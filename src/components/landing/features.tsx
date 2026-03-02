@@ -1,81 +1,132 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   FileText,
   MessageSquare,
   Compass,
   GitBranch,
-  Building2,
-  FolderOpen,
+  MessageCircle,
+  Users,
+  Calendar,
+  Shield,
+  AlertTriangle,
+  Lock,
+  Handshake,
+  Languages,
+  Search,
+  Smartphone,
+  Briefcase,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
-const features = [
+const tier1 = [
   {
     title: "Report Studio",
     icon: FileText,
-    color: "text-gold-500",
-    borderColor: "group-hover:border-gold-500/40",
-    glowColor: "group-hover:shadow-gold-500/10",
+    color: "text-gold-600",
+    bgColor: "bg-gold-600/5",
+    borderHover: "hover:border-gold-600/30",
     description:
-      "AI-powered generation of diplomatic products — from Secretary-General reports to political cables.",
-  },
-  {
-    title: "Diplomatic Assistant",
-    icon: MessageSquare,
-    color: "text-teal",
-    borderColor: "group-hover:border-teal/40",
-    glowColor: "group-hover:shadow-teal/10",
-    description:
-      "Context-aware AI specialized in peace, security, and conflict analysis writing.",
-  },
-  {
-    title: "Media Compass",
-    icon: Compass,
-    color: "text-terracotta",
-    borderColor: "group-hover:border-terracotta/40",
-    glowColor: "group-hover:shadow-terracotta/10",
-    description:
-      "Map news sources on political orientation and reliability axes for conflict coverage.",
+      "AI-generated diplomatic products \u2014 SG reports, cables, SITREPs, briefing notes \u2014 with source citations and UN formatting.",
   },
   {
     title: "Conflict Intelligence Graph",
     icon: GitBranch,
     color: "text-sage",
-    borderColor: "group-hover:border-sage/40",
-    glowColor: "group-hover:shadow-sage/10",
+    bgColor: "bg-sage/5",
+    borderHover: "hover:border-sage/30",
     description:
-      "Temporal knowledge graph of disputes, actors, and their relationships.",
+      "Temporal knowledge graph built on 8 Conflict Grammar\u2122 primitives. Map actors, claims, interests, and commitments over time.",
   },
   {
-    title: "UN Toolkit",
-    icon: Building2,
-    color: "text-steel",
-    borderColor: "group-hover:border-steel/40",
-    glowColor: "group-hover:shadow-steel/10",
+    title: "PRAXIS Assistant",
+    icon: MessageSquare,
+    color: "text-teal",
+    bgColor: "bg-teal/5",
+    borderHover: "hover:border-teal/30",
     description:
-      "Specialized tools for UN document standards, terminology, and resolution drafting.",
+      "Context-aware AI specialized in peace & security analysis. Ask questions, get structured assessments with sourced evidence.",
   },
   {
-    title: "Document Vault",
-    icon: FolderOpen,
-    color: "text-purple",
-    borderColor: "group-hover:border-purple/40",
-    glowColor: "group-hover:shadow-purple/10",
+    title: "Media Compass",
+    icon: Compass,
+    color: "text-terracotta",
+    bgColor: "bg-terracotta/5",
+    borderHover: "hover:border-terracotta/30",
     description:
-      "Secure upload, AI extraction, and cross-reference of conflict documents.",
+      "Source reliability \u00D7 political orientation mapping with real-time monitoring across 45+ global media outlets.",
   },
 ];
 
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.1,
-    },
+const tier2 = [
+  {
+    title: "Talking Points Generator",
+    icon: MessageCircle,
+    description:
+      "Auto-generate structured talking points from any brief, with sourced references and rhetorical framing options.",
   },
-};
+  {
+    title: "Stakeholder Mapper",
+    icon: Users,
+    description:
+      "Visual network analysis of actors, alliances, and influence pathways \u2014 auto-populated from ingested documents.",
+  },
+  {
+    title: "Calendar Monitor",
+    icon: Calendar,
+    description:
+      "Track UNSC, General Assembly, AU PSC, EU Parliament, and regional body schedules with AI-powered agenda previews.",
+  },
+  {
+    title: "Sanctions & Resolutions Tracker",
+    icon: Shield,
+    description:
+      "Live database of UNSC resolutions, sanctions regimes, and arms embargoes with compliance alerts.",
+  },
+  {
+    title: "Early Warning Dashboard",
+    icon: AlertTriangle,
+    description:
+      "Risk scoring across monitored situations using predictive indicators and ACLED-integrated analysis.",
+  },
+  {
+    title: "Secure Document Vault",
+    icon: Lock,
+    description:
+      "End-to-end encrypted document storage with AI extraction, cross-referencing, and version control.",
+  },
+];
+
+const tier3 = [
+  {
+    title: "Negotiation Prep Kit",
+    icon: Handshake,
+    description: "BATNA/ZOPA analysis, concession tracking, precedent lookup for mediation sessions.",
+  },
+  {
+    title: "Multi-Language Brief Translator",
+    icon: Languages,
+    description: "Diplomatic-grade translation preserving UN terminology and political nuance.",
+  },
+  {
+    title: "Comparative Precedent Engine",
+    icon: Search,
+    description: "Search historical peace agreements, resolutions, and frameworks for similar situations.",
+  },
+  {
+    title: "Field Reporting Companion",
+    icon: Smartphone,
+    description: "Mobile-optimized quick reporting with offline capability, GPS tagging, and secure sync.",
+  },
+  {
+    title: "Delegation Briefing Builder",
+    icon: Briefcase,
+    description: "Auto-compile country briefing packages: political context, key contacts, talking points, protocol notes.",
+  },
+];
 
 const cardVariants = {
   hidden: { opacity: 0, y: 40 },
@@ -89,12 +140,19 @@ const cardVariants = {
   },
 };
 
-export function Features() {
-  return (
-    <section id="features" className="relative bg-navy-950 px-6 py-28 lg:py-36">
-      {/* Subtle top fade */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-navy-950 to-transparent" />
+type TabKey = "core" | "workflow" | "advanced";
 
+export function Features() {
+  const [activeTab, setActiveTab] = useState<TabKey>("core");
+
+  const tabs: { key: TabKey; label: string; count: number }[] = [
+    { key: "core", label: "Core Intelligence", count: 4 },
+    { key: "workflow", label: "Daily Workflow", count: 6 },
+    { key: "advanced", label: "Advanced", count: 5 },
+  ];
+
+  return (
+    <section id="features" className="relative px-6 py-24 lg:py-32">
       <div className="mx-auto max-w-6xl">
         {/* Section header */}
         <motion.div
@@ -102,65 +160,172 @@ export function Features() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.7 }}
-          className="mb-16 text-center lg:mb-20"
+          className="mb-4 text-center"
         >
-          <h2 className="mb-4 font-serif text-3xl text-navy-50 sm:text-4xl lg:text-5xl">
-            Intelligence Tools for Complex Conflicts
+          <span className="text-overline text-gold-700">Platform</span>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.7, delay: 0.1 }}
+          className="mb-6 text-center"
+        >
+          <h2 className="mb-4 font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl">
+            15 Tools. One Workspace. Zero Switching.
           </h2>
-          <p className="mx-auto max-w-2xl text-lg text-navy-400">
-            A comprehensive suite designed for the unique demands of peace,
-            security, and diplomatic analysis.
+          <p className="mx-auto max-w-2xl text-lg text-navy-500">
+            Not another chatbot. Not another dashboard. The first platform
+            purpose-built for the daily work of conflict analysis and diplomatic
+            reporting.
           </p>
         </motion.div>
 
-        {/* Feature grid */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-60px" }}
-          className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          {features.map((feature) => {
-            const Icon = feature.icon;
-            return (
-              <motion.div
-                key={feature.title}
-                variants={cardVariants}
-                className="group"
+        {/* Tab selector */}
+        <div className="mb-12 flex justify-center">
+          <div className="inline-flex rounded-lg border border-cream-300 bg-white/60 p-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={cn(
+                  "rounded-md px-5 py-2.5 text-sm font-medium transition-all duration-200",
+                  activeTab === tab.key
+                    ? "bg-diplomatic-blue text-white shadow-sm"
+                    : "text-navy-600 hover:text-navy-900 hover:bg-cream-200/50"
+                )}
               >
-                <div
-                  className={cn(
-                    "relative h-full rounded-xl border border-navy-700/50 bg-navy-800/50 p-7 transition-all duration-300",
-                    "hover:-translate-y-1 hover:shadow-xl",
-                    feature.borderColor,
-                    feature.glowColor
-                  )}
+                {tab.label}
+                <span className={cn(
+                  "ml-2 rounded-full px-1.5 py-0.5 text-[10px]",
+                  activeTab === tab.key
+                    ? "bg-white/20 text-white"
+                    : "bg-cream-200 text-navy-500"
+                )}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Core Intelligence - hero cards */}
+        {activeTab === "core" && (
+          <motion.div
+            key="core"
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+            className="grid gap-6 sm:grid-cols-2"
+          >
+            {tier1.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <motion.div
+                  key={feature.title}
+                  variants={cardVariants}
+                  className="group"
                 >
-                  {/* Icon */}
                   <div
                     className={cn(
-                      "mb-5 inline-flex rounded-lg border border-navy-700/50 bg-navy-900/80 p-3",
-                      feature.color
+                      "relative h-full rounded-xl border border-cream-300/60 bg-white/70 p-8 transition-all duration-300",
+                      "hover:-translate-y-1 hover:shadow-lg hover:shadow-navy-950/5",
+                      feature.borderHover
                     )}
                   >
+                    <div
+                      className={cn(
+                        "mb-5 inline-flex rounded-xl p-3",
+                        feature.bgColor,
+                        feature.color
+                      )}
+                    >
+                      <Icon className="h-6 w-6" strokeWidth={1.5} />
+                    </div>
+                    <h3 className="mb-3 text-xl font-semibold tracking-tight text-navy-900">
+                      {feature.title}
+                    </h3>
+                    <p className="text-sm leading-relaxed text-navy-500">
+                      {feature.description}
+                    </p>
+                    <div className="mt-5 flex items-center gap-1 text-sm font-medium text-gold-700 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      Explore <ArrowRight className="h-3.5 w-3.5" />
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        )}
+
+        {/* Daily Workflow - 3-column grid */}
+        {activeTab === "workflow" && (
+          <motion.div
+            key="workflow"
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+            className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {tier2.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <motion.div
+                  key={feature.title}
+                  variants={cardVariants}
+                  className="group"
+                >
+                  <div className="relative h-full rounded-xl border border-cream-300/60 bg-white/70 p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-navy-950/5 hover:border-diplomatic-blue/20">
+                    <div className="mb-4 inline-flex rounded-lg bg-diplomatic-blue/5 p-2.5 text-diplomatic-blue">
+                      <Icon className="h-5 w-5" strokeWidth={1.5} />
+                    </div>
+                    <h3 className="mb-2 text-base font-semibold tracking-tight text-navy-900">
+                      {feature.title}
+                    </h3>
+                    <p className="text-sm leading-relaxed text-navy-500">
+                      {feature.description}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        )}
+
+        {/* Advanced - compact list */}
+        {activeTab === "advanced" && (
+          <motion.div
+            key="advanced"
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
+            className="mx-auto max-w-3xl space-y-3"
+          >
+            {tier3.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <motion.div
+                  key={feature.title}
+                  variants={cardVariants}
+                  className="group flex items-start gap-4 rounded-xl border border-cream-300/60 bg-white/70 p-5 transition-all duration-200 hover:border-diplomatic-blue/20 hover:shadow-sm"
+                >
+                  <div className="shrink-0 rounded-lg bg-diplomatic-blue/5 p-2.5 text-diplomatic-blue">
                     <Icon className="h-5 w-5" strokeWidth={1.5} />
                   </div>
-
-                  {/* Title */}
-                  <h3 className="mb-3 text-lg font-semibold tracking-tight text-navy-50">
-                    {feature.title}
-                  </h3>
-
-                  {/* Description */}
-                  <p className="text-sm leading-relaxed text-navy-400">
-                    {feature.description}
-                  </p>
-                </div>
-              </motion.div>
-            );
-          })}
-        </motion.div>
+                  <div>
+                    <h3 className="text-base font-semibold text-navy-900">
+                      {feature.title}
+                    </h3>
+                    <p className="mt-1 text-sm text-navy-500">
+                      {feature.description}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        )}
       </div>
     </section>
   );

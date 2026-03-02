@@ -1,142 +1,69 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ChevronDown, Shield } from "lucide-react";
+import { ChevronDown, Shield, Play } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
-// --- Animated network background ---
-
-interface Node {
-  id: number;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  radius: number;
-  color: string;
-}
-
-function NetworkBackground() {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const animationRef = useRef<number>(0);
-  const nodesRef = useRef<Node[]>([]);
-  const [, forceRender] = useState(0);
-
-  const nodeColors = useMemo(
-    () => ["#E8B931", "#4A90A4", "#3D5A80", "#7B6D8D", "#5B8C5A", "#C75B39"],
-    []
-  );
+// --- Animated counter ---
+function AnimatedCounter({ end, suffix = "", duration = 2000 }: { end: number; suffix?: string; duration?: number }) {
+  const [count, setCount] = useState(0);
+  const [started, setStarted] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    const nodeCount = 24;
-    const nodes: Node[] = [];
-
-    for (let i = 0; i < nodeCount; i++) {
-      nodes.push({
-        id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        vx: (Math.random() - 0.5) * 0.015,
-        vy: (Math.random() - 0.5) * 0.015,
-        radius: Math.random() * 1.5 + 1,
-        color: nodeColors[i % nodeColors.length],
-      });
-    }
-    nodesRef.current = nodes;
-
-    let lastTime = 0;
-    const animate = (time: number) => {
-      if (time - lastTime > 50) {
-        lastTime = time;
-        for (const node of nodesRef.current) {
-          node.x += node.vx;
-          node.y += node.vy;
-
-          if (node.x < 0 || node.x > 100) node.vx *= -1;
-          if (node.y < 0 || node.y > 100) node.vy *= -1;
-
-          node.x = Math.max(0, Math.min(100, node.x));
-          node.y = Math.max(0, Math.min(100, node.y));
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started) {
+          setStarted(true);
         }
-        forceRender((n) => n + 1);
-      }
-      animationRef.current = requestAnimationFrame(animate);
-    };
+      },
+      { threshold: 0.5 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [started]);
 
-    animationRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animationRef.current);
-  }, [nodeColors]);
-
-  const nodes = nodesRef.current;
-
-  // Compute edges between nearby nodes
-  const edges: { from: Node; to: Node; dist: number }[] = [];
-  const connectionDist = 28;
-  for (let i = 0; i < nodes.length; i++) {
-    for (let j = i + 1; j < nodes.length; j++) {
-      const dx = nodes[i].x - nodes[j].x;
-      const dy = nodes[i].y - nodes[j].y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < connectionDist) {
-        edges.push({ from: nodes[i], to: nodes[j], dist });
-      }
-    }
-  }
+  useEffect(() => {
+    if (!started) return;
+    const startTime = Date.now();
+    const timer = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(eased * end));
+      if (progress >= 1) clearInterval(timer);
+    }, 16);
+    return () => clearInterval(timer);
+  }, [started, end, duration]);
 
   return (
-    <svg
-      ref={svgRef}
-      className="absolute inset-0 h-full w-full"
-      viewBox="0 0 100 100"
-      preserveAspectRatio="xMidYMid slice"
-      aria-hidden="true"
-    >
-      {/* Edges */}
-      {edges.map(({ from, to, dist }, i) => (
-        <line
-          key={`e-${i}`}
-          x1={from.x}
-          y1={from.y}
-          x2={to.x}
-          y2={to.y}
-          stroke={from.color}
-          strokeOpacity={0.08 * (1 - dist / connectionDist)}
-          strokeWidth={0.15}
-        />
-      ))}
-      {/* Nodes */}
-      {nodes.map((node) => (
-        <circle
-          key={`n-${node.id}`}
-          cx={node.x}
-          cy={node.y}
-          r={node.radius * 0.3}
-          fill={node.color}
-          opacity={0.25}
-        />
-      ))}
-    </svg>
+    <span ref={ref} className="tabular-nums">
+      {count.toLocaleString()}{suffix}
+    </span>
   );
 }
 
 // --- Word-by-word reveal ---
 
 const headlineWords = [
-  "The",
-  "Operating",
-  "System",
-  "for",
-  "High-Stakes",
-  "Disputes",
+  "Your",
+  "Analysts",
+  "Write",
+  "Reports.",
+  "Your",
+  "AI",
+  "Should",
+  "Write",
+  "Intelligence.",
 ];
 
 const containerVariants = {
   hidden: {},
   visible: {
     transition: {
-      staggerChildren: 0.12,
+      staggerChildren: 0.1,
       delayChildren: 0.3,
     },
   },
@@ -152,35 +79,50 @@ const wordVariants = {
   },
 };
 
+// --- Social proof logos (abstract/silhouette representations) ---
+const institutions = [
+  "United Nations",
+  "OSCE",
+  "African Union",
+  "ICG",
+  "Chatham House",
+  "EU External Action",
+];
+
 export function Hero() {
   return (
-    <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-navy-950 px-6">
-      {/* Network background */}
-      <div className="pointer-events-none absolute inset-0 opacity-60">
-        <NetworkBackground />
-      </div>
-
-      {/* Radial gradient overlay */}
+    <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
+      {/* Background mesh gradient */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 70% 50% at 50% 50%, transparent 0%, #050A18 100%)",
+            "radial-gradient(ellipse 80% 60% at 50% 30%, rgba(232,185,49,0.06) 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 80% 70%, rgba(75,146,219,0.04) 0%, transparent 50%), radial-gradient(ellipse 50% 50% at 20% 80%, rgba(27,58,92,0.03) 0%, transparent 50%)",
+        }}
+      />
+
+      {/* Subtle dot grid pattern */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 1px 1px, #1B3A5C 0.5px, transparent 0)",
+          backgroundSize: "32px 32px",
         }}
       />
 
       {/* Content */}
-      <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center text-center">
+      <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center text-center">
         {/* Trust badge */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.6 }}
-          className="mb-10 inline-flex items-center gap-2 rounded-full border border-navy-700/50 bg-navy-900/60 px-4 py-2 backdrop-blur-sm"
+          className="mb-10 inline-flex items-center gap-2 rounded-full border border-diplomatic-blue/10 bg-white/60 px-4 py-2 shadow-sm backdrop-blur-sm"
         >
-          <Shield className="h-3.5 w-3.5 text-gold-500" />
-          <span className="text-xs font-medium tracking-wide text-navy-300">
-            Built by former UN political officers
+          <Shield className="h-3.5 w-3.5 text-gold-600" />
+          <span className="text-xs font-medium tracking-wide text-navy-700">
+            Built by former UN political officers who authored 600+ intelligence products
           </span>
         </motion.div>
 
@@ -189,16 +131,15 @@ export function Hero() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="mb-8 font-serif text-5xl leading-[1.1] font-normal tracking-tight text-navy-50 sm:text-6xl lg:text-7xl"
+          className="mb-8 font-serif text-5xl leading-[1.08] font-normal tracking-tight text-navy-950 sm:text-6xl lg:text-[72px]"
         >
           {headlineWords.map((word, i) => (
             <motion.span
               key={i}
               variants={wordVariants}
               className={cn(
-                "mr-[0.3em] inline-block",
-                (word === "High-Stakes" || word === "Disputes") &&
-                  "text-gold-500"
+                "mr-[0.25em] inline-block",
+                word === "Intelligence." && "text-gold-600"
               )}
             >
               {word}
@@ -211,10 +152,11 @@ export function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.2, duration: 0.7 }}
-          className="mb-12 max-w-2xl text-lg leading-relaxed text-navy-300 sm:text-xl"
+          className="mb-12 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
         >
-          Transform unstructured conflict data into actionable intelligence.
-          Purpose-built for peace, security, and diplomatic professionals.
+          PRAXIS is the AI-native workspace where peace, security, and diplomatic
+          professionals turn raw conflict data into decisive intelligence — in
+          minutes, not weeks.
         </motion.p>
 
         {/* CTAs */}
@@ -224,37 +166,183 @@ export function Hero() {
           transition={{ delay: 1.5, duration: 0.6 }}
           className="flex flex-col items-center gap-4 sm:flex-row"
         >
-          <a
-            href="#cta"
-            className="group inline-flex items-center justify-center rounded-md bg-gold-500 px-8 py-3.5 text-sm font-semibold text-navy-950 transition-all duration-200 hover:bg-gold-400 hover:shadow-xl hover:shadow-gold-500/20"
+          <Link
+            href="/dashboard"
+            className="group inline-flex items-center justify-center rounded-md bg-gold-600 px-8 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-xl hover:shadow-gold-600/20"
           >
-            Request Access
+            Start Free Demo
             <span className="ml-2 transition-transform duration-200 group-hover:translate-x-0.5">
               &rarr;
             </span>
-          </a>
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center justify-center rounded-md border border-gold-500/30 px-8 py-3.5 text-sm font-semibold text-gold-500 transition-all duration-200 hover:border-gold-500/60 hover:bg-gold-500/5 hover:shadow-lg hover:shadow-gold-500/10"
-          >
-            Explore Platform
           </Link>
+          <a
+            href="#demo"
+            className="group inline-flex items-center justify-center gap-2 rounded-md border border-diplomatic-blue/20 px-8 py-3.5 text-sm font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
+          >
+            <Play className="h-4 w-4" />
+            Watch 2-Min Overview
+          </a>
+        </motion.div>
+
+        {/* Social proof strip */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 2, duration: 0.8 }}
+          className="mt-16"
+        >
+          <p className="mb-4 text-xs font-medium uppercase tracking-[0.12em] text-navy-400">
+            Trusted by professionals from
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+            {institutions.map((name) => (
+              <span
+                key={name}
+                className="text-xs font-semibold uppercase tracking-wider text-navy-300/60"
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Live counters */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 2.2, duration: 0.7 }}
+          className="mt-10 flex flex-wrap items-center justify-center gap-8 sm:gap-12"
+        >
+          <div className="text-center">
+            <div className="text-2xl font-semibold text-diplomatic-blue sm:text-3xl">
+              <AnimatedCounter end={847} />
+            </div>
+            <p className="mt-1 text-xs text-navy-400">Conflict situations monitored</p>
+          </div>
+          <div className="h-8 w-px bg-cream-300" />
+          <div className="text-center">
+            <div className="text-2xl font-semibold text-diplomatic-blue sm:text-3xl">
+              <AnimatedCounter end={12400} suffix="+" />
+            </div>
+            <p className="mt-1 text-xs text-navy-400">Diplomatic products generated</p>
+          </div>
+          <div className="hidden h-8 w-px bg-cream-300 sm:block" />
+          <div className="text-center">
+            <div className="text-2xl font-semibold text-diplomatic-blue sm:text-3xl">
+              <AnimatedCounter end={94} suffix="%" />
+            </div>
+            <p className="mt-1 text-xs text-navy-400">Time saved on reporting</p>
+          </div>
         </motion.div>
       </div>
+
+      {/* Floating app screenshot at perspective */}
+      <motion.div
+        initial={{ opacity: 0, y: 60 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.8, duration: 1 }}
+        className="relative z-10 mx-auto mt-16 w-full max-w-5xl px-4"
+      >
+        <div
+          className="relative overflow-hidden rounded-xl border border-navy-200/50 bg-navy-900 shadow-2xl shadow-navy-950/20"
+          style={{
+            transform: "perspective(1200px) rotateX(2deg)",
+          }}
+        >
+          {/* Title bar */}
+          <div className="flex items-center justify-between border-b border-navy-700/50 bg-navy-950 px-4 py-2.5">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1.5">
+                <div className="h-2.5 w-2.5 rounded-full bg-crimson/60" />
+                <div className="h-2.5 w-2.5 rounded-full bg-gold-500/60" />
+                <div className="h-2.5 w-2.5 rounded-full bg-sage/60" />
+              </div>
+              <span className="ml-3 font-mono text-[10px] text-navy-500">
+                praxis.tacitus.ai/dashboard
+              </span>
+            </div>
+            <span className="font-serif text-xs tracking-wide text-gold-500/60">
+              PRAXIS
+            </span>
+          </div>
+
+          {/* Mini dashboard preview */}
+          <div className="flex min-h-[280px] sm:min-h-[340px]">
+            {/* Sidebar */}
+            <div className="hidden w-44 shrink-0 border-r border-navy-700/40 bg-navy-900/80 p-3 md:block">
+              <div className="mb-4 px-2">
+                <p className="font-serif text-sm tracking-wide text-gold-500">TACITUS</p>
+              </div>
+              {[
+                { label: "Dashboard", active: true },
+                { label: "Report Studio", active: false },
+                { label: "Assistant", active: false },
+                { label: "Media Compass", active: false },
+                { label: "Conflict Graph", active: false },
+                { label: "Advisory Council", active: false },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className={cn(
+                    "mb-1 flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[11px]",
+                    item.active
+                      ? "bg-navy-800 text-gold-400 border-l-2 border-gold-500"
+                      : "text-navy-500"
+                  )}
+                >
+                  <span>{item.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Main area */}
+            <div className="flex-1 p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-navy-100">
+                    Good morning, <span className="text-gold-400">Analyst</span>
+                  </h3>
+                  <p className="text-[10px] text-navy-500">2 March 2026 · TACITUS Demo</p>
+                </div>
+                <div className="flex gap-2">
+                  {["12 Active", "47 Reports", "3 Alerts"].map((label) => (
+                    <div
+                      key={label}
+                      className="rounded-md border border-navy-700/30 bg-navy-800/50 px-2.5 py-1 text-[10px] text-navy-300"
+                    >
+                      {label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Placeholder content blocks */}
+              <div className="grid grid-cols-3 gap-3">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-20 rounded-lg border border-navy-700/30 bg-navy-800/30"
+                  />
+                ))}
+              </div>
+              <div className="mt-3 h-32 rounded-lg border border-navy-700/30 bg-navy-800/20" />
+            </div>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 2.2, duration: 0.8 }}
-        className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2"
+        transition={{ delay: 2.8, duration: 0.8 }}
+        className="relative z-10 mt-12 mb-8"
       >
         <a
-          href="#features"
-          className="flex flex-col items-center gap-2 text-navy-500 transition-colors hover:text-navy-300"
+          href="#problem"
+          className="flex flex-col items-center gap-2 text-navy-400 transition-colors hover:text-navy-600"
           aria-label="Scroll down"
         >
-          <span className="text-[10px] font-medium uppercase tracking-[0.2em]">
+          <span className="text-overline text-navy-400">
             Discover
           </span>
           <motion.div
