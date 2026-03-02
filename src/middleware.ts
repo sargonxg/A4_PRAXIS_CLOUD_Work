@@ -11,6 +11,12 @@ const PROTECTED_PATHS = [
   '/un-toolkit',
   '/documents',
   '/settings',
+  '/calendar',
+  '/advisory',
+  '/talking-points',
+  '/stakeholder-map',
+  '/early-warning',
+  '/sanctions',
 ];
 
 export function middleware(request: NextRequest) {
@@ -44,5 +50,11 @@ export const config = {
     '/un-toolkit/:path*',
     '/documents/:path*',
     '/settings/:path*',
+    '/calendar/:path*',
+    '/advisory/:path*',
+    '/talking-points/:path*',
+    '/stakeholder-map/:path*',
+    '/early-warning/:path*',
+    '/sanctions/:path*',
   ],
 };

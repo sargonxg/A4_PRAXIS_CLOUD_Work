@@ -20,21 +20,9 @@ export function Cta() {
     <section
       id="cta"
       className="relative overflow-hidden px-6 py-28 lg:py-36"
-      style={{
-        background:
-          "linear-gradient(to bottom, #050A18 0%, #0B1120 40%, #0B1120 100%)",
-      }}
     >
-      {/* Subtle radial accent */}
-      <div
-        className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2"
-        style={{
-          width: "800px",
-          height: "400px",
-          background:
-            "radial-gradient(ellipse at center, rgba(232,185,49,0.04) 0%, transparent 70%)",
-        }}
-      />
+      {/* Subtle warm gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-cream-100 via-cream-200/50 to-cream-100" />
 
       <div className="relative mx-auto max-w-2xl text-center">
         <motion.div
@@ -43,12 +31,13 @@ export function Cta() {
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7 }}
         >
-          <h2 className="mb-6 font-serif text-3xl text-navy-50 sm:text-4xl lg:text-5xl">
-            Ready to Transform Your Conflict Analysis?
+          <h2 className="mb-6 font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl">
+            Generate Your First Intelligence Brief
           </h2>
-          <p className="mb-10 text-lg text-navy-400">
-            Join select organizations gaining an analytical edge with
-            AI-powered diplomatic intelligence.
+          <p className="mb-10 text-lg text-navy-500">
+            Currently in private beta — limited seats for founding organizations.
+            Join select teams gaining an analytical edge with AI-powered
+            diplomatic intelligence.
           </p>
         </motion.div>
 
@@ -70,14 +59,14 @@ export function Cta() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your institutional email"
                 className={cn(
-                  "flex-1 rounded-md border border-navy-700/60 bg-navy-800/60 px-4 py-3 text-sm text-navy-100 placeholder:text-navy-500",
+                  "flex-1 rounded-md border border-cream-300 bg-white px-4 py-3 text-sm text-navy-900 placeholder:text-navy-400",
                   "outline-none transition-all duration-200",
-                  "focus:border-gold-500/50 focus:ring-2 focus:ring-gold-500/20"
+                  "focus:border-gold-600/50 focus:ring-2 focus:ring-gold-600/20"
                 )}
               />
               <button
                 type="submit"
-                className="group inline-flex items-center justify-center gap-2 rounded-md bg-gold-500 px-6 py-3 text-sm font-semibold text-navy-950 transition-all duration-200 hover:bg-gold-400 hover:shadow-lg hover:shadow-gold-500/20"
+                className="group inline-flex items-center justify-center gap-2 rounded-md bg-gold-600 px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-lg hover:shadow-gold-600/20"
               >
                 Request Access
                 <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -90,7 +79,7 @@ export function Cta() {
               className="inline-flex items-center gap-3 rounded-lg border border-sage/30 bg-sage/10 px-6 py-4"
             >
               <CheckCircle2 className="h-5 w-5 text-sage" />
-              <span className="text-sm font-medium text-navy-200">
+              <span className="text-sm font-medium text-navy-700">
                 Thank you! We&apos;ll be in touch shortly.
               </span>
             </motion.div>
@@ -98,8 +87,8 @@ export function Cta() {
 
           {/* Beta notice */}
           <div className="mt-6 flex items-center justify-center gap-2">
-            <Lock className="h-3 w-3 text-navy-600" />
-            <p className="text-xs text-navy-500">
+            <Lock className="h-3 w-3 text-navy-400" />
+            <p className="text-xs text-navy-400">
               Currently in private beta for select organizations
             </p>
           </div>

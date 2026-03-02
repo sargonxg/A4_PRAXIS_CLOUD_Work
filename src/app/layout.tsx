@@ -11,9 +11,21 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "TACITUS - Diplomatic Intelligence Platform",
+  title: "PRAXIS by TACITUS — Diplomacy. Evolved.",
   description:
-    "Transform unstructured conflict data into actionable intelligence. Purpose-built for peace, security, and diplomatic professionals.",
+    "The AI-native intelligence workspace for peace and security professionals. Transform raw conflict data into decisive intelligence — in minutes, not weeks.",
+  openGraph: {
+    title: "PRAXIS by TACITUS — Diplomacy. Evolved.",
+    description:
+      "The AI-native intelligence workspace for peace and security professionals.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PRAXIS by TACITUS — Diplomacy. Evolved.",
+    description:
+      "The AI-native intelligence workspace for peace and security professionals.",
+  },
 };
 
 export default function RootLayout({
@@ -31,7 +43,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Instrument+Sans:wght@400..700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
       </head>
