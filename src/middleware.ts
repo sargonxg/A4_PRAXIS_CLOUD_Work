@@ -1,0 +1,48 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+// Routes that require authentication (from the (app) route group)
+const PROTECTED_PATHS = [
+  '/dashboard',
+  '/reports',
+  '/assistant',
+  '/media-compass',
+  '/conflict-graph',
+  '/un-toolkit',
+  '/documents',
+  '/settings',
+];
+
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Check if this path is protected
+  const isProtected = PROTECTED_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(path + '/')
+  );
+
+  if (isProtected) {
+    const session = request.cookies.get('tacitus-auth-session');
+
+    if (!session?.value) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: [
+    '/dashboard/:path*',
+    '/reports/:path*',
+    '/assistant/:path*',
+    '/media-compass/:path*',
+    '/conflict-graph/:path*',
+    '/un-toolkit/:path*',
+    '/documents/:path*',
+    '/settings/:path*',
+  ],
+};

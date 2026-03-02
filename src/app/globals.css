@@ -1,0 +1,129 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme inline {
+  /* Fonts - use Google Fonts with system fallbacks */
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: "DM Serif Display", ui-serif, Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", "Fira Code", monospace;
+
+  /* TACITUS color palette - dark navy/slate with gold accents */
+  --color-navy-950: #050A18;
+  --color-navy-900: #0B1120;
+  --color-navy-800: #0F172A;
+  --color-navy-700: #1E293B;
+  --color-navy-600: #334155;
+  --color-navy-500: #475569;
+  --color-navy-400: #64748B;
+  --color-navy-300: #94A3B8;
+  --color-navy-200: #CBD5E1;
+  --color-navy-100: #E2E8F0;
+  --color-navy-50: #F1F5F9;
+
+  --color-gold-500: #E8B931;
+  --color-gold-400: #F0CA4D;
+  --color-gold-600: #C99A1E;
+  --color-gold-300: #F5D978;
+
+  --color-terracotta: #C75B39;
+  --color-teal: #4A90A4;
+  --color-sage: #5B8C5A;
+  --color-steel: #3D5A80;
+  --color-crimson: #A63D40;
+  --color-purple: #7B6D8D;
+  --color-tan: #D4A373;
+
+  --color-background: var(--color-navy-950);
+  --color-foreground: var(--color-navy-100);
+
+  /* Ring defaults */
+  --color-ring: var(--color-gold-500);
+
+  /* Animation durations */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+/* Accordion keyframes */
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-navy-900);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-navy-600);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-navy-500);
+}
+
+/* Selection colors */
+::selection {
+  background-color: color-mix(in srgb, var(--color-gold-500) 30%, transparent);
+  color: var(--color-navy-50);
+}
+
+/* Base styles */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--color-navy-950);
+  color: var(--color-navy-100);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+/* Focus visible styles */
+*:focus-visible {
+  outline: 2px solid var(--color-gold-500);
+  outline-offset: 2px;
+}
+
+/* Prose overrides for dark theme */
+.prose {
+  --tw-prose-body: var(--color-navy-200);
+  --tw-prose-headings: var(--color-navy-50);
+  --tw-prose-lead: var(--color-navy-300);
+  --tw-prose-links: var(--color-gold-400);
+  --tw-prose-bold: var(--color-navy-50);
+  --tw-prose-counters: var(--color-navy-400);
+  --tw-prose-bullets: var(--color-navy-500);
+  --tw-prose-hr: var(--color-navy-700);
+  --tw-prose-quotes: var(--color-navy-200);
+  --tw-prose-quote-borders: var(--color-gold-600);
+  --tw-prose-captions: var(--color-navy-400);
+  --tw-prose-code: var(--color-gold-400);
+  --tw-prose-pre-code: var(--color-navy-200);
+  --tw-prose-pre-bg: var(--color-navy-900);
+  --tw-prose-th-borders: var(--color-navy-600);
+  --tw-prose-td-borders: var(--color-navy-700);
+}
