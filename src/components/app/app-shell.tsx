@@ -17,7 +17,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="flex h-screen overflow-hidden bg-navy-950">
+      <div className="app-light flex h-screen overflow-hidden bg-[var(--color-app-bg)]">
         <AppSidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
           <Header />
