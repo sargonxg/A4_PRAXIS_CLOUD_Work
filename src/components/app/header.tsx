@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Search, Bell, ChevronRight, User, Settings, LogOut } from 'lucide-react';
+import { Search, Bell, ChevronRight, User, Settings, LogOut, Sparkles, X, Send } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
 import {
@@ -20,18 +20,26 @@ const routeLabels: Record<string, string> = {
   dashboard: 'Dashboard',
   reports: 'Report Studio',
   new: 'New Report',
-  assistant: 'Assistant',
+  assistant: 'PRAXIS Assistant',
   'media-compass': 'Media Compass',
   'conflict-graph': 'Conflict Graph',
   'un-toolkit': 'UN Toolkit',
   documents: 'Documents',
   settings: 'Settings',
+  calendar: 'Calendar Monitor',
+  advisory: 'Advisory Council',
+  'talking-points': 'Talking Points',
+  'stakeholder-map': 'Stakeholder Map',
+  'early-warning': 'Early Warning',
+  sanctions: 'Sanctions Tracker',
 };
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuth();
+  const [assistOpen, setAssistOpen] = useState(false);
+  const [assistQuery, setAssistQuery] = useState('');
 
   const breadcrumbs = useMemo(() => {
     const segments = pathname.split('/').filter(Boolean);
@@ -66,83 +74,149 @@ export function Header() {
   }
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-navy-700/50 bg-navy-950/80 px-6 backdrop-blur-md">
-      {/* Breadcrumbs */}
-      <nav className="flex items-center gap-1 text-sm">
-        {breadcrumbs.map((crumb, index) => (
-          <span key={crumb.href} className="flex items-center gap-1">
-            {index > 0 && (
-              <ChevronRight className="h-3.5 w-3.5 text-navy-600" />
-            )}
-            {index === breadcrumbs.length - 1 ? (
-              <span className="font-medium text-navy-100">{crumb.label}</span>
-            ) : (
-              <Link
-                href={crumb.href}
-                className="text-navy-400 transition-colors hover:text-navy-200"
-              >
-                {crumb.label}
-              </Link>
-            )}
-          </span>
-        ))}
-      </nav>
+    <>
+      <header className="flex h-14 items-center justify-between border-b border-[var(--color-app-border)] bg-white/80 px-6 backdrop-blur-md">
+        {/* Breadcrumbs */}
+        <nav className="flex items-center gap-1 text-sm">
+          {breadcrumbs.map((crumb, index) => (
+            <span key={crumb.href} className="flex items-center gap-1">
+              {index > 0 && (
+                <ChevronRight className="h-3.5 w-3.5 text-navy-400" />
+              )}
+              {index === breadcrumbs.length - 1 ? (
+                <span className="font-medium text-navy-900">{crumb.label}</span>
+              ) : (
+                <Link
+                  href={crumb.href}
+                  className="text-navy-400 transition-colors hover:text-navy-600"
+                >
+                  {crumb.label}
+                </Link>
+              )}
+            </span>
+          ))}
+        </nav>
 
-      {/* Right section */}
-      <div className="flex items-center gap-2">
-        {/* Search button */}
-        <button
-          className="flex items-center gap-2 rounded-md border border-navy-700 bg-navy-800/50 px-3 py-1.5 text-sm text-navy-400 transition-colors hover:border-navy-600 hover:text-navy-300"
-          onClick={() => {
-            // Search functionality placeholder
-          }}
-        >
-          <Search className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Search</span>
-          <kbd className="ml-2 hidden rounded bg-navy-700 px-1.5 py-0.5 text-[10px] font-medium text-navy-400 sm:inline-block">
-            Cmd+K
-          </kbd>
-        </button>
+        {/* Right section */}
+        <div className="flex items-center gap-2">
+          {/* AI Quick Ask */}
+          <button
+            onClick={() => setAssistOpen(true)}
+            className="flex items-center gap-2 rounded-lg border border-gold-500/20 bg-gold-500/5 px-3 py-1.5 text-sm text-gold-700 transition-all hover:border-gold-500/40 hover:bg-gold-500/10"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Ask PRAXIS</span>
+            <kbd className="ml-1 hidden rounded bg-gold-500/10 px-1.5 py-0.5 text-[10px] font-medium text-gold-600 sm:inline-block">
+              /
+            </kbd>
+          </button>
 
-        {/* Notifications */}
-        <button className="relative rounded-md p-2 text-navy-400 transition-colors hover:bg-navy-800 hover:text-navy-200">
-          <Bell className="h-4 w-4" />
-          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-gold-500" />
-        </button>
+          {/* Search button */}
+          <button
+            className="flex items-center gap-2 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-sm text-navy-400 transition-colors hover:border-navy-300 hover:text-navy-600"
+          >
+            <Search className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Search</span>
+            <kbd className="ml-2 hidden rounded bg-[var(--color-app-surface-alt)] px-1.5 py-0.5 text-[10px] font-medium text-navy-400 sm:inline-block">
+              Cmd+K
+            </kbd>
+          </button>
 
-        {/* User dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 rounded-md p-1.5 transition-colors hover:bg-navy-800">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gold-500/15 text-xs font-bold text-gold-400">
-                {initials}
+          {/* Notifications */}
+          <button className="relative rounded-lg p-2 text-navy-400 transition-colors hover:bg-[var(--color-app-surface-alt)] hover:text-navy-600">
+            <Bell className="h-4 w-4" />
+            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-crimson ring-2 ring-white" />
+          </button>
+
+          {/* User dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-[var(--color-app-surface-alt)]">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-diplomatic-blue text-xs font-bold text-white">
+                  {initials}
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium text-navy-900">{user?.name}</p>
+                  <p className="text-xs text-navy-500">{user?.email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push('/settings')}>
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/settings')}>
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-crimson focus:text-crimson">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+
+      {/* AI Assistant Overlay */}
+      {assistOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20" onClick={() => setAssistOpen(false)}>
+          <div className="absolute inset-0 bg-navy-950/20 backdrop-blur-sm" />
+          <div
+            className="relative z-10 w-full max-w-2xl rounded-2xl border border-[var(--color-app-border)] bg-white shadow-2xl shadow-navy-950/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 border-b border-[var(--color-app-border)] px-5 py-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-500/10">
+                <Sparkles className="h-4 w-4 text-gold-600" />
               </div>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium text-navy-100">{user?.name}</p>
-                <p className="text-xs text-navy-400">{user?.email}</p>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-navy-900">Ask PRAXIS Anything</h3>
+                <p className="text-[11px] text-navy-500">AI-powered intelligence assistant for your current context</p>
               </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push('/settings')}>
-              <User className="mr-2 h-4 w-4" />
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push('/settings')}>
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-crimson focus:text-crimson">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </header>
+              <button onClick={() => setAssistOpen(false)} className="rounded-md p-1 text-navy-400 hover:text-navy-600">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-5">
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  value={assistQuery}
+                  onChange={(e) => setAssistQuery(e.target.value)}
+                  placeholder='e.g., "Summarize today&apos;s UNSC developments" or "Draft talking points on Sahel"'
+                  className="flex-1 rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-4 py-3 text-sm text-navy-900 placeholder:text-navy-400 focus:border-gold-500/50 focus:outline-none focus:ring-2 focus:ring-gold-500/10"
+                  autoFocus
+                />
+                <button className="flex h-11 w-11 items-center justify-center rounded-lg bg-diplomatic-blue text-white transition-colors hover:bg-diplomatic-blue/90">
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {[
+                  'What are today\'s key developments?',
+                  'Brief me on the Nordalia situation',
+                  'Draft a cable on Sahel security',
+                  'Summarize recent UNSC resolutions',
+                ].map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    onClick={() => setAssistQuery(suggestion)}
+                    className="rounded-full border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-xs text-navy-600 transition-colors hover:border-gold-500/30 hover:bg-gold-500/5 hover:text-navy-900"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

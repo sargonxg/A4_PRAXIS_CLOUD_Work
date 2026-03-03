@@ -1,25 +1,37 @@
 'use client';
 
-import { AlertTriangle, TrendingUp, TrendingDown, Minus, MapPin, ArrowRight, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { AlertTriangle, TrendingUp, TrendingDown, Minus, MapPin, Sparkles, FileText, ChevronDown, ChevronUp, Lightbulb, ArrowRight, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { monitoredSituations } from '@/lib/constants/early-warning-data';
-import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 const trendConfig = {
-  escalating: { label: 'Escalating', icon: TrendingUp, color: 'text-crimson', bg: 'bg-crimson/10', border: 'border-crimson/20' },
-  stable: { label: 'Stable', icon: Minus, color: 'text-gold-400', bg: 'bg-gold-500/10', border: 'border-gold-500/20' },
-  'de-escalating': { label: 'De-escalating', icon: TrendingDown, color: 'text-sage', bg: 'bg-sage/10', border: 'border-sage/20' },
+  escalating: { label: 'Escalating', icon: TrendingUp, color: 'text-crimson', bg: 'bg-crimson/8' },
+  stable: { label: 'Stable', icon: Minus, color: 'text-gold-600', bg: 'bg-gold-500/8' },
+  'de-escalating': { label: 'De-escalating', icon: TrendingDown, color: 'text-sage', bg: 'bg-sage/8' },
 };
 
-function RiskBar({ value, max = 10 }: { value: number; max?: number }) {
+const factorLabels: Record<string, string> = {
+  political: 'Political',
+  armed: 'Armed Violence',
+  humanitarian: 'Humanitarian',
+  economic: 'Economic',
+  social: 'Social Cohesion',
+};
+
+function RiskBar({ value, max = 10, label }: { value: number; max?: number; label?: string }) {
   const pct = (value / max) * 100;
-  const color = value >= 8 ? '#A63D40' : value >= 6 ? '#E8B931' : '#5B8C5A';
+  const color = value >= 8 ? '#A63D40' : value >= 6 ? '#C8961E' : '#5B8C5A';
   return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 flex-1 rounded-full bg-navy-700/50">
-        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
+    <div>
+      {label && <span className="text-[10px] text-navy-500">{label}</span>}
+      <div className="flex items-center gap-2">
+        <div className="h-1.5 flex-1 rounded-full bg-navy-100">
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
+        </div>
+        <span className="text-xs font-mono tabular-nums font-medium" style={{ color }}>{value.toFixed(1)}</span>
       </div>
-      <span className="text-xs font-mono tabular-nums" style={{ color }}>{value.toFixed(1)}</span>
     </div>
   );
 }
@@ -27,96 +39,107 @@ function RiskBar({ value, max = 10 }: { value: number; max?: number }) {
 function SparklineChart({ data }: { data: number[] }) {
   const min = Math.min(...data) - 0.5;
   const max = Math.max(...data) + 0.5;
-  const w = 100;
-  const h = 24;
+  const w = 120;
+  const h = 28;
   const points = data.map((v, i) => {
     const x = (i / (data.length - 1)) * w;
     const y = h - ((v - min) / (max - min)) * h;
     return `${x},${y}`;
   }).join(' ');
 
+  const fillPoints = `0,${h} ${points} ${w},${h}`;
   const lastVal = data[data.length - 1];
-  const color = lastVal >= 8 ? '#A63D40' : lastVal >= 6 ? '#E8B931' : '#5B8C5A';
+  const color = lastVal >= 8 ? '#A63D40' : lastVal >= 6 ? '#C8961E' : '#5B8C5A';
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="h-6 w-20">
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-7 w-28">
+      <polygon points={fillPoints} fill={color} fillOpacity={0.08} />
       <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
-      <circle cx={(data.length - 1) / (data.length - 1) * w} cy={h - ((lastVal - min) / (max - min)) * h} r="2" fill={color} />
+      <circle cx={(data.length - 1) / (data.length - 1) * w} cy={h - ((lastVal - min) / (max - min)) * h} r="2.5" fill={color} />
     </svg>
   );
 }
 
-function SeverityBadge({ severity }: { severity: string }) {
-  const config: Record<string, { bg: string; text: string }> = {
-    critical: { bg: 'bg-crimson/15', text: 'text-crimson' },
-    high: { bg: 'bg-terracotta/15', text: 'text-terracotta' },
-    medium: { bg: 'bg-gold-500/15', text: 'text-gold-400' },
-    low: { bg: 'bg-sage/15', text: 'text-sage' },
-  };
-  const c = config[severity] || config.medium;
-  return (
-    <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase', c.bg, c.text)}>
-      {severity}
-    </span>
-  );
-}
+const aiRecommendations: Record<string, string> = {
+  'nordalia': 'Immediate briefing update recommended. Cross-reference with UNMN reporting cable from Feb 27. Consider activating the rapid response template. Col. Mitchell and Dr. Okafor are both flagging this.',
+  'sudan': 'Multiple humanitarian access constraints reported by OCHA. Recommend cross-referencing with flash update and preparing a note for the USG. Dr. Sharma suggests comparing with 2023 baseline.',
+  'drc': 'M23 movements near Goma warrant closer monitoring. Consider pre-drafting press elements in case the Security Council discusses this week. Check latest PoE reporting.',
+  'sahel': 'New JNIM communiqué detected in open-source intelligence. Media Compass flagged divergent framing between AFP and local outlets. Ambassador Al-Rashid recommends verification pass.',
+};
 
 export default function EarlyWarningPage() {
   const sorted = [...monitoredSituations].sort((a, b) => b.riskScore - a.riskScore);
   const critical = sorted.filter((s) => s.riskScore >= 8);
   const elevated = sorted.filter((s) => s.riskScore >= 6 && s.riskScore < 8);
   const moderate = sorted.filter((s) => s.riskScore < 6);
+  const [expandedId, setExpandedId] = useState<string | null>(sorted[0]?.id ?? null);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-crimson/8">
             <AlertTriangle className="h-5 w-5 text-crimson" />
-            <h1 className="text-2xl font-semibold text-navy-50">Early Warning Dashboard</h1>
           </div>
-          <p className="mt-1 text-sm text-navy-400">
-            Risk scoring across {monitoredSituations.length} monitored situations with predictive indicators
-          </p>
+          <div>
+            <h1 className="text-2xl font-semibold text-navy-900">Early Warning Dashboard</h1>
+            <p className="text-sm text-navy-500">
+              Real-time risk scoring across {monitoredSituations.length} monitored situations with predictive indicators
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-[10px] text-navy-400">
+          <Clock className="h-3 w-3" />
+          Last updated: 5 min ago
         </div>
       </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-crimson/20 bg-crimson/5 p-4">
-          <div className="text-2xl font-semibold text-crimson">{critical.length}</div>
-          <p className="text-xs text-navy-400">Critical Risk (8+)</p>
+        <div className="rounded-xl border border-crimson/15 bg-crimson/4 p-5">
+          <div className="text-3xl font-semibold text-crimson">{critical.length}</div>
+          <p className="text-sm text-navy-700 font-medium">Critical Risk (8+)</p>
+          <p className="mt-1 text-xs text-navy-500">Requires immediate attention and briefing</p>
         </div>
-        <div className="rounded-lg border border-gold-500/20 bg-gold-500/5 p-4">
-          <div className="text-2xl font-semibold text-gold-400">{elevated.length}</div>
-          <p className="text-xs text-navy-400">Elevated Risk (6-8)</p>
+        <div className="rounded-xl border border-gold-500/15 bg-gold-500/4 p-5">
+          <div className="text-3xl font-semibold text-gold-600">{elevated.length}</div>
+          <p className="text-sm text-navy-700 font-medium">Elevated Risk (6-8)</p>
+          <p className="mt-1 text-xs text-navy-500">Active monitoring and reporting required</p>
         </div>
-        <div className="rounded-lg border border-sage/20 bg-sage/5 p-4">
-          <div className="text-2xl font-semibold text-sage">{moderate.length}</div>
-          <p className="text-xs text-navy-400">Moderate Risk (&lt;6)</p>
+        <div className="rounded-xl border border-sage/15 bg-sage/4 p-5">
+          <div className="text-3xl font-semibold text-sage">{moderate.length}</div>
+          <p className="text-sm text-navy-700 font-medium">Moderate Risk (&lt;6)</p>
+          <p className="mt-1 text-xs text-navy-500">Routine watch list monitoring</p>
         </div>
       </div>
 
-      {/* Situations table */}
-      <div className="rounded-lg border border-navy-700/50 bg-navy-800">
-        <div className="border-b border-navy-700/50 px-6 py-4">
-          <h2 className="text-base font-semibold text-navy-50">Monitored Situations</h2>
+      {/* Situations */}
+      <div className="rounded-xl border border-[var(--color-app-border)] bg-white">
+        <div className="flex items-center justify-between border-b border-[var(--color-app-border)] px-5 py-4">
+          <h2 className="text-sm font-semibold text-navy-900">Monitored Situations</h2>
+          <span className="text-[10px] text-navy-400">Click a situation to expand details and AI recommendations</span>
         </div>
-        <div className="divide-y divide-navy-700/30">
+        <div className="divide-y divide-[var(--color-app-border-light)]">
           {sorted.map((situation) => {
             const trend = trendConfig[situation.trend];
             const TrendIcon = trend.icon;
+            const isExpanded = expandedId === situation.id;
+            const rec = aiRecommendations[situation.id];
+
             return (
-              <div key={situation.id} className="px-6 py-4 hover:bg-navy-700/10 transition-colors">
-                <div className="flex items-start justify-between gap-4">
+              <div key={situation.id}>
+                <button
+                  onClick={() => setExpandedId(isExpanded ? null : situation.id)}
+                  className="flex w-full items-start gap-4 px-5 py-4 text-left transition-colors hover:bg-[var(--color-app-surface-alt)]"
+                >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-sm font-semibold text-navy-100">{situation.name}</h3>
+                      <h3 className="text-sm font-semibold text-navy-900">{situation.name}</h3>
                       <div className={cn('flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium', trend.bg, trend.color)}>
                         <TrendIcon className="h-3 w-3" />
                         {trend.label}
                       </div>
-                      <span className="flex items-center gap-1 text-[10px] text-navy-500">
+                      <span className="flex items-center gap-1 text-[10px] text-navy-400">
                         <MapPin className="h-3 w-3" />
                         {situation.region}
                       </span>
@@ -125,37 +148,76 @@ export default function EarlyWarningPage() {
                     {/* Risk factors */}
                     <div className="grid grid-cols-5 gap-3 text-[10px]">
                       {(Object.entries(situation.factors) as [string, number][]).map(([key, val]) => (
-                        <div key={key}>
-                          <span className="text-navy-500 capitalize">{key}</span>
-                          <RiskBar value={val} />
-                        </div>
+                        <RiskBar key={key} value={val} label={factorLabels[key] || key} />
                       ))}
                     </div>
 
                     {/* Recent trigger */}
-                    <div className="mt-3 flex items-start gap-2">
-                      <SeverityBadge severity={situation.triggerSeverity} />
-                      <p className="text-xs text-navy-400">{situation.recentTrigger}</p>
-                      <span className="shrink-0 text-[10px] text-navy-500">{situation.triggerDate}</span>
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className={cn(
+                        'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase',
+                        situation.triggerSeverity === 'critical' ? 'bg-crimson/10 text-crimson' :
+                        situation.triggerSeverity === 'high' ? 'bg-terracotta/10 text-terracotta' :
+                        'bg-gold-500/10 text-gold-600'
+                      )}>
+                        {situation.triggerSeverity}
+                      </span>
+                      <p className="text-xs text-navy-600">{situation.recentTrigger}</p>
+                      <span className="shrink-0 text-[10px] text-navy-400">{situation.triggerDate}</span>
                     </div>
                   </div>
 
                   {/* Risk score + sparkline */}
                   <div className="shrink-0 text-right">
                     <div className="text-2xl font-semibold tabular-nums" style={{
-                      color: situation.riskScore >= 8 ? '#A63D40' : situation.riskScore >= 6 ? '#E8B931' : '#5B8C5A'
+                      color: situation.riskScore >= 8 ? '#A63D40' : situation.riskScore >= 6 ? '#C8961E' : '#5B8C5A'
                     }}>
                       {situation.riskScore.toFixed(1)}
                     </div>
-                    <p className="text-[10px] text-navy-500 mb-1">Risk Score</p>
+                    <p className="text-[10px] text-navy-400 mb-1">Risk Score</p>
                     <SparklineChart data={situation.riskHistory} />
-                    <p className="text-[10px] text-navy-600 mt-1">90-day trend</p>
-                    <button className="mt-2 flex items-center gap-1 text-[10px] font-medium text-gold-400 hover:text-gold-300">
-                      <Sparkles className="h-3 w-3" />
-                      Generate Brief
-                    </button>
+                    <p className="text-[10px] text-navy-400 mt-1">90-day trend</p>
+                    {isExpanded ? (
+                      <ChevronUp className="ml-auto mt-2 h-4 w-4 text-navy-400" />
+                    ) : (
+                      <ChevronDown className="ml-auto mt-2 h-4 w-4 text-navy-400" />
+                    )}
                   </div>
-                </div>
+                </button>
+
+                {/* Expanded section */}
+                {isExpanded && (
+                  <div className="px-5 pb-5">
+                    <div className="rounded-xl border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-4 space-y-4">
+                      {rec && (
+                        <div className="flex items-start gap-3 rounded-lg border border-gold-500/15 bg-white p-4">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gold-500/10">
+                            <Sparkles className="h-4 w-4 text-gold-600" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-600 mb-1">PRAXIS Recommendation</p>
+                            <p className="text-sm text-navy-700 leading-relaxed">{rec}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap gap-2">
+                        <Link href="/reports/new" className="flex items-center gap-1.5 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-2 text-xs font-medium text-navy-700 hover:border-diplomatic-blue/30 hover:text-diplomatic-blue transition-colors">
+                          <FileText className="h-3.5 w-3.5" />
+                          Generate Situation Report
+                        </Link>
+                        <Link href="/talking-points" className="flex items-center gap-1.5 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-2 text-xs font-medium text-navy-700 hover:border-diplomatic-blue/30 hover:text-diplomatic-blue transition-colors">
+                          <Lightbulb className="h-3.5 w-3.5" />
+                          Generate Talking Points
+                        </Link>
+                        <Link href="/stakeholder-map" className="flex items-center gap-1.5 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-2 text-xs font-medium text-navy-700 hover:border-diplomatic-blue/30 hover:text-diplomatic-blue transition-colors">
+                          <ArrowRight className="h-3.5 w-3.5" />
+                          View Stakeholder Map
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
