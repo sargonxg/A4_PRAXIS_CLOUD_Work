@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       maxSteps: 5,
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (err) {
     console.error('Chat route error:', err);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {

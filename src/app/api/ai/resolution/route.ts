@@ -50,7 +50,7 @@ Follow UN Security Council resolution format precisely. Include standard preambu
       ],
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (err) {
     console.error('Resolution route error:', err);
     return new Response(JSON.stringify({ error: 'Failed to draft resolution language' }), {

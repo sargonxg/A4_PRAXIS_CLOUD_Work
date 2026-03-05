@@ -43,7 +43,7 @@ Adhere strictly to UN diplomatic language standards. Be precise, balanced, and a
       ],
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (err) {
     console.error('Talking points route error:', err);
     return new Response(JSON.stringify({ error: 'Failed to generate talking points' }), {

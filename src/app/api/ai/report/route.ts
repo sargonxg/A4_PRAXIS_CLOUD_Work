@@ -32,7 +32,7 @@ Write ONLY the requested section content. Use numbered paragraphs for SG reports
       ],
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (err) {
     console.error('Report route error:', err);
     return new Response(JSON.stringify({ error: 'Failed to generate report section' }), {
