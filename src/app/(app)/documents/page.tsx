@@ -436,7 +436,30 @@ export default function DocumentVaultPage() {
 
   /* ---- upload handler ---- */
   const handleUploadComplete = useCallback(
-    (file: { name: string; type: string; size: number }) => {
+    (file: {
+      name: string;
+      type: string;
+      size: number;
+      entityCount?: number;
+      entities?: {
+        actors?: Array<{ name: string; confidence: number }>;
+        events?: Array<{ title: string; confidence: number }>;
+        [k: string]: unknown[] | undefined;
+      };
+    }) => {
+      const extractedEntities: ExtractedEntity[] = [];
+      if (file.entities) {
+        (file.entities.actors || []).slice(0, 3).forEach((a: { name: string; confidence: number }) => {
+          extractedEntities.push({ label: a.name, type: 'actor', confidence: a.confidence });
+        });
+        (file.entities.events || []).slice(0, 2).forEach((e: { title: string; confidence: number }) => {
+          extractedEntities.push({ label: e.title, type: 'event', confidence: e.confidence });
+        });
+      }
+      if (extractedEntities.length === 0) {
+        extractedEntities.push({ label: file.name.replace(/\.[^.]+$/, ''), type: 'theme', confidence: 0.8 });
+      }
+
       const newDoc: DocumentItem = {
         id: `doc_${Date.now()}`,
         type: file.type as DocType,
@@ -444,12 +467,8 @@ export default function DocumentVaultPage() {
         date: new Date().toISOString().split("T")[0],
         status: "Processed",
         size: `${(file.size / 1024).toFixed(0)} KB`,
-        preview: `[Content of ${file.name} — Document successfully processed and indexed by TACITUS.]`,
-        entities: [
-          { label: "Nordalia", type: "location", confidence: 0.92 },
-          { label: "NLF", type: "actor", confidence: 0.88 },
-          { label: "Ceasefire", type: "theme", confidence: 0.85 },
-        ],
+        preview: `[${file.name} — ${file.entityCount ?? 0} conflict entities extracted and indexed by TACITUS AI.]`,
+        entities: extractedEntities,
         usage: [],
       };
       setDocuments((prev) => [newDoc, ...prev]);

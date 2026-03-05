@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState, useCallback } from 'react';
 import {
   FileText,
   MessageSquare,
@@ -25,10 +26,17 @@ import {
   Zap,
   Globe,
   Shield,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Badge } from '@/components/ui/badge';
+import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
+
+function parseDataStreamChunk(raw: string): string {
+  return raw.split('\n').filter((l) => l.startsWith('0:')).map((l) => { try { return JSON.parse(l.slice(2)); } catch { return ''; } }).join('');
+}
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -135,6 +143,40 @@ const trendConfig = {
 export default function DashboardPage() {
   const { user } = useAuth();
   const today = new Date();
+  const [liveBrief, setLiveBrief] = useState('');
+  const [isBriefLoading, setIsBriefLoading] = useState(false);
+
+  const generateLiveBrief = useCallback(async () => {
+    if (isBriefLoading) return;
+    setIsBriefLoading(true);
+    setLiveBrief('');
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{
+            role: 'user',
+            content: `Generate a morning intelligence briefing for a conflict analyst platform. Today is ${today.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}. Cover: (1) Key conflict flashpoints requiring immediate attention (2) Upcoming diplomatic events in the next 24 hours (3) Intelligence patterns worth monitoring (4) Recommended priority actions for today. Keep it concise, professional, and action-oriented. Use markdown formatting with clear sections.`,
+          }],
+        }),
+      });
+      if (!response.ok) throw new Error('Brief failed');
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += parseDataStreamChunk(decoder.decode(value, { stream: true }));
+        setLiveBrief(accumulated);
+      }
+    } catch {
+      setLiveBrief('_AI brief generation failed. Check AI service configuration._');
+    } finally {
+      setIsBriefLoading(false);
+    }
+  }, [isBriefLoading, today]);
 
   return (
     <div className="space-y-6">
@@ -181,39 +223,57 @@ export default function DashboardPage() {
           </div>
           <h2 className="text-base font-semibold text-navy-900">Morning Intelligence Briefing</h2>
           <span className="text-[10px] text-navy-400">Auto-generated at 06:00 UTC</span>
+          <button
+            onClick={generateLiveBrief}
+            disabled={isBriefLoading}
+            className="ml-auto flex items-center gap-1.5 rounded-lg border border-gold-500/20 bg-gold-500/8 px-3 py-1.5 text-xs font-medium text-gold-700 transition-colors hover:bg-gold-500/15 disabled:opacity-50"
+          >
+            {isBriefLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            {isBriefLoading ? 'Generating...' : 'Live Brief'}
+          </button>
         </div>
-        <div className="space-y-3">
-          {aiInsights.map((insight, i) => {
-            const config = priorityConfig[insight.priority as keyof typeof priorityConfig];
-            const Icon = insight.icon;
-            return (
-              <div key={i} className={cn('rounded-lg border p-4', config.border, config.bg)}>
-                <div className="flex items-start gap-3">
-                  <Icon className={cn('h-5 w-5 shrink-0 mt-0.5', config.iconColor)} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold', config.labelBg)}>{config.label}</span>
-                      <h3 className="text-sm font-semibold text-navy-900">{insight.title}</h3>
-                    </div>
-                    <p className="text-xs text-navy-600 leading-relaxed">{insight.summary}</p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {insight.actions.map((action) => (
-                        <Link
-                          key={action.label}
-                          href={action.href}
-                          className="flex items-center gap-1.5 rounded-md border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-xs font-medium text-navy-700 transition-colors hover:border-diplomatic-blue/30 hover:text-diplomatic-blue"
-                        >
-                          {action.label}
-                          <ArrowRight className="h-3 w-3" />
-                        </Link>
-                      ))}
+
+        {liveBrief ? (
+          <div className="rounded-lg border border-gold-500/10 bg-white p-4">
+            <MarkdownRenderer content={liveBrief} className="text-sm" />
+            {isBriefLoading && (
+              <span className="inline-block w-0.5 h-4 bg-gold-400 animate-pulse ml-0.5 align-text-bottom" />
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {aiInsights.map((insight, i) => {
+              const config = priorityConfig[insight.priority as keyof typeof priorityConfig];
+              const Icon = insight.icon;
+              return (
+                <div key={i} className={cn('rounded-lg border p-4', config.border, config.bg)}>
+                  <div className="flex items-start gap-3">
+                    <Icon className={cn('h-5 w-5 shrink-0 mt-0.5', config.iconColor)} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold', config.labelBg)}>{config.label}</span>
+                        <h3 className="text-sm font-semibold text-navy-900">{insight.title}</h3>
+                      </div>
+                      <p className="text-xs text-navy-600 leading-relaxed">{insight.summary}</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {insight.actions.map((action) => (
+                          <Link
+                            key={action.label}
+                            href={action.href}
+                            className="flex items-center gap-1.5 rounded-md border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-xs font-medium text-navy-700 transition-colors hover:border-diplomatic-blue/30 hover:text-diplomatic-blue"
+                          >
+                            {action.label}
+                            <ArrowRight className="h-3 w-3" />
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Quick Actions */}

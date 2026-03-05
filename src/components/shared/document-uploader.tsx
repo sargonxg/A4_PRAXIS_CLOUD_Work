@@ -26,12 +26,20 @@ type UploadStatus =
   | "done"
   | "error";
 
+interface ExtractedEntities {
+  actors: Array<{ id: string; name: string; actorType: string; description: string; confidence: number }>;
+  events: Array<{ id: string; title: string; description: string; confidence: number }>;
+  [key: string]: Array<{ id: string; confidence: number; [k: string]: unknown }>;
+}
+
 interface DocumentUploaderProps {
-  /** Callback fired when the simulated upload completes */
+  /** Callback fired when upload and extraction completes */
   onUploadComplete?: (file: {
     name: string;
     type: string;
     size: number;
+    entityCount?: number;
+    entities?: ExtractedEntities;
   }) => void;
   /** Additional class names */
   className?: string;
@@ -66,8 +74,8 @@ const STATUS_LABELS: Record<UploadStatus, string> = {
   idle: "",
   uploading: "Uploading...",
   processing: "Processing document...",
-  extracting: "Extracting entities...",
-  done: "Document processed. 12 entities extracted.",
+  extracting: "Extracting entities with AI...",
+  done: "Document processed.",
   error: "Upload failed. Please try again.",
 };
 
@@ -107,50 +115,66 @@ export function DocumentUploader({
     return true;
   }, []);
 
-  const simulateUpload = useCallback(
-    (file: File) => {
+  const [doneLabel, setDoneLabel] = useState("Document processed.");
+
+  const processUpload = useCallback(
+    async (file: File) => {
       setSelectedFile(file);
       setStatus("uploading");
-      setProgress(0);
+      setProgress(30);
 
-      // Phase 1: uploading (0-40 %)
-      const t1 = setInterval(() => {
-        setProgress((p) => {
-          if (p >= 40) {
-            clearInterval(t1);
-            setStatus("processing");
-            // Phase 2: processing (40-70 %)
-            const t2 = setInterval(() => {
-              setProgress((p2) => {
-                if (p2 >= 70) {
-                  clearInterval(t2);
-                  setStatus("extracting");
-                  // Phase 3: extracting (70-100 %)
-                  const t3 = setInterval(() => {
-                    setProgress((p3) => {
-                      if (p3 >= 100) {
-                        clearInterval(t3);
-                        setStatus("done");
-                        onUploadComplete?.({
-                          name: file.name,
-                          type: file.name.split(".").pop()?.toUpperCase() ?? "FILE",
-                          size: file.size,
-                        });
-                        return 100;
-                      }
-                      return p3 + 3;
-                    });
-                  }, 50);
-                  return 70;
-                }
-                return p2 + 2;
-              });
-            }, 60);
-            return 40;
-          }
-          return p + 4;
+      const textTypes = ['text/plain', 'text/markdown', 'text/csv', 'text/html'];
+      const canExtract = textTypes.includes(file.type) || file.name.endsWith('.txt') || file.name.endsWith('.csv') || file.name.endsWith('.md');
+
+      if (!canExtract) {
+        // For PDFs/DOCX — simulate progress and complete without AI extraction
+        setProgress(60);
+        setStatus("processing");
+        setTimeout(() => {
+          setProgress(100);
+          setStatus("done");
+          setDoneLabel("Document uploaded. Text extraction requires server-side processing.");
+          onUploadComplete?.({
+            name: file.name,
+            type: file.name.split(".").pop()?.toUpperCase() ?? "FILE",
+            size: file.size,
+          });
+        }, 1200);
+        return;
+      }
+
+      try {
+        setStatus("processing");
+        setProgress(40);
+        const text = await file.text();
+
+        setStatus("extracting");
+        setProgress(60);
+
+        const res = await fetch('/api/ai/extract', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
         });
-      }, 40);
+
+        setProgress(90);
+        const data = await res.json();
+
+        setProgress(100);
+        setStatus("done");
+        const count = data.entityCount ?? 0;
+        setDoneLabel(`Document processed. ${count} conflict entities extracted.`);
+        onUploadComplete?.({
+          name: file.name,
+          type: file.name.split(".").pop()?.toUpperCase() ?? "FILE",
+          size: file.size,
+          entityCount: count,
+          entities: data.entities,
+        });
+      } catch {
+        setStatus("error");
+        setError("Processing failed. Please try again.");
+      }
     },
     [onUploadComplete],
   );
@@ -178,7 +202,7 @@ export function DocumentUploader({
       if (status !== "idle") return;
       const file = e.dataTransfer.files?.[0];
       if (file && validateFile(file)) {
-        simulateUpload(file);
+        processUpload(file);
       }
     },
     [status, validateFile, simulateUpload],
@@ -188,7 +212,7 @@ export function DocumentUploader({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file && validateFile(file)) {
-        simulateUpload(file);
+        processUpload(file);
       }
     },
     [validateFile, simulateUpload],
@@ -276,8 +300,8 @@ export function DocumentUploader({
               className="flex flex-col items-center gap-3"
             >
               <CheckCircle2 className="h-8 w-8 text-sage" />
-              <p className="text-sm font-medium text-sage">
-                {STATUS_LABELS.done}
+              <p className="text-sm font-medium text-sage text-center">
+                {doneLabel}
               </p>
             </motion.div>
           )}
