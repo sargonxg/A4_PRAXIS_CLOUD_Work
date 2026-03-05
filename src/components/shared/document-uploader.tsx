@@ -205,7 +205,7 @@ export function DocumentUploader({
         processUpload(file);
       }
     },
-    [status, validateFile, simulateUpload],
+    [status, validateFile, processUpload],
   );
 
   const handleFileChange = useCallback(
@@ -215,7 +215,7 @@ export function DocumentUploader({
         processUpload(file);
       }
     },
-    [validateFile, simulateUpload],
+    [validateFile, processUpload],
   );
 
   /* ---- render ---- */
