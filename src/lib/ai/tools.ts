@@ -1,5 +1,3 @@
-// @ts-nocheck
-// TODO: Update tool definitions to match AI SDK v6 API (inputSchema instead of parameters)
 import { tool } from 'ai';
 import { z } from 'zod';
 

@@ -1,103 +1,127 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { generateObject } from 'ai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { z } from 'zod';
 
-export async function POST(request: NextRequest) {
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_AI_API_KEY || '',
+});
+
+const ExtractedEntitySchema = z.object({
+  actors: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    actorType: z.string(),
+    description: z.string(),
+    confidence: z.number().min(0).max(1),
+  })),
+  claims: z.array(z.object({
+    id: z.string(),
+    actorId: z.string(),
+    title: z.string(),
+    description: z.string(),
+    claimType: z.string(),
+    status: z.string(),
+    confidence: z.number().min(0).max(1),
+  })),
+  interests: z.array(z.object({
+    id: z.string(),
+    actorId: z.string(),
+    title: z.string(),
+    description: z.string(),
+    interestType: z.string(),
+    priority: z.string(),
+    confidence: z.number().min(0).max(1),
+  })),
+  constraints: z.array(z.object({
+    id: z.string(),
+    actorId: z.string(),
+    title: z.string(),
+    description: z.string(),
+    constraintType: z.string(),
+    severity: z.string(),
+    confidence: z.number().min(0).max(1),
+  })),
+  leverage: z.array(z.object({
+    id: z.string(),
+    actorId: z.string(),
+    targetActorId: z.string(),
+    title: z.string(),
+    description: z.string(),
+    leverageType: z.string(),
+    confidence: z.number().min(0).max(1),
+  })),
+  commitments: z.array(z.object({
+    id: z.string(),
+    actorId: z.string(),
+    title: z.string(),
+    description: z.string(),
+    commitmentType: z.string(),
+    status: z.string(),
+    confidence: z.number().min(0).max(1),
+  })),
+  events: z.array(z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string(),
+    eventType: z.string(),
+    date: z.string().optional(),
+    impact: z.string(),
+    confidence: z.number().min(0).max(1),
+  })),
+  narratives: z.array(z.object({
+    id: z.string(),
+    actorId: z.string(),
+    title: z.string(),
+    description: z.string(),
+    narrativeType: z.string(),
+    confidence: z.number().min(0).max(1),
+  })),
+});
+
+export async function POST(request: Request) {
+  if (!process.env.GOOGLE_AI_API_KEY) {
+    return new Response(
+      JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in Vercel environment variables.' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
-    const { documentId } = await request.json();
+    const { text, extractionTargets } = await request.json();
 
-    // Demo extraction results
-    const entities = [
-      {
-        primitiveType: 'Actor',
-        data: {
-          id: `actor-${documentId}-1`,
-          name: 'Government of Nordalia',
-          type: 'state',
-          description: 'The recognized government led by President Amara Osei',
-        },
-      },
-      {
-        primitiveType: 'Actor',
-        data: {
-          id: `actor-${documentId}-2`,
-          name: 'Democratic Reform Movement',
-          type: 'armed_group',
-          description: 'Armed opposition movement led by Commander Kwame Asante',
-        },
-      },
-      {
-        primitiveType: 'Event',
-        data: {
-          id: `event-${documentId}-1`,
-          description: 'Framework Agreement on power-sharing signed',
-          type: 'diplomatic',
-          date: '2026-01-15',
-          impact: 'transformative',
-          involvedActors: ['Government of Nordalia', 'Democratic Reform Movement'],
-        },
-      },
-      {
-        primitiveType: 'Commitment',
-        data: {
-          id: `commitment-${documentId}-1`,
-          type: 'agreement',
-          parties: ['Government of Nordalia', 'Democratic Reform Movement'],
-          description: 'Framework Agreement on transitional power-sharing arrangements',
-          dateEstablished: '2026-01-15',
-          status: 'active',
-          legalForce: 'non_binding',
-        },
-      },
-      {
-        primitiveType: 'Claim',
-        data: {
-          id: `claim-${documentId}-1`,
-          actorId: 'drm',
-          text: 'New elections under international supervision are necessary for legitimate governance',
-          type: 'demand',
-          status: 'modified',
-        },
-      },
-      {
-        primitiveType: 'Interest',
-        data: {
-          id: `interest-${documentId}-1`,
-          actorId: 'gov-nordalia',
-          description: 'Maintaining international recognition and control of state institutions',
-          type: 'political',
-          priority: 'vital',
-          isExplicit: false,
-        },
-      },
-      {
-        primitiveType: 'Constraint',
-        data: {
-          id: `constraint-${documentId}-1`,
-          description: 'The 18-month timeline for elections creates pressure on both parties to reach agreement on transitional arrangements',
-          type: 'temporal',
-          affectedActors: ['Government of Nordalia', 'Democratic Reform Movement'],
-          severity: 'significant',
-        },
-      },
-      {
-        primitiveType: 'Narrative',
-        data: {
-          id: `narrative-${documentId}-1`,
-          actorId: 'drm',
-          framingText: 'The June 2025 elections were fundamentally fraudulent and their results cannot serve as a basis for legitimate governance',
-          type: 'delegitimizing',
-          targetAudience: 'international',
-          prevalence: 'dominant',
-        },
-      },
-    ];
+    if (!text) {
+      return Response.json({ error: 'No text provided for extraction' }, { status: 400 });
+    }
 
-    return NextResponse.json({
-      documentId,
-      entityCount: entities.length,
-      entities,
-      processingTime: '3.2s',
+    const targets = extractionTargets?.length
+      ? extractionTargets.join(', ')
+      : 'actors, claims, interests, constraints, leverage, commitments, events, narratives';
+
+    const { object } = await generateObject({
+      model: google('gemini-2.5-flash'),
+      schema: ExtractedEntitySchema,
+      prompt: `You are a conflict analysis expert. Extract structured conflict intelligence entities from the following text using the Conflict Grammar framework.
+
+Extract the following entity types: ${targets}
+
+For each entity, provide:
+- A unique ID (use format: type-n, e.g. actor-1, claim-2)
+- A confidence score (0-1) based on how clearly the entity is evidenced in the text
+- Appropriate classification fields
+
+Text to analyze:
+---
+${text}
+---
+
+If a category has no clear entities in the text, return an empty array for that category. Be precise and grounded in the text.`,
     });
-  } catch {
-    return NextResponse.json({ error: 'Extraction failed' }, { status: 500 });
+
+    const entityCount = Object.values(object).reduce((sum, arr) => sum + (arr as unknown[]).length, 0);
+
+    return Response.json({ entityCount, entities: object });
+  } catch (err) {
+    console.error('Extract route error:', err);
+    return Response.json({ error: 'Extraction failed' }, { status: 500 });
   }
 }
