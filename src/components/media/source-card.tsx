@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/utils/cn";
 import { motion, AnimatePresence } from "framer-motion";
 import { BiasIndicator } from "./bias-indicator";
@@ -13,6 +14,9 @@ import {
   Shield,
   Languages,
   ArrowRight,
+  Loader2,
+  Sparkles,
+  BookOpen,
 } from "lucide-react";
 
 export interface MediaSource {
@@ -134,6 +138,19 @@ const TYPE_LABELS: Record<string, string> = {
   international_org: "International Organization",
 };
 
+interface AiAnalysis {
+  politicalOrientation: number;
+  reliability: number;
+  editorialIndependence: number;
+  ownershipType: string;
+  country: string;
+  description: string;
+  knownBiases: string[];
+  coverageStrengths: string[];
+  conflictCoverageNotes: string;
+  recommendedCrossReferences: string[];
+}
+
 interface SourceCardProps {
   source: MediaSource | null;
   onClose: () => void;
@@ -141,6 +158,36 @@ interface SourceCardProps {
 }
 
 export function SourceCard({ source, onClose, className }: SourceCardProps) {
+  const [aiAnalysis, setAiAnalysis] = useState<AiAnalysis | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analyzedSource, setAnalyzedSource] = useState<string | null>(null);
+
+  const handleAnalyze = async () => {
+    if (!source || isAnalyzing) return;
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+
+    try {
+      const res = await fetch('/api/ai/media-analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: source.name }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setAiAnalysis(data.assessment);
+      setAnalyzedSource(source.name);
+    } catch {
+      setAnalysisError('Analysis failed. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // Reset analysis when source changes
+  const currentAnalysis = analyzedSource === source?.name ? aiAnalysis : null;
+
   return (
     <AnimatePresence mode="wait">
       {source && (
@@ -281,10 +328,54 @@ export function SourceCard({ source, onClose, className }: SourceCardProps) {
             </div>
           </div>
 
+          {/* AI Analysis */}
+          {currentAnalysis ? (
+            <div className="mb-4 rounded-lg border border-gold-500/20 bg-navy-800/60 p-3 space-y-2">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-3.5 w-3.5 text-gold-500" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-gold-500">AI Analysis</span>
+                <button onClick={handleAnalyze} disabled={isAnalyzing} className="ml-auto text-[10px] text-navy-500 hover:text-navy-300 transition-colors">
+                  Refresh
+                </button>
+              </div>
+              <p className="text-xs text-navy-300 leading-relaxed">{currentAnalysis.conflictCoverageNotes}</p>
+              {currentAnalysis.recommendedCrossReferences.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <BookOpen className="h-3 w-3 text-teal" />
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-navy-400">Cross-reference with</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {currentAnalysis.recommendedCrossReferences.map((ref) => (
+                      <span key={ref} className="text-[10px] rounded px-1.5 py-0.5 bg-teal/10 border border-teal/20 text-teal">
+                        {ref}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : analysisError ? (
+            <p className="mb-3 text-xs text-crimson">{analysisError}</p>
+          ) : null}
+
           {/* Action */}
-          <button className="group flex w-full items-center justify-center gap-2 rounded-lg border border-gold-500/30 bg-gold-500/10 px-4 py-2.5 text-sm font-medium text-gold-400 transition-all hover:border-gold-500/50 hover:bg-gold-500/20">
-            Analyze Coverage
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          <button
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+            className="group flex w-full items-center justify-center gap-2 rounded-lg border border-gold-500/30 bg-gold-500/10 px-4 py-2.5 text-sm font-medium text-gold-400 transition-all hover:border-gold-500/50 hover:bg-gold-500/20 disabled:opacity-50"
+          >
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                {currentAnalysis ? 'Re-Analyze Coverage' : 'Analyze Coverage'}
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </>
+            )}
           </button>
         </motion.div>
       )}

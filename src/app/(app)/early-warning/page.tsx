@@ -1,10 +1,19 @@
 'use client';
 
-import { useState } from 'react';
-import { AlertTriangle, TrendingUp, TrendingDown, Minus, MapPin, Sparkles, FileText, ChevronDown, ChevronUp, Lightbulb, ArrowRight, Clock } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { AlertTriangle, TrendingUp, TrendingDown, Minus, MapPin, Sparkles, FileText, ChevronDown, ChevronUp, Lightbulb, ArrowRight, Clock, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { monitoredSituations } from '@/lib/constants/early-warning-data';
+import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import Link from 'next/link';
+
+function parseDataStreamChunk(raw: string): string {
+  return raw
+    .split('\n')
+    .filter((l) => l.startsWith('0:'))
+    .map((l) => { try { return JSON.parse(l.slice(2)); } catch { return ''; } })
+    .join('');
+}
 
 const trendConfig = {
   escalating: { label: 'Escalating', icon: TrendingUp, color: 'text-crimson', bg: 'bg-crimson/8' },
@@ -60,19 +69,54 @@ function SparklineChart({ data }: { data: number[] }) {
   );
 }
 
-const aiRecommendations: Record<string, string> = {
-  'nordalia': 'Immediate briefing update recommended. Cross-reference with UNMN reporting cable from Feb 27. Consider activating the rapid response template. Col. Mitchell and Dr. Okafor are both flagging this.',
-  'sudan': 'Multiple humanitarian access constraints reported by OCHA. Recommend cross-referencing with flash update and preparing a note for the USG. Dr. Sharma suggests comparing with 2023 baseline.',
-  'drc': 'M23 movements near Goma warrant closer monitoring. Consider pre-drafting press elements in case the Security Council discusses this week. Check latest PoE reporting.',
-  'sahel': 'New JNIM communiqué detected in open-source intelligence. Media Compass flagged divergent framing between AFP and local outlets. Ambassador Al-Rashid recommends verification pass.',
-};
-
 export default function EarlyWarningPage() {
   const sorted = [...monitoredSituations].sort((a, b) => b.riskScore - a.riskScore);
   const critical = sorted.filter((s) => s.riskScore >= 8);
   const elevated = sorted.filter((s) => s.riskScore >= 6 && s.riskScore < 8);
   const moderate = sorted.filter((s) => s.riskScore < 6);
   const [expandedId, setExpandedId] = useState<string | null>(sorted[0]?.id ?? null);
+  const [assessments, setAssessments] = useState<Record<string, string>>({});
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  const runAssessment = useCallback(async (situation: typeof sorted[0]) => {
+    if (loadingId) return;
+    setLoadingId(situation.id);
+    setAssessments((prev) => ({ ...prev, [situation.id]: '' }));
+
+    const factorSummary = Object.entries(situation.factors)
+      .map(([k, v]) => `${k}: ${v}/10`)
+      .join(', ');
+
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{
+            role: 'user',
+            content: `You are an early-warning analyst. Provide a concise risk assessment (3-4 paragraphs) for the following conflict situation:\n\nSituation: ${situation.name} (${situation.region})\nRisk Score: ${situation.riskScore}/10\nTrend: ${situation.trend}\nRisk Factors: ${factorSummary}\nRecent Trigger (${situation.triggerSeverity}): ${situation.recentTrigger}\n\nProvide: 1) Current risk assessment, 2) Key escalation drivers, 3) Recommended immediate actions for diplomatic staff.`,
+          }],
+        }),
+      });
+
+      if (!response.ok) throw new Error('AI assessment failed');
+
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += parseDataStreamChunk(decoder.decode(value, { stream: true }));
+        setAssessments((prev) => ({ ...prev, [situation.id]: accumulated }));
+      }
+    } catch {
+      setAssessments((prev) => ({ ...prev, [situation.id]: '_Assessment unavailable. Check AI service configuration._' }));
+    } finally {
+      setLoadingId(null);
+    }
+  }, [loadingId]);
 
   return (
     <div className="space-y-6">
@@ -124,7 +168,8 @@ export default function EarlyWarningPage() {
             const trend = trendConfig[situation.trend];
             const TrendIcon = trend.icon;
             const isExpanded = expandedId === situation.id;
-            const rec = aiRecommendations[situation.id];
+            const assessment = assessments[situation.id];
+            const isLoading = loadingId === situation.id;
 
             return (
               <div key={situation.id}>
@@ -189,16 +234,45 @@ export default function EarlyWarningPage() {
                 {isExpanded && (
                   <div className="px-5 pb-5">
                     <div className="rounded-xl border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-4 space-y-4">
-                      {rec && (
-                        <div className="flex items-start gap-3 rounded-lg border border-gold-500/15 bg-white p-4">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gold-500/10">
-                            <Sparkles className="h-4 w-4 text-gold-600" />
+                      {/* AI Assessment */}
+                      {assessment ? (
+                        <div className="rounded-lg border border-gold-500/15 bg-white p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gold-500/10">
+                              <Sparkles className="h-4 w-4 text-gold-600" />
+                            </div>
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-600">AI Risk Assessment</p>
+                            <button
+                              onClick={() => runAssessment(situation)}
+                              disabled={isLoading}
+                              className="ml-auto text-[10px] text-navy-400 hover:text-diplomatic-blue transition-colors"
+                            >
+                              Regenerate
+                            </button>
                           </div>
-                          <div>
-                            <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-600 mb-1">PRAXIS Recommendation</p>
-                            <p className="text-sm text-navy-700 leading-relaxed">{rec}</p>
-                          </div>
+                          <MarkdownRenderer content={assessment} className="text-sm" />
+                          {isLoading && (
+                            <span className="inline-block w-0.5 h-4 bg-gold-400 animate-pulse ml-0.5 align-text-bottom" />
+                          )}
                         </div>
+                      ) : (
+                        <button
+                          onClick={() => runAssessment(situation)}
+                          disabled={isLoading}
+                          className="flex w-full items-center justify-center gap-2 rounded-lg border border-gold-500/20 bg-gold-500/5 px-4 py-3 text-sm font-medium text-gold-700 transition-colors hover:bg-gold-500/10 disabled:opacity-50"
+                        >
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Analyzing situation...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-4 w-4" />
+                              Generate AI Risk Assessment
+                            </>
+                          )}
+                        </button>
                       )}
 
                       <div className="flex flex-wrap gap-2">

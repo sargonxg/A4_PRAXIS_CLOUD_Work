@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils/cn";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { GraphViewer } from "@/components/graph/graph-viewer";
 import {
   EntityPanel,
@@ -11,7 +11,7 @@ import {
   NODE_TYPE_CONFIG,
 } from "@/components/graph/entity-panel";
 import { TimelineSlider } from "@/components/graph/timeline-slider";
-import { Network, ChevronDown, Filter, Maximize2 } from "lucide-react";
+import { Network, ChevronDown, Filter, Maximize2, Sparkles, X, Loader2 } from "lucide-react";
 
 // ── Pre-computed Node Positions ─────────────────────────────────
 // Coordinates are in SVG viewBox space (800 x 550)
@@ -361,6 +361,14 @@ const TIMELINE_EVENTS = CONFLICT_NODES.filter((n) => n.type === "event" && n.dat
 );
 
 // ── Page Component ──────────────────────────────────────────────
+interface ExtractedResult {
+  actors: Array<{ id: string; name: string; actorType: string; description: string; confidence: number }>;
+  events: Array<{ id: string; title: string; description: string; eventType: string; confidence: number }>;
+  claims: Array<{ id: string; title: string; description: string; confidence: number }>;
+  interests: Array<{ id: string; title: string; description: string; confidence: number }>;
+  [key: string]: Array<{ id: string; confidence: number; [k: string]: unknown }>;
+}
+
 export default function ConflictGraphPage() {
   const [selectedConflict, setSelectedConflict] = useState("nordalia");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -369,6 +377,32 @@ export default function ConflictGraphPage() {
     new Date("2025-06-01"),
     new Date("2026-02-28"),
   ]);
+  const [extractOpen, setExtractOpen] = useState(false);
+  const [extractText, setExtractText] = useState('');
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractedResult, setExtractedResult] = useState<ExtractedResult | null>(null);
+  const [extractError, setExtractError] = useState<string | null>(null);
+
+  const handleExtract = useCallback(async () => {
+    if (!extractText.trim() || isExtracting) return;
+    setIsExtracting(true);
+    setExtractedResult(null);
+    setExtractError(null);
+    try {
+      const res = await fetch('/api/ai/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: extractText }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setExtractedResult(data.entities);
+    } catch {
+      setExtractError('Extraction failed. Check AI service configuration.');
+    } finally {
+      setIsExtracting(false);
+    }
+  }, [extractText, isExtracting]);
 
   const filteredNodes = useMemo(() => {
     let nodes = CONFLICT_NODES;
@@ -472,7 +506,7 @@ export default function ConflictGraphPage() {
             <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-navy-500" />
           </div>
 
-          {/* Node count */}
+          {/* Node count + Extract button */}
           <div className="ml-auto flex items-center gap-3 text-xs text-navy-500">
             <span>
               {filteredNodes.length} node{filteredNodes.length !== 1 ? "s" : ""},{" "}
@@ -486,6 +520,13 @@ export default function ConflictGraphPage() {
               className="rounded-md px-2 py-1 text-navy-400 transition-colors hover:bg-navy-800 hover:text-navy-200"
             >
               Reset
+            </button>
+            <button
+              onClick={() => setExtractOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-gold-500/30 bg-gold-500/10 px-3 py-1.5 text-xs font-medium text-gold-400 transition-colors hover:bg-gold-500/15"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Extract from Text
             </button>
           </div>
         </motion.div>
@@ -583,6 +624,110 @@ export default function ConflictGraphPage() {
           />
         </motion.div>
       </div>
+
+      {/* ── Extract from Text Modal ─────────────────────────── */}
+      <AnimatePresence>
+        {extractOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/80 backdrop-blur-sm p-4"
+            onClick={(e) => e.target === e.currentTarget && setExtractOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              className="w-full max-w-2xl rounded-xl border border-navy-700/60 bg-navy-900 p-6 shadow-2xl"
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-gold-500" />
+                  <h2 className="text-base font-semibold text-navy-100">Extract Conflict Entities</h2>
+                </div>
+                <button onClick={() => setExtractOpen(false)} className="rounded-md p-1 text-navy-500 hover:bg-navy-800 hover:text-navy-300 transition-colors">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="mb-4 text-sm text-navy-400">
+                Paste any conflict-related text — reports, cables, press releases — and AI will extract actors, events, claims, and other entities using the Conflict Grammar framework.
+              </p>
+
+              <textarea
+                value={extractText}
+                onChange={(e) => setExtractText(e.target.value)}
+                rows={6}
+                placeholder="Paste your source text here..."
+                className="w-full rounded-lg border border-navy-700 bg-navy-800/80 px-3 py-2.5 text-sm text-navy-200 placeholder-navy-500 focus:border-gold-500/50 focus:outline-none focus:ring-1 focus:ring-gold-500/30 resize-none"
+              />
+
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-xs text-navy-500">{extractText.length} characters</span>
+                <button
+                  onClick={handleExtract}
+                  disabled={!extractText.trim() || isExtracting}
+                  className="flex items-center gap-2 rounded-lg bg-gold-500 px-4 py-2 text-sm font-medium text-navy-950 transition-colors hover:bg-gold-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isExtracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  {isExtracting ? 'Extracting...' : 'Extract Entities'}
+                </button>
+              </div>
+
+              {extractError && (
+                <p className="mt-3 text-sm text-crimson">{extractError}</p>
+              )}
+
+              {extractedResult && (
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center gap-2 border-t border-navy-700/40 pt-4">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-navy-400">Extracted Entities</span>
+                    <span className="rounded-full bg-gold-500/15 px-2 py-0.5 text-[10px] font-medium text-gold-400">
+                      {Object.values(extractedResult).flat().length} total
+                    </span>
+                  </div>
+                  {extractedResult.actors.length > 0 && (
+                    <div>
+                      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-teal">Actors ({extractedResult.actors.length})</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {extractedResult.actors.map((a) => (
+                          <span key={a.id} className="rounded-md border border-teal/20 bg-teal/10 px-2 py-0.5 text-xs text-teal" title={a.description}>
+                            {a.name} <span className="text-teal/60">({Math.round(a.confidence * 100)}%)</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {extractedResult.events.length > 0 && (
+                    <div>
+                      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gold-400">Events ({extractedResult.events.length})</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {extractedResult.events.map((e) => (
+                          <span key={e.id} className="rounded-md border border-gold-500/20 bg-gold-500/10 px-2 py-0.5 text-xs text-gold-400">
+                            {e.title} <span className="text-gold-400/60">({Math.round(e.confidence * 100)}%)</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {extractedResult.claims.length > 0 && (
+                    <div>
+                      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-crimson">Claims ({extractedResult.claims.length})</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {extractedResult.claims.map((c) => (
+                          <span key={c.id} className="rounded-md border border-crimson/20 bg-crimson/10 px-2 py-0.5 text-xs text-crimson">
+                            {(c as { title: string }).title} <span className="text-crimson/60">({Math.round(c.confidence * 100)}%)</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

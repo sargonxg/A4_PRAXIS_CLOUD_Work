@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -187,39 +187,65 @@ export function SectionEditor({
   const [streamedContent, setStreamedContent] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [pendingContent, setPendingContent] = useState<string | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Cleanup interval on unmount
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
-
-  const handleGenerate = useCallback(() => {
+  const handleGenerate = useCallback(async () => {
     if (isStreaming) return;
-
-    const fullContent = getDemoContent(section.id);
-    let charIndex = 0;
 
     setIsStreaming(true);
     setStreamedContent("");
     setPendingContent(null);
     onUpdateStatus("generating");
 
-    intervalRef.current = setInterval(() => {
-      charIndex += 3; // 3 chars at a time for speed
-      const chunk = fullContent.slice(0, charIndex);
-      setStreamedContent(chunk);
+    try {
+      const response = await fetch("/api/ai/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sectionType: section.id,
+          template: section.title,
+          tone: "formal",
+        }),
+      });
 
-      if (charIndex >= fullContent.length) {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        setStreamedContent(fullContent);
-        setPendingContent(fullContent);
-        setIsStreaming(false);
+      if (!response.ok || !response.body) {
+        throw new Error(`API error: ${response.status}`);
       }
-    }, 12);
-  }, [isStreaming, section.id, onUpdateStatus]);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const rawText = decoder.decode(value, { stream: true });
+        // Parse AI SDK data stream format: lines starting with "0:" contain text chunks
+        const lines = rawText.split("\n");
+        for (const line of lines) {
+          if (line.startsWith("0:")) {
+            try {
+              const chunk = JSON.parse(line.slice(2));
+              accumulated += chunk;
+              setStreamedContent(accumulated);
+            } catch {
+              // skip malformed lines
+            }
+          }
+        }
+      }
+
+      setPendingContent(accumulated || getDemoContent(section.id));
+    } catch (err) {
+      console.error("Section generation failed:", err);
+      // Fallback to demo content
+      const fallback = getDemoContent(section.id);
+      setPendingContent(fallback);
+      setStreamedContent(fallback);
+    } finally {
+      setIsStreaming(false);
+    }
+  }, [isStreaming, section.id, section.title, onUpdateStatus]);
 
   const handleAccept = useCallback(() => {
     if (pendingContent) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpenCheck,
@@ -647,39 +647,51 @@ function TerminologyChecker() {
   const [inputText, setInputText] = useState("");
   const [results, setResults] = useState<TermMatch[]>([]);
   const [hasChecked, setHasChecked] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [complianceScore, setComplianceScore] = useState<number | null>(null);
+  const [recommendation, setRecommendation] = useState<string | null>(null);
 
-  const checkTerminology = useCallback(() => {
-    const lower = inputText.toLowerCase();
-    const matches: TermMatch[] = [];
-
-    for (const [term, data] of Object.entries(TERMINOLOGY_DB)) {
-      let searchFrom = 0;
-      while (true) {
-        const idx = lower.indexOf(term, searchFrom);
-        if (idx === -1) break;
-        // Ensure whole-word boundary (simple check)
-        const before = idx > 0 ? lower[idx - 1] : " ";
-        const after =
-          idx + term.length < lower.length ? lower[idx + term.length] : " ";
-        const wordBoundary = /[\s.,;:!?()"'\-/]/.test(before) && /[\s.,;:!?()"'\-/]/.test(after);
-        if (wordBoundary || idx === 0 || idx + term.length === lower.length) {
-          matches.push({
-            term: inputText.slice(idx, idx + term.length),
-            index: idx,
-            suggestion: data.suggestion,
-            note: data.note,
-            severity: data.severity,
-          });
+  const checkTerminology = useCallback(async () => {
+    if (!inputText.trim()) return;
+    setIsChecking(true);
+    try {
+      const res = await fetch('/api/ai/terminology', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: inputText }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const matches: TermMatch[] = (data.issues || []).map((issue: { term: string; suggestion: string; reason: string; severity: string }, idx: number) => ({
+        term: issue.term,
+        index: idx,
+        suggestion: issue.suggestion,
+        note: issue.reason,
+        severity: issue.severity === 'error' ? 'warning' : 'suggestion',
+      }));
+      setResults(matches);
+      setComplianceScore(data.complianceScore ?? null);
+      setRecommendation(data.recommendation ?? null);
+    } catch {
+      // Fall back to local check
+      const lower = inputText.toLowerCase();
+      const matches: TermMatch[] = [];
+      for (const [term, data] of Object.entries(TERMINOLOGY_DB)) {
+        let searchFrom = 0;
+        while (true) {
+          const idx = lower.indexOf(term, searchFrom);
+          if (idx === -1) break;
+          matches.push({ term: inputText.slice(idx, idx + term.length), index: idx, suggestion: data.suggestion, note: data.note, severity: data.severity });
+          searchFrom = idx + term.length;
         }
-        searchFrom = idx + term.length;
       }
+      matches.sort((a, b) => a.index - b.index);
+      setResults(matches);
+    } finally {
+      setIsChecking(false);
+      setHasChecked(true);
     }
-
-    // Sort by position in text
-    matches.sort((a, b) => a.index - b.index);
-    setResults(matches);
-    setHasChecked(true);
   }, [inputText]);
 
   const copySuggestion = (idx: number, text: string) => {
@@ -705,11 +717,20 @@ function TerminologyChecker() {
 
       <Button
         onClick={checkTerminology}
-        disabled={inputText.trim().length === 0}
+        disabled={inputText.trim().length === 0 || isChecking}
         className="gap-2"
       >
-        <Search className="h-4 w-4" />
-        Check Terminology
+        {isChecking ? (
+          <>
+            <Sparkles className="h-4 w-4 animate-pulse" />
+            Checking with AI...
+          </>
+        ) : (
+          <>
+            <Search className="h-4 w-4" />
+            Check Terminology
+          </>
+        )}
       </Button>
 
       <AnimatePresence>
@@ -744,9 +765,19 @@ function TerminologyChecker() {
                     {results.filter((r) => r.severity === "suggestion").length}{" "}
                     suggestions)
                   </span>
+                  {complianceScore !== null && (
+                    <span className="ml-auto text-xs font-semibold" style={{ color: complianceScore >= 80 ? '#5B8C5A' : complianceScore >= 50 ? '#C8961E' : '#A63D40' }}>
+                      {complianceScore}% compliant
+                    </span>
+                  )}
                 </>
               )}
             </div>
+            {recommendation && (
+              <div className="rounded-lg border border-teal/20 bg-teal/5 px-4 py-3 text-sm text-navy-200">
+                <span className="font-medium text-teal">AI Recommendation: </span>{recommendation}
+              </div>
+            )}
 
             {/* Results */}
             <div className="space-y-3">
@@ -825,11 +856,6 @@ function ResolutionDrafter() {
   const [generatedText, setGeneratedText] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const { displayed, isComplete } = useTypingEffect(
-    isGenerating ? generatedText : "",
-    10,
-  );
-
   const strengthValue = { soft: 25, moderate: 55, strong: 90 };
   const strengthColor = {
     soft: "bg-teal",
@@ -837,15 +863,47 @@ function ResolutionDrafter() {
     strong: "bg-crimson",
   };
 
-  const handleDraft = () => {
-    const templates = RESOLUTION_TEMPLATES[paragraphType][strength];
-    const opener =
-      templates.openers[Math.floor(Math.random() * templates.openers.length)];
-    const template =
-      templates.templates[Math.floor(Math.random() * templates.templates.length)];
-    const text = template.replace("{opener}", opener);
-    setGeneratedText(text);
+  const strengthMap = { soft: 'weak', moderate: 'moderate', strong: 'strong' } as const;
+
+  const handleDraft = async () => {
+    if (!userInput.trim()) return;
     setIsGenerating(true);
+    setGeneratedText('');
+    try {
+      const response = await fetch('/api/ai/resolution', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: userInput,
+          type: paragraphType,
+          strength: strengthMap[strength],
+          keyPoints: [],
+        }),
+      });
+      if (!response.ok) throw new Error('Draft failed');
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const raw = decoder.decode(value, { stream: true });
+        for (const line of raw.split('\n')) {
+          if (line.startsWith('0:')) {
+            try { accumulated += JSON.parse(line.slice(2)); } catch { /* skip */ }
+          }
+        }
+        setGeneratedText(accumulated);
+      }
+    } catch {
+      // Fall back to template
+      const templates = RESOLUTION_TEMPLATES[paragraphType][strength];
+      const opener = templates.openers[Math.floor(Math.random() * templates.openers.length)];
+      const template = templates.templates[Math.floor(Math.random() * templates.templates.length)];
+      setGeneratedText(template.replace("{opener}", opener));
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -969,8 +1027,8 @@ function ResolutionDrafter() {
               <CardContent>
                 <div className="rounded-md bg-navy-900 border border-navy-700 p-4">
                   <p className="text-sm text-navy-200 leading-relaxed font-serif italic">
-                    {isGenerating ? displayed : generatedText}
-                    {isGenerating && !isComplete && (
+                    {generatedText}
+                    {isGenerating && (
                       <span className="inline-block w-0.5 h-4 bg-gold-500 ml-0.5 animate-pulse" />
                     )}
                   </p>
@@ -1379,13 +1437,47 @@ function DiplomaticEditor() {
     { value: "neutralize", label: "Neutralize", icon: "scale" },
   ];
 
-  const handleTransform = () => {
+  const handleTransform = async () => {
+    if (!inputText.trim()) return;
     setIsTransforming(true);
-    // Simulate processing
-    setTimeout(() => {
+    setResult(null);
+    const modeInstructions: Record<string, string> = {
+      diplomatic: 'Transform this text to be more diplomatically phrased. Soften direct accusations, use passive voice where appropriate, employ cautious language, and ensure it meets UN diplomatic standards.',
+      direct: 'Transform this text to be more direct and clear. Remove diplomatic hedging, state facts plainly, and be specific about responsibilities and deadlines.',
+      urgent: 'Transform this text to convey greater urgency. Emphasize the critical nature of the situation, use strong language, and make clear that immediate action is required.',
+      neutralize: 'Transform this text to be completely neutral and balanced. Remove any loaded language, accusations, or one-sided framing. Ensure all parties are referred to equally.',
+    };
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{
+            role: 'user',
+            content: `${modeInstructions[mode] || modeInstructions.diplomatic}\n\nText to transform:\n---\n${inputText}\n---\n\nProvide ONLY the transformed text, no explanation or preamble.`,
+          }],
+        }),
+      });
+      if (!response.ok) throw new Error('Transform failed');
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let transformed = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const raw = decoder.decode(value, { stream: true });
+        for (const line of raw.split('\n')) {
+          if (line.startsWith('0:')) {
+            try { transformed += JSON.parse(line.slice(2)); } catch { /* skip */ }
+          }
+        }
+        setResult({ transformed, diff: [] });
+      }
+    } catch {
       setResult(getDiplomaticTransform(inputText, mode));
+    } finally {
       setIsTransforming(false);
-    }, 800);
+    }
   };
 
   return (
@@ -1458,77 +1550,73 @@ function DiplomaticEditor() {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+            className={result.diff.length > 0 ? "grid grid-cols-1 lg:grid-cols-2 gap-4" : ""}
           >
-            {/* Original (with diff markings) */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-navy-300">
-                  Original (with changes)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md bg-navy-900 border border-navy-700 p-4 text-sm leading-relaxed">
-                  {result.diff.map((seg, i) => {
-                    if (seg.type === "removed") {
-                      return (
-                        <span
-                          key={i}
-                          className="bg-crimson/20 text-crimson line-through decoration-crimson/60"
-                        >
-                          {seg.text}
-                        </span>
-                      );
-                    }
-                    if (seg.type === "added") {
-                      return null; // Don't show added in original panel
-                    }
-                    return (
-                      <span key={i} className="text-navy-300">
-                        {seg.text}
-                      </span>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+            {result.diff.length > 0 ? (
+              <>
+                {/* Original (with diff markings) */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-navy-300">
+                      Original (with changes)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-md bg-navy-900 border border-navy-700 p-4 text-sm leading-relaxed">
+                      {result.diff.map((seg, i) => {
+                        if (seg.type === "removed") return <span key={i} className="bg-crimson/20 text-crimson line-through decoration-crimson/60">{seg.text}</span>;
+                        if (seg.type === "added") return null;
+                        return <span key={i} className="text-navy-300">{seg.text}</span>;
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
 
-            {/* Transformed (with additions highlighted) */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-gold-400 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" />
-                  Transformed
-                  <Badge variant="gold" className="ml-2 capitalize">
-                    {modes.find((m) => m.value === mode)?.label}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md bg-navy-900 border border-navy-700 p-4 text-sm leading-relaxed">
-                  {result.diff.map((seg, i) => {
-                    if (seg.type === "added") {
-                      return (
-                        <span
-                          key={i}
-                          className="bg-sage/20 text-sage"
-                        >
-                          {seg.text}
-                        </span>
-                      );
-                    }
-                    if (seg.type === "removed") {
-                      return null; // Don't show removed in transformed panel
-                    }
-                    return (
-                      <span key={i} className="text-navy-300">
-                        {seg.text}
-                      </span>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                {/* Transformed */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-gold-400 flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      Transformed
+                      <Badge variant="gold" className="ml-2 capitalize">
+                        {modes.find((m) => m.value === mode)?.label}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-md bg-navy-900 border border-navy-700 p-4 text-sm leading-relaxed">
+                      {result.diff.map((seg, i) => {
+                        if (seg.type === "added") return <span key={i} className="bg-sage/20 text-sage">{seg.text}</span>;
+                        if (seg.type === "removed") return null;
+                        return <span key={i} className="text-navy-300">{seg.text}</span>;
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-gold-400 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    Transformed
+                    <Badge variant="gold" className="ml-2 capitalize">
+                      {modes.find((m) => m.value === mode)?.label}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-md bg-navy-900 border border-navy-700 p-4 text-sm leading-relaxed">
+                    <p className="text-navy-200 whitespace-pre-wrap">
+                      {result.transformed}
+                      {isTransforming && (
+                        <span className="inline-block w-0.5 h-4 bg-gold-500 ml-0.5 animate-pulse" />
+                      )}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
