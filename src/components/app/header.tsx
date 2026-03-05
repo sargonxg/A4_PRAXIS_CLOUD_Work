@@ -1,9 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Search, Bell, ChevronRight, User, Settings, LogOut, Sparkles, X, Send } from 'lucide-react';
+import { Search, ChevronRight, User, Settings, LogOut, Sparkles, X, Send } from 'lucide-react';
+import { NotificationBell } from '@/components/shared/notifications';
+import { GlobalSearch } from '@/components/shared/global-search';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
 import {
@@ -32,6 +34,9 @@ const routeLabels: Record<string, string> = {
   'stakeholder-map': 'Stakeholder Map',
   'early-warning': 'Early Warning',
   sanctions: 'Sanctions Tracker',
+  scenarios: 'Scenario Planner',
+  cases: 'Case Library',
+  compare: 'Conflict Comparison',
 };
 
 export function Header() {
@@ -40,6 +45,21 @@ export function Header() {
   const { user } = useAuth();
   const [assistOpen, setAssistOpen] = useState(false);
   const [assistQuery, setAssistQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // Cmd+K / Ctrl+K global shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
 
   const breadcrumbs = useMemo(() => {
     const segments = pathname.split('/').filter(Boolean);
@@ -113,6 +133,7 @@ export function Header() {
 
           {/* Search button */}
           <button
+            onClick={() => setSearchOpen(true)}
             className="flex items-center gap-2 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-sm text-navy-400 transition-colors hover:border-navy-300 hover:text-navy-600"
           >
             <Search className="h-3.5 w-3.5" />
@@ -123,10 +144,7 @@ export function Header() {
           </button>
 
           {/* Notifications */}
-          <button className="relative rounded-lg p-2 text-navy-400 transition-colors hover:bg-[var(--color-app-surface-alt)] hover:text-navy-600">
-            <Bell className="h-4 w-4" />
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-crimson ring-2 ring-white" />
-          </button>
+          <NotificationBell />
 
           {/* User dropdown */}
           <DropdownMenu>
@@ -162,6 +180,9 @@ export function Header() {
           </DropdownMenu>
         </div>
       </header>
+
+      {/* Global Search */}
+      {searchOpen && <GlobalSearch onClose={closeSearch} />}
 
       {/* AI Assistant Overlay */}
       {assistOpen && (
