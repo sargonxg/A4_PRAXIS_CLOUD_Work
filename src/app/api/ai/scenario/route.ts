@@ -59,7 +59,7 @@ Be analytically rigorous, calibrate confidence appropriately, and avoid generic 
       system: 'You are a senior conflict analyst at the International Crisis Group. Provide rigorous, structured, evidence-based scenario analysis for diplomatic and security professionals.',
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (err) {
     console.error('Scenario route error:', err);
     return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500 });

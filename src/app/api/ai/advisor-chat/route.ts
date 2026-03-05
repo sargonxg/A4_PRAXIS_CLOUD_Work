@@ -55,7 +55,7 @@ You are operating within PRAXIS, TACITUS's conflict intelligence platform. You a
       messages,
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (err) {
     console.error('Advisor chat route error:', err);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
