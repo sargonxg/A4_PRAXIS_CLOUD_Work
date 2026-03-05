@@ -1,9 +1,23 @@
 'use client';
 
-import { useState } from 'react';
-import { Users, FileUp, Sparkles, ArrowRight, MessageSquare, Lightbulb } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Users, FileUp, Sparkles, Loader2, RefreshCw, Network, Grid3X3 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import Link from 'next/link';
+import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
+
+function parseDataStreamChunk(raw: string): string {
+  return raw
+    .split('\n')
+    .filter((l) => l.startsWith('0:'))
+    .map((l) => { try { return JSON.parse(l.slice(2)); } catch { return ''; } })
+    .join('');
+}
+
+// Interest score (0-10) for the Influence/Interest Matrix
+const actorInterest: Record<string, number> = {
+  gov: 10, drm: 10, karovia: 8, sertania: 7, cso: 7, unmn: 6, au: 5,
+};
 
 interface Actor {
   id: string;
@@ -63,6 +77,69 @@ const aiInsights: Record<string, string> = {
 
 export default function StakeholderMapPage() {
   const [selectedActor, setSelectedActor] = useState<Actor | null>(null);
+  const [view, setView] = useState<'network' | 'matrix'>('network');
+  const [liveInsights, setLiveInsights] = useState<Record<string, string>>({});
+  const [loadingInsightId, setLoadingInsightId] = useState<string | null>(null);
+
+  const generateInsight = useCallback(async (actor: Actor) => {
+    if (loadingInsightId) return;
+    setLoadingInsightId(actor.id);
+    setLiveInsights((prev) => ({ ...prev, [actor.id]: '' }));
+
+    try {
+      const actorRelationships = relationships
+        .filter((r) => r.from === actor.id || r.to === actor.id)
+        .map((r) => {
+          const other = actors.find((a) => a.id === (r.from === actor.id ? r.to : r.from));
+          return `${r.type.replace('_', ' ')} with ${other?.name} (${r.label})`;
+        });
+
+      const prompt = `Provide a strategic intelligence analysis of this conflict actor in the Nordalia crisis:
+
+Actor: ${actor.name}
+Type: ${actor.type}
+Influence Level: ${actor.influence}/10
+Core Interests: ${actor.interests}
+Key Leverage Points: ${actor.leverage}
+${actor.keyQuote ? `Known position: ${actor.keyQuote}` : ''}
+Relationships: ${actorRelationships.join('; ')}
+
+Provide:
+1. **Strategic Assessment** — current posture and likely next moves
+2. **Negotiating Position** — red lines, flexibility, and entry points
+3. **Influence Pathways** — how best to engage or influence this actor
+4. **Risk Factors** — potential spoiler behavior or destabilizing actions
+5. **Diplomatic Opportunities** — actionable leverage points for peacemakers
+
+Be concise, analytically rigorous, and diplomatically precise.`;
+
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+      });
+
+      if (!response.ok || !response.body) throw new Error('Stream failed');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += parseDataStreamChunk(decoder.decode(value, { stream: true }));
+        setLiveInsights((prev) => ({ ...prev, [actor.id]: accumulated }));
+      }
+    } catch {
+      setLiveInsights((prev) => ({
+        ...prev,
+        [actor.id]: aiInsights[actor.id] ?? `${actor.name} is a ${actor.type} with influence level ${actor.influence}/10. Key interests: ${actor.interests}.`,
+      }));
+    } finally {
+      setLoadingInsightId(null);
+    }
+  }, [loadingInsightId]);
 
   return (
     <div className="space-y-6">
@@ -78,15 +155,99 @@ export default function StakeholderMapPage() {
             </p>
           </div>
         </div>
-        <button className="flex items-center gap-2 rounded-lg border border-[var(--color-app-border)] bg-white px-4 py-2 text-sm text-navy-600 hover:bg-[var(--color-app-surface-alt)] transition-colors">
-          <FileUp className="h-4 w-4" />
-          Auto-populate from Documents
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-lg border border-[var(--color-app-border)] bg-white p-1">
+            <button
+              onClick={() => setView('network')}
+              className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all', view === 'network' ? 'bg-navy-900 text-white' : 'text-navy-500 hover:text-navy-700')}
+            >
+              <Network className="h-3.5 w-3.5" />
+              Network
+            </button>
+            <button
+              onClick={() => setView('matrix')}
+              className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all', view === 'matrix' ? 'bg-navy-900 text-white' : 'text-navy-500 hover:text-navy-700')}
+            >
+              <Grid3X3 className="h-3.5 w-3.5" />
+              Matrix
+            </button>
+          </div>
+          <button className="flex items-center gap-2 rounded-lg border border-[var(--color-app-border)] bg-white px-4 py-2 text-sm text-navy-600 hover:bg-[var(--color-app-surface-alt)] transition-colors">
+            <FileUp className="h-4 w-4" />
+            Auto-populate
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-6">
-        {/* Graph area */}
+        {/* Graph / Matrix area */}
         <div className="flex-1 rounded-xl border border-[var(--color-app-border)] bg-white p-2 overflow-hidden">
+          {view === 'matrix' && (
+            <div className="p-4 h-[550px] flex flex-col">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400 mb-4">Influence / Interest Matrix — click an actor to view profile</p>
+              <div className="flex flex-1 gap-0">
+                {/* Y axis label */}
+                <div className="flex items-center justify-center w-6 shrink-0">
+                  <p className="text-[9px] text-navy-400 font-medium rotate-[-90deg] whitespace-nowrap">Influence →</p>
+                </div>
+                <div className="flex-1 flex flex-col">
+                  <div className="flex flex-1 gap-0">
+                    {/* Top-left: Keep Satisfied */}
+                    <div className="flex-1 rounded-tl-lg border border-[var(--color-app-border)] bg-blue-50/30 p-3 relative">
+                      <p className="text-[9px] font-semibold text-diplomatic-blue/60 mb-2">KEEP SATISFIED</p>
+                      {actors.filter((a) => a.influence >= 5 && (actorInterest[a.id] ?? 5) < 7).map((a) => (
+                        <button key={a.id} onClick={() => setSelectedActor(selectedActor?.id === a.id ? null : a)}
+                          className="mb-1.5 flex items-center gap-1.5 rounded-md bg-white border border-[var(--color-app-border)] px-2 py-1 text-[10px] font-medium text-navy-700 hover:border-diplomatic-blue/30 transition-colors w-full text-left">
+                          <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
+                          {a.name.split(' ').slice(0, 2).join(' ')}
+                        </button>
+                      ))}
+                    </div>
+                    {/* Top-right: Key Players */}
+                    <div className="flex-1 rounded-tr-lg border border-[var(--color-app-border)] border-l-0 bg-crimson/4 p-3 relative">
+                      <p className="text-[9px] font-semibold text-crimson/60 mb-2">KEY PLAYERS</p>
+                      {actors.filter((a) => a.influence >= 5 && (actorInterest[a.id] ?? 5) >= 7).map((a) => (
+                        <button key={a.id} onClick={() => setSelectedActor(selectedActor?.id === a.id ? null : a)}
+                          className="mb-1.5 flex items-center gap-1.5 rounded-md bg-white border border-[var(--color-app-border)] px-2 py-1 text-[10px] font-medium text-navy-700 hover:border-crimson/30 transition-colors w-full text-left">
+                          <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
+                          {a.name.split(' ').slice(0, 2).join(' ')}
+                          <span className="ml-auto text-[9px] text-crimson font-semibold">{a.influence}/10</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex flex-1 gap-0">
+                    {/* Bottom-left: Monitor */}
+                    <div className="flex-1 rounded-bl-lg border border-[var(--color-app-border)] border-t-0 bg-[var(--color-app-surface-alt)] p-3 relative">
+                      <p className="text-[9px] font-semibold text-navy-400 mb-2">MONITOR</p>
+                      {actors.filter((a) => a.influence < 5 && (actorInterest[a.id] ?? 5) < 7).map((a) => (
+                        <button key={a.id} onClick={() => setSelectedActor(selectedActor?.id === a.id ? null : a)}
+                          className="mb-1.5 flex items-center gap-1.5 rounded-md bg-white border border-[var(--color-app-border)] px-2 py-1 text-[10px] font-medium text-navy-700 w-full text-left">
+                          <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
+                          {a.name.split(' ').slice(0, 2).join(' ')}
+                        </button>
+                      ))}
+                    </div>
+                    {/* Bottom-right: Keep Informed */}
+                    <div className="flex-1 rounded-br-lg border border-[var(--color-app-border)] border-t-0 border-l-0 bg-gold-500/4 p-3 relative">
+                      <p className="text-[9px] font-semibold text-gold-600/70 mb-2">KEEP INFORMED</p>
+                      {actors.filter((a) => a.influence < 5 && (actorInterest[a.id] ?? 5) >= 7).map((a) => (
+                        <button key={a.id} onClick={() => setSelectedActor(selectedActor?.id === a.id ? null : a)}
+                          className="mb-1.5 flex items-center gap-1.5 rounded-md bg-white border border-[var(--color-app-border)] px-2 py-1 text-[10px] font-medium text-navy-700 w-full text-left">
+                          <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
+                          {a.name.split(' ').slice(0, 2).join(' ')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* X axis label */}
+                  <p className="text-center text-[9px] text-navy-400 font-medium mt-2">← Interest →</p>
+                </div>
+              </div>
+            </div>
+          )}
+          {view === 'network' && (
+          <>
           <svg viewBox="0 0 100 100" className="h-[500px] w-full" style={{ background: 'linear-gradient(135deg, #FAFBFD 0%, #F5F7FA 100%)' }}>
             {/* Grid pattern */}
             <defs>
@@ -185,6 +346,8 @@ export default function StakeholderMapPage() {
               </div>
             ))}
           </div>
+          </>
+          )}
         </div>
 
         {/* Detail panel */}
@@ -251,23 +414,55 @@ export default function StakeholderMapPage() {
               </div>
 
               {/* AI Insight */}
-              {aiInsights[selectedActor.id] && (
-                <div className="rounded-xl border border-gold-500/15 bg-gold-500/4 p-4">
-                  <div className="flex items-center gap-2 mb-2">
+              <div className="rounded-xl border border-gold-500/15 bg-gold-500/4 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-gold-600" />
                     <h4 className="text-xs font-semibold text-navy-900">PRAXIS Insight</h4>
                   </div>
-                  <p className="text-xs text-navy-600 leading-relaxed">{aiInsights[selectedActor.id]}</p>
-                  <div className="mt-3 flex gap-2">
-                    <Link href="/talking-points" className="rounded-md bg-white border border-[var(--color-app-border)] px-2.5 py-1 text-[10px] font-medium text-navy-600 hover:text-diplomatic-blue transition-colors">
-                      Talking Points
-                    </Link>
-                    <Link href="/advisory" className="rounded-md bg-white border border-[var(--color-app-border)] px-2.5 py-1 text-[10px] font-medium text-navy-600 hover:text-gold-700 transition-colors">
-                      Ask Advisor
-                    </Link>
-                  </div>
+                  <button
+                    onClick={() => generateInsight(selectedActor)}
+                    disabled={loadingInsightId === selectedActor.id}
+                    className="flex items-center gap-1 text-[10px] text-gold-600 hover:text-gold-700 disabled:opacity-50"
+                  >
+                    {loadingInsightId === selectedActor.id
+                      ? <Loader2 className="h-3 w-3 animate-spin" />
+                      : <RefreshCw className="h-3 w-3" />
+                    }
+                    {liveInsights[selectedActor.id] ? 'Refresh' : 'Generate'}
+                  </button>
                 </div>
-              )}
+                {liveInsights[selectedActor.id] ? (
+                  <div className="text-xs text-navy-600 leading-relaxed prose prose-sm max-w-none">
+                    <MarkdownRenderer content={liveInsights[selectedActor.id]} />
+                    {loadingInsightId === selectedActor.id && (
+                      <span className="inline-block h-3 w-0.5 animate-pulse bg-gold-500 ml-0.5" />
+                    )}
+                  </div>
+                ) : aiInsights[selectedActor.id] ? (
+                  <p className="text-xs text-navy-600 leading-relaxed">{aiInsights[selectedActor.id]}</p>
+                ) : (
+                  <button
+                    onClick={() => generateInsight(selectedActor)}
+                    disabled={loadingInsightId === selectedActor.id}
+                    className="w-full flex items-center justify-center gap-2 rounded-lg border border-gold-500/20 bg-white px-3 py-2 text-xs text-gold-700 hover:bg-gold-500/8 transition-colors disabled:opacity-50"
+                  >
+                    {loadingInsightId === selectedActor.id
+                      ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      : <Sparkles className="h-3.5 w-3.5" />
+                    }
+                    Generate AI Analysis
+                  </button>
+                )}
+                <div className="mt-3 flex gap-2">
+                  <Link href="/talking-points" className="rounded-md bg-white border border-[var(--color-app-border)] px-2.5 py-1 text-[10px] font-medium text-navy-600 hover:text-diplomatic-blue transition-colors">
+                    Talking Points
+                  </Link>
+                  <Link href="/advisory" className="rounded-md bg-white border border-[var(--color-app-border)] px-2.5 py-1 text-[10px] font-medium text-navy-600 hover:text-gold-700 transition-colors">
+                    Ask Advisor
+                  </Link>
+                </div>
+              </div>
             </>
           ) : (
             <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-6 text-center">

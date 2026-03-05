@@ -1,10 +1,27 @@
 'use client';
 
-import { useState } from 'react';
-import { Calendar, ChevronRight, Clock, Filter, Sparkles, FileText, Users, ExternalLink, Globe } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Calendar, ChevronRight, Filter, Sparkles, FileText, Users, Loader2, CheckSquare, Square, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { calendarEvents } from '@/lib/constants/calendar-events';
 import Link from 'next/link';
+import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
+
+function parseDataStreamChunk(raw: string): string {
+  return raw
+    .split('\n')
+    .filter((l) => l.startsWith('0:'))
+    .map((l) => { try { return JSON.parse(l.slice(2)); } catch { return ''; } })
+    .join('');
+}
+
+const DEFAULT_CHECKLIST = [
+  'Review key issues and relevant background',
+  'Prepare talking points for key agenda items',
+  'Identify key delegations and their positions',
+  'Brief team on expected outcomes',
+  'Coordinate with relevant counterparts',
+];
 
 const institutionFilters = [
   { id: 'all', label: 'All Events', color: '#475569' },
@@ -23,6 +40,69 @@ const institutionFilters = [
 export default function CalendarPage() {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
+  const [briefings, setBriefings] = useState<Record<string, string>>({});
+  const [loadingBriefId, setLoadingBriefId] = useState<string | null>(null);
+  // checklist: Record<eventId, Record<itemIndex, boolean>>
+  const [checklists, setChecklists] = useState<Record<string, Record<number, boolean>>>({});
+
+  const generateBrief = useCallback(async (event: (typeof calendarEvents)[0]) => {
+    if (loadingBriefId) return;
+    setLoadingBriefId(event.id);
+    setBriefings((prev) => ({ ...prev, [event.id]: '' }));
+
+    try {
+      const prompt = `Generate a concise pre-briefing note for the following diplomatic event:
+
+Event: ${event.title}
+Institution: ${event.institutionFull}
+Date: ${event.date} at ${event.time}
+Topics: ${event.topics.join(', ')}
+${event.keyIssues ? `Key Issues: ${event.keyIssues}` : ''}
+${event.relevantBackground ? `Background: ${event.relevantBackground}` : ''}
+
+Structure your response with:
+1. **What to Expect** — likely agenda items, format, and dynamics
+2. **Key Issues** — 2-3 critical points requiring attention
+3. **Relevant Resolutions** — cite applicable UN/AU/EU resolutions or mandates
+4. **Recommended Positions** — suggested stances or talking points
+5. **Watch Points** — potential surprises or procedural considerations
+
+Keep it concise and action-oriented for a diplomat preparing for this session.`;
+
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+      });
+
+      if (!response.ok || !response.body) throw new Error('Stream failed');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += parseDataStreamChunk(decoder.decode(value, { stream: true }));
+        setBriefings((prev) => ({ ...prev, [event.id]: accumulated }));
+      }
+    } catch {
+      setBriefings((prev) => ({
+        ...prev,
+        [event.id]: `**Pre-Brief: ${event.title}**\n\nFocus on ${event.topics.join(', ')}. ${event.keyIssues ?? ''} ${event.relevantBackground ?? ''}`,
+      }));
+    } finally {
+      setLoadingBriefId(null);
+    }
+  }, [loadingBriefId]);
+
+  const toggleChecklistItem = useCallback((eventId: string, idx: number) => {
+    setChecklists((prev) => ({
+      ...prev,
+      [eventId]: { ...prev[eventId], [idx]: !prev[eventId]?.[idx] },
+    }));
+  }, []);
 
   const filtered = selectedFilter === 'all'
     ? calendarEvents
@@ -147,24 +227,95 @@ export default function CalendarPage() {
                         </div>
 
                         {/* Expanded detail */}
-                        {selectedEvent === event.id && (event.keyIssues || event.relevantBackground) && (
-                          <div className="mt-4 rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-4 space-y-3">
-                            {event.keyIssues && (
-                              <div>
-                                <p className="text-[10px] font-semibold uppercase tracking-wider text-diplomatic-blue mb-1">Key Issues to Watch</p>
-                                <p className="text-xs text-navy-700 leading-relaxed">{event.keyIssues}</p>
+                        {selectedEvent === event.id && (
+                          <div
+                            className="mt-4 space-y-3"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {/* Static key issues / background */}
+                            {(event.keyIssues || event.relevantBackground) && (
+                              <div className="rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-4 space-y-3">
+                                {event.keyIssues && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wider text-diplomatic-blue mb-1">Key Issues to Watch</p>
+                                    <p className="text-xs text-navy-700 leading-relaxed">{event.keyIssues}</p>
+                                  </div>
+                                )}
+                                {event.relevantBackground && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wider text-teal mb-1">Relevant Background</p>
+                                    <p className="text-xs text-navy-700 leading-relaxed">{event.relevantBackground}</p>
+                                  </div>
+                                )}
                               </div>
                             )}
-                            {event.relevantBackground && (
-                              <div>
-                                <p className="text-[10px] font-semibold uppercase tracking-wider text-teal mb-1">Relevant Background</p>
-                                <p className="text-xs text-navy-700 leading-relaxed">{event.relevantBackground}</p>
+
+                            {/* AI Pre-Brief */}
+                            {briefings[event.id] ? (
+                              <div className="rounded-lg border border-gold-500/20 bg-gold-500/4 p-4">
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <Sparkles className="h-3.5 w-3.5 text-gold-600" />
+                                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-700">AI Pre-Brief</p>
+                                  </div>
+                                  <button
+                                    onClick={() => generateBrief(event)}
+                                    disabled={loadingBriefId === event.id}
+                                    className="flex items-center gap-1 text-[10px] text-gold-600 hover:text-gold-700 disabled:opacity-50"
+                                  >
+                                    <RefreshCw className="h-3 w-3" />
+                                    Regenerate
+                                  </button>
+                                </div>
+                                <div className="text-xs text-navy-700 leading-relaxed prose prose-sm max-w-none">
+                                  <MarkdownRenderer content={briefings[event.id]} />
+                                </div>
+                                {loadingBriefId === event.id && (
+                                  <span className="inline-block h-3 w-0.5 animate-pulse bg-gold-500 ml-0.5" />
+                                )}
                               </div>
-                            )}
-                            <div className="flex flex-wrap gap-2 pt-1">
-                              <button className="flex items-center gap-2 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-2 text-xs font-medium text-navy-700 hover:border-gold-500/30 hover:text-gold-700 transition-colors">
-                                <Sparkles className="h-3 w-3 text-gold-600" />
-                                Generate Pre-Brief
+                            ) : null}
+
+                            {/* Preparation Checklist */}
+                            <div className="rounded-lg border border-[var(--color-app-border)] bg-white p-4">
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-500 mb-3">Preparation Checklist</p>
+                              <div className="space-y-2">
+                                {DEFAULT_CHECKLIST.map((item, idx) => {
+                                  const checked = checklists[event.id]?.[idx] ?? false;
+                                  return (
+                                    <button
+                                      key={idx}
+                                      onClick={() => toggleChecklistItem(event.id, idx)}
+                                      className="flex items-center gap-2.5 w-full text-left group"
+                                    >
+                                      {checked
+                                        ? <CheckSquare className="h-3.5 w-3.5 shrink-0 text-teal" />
+                                        : <Square className="h-3.5 w-3.5 shrink-0 text-navy-300 group-hover:text-navy-500" />
+                                      }
+                                      <span className={cn(
+                                        'text-xs',
+                                        checked ? 'line-through text-navy-400' : 'text-navy-700'
+                                      )}>
+                                        {item}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Action buttons */}
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => generateBrief(event)}
+                                disabled={loadingBriefId === event.id}
+                                className="flex items-center gap-2 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-2 text-xs font-medium text-navy-700 hover:border-gold-500/30 hover:text-gold-700 transition-colors disabled:opacity-50"
+                              >
+                                {loadingBriefId === event.id
+                                  ? <Loader2 className="h-3 w-3 text-gold-600 animate-spin" />
+                                  : <Sparkles className="h-3 w-3 text-gold-600" />
+                                }
+                                {briefings[event.id] ? 'Regenerate Pre-Brief' : 'Generate Pre-Brief'}
                               </button>
                               <Link href="/talking-points" className="flex items-center gap-2 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-2 text-xs font-medium text-navy-700 hover:border-diplomatic-blue/30 hover:text-diplomatic-blue transition-colors">
                                 <FileText className="h-3 w-3" />

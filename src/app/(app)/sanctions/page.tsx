@@ -1,9 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-import { Shield, Search, Calendar, ChevronRight, Sparkles, ExternalLink, AlertTriangle, BookOpen, Link2 } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Shield, Search, ChevronRight, Sparkles, BookOpen, Link2, Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import Link from 'next/link';
+import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
+
+function parseDataStreamChunk(raw: string): string {
+  return raw
+    .split('\n')
+    .filter((l) => l.startsWith('0:'))
+    .map((l) => { try { return JSON.parse(l.slice(2)); } catch { return ''; } })
+    .join('');
+}
 
 interface Resolution {
   id: string;
@@ -90,6 +99,59 @@ export default function SanctionsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [selectedRes, setSelectedRes] = useState<string | null>(null);
+  const [liveSummaries, setLiveSummaries] = useState<Record<string, string>>({});
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  const generateSummary = useCallback(async (res: Resolution, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (loadingId) return;
+    setLoadingId(res.id);
+    setLiveSummaries((prev) => ({ ...prev, [res.id]: '' }));
+
+    try {
+      const prompt = `Provide a concise diplomatic intelligence analysis of UN Security Council Resolution ${res.number}: "${res.title}" (${res.country}, adopted ${res.date}).
+
+Key provisions: ${res.keyProvisions.join('; ')}
+${res.sanctionTypes ? `Sanctions measures: ${res.sanctionTypes.join(', ')}` : ''}
+${res.relatedResolutions.length ? `Related resolutions: ${res.relatedResolutions.join(', ')}` : ''}
+
+Your analysis should cover:
+1. **Strategic significance** — why this resolution matters geopolitically
+2. **Sanctions impact** — which actors are affected and how
+3. **Compliance implications** — what states/parties must do
+4. **Precedent value** — how this may apply to similar situations
+5. **Gaps & weaknesses** — known loopholes or implementation challenges
+
+Be concise and diplomatically precise.`;
+
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+      });
+
+      if (!response.ok || !response.body) throw new Error('Stream failed');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += parseDataStreamChunk(decoder.decode(value, { stream: true }));
+        setLiveSummaries((prev) => ({ ...prev, [res.id]: accumulated }));
+      }
+    } catch {
+      // Fallback to static summary if available
+      setLiveSummaries((prev) => ({
+        ...prev,
+        [res.id]: res.aiSummary ?? `Analysis of ${res.number}: ${res.title}. This ${res.type} resolution addresses ${res.country} with ${res.keyProvisions.length} key provisions.`,
+      }));
+    } finally {
+      setLoadingId(null);
+    }
+  }, [loadingId]);
 
   const filtered = resolutions.filter((r) => {
     const matchesSearch = !searchQuery ||
@@ -187,16 +249,49 @@ export default function SanctionsPage() {
                   <h4 className="text-sm font-semibold text-navy-900">{res.title}</h4>
 
                   {isExpanded && (
-                    <div className="mt-4 space-y-4">
+                    <div className="mt-4 space-y-4" onClick={(e) => e.stopPropagation()}>
                       {/* AI Summary */}
-                      {res.aiSummary && (
-                        <div className="flex items-start gap-3 rounded-lg border border-gold-500/15 bg-gold-500/4 p-3">
-                          <Sparkles className="h-4 w-4 shrink-0 text-gold-600 mt-0.5" />
-                          <div>
-                            <p className="text-[10px] font-semibold text-gold-600 mb-0.5">AI Analysis</p>
-                            <p className="text-xs text-navy-700 leading-relaxed">{res.aiSummary}</p>
+                      {(liveSummaries[res.id] || res.aiSummary) ? (
+                        <div className="rounded-lg border border-gold-500/15 bg-gold-500/4 p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="h-3.5 w-3.5 text-gold-600" />
+                              <p className="text-[10px] font-semibold text-gold-600">AI Analysis</p>
+                            </div>
+                            <button
+                              onClick={(e) => generateSummary(res, e)}
+                              disabled={loadingId === res.id}
+                              className="flex items-center gap-1 text-[10px] text-gold-600 hover:text-gold-700 disabled:opacity-50"
+                            >
+                              {loadingId === res.id
+                                ? <Loader2 className="h-3 w-3 animate-spin" />
+                                : <RefreshCw className="h-3 w-3" />
+                              }
+                              {liveSummaries[res.id] ? 'Regenerate' : 'Generate Live'}
+                            </button>
+                          </div>
+                          <div className="text-xs text-navy-700 leading-relaxed">
+                            {liveSummaries[res.id]
+                              ? <MarkdownRenderer content={liveSummaries[res.id]} />
+                              : <p>{res.aiSummary}</p>
+                            }
+                            {loadingId === res.id && (
+                              <span className="inline-block h-3 w-0.5 animate-pulse bg-gold-500 ml-0.5" />
+                            )}
                           </div>
                         </div>
+                      ) : (
+                        <button
+                          onClick={(e) => generateSummary(res, e)}
+                          disabled={loadingId === res.id}
+                          className="flex w-full items-center justify-center gap-2 rounded-lg border border-gold-500/20 bg-gold-500/4 px-4 py-3 text-xs font-medium text-gold-700 hover:bg-gold-500/8 transition-colors disabled:opacity-50"
+                        >
+                          {loadingId === res.id
+                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            : <Sparkles className="h-3.5 w-3.5" />
+                          }
+                          Generate AI Analysis
+                        </button>
                       )}
 
                       <div>
@@ -242,12 +337,21 @@ export default function SanctionsPage() {
                       <div className="flex flex-wrap gap-2 pt-1">
                         <Link href="/talking-points" className="flex items-center gap-1.5 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-[11px] font-medium text-navy-600 hover:text-diplomatic-blue transition-colors">
                           <BookOpen className="h-3 w-3" />
-                          Generate Briefing Note
+                          Draft Briefing Note
                         </Link>
-                        <Link href="/reports/new" className="flex items-center gap-1.5 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-[11px] font-medium text-navy-600 hover:text-diplomatic-blue transition-colors">
-                          <Sparkles className="h-3 w-3 text-gold-600" />
-                          Draft Compliance Report
-                        </Link>
+                        {!liveSummaries[res.id] && (
+                          <button
+                            onClick={(e) => generateSummary(res, e)}
+                            disabled={loadingId === res.id}
+                            className="flex items-center gap-1.5 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-[11px] font-medium text-navy-600 hover:text-gold-700 transition-colors disabled:opacity-50"
+                          >
+                            {loadingId === res.id
+                              ? <Loader2 className="h-3 w-3 text-gold-600 animate-spin" />
+                              : <Sparkles className="h-3 w-3 text-gold-600" />
+                            }
+                            AI Analysis
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
