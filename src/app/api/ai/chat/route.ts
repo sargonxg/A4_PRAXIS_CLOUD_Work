@@ -1,4 +1,4 @@
-import { streamText } from 'ai';
+import { streamText, stepCountIs } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
 import { tacitusTools } from '@/lib/ai/tools';
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       system: DIPLOMATIC_SYSTEM_PROMPT,
       messages,
       tools: tacitusTools,
-      maxSteps: 5,
+      stopWhen: stepCountIs(5),
     });
 
     return result.toTextStreamResponse();
