@@ -21,6 +21,8 @@ import {
   Shield,
   AlertTriangle,
   Sparkles,
+  GitCompare,
+  BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -38,25 +40,37 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    label: 'Intelligence',
+    label: 'Situation Room',
     items: [
       { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-      { label: 'Report Studio', icon: FileText, href: '/reports' },
-      { label: 'PRAXIS Assistant', icon: MessageSquare, href: '/assistant' },
-      { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
       { label: 'Early Warning', icon: AlertTriangle, href: '/early-warning', badge: '3' },
-      { label: 'Sanctions Tracker', icon: Shield, href: '/sanctions' },
+      { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
+      { label: 'Stakeholder Map', icon: Users, href: '/stakeholder-map' },
     ],
   },
   {
-    label: 'Workflow',
+    label: 'Analysis & Drafting',
+    items: [
+      { label: 'PRAXIS Assistant', icon: MessageSquare, href: '/assistant' },
+      { label: 'Report Studio', icon: FileText, href: '/reports' },
+      { label: 'Talking Points', icon: MessageCircle, href: '/talking-points' },
+      { label: 'Scenario Planner', icon: GitCompare, href: '/scenarios', badge: 'NEW' },
+    ],
+  },
+  {
+    label: 'Intelligence Tools',
     items: [
       { label: 'Media Compass', icon: Compass, href: '/media-compass' },
-      { label: 'Talking Points', icon: MessageCircle, href: '/talking-points' },
+      { label: 'Sanctions Tracker', icon: Shield, href: '/sanctions' },
       { label: 'Calendar Monitor', icon: Calendar, href: '/calendar' },
-      { label: 'Stakeholder Map', icon: Users, href: '/stakeholder-map' },
-      { label: 'Documents', icon: FolderOpen, href: '/documents' },
       { label: 'UN Toolkit', icon: Building2, href: '/un-toolkit' },
+    ],
+  },
+  {
+    label: 'Workspace',
+    items: [
+      { label: 'Documents', icon: FolderOpen, href: '/documents' },
+      { label: 'Case Library', icon: BookOpen, href: '/cases', badge: 'NEW' },
     ],
   },
 ];
