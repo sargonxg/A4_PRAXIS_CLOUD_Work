@@ -24,20 +24,16 @@ const footerSections = [
   {
     title: "Company",
     links: [
-      { label: "About TACITUS", href: "#" },
       { label: "Advisory Council", href: "#advisory" },
       { label: "Security", href: "#security" },
-      { label: "Careers", href: "#" },
-      { label: "Press", href: "#" },
+      { label: "Contact Us", href: "mailto:hello@tacitus.me" },
     ],
   },
   {
     title: "Legal",
     links: [
-      { label: "Privacy Policy", href: "#" },
-      { label: "Terms of Service", href: "#" },
-      { label: "Data Processing", href: "#" },
-      { label: "Cookie Policy", href: "#" },
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Terms of Service", href: "/terms" },
     ],
   },
 ];
@@ -59,7 +55,22 @@ export function Footer() {
               PRAXIS by TACITUS — Diplomacy. Evolved.
             </p>
             <p className="mt-1 text-xs text-navy-400">
-              The AI-native intelligence workspace for peace and security professionals.
+              The missing tool for peace and diplomacy professionals.
+            </p>
+            <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-gold-600/30 bg-gold-600/5 px-3 py-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-gold-500 animate-pulse" />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-gold-700">
+                Early Demo
+              </span>
+            </div>
+            <p className="mt-3 text-xs text-navy-400">
+              Feedback?{" "}
+              <a
+                href="mailto:hello@tacitus.me"
+                className="text-diplomatic-blue hover:underline"
+              >
+                hello@tacitus.me
+              </a>
             </p>
           </div>
 
@@ -86,19 +97,19 @@ export function Footer() {
         {/* Bottom */}
         <div className="mt-14 flex flex-col items-center gap-4 border-t border-cream-300/60 pt-8 md:flex-row md:justify-between">
           <p className="text-xs text-navy-400">
-            &copy; 2026 TACITUS. All rights reserved. Built in New York.
+            2026 TACITUS. All rights reserved. Built in New York.
           </p>
 
           {/* Security badges */}
           <div className="flex items-center gap-3">
             <span className="rounded-full border border-cream-300 bg-white px-3 py-1 text-[10px] font-medium text-navy-500">
-              SOC 2 Compliant
+              SOC 2 (Planned)
             </span>
             <span className="rounded-full border border-cream-300 bg-white px-3 py-1 text-[10px] font-medium text-navy-500">
               AES-256 Encrypted
             </span>
             <span className="rounded-full border border-cream-300 bg-white px-3 py-1 text-[10px] font-medium text-navy-500">
-              GDPR Ready
+              GDPR (In Progress)
             </span>
           </div>
         </div>

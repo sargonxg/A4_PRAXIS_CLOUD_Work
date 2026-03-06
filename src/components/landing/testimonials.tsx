@@ -34,7 +34,7 @@ export function Testimonials() {
           transition={{ duration: 0.7 }}
           className="mb-4 text-center"
         >
-          <span className="text-overline text-gold-700">Testimonials</span>
+          <span className="text-overline text-gold-700">Early Feedback</span>
         </motion.div>
 
         <motion.div
@@ -42,11 +42,26 @@ export function Testimonials() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7, delay: 0.1 }}
-          className="mb-16 text-center"
+          className="mb-4 text-center"
         >
           <h2 className="font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl">
-            Trusted by Practitioners in the Field
+            Initial Feedback from Practitioners
           </h2>
+        </motion.div>
+
+        {/* Disclaimer */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-12 text-center"
+        >
+          <p className="mx-auto max-w-xl text-xs text-navy-400 italic">
+            Quotes are from early-stage demo testers. Names and identifying details are
+            withheld for confidentiality. Feedback is illustrative and does not constitute
+            an endorsement by any institution or organisation.
+          </p>
         </motion.div>
 
         <div className="grid gap-6 md:grid-cols-3">

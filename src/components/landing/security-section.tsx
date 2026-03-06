@@ -35,8 +35,9 @@ const securityFeatures = [
   },
   {
     icon: Cloud,
-    title: "Google Cloud Platform",
-    description: "Enterprise-grade infrastructure with global availability and compliance.",
+    title: "GDPR Compliance",
+    description: "Data residency and privacy controls aligned with EU regulatory requirements.",
+    badge: "Planned",
   },
   {
     icon: Shield,
@@ -44,6 +45,8 @@ const securityFeatures = [
     description: "Sensitive analysis data is never stored beyond your session by default.",
   },
 ];
+
+const demoDisclaimer = "Security certifications (SOC 2, GDPR compliance) are planned features. PRAXIS is currently in demo mode and should not be used to process classified or highly sensitive information.";
 
 export function SecuritySection() {
   return (
@@ -111,20 +114,18 @@ export function SecuritySection() {
           })}
         </div>
 
-        {/* Quote */}
+        {/* Demo security disclaimer */}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="mt-16 text-center"
+          className="mt-12 rounded-xl border border-gold-600/20 bg-gold-600/5 px-6 py-4 text-center"
         >
-          <blockquote className="mx-auto max-w-2xl">
-            <p className="font-serif text-xl italic text-navy-700 leading-relaxed">
-              &ldquo;Enterprise-grade security for the world&apos;s most sensitive
-              analysis. On-cloud today. On-premises tomorrow.&rdquo;
-            </p>
-          </blockquote>
+          <p className="text-xs text-navy-500">
+            <span className="font-semibold text-gold-700">Demo Disclaimer:</span>{" "}
+            {demoDisclaimer}
+          </p>
         </motion.div>
       </div>
     </section>

@@ -1,49 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ChevronDown, Shield, Play } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-
-// --- Animated counter ---
-function AnimatedCounter({ end, suffix = "", duration = 2000 }: { end: number; suffix?: string; duration?: number }) {
-  const [count, setCount] = useState(0);
-  const [started, setStarted] = useState(false);
-  const ref = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !started) {
-          setStarted(true);
-        }
-      },
-      { threshold: 0.5 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [started]);
-
-  useEffect(() => {
-    if (!started) return;
-    const startTime = Date.now();
-    const timer = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.floor(eased * end));
-      if (progress >= 1) clearInterval(timer);
-    }, 16);
-    return () => clearInterval(timer);
-  }, [started, end, duration]);
-
-  return (
-    <span ref={ref} className="tabular-nums">
-      {count.toLocaleString()}{suffix}
-    </span>
-  );
-}
 
 // --- Word-by-word reveal ---
 
@@ -154,9 +114,9 @@ export function Hero() {
           transition={{ delay: 1.2, duration: 0.7 }}
           className="mb-12 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
         >
-          PRAXIS is the AI-native workspace where peace, security, and diplomatic
-          professionals turn raw conflict data into decisive intelligence — in
-          minutes, not weeks.
+          PRAXIS is the missing tool for peace and diplomacy professionals —
+          an AI-native workspace that turns raw conflict data into decisive
+          intelligence in minutes, not weeks.
         </motion.p>
 
         {/* CTAs */}
@@ -192,7 +152,7 @@ export function Hero() {
           className="mt-16"
         >
           <p className="mb-4 text-xs font-medium uppercase tracking-[0.12em] text-navy-400">
-            Trusted by professionals from
+            Initial feedback from professionals at
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
             {institutions.map((name) => (
@@ -206,33 +166,17 @@ export function Hero() {
           </div>
         </motion.div>
 
-        {/* Live counters */}
+        {/* Demo notice */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 2.2, duration: 0.7 }}
-          className="mt-10 flex flex-wrap items-center justify-center gap-8 sm:gap-12"
+          className="mt-10 inline-flex items-center gap-2 rounded-full border border-gold-600/20 bg-gold-600/5 px-5 py-2"
         >
-          <div className="text-center">
-            <div className="text-2xl font-semibold text-diplomatic-blue sm:text-3xl">
-              <AnimatedCounter end={847} />
-            </div>
-            <p className="mt-1 text-xs text-navy-400">Conflict situations monitored</p>
-          </div>
-          <div className="h-8 w-px bg-cream-300" />
-          <div className="text-center">
-            <div className="text-2xl font-semibold text-diplomatic-blue sm:text-3xl">
-              <AnimatedCounter end={12400} suffix="+" />
-            </div>
-            <p className="mt-1 text-xs text-navy-400">Diplomatic products generated</p>
-          </div>
-          <div className="hidden h-8 w-px bg-cream-300 sm:block" />
-          <div className="text-center">
-            <div className="text-2xl font-semibold text-diplomatic-blue sm:text-3xl">
-              <AnimatedCounter end={94} suffix="%" />
-            </div>
-            <p className="mt-1 text-xs text-navy-400">Time saved on reporting</p>
-          </div>
+          <span className="h-1.5 w-1.5 rounded-full bg-gold-500 animate-pulse" />
+          <span className="text-xs font-medium text-gold-700">
+            Early Demo — exploring how we can serve practitioners like you
+          </span>
         </motion.div>
       </div>
 
