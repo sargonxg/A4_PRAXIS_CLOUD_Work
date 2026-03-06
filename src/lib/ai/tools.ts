@@ -9,7 +9,7 @@ import { z } from 'zod';
 export const webSearch = tool({
   description:
     'Search the web for current news, reports, and information about a specific topic, conflict, or actor. Returns relevant search results with titles, snippets, and URLs.',
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().describe('The search query to execute'),
     region: z
       .string()
@@ -67,7 +67,7 @@ export const webSearch = tool({
 export const analyzeDocument = tool({
   description:
     'Analyze an uploaded document to extract key entities, claims, events, and relationships. Returns structured data conforming to the Conflict Grammar schema.',
-  parameters: z.object({
+  inputSchema: z.object({
     documentId: z.string().describe('The ID of the uploaded document to analyze'),
     extractionTargets: z
       .array(
@@ -118,7 +118,7 @@ export const analyzeDocument = tool({
 export const queryConflictGraph = tool({
   description:
     'Query the conflict knowledge graph to retrieve entities, relationships, and patterns. Supports filtering by entity type, actor, time range, and relationship type.',
-  parameters: z.object({
+  inputSchema: z.object({
     conflictId: z.string().describe('The ID of the conflict graph to query'),
     entityType: z
       .enum([
@@ -175,7 +175,7 @@ export const queryConflictGraph = tool({
 export const draftSection = tool({
   description:
     'Draft a section of a diplomatic report based on the specified template, section type, and available context from the conflict graph and research materials.',
-  parameters: z.object({
+  inputSchema: z.object({
     sectionId: z.string().describe('The ID of the section to draft'),
     sectionTitle: z.string().describe('The title/heading of the section'),
     templateType: z
@@ -238,7 +238,7 @@ export const draftSection = tool({
 export const editForDiplomaticTone = tool({
   description:
     'Review and edit text to ensure it conforms to diplomatic language standards, including UN terminology, balanced framing, and appropriate hedging. Highlights changes and provides explanations.',
-  parameters: z.object({
+  inputSchema: z.object({
     text: z.string().describe('The text to review and edit'),
     targetAudience: z
       .enum([
@@ -294,7 +294,7 @@ export const editForDiplomaticTone = tool({
 export const analyzeMediaSource = tool({
   description:
     'Analyze a media source for political positioning, reliability, editorial independence, and known biases. Uses the TACITUS media source database and supplementary research.',
-  parameters: z.object({
+  inputSchema: z.object({
     sourceName: z.string().describe('Name of the media source to analyze'),
     sourceUrl: z
       .string()
@@ -334,7 +334,7 @@ export const analyzeMediaSource = tool({
 export const compareMediaCoverage = tool({
   description:
     'Compare how multiple media sources cover the same topic or event. Identifies convergence and divergence points, framing differences, and notable omissions across sources.',
-  parameters: z.object({
+  inputSchema: z.object({
     topic: z.string().describe('The topic or event to compare coverage of'),
     sourceNames: z
       .array(z.string())
@@ -384,7 +384,7 @@ export const compareMediaCoverage = tool({
 export const checkUNTerminology = tool({
   description:
     'Check text against UN terminology standards and official usage guidelines. Identifies non-standard terms and suggests UN-approved alternatives. Flags potentially sensitive language.',
-  parameters: z.object({
+  inputSchema: z.object({
     text: z.string().describe('The text to check for UN terminology compliance'),
     context: z
       .enum([
@@ -453,7 +453,7 @@ export const checkUNTerminology = tool({
 export const draftResolutionLanguage = tool({
   description:
     'Draft text in the style and format of UN Security Council resolutions. Generates preambular and operative paragraphs using standard resolution language and formulations.',
-  parameters: z.object({
+  inputSchema: z.object({
     topic: z.string().describe('The topic or situation the resolution addresses'),
     type: z
       .enum(['preambular', 'operative', 'full'])
@@ -511,7 +511,7 @@ export const draftResolutionLanguage = tool({
 export const generateTalkingPoints = tool({
   description:
     'Generate structured talking points for diplomatic briefings, meetings, or press conferences. Includes main points, supporting evidence, anticipated questions, and suggested responses.',
-  parameters: z.object({
+  inputSchema: z.object({
     topic: z.string().describe('The topic for the talking points'),
     audience: z
       .enum([
