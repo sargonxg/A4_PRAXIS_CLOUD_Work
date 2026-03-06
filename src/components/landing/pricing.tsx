@@ -1,43 +1,52 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, ArrowRight } from "lucide-react";
+import { Check, ArrowRight, Mail } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 const tiers = [
   {
     name: "Analyst",
     description: "For individual practitioners and researchers",
+    price: "$70",
+    period: "/month",
+    note: "billed annually",
     features: [
       "Core intelligence tools",
       "5 reports per month",
       "1 AI advisor",
       "Calendar monitoring",
-      "Basic document vault (1GB)",
+      "Basic document vault (1 GB)",
       "Email support",
     ],
-    cta: "Request Access",
+    cta: "Join the Waiting List",
     highlighted: false,
   },
   {
     name: "Team",
     description: "For small missions, offices, and research teams",
+    price: "$290",
+    period: "/month",
+    note: "up to 5 seats, billed annually",
     features: [
       "Everything in Analyst",
       "Unlimited reports",
       "All 8 AI advisors",
-      "Collaboration & shared vault (25GB)",
+      "Collaboration & shared vault (25 GB)",
       "5 team seats included",
       "Custom report templates",
       "Stakeholder mapper",
       "Priority support",
     ],
-    cta: "Request Access",
+    cta: "Join the Waiting List",
     highlighted: true,
   },
   {
     name: "Enterprise",
     description: "For organizations and multi-mission deployments",
+    price: "Custom",
+    period: "",
+    note: "contact us for a quote",
     features: [
       "Everything in Team",
       "Unlimited seats",
@@ -49,7 +58,7 @@ const tiers = [
       "SLA guarantee",
       "Audit logging & compliance",
     ],
-    cta: "Contact Sales",
+    cta: "Contact Us",
     highlighted: false,
   },
 ];
@@ -73,7 +82,7 @@ export function Pricing() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7, delay: 0.1 }}
-          className="mb-16 text-center"
+          className="mb-6 text-center"
         >
           <h2 className="mb-4 font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl">
             Built for Teams of Every Size
@@ -82,6 +91,20 @@ export function Pricing() {
             From individual analysts to organization-wide deployments.
             All plans include our core security and encryption features.
           </p>
+        </motion.div>
+
+        {/* Demo notice */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-12 flex justify-center"
+        >
+          <div className="inline-flex items-center gap-2 rounded-full border border-gold-600/20 bg-gold-600/5 px-5 py-2 text-xs text-gold-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-gold-500 animate-pulse" />
+            PRAXIS is currently in demo mode — pricing is indicative and subject to change.
+          </div>
         </motion.div>
 
         <div className="grid gap-6 lg:grid-cols-3">
@@ -108,10 +131,13 @@ export function Pricing() {
               <h3 className="text-xl font-semibold text-navy-900">{tier.name}</h3>
               <p className="mt-2 text-sm text-navy-500">{tier.description}</p>
 
-              <div className="mt-6 mb-8">
-                <span className="text-3xl font-semibold text-navy-900">Custom</span>
-                <span className="ml-2 text-sm text-navy-400">contact for pricing</span>
+              <div className="mt-6 mb-1">
+                <span className="text-3xl font-semibold text-navy-900">{tier.price}</span>
+                {tier.period && (
+                  <span className="ml-1 text-sm text-navy-400">{tier.period}</span>
+                )}
               </div>
+              <p className="mb-8 text-xs text-navy-400">{tier.note}</p>
 
               <ul className="mb-8 space-y-3">
                 {tier.features.map((feature) => (
@@ -123,7 +149,7 @@ export function Pricing() {
               </ul>
 
               <a
-                href="#cta"
+                href="mailto:hello@tacitus.me"
                 className={cn(
                   "flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold transition-all duration-200",
                   tier.highlighted
@@ -137,6 +163,30 @@ export function Pricing() {
             </motion.div>
           ))}
         </div>
+
+        {/* Mailing list CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="mt-14 rounded-2xl border border-cream-300/60 bg-cream-50/80 p-8 text-center"
+        >
+          <Mail className="mx-auto mb-3 h-6 w-6 text-diplomatic-blue/50" />
+          <h3 className="mb-2 font-serif text-xl text-navy-900">
+            Get Notified When We&apos;re Ready for Free Trials
+          </h3>
+          <p className="mb-1 text-sm text-navy-500">
+            Send us an email to join our mailing list and be first in line.
+          </p>
+          <a
+            href="mailto:hello@tacitus.me?subject=PRAXIS%20Mailing%20List"
+            className="mt-4 inline-flex items-center gap-2 rounded-md bg-diplomatic-blue px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-diplomatic-blue/90"
+          >
+            <Mail className="h-4 w-4" />
+            hello@tacitus.me
+          </a>
+        </motion.div>
       </div>
     </section>
   );

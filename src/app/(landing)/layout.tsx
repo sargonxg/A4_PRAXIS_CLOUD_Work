@@ -37,6 +37,15 @@ export default function LandingLayout({
 
   return (
     <div className="landing-light paper-texture relative min-h-screen">
+      {/* DEMO mode banner */}
+      <div className="relative z-[60] bg-diplomatic-blue px-4 py-2 text-center text-xs text-white/90">
+        <span className="font-semibold tracking-wide uppercase text-gold-400">Demo</span>
+        {" "}— PRAXIS is in early demo mode. We are collecting initial feedback from practitioners.{" "}
+        <a href="mailto:hello@tacitus.me" className="underline underline-offset-2 hover:text-white transition-colors">
+          Write us at hello@tacitus.me
+        </a>
+      </div>
+
       {/* Scroll progress indicator */}
       <div
         className="scroll-progress"
