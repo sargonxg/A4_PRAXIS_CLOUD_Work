@@ -1,9 +1,46 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ChevronDown, Shield, Play } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+
+function IntelligenceCounter({ end }: { end: number }) {
+  const [count, setCount] = useState(0);
+  const [started, setStarted] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started) setStarted(true);
+      },
+      { threshold: 0.5 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [started]);
+
+  useEffect(() => {
+    if (!started) return;
+    const startTime = Date.now();
+    const timer = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / 1200, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(eased * end));
+      if (progress >= 1) clearInterval(timer);
+    }, 16);
+    return () => clearInterval(timer);
+  }, [started, end]);
+
+  return (
+    <span ref={ref} className="font-semibold tabular-nums text-diplomatic-blue">
+      {count}
+    </span>
+  );
+}
 
 // --- Word-by-word reveal ---
 
@@ -114,9 +151,8 @@ export function Hero() {
           transition={{ delay: 1.2, duration: 0.7 }}
           className="mb-12 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
         >
-          PRAXIS is the missing tool for peace and diplomacy professionals —
-          an AI-native workspace that turns raw conflict data into decisive
-          intelligence in minutes, not weeks.
+          The AI-native workspace for peace and security professionals. Turn raw
+          conflict data into decisive intelligence in minutes.
         </motion.p>
 
         {/* CTAs */}
@@ -142,6 +178,27 @@ export function Hero() {
             <Play className="h-4 w-4" />
             Watch 2-Min Overview
           </a>
+        </motion.div>
+
+        {/* Animated counter */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.9, duration: 0.6 }}
+          className="mt-8 flex items-center gap-3"
+        >
+          <div className="flex -space-x-1.5">
+            {["#4B92DB", "#C8961E", "#A63D40", "#5B8C5A"].map((color, i) => (
+              <div
+                key={i}
+                className="h-6 w-6 rounded-full border-2 border-white/80"
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </div>
+          <span className="text-sm text-navy-500">
+            <IntelligenceCounter end={47} /> intelligence products generated this week
+          </span>
         </motion.div>
 
         {/* Social proof strip */}

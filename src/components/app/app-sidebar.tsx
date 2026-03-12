@@ -23,6 +23,7 @@ import {
   Sparkles,
   GitCompare,
   BookOpen,
+  Scale,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -55,6 +56,7 @@ const navSections: NavSection[] = [
       { label: 'Report Studio', icon: FileText, href: '/reports' },
       { label: 'Talking Points', icon: MessageCircle, href: '/talking-points' },
       { label: 'Scenario Planner', icon: GitCompare, href: '/scenarios', badge: 'NEW' },
+      { label: 'Negotiation Prep', icon: Scale, href: '/negotiation-prep', badge: 'NEW' },
     ],
   },
   {

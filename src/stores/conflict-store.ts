@@ -11,6 +11,10 @@ export interface ConflictSummary {
   region: string;
   status: 'active' | 'frozen' | 'resolved' | 'emerging' | 'escalating';
   description: string;
+  riskScore: number; // 1-10
+  actorCount: number;
+  graphEntities: number;
+  events: { title: string; date: string }[];
 }
 
 export interface SavedScenario {
@@ -57,6 +61,7 @@ interface ConflictStore {
   conflicts: ConflictSummary[];
   addConflict: (conflict: ConflictSummary) => void;
   removeConflict: (id: string) => void;
+  updateConflict: (id: string, updates: Partial<ConflictSummary>) => void;
 
   // Active conflict
   activeConflictId: string;
@@ -85,6 +90,14 @@ interface ConflictStore {
   addAlert: (alert: ConflictAlert) => void;
   acknowledgeAlert: (id: string) => void;
   dismissAlert: (id: string) => void;
+
+  // Visited pages tracking
+  visitedPages: string[];
+  markPageVisited: (page: string) => void;
+
+  // Auto-brief setting
+  autoBriefEnabled: boolean;
+  setAutoBrief: (enabled: boolean) => void;
 }
 
 // ============================================================================
@@ -99,6 +112,52 @@ const SEED_CONFLICTS: ConflictSummary[] = [
     status: 'active',
     description:
       'A multi-party political crisis triggered by disputed general elections in June 2025, resulting in armed confrontation, international mediation, and an ongoing peace process.',
+    riskScore: 7.8,
+    actorCount: 12,
+    graphEntities: 47,
+    events: [
+      { title: 'DRM offensive resumed near Kessara', date: '2026-03-10' },
+      { title: 'ICRC access negotiations stalled', date: '2026-03-08' },
+      { title: 'Karovia resupply convoy detected at border', date: '2026-03-06' },
+      { title: 'UNMIN monitoring report published', date: '2026-03-04' },
+      { title: 'Emergency ceasefire consultations in Geneva', date: '2026-03-01' },
+    ],
+  },
+  {
+    id: 'sahel-corridor',
+    name: 'Sahel Corridor Instability',
+    region: 'West Africa / Sahel',
+    status: 'active',
+    description:
+      'Ongoing multi-state fragility across the Sahel corridor, with armed group proliferation, cross-border arms flows, and weakened state authority following successive coups.',
+    riskScore: 6.2,
+    actorCount: 18,
+    graphEntities: 63,
+    events: [
+      { title: 'New arms route identified via southern Sertania', date: '2026-03-09' },
+      { title: 'AU PSC emergency session convened', date: '2026-03-07' },
+      { title: 'ECOWAS mediation group meeting — Niger', date: '2026-03-05' },
+      { title: 'Cross-border incident near Mali-Burkina boundary', date: '2026-03-02' },
+      { title: 'Panel of Experts interim report submitted', date: '2026-02-27' },
+    ],
+  },
+  {
+    id: 'south-china-sea',
+    name: 'South China Sea Tensions',
+    region: 'Indo-Pacific',
+    status: 'active',
+    description:
+      'Escalating maritime territorial disputes in the South China Sea, with increased naval presence, incidents at contested features, and strained diplomatic channels.',
+    riskScore: 5.1,
+    actorCount: 7,
+    graphEntities: 34,
+    events: [
+      { title: 'Naval standoff at contested shoal', date: '2026-03-11' },
+      { title: 'ASEAN ministerial statement issued', date: '2026-03-08' },
+      { title: 'US Freedom of Navigation Operation conducted', date: '2026-03-05' },
+      { title: 'Philippines lodges diplomatic protest', date: '2026-03-02' },
+      { title: 'China coast guard intercepts supply vessel', date: '2026-02-28' },
+    ],
   },
 ];
 
@@ -158,6 +217,12 @@ export const useConflictStore = create<ConflictStore>()(
         set((state) => ({
           conflicts: state.conflicts.filter((c) => c.id !== id),
         })),
+      updateConflict: (id, updates) =>
+        set((state) => ({
+          conflicts: state.conflicts.map((c) =>
+            c.id === id ? { ...c, ...updates } : c
+          ),
+        })),
 
       // Active conflict — default to Nordalia
       activeConflictId: 'nordalia-crisis',
@@ -209,10 +274,23 @@ export const useConflictStore = create<ConflictStore>()(
         })),
       dismissAlert: (id) =>
         set((state) => ({ alerts: state.alerts.filter((a) => a.id !== id) })),
+
+      // Visited pages
+      visitedPages: [],
+      markPageVisited: (page) =>
+        set((state) => ({
+          visitedPages: state.visitedPages.includes(page)
+            ? state.visitedPages
+            : [...state.visitedPages, page],
+        })),
+
+      // Auto-brief
+      autoBriefEnabled: false,
+      setAutoBrief: (enabled) => set({ autoBriefEnabled: enabled }),
     }),
     {
       name: 'praxis-conflict-store',
-      version: 1,
+      version: 2,
     }
   )
 );
