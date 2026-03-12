@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { MessageCircle, Sparkles, Copy, FileText, Users, Shield, Check, Download, RefreshCw, AlertTriangle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
+import { parseDataStreamChunk } from '@/lib/utils/stream';
 
 const toneOptions = [
   { id: 'council', label: 'For Security Council', icon: Shield, description: 'Formal, measured, mandate-focused' },
@@ -26,14 +27,6 @@ const TONE_LABELS: Record<string, string> = {
   bilateral: 'Bilateral Meeting',
   internal: 'Internal Strategy',
 };
-
-function parseDataStreamChunk(raw: string): string {
-  return raw
-    .split('\n')
-    .filter((l) => l.startsWith('0:'))
-    .map((l) => { try { return JSON.parse(l.slice(2)); } catch { return ''; } })
-    .join('');
-}
 
 export default function TalkingPointsPage() {
   const [selectedTone, setSelectedTone] = useState('council');

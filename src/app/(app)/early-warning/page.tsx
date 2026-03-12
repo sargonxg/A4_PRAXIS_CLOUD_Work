@@ -6,14 +6,7 @@ import { cn } from '@/lib/utils/cn';
 import { monitoredSituations } from '@/lib/constants/early-warning-data';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import Link from 'next/link';
-
-function parseDataStreamChunk(raw: string): string {
-  return raw
-    .split('\n')
-    .filter((l) => l.startsWith('0:'))
-    .map((l) => { try { return JSON.parse(l.slice(2)); } catch { return ''; } })
-    .join('');
-}
+import { parseDataStreamChunk } from '@/lib/utils/stream';
 
 const trendConfig = {
   escalating: { label: 'Escalating', icon: TrendingUp, color: 'text-crimson', bg: 'bg-crimson/8' },

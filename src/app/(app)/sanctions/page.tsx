@@ -5,14 +5,7 @@ import { Shield, Search, ChevronRight, Sparkles, BookOpen, Link2, Loader2, Refre
 import { cn } from '@/lib/utils/cn';
 import Link from 'next/link';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
-
-function parseDataStreamChunk(raw: string): string {
-  return raw
-    .split('\n')
-    .filter((l) => l.startsWith('0:'))
-    .map((l) => { try { return JSON.parse(l.slice(2)); } catch { return ''; } })
-    .join('');
-}
+import { parseDataStreamChunk } from '@/lib/utils/stream';
 
 interface Resolution {
   id: string;
