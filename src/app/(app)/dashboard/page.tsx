@@ -33,10 +33,7 @@ import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Badge } from '@/components/ui/badge';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
-
-function parseDataStreamChunk(raw: string): string {
-  return raw.split('\n').filter((l) => l.startsWith('0:')).map((l) => { try { return JSON.parse(l.slice(2)); } catch { return ''; } }).join('');
-}
+import { parseDataStreamChunk } from '@/lib/utils/stream';
 
 function getGreeting(): string {
   const hour = new Date().getHours();

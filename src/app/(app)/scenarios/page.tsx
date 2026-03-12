@@ -5,14 +5,7 @@ import { GitCompare, Play, Save, Loader2, Sparkles, X, ChevronDown, Plus, Trash2
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { DEMO_CASES } from '@/lib/constants/demo-cases';
-
-function parseDataStreamChunk(raw: string): string {
-  return raw
-    .split('\n')
-    .filter((l) => l.startsWith('0:'))
-    .map((l) => { try { return JSON.parse(l.slice(2)); } catch { return ''; } })
-    .join('');
-}
+import { parseDataStreamChunk } from '@/lib/utils/stream';
 
 const TIME_HORIZONS = ['30 days', '90 days', '6 months', '1 year'];
 

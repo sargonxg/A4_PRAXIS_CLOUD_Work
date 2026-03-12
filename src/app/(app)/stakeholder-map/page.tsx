@@ -5,14 +5,7 @@ import { Users, FileUp, Sparkles, Loader2, RefreshCw, Network, Grid3X3 } from 'l
 import { cn } from '@/lib/utils/cn';
 import Link from 'next/link';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
-
-function parseDataStreamChunk(raw: string): string {
-  return raw
-    .split('\n')
-    .filter((l) => l.startsWith('0:'))
-    .map((l) => { try { return JSON.parse(l.slice(2)); } catch { return ''; } })
-    .join('');
-}
+import { parseDataStreamChunk } from '@/lib/utils/stream';
 
 // Interest score (0-10) for the Influence/Interest Matrix
 const actorInterest: Record<string, number> = {

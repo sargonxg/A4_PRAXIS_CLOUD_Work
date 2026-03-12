@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
+import { format, formatDistanceToNow, isToday, isYesterday, isThisWeek as dateFnsIsThisWeek } from 'date-fns';
 
 /**
  * Format date in diplomatic style: "2 March 2026"
@@ -68,3 +68,28 @@ export function formatFileSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
+
+/**
+ * Format a date range: "1–15 March 2026" or "28 February – 5 March 2026"
+ */
+export function formatDateRange(start: Date | string, end: Date | string): string {
+  const s = typeof start === 'string' ? new Date(start) : start;
+  const e = typeof end === 'string' ? new Date(end) : end;
+  if (format(s, 'MMMM yyyy') === format(e, 'MMMM yyyy')) {
+    return `${format(s, 'd')}–${format(e, 'd MMMM yyyy')}`;
+  }
+  return `${format(s, 'd MMMM')} – ${format(e, 'd MMMM yyyy')}`;
+}
+
+/**
+ * Returns true if the date falls within the current week (Mon–Sun)
+ */
+export function isThisWeek(date: Date | string): boolean {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return dateFnsIsThisWeek(d, { weekStartsOn: 1 });
+}
+
+/**
+ * Returns true if the date is today
+ */
+export { isToday };

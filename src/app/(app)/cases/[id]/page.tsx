@@ -8,14 +8,7 @@ import { cn } from '@/lib/utils/cn';
 import { DEMO_CASES, getCaseById } from '@/lib/constants/demo-cases';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { notFound } from 'next/navigation';
-
-function parseDataStreamChunk(raw: string): string {
-  return raw
-    .split('\n')
-    .filter((l) => l.startsWith('0:'))
-    .map((l) => { try { return JSON.parse(l.slice(2)); } catch { return ''; } })
-    .join('');
-}
+import { parseDataStreamChunk } from '@/lib/utils/stream';
 
 export default function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);

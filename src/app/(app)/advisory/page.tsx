@@ -7,14 +7,7 @@ import { cn } from '@/lib/utils/cn';
 import { useChat } from '@ai-sdk/react';
 import { advisors, type Advisor } from '@/lib/constants/advisors';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
-
-function parseDataStreamChunk(raw: string): string {
-  return raw
-    .split('\n')
-    .filter((l) => l.startsWith('0:'))
-    .map((l) => { try { return JSON.parse(l.slice(2)); } catch { return ''; } })
-    .join('');
-}
+import { parseDataStreamChunk } from '@/lib/utils/stream';
 
 function AdvisorAvatar({ advisor, size = 'md' }: { advisor: Advisor; size?: 'sm' | 'md' | 'lg' }) {
   const initials = advisor.name.split(' ').map((n) => n[0]).join('').slice(0, 2);
