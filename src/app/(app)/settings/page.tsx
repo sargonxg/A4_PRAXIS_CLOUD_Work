@@ -12,9 +12,13 @@ import {
   Lock,
   PlayCircle,
   RotateCcw,
+  Cpu,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils/cn';
 
 /* ---------------------------------------------------------------------------
  * Section wrapper
@@ -178,6 +182,57 @@ export default function SettingsPage() {
             <RotateCcw className="h-3.5 w-3.5" />
             Restart Tour
           </button>
+        </div>
+      </SettingsSection>
+
+      {/* ── AI Provider ───────────────────────────────────────────── */}
+      <SettingsSection
+        icon={Cpu}
+        title="AI Provider"
+        description="Active language model configuration"
+      >
+        <div className="space-y-3">
+          <div className="flex items-start justify-between rounded-md border border-navy-700/50 bg-navy-900/50 px-4 py-3">
+            <div className="flex items-start gap-3">
+              <Cpu className="mt-0.5 h-4 w-4 shrink-0 text-gold-400" />
+              <div>
+                <p className="text-sm font-medium text-navy-100">
+                  Google AI Studio
+                </p>
+                <p className="mt-0.5 text-xs text-navy-400">
+                  Gemini 2.5 Flash · Tool Analysis + Live Research (Search Grounding)
+                </p>
+              </div>
+            </div>
+            <div className={cn(
+              'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium',
+              process.env.NEXT_PUBLIC_AI_CONFIGURED === 'true'
+                ? 'bg-teal/15 text-teal'
+                : 'bg-gold-500/15 text-gold-400'
+            )}>
+              <CheckCircle2 className="h-3 w-3" />
+              Active
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 rounded-md border border-dashed border-navy-700/50 bg-navy-900/20 px-4 py-3">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-navy-500" />
+            <div>
+              <p className="text-sm font-medium text-navy-400">
+                Google Vertex AI
+              </p>
+              <p className="mt-0.5 text-xs text-navy-500">
+                Enterprise provider — set <code className="rounded bg-navy-700 px-1 py-0.5 font-mono text-[10px]">AI_PROVIDER=vertex</code> and{' '}
+                <code className="rounded bg-navy-700 px-1 py-0.5 font-mono text-[10px]">GOOGLE_VERTEX_PROJECT</code> to activate.
+              </p>
+            </div>
+          </div>
+
+          <p className="text-xs text-navy-500">
+            AI provider configuration is managed via environment variables. See{' '}
+            <code className="rounded bg-navy-700 px-1 py-0.5 font-mono text-[10px]">.env.example</code>{' '}
+            for setup instructions.
+          </p>
         </div>
       </SettingsSection>
 

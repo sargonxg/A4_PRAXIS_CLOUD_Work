@@ -318,7 +318,7 @@ export function ChatInterface() {
                     : 'AI-powered diplomatic intelligence with structured tool access. Query the conflict graph, draft reports, analyze media, assess escalation, and map negotiation space.'}
                 </p>
               </div>
-              <SuggestedPrompts onSelect={handlePromptSelect} />
+              <SuggestedPrompts onSelect={handlePromptSelect} mode={useGroundedMode ? "research" : "analysis"} />
             </motion.div>
           )}
 
