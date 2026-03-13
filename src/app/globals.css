@@ -144,6 +144,7 @@ body {
 .landing-light {
   background-color: var(--color-cream-100);
   color: var(--color-navy-950);
+  color-scheme: light;
 }
 
 /* Subtle paper texture overlay */
