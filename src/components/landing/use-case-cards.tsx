@@ -33,10 +33,10 @@ const useCases = [
   },
   {
     icon: Shield,
-    role: "Security Council Analyst",
-    tagline: "Brief the Council with AI-sourced intelligence",
+    role: "Multilateral Analyst",
+    tagline: "Synthesize intelligence across sources in minutes",
     description:
-      "Rapidly synthesize cross-source intelligence into Council-ready briefings with risk scoring, escalation indicators, and recommended actions.",
+      "Rapidly synthesize cross-source intelligence into concise briefings with risk scoring, escalation indicators, and recommended actions — ready for senior decision-makers.",
     color: "text-crimson",
     bgColor: "bg-crimson/5",
     borderHover: "hover:border-crimson/30",

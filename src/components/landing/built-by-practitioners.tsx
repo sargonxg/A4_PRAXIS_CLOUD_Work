@@ -2,12 +2,6 @@
 
 import { motion } from "framer-motion";
 
-const institutions = [
-  { name: "Columbia SIPA", abbr: "SIPA" },
-  { name: "Sciences Po", abbr: "Sciences Po" },
-  { name: "United Nations", abbr: "United Nations" },
-];
-
 export function BuiltByPractitioners() {
   return (
     <section id="built-by-practitioners" className="relative overflow-hidden px-6 py-24 lg:py-32">
@@ -23,7 +17,7 @@ export function BuiltByPractitioners() {
           transition={{ duration: 0.7 }}
           className="mb-6"
         >
-          <span className="text-overline text-gold-700">Provenance</span>
+          <span className="text-overline text-gold-700">Our Team</span>
         </motion.div>
 
         {/* Large serif headline */}
@@ -55,10 +49,10 @@ export function BuiltByPractitioners() {
           </span>
 
           <p className="relative z-10 text-base leading-relaxed text-navy-700 sm:text-lg">
-            Created by a former UN Political Affairs Officer with 8 years on the Syria
-            desk and 600+ intelligence products authored. PRAXIS isn&apos;t built by
-            engineers guessing what analysts need — it&apos;s built by an analyst who
-            lived the workflow.
+            PRAXIS is built by people who have spent careers at the intersection
+            of multilateral diplomacy, bilateral negotiations, and field-level
+            peacemaking — practitioners who have lived the workflows this platform
+            is designed to support.
           </p>
 
           {/* Closing quote */}
@@ -70,42 +64,18 @@ export function BuiltByPractitioners() {
           </span>
         </motion.div>
 
-        {/* Institution logos (text-only) */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.35 }}
-        >
-          <p className="mb-5 text-xs font-semibold uppercase tracking-[0.15em] text-navy-400">
-            Academic & Professional Background
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-0">
-            {institutions.map((inst, i) => (
-              <span key={inst.name} className="flex items-center">
-                <span className="text-sm font-semibold uppercase tracking-widest text-navy-400/70 transition-colors duration-200 hover:text-navy-600">
-                  {inst.name}
-                </span>
-                {i < institutions.length - 1 && (
-                  <span className="mx-4 text-navy-300">|</span>
-                )}
-              </span>
-            ))}
-          </div>
-        </motion.div>
-
         {/* Credential dots */}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.5 }}
+          transition={{ duration: 0.6, delay: 0.35 }}
           className="mt-10 flex flex-wrap items-center justify-center gap-3"
         >
           {[
-            "8 Years UN Syria Desk",
-            "600+ Intelligence Products",
-            "Multilateral Negotiation",
+            "Multilateral Diplomacy",
+            "Bilateral Negotiations",
+            "Peace & Security",
             "Field Experience",
           ].map((badge) => (
             <span
