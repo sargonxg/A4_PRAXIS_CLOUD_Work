@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { BookOpen, Search, GitCompare, AlertTriangle, Pause, CheckCircle, TrendingUp, Filter, X } from 'lucide-react';
+import Link from 'next/link';
+import { BookOpen, Search, GitCompare, AlertTriangle, Pause, CheckCircle, TrendingUp, Filter, X, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 interface CaseData {
@@ -23,7 +24,7 @@ interface CaseData {
 
 const CASES: CaseData[] = [
   {
-    id: 'nordalia-crisis',
+    id: 'nordalia',
     name: 'Nordalia Crisis',
     region: 'East Africa',
     status: 'active',
@@ -32,7 +33,7 @@ const CASES: CaseData[] = [
     eventCount: 47,
     themes: ['Electoral Violence', 'Armed Conflict', 'Peace Process', 'Sanctions', 'Humanitarian Crisis'],
     institutions: ['UNSC', 'AU', 'EU', 'UNMN', 'ICC'],
-    startYear: 2025,
+    startYear: 2021,
     description: 'Multi-party political crisis triggered by disputed elections. Government forces and Democratic Reform Movement (DRM) engaged in armed conflict over eastern provincial autonomy and resource control. UN peacekeeping mission (UNMN) deployed November 2025.',
     primaryConflictType: 'Internal armed conflict with regional proxy dimensions',
   },
@@ -211,6 +212,13 @@ function CaseCard({ caseData, compareIds, onToggleCompare }: {
 
       {/* Actions */}
       <div className="flex gap-2 border-t border-[var(--color-app-border-light)] p-4">
+        <Link
+          href={`/cases/${caseData.id}`}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[var(--color-app-border)] px-3 py-2 text-xs font-medium text-navy-600 hover:border-diplomatic-blue/30 hover:text-diplomatic-blue transition-colors"
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+          View Case
+        </Link>
         <button
           onClick={() => onToggleCompare(caseData.id)}
           className={cn(
@@ -221,7 +229,7 @@ function CaseCard({ caseData, compareIds, onToggleCompare }: {
           )}
         >
           <GitCompare className="h-3.5 w-3.5" />
-          {isSelected ? 'Selected' : 'Add to Compare'}
+          {isSelected ? 'Selected' : 'Compare'}
         </button>
       </div>
     </div>
