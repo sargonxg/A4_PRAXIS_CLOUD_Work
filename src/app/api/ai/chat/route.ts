@@ -18,11 +18,20 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { messages } = await request.json();
+    const { messages, conflictContext } = await request.json();
+
+    // Append conflict context to system prompt when the user has selected a conflict
+    const systemPrompt = conflictContext
+      ? `${DIPLOMATIC_SYSTEM_PROMPT}
+
+## Active Conflict Context
+The user is currently analyzing: **${conflictContext}**
+When responding to questions about this conflict, proactively use the queryConflictGraph tool to retrieve real structured data before answering.`
+      : DIPLOMATIC_SYSTEM_PROMPT;
 
     const result = streamText({
       model: google('gemini-2.5-flash'),
-      system: DIPLOMATIC_SYSTEM_PROMPT,
+      system: systemPrompt,
       messages,
       tools: tacitusTools,
       stopWhen: stepCountIs(5),
