@@ -6,14 +6,19 @@ import {
   Search,
   BarChart3,
   BookCheck,
+  Globe,
+  AlertTriangle,
+  Newspaper,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface SuggestedPromptsProps {
   onSelect: (prompt: string) => void;
+  mode?: "analysis" | "research";
 }
 
-const PROMPTS = [
+const ANALYSIS_PROMPTS = [
   {
     icon: FileText,
     label: "Draft a briefing note",
@@ -22,38 +27,69 @@ const PROMPTS = [
     bgColor: "bg-gold-500/10",
   },
   {
-    icon: Search,
-    label: "Analyze a conflict",
-    prompt: "Analyze the Nordalia conflict situation and identify key escalation risks",
+    icon: BarChart3,
+    label: "Assess escalation risk",
+    prompt: "Analyze the Nordalia conflict's current escalation stage using the Glasl model and identify the top three de-escalation opportunities",
     color: "text-teal",
     bgColor: "bg-teal/10",
   },
   {
-    icon: BarChart3,
-    label: "Research developments",
-    prompt:
-      "Research latest developments in the Nordalia conflict zone and summarize key findings",
+    icon: AlertTriangle,
+    label: "Map negotiation space",
+    prompt: "Map the ZOPA and BATNA for the Belara Mining Complex revenue dispute between the Government of Nordalia and the DRM",
     color: "text-sage",
     bgColor: "bg-sage/10",
   },
   {
     icon: BookCheck,
     label: "Check terminology",
-    prompt:
-      "Check diplomatic terminology in my draft and suggest improvements for formal UN communications",
+    prompt: "Check diplomatic terminology in my draft and suggest improvements for formal UN communications",
     color: "text-purple",
     bgColor: "bg-purple/10",
   },
 ];
 
-export function SuggestedPrompts({ onSelect }: SuggestedPromptsProps) {
+const RESEARCH_PROMPTS = [
+  {
+    icon: Globe,
+    label: "Latest developments",
+    prompt: "What are the latest developments in the Nordalia situation? Summarize recent events and their implications for the peace process.",
+    color: "text-gold-400",
+    bgColor: "bg-gold-500/10",
+  },
+  {
+    icon: Newspaper,
+    label: "Media coverage analysis",
+    prompt: "How are international media outlets covering the Nordalia conflict? Compare framing across different regions and identify significant divergences.",
+    color: "text-teal",
+    bgColor: "bg-teal/10",
+  },
+  {
+    icon: Search,
+    label: "UNSC discussions",
+    prompt: "Find recent UN Security Council discussions on Nordalia and summarize the key positions of permanent members.",
+    color: "text-sage",
+    bgColor: "bg-sage/10",
+  },
+  {
+    icon: TrendingUp,
+    label: "Humanitarian situation",
+    prompt: "What is the current humanitarian situation in the Eastern Provinces? Find the latest figures on displacement, aid access, and civilian protection.",
+    color: "text-purple",
+    bgColor: "bg-purple/10",
+  },
+];
+
+export function SuggestedPrompts({ onSelect, mode = "analysis" }: SuggestedPromptsProps) {
+  const prompts = mode === "research" ? RESEARCH_PROMPTS : ANALYSIS_PROMPTS;
+
   return (
     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-      {PROMPTS.map((item, i) => {
+      {prompts.map((item, i) => {
         const Icon = item.icon;
         return (
           <motion.button
-            key={i}
+            key={`${mode}-${i}`}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 + i * 0.08, duration: 0.3 }}
