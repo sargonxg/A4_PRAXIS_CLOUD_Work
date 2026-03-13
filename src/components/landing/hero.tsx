@@ -119,7 +119,7 @@ export function Hero() {
         >
           <Shield className="h-3.5 w-3.5 text-gold-600" />
           <span className="text-xs font-medium tracking-wide text-navy-700">
-            Built by former UN political officers who authored 600+ intelligence products
+            Built by practitioners with careers in multilateral and bilateral diplomacy
           </span>
         </motion.div>
 
