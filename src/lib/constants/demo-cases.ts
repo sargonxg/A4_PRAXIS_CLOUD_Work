@@ -96,6 +96,39 @@ export const DEMO_CASES: DemoCase[] = [
     primaryConflictType: 'Frozen territorial division',
     summaryPrompt: 'Analyze the Cyprus reunification impasse including UN good offices process, bi-communal tensions, Turkish Cypriot positions, and Eastern Mediterranean hydrocarbon disputes.',
   },
+  {
+    id: 'kolari-borders',
+    name: 'Kolari-Barantum Border Dispute',
+    region: 'Central Africa',
+    status: 'frozen',
+    startYear: 2018,
+    description:
+      'Frozen territorial conflict over mineral-rich border region between Kolari and Barantum. ICJ proceedings ongoing since 2022. Low-level incidents continue despite formal ceasefire established under AU mediation.',
+    riskLevel: 'low',
+    actorCount: 4,
+    eventCount: 12,
+    keyThemes: ['Border Dispute', 'Natural Resources', 'Frozen Conflict', 'ICJ Proceedings', 'AU Mediation'],
+    institutions: ['AU', 'ICJ'],
+    primaryConflictType: 'Interstate border and resource dispute',
+    summaryPrompt: 'Analyze the Kolari-Barantum border dispute including the origins of the territorial conflict, mineral resource dimensions, AU mediation efforts, ICJ proceedings, and current ceasefire status.',
+  },
+  {
+    id: 'meldova-1991',
+    name: 'Meldova Civil War (Historical)',
+    region: 'Eastern Europe',
+    status: 'resolved',
+    startYear: 1992,
+    endYear: 1997,
+    description:
+      'Historical case study: civil war resolved through comprehensive peace agreement brokered by OSCE. Post-conflict reconstruction involved EU stabilization funds and UN transitional justice mechanisms. Widely studied as a successful negotiated settlement.',
+    riskLevel: 'low',
+    actorCount: 5,
+    eventCount: 89,
+    keyThemes: ['Civil War', 'Peace Agreement', 'Post-Conflict Reconstruction', 'OSCE Mediation', 'Transitional Justice'],
+    institutions: ['OSCE', 'UN', 'EU'],
+    primaryConflictType: 'Internal armed conflict — resolved',
+    summaryPrompt: 'Analyze the Meldova Civil War (1992–1997) as a historical case study in negotiated peace: the conflict origins, warring factions, OSCE mediation process, final peace agreement, and post-conflict reconstruction outcomes.',
+  },
 ];
 
 export function getCaseById(id: string): DemoCase | undefined {

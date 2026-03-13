@@ -28,7 +28,7 @@ interface CaseData {
 
 const CASES: CaseData[] = [
   {
-    id: 'nordalia-crisis',
+    id: 'nordalia',
     name: 'Nordalia Crisis',
     region: 'East Africa',
     status: 'active',
