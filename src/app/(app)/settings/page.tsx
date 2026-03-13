@@ -10,6 +10,8 @@ import {
   Mail,
   Briefcase,
   Lock,
+  PlayCircle,
+  RotateCcw,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Badge } from '@/components/ui/badge';
@@ -152,6 +154,31 @@ export default function SettingsPage() {
         <p className="mt-3 text-xs text-navy-500">
           Additional themes will be available in a future release.
         </p>
+      </SettingsSection>
+
+      {/* ── Demo Tour ─────────────────────────────────────────────── */}
+      <SettingsSection
+        icon={PlayCircle}
+        title="Guided Tour"
+        description="Restart the onboarding walkthrough"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-navy-200">Take a 2-minute tour of PRAXIS features.</p>
+            <p className="text-xs text-navy-500 mt-1">Resets the welcome modal and walkthrough.</p>
+          </div>
+          <button
+            onClick={() => {
+              localStorage.removeItem('praxis-tour-seen');
+              localStorage.removeItem('praxis-visited-pages');
+              window.location.href = '/dashboard';
+            }}
+            className="flex items-center gap-2 rounded-md border border-navy-600 bg-navy-700/50 px-4 py-2 text-sm font-medium text-navy-100 transition-colors hover:bg-navy-700 hover:text-white"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Restart Tour
+          </button>
+        </div>
       </SettingsSection>
 
       {/* ── API Keys ──────────────────────────────────────────────── */}

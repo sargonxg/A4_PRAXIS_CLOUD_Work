@@ -6,6 +6,8 @@ import { useAppStore } from '@/stores/app-store';
 import { AppSidebar } from '@/components/app/app-sidebar';
 import { Header } from '@/components/app/header';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { DemoModeBanner } from '@/components/onboarding/demo-mode-banner';
+import { OnboardingWrapper } from '@/components/onboarding/onboarding-wrapper';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -20,6 +22,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="app-light flex h-screen overflow-hidden bg-[var(--color-app-bg)]">
         <AppSidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
+          <DemoModeBanner />
           <Header />
           <main className="flex-1 overflow-y-auto">
             <div className="mx-auto max-w-7xl px-6 py-6">
@@ -28,6 +31,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </main>
         </div>
       </div>
+      {/* Onboarding: welcome modal + guided walkthrough */}
+      <OnboardingWrapper />
     </TooltipProvider>
   );
 }
