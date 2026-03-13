@@ -1,10 +1,6 @@
-import { streamText } from 'ai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { streamText, stepCountIs } from 'ai';
+import { google } from '@ai-sdk/google';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
-
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY || '',
-});
 
 export const maxDuration = 60;
 
@@ -19,14 +15,15 @@ export async function POST(request: Request) {
   try {
     const { messages, conflictContext } = await request.json();
 
-    // Google Search grounding via providerOptions (correct API for @ai-sdk/google v3.x).
-    // NOTE: useSearchGrounding conflicts with custom tools (SDK issue #8258), so this
-    // route is separate from /api/ai/chat which uses the custom tacitusTools registry.
+    // Google Search grounding via google.tools.googleSearch (correct API for @ai-sdk/google v3.x).
+    // NOTE: useSearchGrounding via a 2nd model arg was removed in v3.x.
+    // NOTE: Cannot combine with custom tacitusTools (SDK issue #8258) — separate route.
     const result = streamText({
       model: google('gemini-2.5-flash'),
-      providerOptions: {
-        google: { useSearchGrounding: true },
+      tools: {
+        google_search: google.tools.googleSearch({}),
       },
+      stopWhen: stepCountIs(5),
       system: `${DIPLOMATIC_SYSTEM_PROMPT}
 
 ## Live Research Mode

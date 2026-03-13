@@ -84,9 +84,9 @@ export function getModel(modelId: string = DEFAULT_MODEL): LanguageModel {
 
 /**
  * Returns the base model to use for grounded search requests.
- * Search grounding must be enabled via providerOptions in the streamText/generateText call:
- *   providerOptions: { google: { useSearchGrounding: true } }
- * @ai-sdk/google v3.x does not support passing options as a second model argument.
+ * Search grounding in @ai-sdk/google v3.x is enabled via the tools option in streamText:
+ *   tools: { google_search: google.tools.googleSearch({}) }
+ * where `google` is the default export from '@ai-sdk/google'.
  */
 export function getGroundedModel(modelId: string = DEFAULT_MODEL): LanguageModel {
   const googleProvider = createGoogleProvider();

@@ -1,9 +1,5 @@
-import { streamText } from 'ai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY || '',
-});
+import { streamText, stepCountIs } from 'ai';
+import { google } from '@ai-sdk/google';
 
 export const maxDuration = 60;
 
@@ -18,13 +14,14 @@ export async function POST(request: Request) {
   try {
     const { query, conflictContext } = await request.json();
 
-    // Use Google Search grounding via providerOptions (correct API for @ai-sdk/google v3.x).
-    // This route is dedicated to structured research queries from the Research panel.
+    // Google Search grounding via google.tools.googleSearch (correct API for @ai-sdk/google v3.x).
+    // This route handles structured research queries from the Research panel.
     const result = streamText({
       model: google('gemini-2.5-flash'),
-      providerOptions: {
-        google: { useSearchGrounding: true },
+      tools: {
+        google_search: google.tools.googleSearch({}),
       },
+      stopWhen: stepCountIs(5),
       system: `You are PRAXIS Research Engine, a conflict intelligence research assistant with access to Google Search for real-time information.
 
 When researching a query:
