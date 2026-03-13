@@ -15,6 +15,8 @@ import {
   Download,
   X,
   ChevronDown,
+  Globe,
+  Cpu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
@@ -51,8 +53,14 @@ const QUICK_ACTIONS = [
 
 function getToolDisplayType(toolName: string): "web-search" | "draft" | "graph-query" | "terminology-check" {
   if (toolName === "webSearch") return "web-search";
-  if (toolName === "draftSection" || toolName === "editForDiplomaticTone") return "draft";
-  if (toolName === "queryConflictGraph" || toolName === "analyzeDocument") return "graph-query";
+  if (toolName === "draftSection" || toolName === "editForDiplomaticTone" || toolName === "draftResolutionLanguage") return "draft";
+  if (
+    toolName === "queryConflictGraph" ||
+    toolName === "analyzeDocument" ||
+    toolName === "escalationAssessment" ||
+    toolName === "negotiationSpaceAnalysis" ||
+    toolName === "narrativeEcosystemMap"
+  ) return "graph-query";
   if (toolName === "checkUNTerminology") return "terminology-check";
   return "graph-query";
 }
@@ -70,15 +78,36 @@ export function ChatInterface() {
   const [conflictContext, setConflictContext] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [showContextDropdown, setShowContextDropdown] = useState(false);
+  // Toggle between tool-based chat and Google Search-grounded research
+  const [useGroundedMode, setUseGroundedMode] = useState(false);
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error, setInput, reload } = useChat({
+  const conflictLabel = CONFLICT_CONTEXTS.find((c) => c.id === conflictContext)?.label ?? '';
+
+  // Standard tool-based chat (custom tools, no Google Search grounding)
+  const toolChat = useChat({
     api: "/api/ai/chat",
+    body: { conflictContext: conflictLabel || undefined },
     onFinish: () => {
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 50);
     },
   });
+
+  // Google Search-grounded chat (real-time web search, no custom tools)
+  const groundedChat = useChat({
+    api: "/api/ai/grounded-search",
+    body: { conflictContext: conflictLabel || undefined },
+    onFinish: () => {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 50);
+    },
+  });
+
+  // Active chat instance based on mode toggle
+  const activeChat = useGroundedMode ? groundedChat : toolChat;
+  const { messages, input, handleInputChange, handleSubmit, isLoading, error, setInput, reload } = activeChat;
 
   const handleFileUpload = useCallback(async (file: File) => {
     setIsUploading(true);
@@ -95,8 +124,7 @@ export function ChatInterface() {
 
   const exportConversation = useCallback(() => {
     if (messages.length === 0) return;
-    const conflictLabel = CONFLICT_CONTEXTS.find((c) => c.id === conflictContext)?.label ?? '';
-    const header = `# TACITUS Diplomatic Assistant — Conversation Export\n\n${conflictLabel ? `**Context:** ${conflictLabel}\n\n` : ''}---\n\n`;
+    const header = `# TACITUS Diplomatic Assistant — Conversation Export\n\n${conflictLabel ? `**Context:** ${conflictLabel}\n` : ''}**Mode:** ${useGroundedMode ? 'Live Research (Google Search)' : 'Tool-based Analysis'}\n\n---\n\n`;
     const body = messages
       .filter((m) => m.content)
       .map((m) => `### ${m.role === 'user' ? 'You' : 'TACITUS'}\n\n${m.content}`)
@@ -108,7 +136,7 @@ export function ChatInterface() {
     a.download = `tacitus-${Date.now()}.md`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [messages, conflictContext]);
+  }, [messages, conflictLabel, useGroundedMode]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -146,8 +174,7 @@ export function ChatInterface() {
       // Build context prefix
       const parts: string[] = [];
       if (conflictContext) {
-        const label = CONFLICT_CONTEXTS.find((c) => c.id === conflictContext)?.label ?? '';
-        parts.push(`[Conflict context: ${label}]`);
+        parts.push(`[Conflict context: ${conflictLabel}]`);
       }
       if (uploadedContext) {
         parts.push(`[Document: ${uploadedContext.name}]\n\`\`\`\n${uploadedContext.text}\n\`\`\``);
@@ -169,20 +196,24 @@ export function ChatInterface() {
         scrollToBottom();
       }
     },
-    [input, isLoading, handleSubmit, scrollToBottom, conflictContext, uploadedContext, messages.length, setInput]
+    [input, isLoading, handleSubmit, scrollToBottom, conflictLabel, conflictContext, uploadedContext, messages.length, setInput]
   );
 
   const handlePromptSelect = useCallback(
     (prompt: string) => {
       setInput(prompt);
       setTimeout(() => {
-        // Submit with the selected prompt
         const form = inputRef.current?.closest("form");
         if (form) form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
       }, 0);
     },
     [setInput]
   );
+
+  // Clear the active conversation when toggling modes
+  const handleModeToggle = useCallback(() => {
+    setUseGroundedMode((prev) => !prev);
+  }, []);
 
   const isEmpty = messages.length === 0 && !isLoading;
 
@@ -200,6 +231,31 @@ export function ChatInterface() {
           </div>
         </div>
         <div className="flex items-center gap-1.5">
+          {/* Live Research Mode Toggle */}
+          <button
+            type="button"
+            onClick={handleModeToggle}
+            title={useGroundedMode ? "Switch to Tool-based Analysis" : "Switch to Live Research (Google Search)"}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-all border",
+              useGroundedMode
+                ? "bg-diplomatic-blue/15 border-diplomatic-blue/30 text-diplomatic-blue hover:bg-diplomatic-blue/25"
+                : "bg-navy-800 border-navy-600 text-navy-400 hover:bg-navy-700 hover:text-navy-200"
+            )}
+          >
+            {useGroundedMode ? (
+              <>
+                <Globe className="h-3.5 w-3.5" />
+                Live Research
+              </>
+            ) : (
+              <>
+                <Cpu className="h-3.5 w-3.5" />
+                Tool Analysis
+              </>
+            )}
+          </button>
+
           {messages.length > 0 && (
             <Button variant="ghost" size="sm" onClick={exportConversation} className="gap-1.5 text-navy-400">
               <Download className="h-3.5 w-3.5" />
@@ -215,6 +271,26 @@ export function ChatInterface() {
         </div>
       </div>
 
+      {/* Mode Banner */}
+      <AnimatePresence>
+        {useGroundedMode && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-center gap-2 border-b border-diplomatic-blue/20 bg-diplomatic-blue/8 px-6 py-2">
+              <Globe className="h-3.5 w-3.5 shrink-0 text-diplomatic-blue" />
+              <p className="text-[11px] text-diplomatic-blue">
+                <strong>Live Research mode</strong> — powered by Gemini 2.5 Flash with Google Search grounding.
+                Real-time web search with source citations. Custom tools unavailable in this mode (SDK limitation).
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
         <div className="mx-auto max-w-3xl space-y-6">
@@ -227,15 +303,19 @@ export function ChatInterface() {
             >
               <div className="mb-8 text-center">
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gold-500/10 border border-gold-500/20">
-                  <span className="text-2xl font-serif font-bold text-gold-400">T</span>
+                  {useGroundedMode ? (
+                    <Globe className="h-6 w-6 text-diplomatic-blue" />
+                  ) : (
+                    <span className="text-2xl font-serif font-bold text-gold-400">T</span>
+                  )}
                 </div>
                 <h2 className="font-serif text-2xl text-navy-50 mb-2">
-                  TACITUS Diplomatic Assistant
+                  {useGroundedMode ? 'Live Research Assistant' : 'TACITUS Diplomatic Assistant'}
                 </h2>
                 <p className="text-sm text-navy-400 max-w-lg mx-auto leading-relaxed">
-                  I am your AI-powered diplomatic intelligence assistant. I can help you draft
-                  reports, analyze conflicts, research developments, and review diplomatic
-                  communications. Powered by Gemini 2.5 Flash.
+                  {useGroundedMode
+                    ? 'Real-time conflict intelligence powered by Gemini 2.5 Flash with Google Search grounding. Ask about current developments, breaking news, or recent diplomatic activity — get cited, searchable answers.'
+                    : 'AI-powered diplomatic intelligence with structured tool access. Query the conflict graph, draft reports, analyze media, assess escalation, and map negotiation space.'}
                 </p>
               </div>
               <SuggestedPrompts onSelect={handlePromptSelect} />
@@ -258,8 +338,8 @@ export function ChatInterface() {
           {/* Rendered messages */}
           {messages.map((msg) => (
             <div key={msg.id} className="space-y-3">
-              {/* Tool invocations for assistant messages */}
-              {msg.role === "assistant" && msg.toolInvocations?.map((invocation) => (
+              {/* Tool invocations for assistant messages (tool mode only) */}
+              {msg.role === "assistant" && !useGroundedMode && msg.toolInvocations?.map((invocation) => (
                 <ToolInvocation
                   key={invocation.toolCallId}
                   invocation={{
@@ -268,7 +348,7 @@ export function ChatInterface() {
                     query: (() => {
                       try {
                         const args = invocation.args as Record<string, unknown>;
-                        return args?.query as string || args?.text as string || invocation.toolName;
+                        return args?.query as string || args?.text as string || args?.topic as string || invocation.toolName;
                       } catch {
                         return invocation.toolName;
                       }
@@ -304,10 +384,21 @@ export function ChatInterface() {
                 exit={{ opacity: 0 }}
                 className="flex gap-3"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold-500/10 border border-gold-500/20">
-                  <span className="text-sm font-serif font-bold text-gold-400">T</span>
+                <div className={cn(
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border",
+                  useGroundedMode
+                    ? "bg-diplomatic-blue/10 border-diplomatic-blue/20"
+                    : "bg-gold-500/10 border-gold-500/20"
+                )}>
+                  {useGroundedMode
+                    ? <Globe className="h-4 w-4 text-diplomatic-blue animate-pulse" />
+                    : <span className="text-sm font-serif font-bold text-gold-400">T</span>
+                  }
                 </div>
                 <div className="flex items-center gap-1.5 rounded-xl bg-navy-800 border-l-2 border-gold-500/30 px-4 py-3">
+                  {useGroundedMode && (
+                    <span className="text-[10px] text-diplomatic-blue mr-2">Searching the web...</span>
+                  )}
                   <span className="flex gap-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-gold-400 animate-bounce" style={{ animationDelay: "0ms" }} />
                     <span className="h-1.5 w-1.5 rounded-full bg-gold-400 animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -330,7 +421,7 @@ export function ChatInterface() {
             <div className="mb-2 flex flex-wrap gap-2">
               {conflictContext && (
                 <div className="flex items-center gap-1.5 rounded-full bg-diplomatic-blue/15 border border-diplomatic-blue/20 px-2.5 py-1 text-[11px] font-medium text-diplomatic-blue">
-                  {CONFLICT_CONTEXTS.find((c) => c.id === conflictContext)?.label}
+                  {conflictLabel}
                   <button onClick={() => setConflictContext('')} className="hover:text-white"><X className="h-3 w-3" /></button>
                 </div>
               )}
@@ -375,7 +466,9 @@ export function ChatInterface() {
                 value={input}
                 onChange={handleTextareaChange}
                 onKeyDown={handleKeyDown}
-                placeholder="Type your message..."
+                placeholder={useGroundedMode
+                  ? "Ask anything — I'll search the web for current information..."
+                  : "Type your message..."}
                 rows={1}
                 className="flex-1 resize-none bg-transparent text-sm text-navy-100 placeholder:text-navy-500 focus:outline-none min-h-[32px] max-h-[120px] py-1.5"
               />
@@ -430,9 +523,7 @@ export function ChatInterface() {
                 onClick={() => setShowContextDropdown((v) => !v)}
                 className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-navy-400 hover:bg-navy-800 hover:text-navy-200 transition-colors"
               >
-                {conflictContext
-                  ? CONFLICT_CONTEXTS.find((c) => c.id === conflictContext)?.label
-                  : 'Set context'}
+                {conflictContext ? conflictLabel : 'Set context'}
                 <ChevronDown className="h-3 w-3" />
               </button>
               {showContextDropdown && (

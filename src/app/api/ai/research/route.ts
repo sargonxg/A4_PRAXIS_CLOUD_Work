@@ -1,55 +1,59 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { streamText } from 'ai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
-export async function POST(request: NextRequest) {
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_AI_API_KEY || '',
+});
+
+export const maxDuration = 60;
+
+export async function POST(request: Request) {
+  if (!process.env.GOOGLE_AI_API_KEY) {
+    return new Response(JSON.stringify({ error: 'AI not configured' }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
-    const { query } = await request.json();
+    const { query, conflictContext } = await request.json();
 
-    // Demo research results
-    const results = {
-      query,
-      timestamp: new Date().toISOString(),
-      sources: [
-        {
-          title: 'UN News: Special Representative Briefs Security Council on Nordalia',
-          url: 'https://news.un.org/en/story/2026/02/nordalia',
-          snippet: 'The Special Representative of the Secretary-General for Nordalia, Maria Santos, briefed the Security Council on progress in implementing the Framework Agreement...',
-          date: '2026-02-27',
-          reliability: 0.95,
-        },
-        {
-          title: 'Reuters: Nordalia parties agree on transitional timeline',
-          url: 'https://reuters.com/world/africa/nordalia-timeline-2026',
-          snippet: 'Representatives of the Government of Nordalia and the Democratic Reform Movement have agreed on a detailed implementation timeline for the January Framework Agreement...',
-          date: '2026-02-25',
-          reliability: 0.92,
-        },
-        {
-          title: 'Al Jazeera: Analysis - Can the Nordalia peace process survive?',
-          url: 'https://aljazeera.com/features/nordalia-peace-analysis',
-          snippet: 'As the parties move towards implementation of the Framework Agreement, analysts warn that spoiler dynamics and regional competition could derail progress...',
-          date: '2026-02-23',
-          reliability: 0.78,
-        },
-        {
-          title: 'International Crisis Group: Nordalia - Making the Framework Agreement Work',
-          url: 'https://crisisgroup.org/africa/nordalia-framework',
-          snippet: 'The Framework Agreement is a significant achievement, but its success depends on addressing three key challenges: security sector reform, electoral preparations, and transitional justice...',
-          date: '2026-02-20',
-          reliability: 0.90,
-        },
-        {
-          title: 'BBC: Nordalia ceasefire violations decrease amid renewed diplomacy',
-          url: 'https://bbc.com/news/world-africa-nordalia',
-          snippet: 'Ceasefire violations in Nordalia have decreased by 25 per cent in the latest reporting period, according to the UN peacekeeping mission...',
-          date: '2026-02-18',
-          reliability: 0.88,
-        },
-      ],
-      summary: 'The situation in Nordalia shows cautious progress. The Framework Agreement signed in January 2026 has created a pathway for political resolution, though implementation challenges remain significant. Key areas of concern include the security sector reform timeline, regional power dynamics, and the capacity of transitional institutions.',
-    };
+    // Use Google Search grounding for real-time research results.
+    // This route is dedicated to structured research queries from the Research panel.
+    const model = google('gemini-2.5-flash', {
+      useSearchGrounding: true,
+    });
 
-    return NextResponse.json(results);
-  } catch {
-    return NextResponse.json({ error: 'Research request failed' }, { status: 500 });
+    const result = streamText({
+      model,
+      system: `You are PRAXIS Research Engine, a conflict intelligence research assistant with access to Google Search for real-time information.
+
+When researching a query:
+1. Search for the most recent and authoritative sources
+2. Cite specific sources with outlet name and date: "[Reuters, 2026-03-10]: ..."
+3. Assess source reliability — distinguish between wire services, quality broadsheets, state media, and think tanks
+4. Note any conflicting reports between sources
+5. Identify critical information gaps
+6. Flag time-sensitivity of information (how quickly is this evolving?)
+7. Cross-reference claims across multiple sources before treating as confirmed
+
+${conflictContext ? `Current analytical context: ${conflictContext}` : ''}
+
+Format your response with clear sections:
+## Key Findings
+## Sources & Reliability Assessment
+## Analysis
+## Information Gaps
+## Recommendations for Further Research`,
+      prompt: query,
+    });
+
+    return result.toTextStreamResponse();
+  } catch (err) {
+    console.error('Research route error:', err);
+    return new Response(JSON.stringify({ error: 'Research request failed' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
