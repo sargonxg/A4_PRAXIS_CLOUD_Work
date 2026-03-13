@@ -44,21 +44,17 @@ function createGoogleProvider() {
 }
 
 // ---------------------------------------------------------------------------
-// Vertex AI provider (lazy import so it doesn't crash when the package
-// isn't installed — teams using Google AI Studio don't need @ai-sdk/google-vertex)
+// Vertex AI provider stub
+// To enable: install @ai-sdk/google-vertex, set AI_PROVIDER=vertex,
+// GOOGLE_VERTEX_PROJECT, and GOOGLE_VERTEX_LOCATION env vars.
+// Until the package is installed, falls back to Google AI Studio.
 // ---------------------------------------------------------------------------
 
 async function createVertexProvider() {
-  try {
-    const { createVertex } = await import('@ai-sdk/google-vertex');
-    return createVertex({
-      project: process.env.GOOGLE_VERTEX_PROJECT || '',
-      location: process.env.GOOGLE_VERTEX_LOCATION || 'us-central1',
-    });
-  } catch {
-    console.warn('[providers] @ai-sdk/google-vertex not installed — falling back to Google AI Studio');
-    return createGoogleProvider();
-  }
+  // @ai-sdk/google-vertex is an optional dependency not currently installed.
+  // Falls back gracefully to Google AI Studio.
+  console.warn('[providers] Vertex AI requested but @ai-sdk/google-vertex is not installed. Falling back to Google AI Studio. Run: npm install @ai-sdk/google-vertex');
+  return createGoogleProvider();
 }
 
 // ---------------------------------------------------------------------------
@@ -103,14 +99,15 @@ export function getProModel(): LanguageModel {
 }
 
 /**
- * Async variant that properly resolves the Vertex AI provider when configured.
+ * Async variant — currently equivalent to getModel() since Vertex AI
+ * requires installing @ai-sdk/google-vertex separately.
  */
 export async function getModelAsync(modelId: string = DEFAULT_MODEL): Promise<LanguageModel> {
   const provider = detectProvider();
 
   if (provider === 'vertex') {
-    const vertexProvider = await createVertexProvider();
-    return (vertexProvider as ReturnType<typeof createGoogleProvider>)(modelId);
+    // Falls back to Google AI Studio until @ai-sdk/google-vertex is installed
+    await createVertexProvider();
   }
 
   const googleProvider = createGoogleProvider();

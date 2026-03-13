@@ -298,7 +298,7 @@ export const draftSection = tool({
     const events = (conflictData.events as Array<Record<string, unknown>> | undefined) ?? [];
     const recentEvents = events
       .slice(-5)
-      .map((e) => `${e.date}: ${e.title} — ${String(e.description ?? '').slice(0, 100)}...`)
+      .map((e) => `${e.date} [${e.type}]: ${String(e.description ?? '').slice(0, 120)}...`)
       .join('\n');
 
     const { text } = await generateText({
@@ -857,7 +857,7 @@ export const escalationAssessment = tool({
     const events = (conflictData.events as Array<Record<string, unknown>> | undefined) ?? [];
     const recentEvents = events
       .slice(-8)
-      .map((e) => `${e.date}: ${e.title} (${e.type ?? 'unknown'})`)
+      .map((e) => `${e.date} [${e.type ?? 'unknown'}]: ${String(e.description ?? '').slice(0, 80)}...`)
       .join('\n');
     const actorList = conflict.actors.map((a) => `${a.name} (${a.type})`).join(', ');
 
@@ -967,7 +967,7 @@ export const negotiationSpaceAnalysis = tool({
       .map((c) => `${c.actorId}: ${c.description}`)
       .join('\n');
     const commitments = ((conflictData.commitments as Array<Record<string, unknown>> | undefined) ?? [])
-      .map((c) => `${c.title}: ${c.status}`)
+      .map((c) => `${c.type} [${c.status}]: ${String(c.description ?? '').slice(0, 120)}`)
       .join('\n');
 
     const { object } = await generateObject({
