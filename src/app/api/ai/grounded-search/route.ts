@@ -19,15 +19,14 @@ export async function POST(request: Request) {
   try {
     const { messages, conflictContext } = await request.json();
 
-    // Google Search grounding enables real-time web search via Gemini's built-in tool.
+    // Google Search grounding via providerOptions (correct API for @ai-sdk/google v3.x).
     // NOTE: useSearchGrounding conflicts with custom tools (SDK issue #8258), so this
     // route is separate from /api/ai/chat which uses the custom tacitusTools registry.
-    const model = google('gemini-2.5-flash', {
-      useSearchGrounding: true,
-    });
-
     const result = streamText({
-      model,
+      model: google('gemini-2.5-flash'),
+      providerOptions: {
+        google: { useSearchGrounding: true },
+      },
       system: `${DIPLOMATIC_SYSTEM_PROMPT}
 
 ## Live Research Mode

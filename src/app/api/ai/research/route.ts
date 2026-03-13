@@ -18,14 +18,13 @@ export async function POST(request: Request) {
   try {
     const { query, conflictContext } = await request.json();
 
-    // Use Google Search grounding for real-time research results.
+    // Use Google Search grounding via providerOptions (correct API for @ai-sdk/google v3.x).
     // This route is dedicated to structured research queries from the Research panel.
-    const model = google('gemini-2.5-flash', {
-      useSearchGrounding: true,
-    });
-
     const result = streamText({
-      model,
+      model: google('gemini-2.5-flash'),
+      providerOptions: {
+        google: { useSearchGrounding: true },
+      },
       system: `You are PRAXIS Research Engine, a conflict intelligence research assistant with access to Google Search for real-time information.
 
 When researching a query:

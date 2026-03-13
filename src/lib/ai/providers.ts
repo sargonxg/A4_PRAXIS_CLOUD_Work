@@ -83,12 +83,14 @@ export function getModel(modelId: string = DEFAULT_MODEL): LanguageModel {
 }
 
 /**
- * Returns a Google Search-grounded language model.
- * Only supported on Google AI Studio; Vertex AI requires different grounding config.
+ * Returns the base model to use for grounded search requests.
+ * Search grounding must be enabled via providerOptions in the streamText/generateText call:
+ *   providerOptions: { google: { useSearchGrounding: true } }
+ * @ai-sdk/google v3.x does not support passing options as a second model argument.
  */
 export function getGroundedModel(modelId: string = DEFAULT_MODEL): LanguageModel {
   const googleProvider = createGoogleProvider();
-  return googleProvider(modelId, { useSearchGrounding: true });
+  return googleProvider(modelId);
 }
 
 /**
