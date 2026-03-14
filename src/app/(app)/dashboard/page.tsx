@@ -25,10 +25,16 @@ import {
   Lightbulb,
   Zap,
   TrendingUp,
+  TrendingDown,
+  Minus,
   X,
   BarChart3,
   GitBranch,
   Check,
+  MapPin,
+  Layers,
+  ExternalLink,
+  Network,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -46,6 +52,7 @@ import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 import { formatDiplomaticDate, formatRelativeTime } from '@/lib/utils/format';
 import { useConflictStore } from '@/stores/conflict-store';
+import { DEMO_CONFLICT } from '@/lib/constants/demo-conflict';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -81,6 +88,19 @@ const STATUS_STYLES = {
   published: { label: 'Published', bg: 'bg-diplomatic-blue/10', text: 'text-diplomatic-blue' },
 };
 
+// Glasl 9-stage escalation model
+const GLASL_STAGES: { label: string; color: string; bg: string }[] = [
+  { label: 'Hardening',       color: '#5B8C5A', bg: '#5B8C5A1A' },
+  { label: 'Debates',         color: '#4A90A4', bg: '#4A90A41A' },
+  { label: 'Actions',         color: '#4A90A4', bg: '#4A90A41A' },
+  { label: 'Coalitions',      color: '#E8B931', bg: '#E8B9311A' },
+  { label: 'Loss of Face',    color: '#C8961E', bg: '#C8961E1A' },
+  { label: 'Threats',         color: '#C75B39', bg: '#C75B391A' },
+  { label: 'Destructive Blows', color: '#A63D40', bg: '#A63D401A' },
+  { label: 'Fragmentation',   color: '#A63D40', bg: '#A63D401A' },
+  { label: 'Abyss',           color: '#7B1D1D', bg: '#7B1D1D1A' },
+];
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -102,6 +122,174 @@ function riskTextColor(score: number): string {
   if (score >= 7) return 'text-crimson';
   if (score >= 5) return 'text-gold-600';
   return 'text-sage';
+}
+
+// ---------------------------------------------------------------------------
+// Glasl Stage Meter
+// ---------------------------------------------------------------------------
+
+function GlaslStageMeter({ stage }: { stage: number }) {
+  const current = GLASL_STAGES[stage - 1];
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex gap-0.5">
+        {GLASL_STAGES.map((s, i) => (
+          <div
+            key={i}
+            className="h-2 w-3 rounded-sm transition-all"
+            style={{
+              backgroundColor: i < stage ? s.color : '#E2E8F0',
+              opacity: i === stage - 1 ? 1 : i < stage ? 0.6 : 0.3,
+            }}
+          />
+        ))}
+      </div>
+      <span className="text-[10px] font-semibold" style={{ color: current?.color }}>
+        Stage {stage}/9 — {current?.label}
+      </span>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Active Conflict Snapshot — immediately populated from store + DEMO data
+// ---------------------------------------------------------------------------
+
+function ActiveConflictSnapshot({
+  conflictId,
+  name,
+  region,
+  riskScore,
+  status,
+  actorCount,
+  graphEntities,
+  description,
+  events,
+}: {
+  conflictId: string;
+  name: string;
+  region: string;
+  riskScore: number;
+  status: string;
+  actorCount: number;
+  graphEntities: number;
+  description: string;
+  events: { title: string; date: string }[];
+}) {
+  // Pull GLASL stage from DEMO_CONFLICT if this is the primary demo conflict
+  const glaslStage = conflictId === 'nordalia-crisis' ? DEMO_CONFLICT.glaslStage : null;
+  const escalationTrend = conflictId === 'nordalia-crisis' ? DEMO_CONFLICT.escalationTrend : 'stable';
+  const TrendIcon = escalationTrend === 'volatile' ? TrendingUp
+    : escalationTrend === 'escalating' ? TrendingUp
+    : escalationTrend === 'de-escalating' ? TrendingDown
+    : Minus;
+  const trendColor = escalationTrend === 'volatile' || escalationTrend === 'escalating'
+    ? 'text-crimson' : escalationTrend === 'de-escalating' ? 'text-sage' : 'text-gold-600';
+
+  const riskWidth = `${(riskScore / 10) * 100}%`;
+  const riskColor = riskScore >= 7 ? '#A63D40' : riskScore >= 5 ? '#E8B931' : '#5B8C5A';
+
+  return (
+    <div className="rounded-xl border border-diplomatic-blue/20 bg-gradient-to-br from-diplomatic-blue/4 via-white to-transparent overflow-hidden">
+      {/* Header row */}
+      <div className="flex flex-wrap items-center gap-3 border-b border-diplomatic-blue/10 bg-diplomatic-blue/3 px-5 py-3">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-crimson opacity-60" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-crimson" />
+          </span>
+          <h2 className="text-sm font-bold text-navy-900">{name}</h2>
+        </div>
+        <span className={cn(
+          'rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize',
+          status === 'active' ? 'bg-crimson/12 text-crimson' :
+          status === 'emerging' ? 'bg-gold-500/12 text-gold-700' :
+          'bg-navy-100 text-navy-500'
+        )}>
+          {status}
+        </span>
+        <span className="flex items-center gap-1 text-xs text-navy-500">
+          <MapPin className="h-3 w-3" />
+          {region}
+        </span>
+        <span className={cn('ml-auto flex items-center gap-1 text-xs font-medium', trendColor)}>
+          <TrendIcon className="h-3.5 w-3.5" />
+          {escalationTrend === 'volatile' ? 'Volatile' : escalationTrend === 'escalating' ? 'Escalating' : escalationTrend === 'de-escalating' ? 'De-escalating' : 'Stable'}
+        </span>
+      </div>
+
+      <div className="p-5">
+        {/* Description */}
+        <p className="mb-4 text-xs leading-relaxed text-navy-600 line-clamp-2">{description}</p>
+
+        {/* Glasl stage */}
+        {glaslStage && (
+          <div className="mb-4">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-[10px] font-medium uppercase tracking-wide text-navy-400">Escalation Stage (Glasl Model)</span>
+            </div>
+            <GlaslStageMeter stage={glaslStage} />
+          </div>
+        )}
+
+        {/* Stats row */}
+        <div className="mb-4 grid grid-cols-4 gap-3">
+          {/* Risk Score */}
+          <div className="col-span-2 rounded-lg bg-navy-50 p-3">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-[10px] uppercase tracking-wide text-navy-400">Risk Score</span>
+              <span className="text-sm font-bold" style={{ color: riskColor }}>{riskScore.toFixed(1)}</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-navy-200">
+              <div className="h-full rounded-full transition-all duration-700" style={{ width: riskWidth, backgroundColor: riskColor }} />
+            </div>
+          </div>
+          {/* Actors */}
+          <div className="rounded-lg bg-navy-50 p-3 text-center">
+            <div className="text-lg font-bold text-navy-900">{actorCount}</div>
+            <div className="text-[10px] text-navy-400">Actors</div>
+          </div>
+          {/* Graph entities */}
+          <div className="rounded-lg bg-navy-50 p-3 text-center">
+            <div className="text-lg font-bold text-navy-900">{graphEntities}</div>
+            <div className="text-[10px] text-navy-400">Entities</div>
+          </div>
+        </div>
+
+        {/* Recent events */}
+        {events.length > 0 && (
+          <div className="mb-4">
+            <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide text-navy-400">Latest Intelligence</p>
+            <div className="space-y-1.5">
+              {events.slice(0, 3).map((ev, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <div className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-navy-400" />
+                  <p className="min-w-0 flex-1 text-xs text-navy-700 leading-snug">{ev.title}</p>
+                  <span className="shrink-0 text-[10px] text-navy-400">{formatRelativeTime(ev.date)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Quick links */}
+        <div className="flex flex-wrap gap-2">
+          <Link href="/conflict-graph" className="flex items-center gap-1.5 rounded-lg border border-navy-200 bg-white px-3 py-1.5 text-xs font-medium text-navy-700 transition-colors hover:border-diplomatic-blue/40 hover:text-diplomatic-blue">
+            <GitBranch className="h-3 w-3" /> Conflict Graph
+          </Link>
+          <Link href="/stakeholder-map" className="flex items-center gap-1.5 rounded-lg border border-navy-200 bg-white px-3 py-1.5 text-xs font-medium text-navy-700 transition-colors hover:border-diplomatic-blue/40 hover:text-diplomatic-blue">
+            <Network className="h-3 w-3" /> Stakeholder Map
+          </Link>
+          <Link href="/early-warning" className="flex items-center gap-1.5 rounded-lg border border-crimson/25 bg-crimson/4 px-3 py-1.5 text-xs font-medium text-crimson transition-colors hover:bg-crimson/10">
+            <AlertTriangle className="h-3 w-3" /> Early Warning
+          </Link>
+          <Link href="/scenarios" className="flex items-center gap-1.5 rounded-lg border border-teal/25 bg-teal/4 px-3 py-1.5 text-xs font-medium text-teal transition-colors hover:bg-teal/10">
+            <Layers className="h-3 w-3" /> Scenario Planner
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -312,41 +500,41 @@ function NewConflictModal({ open, onClose }: NewConflictModalProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-navy-300">Conflict Name *</label>
+            <label className="mb-1.5 block text-xs font-medium text-navy-700">Conflict Name *</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Eastern Marchlands Dispute"
               required
-              className="w-full rounded-md border border-navy-600 bg-navy-700 px-3 py-2 text-sm text-navy-100 placeholder-navy-500 focus:border-gold-500 focus:outline-none"
+              className="w-full rounded-md border border-navy-200 bg-white px-3 py-2 text-sm text-navy-900 placeholder-navy-400 focus:border-diplomatic-blue/50 focus:outline-none focus:ring-1 focus:ring-diplomatic-blue/20"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-navy-300">Region *</label>
+            <label className="mb-1.5 block text-xs font-medium text-navy-700">Region *</label>
             <input
               value={region}
               onChange={(e) => setRegion(e.target.value)}
               placeholder="e.g. Eastern Europe"
               required
-              className="w-full rounded-md border border-navy-600 bg-navy-700 px-3 py-2 text-sm text-navy-100 placeholder-navy-500 focus:border-gold-500 focus:outline-none"
+              className="w-full rounded-md border border-navy-200 bg-white px-3 py-2 text-sm text-navy-900 placeholder-navy-400 focus:border-diplomatic-blue/50 focus:outline-none focus:ring-1 focus:ring-diplomatic-blue/20"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-navy-300">Description</label>
+            <label className="mb-1.5 block text-xs font-medium text-navy-700">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description of the situation..."
               rows={3}
-              className="w-full rounded-md border border-navy-600 bg-navy-700 px-3 py-2 text-sm text-navy-100 placeholder-navy-500 focus:border-gold-500 focus:outline-none resize-none"
+              className="w-full rounded-md border border-navy-200 bg-white px-3 py-2 text-sm text-navy-900 placeholder-navy-400 focus:border-diplomatic-blue/50 focus:outline-none focus:ring-1 focus:ring-diplomatic-blue/20 resize-none"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-navy-300">Status</label>
+            <label className="mb-1.5 block text-xs font-medium text-navy-700">Status</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as 'active' | 'emerging' | 'frozen')}
-              className="w-full rounded-md border border-navy-600 bg-navy-700 px-3 py-2 text-sm text-navy-100 focus:border-gold-500 focus:outline-none"
+              className="w-full rounded-md border border-navy-200 bg-white px-3 py-2 text-sm text-navy-900 focus:border-diplomatic-blue/50 focus:outline-none focus:ring-1 focus:ring-diplomatic-blue/20"
             >
               <option value="active">Active</option>
               <option value="emerging">Emerging</option>
@@ -357,7 +545,7 @@ function NewConflictModal({ open, onClose }: NewConflictModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-navy-600 px-4 py-2 text-sm text-navy-300 hover:bg-navy-700"
+              className="rounded-md border border-navy-200 px-4 py-2 text-sm text-navy-600 hover:bg-navy-50 transition-colors"
             >
               Cancel
             </button>
@@ -610,26 +798,48 @@ Format with bold section headers using **text**. Be concise, professional, and a
 
   return (
     <div className="space-y-6">
-      {/* Demo Mode Banner */}
-      <div className="flex items-center gap-3 rounded-lg border border-diplomatic-blue/20 bg-diplomatic-blue/5 px-4 py-2.5">
-        <div className="flex items-center gap-1.5 text-xs text-diplomatic-blue font-medium">
+      {/* Scenario Selector Banner */}
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-diplomatic-blue/20 bg-diplomatic-blue/4 px-4 py-3">
+        <div className="flex items-center gap-2 text-xs font-semibold text-diplomatic-blue">
           <Activity className="h-3.5 w-3.5" />
-          Demo Mode — Exploring
+          Active Scenario
         </div>
-        <select
-          value={activeConflictId}
-          onChange={(e) => setActiveConflict(e.target.value)}
-          className="rounded-md border border-diplomatic-blue/20 bg-white px-2 py-1 text-xs font-semibold text-diplomatic-blue focus:outline-none focus:ring-1 focus:ring-diplomatic-blue/40"
-        >
-          {conflicts.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-        <span className="text-xs text-navy-500">All AI features are live.</span>
-        <span className="ml-auto flex items-center gap-1.5 text-[11px] text-navy-400">
-          <Sparkles className="h-3 w-3" />
-          {aiQueryCount} AI queries this session
-        </span>
+        <div className="flex items-center gap-2">
+          <select
+            value={activeConflictId}
+            onChange={(e) => {
+              setActiveConflict(e.target.value);
+              briefGenerated.current = false;
+            }}
+            className="rounded-md border border-diplomatic-blue/25 bg-white px-3 py-1.5 text-xs font-semibold text-diplomatic-blue focus:outline-none focus:ring-1 focus:ring-diplomatic-blue/40"
+          >
+            {conflicts.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          {activeConflict && (
+            <span className={cn(
+              'rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize',
+              activeConflict.status === 'active' ? 'bg-crimson/12 text-crimson' :
+              activeConflict.status === 'emerging' ? 'bg-gold-500/12 text-gold-700' :
+              'bg-navy-100 text-navy-600'
+            )}>
+              {activeConflict.status}
+            </span>
+          )}
+          {activeConflict && (
+            <span className="text-xs text-navy-500">{activeConflict.region}</span>
+          )}
+        </div>
+        <div className="ml-auto flex items-center gap-3 text-[11px] text-navy-400">
+          <span className="flex items-center gap-1 rounded-full bg-sage/10 px-2 py-0.5 text-sage">
+            <Activity className="h-2.5 w-2.5" /> All AI features live
+          </span>
+          <span className="flex items-center gap-1">
+            <Sparkles className="h-3 w-3" />
+            {aiQueryCount} AI {aiQueryCount === 1 ? 'query' : 'queries'}
+          </span>
+        </div>
       </div>
 
       {/* Greeting Header */}
@@ -651,6 +861,21 @@ Format with bold section headers using **text**. Be concise, professional, and a
           New Conflict
         </button>
       </div>
+
+      {/* Active Conflict Snapshot — real data, no AI required */}
+      {activeConflict && (
+        <ActiveConflictSnapshot
+          conflictId={activeConflict.id}
+          name={activeConflict.name}
+          region={activeConflict.region}
+          riskScore={activeConflict.riskScore}
+          status={activeConflict.status}
+          actorCount={activeConflict.actorCount}
+          graphEntities={activeConflict.graphEntities}
+          description={activeConflict.description}
+          events={activeConflict.events ?? []}
+        />
+      )}
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -744,10 +969,24 @@ Format with bold section headers using **text**. Be concise, professional, and a
                 <Skeleton className="h-3 w-4/5 bg-navy-100" />
               </div>
             ) : (
-              <div className="rounded-lg border border-gold-500/10 bg-white/50 p-4 text-center">
-                <p className="text-sm text-navy-500">
-                  Click <strong>Live Brief</strong> to generate a real-time intelligence briefing, or enable <strong>Auto-brief</strong> to generate on page load.
-                </p>
+              <div className="rounded-lg border border-gold-500/10 bg-gold-500/3 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-gold-600" />
+                  <span className="text-xs font-semibold text-gold-700">Pre-session intelligence summary</span>
+                  <span className="ml-auto text-[10px] text-navy-400">{formatDiplomaticDate(today)}</span>
+                </div>
+                <div className="space-y-2 text-xs text-navy-700 leading-relaxed">
+                  <p><strong className="text-navy-900">Nordalia Crisis (Stage 5/9):</strong> DRM continues to hold eastern province positions following failed September ceasefire. Karovian arms supply route remains active. UNMN access restricted in 3 districts.</p>
+                  <p><strong className="text-navy-900">Today&apos;s priorities:</strong> UNSC debate on PoC at 10:00 requires brief. AU-mediated talks stalled — new facilitation proposal due this week. Arms embargo monitoring report overdue.</p>
+                  <p><strong className="text-navy-900">Watch:</strong> Sahel corridor arms flow intensifying. Westmark parliamentary vote on military support scheduled. Civil society access window closing in eastern provinces.</p>
+                </div>
+                <button
+                  onClick={generateLiveBrief}
+                  className="mt-3 flex items-center gap-1.5 rounded-md border border-gold-500/30 bg-white px-3 py-1.5 text-xs font-medium text-gold-700 transition-colors hover:bg-gold-500/10"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Generate live AI brief
+                </button>
               </div>
             )}
           </div>
@@ -856,6 +1095,13 @@ Format with bold section headers using **text**. Be concise, professional, and a
                           {conflict.status}
                         </span>
                       </div>
+
+                      {/* Glasl stage — shown for Nordalia demo conflict */}
+                      {conflict.id === 'nordalia-crisis' && (
+                        <div className="mb-3">
+                          <GlaslStageMeter stage={DEMO_CONFLICT.glaslStage} />
+                        </div>
+                      )}
 
                       {/* Risk bar */}
                       <div className="mb-3">

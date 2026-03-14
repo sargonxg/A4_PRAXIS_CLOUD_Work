@@ -40,7 +40,7 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     id: 'step-3',
     title: 'Conflict Knowledge Graph',
     description:
-      'Every actor, claim, event, and narrative mapped as an interactive network. The Conflict Grammar™ structures complex situations into analyzable data.',
+      'Every actor, claim, event, and narrative mapped as an interactive network. The Conflict Grammar structures complex situations into analyzable data.',
     targetDataAttr: 'data-tour="conflict-graph"',
     page: '/conflict-graph',
     position: 'left',

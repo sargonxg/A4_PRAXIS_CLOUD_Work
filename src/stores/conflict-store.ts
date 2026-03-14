@@ -284,8 +284,8 @@ export const useConflictStore = create<ConflictStore>()(
             : [...state.visitedPages, page],
         })),
 
-      // Auto-brief
-      autoBriefEnabled: false,
+      // Auto-brief — enabled by default so dashboard is populated on first load
+      autoBriefEnabled: true,
       setAutoBrief: (enabled) => set({ autoBriefEnabled: enabled }),
     }),
     {

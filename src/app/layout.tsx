@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "PRAXIS by TACITUS — Conflict Intelligence Platform",
     description:
-      "AI-native conflict intelligence for peace and security professionals. Live Gemini AI. Glasl escalation model. Conflict Grammar™ knowledge graph.",
+      "AI-native conflict intelligence for peace and security professionals. Live Gemini AI. Glasl escalation model. Conflict Grammar knowledge graph.",
     type: "website",
     siteName: "PRAXIS by TACITUS",
   },

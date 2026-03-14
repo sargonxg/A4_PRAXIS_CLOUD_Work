@@ -103,7 +103,7 @@ export function ConflictGrammarHighlight() {
           transition={{ duration: 0.7 }}
           className="mb-4 text-center"
         >
-          <span className="text-overline text-gold-700">Conflict Grammar™ in Action</span>
+          <span className="text-overline text-gold-700">Conflict Grammar in Action</span>
         </motion.div>
 
         <motion.div
@@ -177,7 +177,7 @@ export function ConflictGrammarHighlight() {
           className="mb-3"
         >
           <p className="text-xs font-semibold uppercase tracking-wider text-navy-400 mb-2">
-            Annotated — Conflict Grammar™ Entities Detected
+            Annotated — Conflict Grammar Entities Detected
           </p>
           <div className="rounded-xl border border-diplomatic-blue/15 bg-white/80 px-6 py-5 text-sm leading-[2.2] shadow-sm">
             {segments.map((seg, i) => {
@@ -251,7 +251,7 @@ export function ConflictGrammarHighlight() {
           transition={{ duration: 0.5, delay: 0.9 }}
           className="mt-6 text-center text-xs text-navy-400"
         >
-          This is a static demonstration. PRAXIS applies Conflict Grammar™ recognition
+          This is a static demonstration. PRAXIS applies Conflict Grammar recognition
           automatically to any ingested document, article, or field report.
         </motion.p>
       </div>
