@@ -6,7 +6,7 @@ export const DEMO_CONFLICT = {
   startDate: '2024-03-12',
   riskScore: 7.8,
   glaslStage: 5,
-  escalationTrend: 'volatile' as const,
+  escalationTrend: 'volatile' as 'volatile' | 'escalating' | 'de-escalating' | 'stable',
   lastUpdated: '2026-03-13',
   description:
     'A multi-party armed conflict triggered by disputed general elections in March 2024, resulting in a DRM insurgency in the Eastern Provinces, regional power rivalry between Karovia and Westmark, and an ongoing UN-AU peace process. The conflict is rooted in post-independence resource governance failures and ethnic political exclusion spanning two decades.',
