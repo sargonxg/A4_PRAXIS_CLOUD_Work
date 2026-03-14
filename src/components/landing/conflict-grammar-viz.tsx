@@ -324,7 +324,7 @@ export function ConflictGrammarViz() {
           className="mb-16 text-center lg:mb-20"
         >
           <h2 className="mb-4 font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl">
-            Conflict Grammar&trade;
+            Conflict Grammar
           </h2>
           <p className="mx-auto max-w-2xl text-lg text-navy-500">
             Eight universal primitives for analyzing any dispute. A structured
