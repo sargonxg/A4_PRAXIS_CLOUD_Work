@@ -178,7 +178,8 @@ function ActiveConflictSnapshot({
 }) {
   // Pull GLASL stage from DEMO_CONFLICT if this is the primary demo conflict
   const glaslStage = conflictId === 'nordalia-crisis' ? DEMO_CONFLICT.glaslStage : null;
-  const escalationTrend = conflictId === 'nordalia-crisis' ? DEMO_CONFLICT.escalationTrend : 'stable';
+  const escalationTrend: 'volatile' | 'escalating' | 'de-escalating' | 'stable' =
+    conflictId === 'nordalia-crisis' ? DEMO_CONFLICT.escalationTrend : 'stable';
   const TrendIcon = escalationTrend === 'volatile' ? TrendingUp
     : escalationTrend === 'escalating' ? TrendingUp
     : escalationTrend === 'de-escalating' ? TrendingDown
