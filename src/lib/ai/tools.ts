@@ -188,39 +188,39 @@ export const queryConflictGraph = tool({
         results = conflict.actors;
         break;
       case 'event':
-        results = (conflict as Record<string, unknown[]>).events || [];
+        results = (conflict as unknown as Record<string, unknown[]>).events || [];
         break;
       case 'relationship':
-        results = (conflict as Record<string, unknown[]>).relationships || [];
+        results = (conflict as unknown as Record<string, unknown[]>).relationships || [];
         break;
       case 'all':
         results = [
           ...conflict.actors.map((a) => ({ ...a, _entityType: 'actor' })),
-          ...((conflict as Record<string, unknown[]>).events || []).map((e) => ({
+          ...((conflict as unknown as Record<string, unknown[]>).events || []).map((e) => ({
             ...(e as object),
             _entityType: 'event',
           })),
-          ...((conflict as Record<string, unknown[]>).claims || []).map((c) => ({
+          ...((conflict as unknown as Record<string, unknown[]>).claims || []).map((c) => ({
             ...(c as object),
             _entityType: 'claim',
           })),
-          ...((conflict as Record<string, unknown[]>).interests || []).map((i) => ({
+          ...((conflict as unknown as Record<string, unknown[]>).interests || []).map((i) => ({
             ...(i as object),
             _entityType: 'interest',
           })),
-          ...((conflict as Record<string, unknown[]>).commitments || []).map((c) => ({
+          ...((conflict as unknown as Record<string, unknown[]>).commitments || []).map((c) => ({
             ...(c as object),
             _entityType: 'commitment',
           })),
-          ...((conflict as Record<string, unknown[]>).leverage || []).map((l) => ({
+          ...((conflict as unknown as Record<string, unknown[]>).leverage || []).map((l) => ({
             ...(l as object),
             _entityType: 'leverage',
           })),
-          ...((conflict as Record<string, unknown[]>).constraints || []).map((c) => ({
+          ...((conflict as unknown as Record<string, unknown[]>).constraints || []).map((c) => ({
             ...(c as object),
             _entityType: 'constraint',
           })),
-          ...((conflict as Record<string, unknown[]>).narratives || []).map((n) => ({
+          ...((conflict as unknown as Record<string, unknown[]>).narratives || []).map((n) => ({
             ...(n as object),
             _entityType: 'narrative',
           })),
