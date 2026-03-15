@@ -103,10 +103,10 @@ export function SpectrumChart({
             <feGaussianBlur stdDeviation="3" result="blur" />
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
-          {/* Subtle radial gradient for background */}
+          {/* Subtle radial gradient for background — light theme */}
           <radialGradient id="plotBg" cx="50%" cy="50%" r="60%">
-            <stop offset="0%" stopColor="#0F172A" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#050A18" stopOpacity="1" />
+            <stop offset="0%" stopColor="#F8FAFC" stopOpacity="1" />
+            <stop offset="100%" stopColor="#F1F5F9" stopOpacity="1" />
           </radialGradient>
         </defs>
 
@@ -131,7 +131,7 @@ export function SpectrumChart({
               y1={PADDING.top}
               x2={px}
               y2={PADDING.top + PLOT_H}
-              stroke={isCenterLine ? "#334155" : "#1E293B"}
+              stroke={isCenterLine ? "#94A3B8" : "#CBD5E1"}
               strokeWidth={isCenterLine ? 1.5 : 0.5}
               strokeDasharray={isCenterLine ? undefined : "4 4"}
             />
@@ -149,7 +149,7 @@ export function SpectrumChart({
               y1={py}
               x2={PADDING.left + PLOT_W}
               y2={py}
-              stroke={isMidLine ? "#334155" : "#1E293B"}
+              stroke={isMidLine ? "#94A3B8" : "#CBD5E1"}
               strokeWidth={isMidLine ? 1.5 : 0.5}
               strokeDasharray={isMidLine ? undefined : "4 4"}
             />
@@ -164,7 +164,7 @@ export function SpectrumChart({
             y={dataToPixelY(q.y)}
             textAnchor="middle"
             dominantBaseline="middle"
-            fill="#1E293B"
+            fill="#CBD5E1"
             fontSize={11}
             fontWeight={600}
             fontFamily="var(--font-sans), system-ui, sans-serif"
@@ -294,7 +294,7 @@ export function SpectrumChart({
           width={PLOT_W}
           height={PLOT_H}
           fill="none"
-          stroke="#1E293B"
+          stroke="#CBD5E1"
           strokeWidth={1}
           rx={4}
         />
@@ -317,7 +317,7 @@ export function SpectrumChart({
                 r={radius}
                 fill={source.color}
                 fillOpacity={isActive ? 1 : 0.85}
-                stroke={isSelected ? "#E8B931" : isHovered ? "#CBD5E1" : "transparent"}
+                stroke={isSelected ? "#E8B931" : isHovered ? "#475569" : "transparent"}
                 strokeWidth={isSelected ? 2.5 : isHovered ? 1.5 : 0}
                 filter={isActive ? "url(#glow)" : undefined}
                 style={{ cursor: "pointer" }}
@@ -339,7 +339,7 @@ export function SpectrumChart({
                 x={cx}
                 y={cy - (isActive ? 13 : 9)}
                 textAnchor="middle"
-                fill={isActive ? "#E2E8F0" : "#94A3B8"}
+                fill={isActive ? "#0F172A" : "#475569"}
                 fontSize={isActive ? 10 : 8}
                 fontWeight={isActive ? 600 : 400}
                 fontFamily="var(--font-sans), system-ui, sans-serif"
@@ -366,7 +366,7 @@ export function SpectrumChart({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="pointer-events-none absolute z-20 rounded-lg border border-navy-700/60 bg-navy-900/95 px-3 py-2 shadow-xl backdrop-blur-md"
+            className="pointer-events-none absolute z-20 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-2 shadow-xl backdrop-blur-md"
             style={{
               left: tooltipPos.x + 16,
               top: tooltipPos.y - 10,
@@ -377,13 +377,13 @@ export function SpectrumChart({
                 className="h-2.5 w-2.5 rounded-full"
                 style={{ backgroundColor: hoveredSource.color }}
               />
-              <span className="text-sm font-semibold text-navy-100">
+              <span className="text-sm font-semibold text-navy-900">
                 {hoveredSource.name}
               </span>
             </div>
-            <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-navy-400">
+            <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-navy-500">
               <span>Orientation</span>
-              <span className="text-navy-200">
+              <span className="text-navy-700">
                 {hoveredSource.x > 0.1
                   ? "Right"
                   : hoveredSource.x < -0.1
@@ -393,15 +393,15 @@ export function SpectrumChart({
                 {hoveredSource.x.toFixed(2)})
               </span>
               <span>Reliability</span>
-              <span className="text-navy-200">
+              <span className="text-navy-700">
                 {Math.round(hoveredSource.y * 100)}%
               </span>
               <span>Type</span>
-              <span className="text-navy-200 capitalize">
+              <span className="text-navy-700 capitalize">
                 {hoveredSource.type.replace("_", " ")}
               </span>
               <span>Region</span>
-              <span className="text-navy-200">{hoveredSource.region}</span>
+              <span className="text-navy-700">{hoveredSource.region}</span>
             </div>
           </motion.div>
         )}

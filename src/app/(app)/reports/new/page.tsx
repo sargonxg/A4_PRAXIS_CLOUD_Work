@@ -270,15 +270,15 @@ function TemplateCard({
     <button
       onClick={() => onSelect(template)}
       className={cn(
-        'group relative flex flex-col text-left rounded-xl border border-navy-700 bg-gradient-to-b p-5 transition-all duration-200',
+        'group relative flex flex-col text-left rounded-xl border border-[var(--color-app-border)] bg-gradient-to-b p-5 transition-all duration-200',
         'hover:border-gold-500/50 hover:shadow-lg hover:shadow-gold-500/5',
         template.color
       )}
     >
       {/* Header row */}
       <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-navy-800 border border-navy-700 group-hover:border-gold-500/30 group-hover:bg-navy-750 transition-colors">
-          <Icon className="h-5 w-5 text-navy-300 group-hover:text-gold-400 transition-colors" />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-app-surface-alt)] border border-[var(--color-app-border)] hover:border-gold-500/30 group-hover:bg-gold-500/5 transition-colors">
+          <Icon className="h-5 w-5 text-navy-500 group-hover:text-gold-600 transition-colors" />
         </div>
         <Badge variant={diff.badgeVariant} className="shrink-0 text-[10px]">
           {diff.label}
@@ -286,7 +286,7 @@ function TemplateCard({
       </div>
 
       {/* Title */}
-      <h3 className="font-semibold text-navy-100 text-sm mb-1.5 group-hover:text-gold-400 transition-colors leading-tight">
+      <h3 className="font-semibold text-navy-900 text-sm mb-1.5 group-hover:text-gold-400 transition-colors leading-tight">
         {template.name}
       </h3>
 
@@ -307,7 +307,7 @@ function TemplateCard({
 
       {/* Used for tag */}
       <div className="flex items-center justify-between">
-        <span className="inline-flex items-center gap-1 rounded-md bg-navy-800/80 border border-navy-700 px-2 py-0.5 text-[10px] text-navy-400">
+        <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-app-surface-alt)] border border-[var(--color-app-border)] px-2 py-0.5 text-[10px] text-navy-400">
           {template.usedFor}
         </span>
         <ChevronRight className="h-3.5 w-3.5 text-navy-600 group-hover:text-gold-400 group-hover:translate-x-0.5 transition-all" />
@@ -360,17 +360,17 @@ export default function NewReportPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Page header */}
-      <div className="border-b border-navy-700 bg-navy-900/50 px-6 py-5">
+      <div className="border-b border-[var(--color-app-border)] px-6 py-5">
         <div className="flex items-center gap-3 mb-1">
           <button
             onClick={() => router.push('/reports')}
-            className="flex items-center gap-1.5 text-xs text-navy-400 hover:text-navy-200 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-navy-400 hover:text-navy-900 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Reports
           </button>
         </div>
-        <h1 className="font-serif text-2xl text-navy-50 mt-3">
+        <h1 className="font-serif text-2xl text-navy-900 mt-3">
           Choose a Template
         </h1>
         <p className="mt-1 text-sm text-navy-400">
@@ -380,7 +380,7 @@ export default function NewReportPage() {
       </div>
 
       {/* Search + filter bar */}
-      <div className="border-b border-navy-700 bg-navy-900/30 px-6 py-3 flex items-center gap-4">
+      <div className="border-b border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-6 py-3 flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-navy-500" />
           <input
@@ -388,7 +388,7 @@ export default function NewReportPage() {
             placeholder="Search templates…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-navy-800 border border-navy-700 rounded-md pl-9 pr-3 py-1.5 text-sm text-navy-100 placeholder:text-navy-500 focus:outline-none focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/30 transition-colors"
+            className="w-full bg-white border border-[var(--color-app-border)] rounded-md pl-9 pr-3 py-1.5 text-sm text-navy-900 placeholder:text-navy-500 focus:outline-none focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/30 transition-colors"
           />
         </div>
 
@@ -401,7 +401,7 @@ export default function NewReportPage() {
                 'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
                 filter === opt.value
                   ? 'bg-gold-500/20 text-gold-400 border border-gold-500/30'
-                  : 'text-navy-400 hover:text-navy-200 hover:bg-navy-800 border border-transparent'
+                  : 'text-navy-400 hover:text-navy-900 hover:bg-[var(--color-app-surface-alt)] border border-transparent'
               )}
             >
               {opt.label}
@@ -419,7 +419,7 @@ export default function NewReportPage() {
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <FileText className="h-10 w-10 text-navy-600 mb-3" />
-            <p className="text-navy-300 font-medium">No templates match your search</p>
+            <p className="text-navy-600 font-medium">No templates match your search</p>
             <p className="text-sm text-navy-500 mt-1">
               Try adjusting your filters or search term.
             </p>

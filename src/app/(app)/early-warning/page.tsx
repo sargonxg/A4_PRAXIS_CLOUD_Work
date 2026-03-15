@@ -81,6 +81,8 @@ const CONFLICT_STAGES: Record<string, number> = {
   'nordalia-crisis': 4,
   'sahel-corridor': 3,
   'south-china-sea': 2,
+  'ukraine-russia': 7,
+  'sudan-crisis': 8,
 };
 
 // Mock events per conflict
@@ -100,6 +102,16 @@ const MOCK_EVENTS: Record<string, { title: string; date: string }[]> = {
     { title: 'ASEAN ministerial statement issued', date: 'Mar 8' },
     { title: 'US Freedom of Navigation Operation', date: 'Mar 5' },
   ],
+  'ukraine-russia': [
+    { title: 'Frontline shifts reported in Zaporizhzhia sector', date: 'Mar 12' },
+    { title: 'IAEA Director General visits Zaporizhzhia NPP', date: 'Mar 9' },
+    { title: 'New sanctions package adopted by EU', date: 'Mar 7' },
+  ],
+  'sudan-crisis': [
+    { title: 'RSF advances in Gezira state', date: 'Mar 11' },
+    { title: 'IPC Phase 5 declared in North Darfur', date: 'Mar 8' },
+    { title: 'Jeddah talks suspended indefinitely', date: 'Mar 5' },
+  ],
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -112,6 +124,9 @@ const TRIGGERS = [
   { event: 'Karovia elections', deadline: '22 days', likelihood: 'Medium', conflict: 'Nordalia', likelihoodColor: 'text-gold-400' },
   { event: 'Sahel peacekeeping rotation', deadline: '14 days', likelihood: 'Medium', conflict: 'Sahel', likelihoodColor: 'text-gold-400' },
   { event: 'SCS patrol incident risk', deadline: 'Ongoing', likelihood: 'Elevated', conflict: 'SCS', likelihoodColor: 'text-crimson' },
+  { event: 'Ukraine spring offensive assessment window', deadline: '30 days', likelihood: 'High', conflict: 'Ukraine', likelihoodColor: 'text-crimson' },
+  { event: 'Sudan ceasefire review deadline', deadline: '12 days', likelihood: 'Critical', conflict: 'Sudan', likelihoodColor: 'text-crimson' },
+  { event: 'UNSC Sudan mandate discussion', deadline: '45 days', likelihood: 'Medium', conflict: 'Sudan', likelihoodColor: 'text-gold-400' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────

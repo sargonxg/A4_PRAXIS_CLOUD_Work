@@ -131,10 +131,10 @@ function sectionWordCount(sections: { content: string }[]): number {
 function EmptyState({ onNew }: { onNew: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-navy-800 border border-navy-700 mb-4">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--color-app-surface-alt)] border border-[var(--color-app-border)] mb-4">
         <FileText className="h-8 w-8 text-navy-500" />
       </div>
-      <h3 className="text-navy-200 font-semibold text-lg">No reports yet</h3>
+      <h3 className="text-navy-800 font-semibold text-lg">No reports yet</h3>
       <p className="text-sm text-navy-500 mt-2 max-w-xs">
         Create your first diplomatic report using one of our professional UN
         document templates.
@@ -166,24 +166,24 @@ function StoreReportRow({
   const wordCount = sectionWordCount(report.sections);
 
   return (
-    <tr className="group transition-colors hover:bg-navy-800/40">
+    <tr className="group transition-colors hover:bg-[var(--color-app-surface-alt)]">
       <td className="px-4 py-3.5">
         <button
           onClick={() => router.push(`/reports/${report.id}`)}
           className="flex items-center gap-3 text-left"
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-navy-700 text-navy-300 group-hover:bg-navy-600 group-hover:text-gold-400 transition-colors">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-navy-100 text-navy-700 group-hover:bg-navy-200 group-hover:text-gold-400 transition-colors">
             <FileText className="h-4 w-4" />
           </div>
           <div>
-            <span className="text-sm font-medium text-navy-100 group-hover:text-gold-400 transition-colors line-clamp-1 block">
+            <span className="text-sm font-medium text-navy-900 group-hover:text-gold-400 transition-colors line-clamp-1 block">
               {report.title}
             </span>
           </div>
         </button>
       </td>
       <td className="px-4 py-3.5">
-        <span className="text-xs text-navy-400">
+        <span className="text-xs text-navy-500">
           {report.sections.length} sections
         </span>
       </td>
@@ -191,10 +191,10 @@ function StoreReportRow({
         <Badge variant={cfg.badgeVariant}>{cfg.label}</Badge>
       </td>
       <td className="px-4 py-3.5">
-        <span className="text-xs text-navy-400">{wordCountLabel(wordCount)}</span>
+        <span className="text-xs text-navy-500">{wordCountLabel(wordCount)}</span>
       </td>
       <td className="px-4 py-3.5">
-        <div className="flex items-center gap-1.5 text-xs text-navy-400">
+        <div className="flex items-center gap-1.5 text-xs text-navy-500">
           <Clock className="h-3 w-3" />
           <span>
             {new Date(report.createdAt).toLocaleDateString('en-US', {
@@ -253,17 +253,17 @@ function DemoReportRow({ report }: { report: DemoReport }) {
   const cfg = STATUS_CONFIG[report.status] || STATUS_CONFIG.draft;
 
   return (
-    <tr className="group transition-colors hover:bg-navy-800/40">
+    <tr className="group transition-colors hover:bg-[var(--color-app-surface-alt)]">
       <td className="px-4 py-3.5">
         <button
           onClick={() => router.push('/reports/new')}
           className="flex items-center gap-3 text-left"
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-navy-700 text-navy-300 group-hover:bg-navy-600 group-hover:text-gold-400 transition-colors">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-navy-100 text-navy-700 group-hover:bg-navy-200 group-hover:text-gold-400 transition-colors">
             <FileText className="h-4 w-4" />
           </div>
           <div>
-            <span className="text-sm font-medium text-navy-100 group-hover:text-gold-400 transition-colors line-clamp-1 block">
+            <span className="text-sm font-medium text-navy-900 group-hover:text-gold-400 transition-colors line-clamp-1 block">
               {report.title}
             </span>
             <span className="text-xs text-navy-500">{report.conflict}</span>
@@ -271,18 +271,18 @@ function DemoReportRow({ report }: { report: DemoReport }) {
         </button>
       </td>
       <td className="px-4 py-3.5">
-        <span className="text-xs text-navy-400">{report.template}</span>
+        <span className="text-xs text-navy-500">{report.template}</span>
       </td>
       <td className="px-4 py-3.5">
         <Badge variant={cfg.badgeVariant}>{cfg.label}</Badge>
       </td>
       <td className="px-4 py-3.5">
-        <span className="text-xs text-navy-400">
+        <span className="text-xs text-navy-500">
           {wordCountLabel(report.wordCount)}
         </span>
       </td>
       <td className="px-4 py-3.5">
-        <div className="flex items-center gap-1.5 text-xs text-navy-400">
+        <div className="flex items-center gap-1.5 text-xs text-navy-500">
           <Clock className="h-3 w-3" />
           <span>{report.modified}</span>
         </div>
@@ -371,10 +371,10 @@ export default function ReportsPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-navy-700 bg-navy-900/50 px-6 py-4">
+      <div className="flex items-center justify-between border-b border-[var(--color-app-border)] px-6 py-4">
         <div>
-          <h1 className="font-serif text-2xl text-navy-50">Report Studio</h1>
-          <p className="mt-1 text-sm text-navy-400">
+          <h1 className="font-serif text-2xl text-navy-900">Report Studio</h1>
+          <p className="mt-1 text-sm text-navy-500">
             Create, edit, and manage diplomatic reports with AI assistance
           </p>
         </div>
@@ -388,7 +388,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Filter / search bar */}
-      <div className="flex items-center gap-4 border-b border-navy-700 bg-navy-900/30 px-6 py-2.5">
+      <div className="flex items-center gap-4 border-b border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-6 py-2.5">
         {/* Filter tabs */}
         <div className="flex items-center gap-0.5">
           {FILTER_TABS.map((tab) => (
@@ -398,8 +398,8 @@ export default function ReportsPage() {
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
                 activeFilter === tab.value
-                  ? 'bg-navy-700 text-navy-100'
-                  : 'text-navy-400 hover:text-navy-200 hover:bg-navy-800'
+                  ? 'bg-navy-900 text-white'
+                  : 'text-navy-500 hover:text-navy-700 hover:bg-[var(--color-app-surface-alt)]'
               )}
             >
               {tab.label}
@@ -408,8 +408,8 @@ export default function ReportsPage() {
                   className={cn(
                     'inline-flex items-center justify-center min-w-[16px] h-4 rounded-full text-[10px] px-1',
                     activeFilter === tab.value
-                      ? 'bg-navy-600 text-navy-200'
-                      : 'bg-navy-800 text-navy-500'
+                      ? 'bg-navy-200 text-navy-600'
+                      : 'bg-navy-100 text-navy-400'
                   )}
                 >
                   {tabCounts[tab.value]}
@@ -427,7 +427,7 @@ export default function ReportsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search reports…"
-            className="w-full bg-navy-800 border border-navy-700 rounded-md pl-8 pr-3 py-1.5 text-xs text-navy-100 placeholder:text-navy-500 focus:outline-none focus:border-gold-500/40 transition-colors"
+            className="w-full bg-white border border-[var(--color-app-border)] rounded-md pl-8 pr-3 py-1.5 text-xs text-navy-900 placeholder:text-navy-500 focus:outline-none focus:border-gold-500/40 transition-colors"
           />
         </div>
       </div>
@@ -456,7 +456,7 @@ export default function ReportsPage() {
           <EmptyState onNew={() => router.push('/reports/new')} />
         ) : filteredReports.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-navy-400 text-sm">No reports match your filter.</p>
+            <p className="text-navy-500 text-sm">No reports match your filter.</p>
             <Button
               variant="ghost"
               size="sm"
@@ -470,31 +470,31 @@ export default function ReportsPage() {
             </Button>
           </div>
         ) : (
-          <div className="rounded-lg border border-navy-700 overflow-hidden">
+          <div className="rounded-lg border border-[var(--color-app-border)] overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-navy-700 bg-navy-800/60">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-navy-400">
+                <tr className="border-b border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)]">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-navy-500">
                     Title
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-navy-400">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-navy-500">
                     Template
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-navy-400">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-navy-500">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-navy-400">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-navy-500">
                     Word Count
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-navy-400">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-navy-500">
                     Last Modified
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-navy-400">
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-navy-500">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-navy-700/50">
+              <tbody className="divide-y divide-[var(--color-app-border)]">
                 {usingDemo
                   ? (filteredReports as DemoReport[]).map((r) => (
                       <DemoReportRow key={r.id} report={r} />

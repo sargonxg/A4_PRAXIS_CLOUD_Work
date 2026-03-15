@@ -76,6 +76,7 @@ const CALENDAR_EVENTS = [
 const QUICK_ACTIONS = [
   { label: 'New Report', description: 'AI-assisted situation report', href: '/reports/new', icon: FileText, color: 'text-diplomatic-blue', bg: 'bg-diplomatic-blue/8' },
   { label: 'Ask PRAXIS', description: 'AI analysis and research', href: '/assistant', icon: MessageSquare, color: 'text-teal', bg: 'bg-teal/8' },
+  { label: 'Deep Research', description: 'Multi-source briefing research', href: '/assistant', icon: Globe, color: 'text-gold-600', bg: 'bg-gold-500/8', badge: 'New' },
   { label: 'Upload Sources', description: 'Ingest documents and cables', href: '/documents', icon: Upload, color: 'text-sage', bg: 'bg-sage/8' },
   { label: 'Media Scan', description: 'Analyze media landscape', href: '/media-compass', icon: Compass, color: 'text-navy-500', bg: 'bg-navy-100' },
 ];
@@ -1166,7 +1167,7 @@ Format with bold section headers using **text**. Be concise, professional, and a
                 const Icon = action.icon;
                 return (
                   <Link
-                    key={action.href}
+                    key={action.label}
                     href={action.href}
                     className="group flex flex-col gap-2 rounded-lg border border-[var(--color-app-border)] p-3 transition-all hover:border-diplomatic-blue/20 hover:shadow-sm"
                   >
@@ -1174,7 +1175,12 @@ Format with bold section headers using **text**. Be concise, professional, and a
                       <Icon className={cn('h-4 w-4', action.color)} />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-navy-900">{action.label}</p>
+                      <p className="text-xs font-semibold text-navy-900">
+                        {action.label}
+                        {'badge' in action && action.badge && (
+                          <span className="ml-1.5 inline-flex rounded-full bg-gold-500/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-gold-600">{action.badge}</span>
+                        )}
+                      </p>
                       <p className="text-[10px] text-navy-500">{action.description}</p>
                     </div>
                   </Link>

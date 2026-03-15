@@ -107,8 +107,8 @@ export function GraphViewer({
           </marker>
           {/* Radial gradient for background */}
           <radialGradient id="graphBg" cx="50%" cy="40%" r="60%">
-            <stop offset="0%" stopColor="#0F172A" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#050A18" stopOpacity="1" />
+            <stop offset="0%" stopColor="#F8FAFC" stopOpacity="1" />
+            <stop offset="100%" stopColor="#F1F5F9" stopOpacity="1" />
           </radialGradient>
         </defs>
 
@@ -130,7 +130,7 @@ export function GraphViewer({
             y1={0}
             x2={(i + 1) * (VIEWBOX_W / 16)}
             y2={VIEWBOX_H}
-            stroke="#1E293B"
+            stroke="#CBD5E1"
             strokeWidth={0.3}
             strokeOpacity={0.4}
           />
@@ -142,7 +142,7 @@ export function GraphViewer({
             y1={(i + 1) * (VIEWBOX_H / 11)}
             x2={VIEWBOX_W}
             y2={(i + 1) * (VIEWBOX_H / 11)}
-            stroke="#1E293B"
+            stroke="#CBD5E1"
             strokeWidth={0.3}
             strokeOpacity={0.4}
           />
@@ -224,8 +224,8 @@ export function GraphViewer({
                   width={60}
                   height={16}
                   rx={4}
-                  fill="#0B1120"
-                  fillOpacity={0.85}
+                  fill="#FFFFFF"
+                  fillOpacity={0.92}
                   stroke={edgeConfig.color}
                   strokeWidth={0.5}
                   strokeOpacity={0.4}
@@ -331,7 +331,7 @@ export function GraphViewer({
                 x={node.x}
                 y={node.y + r + 14}
                 textAnchor="middle"
-                fill={isActive ? "#E2E8F0" : "#94A3B8"}
+                fill={isActive ? "#0F172A" : "#475569"}
                 fontSize={isActive ? 10 : 9}
                 fontWeight={isActive ? 600 : 400}
                 fontFamily="var(--font-sans), system-ui, sans-serif"
@@ -352,7 +352,7 @@ export function GraphViewer({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.12 }}
-            className="pointer-events-none absolute z-20 rounded-lg border border-navy-700/60 bg-navy-900/95 px-3 py-2 shadow-xl backdrop-blur-md"
+            className="pointer-events-none absolute z-20 rounded-lg border border-[var(--color-app-border)] bg-white/95 px-3 py-2 shadow-xl backdrop-blur-md"
             style={{
               left: tooltipPos.x + 16,
               top: tooltipPos.y - 10,
@@ -366,11 +366,11 @@ export function GraphViewer({
                     NODE_TYPE_CONFIG[hoveredNode.type].color,
                 }}
               />
-              <span className="text-sm font-semibold text-navy-100">
+              <span className="text-sm font-semibold text-navy-900">
                 {hoveredNode.label}
               </span>
             </div>
-            <div className="mt-1 flex items-center gap-2 text-xs text-navy-400">
+            <div className="mt-1 flex items-center gap-2 text-xs text-navy-600">
               <span
                 className="font-medium"
                 style={{
@@ -379,13 +379,13 @@ export function GraphViewer({
               >
                 {NODE_TYPE_CONFIG[hoveredNode.type].label}
               </span>
-              <span className="text-navy-600">&middot;</span>
+              <span className="text-navy-400">&middot;</span>
               <span>
                 Importance: {Math.round(hoveredNode.importance * 100)}%
               </span>
             </div>
             {hoveredNode.description && (
-              <p className="mt-1 max-w-[200px] text-[10px] leading-snug text-navy-500">
+              <p className="mt-1 max-w-[200px] text-[10px] leading-snug text-navy-600">
                 {hoveredNode.description}
               </p>
             )}

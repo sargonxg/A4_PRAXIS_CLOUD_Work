@@ -15,7 +15,12 @@ export interface DemoCase {
   summaryPrompt: string;
 }
 
+import { UKRAINE_RUSSIA_CASE } from './cases/ukraine-russia';
+import { SUDAN_CRISIS_CASE } from './cases/sudan-crisis';
+
 export const DEMO_CASES: DemoCase[] = [
+  UKRAINE_RUSSIA_CASE,
+  SUDAN_CRISIS_CASE,
   {
     id: 'nordalia',
     name: 'Nordalia Crisis',

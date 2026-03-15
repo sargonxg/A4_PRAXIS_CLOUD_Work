@@ -703,7 +703,7 @@ function TerminologyChecker() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <label className="text-sm font-medium text-navy-300">
+        <label className="text-sm font-medium text-navy-600">
           Paste your text below to check for non-standard UN terminology
         </label>
         <Textarea
@@ -742,7 +742,7 @@ function TerminologyChecker() {
             className="space-y-4"
           >
             {/* Summary bar */}
-            <div className="flex items-center gap-3 rounded-lg border border-navy-700 bg-navy-900/60 px-4 py-3">
+            <div className="flex items-center gap-3 rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-4 py-3">
               {results.length === 0 ? (
                 <>
                   <Check className="h-5 w-5 text-sage" />
@@ -754,7 +754,7 @@ function TerminologyChecker() {
               ) : (
                 <>
                   <AlertTriangle className="h-5 w-5 text-gold-500" />
-                  <span className="text-sm text-navy-200">
+                  <span className="text-sm text-navy-800">
                     Found{" "}
                     <span className="font-semibold text-gold-400">
                       {results.length}
@@ -774,7 +774,7 @@ function TerminologyChecker() {
               )}
             </div>
             {recommendation && (
-              <div className="rounded-lg border border-teal/20 bg-teal/5 px-4 py-3 text-sm text-navy-200">
+              <div className="rounded-lg border border-teal/20 bg-teal/5 px-4 py-3 text-sm text-navy-800">
                 <span className="font-medium text-teal">AI Recommendation: </span>{recommendation}
               </div>
             )}
@@ -788,7 +788,7 @@ function TerminologyChecker() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}
                 >
-                  <Card className="border-navy-700/80">
+                  <Card className="border-[var(--color-app-border)]/80">
                     <CardContent className="p-4">
                       <div className="flex flex-wrap items-start gap-3">
                         {/* Severity badge */}
@@ -820,7 +820,7 @@ function TerminologyChecker() {
                               onClick={() =>
                                 copySuggestion(i, match.suggestion)
                               }
-                              className="ml-1 p-1 rounded hover:bg-navy-700 transition-colors text-navy-400 hover:text-navy-200 cursor-pointer"
+                              className="ml-1 p-1 rounded hover:bg-navy-100 transition-colors text-navy-400 hover:text-navy-700 cursor-pointer"
                             >
                               {copiedIdx === i ? (
                                 <Check className="h-3.5 w-3.5 text-sage" />
@@ -911,7 +911,7 @@ function ResolutionDrafter() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Paragraph type */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-navy-300">
+          <label className="text-sm font-medium text-navy-600">
             Paragraph Type
           </label>
           <div className="flex gap-2">
@@ -923,7 +923,7 @@ function ResolutionDrafter() {
                   "flex-1 rounded-md px-4 py-2.5 text-sm font-medium transition-all border cursor-pointer",
                   paragraphType === t
                     ? "bg-gold-500/10 border-gold-500/50 text-gold-400"
-                    : "bg-navy-900 border-navy-600 text-navy-400 hover:bg-navy-800 hover:text-navy-200",
+                    : "bg-[var(--color-app-surface-alt)] border-[var(--color-app-border)] text-navy-400 hover:bg-navy-100 hover:text-navy-700",
                 )}
               >
                 {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -934,7 +934,7 @@ function ResolutionDrafter() {
 
         {/* Strength */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-navy-300">
+          <label className="text-sm font-medium text-navy-600">
             Diplomatic Strength
           </label>
           <Select
@@ -962,7 +962,7 @@ function ResolutionDrafter() {
           </span>
           <span className="capitalize">{strength}</span>
         </div>
-        <div className="h-2 rounded-full bg-navy-700 overflow-hidden">
+        <div className="h-2 rounded-full bg-navy-100 overflow-hidden">
           <motion.div
             className={cn("h-full rounded-full", strengthColor[strength])}
             initial={false}
@@ -979,7 +979,7 @@ function ResolutionDrafter() {
 
       {/* User input */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-navy-300">
+        <label className="text-sm font-medium text-navy-600">
           What should this paragraph express?
         </label>
         <Textarea
@@ -1025,8 +1025,8 @@ function ResolutionDrafter() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md bg-navy-900 border border-navy-700 p-4">
-                  <p className="text-sm text-navy-200 leading-relaxed font-serif italic">
+                <div className="rounded-md bg-[var(--color-app-surface-alt)] border border-[var(--color-app-border)] p-4">
+                  <p className="text-sm text-navy-800 leading-relaxed font-serif italic">
                     {generatedText}
                     {isGenerating && (
                       <span className="inline-block w-0.5 h-4 bg-gold-500 ml-0.5 animate-pulse" />
@@ -1073,7 +1073,7 @@ function TalkingPointsGenerator() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2 md:col-span-2">
-          <label className="text-sm font-medium text-navy-300">
+          <label className="text-sm font-medium text-navy-600">
             Situation
           </label>
           <Textarea
@@ -1085,7 +1085,7 @@ function TalkingPointsGenerator() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-navy-300">
+          <label className="text-sm font-medium text-navy-600">
             Audience
           </label>
           <Select value={audience} onValueChange={setAudience}>
@@ -1103,7 +1103,7 @@ function TalkingPointsGenerator() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-navy-300">
+          <label className="text-sm font-medium text-navy-600">
             Sensitivities{" "}
             <span className="text-navy-500">(optional)</span>
           </label>
@@ -1116,7 +1116,7 @@ function TalkingPointsGenerator() {
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <label className="text-sm font-medium text-navy-300">
+          <label className="text-sm font-medium text-navy-600">
             Key Messages
           </label>
           <Textarea
@@ -1153,7 +1153,7 @@ function TalkingPointsGenerator() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-navy-200 leading-relaxed whitespace-pre-line">
+                    <p className="text-sm text-navy-800 leading-relaxed whitespace-pre-line">
                       {TALKING_POINTS_TEMPLATE.opening}
                     </p>
                   </CardContent>
@@ -1180,7 +1180,7 @@ function TalkingPointsGenerator() {
                           <span className="shrink-0 h-5 w-5 rounded-full bg-gold-500/20 text-gold-400 text-xs font-bold flex items-center justify-center mt-0.5">
                             {i + 1}
                           </span>
-                          <p className="text-sm font-medium text-navy-100">
+                          <p className="text-sm font-medium text-navy-900">
                             {msg.point}
                           </p>
                         </div>
@@ -1226,12 +1226,12 @@ function TalkingPointsGenerator() {
                     {TALKING_POINTS_TEMPLATE.qaSection.map((qa, i) => (
                       <div
                         key={i}
-                        className="rounded-md border border-navy-700 bg-navy-900/50 p-3 space-y-2"
+                        className="rounded-md border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-3 space-y-2"
                       >
                         <p className="text-sm font-medium text-teal">
                           Q: {qa.question}
                         </p>
-                        <p className="text-sm text-navy-300 leading-relaxed">
+                        <p className="text-sm text-navy-600 leading-relaxed">
                           A: {qa.response}
                         </p>
                       </div>
@@ -1259,7 +1259,7 @@ function TalkingPointsGenerator() {
                       {TALKING_POINTS_TEMPLATE.redLines.map((line, i) => (
                         <li
                           key={i}
-                          className="flex items-start gap-2 text-sm text-navy-300"
+                          className="flex items-start gap-2 text-sm text-navy-600"
                         >
                           <span className="text-crimson mt-0.5 shrink-0">
                             &times;
@@ -1328,7 +1328,7 @@ function DocumentFormatter() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-navy-300">
+          <label className="text-sm font-medium text-navy-600">
             Output Format
           </label>
           <Select value={format} onValueChange={setFormat}>
@@ -1348,13 +1348,13 @@ function DocumentFormatter() {
 
         {/* Format preview */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-navy-300">
+          <label className="text-sm font-medium text-navy-600">
             Document Structure Preview
           </label>
-          <div className="rounded-md border border-navy-700 bg-navy-900/50 p-3 space-y-1 max-h-36 overflow-y-auto">
+          <div className="rounded-md border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-3 space-y-1 max-h-36 overflow-y-auto">
             {DOC_STRUCTURES[format]?.sections.map((s, i) => (
               <p key={i} className="text-xs text-navy-400">
-                <span className="text-navy-300 font-medium">{s.heading}</span>
+                <span className="text-navy-600 font-medium">{s.heading}</span>
               </p>
             ))}
           </div>
@@ -1362,7 +1362,7 @@ function DocumentFormatter() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium text-navy-300">
+        <label className="text-sm font-medium text-navy-600">
           Paste your text (separate sections with blank lines)
         </label>
         <Textarea
@@ -1401,7 +1401,7 @@ function DocumentFormatter() {
                 </Button>
               </CardHeader>
               <CardContent>
-                <pre className="text-sm text-navy-200 leading-relaxed whitespace-pre-wrap font-mono bg-navy-900 border border-navy-700 rounded-md p-4 max-h-[500px] overflow-y-auto">
+                <pre className="text-sm text-navy-800 leading-relaxed whitespace-pre-wrap font-mono bg-[var(--color-app-surface-alt)] border border-[var(--color-app-border)] rounded-md p-4 max-h-[500px] overflow-y-auto">
                   {formattedOutput}
                 </pre>
               </CardContent>
@@ -1484,7 +1484,7 @@ function DiplomaticEditor() {
     <div className="space-y-6">
       {/* Mode selection */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-navy-300">
+        <label className="text-sm font-medium text-navy-600">
           Transformation Mode
         </label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -1496,7 +1496,7 @@ function DiplomaticEditor() {
                 "rounded-md px-3 py-2.5 text-sm font-medium transition-all border text-center cursor-pointer",
                 mode === m.value
                   ? "bg-gold-500/10 border-gold-500/50 text-gold-400"
-                  : "bg-navy-900 border-navy-600 text-navy-400 hover:bg-navy-800 hover:text-navy-200",
+                  : "bg-[var(--color-app-surface-alt)] border-[var(--color-app-border)] text-navy-400 hover:bg-navy-100 hover:text-navy-700",
               )}
             >
               {m.label}
@@ -1507,7 +1507,7 @@ function DiplomaticEditor() {
 
       {/* Input */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-navy-300">
+        <label className="text-sm font-medium text-navy-600">
           Input Text
         </label>
         <Textarea
@@ -1557,16 +1557,16 @@ function DiplomaticEditor() {
                 {/* Original (with diff markings) */}
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-navy-300">
+                    <CardTitle className="text-sm text-navy-600">
                       Original (with changes)
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="rounded-md bg-navy-900 border border-navy-700 p-4 text-sm leading-relaxed">
+                    <div className="rounded-md bg-[var(--color-app-surface-alt)] border border-[var(--color-app-border)] p-4 text-sm leading-relaxed">
                       {result.diff.map((seg, i) => {
                         if (seg.type === "removed") return <span key={i} className="bg-crimson/20 text-crimson line-through decoration-crimson/60">{seg.text}</span>;
                         if (seg.type === "added") return null;
-                        return <span key={i} className="text-navy-300">{seg.text}</span>;
+                        return <span key={i} className="text-navy-600">{seg.text}</span>;
                       })}
                     </div>
                   </CardContent>
@@ -1584,11 +1584,11 @@ function DiplomaticEditor() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="rounded-md bg-navy-900 border border-navy-700 p-4 text-sm leading-relaxed">
+                    <div className="rounded-md bg-[var(--color-app-surface-alt)] border border-[var(--color-app-border)] p-4 text-sm leading-relaxed">
                       {result.diff.map((seg, i) => {
                         if (seg.type === "added") return <span key={i} className="bg-sage/20 text-sage">{seg.text}</span>;
                         if (seg.type === "removed") return null;
-                        return <span key={i} className="text-navy-300">{seg.text}</span>;
+                        return <span key={i} className="text-navy-600">{seg.text}</span>;
                       })}
                     </div>
                   </CardContent>
@@ -1606,8 +1606,8 @@ function DiplomaticEditor() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="rounded-md bg-navy-900 border border-navy-700 p-4 text-sm leading-relaxed">
-                    <p className="text-navy-200 whitespace-pre-wrap">
+                  <div className="rounded-md bg-[var(--color-app-surface-alt)] border border-[var(--color-app-border)] p-4 text-sm leading-relaxed">
+                    <p className="text-navy-800 whitespace-pre-wrap">
                       {result.transformed}
                       {isTransforming && (
                         <span className="inline-block w-0.5 h-4 bg-gold-500 ml-0.5 animate-pulse" />
@@ -1657,7 +1657,7 @@ const TABS = [
 
 export default function UNToolkitPage() {
   return (
-    <div className="min-h-screen bg-navy-950">
+    <div className="space-y-6">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Page header */}
         <motion.div
@@ -1676,12 +1676,12 @@ export default function UNToolkitPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="terminology" className="space-y-6">
-          <TabsList className="w-full h-auto flex-wrap gap-1 bg-navy-900/80 p-1.5 rounded-xl">
+          <TabsList className="w-full h-auto flex-wrap gap-1 bg-[var(--color-app-surface-alt)] p-1.5 rounded-xl">
             {TABS.map((tab) => (
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
-                className="gap-2 data-[state=active]:bg-navy-700 data-[state=active]:text-gold-400 px-3 py-2 text-xs sm:text-sm"
+                className="gap-2 data-[state=active]:bg-navy-100 data-[state=active]:text-gold-400 px-3 py-2 text-xs sm:text-sm"
               >
                 <tab.icon className="h-4 w-4" />
                 <span className="hidden sm:inline">{tab.label}</span>

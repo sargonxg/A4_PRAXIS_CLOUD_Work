@@ -478,7 +478,7 @@ export default function DocumentVaultPage() {
   );
 
   return (
-    <div className="min-h-screen bg-navy-950">
+    <div>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* ---- HEADER ---- */}
         <motion.div
@@ -487,7 +487,7 @@ export default function DocumentVaultPage() {
           className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
         >
           <div>
-            <h1 className="text-2xl font-bold text-navy-50 font-serif tracking-wide">
+            <h1 className="text-2xl font-bold text-navy-900 font-serif tracking-wide">
               Document Vault
             </h1>
             <p className="mt-1 text-sm text-navy-400">
@@ -556,7 +556,7 @@ export default function DocumentVaultPage() {
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-navy-500 hover:text-navy-300 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-navy-500 hover:text-navy-700 cursor-pointer"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -625,7 +625,7 @@ export default function DocumentVaultPage() {
             <Card>
               <CardContent className="p-0">
                 {/* Table header */}
-                <div className="grid grid-cols-[40px_1fr_80px_100px_60px] gap-2 px-4 py-3 border-b border-navy-700 text-xs font-medium text-navy-400 uppercase tracking-wider">
+                <div className="grid grid-cols-[40px_1fr_80px_100px_60px] gap-2 px-4 py-3 border-b border-[var(--color-app-border)] text-xs font-medium text-navy-500 uppercase tracking-wider">
                   <span>Type</span>
                   <span>Name</span>
                   <span>Date</span>
@@ -634,7 +634,7 @@ export default function DocumentVaultPage() {
                 </div>
 
                 {/* Rows */}
-                <div className="divide-y divide-navy-700/50">
+                <div className="divide-y divide-[var(--color-app-border)]">
                   {filteredDocs.length === 0 ? (
                     <div className="px-4 py-12 text-center">
                       <FileText className="h-10 w-10 mx-auto text-navy-600 mb-3" />
@@ -653,8 +653,8 @@ export default function DocumentVaultPage() {
                         className={cn(
                           "grid grid-cols-[40px_1fr_80px_100px_60px] gap-2 px-4 py-3 items-center cursor-pointer transition-colors",
                           selectedDoc?.id === doc.id
-                            ? "bg-navy-700/50"
-                            : "hover:bg-navy-800/50",
+                            ? "bg-[var(--color-app-surface-alt)]"
+                            : "hover:bg-navy-100",
                         )}
                       >
                         {/* Type icon */}
@@ -664,7 +664,7 @@ export default function DocumentVaultPage() {
 
                         {/* Name */}
                         <div className="min-w-0">
-                          <p className="text-sm text-navy-200 truncate font-medium">
+                          <p className="text-sm text-navy-900 truncate font-medium">
                             {doc.name}
                           </p>
                           <p className="text-xs text-navy-500">{doc.size}</p>
@@ -685,13 +685,13 @@ export default function DocumentVaultPage() {
                               e.stopPropagation();
                               setSelectedDoc(doc);
                             }}
-                            className="p-1 rounded hover:bg-navy-700 text-navy-400 hover:text-navy-200 transition-colors cursor-pointer"
+                            className="p-1 rounded hover:bg-navy-100 text-navy-500 hover:text-navy-900 transition-colors cursor-pointer"
                           >
                             <Eye className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={(e) => e.stopPropagation()}
-                            className="p-1 rounded hover:bg-navy-700 text-navy-400 hover:text-navy-200 transition-colors cursor-pointer"
+                            className="p-1 rounded hover:bg-navy-100 text-navy-500 hover:text-navy-900 transition-colors cursor-pointer"
                           >
                             <Download className="h-3.5 w-3.5" />
                           </button>
@@ -725,7 +725,7 @@ export default function DocumentVaultPage() {
                         </div>
                         <button
                           onClick={() => setSelectedDoc(null)}
-                          className="p-1 rounded hover:bg-navy-700 text-navy-400 hover:text-navy-200 shrink-0 cursor-pointer"
+                          className="p-1 rounded hover:bg-navy-100 text-navy-500 hover:text-navy-900 shrink-0 cursor-pointer"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -776,8 +776,8 @@ export default function DocumentVaultPage() {
 
                         {/* Preview */}
                         <TabsContent value="preview">
-                          <div className="rounded-md bg-navy-900 border border-navy-700 p-4 max-h-[400px] overflow-y-auto">
-                            <pre className="text-xs text-navy-300 leading-relaxed whitespace-pre-wrap font-mono">
+                          <div className="rounded-md bg-[var(--color-app-surface-alt)] border border-[var(--color-app-border)] p-4 max-h-[400px] overflow-y-auto">
+                            <pre className="text-xs text-navy-600 leading-relaxed whitespace-pre-wrap font-mono">
                               {selectedDoc.preview}
                             </pre>
                           </div>
@@ -845,9 +845,9 @@ export default function DocumentVaultPage() {
                               {selectedDoc.usage.map((use, i) => (
                                 <div
                                   key={i}
-                                  className="rounded-md border border-navy-700 bg-navy-900/50 p-3 space-y-1"
+                                  className="rounded-md border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-3 space-y-1"
                                 >
-                                  <p className="text-sm font-medium text-navy-200">
+                                  <p className="text-sm font-medium text-navy-900">
                                     {use.reportTitle}
                                   </p>
                                   <div className="flex items-center gap-2 text-xs text-navy-500">

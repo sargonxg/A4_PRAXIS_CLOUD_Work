@@ -440,8 +440,8 @@ export default function ConflictGraphPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-navy-950">
-      <div className="mx-auto max-w-[1400px] px-4 py-6 lg:px-8">
+    <div className="space-y-6">
+      <div className="mx-auto max-w-[1400px]">
         {/* ── Header ─────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -454,7 +454,7 @@ export default function ConflictGraphPage() {
               <Network className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="font-serif text-2xl font-normal tracking-wide text-navy-100">
+              <h1 className="font-serif text-2xl font-normal tracking-wide text-navy-900">
                 Conflict Intelligence Graph
               </h1>
               <p className="text-sm text-navy-400">
@@ -476,7 +476,7 @@ export default function ConflictGraphPage() {
             <select
               value={selectedConflict}
               onChange={(e) => setSelectedConflict(e.target.value)}
-              className="appearance-none rounded-lg border border-navy-700/50 bg-navy-800/80 py-2 pl-3.5 pr-8 text-sm font-medium text-navy-200 transition-colors hover:border-navy-600 focus:border-gold-500/50 focus:outline-none focus:ring-1 focus:ring-gold-500/30"
+              className="appearance-none rounded-lg border border-[var(--color-app-border)] bg-white py-2 pl-3.5 pr-8 text-sm font-medium text-navy-800 transition-colors hover:border-navy-400 focus:border-gold-500/50 focus:outline-none focus:ring-1 focus:ring-gold-500/30"
             >
               {CONFLICTS.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -493,7 +493,7 @@ export default function ConflictGraphPage() {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="appearance-none rounded-lg border border-navy-700/50 bg-navy-800/80 py-2 pl-9 pr-8 text-sm text-navy-200 transition-colors hover:border-navy-600 focus:border-gold-500/50 focus:outline-none focus:ring-1 focus:ring-gold-500/30"
+              className="appearance-none rounded-lg border border-[var(--color-app-border)] bg-white py-2 pl-9 pr-8 text-sm text-navy-800 transition-colors hover:border-navy-400 focus:border-gold-500/50 focus:outline-none focus:ring-1 focus:ring-gold-500/30"
             >
               {NODE_TYPE_FILTERS.map((t) => (
                 <option key={t} value={t}>
@@ -517,7 +517,7 @@ export default function ConflictGraphPage() {
                 setSelectedNodeId(null);
                 setTypeFilter("All Types");
               }}
-              className="rounded-md px-2 py-1 text-navy-400 transition-colors hover:bg-navy-800 hover:text-navy-200"
+              className="rounded-md px-2 py-1 text-navy-600 transition-colors hover:bg-navy-100 hover:text-navy-800"
             >
               Reset
             </button>
@@ -547,8 +547,8 @@ export default function ConflictGraphPage() {
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs transition-colors",
                 typeFilter === type
-                  ? "bg-navy-800 text-navy-200"
-                  : "text-navy-500 hover:text-navy-400"
+                  ? "bg-navy-100 text-navy-800"
+                  : "text-navy-600 hover:text-navy-800"
               )}
             >
               <div
@@ -558,18 +558,18 @@ export default function ConflictGraphPage() {
               {config.label}
             </button>
           ))}
-          <div className="ml-2 flex items-center gap-3 border-l border-navy-700/40 pl-3">
+          <div className="ml-2 flex items-center gap-3 border-l border-[var(--color-app-border)] pl-3">
             <div className="flex items-center gap-1.5">
               <div className="h-px w-4 bg-[#5B8C5A]" />
-              <span className="text-[10px] text-navy-500">Ally</span>
+              <span className="text-[10px] text-navy-600">Ally</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-px w-4 border-b border-dashed border-[#A63D40]" />
-              <span className="text-[10px] text-navy-500">Adversary</span>
+              <span className="text-[10px] text-navy-600">Adversary</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-px w-4 bg-[#4A90A4]" />
-              <span className="text-[10px] text-navy-500">Mediator</span>
+              <span className="text-[10px] text-navy-600">Mediator</span>
             </div>
           </div>
         </motion.div>
@@ -582,9 +582,9 @@ export default function ConflictGraphPage() {
           className="mb-4 grid gap-4 lg:grid-cols-[1fr_340px]"
         >
           {/* Graph Area */}
-          <div className="relative rounded-xl border border-navy-700/40 bg-navy-900/50 p-2">
+          <div className="relative rounded-xl border border-[var(--color-app-border)] bg-white p-2">
             <div className="absolute right-3 top-3 z-10">
-              <button className="rounded-md p-1.5 text-navy-500 transition-colors hover:bg-navy-800/80 hover:text-navy-300">
+              <button className="rounded-md p-1.5 text-navy-600 transition-colors hover:bg-navy-100 hover:text-navy-800">
                 <Maximize2 className="h-4 w-4" />
               </button>
             </div>
@@ -632,21 +632,21 @@ export default function ConflictGraphPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/80 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/20 backdrop-blur-sm p-4"
             onClick={(e) => e.target === e.currentTarget && setExtractOpen(false)}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 16 }}
-              className="w-full max-w-2xl rounded-xl border border-navy-700/60 bg-navy-900 p-6 shadow-2xl"
+              className="w-full max-w-2xl rounded-xl border border-[var(--color-app-border)] bg-white p-6 shadow-2xl"
             >
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-gold-500" />
-                  <h2 className="text-base font-semibold text-navy-100">Extract Conflict Entities</h2>
+                  <h2 className="text-base font-semibold text-navy-900">Extract Conflict Entities</h2>
                 </div>
-                <button onClick={() => setExtractOpen(false)} className="rounded-md p-1 text-navy-500 hover:bg-navy-800 hover:text-navy-300 transition-colors">
+                <button onClick={() => setExtractOpen(false)} className="rounded-md p-1 text-navy-600 hover:bg-navy-100 hover:text-navy-800 transition-colors">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -659,7 +659,7 @@ export default function ConflictGraphPage() {
                 onChange={(e) => setExtractText(e.target.value)}
                 rows={6}
                 placeholder="Paste your source text here..."
-                className="w-full rounded-lg border border-navy-700 bg-navy-800/80 px-3 py-2.5 text-sm text-navy-200 placeholder-navy-500 focus:border-gold-500/50 focus:outline-none focus:ring-1 focus:ring-gold-500/30 resize-none"
+                className="w-full rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-3 py-2.5 text-sm text-navy-800 placeholder-navy-400 focus:border-gold-500/50 focus:outline-none focus:ring-1 focus:ring-gold-500/30 resize-none"
               />
 
               <div className="mt-3 flex items-center justify-between">
@@ -680,7 +680,7 @@ export default function ConflictGraphPage() {
 
               {extractedResult && (
                 <div className="mt-4 space-y-3">
-                  <div className="flex items-center gap-2 border-t border-navy-700/40 pt-4">
+                  <div className="flex items-center gap-2 border-t border-[var(--color-app-border)] pt-4">
                     <span className="text-xs font-semibold uppercase tracking-wider text-navy-400">Extracted Entities</span>
                     <span className="rounded-full bg-gold-500/15 px-2 py-0.5 text-[10px] font-medium text-gold-400">
                       {Object.values(extractedResult).flat().length} total
