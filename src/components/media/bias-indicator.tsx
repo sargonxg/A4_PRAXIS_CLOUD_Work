@@ -30,7 +30,7 @@ export function BiasIndicator({ value, label, className }: BiasIndicatorProps) {
       )}
       <div className="relative">
         {/* Track */}
-        <div className="relative h-2 w-full overflow-hidden rounded-full bg-navy-800">
+        <div className="relative h-2 w-full overflow-hidden rounded-full bg-navy-200">
           {/* Gradient fill */}
           <div
             className="absolute inset-0 rounded-full"
@@ -43,11 +43,11 @@ export function BiasIndicator({ value, label, className }: BiasIndicatorProps) {
         </div>
 
         {/* Center line */}
-        <div className="absolute top-0 left-1/2 h-2 w-px -translate-x-1/2 bg-navy-500" />
+        <div className="absolute top-0 left-1/2 h-2 w-px -translate-x-1/2 bg-navy-400" />
 
         {/* Indicator dot */}
         <motion.div
-          className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-gold-500 bg-navy-900 shadow-md shadow-gold-500/20"
+          className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-gold-500 bg-white shadow-md shadow-gold-500/20"
           initial={{ left: "50%" }}
           animate={{ left: `${pct}%` }}
           transition={{ type: "spring", stiffness: 200, damping: 20 }}

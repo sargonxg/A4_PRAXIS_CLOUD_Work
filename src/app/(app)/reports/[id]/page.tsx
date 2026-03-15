@@ -192,23 +192,23 @@ function SectionEditor({
         'rounded-xl border transition-colors',
         isAiContent
           ? 'border-gold-500/20 bg-gold-500/5'
-          : 'border-navy-700 bg-navy-900/40'
+          : 'border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)]'
       )}
     >
       {/* Section header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-navy-700/50">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-app-border)]">
         <div className="flex items-center gap-2.5">
           {isAiContent && (
             <span className="w-1.5 h-1.5 rounded-full bg-gold-400 shrink-0" />
           )}
-          <h3 className="text-sm font-semibold text-navy-100">{title}</h3>
+          <h3 className="text-sm font-semibold text-navy-900">{title}</h3>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-navy-500">
             {wordCount} {wordCount === 1 ? 'word' : 'words'}
           </span>
           {isAiContent && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-gold-500/10 border border-gold-500/20 px-2 py-0.5 text-[10px] text-gold-400">
+            <span className="inline-flex items-center gap-1 rounded-md bg-gold-500/10 border border-gold-500/20 px-2 py-0.5 text-[10px] text-gold-600">
               <Sparkles className="h-2.5 w-2.5" />
               AI generated
             </span>
@@ -219,7 +219,7 @@ function SectionEditor({
       {/* Textarea */}
       <div className="relative px-4 py-3">
         {isGenerating && (
-          <div className="absolute top-4 right-6 flex items-center gap-1.5 text-xs text-gold-400 bg-navy-900/80 px-2 py-1 rounded-md">
+          <div className="absolute top-4 right-6 flex items-center gap-1.5 text-xs text-gold-600 px-2 py-1 rounded-md">
             <Loader2 className="h-3 w-3 animate-spin" />
             Generating…
           </div>
@@ -234,7 +234,7 @@ function SectionEditor({
           disabled={isGenerating}
           placeholder={`Write the ${title} section here, or use AI to generate it…`}
           className={cn(
-            'w-full resize-none bg-transparent text-sm text-navy-100 placeholder:text-navy-600',
+            'w-full resize-none bg-transparent text-sm text-navy-900 placeholder:text-navy-400',
             'focus:outline-none leading-relaxed min-h-[120px]',
             isGenerating && 'opacity-75 cursor-wait'
           )}
@@ -245,7 +245,7 @@ function SectionEditor({
       <div
         className={cn(
           'flex items-center gap-2 px-4 py-2.5 border-t',
-          isAiContent ? 'border-gold-500/10' : 'border-navy-700/50'
+          isAiContent ? 'border-gold-500/10' : 'border-[var(--color-app-border)]'
         )}
       >
         <Button
@@ -270,7 +270,7 @@ function SectionEditor({
               variant="ghost"
               onClick={() => generateSection('rephrase')}
               disabled={isGenerating || content.length === 0}
-              className="gap-1.5 text-xs h-7 text-navy-400 hover:text-navy-100"
+              className="gap-1.5 text-xs h-7 text-navy-400 hover:text-navy-900"
             >
               <WrapText className="h-3 w-3" />
               Rephrase Diplomatically
@@ -281,7 +281,7 @@ function SectionEditor({
                 variant="ghost"
                 onClick={() => generateSection('shorter')}
                 disabled={isGenerating || content.length === 0}
-                className="gap-1 text-xs h-7 text-navy-400 hover:text-navy-100 px-2"
+                className="gap-1 text-xs h-7 text-navy-400 hover:text-navy-900 px-2"
               >
                 <Minimize2 className="h-3 w-3" />
                 Shorter
@@ -291,7 +291,7 @@ function SectionEditor({
                 variant="ghost"
                 onClick={() => generateSection('longer')}
                 disabled={isGenerating || content.length === 0}
-                className="gap-1 text-xs h-7 text-navy-400 hover:text-navy-100 px-2"
+                className="gap-1 text-xs h-7 text-navy-400 hover:text-navy-900 px-2"
               >
                 <Maximize2 className="h-3 w-3" />
                 Longer
@@ -445,7 +445,7 @@ export default function ReportEditorPage() {
       <div className="flex flex-col items-center justify-center h-full gap-4">
         <FileText className="h-12 w-12 text-navy-600" />
         <div className="text-center">
-          <p className="text-navy-200 font-medium">Report not found</p>
+          <p className="text-navy-700 font-medium">Report not found</p>
           <p className="text-sm text-navy-500 mt-1">
             This report may have been deleted or doesn&apos;t exist.
           </p>
@@ -467,17 +467,17 @@ export default function ReportEditorPage() {
   return (
     <div className="flex flex-col h-full -mx-6 -my-6">
       {/* Toolbar */}
-      <div className="flex items-center justify-between border-b border-navy-700 bg-navy-900/70 px-5 py-3 shrink-0">
+      <div className="flex items-center justify-between border-b border-[var(--color-app-border)] px-5 py-3 shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push('/reports')}
-            className="flex items-center gap-1.5 text-xs text-navy-400 hover:text-navy-200 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-navy-400 hover:text-navy-900 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Reports
           </button>
-          <span className="text-navy-700">/</span>
-          <span className="text-xs text-navy-300 line-clamp-1 max-w-[200px]">
+          <span className="text-navy-300">/</span>
+          <span className="text-xs text-navy-600 line-clamp-1 max-w-[200px]">
             {title}
           </span>
         </div>
@@ -487,7 +487,7 @@ export default function ReportEditorPage() {
           <div className="relative">
             <button
               onClick={() => setShowStatusDropdown((v) => !v)}
-              className="flex items-center gap-1.5 text-xs border border-navy-700 rounded-md px-2.5 py-1.5 bg-navy-800 hover:bg-navy-750 transition-colors"
+              className="flex items-center gap-1.5 text-xs border border-[var(--color-app-border)] rounded-md px-2.5 py-1.5 bg-white hover:bg-[var(--color-app-surface-alt)] transition-colors"
             >
               <Badge variant={statusCfg.badgeVariant} className="text-[10px] px-1.5 py-0">
                 {statusCfg.label}
@@ -495,7 +495,7 @@ export default function ReportEditorPage() {
               <ChevronDown className="h-3 w-3 text-navy-500" />
             </button>
             {showStatusDropdown && (
-              <div className="absolute right-0 top-full mt-1 z-20 bg-navy-800 border border-navy-700 rounded-lg shadow-xl overflow-hidden min-w-[140px]">
+              <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-[var(--color-app-border)] rounded-lg shadow-xl overflow-hidden min-w-[140px]">
                 {(
                   Object.entries(STATUS_CONFIG) as [
                     ReportStatus,
@@ -509,8 +509,8 @@ export default function ReportEditorPage() {
                       setShowStatusDropdown(false);
                     }}
                     className={cn(
-                      'w-full flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-navy-700 transition-colors',
-                      status === key && 'bg-navy-700/50'
+                      'w-full flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-[var(--color-app-surface-alt)] transition-colors',
+                      status === key && 'bg-[var(--color-app-surface-alt)]'
                     )}
                   >
                     <Badge
@@ -579,7 +579,7 @@ export default function ReportEditorPage() {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-transparent font-serif text-3xl text-navy-50 placeholder:text-navy-600 focus:outline-none border-b border-transparent focus:border-navy-700 pb-1 transition-colors"
+              className="w-full bg-transparent font-serif text-3xl text-navy-900 placeholder:text-navy-400 focus:outline-none border-b border-transparent focus:border-[var(--color-app-border)] pb-1 transition-colors"
               placeholder="Report title…"
             />
             <div className="flex items-center gap-3 mt-2 text-xs text-navy-500">
@@ -621,18 +621,18 @@ export default function ReportEditorPage() {
         </div>
 
         {/* RIGHT: Source panel (35%) */}
-        <div className="flex-[35] border-l border-navy-700 overflow-y-auto bg-navy-950/40 flex flex-col">
+        <div className="flex-[35] border-l border-[var(--color-app-border)] overflow-y-auto bg-[var(--color-app-surface-alt)] flex flex-col">
           {/* Conflict context */}
-          <div className="px-5 py-4 border-b border-navy-700">
+          <div className="px-5 py-4 border-b border-[var(--color-app-border)]">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-navy-400 mb-3">
               Linked Conflict
             </h2>
-            <div className="flex items-start gap-3 rounded-lg bg-navy-800/60 border border-navy-700 p-3">
+            <div className="flex items-start gap-3 rounded-lg bg-[var(--color-app-surface-alt)] border border-[var(--color-app-border)] p-3">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-terracotta/10 border border-terracotta/20">
                 <BookOpen className="h-4 w-4 text-terracotta" />
               </div>
               <div>
-                <p className="text-sm font-medium text-navy-100">
+                <p className="text-sm font-medium text-navy-900">
                   {conflict?.name ?? 'Nordalia Crisis'}
                 </p>
                 <p className="text-xs text-navy-400 mt-0.5">
@@ -668,7 +668,7 @@ export default function ReportEditorPage() {
                 value={sourceSearch}
                 onChange={(e) => setSourceSearch(e.target.value)}
                 placeholder="Search sources…"
-                className="w-full bg-navy-800 border border-navy-700 rounded-md px-3 py-1.5 text-xs text-navy-100 placeholder:text-navy-500 focus:outline-none focus:border-gold-500/40 transition-colors"
+                className="w-full bg-white border border-[var(--color-app-border)] rounded-md px-3 py-1.5 text-xs text-navy-900 placeholder:text-navy-500 focus:outline-none focus:border-gold-500/40 transition-colors"
               />
             </div>
 
@@ -684,16 +684,16 @@ export default function ReportEditorPage() {
               ).map((source) => (
                 <div
                   key={source.id}
-                  className="rounded-lg border border-navy-700 bg-navy-800/40 p-3 hover:border-navy-600 transition-colors cursor-pointer group"
+                  className="rounded-lg border border-[var(--color-app-border)] bg-white p-3 hover:border-navy-300 transition-colors cursor-pointer group"
                 >
                   <div className="flex items-start gap-2">
-                    <FileText className="h-3.5 w-3.5 text-navy-500 shrink-0 mt-0.5 group-hover:text-gold-400 transition-colors" />
+                    <FileText className="h-3.5 w-3.5 text-navy-500 shrink-0 mt-0.5 group-hover:text-gold-600 transition-colors" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-navy-200 leading-snug line-clamp-2 group-hover:text-navy-100 transition-colors">
+                      <p className="text-xs text-navy-700 leading-snug line-clamp-2 group-hover:text-navy-900 transition-colors">
                         {source.title}
                       </p>
                       <div className="flex items-center gap-2 mt-1.5">
-                        <span className="text-[10px] text-navy-500 border border-navy-700 rounded px-1.5 py-0.5">
+                        <span className="text-[10px] text-navy-500 border border-[var(--color-app-border)] rounded px-1.5 py-0.5">
                           {source.type}
                         </span>
                         <span className="flex items-center gap-1 text-[10px] text-navy-600">
@@ -714,7 +714,7 @@ export default function ReportEditorPage() {
 
           {/* Recent events from conflict */}
           {conflict?.events && conflict.events.length > 0 && (
-            <div className="px-5 py-4 border-t border-navy-700">
+            <div className="px-5 py-4 border-t border-[var(--color-app-border)]">
               <h2 className="text-xs font-semibold uppercase tracking-wider text-navy-400 mb-3">
                 Recent Events
               </h2>
@@ -723,7 +723,7 @@ export default function ReportEditorPage() {
                   <div key={i} className="flex items-start gap-2">
                     <div className="w-1 h-1 rounded-full bg-gold-500 mt-1.5 shrink-0" />
                     <div>
-                      <p className="text-xs text-navy-300 leading-snug">
+                      <p className="text-xs text-navy-600 leading-snug">
                         {event.title}
                       </p>
                       <p className="text-[10px] text-navy-600 mt-0.5">

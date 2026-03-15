@@ -1,16 +1,19 @@
 /**
  * PRAXIS AI Provider Abstraction
  *
- * Supports two provider backends:
- *   - "google"  → Google AI Studio (default) — uses GOOGLE_AI_API_KEY
- *   - "vertex"  → Google Vertex AI          — uses GOOGLE_VERTEX_PROJECT + GOOGLE_VERTEX_LOCATION
+ * Supports three provider backends:
+ *   - "google"    → Google AI Studio (default) — uses GOOGLE_AI_API_KEY
+ *   - "vertex"    → Google Vertex AI           — uses GOOGLE_VERTEX_PROJECT + GOOGLE_VERTEX_LOCATION
+ *   - "anthropic" → Anthropic Claude (analysis) — uses ANTHROPIC_API_KEY
  *
- * Set AI_PROVIDER env var to "vertex" to switch to Vertex AI.
+ * Set AI_PROVIDER env var to "vertex" to switch primary provider to Vertex AI.
+ * Anthropic is available as a secondary analysis engine regardless of primary provider.
  * All routes should use getModel() / getGroundedModel() rather than constructing
  * provider instances directly.
  */
 
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createAnthropic } from '@ai-sdk/anthropic';
 import type { LanguageModel } from 'ai';
 
 export type ProviderName = 'google' | 'vertex';
@@ -148,6 +151,65 @@ export function getProviderInfo(): ProviderInfo {
     configNote: apiKey
       ? `API key configured (${apiKey.slice(0, 6)}...)`
       : 'Set GOOGLE_AI_API_KEY environment variable',
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Anthropic (secondary analysis engine)
+// ---------------------------------------------------------------------------
+
+const ANTHROPIC_MODEL = 'claude-sonnet-4-20250514';
+
+function isAnthropicConfigured(): boolean {
+  return !!process.env.ANTHROPIC_API_KEY;
+}
+
+/**
+ * Returns an Anthropic Claude model for deep analysis tasks.
+ * Falls back to Gemini Pro if ANTHROPIC_API_KEY is not set.
+ */
+export function getAnalysisModel(): LanguageModel {
+  if (isAnthropicConfigured()) {
+    const anthropicProvider = createAnthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY || '',
+    });
+    return anthropicProvider(ANTHROPIC_MODEL);
+  }
+  return getProModel();
+}
+
+/**
+ * Returns a list of all configured providers and their status.
+ */
+export function getAvailableProviders() {
+  const googleKey = process.env.GOOGLE_AI_API_KEY;
+  const vertexProject = process.env.GOOGLE_VERTEX_PROJECT;
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+
+  return {
+    google: {
+      name: 'Google AI Studio',
+      configured: !!googleKey,
+      model: DEFAULT_MODEL,
+      capabilities: ['Chat', 'Research (Google Search)', 'Tool Use', 'Streaming'],
+      note: googleKey ? 'Active — primary provider' : 'Set GOOGLE_AI_API_KEY',
+    },
+    vertex: {
+      name: 'Google Vertex AI',
+      configured: !!vertexProject,
+      model: DEFAULT_MODEL,
+      capabilities: ['Chat', 'Research', 'Tool Use', 'Audit Logs', 'VPC-SC'],
+      note: vertexProject ? 'Available — enterprise tier' : 'Set GOOGLE_VERTEX_PROJECT',
+    },
+    anthropic: {
+      name: 'Anthropic Claude',
+      configured: !!anthropicKey,
+      model: ANTHROPIC_MODEL,
+      capabilities: ['Deep Analysis', 'Bias Detection', 'Diplomatic Language', 'Complex Reasoning'],
+      note: anthropicKey
+        ? 'Active — enhanced analysis engine'
+        : 'Optional — set ANTHROPIC_API_KEY for enhanced analysis',
+    },
   };
 }
 

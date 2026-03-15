@@ -5,13 +5,19 @@ import { cn } from "@/lib/utils/cn";
 import { motion } from "framer-motion";
 import { SpectrumChart } from "@/components/media/spectrum-chart";
 import { SourceCard, type MediaSource } from "@/components/media/source-card";
+import { CoverageComparison } from "@/components/media/coverage-comparison";
+import { SentimentHeatmap } from "@/components/media/sentiment-heatmap";
 import {
   Compass,
   ChevronDown,
   Search,
   GitCompareArrows,
   Filter,
+  BarChart3,
+  Thermometer,
 } from "lucide-react";
+
+type MediaTab = "source-map" | "coverage" | "sentiment";
 
 // ── Media Source Data ────────────────────────────────────────────
 const MEDIA_SOURCES: MediaSource[] = [
@@ -101,6 +107,7 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export default function MediaCompassPage() {
+  const [activeTab, setActiveTab] = useState<MediaTab>("source-map");
   const [selectedSource, setSelectedSource] = useState<MediaSource | null>(null);
   const [regionFilter, setRegionFilter] = useState("All Regions");
   const [typeFilter, setTypeFilter] = useState("All Types");
@@ -163,8 +170,8 @@ export default function MediaCompassPage() {
   };
 
   return (
-    <div className="min-h-screen bg-navy-950">
-      <div className="mx-auto max-w-[1400px] px-4 py-6 lg:px-8">
+    <div className="space-y-6">
+      <div className="mx-auto max-w-[1400px]">
         {/* ── Header ─────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -177,16 +184,68 @@ export default function MediaCompassPage() {
               <Compass className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="font-serif text-2xl font-normal tracking-wide text-navy-100">
+              <h1 className="font-serif text-2xl font-normal tracking-wide text-navy-900">
                 Media Compass
               </h1>
-              <p className="text-sm text-navy-400">
+              <p className="text-sm text-navy-500">
                 Map news sources by orientation and reliability
               </p>
             </div>
           </div>
         </motion.div>
 
+        {/* ── Tab Navigation ──────────────────────────────────── */}
+        <div className="mb-6 flex gap-1 rounded-xl border border-[var(--color-app-border)] bg-white p-1.5 w-fit">
+          <button
+            onClick={() => setActiveTab("source-map")}
+            className={cn(
+              "flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-all",
+              activeTab === "source-map"
+                ? "bg-navy-900 text-white shadow-sm"
+                : "text-navy-500 hover:bg-[var(--color-app-surface-alt)] hover:text-navy-700"
+            )}
+          >
+            <Compass className="h-4 w-4" />
+            Source Map
+          </button>
+          <button
+            onClick={() => setActiveTab("coverage")}
+            className={cn(
+              "flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-all",
+              activeTab === "coverage"
+                ? "bg-navy-900 text-white shadow-sm"
+                : "text-navy-500 hover:bg-[var(--color-app-surface-alt)] hover:text-navy-700"
+            )}
+          >
+            <BarChart3 className="h-4 w-4" />
+            Coverage Comparison
+          </button>
+          <button
+            onClick={() => setActiveTab("sentiment")}
+            className={cn(
+              "flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-all",
+              activeTab === "sentiment"
+                ? "bg-navy-900 text-white shadow-sm"
+                : "text-navy-500 hover:bg-[var(--color-app-surface-alt)] hover:text-navy-700"
+            )}
+          >
+            <Thermometer className="h-4 w-4" />
+            Sentiment Analysis
+          </button>
+        </div>
+
+        {/* ── Tab Content ─────────────────────────────────────── */}
+
+        {activeTab === "coverage" && (
+          <CoverageComparison />
+        )}
+
+        {activeTab === "sentiment" && (
+          <SentimentHeatmap />
+        )}
+
+        {activeTab === "source-map" && (
+        <>
         {/* ── Controls Bar ───────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: -5 }}
@@ -200,7 +259,7 @@ export default function MediaCompassPage() {
             <select
               value={regionFilter}
               onChange={(e) => setRegionFilter(e.target.value)}
-              className="appearance-none rounded-lg border border-navy-700/50 bg-navy-800/80 py-2 pl-9 pr-8 text-sm text-navy-200 transition-colors hover:border-navy-600 focus:border-teal/50 focus:outline-none focus:ring-1 focus:ring-teal/30"
+              className="appearance-none rounded-lg border border-[var(--color-app-border)] bg-white py-2 pl-9 pr-8 text-sm text-navy-700 transition-colors hover:border-navy-300 focus:border-teal/50 focus:outline-none focus:ring-1 focus:ring-teal/30"
             >
               {REGIONS.map((r) => (
                 <option key={r} value={r}>
@@ -216,7 +275,7 @@ export default function MediaCompassPage() {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="appearance-none rounded-lg border border-navy-700/50 bg-navy-800/80 py-2 pl-3.5 pr-8 text-sm text-navy-200 transition-colors hover:border-navy-600 focus:border-teal/50 focus:outline-none focus:ring-1 focus:ring-teal/30"
+              className="appearance-none rounded-lg border border-[var(--color-app-border)] bg-white py-2 pl-3.5 pr-8 text-sm text-navy-700 transition-colors hover:border-navy-300 focus:border-teal/50 focus:outline-none focus:ring-1 focus:ring-teal/30"
             >
               {TYPES.map((t) => (
                 <option key={t} value={t}>
@@ -240,7 +299,7 @@ export default function MediaCompassPage() {
                   "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                   colorBy === opt
                     ? "bg-teal/15 text-teal"
-                    : "text-navy-400 hover:bg-navy-800 hover:text-navy-300"
+                    : "text-navy-500 hover:bg-navy-100 hover:text-navy-700"
                 )}
               >
                 {opt}
@@ -267,7 +326,7 @@ export default function MediaCompassPage() {
                 className="h-2.5 w-2.5 rounded-full"
                 style={{ backgroundColor: item.color }}
               />
-              <span className="text-xs text-navy-400">{item.label}</span>
+              <span className="text-xs text-navy-600">{item.label}</span>
             </div>
           ))}
         </motion.div>
@@ -279,7 +338,7 @@ export default function MediaCompassPage() {
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative rounded-xl border border-navy-700/40 bg-navy-900/50 p-2"
+            className="relative rounded-xl border border-[var(--color-app-border)] bg-white p-2"
             style={{ minHeight: "60vh" }}
           >
             <SpectrumChart
@@ -301,12 +360,12 @@ export default function MediaCompassPage() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex flex-col items-center justify-center rounded-xl border border-dashed border-navy-700/40 bg-navy-900/30 py-16 text-center"
+                className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] py-16 text-center"
               >
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-navy-800/60">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-navy-100">
                   <Search className="h-5 w-5 text-navy-500" />
                 </div>
-                <p className="text-sm font-medium text-navy-400">
+                <p className="text-sm font-medium text-navy-600">
                   Select a source
                 </p>
                 <p className="mt-1 max-w-[200px] text-xs text-navy-500">
@@ -322,11 +381,11 @@ export default function MediaCompassPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="mt-6 rounded-xl border border-navy-700/40 bg-navy-900/50 p-5"
+          className="mt-6 rounded-xl border border-[var(--color-app-border)] bg-white p-5"
         >
           <div className="mb-4 flex items-center gap-2">
             <GitCompareArrows className="h-4 w-4 text-gold-500" />
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-navy-200">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-navy-800">
               Compare Mode
             </h2>
           </div>
@@ -340,7 +399,7 @@ export default function MediaCompassPage() {
               <div className="relative">
                 <button
                   onClick={() => setCompareSourcesOpen(!compareSourcesOpen)}
-                  className="flex w-full items-center justify-between rounded-lg border border-navy-700/50 bg-navy-800/80 px-3 py-2.5 text-sm text-navy-200 transition-colors hover:border-navy-600"
+                  className="flex w-full items-center justify-between rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-2.5 text-sm text-navy-700 transition-colors hover:border-navy-300"
                 >
                   <span>
                     {selectedCompare.length > 0
@@ -355,16 +414,16 @@ export default function MediaCompassPage() {
                   />
                 </button>
                 {compareSourcesOpen && (
-                  <div className="absolute top-full z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-navy-700/60 bg-navy-800 shadow-xl">
+                  <div className="absolute top-full z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-[var(--color-app-border)] bg-white shadow-xl">
                     {MEDIA_SOURCES.map((s) => (
                       <button
                         key={s.name}
                         onClick={() => toggleCompareSource(s.name)}
                         className={cn(
-                          "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-navy-700/50",
+                          "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-navy-50",
                           selectedCompare.includes(s.name)
-                            ? "bg-navy-700/30 text-gold-400"
-                            : "text-navy-300"
+                            ? "bg-gold-500/10 text-gold-700"
+                            : "text-navy-700"
                         )}
                       >
                         <div
@@ -394,7 +453,7 @@ export default function MediaCompassPage() {
                 value={compareTopic}
                 onChange={(e) => setCompareTopic(e.target.value)}
                 placeholder="Enter topic to compare coverage..."
-                className="w-full rounded-lg border border-navy-700/50 bg-navy-800/80 px-3 py-2.5 text-sm text-navy-200 placeholder-navy-500 transition-colors hover:border-navy-600 focus:border-gold-500/50 focus:outline-none focus:ring-1 focus:ring-gold-500/30"
+                className="w-full rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-2.5 text-sm text-navy-700 placeholder-navy-400 transition-colors hover:border-navy-300 focus:border-gold-500/50 focus:outline-none focus:ring-1 focus:ring-gold-500/30"
               />
             </div>
 
@@ -405,7 +464,7 @@ export default function MediaCompassPage() {
                 "shrink-0 rounded-lg px-6 py-2.5 text-sm font-medium transition-all",
                 selectedCompare.length >= 2 && compareTopic.trim()
                   ? "bg-gold-500 text-navy-950 hover:bg-gold-400 hover:shadow-lg hover:shadow-gold-500/20"
-                  : "cursor-not-allowed bg-navy-700/50 text-navy-500"
+                  : "cursor-not-allowed bg-navy-100 text-navy-400"
               )}
             >
               Compare
@@ -420,7 +479,7 @@ export default function MediaCompassPage() {
                 return (
                   <span
                     key={name}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-navy-700/40 bg-navy-800/60 px-3 py-1 text-xs text-navy-300"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-3 py-1 text-xs text-navy-700"
                   >
                     <div
                       className="h-2 w-2 rounded-full"
@@ -429,7 +488,7 @@ export default function MediaCompassPage() {
                     {name}
                     <button
                       onClick={() => toggleCompareSource(name)}
-                      className="ml-0.5 text-navy-500 hover:text-navy-300"
+                      className="ml-0.5 text-navy-400 hover:text-navy-600"
                     >
                       &times;
                     </button>
@@ -439,6 +498,8 @@ export default function MediaCompassPage() {
             </div>
           )}
         </motion.div>
+        </>
+        )}
       </div>
     </div>
   );

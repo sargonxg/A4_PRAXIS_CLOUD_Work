@@ -198,7 +198,7 @@ export function SourceCard({ source, onClose, className }: SourceCardProps) {
           exit={{ opacity: 0, y: 20, scale: 0.97 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
           className={cn(
-            "rounded-xl border border-navy-700/60 bg-navy-900/95 p-5 backdrop-blur-md",
+            "rounded-xl border border-[var(--color-app-border)] bg-white p-5 shadow-sm",
             className
           )}
         >
@@ -213,10 +213,10 @@ export function SourceCard({ source, onClose, className }: SourceCardProps) {
                 }}
               />
               <div>
-                <h3 className="text-lg font-semibold text-navy-100">
+                <h3 className="text-lg font-semibold text-navy-900">
                   {source.name}
                 </h3>
-                <p className="text-xs text-navy-400">
+                <p className="text-xs text-navy-500">
                   {TYPE_LABELS[source.type] ?? source.type} &middot;{" "}
                   {source.region}
                 </p>
@@ -224,7 +224,7 @@ export function SourceCard({ source, onClose, className }: SourceCardProps) {
             </div>
             <button
               onClick={onClose}
-              className="rounded-md p-1 text-navy-500 transition-colors hover:bg-navy-800 hover:text-navy-300"
+              className="rounded-md p-1 text-navy-400 transition-colors hover:bg-navy-100 hover:text-navy-600"
               aria-label="Close"
             >
               <X className="h-4 w-4" />
@@ -232,7 +232,7 @@ export function SourceCard({ source, onClose, className }: SourceCardProps) {
           </div>
 
           {/* Description */}
-          <p className="mb-4 text-sm leading-relaxed text-navy-300">
+          <p className="mb-4 text-sm leading-relaxed text-navy-600">
             {getExtendedInfo(source.name).description}
           </p>
 
@@ -330,15 +330,15 @@ export function SourceCard({ source, onClose, className }: SourceCardProps) {
 
           {/* AI Analysis */}
           {currentAnalysis ? (
-            <div className="mb-4 rounded-lg border border-gold-500/20 bg-navy-800/60 p-3 space-y-2">
+            <div className="mb-4 rounded-lg border border-gold-500/20 bg-gold-500/5 p-3 space-y-2">
               <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="h-3.5 w-3.5 text-gold-500" />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-gold-500">AI Analysis</span>
-                <button onClick={handleAnalyze} disabled={isAnalyzing} className="ml-auto text-[10px] text-navy-500 hover:text-navy-300 transition-colors">
+                <Sparkles className="h-3.5 w-3.5 text-gold-600" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-gold-700">AI Analysis</span>
+                <button onClick={handleAnalyze} disabled={isAnalyzing} className="ml-auto text-[10px] text-navy-400 hover:text-navy-600 transition-colors">
                   Refresh
                 </button>
               </div>
-              <p className="text-xs text-navy-300 leading-relaxed">{currentAnalysis.conflictCoverageNotes}</p>
+              <p className="text-xs text-navy-600 leading-relaxed">{currentAnalysis.conflictCoverageNotes}</p>
               {currentAnalysis.recommendedCrossReferences.length > 0 && (
                 <div>
                   <div className="flex items-center gap-1.5 mb-1">
@@ -363,7 +363,7 @@ export function SourceCard({ source, onClose, className }: SourceCardProps) {
           <button
             onClick={handleAnalyze}
             disabled={isAnalyzing}
-            className="group flex w-full items-center justify-center gap-2 rounded-lg border border-gold-500/30 bg-gold-500/10 px-4 py-2.5 text-sm font-medium text-gold-400 transition-all hover:border-gold-500/50 hover:bg-gold-500/20 disabled:opacity-50"
+            className="group flex w-full items-center justify-center gap-2 rounded-lg border border-gold-500/30 bg-gold-500/10 px-4 py-2.5 text-sm font-medium text-gold-700 transition-all hover:border-gold-500/50 hover:bg-gold-500/20 disabled:opacity-50"
           >
             {isAnalyzing ? (
               <>
@@ -393,14 +393,14 @@ function InfoItem({
   value: string;
 }) {
   return (
-    <div className="rounded-lg border border-navy-700/40 bg-navy-800/50 px-3 py-2">
+    <div className="rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-3 py-2">
       <div className="mb-0.5 flex items-center gap-1.5">
-        <Icon className="h-3 w-3 text-navy-500" />
+        <Icon className="h-3 w-3 text-navy-400" />
         <span className="text-[10px] font-medium uppercase tracking-wider text-navy-500">
           {label}
         </span>
       </div>
-      <p className="text-sm font-medium text-navy-200">{value}</p>
+      <p className="text-sm font-medium text-navy-800">{value}</p>
     </div>
   );
 }
