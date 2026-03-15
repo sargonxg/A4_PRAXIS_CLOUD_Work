@@ -173,7 +173,7 @@ function RadarChart({ values, labels, maxVal = 10 }: { values: number[]; labels:
             key={frac}
             points={pts}
             fill="none"
-            stroke="rgba(255,255,255,0.08)"
+            stroke="rgba(0,0,0,0.08)"
             strokeWidth="1"
           />
         );
@@ -189,7 +189,7 @@ function RadarChart({ values, labels, maxVal = 10 }: { values: number[]; labels:
             y1={cy}
             x2={outer.x}
             y2={outer.y}
-            stroke="rgba(255,255,255,0.12)"
+            stroke="rgba(0,0,0,0.1)"
             strokeWidth="1"
           />
         );
@@ -222,7 +222,7 @@ function RadarChart({ values, labels, maxVal = 10 }: { values: number[]; labels:
             textAnchor="middle"
             dominantBaseline="middle"
             fontSize="7.5"
-            fill="rgba(255,255,255,0.6)"
+            fill="#64748B"
           >
             {lines.map((line, li) => (
               <tspan key={li} x={pos.x} dy={li === 0 ? (lines.length > 1 ? '-0.5em' : '0') : '1.1em'}>
@@ -290,7 +290,7 @@ function GlaslLadder({
                 styles.bg,
                 styles.border,
                 isActive
-                  ? 'ring-2 ring-offset-1 ring-offset-navy-950'
+                  ? 'ring-2 ring-offset-1 ring-offset-white'
                   : 'hover:opacity-90',
                 isActive && s.zone === 'green' && 'ring-sage/60',
                 isActive && s.zone === 'amber' && 'ring-gold-500/60',
@@ -310,7 +310,7 @@ function GlaslLadder({
                       <span className={cn('h-2 w-2 rounded-full animate-pulse', styles.dot)} />
                     )}
                   </div>
-                  <p className="mt-0.5 text-[10px] text-navy-400 leading-tight">{s.description}</p>
+                  <p className="mt-0.5 text-[10px] text-navy-500 leading-tight">{s.description}</p>
                 </div>
 
                 {/* Staircase indent indicator */}
@@ -361,14 +361,14 @@ function AlertPanel() {
         <CheckCircle className="h-5 w-5 text-sage shrink-0" />
         <div>
           <p className="text-sm font-semibold text-sage">All Clear</p>
-          <p className="text-xs text-navy-400">No active alerts requiring acknowledgement.</p>
+          <p className="text-xs text-navy-500">No active alerts requiring acknowledgement.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-crimson/20 bg-navy-950/60 overflow-hidden">
+    <div className="rounded-xl border border-crimson/20 bg-crimson/5 overflow-hidden">
       <div className="flex items-center gap-2 border-b border-[var(--color-app-border)] px-5 py-3">
         <div className="relative flex h-3 w-3 items-center justify-center">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-crimson opacity-40" />
@@ -407,7 +407,7 @@ function AlertPanel() {
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-semibold text-navy-100">{alert.title}</span>
+                  <span className="text-xs font-semibold text-navy-900">{alert.title}</span>
                   <Badge
                     variant={isHigh ? 'crimson' : isMed ? 'gold' : 'sage'}
                     className="text-[9px] uppercase"
@@ -415,13 +415,13 @@ function AlertPanel() {
                     {alert.severity}
                   </Badge>
                 </div>
-                <p className="mt-0.5 text-[11px] text-navy-400 line-clamp-2">{alert.description}</p>
+                <p className="mt-0.5 text-[11px] text-navy-500 line-clamp-2">{alert.description}</p>
                 <p className="mt-1 text-[10px] text-navy-500">2h ago</p>
               </div>
 
               <button
                 onClick={() => acknowledgeAlert(alert.id)}
-                className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[var(--color-app-border)] bg-navy-900/60 px-2.5 py-1.5 text-[10px] font-medium text-navy-300 transition-colors hover:border-sage/30 hover:text-sage"
+                className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[var(--color-app-border)] bg-white px-2.5 py-1.5 text-[10px] font-medium text-navy-600 transition-colors hover:border-sage/30 hover:text-sage"
               >
                 <BellOff className="h-3 w-3" />
                 Acknowledge
@@ -497,13 +497,13 @@ function SituationCard({ conflict }: { conflict: ReturnType<typeof useConflictSt
   }, [conflict, loading]);
 
   return (
-    <div className="w-72 shrink-0 rounded-xl border border-[var(--color-app-border)] bg-navy-900/60 flex flex-col">
+    <div className="w-72 shrink-0 rounded-xl border border-[var(--color-app-border)] bg-white flex flex-col">
       {/* Header */}
       <div className="px-4 pt-4 pb-3 border-b border-[var(--color-app-border-light)]">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h3 className="text-sm font-semibold text-navy-100 leading-tight">{conflict.name}</h3>
-            <p className="mt-0.5 text-[10px] text-navy-400">{conflict.region}</p>
+            <h3 className="text-sm font-semibold text-navy-900 leading-tight">{conflict.name}</h3>
+            <p className="mt-0.5 text-[10px] text-navy-500">{conflict.region}</p>
           </div>
           {activeAlerts.length > 0 && (
             <span className="flex items-center gap-1 rounded-full bg-crimson/15 px-1.5 py-0.5 text-[9px] font-bold text-crimson shrink-0">
@@ -519,7 +519,7 @@ function SituationCard({ conflict }: { conflict: ReturnType<typeof useConflictSt
             <span className="text-[10px] text-navy-500">Risk Score</span>
             <span className={cn('text-sm font-bold tabular-nums', riskTextColor)}>{conflict.riskScore.toFixed(1)}</span>
           </div>
-          <div className="h-1.5 rounded-full bg-navy-800">
+          <div className="h-1.5 rounded-full bg-navy-200">
             <div
               className={cn('h-full rounded-full transition-all duration-500', riskColor)}
               style={{ width: `${(conflict.riskScore / 10) * 100}%` }}
@@ -542,9 +542,9 @@ function SituationCard({ conflict }: { conflict: ReturnType<typeof useConflictSt
         <div className="space-y-1.5">
           {events.map((ev, i) => (
             <div key={i} className="flex items-start gap-2">
-              <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-navy-600 shrink-0" />
+              <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-navy-400 shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-navy-300 leading-tight line-clamp-1">{ev.title}</p>
+                <p className="text-[10px] text-navy-600 leading-tight line-clamp-1">{ev.title}</p>
               </div>
               <span className="shrink-0 text-[9px] text-navy-500">{ev.date}</span>
             </div>
@@ -566,7 +566,7 @@ function SituationCard({ conflict }: { conflict: ReturnType<typeof useConflictSt
         </button>
 
         {expanded && assessment && (
-          <div className="mt-2 rounded-lg border border-gold-500/15 bg-navy-950/60 p-3">
+          <div className="mt-2 rounded-lg border border-gold-500/15 bg-[var(--color-app-surface-alt)] p-3">
             <MarkdownRenderer content={assessment} className="text-[11px]" />
           </div>
         )}
@@ -681,8 +681,8 @@ export default function EarlyWarningPage() {
             <Shield className="h-5 w-5 text-crimson" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-navy-100">Early Warning Dashboard</h1>
-            <p className="text-xs text-navy-400">Glasl Escalation Model · Risk Radar · AI Horizon Scan</p>
+            <h1 className="text-2xl font-bold text-navy-900">Early Warning Dashboard</h1>
+            <p className="text-xs text-navy-500">Glasl Escalation Model · Risk Radar · AI Horizon Scan</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -703,11 +703,11 @@ export default function EarlyWarningPage() {
       <div className="grid grid-cols-12 gap-4">
 
         {/* LEFT: Glasl Escalation Ladder (40%) */}
-        <div className="col-span-12 lg:col-span-5 rounded-xl border border-[var(--color-app-border)] bg-navy-950/80 overflow-hidden">
+        <div className="col-span-12 lg:col-span-5 rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden">
           <div className="border-b border-[var(--color-app-border)] px-4 py-3">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-crimson shrink-0" />
-              <h2 className="text-sm font-bold text-navy-100">Glasl 9-Stage Escalation Model</h2>
+              <h2 className="text-sm font-bold text-navy-900">Glasl 9-Stage Escalation Model</h2>
             </div>
             <p className="mt-0.5 text-[10px] text-navy-500">Active conflict: The Nordalia Crisis</p>
 
@@ -717,7 +717,7 @@ export default function EarlyWarningPage() {
               <span className={cn('text-xs font-semibold', activeZoneStyles.text)}>
                 Stage {activeStage}: {activeStageData?.name}
               </span>
-              <span className="ml-auto text-[10px] text-navy-400">{activeStageData?.description}</span>
+              <span className="ml-auto text-[10px] text-navy-500">{activeStageData?.description}</span>
             </div>
           </div>
 
@@ -740,11 +740,11 @@ export default function EarlyWarningPage() {
 
         {/* CENTER: Risk Radar (35%) */}
         <div className="col-span-12 lg:col-span-4 flex flex-col gap-4">
-          <div className="rounded-xl border border-[var(--color-app-border)] bg-navy-950/80 overflow-hidden flex-1">
+          <div className="rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden flex-1">
             <div className="border-b border-[var(--color-app-border)] px-4 py-3">
               <div className="flex items-center gap-2">
                 <Radio className="h-4 w-4 text-diplomatic-blue shrink-0" />
-                <h2 className="text-sm font-bold text-navy-100">Risk Indicator Radar</h2>
+                <h2 className="text-sm font-bold text-navy-900">Risk Indicator Radar</h2>
               </div>
               {/* Conflict selector */}
               <div className="mt-2 flex gap-1 flex-wrap">
@@ -756,7 +756,7 @@ export default function EarlyWarningPage() {
                       'rounded-full px-2 py-0.5 text-[9px] font-medium border transition-colors',
                       radarConflictId === c.id
                         ? 'border-diplomatic-blue/50 bg-diplomatic-blue/15 text-diplomatic-blue'
-                        : 'border-[var(--color-app-border)] text-navy-400 hover:text-navy-200',
+                        : 'border-[var(--color-app-border)] text-navy-500 hover:text-navy-800',
                     )}
                   >
                     {c.name.split(' ')[1] ?? c.name.split(' ')[0]}
@@ -776,11 +776,11 @@ export default function EarlyWarningPage() {
                   const barColor = val >= 8 ? 'bg-crimson' : val >= 6 ? 'bg-gold-500' : 'bg-sage';
                   return (
                     <div key={dim} className="flex items-center gap-2">
-                      <span className="w-28 text-[10px] text-navy-400 leading-tight">{dim.replace('\n', ' ')}</span>
-                      <div className="flex-1 h-1.5 rounded-full bg-navy-800">
+                      <span className="w-28 text-[10px] text-navy-500 leading-tight">{dim.replace('\n', ' ')}</span>
+                      <div className="flex-1 h-1.5 rounded-full bg-navy-200">
                         <div className={cn('h-full rounded-full', barColor)} style={{ width: `${pct}%` }} />
                       </div>
-                      <span className="w-5 text-right text-[10px] font-mono text-navy-300">{val}</span>
+                      <span className="w-5 text-right text-[10px] font-mono text-navy-600">{val}</span>
                     </div>
                   );
                 })}
@@ -789,7 +789,7 @@ export default function EarlyWarningPage() {
               {/* Composite score */}
               <div className="w-full rounded-lg border border-diplomatic-blue/20 bg-diplomatic-blue/8 px-3 py-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-navy-400 font-semibold uppercase tracking-wider">Composite Risk Score</span>
+                  <span className="text-[10px] text-navy-500 font-semibold uppercase tracking-wider">Composite Risk Score</span>
                   <span className="text-lg font-bold text-diplomatic-blue tabular-nums">{compositeScore.toFixed(1)}</span>
                 </div>
                 <p className="text-[10px] text-navy-500 mt-0.5">Average across all 5 risk dimensions</p>
@@ -799,19 +799,19 @@ export default function EarlyWarningPage() {
         </div>
 
         {/* RIGHT: Trigger Watchlist (25%) */}
-        <div className="col-span-12 lg:col-span-3 rounded-xl border border-[var(--color-app-border)] bg-navy-950/80 overflow-hidden">
+        <div className="col-span-12 lg:col-span-3 rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden">
           <div className="border-b border-[var(--color-app-border)] px-4 py-3">
             <div className="flex items-center gap-2">
               <Target className="h-4 w-4 text-gold-400 shrink-0" />
-              <h2 className="text-sm font-bold text-navy-100">Trigger Watchlist</h2>
+              <h2 className="text-sm font-bold text-navy-900">Trigger Watchlist</h2>
             </div>
             <p className="mt-0.5 text-[10px] text-navy-500">Events requiring monitoring</p>
           </div>
 
           <div className="divide-y divide-[var(--color-app-border-light)]">
             {TRIGGERS.map((trigger, i) => (
-              <div key={i} className="px-4 py-3 hover:bg-navy-900/40 transition-colors">
-                <p className="text-[11px] font-medium text-navy-200 leading-tight">{trigger.event}</p>
+              <div key={i} className="px-4 py-3 hover:bg-[var(--color-app-surface-alt)] transition-colors">
+                <p className="text-[11px] font-medium text-navy-700 leading-tight">{trigger.event}</p>
                 <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                   <span className="flex items-center gap-1 text-[9px] text-navy-500">
                     <Calendar className="h-2.5 w-2.5" />
@@ -832,7 +832,7 @@ export default function EarlyWarningPage() {
       <div>
         <div className="mb-3 flex items-center gap-2">
           <Globe className="h-4 w-4 text-teal shrink-0" />
-          <h2 className="text-sm font-bold text-navy-100">Monitored Situations</h2>
+          <h2 className="text-sm font-bold text-navy-900">Monitored Situations</h2>
           <span className="text-[10px] text-navy-500">{conflicts.length} active</span>
         </div>
         <div className="flex gap-4 overflow-x-auto pb-2">
@@ -843,13 +843,13 @@ export default function EarlyWarningPage() {
       </div>
 
       {/* ── Horizon Scan ── */}
-      <div className="rounded-xl border border-[var(--color-app-border)] bg-navy-950/80 overflow-hidden">
+      <div className="rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden">
         <div className="border-b border-[var(--color-app-border)] px-5 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Zap className="h-4 w-4 text-gold-400 shrink-0" />
               <div>
-                <h2 className="text-sm font-bold text-navy-100">AI Horizon Scan — 30-Day Outlook</h2>
+                <h2 className="text-sm font-bold text-navy-900">AI Horizon Scan — 30-Day Outlook</h2>
                 <p className="text-[10px] text-navy-500">AI-generated forecast across all monitored conflicts</p>
               </div>
             </div>
@@ -873,7 +873,7 @@ export default function EarlyWarningPage() {
               <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-gold-500/20 bg-gold-500/8">
                 <Sparkles className="h-6 w-6 text-gold-400/60" />
               </div>
-              <p className="text-sm text-navy-400">Click "Generate Horizon Scan" to get an AI-powered 30-day outlook</p>
+              <p className="text-sm text-navy-500">Click &quot;Generate Horizon Scan&quot; to get an AI-powered 30-day outlook</p>
               <p className="mt-1 text-[10px] text-navy-600">Analyzes all {conflicts.length} monitored conflicts for risks, triggers, and opportunities</p>
             </div>
           )}
@@ -886,7 +886,7 @@ export default function EarlyWarningPage() {
           )}
 
           {horizonOutput && (
-            <div className="prose prose-invert max-w-none">
+            <div className="prose max-w-none">
               <MarkdownRenderer content={horizonOutput} className="text-sm" />
               {horizonLoading && (
                 <span className="inline-block h-4 w-0.5 animate-pulse bg-gold-400 align-text-bottom ml-0.5" />
