@@ -120,10 +120,10 @@ const ACTOR_TYPES = [
 ];
 
 const RELATIONSHIP_TYPES = [
-  { value: 'ally', label: 'Ally / Partner', color: 'text-emerald-400' },
-  { value: 'adversary', label: 'Adversary / Opponent', color: 'text-red-400' },
-  { value: 'neutral', label: 'Neutral / Complex', color: 'text-slate-400' },
-  { value: 'mediator', label: 'Mediator / Facilitator', color: 'text-amber-400' },
+  { value: 'ally', label: 'Ally / Partner', color: 'text-emerald-600' },
+  { value: 'adversary', label: 'Adversary / Opponent', color: 'text-red-600' },
+  { value: 'neutral', label: 'Neutral / Complex', color: 'text-navy-500' },
+  { value: 'mediator', label: 'Mediator / Facilitator', color: 'text-amber-600' },
 ];
 
 const SIMILAR_CASE_TEMPLATES = Object.entries(CASE_REGISTRY).map(([id, c]) => ({
@@ -159,53 +159,53 @@ function Step1BasicInfo({
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm text-slate-300 mb-1 block">Conflict / Case Name *</label>
+        <label className="text-sm text-navy-600 mb-1 block">Conflict / Case Name *</label>
         <input
           type="text"
           value={data.name}
           onChange={(e) => onChange({ name: e.target.value })}
           placeholder="e.g., Riverside Valley Water Rights Dispute"
-          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-white/30"
+          className="w-full bg-white border border-[var(--color-app-border)] rounded-lg px-3 py-2 text-navy-900 text-sm placeholder:text-navy-300 focus:outline-none focus:border-navy-300"
         />
       </div>
 
       <div>
-        <label className="text-sm text-slate-300 mb-1 block">Brief Description *</label>
+        <label className="text-sm text-navy-600 mb-1 block">Brief Description *</label>
         <textarea
           value={data.description}
           onChange={(e) => onChange({ description: e.target.value })}
           placeholder="Describe the conflict in 2-3 sentences: who is involved, what the core dispute is, and the current status."
           rows={3}
-          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-white/30 resize-none"
+          className="w-full bg-white border border-[var(--color-app-border)] rounded-lg px-3 py-2 text-navy-900 text-sm placeholder:text-navy-300 focus:outline-none focus:border-navy-300 resize-none"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-sm text-slate-300 mb-1 block">Region / Location</label>
+          <label className="text-sm text-navy-600 mb-1 block">Region / Location</label>
           <input
             type="text"
             value={data.region}
             onChange={(e) => onChange({ region: e.target.value })}
             placeholder="e.g., East Africa, Pacific Northwest"
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-white/30"
+            className="w-full bg-white border border-[var(--color-app-border)] rounded-lg px-3 py-2 text-navy-900 text-sm placeholder:text-navy-300 focus:outline-none focus:border-navy-300"
           />
         </div>
         <div>
-          <label className="text-sm text-slate-300 mb-1 block">Start Year</label>
+          <label className="text-sm text-navy-600 mb-1 block">Start Year</label>
           <input
             type="number"
             value={data.startYear}
             onChange={(e) => onChange({ startYear: parseInt(e.target.value) || 2024 })}
             min={1900}
             max={2026}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white/30"
+            className="w-full bg-white border border-[var(--color-app-border)] rounded-lg px-3 py-2 text-navy-900 text-sm focus:outline-none focus:border-navy-300"
           />
         </div>
       </div>
 
       <div>
-        <label className="text-sm text-slate-300 mb-2 block">Conflict Type *</label>
+        <label className="text-sm text-navy-600 mb-2 block">Conflict Type *</label>
         <div className="grid grid-cols-2 gap-2">
           {CONFLICT_TYPES.map(({ value, label, icon: Icon }) => (
             <button
@@ -213,8 +213,8 @@ function Step1BasicInfo({
               onClick={() => onChange({ conflictType: value })}
               className={`flex items-center gap-2 p-2.5 rounded-lg border text-left transition-all ${
                 data.conflictType === value
-                  ? 'bg-gold-500/20 border-gold-500/50 text-gold-300'
-                  : 'bg-white/3 border-white/10 text-slate-400 hover:text-white hover:border-white/20'
+                  ? 'bg-gold-50 border-gold-400 text-gold-700'
+                  : 'bg-[var(--color-app-surface-alt)] border-[var(--color-app-border)] text-navy-500 hover:text-navy-900 hover:border-navy-200'
               }`}
             >
               <Icon className="w-4 h-4 shrink-0" />
@@ -225,14 +225,14 @@ function Step1BasicInfo({
       </div>
 
       <div>
-        <label className="text-sm text-slate-300 mb-2 block">Start from a similar case template?</label>
+        <label className="text-sm text-navy-600 mb-2 block">Start from a similar case template?</label>
         <div className="space-y-2">
           <button
             onClick={() => onChange({ templateId: null })}
             className={`w-full text-left p-2.5 rounded-lg border transition-all text-sm ${
               data.templateId === null
-                ? 'bg-gold-500/10 border-gold-500/30 text-gold-300'
-                : 'bg-white/3 border-white/10 text-slate-400 hover:text-white'
+                ? 'bg-gold-50 border-gold-400 text-gold-700'
+                : 'bg-[var(--color-app-surface-alt)] border-[var(--color-app-border)] text-navy-500 hover:text-navy-900'
             }`}
           >
             Start from scratch
@@ -243,15 +243,15 @@ function Step1BasicInfo({
               onClick={() => onChange({ templateId: t.id })}
               className={`w-full text-left p-2.5 rounded-lg border transition-all ${
                 data.templateId === t.id
-                  ? 'bg-gold-500/10 border-gold-500/30 text-gold-300'
-                  : 'bg-white/3 border-white/10 text-slate-400 hover:text-white'
+                  ? 'bg-gold-50 border-gold-400 text-gold-700'
+                  : 'bg-[var(--color-app-surface-alt)] border-[var(--color-app-border)] text-navy-500 hover:text-navy-900'
               }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">{t.name}</span>
-                <Badge className="text-xs bg-white/5 text-slate-500 capitalize">{t.archetype}</Badge>
+                <Badge className="text-xs bg-navy-50 text-navy-500 capitalize">{t.archetype}</Badge>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">{t.region}</p>
+              <p className="text-xs text-navy-400 mt-0.5">{t.region}</p>
             </button>
           ))}
         </div>
@@ -296,7 +296,7 @@ function Step2Actors({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-navy-500">
           Add the key parties involved in this conflict. You need at least 2 actors to proceed.
         </p>
         <Button
@@ -304,7 +304,7 @@ function Step2Actors({
           variant="outline"
           onClick={onAIAssist}
           disabled={isAILoading || !data.description}
-          className="shrink-0 border-white/10 text-slate-300 hover:bg-white/5 text-xs"
+          className="shrink-0 border-[var(--color-app-border)] text-navy-600 hover:bg-[var(--color-app-surface-alt)] text-xs"
         >
           {isAILoading ? (
             <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
@@ -321,23 +321,23 @@ function Step2Actors({
           {data.actors.map((actor) => (
             <div
               key={actor.id}
-              className="flex items-center gap-2 p-2.5 bg-white/3 rounded-lg border border-white/10"
+              className="flex items-center gap-2 p-2.5 bg-[var(--color-app-surface-alt)] rounded-lg border border-[var(--color-app-border)]"
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-white">{actor.name}</span>
-                  <Badge className="text-xs bg-white/5 text-slate-500 capitalize">
+                  <span className="text-sm text-navy-900">{actor.name}</span>
+                  <Badge className="text-xs bg-navy-50 text-navy-500 capitalize">
                     {actor.type.replace('_', ' ')}
                   </Badge>
                 </div>
                 {actor.description && (
-                  <p className="text-xs text-slate-500 mt-0.5 truncate">{actor.description}</p>
+                  <p className="text-xs text-navy-400 mt-0.5 truncate">{actor.description}</p>
                 )}
               </div>
-              <span className="text-xs text-slate-500 shrink-0">Priority: {actor.importance}</span>
+              <span className="text-xs text-navy-400 shrink-0">Priority: {actor.importance}</span>
               <button
                 onClick={() => removeActor(actor.id)}
-                className="text-slate-500 hover:text-red-400 shrink-0"
+                className="text-navy-300 hover:text-red-500 shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -347,29 +347,29 @@ function Step2Actors({
       )}
 
       {/* Add actor form */}
-      <div className="bg-white/3 rounded-lg border border-white/10 border-dashed p-3 space-y-3">
-        <p className="text-xs text-slate-500">Add an actor</p>
+      <div className="bg-[var(--color-app-surface-alt)] rounded-lg border border-[var(--color-app-border)] border-dashed p-3 space-y-3">
+        <p className="text-xs text-navy-400">Add an actor</p>
         <div className="grid grid-cols-2 gap-2">
           <input
             type="text"
             value={newActor.name || ''}
             onChange={(e) => setNewActor((prev) => ({ ...prev, name: e.target.value }))}
             placeholder="Actor name *"
-            className="col-span-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-white/30"
+            className="col-span-2 bg-white border border-[var(--color-app-border)] rounded-lg px-3 py-2 text-navy-900 text-sm placeholder:text-navy-300 focus:outline-none focus:border-navy-300"
           />
           <select
             value={newActor.type || 'state'}
             onChange={(e) => setNewActor((prev) => ({ ...prev, type: e.target.value }))}
-            className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white/30"
+            className="bg-white border border-[var(--color-app-border)] rounded-lg px-3 py-2 text-navy-900 text-sm focus:outline-none focus:border-navy-300"
           >
             {ACTOR_TYPES.map((t) => (
-              <option key={t.value} value={t.value} className="bg-slate-900">
+              <option key={t.value} value={t.value}>
                 {t.label}
               </option>
             ))}
           </select>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-slate-500 shrink-0">Priority:</label>
+            <label className="text-xs text-navy-400 shrink-0">Priority:</label>
             <input
               type="range"
               min={1}
@@ -378,7 +378,7 @@ function Step2Actors({
               onChange={(e) => setNewActor((prev) => ({ ...prev, importance: parseInt(e.target.value) }))}
               className="flex-1"
             />
-            <span className="text-xs text-white w-4">{newActor.importance || 7}</span>
+            <span className="text-xs text-navy-700 w-4">{newActor.importance || 7}</span>
           </div>
         </div>
         <input
@@ -386,7 +386,7 @@ function Step2Actors({
           value={newActor.description || ''}
           onChange={(e) => setNewActor((prev) => ({ ...prev, description: e.target.value }))}
           placeholder="Brief description (optional)"
-          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-white/30"
+          className="w-full bg-white border border-[var(--color-app-border)] rounded-lg px-3 py-2 text-navy-900 text-sm placeholder:text-navy-300 focus:outline-none focus:border-navy-300"
         />
         <Button
           size="sm"
@@ -435,26 +435,26 @@ function Step3Claims({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-navy-500">
         For each actor, what do they want (claims) and what drives them (interests)?
       </p>
 
       {/* Actor-by-actor claims */}
       {data.actors.map((actor) => (
-        <div key={actor.id} className="bg-white/3 rounded-lg border border-white/10 p-3 space-y-2">
+        <div key={actor.id} className="bg-[var(--color-app-surface-alt)] rounded-lg border border-[var(--color-app-border)] p-3 space-y-2">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-gold-500" />
-            <span className="text-sm text-white font-medium">{actor.name}</span>
+            <span className="text-sm text-navy-900 font-medium">{actor.name}</span>
           </div>
 
           {/* Existing claims for this actor */}
           {data.claims
             .filter((c) => c.actorId === actor.id)
             .map((claim, i) => (
-              <div key={i} className="text-xs text-slate-400 pl-4">
-                <span className="text-slate-300">{claim.title}</span>
+              <div key={i} className="text-xs text-navy-500 pl-4">
+                <span className="text-navy-700">{claim.title}</span>
                 {' — '}
-                <span className="capitalize text-slate-500">{claim.type}</span>
+                <span className="capitalize text-navy-400">{claim.type}</span>
               </div>
             ))}
 
@@ -462,7 +462,7 @@ function Step3Claims({
           {data.interests
             .filter((int) => int.actorId === actor.id)
             .map((interest, i) => (
-              <div key={i} className="text-xs text-slate-400 pl-4 italic">
+              <div key={i} className="text-xs text-navy-500 pl-4 italic">
                 {interest.isExplicit ? '(Stated)' : '(Unstated)'} {interest.description}
               </div>
             ))}
@@ -470,16 +470,16 @@ function Step3Claims({
       ))}
 
       {/* Add claim form */}
-      <div className="bg-white/3 rounded-lg border border-white/10 border-dashed p-3 space-y-2">
-        <p className="text-xs text-slate-500">Add a claim or interest</p>
+      <div className="bg-[var(--color-app-surface-alt)] rounded-lg border border-[var(--color-app-border)] border-dashed p-3 space-y-2">
+        <p className="text-xs text-navy-400">Add a claim or interest</p>
         <select
           value={newClaim.actorId || ''}
           onChange={(e) => setNewClaim((prev) => ({ ...prev, actorId: e.target.value }))}
-          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white/30"
+          className="w-full bg-white border border-[var(--color-app-border)] rounded-lg px-3 py-2 text-navy-900 text-sm focus:outline-none focus:border-navy-300"
         >
-          <option value="" className="bg-slate-900">Select actor</option>
+          <option value="">Select actor</option>
           {data.actors.map((a) => (
-            <option key={a.id} value={a.id} className="bg-slate-900">{a.name}</option>
+            <option key={a.id} value={a.id}>{a.name}</option>
           ))}
         </select>
         <input
@@ -487,23 +487,23 @@ function Step3Claims({
           value={newClaim.title || ''}
           onChange={(e) => setNewClaim((prev) => ({ ...prev, title: e.target.value }))}
           placeholder="What do they claim or demand? (e.g., 'Full territorial sovereignty')"
-          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-white/30"
+          className="w-full bg-white border border-[var(--color-app-border)] rounded-lg px-3 py-2 text-navy-900 text-sm placeholder:text-navy-300 focus:outline-none focus:border-navy-300"
         />
         <input
           type="text"
           value={newClaim.description || ''}
           onChange={(e) => setNewClaim((prev) => ({ ...prev, description: e.target.value }))}
           placeholder="Brief description (optional)"
-          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-white/30"
+          className="w-full bg-white border border-[var(--color-app-border)] rounded-lg px-3 py-2 text-navy-900 text-sm placeholder:text-navy-300 focus:outline-none focus:border-navy-300"
         />
         <div className="flex gap-2">
           <select
             value={newClaim.type || 'demand'}
             onChange={(e) => setNewClaim((prev) => ({ ...prev, type: e.target.value as 'demand' | 'position' }))}
-            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white/30"
+            className="flex-1 bg-white border border-[var(--color-app-border)] rounded-lg px-3 py-2 text-navy-900 text-sm focus:outline-none focus:border-navy-300"
           >
-            <option value="demand" className="bg-slate-900">Demand (what they want)</option>
-            <option value="position" className="bg-slate-900">Position (stated stance)</option>
+            <option value="demand">Demand (what they want)</option>
+            <option value="position">Position (stated stance)</option>
           </select>
           <Button
             size="sm"
@@ -557,15 +557,15 @@ function Step4Relationships({
   };
 
   const relColors: Record<string, string> = {
-    ally: 'bg-emerald-500/20 text-emerald-300',
-    adversary: 'bg-red-500/20 text-red-300',
-    neutral: 'bg-slate-500/20 text-slate-300',
-    mediator: 'bg-amber-500/20 text-amber-300',
+    ally: 'bg-emerald-50 text-emerald-700',
+    adversary: 'bg-red-50 text-red-700',
+    neutral: 'bg-navy-50 text-navy-600',
+    mediator: 'bg-amber-50 text-amber-700',
   };
 
   if (actors.length < 2) {
     return (
-      <div className="text-center py-8 text-slate-500">
+      <div className="text-center py-8 text-navy-400">
         <Network className="w-8 h-8 mx-auto mb-2 opacity-40" />
         <p className="text-sm">Add actors first to map relationships</p>
       </div>
@@ -574,7 +574,7 @@ function Step4Relationships({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-navy-500">
         Define how each pair of actors relates to each other.
       </p>
 
@@ -585,12 +585,12 @@ function Step4Relationships({
             return (
               <div
                 key={`${source.id}-${target.id}`}
-                className="flex items-center gap-3 p-2.5 bg-white/3 rounded-lg border border-white/10"
+                className="flex items-center gap-3 p-2.5 bg-[var(--color-app-surface-alt)] rounded-lg border border-[var(--color-app-border)]"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-300">
+                  <div className="flex items-center gap-1.5 text-xs text-navy-600">
                     <span className="truncate">{source.name}</span>
-                    <ChevronRight className="w-3 h-3 text-slate-600 shrink-0" />
+                    <ChevronRight className="w-3 h-3 text-navy-300 shrink-0" />
                     <span className="truncate">{target.name}</span>
                   </div>
                 </div>
@@ -601,8 +601,8 @@ function Step4Relationships({
                       onClick={() => setRelationship(source.id, target.id, rt.value as WizardRelationship['type'])}
                       className={`text-xs px-2 py-0.5 rounded transition-all ${
                         rel?.type === rt.value
-                          ? relColors[rt.value] || 'bg-gold-500/20 text-gold-300'
-                          : 'bg-white/5 text-slate-500 hover:text-white'
+                          ? relColors[rt.value] || 'bg-gold-50 text-gold-700'
+                          : 'bg-white border border-[var(--color-app-border)] text-navy-400 hover:text-navy-900'
                       }`}
                     >
                       {rt.label.split(' ')[0]}
@@ -615,7 +615,7 @@ function Step4Relationships({
         )}
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-navy-400">
         {data.relationships.length} of {(actors.length * (actors.length - 1)) / 2} relationships defined
       </p>
     </div>
@@ -642,7 +642,7 @@ function Step5Timeline({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-navy-500">
         Add key events in the conflict timeline. Start with the most important ones.
       </p>
 
@@ -654,16 +654,16 @@ function Step5Timeline({
             .map((evt, i) => (
               <div
                 key={i}
-                className="flex items-start gap-2 p-2.5 bg-white/3 rounded-lg border border-white/10"
+                className="flex items-start gap-2 p-2.5 bg-[var(--color-app-surface-alt)] rounded-lg border border-[var(--color-app-border)]"
               >
-                <div className="text-xs text-slate-500 tabular-nums mt-0.5 shrink-0 w-20">{evt.date}</div>
+                <div className="text-xs text-navy-400 tabular-nums mt-0.5 shrink-0 w-20">{evt.date}</div>
                 <div className="flex-1">
-                  <p className="text-xs text-white">{evt.title}</p>
-                  <p className="text-xs text-slate-500">{evt.type}</p>
+                  <p className="text-xs text-navy-900">{evt.title}</p>
+                  <p className="text-xs text-navy-400">{evt.type}</p>
                 </div>
                 <button
                   onClick={() => onChange({ events: data.events.filter((_, idx) => idx !== i) })}
-                  className="text-slate-600 hover:text-red-400"
+                  className="text-navy-300 hover:text-red-500"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -673,22 +673,22 @@ function Step5Timeline({
       )}
 
       {/* Add event form */}
-      <div className="bg-white/3 rounded-lg border border-white/10 border-dashed p-3 space-y-2">
-        <p className="text-xs text-slate-500">Add a key event</p>
+      <div className="bg-[var(--color-app-surface-alt)] rounded-lg border border-[var(--color-app-border)] border-dashed p-3 space-y-2">
+        <p className="text-xs text-navy-400">Add a key event</p>
         <div className="grid grid-cols-2 gap-2">
           <input
             type="date"
             value={newEvent.date || ''}
             onChange={(e) => setNewEvent((prev) => ({ ...prev, date: e.target.value }))}
-            className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white/30"
+            className="bg-white border border-[var(--color-app-border)] rounded-lg px-3 py-2 text-navy-900 text-sm focus:outline-none focus:border-navy-300"
           />
           <select
             value={newEvent.type || 'political'}
             onChange={(e) => setNewEvent((prev) => ({ ...prev, type: e.target.value }))}
-            className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white/30"
+            className="bg-white border border-[var(--color-app-border)] rounded-lg px-3 py-2 text-navy-900 text-sm focus:outline-none focus:border-navy-300"
           >
             {EVENT_TYPES.map((t) => (
-              <option key={t} value={t} className="bg-slate-900 capitalize">{t}</option>
+              <option key={t} value={t} className="capitalize">{t}</option>
             ))}
           </select>
         </div>
@@ -697,14 +697,14 @@ function Step5Timeline({
           value={newEvent.title || ''}
           onChange={(e) => setNewEvent((prev) => ({ ...prev, title: e.target.value }))}
           placeholder="Event title *"
-          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-white/30"
+          className="w-full bg-white border border-[var(--color-app-border)] rounded-lg px-3 py-2 text-navy-900 text-sm placeholder:text-navy-300 focus:outline-none focus:border-navy-300"
         />
         <textarea
           value={newEvent.description || ''}
           onChange={(e) => setNewEvent((prev) => ({ ...prev, description: e.target.value }))}
           placeholder="Description (optional)"
           rows={2}
-          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-white/30 resize-none"
+          className="w-full bg-white border border-[var(--color-app-border)] rounded-lg px-3 py-2 text-navy-900 text-sm placeholder:text-navy-300 focus:outline-none focus:border-navy-300 resize-none"
         />
         <Button
           size="sm"
@@ -731,47 +731,47 @@ function Step6Review({
 }) {
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-400">Review your case before launching it into PRAXIS.</p>
+      <p className="text-sm text-navy-500">Review your case before launching it into PRAXIS.</p>
 
       {/* Summary card */}
-      <div className="bg-white/3 rounded-xl border border-white/10 p-4 space-y-3">
+      <div className="bg-[var(--color-app-surface-alt)] rounded-xl border border-[var(--color-app-border)] p-4 space-y-3">
         <div>
-          <h3 className="text-white font-semibold text-lg">{data.name || 'Untitled Case'}</h3>
-          <p className="text-sm text-slate-400 mt-1">{data.description}</p>
+          <h3 className="text-navy-900 font-semibold text-lg">{data.name || 'Untitled Case'}</h3>
+          <p className="text-sm text-navy-500 mt-1">{data.description}</p>
         </div>
 
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center">
-            <p className="text-2xl font-bold text-gold-400">{data.actors.length}</p>
-            <p className="text-xs text-slate-500">Actors</p>
+            <p className="text-2xl font-bold text-gold-600">{data.actors.length}</p>
+            <p className="text-xs text-navy-400">Actors</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-gold-400">{data.events.length}</p>
-            <p className="text-xs text-slate-500">Events</p>
+            <p className="text-2xl font-bold text-gold-600">{data.events.length}</p>
+            <p className="text-xs text-navy-400">Events</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-gold-400">{data.claims.length + data.interests.length}</p>
-            <p className="text-xs text-slate-500">Claims/Interests</p>
+            <p className="text-2xl font-bold text-gold-600">{data.claims.length + data.interests.length}</p>
+            <p className="text-xs text-navy-400">Claims/Interests</p>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 pt-2 border-t border-white/10">
-          <Badge className="bg-white/5 text-slate-400">{data.region}</Badge>
-          <Badge className="bg-white/5 text-slate-400 capitalize">{data.conflictType?.replace('_', ' ')}</Badge>
-          <Badge className="bg-white/5 text-slate-400">Started {data.startYear}</Badge>
+        <div className="flex flex-wrap gap-1.5 pt-2 border-t border-[var(--color-app-border)]">
+          <Badge className="bg-navy-50 text-navy-500">{data.region}</Badge>
+          <Badge className="bg-navy-50 text-navy-500 capitalize">{data.conflictType?.replace('_', ' ')}</Badge>
+          <Badge className="bg-navy-50 text-navy-500">Started {data.startYear}</Badge>
         </div>
       </div>
 
       {/* Actor list */}
       {data.actors.length > 0 && (
-        <div className="bg-white/3 rounded-lg border border-white/10 p-3">
-          <p className="text-xs text-slate-500 mb-2">Actors</p>
+        <div className="bg-[var(--color-app-surface-alt)] rounded-lg border border-[var(--color-app-border)] p-3">
+          <p className="text-xs text-navy-400 mb-2">Actors</p>
           <div className="space-y-1">
             {data.actors.map((a) => (
               <div key={a.id} className="flex items-center gap-2 text-xs">
                 <div className="w-1.5 h-1.5 rounded-full bg-gold-500" />
-                <span className="text-white">{a.name}</span>
-                <span className="text-slate-500 capitalize">{a.type.replace('_', ' ')}</span>
+                <span className="text-navy-900">{a.name}</span>
+                <span className="text-navy-400 capitalize">{a.type.replace('_', ' ')}</span>
               </div>
             ))}
           </div>
@@ -973,20 +973,20 @@ export function CaseCreationWizard({ onComplete, onCancel }: CaseCreationWizardP
   };
 
   return (
-    <div className="flex flex-col h-full max-h-[85vh] bg-navy-950 rounded-2xl border border-white/10 overflow-hidden">
+    <div className="flex flex-col h-full max-h-[85vh] bg-white rounded-2xl border border-[var(--color-app-border)] overflow-hidden shadow-lg">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-app-border)]">
         <div>
-          <h2 className="text-white font-semibold">Create New Case</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Step {currentStep} of {STEPS.length}</p>
+          <h2 className="text-navy-900 font-semibold">Create New Case</h2>
+          <p className="text-xs text-navy-400 mt-0.5">Step {currentStep} of {STEPS.length}</p>
         </div>
-        <button onClick={onCancel} className="text-slate-500 hover:text-white">
+        <button onClick={onCancel} className="text-navy-400 hover:text-navy-700">
           <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* Step indicators */}
-      <div className="flex items-center px-6 py-3 border-b border-white/10 gap-1 overflow-x-auto">
+      <div className="flex items-center px-6 py-3 border-b border-[var(--color-app-border)] gap-1 overflow-x-auto bg-[var(--color-app-surface-alt)]">
         {STEPS.map((step, i) => {
           const StepIcon = step.icon;
           const isCompleted = currentStep > step.id;
@@ -998,21 +998,21 @@ export function CaseCreationWizard({ onComplete, onCancel }: CaseCreationWizardP
                 disabled={!isCompleted}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap ${
                   isCurrent
-                    ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40'
+                    ? 'bg-gold-50 text-gold-700 border border-gold-300'
                     : isCompleted
-                    ? 'text-slate-300 hover:text-white cursor-pointer'
-                    : 'text-slate-600 cursor-not-allowed'
+                    ? 'text-navy-600 hover:text-navy-900 cursor-pointer'
+                    : 'text-navy-300 cursor-not-allowed'
                 }`}
               >
                 {isCompleted ? (
-                  <Check className="w-3.5 h-3.5 text-gold-400" />
+                  <Check className="w-3.5 h-3.5 text-gold-500" />
                 ) : (
                   <StepIcon className="w-3.5 h-3.5" />
                 )}
                 {step.label}
               </button>
               {i < STEPS.length - 1 && (
-                <div className={`w-4 h-px ${isCompleted ? 'bg-gold-500/40' : 'bg-white/10'}`} />
+                <div className={`w-4 h-px ${isCompleted ? 'bg-gold-400/60' : 'bg-[var(--color-app-border)]'}`} />
               )}
             </React.Fragment>
           );
@@ -1050,12 +1050,12 @@ export function CaseCreationWizard({ onComplete, onCancel }: CaseCreationWizardP
 
       {/* Navigation */}
       {currentStep < 6 && (
-        <div className="flex items-center justify-between px-6 py-4 border-t border-white/10">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)]">
           <Button
             variant="ghost"
             onClick={() => setCurrentStep((prev) => Math.max(1, prev - 1))}
             disabled={currentStep === 1}
-            className="text-slate-400 hover:text-white"
+            className="text-navy-500 hover:text-navy-900"
           >
             <ChevronLeft className="w-4 h-4 mr-1" />
             Back

@@ -188,20 +188,14 @@ function calculateZOPA(parties: PartyPosition[]): {
 } {
   if (parties.length < 2) return { exists: false, low: 0, high: 0, width: 0 };
 
-  // Find overlap between the minimum acceptable ranges
   const allMins = parties.map((p) => p.minimumAcceptable);
   const overlapLow = Math.min(...allMins);
   const overlapHigh = Math.max(...allMins);
 
-  // ZOPA exists if there's overlap between parties' acceptable ranges
-  // Party A wants high, Party B wants low (or vice versa)
-  // Check if any party's range overlaps with another
   if (parties.length === 2) {
     const [a, b] = parties;
     const aWantsHigh = a.aspirationalPosition > b.aspirationalPosition;
     if (aWantsHigh) {
-      // A wants high, B wants low
-      // ZOPA: B's min <= A's min (there's overlap)
       if (b.minimumAcceptable <= a.minimumAcceptable) {
         return {
           exists: true,
@@ -211,7 +205,6 @@ function calculateZOPA(parties: PartyPosition[]): {
         };
       }
     } else {
-      // A wants low, B wants high
       if (a.minimumAcceptable <= b.minimumAcceptable) {
         return {
           exists: true,
@@ -231,9 +224,9 @@ function pct(value: number, low: number, high: number): number {
 }
 
 const BATNA_COLORS: Record<string, string> = {
-  strong: 'text-red-400 bg-red-500/10 border-red-500/30',
-  moderate: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
-  weak: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+  strong: 'text-red-700 bg-red-50 border-red-200',
+  moderate: 'text-amber-700 bg-amber-50 border-amber-200',
+  weak: 'text-emerald-700 bg-emerald-50 border-emerald-200',
 };
 
 const BATNA_ICONS = {
@@ -262,7 +255,9 @@ function PartyBar({ party, issue, isSelected, onClick }: PartyBarProps) {
   return (
     <div
       className={`rounded-lg border transition-all cursor-pointer ${
-        isSelected ? 'border-white/20 bg-white/5' : 'border-white/10 hover:border-white/15'
+        isSelected
+          ? 'border-[var(--color-app-border)] bg-navy-50 shadow-sm'
+          : 'border-[var(--color-app-border)] hover:border-navy-200 bg-white'
       } p-3`}
       onClick={onClick}
     >
@@ -273,7 +268,7 @@ function PartyBar({ party, issue, isSelected, onClick }: PartyBarProps) {
             className="w-3 h-3 rounded-full"
             style={{ backgroundColor: party.color }}
           />
-          <span className="text-sm text-white font-medium">{party.actorName}</span>
+          <span className="text-sm text-navy-900 font-medium">{party.actorName}</span>
         </div>
         <Badge
           className={`text-xs ${BATNA_COLORS[party.batnaStrength]}`}
@@ -284,7 +279,7 @@ function PartyBar({ party, issue, isSelected, onClick }: PartyBarProps) {
       </div>
 
       {/* Position bar */}
-      <div className="relative h-8 bg-white/5 rounded-lg overflow-hidden mb-2">
+      <div className="relative h-8 bg-navy-50 rounded-lg overflow-hidden mb-2 border border-[var(--color-app-border-light)]">
         {/* Aspiration zone */}
         <div
           className="absolute top-0 bottom-0 opacity-20 rounded"
@@ -305,7 +300,7 @@ function PartyBar({ party, issue, isSelected, onClick }: PartyBarProps) {
         />
         {/* Opening position marker */}
         <div
-          className="absolute top-0 bottom-0 w-0.5 bg-white/60"
+          className="absolute top-0 bottom-0 w-0.5 bg-navy-500"
           style={{ left: `${openPct}%` }}
         />
         {/* Minimum acceptable (red line) */}
@@ -322,10 +317,10 @@ function PartyBar({ party, issue, isSelected, onClick }: PartyBarProps) {
 
         {/* Labels */}
         <div className="absolute inset-0 flex items-center px-2">
-          <span className="text-xs text-white/40 tabular-nums">
+          <span className="text-xs text-navy-300 tabular-nums">
             {issue.low}
           </span>
-          <span className="ml-auto text-xs text-white/40 tabular-nums">
+          <span className="ml-auto text-xs text-navy-300 tabular-nums">
             {issue.high}
             {issue.unit ? ` ${issue.unit}` : ''}
           </span>
@@ -333,16 +328,16 @@ function PartyBar({ party, issue, isSelected, onClick }: PartyBarProps) {
       </div>
 
       {/* Position values */}
-      <div className="flex justify-between text-xs text-slate-500">
+      <div className="flex justify-between text-xs text-navy-400">
         <span>
-          Opening: <span className="text-white">{party.openingPosition}</span>
+          Opening: <span className="text-navy-800 font-medium">{party.openingPosition}</span>
         </span>
         <span>
           Min acceptable:{' '}
-          <span className="text-red-400">{party.minimumAcceptable}</span>
+          <span className="text-red-600 font-medium">{party.minimumAcceptable}</span>
         </span>
         <span>
-          Aspiration: <span className="text-slate-300">{party.aspirationalPosition}</span>
+          Aspiration: <span className="text-navy-600">{party.aspirationalPosition}</span>
         </span>
       </div>
 
@@ -355,21 +350,21 @@ function PartyBar({ party, issue, isSelected, onClick }: PartyBarProps) {
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="mt-3 pt-3 border-t border-white/10 space-y-3">
+            <div className="mt-3 pt-3 border-t border-[var(--color-app-border)] space-y-3">
               {/* BATNA */}
               <div>
-                <p className="text-xs text-slate-500 mb-1">BATNA Assessment</p>
-                <p className="text-xs text-slate-300 leading-relaxed">{party.batnaDescription}</p>
+                <p className="text-xs text-navy-400 mb-1">BATNA Assessment</p>
+                <p className="text-xs text-navy-600 leading-relaxed">{party.batnaDescription}</p>
               </div>
 
               {/* Interests */}
               {party.interests.length > 0 && (
                 <div>
-                  <p className="text-xs text-slate-500 mb-1.5">Key Interests</p>
+                  <p className="text-xs text-navy-400 mb-1.5">Key Interests</p>
                   <ul className="space-y-1">
                     {party.interests.map((interest, i) => (
-                      <li key={i} className="flex items-start gap-1.5 text-xs text-slate-300">
-                        <ArrowRight className="w-3 h-3 text-slate-500 mt-0.5 shrink-0" />
+                      <li key={i} className="flex items-start gap-1.5 text-xs text-navy-600">
+                        <ArrowRight className="w-3 h-3 text-navy-300 mt-0.5 shrink-0" />
                         {interest}
                       </li>
                     ))}
@@ -380,12 +375,12 @@ function PartyBar({ party, issue, isSelected, onClick }: PartyBarProps) {
               {/* Constraints */}
               {party.constraints.length > 0 && (
                 <div>
-                  <p className="text-xs text-slate-500 mb-1.5">Constraints</p>
+                  <p className="text-xs text-navy-400 mb-1.5">Constraints</p>
                   <div className="flex flex-wrap gap-1">
                     {party.constraints.map((c, i) => (
                       <span
                         key={i}
-                        className="text-xs bg-white/5 border border-white/10 rounded px-2 py-0.5 text-slate-400"
+                        className="text-xs bg-[var(--color-app-surface-alt)] border border-[var(--color-app-border)] rounded px-2 py-0.5 text-navy-500"
                       >
                         {c}
                       </span>
@@ -425,7 +420,7 @@ export function ZOPAVisualizer({
 
   if (!selectedIssue) {
     return (
-      <div className={`text-center py-12 text-slate-500 ${className}`}>
+      <div className={`text-center py-12 text-navy-400 ${className}`}>
         <Scale className="w-8 h-8 mx-auto mb-2 opacity-40" />
         <p>No negotiation issues configured</p>
       </div>
@@ -437,11 +432,11 @@ export function ZOPAVisualizer({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Scale className="w-5 h-5 text-gold-400" />
-          <h3 className="text-white font-semibold">ZOPA Visualizer</h3>
+          <Scale className="w-5 h-5 text-gold-600" />
+          <h3 className="text-navy-900 font-semibold">ZOPA Visualizer</h3>
           <div className="relative group">
-            <Info className="w-4 h-4 text-slate-500 cursor-help" />
-            <div className="hidden group-hover:block absolute left-0 top-5 w-64 bg-navy-900 border border-white/10 rounded-lg p-2 text-xs text-slate-400 z-50 shadow-xl">
+            <Info className="w-4 h-4 text-navy-400 cursor-help" />
+            <div className="hidden group-hover:block absolute left-0 top-5 w-64 bg-white border border-[var(--color-app-border)] rounded-lg p-2 text-xs text-navy-500 z-50 shadow-lg">
               Zone of Possible Agreement (ZOPA): the range between parties&apos; minimum acceptable positions. Negotiations have the highest likelihood of success when a positive ZOPA exists.
             </div>
           </div>
@@ -451,7 +446,7 @@ export function ZOPAVisualizer({
             size="sm"
             variant="outline"
             onClick={() => onRequestAIAnalysis(selectedIssue)}
-            className="text-xs border-white/10 text-slate-300 hover:bg-white/5"
+            className="text-xs border-[var(--color-app-border)] text-navy-600 hover:bg-[var(--color-app-surface-alt)]"
           >
             <TrendingUp className="w-3.5 h-3.5 mr-1" />
             AI Analysis
@@ -469,14 +464,14 @@ export function ZOPAVisualizer({
               onClick={() => { setSelectedIssueId(issue.id); setSelectedPartyId(null); }}
               className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all ${
                 selectedIssueId === issue.id
-                  ? 'bg-gold-500/20 border-gold-500/40 text-gold-300'
-                  : 'bg-white/3 border-white/10 text-slate-400 hover:text-white'
+                  ? 'bg-gold-50 border-gold-300 text-gold-700 font-medium'
+                  : 'bg-[var(--color-app-surface-alt)] border-[var(--color-app-border)] text-navy-500 hover:text-navy-900'
               }`}
             >
               {z.exists ? (
-                <CheckCircle className="w-3 h-3 text-emerald-400" />
+                <CheckCircle className="w-3 h-3 text-emerald-500" />
               ) : (
-                <XCircle className="w-3 h-3 text-red-400" />
+                <XCircle className="w-3 h-3 text-red-500" />
               )}
               {issue.title}
             </button>
@@ -485,11 +480,11 @@ export function ZOPAVisualizer({
       </div>
 
       {/* Issue Header */}
-      <div className="bg-white/3 rounded-lg border border-white/10 p-4">
-        <h4 className="text-white font-medium mb-1">{selectedIssue.title}</h4>
-        <p className="text-sm text-slate-400">{selectedIssue.description}</p>
+      <div className="bg-[var(--color-app-surface-alt)] rounded-lg border border-[var(--color-app-border)] p-4">
+        <h4 className="text-navy-900 font-medium mb-1">{selectedIssue.title}</h4>
+        <p className="text-sm text-navy-500">{selectedIssue.description}</p>
         {selectedIssue.unit && (
-          <p className="text-xs text-slate-500 mt-1">Unit: {selectedIssue.unit}</p>
+          <p className="text-xs text-navy-400 mt-1">Unit: {selectedIssue.unit}</p>
         )}
       </div>
 
@@ -498,20 +493,20 @@ export function ZOPAVisualizer({
         <div
           className={`rounded-lg border p-3 flex items-center gap-3 ${
             zopa.exists
-              ? 'bg-emerald-500/10 border-emerald-500/30'
-              : 'bg-red-500/10 border-red-500/30'
+              ? 'bg-emerald-50 border-emerald-200'
+              : 'bg-red-50 border-red-200'
           }`}
         >
           {zopa.exists ? (
-            <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+            <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
           ) : (
-            <XCircle className="w-5 h-5 text-red-400 shrink-0" />
+            <XCircle className="w-5 h-5 text-red-600 shrink-0" />
           )}
           <div>
-            <p className={`text-sm font-medium ${zopa.exists ? 'text-emerald-300' : 'text-red-300'}`}>
+            <p className={`text-sm font-medium ${zopa.exists ? 'text-emerald-700' : 'text-red-700'}`}>
               {zopa.exists ? 'Positive ZOPA Exists' : 'Negative ZOPA — No Overlap'}
             </p>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-navy-500 mt-0.5">
               {zopa.exists
                 ? `Agreement zone: ${zopa.low} – ${zopa.high} ${selectedIssue.unit || ''}. Width: ${zopa.width} units.`
                 : 'The minimum acceptable positions of the parties do not overlap. Bridging measures or reframing required.'}
@@ -521,9 +516,9 @@ export function ZOPAVisualizer({
       )}
 
       {/* Combined Bar Chart */}
-      <div className="bg-white/3 rounded-lg border border-white/10 p-4">
-        <p className="text-xs text-slate-500 mb-3">Position Overview</p>
-        <div className="relative h-20 bg-white/5 rounded-lg overflow-hidden mb-2">
+      <div className="bg-[var(--color-app-surface-alt)] rounded-lg border border-[var(--color-app-border)] p-4">
+        <p className="text-xs text-navy-400 mb-3">Position Overview</p>
+        <div className="relative h-20 bg-white rounded-lg overflow-hidden mb-2 border border-[var(--color-app-border-light)]">
           {/* Scale markers */}
           {[0, 25, 50, 75, 100].map((pctMark) => {
             const val = selectedIssue.low + (pctMark / 100) * (selectedIssue.high - selectedIssue.low);
@@ -533,7 +528,7 @@ export function ZOPAVisualizer({
                 className="absolute top-0 bottom-0 flex flex-col items-center"
                 style={{ left: `${pctMark}%` }}
               >
-                <div className="w-px h-full bg-white/10" />
+                <div className="w-px h-full bg-navy-100" />
               </div>
             );
           })}
@@ -541,13 +536,13 @@ export function ZOPAVisualizer({
           {/* ZOPA overlay */}
           {zopa?.exists && (
             <div
-              className="absolute top-0 bottom-0 bg-emerald-500/20 border-x border-emerald-500/40"
+              className="absolute top-0 bottom-0 bg-emerald-100 border-x border-emerald-300"
               style={{
                 left: `${pct(zopa.low, selectedIssue.low, selectedIssue.high)}%`,
                 width: `${pct(zopa.high, selectedIssue.low, selectedIssue.high) - pct(zopa.low, selectedIssue.low, selectedIssue.high)}%`,
               }}
             >
-              <span className="absolute top-1 left-1 text-xs text-emerald-400 font-medium">ZOPA</span>
+              <span className="absolute top-1 left-1 text-xs text-emerald-700 font-medium">ZOPA</span>
             </div>
           )}
 
@@ -598,10 +593,10 @@ export function ZOPAVisualizer({
         </div>
 
         {/* Scale */}
-        <div className="flex justify-between text-xs text-slate-500">
+        <div className="flex justify-between text-xs text-navy-400">
           <span>{selectedIssue.low}</span>
           {selectedIssue.unit && (
-            <span className="text-slate-600">{selectedIssue.unit}</span>
+            <span className="text-navy-300">{selectedIssue.unit}</span>
           )}
           <span>{selectedIssue.high}</span>
         </div>
@@ -610,16 +605,16 @@ export function ZOPAVisualizer({
         <div className="flex items-center gap-4 mt-3 flex-wrap">
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-1 bg-red-500 rounded" />
-            <span className="text-xs text-slate-500">Red line</span>
+            <span className="text-xs text-navy-400">Red line</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-4 h-1 bg-white/60 rounded" />
-            <span className="text-xs text-slate-500">Opening position</span>
+            <div className="w-4 h-1 bg-navy-400 rounded" />
+            <span className="text-xs text-navy-400">Opening position</span>
           </div>
           {zopa?.exists && (
             <div className="flex items-center gap-1.5">
-              <div className="w-4 h-1 bg-emerald-500/60 rounded" />
-              <span className="text-xs text-slate-500">ZOPA</span>
+              <div className="w-4 h-1 bg-emerald-400 rounded" />
+              <span className="text-xs text-navy-400">ZOPA</span>
             </div>
           )}
         </div>
@@ -627,7 +622,7 @@ export function ZOPAVisualizer({
 
       {/* Party Cards */}
       <div className="space-y-3">
-        <p className="text-xs text-slate-500">Party Profiles</p>
+        <p className="text-xs text-navy-400">Party Profiles</p>
         {selectedIssue.parties.map((party) => (
           <PartyBar
             key={party.actorId}
@@ -644,9 +639,9 @@ export function ZOPAVisualizer({
       </div>
 
       {/* Trade-off Matrix hint */}
-      <div className="bg-white/3 rounded-lg border border-white/10 p-3">
-        <p className="text-xs text-slate-500 mb-1">Negotiation Insight</p>
-        <p className="text-sm text-slate-300">
+      <div className="bg-[var(--color-app-surface-alt)] rounded-lg border border-[var(--color-app-border)] p-3">
+        <p className="text-xs text-navy-400 mb-1">Negotiation Insight</p>
+        <p className="text-sm text-navy-600">
           {zopa?.exists
             ? `A positive ZOPA of ${zopa.width} units exists on "${selectedIssue.title}". Focus on converting opening positions to interest-based trades that allow both parties to claim success within this range.`
             : `The negative ZOPA on "${selectedIssue.title}" requires either reframing the issue, linking it to a trade on another issue where ZOPA exists, or changing one party's constraints before agreement is possible.`}
