@@ -1,5 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import {
+  getCaseOntology,
+  CASE_REGISTRY,
+  type CaseOntology,
+} from '@/lib/constants/case-registry';
 
 // ============================================================================
 // Simplified types for the store
@@ -68,6 +73,15 @@ interface ConflictStore {
   setActiveConflict: (id: string) => void;
   getActiveConflict: () => ConflictSummary | undefined;
 
+  // Active case ontology (loaded from CASE_REGISTRY)
+  activeCaseOntology: CaseOntology | null;
+  loadCase: (id: string) => void;
+
+  // Custom user-created cases (ontologies only; summary added to conflicts[])
+  customCases: Record<string, CaseOntology>;
+  addCustomCase: (id: string, ontology: CaseOntology) => void;
+  removeCustomCase: (id: string) => void;
+
   // Session tracking
   sessionStartedAt: string;
   aiQueryCount: number;
@@ -101,7 +115,7 @@ interface ConflictStore {
 }
 
 // ============================================================================
-// Seed data
+// Seed data — generated from CASE_REGISTRY
 // ============================================================================
 
 const SEED_CONFLICTS: ConflictSummary[] = [
@@ -159,6 +173,54 @@ const SEED_CONFLICTS: ConflictSummary[] = [
       { title: 'China coast guard intercepts supply vessel', date: '2026-02-28' },
     ],
   },
+  {
+    id: 'techcorp-restructuring',
+    name: 'TechCorp Engineering Restructuring Dispute',
+    region: 'United States (Pacific Northwest)',
+    status: 'active',
+    description:
+      'Multi-party organizational labor dispute involving layoff discrimination claims, nascent unionization, and federal mediation. Enterprise use case demonstration.',
+    riskScore: 4.2,
+    actorCount: 8,
+    graphEntities: 28,
+    events: [
+      { title: 'First FMCS mediation session: positions exchanged', date: '2026-01-15' },
+      { title: 'NLRB representation hearing: bargaining unit narrowed', date: '2026-02-12' },
+      { title: 'Second FMCS session: tentative framework on discrimination claims', date: '2026-02-26' },
+      { title: 'TEU demands reinstatement as non-negotiable precondition', date: '2026-03-05' },
+    ],
+  },
+  {
+    id: 'ethiopia-tigray',
+    name: 'Ethiopia-Tigray: Post-Pretoria Peace Process',
+    region: 'Horn of Africa',
+    status: 'active',
+    description:
+      'Implementation of the 2022 Cessation of Hostilities Agreement — DDR, humanitarian access, Western Tigray status, and accountability — based on publicly available open-source reporting.',
+    riskScore: 6.8,
+    actorCount: 9,
+    graphEntities: 38,
+    events: [
+      { title: 'AU Panel: DDR at 18%, Western Tigray stalled', date: '2026-01-08' },
+      { title: 'Domestic transitional justice task force convenes', date: '2025-10-14' },
+      { title: 'Tigray CSO forum calls for international tribunal', date: '2026-03-04' },
+    ],
+  },
+  {
+    id: 'riverside-land-dispute',
+    name: 'Riverside County: Development vs. Indigenous Land Rights',
+    region: 'Pacific Northwest (fictional)',
+    status: 'active',
+    description:
+      'Multi-stakeholder local dispute involving indigenous treaty rights, environmental protection, and county development approval — community/NGO use case demonstration.',
+    riskScore: 3.8,
+    actorCount: 7,
+    graphEntities: 22,
+    events: [
+      { title: 'All parties enter federal mediation; court defers ruling', date: '2026-02-01' },
+      { title: 'First mediation session: cultural site visit proposed', date: '2026-03-10' },
+    ],
+  },
 ];
 
 const SEED_ALERTS: ConflictAlert[] = [
@@ -194,8 +256,17 @@ const SEED_ALERTS: ConflictAlert[] = [
     severity: 'medium',
     title: 'Karovia military resupply convoy detected at northern border',
     description:
-      'Satellite imagery analysis and ground-level reporting indicate a Karovian military resupply convoy has been observed at the northern border crossing point. The convoy\'s final destination and recipient are unconfirmed. This may constitute a violation of the arms embargo established under UNSC Resolution 2890.',
+      "Satellite imagery analysis and ground-level reporting indicate a Karovian military resupply convoy has been observed at the northern border crossing point. The convoy's final destination and recipient are unconfirmed. This may constitute a violation of the arms embargo established under UNSC Resolution 2890.",
     conflictId: 'nordalia-crisis',
+    acknowledgedAt: null,
+  },
+  {
+    id: 'alert-005',
+    severity: 'medium',
+    title: 'Ethiopia-Tigray: Tigray CSO forum demands international tribunal',
+    description:
+      'A major Tigrayan civil society forum in Mekelle has issued a declaration calling for an international criminal tribunal for Ethiopia-Tigray conflict crimes, signed by 89 civil society organizations. This may complicate the ongoing domestic transitional justice process and create pressure on Western donor governments.',
+    conflictId: 'ethiopia-tigray',
     acknowledgedAt: null,
   },
 ];
@@ -226,11 +297,42 @@ export const useConflictStore = create<ConflictStore>()(
 
       // Active conflict — default to Nordalia
       activeConflictId: 'nordalia-crisis',
-      setActiveConflict: (id) => set({ activeConflictId: id }),
+      setActiveConflict: (id) => {
+        set({ activeConflictId: id });
+        // Auto-load the ontology when switching cases
+        get().loadCase(id);
+      },
       getActiveConflict: () => {
         const state = get();
         return state.conflicts.find((c) => c.id === state.activeConflictId);
       },
+
+      // Active case ontology
+      activeCaseOntology: getCaseOntology('nordalia-crisis'),
+      loadCase: (id: string) => {
+        // Check CASE_REGISTRY first, then customCases
+        const registryOntology = getCaseOntology(id);
+        if (registryOntology) {
+          set({ activeCaseOntology: registryOntology });
+          return;
+        }
+        const customOntology = get().customCases[id];
+        if (customOntology) {
+          set({ activeCaseOntology: customOntology });
+        }
+      },
+
+      // Custom cases
+      customCases: {},
+      addCustomCase: (id: string, ontology: CaseOntology) =>
+        set((state) => ({
+          customCases: { ...state.customCases, [id]: ontology },
+        })),
+      removeCustomCase: (id: string) =>
+        set((state) => {
+          const { [id]: _removed, ...rest } = state.customCases;
+          return { customCases: rest };
+        }),
 
       // Session tracking
       sessionStartedAt: new Date().toISOString(),
@@ -290,7 +392,25 @@ export const useConflictStore = create<ConflictStore>()(
     }),
     {
       name: 'praxis-conflict-store',
-      version: 2,
+      version: 3,
     }
   )
 );
+
+// ============================================================================
+// Convenience selector hooks
+// ============================================================================
+
+/** Get the active case ontology directly */
+export function useActiveCaseOntology() {
+  return useConflictStore((s) => s.activeCaseOntology);
+}
+
+/** Get unacknowledged alerts for the active conflict */
+export function useActiveAlerts() {
+  return useConflictStore((s) =>
+    s.alerts.filter(
+      (a) => a.conflictId === s.activeConflictId && a.acknowledgedAt === null
+    )
+  );
+}

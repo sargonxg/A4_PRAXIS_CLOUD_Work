@@ -1152,6 +1152,547 @@ Conduct a comprehensive narrative ecosystem analysis:
 });
 
 // ============================================================================
+// Tool 14: historicalParallelAnalysis
+// Identifies historical conflict parallels with similarity scoring
+// ============================================================================
+
+export const historicalParallelAnalysis = tool({
+  description:
+    'Identify historical conflict parallels for a given conflict. Returns 3-5 historical cases with similarity scores, lessons learned, and cautionary notes. Useful for contextualizing current dynamics and informing mediation strategy.',
+  inputSchema: z.object({
+    conflictId: z.string().describe('Conflict ID to find historical parallels for'),
+    dimension: z
+      .enum(['military', 'diplomatic', 'political', 'humanitarian', 'economic', 'all'])
+      .optional()
+      .describe('Specific dimension to focus the parallel analysis on (default: all)'),
+    timeframe: z
+      .enum(['cold_war', 'post_cold_war', 'post_2000', 'any'])
+      .optional()
+      .describe('Historical timeframe to search within (default: any)'),
+  }),
+  execute: async ({ conflictId, dimension, timeframe }) => {
+    const conflict = DEMO_CONFLICT;
+    const conflictData = conflict as Record<string, unknown>;
+    const actors = conflict.actors.slice(0, 6).map((a) => `${a.name} (${a.type})`).join(', ');
+    const events = (conflictData.events as Array<Record<string, unknown>> | undefined) ?? [];
+    const recentEvents = events
+      .slice(-5)
+      .map((e) => `${e.date}: ${String(e.description ?? '').slice(0, 80)}`)
+      .join('\n');
+
+    const { object } = await generateObject({
+      model: gemini(),
+      schema: z.object({
+        conflictName: z.string(),
+        analysisScope: z.string().describe('What dimension and timeframe was analyzed'),
+        parallels: z.array(
+          z.object({
+            historicalCase: z.string().describe('Name of the historical conflict'),
+            period: z.string().describe('Time period (e.g., "1991-1995")'),
+            region: z.string(),
+            similarityScore: z.number().min(0).max(1).describe('Overall similarity score (0-1)'),
+            keyParallels: z.array(z.string()).describe('Specific structural or dynamic similarities'),
+            keyDifferences: z.array(z.string()).describe('Important ways the cases differ'),
+            outcome: z.string().describe('How the historical case ended'),
+            lessonsLearned: z.array(z.string()).describe('Actionable lessons for the current conflict'),
+            cautionaryNotes: z.array(z.string()).describe('Risks of over-applying this parallel'),
+            relevantSources: z.array(z.string()).describe('Academic or policy sources on this case'),
+          })
+        ),
+        crossCuttingInsights: z.array(z.string()).describe('Insights that emerge across multiple parallels'),
+        keyDivergenceFromHistory: z.string().describe('What makes the current conflict genuinely novel'),
+        analystNotes: z.string().describe('Methodological caveats on historical comparison'),
+      }),
+      prompt: `Identify historical conflict parallels for: ${conflict.name}
+
+CONFLICT DESCRIPTION: ${conflict.description}
+KEY ACTORS: ${actors}
+RECENT DYNAMICS:
+${recentEvents}
+
+ANALYSIS DIMENSION: ${dimension || 'all dimensions'}
+TIMEFRAME: ${timeframe === 'cold_war' ? '1947-1991' : timeframe === 'post_cold_war' ? '1991-2000' : timeframe === 'post_2000' ? '2000-present' : 'any period in modern history'}
+
+Identify 3-5 historical conflict cases that offer meaningful parallels to the current situation. For each:
+1. Assess structural similarity (actor configuration, grievance type, conflict phase, international context)
+2. Score overall similarity (0.0-1.0) with honest calibration
+3. Extract actionable lessons relevant to current mediation/resolution efforts
+4. Note cautionary risks of over-applying the analogy
+5. Cite real academic and policy sources on the historical case
+
+Cross-cutting: What patterns emerge across multiple parallels? What is genuinely novel about the current conflict that history does not well illuminate?
+
+Be intellectually rigorous — resist superficial parallels. Prioritize cases where the mechanism of similarity is clear and the lessons are transferable.`,
+    });
+
+    return { ...object, conflictId };
+  },
+});
+
+// ============================================================================
+// Tool 15: generateTimeline
+// Generates structured timeline data for the interactive timeline component
+// ============================================================================
+
+export const generateTimeline = tool({
+  description:
+    'Generate or enrich structured timeline data for a conflict. Returns events formatted for the InteractiveTimeline component, including Glasl stage classifications, significance ratings, and source citations.',
+  inputSchema: z.object({
+    conflictId: z.string().describe('Conflict ID to generate timeline for'),
+    startDate: z.string().optional().describe('Start date filter (ISO format: YYYY-MM-DD)'),
+    endDate: z.string().optional().describe('End date filter (ISO format: YYYY-MM-DD)'),
+    eventTypes: z
+      .array(z.enum(['political', 'military', 'diplomatic', 'humanitarian', 'economic']))
+      .optional()
+      .describe('Event types to include (default: all types)'),
+    includeProjected: z
+      .boolean()
+      .optional()
+      .describe('Whether to include projected/anticipated future events (default: false)'),
+  }),
+  execute: async ({ conflictId, startDate, endDate, eventTypes, includeProjected }) => {
+    const conflict = DEMO_CONFLICT;
+    const conflictData = conflict as Record<string, unknown>;
+    const allEvents = (conflictData.events as Array<Record<string, unknown>> | undefined) ?? [];
+
+    // Filter events by date range if specified
+    const filteredEvents = allEvents.filter((e) => {
+      const dateStr = String(e.date ?? '');
+      if (startDate && dateStr < startDate) return false;
+      if (endDate && dateStr > endDate) return false;
+      if (eventTypes && eventTypes.length > 0) {
+        const eType = String(e.type ?? '');
+        if (!eventTypes.includes(eType as 'political' | 'military' | 'diplomatic' | 'humanitarian' | 'economic')) return false;
+      }
+      return true;
+    });
+
+    const eventSummaries = filteredEvents
+      .slice(0, 20)
+      .map((e) => `[${e.date}] [${e.type}] ${String(e.description ?? '').slice(0, 100)}`)
+      .join('\n');
+
+    const { object } = await generateObject({
+      model: gemini(),
+      schema: z.object({
+        conflictName: z.string(),
+        timelineRange: z.object({
+          start: z.string(),
+          end: z.string(),
+        }),
+        events: z.array(
+          z.object({
+            id: z.string(),
+            date: z.string().describe('ISO date string YYYY-MM-DD'),
+            title: z.string().describe('Short event title (5-10 words)'),
+            description: z.string().describe('Detailed event description (2-4 sentences)'),
+            type: z.enum(['political', 'military', 'diplomatic', 'humanitarian', 'economic']),
+            glaslStage: z.number().min(1).max(9).describe('Glasl escalation stage at time of event'),
+            escalatoryDirection: z.enum(['escalatory', 'de-escalatory', 'neutral']),
+            significance: z.enum(['critical', 'major', 'moderate', 'minor']),
+            involvedActors: z.array(z.string()).describe('Names of key actors involved'),
+            sources: z.array(z.string()).describe('Source citations (real outlets/documents)'),
+            tags: z.array(z.string()).optional().describe('Analytical tags (e.g., "ceasefire", "sanctions", "humanitarian corridor")'),
+          })
+        ),
+        projectedEvents: z
+          .array(
+            z.object({
+              estimatedDate: z.string().describe('Estimated date or timeframe (e.g., "Q2 2026")'),
+              title: z.string(),
+              description: z.string(),
+              type: z.enum(['political', 'military', 'diplomatic', 'humanitarian', 'economic']),
+              probability: z.enum(['low', 'medium', 'high']),
+              triggerConditions: z.array(z.string()),
+            })
+          )
+          .optional(),
+        escalationTrajectory: z.object({
+          trend: z.enum(['escalating', 'stable', 'de-escalating', 'volatile']),
+          summary: z.string(),
+          peakStage: z.number().min(1).max(9),
+          currentStage: z.number().min(1).max(9),
+        }),
+        timelineNote: z.string().describe('Methodological note on data coverage and gaps'),
+      }),
+      prompt: `Generate enriched timeline data for: ${conflict.name}
+
+CONFLICT DESCRIPTION: ${conflict.description}
+
+EXISTING EVENT DATA (${filteredEvents.length} events):
+${eventSummaries}
+
+DATE FILTER: ${startDate || 'no start filter'} to ${endDate || 'no end filter'}
+EVENT TYPES: ${eventTypes?.join(', ') || 'all types'}
+INCLUDE PROJECTED: ${includeProjected ? 'YES — include 3-5 plausible near-future events' : 'NO'}
+
+GLASL ESCALATION STAGES FOR CLASSIFICATION:
+1: Hardening | 2: Debates/Polemics | 3: Actions not Words | 4: Images/Coalitions |
+5: Loss of Face | 6: Threat Strategies | 7: Limited Destructive Blows |
+8: Fragmentation | 9: Together into Abyss
+
+For each event:
+- Assign a clear, informative title
+- Classify into the correct Glasl stage based on conflict dynamics at that time
+- Determine escalatory direction (did this event push toward or away from violence?)
+- Rate significance honestly (critical = major turning point, minor = routine development)
+- Identify key actors directly involved
+- Cite realistic sources (real news outlets, UN documents, NGO reports)
+
+Calculate overall escalation trajectory across the timeline period.`,
+    });
+
+    return { ...object, conflictId };
+  },
+});
+
+// ============================================================================
+// Tool 16: sanctionsCheck
+// Generates sanctions regime information for entities or conflicts
+// ============================================================================
+
+export const sanctionsCheck = tool({
+  description:
+    'Generate comprehensive sanctions regime information for a named entity or conflict. Returns sanctions lists, designating bodies, asset freeze/travel ban status, and compliance guidance. For analytical and due-diligence awareness purposes.',
+  inputSchema: z.object({
+    entityName: z
+      .string()
+      .optional()
+      .describe('Name of the individual, organization, or entity to check'),
+    conflictId: z
+      .string()
+      .optional()
+      .describe('Conflict ID to retrieve all related sanctions regimes'),
+    sanctionsBody: z
+      .enum(['un_security_council', 'us_ofac', 'eu', 'uk_ofsi', 'all'])
+      .optional()
+      .describe('Specific sanctions body to focus on (default: all)'),
+    includeGuidance: z
+      .boolean()
+      .optional()
+      .describe('Whether to include compliance and due diligence guidance (default: true)'),
+  }),
+  execute: async ({ entityName, conflictId, sanctionsBody, includeGuidance }) => {
+    const conflict = DEMO_CONFLICT;
+    const conflictActors = conflict.actors.map((a) => `${a.name} (${a.type}): ${a.description.slice(0, 80)}`).join('\n');
+
+    const { object } = await generateObject({
+      model: gemini(),
+      schema: z.object({
+        queryType: z.enum(['entity', 'conflict', 'combined']),
+        disclaimer: z.string().describe('Legal/analytical disclaimer about the nature of this output'),
+        entityResults: z
+          .array(
+            z.object({
+              entityName: z.string(),
+              entityType: z.enum(['individual', 'organization', 'vessel', 'aircraft', 'unknown']),
+              sanctionsStatus: z.enum(['designated', 'not_designated', 'unclear', 'delisted']),
+              designatingBodies: z.array(
+                z.object({
+                  body: z.string(),
+                  listName: z.string(),
+                  designationDate: z.string().optional(),
+                  designationBasis: z.string(),
+                  measures: z.array(z.enum(['asset_freeze', 'travel_ban', 'arms_embargo', 'trade_restriction'])),
+                })
+              ),
+              aliases: z.array(z.string()),
+              associatedEntities: z.array(z.string()),
+              noteworthy: z.string().optional(),
+            })
+          )
+          .optional(),
+        conflictRegimes: z
+          .array(
+            z.object({
+              regimeName: z.string(),
+              legalBasis: z.string().describe('Resolution number, regulation, or executive order'),
+              establishedDate: z.string(),
+              designatingBody: z.string(),
+              scopeDescription: z.string(),
+              keyMeasures: z.array(z.string()),
+              currentlyActive: z.boolean(),
+              recentDevelopments: z.string(),
+              keyDesignatedEntities: z.array(z.string()).describe('Notable designated actors (not exhaustive)'),
+            })
+          )
+          .optional(),
+        complianceGuidance: z
+          .object({
+            dueDiligenceSteps: z.array(z.string()),
+            redFlags: z.array(z.string()),
+            reportingObligations: z.string(),
+            keyContacts: z.array(z.object({ body: z.string(), resource: z.string() })),
+            commonPitfalls: z.array(z.string()),
+          })
+          .optional(),
+        analyticalNote: z.string().describe('Analytical context on how sanctions are affecting the conflict dynamics'),
+      }),
+      prompt: `Generate a sanctions regime analysis for${entityName ? ` entity: "${entityName}"` : ''}${conflictId ? ` conflict context: ${conflict.name}` : ''}.
+
+CONFLICT CONTEXT (${conflict.name}):
+${conflictActors}
+
+SANCTIONS BODIES TO COVER: ${sanctionsBody === 'all' || !sanctionsBody ? 'UN Security Council, US OFAC, EU, UK OFSI' : sanctionsBody.replace(/_/g, ' ').toUpperCase()}
+INCLUDE COMPLIANCE GUIDANCE: ${includeGuidance !== false ? 'YES' : 'NO'}
+
+${entityName ? `ENTITY LOOKUP:
+Generate realistic but clearly illustrative sanctions information for "${entityName}" in the context of the ${conflict.name} scenario. For the Nordalia Crisis (a fictional scenario), create fictional but realistic-sounding sanctions designations that reflect the conflict dynamics.
+
+If this is a real-world conflict, generate accurate information based on real sanctions regimes.` : ''}
+
+${conflictId ? `CONFLICT REGIME MAPPING:
+Map all relevant sanctions regimes that apply to this conflict, including:
+- UN Security Council committee/panel
+- Regional body measures (EU, AU, ECOWAS, etc.)
+- Major bilateral measures (US, UK)
+- Arms embargoes and targeted financial measures
+
+For fictional scenarios, create realistic fictional regime structures.` : ''}
+
+IMPORTANT DISCLAIMERS:
+- This is an AI-generated analytical tool for awareness purposes only
+- Real sanctions compliance requires checking official government databases (UN Consolidated List, OFAC SDN List, EU Sanctions Map, OFSI List)
+- This does not constitute legal advice
+
+Provide realistic, analytically useful output that helps conflict analysts understand the sanctions environment and its implications for the conflict dynamics.`,
+    });
+
+    return {
+      ...object,
+      disclaimer: 'ANALYTICAL PURPOSE ONLY. For actual sanctions compliance, consult official government databases: UN Consolidated List, US OFAC SDN List, EU Sanctions Map, UK OFSI Consolidated List. This AI-generated output does not constitute legal advice.',
+      conflictId: conflictId || null,
+    };
+  },
+});
+
+// ============================================================================
+// Tool 17: humanitarianSnapshot
+// Generates OCHA-style humanitarian situation snapshot
+// ============================================================================
+
+export const humanitarianSnapshot = tool({
+  description:
+    'Generate an OCHA-style humanitarian situation snapshot for a conflict. Returns key humanitarian indicators, population movement, access constraints, funding gaps, and response priorities.',
+  inputSchema: z.object({
+    conflictId: z.string().describe('Conflict ID to generate humanitarian snapshot for'),
+    focusSectors: z
+      .array(z.enum(['food_security', 'health', 'shelter', 'wash', 'protection', 'education', 'livelihoods']))
+      .optional()
+      .describe('Humanitarian sectors to focus on (default: all)'),
+    asOfDate: z.string().optional().describe('Snapshot reference date (ISO format, default: current)'),
+  }),
+  execute: async ({ conflictId, focusSectors, asOfDate }) => {
+    const conflict = DEMO_CONFLICT;
+    const conflictData = conflict as Record<string, unknown>;
+    const actors = conflict.actors.map((a) => `${a.name} (${a.type})`).join(', ');
+    const events = (conflictData.events as Array<Record<string, unknown>> | undefined) ?? [];
+    const humanEvents = events
+      .filter((e) => String(e.type ?? '') === 'humanitarian' || String(e.description ?? '').toLowerCase().includes('humanitarian'))
+      .slice(0, 8)
+      .map((e) => `${e.date}: ${String(e.description ?? '').slice(0, 100)}`)
+      .join('\n');
+
+    const { object } = await generateObject({
+      model: gemini(),
+      schema: z.object({
+        conflictName: z.string(),
+        snapshotDate: z.string(),
+        classification: z.enum(['L1', 'L2', 'L3']).describe('IASC emergency classification level'),
+        overallSeverity: z.enum(['moderate', 'serious', 'critical', 'catastrophic']),
+        executiveSummary: z.string().describe('2-3 sentence top-line summary for senior leadership'),
+        populationData: z.object({
+          totalAffected: z.string().describe('Total affected population (number + context)'),
+          displaced: z.object({
+            idps: z.string().describe('Internally displaced persons'),
+            refugees: z.string().describe('Refugees in neighboring countries'),
+            returnees: z.string().describe('Recent returnees'),
+          }),
+          atRisk: z.string().describe('Population in areas at risk'),
+          keyVulnerableGroups: z.array(z.string()),
+        }),
+        sectorIndicators: z.array(
+          z.object({
+            sector: z.string(),
+            severityLevel: z.enum(['moderate', 'serious', 'critical', 'catastrophic']),
+            keyIndicators: z.array(z.string()).describe('2-3 quantified indicators'),
+            priority: z.enum(['low', 'medium', 'high', 'acute']),
+            gaps: z.array(z.string()),
+          })
+        ),
+        accessConstraints: z.array(
+          z.object({
+            area: z.string(),
+            constraintType: z.enum(['security', 'bureaucratic', 'physical', 'combined']),
+            description: z.string(),
+            percentageUnreached: z.string().optional(),
+            humanitarianConsequence: z.string(),
+          })
+        ),
+        fundingStatus: z.object({
+          appealName: z.string(),
+          totalRequested: z.string(),
+          totalReceived: z.string(),
+          fundingGapPercent: z.number().min(0).max(100),
+          topDonors: z.array(z.string()),
+          criticallyUnderfundedSectors: z.array(z.string()),
+        }),
+        keyProtectionConcerns: z.array(z.string()),
+        immediatePriorities: z.array(
+          z.object({
+            priority: z.string(),
+            requiredAction: z.string(),
+            responsibleActors: z.array(z.string()),
+            timeline: z.string(),
+          })
+        ),
+        contactInfo: z.object({
+          ochaCoverage: z.string(),
+          interclusterCoordinator: z.string(),
+          mediaContact: z.string(),
+        }),
+        dataQualityNote: z.string().describe('Note on data sources, gaps, and reliability'),
+      }),
+      prompt: `Generate an OCHA-style humanitarian snapshot for: ${conflict.name}
+
+CONFLICT DESCRIPTION: ${conflict.description}
+KEY ACTORS: ${actors}
+HUMANITARIAN EVENTS ON RECORD:
+${humanEvents || 'No specific humanitarian events recorded'}
+
+SNAPSHOT DATE: ${asOfDate || new Date().toISOString().split('T')[0]}
+SECTORS TO COVER: ${focusSectors?.join(', ') || 'all sectors (food security, health, shelter, WASH, protection, education, livelihoods)'}
+
+OCHA FORMATTING STANDARDS:
+- Use IPC Phase classifications for food security (Phase 1-5)
+- WHO scale for health emergencies
+- UNHCR data conventions for displacement
+- UN OCHA format for funding (Humanitarian Response Plan)
+- Cluster system for sector coordination (Food Cluster, Health Cluster, WASH Cluster, etc.)
+
+Generate a realistic, analytically substantive snapshot following OCHA's Situation Report format. For fictional conflicts (like Nordalia Crisis), create plausible indicators consistent with the conflict's known dynamics. Include realistic-sounding (but clearly illustrative) figures and percentages.
+
+Lead with the most urgent/life-threatening concerns. Be frank about access constraints. Include realistic funding gaps.`,
+    });
+
+    return { ...object, conflictId };
+  },
+});
+
+// ============================================================================
+// Tool 18: compareConflicts
+// Side-by-side comparison of two conflicts across specified dimensions
+// ============================================================================
+
+export const compareConflicts = tool({
+  description:
+    'Run a structured side-by-side comparison of two conflicts across specified analytical dimensions. Returns comparative tables, divergence analysis, and synthesis insights.',
+  inputSchema: z.object({
+    conflictId1: z.string().describe('First conflict ID to compare'),
+    conflictId2: z.string().describe('Second conflict ID to compare (can be a historical case name)'),
+    dimensions: z
+      .array(
+        z.enum([
+          'actors',
+          'grievances',
+          'escalation',
+          'international_response',
+          'humanitarian',
+          'economics',
+          'narrative',
+          'peace_prospects',
+        ])
+      )
+      .optional()
+      .describe('Analytical dimensions to compare (default: all)'),
+    purpose: z
+      .enum(['academic', 'policy', 'operational', 'early_warning'])
+      .optional()
+      .describe('Purpose of the comparison (shapes depth and framing)'),
+  }),
+  execute: async ({ conflictId1, conflictId2, dimensions, purpose }) => {
+    const conflict1 = DEMO_CONFLICT;
+    const conflictData1 = conflict1 as Record<string, unknown>;
+    const actors1 = conflict1.actors.slice(0, 5).map((a) => `${a.name} (${a.type})`).join(', ');
+    const events1 = (conflictData1.events as Array<Record<string, unknown>> | undefined) ?? [];
+    const recentEvents1 = events1
+      .slice(-5)
+      .map((e) => `${e.date}: ${String(e.description ?? '').slice(0, 70)}`)
+      .join('\n');
+
+    const activeDimensions = dimensions || [
+      'actors', 'grievances', 'escalation', 'international_response',
+      'humanitarian', 'economics', 'narrative', 'peace_prospects',
+    ];
+
+    const { object } = await generateObject({
+      model: gemini(),
+      schema: z.object({
+        conflict1Name: z.string(),
+        conflict2Name: z.string(),
+        comparisonDate: z.string(),
+        purpose: z.string(),
+        dimensionalComparisons: z.array(
+          z.object({
+            dimension: z.string(),
+            conflict1Assessment: z.string().describe('Assessment of this dimension for conflict 1'),
+            conflict2Assessment: z.string().describe('Assessment of this dimension for conflict 2'),
+            keyDivergences: z.array(z.string()).describe('Most important ways these conflicts differ on this dimension'),
+            keyConvergences: z.array(z.string()).describe('Important similarities on this dimension'),
+            analyticalSignificance: z.string().describe('Why this divergence/convergence matters for analysis'),
+          })
+        ),
+        overallSimilarityRating: z.number().min(0).max(1).describe('Overall structural similarity (0=completely different, 1=near-identical)'),
+        structuralComparison: z.object({
+          sharedFeatures: z.array(z.string()).describe('Core structural features both conflicts share'),
+          distinctiveFeatures1: z.array(z.string()).describe('Features unique to conflict 1'),
+          distinctiveFeatures2: z.array(z.string()).describe('Features unique to conflict 2'),
+        }),
+        lessonsForConflict1: z.array(
+          z.object({
+            lesson: z.string(),
+            sourceFromConflict2: z.string().describe('What aspect of conflict 2 generates this lesson'),
+            applicability: z.enum(['directly_applicable', 'partially_applicable', 'cautionary']),
+          })
+        ),
+        synthesisInsights: z.array(z.string()).describe('High-level insights that emerge from the comparison'),
+        comparisonCaveats: z.array(z.string()).describe('Methodological limits and risks of this comparison'),
+        recommendedNextSteps: z.array(z.string()).describe('Actions or analyses this comparison suggests'),
+      }),
+      prompt: `Conduct a comparative analysis of two conflicts:
+
+CONFLICT 1: ${conflict1.name}
+Description: ${conflict1.description}
+Key actors: ${actors1}
+Recent dynamics:
+${recentEvents1}
+
+CONFLICT 2: "${conflictId2}"
+(Generate a substantive representation of this conflict based on your knowledge. If it is a real conflict, use real data. If it is fictional, create consistent analytical data.)
+
+DIMENSIONS TO COMPARE: ${activeDimensions.join(', ')}
+
+COMPARISON PURPOSE: ${purpose || 'policy'} analysis
+${purpose === 'early_warning' ? '— Focus on predictive indicators and escalation patterns' : ''}
+${purpose === 'operational' ? '— Focus on lessons for field operations and humanitarian response' : ''}
+${purpose === 'academic' ? '— Focus on theoretical frameworks and structural patterns' : ''}
+${purpose === 'policy' ? '— Focus on policy options and diplomatic instruments' : ''}
+
+For each dimension:
+1. Assess both conflicts honestly and substantively
+2. Identify the most analytically significant divergences and convergences
+3. Explain why these differences/similarities matter
+
+Synthesize: What does conflict 2's experience suggest for the trajectory or resolution of conflict 1? Where do the analogies break down?
+
+Be rigorous — avoid superficial comparisons. Focus on causal mechanisms, not surface similarities.`,
+    });
+
+    return { ...object, conflictId1, conflictId2 };
+  },
+});
+
+// ============================================================================
 // Tool Registry
 // ============================================================================
 
@@ -1169,6 +1710,11 @@ export const tacitusTools = {
   escalationAssessment,
   negotiationSpaceAnalysis,
   narrativeEcosystemMap,
+  historicalParallelAnalysis,
+  generateTimeline,
+  sanctionsCheck,
+  humanitarianSnapshot,
+  compareConflicts,
 };
 
 export type TacitusToolName = keyof typeof tacitusTools;
