@@ -1105,9 +1105,9 @@ Format with bold section headers using **text**. Be concise, professional, and a
                       </div>
 
                       {/* Glasl stage — shown for Nordalia demo conflict */}
-                      {conflict.id === 'nordalia-crisis' && (
+                      {conflict.id === 'nordalia-crisis' && demoConflict && (
                         <div className="mb-3">
-                          <GlaslStageMeter stage={DEMO_CONFLICT.glaslStage} />
+                          <GlaslStageMeter stage={demoConflict.glaslStage} />
                         </div>
                       )}
 
