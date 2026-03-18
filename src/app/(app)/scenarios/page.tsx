@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from 'react';
 import { GitCompare, Play, Save, Loader2, Sparkles, X, ChevronDown, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
-import { DEMO_CASES } from '@/lib/constants/demo-cases';
+import { useConflictList } from '@/hooks/use-conflict-data';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 
 const TIME_HORIZONS = ['30 days', '90 days', '6 months', '1 year'];
@@ -30,6 +30,7 @@ interface SavedScenario {
 }
 
 export default function ScenariosPage() {
+  const { data: cases, loading: casesLoading } = useConflictList();
   const [conflictId, setConflictId] = useState('nordalia');
   const [trigger, setTrigger] = useState('');
   const [selectedActors, setSelectedActors] = useState<string[]>([]);
@@ -40,7 +41,8 @@ export default function ScenariosPage() {
   const [compareIdx, setCompareIdx] = useState<number | null>(null);
   const analysisRef = useRef<HTMLDivElement>(null);
 
-  const selectedCase = DEMO_CASES.find((c) => c.id === conflictId) ?? DEMO_CASES[0];
+  const demoCases = cases ?? [];
+  const selectedCase = demoCases.find((c) => c.id === conflictId) ?? demoCases[0];
 
   const toggleActor = (actor: string) => {
     setSelectedActors((prev) =>
@@ -49,7 +51,7 @@ export default function ScenariosPage() {
   };
 
   const runScenario = useCallback(async () => {
-    if (!trigger.trim() || isRunning) return;
+    if (!trigger.trim() || isRunning || !selectedCase) return;
     setIsRunning(true);
     setAnalysis('');
     setTimeout(() => analysisRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
@@ -79,14 +81,14 @@ export default function ScenariosPage() {
         setAnalysis(accumulated);
       }
     } catch {
-      setAnalysis(`**Scenario analysis failed.** Please try again.\n\n*Trigger: ${trigger}*\n\n*Conflict: ${selectedCase.name}*\n\n*Time horizon: ${timeHorizon}*`);
+      setAnalysis(`**Scenario analysis failed.** Please try again.\n\n*Trigger: ${trigger}*\n\n*Conflict: ${selectedCase?.name}*\n\n*Time horizon: ${timeHorizon}*`);
     } finally {
       setIsRunning(false);
     }
   }, [trigger, isRunning, selectedCase, selectedActors, timeHorizon]);
 
   const saveScenario = () => {
-    if (!analysis) return;
+    if (!analysis || !selectedCase) return;
     const scenario: SavedScenario = {
       id: Date.now().toString(),
       title: trigger.slice(0, 60) + (trigger.length > 60 ? '…' : ''),
@@ -106,6 +108,36 @@ export default function ScenariosPage() {
     'Ceasefire collapses after major IHL violation',
     'Mining revenues seized by DRM, triggering sanctions',
   ];
+
+  // Loading skeleton while cases are being fetched
+  if (casesLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-steel/8">
+            <GitCompare className="h-5 w-5 text-steel" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-navy-900">Scenario Planner</h1>
+            <p className="text-sm text-navy-500">Loading conflict data...</p>
+          </div>
+        </div>
+        <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
+          <div className="space-y-4">
+            <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5 space-y-5">
+              <div className="h-10 w-full animate-pulse rounded-lg bg-navy-100" />
+              <div className="h-20 w-full animate-pulse rounded-lg bg-navy-100" />
+              <div className="h-10 w-full animate-pulse rounded-lg bg-navy-100" />
+            </div>
+          </div>
+          <div className="flex h-full min-h-[400px] flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-app-border)] bg-white p-8">
+            <div className="h-14 w-14 animate-pulse rounded-2xl bg-navy-100" />
+            <div className="mt-4 h-5 w-48 animate-pulse rounded bg-navy-100" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -134,7 +166,7 @@ export default function ScenariosPage() {
                   onChange={(e) => setConflictId(e.target.value)}
                   className="w-full appearance-none rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-2.5 text-sm text-navy-900 focus:border-diplomatic-blue/30 focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/10"
                 >
-                  {DEMO_CASES.map((c) => (
+                  {demoCases.map((c) => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
@@ -285,7 +317,7 @@ export default function ScenariosPage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-navy-900">Scenario Analysis</p>
-                    <p className="text-[11px] text-navy-500">{selectedCase.name} · {timeHorizon}</p>
+                    <p className="text-[11px] text-navy-500">{selectedCase?.name} · {timeHorizon}</p>
                   </div>
                 </div>
                 {analysis && !isRunning && (

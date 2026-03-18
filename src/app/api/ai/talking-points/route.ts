@@ -1,10 +1,6 @@
 import { streamText } from 'ai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { getModel } from '@/lib/ai/providers';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
-
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY || '',
-});
 
 export const maxDuration = 60;
 
@@ -20,7 +16,7 @@ export async function POST(request: Request) {
     const { situation, audience, tone, context } = await request.json();
 
     const result = streamText({
-      model: google('gemini-2.5-flash'),
+      model: getModel(),
       system: DIPLOMATIC_SYSTEM_PROMPT,
       messages: [
         {

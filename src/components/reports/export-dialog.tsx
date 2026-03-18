@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { FileText, FileDown, Check, Loader2 } from "lucide-react";
+import { FileText, FileDown, Check, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,22 +18,28 @@ interface ExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   reportTitle: string;
+  reportId?: string;
 }
 
 const EXPORT_FORMATS = [
   {
     id: "pdf",
     name: "PDF Document",
-    description: "Formatted PDF with headers, footers, and classification markings",
+    description:
+      "Formatted PDF with TACITUS header, section headings, and page numbers",
     icon: FileText,
     extension: ".pdf",
+    mimeType: "application/pdf",
   },
   {
     id: "docx",
     name: "Word Document",
-    description: "Editable DOCX file compatible with Microsoft Word and Google Docs",
+    description:
+      "Editable DOCX file compatible with Microsoft Word and Google Docs",
     icon: FileDown,
     extension: ".docx",
+    mimeType:
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   },
   {
     id: "md",
@@ -41,6 +47,7 @@ const EXPORT_FORMATS = [
     description: "Plain text markdown file for version control and sharing",
     icon: FileText,
     extension: ".md",
+    mimeType: "text/markdown",
   },
 ] as const;
 
@@ -48,23 +55,85 @@ export function ExportDialog({
   open,
   onOpenChange,
   reportTitle,
+  reportId,
 }: ExportDialogProps) {
   const [selectedFormat, setSelectedFormat] = useState<string>("pdf");
   const [isExporting, setIsExporting] = useState(false);
   const [isDone, setIsDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleExport = () => {
+  const handleExport = useCallback(async () => {
+    if (!reportId) {
+      setError("No report ID available for export.");
+      return;
+    }
+
     setIsExporting(true);
-    // Simulate export
-    setTimeout(() => {
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/reports/${reportId}/export`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ format: selectedFormat }),
+      });
+
+      // If the response is JSON, it's likely an error
+      const contentType = res.headers.get("Content-Type") || "";
+      if (contentType.includes("application/json")) {
+        const data = await res.json();
+        if (data.error) {
+          setError(data.error);
+          setIsExporting(false);
+          return;
+        }
+        // Legacy JSON response (shouldn't happen with new route but handle gracefully)
+        setIsExporting(false);
+        setIsDone(true);
+        setTimeout(() => {
+          setIsDone(false);
+          onOpenChange(false);
+        }, 1500);
+        return;
+      }
+
+      if (!res.ok) {
+        setError(`Export failed with status ${res.status}`);
+        setIsExporting(false);
+        return;
+      }
+
+      // Binary or text response — trigger browser download
+      const blob = await res.blob();
+      const formatInfo = EXPORT_FORMATS.find((f) => f.id === selectedFormat);
+      const safeTitle = reportTitle
+        .replace(/[^a-zA-Z0-9 _-]/g, "")
+        .replace(/\s+/g, "-")
+        .substring(0, 80);
+      const filename = `${safeTitle}${formatInfo?.extension || ".txt"}`;
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
       setIsExporting(false);
       setIsDone(true);
       setTimeout(() => {
         setIsDone(false);
         onOpenChange(false);
       }, 1500);
-    }, 2000);
-  };
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Export failed unexpectedly.";
+      setError(message);
+      setIsExporting(false);
+    }
+  }, [reportId, selectedFormat, reportTitle, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -84,7 +153,10 @@ export function ExportDialog({
             return (
               <button
                 key={format.id}
-                onClick={() => setSelectedFormat(format.id)}
+                onClick={() => {
+                  setSelectedFormat(format.id);
+                  setError(null);
+                }}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all cursor-pointer",
                   isSelected
@@ -128,6 +200,13 @@ export function ExportDialog({
             );
           })}
         </div>
+
+        {error && (
+          <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/5 p-3 text-sm text-red-400">
+            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
 
         <DialogFooter>
           <Button

@@ -24,6 +24,8 @@ const footerSections = [
   {
     title: "Company",
     links: [
+      { label: "TACITUS", href: "https://tacitus.me" },
+      { label: "Concordia Discors", href: "https://concordiadiscors.org" },
       { label: "Advisory Council", href: "#advisory" },
       { label: "Security", href: "#security" },
       { label: "Contact Us", href: "mailto:hello@tacitus.me" },
@@ -94,11 +96,33 @@ export function Footer() {
           ))}
         </div>
 
-        {/* Bottom */}
-        <div className="mt-14 flex flex-col items-center gap-4 border-t border-cream-300/60 pt-8 md:flex-row md:justify-between">
-          <p className="text-xs text-navy-400">
-            2026 TACITUS. All rights reserved. Built in New York.
+        {/* Built on */}
+        <div className="mt-12 flex flex-col items-center gap-3 border-t border-cream-300/60 pt-8">
+          <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-navy-400">
+            Built on
           </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+            {["Google Gemini", "Vercel", "Next.js", "Neo4j"].map((name) => (
+              <span
+                key={name}
+                className="text-xs font-semibold uppercase tracking-wider text-navy-300/60"
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom */}
+        <div className="mt-8 flex flex-col items-center gap-4 border-t border-cream-300/60 pt-8 md:flex-row md:justify-between">
+          <div className="flex flex-col gap-1">
+            <p className="text-xs text-navy-400">
+              2026 TACITUS. All rights reserved. Built in New York.
+            </p>
+            <p className="text-xs text-navy-400/70">
+              Built by a former UN Political Affairs Officer.
+            </p>
+          </div>
 
           {/* Security badges */}
           <div className="flex items-center gap-3">

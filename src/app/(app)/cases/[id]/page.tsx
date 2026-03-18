@@ -5,22 +5,23 @@ import { use } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, BookOpen, Sparkles, Loader2, GitCompare, Users, Calendar, Shield, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import { DEMO_CASES, getCaseById } from '@/lib/constants/demo-cases';
+import { useConflictDetail, useConflictList } from '@/hooks/use-conflict-data';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { notFound } from 'next/navigation';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 
 export default function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const caseData = getCaseById(id);
+  const { data: detail, loading, error } = useConflictDetail(id);
+  const { data: allCases } = useConflictList();
+
+  const caseData = detail?.meta ?? null;
 
   const [summary, setSummary] = useState('');
   const [isSummarizing, setIsSummarizing] = useState(false);
 
-  if (!caseData) notFound();
-
   const generateSummary = useCallback(async () => {
-    if (isSummarizing) return;
+    if (isSummarizing || !caseData) return;
     setIsSummarizing(true);
     setSummary('');
 
@@ -49,7 +50,45 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
     }
   }, [isSummarizing, caseData]);
 
-  const relatedCases = DEMO_CASES.filter((c) => c.id !== id).slice(0, 3);
+  // Loading skeleton
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <Link href="/cases" className="rounded-lg p-2 text-navy-400 hover:bg-[var(--color-app-surface-alt)] hover:text-navy-600 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-diplomatic-blue/8">
+            <BookOpen className="h-5 w-5 text-diplomatic-blue" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-6 w-48 animate-pulse rounded bg-navy-100" />
+            <div className="h-4 w-32 animate-pulse rounded bg-navy-100" />
+          </div>
+        </div>
+        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+          <div className="space-y-5">
+            <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+              <div className="h-4 w-full animate-pulse rounded bg-navy-100 mb-3" />
+              <div className="h-4 w-3/4 animate-pulse rounded bg-navy-100 mb-3" />
+              <div className="h-4 w-1/2 animate-pulse rounded bg-navy-100" />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-4">
+              <div className="h-4 w-24 animate-pulse rounded bg-navy-100 mb-3" />
+              <div className="h-8 w-full animate-pulse rounded bg-navy-100 mb-2" />
+              <div className="h-8 w-full animate-pulse rounded bg-navy-100" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !caseData) notFound();
+
+  const relatedCases = (allCases ?? []).filter((c) => c.id !== id).slice(0, 3);
 
   return (
     <div className="space-y-6">

@@ -297,6 +297,7 @@ export function ReportComposer({
         open={exportOpen}
         onOpenChange={setExportOpen}
         reportTitle={report.title || "Untitled Report"}
+        reportId={report.id}
       />
     </>
   );

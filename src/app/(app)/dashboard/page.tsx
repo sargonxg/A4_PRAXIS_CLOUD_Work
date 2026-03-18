@@ -52,7 +52,8 @@ import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 import { formatDiplomaticDate, formatRelativeTime } from '@/lib/utils/format';
 import { useConflictStore } from '@/stores/conflict-store';
-import { DEMO_CONFLICT } from '@/lib/constants/demo-conflict';
+import { useConflictDetail } from '@/hooks/use-conflict-data';
+import { isDemoMode, getCachedResponse } from '@/lib/demo/demo-mode';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -166,6 +167,8 @@ function ActiveConflictSnapshot({
   graphEntities,
   description,
   events,
+  glaslStage = null,
+  escalationTrend = 'stable',
 }: {
   conflictId: string;
   name: string;
@@ -176,12 +179,9 @@ function ActiveConflictSnapshot({
   graphEntities: number;
   description: string;
   events: { title: string; date: string }[];
+  glaslStage?: number | null;
+  escalationTrend?: 'volatile' | 'escalating' | 'de-escalating' | 'stable';
 }) {
-  // Pull GLASL stage from DEMO_CONFLICT if this is the primary demo conflict
-  const glaslStage = conflictId === 'nordalia-crisis' ? DEMO_CONFLICT.glaslStage : null;
-  const escalationTrend = (
-    conflictId === 'nordalia-crisis' ? DEMO_CONFLICT.escalationTrend : 'stable'
-  ) as 'volatile' | 'escalating' | 'de-escalating' | 'stable';
   const TrendIcon = escalationTrend === 'volatile' ? TrendingUp
     : escalationTrend === 'escalating' ? TrendingUp
     : escalationTrend === 'de-escalating' ? TrendingDown
@@ -572,6 +572,10 @@ export default function DashboardPage() {
   const router = useRouter();
   const today = new Date();
 
+  // Fetch Nordalia demo-conflict data via API (replaces static import)
+  const { data: nordaliaDetail, loading: nordaliaLoading } = useConflictDetail('nordalia-crisis');
+  const demoConflict = nordaliaDetail?.demoConflict ?? null;
+
   // Store
   const {
     conflicts,
@@ -623,6 +627,24 @@ export default function DashboardPage() {
     setLiveBrief('');
     incrementQueryCount();
     try {
+      // Demo mode: use pre-computed morning brief
+      if (isDemoMode()) {
+        const cached = getCachedResponse('dashboard', 'morning_brief');
+        if (cached) {
+          // Simulate streaming by revealing text progressively
+          const words = cached.split(' ');
+          let accumulated = '';
+          for (let i = 0; i < words.length; i++) {
+            accumulated += (i === 0 ? '' : ' ') + words[i];
+            if (i % 8 === 0 || i === words.length - 1) {
+              setLiveBrief(accumulated);
+              await new Promise((r) => setTimeout(r, 12));
+            }
+          }
+          setIsBriefLoading(false);
+          return;
+        }
+      }
       const unacknowledgedAlerts = alerts
         .filter((a) => a.acknowledgedAt === null)
         .map((a) => a.title)
@@ -693,6 +715,18 @@ Format with bold section headers using **text**. Be concise, professional, and a
     setInsights([]);
     incrementQueryCount();
     try {
+      // Demo mode: use pre-computed insights
+      if (isDemoMode()) {
+        const cached = getCachedResponse('dashboard', 'insights');
+        if (cached) {
+          // Brief delay to simulate loading
+          await new Promise((r) => setTimeout(r, 600));
+          const parsed = JSON.parse(cached) as InsightType[];
+          setInsights(parsed.slice(0, 3));
+          setInsightsLoading(false);
+          return;
+        }
+      }
       const conflictData = conflicts
         .filter((c) => c.status !== 'resolved')
         .map((c) => ({
@@ -877,6 +911,8 @@ Format with bold section headers using **text**. Be concise, professional, and a
           graphEntities={activeConflict.graphEntities}
           description={activeConflict.description}
           events={activeConflict.events ?? []}
+          glaslStage={activeConflict.id === 'nordalia-crisis' ? (demoConflict?.glaslStage ?? null) : null}
+          escalationTrend={activeConflict.id === 'nordalia-crisis' ? ((demoConflict?.escalationTrend as 'volatile' | 'escalating' | 'de-escalating' | 'stable') ?? 'stable') : 'stable'}
         />
       )}
 
@@ -1100,9 +1136,9 @@ Format with bold section headers using **text**. Be concise, professional, and a
                       </div>
 
                       {/* Glasl stage — shown for Nordalia demo conflict */}
-                      {conflict.id === 'nordalia-crisis' && (
+                      {conflict.id === 'nordalia-crisis' && demoConflict && (
                         <div className="mb-3">
-                          <GlaslStageMeter stage={DEMO_CONFLICT.glaslStage} />
+                          <GlaslStageMeter stage={demoConflict.glaslStage} />
                         </div>
                       )}
 

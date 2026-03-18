@@ -1,26 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getConflict, addEntity, createConflict } from '@/lib/services/conflict-service';
+import { ConflictEntitySchema, type ConflictEntity } from '@/lib/ai/schemas/conflict-grammar';
 
 export async function POST(request: NextRequest) {
   try {
-    const { entities, conflictId, documentId } = await request.json();
+    const { entities, conflictId } = await request.json();
 
-    // Demo ingestion response
+    if (!entities || !Array.isArray(entities) || entities.length === 0) {
+      return NextResponse.json({ error: 'No entities provided' }, { status: 400 });
+    }
+
+    const targetConflictId = conflictId || 'nordalia-crisis';
+
+    // Ensure the conflict exists
+    let conflict = getConflict(targetConflictId);
+    if (!conflict) {
+      conflict = createConflict('New Conflict');
+    }
+
+    // Validate and add each entity
+    const counts: Record<string, number> = {
+      actor: 0,
+      claim: 0,
+      interest: 0,
+      constraint: 0,
+      leverage: 0,
+      commitment: 0,
+      event: 0,
+      narrative: 0,
+    };
+    const errors: string[] = [];
+
+    for (const raw of entities) {
+      try {
+        const entity: ConflictEntity = ConflictEntitySchema.parse(raw);
+        const result = addEntity(targetConflictId, entity);
+        if (result) {
+          counts[entity.type] = (counts[entity.type] || 0) + 1;
+        } else {
+          errors.push(`Failed to add entity ${raw.id ?? 'unknown'}: conflict not found`);
+        }
+      } catch (err) {
+        errors.push(`Validation failed for entity ${raw.id ?? 'unknown'}: ${err instanceof Error ? err.message : 'unknown error'}`);
+      }
+    }
+
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+
     return NextResponse.json({
       success: true,
-      conflictId: conflictId || 'nordalia-crisis',
-      documentId: documentId || 'unknown',
+      conflictId: targetConflictId,
       ingested: {
-        actors: entities?.filter((e: { primitiveType: string }) => e.primitiveType === 'Actor').length || 0,
-        claims: entities?.filter((e: { primitiveType: string }) => e.primitiveType === 'Claim').length || 0,
-        interests: entities?.filter((e: { primitiveType: string }) => e.primitiveType === 'Interest').length || 0,
-        constraints: entities?.filter((e: { primitiveType: string }) => e.primitiveType === 'Constraint').length || 0,
-        leverage: entities?.filter((e: { primitiveType: string }) => e.primitiveType === 'Leverage').length || 0,
-        commitments: entities?.filter((e: { primitiveType: string }) => e.primitiveType === 'Commitment').length || 0,
-        events: entities?.filter((e: { primitiveType: string }) => e.primitiveType === 'Event').length || 0,
-        narratives: entities?.filter((e: { primitiveType: string }) => e.primitiveType === 'Narrative').length || 0,
-        total: entities?.length || 0,
+        actors: counts.actor,
+        claims: counts.claim,
+        interests: counts.interest,
+        constraints: counts.constraint,
+        leverage: counts.leverage,
+        commitments: counts.commitment,
+        events: counts.event,
+        narratives: counts.narrative,
+        total,
       },
-      message: 'Entities ingested into conflict knowledge graph.',
+      errors: errors.length > 0 ? errors : undefined,
+      message: `${total} entities ingested into conflict knowledge graph.`,
     });
   } catch {
     return NextResponse.json({ error: 'Ingestion failed' }, { status: 500 });
