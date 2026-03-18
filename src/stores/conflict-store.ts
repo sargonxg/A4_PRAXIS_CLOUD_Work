@@ -1,10 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import {
-  getCaseOntology,
-  CASE_REGISTRY,
-  type CaseOntology,
-} from '@/lib/constants/case-registry';
+import type { CaseOntology } from '@/lib/constants/case-registry';
 
 // ============================================================================
 // Simplified types for the store
@@ -73,9 +69,12 @@ interface ConflictStore {
   setActiveConflict: (id: string) => void;
   getActiveConflict: () => ConflictSummary | undefined;
 
-  // Active case ontology (loaded from CASE_REGISTRY)
+  // Active case ontology (loaded from API)
   activeCaseOntology: CaseOntology | null;
   loadCase: (id: string) => void;
+
+  // Async initialization — fetches ontology from API route
+  initializeFromRegistry: () => Promise<void>;
 
   // Custom user-created cases (ontologies only; summary added to conflicts[])
   customCases: Record<string, CaseOntology>;
@@ -112,6 +111,40 @@ interface ConflictStore {
   // Auto-brief setting
   autoBriefEnabled: boolean;
   setAutoBrief: (enabled: boolean) => void;
+}
+
+// ============================================================================
+// Module-level ontology cache (avoids re-fetching on every loadCase call)
+// ============================================================================
+
+const ontologyCache = new Map<string, CaseOntology>();
+const ontologyInflight = new Map<string, Promise<CaseOntology | null>>();
+
+async function fetchOntology(id: string): Promise<CaseOntology | null> {
+  const cached = ontologyCache.get(id);
+  if (cached) return cached;
+
+  // Deduplicate concurrent requests for the same ID
+  if (!ontologyInflight.has(id)) {
+    const promise = fetch(`/api/data/conflicts?id=${encodeURIComponent(id)}`)
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then((data) => {
+        const ontology: CaseOntology | null = data?.ontology ?? null;
+        if (ontology) ontologyCache.set(id, ontology);
+        ontologyInflight.delete(id);
+        return ontology;
+      })
+      .catch(() => {
+        ontologyInflight.delete(id);
+        return null;
+      });
+    ontologyInflight.set(id, promise);
+  }
+
+  return ontologyInflight.get(id)!;
 }
 
 // ============================================================================
@@ -307,18 +340,45 @@ export const useConflictStore = create<ConflictStore>()(
         return state.conflicts.find((c) => c.id === state.activeConflictId);
       },
 
-      // Active case ontology
-      activeCaseOntology: getCaseOntology('nordalia-crisis'),
+      // Active case ontology — starts null, populated via initializeFromRegistry or loadCase
+      activeCaseOntology: null,
       loadCase: (id: string) => {
-        // Check CASE_REGISTRY first, then customCases
-        const registryOntology = getCaseOntology(id);
-        if (registryOntology) {
-          set({ activeCaseOntology: registryOntology });
-          return;
-        }
+        // Check custom cases first (synchronous)
         const customOntology = get().customCases[id];
         if (customOntology) {
           set({ activeCaseOntology: customOntology });
+          return;
+        }
+
+        // Check in-memory cache (synchronous)
+        const cached = ontologyCache.get(id);
+        if (cached) {
+          set({ activeCaseOntology: cached });
+          return;
+        }
+
+        // Fetch from API (async, fire-and-forget from the sync interface)
+        fetchOntology(id).then((ontology) => {
+          if (ontology && get().activeConflictId === id) {
+            set({ activeCaseOntology: ontology });
+          }
+        });
+      },
+
+      // Async initialization — call this once on app mount to load default ontology
+      initializeFromRegistry: async () => {
+        const id = get().activeConflictId;
+
+        // Check custom cases first
+        const customOntology = get().customCases[id];
+        if (customOntology) {
+          set({ activeCaseOntology: customOntology });
+          return;
+        }
+
+        const ontology = await fetchOntology(id);
+        if (ontology && get().activeConflictId === id) {
+          set({ activeCaseOntology: ontology });
         }
       },
 

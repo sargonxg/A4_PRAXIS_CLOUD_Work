@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils/cn";
 import { motion, AnimatePresence } from "framer-motion";
 import { GraphViewer } from "@/components/graph/graph-viewer";
@@ -11,354 +11,21 @@ import {
   NODE_TYPE_CONFIG,
 } from "@/components/graph/entity-panel";
 import { TimelineSlider } from "@/components/graph/timeline-slider";
-import { Network, ChevronDown, Filter, Maximize2, Sparkles, X, Loader2 } from "lucide-react";
+import { Network, ChevronDown, Maximize2, Sparkles, X, Loader2 } from "lucide-react";
+import { ENTITY_COLORS, ENTITY_TYPES } from "@/lib/constants/entity-colors";
 
-// ── Pre-computed Node Positions ─────────────────────────────────
-// Coordinates are in SVG viewBox space (800 x 550)
-// Actors in center, events along bottom, related nodes nearby
-
-const CONFLICT_NODES: GraphNode[] = [
-  // ── Actors (large, central) ──────────────────────────────────
-  {
-    id: "gov",
-    label: "Gov. of Nordalia",
-    type: "actor",
-    importance: 1.0,
-    x: 400,
-    y: 220,
-    description:
-      "The sitting government of Nordalia, led by President Amara Osei. Controls security forces and state institutions. Accused of electoral manipulation.",
-  },
-  {
-    id: "drm",
-    label: "Dem. Reform Movement",
-    type: "actor",
-    importance: 0.9,
-    x: 230,
-    y: 250,
-    description:
-      "Opposition coalition demanding democratic reforms and transparent elections. Led by Commander Kwame Asante. Supported by Western governments.",
-  },
-  {
-    id: "unmin",
-    label: "UNMIN",
-    type: "actor",
-    importance: 0.85,
-    x: 400,
-    y: 80,
-    description:
-      "United Nations Mission in Nordalia. Mandated to support peace process, monitor ceasefire, and protect civilians. Led by SRSG Maria Santos.",
-  },
-  {
-    id: "eastland",
-    label: "Rep. of Eastland",
-    type: "actor",
-    importance: 0.7,
-    x: 590,
-    y: 200,
-    description:
-      "Regional power with military alliance to the Nordalian government. Provides arms and diplomatic cover at the Security Council.",
-  },
-  {
-    id: "westmark",
-    label: "Fed. Rep. Westmark",
-    type: "actor",
-    importance: 0.7,
-    x: 130,
-    y: 160,
-    description:
-      "Western democracy supporting the Democratic Reform Movement through diplomatic channels and targeted sanctions against Nordalian officials.",
-  },
-  {
-    id: "au",
-    label: "AU Panel",
-    type: "actor",
-    importance: 0.65,
-    x: 560,
-    y: 80,
-    description:
-      "African Union Panel of the Wise. Deployed to facilitate dialogue between the Government and DRM. Works in coordination with UNMIN.",
-  },
-  {
-    id: "osei",
-    label: "Pres. Amara Osei",
-    type: "actor",
-    importance: 0.8,
-    x: 480,
-    y: 310,
-    description:
-      "President of Nordalia since 2019. Former military officer who came to power through elections criticized by international observers.",
-  },
-  {
-    id: "asante",
-    label: "Cmdr. Kwame Asante",
-    type: "actor",
-    importance: 0.75,
-    x: 180,
-    y: 340,
-    description:
-      "Charismatic leader of the Democratic Reform Movement. Former civil rights lawyer who organized mass protests against the government.",
-  },
-  {
-    id: "santos",
-    label: "SRSG Maria Santos",
-    type: "actor",
-    importance: 0.7,
-    x: 340,
-    y: 110,
-    description:
-      "Special Representative of the Secretary-General. Experienced diplomat tasked with mediating between the parties.",
-  },
-
-  // ── Interests ────────────────────────────────────────────────
-  {
-    id: "int_power",
-    label: "Retain Power",
-    type: "interest",
-    importance: 0.6,
-    x: 510,
-    y: 290,
-    description: "Government's core interest in maintaining political control and access to state resources.",
-  },
-  {
-    id: "int_reform",
-    label: "Democratic Reform",
-    type: "interest",
-    importance: 0.6,
-    x: 140,
-    y: 250,
-    description: "DRM's demand for free and fair elections, constitutional reform, and civilian oversight of security forces.",
-  },
-  {
-    id: "int_stability",
-    label: "Regional Stability",
-    type: "interest",
-    importance: 0.5,
-    x: 630,
-    y: 130,
-    description: "Eastland's interest in maintaining a stable and friendly government in Nordalia to secure trade routes.",
-  },
-
-  // ── Claims ───────────────────────────────────────────────────
-  {
-    id: "claim_fraud",
-    label: "Electoral Fraud",
-    type: "claim",
-    importance: 0.55,
-    x: 280,
-    y: 170,
-    description: "DRM alleges systematic vote manipulation in the June 2025 elections, including ballot stuffing in rural areas.",
-  },
-  {
-    id: "claim_legit",
-    label: "Legitimate Victory",
-    type: "claim",
-    importance: 0.5,
-    x: 500,
-    y: 160,
-    description: "Government asserts elections were free and fair, validated by the National Electoral Commission.",
-  },
-
-  // ── Constraints ──────────────────────────────────────────────
-  {
-    id: "con_sanctions",
-    label: "Targeted Sanctions",
-    type: "constraint",
-    importance: 0.5,
-    x: 90,
-    y: 100,
-    description: "Westmark-led sanctions targeting senior government officials. Asset freezes and travel bans.",
-  },
-  {
-    id: "con_arms",
-    label: "Arms Embargo Debate",
-    type: "constraint",
-    importance: 0.45,
-    x: 680,
-    y: 260,
-    description: "UNSC discussion on imposing an arms embargo. Blocked by Eastland veto threats.",
-  },
-
-  // ── Narrative ────────────────────────────────────────────────
-  {
-    id: "nar_sovereignty",
-    label: "Sovereignty Defense",
-    type: "narrative",
-    importance: 0.45,
-    x: 650,
-    y: 340,
-    description: "Government narrative framing international intervention as neo-colonial interference in domestic affairs.",
-  },
-  {
-    id: "nar_democracy",
-    label: "Democracy Movement",
-    type: "narrative",
-    importance: 0.45,
-    x: 100,
-    y: 370,
-    description: "DRM narrative positioning their struggle as part of a broader African democratic awakening.",
-  },
-
-  // ── Events (bottom row, crimson) ─────────────────────────────
-  {
-    id: "ev_elections",
-    label: "Elections",
-    type: "event",
-    importance: 0.7,
-    x: 80,
-    y: 460,
-    date: "Jun 15, 2025",
-    description: "National elections held under disputed conditions. Osei declared winner with 58% of the vote.",
-  },
-  {
-    id: "ev_results",
-    label: "Results Declared",
-    type: "event",
-    importance: 0.6,
-    x: 150,
-    y: 460,
-    date: "Jun 22, 2025",
-    description: "National Electoral Commission declares Osei the winner. DRM immediately rejects results.",
-  },
-  {
-    id: "ev_protests",
-    label: "Protests",
-    type: "event",
-    importance: 0.65,
-    x: 220,
-    y: 460,
-    date: "Jun 24, 2025",
-    description: "Massive street protests erupt in the capital and three other cities. Estimated 200,000 participants.",
-  },
-  {
-    id: "ev_crackdown",
-    label: "Crackdown",
-    type: "event",
-    importance: 0.75,
-    x: 310,
-    y: 460,
-    date: "Jul 1, 2025",
-    description: "Security forces use lethal force against protesters. At least 47 killed, hundreds detained.",
-  },
-  {
-    id: "ev_unsc",
-    label: "UNSC Session",
-    type: "event",
-    importance: 0.55,
-    x: 390,
-    y: 460,
-    date: "Jul 10, 2025",
-    description: "Emergency Security Council session on Nordalia. Presidential Statement calling for restraint.",
-  },
-  {
-    id: "ev_au_mediation",
-    label: "AU Mediation",
-    type: "event",
-    importance: 0.6,
-    x: 470,
-    y: 460,
-    date: "Aug 1, 2025",
-    description: "AU Panel of the Wise arrives in Nordalia to facilitate dialogue between parties.",
-  },
-  {
-    id: "ev_ceasefire",
-    label: "Ceasefire",
-    type: "event",
-    importance: 0.7,
-    x: 550,
-    y: 460,
-    date: "Sep 15, 2025",
-    description: "Ceasefire agreement signed by both parties under AU-UNMIN mediation. Fragile calm descends.",
-  },
-  {
-    id: "ev_violation",
-    label: "Violation",
-    type: "event",
-    importance: 0.65,
-    x: 620,
-    y: 460,
-    date: "Oct 20, 2025",
-    description: "Government forces conduct operations in DRM-held areas, killing 12 civilians. Ceasefire collapses.",
-  },
-  {
-    id: "ev_talks",
-    label: "Renewed Talks",
-    type: "event",
-    importance: 0.55,
-    x: 690,
-    y: 460,
-    date: "Dec 1, 2025",
-    description: "After international pressure, both parties agree to return to negotiations in a neutral venue.",
-  },
-  {
-    id: "ev_framework",
-    label: "Framework Agreement",
-    type: "event",
-    importance: 0.7,
-    x: 750,
-    y: 460,
-    date: "Jan 15, 2026",
-    description: "Parties sign a framework agreement outlining the path to new elections within 18 months.",
-  },
-];
-
-const CONFLICT_EDGES: GraphEdge[] = [
-  // Actor relationships
-  { source: "gov", target: "drm", label: "Adversary", type: "adversary" },
-  { source: "gov", target: "eastland", label: "Alliance", type: "ally" },
-  { source: "drm", target: "westmark", label: "Support", type: "ally" },
-  { source: "unmin", target: "gov", label: "Mediator", type: "mediator" },
-  { source: "unmin", target: "drm", label: "Mediator", type: "mediator" },
-  { source: "au", target: "unmin", label: "Coordination", type: "coordination" },
-  { source: "osei", target: "gov", label: "Leads", type: "leads" },
-  { source: "asante", target: "drm", label: "Leads", type: "leads" },
-  { source: "santos", target: "unmin", label: "Leads", type: "leads" },
-
-  // Interests
-  { source: "gov", target: "int_power", label: "Pursues", type: "supports" },
-  { source: "drm", target: "int_reform", label: "Pursues", type: "supports" },
-  { source: "eastland", target: "int_stability", label: "Pursues", type: "supports" },
-
-  // Claims
-  { source: "drm", target: "claim_fraud", label: "Asserts", type: "supports" },
-  { source: "gov", target: "claim_legit", label: "Asserts", type: "supports" },
-
-  // Constraints
-  { source: "westmark", target: "con_sanctions", label: "Imposes", type: "supports" },
-  { source: "con_sanctions", target: "gov", label: "Constrains", type: "threatens" },
-
-  // Narratives
-  { source: "gov", target: "nar_sovereignty", label: "Promotes", type: "supports" },
-  { source: "drm", target: "nar_democracy", label: "Promotes", type: "supports" },
-];
+// ── Entity type toggle config ───────────────────────────────────
+const ENTITY_TYPE_TOGGLES = ENTITY_TYPES.map((t) => ({
+  key: t.toLowerCase(),
+  label: t,
+  color: ENTITY_COLORS[t],
+}));
 
 const CONFLICTS = [
-  { id: "nordalia", label: "The Nordalia Crisis" },
+  { id: "nordalia-crisis", label: "The Nordalia Crisis" },
   { id: "example2", label: "Cascadia Dispute (Demo)" },
   { id: "example3", label: "Sahel Security Corridor (Demo)" },
 ];
-
-const NODE_TYPE_FILTERS = [
-  "All Types",
-  "actor",
-  "claim",
-  "interest",
-  "constraint",
-  "leverage",
-  "commitment",
-  "event",
-  "narrative",
-] as const;
-
-// ── Timeline Events ─────────────────────────────────────────────
-const TIMELINE_EVENTS = CONFLICT_NODES.filter((n) => n.type === "event" && n.date).map(
-  (n) => ({
-    id: n.id,
-    label: n.label,
-    date: new Date(n.date!),
-    nodeId: n.id,
-  })
-);
 
 // ── Page Component ──────────────────────────────────────────────
 interface ExtractedResult {
@@ -370,18 +37,88 @@ interface ExtractedResult {
 }
 
 export default function ConflictGraphPage() {
-  const [selectedConflict, setSelectedConflict] = useState("nordalia");
+  const [selectedConflict, setSelectedConflict] = useState("nordalia-crisis");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [typeFilter, setTypeFilter] = useState<string>("All Types");
+  const [activeTypes, setActiveTypes] = useState<Set<string>>(
+    new Set(ENTITY_TYPE_TOGGLES.map((t) => t.key))
+  );
   const [dateRange, setDateRange] = useState<[Date, Date]>([
-    new Date("2025-06-01"),
-    new Date("2026-02-28"),
+    new Date("2024-03-01"),
+    new Date("2026-03-18"),
   ]);
   const [extractOpen, setExtractOpen] = useState(false);
   const [extractText, setExtractText] = useState('');
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractedResult, setExtractedResult] = useState<ExtractedResult | null>(null);
   const [extractError, setExtractError] = useState<string | null>(null);
+
+  // ── API-fetched graph data ────────────────────────────────────
+  const [allNodes, setAllNodes] = useState<GraphNode[]>([]);
+  const [allEdges, setAllEdges] = useState<GraphEdge[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch graph data from API
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+
+    async function fetchGraph() {
+      try {
+        const res = await fetch('/api/graph/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conflictId: selectedConflict }),
+        });
+        const data = await res.json();
+        if (cancelled) return;
+        if (data.error) {
+          console.error('Graph query error:', data.error);
+          return;
+        }
+        // Map API nodes to GraphNode format
+        const nodes: GraphNode[] = (data.nodes ?? []).map((n: {
+          id: string;
+          label: string;
+          type: string;
+          description?: string;
+          importance: number;
+          x: number;
+          y: number;
+          date?: string;
+        }) => ({
+          id: n.id,
+          label: n.label,
+          type: n.type as GraphNode['type'],
+          description: n.description,
+          importance: n.importance ?? 0.5,
+          x: n.x ?? 400,
+          y: n.y ?? 275,
+          date: n.date,
+        }));
+        // Map API edges to GraphEdge format
+        const edges: GraphEdge[] = (data.edges ?? []).map((e: {
+          source: string;
+          target: string;
+          label: string;
+          type: string;
+        }) => ({
+          source: e.source,
+          target: e.target,
+          label: e.label ?? e.type,
+          type: mapEdgeType(e.type),
+        }));
+        setAllNodes(nodes);
+        setAllEdges(edges);
+      } catch (err) {
+        if (!cancelled) console.error('Failed to fetch graph:', err);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    fetchGraph();
+    return () => { cancelled = true; };
+  }, [selectedConflict]);
 
   const handleExtract = useCallback(async () => {
     if (!extractText.trim() || isExtracting) return;
@@ -404,31 +141,53 @@ export default function ConflictGraphPage() {
     }
   }, [extractText, isExtracting]);
 
+  // Toggle a single entity type on/off
+  const toggleType = useCallback((type: string) => {
+    setActiveTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) {
+        next.delete(type);
+      } else {
+        next.add(type);
+      }
+      return next;
+    });
+  }, []);
+
+  // Show all / show none helpers
+  const showAllTypes = useCallback(() => {
+    setActiveTypes(new Set(ENTITY_TYPE_TOGGLES.map((t) => t.key)));
+  }, []);
+
   const filteredNodes = useMemo(() => {
-    let nodes = CONFLICT_NODES;
-
-    if (typeFilter !== "All Types") {
-      // Always include the selected node and event nodes in timeline range
-      nodes = nodes.filter(
-        (n) =>
-          n.type === typeFilter ||
-          n.id === selectedNodeId ||
-          (n.type === "event" && n.date)
-      );
-    }
-
-    return nodes;
-  }, [typeFilter, selectedNodeId]);
+    return allNodes.filter(
+      (n) =>
+        activeTypes.has(n.type) ||
+        n.id === selectedNodeId
+    );
+  }, [allNodes, activeTypes, selectedNodeId]);
 
   const filteredEdges = useMemo(() => {
     const nodeIds = new Set(filteredNodes.map((n) => n.id));
-    return CONFLICT_EDGES.filter(
+    return allEdges.filter(
       (e) => nodeIds.has(e.source) && nodeIds.has(e.target)
     );
-  }, [filteredNodes]);
+  }, [filteredNodes, allEdges]);
+
+  // Timeline events from event-type nodes
+  const timelineEvents = useMemo(() => {
+    return allNodes
+      .filter((n) => n.type === "event" && n.date)
+      .map((n) => ({
+        id: n.id,
+        label: n.label,
+        date: new Date(n.date!),
+        nodeId: n.id,
+      }));
+  }, [allNodes]);
 
   const selectedNode = selectedNodeId
-    ? CONFLICT_NODES.find((n) => n.id === selectedNodeId) ?? null
+    ? allNodes.find((n) => n.id === selectedNodeId) ?? null
     : null;
 
   const handleSelectNode = useCallback((id: string | null) => {
@@ -487,35 +246,22 @@ export default function ConflictGraphPage() {
             <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-navy-500" />
           </div>
 
-          {/* Type filter */}
-          <div className="relative">
-            <Filter className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-navy-500" />
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="appearance-none rounded-lg border border-[var(--color-app-border)] bg-white py-2 pl-9 pr-8 text-sm text-navy-800 transition-colors hover:border-navy-400 focus:border-gold-500/50 focus:outline-none focus:ring-1 focus:ring-gold-500/30"
-            >
-              {NODE_TYPE_FILTERS.map((t) => (
-                <option key={t} value={t}>
-                  {t === "All Types"
-                    ? "All Types"
-                    : NODE_TYPE_CONFIG[t as keyof typeof NODE_TYPE_CONFIG]?.label ?? t}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-navy-500" />
-          </div>
-
-          {/* Node count + Extract button */}
+          {/* Node count + actions */}
           <div className="ml-auto flex items-center gap-3 text-xs text-navy-500">
-            <span>
-              {filteredNodes.length} node{filteredNodes.length !== 1 ? "s" : ""},{" "}
-              {filteredEdges.length} edge{filteredEdges.length !== 1 ? "s" : ""}
-            </span>
+            {isLoading ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="h-3 w-3 animate-spin" /> Loading graph...
+              </span>
+            ) : (
+              <span>
+                {filteredNodes.length} node{filteredNodes.length !== 1 ? "s" : ""},{" "}
+                {filteredEdges.length} edge{filteredEdges.length !== 1 ? "s" : ""}
+              </span>
+            )}
             <button
               onClick={() => {
                 setSelectedNodeId(null);
-                setTypeFilter("All Types");
+                showAllTypes();
               }}
               className="rounded-md px-2 py-1 text-navy-600 transition-colors hover:bg-navy-100 hover:text-navy-800"
             >
@@ -531,33 +277,48 @@ export default function ConflictGraphPage() {
           </div>
         </motion.div>
 
-        {/* ── Legend ──────────────────────────────────────────── */}
+        {/* ── Entity Type Filter Toggles ──────────────────────── */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.15 }}
-          className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1"
+          className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1.5"
         >
-          {Object.entries(NODE_TYPE_CONFIG).map(([type, config]) => (
-            <button
-              key={type}
-              onClick={() =>
-                setTypeFilter(typeFilter === type ? "All Types" : type)
-              }
-              className={cn(
-                "flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs transition-colors",
-                typeFilter === type
-                  ? "bg-navy-100 text-navy-800"
-                  : "text-navy-600 hover:text-navy-800"
-              )}
-            >
-              <div
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: config.color }}
-              />
-              {config.label}
-            </button>
-          ))}
+          {ENTITY_TYPE_TOGGLES.map(({ key, label, color }) => {
+            const isActive = activeTypes.has(key);
+            return (
+              <button
+                key={key}
+                onClick={() => toggleType(key)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-all border",
+                  isActive
+                    ? "border-current/20 shadow-sm"
+                    : "border-transparent bg-navy-100/50 text-navy-400 line-through opacity-60 hover:opacity-80"
+                )}
+                style={
+                  isActive
+                    ? {
+                        backgroundColor: `${color}15`,
+                        color: color,
+                        borderColor: `${color}30`,
+                      }
+                    : undefined
+                }
+              >
+                <div
+                  className={cn(
+                    "h-2.5 w-2.5 rounded-full transition-opacity",
+                    !isActive && "opacity-40"
+                  )}
+                  style={{ backgroundColor: color }}
+                />
+                {label}
+              </button>
+            );
+          })}
+
+          {/* Edge legend */}
           <div className="ml-2 flex items-center gap-3 border-l border-[var(--color-app-border)] pl-3">
             <div className="flex items-center gap-1.5">
               <div className="h-px w-4 bg-[#5B8C5A]" />
@@ -588,20 +349,29 @@ export default function ConflictGraphPage() {
                 <Maximize2 className="h-4 w-4" />
               </button>
             </div>
-            <GraphViewer
-              nodes={filteredNodes}
-              edges={filteredEdges}
-              selectedNodeId={selectedNodeId}
-              onSelectNode={handleSelectNode}
-              className="min-h-[450px] lg:min-h-[500px]"
-            />
+            {isLoading ? (
+              <div className="flex min-h-[450px] items-center justify-center lg:min-h-[500px]">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-navy-400" />
+                  <span className="text-sm text-navy-500">Loading conflict graph...</span>
+                </div>
+              </div>
+            ) : (
+              <GraphViewer
+                nodes={filteredNodes}
+                edges={filteredEdges}
+                selectedNodeId={selectedNodeId}
+                onSelectNode={handleSelectNode}
+                className="min-h-[450px] lg:min-h-[500px]"
+              />
+            )}
           </div>
 
           {/* Entity Panel */}
           <EntityPanel
             node={selectedNode}
-            edges={CONFLICT_EDGES}
-            nodes={CONFLICT_NODES}
+            edges={allEdges}
+            nodes={allNodes}
             onClose={() => setSelectedNodeId(null)}
             onSelectNode={(id) => setSelectedNodeId(id)}
             className="min-h-[450px] lg:min-h-[500px]"
@@ -615,8 +385,8 @@ export default function ConflictGraphPage() {
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <TimelineSlider
-            events={TIMELINE_EVENTS}
-            nodes={CONFLICT_NODES}
+            events={timelineEvents}
+            nodes={allNodes}
             selectedNodeId={selectedNodeId}
             onSelectNode={handleTimelineSelectNode}
             dateRange={dateRange}
@@ -730,4 +500,15 @@ export default function ConflictGraphPage() {
       </AnimatePresence>
     </div>
   );
+}
+
+// ── Helpers ─────────────────────────────────────────────────────
+function mapEdgeType(type: string): GraphEdge['type'] {
+  const validTypes: GraphEdge['type'][] = ['adversary', 'ally', 'mediator', 'coordination', 'leads', 'supports', 'threatens'];
+  if (validTypes.includes(type as GraphEdge['type'])) return type as GraphEdge['type'];
+  // Map relationship types to edge display types
+  if (type === 'neutral') return 'coordination';
+  if (type === 'patron' || type === 'proxy' || type === 'dependent') return 'ally';
+  if (type === 'competitor') return 'adversary';
+  return 'supports';
 }
