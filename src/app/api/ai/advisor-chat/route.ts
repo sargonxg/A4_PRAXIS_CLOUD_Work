@@ -1,9 +1,5 @@
 import { streamText } from 'ai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY || '',
-});
+import { getModel } from '@/lib/ai/providers';
 
 export const maxDuration = 60;
 
@@ -50,7 +46,7 @@ export async function POST(request: Request) {
 You are operating within PRAXIS, TACITUS's conflict intelligence platform. You are being consulted by a diplomatic professional, political affairs officer, or conflict analyst. Give substantive, expert guidance grounded in your specific expertise. Do not be vague or generic. Reference specific frameworks, data sources, and professional best practices from your field. Maintain your distinct voice and perspective throughout.`;
 
     const result = streamText({
-      model: google('gemini-2.5-flash'),
+      model: getModel(),
       system: systemPrompt,
       messages,
     });

@@ -151,8 +151,9 @@ export function Hero() {
           transition={{ delay: 1.2, duration: 0.7 }}
           className="mb-12 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
         >
-          The AI-native workspace for peace and security professionals. Turn raw
-          conflict data into decisive intelligence in minutes.
+          The conflict operating system for peace and security professionals.
+          AI-powered analysis, knowledge graphs, and automated report generation
+          — from raw data to decisive intelligence in minutes.
         </motion.p>
 
         {/* CTAs */}

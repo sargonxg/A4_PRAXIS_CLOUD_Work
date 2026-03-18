@@ -1,10 +1,6 @@
 import { generateObject } from 'ai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { getModel } from '@/lib/ai/providers';
 import { z } from 'zod';
-
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY || '',
-});
 
 const TermIssueSchema = z.object({
   term: z.string(),
@@ -77,7 +73,7 @@ export async function POST(request: Request) {
 
     // Use Gemini for nuanced analysis
     const { object } = await generateObject({
-      model: google('gemini-2.5-flash'),
+      model: getModel(),
       schema: TerminologyResponseSchema,
       prompt: `You are a UN Editorial Manual expert. Analyze the following text for UN terminology compliance.
 Document context: ${context || 'general'}

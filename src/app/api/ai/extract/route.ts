@@ -1,10 +1,6 @@
 import { generateObject } from 'ai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { getModel } from '@/lib/ai/providers';
 import { z } from 'zod';
-
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY || '',
-});
 
 const ExtractedEntitySchema = z.object({
   actors: z.array(z.object({
@@ -98,7 +94,7 @@ export async function POST(request: Request) {
       : 'actors, claims, interests, constraints, leverage, commitments, events, narratives';
 
     const { object } = await generateObject({
-      model: google('gemini-2.5-flash'),
+      model: getModel(),
       schema: ExtractedEntitySchema,
       prompt: `You are a conflict analysis expert. Extract structured conflict intelligence entities from the following text using the Conflict Grammar framework.
 

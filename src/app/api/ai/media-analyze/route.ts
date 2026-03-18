@@ -1,10 +1,6 @@
 import { generateObject } from 'ai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { getModel } from '@/lib/ai/providers';
 import { z } from 'zod';
-
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY || '',
-});
 
 const MediaAnalysisSchema = z.object({
   politicalOrientation: z.number().min(-1).max(1).describe('Political orientation from -1 (left) to +1 (right)'),
@@ -31,7 +27,7 @@ export async function POST(request: Request) {
     const { source, topic } = await request.json();
 
     const { object } = await generateObject({
-      model: google('gemini-2.5-flash'),
+      model: getModel(),
       schema: MediaAnalysisSchema,
       prompt: `Analyze the media source "${source}" for a conflict/peace professional.
 ${topic ? `Specific topic context: ${topic}` : ''}

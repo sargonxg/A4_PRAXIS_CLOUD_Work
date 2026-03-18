@@ -52,7 +52,7 @@ import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 import { formatDiplomaticDate, formatRelativeTime } from '@/lib/utils/format';
 import { useConflictStore } from '@/stores/conflict-store';
-import { DEMO_CONFLICT } from '@/lib/constants/demo-conflict';
+import { useConflictDetail } from '@/hooks/use-conflict-data';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -166,6 +166,8 @@ function ActiveConflictSnapshot({
   graphEntities,
   description,
   events,
+  glaslStage = null,
+  escalationTrend = 'stable',
 }: {
   conflictId: string;
   name: string;
@@ -176,12 +178,9 @@ function ActiveConflictSnapshot({
   graphEntities: number;
   description: string;
   events: { title: string; date: string }[];
+  glaslStage?: number | null;
+  escalationTrend?: 'volatile' | 'escalating' | 'de-escalating' | 'stable';
 }) {
-  // Pull GLASL stage from DEMO_CONFLICT if this is the primary demo conflict
-  const glaslStage = conflictId === 'nordalia-crisis' ? DEMO_CONFLICT.glaslStage : null;
-  const escalationTrend = (
-    conflictId === 'nordalia-crisis' ? DEMO_CONFLICT.escalationTrend : 'stable'
-  ) as 'volatile' | 'escalating' | 'de-escalating' | 'stable';
   const TrendIcon = escalationTrend === 'volatile' ? TrendingUp
     : escalationTrend === 'escalating' ? TrendingUp
     : escalationTrend === 'de-escalating' ? TrendingDown
@@ -572,6 +571,10 @@ export default function DashboardPage() {
   const router = useRouter();
   const today = new Date();
 
+  // Fetch Nordalia demo-conflict data via API (replaces static import)
+  const { data: nordaliaDetail, loading: nordaliaLoading } = useConflictDetail('nordalia-crisis');
+  const demoConflict = nordaliaDetail?.demoConflict ?? null;
+
   // Store
   const {
     conflicts,
@@ -877,6 +880,8 @@ Format with bold section headers using **text**. Be concise, professional, and a
           graphEntities={activeConflict.graphEntities}
           description={activeConflict.description}
           events={activeConflict.events ?? []}
+          glaslStage={activeConflict.id === 'nordalia-crisis' ? (demoConflict?.glaslStage ?? null) : null}
+          escalationTrend={activeConflict.id === 'nordalia-crisis' ? ((demoConflict?.escalationTrend as 'volatile' | 'escalating' | 'de-escalating' | 'stable') ?? 'stable') : 'stable'}
         />
       )}
 

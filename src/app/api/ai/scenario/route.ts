@@ -1,7 +1,5 @@
 import { streamText } from 'ai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-
-const google = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY || '' });
+import { getModel } from '@/lib/ai/providers';
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
@@ -54,7 +52,7 @@ Provide recommended responses categorized by:
 Be analytically rigorous, calibrate confidence appropriately, and avoid generic analysis. Reference specific actors, instruments, and precedents where relevant.`;
 
     const result = streamText({
-      model: google('gemini-2.5-flash'),
+      model: getModel(),
       prompt,
       system: 'You are a senior conflict analyst at the International Crisis Group. Provide rigorous, structured, evidence-based scenario analysis for diplomatic and security professionals.',
     });

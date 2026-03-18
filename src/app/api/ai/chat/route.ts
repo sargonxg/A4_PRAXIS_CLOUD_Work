@@ -1,11 +1,7 @@
 import { streamText, stepCountIs } from 'ai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { getModel } from '@/lib/ai/providers';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
 import { tacitusTools } from '@/lib/ai/tools';
-
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY || '',
-});
 
 export const maxDuration = 60;
 
@@ -30,7 +26,7 @@ When responding to questions about this conflict, proactively use the queryConfl
       : DIPLOMATIC_SYSTEM_PROMPT;
 
     const result = streamText({
-      model: google('gemini-2.5-flash'),
+      model: getModel(),
       system: systemPrompt,
       messages,
       tools: tacitusTools,

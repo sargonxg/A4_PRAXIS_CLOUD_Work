@@ -1,6 +1,5 @@
 import { streamText } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
-import { google } from '@ai-sdk/google';
+import { getAnalysisModel, getAvailableProviders } from '@/lib/ai/providers';
 
 export const maxDuration = 120;
 
@@ -11,8 +10,9 @@ export const maxDuration = 120;
  * and complex geopolitical reasoning.
  */
 export async function POST(request: Request) {
-  const hasAnthropic = !!process.env.ANTHROPIC_API_KEY;
-  const hasGoogle = !!process.env.GOOGLE_AI_API_KEY;
+  const providers = getAvailableProviders();
+  const hasAnthropic = providers.anthropic.configured;
+  const hasGoogle = providers.google.configured;
 
   if (!hasAnthropic && !hasGoogle) {
     return new Response(
@@ -76,10 +76,8 @@ ${context ? `## Context Provided\n${context}` : ''}
 - Flag areas of uncertainty or incomplete information
 - Provide actionable insights where possible`;
 
-    // Use Claude if available, otherwise Gemini
-    const model = hasAnthropic
-      ? anthropic('claude-sonnet-4-20250514')
-      : google('gemini-2.5-flash');
+    // Use Claude if available, otherwise Gemini Pro (via centralized provider)
+    const model = getAnalysisModel();
 
     const result = streamText({
       model,
