@@ -21,8 +21,8 @@ export function ensureNordaliaData(conflictId: string = 'nordalia-crisis'): void
     return;
   }
 
-  // Create the conflict
-  const created = createConflict(DEMO_CONFLICT.name, DEMO_CONFLICT.description, DEMO_CONFLICT.region);
+  // Create the conflict with a well-known ID
+  const created = createConflictWithId(conflictId, DEMO_CONFLICT.name, DEMO_CONFLICT.description, DEMO_CONFLICT.region);
 
   // Build the full graph data mapped to conflict-grammar schema
   const graphData: Partial<Omit<ConflictGraph, 'id'>> = {
@@ -143,13 +143,9 @@ export function ensureNordaliaData(conflictId: string = 'nordalia-crisis'): void
     })),
   };
 
-  // Overwrite the created conflict's ID with a stable ID
-  // Use updateConflict to set all the data
+  // Populate the conflict with all demo data
   updateConflict(created.id, graphData);
 
-  // Also store it under the well-known 'nordalia-crisis' key
-  // by re-creating with a specific approach: store under the generated ID
-  // and track the mapping
   initialized = true;
 }
 

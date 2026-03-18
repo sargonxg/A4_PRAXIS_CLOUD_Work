@@ -41,6 +41,17 @@ export function createConflict(name: string, description?: string, region?: stri
   return validated;
 }
 
+export function createConflictWithId(id: string, name: string, description?: string, region?: string): ConflictGraph {
+  const graph: ConflictGraph = {
+    ...emptyGraph(id, name),
+    description,
+    region,
+  };
+  const validated = ConflictGraphSchema.parse(graph);
+  conflictStore.set(id, validated);
+  return validated;
+}
+
 export function getConflict(id: string): ConflictGraph | undefined {
   return conflictStore.get(id);
 }

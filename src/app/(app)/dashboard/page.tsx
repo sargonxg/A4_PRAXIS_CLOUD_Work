@@ -53,6 +53,7 @@ import { parseDataStreamChunk } from '@/lib/utils/stream';
 import { formatDiplomaticDate, formatRelativeTime } from '@/lib/utils/format';
 import { useConflictStore } from '@/stores/conflict-store';
 import { useConflictDetail } from '@/hooks/use-conflict-data';
+import { isDemoMode, getCachedResponse } from '@/lib/demo/demo-mode';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -626,6 +627,24 @@ export default function DashboardPage() {
     setLiveBrief('');
     incrementQueryCount();
     try {
+      // Demo mode: use pre-computed morning brief
+      if (isDemoMode()) {
+        const cached = getCachedResponse('dashboard', 'morning_brief');
+        if (cached) {
+          // Simulate streaming by revealing text progressively
+          const words = cached.split(' ');
+          let accumulated = '';
+          for (let i = 0; i < words.length; i++) {
+            accumulated += (i === 0 ? '' : ' ') + words[i];
+            if (i % 8 === 0 || i === words.length - 1) {
+              setLiveBrief(accumulated);
+              await new Promise((r) => setTimeout(r, 12));
+            }
+          }
+          setIsBriefLoading(false);
+          return;
+        }
+      }
       const unacknowledgedAlerts = alerts
         .filter((a) => a.acknowledgedAt === null)
         .map((a) => a.title)
@@ -696,6 +715,18 @@ Format with bold section headers using **text**. Be concise, professional, and a
     setInsights([]);
     incrementQueryCount();
     try {
+      // Demo mode: use pre-computed insights
+      if (isDemoMode()) {
+        const cached = getCachedResponse('dashboard', 'insights');
+        if (cached) {
+          // Brief delay to simulate loading
+          await new Promise((r) => setTimeout(r, 600));
+          const parsed = JSON.parse(cached) as InsightType[];
+          setInsights(parsed.slice(0, 3));
+          setInsightsLoading(false);
+          return;
+        }
+      }
       const conflictData = conflicts
         .filter((c) => c.status !== 'resolved')
         .map((c) => ({
