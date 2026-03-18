@@ -30,40 +30,40 @@ export interface RelationshipMatrixProps {
 type RelationshipType = 'all' | 'ally' | 'adversary' | 'neutral' | 'mediator';
 
 // ============================================================================
-// Constants
+// Constants — all using light-mode palette
 // ============================================================================
 
 const REL_TYPE_COLORS: Record<string, string> = {
-  ally: 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300',
-  adversary: 'bg-red-500/20 border-red-500/40 text-red-300',
-  neutral: 'bg-slate-500/20 border-slate-500/40 text-slate-300',
-  mediator: 'bg-amber-500/20 border-amber-500/40 text-amber-300',
-  complex: 'bg-purple-500/20 border-purple-500/40 text-purple-300',
+  ally: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+  adversary: 'bg-red-50 border-red-200 text-red-700',
+  neutral: 'bg-navy-50 border-navy-200 text-navy-600',
+  mediator: 'bg-amber-50 border-amber-200 text-amber-700',
+  complex: 'bg-purple-50 border-purple-200 text-purple-700',
 };
 
 const REL_TYPE_DOT: Record<string, string> = {
   ally: 'bg-emerald-500',
   adversary: 'bg-red-500',
-  neutral: 'bg-slate-400',
+  neutral: 'bg-navy-400',
   mediator: 'bg-amber-500',
   complex: 'bg-purple-500',
 };
 
 const REL_CELL_BG: Record<string, string> = {
-  ally: 'bg-emerald-500/15 hover:bg-emerald-500/25',
-  adversary: 'bg-red-500/15 hover:bg-red-500/25',
-  neutral: 'bg-slate-500/10 hover:bg-slate-500/20',
-  mediator: 'bg-amber-500/15 hover:bg-amber-500/25',
-  complex: 'bg-purple-500/15 hover:bg-purple-500/25',
+  ally: 'bg-emerald-50 hover:bg-emerald-100',
+  adversary: 'bg-red-50 hover:bg-red-100',
+  neutral: 'bg-navy-50 hover:bg-navy-100',
+  mediator: 'bg-amber-50 hover:bg-amber-100',
+  complex: 'bg-purple-50 hover:bg-purple-100',
 };
 
 const ACTOR_TYPE_COLORS: Record<string, string> = {
-  state: 'bg-blue-500/20 text-blue-300',
-  armed_group: 'bg-red-500/20 text-red-300',
-  international_org: 'bg-amber-500/20 text-amber-300',
-  civil_society: 'bg-emerald-500/20 text-emerald-300',
-  private_sector: 'bg-purple-500/20 text-purple-300',
-  individual: 'bg-slate-500/20 text-slate-300',
+  state: 'bg-blue-50 text-blue-700',
+  armed_group: 'bg-red-50 text-red-700',
+  international_org: 'bg-amber-50 text-amber-700',
+  civil_society: 'bg-emerald-50 text-emerald-700',
+  private_sector: 'bg-purple-50 text-purple-700',
+  individual: 'bg-navy-50 text-navy-600',
 };
 
 function truncate(str: string, max: number) {
@@ -168,14 +168,14 @@ export function RelationshipMatrix({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-gold-400" />
-          <h3 className="text-white font-semibold">Relationship Matrix</h3>
-          <Badge className="bg-white/5 text-slate-400 text-xs border border-white/10">
+          <Users className="w-5 h-5 text-gold-600" />
+          <h3 className="text-navy-900 font-semibold">Relationship Matrix</h3>
+          <Badge className="bg-navy-50 text-navy-500 text-xs border border-[var(--color-app-border)]">
             {displayActors.length} actors
           </Badge>
         </div>
         <div className="flex items-center gap-1">
-          <Info className="w-4 h-4 text-slate-500 cursor-help" aria-label="Click any cell to see relationship details" />
+          <Info className="w-4 h-4 text-navy-400 cursor-help" aria-label="Click any cell to see relationship details" />
         </div>
       </div>
 
@@ -194,17 +194,17 @@ export function RelationshipMatrix({
             className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-all ${
               typeFilter === type
                 ? REL_TYPE_COLORS[type] || REL_TYPE_COLORS.neutral
-                : 'bg-white/3 border-white/10 text-slate-400 hover:text-white'
+                : 'bg-[var(--color-app-surface-alt)] border-[var(--color-app-border)] text-navy-500 hover:text-navy-900'
             }`}
           >
-            <div className={`w-2 h-2 rounded-full ${REL_TYPE_DOT[type] || 'bg-slate-400'}`} />
+            <div className={`w-2 h-2 rounded-full ${REL_TYPE_DOT[type] || 'bg-navy-400'}`} />
             {type.charAt(0).toUpperCase() + type.slice(1)}: {count}
           </button>
         ))}
         {typeFilter !== 'all' && (
           <button
             onClick={() => setTypeFilter('all')}
-            className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
+            className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
           >
             <X className="w-3 h-3" /> Clear
           </button>
@@ -227,17 +227,17 @@ export function RelationshipMatrix({
               >
                 {/* Actor avatar */}
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mb-1 border ${
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mb-1 border transition-colors ${
                     hoveredActor === actor.id
-                      ? 'border-white/40 bg-white/10'
-                      : 'border-white/10 bg-white/5'
+                      ? 'border-navy-300 bg-navy-100 text-navy-800'
+                      : 'border-[var(--color-app-border)] bg-navy-50 text-navy-600'
                   }`}
                 >
                   {getActorInitials(actor.name)}
                 </div>
                 <span
-                  className={`text-center text-xs leading-tight ${
-                    hoveredActor === actor.id ? 'text-white' : 'text-slate-400'
+                  className={`text-center text-xs leading-tight transition-colors ${
+                    hoveredActor === actor.id ? 'text-navy-900' : 'text-navy-400'
                   }`}
                   title={actor.name}
                 >
@@ -253,7 +253,7 @@ export function RelationshipMatrix({
               {/* Row label */}
               <div
                 className={`w-32 shrink-0 pr-3 text-right cursor-pointer transition-colors ${
-                  hoveredActor === rowActor.id ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+                  hoveredActor === rowActor.id ? 'text-navy-900' : 'text-navy-500 hover:text-navy-700'
                 }`}
                 onMouseEnter={() => setHoveredActor(rowActor.id)}
                 onMouseLeave={() => setHoveredActor(null)}
@@ -282,9 +282,9 @@ export function RelationshipMatrix({
                   return (
                     <div
                       key={colActor.id}
-                      className="w-20 h-10 shrink-0 flex items-center justify-center bg-white/5 rounded mx-0.5"
+                      className="w-20 h-10 shrink-0 flex items-center justify-center bg-[var(--color-app-surface-alt)] rounded mx-0.5"
                     >
-                      <div className="w-4 h-px bg-white/20" />
+                      <div className="w-4 h-px bg-navy-200" />
                     </div>
                   );
                 }
@@ -294,7 +294,7 @@ export function RelationshipMatrix({
                     <div
                       key={colActor.id}
                       className={`w-20 h-10 shrink-0 rounded mx-0.5 transition-all ${
-                        isHighlighted ? 'bg-white/3' : ''
+                        isHighlighted ? 'bg-navy-50' : ''
                       }`}
                     />
                   );
@@ -316,14 +316,14 @@ export function RelationshipMatrix({
                     }
                     className={`w-20 h-10 shrink-0 rounded mx-0.5 flex items-center justify-center transition-all border ${
                       isSelected
-                        ? 'ring-2 ring-white/30 scale-105 ' + (REL_TYPE_COLORS[rel.type] || REL_TYPE_COLORS.neutral)
-                        : bgClass + (isHighlighted ? ' opacity-100' : ' opacity-75')
+                        ? 'ring-2 ring-navy-300 scale-105 ' + (REL_TYPE_COLORS[rel.type] || REL_TYPE_COLORS.neutral)
+                        : bgClass + (isHighlighted ? ' opacity-100' : ' opacity-80')
                     } ${
-                      isHighlighted ? 'border-white/20' : 'border-transparent'
+                      isHighlighted ? 'border-navy-200' : 'border-transparent'
                     }`}
                     title={`${rowActor.name} → ${colActor.name}: ${rel.label}`}
                   >
-                    <div className={`w-2 h-2 rounded-full ${REL_TYPE_DOT[rel.type] || 'bg-slate-400'}`} />
+                    <div className={`w-2 h-2 rounded-full ${REL_TYPE_DOT[rel.type] || 'bg-navy-400'}`} />
                   </motion.button>
                 );
               })}
@@ -339,16 +339,16 @@ export function RelationshipMatrix({
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 6 }}
-            className="bg-navy-900 border border-white/10 rounded-xl p-4"
+            className="bg-white border border-[var(--color-app-border)] rounded-xl p-4 shadow-sm"
           >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-white font-medium">
+                  <span className="text-sm text-navy-900 font-medium">
                     {selectedSourceActor.name}
                   </span>
-                  <ArrowRight className="w-4 h-4 text-slate-500" />
-                  <span className="text-sm text-white font-medium">
+                  <ArrowRight className="w-4 h-4 text-navy-400" />
+                  <span className="text-sm text-navy-900 font-medium">
                     {selectedTargetActor.name}
                   </span>
                 </div>
@@ -358,27 +358,27 @@ export function RelationshipMatrix({
               </div>
               <button
                 onClick={() => setSelectedPair(null)}
-                className="text-slate-500 hover:text-white"
+                className="text-navy-400 hover:text-navy-700"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-sm text-slate-300 mt-2 leading-relaxed">
+            <p className="text-sm text-navy-600 mt-2 leading-relaxed">
               {selectedRel.label}
             </p>
 
             {/* Actor summaries */}
-            <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-white/10">
+            <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-[var(--color-app-border)]">
               <div>
-                <p className="text-xs text-slate-500 mb-1">{selectedSourceActor.name}</p>
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <p className="text-xs text-navy-400 mb-1">{selectedSourceActor.name}</p>
+                <p className="text-xs text-navy-500 leading-relaxed">
                   {truncate(selectedSourceActor.description, 180)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-slate-500 mb-1">{selectedTargetActor.name}</p>
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <p className="text-xs text-navy-400 mb-1">{selectedTargetActor.name}</p>
+                <p className="text-xs text-navy-500 leading-relaxed">
                   {truncate(selectedTargetActor.description, 180)}
                 </p>
               </div>
@@ -388,14 +388,14 @@ export function RelationshipMatrix({
       </AnimatePresence>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-3 pt-3 border-t border-white/10">
+      <div className="flex flex-wrap gap-3 pt-3 border-t border-[var(--color-app-border)]">
         {Object.entries(REL_TYPE_COLORS).slice(0, 4).map(([type, colorClass]) => (
           <div key={type} className="flex items-center gap-1.5">
             <div className={`w-3 h-3 rounded-full ${REL_TYPE_DOT[type]}`} />
-            <span className="text-xs text-slate-400 capitalize">{type}</span>
+            <span className="text-xs text-navy-400 capitalize">{type}</span>
           </div>
         ))}
-        <div className="text-xs text-slate-500 ml-2">Click any cell for details</div>
+        <div className="text-xs text-navy-400 ml-2">Click any cell for details</div>
       </div>
     </div>
   );
