@@ -516,7 +516,7 @@ export async function POST(
     /* --- PDF --- */
     if (format === 'pdf') {
       const pdfBuffer = await generatePdf(report);
-      return new NextResponse(pdfBuffer, {
+      return new NextResponse(new Uint8Array(pdfBuffer), {
         status: 200,
         headers: {
           'Content-Type': 'application/pdf',
@@ -528,7 +528,7 @@ export async function POST(
     /* --- DOCX --- */
     if (format === 'docx') {
       const docxBuffer = await generateDocx(report);
-      return new NextResponse(docxBuffer, {
+      return new NextResponse(new Uint8Array(docxBuffer), {
         status: 200,
         headers: {
           'Content-Type':

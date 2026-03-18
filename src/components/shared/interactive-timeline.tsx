@@ -58,19 +58,19 @@ const EVENT_TYPE_COLORS: Record<string, string> = {
 };
 
 const EVENT_TYPE_TEXT: Record<string, string> = {
-  political: 'text-blue-400',
-  military: 'text-red-400',
-  diplomatic: 'text-amber-400',
-  humanitarian: 'text-emerald-400',
-  economic: 'text-purple-400',
+  political: 'text-blue-600',
+  military: 'text-red-600',
+  diplomatic: 'text-amber-600',
+  humanitarian: 'text-emerald-600',
+  economic: 'text-purple-600',
 };
 
 const EVENT_TYPE_BADGE: Record<string, string> = {
-  political: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-  military: 'bg-red-500/20 text-red-300 border-red-500/30',
-  diplomatic: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-  humanitarian: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-  economic: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+  political: 'bg-blue-50 text-blue-700 border-blue-200',
+  military: 'bg-red-50 text-red-700 border-red-200',
+  diplomatic: 'bg-amber-50 text-amber-700 border-amber-200',
+  humanitarian: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  economic: 'bg-purple-50 text-purple-700 border-purple-200',
 };
 
 const EVENT_TYPE_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -82,15 +82,27 @@ const EVENT_TYPE_ICON: Record<string, React.ComponentType<{ className?: string }
 };
 
 const GLASL_STAGE_COLORS: Record<number, string> = {
-  1: 'bg-emerald-900/30 border-emerald-700/20',
-  2: 'bg-emerald-900/20 border-emerald-700/20',
-  3: 'bg-yellow-900/20 border-yellow-700/20',
-  4: 'bg-yellow-900/30 border-yellow-700/20',
-  5: 'bg-orange-900/30 border-orange-700/20',
-  6: 'bg-orange-900/40 border-orange-700/20',
-  7: 'bg-red-900/40 border-red-700/20',
-  8: 'bg-red-900/50 border-red-700/20',
-  9: 'bg-red-900/60 border-red-700/20',
+  1: 'bg-emerald-50 border-emerald-200',
+  2: 'bg-emerald-50 border-emerald-200',
+  3: 'bg-yellow-50 border-yellow-200',
+  4: 'bg-yellow-50 border-yellow-200',
+  5: 'bg-orange-50 border-orange-200',
+  6: 'bg-orange-100 border-orange-300',
+  7: 'bg-red-50 border-red-200',
+  8: 'bg-red-100 border-red-300',
+  9: 'bg-red-100 border-red-400',
+};
+
+const GLASL_STAGE_TEXT: Record<number, string> = {
+  1: 'text-emerald-700',
+  2: 'text-emerald-700',
+  3: 'text-yellow-700',
+  4: 'text-yellow-700',
+  5: 'text-orange-700',
+  6: 'text-orange-800',
+  7: 'text-red-700',
+  8: 'text-red-700',
+  9: 'text-red-800',
 };
 
 const GLASL_STAGE_LABELS: Record<number, string> = {
@@ -134,10 +146,8 @@ function formatDate(dateStr: string): string {
 
 function getEventTitle(event: TimelineEvent): string {
   if (event.title) return event.title;
-  // Try to get from metadata
   const meta = NORDALIA_EVENT_METADATA[event.id];
   if (meta?.title) return meta.title;
-  // Truncate description
   return event.description.slice(0, 72) + (event.description.length > 72 ? '...' : '');
 }
 
@@ -154,9 +164,9 @@ function getEscalationIcon(direction: string) {
 }
 
 function getEscalationColor(direction: string): string {
-  if (direction === 'escalatory') return 'text-red-400';
-  if (direction === 'de_escalatory') return 'text-emerald-400';
-  return 'text-slate-400';
+  if (direction === 'escalatory') return 'text-red-500';
+  if (direction === 'de_escalatory') return 'text-emerald-600';
+  return 'text-navy-400';
 }
 
 // ============================================================================
@@ -170,7 +180,7 @@ interface EventDotProps {
 }
 
 function EventDot({ event, isSelected, onClick }: EventDotProps) {
-  const colorClass = EVENT_TYPE_COLORS[event.type] || 'bg-slate-500 border-slate-400';
+  const colorClass = EVENT_TYPE_COLORS[event.type] || 'bg-navy-400 border-navy-300';
   const sizeClass = IMPACT_SIZES[event.impact] || IMPACT_SIZES.moderate;
   const glaslStage = getGlaslStage(event);
 
@@ -179,15 +189,15 @@ function EventDot({ event, isSelected, onClick }: EventDotProps) {
       onClick={onClick}
       className={`
         relative rounded-full border-2 transition-all duration-200 cursor-pointer
-        hover:scale-125 hover:shadow-lg hover:z-20
+        hover:scale-125 hover:shadow-md hover:z-20
         ${colorClass}
         ${sizeClass}
-        ${isSelected ? 'scale-125 ring-2 ring-white/40 shadow-lg z-10' : ''}
+        ${isSelected ? 'scale-125 ring-2 ring-navy-300 shadow-md z-10' : ''}
       `}
       title={getEventTitle(event)}
     >
       {glaslStage !== undefined && glaslStage >= 6 && (
-        <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-400 rounded-full animate-pulse" />
+        <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
       )}
     </button>
   );
@@ -205,39 +215,40 @@ interface EventDetailPanelProps {
 function EventDetailPanel({ event, onClose }: EventDetailPanelProps) {
   const EscalationIcon = getEscalationIcon(event.escalatoryDirection);
   const escalationColor = getEscalationColor(event.escalatoryDirection);
-  const badgeClass = EVENT_TYPE_BADGE[event.type] || 'bg-slate-500/20 text-slate-300';
+  const badgeClass = EVENT_TYPE_BADGE[event.type] || 'bg-navy-50 text-navy-600';
   const TypeIcon = EVENT_TYPE_ICON[event.type] || Globe;
   const glaslStage = getGlaslStage(event);
   const meta = NORDALIA_EVENT_METADATA[event.id];
   const sources = event.sources || meta?.sources || [];
   const actorIds = event.involvedActors || [];
+  const glaslTextColor = glaslStage !== undefined ? (GLASL_STAGE_TEXT[glaslStage] || 'text-navy-600') : '';
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
-      className="bg-navy-900 border border-white/10 rounded-xl p-4 mt-3 relative"
+      className="bg-white border border-[var(--color-app-border)] rounded-xl p-4 mt-3 relative shadow-sm"
     >
       <button
         onClick={onClose}
-        className="absolute top-3 right-3 text-slate-400 hover:text-white transition-colors"
+        className="absolute top-3 right-3 text-navy-400 hover:text-navy-700 transition-colors"
       >
         <X className="w-4 h-4" />
       </button>
 
       {/* Header */}
       <div className="flex items-start gap-3 pr-6">
-        <div className={`p-1.5 rounded-lg ${EVENT_TYPE_BADGE[event.type] || 'bg-slate-500/20'}`}>
+        <div className={`p-1.5 rounded-lg ${EVENT_TYPE_BADGE[event.type] || 'bg-navy-50'}`}>
           <TypeIcon className="w-4 h-4" />
         </div>
         <div>
-          <h4 className="text-white font-medium text-sm leading-tight">{getEventTitle(event)}</h4>
+          <h4 className="text-navy-900 font-medium text-sm leading-tight">{getEventTitle(event)}</h4>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-slate-400 text-xs">{formatDate(event.date)}</span>
+            <span className="text-navy-400 text-xs">{formatDate(event.date)}</span>
             <Badge className={`text-xs ${badgeClass}`}>{event.type}</Badge>
             {glaslStage !== undefined && (
-              <Badge className="text-xs bg-slate-700/50 text-slate-300 border-slate-600">
+              <Badge className={`text-xs bg-navy-50 border-navy-200 ${glaslTextColor}`}>
                 Glasl Stage {glaslStage}
               </Badge>
             )}
@@ -246,10 +257,10 @@ function EventDetailPanel({ event, onClose }: EventDetailPanelProps) {
       </div>
 
       {/* Description */}
-      <p className="text-slate-300 text-sm mt-3 leading-relaxed">{event.description}</p>
+      <p className="text-navy-600 text-sm mt-3 leading-relaxed">{event.description}</p>
 
       {/* Escalation & Impact */}
-      <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/10">
+      <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[var(--color-app-border)]">
         <div className="flex items-center gap-1.5">
           <EscalationIcon className={`w-4 h-4 ${escalationColor}`} />
           <span className={`text-xs ${escalationColor}`}>
@@ -258,12 +269,12 @@ function EventDetailPanel({ event, onClose }: EventDetailPanelProps) {
               : 'Neutral'}
           </span>
         </div>
-        <div className="text-xs text-slate-400">
-          Impact: <span className="text-slate-200 capitalize">{event.impact}</span>
+        <div className="text-xs text-navy-400">
+          Impact: <span className="text-navy-700 capitalize">{event.impact}</span>
         </div>
         {glaslStage !== undefined && (
-          <div className="text-xs text-slate-400">
-            <span className="text-slate-200">{GLASL_STAGE_LABELS[glaslStage]}</span>
+          <div className={`text-xs ${glaslTextColor}`}>
+            <span>{GLASL_STAGE_LABELS[glaslStage]}</span>
           </div>
         )}
       </div>
@@ -271,10 +282,10 @@ function EventDetailPanel({ event, onClose }: EventDetailPanelProps) {
       {/* Actors */}
       {actorIds.length > 0 && (
         <div className="mt-3">
-          <p className="text-xs text-slate-500 mb-1.5">Involved actors</p>
+          <p className="text-xs text-navy-400 mb-1.5">Involved actors</p>
           <div className="flex flex-wrap gap-1">
             {actorIds.map((aid) => (
-              <span key={aid} className="text-xs bg-white/5 border border-white/10 rounded px-2 py-0.5 text-slate-300">
+              <span key={aid} className="text-xs bg-navy-50 border border-[var(--color-app-border)] rounded px-2 py-0.5 text-navy-600">
                 {aid}
               </span>
             ))}
@@ -285,11 +296,11 @@ function EventDetailPanel({ event, onClose }: EventDetailPanelProps) {
       {/* Sources */}
       {sources.length > 0 && (
         <div className="mt-3">
-          <p className="text-xs text-slate-500 mb-1.5">Sources</p>
+          <p className="text-xs text-navy-400 mb-1.5">Sources</p>
           <ul className="space-y-1">
             {sources.slice(0, 3).map((src, i) => (
-              <li key={i} className="text-xs text-slate-400 flex items-start gap-1.5">
-                <span className="text-slate-600 mt-0.5">▪</span>
+              <li key={i} className="text-xs text-navy-500 flex items-start gap-1.5">
+                <span className="text-navy-300 mt-0.5">▪</span>
                 <span>{src}</span>
               </li>
             ))}
@@ -306,11 +317,12 @@ function EventDetailPanel({ event, onClose }: EventDetailPanelProps) {
 
 function GlaslBand({ stage }: { stage: number }) {
   const colorClass = GLASL_STAGE_COLORS[stage] || GLASL_STAGE_COLORS[5];
+  const textClass = GLASL_STAGE_TEXT[stage] || 'text-navy-600';
   const label = GLASL_STAGE_LABELS[stage];
   return (
     <div className={`rounded-lg border px-3 py-1 flex items-center gap-2 ${colorClass}`}>
-      <span className="text-xs font-mono text-white/60">S{stage}</span>
-      <span className="text-xs text-white/80">{label}</span>
+      <span className={`text-xs font-mono ${textClass} opacity-70`}>S{stage}</span>
+      <span className={`text-xs ${textClass}`}>{label}</span>
     </div>
   );
 }
@@ -399,9 +411,9 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-gold-400" />
-          <h3 className="text-white font-semibold">Conflict Timeline</h3>
-          <Badge className="bg-white/5 text-slate-400 text-xs border border-white/10">
+          <Calendar className="w-5 h-5 text-gold-600" />
+          <h3 className="text-navy-900 font-semibold">Conflict Timeline</h3>
+          <Badge className="bg-navy-50 text-navy-500 text-xs border border-[var(--color-app-border)]">
             {sortedEvents.length} events
           </Badge>
         </div>
@@ -410,7 +422,7 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
             variant="ghost"
             size="sm"
             onClick={() => setShowGlaslLegend(!showGlaslLegend)}
-            className="text-slate-400 hover:text-white text-xs"
+            className="text-navy-400 hover:text-navy-700 text-xs"
           >
             Glasl Scale
           </Button>
@@ -418,12 +430,12 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
             variant="ghost"
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
-            className="text-slate-400 hover:text-white"
+            className="text-navy-400 hover:text-navy-700"
           >
             <Filter className="w-4 h-4 mr-1" />
             Filters
             {(typeFilter !== 'all' || escalationFilter !== 'all') && (
-              <span className="ml-1 w-2 h-2 bg-gold-400 rounded-full" />
+              <span className="ml-1 w-2 h-2 bg-gold-500 rounded-full" />
             )}
           </Button>
         </div>
@@ -438,8 +450,8 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="grid grid-cols-3 gap-2 p-3 bg-white/3 rounded-lg border border-white/10">
-              <p className="col-span-3 text-xs text-slate-400 mb-1">Glasl Model of Conflict Escalation</p>
+            <div className="grid grid-cols-3 gap-2 p-3 bg-[var(--color-app-surface-alt)] rounded-lg border border-[var(--color-app-border)]">
+              <p className="col-span-3 text-xs text-navy-400 mb-1">Glasl Model of Conflict Escalation</p>
               {Object.entries(GLASL_STAGE_LABELS).map(([stage, label]) => (
                 <GlaslBand key={stage} stage={parseInt(stage)} />
               ))}
@@ -457,9 +469,9 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="flex flex-wrap gap-2 p-3 bg-white/3 rounded-lg border border-white/10">
+            <div className="flex flex-wrap gap-2 p-3 bg-[var(--color-app-surface-alt)] rounded-lg border border-[var(--color-app-border)]">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-slate-400">Type:</span>
+                <span className="text-xs text-navy-400">Type:</span>
                 {(['all', 'political', 'military', 'diplomatic', 'humanitarian', 'economic'] as EventType[]).map((t) => (
                   <button
                     key={t}
@@ -467,7 +479,7 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
                     className={`text-xs px-2 py-0.5 rounded transition-colors ${
                       typeFilter === t
                         ? 'bg-gold-500 text-navy-900 font-medium'
-                        : 'text-slate-400 hover:text-white'
+                        : 'text-navy-500 hover:text-navy-900'
                     }`}
                   >
                     {t === 'all' ? 'All' : t.charAt(0).toUpperCase() + t.slice(1)}
@@ -475,7 +487,7 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
                 ))}
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-slate-400">Trend:</span>
+                <span className="text-xs text-navy-400">Trend:</span>
                 {(['all', 'escalatory', 'de_escalatory', 'neutral'] as EscalationFilter[]).map((f) => (
                   <button
                     key={f}
@@ -483,7 +495,7 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
                     className={`text-xs px-2 py-0.5 rounded transition-colors ${
                       escalationFilter === f
                         ? 'bg-gold-500 text-navy-900 font-medium'
-                        : 'text-slate-400 hover:text-white'
+                        : 'text-navy-500 hover:text-navy-900'
                     }`}
                   >
                     {f === 'all' ? 'All' : f === 'escalatory' ? '↑ Escalating' : f === 'de_escalatory' ? '↓ De-escalating' : 'Neutral'}
@@ -493,7 +505,7 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
               {(typeFilter !== 'all' || escalationFilter !== 'all') && (
                 <button
                   onClick={() => { setTypeFilter('all'); setEscalationFilter('all'); }}
-                  className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
+                  className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
                 >
                   <X className="w-3 h-3" /> Clear filters
                 </button>
@@ -505,8 +517,8 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
 
       {/* Escalation Trajectory Sparkline */}
       {trajectoryData.length > 1 && (
-        <div className="bg-white/3 rounded-lg border border-white/10 p-3">
-          <p className="text-xs text-slate-500 mb-2">Glasl Escalation Trajectory</p>
+        <div className="bg-[var(--color-app-surface-alt)] rounded-lg border border-[var(--color-app-border)] p-3">
+          <p className="text-xs text-navy-400 mb-2">Glasl Escalation Trajectory</p>
           <div className="relative h-16 flex items-end gap-1">
             {trajectoryData.map((d, i) => {
               const heightPct = (d.stage / 9) * 100;
@@ -515,7 +527,7 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
                 <div
                   key={d.id}
                   className={`flex-1 min-w-0 rounded-t transition-all duration-200 cursor-pointer hover:opacity-80 ${color} ${
-                    selectedEventId === d.id ? 'ring-1 ring-white' : ''
+                    selectedEventId === d.id ? 'ring-1 ring-navy-700' : ''
                   }`}
                   style={{ height: `${heightPct}%` }}
                   onClick={() => handleEventClick(d.id)}
@@ -525,8 +537,8 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
             })}
           </div>
           <div className="flex justify-between mt-1">
-            <span className="text-xs text-slate-600">Stage 1</span>
-            <span className="text-xs text-slate-600">Stage 9</span>
+            <span className="text-xs text-navy-300">Stage 1</span>
+            <span className="text-xs text-navy-300">Stage 9</span>
           </div>
         </div>
       )}
@@ -534,7 +546,7 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
       {/* Timeline */}
       <div className="relative">
         {/* Central spine line */}
-        <div className="absolute left-[3.5rem] top-0 bottom-0 w-px bg-white/10" />
+        <div className="absolute left-[3.5rem] top-0 bottom-0 w-px bg-[var(--color-app-border)]" />
 
         <div className="space-y-0">
           {years.map((year) => (
@@ -542,12 +554,12 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
               {/* Year marker */}
               <div className="flex items-center gap-3 mb-3 mt-4 first:mt-0">
                 <div className="w-14 text-right">
-                  <span className="text-xs font-semibold text-gold-400">{year}</span>
+                  <span className="text-xs font-semibold text-gold-600">{year}</span>
                 </div>
                 <div className="w-4 flex justify-center">
-                  <div className="w-3 h-3 rounded-full bg-gold-500/60 border border-gold-400/40" />
+                  <div className="w-3 h-3 rounded-full bg-gold-400/80 border border-gold-500/60" />
                 </div>
-                <div className="h-px flex-1 bg-white/10" />
+                <div className="h-px flex-1 bg-[var(--color-app-border)]" />
               </div>
 
               {/* Events in this year */}
@@ -558,14 +570,14 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
                   const bgColor = glaslStage ? GLASL_STAGE_COLORS[glaslStage] : '';
                   const EscIcon = getEscalationIcon(evt.escalatoryDirection);
                   const escColor = getEscalationColor(evt.escalatoryDirection);
-                  const textColor = EVENT_TYPE_TEXT[evt.type] || 'text-slate-400';
+                  const textColor = EVENT_TYPE_TEXT[evt.type] || 'text-navy-500';
 
                   return (
                     <div key={evt.id}>
                       <div className="flex items-start gap-3">
                         {/* Date */}
                         <div className="w-14 text-right pt-0.5 shrink-0">
-                          <span className="text-xs text-slate-500 tabular-nums">
+                          <span className="text-xs text-navy-400 tabular-nums">
                             {evt.date.slice(5, 10)}
                           </span>
                         </div>
@@ -582,27 +594,27 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
                         {/* Content */}
                         <div
                           className={`flex-1 cursor-pointer rounded-lg transition-colors ${
-                            isSelected ? 'bg-white/5' : 'hover:bg-white/3'
+                            isSelected ? 'bg-navy-50' : 'hover:bg-[var(--color-app-surface-alt)]'
                           } p-2`}
                           onClick={() => handleEventClick(evt.id)}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm text-slate-200 leading-snug">
+                              <p className="text-sm text-navy-800 leading-snug">
                                 {getEventTitle(evt)}
                               </p>
                               {!compact && (
                                 <div className="flex items-center gap-2 mt-1">
                                   <span className={`text-xs ${textColor} capitalize`}>{evt.type}</span>
                                   {glaslStage !== undefined && (
-                                    <span className="text-xs text-slate-500">S{glaslStage}</span>
+                                    <span className="text-xs text-navy-400">S{glaslStage}</span>
                                   )}
                                 </div>
                               )}
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
                               <EscIcon className={`w-3.5 h-3.5 ${escColor}`} />
-                              <button className="text-slate-600 hover:text-slate-400">
+                              <button className="text-navy-300 hover:text-navy-500">
                                 {isSelected ? (
                                   <ChevronUp className="w-3.5 h-3.5" />
                                 ) : (
@@ -636,23 +648,23 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
 
       {/* Empty state */}
       {sortedEvents.length === 0 && (
-        <div className="text-center py-12 text-slate-500">
+        <div className="text-center py-12 text-navy-400">
           <Calendar className="w-8 h-8 mx-auto mb-2 opacity-40" />
           <p className="text-sm">No events match the current filters</p>
         </div>
       )}
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-3 pt-3 border-t border-white/10">
+      <div className="flex flex-wrap gap-3 pt-3 border-t border-[var(--color-app-border)]">
         {Object.entries(EVENT_TYPE_COLORS).map(([type, colorClass]) => (
           <div key={type} className="flex items-center gap-1.5">
             <div className={`w-3 h-3 rounded-full border ${colorClass}`} />
-            <span className="text-xs text-slate-400 capitalize">{type}</span>
+            <span className="text-xs text-navy-400 capitalize">{type}</span>
           </div>
         ))}
-        <div className="flex items-center gap-1.5 ml-2 border-l border-white/10 pl-2">
-          <div className="w-3 h-3 rounded-full bg-white border border-white/40" />
-          <span className="text-xs text-slate-400">Critical event</span>
+        <div className="flex items-center gap-1.5 ml-2 border-l border-[var(--color-app-border)] pl-2">
+          <div className="w-3 h-3 rounded-full bg-red-500 border border-red-400" />
+          <span className="text-xs text-navy-400">Critical event</span>
         </div>
       </div>
     </div>
