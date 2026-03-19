@@ -102,7 +102,7 @@ export function Footer() {
             Built on
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-            {["Google Gemini", "Vercel", "Next.js", "Neo4j"].map((name) => (
+            {["Gemini AI", "Vercel", "Neo4j"].map((name) => (
               <span
                 key={name}
                 className="text-xs font-semibold uppercase tracking-wider text-navy-300/60"
@@ -120,7 +120,7 @@ export function Footer() {
               2026 TACITUS. All rights reserved. Built in New York.
             </p>
             <p className="text-xs text-navy-400/70">
-              Built by a former UN Political Affairs Officer.
+              Built by a former UN Political Affairs Officer with 8 years on the Syria desk.
             </p>
           </div>
 
