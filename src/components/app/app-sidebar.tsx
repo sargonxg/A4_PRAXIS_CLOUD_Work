@@ -30,6 +30,7 @@ import {
   BarChart3,
   UserCircle,
   UsersRound,
+  Presentation,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -67,6 +68,7 @@ const navSections: NavSection[] = [
       { label: 'Scenario Planner', icon: GitCompare, href: '/scenarios', badge: 'NEW' },
       { label: 'Negotiation Prep', icon: Scale, href: '/negotiation-prep', badge: 'NEW' },
       { label: 'CONCORDIA Mediation', icon: Scale, href: '/concordia', badge: 'TACITUS' },
+      { label: 'Briefing Room', icon: Presentation, href: '/briefing', badge: 'NEW' },
     ],
   },
   {

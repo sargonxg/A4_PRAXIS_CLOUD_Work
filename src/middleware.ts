@@ -28,6 +28,7 @@ const PROTECTED_PATHS = [
   '/risk-monitor',
   '/actors',
   '/team',
+  '/briefing',
 ];
 
 export function middleware(request: NextRequest) {
@@ -78,5 +79,6 @@ export const config = {
     '/risk-monitor/:path*',
     '/actors/:path*',
     '/team/:path*',
+    '/briefing/:path*',
   ],
 };
