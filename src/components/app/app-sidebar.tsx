@@ -28,6 +28,8 @@ import {
   BookMarked,
   FileCheck,
   BarChart3,
+  UserCircle,
+  UsersRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -52,6 +54,7 @@ const navSections: NavSection[] = [
       { label: 'Risk Monitor', icon: BarChart3, href: '/risk-monitor', badge: '8' },
       { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
       { label: 'Stakeholder Map', icon: Users, href: '/stakeholder-map' },
+      { label: 'Actor Profiles', icon: UserCircle, href: '/actors' },
     ],
   },
   {
@@ -82,6 +85,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Documents', icon: FolderOpen, href: '/documents' },
       { label: 'Case Library', icon: BookOpen, href: '/cases', badge: 'NEW' },
+      { label: 'Team Hub', icon: UsersRound, href: '/team' },
     ],
   },
 ];
