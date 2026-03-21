@@ -12,6 +12,7 @@ import {
   Presentation,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { PoweredByTacitus } from '@/components/shared/powered-by-tacitus';
 import { CASE_REGISTRY } from '@/lib/constants/case-registry';
 import { DEMO_MORNING_BRIEF, type BriefingSlide } from '@/lib/constants/briefing-data';
 
@@ -225,6 +226,7 @@ export default function BriefingPage() {
             )}
           </button>
         </div>
+        <PoweredByTacitus />
       </div>
     );
   }
@@ -328,6 +330,7 @@ export default function BriefingPage() {
       <div className="absolute bottom-14 left-4 text-navy-200 text-[10px]">
         PRAXIS Intelligence Platform
       </div>
+      <PoweredByTacitus />
     </div>
   );
 }

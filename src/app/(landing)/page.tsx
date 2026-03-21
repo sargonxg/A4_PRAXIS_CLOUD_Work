@@ -14,6 +14,7 @@ import { Testimonials } from "@/components/landing/testimonials";
 import { Marketplace } from "@/components/landing/marketplace";
 import { WaitlistForm } from "@/components/landing/waitlist-form";
 import { Cta } from "@/components/landing/cta";
+import { EcosystemSection } from "@/components/landing/ecosystem-section";
 import { Footer } from "@/components/landing/footer";
 
 export default function LandingPage() {
@@ -32,6 +33,7 @@ export default function LandingPage() {
       <SecuritySection />
       <Pricing />
       <Testimonials />
+      <EcosystemSection />
       <Marketplace />
       <WaitlistForm />
       <Cta />

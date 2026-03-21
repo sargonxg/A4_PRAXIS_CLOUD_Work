@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { EcosystemBadge } from '@/components/shared/ecosystem-badge';
+import { PoweredByTacitus } from '@/components/shared/powered-by-tacitus';
 import {
   DEMO_AGREEMENTS,
   NORDALIA_CEASEFIRE_CLAUSES,
@@ -580,6 +581,7 @@ export default function TreatyAnalyzerPage() {
           </span>
         </div>
       </div>
+      <PoweredByTacitus />
     </div>
   );
 }
