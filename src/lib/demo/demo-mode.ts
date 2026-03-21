@@ -76,6 +76,21 @@ export function hashInput(input: object): string {
     return 'morning_brief';
   }
 
+  // Check for ARGUS / knowledge graph queries
+  if (matchesPattern(str, ['argus', 'knowledge graph', 'commitment chain', 'entity', 'graph query'])) {
+    return 'argus_query';
+  }
+
+  // Check for CONCORDIA / mediation queries
+  if (matchesPattern(str, ['concordia', 'mediation recommend', 'mediation round', 'mediation package'])) {
+    return 'concordia_query';
+  }
+
+  // Check for Wind Tunnel / scenario simulation queries
+  if (matchesPattern(str, ['wind tunnel', 'psychographic', 'tribe', 'civisphere'])) {
+    return 'windtunnel_query';
+  }
+
   // No match
   return '';
 }

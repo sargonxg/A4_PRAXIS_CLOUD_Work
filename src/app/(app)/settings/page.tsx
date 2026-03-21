@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   User,
   Building2,
@@ -92,6 +93,80 @@ function Code({ children }: { children: React.ReactNode }) {
     <code className="rounded bg-navy-100 px-1.5 py-0.5 font-mono text-[10px] text-diplomatic-blue">
       {children}
     </code>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+ * ACO Primitives section (extracted for useState)
+ * -------------------------------------------------------------------------*/
+
+const ACO_PRIMITIVES = [
+  { name: 'Actor', description: 'Parties to the conflict', color: 'bg-blue-500', toggleColor: 'peer-checked:bg-blue-500' },
+  { name: 'Claim', description: 'Formal positions and demands', color: 'bg-purple-500', toggleColor: 'peer-checked:bg-purple-500' },
+  { name: 'Interest', description: 'Underlying needs and motivations', color: 'bg-teal-500', toggleColor: 'peer-checked:bg-teal-500' },
+  { name: 'Constraint', description: 'Limiting factors and boundaries', color: 'bg-red-500', toggleColor: 'peer-checked:bg-red-500' },
+  { name: 'Leverage', description: 'Sources of influence and power', color: 'bg-amber-500', toggleColor: 'peer-checked:bg-amber-500' },
+  { name: 'Commitment', description: 'Agreements and promises made', color: 'bg-green-500', toggleColor: 'peer-checked:bg-green-500' },
+  { name: 'Event', description: 'Key occurrences and incidents', color: 'bg-orange-500', toggleColor: 'peer-checked:bg-orange-500' },
+  { name: 'Narrative', description: 'Framing and storytelling patterns', color: 'bg-pink-500', toggleColor: 'peer-checked:bg-pink-500' },
+];
+
+function EcosystemACOSection() {
+  const [enabled, setEnabled] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(ACO_PRIMITIVES.map((p) => [p.name, true]))
+  );
+
+  return (
+    <SettingsSection
+      icon={GitBranch}
+      title="Conflict Grammar Configuration"
+      description="Agentic Conflict Ontology (ACO) primitives for structured analysis"
+    >
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {ACO_PRIMITIVES.map((prim) => (
+          <div
+            key={prim.name}
+            className="rounded-lg border border-[var(--color-app-border)] bg-white p-3"
+          >
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className={cn('h-3 w-3 rounded-full', prim.color)} />
+              <p className="text-xs font-bold text-navy-900">{prim.name}</p>
+            </div>
+            <p className="text-[10px] text-navy-500 leading-snug mb-2">{prim.description}</p>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <div
+                className="relative h-4 w-7 rounded-full transition-colors"
+                style={{ backgroundColor: enabled[prim.name] ? undefined : '#cbd5e1' }}
+              >
+                <input
+                  type="checkbox"
+                  checked={enabled[prim.name]}
+                  onChange={() => setEnabled((prev) => ({ ...prev, [prim.name]: !prev[prim.name] }))}
+                  className="peer sr-only"
+                />
+                <div
+                  className={cn(
+                    'absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all shadow-sm',
+                    enabled[prim.name] ? 'left-3.5' : 'left-0.5'
+                  )}
+                />
+                <div
+                  className={cn(
+                    'absolute inset-0 rounded-full transition-colors',
+                    enabled[prim.name] ? prim.color + '/80' : 'bg-navy-200'
+                  )}
+                  style={{ zIndex: -1 }}
+                />
+              </div>
+              <span className="text-[10px] text-navy-400">Analyze</span>
+            </label>
+          </div>
+        ))}
+      </div>
+      <p className="mt-4 text-[11px] text-navy-500">
+        The Agentic Conflict Ontology (ACO) v2.0 powers all TACITUS products. Disabling a primitive in demo mode hides it from analysis views.
+      </p>
+    </SettingsSection>
   );
 }
 
@@ -439,6 +514,81 @@ export default function SettingsPage() {
           </div>
         </div>
       </SettingsSection>
+
+      {/* ── TACITUS Ecosystem Connections ──────────────────────────── */}
+      <SettingsSection
+        icon={Layers}
+        title="TACITUS Ecosystem Connections"
+        description="Connected products in the TACITUS intelligence platform"
+      >
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            {
+              name: 'ARGUS',
+              description: 'Graph-Augmented RAG Intelligence',
+              status: 'Demo Mode' as const,
+              endpoint: 'argus.tacitus.me/api/v1',
+              stats: '847 entities | 12,400 relationships | Last sync: 5 min ago',
+            },
+            {
+              name: 'CONCORDIA',
+              description: 'AI Mediation Platform',
+              status: 'Demo Mode' as const,
+              endpoint: 'concordia.tacitus.me/api/v1',
+              stats: '14 frameworks | 3 active sessions',
+            },
+            {
+              name: 'WIND TUNNEL',
+              description: 'Scenario Simulation Engine',
+              status: 'Demo Mode' as const,
+              endpoint: 'windtunnel.tacitus.me/api/v1',
+              stats: '27 tribes | CiviSphere v2.0',
+            },
+            {
+              name: 'CONFLICT COMPASS',
+              description: 'Conflict Assessment Tool',
+              status: 'Demo Mode' as const,
+              endpoint: 'conflictcompass.tacitus.me/api/v1',
+              stats: '4 active assessments',
+            },
+            {
+              name: 'DIALECTICA',
+              description: 'Ontology Backend (Core)',
+              status: 'Infrastructure' as const,
+              endpoint: 'internal',
+              stats: 'ACO v2.0 | 8 primitives | 41 classes | 29 properties',
+            },
+          ].map((product) => (
+            <div key={product.name} className="rounded-lg border border-[var(--color-app-border)] bg-white p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-bold text-navy-900">{product.name}</p>
+                <span
+                  className={cn(
+                    'rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                    product.status === 'Infrastructure'
+                      ? 'bg-teal/10 text-teal'
+                      : 'bg-gold-500/10 text-gold-700'
+                  )}
+                >
+                  {product.status}
+                </span>
+              </div>
+              <p className="text-[11px] text-navy-500 mb-2">{product.description}</p>
+              <p className="font-mono text-[10px] text-diplomatic-blue mb-2">{product.endpoint}</p>
+              <p className="text-[10px] text-navy-400">{product.stats}</p>
+              <div className="mt-3 flex items-center gap-2" title="Available in production">
+                <div className="relative h-4 w-7 rounded-full bg-navy-200 cursor-not-allowed">
+                  <div className="absolute left-0.5 top-0.5 h-3 w-3 rounded-full bg-navy-400 transition-all" />
+                </div>
+                <span className="text-[10px] text-navy-400">Enable Live Connection</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </SettingsSection>
+
+      {/* ── Conflict Grammar Configuration ─────────────────────────── */}
+      <EcosystemACOSection />
 
       {/* ── Appearance ────────────────────────────────────────────── */}
       <SettingsSection
