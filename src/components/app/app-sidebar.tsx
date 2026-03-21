@@ -25,6 +25,9 @@ import {
   BookOpen,
   Scale,
   Network,
+  BookMarked,
+  FileCheck,
+  BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -46,6 +49,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
       { label: 'Early Warning', icon: AlertTriangle, href: '/early-warning', badge: '3' },
+      { label: 'Risk Monitor', icon: BarChart3, href: '/risk-monitor', badge: '8' },
       { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
       { label: 'Stakeholder Map', icon: Users, href: '/stakeholder-map' },
     ],
@@ -55,6 +59,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'PRAXIS Assistant', icon: MessageSquare, href: '/assistant' },
       { label: 'Report Studio', icon: FileText, href: '/reports' },
+      { label: 'Dossier Generator', icon: BookMarked, href: '/dossier', badge: 'NEW' },
       { label: 'Talking Points', icon: MessageCircle, href: '/talking-points' },
       { label: 'Scenario Planner', icon: GitCompare, href: '/scenarios', badge: 'NEW' },
       { label: 'Negotiation Prep', icon: Scale, href: '/negotiation-prep', badge: 'NEW' },
@@ -66,6 +71,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'ARGUS Intelligence', icon: Network, href: '/argus', badge: 'TACITUS' },
       { label: 'Media Compass', icon: Compass, href: '/media-compass' },
+      { label: 'Treaty Analyzer', icon: FileCheck, href: '/treaty-analyzer', badge: 'NEW' },
       { label: 'Sanctions Tracker', icon: Shield, href: '/sanctions' },
       { label: 'Calendar Monitor', icon: Calendar, href: '/calendar' },
       { label: 'UN Toolkit', icon: Building2, href: '/un-toolkit' },

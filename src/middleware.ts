@@ -23,6 +23,9 @@ const PROTECTED_PATHS = [
   '/cases',
   '/argus',
   '/concordia',
+  '/dossier',
+  '/treaty-analyzer',
+  '/risk-monitor',
 ];
 
 export function middleware(request: NextRequest) {
@@ -68,5 +71,8 @@ export const config = {
     '/cases/:path*',
     '/argus/:path*',
     '/concordia/:path*',
+    '/dossier/:path*',
+    '/treaty-analyzer/:path*',
+    '/risk-monitor/:path*',
   ],
 };
