@@ -26,6 +26,8 @@ const PROTECTED_PATHS = [
   '/dossier',
   '/treaty-analyzer',
   '/risk-monitor',
+  '/actors',
+  '/team',
 ];
 
 export function middleware(request: NextRequest) {
@@ -74,5 +76,7 @@ export const config = {
     '/dossier/:path*',
     '/treaty-analyzer/:path*',
     '/risk-monitor/:path*',
+    '/actors/:path*',
+    '/team/:path*',
   ],
 };
