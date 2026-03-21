@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { GitCompare, Play, Save, Loader2, Sparkles, X, ChevronDown, Plus, Trash2 } from 'lucide-react';
+import { GitCompare, Play, Save, Loader2, Sparkles, X, ChevronDown, Plus, Trash2, Wind, SlidersHorizontal, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
+import { EcosystemBadge } from '@/components/shared/ecosystem-badge';
 import { useConflictList } from '@/hooks/use-conflict-data';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
+import { SCENARIO_PRESETS, type ScenarioPreset } from '@/lib/constants/scenario-configs';
 
 const TIME_HORIZONS = ['30 days', '90 days', '6 months', '1 year'];
 
@@ -40,6 +42,8 @@ export default function ScenariosPage() {
   const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>([]);
   const [compareIdx, setCompareIdx] = useState<number | null>(null);
   const analysisRef = useRef<HTMLDivElement>(null);
+  const [builderParams, setBuilderParams] = useState(SCENARIO_PRESETS[0].params);
+  const [activePreset, setActivePreset] = useState<string | null>(SCENARIO_PRESETS[0].id);
 
   const demoCases = cases ?? [];
   const selectedCase = demoCases.find((c) => c.id === conflictId) ?? demoCases[0];
@@ -101,6 +105,28 @@ export default function ScenariosPage() {
     setSavedScenarios((prev) => [scenario, ...prev]);
   };
 
+  const updateParam = <K extends keyof ScenarioPreset['params']>(key: K, value: ScenarioPreset['params'][K]) => {
+    const next = { ...builderParams, [key]: value };
+    setBuilderParams(next);
+    const match = SCENARIO_PRESETS.find(
+      (p) =>
+        p.params.ceasefireCompliance === next.ceasefireCompliance &&
+        p.params.externalIntervention === next.externalIntervention &&
+        p.params.economicPressure === next.economicPressure &&
+        p.params.humanitarianAccess === next.humanitarianAccess &&
+        p.params.mediaEnvironment === next.mediaEnvironment &&
+        p.params.timelineHorizon === next.timelineHorizon
+    );
+    setActivePreset(match?.id ?? null);
+  };
+
+  const applyPreset = (preset: ScenarioPreset) => {
+    setBuilderParams({ ...preset.params });
+    setActivePreset(preset.id);
+  };
+
+  const activePresetData = SCENARIO_PRESETS.find((p) => p.id === activePreset);
+
   const EXAMPLE_TRIGGERS = [
     'DRM withdraws from the Framework Agreement',
     'Karovia increases military support to DRM',
@@ -141,6 +167,226 @@ export default function ScenariosPage() {
 
   return (
     <div className="space-y-6">
+      {/* Scenario Builder */}
+      <div className="rounded-xl border border-[var(--color-app-border)] bg-white">
+        <div className="flex items-center gap-3 border-b border-[var(--color-app-border)] px-5 py-4">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10">
+            <SlidersHorizontal className="h-4 w-4 text-amber-600" />
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold text-navy-900">Scenario Builder</h2>
+            <p className="text-[11px] text-navy-500">Adjust parameters to model conflict trajectories</p>
+          </div>
+        </div>
+
+        <div className="grid gap-6 p-5 lg:grid-cols-2">
+          {/* Left: Parameters */}
+          <div className="space-y-4">
+            {/* Ceasefire Compliance Slider */}
+            <div>
+              <label className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">
+                <span>Ceasefire Compliance</span>
+                <span className="text-[11px] font-bold text-navy-700 normal-case tracking-normal">{builderParams.ceasefireCompliance}%</span>
+              </label>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={builderParams.ceasefireCompliance}
+                onChange={(e) => updateParam('ceasefireCompliance', Number(e.target.value))}
+                className="w-full accent-diplomatic-blue"
+              />
+              <div className="mt-1 flex justify-between text-[9px] text-navy-300">
+                <span>Non-compliant</span>
+                <span>Full compliance</span>
+              </div>
+            </div>
+
+            {/* External Intervention Select */}
+            <div>
+              <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">External Intervention</label>
+              <div className="relative">
+                <select
+                  value={builderParams.externalIntervention}
+                  onChange={(e) => updateParam('externalIntervention', e.target.value as ScenarioPreset['params']['externalIntervention'])}
+                  className="w-full appearance-none rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-2 text-sm text-navy-900 focus:border-diplomatic-blue/30 focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/10"
+                >
+                  <option value="none">None</option>
+                  <option value="diplomatic">Diplomatic</option>
+                  <option value="military">Military</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Economic Pressure Select */}
+            <div>
+              <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">Economic Pressure</label>
+              <div className="relative">
+                <select
+                  value={builderParams.economicPressure}
+                  onChange={(e) => updateParam('economicPressure', e.target.value as ScenarioPreset['params']['economicPressure'])}
+                  className="w-full appearance-none rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-2 text-sm text-navy-900 focus:border-diplomatic-blue/30 focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/10"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="sanctions">Sanctions</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Humanitarian Access Select */}
+            <div>
+              <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">Humanitarian Access</label>
+              <div className="relative">
+                <select
+                  value={builderParams.humanitarianAccess}
+                  onChange={(e) => updateParam('humanitarianAccess', e.target.value as ScenarioPreset['params']['humanitarianAccess'])}
+                  className="w-full appearance-none rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-2 text-sm text-navy-900 focus:border-diplomatic-blue/30 focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/10"
+                >
+                  <option value="full">Full</option>
+                  <option value="partial">Partial</option>
+                  <option value="blocked">Blocked</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Media Environment Select */}
+            <div>
+              <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">Media Environment</label>
+              <div className="relative">
+                <select
+                  value={builderParams.mediaEnvironment}
+                  onChange={(e) => updateParam('mediaEnvironment', e.target.value as ScenarioPreset['params']['mediaEnvironment'])}
+                  className="w-full appearance-none rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-2 text-sm text-navy-900 focus:border-diplomatic-blue/30 focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/10"
+                >
+                  <option value="open">Open</option>
+                  <option value="restricted">Restricted</option>
+                  <option value="shutdown">Shutdown</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Timeline Horizon Pills */}
+            <div>
+              <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">Timeline Horizon</label>
+              <div className="flex gap-2">
+                {([30, 60, 90, 180] as const).map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => updateParam('timelineHorizon', d)}
+                    className={cn(
+                      'flex-1 rounded-lg border py-2 text-[11px] font-medium transition-all',
+                      builderParams.timelineHorizon === d
+                        ? 'bg-navy-900 text-white border-navy-900'
+                        : 'border-[var(--color-app-border)] text-navy-600 bg-white hover:bg-[var(--color-app-surface-alt)]'
+                    )}
+                  >
+                    {d}d
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Preset Scenarios */}
+            <div>
+              <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">Preset Scenarios</label>
+              <div className="grid grid-cols-2 gap-2">
+                {SCENARIO_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    onClick={() => applyPreset(preset)}
+                    className={cn(
+                      'rounded-lg border p-2.5 text-left transition-all',
+                      activePreset === preset.id
+                        ? 'border-diplomatic-blue/40 bg-diplomatic-blue/5 ring-1 ring-diplomatic-blue/20'
+                        : 'border-[var(--color-app-border)] hover:bg-[var(--color-app-surface-alt)]'
+                    )}
+                  >
+                    <p className="text-[11px] font-semibold text-navy-800">{preset.name}</p>
+                    <p className="mt-0.5 text-[10px] text-navy-500 leading-snug">{preset.description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Wind Tunnel CTA */}
+            <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3">
+              <div className="flex items-start gap-2">
+                <Wind className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                <div>
+                  <p className="text-[11px] font-semibold text-navy-800">Run in Wind Tunnel</p>
+                  <p className="mt-0.5 text-[10px] text-navy-500 leading-snug">
+                    For psychographic impact analysis across 27 population tribes, run this scenario in Wind Tunnel.
+                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <a
+                      href="https://windtunnel.tacitus.me"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 rounded-md bg-amber-600 px-2.5 py-1 text-[10px] font-semibold text-white hover:bg-amber-700 transition-colors"
+                    >
+                      Open Wind Tunnel
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                    <EcosystemBadge product="WIND_TUNNEL" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Projected Outcomes */}
+          <div>
+            <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">Projected Outcomes</h3>
+            {activePresetData ? (
+              <div className="space-y-3">
+                {([
+                  { key: 'best' as const, label: 'Best Case', color: 'emerald', bgColor: 'bg-emerald-50', barColor: 'bg-emerald-500', textColor: 'text-emerald-700', badgeColor: 'bg-emerald-100 text-emerald-700' },
+                  { key: 'base' as const, label: 'Base Case', color: 'amber', bgColor: 'bg-amber-50', barColor: 'bg-amber-500', textColor: 'text-amber-700', badgeColor: 'bg-amber-100 text-amber-700' },
+                  { key: 'worst' as const, label: 'Worst Case', color: 'red', bgColor: 'bg-red-50', barColor: 'bg-red-500', textColor: 'text-red-700', badgeColor: 'bg-red-100 text-red-700' },
+                ]).map(({ key, label, bgColor, barColor, textColor, badgeColor }) => {
+                  const outcome = activePresetData.outcomes[key];
+                  return (
+                    <div key={key} className={cn('rounded-lg border border-[var(--color-app-border)] p-4', bgColor)}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={cn('text-[11px] font-semibold uppercase tracking-wide', textColor)}>{label}</span>
+                        <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold', badgeColor)}>
+                          {outcome.riskDelta > 0 ? '+' : ''}{outcome.riskDelta} risk
+                        </span>
+                      </div>
+                      <div className="mb-2 flex items-baseline gap-1">
+                        <span className={cn('text-3xl font-bold', textColor)}>{outcome.probability}</span>
+                        <span className={cn('text-sm font-medium', textColor)}>%</span>
+                      </div>
+                      <div className="mb-3 h-2 w-full rounded-full bg-white/60">
+                        <div
+                          className={cn('h-full rounded-full transition-all duration-500', barColor)}
+                          style={{ width: `${outcome.probability}%` }}
+                        />
+                      </div>
+                      <p className="text-[11px] text-navy-700 leading-relaxed">{outcome.summary}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex h-full min-h-[300px] flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-6 text-center">
+                <SlidersHorizontal className="h-8 w-8 text-navy-300 mb-3" />
+                <p className="text-sm font-semibold text-navy-700">Custom Scenario</p>
+                <p className="mt-1.5 text-[11px] text-navy-500 max-w-xs leading-relaxed">
+                  Adjust parameters and select a preset to see projected outcomes, or run in Wind Tunnel for custom analysis.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-steel/8">
