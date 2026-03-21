@@ -24,6 +24,7 @@ import {
   GitCompare,
   BookOpen,
   Scale,
+  Network,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -57,11 +58,13 @@ const navSections: NavSection[] = [
       { label: 'Talking Points', icon: MessageCircle, href: '/talking-points' },
       { label: 'Scenario Planner', icon: GitCompare, href: '/scenarios', badge: 'NEW' },
       { label: 'Negotiation Prep', icon: Scale, href: '/negotiation-prep', badge: 'NEW' },
+      { label: 'CONCORDIA Mediation', icon: Scale, href: '/concordia', badge: 'TACITUS' },
     ],
   },
   {
     label: 'Intelligence Tools',
     items: [
+      { label: 'ARGUS Intelligence', icon: Network, href: '/argus', badge: 'TACITUS' },
       { label: 'Media Compass', icon: Compass, href: '/media-compass' },
       { label: 'Sanctions Tracker', icon: Shield, href: '/sanctions' },
       { label: 'Calendar Monitor', icon: Calendar, href: '/calendar' },
@@ -196,7 +199,12 @@ export function AppSidebar() {
                   </AnimatePresence>
                   {/* Badge */}
                   {item.badge && sidebarOpen && (
-                    <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-crimson/10 px-1.5 text-[10px] font-bold text-crimson">
+                    <span className={cn(
+                      'ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold',
+                      item.badge === 'TACITUS'
+                        ? 'bg-emerald-500/10 text-emerald-600'
+                        : 'bg-crimson/10 text-crimson'
+                    )}>
                       {item.badge}
                     </span>
                   )}
@@ -210,7 +218,12 @@ export function AppSidebar() {
                     <TooltipContent side="right" className="font-medium">
                       {item.label}
                       {item.badge && (
-                        <span className="ml-2 rounded-full bg-crimson/10 px-1.5 py-0.5 text-[10px] text-crimson">
+                        <span className={cn(
+                          'ml-2 rounded-full px-1.5 py-0.5 text-[10px]',
+                          item.badge === 'TACITUS'
+                            ? 'bg-emerald-500/10 text-emerald-600'
+                            : 'bg-crimson/10 text-crimson'
+                        )}>
                           {item.badge}
                         </span>
                       )}
