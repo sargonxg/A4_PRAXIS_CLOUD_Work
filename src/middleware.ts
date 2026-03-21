@@ -21,6 +21,8 @@ const PROTECTED_PATHS = [
   '/negotiation-prep',
   '/compare',
   '/cases',
+  '/argus',
+  '/concordia',
 ];
 
 export function middleware(request: NextRequest) {
@@ -64,5 +66,7 @@ export const config = {
     '/negotiation-prep/:path*',
     '/compare/:path*',
     '/cases/:path*',
+    '/argus/:path*',
+    '/concordia/:path*',
   ],
 };
