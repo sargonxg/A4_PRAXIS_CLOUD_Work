@@ -14,13 +14,16 @@ import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const { setUser, sidebarOpen } = useAppStore();
+  const { setUser, sidebarOpen, setDemoMode } = useAppStore();
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
-    if (user) setUser(user);
-  }, [user, setUser]);
+    if (user) {
+      setUser(user);
+      if (user.isDemo) setDemoMode(true);
+    }
+  }, [user, setUser, setDemoMode]);
 
   const openSearch = useCallback(() => setSearchOpen(true), []);
   const closeSearch = useCallback(() => setSearchOpen(false), []);
