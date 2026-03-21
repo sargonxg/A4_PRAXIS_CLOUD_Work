@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { EcosystemBadge } from '@/components/shared/ecosystem-badge';
+import { PoweredByTacitus } from '@/components/shared/powered-by-tacitus';
 import { CASE_REGISTRY } from '@/lib/constants/case-registry';
 import {
   DOSSIER_TYPES,
@@ -534,6 +535,7 @@ export default function DossierPage() {
       {step === 'view' && config && (
         <ViewStep config={config} onReset={handleReset} />
       )}
+      <PoweredByTacitus />
     </div>
   );
 }

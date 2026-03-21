@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Risk Monitor',
+  title: 'Risk Monitor | PRAXIS by TACITUS',
   description: 'Risk heatmap and conflict forecasting across monitored regions.',
 };
 

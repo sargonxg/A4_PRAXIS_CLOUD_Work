@@ -5,6 +5,7 @@ import { Search, Upload, Network, FileText, GitCompare, ExternalLink } from 'luc
 import { cn } from '@/lib/utils/cn';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EcosystemBadge } from '@/components/shared/ecosystem-badge';
+import { PoweredByTacitus } from '@/components/shared/powered-by-tacitus';
 import {
   ARGUS_DEMO_QUERIES,
   ARGUS_DEMO_DOCUMENTS,
@@ -427,6 +428,7 @@ export default function ArgusPage() {
           Open ARGUS <ExternalLink className="h-3 w-3" />
         </a>
       </div>
+      <PoweredByTacitus />
     </div>
   );
 }

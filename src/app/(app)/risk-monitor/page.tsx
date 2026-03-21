@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { TrendingUp, TrendingDown, Minus, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { PoweredByTacitus } from '@/components/shared/powered-by-tacitus';
 import {
   MONITORED_REGIONS,
   RISK_TIMELINE_DATA,
@@ -326,6 +327,7 @@ export default function RiskMonitorPage() {
           <RegionDetail region={selectedRegion} />
         )}
       </section>
+      <PoweredByTacitus />
     </div>
   );
 }

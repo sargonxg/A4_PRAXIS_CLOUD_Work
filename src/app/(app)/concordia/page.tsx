@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { EcosystemBadge } from '@/components/shared/ecosystem-badge';
+import { PoweredByTacitus } from '@/components/shared/powered-by-tacitus';
 import { CASE_REGISTRY } from '@/lib/constants/case-registry';
 import {
   MEDIATION_FRAMEWORKS,
@@ -532,6 +533,7 @@ export default function ConcordiaPage() {
           Open CONCORDIA <ExternalLink className="h-3 w-3" />
         </a>
       </div>
+      <PoweredByTacitus />
     </div>
   );
 }
