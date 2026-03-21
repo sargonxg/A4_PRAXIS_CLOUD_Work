@@ -35,6 +35,8 @@ import {
   Layers,
   ExternalLink,
   Network,
+  Scale,
+  Wind,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -80,6 +82,8 @@ const QUICK_ACTIONS = [
   { label: 'Deep Research', description: 'Multi-source briefing research', href: '/assistant', icon: Globe, color: 'text-gold-600', bg: 'bg-gold-500/8', badge: 'New' },
   { label: 'Upload Sources', description: 'Ingest documents and cables', href: '/documents', icon: Upload, color: 'text-sage', bg: 'bg-sage/8' },
   { label: 'Media Scan', description: 'Analyze media landscape', href: '/media-compass', icon: Compass, color: 'text-navy-500', bg: 'bg-navy-100' },
+  { label: 'ARGUS Query', description: 'Search the conflict knowledge graph', href: '/argus', icon: Network, color: 'text-emerald-600', bg: 'bg-emerald-500/8' },
+  { label: 'Start Mediation', description: 'Launch CONCORDIA session', href: '/concordia', icon: Scale, color: 'text-violet-600', bg: 'bg-violet-500/8' },
 ];
 
 const STATUS_STYLES = {
@@ -560,6 +564,187 @@ function NewConflictModal({ open, onClose }: NewConflictModalProps) {
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TACITUS Intelligence Ecosystem Cards
+// ---------------------------------------------------------------------------
+
+const ECOSYSTEM_CARDS = [
+  {
+    icon: Network,
+    name: 'ARGUS',
+    tagline: 'Graph-Augmented RAG',
+    stats: '847 entities · 12,400 relationships',
+    status: 'Demo Mode' as const,
+    statusColor: 'bg-amber-500',
+    href: '/argus',
+    accent: 'emerald' as const,
+    external: false,
+  },
+  {
+    icon: Scale,
+    name: 'CONCORDIA',
+    tagline: 'AI Mediation Platform',
+    stats: '3 sessions · 14 frameworks',
+    status: 'Demo Mode' as const,
+    statusColor: 'bg-amber-500',
+    href: '/concordia',
+    accent: 'violet' as const,
+    external: false,
+  },
+  {
+    icon: Wind,
+    name: 'WIND TUNNEL',
+    tagline: 'Scenario Simulation',
+    stats: '27 tribes · CiviSphere v2',
+    status: 'External' as const,
+    statusColor: 'bg-blue-500',
+    href: 'https://windtunnel.tacitus.me',
+    accent: 'amber' as const,
+    external: true,
+  },
+  {
+    icon: Compass,
+    name: 'CONFLICT COMPASS',
+    tagline: 'Conflict Assessment',
+    stats: '4 active assessments',
+    status: 'External' as const,
+    statusColor: 'bg-blue-500',
+    href: 'https://conflictcompass.tacitus.me',
+    accent: 'blue' as const,
+    external: true,
+  },
+];
+
+const ACCENT_STYLES = {
+  emerald: { icon: 'text-emerald-600 bg-emerald-500/10', cta: 'text-emerald-600 hover:text-emerald-700' },
+  violet: { icon: 'text-violet-600 bg-violet-500/10', cta: 'text-violet-600 hover:text-violet-700' },
+  amber: { icon: 'text-amber-600 bg-amber-500/10', cta: 'text-amber-600 hover:text-amber-700' },
+  blue: { icon: 'text-blue-600 bg-blue-500/10', cta: 'text-blue-600 hover:text-blue-700' },
+};
+
+function EcosystemCard({ card }: { card: typeof ECOSYSTEM_CARDS[number] }) {
+  const Icon = card.icon;
+  const accent = ACCENT_STYLES[card.accent];
+  const Tag = card.external ? 'a' : Link;
+  const extraProps = card.external ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+
+  return (
+    <Tag
+      href={card.href}
+      {...extraProps}
+      className="group flex flex-col justify-between rounded-xl border border-[var(--color-app-border)] bg-white p-4 transition-shadow hover:shadow-sm"
+    >
+      <div>
+        <div className="flex items-center gap-2.5">
+          <div className={cn('rounded-lg p-1.5', accent.icon)}>
+            <Icon className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-navy-900">{card.name}</p>
+            <p className="text-[10px] text-navy-500">{card.tagline}</p>
+          </div>
+        </div>
+        <p className="mt-3 text-[11px] text-navy-500">{card.stats}</p>
+      </div>
+      <div className="mt-3 flex items-center justify-between">
+        <span className="flex items-center gap-1.5 text-[10px] text-navy-400">
+          <span className={cn('h-1.5 w-1.5 rounded-full', card.statusColor)} />
+          {card.status}
+        </span>
+        <span className={cn('flex items-center gap-0.5 text-[10px] font-semibold', accent.cta)}>
+          Open <ArrowRight className="h-3 w-3" />
+        </span>
+      </div>
+    </Tag>
+  );
+}
+
+function EcosystemSection() {
+  return (
+    <div className="rounded-xl border border-[var(--color-app-border)] bg-white">
+      <div className="flex items-center gap-2 border-b border-[var(--color-app-border)] px-5 py-4">
+        <Layers className="h-4 w-4 text-diplomatic-blue" />
+        <h2 className="text-sm font-semibold text-navy-900">TACITUS Intelligence Ecosystem</h2>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-4">
+        {ECOSYSTEM_CARDS.map((card) => (
+          <EcosystemCard key={card.name} card={card} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AI Intelligence Feed
+// ---------------------------------------------------------------------------
+
+const AI_FEED_ITEMS: {
+  id: string;
+  source: 'ARGUS' | 'EARLY_WARNING' | 'CONCORDIA' | 'MEDIA' | 'PRAXIS';
+  text: string;
+  timeAgo: string;
+  severity: 'info' | 'warning' | 'critical';
+}[] = [
+  { id: 'f1', source: 'ARGUS', text: 'New leverage relationship detected: Eastern Marches militia funding linked to sanctions-listed entity', timeAgo: '12 min ago', severity: 'warning' },
+  { id: 'f2', source: 'EARLY_WARNING', text: 'Escalation probability increased to 73% for Nordalia northern corridor', timeAgo: '28 min ago', severity: 'critical' },
+  { id: 'f3', source: 'CONCORDIA', text: 'Ceasefire monitoring session #4 completed. Compliance rate: 61%', timeAgo: '1 hour ago', severity: 'info' },
+  { id: 'f4', source: 'MEDIA', text: 'Narrative divergence: 47% gap between state and international media on Eastern Marches', timeAgo: '2 hours ago', severity: 'warning' },
+  { id: 'f5', source: 'ARGUS', text: 'Historical parallel identified: 83% similarity to 2019 Minsk Process Phase II', timeAgo: '3 hours ago', severity: 'info' },
+  { id: 'f6', source: 'PRAXIS', text: 'Morning intelligence brief ready for Nordalia Crisis', timeAgo: '5 hours ago', severity: 'info' },
+];
+
+const SOURCE_COLORS: Record<string, string> = {
+  ARGUS: 'bg-emerald-500/10 text-emerald-700',
+  EARLY_WARNING: 'bg-red-500/10 text-red-700',
+  CONCORDIA: 'bg-violet-500/10 text-violet-700',
+  MEDIA: 'bg-blue-500/10 text-blue-700',
+  PRAXIS: 'bg-gold-500/10 text-gold-700',
+};
+
+const SEVERITY_DOT: Record<string, string> = {
+  info: 'bg-navy-300',
+  warning: 'bg-amber-500',
+  critical: 'bg-red-500',
+};
+
+function AIFeedSection() {
+  return (
+    <div className="rounded-xl border border-[var(--color-app-border)] bg-white">
+      <div className="flex items-center justify-between border-b border-[var(--color-app-border)] px-5 py-4">
+        <div className="flex items-center gap-2">
+          <Activity className="h-4 w-4 text-diplomatic-blue" />
+          <h2 className="text-sm font-semibold text-navy-900">AI Intelligence Feed</h2>
+        </div>
+        <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-600">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+          Live
+        </span>
+      </div>
+      <div className="divide-y divide-[var(--color-app-border-light)]">
+        {AI_FEED_ITEMS.map((item, index) => (
+          <div key={item.id} className="flex items-start gap-3 px-5 py-3">
+            <span className={cn('mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full', SEVERITY_DOT[item.severity])} />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className={cn(
+                  'rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider',
+                  SOURCE_COLORS[item.source],
+                  index === 0 && 'animate-pulse',
+                )}>
+                  {item.source.replace('_', ' ')}
+                </span>
+                <span className="text-[10px] text-navy-400">{item.timeAgo}</span>
+              </div>
+              <p className="mt-0.5 text-[12px] text-navy-700">{item.text}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -1199,7 +1384,7 @@ Format with bold section headers using **text**. Be concise, professional, and a
             <div className="border-b border-[var(--color-app-border)] px-5 py-4">
               <h2 className="text-sm font-semibold text-navy-900">Quick Actions</h2>
             </div>
-            <div className="grid grid-cols-2 gap-3 p-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4">
               {QUICK_ACTIONS.map((action) => {
                 const Icon = action.icon;
                 return (
@@ -1225,6 +1410,12 @@ Format with bold section headers using **text**. Be concise, professional, and a
               })}
             </div>
           </div>
+
+          {/* TACITUS Intelligence Ecosystem */}
+          <EcosystemSection />
+
+          {/* AI Intelligence Feed */}
+          <AIFeedSection />
 
           {/* Recent Reports */}
           <div className="rounded-xl border border-[var(--color-app-border)] bg-white">
