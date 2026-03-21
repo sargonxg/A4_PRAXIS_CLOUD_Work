@@ -12,11 +12,12 @@ function LoginForm() {
   const redirect = searchParams.get('redirect') || '/dashboard';
 
   const [email, setEmail] = useState('analyst@tacitus.demo');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isPending, startTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(false);
 
-  async function handleSignIn(signInEmail?: string) {
+  async function handleSignIn(payload: { email: string; password?: string; isDemo?: boolean }) {
     setError('');
     setIsLoading(true);
 
@@ -24,7 +25,7 @@ function LoginForm() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: signInEmail || email }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -35,7 +36,7 @@ function LoginForm() {
           router.refresh();
         });
       } else {
-        setError('Authentication failed. Please try again.');
+        setError(data.error || 'Authentication failed. Please try again.');
         setIsLoading(false);
       }
     } catch {
@@ -50,11 +51,11 @@ function LoginForm() {
       setError('Please enter an email address.');
       return;
     }
-    await handleSignIn(email);
+    await handleSignIn({ email, password });
   }
 
   async function handleDemoMode() {
-    await handleSignIn('analyst@tacitus.demo');
+    await handleSignIn({ email: 'analyst@tacitus.demo', isDemo: true });
   }
 
   const loading = isLoading || isPending;
@@ -123,6 +124,36 @@ function LoginForm() {
                   setError('');
                 }}
                 placeholder="your.name@organization.gov"
+                disabled={loading}
+                className={cn(
+                  'w-full rounded-lg border bg-navy-950/60 px-4 py-3 text-sm text-navy-100',
+                  'placeholder:text-navy-600',
+                  'transition-colors duration-200',
+                  'focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/30 focus:outline-none',
+                  'disabled:cursor-not-allowed disabled:opacity-50',
+                  error
+                    ? 'border-crimson/50'
+                    : 'border-navy-700/60 hover:border-navy-600'
+                )}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="mb-1.5 block text-xs font-medium tracking-wide text-navy-300 uppercase"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError('');
+                }}
+                placeholder="Enter demo password"
                 disabled={loading}
                 className={cn(
                   'w-full rounded-lg border bg-navy-950/60 px-4 py-3 text-sm text-navy-100',
@@ -212,6 +243,12 @@ function LoginForm() {
                 </>
               )}
             </button>
+            <p className="mt-3 text-center text-[11px] text-navy-500">
+              Demo password:{' '}
+              <code className="rounded bg-navy-800/50 px-1.5 py-0.5 font-mono text-[10px] text-gold-500">
+                PRAXIS2026
+              </code>
+            </p>
           </motion.div>
 
           {/* Access request link */}

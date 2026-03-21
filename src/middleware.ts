@@ -17,6 +17,10 @@ const PROTECTED_PATHS = [
   '/stakeholder-map',
   '/early-warning',
   '/sanctions',
+  '/scenarios',
+  '/negotiation-prep',
+  '/compare',
+  '/cases',
 ];
 
 export function middleware(request: NextRequest) {
@@ -56,5 +60,9 @@ export const config = {
     '/stakeholder-map/:path*',
     '/early-warning/:path*',
     '/sanctions/:path*',
+    '/scenarios/:path*',
+    '/negotiation-prep/:path*',
+    '/compare/:path*',
+    '/cases/:path*',
   ],
 };
