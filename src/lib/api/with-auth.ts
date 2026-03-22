@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { verifyIdToken } from '@/lib/firebase/admin';
 
 export interface AuthenticatedUser {
   uid: string;
@@ -8,14 +9,22 @@ export interface AuthenticatedUser {
   isDemo: boolean;
 }
 
-/**
- * Wraps an API route handler with authentication.
- * Checks for the session cookie and extracts user info.
- * For Firebase users, the token is validated client-side; the cookie confirms a session exists.
- * For demo users, returns the demo user profile.
- *
- * Also applies rate limiting via a simple in-memory counter.
- */
+// Simple in-memory rate limiter
+const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
+const RATE_LIMIT = 100;
+const RATE_WINDOW_MS = 60_000;
+
+function checkRateLimit(uid: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(uid);
+  if (!entry || now - entry.windowStart > RATE_WINDOW_MS) {
+    rateLimitMap.set(uid, { count: 1, windowStart: now });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= RATE_LIMIT;
+}
+
 export function withAuth(
   handler: (req: Request, user: AuthenticatedUser) => Promise<Response>
 ) {
@@ -25,20 +34,14 @@ export function withAuth(
       const sessionCookie = cookieStore.get('tacitus-auth-session');
 
       if (!sessionCookie?.value) {
-        return NextResponse.json(
-          { error: 'Authentication required' },
-          { status: 401 }
-        );
+        return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
       }
 
       let sessionData;
       try {
         sessionData = JSON.parse(sessionCookie.value);
       } catch {
-        return NextResponse.json(
-          { error: 'Invalid session' },
-          { status: 401 }
-        );
+        return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
       }
 
       // Demo mode
@@ -54,37 +57,23 @@ export function withAuth(
 
       // Firebase authenticated user
       if (sessionData.token) {
-        // For server-side verification, we trust the session cookie.
-        // Full token verification would require Firebase Admin SDK.
-        // We attempt to decode the token payload for user info.
         try {
-          const payload = JSON.parse(
-            Buffer.from(sessionData.token.split('.')[1], 'base64').toString()
-          );
-          const user: AuthenticatedUser = {
-            uid: payload.user_id || payload.sub || '',
-            email: payload.email || '',
-            name: payload.name || payload.email?.split('@')[0] || 'User',
-            isDemo: false,
-          };
+          const verified = await verifyIdToken(sessionData.token);
+          const user: AuthenticatedUser = { ...verified, isDemo: false };
+
+          if (!checkRateLimit(user.uid)) {
+            return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+          }
+
           return handler(req, user);
         } catch {
-          return NextResponse.json(
-            { error: 'Invalid authentication token' },
-            { status: 401 }
-          );
+          return NextResponse.json({ error: 'Invalid authentication token' }, { status: 401 });
         }
       }
 
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     } catch {
-      return NextResponse.json(
-        { error: 'Authentication error' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Authentication error' }, { status: 500 });
     }
   };
 }

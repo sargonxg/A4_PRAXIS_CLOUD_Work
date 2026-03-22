@@ -1,23 +1,7 @@
 User-agent: *
 Allow: /
-Disallow: /dashboard
-Disallow: /assistant
-Disallow: /conflict-graph
-Disallow: /reports
-Disallow: /documents
-Disallow: /scenarios
-Disallow: /talking-points
-Disallow: /advisory
-Disallow: /media-compass
-Disallow: /cases
-Disallow: /calendar
-Disallow: /early-warning
-Disallow: /negotiation-prep
-Disallow: /sanctions
-Disallow: /stakeholder-map
-Disallow: /un-toolkit
-Disallow: /compare
-Disallow: /settings
-Disallow: /api
+Disallow: /app/
+Disallow: /demo/
+Disallow: /api/
 
 Sitemap: https://praxis-nextjs-tacitus.vercel.app/sitemap.xml
