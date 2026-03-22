@@ -164,7 +164,7 @@ export function Hero() {
           className="flex flex-col items-center gap-4 sm:flex-row"
         >
           <Link
-            href="/dashboard"
+            href="/login"
             className="group inline-flex items-center justify-center rounded-md bg-gold-600 px-8 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-xl hover:shadow-gold-600/20"
           >
             Start Free Demo

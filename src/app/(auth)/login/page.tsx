@@ -78,9 +78,11 @@ function LoginForm() {
     }
   }
 
-  function handleDemoMode() {
+  async function handleDemoMode() {
     setIsLoading(true);
-    signInAsDemo();
+    await signInAsDemo();
+    // Small delay to ensure cookie is set before navigation
+    await new Promise((r) => setTimeout(r, 100));
     router.push(redirect);
     router.refresh();
   }

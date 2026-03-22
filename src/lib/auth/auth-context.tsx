@@ -38,7 +38,7 @@ interface AuthContextValue {
   signInWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUpWithEmail: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
-  signInAsDemo: () => void;
+  signInAsDemo: () => Promise<void>;
   logout: () => Promise<void>;
   refreshCredits: () => Promise<void>;
 }
@@ -70,7 +70,7 @@ const AuthContext = createContext<AuthContextValue>({
   signInWithEmail: async () => ({ success: false }),
   signUpWithEmail: async () => ({ success: false }),
   signInWithGoogle: async () => ({ success: false }),
-  signInAsDemo: () => {},
+  signInAsDemo: async () => {},
   logout: async () => {},
   refreshCredits: async () => {},
 });
@@ -205,18 +205,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Demo mode
-  const signInAsDemo = useCallback(() => {
+  const signInAsDemo = useCallback(async () => {
+    // Set demo cookie FIRST so middleware allows navigation
+    await fetch('/api/auth/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ demo: true }),
+    });
     setUser(DEMO_USER);
     setFirebaseUser(null);
     setCredits(999);
     setIsDemoMode(true);
     setLoading(false);
-    // Set demo cookie for middleware
-    fetch('/api/auth/session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ demo: true }),
-    });
   }, []);
 
   // Logout
