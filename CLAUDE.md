@@ -4,15 +4,15 @@
 The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Deployed at praxis-nextjs-tacitus.vercel.app.
 
 ## Tech Stack
-Next.js 16.1.6 (App Router), TypeScript 5.9, Tailwind CSS 4, Radix UI, Vercel AI SDK (ai@6.0.105 + @ai-sdk/google + @ai-sdk/anthropic), Firebase Auth + Firestore, Zustand 5, D3.js 7, Framer Motion 12, Zod 4. Vercel (iad1).
+Next.js 16.1.6 (App Router), TypeScript 5.9, Tailwind CSS 4, Radix UI, Vercel AI SDK (ai@6.0.105 + @ai-sdk/google + @ai-sdk/anthropic), Firebase Auth + Firestore, Firecrawl (web intelligence), Zustand 5, D3.js 7, Framer Motion 12, Zod 4. Vercel (iad1).
 
 ## Architecture
 - `src/app/(landing)/` — Public landing page (18 sections, includes Ecosystem showcase)
 - `src/app/(auth)/` — Login (Firebase Auth: Google + email/password + Demo Mode bypass)
 - `src/app/(app)/` — Authenticated workspace (29 pages)
-- `src/app/api/` — 24 routes (13 AI, 4 data, 3 auth, 2 graph, 1 health, 1 upload)
-- `src/lib/firebase/` — config.ts (client SDK), admin.ts (server SDK), firestore.ts (user profiles, credits, persistence)
-- `src/lib/ai/` — providers.ts (Gemini/Claude dual), tools.ts (18 tools, 1720 lines), prompts/, schemas/
+- `src/app/api/` — 36 routes (24 AI, 4 data, 3 auth, 2 graph, 1 settings, 1 health, 1 upload)
+- `src/lib/firebase/` — config.ts (client SDK), admin.ts (server SDK), firestore.ts (user profiles, credits, AI settings, persistence)
+- `src/lib/ai/` — providers.ts (Gemini/Claude dual + user prefs), tools.ts (18 tools with Firecrawl web search), firecrawl.ts (web crawling service), research-engine.ts (Firecrawl-powered research pipeline), prompts/, schemas/
 - `src/lib/constants/` — demo-conflict.ts (Nordalia Crisis, 1047 lines), case-registry, media-database (50+ outlets), un-terminology, templates, 5 case files, scenario-configs, briefing-data, argus-demo, concordia-demo, actor-profiles, treaty-demo, risk-regions
 - `src/lib/services/` — ai-service, conflict-service, document-service, export-service, research-service
 - `src/lib/api/` — with-auth.ts (Firebase token + demo auth wrapper), with-credits.ts (TACITUS Credits deduction)

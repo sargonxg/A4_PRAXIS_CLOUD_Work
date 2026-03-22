@@ -74,3 +74,39 @@ export async function checkAndDeductCredits(
     return { allowed: true };
   }
 }
+
+/**
+ * Refunds credits to a user after a failed AI operation.
+ */
+export async function refundCredits(
+  operationType: string,
+  description: string,
+): Promise<void> {
+  const session = await getSessionUid();
+  if (!session || session.isDemo) return;
+
+  const cost = AI_CREDIT_COSTS[operationType] || 1;
+  try {
+    const { increment, doc, updateDoc } = await import('firebase/firestore');
+    const { db } = await import('@/lib/firebase/config');
+
+    const userRef = doc(db, 'users', session.uid);
+    await updateDoc(userRef, {
+      credits: increment(cost),
+      totalCreditsUsed: increment(-cost),
+    });
+
+    // Record refund transaction
+    const { collection, setDoc, serverTimestamp } = await import('firebase/firestore');
+    const txRef = doc(collection(db, 'credit_transactions'));
+    await setDoc(txRef, {
+      userId: session.uid,
+      amount: cost,
+      type: 'refund',
+      description: `Refund: ${description}`,
+      createdAt: serverTimestamp(),
+    });
+  } catch (err) {
+    console.error('[credits] Failed to refund credits:', err);
+  }
+}

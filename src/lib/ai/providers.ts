@@ -104,6 +104,24 @@ export function getProModel(): LanguageModel {
 }
 
 /**
+ * Returns a model based on user AI settings.
+ * Falls back to getModel() defaults if no settings provided.
+ */
+export function getModelForUser(settings?: { preferredModel?: string; temperature?: number }): LanguageModel {
+  if (!settings?.preferredModel) return getModel();
+
+  switch (settings.preferredModel) {
+    case 'gemini-2.5-pro':
+      return getProModel();
+    case 'claude-sonnet-4':
+      return getAnalysisModel();
+    case 'gemini-2.5-flash':
+    default:
+      return getModel();
+  }
+}
+
+/**
  * Async variant — currently equivalent to getModel() since Vertex AI
  * requires installing @ai-sdk/google-vertex separately.
  */

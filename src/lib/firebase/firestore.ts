@@ -17,6 +17,22 @@ import { db } from './config';
 // Types
 // ---------------------------------------------------------------------------
 
+export interface AISettings {
+  preferredModel: 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'claude-sonnet-4';
+  temperature: number;              // 0.0-1.0, default 0.4
+  researchDepth: 'quick' | 'standard' | 'comprehensive';
+  customInstructions: string;       // Additional system prompt text
+  maxTokens: number;                // Response length preference
+}
+
+export const DEFAULT_AI_SETTINGS: AISettings = {
+  preferredModel: 'gemini-2.5-flash',
+  temperature: 0.4,
+  researchDepth: 'standard',
+  customInstructions: '',
+  maxTokens: 4096,
+};
+
 export interface UserProfile {
   uid: string;
   email: string;
@@ -31,6 +47,7 @@ export interface UserProfile {
   createdAt: Timestamp | ReturnType<typeof serverTimestamp>;
   lastLoginAt: Timestamp | ReturnType<typeof serverTimestamp>;
   aiProvider: string;
+  aiSettings?: AISettings;
 }
 
 export interface CreditTransaction {
@@ -135,21 +152,36 @@ export async function updateUserProfile(
 
 // Cost table for AI operations (in credits)
 export const AI_CREDIT_COSTS: Record<string, number> = {
+  // Core routes
   'ai_chat': 1,
-  'ai_report': 5,
-  'ai_analysis': 3,
-  'ai_research': 3,
+  'ai_terminology': 1,
   'ai_scenario': 2,
-  'ai_dossier': 4,
   'ai_extract': 2,
   'ai_media': 2,
-  'ai_resolution': 3,
   'ai_talking_points': 2,
-  'ai_terminology': 1,
   'ai_grounded_search': 2,
-  'ai_claude_analyze': 4,
-  'ai_deep_research': 5,
   'ai_advisor_chat': 2,
+  'ai_analysis': 3,
+  'ai_research': 3,
+  'ai_resolution': 3,
+  'ai_claude_analyze': 4,
+  'ai_dossier': 4,
+  'ai_report': 5,
+  'ai_deep_research': 5,
+  // Phase 2: Intelligence tools (Firecrawl-powered)
+  'ai_web_crawl': 3,
+  'ai_media_scan': 3,
+  'ai_actor_enrichment': 3,
+  'ai_escalation_scan': 3,
+  'ai_sanctions_scan': 4,
+  // Phase 3: Production pages
+  'ai_dossier_generate': 5,
+  'ai_briefing_generate': 4,
+  'ai_mediation': 3,
+  'ai_risk_assessment': 4,
+  'ai_treaty_analyze': 4,
+  'ai_negotiation': 3,
+  'ai_argus': 3,
 };
 
 /**
