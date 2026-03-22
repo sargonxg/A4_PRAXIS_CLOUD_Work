@@ -33,6 +33,8 @@ export const DEFAULT_AI_SETTINGS: AISettings = {
   maxTokens: 4096,
 };
 
+export type SubscriptionTier = 'free' | 'pro' | 'enterprise';
+
 export interface UserProfile {
   uid: string;
   email: string;
@@ -44,10 +46,15 @@ export interface UserProfile {
   credits: number;
   totalCreditsUsed: number;
   isDemo: boolean;
+  subscription: SubscriptionTier;
+  subscriptionExpiresAt?: Timestamp | null;
   createdAt: Timestamp | ReturnType<typeof serverTimestamp>;
   lastLoginAt: Timestamp | ReturnType<typeof serverTimestamp>;
   aiProvider: string;
   aiSettings?: AISettings;
+  researchProviders?: string[];   // enabled provider IDs
+  calendarSources?: string[];     // connected calendar source IDs
+  savedItems?: string[];          // bookmarked report/analysis IDs
 }
 
 export interface CreditTransaction {
@@ -109,9 +116,12 @@ export async function ensureUserProfile(user: {
     credits: INITIAL_CREDITS,
     totalCreditsUsed: 0,
     isDemo: false,
+    subscription: 'free',
     createdAt: serverTimestamp(),
     lastLoginAt: serverTimestamp(),
     aiProvider: 'google',
+    researchProviders: ['google-search'],
+    calendarSources: ['manual'],
   };
 
   await setDoc(userRef, profile);
