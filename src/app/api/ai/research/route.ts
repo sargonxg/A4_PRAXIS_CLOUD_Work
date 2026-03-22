@@ -1,47 +1,39 @@
-import { streamText, stepCountIs } from 'ai';
-import { google } from '@ai-sdk/google';
+import { conductResearch, type ResearchMode } from '@/lib/ai/research-engine';
+import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
+import { checkAndDeductCredits } from '@/lib/api/with-credits';
 
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
-  if (!process.env.GOOGLE_AI_API_KEY) {
-    return new Response(JSON.stringify({ error: 'AI not configured' }), {
-      status: 503,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
   try {
-    const { query, conflictContext } = await request.json();
+    const { query, mode = 'briefing', conflictContext } = await request.json() as {
+      query: string;
+      mode?: ResearchMode;
+      conflictContext?: string;
+    };
 
-    // Google Search grounding via google.tools.googleSearch (correct API for @ai-sdk/google v3.x).
-    // This route handles structured research queries from the Research panel.
-    const result = streamText({
-      model: google('gemini-2.5-flash'),
-      tools: {
-        google_search: google.tools.googleSearch({}),
-      },
-      stopWhen: stepCountIs(5),
-      system: `You are PRAXIS Research Engine, a conflict intelligence research assistant with access to Google Search for real-time information.
+    // --- Demo mode: return pre-computed responses when no API key is set ---
+    if (isServerDemoMode()) {
+      const inputHash = hashInput({ content: query, context: conflictContext });
+      if (inputHash) {
+        const cached = getCachedResponse('research', inputHash);
+        if (cached) return formatAsStreamResponse(cached);
+      }
+      return new Response(
+        JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in Vercel environment variables.' }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
-When researching a query:
-1. Search for the most recent and authoritative sources
-2. Cite specific sources with outlet name and date: "[Reuters, 2026-03-10]: ..."
-3. Assess source reliability — distinguish between wire services, quality broadsheets, state media, and think tanks
-4. Note any conflicting reports between sources
-5. Identify critical information gaps
-6. Flag time-sensitivity of information (how quickly is this evolving?)
-7. Cross-reference claims across multiple sources before treating as confirmed
+    // --- Live mode: check credits before making AI call ---
+    const creditCheck = await checkAndDeductCredits('ai_research', 'Research query');
+    if (!creditCheck.allowed) return creditCheck.response;
 
-${conflictContext ? `Current analytical context: ${conflictContext}` : ''}
-
-Format your response with clear sections:
-## Key Findings
-## Sources & Reliability Assessment
-## Analysis
-## Information Gaps
-## Recommendations for Further Research`,
-      prompt: query,
+    const result = await conductResearch({
+      query,
+      mode,
+      depth: 'standard',
+      conflictContext,
     });
 
     return result.toTextStreamResponse();

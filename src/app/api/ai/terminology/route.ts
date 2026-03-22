@@ -1,5 +1,6 @@
 import { generateObject } from 'ai';
 import { getModel } from '@/lib/ai/providers';
+import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { z } from 'zod';
 
 const TermIssueSchema = z.object({
@@ -63,6 +64,9 @@ export async function POST(request: Request) {
 
   try {
     const { text, context } = await request.json();
+
+    const creditCheck = await checkAndDeductCredits('ai_terminology', 'Terminology check');
+    if (!creditCheck.allowed) return creditCheck.response;
 
     if (!text) {
       return Response.json({ error: 'No text provided' }, { status: 400 });

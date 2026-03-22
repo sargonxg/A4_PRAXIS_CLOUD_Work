@@ -1,7 +1,4 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import { getSession } from '@/lib/auth/mock-auth';
-import { AuthProvider } from '@/lib/auth/auth-context';
 import { AppShell } from '@/components/app/app-shell';
 
 export const metadata: Metadata = {
@@ -11,13 +8,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession();
-  if (!session) redirect('/login');
-
-  return (
-    <AuthProvider user={session}>
-      <AppShell>{children}</AppShell>
-    </AuthProvider>
-  );
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  // Auth is now handled client-side by Firebase.
+  // The middleware checks for the session cookie to gate access.
+  // The AuthProvider in the root layout manages user state.
+  return <AppShell>{children}</AppShell>;
 }

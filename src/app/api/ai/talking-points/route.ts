@@ -1,6 +1,7 @@
 import { streamText } from 'ai';
 import { getModel } from '@/lib/ai/providers';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
+import { checkAndDeductCredits } from '@/lib/api/with-credits';
 
 export const maxDuration = 60;
 
@@ -14,6 +15,9 @@ export async function POST(request: Request) {
 
   try {
     const { situation, audience, tone, context } = await request.json();
+
+    const creditCheck = await checkAndDeductCredits('ai_talking_points', 'Talking points');
+    if (!creditCheck.allowed) return creditCheck.response;
 
     const result = streamText({
       model: getModel(),

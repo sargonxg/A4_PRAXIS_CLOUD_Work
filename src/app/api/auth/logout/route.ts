@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { signOut } from '@/lib/auth/mock-auth';
+import { cookies } from 'next/headers';
 
 export async function POST() {
-  await signOut();
+  const cookieStore = await cookies();
+  cookieStore.delete('tacitus-auth-session');
   return NextResponse.json({ success: true });
 }

@@ -1,5 +1,6 @@
 import { streamText } from 'ai';
 import { getAnalysisModel, getAvailableProviders } from '@/lib/ai/providers';
+import { checkAndDeductCredits } from '@/lib/api/with-credits';
 
 export const maxDuration = 120;
 
@@ -26,6 +27,9 @@ export async function POST(request: Request) {
 
   try {
     const { query, analysisType = 'diplomatic', context } = await request.json();
+
+    const creditCheck = await checkAndDeductCredits('ai_claude_analyze', 'Claude deep analysis');
+    if (!creditCheck.allowed) return creditCheck.response;
 
     const analysisPrompts: Record<string, string> = {
       diplomatic: `You are a senior diplomatic analyst providing nuanced assessment. Consider:

@@ -4,6 +4,7 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { DEMO_CONFLICT } from '@/lib/constants/demo-conflict';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
 import { MEDIA_DATABASE, findMediaOutlet } from '@/lib/constants/media-database';
+import { searchWeb } from '@/lib/ai/firecrawl';
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_AI_API_KEY || '',
@@ -14,14 +15,13 @@ const gemini = (model = 'gemini-2.5-flash') => google(model);
 
 // ============================================================================
 // Tool 1: webSearch
-// AI-generated conflict-grounded search results via Gemini
-// NOTE: Cannot use useSearchGrounding here — it conflicts with custom tools
-// (Vercel AI SDK / Gemini issue #8258). Use /api/ai/grounded-search for live search.
+// Firecrawl-powered web search returning real results with full page content.
+// Falls back to empty results with an error message if Firecrawl is unavailable.
 // ============================================================================
 
 export const webSearch = tool({
   description:
-    'Search for current news and reports about a conflict topic. Returns realistic, AI-generated results using real outlet names and substantive analytical content. For live Google Search use the grounded-search endpoint instead.',
+    'Search the web for current news and reports about a conflict topic. Returns real search results with titles, snippets, sources, and reliability scores powered by Firecrawl web intelligence.',
   inputSchema: z.object({
     query: z.string().describe('The search query to execute'),
     region: z.string().optional().describe('Geographic region to focus the search on'),
@@ -30,42 +30,63 @@ export const webSearch = tool({
       .optional()
       .describe('Time range filter for search results'),
   }),
-  execute: async ({ query, region, timeRange }) => {
+  execute: async ({ query, region }) => {
     try {
-      const { object } = await generateObject({
-        model: gemini(),
-        schema: z.object({
-          results: z.array(
-            z.object({
-              title: z.string(),
-              snippet: z.string().describe('2-3 sentences of substantive analytical content'),
-              source: z.string(),
-              publishedDate: z.string(),
-              url: z.string(),
-              reliabilityScore: z
-                .number()
-                .min(0)
-                .max(1)
-                .describe('Source reliability: wire services 0.90+, quality press 0.80+, state media 0.40-0.60'),
-            })
-          ),
-          analysisNote: z
-            .string()
-            .describe('1-sentence assessment of the overall information landscape for this query'),
-        }),
-        prompt: `You are a conflict intelligence research assistant. Generate 4-5 realistic search results for the query: "${query}"${region ? ` in the ${region} region` : ''}. Time range: ${timeRange || 'recent'}.
+      const fullQuery = region ? `${query} ${region}` : query;
+      const webResults = await searchWeb(fullQuery, { numResults: 5 });
 
-IMPORTANT: Use REAL news outlet names (Reuters, Al Jazeera, BBC, Crisis Group, UN News, ACLED, Financial Times, Foreign Policy, The Guardian, AFP, AP, DW, France 24, etc.). Generate realistic-sounding article titles and snippets that a professional conflict analyst would find useful. Each snippet should be 2-3 sentences of substantive content, not generic filler. Include a reliability score based on source type (wire services 0.90+, quality broadsheets 0.80+, regional specialists 0.70-0.80, state media 0.40-0.60).
+      if (webResults.length === 0) {
+        return {
+          results: [],
+          query,
+          analysisNote:
+            'No web results returned. Firecrawl may not be configured (set FIRECRAWL_API_KEY) or the query returned no matches.',
+        };
+      }
 
-Also provide an analysisNote: a 1-sentence assessment of the overall information landscape for this query.`,
+      // Map Firecrawl results to the expected schema
+      const results = webResults.map((r) => {
+        // Extract source/outlet name from URL hostname
+        let source = 'Unknown Source';
+        try {
+          const hostname = new URL(r.url).hostname.replace('www.', '');
+          source = hostname.split('.')[0].charAt(0).toUpperCase() + hostname.split('.')[0].slice(1);
+        } catch { /* keep default */ }
+
+        // Build a snippet from description or content
+        const snippet = r.description
+          || (r.content ? r.content.slice(0, 300).replace(/\n+/g, ' ').trim() : 'No content available.');
+
+        // Assign reliability score based on known outlet patterns
+        let reliabilityScore = 0.70; // default
+        const lowerUrl = r.url.toLowerCase();
+        if (/reuters|apnews|afp/.test(lowerUrl)) reliabilityScore = 0.95;
+        else if (/bbc|guardian|nytimes|washingtonpost|ft\.com|aljazeera/.test(lowerUrl)) reliabilityScore = 0.85;
+        else if (/crisisgroup|icg|acled|sipri|iiss/.test(lowerUrl)) reliabilityScore = 0.88;
+        else if (/un\.org|osce|europa\.eu/.test(lowerUrl)) reliabilityScore = 0.90;
+        else if (/foreignpolicy|economist|foreignaffairs/.test(lowerUrl)) reliabilityScore = 0.82;
+
+        return {
+          title: r.title || 'Untitled',
+          snippet,
+          source,
+          publishedDate: r.publishedDate || new Date().toISOString().split('T')[0],
+          url: r.url,
+          reliabilityScore,
+        };
       });
-      return { ...object, query };
+
+      return {
+        results,
+        query,
+        analysisNote: `Found ${results.length} web sources for "${query}". Results are from live Firecrawl search.`,
+      };
     } catch {
       return {
         results: [],
         query,
         analysisNote:
-          'Search unavailable. Switch to Live Research mode (Google Search grounding) for real-time results.',
+          'Web search failed due to an unexpected error. Check Firecrawl configuration and API key.',
       };
     }
   },

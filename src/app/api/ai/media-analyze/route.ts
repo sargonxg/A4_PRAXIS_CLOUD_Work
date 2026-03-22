@@ -1,5 +1,6 @@
 import { generateObject } from 'ai';
 import { getModel } from '@/lib/ai/providers';
+import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { z } from 'zod';
 
 const MediaAnalysisSchema = z.object({
@@ -25,6 +26,9 @@ export async function POST(request: Request) {
 
   try {
     const { source, topic } = await request.json();
+
+    const creditCheck = await checkAndDeductCredits('ai_media', 'Media analysis');
+    if (!creditCheck.allowed) return creditCheck.response;
 
     const { object } = await generateObject({
       model: getModel(),

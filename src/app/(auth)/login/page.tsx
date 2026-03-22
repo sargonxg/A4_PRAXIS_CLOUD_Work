@@ -1,42 +1,57 @@
 'use client';
 
-import { useState, useTransition, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils/cn';
-import { Shield, ArrowRight, Loader2 } from 'lucide-react';
+import { Shield, ArrowRight, Loader2, Mail, Chrome } from 'lucide-react';
+import { useAuth } from '@/lib/auth/auth-context';
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/dashboard';
+  const { signInWithEmail, signUpWithEmail, signInWithGoogle, signInAsDemo } = useAuth();
 
-  const [email, setEmail] = useState('analyst@tacitus.demo');
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [error, setError] = useState('');
-  const [isPending, startTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(false);
 
-  async function handleSignIn(payload: { email: string; password?: string; isDemo?: boolean }) {
+  async function handleEmailSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) {
+      setError('Please enter an email address.');
+      return;
+    }
+    if (!password.trim()) {
+      setError('Please enter a password.');
+      return;
+    }
+
     setError('');
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        startTransition(() => {
-          router.push(redirect);
-          router.refresh();
-        });
+      let result;
+      if (mode === 'signup') {
+        if (!name.trim()) {
+          setError('Please enter your name.');
+          setIsLoading(false);
+          return;
+        }
+        result = await signUpWithEmail(email, password, name);
       } else {
-        setError(data.error || 'Authentication failed. Please try again.');
+        result = await signInWithEmail(email, password);
+      }
+
+      if (result.success) {
+        router.push(redirect);
+        router.refresh();
+      } else {
+        setError(result.error || 'Authentication failed.');
         setIsLoading(false);
       }
     } catch {
@@ -45,20 +60,30 @@ function LoginForm() {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email.trim()) {
-      setError('Please enter an email address.');
-      return;
+  async function handleGoogleSignIn() {
+    setError('');
+    setIsLoading(true);
+    try {
+      const result = await signInWithGoogle();
+      if (result.success) {
+        router.push(redirect);
+        router.refresh();
+      } else {
+        setError(result.error || 'Google sign-in failed.');
+        setIsLoading(false);
+      }
+    } catch {
+      setError('Google sign-in failed. Please try again.');
+      setIsLoading(false);
     }
-    await handleSignIn({ email, password });
   }
 
-  async function handleDemoMode() {
-    await handleSignIn({ email: 'analyst@tacitus.demo', isDemo: true });
+  function handleDemoMode() {
+    setIsLoading(true);
+    signInAsDemo();
+    router.push(redirect);
+    router.refresh();
   }
-
-  const loading = isLoading || isPending;
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-navy-950 px-4">
@@ -100,14 +125,85 @@ function LoginForm() {
             </p>
           </motion.div>
 
-          {/* Login form */}
-          <motion.form
+          {/* Google Sign In */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.25, duration: 0.5 }}
+          >
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+              className={cn(
+                'group flex w-full items-center justify-center gap-3 rounded-lg px-4 py-3',
+                'border border-navy-600/60 bg-white/5 text-sm font-medium text-navy-100',
+                'transition-all duration-200',
+                'hover:bg-white/10 hover:border-navy-500',
+                'active:scale-[0.98]',
+                'disabled:cursor-not-allowed disabled:opacity-60'
+              )}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Chrome className="h-5 w-5 text-navy-300" />
+                  Continue with Google
+                </>
+              )}
+            </button>
+          </motion.div>
+
+          {/* Divider */}
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            onSubmit={handleSubmit}
-            className="space-y-4"
+            className="my-5 flex items-center gap-3"
           >
+            <div className="h-px flex-1 bg-navy-700/50" />
+            <span className="text-xs tracking-wider text-navy-500 uppercase">
+              or continue with email
+            </span>
+            <div className="h-px flex-1 bg-navy-700/50" />
+          </motion.div>
+
+          {/* Email/Password form */}
+          <motion.form
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.35, duration: 0.5 }}
+            onSubmit={handleEmailSubmit}
+            className="space-y-3.5"
+          >
+            {mode === 'signup' && (
+              <div>
+                <label
+                  htmlFor="name"
+                  className="mb-1.5 block text-xs font-medium tracking-wide text-navy-300 uppercase"
+                >
+                  Full Name
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => { setName(e.target.value); setError(''); }}
+                  placeholder="Dr. Jane Smith"
+                  disabled={isLoading}
+                  className={cn(
+                    'w-full rounded-lg border bg-navy-950/60 px-4 py-3 text-sm text-navy-100',
+                    'placeholder:text-navy-600',
+                    'transition-colors duration-200',
+                    'focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/30 focus:outline-none',
+                    'disabled:cursor-not-allowed disabled:opacity-50',
+                    'border-navy-700/60 hover:border-navy-600'
+                  )}
+                />
+              </div>
+            )}
+
             <div>
               <label
                 htmlFor="email"
@@ -119,21 +215,16 @@ function LoginForm() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setError('');
-                }}
+                onChange={(e) => { setEmail(e.target.value); setError(''); }}
                 placeholder="your.name@organization.gov"
-                disabled={loading}
+                disabled={isLoading}
                 className={cn(
                   'w-full rounded-lg border bg-navy-950/60 px-4 py-3 text-sm text-navy-100',
                   'placeholder:text-navy-600',
                   'transition-colors duration-200',
                   'focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/30 focus:outline-none',
                   'disabled:cursor-not-allowed disabled:opacity-50',
-                  error
-                    ? 'border-crimson/50'
-                    : 'border-navy-700/60 hover:border-navy-600'
+                  error ? 'border-crimson/50' : 'border-navy-700/60 hover:border-navy-600'
                 )}
               />
             </div>
@@ -149,21 +240,16 @@ function LoginForm() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError('');
-                }}
-                placeholder="Enter demo password"
-                disabled={loading}
+                onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                placeholder={mode === 'signup' ? 'Create a password (min 6 chars)' : 'Enter your password'}
+                disabled={isLoading}
                 className={cn(
                   'w-full rounded-lg border bg-navy-950/60 px-4 py-3 text-sm text-navy-100',
                   'placeholder:text-navy-600',
                   'transition-colors duration-200',
                   'focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/30 focus:outline-none',
                   'disabled:cursor-not-allowed disabled:opacity-50',
-                  error
-                    ? 'border-crimson/50'
-                    : 'border-navy-700/60 hover:border-navy-600'
+                  error ? 'border-crimson/50' : 'border-navy-700/60 hover:border-navy-600'
                 )}
               />
             </div>
@@ -180,7 +266,7 @@ function LoginForm() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={isLoading}
               className={cn(
                 'group flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3',
                 'bg-gold-500 text-navy-950 font-semibold text-sm',
@@ -190,15 +276,43 @@ function LoginForm() {
                 'disabled:cursor-not-allowed disabled:opacity-60'
               )}
             >
-              {loading ? (
+              {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  Sign In
+                  <Mail className="h-4 w-4" />
+                  {mode === 'signup' ? 'Create Account' : 'Sign In'}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </>
               )}
             </button>
+
+            {/* Toggle sign in / sign up */}
+            <p className="text-center text-xs text-navy-500">
+              {mode === 'signin' ? (
+                <>
+                  Don&apos;t have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setMode('signup'); setError(''); }}
+                    className="text-gold-500/80 hover:text-gold-400 hover:underline"
+                  >
+                    Create one
+                  </button>
+                </>
+              ) : (
+                <>
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setMode('signin'); setError(''); }}
+                    className="text-gold-500/80 hover:text-gold-400 hover:underline"
+                  >
+                    Sign in
+                  </button>
+                </>
+              )}
+            </p>
           </motion.form>
 
           {/* Divider */}
@@ -206,7 +320,7 @@ function LoginForm() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.5 }}
-            className="my-6 flex items-center gap-3"
+            className="my-5 flex items-center gap-3"
           >
             <div className="h-px flex-1 bg-navy-700/50" />
             <span className="text-xs tracking-wider text-navy-500 uppercase">
@@ -224,7 +338,7 @@ function LoginForm() {
             <button
               type="button"
               onClick={handleDemoMode}
-              disabled={loading}
+              disabled={isLoading}
               className={cn(
                 'flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3',
                 'border border-navy-600/60 bg-transparent text-sm font-medium text-navy-200',
@@ -234,7 +348,7 @@ function LoginForm() {
                 'disabled:cursor-not-allowed disabled:opacity-60'
               )}
             >
-              {loading ? (
+              {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
@@ -244,28 +358,21 @@ function LoginForm() {
               )}
             </button>
             <p className="mt-3 text-center text-[11px] text-navy-500">
-              Demo password:{' '}
-              <code className="rounded bg-navy-800/50 px-1.5 py-0.5 font-mono text-[10px] text-gold-500">
-                PRAXIS2026
-              </code>
+              Explore PRAXIS with pre-loaded conflict data — no account needed
             </p>
           </motion.div>
 
-          {/* Access request link */}
-          <motion.p
+          {/* Credits info */}
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.5 }}
-            className="mt-6 text-center text-xs text-navy-500"
+            className="mt-5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3"
           >
-            Need access?{' '}
-            <a
-              href="#"
-              className="text-gold-500/80 transition-colors hover:text-gold-400 hover:underline"
-            >
-              Request access for your organization
-            </a>
-          </motion.p>
+            <p className="text-center text-xs text-emerald-400">
+              <span className="font-semibold">100 TACITUS Credits</span> awarded on sign-up — power your AI analysis
+            </p>
+          </motion.div>
         </div>
 
         {/* Footer */}
