@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PRAXIS by TACITUS
 
-## Getting Started
+**The conflict operating system for peace and security professionals.**
 
-First, run the development server:
+AI-powered analysis, knowledge graphs, and automated report generation — from raw data to decisive intelligence in minutes.
+
+## Quick Start
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). The demo works with zero configuration.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Two Experiences
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| | Demo (`/demo/*`) | Real App (`/app/*`) |
+|---|---|---|
+| **Auth** | Cookie-only, no account | Firebase Google + email/password |
+| **Data** | Pre-loaded Nordalia Crisis | User creates own situations |
+| **AI** | Cached responses | Live Gemini/Claude + Firecrawl |
+| **Credits** | Unlimited | 100 on sign-up, deducted per use |
+| **Purpose** | Investor demos, exploration | Real conflict intelligence work |
 
-## Learn More
+## Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Required for live AI (real app)
+GOOGLE_AI_API_KEY=your_key
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Required for server-side Firestore (situation CRUD, auth verification)
+FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"praxisbytacitus",...}
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Optional
+ANTHROPIC_API_KEY=your_key          # Claude deep analysis
+FIRECRAWL_API_KEY=your_key          # Web research
+AI_PROVIDER=google                   # 'google' or 'vertex'
+```
 
-## Deploy on Vercel
+## Firebase Setup
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Project: `praxisbytacitus`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Enable Authentication providers: Google + Email/Password
+2. Add your domain to Firebase Auth > Authorized domains
+3. Generate a service account key: Firebase Console > Project Settings > Service Accounts > Generate new private key
+4. Set `FIREBASE_SERVICE_ACCOUNT_KEY` in Vercel with the JSON contents
+5. Deploy Firestore rules:
+   ```bash
+   firebase use praxisbytacitus
+   firebase deploy --only firestore:rules
+   ```
+
+## Tech Stack
+
+Next.js 16.1.6 (App Router), TypeScript 5.9, Tailwind CSS 4, Radix UI, Vercel AI SDK, Firebase Auth + Firestore + Admin SDK, Firecrawl, Zustand 5, D3.js 7, Framer Motion 12, Zod 4.
+
+## Architecture
+
+See [CLAUDE.md](./CLAUDE.md) for full architecture docs and [ARCHITECTURE.md](./ARCHITECTURE.md) for the dual-app data flow diagrams.
+
+## Deployment
+
+Deployed on Vercel (iad1 region). Push to `main` triggers automatic deployment.
+
+```bash
+npm run build   # Verify build passes locally
+git push        # Auto-deploys to Vercel
+```

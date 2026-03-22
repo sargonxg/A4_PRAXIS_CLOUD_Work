@@ -1,8 +1,17 @@
-import { adminDb } from './admin';
 import type { Situation, CreateSituationInput } from '@/types/situation';
 
+/**
+ * Get the Admin Firestore instance. Lazy-loaded to avoid initialization
+ * errors when the module is imported but not used.
+ */
+function getDb() {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { adminDb } = require('./admin');
+  return adminDb as FirebaseFirestore.Firestore;
+}
+
 function situationsCol(uid: string) {
-  return adminDb.collection('users').doc(uid).collection('situations');
+  return getDb().collection('users').doc(uid).collection('situations');
 }
 
 export async function createSituation(
@@ -42,8 +51,15 @@ export async function getSituation(
 }
 
 export async function listSituations(uid: string): Promise<Situation[]> {
-  const snap = await situationsCol(uid).orderBy('updatedAt', 'desc').get();
-  return snap.docs.map((d) => d.data() as Situation);
+  try {
+    const snap = await situationsCol(uid).orderBy('updatedAt', 'desc').get();
+    return snap.docs.map((d) => d.data() as Situation);
+  } catch (err) {
+    // If index doesn't exist yet, try without ordering
+    console.warn('[situations] orderBy failed, trying without:', err);
+    const snap = await situationsCol(uid).get();
+    return snap.docs.map((d) => d.data() as Situation);
+  }
 }
 
 export async function updateSituation(

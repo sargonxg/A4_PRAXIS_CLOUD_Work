@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils/cn';
-import { Shield, ArrowRight, Loader2, Mail, Chrome, Link2 } from 'lucide-react';
+import { Shield, ArrowRight, Loader2, Mail, Chrome } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 
 function LoginForm() {
@@ -12,10 +12,9 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const queryMode = searchParams.get('mode');
   const rawRedirect = searchParams.get('redirect');
-  const finishSignIn = searchParams.get('finishSignIn');
   const appRedirect = rawRedirect?.startsWith('/app') ? rawRedirect : '/app/dashboard';
   const demoRedirect = rawRedirect?.startsWith('/demo') ? rawRedirect : '/demo/dashboard';
-  const { signInWithEmail, signUpWithEmail, signInWithGoogle, sendEmailLink, completeEmailLinkSignIn, signInAsDemo } = useAuth();
+  const { signInWithEmail, signUpWithEmail, signInWithGoogle, signInAsDemo } = useAuth();
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -23,29 +22,6 @@ function LoginForm() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [linkSent, setLinkSent] = useState(false);
-
-  // Handle email link sign-in callback
-  useEffect(() => {
-    if (finishSignIn === 'true') {
-      const storedEmail = window.localStorage.getItem('emailForSignIn');
-      if (storedEmail) {
-        setIsLoading(true);
-        completeEmailLinkSignIn(storedEmail, window.location.href).then((result) => {
-          if (result.success) {
-            router.push(appRedirect);
-            router.refresh();
-          } else {
-            setError(result.error || 'Sign-in failed.');
-            setIsLoading(false);
-          }
-        });
-      } else {
-        setError('Please enter your email to complete sign-in.');
-        setMode('signin');
-      }
-    }
-  }, [finishSignIn, completeEmailLinkSignIn, router, appRedirect]);
 
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -343,42 +319,6 @@ function LoginForm() {
               )}
             </p>
           </motion.form>
-
-          {/* Email link (passwordless) option */}
-          {mode === 'signin' && !linkSent && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.38, duration: 0.5 }}
-              className="mt-3"
-            >
-              <button
-                type="button"
-                onClick={async () => {
-                  if (!email.trim()) { setError('Enter your email first, then click this button.'); return; }
-                  setIsLoading(true); setError('');
-                  const result = await sendEmailLink(email);
-                  if (result.success) { setLinkSent(true); } else { setError(result.error || 'Failed to send link.'); }
-                  setIsLoading(false);
-                }}
-                disabled={isLoading}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-navy-700/40 bg-navy-800/30 px-4 py-2.5 text-xs font-medium text-navy-300 transition-all hover:border-gold-500/30 hover:text-gold-400 disabled:opacity-50"
-              >
-                <Link2 className="h-3.5 w-3.5" />
-                Sign in with email link (no password)
-              </button>
-            </motion.div>
-          )}
-          {linkSent && (
-            <motion.div
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-center"
-            >
-              <p className="text-sm font-medium text-emerald-400">Check your email</p>
-              <p className="mt-1 text-xs text-emerald-400/70">We sent a sign-in link to <strong>{email}</strong>. Click it to sign in.</p>
-            </motion.div>
-          )}
 
           {/* Divider */}
           <motion.div
