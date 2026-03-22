@@ -232,11 +232,11 @@ export function SituationOnboarding({ situation, onComplete }: SituationOnboardi
                 </span>
               </div>
 
-              <div className="max-h-80 overflow-y-auto rounded-lg border border-navy-200 bg-navy-50/50 p-4">
+              <div className="max-h-80 overflow-y-auto rounded-lg border border-navy-200 bg-white p-4 text-sm text-navy-800 leading-relaxed">
                 {researchResult ? (
                   <MarkdownRenderer content={researchResult} />
                 ) : (
-                  <div className="flex items-center gap-2 text-sm text-navy-400">
+                  <div className="flex items-center gap-2 text-sm text-navy-600">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Gathering intelligence from selected sources...
                   </div>

@@ -1,0 +1,237 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, Loader2, Check, X, Settings2 } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
+import { usePreferencesStore, type DataSourceMode } from '@/stores/preferences-store';
+import { useSituationStore } from '@/stores/situation-store';
+import { useAuth } from '@/lib/auth/auth-context';
+import type { Situation } from '@/types/situation';
+
+interface AiPopulateProps {
+  /** Unique tool identifier (e.g., 'risk-monitor', 'early-warning') */
+  toolId: string;
+  /** Human-readable tool name */
+  toolName: string;
+  /** API endpoint to call for generating data */
+  apiEndpoint: string;
+  /** Extra body params to send with the API call */
+  extraBody?: Record<string, unknown>;
+  /** Credit cost for this generation */
+  creditCost: number;
+  /** Called when generation completes with the response data */
+  onDataGenerated: (data: unknown) => void;
+  /** Whether data already exists (skip auto-populate if true) */
+  hasExistingData: boolean;
+  /** Children to render (the actual tool UI) */
+  children: React.ReactNode;
+}
+
+const SOURCE_MODE_LABELS: Record<DataSourceMode, string> = {
+  all: 'All sources (web + documents + AI knowledge)',
+  'web-and-docs': 'Web sources + uploaded documents',
+  'docs-only': 'Only uploaded documents',
+  'llm-only': 'AI knowledge only (no external sources)',
+};
+
+/**
+ * Wraps a tool page to auto-populate data when first opened.
+ * Shows a "PRAXIS is researching..." overlay, then reveals the tool.
+ */
+export function AiPopulate({
+  toolId,
+  toolName,
+  apiEndpoint,
+  extraBody,
+  creditCost,
+  onDataGenerated,
+  hasExistingData,
+  children,
+}: AiPopulateProps) {
+  const { activeSituation } = useSituationStore();
+  const { credits } = useAuth();
+  const { aiAutoPopulate, getEffectiveMode, setToolOverride } = usePreferencesStore();
+
+  const [status, setStatus] = useState<'idle' | 'generating' | 'done' | 'error' | 'skipped'>('idle');
+  const [showSourcePicker, setShowSourcePicker] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const sourceMode = getEffectiveMode(toolId);
+
+  // Auto-populate when tool opens for the first time with no data
+  useEffect(() => {
+    if (hasExistingData || !aiAutoPopulate || !activeSituation || status !== 'idle') {
+      if (hasExistingData) setStatus('skipped');
+      return;
+    }
+    // Don't auto-generate, just show the prompt
+  }, [hasExistingData, aiAutoPopulate, activeSituation, status]);
+
+  const generate = useCallback(async () => {
+    if (!activeSituation) return;
+    setStatus('generating');
+    setErrorMsg('');
+
+    try {
+      const res = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          situationId: activeSituation.id,
+          situation: activeSituation,
+          sourceMode,
+          ...extraBody,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Generation failed' }));
+        setErrorMsg(data.error || `Failed to generate ${toolName} data`);
+        setStatus('error');
+        return;
+      }
+
+      const data = await res.json();
+      onDataGenerated(data);
+      setStatus('done');
+    } catch {
+      setErrorMsg('Network error. Please try again.');
+      setStatus('error');
+    }
+  }, [activeSituation, apiEndpoint, sourceMode, extraBody, toolName, onDataGenerated]);
+
+  // If data exists or user skipped, just show the tool
+  if (status === 'skipped' || status === 'done' || hasExistingData) {
+    return <>{children}</>;
+  }
+
+  // Generating state
+  if (status === 'generating') {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+          className="mb-6"
+        >
+          <Sparkles className="h-10 w-10 text-gold-600" />
+        </motion.div>
+        <h3 className="text-base font-semibold text-navy-900">PRAXIS is analyzing</h3>
+        <p className="mt-2 text-sm text-navy-600">
+          Generating {toolName} data for &ldquo;{activeSituation?.name}&rdquo;...
+        </p>
+        <div className="mt-4 flex items-center gap-2 text-xs text-navy-400">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          Researching, analyzing, and structuring intelligence
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (status === 'error') {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <X className="h-10 w-10 text-red-400" />
+        <h3 className="mt-4 text-base font-semibold text-navy-900">Generation Failed</h3>
+        <p className="mt-2 text-sm text-navy-500">{errorMsg}</p>
+        <div className="mt-4 flex gap-3">
+          <button onClick={generate} className="rounded-lg bg-diplomatic-blue px-4 py-2 text-sm font-medium text-white hover:bg-diplomatic-blue/90">
+            Retry
+          </button>
+          <button onClick={() => setStatus('skipped')} className="rounded-lg border border-navy-200 px-4 py-2 text-sm font-medium text-navy-600 hover:bg-navy-50">
+            Skip — use empty view
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Prompt state — ask user before generating
+  return (
+    <div className="space-y-6">
+      {/* AI Populate prompt */}
+      <div className="rounded-xl border border-gold-500/30 bg-white p-5 shadow-sm">
+        <div className="flex items-start gap-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold-500/10">
+            <Sparkles className="h-5 w-5 text-gold-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-navy-900">
+              Generate {toolName} for &ldquo;{activeSituation?.name}&rdquo;
+            </h3>
+            <p className="mt-1 text-xs text-navy-600">
+              PRAXIS will analyze your situation data and generate {toolName.toLowerCase()} intelligence.
+              This uses {creditCost} credit{creditCost !== 1 ? 's' : ''}.
+              You have {credits} credits.
+            </p>
+
+            {/* Source mode picker */}
+            <div className="mt-3">
+              <button
+                onClick={() => setShowSourcePicker(!showSourcePicker)}
+                className="flex items-center gap-1.5 text-[11px] text-navy-500 hover:text-navy-700"
+              >
+                <Settings2 className="h-3 w-3" />
+                Data sources: {SOURCE_MODE_LABELS[sourceMode]}
+              </button>
+
+              <AnimatePresence>
+                {showSourcePicker && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="mt-2 overflow-hidden"
+                  >
+                    <div className="space-y-1.5">
+                      {(Object.keys(SOURCE_MODE_LABELS) as DataSourceMode[]).map((mode) => (
+                        <button
+                          key={mode}
+                          onClick={() => { setToolOverride(toolId, mode); setShowSourcePicker(false); }}
+                          className={cn(
+                            'flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-colors',
+                            sourceMode === mode
+                              ? 'border-diplomatic-blue bg-diplomatic-blue/5 text-diplomatic-blue'
+                              : 'border-navy-200 text-navy-600 hover:border-navy-300'
+                          )}
+                        >
+                          <div className={cn(
+                            'h-3 w-3 rounded-full border',
+                            sourceMode === mode ? 'border-diplomatic-blue bg-diplomatic-blue' : 'border-navy-300'
+                          )} />
+                          {SOURCE_MODE_LABELS[mode]}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="mt-4 flex items-center gap-3">
+              <button
+                onClick={generate}
+                disabled={credits < creditCost}
+                className="flex items-center gap-2 rounded-lg bg-gold-500 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-gold-500/20 hover:bg-gold-600 disabled:opacity-50"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Generate {toolName}
+              </button>
+              <button
+                onClick={() => setStatus('skipped')}
+                className="text-xs text-navy-500 hover:text-navy-700"
+              >
+                Skip — I&apos;ll add data manually
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Show empty tool underneath */}
+      {children}
+    </div>
+  );
+}
