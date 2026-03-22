@@ -11,7 +11,8 @@ Next.js 16.1.6 (App Router), TypeScript 5.9, Tailwind CSS 4, Radix UI, Vercel AI
 ## Architecture
 - `src/app/(landing)/` — Public landing page (18 sections, includes Ecosystem showcase)
 - `src/app/(auth)/` — Login (Firebase Auth: Google + email/password + Demo Mode bypass)
-- `src/app/(app)/` — Authenticated workspace (29 pages)
+- `src/app/app/` — Real PRAXIS workspace (Firebase auth, situation-driven, 30 pages at /app/*)
+- `src/app/demo/` — Demo workspace (cookie auth, pre-loaded Nordalia data, 30 pages at /demo/*)
 - `src/app/api/` — 36 routes (24 AI, 4 data, 3 auth, 2 graph, 1 settings, 1 health, 1 upload)
 - `src/lib/firebase/` — config.ts (client SDK), admin.ts (server SDK), firestore.ts (user profiles, credits, AI settings, persistence)
 - `src/lib/ai/` — providers.ts (Gemini/Claude dual + user prefs), tools.ts (18 tools with Firecrawl web search), firecrawl.ts (web crawling service), research-engine.ts (Firecrawl-powered research pipeline), prompts/, schemas/

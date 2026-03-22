@@ -2,6 +2,8 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { PraxisLink } from '@/components/shared/praxis-link';
+import { usePraxisRoute } from '@/lib/utils/routes';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -36,6 +38,7 @@ import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
 import { SituationSelector } from '@/components/app/situation-selector';
 import { useAppStore } from '@/stores/app-store';
+import { useSituationStore } from '@/stores/situation-store';
 import {
   Tooltip,
   TooltipContent,
@@ -97,8 +100,13 @@ const navSections: NavSection[] = [
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const route = usePraxisRoute();
   const { user, credits, logout } = useAuth();
   const { sidebarOpen, toggleSidebar } = useAppStore();
+  const { activeSituationId, setActiveSituation } = useSituationStore();
+
+  // Strip /app or /demo prefix for active matching against nav hrefs
+  const barePath = pathname.replace(/^\/(app|demo)/, '') || '/';
 
   const initials = user?.name
     ? user.name
@@ -127,7 +135,7 @@ export function AppSidebar() {
     >
       {/* Logo */}
       <div className="flex h-16 items-center px-4 border-b border-[var(--color-app-border)]">
-        <Link href="/dashboard" className="flex items-center gap-2 overflow-hidden">
+        <PraxisLink href="/dashboard" className="flex items-center gap-2 overflow-hidden">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-diplomatic-blue">
             <span className="font-serif text-sm font-bold text-white">P</span>
           </div>
@@ -147,17 +155,14 @@ export function AppSidebar() {
               </motion.div>
             )}
           </AnimatePresence>
-        </Link>
+        </PraxisLink>
       </div>
 
       {/* Situation selector for production users */}
       <SituationSelector
         collapsed={!sidebarOpen}
-        activeSituationId={null}
-        onSelect={(id) => {
-          // Store the active situation ID — will be wired to conflict store
-          console.log('Selected situation:', id);
-        }}
+        activeSituationId={activeSituationId}
+        onSelect={setActiveSituation}
       />
 
       {/* Navigation sections */}
@@ -181,11 +186,11 @@ export function AppSidebar() {
 
             {section.items.map((item) => {
               const isActive =
-                pathname === item.href || pathname.startsWith(item.href + '/');
+                barePath === item.href || barePath.startsWith(item.href + '/');
               const Icon = item.icon;
 
               const linkContent = (
-                <Link
+                <PraxisLink
                   key={item.href}
                   href={item.href}
                   className={cn(
@@ -232,7 +237,7 @@ export function AppSidebar() {
                       {item.badge}
                     </span>
                   )}
-                </Link>
+                </PraxisLink>
               );
 
               if (!sidebarOpen) {
@@ -264,9 +269,9 @@ export function AppSidebar() {
         {/* Advisory Council - special item */}
         <div className="mt-2 border-t border-[var(--color-app-border)] pt-3">
           {(() => {
-            const isActive = pathname.startsWith('/advisory');
+            const isActive = barePath.startsWith('/advisory');
             const linkContent = (
-              <Link
+              <PraxisLink
                 href="/advisory"
                 className={cn(
                   'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
@@ -294,7 +299,7 @@ export function AppSidebar() {
                     </motion.span>
                   )}
                 </AnimatePresence>
-              </Link>
+              </PraxisLink>
             );
 
             if (!sidebarOpen) {
@@ -314,9 +319,9 @@ export function AppSidebar() {
         {/* Settings */}
         <div className="mt-1">
           {(() => {
-            const isActive = pathname === '/settings';
+            const isActive = barePath === '/settings';
             const linkContent = (
-              <Link
+              <PraxisLink
                 href="/settings"
                 className={cn(
                   'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
@@ -339,7 +344,7 @@ export function AppSidebar() {
                     </motion.span>
                   )}
                 </AnimatePresence>
-              </Link>
+              </PraxisLink>
             );
 
             if (!sidebarOpen) {

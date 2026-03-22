@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useAppStore } from '@/stores/app-store';
+import { usePraxisRoute } from '@/lib/utils/routes';
 import { AppSidebar } from '@/components/app/app-sidebar';
 import { Header } from '@/components/app/header';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -17,6 +18,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { setUser, setDemoMode } = useAppStore();
   const router = useRouter();
+  const route = usePraxisRoute();
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
@@ -46,10 +48,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useKeyboardShortcuts({
     openSearch,
-    newReport: () => router.push('/reports/new'),
-    openAssistant: () => router.push('/assistant'),
-    openConflictGraph: () => router.push('/conflict-graph'),
-    openDashboard: () => router.push('/dashboard'),
+    newReport: () => router.push(route('/reports/new')),
+    openAssistant: () => router.push(route('/assistant')),
+    openConflictGraph: () => router.push(route('/conflict-graph')),
+    openDashboard: () => router.push(route('/dashboard')),
     closeModal: () => setSearchOpen(false),
   });
 

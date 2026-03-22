@@ -88,7 +88,7 @@ const institutions = [
 
 export function Hero() {
   return (
-    <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
+    <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-24">
       {/* Background mesh gradient */}
       <div
         className="pointer-events-none absolute inset-0"
@@ -167,18 +167,18 @@ export function Hero() {
             href="/login"
             className="group inline-flex items-center justify-center rounded-md bg-gold-600 px-8 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-xl hover:shadow-gold-600/20"
           >
-            Start Free Demo
+            Start Using PRAXIS
             <span className="ml-2 transition-transform duration-200 group-hover:translate-x-0.5">
               &rarr;
             </span>
           </Link>
-          <a
-            href="#demo"
+          <Link
+            href="/login?mode=demo"
             className="group inline-flex items-center justify-center gap-2 rounded-md border border-diplomatic-blue/20 px-8 py-3.5 text-sm font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
           >
             <Play className="h-4 w-4" />
-            Watch 2-Min Overview
-          </a>
+            Try the Demo
+          </Link>
         </motion.div>
 
         {/* Animated counter */}

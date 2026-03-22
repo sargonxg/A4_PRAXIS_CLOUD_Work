@@ -1,86 +1,60 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Routes that require authentication (from the (app) route group)
-const PROTECTED_PATHS = [
-  '/dashboard',
-  '/reports',
-  '/assistant',
-  '/media-compass',
-  '/conflict-graph',
-  '/un-toolkit',
-  '/documents',
-  '/settings',
-  '/calendar',
-  '/advisory',
-  '/talking-points',
-  '/stakeholder-map',
-  '/early-warning',
-  '/sanctions',
-  '/scenarios',
-  '/negotiation-prep',
-  '/compare',
-  '/cases',
-  '/argus',
-  '/concordia',
-  '/dossier',
-  '/treaty-analyzer',
-  '/risk-monitor',
-  '/actors',
-  '/team',
-  '/briefing',
-  '/situations',
-];
+const SESSION_COOKIE = 'tacitus-auth-session';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const session = request.cookies.get(SESSION_COOKIE);
 
-  // Check if this path is protected
-  const isProtected = PROTECTED_PATHS.some(
-    (path) => pathname === path || pathname.startsWith(path + '/')
-  );
-
-  if (isProtected) {
-    const session = request.cookies.get('tacitus-auth-session');
-
-    if (!session?.value) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(loginUrl);
+  let sessionData: { demo?: boolean; token?: string } | null = null;
+  if (session?.value) {
+    try {
+      sessionData = JSON.parse(session.value);
+    } catch {
+      sessionData = null;
     }
   }
 
-  return NextResponse.next();
+  const isDemo = sessionData?.demo === true;
+  const hasFirebaseToken = !!sessionData?.token;
+
+  // --- /demo/* routes: require demo session cookie ---
+  if (pathname.startsWith('/demo')) {
+    if (!sessionData) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('mode', 'demo');
+      return addSecurityHeaders(NextResponse.redirect(loginUrl));
+    }
+    return addSecurityHeaders(NextResponse.next());
+  }
+
+  // --- /app/* routes: require Firebase JWT, reject demo users ---
+  if (pathname.startsWith('/app')) {
+    if (isDemo) {
+      // Demo users cannot access the real app
+      return addSecurityHeaders(
+        NextResponse.redirect(new URL('/demo/dashboard', request.url))
+      );
+    }
+    if (!hasFirebaseToken) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return addSecurityHeaders(NextResponse.redirect(loginUrl));
+    }
+    return addSecurityHeaders(NextResponse.next());
+  }
+
+  return addSecurityHeaders(NextResponse.next());
+}
+
+function addSecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  return response;
 }
 
 export const config = {
-  matcher: [
-    '/dashboard/:path*',
-    '/reports/:path*',
-    '/assistant/:path*',
-    '/media-compass/:path*',
-    '/conflict-graph/:path*',
-    '/un-toolkit/:path*',
-    '/documents/:path*',
-    '/settings/:path*',
-    '/calendar/:path*',
-    '/advisory/:path*',
-    '/talking-points/:path*',
-    '/stakeholder-map/:path*',
-    '/early-warning/:path*',
-    '/sanctions/:path*',
-    '/scenarios/:path*',
-    '/negotiation-prep/:path*',
-    '/compare/:path*',
-    '/cases/:path*',
-    '/argus/:path*',
-    '/concordia/:path*',
-    '/dossier/:path*',
-    '/treaty-analyzer/:path*',
-    '/risk-monitor/:path*',
-    '/actors/:path*',
-    '/team/:path*',
-    '/briefing/:path*',
-    '/situations/:path*',
-  ],
+  matcher: ['/demo/:path*', '/app/:path*'],
 };

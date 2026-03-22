@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
+import { usePraxisRoute } from '@/lib/utils/routes';
+import { useSituationStore } from '@/stores/situation-store';
 import { cn } from '@/lib/utils/cn';
 import { ChevronDown, Plus, Globe, Loader2 } from 'lucide-react';
-import type { SituationSummary } from '@/lib/firebase/situations';
 
 interface SituationSelectorProps {
   collapsed?: boolean;
@@ -16,7 +17,8 @@ interface SituationSelectorProps {
 export function SituationSelector({ collapsed, activeSituationId, onSelect }: SituationSelectorProps) {
   const { user } = useAuth();
   const router = useRouter();
-  const [situations, setSituations] = useState<SituationSummary[]>([]);
+  const route = usePraxisRoute();
+  const { situations, setSituations, setLoading: setStoreLoading } = useSituationStore();
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
@@ -29,17 +31,17 @@ export function SituationSelector({ collapsed, activeSituationId, onSelect }: Si
     fetch('/api/situations')
       .then((res) => res.json())
       .then((data) => {
-        setSituations(data.situations || []);
-        // Auto-select first situation if none active
-        if (!activeSituationId && data.situations?.length > 0) {
-          onSelect(data.situations[0].id);
+        const list = data.situations || [];
+        setSituations(list);
+        if (!activeSituationId && list.length > 0) {
+          onSelect(list[0].id);
         }
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [user, activeSituationId, onSelect]);
+      .finally(() => { setLoading(false); setStoreLoading(false); });
+  }, [user, activeSituationId, onSelect, setSituations, setStoreLoading]);
 
-  if (user?.isDemo) return null; // Demo users don't see situation selector
+  if (user?.isDemo) return null;
 
   const activeSituation = situations.find((s) => s.id === activeSituationId);
 
@@ -58,7 +60,7 @@ export function SituationSelector({ collapsed, activeSituationId, onSelect }: Si
     return (
       <div className="mx-2 mb-3">
         <button
-          onClick={() => router.push('/situations/new')}
+          onClick={() => router.push(route('/situations/new'))}
           className={cn(
             'flex w-full items-center gap-2 rounded-lg border border-dashed border-gold-500/30 bg-gold-500/5 px-3 py-2.5',
             'text-xs font-medium text-gold-700 transition-colors hover:bg-gold-500/10 hover:border-gold-500/50'
@@ -128,7 +130,7 @@ export function SituationSelector({ collapsed, activeSituationId, onSelect }: Si
           </div>
           <div className="border-t border-[var(--color-app-border)] p-1">
             <button
-              onClick={() => { router.push('/situations/new'); setOpen(false); }}
+              onClick={() => { router.push(route('/situations/new')); setOpen(false); }}
               className="flex w-full items-center gap-2 rounded px-3 py-2 text-xs font-medium text-gold-700 transition-colors hover:bg-gold-500/5"
             >
               <Plus className="h-3.5 w-3.5" />

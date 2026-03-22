@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { usePraxisRoute } from '@/lib/utils/routes';
 import { Search, ChevronRight, User, Settings, LogOut, Sparkles, X, Send, Coins } from 'lucide-react';
 import { NotificationBell } from '@/components/shared/notifications';
 import { GlobalSearch } from '@/components/shared/global-search';
@@ -42,6 +43,7 @@ const routeLabels: Record<string, string> = {
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
+  const route = usePraxisRoute();
   const { user, credits, logout } = useAuth();
   const [assistOpen, setAssistOpen] = useState(false);
   const [assistQuery, setAssistQuery] = useState('');
@@ -173,11 +175,11 @@ export function Header() {
                 </div>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push('/settings')}>
+              <DropdownMenuItem onClick={() => router.push(route('/settings'))}>
                 <User className="mr-2 h-4 w-4" />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push('/settings')}>
+              <DropdownMenuItem onClick={() => router.push(route('/settings'))}>
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>

@@ -37,7 +37,7 @@ export default function LandingLayout({
 
   return (
     <div className="landing-light paper-texture relative min-h-screen">
-      {/* DEMO mode banner */}
+      {/* DEMO mode banner — normal flow, scrolls away naturally */}
       <div className="relative z-[60] bg-diplomatic-blue px-4 py-2 text-center text-xs text-white/90">
         <span className="font-semibold tracking-wide uppercase text-gold-400">Demo</span>
         {" "}— PRAXIS is in early demo mode. We are collecting initial feedback from practitioners.{" "}
@@ -52,10 +52,10 @@ export default function LandingLayout({
         style={{ width: `${scrollProgress}%` }}
       />
 
-      {/* Navigation */}
+      {/* Navigation — sticky so it sticks after banner scrolls away */}
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
+          "sticky top-0 z-50 transition-all duration-500",
           scrolled
             ? "bg-white/95 backdrop-blur-md border-b border-cream-300/60 shadow-sm"
             : "bg-transparent"

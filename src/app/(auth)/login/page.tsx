@@ -10,7 +10,11 @@ import { useAuth } from '@/lib/auth/auth-context';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/dashboard';
+  const queryMode = searchParams.get('mode');
+  const rawRedirect = searchParams.get('redirect');
+  // Real auth → /app/dashboard, demo → /demo/dashboard
+  const appRedirect = rawRedirect?.startsWith('/app') ? rawRedirect : '/app/dashboard';
+  const demoRedirect = rawRedirect?.startsWith('/demo') ? rawRedirect : '/demo/dashboard';
   const { signInWithEmail, signUpWithEmail, signInWithGoogle, signInAsDemo } = useAuth();
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
@@ -48,7 +52,7 @@ function LoginForm() {
       }
 
       if (result.success) {
-        router.push(redirect);
+        router.push(appRedirect);
         router.refresh();
       } else {
         setError(result.error || 'Authentication failed.');
@@ -66,7 +70,7 @@ function LoginForm() {
     try {
       const result = await signInWithGoogle();
       if (result.success) {
-        router.push(redirect);
+        router.push(appRedirect);
         router.refresh();
       } else {
         setError(result.error || 'Google sign-in failed.');
@@ -83,7 +87,7 @@ function LoginForm() {
     await signInAsDemo();
     // Small delay to ensure cookie is set before navigation
     await new Promise((r) => setTimeout(r, 100));
-    router.push(redirect);
+    router.push(demoRedirect);
     router.refresh();
   }
 
