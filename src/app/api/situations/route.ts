@@ -9,8 +9,13 @@ export const GET = withAuth(async (_req, user) => {
   if (user.isDemo) {
     return NextResponse.json({ situations: [] });
   }
-  const situations = await listSituations(user.uid);
-  return NextResponse.json({ situations });
+  try {
+    const situations = await listSituations(user.uid);
+    return NextResponse.json({ situations });
+  } catch (err) {
+    console.error('[situations] List failed:', err);
+    return NextResponse.json({ situations: [] });
+  }
 });
 
 export const POST = withAuth(async (req, user) => {
@@ -21,22 +26,30 @@ export const POST = withAuth(async (req, user) => {
     );
   }
 
-  const body = await req.json();
-  const { name, type, description, region, actors, userRole, status } = body;
+  try {
+    const body = await req.json();
+    const { name, type, description, region, actors, userRole, status } = body;
 
-  if (!name?.trim()) {
-    return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    if (!name?.trim()) {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    }
+
+    const situation = await createSituation(user.uid, {
+      name: name.trim(),
+      type: type || 'custom',
+      description: description?.trim() || '',
+      region: region?.trim() || '',
+      actors: actors || [],
+      userRole: userRole || 'analyst',
+      status: status || 'active',
+    });
+
+    return NextResponse.json({ situation });
+  } catch (err) {
+    console.error('[situations] Create failed:', err);
+    return NextResponse.json(
+      { error: 'Failed to create situation. Please try again.' },
+      { status: 500 }
+    );
   }
-
-  const situation = await createSituation(user.uid, {
-    name: name.trim(),
-    type: type || 'custom',
-    description: description?.trim() || '',
-    region: region?.trim() || '',
-    actors: actors || [],
-    userRole: userRole || 'analyst',
-    status: status || 'active',
-  });
-
-  return NextResponse.json({ situation });
 });

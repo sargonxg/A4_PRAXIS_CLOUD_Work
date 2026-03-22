@@ -29,7 +29,10 @@ export function SituationSelector({ collapsed, activeSituationId, onSelect }: Si
     }
 
     fetch('/api/situations')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) return { situations: [] };
+        return res.json();
+      })
       .then((data) => {
         const list = data.situations || [];
         setSituations(list);

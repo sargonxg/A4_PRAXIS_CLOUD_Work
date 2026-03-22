@@ -1,30 +1,15 @@
-import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  collection,
-  query,
-  orderBy,
-  getDocs,
-} from 'firebase/firestore';
-import { db } from './config';
+import { adminDb } from './admin';
 import type { Situation, CreateSituationInput } from '@/types/situation';
 
-function situationsRef(uid: string) {
-  return collection(db, 'users', uid, 'situations');
-}
-
-function situationDoc(uid: string, situationId: string) {
-  return doc(db, 'users', uid, 'situations', situationId);
+function situationsCol(uid: string) {
+  return adminDb.collection('users').doc(uid).collection('situations');
 }
 
 export async function createSituation(
   uid: string,
   data: CreateSituationInput
 ): Promise<Situation> {
-  const ref = doc(situationsRef(uid));
+  const ref = situationsCol(uid).doc();
   const now = new Date().toISOString();
   const situation: Situation = {
     id: ref.id,
@@ -44,7 +29,7 @@ export async function createSituation(
     createdAt: now,
     updatedAt: now,
   };
-  await setDoc(ref, situation);
+  await ref.set(situation);
   return situation;
 }
 
@@ -52,13 +37,12 @@ export async function getSituation(
   uid: string,
   situationId: string
 ): Promise<Situation | null> {
-  const snap = await getDoc(situationDoc(uid, situationId));
-  return snap.exists() ? (snap.data() as Situation) : null;
+  const snap = await situationsCol(uid).doc(situationId).get();
+  return snap.exists ? (snap.data() as Situation) : null;
 }
 
 export async function listSituations(uid: string): Promise<Situation[]> {
-  const q = query(situationsRef(uid), orderBy('updatedAt', 'desc'));
-  const snap = await getDocs(q);
+  const snap = await situationsCol(uid).orderBy('updatedAt', 'desc').get();
   return snap.docs.map((d) => d.data() as Situation);
 }
 
@@ -67,7 +51,7 @@ export async function updateSituation(
   situationId: string,
   updates: Partial<Situation>
 ): Promise<void> {
-  await updateDoc(situationDoc(uid, situationId), {
+  await situationsCol(uid).doc(situationId).update({
     ...updates,
     updatedAt: new Date().toISOString(),
   });
@@ -84,5 +68,5 @@ export async function deleteSituation(
   uid: string,
   situationId: string
 ): Promise<void> {
-  await deleteDoc(situationDoc(uid, situationId));
+  await situationsCol(uid).doc(situationId).delete();
 }

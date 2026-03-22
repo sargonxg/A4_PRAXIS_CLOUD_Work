@@ -419,7 +419,7 @@ function StepReview({ form, onBack, onCreate, isCreating }: { form: SituationFor
 export default function NewSituationPage() {
   const router = useRouter();
   const route = usePraxisRoute();
-  const { user } = useAuth();
+  const { user, firebaseUser } = useAuth();
   const { addSituation } = useSituationStore();
   const [step, setStep] = useState<Step>(1);
   const [direction, setDirection] = useState(1);
@@ -443,6 +443,16 @@ export default function NewSituationPage() {
     setIsCreating(true);
     setError('');
     try {
+      // Refresh token cookie before API call
+      if (firebaseUser) {
+        const token = await firebaseUser.getIdToken(true);
+        await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+      }
+
       const res = await fetch('/api/situations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -450,7 +460,11 @@ export default function NewSituationPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: 'Request failed' }));
-        setError(data.error || 'Failed to create situation');
+        if (res.status === 401) {
+          setError('Session expired. Please sign in again.');
+        } else {
+          setError(data.error || 'Failed to create situation. Please try again.');
+        }
         setIsCreating(false);
         return;
       }
@@ -458,10 +472,10 @@ export default function NewSituationPage() {
       addSituation(situation);
       router.push(route('/dashboard'));
     } catch {
-      setError('Network error. Please try again.');
+      setError('Network error. Please check your connection and try again.');
       setIsCreating(false);
     }
-  }, [form, router, route, addSituation]);
+  }, [form, router, route, addSituation, firebaseUser]);
 
   if (user?.isDemo) {
     return (
