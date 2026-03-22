@@ -1714,6 +1714,269 @@ Be rigorous — avoid superficial comparisons. Focus on causal mechanisms, not s
 });
 
 // ============================================================================
+// Tool 19: canonicalNameLookup
+// Resolves proper/canonical names for actors, places, treaties using
+// authoritative sources (Wikipedia, UN, State Dept, ICJ, etc.)
+// ============================================================================
+
+export const canonicalNameLookup = tool({
+  description:
+    'Look up the canonical/official name for an actor, place, treaty, organization, or concept. Uses authoritative sources (Wikipedia, UN, US State Department, ICJ, EU) to find the proper designation. Use this when the user mentions an entity and you need to verify its official name, or when standardizing names across a situation.',
+  inputSchema: z.object({
+    entity: z.string().describe('The name or partial name to look up'),
+    entityType: z.enum(['actor', 'place', 'organization', 'treaty', 'event', 'concept']).describe('Type of entity'),
+    context: z.string().optional().describe('Situation context to disambiguate'),
+  }),
+  execute: async ({ entity, entityType, context }) => {
+    // Try Firecrawl web search for authoritative sources
+    const sources = [
+      `"${entity}" site:wikipedia.org ${entityType}`,
+      `"${entity}" site:un.org official name`,
+      `"${entity}" ${entityType} official designation`,
+    ];
+
+    const allResults = [];
+    for (const query of sources) {
+      try {
+        const results = await searchWeb(query, { numResults: 3 });
+        allResults.push(...results);
+      } catch {
+        // Continue with other sources
+      }
+    }
+
+    if (allResults.length === 0) {
+      // Fallback to AI knowledge
+      const { text } = await generateText({
+        model: gemini(),
+        prompt: `What is the canonical/official name for "${entity}" (${entityType})?
+${context ? `Context: ${context}` : ''}
+
+Provide:
+1. Official/canonical name as used by the United Nations
+2. Alternative names/spellings commonly used
+3. The ISO or UN designation if applicable
+4. Any naming controversies or sensitivities
+
+Be precise and cite the authoritative source for each name variant.`,
+      });
+      return {
+        entity,
+        canonicalName: entity,
+        source: 'AI knowledge (no web results available)',
+        analysis: text,
+        webResults: [],
+      };
+    }
+
+    // Use AI to synthesize the authoritative name from search results
+    const sourceTexts = allResults.slice(0, 5).map((r) =>
+      `[${r.title}](${r.url}): ${(r.description || r.content || '').slice(0, 500)}`
+    ).join('\n\n');
+
+    const { object } = await generateObject({
+      model: gemini(),
+      schema: z.object({
+        canonicalName: z.string().describe('The most authoritative/official name'),
+        unDesignation: z.string().optional().describe('UN official designation if different'),
+        alternativeNames: z.array(z.string()).describe('Other commonly used names'),
+        namingNotes: z.string().describe('Important notes about naming conventions or sensitivities'),
+        sources: z.array(z.object({
+          name: z.string(),
+          url: z.string(),
+          designation: z.string(),
+        })),
+      }),
+      prompt: `Based on these authoritative sources, determine the canonical name for "${entity}" (${entityType}).
+
+SOURCES:
+${sourceTexts}
+
+${context ? `CONTEXT: ${context}` : ''}
+
+Identify:
+1. The most authoritative/official name (UN usage preferred)
+2. Alternative names and when each is appropriate
+3. Any naming sensitivities (e.g., contested territories, disputed states)
+4. Which sources support which names`,
+    });
+
+    return {
+      entity,
+      ...object,
+      webResults: allResults.slice(0, 5).map((r) => ({ title: r.title, url: r.url })),
+    };
+  },
+});
+
+// ============================================================================
+// Tool 20: deepSourceResearch
+// Multi-source deep research combining Firecrawl, academic databases,
+// think tank reports, and government sources
+// ============================================================================
+
+export const deepSourceResearch = tool({
+  description:
+    'Conduct deep multi-source research on a topic. Searches across news wires, think tanks, academic sources, government reports, and specialized conflict databases. Returns synthesized findings with full source attribution and reliability scoring.',
+  inputSchema: z.object({
+    topic: z.string().describe('Research topic or question'),
+    situationContext: z.string().optional().describe('Active situation context'),
+    depth: z.enum(['quick', 'standard', 'comprehensive']).default('standard'),
+    sourcePreferences: z.array(z.string()).optional().describe('Preferred sources (e.g., "Crisis Group", "ACLED", "Reuters")'),
+    timeRange: z.enum(['week', 'month', 'quarter', 'year']).optional(),
+  }),
+  execute: async ({ topic, situationContext, depth, sourcePreferences, timeRange }) => {
+    const numResults = depth === 'quick' ? 5 : depth === 'comprehensive' ? 15 : 8;
+
+    // Build targeted queries for different source categories
+    const queries = [
+      topic, // General
+      `${topic} site:crisisgroup.org OR site:acleddata.com OR site:sipri.org`, // Think tanks
+      `${topic} site:un.org OR site:reliefweb.int`, // UN/humanitarian
+      `${topic} site:reuters.com OR site:apnews.com`, // Wire services
+    ];
+
+    if (sourcePreferences?.length) {
+      queries.push(`${topic} ${sourcePreferences.map((s) => `"${s}"`).join(' OR ')}`);
+    }
+
+    const allResults = [];
+    for (const query of queries.slice(0, depth === 'comprehensive' ? 4 : 2)) {
+      try {
+        const results = await searchWeb(query, { numResults: Math.ceil(numResults / 2) });
+        allResults.push(...results);
+      } catch {
+        // Continue
+      }
+    }
+
+    // Deduplicate by URL
+    const seen = new Set<string>();
+    const unique = allResults.filter((r) => {
+      if (seen.has(r.url)) return false;
+      seen.add(r.url);
+      return true;
+    }).slice(0, numResults);
+
+    if (unique.length === 0) {
+      return {
+        topic,
+        findings: [],
+        summary: 'No sources found. Firecrawl may not be configured.',
+        sources: [],
+      };
+    }
+
+    // Synthesize findings
+    const sourceTexts = unique.map((r, i) =>
+      `[Source ${i + 1}] ${r.title} (${r.url})\n${(r.description || r.content || '').slice(0, 800)}`
+    ).join('\n\n---\n\n');
+
+    const { object } = await generateObject({
+      model: gemini(),
+      schema: z.object({
+        summary: z.string().describe('Executive summary of findings (2-3 paragraphs)'),
+        keyFindings: z.array(z.object({
+          finding: z.string(),
+          confidence: z.enum(['high', 'medium', 'low']),
+          sources: z.array(z.number()).describe('Source indices that support this finding'),
+        })),
+        emergingTrends: z.array(z.string()),
+        informationGaps: z.array(z.string()),
+        suggestedFollowUp: z.array(z.string()),
+        conflictGrammarEntities: z.object({
+          newActors: z.array(z.string()),
+          newEvents: z.array(z.string()),
+          newClaims: z.array(z.string()),
+        }),
+      }),
+      prompt: `You are a TACITUS intelligence analyst. Synthesize these ${unique.length} sources into actionable intelligence.
+
+RESEARCH TOPIC: ${topic}
+${situationContext ? `SITUATION CONTEXT: ${situationContext}` : ''}
+${timeRange ? `TIME RANGE: Last ${timeRange}` : ''}
+
+SOURCES:
+${sourceTexts}
+
+Produce:
+1. Executive summary — what does the evidence show?
+2. Key findings with confidence levels and source attribution
+3. Emerging trends that an analyst should watch
+4. Information gaps — what we still don't know
+5. Suggested follow-up research questions
+6. Any new Conflict Grammar entities (actors, events, claims) discovered`,
+    });
+
+    return {
+      topic,
+      ...object,
+      sources: unique.map((r, i) => ({
+        index: i + 1,
+        title: r.title || 'Untitled',
+        url: r.url,
+        source: (() => {
+          try { return new URL(r.url).hostname.replace('www.', ''); } catch { return 'unknown'; }
+        })(),
+      })),
+    };
+  },
+});
+
+// ============================================================================
+// Tool 21: verifyAndStandardize
+// Cross-references claims, dates, and facts against multiple sources
+// ============================================================================
+
+export const verifyAndStandardize = tool({
+  description:
+    'Verify a claim, date, statistic, or fact against multiple authoritative sources. Cross-references to confirm accuracy and provides the standardized/official version. Use this before including contested facts in reports.',
+  inputSchema: z.object({
+    claim: z.string().describe('The claim or fact to verify'),
+    claimType: z.enum(['date', 'statistic', 'event', 'quote', 'designation', 'general']),
+    context: z.string().optional(),
+  }),
+  execute: async ({ claim, claimType, context }) => {
+    // Search for verification
+    const verifyResults = await searchWeb(`"${claim}" verify fact check`, { numResults: 5 }).catch(() => []);
+    const officialResults = await searchWeb(`"${claim}" site:un.org OR site:reuters.com OR site:icj-cij.org`, { numResults: 3 }).catch(() => []);
+
+    const allSources = [...verifyResults, ...officialResults].slice(0, 6);
+    const sourceTexts = allSources.map((r) =>
+      `${r.title} (${r.url}): ${(r.description || '').slice(0, 300)}`
+    ).join('\n');
+
+    const { object } = await generateObject({
+      model: gemini(),
+      schema: z.object({
+        verified: z.boolean().describe('Whether the claim is verified as accurate'),
+        confidence: z.enum(['confirmed', 'likely', 'contested', 'unverified', 'false']),
+        standardizedVersion: z.string().describe('The corrected/standardized version of the claim'),
+        discrepancies: z.array(z.string()).describe('Any discrepancies found between sources'),
+        notes: z.string().describe('Important caveats or context'),
+      }),
+      prompt: `Verify this ${claimType}: "${claim}"
+${context ? `Context: ${context}` : ''}
+
+Sources found:
+${sourceTexts || 'No sources available — use general knowledge with appropriate caveats.'}
+
+Assess:
+1. Is this claim accurate?
+2. What is the standardized/official version?
+3. Are there any discrepancies between sources?
+4. What caveats should accompany this claim in a diplomatic document?`,
+    });
+
+    return {
+      claim,
+      ...object,
+      sources: allSources.map((r) => ({ title: r.title, url: r.url })),
+    };
+  },
+});
+
+// ============================================================================
 // Tool Registry
 // ============================================================================
 
@@ -1736,6 +1999,9 @@ export const tacitusTools = {
   sanctionsCheck,
   humanitarianSnapshot,
   compareConflicts,
+  canonicalNameLookup,
+  deepSourceResearch,
+  verifyAndStandardize,
 };
 
 export type TacitusToolName = keyof typeof tacitusTools;

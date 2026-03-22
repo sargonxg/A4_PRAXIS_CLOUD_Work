@@ -1,50 +1,75 @@
 import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth, type Auth } from 'firebase-admin/auth';
+import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 
-function getAdminApp(): App {
+let _app: App | null = null;
+let _auth: Auth | null = null;
+let _db: Firestore | null = null;
+let _initError: string | null = null;
+
+function ensureInitialized() {
+  if (_app) return;
+
+  // Already initialized by another import
   if (getApps().length > 0) {
-    return getApps()[0];
+    _app = getApps()[0];
+    _auth = getAuth(_app);
+    _db = getFirestore(_app);
+    return;
   }
 
-  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
-  if (serviceAccountKey) {
-    try {
-      const serviceAccount = JSON.parse(serviceAccountKey);
+  if (!raw) {
+    _initError = 'FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set';
+    console.error(`[firebase-admin] ${_initError}`);
+    // Initialize without credentials — auth fallback will still work
+    _app = initializeApp({ projectId: 'praxisbytacitus' });
+    _auth = getAuth(_app);
+    // _db intentionally left null — Firestore ops will fail with clear error
+    return;
+  }
 
-      // Vercel may store the private key with literal \n — convert to real newlines
-      if (serviceAccount.private_key && typeof serviceAccount.private_key === 'string') {
-        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-      }
+  try {
+    let serviceAccount = JSON.parse(raw);
 
-      return initializeApp({
-        credential: cert(serviceAccount),
-        projectId: serviceAccount.project_id || 'praxisbytacitus',
-      });
-    } catch (e) {
-      console.error('[firebase-admin] Failed to initialize with service account:', e);
+    // Handle Vercel's literal \n in private_key
+    if (serviceAccount.private_key && typeof serviceAccount.private_key === 'string') {
+      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     }
-  } else {
-    console.warn('[firebase-admin] FIREBASE_SERVICE_ACCOUNT_KEY not set — Admin SDK operations will fail');
+
+    _app = initializeApp({
+      credential: cert(serviceAccount),
+      projectId: serviceAccount.project_id || 'praxisbytacitus',
+    });
+    _auth = getAuth(_app);
+    _db = getFirestore(_app);
+    console.log('[firebase-admin] Initialized successfully with service account');
+  } catch (e) {
+    _initError = e instanceof Error ? e.message : String(e);
+    console.error('[firebase-admin] Failed to initialize:', _initError);
+    // Fallback
+    _app = initializeApp({ projectId: 'praxisbytacitus' });
+    _auth = getAuth(_app);
   }
-
-  // Fallback: initialize without credentials (most operations will fail)
-  return initializeApp({
-    projectId: 'praxisbytacitus',
-  });
 }
 
-let adminApp: App;
-try {
-  adminApp = getAdminApp();
-} catch (e) {
-  console.error('[firebase-admin] Critical initialization error:', e);
-  adminApp = initializeApp({ projectId: 'praxisbytacitus' });
-}
+// Initialize on module load
+ensureInitialized();
 
-export const adminAuth = getAuth(adminApp);
-export const adminDb = getFirestore(adminApp);
+export const adminAuth: Auth = _auth!;
+
+// adminDb can be null if no service account key is set
+export const adminDb: Firestore = _db!;
+
+export function getAdminDbOrThrow(): Firestore {
+  if (!_db) {
+    throw new Error(
+      _initError || 'Firebase Admin Firestore not available. Set FIREBASE_SERVICE_ACCOUNT_KEY.'
+    );
+  }
+  return _db;
+}
 
 export async function verifyIdToken(token: string): Promise<{
   uid: string;
@@ -52,7 +77,8 @@ export async function verifyIdToken(token: string): Promise<{
   name: string;
 }> {
   try {
-    const decoded = await adminAuth.verifyIdToken(token);
+    if (!_auth) throw new Error('Auth not initialized');
+    const decoded = await _auth.verifyIdToken(token);
     return {
       uid: decoded.uid,
       email: decoded.email || '',
@@ -60,15 +86,19 @@ export async function verifyIdToken(token: string): Promise<{
     };
   } catch {
     // Fallback: decode JWT payload without verification
-    const payload = JSON.parse(
-      Buffer.from(token.split('.')[1], 'base64').toString()
-    );
-    return {
-      uid: payload.user_id || payload.sub || '',
-      email: payload.email || '',
-      name: payload.name || payload.email?.split('@')[0] || 'User',
-    };
+    try {
+      const payload = JSON.parse(
+        Buffer.from(token.split('.')[1], 'base64').toString()
+      );
+      return {
+        uid: payload.user_id || payload.sub || '',
+        email: payload.email || '',
+        name: payload.name || payload.email?.split('@')[0] || 'User',
+      };
+    } catch {
+      throw new Error('Invalid token format');
+    }
   }
 }
 
-export default adminApp;
+export default _app!;

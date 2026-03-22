@@ -1,24 +1,19 @@
+import { adminDb } from './admin';
 import type { Situation, CreateSituationInput } from '@/types/situation';
 
-/**
- * Get the Admin Firestore instance. Lazy-loaded to avoid initialization
- * errors when the module is imported but not used.
- */
-function getDb() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { adminDb } = require('./admin');
-  return adminDb as FirebaseFirestore.Firestore;
-}
-
 function situationsCol(uid: string) {
-  return getDb().collection('users').doc(uid).collection('situations');
+  if (!adminDb) {
+    throw new Error('Firebase Admin SDK not initialized. Set FIREBASE_SERVICE_ACCOUNT_KEY environment variable.');
+  }
+  return adminDb.collection('users').doc(uid).collection('situations');
 }
 
 export async function createSituation(
   uid: string,
   data: CreateSituationInput
 ): Promise<Situation> {
-  const ref = situationsCol(uid).doc();
+  const col = situationsCol(uid);
+  const ref = col.doc();
   const now = new Date().toISOString();
   const situation: Situation = {
     id: ref.id,
@@ -54,11 +49,14 @@ export async function listSituations(uid: string): Promise<Situation[]> {
   try {
     const snap = await situationsCol(uid).orderBy('updatedAt', 'desc').get();
     return snap.docs.map((d) => d.data() as Situation);
-  } catch (err) {
+  } catch {
     // If index doesn't exist yet, try without ordering
-    console.warn('[situations] orderBy failed, trying without:', err);
-    const snap = await situationsCol(uid).get();
-    return snap.docs.map((d) => d.data() as Situation);
+    try {
+      const snap = await situationsCol(uid).get();
+      return snap.docs.map((d) => d.data() as Situation);
+    } catch {
+      return [];
+    }
   }
 }
 
