@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePraxisRoute } from '@/lib/utils/routes';
+import { useSituationStore } from '@/stores/situation-store';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Globe,
@@ -13,31 +14,64 @@ import {
   Loader2,
   Check,
   Plus,
+  Users,
+  Upload,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
+import type { SituationType, UserRole } from '@/types/situation';
 
-/* ---------------------------------------------------------------------------
- * Types
- * -------------------------------------------------------------------------*/
+/* ---------- Types ---------- */
 
 interface SituationForm {
   name: string;
+  type: SituationType;
   description: string;
   region: string;
-  status: 'active' | 'monitoring' | 'emerging';
+  status: 'active' | 'emerging' | 'frozen';
+  actors: string[];
+  userRole: UserRole;
 }
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 
-/* ---------------------------------------------------------------------------
- * Step indicator
- * -------------------------------------------------------------------------*/
+/* ---------- Constants ---------- */
+
+const SITUATION_TYPES: { value: SituationType; label: string }[] = [
+  { value: 'international', label: 'International Conflict' },
+  { value: 'civil', label: 'Civil Conflict' },
+  { value: 'political', label: 'Political Crisis' },
+  { value: 'trade', label: 'Trade Dispute' },
+  { value: 'workplace', label: 'Workplace Dispute' },
+  { value: 'community', label: 'Community Dispute' },
+  { value: 'legal', label: 'Legal Dispute' },
+  { value: 'custom', label: 'Custom' },
+];
+
+const USER_ROLES: { value: UserRole; label: string; desc: string }[] = [
+  { value: 'observer', label: 'Observer', desc: 'Monitoring without direct involvement' },
+  { value: 'analyst', label: 'Analyst', desc: 'Producing intelligence and assessments' },
+  { value: 'mediator', label: 'Mediator', desc: 'Facilitating negotiation between parties' },
+  { value: 'party', label: 'Party to conflict', desc: 'Directly involved in the situation' },
+  { value: 'advisor', label: 'Advisor', desc: 'Providing counsel to stakeholders' },
+  { value: 'researcher', label: 'Researcher', desc: 'Academic or policy research' },
+];
+
+const REGION_SUGGESTIONS = [
+  'Middle East', 'Sub-Saharan Africa', 'Eastern Europe', 'South Asia',
+  'Central Asia', 'East Asia', 'Southeast Asia', 'North Africa',
+  'Latin America', 'Western Balkans', 'Horn of Africa', 'Sahel',
+  'South Caucasus', 'Caribbean', 'Pacific Islands',
+];
+
+/* ---------- Step Indicator ---------- */
 
 const STEPS: { step: Step; label: string; icon: React.ElementType }[] = [
-  { step: 1, label: 'Define', icon: FileText },
-  { step: 2, label: 'Research', icon: Sparkles },
-  { step: 3, label: 'Review & Create', icon: Check },
+  { step: 1, label: 'Describe', icon: FileText },
+  { step: 2, label: 'Actors', icon: Users },
+  { step: 3, label: 'Context', icon: Upload },
+  { step: 4, label: 'Create', icon: Check },
 ];
 
 function StepIndicator({ current }: { current: Step }) {
@@ -49,40 +83,16 @@ function StepIndicator({ current }: { current: Step }) {
         return (
           <div key={step} className="flex items-center gap-2">
             {idx > 0 && (
-              <div
-                className={cn(
-                  'hidden sm:block h-px w-8 transition-colors',
-                  isCompleted || isActive ? 'bg-gold-500' : 'bg-navy-200'
-                )}
-              />
+              <div className={cn('hidden sm:block h-px w-8 transition-colors', isCompleted || isActive ? 'bg-gold-500' : 'bg-navy-200')} />
             )}
             <div className="flex items-center gap-2">
-              <div
-                className={cn(
-                  'flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all',
-                  isActive
-                    ? 'bg-gold-500 text-white shadow-md shadow-gold-500/25'
-                    : isCompleted
-                      ? 'bg-gold-500/20 text-gold-700'
-                      : 'bg-navy-100 text-navy-400'
-                )}
-              >
-                {isCompleted ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  <Icon className="h-4 w-4" />
-                )}
+              <div className={cn(
+                'flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all',
+                isActive ? 'bg-gold-500 text-white shadow-md shadow-gold-500/25' : isCompleted ? 'bg-gold-500/20 text-gold-700' : 'bg-navy-100 text-navy-400'
+              )}>
+                {isCompleted ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
               </div>
-              <span
-                className={cn(
-                  'hidden sm:inline text-xs font-medium transition-colors',
-                  isActive
-                    ? 'text-navy-900'
-                    : isCompleted
-                      ? 'text-navy-600'
-                      : 'text-navy-400'
-                )}
-              >
+              <span className={cn('hidden sm:inline text-xs font-medium transition-colors', isActive ? 'text-navy-900' : isCompleted ? 'text-navy-600' : 'text-navy-400')}>
                 {label}
               </span>
             </div>
@@ -93,380 +103,231 @@ function StepIndicator({ current }: { current: Step }) {
   );
 }
 
-/* ---------------------------------------------------------------------------
- * Motion variants
- * -------------------------------------------------------------------------*/
+/* ---------- Motion ---------- */
 
 const stepVariants = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? 40 : -40,
-    opacity: 0,
-  }),
-  center: {
-    x: 0,
-    opacity: 1,
-  },
-  exit: (direction: number) => ({
-    x: direction > 0 ? -40 : 40,
-    opacity: 0,
-  }),
+  enter: (d: number) => ({ x: d > 0 ? 40 : -40, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (d: number) => ({ x: d > 0 ? -40 : 40, opacity: 0 }),
 };
 
-/* ---------------------------------------------------------------------------
- * Step 1 — Define
- * -------------------------------------------------------------------------*/
+/* ---------- Step 1: Describe ---------- */
 
-function StepDefine({
-  form,
-  setForm,
-  onNext,
-}: {
-  form: SituationForm;
-  setForm: React.Dispatch<React.SetStateAction<SituationForm>>;
-  onNext: () => void;
-}) {
+function StepDescribe({ form, setForm, onNext }: { form: SituationForm; setForm: React.Dispatch<React.SetStateAction<SituationForm>>; onNext: () => void }) {
   const isValid = form.name.trim().length > 0;
+  const [showRegions, setShowRegions] = useState(false);
 
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-semibold text-navy-900">
-          Define the Situation
-        </h2>
-        <p className="mt-1 text-sm text-navy-500">
-          Describe the conflict or geopolitical situation you want to track and
-          analyze.
-        </p>
+        <h2 className="text-lg font-semibold text-navy-900">Describe Your Situation</h2>
+        <p className="mt-1 text-sm text-navy-500">What conflict or situation are you tracking?</p>
       </div>
 
-      {/* Name */}
       <div className="space-y-1.5">
-        <label className="flex items-center gap-1.5 text-xs font-medium text-navy-700">
-          <FileText className="h-3 w-3" />
-          Situation Name <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={form.name}
-          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          placeholder="e.g., Eastern Mediterranean Maritime Dispute"
-          className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20 transition-colors"
-          autoFocus
-        />
+        <label className="text-xs font-medium text-navy-700">Situation Name <span className="text-red-500">*</span></label>
+        <input type="text" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="e.g., Syria Ceasefire Monitoring" autoFocus
+          className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20" />
       </div>
 
-      {/* Description */}
       <div className="space-y-1.5">
-        <label className="flex items-center gap-1.5 text-xs font-medium text-navy-700">
-          <FileText className="h-3 w-3" />
-          Description
-        </label>
-        <textarea
-          value={form.description}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, description: e.target.value }))
-          }
-          placeholder="Provide a brief overview of the situation, key dynamics, and why it requires monitoring..."
-          rows={4}
-          className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20 transition-colors resize-none"
-        />
+        <label className="text-xs font-medium text-navy-700">Type</label>
+        <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as SituationType }))}
+          className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20">
+          {SITUATION_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+        </select>
       </div>
 
-      {/* Region + Status row */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-navy-700">Description</label>
+        <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+          placeholder="2-3 sentences describing the conflict dynamics, key issues, and current state..." rows={4}
+          className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20 resize-none" />
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label className="flex items-center gap-1.5 text-xs font-medium text-navy-700">
-            <Globe className="h-3 w-3" />
-            Region
-          </label>
-          <input
-            type="text"
-            value={form.region}
-            onChange={(e) => setForm((f) => ({ ...f, region: e.target.value }))}
+        <div className="space-y-1.5 relative">
+          <label className="flex items-center gap-1.5 text-xs font-medium text-navy-700"><Globe className="h-3 w-3" /> Region</label>
+          <input type="text" value={form.region} onChange={(e) => setForm((f) => ({ ...f, region: e.target.value }))}
+            onFocus={() => setShowRegions(true)} onBlur={() => setTimeout(() => setShowRegions(false), 150)}
             placeholder="e.g., Eastern Mediterranean"
-            className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20 transition-colors"
-          />
+            className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20" />
+          {showRegions && (
+            <div className="absolute top-full left-0 right-0 z-10 mt-1 max-h-36 overflow-y-auto rounded-lg border border-navy-200 bg-white shadow-lg">
+              {REGION_SUGGESTIONS.filter((r) => r.toLowerCase().includes(form.region.toLowerCase())).map((r) => (
+                <button key={r} onMouseDown={() => { setForm((f) => ({ ...f, region: r })); setShowRegions(false); }}
+                  className="block w-full px-3 py-1.5 text-left text-xs text-navy-700 hover:bg-navy-50">{r}</button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="space-y-1.5">
-          <label className="flex items-center gap-1.5 text-xs font-medium text-navy-700">
-            <FileText className="h-3 w-3" />
-            Status
-          </label>
-          <select
-            value={form.status}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                status: e.target.value as SituationForm['status'],
-              }))
-            }
-            className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20 transition-colors"
-          >
+          <label className="text-xs font-medium text-navy-700">Status</label>
+          <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as SituationForm['status'] }))}
+            className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20">
             <option value="active">Active</option>
-            <option value="monitoring">Monitoring</option>
             <option value="emerging">Emerging</option>
+            <option value="frozen">Frozen</option>
           </select>
         </div>
       </div>
 
-      {/* Next button */}
       <div className="flex justify-end pt-2">
-        <button
-          onClick={onNext}
-          disabled={!isValid}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold transition-all',
-            isValid
-              ? 'bg-gold-500 text-white hover:bg-gold-600 shadow-md shadow-gold-500/20 hover:shadow-lg hover:shadow-gold-500/30'
-              : 'bg-navy-100 text-navy-400 cursor-not-allowed'
-          )}
-        >
-          Continue
-          <ArrowRight className="h-4 w-4" />
+        <button onClick={onNext} disabled={!isValid}
+          className={cn('flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold transition-all',
+            isValid ? 'bg-gold-500 text-white hover:bg-gold-600 shadow-md shadow-gold-500/20' : 'bg-navy-100 text-navy-400 cursor-not-allowed')}>
+          Continue <ArrowRight className="h-4 w-4" />
         </button>
       </div>
     </div>
   );
 }
 
-/* ---------------------------------------------------------------------------
- * Step 2 — Research (optional)
- * -------------------------------------------------------------------------*/
+/* ---------- Step 2: Actors ---------- */
 
-function StepResearch({
-  form,
-  onNext,
-  onBack,
-}: {
-  form: SituationForm;
-  onNext: () => void;
-  onBack: () => void;
-}) {
-  const [researchEnabled, setResearchEnabled] = useState(false);
-  const [researchQuery, setResearchQuery] = useState(form.name);
-  const [isResearching, setIsResearching] = useState(false);
-  const [researchResult, setResearchResult] = useState('');
-  const [researchDone, setResearchDone] = useState(false);
+function StepActors({ form, setForm, onNext, onBack }: { form: SituationForm; setForm: React.Dispatch<React.SetStateAction<SituationForm>>; onNext: () => void; onBack: () => void }) {
+  const [actorInput, setActorInput] = useState('');
 
-  const doResearch = useCallback(async () => {
-    if (!researchQuery.trim()) return;
-    setIsResearching(true);
-    setResearchResult('');
-    setResearchDone(false);
-
-    try {
-      const res = await fetch('/api/ai/deep-research', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: researchQuery,
-          mode: 'background',
-          depth: 'standard',
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Research failed' }));
-        setResearchResult(
-          `Research unavailable: ${err.error || 'Service error'}. You can skip this step and research later.`
-        );
-        setResearchDone(true);
-        setIsResearching(false);
-        return;
-      }
-
-      // Stream the response
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-      let fullText = '';
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          fullText += chunk;
-          setResearchResult(fullText);
-        }
-      }
-
-      setResearchDone(true);
-    } catch {
-      setResearchResult(
-        'Research request failed. You can skip this step and add research later from the dashboard.'
-      );
-      setResearchDone(true);
-    } finally {
-      setIsResearching(false);
+  const addActor = () => {
+    const name = actorInput.trim();
+    if (name && !form.actors.includes(name)) {
+      setForm((f) => ({ ...f, actors: [...f.actors, name] }));
+      setActorInput('');
     }
-  }, [researchQuery]);
+  };
+
+  const removeActor = (name: string) => {
+    setForm((f) => ({ ...f, actors: f.actors.filter((a) => a !== name) }));
+  };
 
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-semibold text-navy-900">
-          AI Research
-          <span className="ml-2 text-xs font-normal text-navy-400">
-            Optional
-          </span>
-        </h2>
-        <p className="mt-1 text-sm text-navy-500">
-          Let TACITUS research this situation using live intelligence sources.
-          You can also skip this and research later.
-        </p>
+        <h2 className="text-lg font-semibold text-navy-900">Who&apos;s Involved?</h2>
+        <p className="mt-1 text-sm text-navy-500">Identify the key actors and your role in this situation.</p>
       </div>
 
-      {/* Toggle */}
-      <div className="flex items-center justify-between rounded-lg border border-[var(--color-app-border)] bg-navy-50/50 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <Sparkles className="h-4 w-4 text-gold-600" />
-          <div>
-            <p className="text-sm font-medium text-navy-900">
-              Let AI research this situation
-            </p>
-            <p className="text-xs text-navy-500">
-              Uses Deep Research pipeline with Google Search grounding
-            </p>
-          </div>
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-navy-700">Key Actors / Parties</label>
+        <div className="flex gap-2">
+          <input type="text" value={actorInput} onChange={(e) => setActorInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addActor(); } }}
+            placeholder="Type an actor name and press Enter"
+            className="flex-1 rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20" />
+          <button onClick={addActor} className="rounded-lg bg-navy-100 px-3 py-2.5 text-navy-600 hover:bg-navy-200 transition-colors">
+            <Plus className="h-4 w-4" />
+          </button>
         </div>
-        <label className="relative cursor-pointer">
-          <input
-            type="checkbox"
-            checked={researchEnabled}
-            onChange={() => setResearchEnabled((v) => !v)}
-            className="peer sr-only"
-            disabled={isResearching}
-          />
-          <div
-            className={cn(
-              'h-5 w-9 rounded-full transition-colors',
-              researchEnabled ? 'bg-gold-500' : 'bg-navy-200'
-            )}
-          />
-          <div
-            className={cn(
-              'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all',
-              researchEnabled ? 'left-[18px]' : 'left-0.5'
-            )}
-          />
-        </label>
+        {form.actors.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {form.actors.map((actor) => (
+              <span key={actor} className="inline-flex items-center gap-1.5 rounded-full bg-diplomatic-blue/10 px-3 py-1 text-xs font-medium text-diplomatic-blue">
+                {actor}
+                <button onClick={() => removeActor(actor)} className="text-diplomatic-blue/60 hover:text-diplomatic-blue"><X className="h-3 w-3" /></button>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Research form */}
-      <AnimatePresence mode="wait">
-        {researchEnabled && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="space-y-4 overflow-hidden"
-          >
-            <div className="space-y-1.5">
-              <label className="flex items-center gap-1.5 text-xs font-medium text-navy-700">
-                <Sparkles className="h-3 w-3" />
-                Research Query
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={researchQuery}
-                  onChange={(e) => setResearchQuery(e.target.value)}
-                  placeholder="What should TACITUS research?"
-                  disabled={isResearching}
-                  className="flex-1 rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20 transition-colors disabled:opacity-50"
-                />
-                <button
-                  onClick={doResearch}
-                  disabled={isResearching || !researchQuery.trim()}
-                  className={cn(
-                    'flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-all',
-                    isResearching || !researchQuery.trim()
-                      ? 'bg-navy-100 text-navy-400 cursor-not-allowed'
-                      : 'bg-diplomatic-blue text-white hover:bg-diplomatic-blue/90 shadow-md shadow-diplomatic-blue/20'
-                  )}
-                >
-                  {isResearching ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Researching...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4" />
-                      Research
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-navy-700">Your Role</label>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {USER_ROLES.map((r) => (
+            <button key={r.value} onClick={() => setForm((f) => ({ ...f, userRole: r.value }))}
+              className={cn('rounded-lg border px-4 py-3 text-left transition-all',
+                form.userRole === r.value ? 'border-diplomatic-blue bg-diplomatic-blue/5 ring-1 ring-diplomatic-blue/20' : 'border-navy-200 hover:border-navy-300')}>
+              <p className={cn('text-sm font-medium', form.userRole === r.value ? 'text-diplomatic-blue' : 'text-navy-700')}>{r.label}</p>
+              <p className="text-[11px] text-navy-500 mt-0.5">{r.desc}</p>
+            </button>
+          ))}
+        </div>
+      </div>
 
-            {/* Research results */}
-            {(researchResult || isResearching) && (
-              <div className="rounded-lg border border-[var(--color-app-border)] bg-white">
-                <div className="border-b border-[var(--color-app-border)] px-4 py-2.5">
-                  <div className="flex items-center gap-2">
-                    {isResearching ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-gold-600" />
-                    ) : (
-                      <Check className="h-3.5 w-3.5 text-teal" />
-                    )}
-                    <span className="text-xs font-semibold text-navy-700">
-                      {isResearching
-                        ? 'Researching...'
-                        : 'Research Complete'}
-                    </span>
-                  </div>
-                </div>
-                <div className="max-h-64 overflow-y-auto p-4">
-                  <p className="whitespace-pre-wrap text-sm text-navy-700 leading-relaxed">
-                    {researchResult}
-                  </p>
-                  {isResearching && !researchResult && (
-                    <div className="flex items-center gap-2 text-sm text-navy-400">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Gathering intelligence from multiple sources...
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Navigation */}
       <div className="flex items-center justify-between pt-2">
-        <button
-          onClick={onBack}
-          disabled={isResearching}
-          className="flex items-center gap-2 rounded-lg border border-navy-200 px-5 py-2.5 text-sm font-medium text-navy-700 transition-colors hover:border-navy-300 hover:bg-navy-50 disabled:opacity-50"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
+        <button onClick={onBack} className="flex items-center gap-2 rounded-lg border border-navy-200 px-5 py-2.5 text-sm font-medium text-navy-700 hover:bg-navy-50">
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+        <button onClick={onNext}
+          className="flex items-center gap-2 rounded-lg bg-gold-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-gold-600 shadow-md shadow-gold-500/20">
+          Continue <ArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Step 3: Context (optional) ---------- */
+
+function StepContext({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+  const [urls, setUrls] = useState<string[]>(['']);
+  const [notes, setNotes] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files).filter((f) =>
+        ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'].includes(f.type)
+      );
+      setFiles((prev) => [...prev, ...newFiles].slice(0, 10));
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-lg font-semibold text-navy-900">Add Context <span className="ml-2 text-xs font-normal text-navy-400">Optional</span></h2>
+        <p className="mt-1 text-sm text-navy-500">Upload documents, paste URLs, or add notes. PRAXIS will analyze these to build your conflict knowledge graph.</p>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-navy-700">Documents (PDF, DOCX, TXT)</label>
+        <div className="rounded-lg border-2 border-dashed border-navy-200 bg-navy-50/50 p-6 text-center hover:border-diplomatic-blue/30 transition-colors">
+          <Upload className="mx-auto h-8 w-8 text-navy-400" />
+          <p className="mt-2 text-sm text-navy-600">Drag & drop files or <label className="cursor-pointer text-diplomatic-blue hover:underline">browse<input type="file" multiple accept=".pdf,.docx,.txt" onChange={handleFileChange} className="hidden" /></label></p>
+          <p className="mt-1 text-[11px] text-navy-400">Max 25MB per file</p>
+        </div>
+        {files.length > 0 && (
+          <div className="space-y-1 mt-2">
+            {files.map((f, i) => (
+              <div key={i} className="flex items-center justify-between rounded-lg border border-navy-200 bg-white px-3 py-2">
+                <span className="text-xs text-navy-700 truncate">{f.name}</span>
+                <button onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))} className="text-navy-400 hover:text-red-500"><X className="h-3.5 w-3.5" /></button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-navy-700">URLs (up to 5 articles/reports)</label>
+        {urls.map((url, i) => (
+          <div key={i} className="flex gap-2">
+            <input type="url" value={url} onChange={(e) => { const u = [...urls]; u[i] = e.target.value; setUrls(u); }} placeholder="https://..."
+              className="flex-1 rounded-lg border border-navy-200 bg-white px-4 py-2 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20" />
+            {urls.length > 1 && <button onClick={() => setUrls(urls.filter((_, j) => j !== i))} className="text-navy-400 hover:text-red-500"><X className="h-4 w-4" /></button>}
+          </div>
+        ))}
+        {urls.length < 5 && (
+          <button onClick={() => setUrls([...urls, ''])} className="text-xs text-diplomatic-blue hover:underline mt-1">+ Add another URL</button>
+        )}
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-navy-700">Notes / Raw Text</label>
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Paste any relevant notes, meeting summaries, or raw intelligence..." rows={3}
+          className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20 resize-none" />
+      </div>
+
+      <div className="flex items-center justify-between pt-2">
+        <button onClick={onBack} className="flex items-center gap-2 rounded-lg border border-navy-200 px-5 py-2.5 text-sm font-medium text-navy-700 hover:bg-navy-50">
+          <ArrowLeft className="h-4 w-4" /> Back
         </button>
         <div className="flex items-center gap-3">
-          {!researchDone && researchEnabled && (
-            <button
-              onClick={onNext}
-              disabled={isResearching}
-              className="text-sm font-medium text-navy-500 hover:text-navy-700 transition-colors disabled:opacity-50"
-            >
-              Skip
-            </button>
-          )}
-          <button
-            onClick={onNext}
-            disabled={isResearching}
-            className={cn(
-              'flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold transition-all',
-              isResearching
-                ? 'bg-navy-100 text-navy-400 cursor-not-allowed'
-                : 'bg-gold-500 text-white hover:bg-gold-600 shadow-md shadow-gold-500/20 hover:shadow-lg hover:shadow-gold-500/30'
-            )}
-          >
-            {researchDone ? 'Continue with Research' : 'Continue'}
-            <ArrowRight className="h-4 w-4" />
+          <button onClick={onNext} className="text-sm font-medium text-navy-500 hover:text-navy-700">Skip for now</button>
+          <button onClick={onNext}
+            className="flex items-center gap-2 rounded-lg bg-gold-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-gold-600 shadow-md shadow-gold-500/20">
+            Continue <ArrowRight className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -474,116 +335,64 @@ function StepResearch({
   );
 }
 
-/* ---------------------------------------------------------------------------
- * Step 3 — Review & Create
- * -------------------------------------------------------------------------*/
+/* ---------- Step 4: Review & Create ---------- */
 
-function StepReview({
-  form,
-  onBack,
-  onCreate,
-  isCreating,
-}: {
-  form: SituationForm;
-  onBack: () => void;
-  onCreate: () => void;
-  isCreating: boolean;
-}) {
-  const statusLabels: Record<string, string> = {
-    active: 'Active',
-    monitoring: 'Monitoring',
-    emerging: 'Emerging',
-  };
-  const statusColors: Record<string, string> = {
-    active: 'bg-teal/10 text-teal',
-    monitoring: 'bg-diplomatic-blue/10 text-diplomatic-blue',
-    emerging: 'bg-gold-500/10 text-gold-700',
-  };
+function StepReview({ form, onBack, onCreate, isCreating }: { form: SituationForm; onBack: () => void; onCreate: () => void; isCreating: boolean }) {
+  const typeLabel = SITUATION_TYPES.find((t) => t.value === form.type)?.label ?? form.type;
+  const roleLabel = USER_ROLES.find((r) => r.value === form.userRole)?.label ?? form.userRole;
 
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-semibold text-navy-900">
-          Review & Create
-        </h2>
-        <p className="mt-1 text-sm text-navy-500">
-          Confirm the details below and create your new situation.
-        </p>
+        <h2 className="text-lg font-semibold text-navy-900">Review & Create</h2>
+        <p className="mt-1 text-sm text-navy-500">Confirm the details and create your situation workspace.</p>
       </div>
 
-      {/* Summary card */}
       <div className="rounded-xl border border-[var(--color-app-border)] bg-navy-50/30">
         <div className="border-b border-[var(--color-app-border)] px-6 py-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="text-base font-bold text-navy-900">
-                {form.name}
-              </h3>
-              {form.region && (
-                <div className="mt-1 flex items-center gap-1.5 text-xs text-navy-500">
-                  <Globe className="h-3 w-3" />
-                  {form.region}
-                </div>
-              )}
-            </div>
-            <span
-              className={cn(
-                'rounded-full px-2.5 py-1 text-[11px] font-semibold',
-                statusColors[form.status] || 'bg-navy-100 text-navy-500'
-              )}
-            >
-              {statusLabels[form.status] || form.status}
-            </span>
+          <h3 className="text-base font-bold text-navy-900">{form.name}</h3>
+          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-navy-500">
+            <span className="rounded-full bg-diplomatic-blue/10 px-2 py-0.5 font-medium text-diplomatic-blue">{typeLabel}</span>
+            {form.region && <span className="flex items-center gap-1"><Globe className="h-3 w-3" />{form.region}</span>}
+            <span className="capitalize">{form.status}</span>
           </div>
         </div>
         <div className="px-6 py-4 space-y-4">
-          {form.description ? (
+          {form.description && (
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-400 mb-1">
-                Description
-              </p>
-              <p className="text-sm text-navy-700 leading-relaxed">
-                {form.description}
-              </p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-400 mb-1">Description</p>
+              <p className="text-sm text-navy-700 leading-relaxed">{form.description}</p>
             </div>
-          ) : (
-            <p className="text-sm italic text-navy-400">
-              No description provided. You can add one later from the dashboard.
-            </p>
           )}
+          {form.actors.length > 0 && (
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-400 mb-1.5">Actors ({form.actors.length})</p>
+              <div className="flex flex-wrap gap-1.5">
+                {form.actors.map((a) => <span key={a} className="rounded-full bg-diplomatic-blue/10 px-2.5 py-0.5 text-xs font-medium text-diplomatic-blue">{a}</span>)}
+              </div>
+            </div>
+          )}
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-400 mb-1">Your Role</p>
+            <p className="text-sm text-navy-700">{roleLabel}</p>
+          </div>
 
-          {/* What gets created */}
+          <div className="rounded-lg border border-emerald-200/60 bg-emerald-50/50 px-4 py-3">
+            <p className="text-xs text-emerald-700">Creating this situation costs <strong>0 credits</strong>. AI analysis of uploaded documents costs 3 credits each.</p>
+          </div>
+
           <div className="rounded-lg border border-navy-200 bg-white p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-400 mb-3">
-              What will be created
-            </p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-400 mb-3">PRAXIS will create</p>
             <div className="grid gap-2 sm:grid-cols-2">
               {[
-                {
-                  label: 'Conflict Grammar Structure',
-                  desc: '8 ACO entity categories initialized',
-                },
-                {
-                  label: 'Intelligence Dashboard',
-                  desc: 'Risk scoring & escalation tracking',
-                },
-                {
-                  label: 'Research Pipeline',
-                  desc: 'Deep research & media monitoring',
-                },
-                {
-                  label: 'Analysis Workspace',
-                  desc: 'Actor mapping, scenarios, reports',
-                },
+                { label: 'Dashboard overview', desc: 'Situation snapshot & quick actions' },
+                { label: 'Conflict graph', desc: 'Populated from your context' },
+                { label: 'Actor profiles', desc: `${form.actors.length || 'No'} actors ready to enrich` },
+                { label: 'AI assistant', desc: 'Ready for situation-aware questions' },
               ].map(({ label, desc }) => (
                 <div key={label} className="flex items-start gap-2">
                   <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal" />
-                  <div>
-                    <p className="text-xs font-medium text-navy-800">
-                      {label}
-                    </p>
-                    <p className="text-[10px] text-navy-500">{desc}</p>
-                  </div>
+                  <div><p className="text-xs font-medium text-navy-800">{label}</p><p className="text-[10px] text-navy-500">{desc}</p></div>
                 </div>
               ))}
             </div>
@@ -591,51 +400,27 @@ function StepReview({
         </div>
       </div>
 
-      {/* Navigation */}
       <div className="flex items-center justify-between pt-2">
-        <button
-          onClick={onBack}
-          disabled={isCreating}
-          className="flex items-center gap-2 rounded-lg border border-navy-200 px-5 py-2.5 text-sm font-medium text-navy-700 transition-colors hover:border-navy-300 hover:bg-navy-50 disabled:opacity-50"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
+        <button onClick={onBack} disabled={isCreating} className="flex items-center gap-2 rounded-lg border border-navy-200 px-5 py-2.5 text-sm font-medium text-navy-700 hover:bg-navy-50 disabled:opacity-50">
+          <ArrowLeft className="h-4 w-4" /> Back
         </button>
-        <button
-          onClick={onCreate}
-          disabled={isCreating}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold transition-all',
-            isCreating
-              ? 'bg-gold-500/70 text-white cursor-not-allowed'
-              : 'bg-gold-500 text-white hover:bg-gold-600 shadow-md shadow-gold-500/20 hover:shadow-lg hover:shadow-gold-500/30'
-          )}
-        >
-          {isCreating ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Creating...
-            </>
-          ) : (
-            <>
-              <Plus className="h-4 w-4" />
-              Create Situation
-            </>
-          )}
+        <button onClick={onCreate} disabled={isCreating}
+          className={cn('flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold transition-all',
+            isCreating ? 'bg-gold-500/70 text-white cursor-not-allowed' : 'bg-gold-500 text-white hover:bg-gold-600 shadow-md shadow-gold-500/20')}>
+          {isCreating ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating...</> : <><Sparkles className="h-4 w-4" /> Create Situation</>}
         </button>
       </div>
     </div>
   );
 }
 
-/* ---------------------------------------------------------------------------
- * Main page
- * -------------------------------------------------------------------------*/
+/* ---------- Main Page ---------- */
 
 export default function NewSituationPage() {
   const router = useRouter();
   const route = usePraxisRoute();
   const { user } = useAuth();
+  const { addSituation } = useSituationStore();
   const [step, setStep] = useState<Step>(1);
   const [direction, setDirection] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
@@ -643,52 +428,41 @@ export default function NewSituationPage() {
 
   const [form, setForm] = useState<SituationForm>({
     name: '',
+    type: 'international',
     description: '',
     region: '',
     status: 'active',
+    actors: [],
+    userRole: 'analyst',
   });
 
-  const goNext = useCallback(() => {
-    setDirection(1);
-    setStep((s) => Math.min(s + 1, 3) as Step);
-  }, []);
-
-  const goBack = useCallback(() => {
-    setDirection(-1);
-    setStep((s) => Math.max(s - 1, 1) as Step);
-  }, []);
+  const goNext = useCallback(() => { setDirection(1); setStep((s) => Math.min(s + 1, 4) as Step); }, []);
+  const goBack = useCallback(() => { setDirection(-1); setStep((s) => Math.max(s - 1, 1) as Step); }, []);
 
   const handleCreate = useCallback(async () => {
     setIsCreating(true);
     setError('');
-
     try {
       const res = await fetch('/api/situations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name,
-          description: form.description,
-          region: form.region,
-          status: form.status,
-        }),
+        body: JSON.stringify(form),
       });
-
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: 'Request failed' }));
         setError(data.error || 'Failed to create situation');
         setIsCreating(false);
         return;
       }
-
+      const { situation } = await res.json();
+      addSituation(situation);
       router.push(route('/dashboard'));
     } catch {
       setError('Network error. Please try again.');
       setIsCreating(false);
     }
-  }, [form, router]);
+  }, [form, router, route, addSituation]);
 
-  // Demo user guard
   if (user?.isDemo) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -696,17 +470,9 @@ export default function NewSituationPage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gold-500/10">
             <Globe className="h-6 w-6 text-gold-600" />
           </div>
-          <h2 className="text-lg font-semibold text-navy-900">
-            Sign in to Create Situations
-          </h2>
-          <p className="mt-2 text-sm text-navy-500">
-            Creating and managing real situations requires a TACITUS account.
-            Demo mode uses the pre-built Nordalia Crisis scenario.
-          </p>
-          <button
-            onClick={() => router.push(route('/dashboard'))}
-            className="mt-6 rounded-lg bg-gold-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-gold-600 transition-colors shadow-md shadow-gold-500/20"
-          >
+          <h2 className="text-lg font-semibold text-navy-900">Sign in to Create Situations</h2>
+          <p className="mt-2 text-sm text-navy-500">Creating real situations requires a TACITUS account. Demo mode uses the pre-built Nordalia Crisis scenario.</p>
+          <button onClick={() => router.push(route('/dashboard'))} className="mt-6 rounded-lg bg-gold-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-gold-600 shadow-md shadow-gold-500/20">
             Back to Dashboard
           </button>
         </div>
@@ -716,60 +482,27 @@ export default function NewSituationPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-navy-900">
-          New Situation
-        </h1>
-        <p className="mt-1 text-sm text-navy-500">
-          Create a new conflict or geopolitical situation for intelligence
-          tracking and analysis.
-        </p>
+        <h1 className="text-2xl font-semibold text-navy-900">New Situation</h1>
+        <p className="mt-1 text-sm text-navy-500">Create a conflict or geopolitical situation for intelligence tracking and analysis.</p>
       </div>
 
-      {/* Step indicator */}
       <StepIndicator current={step} />
 
-      {/* Step content */}
       <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-6 sm:p-8">
-        {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-
+        {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
         <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
-            key={step}
-            custom={direction}
-            variants={stepVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-          >
-            {step === 1 && (
-              <StepDefine form={form} setForm={setForm} onNext={goNext} />
-            )}
-            {step === 2 && (
-              <StepResearch form={form} onNext={goNext} onBack={goBack} />
-            )}
-            {step === 3 && (
-              <StepReview
-                form={form}
-                onBack={goBack}
-                onCreate={handleCreate}
-                isCreating={isCreating}
-              />
-            )}
+          <motion.div key={step} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25, ease: 'easeInOut' }}>
+            {step === 1 && <StepDescribe form={form} setForm={setForm} onNext={goNext} />}
+            {step === 2 && <StepActors form={form} setForm={setForm} onNext={goNext} onBack={goBack} />}
+            {step === 3 && <StepContext onNext={goNext} onBack={goBack} />}
+            {step === 4 && <StepReview form={form} onBack={goBack} onCreate={handleCreate} isCreating={isCreating} />}
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Footer note */}
       <p className="text-center text-[11px] text-navy-400">
-        Situations are stored securely in your TACITUS workspace. You can edit
-        details, add entities, and run research at any time from the dashboard.
+        Situations are stored securely in your TACITUS workspace. You can edit details and run AI analysis at any time.
       </p>
     </div>
   );
