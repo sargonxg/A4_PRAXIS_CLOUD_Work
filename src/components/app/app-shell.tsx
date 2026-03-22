@@ -11,17 +11,33 @@ import { DemoModeBanner } from '@/components/onboarding/demo-mode-banner';
 import { OnboardingWrapper } from '@/components/onboarding/onboarding-wrapper';
 import { GlobalSearch } from '@/components/shared/global-search';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { Loader2 } from 'lucide-react';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-  const { setUser, sidebarOpen, setDemoMode } = useAppStore();
+  const { user, loading } = useAuth();
+  const { setUser, setDemoMode } = useAppStore();
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [loading, user, router]);
+
+  useEffect(() => {
     if (user) {
-      setUser(user);
+      setUser({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        orgId: user.orgId,
+        orgName: user.orgName,
+        isDemo: user.isDemo,
+      });
       if (user.isDemo) setDemoMode(true);
+      else setDemoMode(false);
     }
   }, [user, setUser, setDemoMode]);
 
@@ -36,6 +52,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     openDashboard: () => router.push('/dashboard'),
     closeModal: () => setSearchOpen(false),
   });
+
+  // Show loading state while Firebase auth is initializing
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[var(--color-app-bg)]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-diplomatic-blue" />
+          <p className="text-sm text-navy-500">Loading PRAXIS...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   return (
     <TooltipProvider delayDuration={0}>

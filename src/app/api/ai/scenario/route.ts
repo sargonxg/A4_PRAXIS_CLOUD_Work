@@ -1,5 +1,6 @@
 import { streamText } from 'ai';
 import { getModel } from '@/lib/ai/providers';
+import { checkAndDeductCredits } from '@/lib/api/with-credits';
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
@@ -9,6 +10,9 @@ export async function POST(request: Request) {
 
   try {
     const { conflictContext, scenarioTrigger, actors, timeHorizon } = await request.json();
+
+    const creditCheck = await checkAndDeductCredits('ai_scenario', 'Scenario analysis');
+    if (!creditCheck.allowed) return creditCheck.response;
 
     const actorList = Array.isArray(actors) && actors.length > 0
       ? `Involved actors: ${actors.join(', ')}`

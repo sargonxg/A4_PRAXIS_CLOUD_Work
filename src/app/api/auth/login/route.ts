@@ -1,24 +1,43 @@
 import { NextResponse } from 'next/server';
-import { signIn, signInDemo } from '@/lib/auth/mock-auth';
+import { cookies } from 'next/headers';
 
+const SESSION_COOKIE = 'tacitus-auth-session';
+
+/**
+ * POST — Legacy login endpoint.
+ * Now only handles demo mode login. Firebase Auth is handled client-side.
+ */
 export async function POST(request: Request) {
   try {
-    const { email, password, isDemo } = await request.json();
+    const { isDemo } = await request.json();
 
     if (isDemo === true) {
-      const user = await signInDemo();
-      return NextResponse.json({ user, success: true });
+      const cookieStore = await cookies();
+      cookieStore.set(SESSION_COOKIE, JSON.stringify({ demo: true }), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24,
+        path: '/',
+      });
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: 'demo-user-001',
+          email: 'analyst@tacitus.demo',
+          name: 'Demo Analyst',
+          role: 'senior',
+          orgId: 'org-demo-001',
+          orgName: 'TACITUS Demo Organization',
+          isDemo: true,
+        },
+      });
     }
 
-    const user = await signIn(email, password);
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid credentials. Contact team@tacitus.me for demo access.', success: false },
-        { status: 401 }
-      );
-    }
-
-    return NextResponse.json({ user, success: true });
+    return NextResponse.json(
+      { error: 'Use Firebase Auth for authentication.', success: false },
+      { status: 400 }
+    );
   } catch {
     return NextResponse.json(
       { error: 'Authentication failed', success: false },

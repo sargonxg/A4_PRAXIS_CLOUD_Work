@@ -1,5 +1,6 @@
 import { generateObject } from 'ai';
 import { getModel } from '@/lib/ai/providers';
+import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { z } from 'zod';
 
 const ExtractedEntitySchema = z.object({
@@ -84,6 +85,9 @@ export async function POST(request: Request) {
 
   try {
     const { text, extractionTargets } = await request.json();
+
+    const creditCheck = await checkAndDeductCredits('ai_extract', 'Entity extraction');
+    if (!creditCheck.allowed) return creditCheck.response;
 
     if (!text) {
       return Response.json({ error: 'No text provided for extraction' }, { status: 400 });

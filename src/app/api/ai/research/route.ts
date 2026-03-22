@@ -1,5 +1,6 @@
 import { streamText, stepCountIs } from 'ai';
 import { google } from '@ai-sdk/google';
+import { checkAndDeductCredits } from '@/lib/api/with-credits';
 
 export const maxDuration = 60;
 
@@ -13,6 +14,9 @@ export async function POST(request: Request) {
 
   try {
     const { query, conflictContext } = await request.json();
+
+    const creditCheck = await checkAndDeductCredits('ai_research', 'Research query');
+    if (!creditCheck.allowed) return creditCheck.response;
 
     // Google Search grounding via google.tools.googleSearch (correct API for @ai-sdk/google v3.x).
     // This route handles structured research queries from the Research panel.

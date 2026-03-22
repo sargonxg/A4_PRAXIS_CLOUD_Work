@@ -1,6 +1,7 @@
 import { streamText, stepCountIs } from 'ai';
 import { google } from '@ai-sdk/google';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
+import { checkAndDeductCredits } from '@/lib/api/with-credits';
 
 export const maxDuration = 60;
 
@@ -14,6 +15,9 @@ export async function POST(request: Request) {
 
   try {
     const { messages, conflictContext } = await request.json();
+
+    const creditCheck = await checkAndDeductCredits('ai_grounded_search', 'Grounded search');
+    if (!creditCheck.allowed) return creditCheck.response;
 
     // Google Search grounding via google.tools.googleSearch (correct API for @ai-sdk/google v3.x).
     // NOTE: useSearchGrounding via a 2nd model arg was removed in v3.x.

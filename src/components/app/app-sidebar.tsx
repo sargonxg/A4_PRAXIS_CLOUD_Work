@@ -40,6 +40,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Coins } from 'lucide-react';
 
 interface NavSection {
   label: string;
@@ -95,7 +96,7 @@ const navSections: NavSection[] = [
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, credits, logout } = useAuth();
   const { sidebarOpen, toggleSidebar } = useAppStore();
 
   const initials = user?.name
@@ -109,7 +110,7 @@ export function AppSidebar() {
 
   async function handleLogout() {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await logout();
       router.push('/login');
     } catch {
       router.push('/login');
@@ -357,6 +358,30 @@ export function AppSidebar() {
 
       {/* Bottom section */}
       <div className="border-t border-[var(--color-app-border)] p-2">
+        {/* Credits display */}
+        {sidebarOpen ? (
+          <div className="mb-2 mx-2 rounded-lg border border-emerald-200/60 bg-emerald-50/50 px-3 py-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Coins className="h-3.5 w-3.5 text-emerald-600" />
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">TACITUS Credits</span>
+              </div>
+              <span className="text-sm font-bold text-emerald-700">{user?.isDemo ? '∞' : credits}</span>
+            </div>
+          </div>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="mb-2 flex items-center justify-center rounded-lg border border-emerald-200/60 bg-emerald-50/50 px-2 py-2">
+                <span className="text-xs font-bold text-emerald-700">{user?.isDemo ? '∞' : credits}</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              TACITUS Credits: {user?.isDemo ? 'Unlimited (Demo)' : credits}
+            </TooltipContent>
+          </Tooltip>
+        )}
+
         {/* User info */}
         <div className="mb-2 flex items-center gap-3 rounded-lg px-3 py-2.5">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-diplomatic-blue text-xs font-bold text-white">

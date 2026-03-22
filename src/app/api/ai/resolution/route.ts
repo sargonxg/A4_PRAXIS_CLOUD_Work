@@ -1,6 +1,7 @@
 import { streamText } from 'ai';
 import { getModel } from '@/lib/ai/providers';
 import { UN_STYLE_PROMPT } from '@/lib/ai/prompts/un-style';
+import { checkAndDeductCredits } from '@/lib/api/with-credits';
 
 export const maxDuration = 60;
 
@@ -14,6 +15,9 @@ export async function POST(request: Request) {
 
   try {
     const { topic, type, keyPoints, strength } = await request.json();
+
+    const creditCheck = await checkAndDeductCredits('ai_resolution', 'Resolution drafting');
+    if (!creditCheck.allowed) return creditCheck.response;
 
     const strengthGuide = {
       strong: 'Use strong action language: Demands, Decides, Requires, Determines, Condemns.',

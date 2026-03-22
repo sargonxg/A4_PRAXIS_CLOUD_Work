@@ -1,5 +1,6 @@
 import { streamText, stepCountIs } from 'ai';
 import { google } from '@ai-sdk/google';
+import { checkAndDeductCredits } from '@/lib/api/with-credits';
 
 export const maxDuration = 120;
 
@@ -109,6 +110,9 @@ export async function POST(request: Request) {
       depth?: ResearchDepth;
       conflictContext?: string;
     } = body;
+
+    const creditCheck = await checkAndDeductCredits('ai_deep_research', 'Deep research');
+    if (!creditCheck.allowed) return creditCheck.response;
 
     const stepLimit = depth === 'quick' ? 3 : depth === 'comprehensive' ? 8 : 5;
 

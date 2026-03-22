@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Search, ChevronRight, User, Settings, LogOut, Sparkles, X, Send } from 'lucide-react';
+import { Search, ChevronRight, User, Settings, LogOut, Sparkles, X, Send, Coins } from 'lucide-react';
 import { NotificationBell } from '@/components/shared/notifications';
 import { GlobalSearch } from '@/components/shared/global-search';
 import { cn } from '@/lib/utils/cn';
@@ -42,7 +42,7 @@ const routeLabels: Record<string, string> = {
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, credits, logout } = useAuth();
   const [assistOpen, setAssistOpen] = useState(false);
   const [assistQuery, setAssistQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -86,7 +86,7 @@ export function Header() {
 
   async function handleLogout() {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await logout();
       router.push('/login');
     } catch {
       router.push('/login');
@@ -162,6 +162,16 @@ export function Header() {
                   <p className="text-xs text-navy-500">{user?.email}</p>
                 </div>
               </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <div className="mx-2 my-1.5 rounded-md border border-emerald-200/60 bg-emerald-50/50 px-3 py-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Coins className="h-3.5 w-3.5 text-emerald-600" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">Credits</span>
+                  </div>
+                  <span className="text-sm font-bold text-emerald-700">{user?.isDemo ? '∞' : credits}</span>
+                </div>
+              </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => router.push('/settings')}>
                 <User className="mr-2 h-4 w-4" />

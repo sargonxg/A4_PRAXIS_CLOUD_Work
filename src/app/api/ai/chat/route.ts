@@ -3,6 +3,7 @@ import { getModel } from '@/lib/ai/providers';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
 import { tacitusTools } from '@/lib/ai/tools';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
+import { checkAndDeductCredits } from '@/lib/api/with-credits';
 
 export const maxDuration = 60;
 
@@ -42,7 +43,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // --- Live mode: use the AI provider ---
+    // --- Live mode: check credits before making AI call ---
+    const creditCheck = await checkAndDeductCredits('ai_chat', 'Chat message');
+    if (!creditCheck.allowed) return creditCheck.response;
 
     // Append conflict context to system prompt when the user has selected a conflict
     const systemPrompt = conflictContext
