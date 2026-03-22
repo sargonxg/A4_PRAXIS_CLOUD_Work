@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useMemo } from 'react';
@@ -100,10 +101,8 @@ function CircularGauge({ value, size = 120 }: { value: number; size?: number }) 
   );
 }
 
-export default function TreatyAnalyzerPage() {
+function DemoTreatyAnalyzerPage() {
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const [selectedAgreementId, setSelectedAgreementId] = useState<string>(
     DEMO_AGREEMENTS[0].id
   );
@@ -589,5 +588,33 @@ export default function TreatyAnalyzerPage() {
       </div>
       <PoweredByTacitus />
     </div>
+  );
+}
+
+// ============================================================================
+// Real mode wrapper — separates demo data from situation-specific data
+// ============================================================================
+
+export default function TreatyAnalyzerPage() {
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  
+  // Demo mode — render with hardcoded demo data
+  if (isDemo) return <DemoTreatyAnalyzerPage />;
+  
+  // No situation selected
+  if (showGuard || !situation) return <NoSituationState />;
+  
+  // Real mode — AI populate prompt, then show tool
+  return (
+    <AiPopulate
+      toolId="treaty-analyzer"
+      toolName="Treaty Analysis"
+      apiEndpoint="/api/ai/treaty-analyze"
+      creditCost={3}
+      hasExistingData={false}
+      onDataGenerated={() => {}}
+    >
+      <DemoTreatyAnalyzerPage />
+    </AiPopulate>
   );
 }

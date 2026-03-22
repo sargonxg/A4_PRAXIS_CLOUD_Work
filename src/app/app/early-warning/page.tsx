@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useCallback } from 'react';
@@ -582,10 +583,8 @@ function SituationCard({ conflict }: { conflict: ReturnType<typeof useConflictSt
 // Main Page
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function EarlyWarningPage() {
+function DemoEarlyWarningPage() {
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const conflicts = useConflictStore((s) => s.conflicts);
 
   // Glasl stage state (local)
@@ -902,5 +901,33 @@ export default function EarlyWarningPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ============================================================================
+// Real mode wrapper — separates demo data from situation-specific data
+// ============================================================================
+
+export default function EarlyWarningPage() {
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  
+  // Demo mode — render with hardcoded demo data
+  if (isDemo) return <DemoEarlyWarningPage />;
+  
+  // No situation selected
+  if (showGuard || !situation) return <NoSituationState />;
+  
+  // Real mode — AI populate prompt, then show tool
+  return (
+    <AiPopulate
+      toolId="early-warning"
+      toolName="Early Warning"
+      apiEndpoint="/api/ai/risk-assessment"
+      creditCost={3}
+      hasExistingData={false}
+      onDataGenerated={() => {}}
+    >
+      <DemoEarlyWarningPage />
+    </AiPopulate>
   );
 }

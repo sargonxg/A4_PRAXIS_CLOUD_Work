@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useCallback } from 'react';
@@ -61,10 +62,8 @@ const FILTER_OPTS: { id: FilterType; label: string }[] = [
   { id: 'modified',   label: 'Modified' },
 ];
 
-export default function SanctionsPage() {
+function DemoSanctionsPage() {
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -460,5 +459,33 @@ Format with clear headers. Be specific about Nordalia context.`;
         </div>
       </div>
     </div>
+  );
+}
+
+// ============================================================================
+// Real mode wrapper — separates demo data from situation-specific data
+// ============================================================================
+
+export default function SanctionsPage() {
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  
+  // Demo mode — render with hardcoded demo data
+  if (isDemo) return <DemoSanctionsPage />;
+  
+  // No situation selected
+  if (showGuard || !situation) return <NoSituationState />;
+  
+  // Real mode — AI populate prompt, then show tool
+  return (
+    <AiPopulate
+      toolId="sanctions"
+      toolName="Sanctions Scan"
+      apiEndpoint="/api/ai/sanctions-scan"
+      creditCost={2}
+      hasExistingData={false}
+      onDataGenerated={() => {}}
+    >
+      <DemoSanctionsPage />
+    </AiPopulate>
   );
 }

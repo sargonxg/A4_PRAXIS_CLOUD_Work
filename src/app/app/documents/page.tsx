@@ -2,6 +2,7 @@
 
 import { useSituationGuard } from "@/hooks/use-situation-guard";
 import { NoSituationState } from "@/components/praxis/no-situation-state";
+import { AiPopulate } from '@/components/praxis/ai-populate';
 
 import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -415,10 +416,8 @@ function formatDate(dateStr: string): string {
 /* ====================================================================
    MAIN PAGE
    ==================================================================== */
-export default function DocumentVaultPage() {
+function DemoDocumentVaultPage() {
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const [documents, setDocuments] = useState<DocumentItem[]>(MOCK_DOCUMENTS);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
@@ -896,4 +895,11 @@ export default function DocumentVaultPage() {
       </div>
     </div>
   );
+}
+
+export default function DocumentVaultPage() {
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (isDemo) return <DemoDocumentVaultPage />;
+  if (showGuard || !situation) return <NoSituationState />;
+  return <DemoDocumentVaultPage />;
 }

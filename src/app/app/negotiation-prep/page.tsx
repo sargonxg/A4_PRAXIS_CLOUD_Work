@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useCallback } from 'react';
@@ -373,10 +374,8 @@ async function streamAI(
 
 type ActiveSection = 'parties' | 'zopa' | 'batna' | 'concessions' | 'talking-points';
 
-export default function NegotiationPrepPage() {
+function DemoNegotiationPrepPage() {
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const [activeSection, setActiveSection] = useState<ActiveSection>('parties');
   const [expandedParty, setExpandedParty] = useState<string | null>(null);
   const [partyAnalysis, setPartyAnalysis] = useState<Record<string, string>>({});
@@ -1049,5 +1048,33 @@ Use the precise diplomatic language appropriate for a joint communiqué or closi
         </div>
       )}
     </div>
+  );
+}
+
+// ============================================================================
+// Real mode wrapper — separates demo data from situation-specific data
+// ============================================================================
+
+export default function NegotiationPrepPage() {
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  
+  // Demo mode — render with hardcoded demo data
+  if (isDemo) return <DemoNegotiationPrepPage />;
+  
+  // No situation selected
+  if (showGuard || !situation) return <NoSituationState />;
+  
+  // Real mode — AI populate prompt, then show tool
+  return (
+    <AiPopulate
+      toolId="negotiation-prep"
+      toolName="Negotiation Analysis"
+      apiEndpoint="/api/ai/negotiation"
+      creditCost={3}
+      hasExistingData={false}
+      onDataGenerated={() => {}}
+    >
+      <DemoNegotiationPrepPage />
+    </AiPopulate>
   );
 }

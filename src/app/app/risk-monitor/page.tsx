@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState } from 'react';
@@ -227,10 +228,8 @@ function SubScoreBar({ label, value }: { label: string; value: number }) {
 // Main Page
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function RiskMonitorPage() {
+function DemoRiskMonitorPage() {
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const [selectedRegion, setSelectedRegion] = useState<MonitoredRegion | null>(null);
 
   return (
@@ -491,5 +490,33 @@ function RegionDetail({ region }: { region: MonitoredRegion }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// ============================================================================
+// Real mode wrapper — separates demo data from situation-specific data
+// ============================================================================
+
+export default function RiskMonitorPage() {
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  
+  // Demo mode — render with hardcoded demo data
+  if (isDemo) return <DemoRiskMonitorPage />;
+  
+  // No situation selected
+  if (showGuard || !situation) return <NoSituationState />;
+  
+  // Real mode — AI populate prompt, then show tool
+  return (
+    <AiPopulate
+      toolId="risk-monitor"
+      toolName="Risk Monitor"
+      apiEndpoint="/api/ai/risk-assessment"
+      creditCost={3}
+      hasExistingData={false}
+      onDataGenerated={() => {}}
+    >
+      <DemoRiskMonitorPage />
+    </AiPopulate>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState } from 'react';
@@ -375,10 +376,8 @@ function CrossCasePatternsTab() {
 
 /* ── Main Page ──────────────────────────────────────────────────────── */
 
-export default function ArgusPage() {
+function DemoArgusPage() {
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   return (
     <div className="space-y-6">
       <div>
@@ -436,5 +435,33 @@ export default function ArgusPage() {
       </div>
       <PoweredByTacitus />
     </div>
+  );
+}
+
+// ============================================================================
+// Real mode wrapper — separates demo data from situation-specific data
+// ============================================================================
+
+export default function ArgusPage() {
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  
+  // Demo mode — render with hardcoded demo data
+  if (isDemo) return <DemoArgusPage />;
+  
+  // No situation selected
+  if (showGuard || !situation) return <NoSituationState />;
+  
+  // Real mode — AI populate prompt, then show tool
+  return (
+    <AiPopulate
+      toolId="argus"
+      toolName="ARGUS Intelligence"
+      apiEndpoint="/api/ai/argus"
+      creditCost={2}
+      hasExistingData={false}
+      onDataGenerated={() => {}}
+    >
+      <DemoArgusPage />
+    </AiPopulate>
   );
 }

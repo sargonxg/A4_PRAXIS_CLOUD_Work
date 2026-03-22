@@ -2,6 +2,7 @@
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
+import { AiPopulate } from '@/components/praxis/ai-populate';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -318,10 +319,8 @@ const FILTER_TABS: { value: FilterTab; label: string }[] = [
   { value: 'final', label: 'Final' },
 ];
 
-export default function ReportsPage() {
+function DemoReportsPage() {
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const router = useRouter();
   const route = usePraxisRoute();
   const { reports, addReport, removeReport } = useConflictStore();
@@ -527,5 +526,16 @@ export default function ReportsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ReportsPage() {
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (isDemo) return <DemoReportsPage />;
+  if (showGuard || !situation) return <NoSituationState />;
+  return (
+    <AiPopulate toolId="reports" toolName="Reports" apiEndpoint="/api/ai/report" creditCost={5} hasExistingData={false} onDataGenerated={() => {}}>
+      <DemoReportsPage />
+    </AiPopulate>
   );
 }

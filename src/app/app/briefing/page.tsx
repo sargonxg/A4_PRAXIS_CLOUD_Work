@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -91,10 +92,8 @@ function SlideContent({ slide }: { slide: BriefingSlide }) {
   );
 }
 
-export default function BriefingPage() {
+function DemoBriefingPage() {
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const [view, setView] = useState<'builder' | 'presentation'>('builder');
   const [selectedCase, setSelectedCase] = useState(caseEntries[0]?.id ?? '');
   const [briefingType, setBriefingType] = useState('morning');
@@ -338,5 +337,33 @@ export default function BriefingPage() {
       </div>
       <PoweredByTacitus />
     </div>
+  );
+}
+
+// ============================================================================
+// Real mode wrapper — separates demo data from situation-specific data
+// ============================================================================
+
+export default function BriefingPage() {
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  
+  // Demo mode — render with hardcoded demo data
+  if (isDemo) return <DemoBriefingPage />;
+  
+  // No situation selected
+  if (showGuard || !situation) return <NoSituationState />;
+  
+  // Real mode — AI populate prompt, then show tool
+  return (
+    <AiPopulate
+      toolId="briefing"
+      toolName="Briefing"
+      apiEndpoint="/api/ai/briefing-generate"
+      creditCost={3}
+      hasExistingData={false}
+      onDataGenerated={() => {}}
+    >
+      <DemoBriefingPage />
+    </AiPopulate>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useEffect, useRef } from 'react';
@@ -493,10 +494,8 @@ function SettlementSection() {
 
 /* ── Main Page ──────────────────────────────────────────────────────── */
 
-export default function ConcordiaPage() {
+function DemoConcordiaPage() {
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   return (
     <div className="space-y-10">
       {/* Header */}
@@ -541,5 +540,33 @@ export default function ConcordiaPage() {
       </div>
       <PoweredByTacitus />
     </div>
+  );
+}
+
+// ============================================================================
+// Real mode wrapper — separates demo data from situation-specific data
+// ============================================================================
+
+export default function ConcordiaPage() {
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  
+  // Demo mode — render with hardcoded demo data
+  if (isDemo) return <DemoConcordiaPage />;
+  
+  // No situation selected
+  if (showGuard || !situation) return <NoSituationState />;
+  
+  // Real mode — AI populate prompt, then show tool
+  return (
+    <AiPopulate
+      toolId="concordia"
+      toolName="CONCORDIA Mediation"
+      apiEndpoint="/api/ai/mediation"
+      creditCost={3}
+      hasExistingData={false}
+      onDataGenerated={() => {}}
+    >
+      <DemoConcordiaPage />
+    </AiPopulate>
   );
 }

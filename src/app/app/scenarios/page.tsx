@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useCallback, useRef } from 'react';
@@ -34,10 +35,8 @@ interface SavedScenario {
   savedAt: Date;
 }
 
-export default function ScenariosPage() {
+function DemoScenariosPage() {
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const { data: cases, loading: casesLoading } = useConflictList();
   const [conflictId, setConflictId] = useState('nordalia');
   const [trigger, setTrigger] = useState('');
@@ -638,5 +637,33 @@ export default function ScenariosPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ============================================================================
+// Real mode wrapper — separates demo data from situation-specific data
+// ============================================================================
+
+export default function ScenariosPage() {
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  
+  // Demo mode — render with hardcoded demo data
+  if (isDemo) return <DemoScenariosPage />;
+  
+  // No situation selected
+  if (showGuard || !situation) return <NoSituationState />;
+  
+  // Real mode — AI populate prompt, then show tool
+  return (
+    <AiPopulate
+      toolId="scenarios"
+      toolName="Scenario Analysis"
+      apiEndpoint="/api/ai/scenario"
+      creditCost={3}
+      hasExistingData={false}
+      onDataGenerated={() => {}}
+    >
+      <DemoScenariosPage />
+    </AiPopulate>
   );
 }

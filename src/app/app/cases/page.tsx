@@ -240,10 +240,8 @@ function CaseCard({ caseData, compareIds, onToggleCompare }: {
   );
 }
 
-export default function CasesPage() {
+function DemoCasesPage() {
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const router = useRouter();
   const route = usePraxisRoute();
   const [search, setSearch] = useState('');
@@ -393,4 +391,11 @@ export default function CasesPage() {
       )}
     </div>
   );
+}
+
+export default function CasesPage() {
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (isDemo) return <DemoCasesPage />;
+  if (showGuard || !situation) return <NoSituationState />;
+  return <DemoCasesPage />;
 }

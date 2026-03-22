@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -497,10 +498,8 @@ function ViewStep({
 
 /* ── Main Page ──────────────────────────────────────────────────────── */
 
-export default function DossierPage() {
+function DemoDossierPage() {
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const [step, setStep] = useState<Step>('configure');
   const [config, setConfig] = useState<{
     caseId: string;
@@ -543,5 +542,33 @@ export default function DossierPage() {
       )}
       <PoweredByTacitus />
     </div>
+  );
+}
+
+// ============================================================================
+// Real mode wrapper — separates demo data from situation-specific data
+// ============================================================================
+
+export default function DossierPage() {
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  
+  // Demo mode — render with hardcoded demo data
+  if (isDemo) return <DemoDossierPage />;
+  
+  // No situation selected
+  if (showGuard || !situation) return <NoSituationState />;
+  
+  // Real mode — AI populate prompt, then show tool
+  return (
+    <AiPopulate
+      toolId="dossier"
+      toolName="Dossier"
+      apiEndpoint="/api/ai/dossier-generate"
+      creditCost={4}
+      hasExistingData={false}
+      onDataGenerated={() => {}}
+    >
+      <DemoDossierPage />
+    </AiPopulate>
   );
 }

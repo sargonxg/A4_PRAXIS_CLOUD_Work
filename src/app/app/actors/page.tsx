@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useMemo } from 'react';
@@ -411,10 +412,8 @@ function ActorDetail({ actor, onBack }: { actor: ActorProfile; onBack: () => voi
 
 /* ── Main Page ──────────────────────────────────────────────────────── */
 
-export default function ActorsPage() {
+function DemoActorsPage() {
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const [view, setView] = useState<'list' | string>('list');
 
   const selectedActor = view !== 'list'
@@ -439,5 +438,33 @@ export default function ActorsPage() {
         <ActorDetail actor={selectedActor} onBack={() => setView('list')} />
       ) : null}
     </div>
+  );
+}
+
+// ============================================================================
+// Real mode wrapper — separates demo data from situation-specific data
+// ============================================================================
+
+export default function ActorsPage() {
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  
+  // Demo mode — render with hardcoded demo data
+  if (isDemo) return <DemoActorsPage />;
+  
+  // No situation selected
+  if (showGuard || !situation) return <NoSituationState />;
+  
+  // Real mode — AI populate prompt, then show tool
+  return (
+    <AiPopulate
+      toolId="actors"
+      toolName="Actor Profiles"
+      apiEndpoint="/api/ai/actor-enrichment"
+      creditCost={2}
+      hasExistingData={false}
+      onDataGenerated={() => {}}
+    >
+      <DemoActorsPage />
+    </AiPopulate>
   );
 }
