@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePraxisRoute } from '@/lib/utils/routes';
@@ -322,6 +325,9 @@ function TemplateCard({
 // ---------------------------------------------------------------------------
 
 export default function NewReportPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const router = useRouter();
   const route = usePraxisRoute();
   const { addReport, activeConflictId } = useConflictStore();

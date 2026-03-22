@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState, useCallback, useRef } from 'react';
 import { Sparkles, MessageSquare, Send, X, Loader2, Users, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -427,6 +430,9 @@ function PanelDiscussion() {
 }
 
 export default function AdvisoryPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const [chatAdvisor, setChatAdvisor] = useState<AdvisorDef | null>(null);
   const [mode, setMode] = useState<'individual' | 'panel'>('individual');
 

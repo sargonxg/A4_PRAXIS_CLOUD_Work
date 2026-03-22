@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   FileText,
@@ -495,6 +498,9 @@ function ViewStep({
 /* ── Main Page ──────────────────────────────────────────────────────── */
 
 export default function DossierPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const [step, setStep] = useState<Step>('configure');
   const [config, setConfig] = useState<{
     caseId: string;

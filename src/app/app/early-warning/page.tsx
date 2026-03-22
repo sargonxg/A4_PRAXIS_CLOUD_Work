@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState, useCallback } from 'react';
 import {
   AlertTriangle,
@@ -580,6 +583,9 @@ function SituationCard({ conflict }: { conflict: ReturnType<typeof useConflictSt
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function EarlyWarningPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const conflicts = useConflictStore((s) => s.conflicts);
 
   // Glasl stage state (local)

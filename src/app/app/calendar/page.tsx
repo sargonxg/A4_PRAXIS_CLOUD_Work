@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState, useCallback } from 'react';
 import { Calendar, ChevronRight, Filter, Sparkles, FileText, Users, Loader2, CheckSquare, Square, RefreshCw, X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -82,6 +85,9 @@ const DEFAULT_CHECKLIST = [
 ];
 
 export default function CalendarPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set(['all']));
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [briefings, setBriefings] = useState<Record<string, string>>({});

@@ -1,5 +1,8 @@
 "use client";
 
+import { useSituationGuard } from "@/hooks/use-situation-guard";
+import { NoSituationState } from "@/components/praxis/no-situation-state";
+
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils/cn";
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,6 +40,9 @@ interface ExtractedResult {
 }
 
 export default function ConflictGraphPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const [selectedConflict, setSelectedConflict] = useState("nordalia-crisis");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeTypes, setActiveTypes] = useState<Set<string>>(

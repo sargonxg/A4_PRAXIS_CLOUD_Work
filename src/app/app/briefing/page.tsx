@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState, useEffect, useCallback } from 'react';
 import {
   ChevronLeft,
@@ -89,6 +92,9 @@ function SlideContent({ slide }: { slide: BriefingSlide }) {
 }
 
 export default function BriefingPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const [view, setView] = useState<'builder' | 'presentation'>('builder');
   const [selectedCase, setSelectedCase] = useState(caseEntries[0]?.id ?? '');
   const [briefingType, setBriefingType] = useState('morning');

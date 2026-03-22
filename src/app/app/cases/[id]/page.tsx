@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState, useCallback } from 'react';
 import { use } from 'react';
 import { PraxisLink } from '@/components/shared/praxis-link';
@@ -11,6 +14,9 @@ import { notFound } from 'next/navigation';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 
 export default function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const { id } = use(params);
   const { data: detail, loading, error } = useConflictDetail(id);
   const { data: allCases } = useConflictList();

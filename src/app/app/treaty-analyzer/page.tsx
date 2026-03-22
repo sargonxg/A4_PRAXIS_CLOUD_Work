@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState, useMemo } from 'react';
 import {
   FileCheck,
@@ -98,6 +101,9 @@ function CircularGauge({ value, size = 120 }: { value: number; size?: number }) 
 }
 
 export default function TreatyAnalyzerPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const [selectedAgreementId, setSelectedAgreementId] = useState<string>(
     DEMO_AGREEMENTS[0].id
   );

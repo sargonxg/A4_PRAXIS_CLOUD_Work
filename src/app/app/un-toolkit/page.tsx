@@ -1,5 +1,8 @@
 "use client";
 
+import { useSituationGuard } from "@/hooks/use-situation-guard";
+import { NoSituationState } from "@/components/praxis/no-situation-state";
+
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -1656,6 +1659,9 @@ const TABS = [
 ];
 
 export default function UNToolkitPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   return (
     <div className="space-y-6">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">

@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState, useCallback, useRef } from 'react';
 import {
   Users,
@@ -517,6 +520,9 @@ async function streamAI(prompt: string, onChunk: (text: string) => void): Promis
 type TabType = 'grid' | 'matrix';
 
 export default function StakeholderMapPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const [activeTab, setActiveTab] = useState<TabType>('grid');
   const [selectedActorId, setSelectedActorId] = useState<string | null>(null);
   const [liveInsights, setLiveInsights] = useState<Record<string, string>>({});

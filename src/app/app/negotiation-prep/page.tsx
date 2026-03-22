@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState, useCallback } from 'react';
 import {
   Scale,
@@ -371,6 +374,9 @@ async function streamAI(
 type ActiveSection = 'parties' | 'zopa' | 'batna' | 'concessions' | 'talking-points';
 
 export default function NegotiationPrepPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const [activeSection, setActiveSection] = useState<ActiveSection>('parties');
   const [expandedParty, setExpandedParty] = useState<string | null>(null);
   const [partyAnalysis, setPartyAnalysis] = useState<Record<string, string>>({});

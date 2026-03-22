@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePraxisRoute } from '@/lib/utils/routes';
@@ -316,6 +319,9 @@ const FILTER_TABS: { value: FilterTab; label: string }[] = [
 ];
 
 export default function ReportsPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const router = useRouter();
   const route = usePraxisRoute();
   const { reports, addReport, removeReport } = useConflictStore();

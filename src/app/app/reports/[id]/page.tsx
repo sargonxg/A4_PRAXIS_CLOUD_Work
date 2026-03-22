@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { usePraxisRoute } from '@/lib/utils/routes';
@@ -310,6 +313,9 @@ function SectionEditor({
 // ---------------------------------------------------------------------------
 
 export default function ReportEditorPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const params = useParams();
   const router = useRouter();
   const route = usePraxisRoute();

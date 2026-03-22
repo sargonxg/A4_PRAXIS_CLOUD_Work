@@ -1,5 +1,8 @@
 "use client";
 
+import { useSituationGuard } from "@/hooks/use-situation-guard";
+import { NoSituationState } from "@/components/praxis/no-situation-state";
+
 import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -413,6 +416,9 @@ function formatDate(dateStr: string): string {
    MAIN PAGE
    ==================================================================== */
 export default function DocumentVaultPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const [documents, setDocuments] = useState<DocumentItem[]>(MOCK_DOCUMENTS);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");

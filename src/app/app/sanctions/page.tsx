@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState, useCallback } from 'react';
 import { Shield, Search, ChevronRight, Sparkles, BookOpen, Link2, Loader2, RefreshCw, Users, Building2, Clock, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -59,6 +62,9 @@ const FILTER_OPTS: { id: FilterType; label: string }[] = [
 ];
 
 export default function SanctionsPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);

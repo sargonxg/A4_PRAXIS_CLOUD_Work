@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PraxisLink } from '@/components/shared/praxis-link';
@@ -564,6 +567,9 @@ Be analytically specific. Cite conflict resolution theory where relevant. Avoid 
 }
 
 export default function ComparePage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center p-16">

@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState } from 'react';
 import { Search, Upload, Network, FileText, GitCompare, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -373,6 +376,9 @@ function CrossCasePatternsTab() {
 /* ── Main Page ──────────────────────────────────────────────────────── */
 
 export default function ArgusPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   return (
     <div className="space-y-6">
       <div>

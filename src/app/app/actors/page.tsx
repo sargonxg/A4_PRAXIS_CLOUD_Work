@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState, useMemo } from 'react';
 import { Search, ChevronLeft, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -409,6 +412,9 @@ function ActorDetail({ actor, onBack }: { actor: ActorProfile; onBack: () => voi
 /* ── Main Page ──────────────────────────────────────────────────────── */
 
 export default function ActorsPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const [view, setView] = useState<'list' | string>('list');
 
   const selectedActor = view !== 'list'

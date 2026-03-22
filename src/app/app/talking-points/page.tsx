@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState, useRef, useCallback } from 'react';
 import { MessageCircle, Sparkles, Copy, FileText, Users, Shield, Check, Download, RefreshCw, AlertTriangle, Loader2, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -68,6 +71,9 @@ const CONFLICT_OPTIONS = [
 ];
 
 export default function TalkingPointsPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const [selectedAudience, setSelectedAudience] = useState('council');
   const [selectedTopic, setSelectedTopic] = useState('ceasefire');
   const [selectedConflict, setSelectedConflict] = useState('nordalia');

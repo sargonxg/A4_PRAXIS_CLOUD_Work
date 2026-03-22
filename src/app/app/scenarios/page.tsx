@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState, useCallback, useRef } from 'react';
 import { GitCompare, Play, Save, Loader2, Sparkles, X, ChevronDown, Plus, Trash2, Wind, SlidersHorizontal, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -32,6 +35,9 @@ interface SavedScenario {
 }
 
 export default function ScenariosPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const { data: cases, loading: casesLoading } = useConflictList();
   const [conflictId, setConflictId] = useState('nordalia');
   const [trigger, setTrigger] = useState('');

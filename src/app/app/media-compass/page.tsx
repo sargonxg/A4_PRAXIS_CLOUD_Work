@@ -1,5 +1,8 @@
 "use client";
 
+import { useSituationGuard } from "@/hooks/use-situation-guard";
+import { NoSituationState } from "@/components/praxis/no-situation-state";
+
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils/cn";
 import { motion } from "framer-motion";
@@ -107,6 +110,9 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export default function MediaCompassPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const [activeTab, setActiveTab] = useState<MediaTab>("source-map");
   const [selectedSource, setSelectedSource] = useState<MediaSource | null>(null);
   const [regionFilter, setRegionFilter] = useState("All Regions");

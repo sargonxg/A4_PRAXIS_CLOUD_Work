@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState } from 'react';
 import { Clock, FileText, Users } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -123,6 +126,9 @@ function ActivityItem({ item }: { item: (typeof ACTIVITY_FEED)[number] }) {
 /* ------------------------------------------------------------------ */
 
 export default function TeamPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const [notes, setNotes] = useState(
     'Priority items for today:\n- Review overnight ARGUS alerts on EMLF movements\n- Prepare talking points for 14:00 EU FAC briefing\n- Follow up on ceasefire compliance report from Eva',
   );

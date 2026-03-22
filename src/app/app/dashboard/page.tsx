@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { useRouter } from 'next/navigation';
 import { usePraxisRoute } from '@/lib/utils/routes';
@@ -754,6 +757,9 @@ function AIFeedSection() {
 // ---------------------------------------------------------------------------
 
 export default function DashboardPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const { user } = useAuth();
   const router = useRouter();
   const route = usePraxisRoute();

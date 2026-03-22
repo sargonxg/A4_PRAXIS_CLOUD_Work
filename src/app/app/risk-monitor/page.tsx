@@ -1,5 +1,8 @@
 'use client';
 
+import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { NoSituationState } from '@/components/praxis/no-situation-state';
+
 import { useState } from 'react';
 import { TrendingUp, TrendingDown, Minus, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -225,6 +228,9 @@ function SubScoreBar({ label, value }: { label: string; value: number }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function RiskMonitorPage() {
+
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (showGuard) return <NoSituationState />;
   const [selectedRegion, setSelectedRegion] = useState<MonitoredRegion | null>(null);
 
   return (
