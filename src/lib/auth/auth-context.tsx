@@ -12,7 +12,6 @@ import {
   type User as FirebaseUser,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
-import { ensureUserProfile, getUserProfile, type UserProfile } from '@/lib/firebase/firestore';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -76,20 +75,20 @@ const AuthContext = createContext<AuthContextValue>({
 });
 
 // ---------------------------------------------------------------------------
-// Helper: convert Firebase user + Firestore profile to AuthUser
+// Helper: create AuthUser from Firebase user (no Firestore dependency)
 // ---------------------------------------------------------------------------
 
-function toAuthUser(fbUser: FirebaseUser, profile: UserProfile): AuthUser {
+function fbUserToAuthUser(fbUser: FirebaseUser, credits = 100): AuthUser {
   return {
     id: fbUser.uid,
-    email: fbUser.email || profile.email,
-    name: fbUser.displayName || profile.displayName,
-    role: profile.role,
-    orgId: profile.orgId,
-    orgName: profile.orgName,
+    email: fbUser.email || '',
+    name: fbUser.displayName || fbUser.email?.split('@')[0] || 'Analyst',
+    role: 'analyst',
+    orgId: 'org-default',
+    orgName: 'TACITUS Platform',
     isDemo: false,
-    photoURL: fbUser.photoURL || profile.photoURL,
-    credits: profile.credits,
+    photoURL: fbUser.photoURL || undefined,
+    credits,
   };
 }
 
@@ -106,15 +105,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Sync auth token to a cookie so the Next.js middleware can check it
   const syncTokenCookie = useCallback(async (fbUser: FirebaseUser | null) => {
-    if (fbUser) {
-      const token = await fbUser.getIdToken();
-      await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      });
-    } else if (!isDemoMode) {
-      await fetch('/api/auth/session', { method: 'DELETE' });
+    try {
+      if (fbUser) {
+        const token = await fbUser.getIdToken();
+        await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+      } else if (!isDemoMode) {
+        await fetch('/api/auth/session', { method: 'DELETE' });
+      }
+    } catch (err) {
+      console.error('[auth] Cookie sync failed:', err);
     }
   }, [isDemoMode]);
 
@@ -122,23 +125,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
+        // First: set the user immediately from Firebase Auth data (no Firestore dependency)
+        const authUser = fbUserToAuthUser(fbUser);
+        setUser(authUser);
+        setFirebaseUser(fbUser);
+        setCredits(100);
+        setIsDemoMode(false);
+
+        // Second: sync cookie (needed for middleware)
+        await syncTokenCookie(fbUser);
+
+        // Third: try to load/create Firestore profile (non-blocking)
         try {
+          const { ensureUserProfile } = await import('@/lib/firebase/firestore');
           const profile = await ensureUserProfile({
             uid: fbUser.uid,
             email: fbUser.email,
             displayName: fbUser.displayName,
             photoURL: fbUser.photoURL,
           });
-          const authUser = toAuthUser(fbUser, profile);
-          setUser(authUser);
-          setFirebaseUser(fbUser);
+          // Update with Firestore data (credits, role, org)
+          setUser({
+            ...authUser,
+            role: profile.role,
+            orgId: profile.orgId,
+            orgName: profile.orgName,
+            credits: profile.credits,
+          });
           setCredits(profile.credits);
-          setIsDemoMode(false);
-          await syncTokenCookie(fbUser);
         } catch (err) {
-          console.error('[auth] Failed to load user profile:', err);
-          setUser(null);
-          setFirebaseUser(null);
+          // Firestore failed — that's OK, user is still logged in with defaults
+          console.warn('[auth] Firestore profile load failed (using defaults):', err);
         }
       } else if (!isDemoMode) {
         setUser(null);
@@ -180,10 +197,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err: unknown) {
       const code = (err as { code?: string }).code || '';
       if (code === 'auth/email-already-in-use') {
-        return { success: false, error: 'An account with this email already exists.' };
+        return { success: false, error: 'An account with this email already exists. Sign in instead.' };
       }
       if (code === 'auth/weak-password') {
         return { success: false, error: 'Password must be at least 6 characters.' };
+      }
+      if (code === 'auth/invalid-email') {
+        return { success: false, error: 'Please enter a valid email address.' };
       }
       return { success: false, error: 'Sign up failed. Please try again.' };
     }
@@ -200,7 +220,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (code === 'auth/popup-closed-by-user') {
         return { success: false, error: 'Sign-in popup was closed.' };
       }
-      return { success: false, error: 'Google sign-in failed. Please try again.' };
+      if (code === 'auth/unauthorized-domain') {
+        return { success: false, error: 'This domain is not authorized for Google sign-in. Please add it in Firebase Console > Authentication > Settings > Authorized domains.' };
+      }
+      if (code === 'auth/popup-blocked') {
+        return { success: false, error: 'Pop-up was blocked by the browser. Please allow pop-ups for this site.' };
+      }
+      console.error('[auth] Google sign-in error:', code, err);
+      return { success: false, error: `Google sign-in failed (${code}). Please try again.` };
     }
   }, []);
 
@@ -232,16 +259,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await fetch('/api/auth/session', { method: 'DELETE' });
     } catch (err) {
       console.error('[auth] Logout error:', err);
+      // Force clear state even if signOut fails
+      setUser(null);
+      setFirebaseUser(null);
+      setCredits(0);
+      setIsDemoMode(false);
     }
   }, [firebaseUser]);
 
   // Refresh credits from Firestore
   const refreshCredits = useCallback(async () => {
     if (!firebaseUser) return;
-    const profile = await getUserProfile(firebaseUser.uid);
-    if (profile) {
-      setCredits(profile.credits);
-      setUser((prev) => prev ? { ...prev, credits: profile.credits } : null);
+    try {
+      const { getUserProfile } = await import('@/lib/firebase/firestore');
+      const profile = await getUserProfile(firebaseUser.uid);
+      if (profile) {
+        setCredits(profile.credits);
+        setUser((prev) => prev ? { ...prev, credits: profile.credits } : null);
+      }
+    } catch (err) {
+      console.warn('[auth] Failed to refresh credits:', err);
     }
   }, [firebaseUser]);
 
