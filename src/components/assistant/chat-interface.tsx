@@ -23,6 +23,8 @@ import { cn } from "@/lib/utils/cn";
 import { MessageBubble } from "@/components/assistant/message-bubble";
 import { ToolInvocation } from "@/components/assistant/tool-invocation";
 import { SuggestedPrompts } from "@/components/assistant/suggested-prompts";
+import { useSituationStore } from "@/stores/situation-store";
+import { useAppStore } from "@/stores/app-store";
 
 const CONFLICT_CONTEXTS = [
   { id: '', label: 'No conflict context' },
@@ -74,19 +76,26 @@ export function ChatInterface() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { activeSituation } = useSituationStore();
+  const { demoMode } = useAppStore();
+
   const [uploadedContext, setUploadedContext] = useState<{ name: string; text: string } | null>(null);
   const [conflictContext, setConflictContext] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [showContextDropdown, setShowContextDropdown] = useState(false);
-  // Toggle between tool-based chat and Google Search-grounded research
   const [useGroundedMode, setUseGroundedMode] = useState(false);
 
   const conflictLabel = CONFLICT_CONTEXTS.find((c) => c.id === conflictContext)?.label ?? '';
 
-  // Standard tool-based chat (custom tools, no Google Search grounding)
+  // Pass full situation data to AI for context-aware responses
+  const chatBody = {
+    conflictContext: conflictLabel || undefined,
+    situation: !demoMode && activeSituation ? activeSituation : undefined,
+  };
+
   const toolChat = useChat({
     api: "/api/ai/chat",
-    body: { conflictContext: conflictLabel || undefined },
+    body: chatBody,
     onFinish: () => {
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -97,7 +106,7 @@ export function ChatInterface() {
   // Google Search-grounded chat (real-time web search, no custom tools)
   const groundedChat = useChat({
     api: "/api/ai/grounded-search",
-    body: { conflictContext: conflictLabel || undefined },
+    body: chatBody,
     onFinish: () => {
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

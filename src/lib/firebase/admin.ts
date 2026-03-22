@@ -7,38 +7,45 @@ function getAdminApp(): App {
     return getApps()[0];
   }
 
-  // In production, use service account credentials from env var.
-  // In development, the Firebase Admin SDK can use Application Default Credentials
-  // or a service account key JSON set via FIREBASE_SERVICE_ACCOUNT_KEY env var.
   const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
   if (serviceAccountKey) {
     try {
       const serviceAccount = JSON.parse(serviceAccountKey);
+
+      // Vercel may store the private key with literal \n — convert to real newlines
+      if (serviceAccount.private_key && typeof serviceAccount.private_key === 'string') {
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+      }
+
       return initializeApp({
         credential: cert(serviceAccount),
-        projectId: 'praxisbytacitus',
+        projectId: serviceAccount.project_id || 'praxisbytacitus',
       });
     } catch (e) {
-      console.error('[firebase-admin] Failed to parse service account key:', e);
+      console.error('[firebase-admin] Failed to initialize with service account:', e);
     }
+  } else {
+    console.warn('[firebase-admin] FIREBASE_SERVICE_ACCOUNT_KEY not set — Admin SDK operations will fail');
   }
 
-  // Fallback: initialize without explicit credentials (uses ADC or emulator)
+  // Fallback: initialize without credentials (most operations will fail)
   return initializeApp({
     projectId: 'praxisbytacitus',
   });
 }
 
-const adminApp = getAdminApp();
+let adminApp: App;
+try {
+  adminApp = getAdminApp();
+} catch (e) {
+  console.error('[firebase-admin] Critical initialization error:', e);
+  adminApp = initializeApp({ projectId: 'praxisbytacitus' });
+}
 
 export const adminAuth = getAuth(adminApp);
 export const adminDb = getFirestore(adminApp);
 
-/**
- * Verify a Firebase ID token. Falls back to JWT decode if Admin SDK
- * can't verify (e.g., no service account configured).
- */
 export async function verifyIdToken(token: string): Promise<{
   uid: string;
   email: string;

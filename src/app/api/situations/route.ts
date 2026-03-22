@@ -46,9 +46,10 @@ export const POST = withAuth(async (req, user) => {
 
     return NextResponse.json({ situation });
   } catch (err) {
-    console.error('[situations] Create failed:', err);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[situations] Create failed:', message, err);
     return NextResponse.json(
-      { error: 'Failed to create situation. Please try again.' },
+      { error: `Failed to create situation: ${message}` },
       { status: 500 }
     );
   }
