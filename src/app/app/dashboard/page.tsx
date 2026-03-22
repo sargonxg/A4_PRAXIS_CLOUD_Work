@@ -2,6 +2,8 @@
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
+import { SituationDashboard, WelcomeState } from '@/components/praxis/situation-dashboard';
+import { useSituationStore } from '@/stores/situation-store';
 
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { useRouter } from 'next/navigation';
@@ -759,7 +761,16 @@ function AIFeedSection() {
 export default function DashboardPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
+  const { situations } = useSituationStore();
+
+  // Real app — show situation-specific dashboard (no demo data)
+  if (!isDemo) {
+    if (situations.length === 0 && !showGuard) return <WelcomeState />;
+    if (showGuard || !situation) return <NoSituationState />;
+    return <SituationDashboard situation={situation} />;
+  }
+
+  // Below is the DEMO dashboard only
   const { user } = useAuth();
   const router = useRouter();
   const route = usePraxisRoute();
