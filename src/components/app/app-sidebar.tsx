@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
+import { SituationSelector } from '@/components/app/situation-selector';
 import { useAppStore } from '@/stores/app-store';
 import {
   Tooltip,
@@ -148,6 +149,16 @@ export function AppSidebar() {
           </AnimatePresence>
         </Link>
       </div>
+
+      {/* Situation selector for production users */}
+      <SituationSelector
+        collapsed={!sidebarOpen}
+        activeSituationId={null}
+        onSelect={(id) => {
+          // Store the active situation ID — will be wired to conflict store
+          console.log('Selected situation:', id);
+        }}
+      />
 
       {/* Navigation sections */}
       <nav className="flex-1 space-y-1 px-2 py-3 overflow-y-auto">

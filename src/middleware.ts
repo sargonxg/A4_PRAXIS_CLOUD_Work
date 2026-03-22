@@ -29,6 +29,7 @@ const PROTECTED_PATHS = [
   '/actors',
   '/team',
   '/briefing',
+  '/situations',
 ];
 
 export function middleware(request: NextRequest) {
@@ -80,5 +81,6 @@ export const config = {
     '/actors/:path*',
     '/team/:path*',
     '/briefing/:path*',
+    '/situations/:path*',
   ],
 };
