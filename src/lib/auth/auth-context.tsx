@@ -7,6 +7,9 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   signOut as firebaseSignOut,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
   GoogleAuthProvider,
   updateProfile,
   type User as FirebaseUser,
@@ -37,6 +40,8 @@ interface AuthContextValue {
   signInWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUpWithEmail: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
+  sendEmailLink: (email: string) => Promise<{ success: boolean; error?: string }>;
+  completeEmailLinkSignIn: (email: string, url: string) => Promise<{ success: boolean; error?: string }>;
   signInAsDemo: () => Promise<void>;
   logout: () => Promise<void>;
   refreshCredits: () => Promise<void>;
@@ -69,6 +74,8 @@ const AuthContext = createContext<AuthContextValue>({
   signInWithEmail: async () => ({ success: false }),
   signUpWithEmail: async () => ({ success: false }),
   signInWithGoogle: async () => ({ success: false }),
+  sendEmailLink: async () => ({ success: false }),
+  completeEmailLinkSignIn: async () => ({ success: false }),
   signInAsDemo: async () => {},
   logout: async () => {},
   refreshCredits: async () => {},
@@ -231,6 +238,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Email link (passwordless) sign in — step 1: send link
+  const sendEmailLink = useCallback(async (email: string) => {
+    try {
+      const actionCodeSettings = {
+        url: `${window.location.origin}/login?finishSignIn=true`,
+        handleCodeInApp: true,
+      };
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      window.localStorage.setItem('emailForSignIn', email);
+      return { success: true };
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code || '';
+      if (code === 'auth/invalid-email') {
+        return { success: false, error: 'Please enter a valid email address.' };
+      }
+      return { success: false, error: 'Failed to send sign-in link. Please try again.' };
+    }
+  }, []);
+
+  // Email link sign in — step 2: complete sign in from link
+  const completeEmailLinkSignIn = useCallback(async (email: string, url: string) => {
+    try {
+      if (!isSignInWithEmailLink(auth, url)) {
+        return { success: false, error: 'Invalid sign-in link.' };
+      }
+      await signInWithEmailLink(auth, email, url);
+      window.localStorage.removeItem('emailForSignIn');
+      return { success: true };
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code || '';
+      if (code === 'auth/invalid-action-code') {
+        return { success: false, error: 'This link has expired. Please request a new one.' };
+      }
+      return { success: false, error: 'Sign-in failed. Please try again.' };
+    }
+  }, []);
+
   // Demo mode
   const signInAsDemo = useCallback(async () => {
     // Set demo cookie FIRST so middleware allows navigation
@@ -292,6 +336,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signInWithEmail,
         signUpWithEmail,
         signInWithGoogle,
+        sendEmailLink,
+        completeEmailLinkSignIn,
         signInAsDemo,
         logout,
         refreshCredits,
