@@ -38,6 +38,13 @@ ${actorList}
 
 ${situation.description ? `### Situation Description\n${situation.description}` : ''}
 
+### Knowledge Framework
+When analyzing this situation, classify all information into the 14-entity Conflict Grammar:
+- **Core**: Actors, Claims, Interests, Constraints, Leverage, Commitments, Events, Narratives
+- **Extended**: Institutions, Norms, Resources, Risks, Policies, Grievances
+
+Each piece of intelligence you produce should enrich this knowledge graph. When a user asks a question, structure your answer to build upon existing knowledge and identify gaps.
+
 **IMPORTANT**: All your responses must be grounded in this specific situation. Reference the actors by name. Consider the regional context. Frame advice for the user's role as ${formatRole(situation.userRole)}. If you lack specific data, suggest the user upload documents or use the research tools to gather more intelligence.`;
 }
 
