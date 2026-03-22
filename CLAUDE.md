@@ -1,5 +1,7 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
+> Version 2.0 — Firebase Auth, AI Upgrade, Subscription Tiers
+
 ## What This Is
 The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Deployed at praxis-nextjs-tacitus.vercel.app.
 
