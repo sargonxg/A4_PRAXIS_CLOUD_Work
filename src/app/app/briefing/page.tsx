@@ -332,7 +332,7 @@ function DemoBriefingPage() {
       </div>
 
       {/* Watermark */}
-      <div className="absolute bottom-14 left-4 text-navy-200 text-[10px]">
+      <div className="absolute bottom-14 left-4 text-navy-400 text-[10px]">
         PRAXIS Intelligence Platform
       </div>
       <PoweredByTacitus />
