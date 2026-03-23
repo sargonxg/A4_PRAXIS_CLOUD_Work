@@ -20,7 +20,7 @@ function UserAvatar({ name }: { name: string }) {
     .slice(0, 2);
 
   return (
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy-600 text-xs font-semibold text-navy-100">
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy-200 text-xs font-semibold text-navy-800">
       {initials}
     </div>
   );
@@ -64,8 +64,8 @@ export function MessageBubble({
         className={cn(
           "max-w-[75%] rounded-xl px-4 py-3",
           role === "user"
-            ? "bg-navy-700 text-navy-100"
-            : "bg-navy-800 border-l-2 border-gold-500/30"
+            ? "bg-navy-100 text-navy-800"
+            : "bg-white border-l-2 border-gold-500/30"
         )}
       >
         {role === "assistant" ? (

@@ -72,7 +72,7 @@ export function SuggestedPrompts({ onSelect }: SuggestedPromptsProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 + i * 0.08, duration: 0.3 }}
             className={cn(
-              'rounded-lg border-t-2 border border-navy-700/60 bg-navy-800/40',
+              'rounded-lg border-t-2 border border-navy-200 bg-[var(--color-app-surface-alt)]',
               cat.accent
             )}
           >
@@ -80,14 +80,14 @@ export function SuggestedPrompts({ onSelect }: SuggestedPromptsProps) {
               <div className={cn('flex h-6 w-6 items-center justify-center rounded-md', cat.iconBg)}>
                 <Icon className={cn('h-3.5 w-3.5', cat.iconColor)} />
               </div>
-              <p className="text-xs font-semibold text-navy-200">{cat.title}</p>
+              <p className="text-xs font-semibold text-navy-700">{cat.title}</p>
             </div>
             <div className="px-1.5 pb-2 space-y-0.5">
               {cat.prompts.map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => onSelect(prompt)}
-                  className="group flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs text-navy-300 transition-colors hover:bg-navy-700/50 hover:text-navy-100 cursor-pointer"
+                  className="group flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs text-navy-600 transition-colors hover:bg-navy-100 hover:text-navy-700 cursor-pointer"
                 >
                   <span className="line-clamp-2">{prompt}</span>
                   <ChevronRight className="ml-1 h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 text-navy-400" />

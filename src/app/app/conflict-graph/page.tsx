@@ -2,6 +2,9 @@
 
 import { useSituationGuard } from "@/hooks/use-situation-guard";
 import { NoSituationState } from "@/components/praxis/no-situation-state";
+import { RealToolView } from "@/components/praxis/real-tool-view";
+import { AiPopulate } from "@/components/praxis/ai-populate";
+import { GitBranch } from "lucide-react";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils/cn";
@@ -39,10 +42,7 @@ interface ExtractedResult {
   [key: string]: Array<{ id: string; confidence: number; [k: string]: unknown }>;
 }
 
-export default function ConflictGraphPage() {
-
-  const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
+function DemoConflictGraphPage() {
   const [selectedConflict, setSelectedConflict] = useState("nordalia-crisis");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeTypes, setActiveTypes] = useState<Set<string>>(
@@ -517,4 +517,15 @@ function mapEdgeType(type: string): GraphEdge['type'] {
   if (type === 'patron' || type === 'proxy' || type === 'dependent') return 'ally';
   if (type === 'competitor') return 'adversary';
   return 'supports';
+}
+
+export default function ConflictGraphPage() {
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  if (isDemo) return <DemoConflictGraphPage />;
+  if (showGuard || !situation) return <NoSituationState />;
+  return (
+    <AiPopulate toolId="conflict-graph" toolName="Conflict Graph" apiEndpoint="/api/graph/build" creditCost={3} hasExistingData={false} onDataGenerated={() => {}}>
+      <RealToolView situation={situation} toolName="Conflict Graph" toolDescription="Interactive knowledge graph of actors, events, and relationships" icon={GitBranch} capabilities={["Map all actors and their relationships","Visualize conflict dynamics over time","Identify leverage points and alliances","Track escalation patterns"]} />
+    </AiPopulate>
+  );
 }

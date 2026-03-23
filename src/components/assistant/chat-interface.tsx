@@ -229,13 +229,13 @@ export function ChatInterface() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-navy-700 bg-navy-900/50 px-6 py-4">
+      <div className="flex items-center justify-between border-b border-[var(--color-app-border)] bg-white px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold-500/10 border border-gold-500/20">
-            <span className="text-lg font-serif font-bold text-gold-400">T</span>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold-500/10 border border-gold-500/30">
+            <span className="text-lg font-serif font-bold text-gold-600">T</span>
           </div>
           <div>
-            <h1 className="font-serif text-xl text-navy-50">Diplomatic Assistant</h1>
+            <h1 className="font-serif text-xl text-navy-900">Diplomatic Assistant</h1>
             <p className="text-xs text-navy-400">AI-powered analysis, drafting, and research</p>
           </div>
         </div>
@@ -249,7 +249,7 @@ export function ChatInterface() {
               "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-all border",
               useGroundedMode
                 ? "bg-diplomatic-blue/15 border-diplomatic-blue/30 text-diplomatic-blue hover:bg-diplomatic-blue/25"
-                : "bg-navy-800 border-navy-600 text-navy-400 hover:bg-navy-700 hover:text-navy-200"
+                : "bg-white border-navy-200 text-navy-400 hover:bg-navy-100 hover:text-navy-700"
             )}
           >
             {useGroundedMode ? (
@@ -311,14 +311,14 @@ export function ChatInterface() {
               className="pt-8"
             >
               <div className="mb-8 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gold-500/10 border border-gold-500/20">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gold-500/10 border border-gold-500/30">
                   {useGroundedMode ? (
                     <Globe className="h-6 w-6 text-diplomatic-blue" />
                   ) : (
-                    <span className="text-2xl font-serif font-bold text-gold-400">T</span>
+                    <span className="text-2xl font-serif font-bold text-gold-600">T</span>
                   )}
                 </div>
-                <h2 className="font-serif text-2xl text-navy-50 mb-2">
+                <h2 className="font-serif text-2xl text-navy-900 mb-2">
                   {useGroundedMode ? 'Live Research Assistant' : 'TACITUS Diplomatic Assistant'}
                 </h2>
                 <p className="text-sm text-navy-400 max-w-lg mx-auto leading-relaxed">
@@ -397,14 +397,14 @@ export function ChatInterface() {
                   "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border",
                   useGroundedMode
                     ? "bg-diplomatic-blue/10 border-diplomatic-blue/20"
-                    : "bg-gold-500/10 border-gold-500/20"
+                    : "bg-gold-500/10 border-gold-500/30"
                 )}>
                   {useGroundedMode
                     ? <Globe className="h-4 w-4 text-diplomatic-blue animate-pulse" />
-                    : <span className="text-sm font-serif font-bold text-gold-400">T</span>
+                    : <span className="text-sm font-serif font-bold text-gold-600">T</span>
                   }
                 </div>
-                <div className="flex items-center gap-1.5 rounded-xl bg-navy-800 border-l-2 border-gold-500/30 px-4 py-3">
+                <div className="flex items-center gap-1.5 rounded-xl bg-white border-l-2 border-gold-500/30 px-4 py-3">
                   {useGroundedMode && (
                     <span className="text-[10px] text-diplomatic-blue mr-2">Searching the web...</span>
                   )}
@@ -423,7 +423,7 @@ export function ChatInterface() {
       </div>
 
       {/* Input area */}
-      <div className="border-t border-navy-700 bg-navy-900/50 px-6 py-4">
+      <div className="border-t border-[var(--color-app-border)] bg-white px-6 py-4">
         <div className="mx-auto max-w-3xl">
           {/* Context badges */}
           {(conflictContext || uploadedContext) && (
@@ -435,7 +435,7 @@ export function ChatInterface() {
                 </div>
               )}
               {uploadedContext && (
-                <div className="flex items-center gap-1.5 rounded-full bg-gold-500/15 border border-gold-500/20 px-2.5 py-1 text-[11px] font-medium text-gold-400">
+                <div className="flex items-center gap-1.5 rounded-full bg-gold-500/15 border border-gold-500/30 px-2.5 py-1 text-[11px] font-medium text-gold-600">
                   <Paperclip className="h-3 w-3" />
                   {uploadedContext.name}
                   <button onClick={() => setUploadedContext(null)} className="hover:text-gold-200"><X className="h-3 w-3" /></button>
@@ -457,14 +457,14 @@ export function ChatInterface() {
                 e.target.value = '';
               }}
             />
-            <div className="flex items-end gap-2 rounded-xl border border-navy-600 bg-navy-800 px-3 py-2 focus-within:border-gold-500/40 focus-within:ring-1 focus-within:ring-gold-500/20 transition-all">
+            <div className="flex items-end gap-2 rounded-xl border border-navy-200 bg-white px-3 py-2 focus-within:border-gold-500/40 focus-within:ring-1 focus-within:ring-gold-500/20 transition-all">
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="h-8 w-8 shrink-0 text-navy-400 hover:text-navy-200"
+                className="h-8 w-8 shrink-0 text-navy-400 hover:text-navy-700"
                 title="Attach document"
               >
                 {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
@@ -479,7 +479,7 @@ export function ChatInterface() {
                   ? "Ask anything — I'll search the web for current information..."
                   : "Type your message..."}
                 rows={1}
-                className="flex-1 resize-none bg-transparent text-sm text-navy-100 placeholder:text-navy-500 focus:outline-none min-h-[32px] max-h-[120px] py-1.5"
+                className="flex-1 resize-none bg-transparent text-sm text-navy-800 placeholder:text-navy-500 focus:outline-none min-h-[32px] max-h-[120px] py-1.5"
               />
 
               <Button
@@ -490,7 +490,7 @@ export function ChatInterface() {
                   "h-8 w-8 shrink-0 rounded-lg transition-all",
                   input.trim()
                     ? "bg-gold-500 text-navy-950 hover:bg-gold-400"
-                    : "bg-navy-700 text-navy-500"
+                    : "bg-navy-100 text-navy-500"
                 )}
               >
                 {isLoading ? (
@@ -517,7 +517,7 @@ export function ChatInterface() {
                   }}
                   className={cn(
                     "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-navy-400",
-                    "transition-colors hover:bg-navy-800 hover:text-navy-200",
+                    "transition-colors hover:bg-white hover:text-navy-700",
                     "cursor-pointer"
                   )}
                 >
@@ -530,21 +530,21 @@ export function ChatInterface() {
               <button
                 type="button"
                 onClick={() => setShowContextDropdown((v) => !v)}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-navy-400 hover:bg-navy-800 hover:text-navy-200 transition-colors"
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-navy-400 hover:bg-white hover:text-navy-700 transition-colors"
               >
                 {conflictContext ? conflictLabel : 'Set context'}
                 <ChevronDown className="h-3 w-3" />
               </button>
               {showContextDropdown && (
-                <div className="absolute bottom-full right-0 mb-1 z-20 min-w-[180px] rounded-lg border border-navy-600 bg-navy-800 shadow-xl">
+                <div className="absolute bottom-full right-0 mb-1 z-20 min-w-[180px] rounded-lg border border-navy-200 bg-white shadow-xl">
                   {CONFLICT_CONTEXTS.map((ctx) => (
                     <button
                       key={ctx.id}
                       type="button"
                       onClick={() => { setConflictContext(ctx.id); setShowContextDropdown(false); }}
                       className={cn(
-                        'block w-full px-3 py-2 text-left text-[11px] hover:bg-navy-700 transition-colors',
-                        conflictContext === ctx.id ? 'text-gold-400 font-medium' : 'text-navy-300'
+                        'block w-full px-3 py-2 text-left text-[11px] hover:bg-navy-100 transition-colors',
+                        conflictContext === ctx.id ? 'text-gold-600 font-medium' : 'text-navy-600'
                       )}
                     >
                       {ctx.label}

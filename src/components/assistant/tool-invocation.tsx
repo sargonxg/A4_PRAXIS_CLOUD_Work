@@ -88,13 +88,13 @@ export function ToolInvocation({ invocation }: ToolInvocationProps) {
       transition={{ duration: 0.35, ease: "easeOut" }}
       className="ml-11"
     >
-      <div className="rounded-lg border border-navy-700/60 bg-navy-800/40 overflow-hidden">
+      <div className="rounded-lg border border-navy-200 bg-[var(--color-app-surface-alt)] overflow-hidden">
         {/* Header */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className={cn(
             "flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors cursor-pointer",
-            "hover:bg-navy-800/80"
+            "hover:bg-white/80"
           )}
         >
           <div
@@ -146,11 +146,11 @@ export function ToolInvocation({ invocation }: ToolInvocationProps) {
               transition={{ duration: 0.25 }}
               className="overflow-hidden"
             >
-              <div className="border-t border-navy-700/40 px-3 py-2 space-y-2">
+              <div className="border-t border-navy-200 px-3 py-2 space-y-2">
                 {invocation.results.map((result, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-2 rounded-md bg-navy-900/40 p-2"
+                    className="flex items-start gap-2 rounded-md bg-navy-50 p-2"
                   >
                     {invocation.type === "web-search" ? (
                       <Globe className="mt-0.5 h-3 w-3 shrink-0 text-teal" />
@@ -158,7 +158,7 @@ export function ToolInvocation({ invocation }: ToolInvocationProps) {
                       <FileText className="mt-0.5 h-3 w-3 shrink-0 text-navy-400" />
                     )}
                     <div className="min-w-0">
-                      <p className="text-xs font-medium text-navy-200 line-clamp-1">
+                      <p className="text-xs font-medium text-navy-700 line-clamp-1">
                         {result.title}
                       </p>
                       <p className="mt-0.5 text-[11px] text-navy-400 line-clamp-2">
