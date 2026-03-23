@@ -770,7 +770,15 @@ export default function DashboardPage() {
     return <SituationDashboard situation={situation} />;
   }
 
-  // Below is the DEMO dashboard only
+  // Demo mode — render the full demo dashboard with Nordalia data
+  return <DemoDashboard />;
+}
+
+// ---------------------------------------------------------------------------
+// Demo Dashboard (Nordalia + hardcoded demo data — only for /demo/* visitors)
+// ---------------------------------------------------------------------------
+
+function DemoDashboard() {
   const { user } = useAuth();
   const router = useRouter();
   const route = usePraxisRoute();

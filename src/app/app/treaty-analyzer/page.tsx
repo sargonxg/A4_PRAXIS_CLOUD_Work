@@ -102,7 +102,7 @@ function CircularGauge({ value, size = 120 }: { value: number; size?: number }) 
   );
 }
 
-function DemoTreatyAnalyzerPage() {
+function DemoTreatyAnalyzerPage({ situationName }: { situationName?: string }) {
 
   const [selectedAgreementId, setSelectedAgreementId] = useState<string>(
     DEMO_AGREEMENTS[0].id
@@ -115,12 +115,13 @@ function DemoTreatyAnalyzerPage() {
   const agreementStatus = AGREEMENT_STATUS_STYLES[selectedAgreement.status];
 
   // Only show clause data for the ceasefire agreement (our detailed demo)
+  const defaultAgreementId = DEMO_AGREEMENTS[0]?.id ?? 'nordalia-ceasefire';
   const clauses =
-    selectedAgreementId === 'nordalia-ceasefire'
+    selectedAgreementId === defaultAgreementId
       ? NORDALIA_CEASEFIRE_CLAUSES
       : [];
   const summary =
-    selectedAgreementId === 'nordalia-ceasefire' ? COMPLIANCE_SUMMARY : null;
+    selectedAgreementId === defaultAgreementId ? COMPLIANCE_SUMMARY : null;
 
   const stats = useMemo(() => {
     if (!clauses.length) return null;
@@ -218,7 +219,7 @@ function DemoTreatyAnalyzerPage() {
             Detailed clause analysis not yet available for this agreement
           </p>
           <p className="mt-1 text-xs text-navy-400">
-            Select the Nordalia Ceasefire Agreement to view full compliance
+            Select the {situationName ?? 'Nordalia'} Ceasefire Agreement to view full compliance
             analysis
           </p>
         </div>
@@ -601,10 +602,10 @@ export default function TreatyAnalyzerPage() {
   
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoTreatyAnalyzerPage />;
-  
+
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
-  
+
   // Real mode — AI populate prompt, then show tool
   return (
     <AiPopulate
@@ -615,7 +616,7 @@ export default function TreatyAnalyzerPage() {
       hasExistingData={false}
       onDataGenerated={() => {}}
     >
-      <DemoTreatyAnalyzerPage />
+      <DemoTreatyAnalyzerPage situationName={situation.name} />
     </AiPopulate>
   );
 }

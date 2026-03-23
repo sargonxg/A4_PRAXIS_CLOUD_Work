@@ -311,7 +311,7 @@ function DocumentIntelligenceTab() {
 
 /* ── Tab 3: Cross-Case Patterns ─────────────────────────────────────── */
 
-function CrossCasePatternsTab() {
+function CrossCasePatternsTab({ situationName }: { situationName?: string }) {
   const categories = Object.keys(ARGUS_CROSS_CASE_MATRIX);
 
   return (
@@ -326,7 +326,7 @@ function CrossCasePatternsTab() {
               <div className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-red-500" />
                 <span className="text-xs font-semibold uppercase tracking-wider text-navy-500">
-                  Nordalia
+                  {situationName ?? 'Nordalia'}
                 </span>
               </div>
             </th>
@@ -377,7 +377,7 @@ function CrossCasePatternsTab() {
 
 /* ── Main Page ──────────────────────────────────────────────────────── */
 
-function DemoArgusPage() {
+function DemoArgusPage({ situationName }: { situationName?: string }) {
 
   return (
     <div className="space-y-6">
@@ -409,7 +409,7 @@ function DemoArgusPage() {
           <DocumentIntelligenceTab />
         </TabsContent>
         <TabsContent value="cross-case">
-          <CrossCasePatternsTab />
+          <CrossCasePatternsTab situationName={situationName} />
         </TabsContent>
       </Tabs>
 
@@ -448,10 +448,10 @@ export default function ArgusPage() {
   
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoArgusPage />;
-  
+
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
-  
+
   // Real mode — AI populate prompt, then show tool
   return (
     <AiPopulate
@@ -462,7 +462,7 @@ export default function ArgusPage() {
       hasExistingData={false}
       onDataGenerated={() => {}}
     >
-      <DemoArgusPage />
+      <DemoArgusPage situationName={situation.name} />
     </AiPopulate>
   );
 }

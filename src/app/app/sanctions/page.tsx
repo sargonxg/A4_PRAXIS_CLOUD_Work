@@ -4,6 +4,8 @@ import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { RealToolView } from '@/components/praxis/real-tool-view';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
+import { NoDataState } from '@/components/praxis/no-data-state';
+import type { Situation } from '@/types/situation';
 
 import { useState, useCallback } from 'react';
 import { Shield, Search, ChevronRight, Sparkles, BookOpen, Link2, Loader2, RefreshCw, Users, Building2, Clock, TrendingUp } from 'lucide-react';
@@ -464,18 +466,74 @@ Format with clear headers. Be specific about Nordalia context.`;
 }
 
 // ============================================================================
+// Real mode — situation-driven, no hardcoded Nordalia data
+// ============================================================================
+
+function RealSanctionsPage({ situation }: { situation: Situation }) {
+  const [generating, setGenerating] = useState(false);
+
+  const actors = situation.actors ?? [];
+  const hasData = false; // TODO: wire to Firestore sanctions data
+
+  if (!hasData) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-crimson/8">
+            <Shield className="h-5 w-5 text-crimson" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-navy-900">Sanctions Tracker</h1>
+            <p className="text-sm text-navy-500">
+              {situation.name} — sanctions analysis pending
+            </p>
+          </div>
+        </div>
+
+        {actors.length > 0 && (
+          <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400 mb-2">Situation Actors</p>
+            <div className="flex flex-wrap gap-2">
+              {actors.map((actor) => (
+                <span
+                  key={actor}
+                  className="rounded-full border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-3 py-1 text-xs font-medium text-navy-700"
+                >
+                  {actor}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <NoDataState
+          toolName="Sanctions Scan"
+          situationName={situation.name}
+          creditCost={2}
+          onGenerate={() => setGenerating(true)}
+          loading={generating}
+        />
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// ============================================================================
 // Real mode wrapper — separates demo data from situation-specific data
 // ============================================================================
 
 export default function SanctionsPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
-  
+
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoSanctionsPage />;
-  
+
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
-  
+
   // Real mode — AI populate prompt, then show tool
   return (
     <AiPopulate
@@ -486,7 +544,7 @@ export default function SanctionsPage() {
       hasExistingData={false}
       onDataGenerated={() => {}}
     >
-      <DemoSanctionsPage />
+      <RealSanctionsPage situation={situation} />
     </AiPopulate>
   );
 }

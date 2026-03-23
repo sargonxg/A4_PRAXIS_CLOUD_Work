@@ -103,6 +103,7 @@ interface SectionEditorProps {
   templateName: string;
   previousContent: string;
   onContentChange: (content: string) => void;
+  conflictContext?: string;
 }
 
 function SectionEditor({
@@ -112,6 +113,7 @@ function SectionEditor({
   templateName,
   previousContent,
   onContentChange,
+  conflictContext = 'the Nordalia Crisis',
 }: SectionEditorProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAiContent, setIsAiContent] = useState(false);
@@ -135,7 +137,7 @@ function SectionEditor({
 
     let prompt = '';
     if (instruction === 'generate') {
-      prompt = `Generate the "${title}" section for a ${templateName} about the Nordalia Crisis. Previous sections context: ${previousContent.slice(0, 400) || 'none'}. Write in formal UN diplomatic language. 200-300 words. Output only the section text, no headers.`;
+      prompt = `Generate the "${title}" section for a ${templateName} about ${conflictContext}. Previous sections context: ${previousContent.slice(0, 400) || 'none'}. Write in formal UN diplomatic language. 200-300 words. Output only the section text, no headers.`;
     } else if (instruction === 'rephrase') {
       prompt = `Rephrase the following text in formal UN diplomatic language, maintaining all factual content:\n\n${content}`;
     } else if (instruction === 'shorter') {
@@ -150,7 +152,7 @@ function SectionEditor({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt,
-          conflictContext: 'Nordalia Crisis',
+          conflictContext,
         }),
       });
 
@@ -391,13 +393,14 @@ export default function ReportEditorPage() {
         .map((s) => `${s.title}: ${sectionContents[s.id] || ''}`)
         .join('\n');
 
-      const prompt = `Generate the "${section.title}" section for a ${report.title} about the Nordalia Crisis. Previous sections context: ${previousContent.slice(0, 400) || 'none'}. Write in formal UN diplomatic language. 200-300 words. Output only the section text, no headers.`;
+      const conflictCtx = situation?.name ?? conflict?.name ?? 'the active conflict';
+      const prompt = `Generate the "${section.title}" section for a ${report.title} about ${conflictCtx}. Previous sections context: ${previousContent.slice(0, 400) || 'none'}. Write in formal UN diplomatic language. 200-300 words. Output only the section text, no headers.`;
 
       try {
         const response = await fetch('/api/ai/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, conflictContext: 'Nordalia Crisis' }),
+          body: JSON.stringify({ prompt, conflictContext: conflictCtx }),
         });
         if (!response.ok || !response.body) continue;
 
@@ -622,6 +625,7 @@ export default function ReportEditorPage() {
                   templateName={title}
                   previousContent={prevContent}
                   onContentChange={(c) => handleSectionChange(section.id, c)}
+                  conflictContext={situation?.name ?? conflict?.name ?? 'the Nordalia Crisis'}
                 />
               );
             })}
@@ -641,17 +645,17 @@ export default function ReportEditorPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-navy-900">
-                  {conflict?.name ?? 'Nordalia Crisis'}
+                  {conflict?.name ?? situation?.name ?? 'Unknown Conflict'}
                 </p>
                 <p className="text-xs text-navy-400 mt-0.5">
-                  {conflict?.region ?? 'Nordalia (fictional)'}
+                  {conflict?.region ?? situation?.region ?? 'Region not specified'}
                 </p>
                 <div className="flex items-center gap-1.5 mt-1.5">
                   <Badge variant="terracotta" className="text-[10px] px-1.5 py-0">
                     Active
                   </Badge>
                   <span className="text-[10px] text-navy-500">
-                    Risk score: {conflict?.riskScore ?? 7.8}/10
+                    Risk score: {conflict?.riskScore ?? situation?.riskScore ?? 'N/A'}/10
                   </span>
                 </div>
               </div>

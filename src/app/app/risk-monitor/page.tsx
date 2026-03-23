@@ -229,7 +229,7 @@ function SubScoreBar({ label, value }: { label: string; value: number }) {
 // Main Page
 // ─────────────────────────────────────────────────────────────────────────────
 
-function DemoRiskMonitorPage() {
+function DemoRiskMonitorPage({ situationName }: { situationName?: string }) {
 
   const [selectedRegion, setSelectedRegion] = useState<MonitoredRegion | null>(null);
 
@@ -330,7 +330,7 @@ function DemoRiskMonitorPage() {
             <p className="text-sm">Select a region above to view detailed risk assessment</p>
           </div>
         ) : (
-          <RegionDetail region={selectedRegion} />
+          <RegionDetail region={selectedRegion} situationName={situationName} />
         )}
       </section>
       <PoweredByTacitus />
@@ -342,7 +342,7 @@ function DemoRiskMonitorPage() {
 // Region Detail Panel
 // ─────────────────────────────────────────────────────────────────────────────
 
-function RegionDetail({ region }: { region: MonitoredRegion }) {
+function RegionDetail({ region, situationName }: { region: MonitoredRegion; situationName?: string }) {
   const style = RISK_LEVEL_STYLES[region.riskLevel];
   const trendMeta = TREND_META[region.escalationTrend];
   const TrendIc = trendMeta.icon;
@@ -464,7 +464,7 @@ function RegionDetail({ region }: { region: MonitoredRegion }) {
         {/* Risk Trajectory Chart */}
         <div>
           <div className="text-xs font-medium text-navy-600 uppercase tracking-wide mb-2">
-            Risk Trajectory (Nordalia Benchmark)
+            Risk Trajectory ({situationName ?? 'Nordalia'} Benchmark)
           </div>
           <div className="rounded-lg border border-[var(--color-app-border)] bg-white p-3">
             <RiskTrajectoryChart />
@@ -503,10 +503,10 @@ export default function RiskMonitorPage() {
   
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoRiskMonitorPage />;
-  
+
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
-  
+
   // Real mode — AI populate prompt, then show tool
   return (
     <AiPopulate
@@ -517,7 +517,7 @@ export default function RiskMonitorPage() {
       hasExistingData={false}
       onDataGenerated={() => {}}
     >
-      <DemoRiskMonitorPage />
+      <DemoRiskMonitorPage situationName={situation.name} />
     </AiPopulate>
   );
 }

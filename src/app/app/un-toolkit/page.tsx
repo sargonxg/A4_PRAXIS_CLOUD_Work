@@ -853,6 +853,8 @@ function TerminologyChecker() {
    TAB 2: RESOLUTION DRAFTER
    ==================================================================== */
 function ResolutionDrafter() {
+  const { situation } = useSituationGuard();
+  const sitName = situation?.name ?? 'Nordalia';
   const [paragraphType, setParagraphType] = useState<ParagraphType>("preambular");
   const [strength, setStrength] = useState<Strength>("moderate");
   const [userInput, setUserInput] = useState("");
@@ -899,11 +901,13 @@ function ResolutionDrafter() {
         setGeneratedText(accumulated);
       }
     } catch {
-      // Fall back to template
+      // Fall back to template — replace hardcoded Nordalia with active situation name
       const templates = RESOLUTION_TEMPLATES[paragraphType][strength];
       const opener = templates.openers[Math.floor(Math.random() * templates.openers.length)];
       const template = templates.templates[Math.floor(Math.random() * templates.templates.length)];
-      setGeneratedText(template.replace("{opener}", opener));
+      setGeneratedText(
+        template.replace("{opener}", opener).replaceAll("Nordalia", sitName)
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -989,7 +993,7 @@ function ResolutionDrafter() {
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           rows={3}
-          placeholder="Describe the concern about humanitarian access in northern Nordalia..."
+          placeholder={`Describe the concern about humanitarian access in ${sitName}...`}
         />
       </div>
 

@@ -319,17 +319,18 @@ const FILTER_TABS: { value: FilterTab; label: string }[] = [
   { value: 'final', label: 'Final' },
 ];
 
-function DemoReportsPage() {
+function DemoReportsPage({ situation }: { situation?: import('@/types/situation').Situation | null }) {
 
   const router = useRouter();
   const route = usePraxisRoute();
   const { reports, addReport, removeReport } = useConflictStore();
+  const isReal = !!situation;
 
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
   const [search, setSearch] = useState('');
 
-  const usingDemo = reports.length === 0;
-  const displayReports = usingDemo ? DEMO_REPORTS : reports;
+  const usingDemo = isReal ? false : reports.length === 0;
+  const displayReports = isReal ? reports : (usingDemo ? DEMO_REPORTS : reports);
 
   // Filter logic
   const filteredReports = displayReports.filter((r) => {
@@ -441,8 +442,8 @@ function DemoReportsPage() {
         </div>
       </div>
 
-      {/* Demo banner */}
-      {usingDemo && (
+      {/* Demo banner (only in demo mode) */}
+      {usingDemo && !isReal && (
         <div className="mx-6 mt-4 flex items-center gap-3 rounded-lg border border-gold-500/20 bg-gold-500/5 px-4 py-2.5">
           <div className="h-1.5 w-1.5 rounded-full bg-gold-400 shrink-0" />
           <p className="text-xs text-gold-400">
@@ -535,7 +536,7 @@ export default function ReportsPage() {
   if (showGuard || !situation) return <NoSituationState />;
   return (
     <AiPopulate toolId="reports" toolName="Reports" apiEndpoint="/api/ai/report" creditCost={5} hasExistingData={false} onDataGenerated={() => {}}>
-      <DemoReportsPage />
+      <DemoReportsPage situation={situation} />
     </AiPopulate>
   );
 }

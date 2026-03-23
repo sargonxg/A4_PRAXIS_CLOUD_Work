@@ -63,7 +63,7 @@ const TOPIC_OPTIONS: TopicOption[] = [
   { id: 'custom', label: 'Custom topic...', context: '' },
 ];
 
-const CONFLICT_OPTIONS = [
+const DEMO_CONFLICT_OPTIONS = [
   { id: 'nordalia', label: 'Nordalia Crisis', riskScore: 7.8 },
   { id: 'sahel', label: 'Sahel Security Complex', riskScore: 6.2 },
   { id: 'scs', label: 'South China Sea Tensions', riskScore: 5.8 },
@@ -74,9 +74,19 @@ export default function TalkingPointsPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
   if (showGuard) return <NoSituationState />;
+
+  // In real mode, build conflict options from the active situation
+  const CONFLICT_OPTIONS = isDemo
+    ? DEMO_CONFLICT_OPTIONS
+    : situation
+      ? [{ id: situation.id, label: situation.name, riskScore: situation.riskScore }]
+      : DEMO_CONFLICT_OPTIONS;
+
+  const defaultConflictId = isDemo ? 'nordalia' : (situation?.id ?? 'nordalia');
+
   const [selectedAudience, setSelectedAudience] = useState('council');
   const [selectedTopic, setSelectedTopic] = useState('ceasefire');
-  const [selectedConflict, setSelectedConflict] = useState('nordalia');
+  const [selectedConflict, setSelectedConflict] = useState(defaultConflictId);
   const [customTopic, setCustomTopic] = useState('');
   const [additionalContext, setAdditionalContext] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -86,7 +96,7 @@ export default function TalkingPointsPage() {
 
   const audienceOption = AUDIENCE_OPTIONS.find((a) => a.id === selectedAudience)!;
   const topicOption = TOPIC_OPTIONS.find((t) => t.id === selectedTopic)!;
-  const conflictOption = CONFLICT_OPTIONS.find((c) => c.id === selectedConflict)!;
+  const conflictOption = CONFLICT_OPTIONS.find((c) => c.id === selectedConflict) ?? CONFLICT_OPTIONS[0];
 
   const topicLabel = selectedTopic === 'custom' ? customTopic : topicOption?.label ?? '';
   const topicContext = selectedTopic === 'custom' ? additionalContext : topicOption?.context ?? '';
@@ -100,10 +110,14 @@ export default function TalkingPointsPage() {
     const controller = new AbortController();
     abortRef.current = controller;
 
+    const situationContext = !isDemo && situation
+      ? `Situation: ${situation.name} (${situation.region}). Risk score: ${situation.riskScore}/10. Status: ${situation.status}. Actors: ${situation.actors.join(', ') || 'not specified'}.`
+      : 'Current situation: DRM advancing, ceasefire fragile, UNMN mandate renewal in 19 days, Karovia proxy involvement suspected, Framework Agreement partially implemented.';
+
     const prompt = `Generate talking points for: ${topicLabel}
 Audience: ${audienceOption.label}
 Conflict context: ${conflictOption.label}
-Current situation: DRM advancing, ceasefire fragile, UNMN mandate renewal in 19 days, Karovia proxy involvement suspected, Framework Agreement partially implemented.
+${situationContext}
 ${topicContext ? `Topic-specific context: ${topicContext}` : ''}
 ${additionalContext && selectedTopic !== 'custom' ? `Additional context: ${additionalContext}` : ''}
 
@@ -387,7 +401,7 @@ A: [answer]
               </div>
               <div className="mt-5 flex items-center gap-1.5 rounded-lg border border-gold-500/15 bg-gold-500/4 px-3 py-2 text-xs text-gold-700">
                 <Sparkles className="h-3.5 w-3.5 shrink-0" />
-                Grounded in UN diplomatic standards and Nordalia context
+                Grounded in UN diplomatic standards and {situation?.name ?? 'Nordalia'} context
               </div>
             </div>
           )}

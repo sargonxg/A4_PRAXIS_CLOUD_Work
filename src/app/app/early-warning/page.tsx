@@ -584,12 +584,20 @@ function SituationCard({ conflict }: { conflict: ReturnType<typeof useConflictSt
 // Main Page
 // ─────────────────────────────────────────────────────────────────────────────
 
-function DemoEarlyWarningPage() {
+function DemoEarlyWarningPage({ situation }: { situation?: import('@/types/situation').Situation | null }) {
 
   const conflicts = useConflictStore((s) => s.conflicts);
+  const isReal = !!situation;
+
+  // For real mode, derive the situation name and context dynamically
+  const situationName = situation?.name ?? 'Nordalia Crisis';
+  const situationRegion = situation?.region ?? 'Nordalia (fictional)';
+  const situationActors = situation?.actors ?? [];
+  const situationGlaslStage = situation?.glaslStage ?? 4;
+  const situationRiskScore = situation?.riskScore ?? 7.8;
 
   // Glasl stage state (local)
-  const [activeStage, setActiveStage] = useState(4);
+  const [activeStage, setActiveStage] = useState(situationGlaslStage);
   const [isAssessingStage, setIsAssessingStage] = useState(false);
   const [stageAssessment, setStageAssessment] = useState('');
 
@@ -597,18 +605,20 @@ function DemoEarlyWarningPage() {
   const [horizonOutput, setHorizonOutput] = useState('');
   const [horizonLoading, setHorizonLoading] = useState(false);
 
-  // Active conflict selection for radar
-  const [radarConflictId, setRadarConflictId] = useState('nordalia-crisis');
-  const radarConflict = conflicts.find((c) => c.id === radarConflictId) ?? conflicts[0];
-  const radarValues = radarConflictId === 'nordalia-crisis' ? NORDALIA_RADAR : [5, 5, 5, 5, 5];
-  const compositeScore = radarValues.reduce((a, b) => a + b, 0) / radarValues.length;
+  // Active conflict selection for radar (only relevant in demo mode)
+  const [radarConflictId, setRadarConflictId] = useState(isReal ? '__real__' : 'nordalia-crisis');
+  const radarConflict = isReal ? null : (conflicts.find((c) => c.id === radarConflictId) ?? conflicts[0]);
+  const radarValues = isReal ? [5, 5, 5, 5, 5] : (radarConflictId === 'nordalia-crisis' ? NORDALIA_RADAR : [5, 5, 5, 5, 5]);
+  const compositeScore = isReal ? situationRiskScore : (radarValues.reduce((a, b) => a + b, 0) / radarValues.length);
 
   const handleAIAssessStage = useCallback(async () => {
     if (isAssessingStage) return;
     setIsAssessingStage(true);
     setStageAssessment('');
-    const activeConflict = conflicts.find((c) => c.id === 'nordalia-crisis') ?? conflicts[0];
-    const prompt = `You are a conflict analyst using the Glasl escalation model. The current assessed stage for the ${activeConflict?.name ?? 'Nordalia Crisis'} is Stage ${activeStage}. Based on the following context: Risk score ${activeConflict?.riskScore}/10, status: ${activeConflict?.status}. In ONE sentence, confirm or suggest a different stage (1-9) and briefly explain. End with: "Recommended stage: [number]"`;
+    const conflictName = isReal ? situationName : (conflicts.find((c) => c.id === 'nordalia-crisis')?.name ?? 'Nordalia Crisis');
+    const conflictRisk = isReal ? situationRiskScore : (conflicts.find((c) => c.id === 'nordalia-crisis')?.riskScore ?? 7.8);
+    const conflictStatus = isReal ? situation?.status ?? 'active' : (conflicts.find((c) => c.id === 'nordalia-crisis')?.status ?? 'active');
+    const prompt = `You are a conflict analyst using the Glasl escalation model. The current assessed stage for the ${conflictName} is Stage ${activeStage}. Based on the following context: Risk score ${conflictRisk}/10, status: ${conflictStatus}. In ONE sentence, confirm or suggest a different stage (1-9) and briefly explain. End with: "Recommended stage: [number]"`;
     try {
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
@@ -639,16 +649,18 @@ function DemoEarlyWarningPage() {
     } finally {
       setIsAssessingStage(false);
     }
-  }, [isAssessingStage, activeStage, conflicts]);
+  }, [isAssessingStage, activeStage, conflicts, isReal, situationName, situationRiskScore, situation?.status]);
 
   const handleHorizonScan = useCallback(async () => {
     if (horizonLoading) return;
     setHorizonLoading(true);
     setHorizonOutput('');
-    const conflictSummary = conflicts
-      .map((c) => `${c.name} (${c.region}) — risk score ${c.riskScore}/10, status: ${c.status}`)
-      .join('; ');
-    const prompt = `Generate a 30-day horizon scan for these monitored conflicts: ${conflictSummary}. Format with sections: ## Top 3 Risks in Next 30 Days, ## Escalation Triggers to Watch, ## Diplomatic Opportunities. Be specific and analytical.`;
+    const conflictSummary = isReal
+      ? `${situationName} (${situationRegion}) — risk score ${situationRiskScore}/10, status: ${situation?.status ?? 'active'}, actors: ${situationActors.join(', ') || 'not specified'}`
+      : conflicts
+          .map((c) => `${c.name} (${c.region}) — risk score ${c.riskScore}/10, status: ${c.status}`)
+          .join('; ');
+    const prompt = `Generate a 30-day horizon scan for ${isReal ? 'this situation' : 'these monitored conflicts'}: ${conflictSummary}. Format with sections: ## Top 3 Risks in Next 30 Days, ## Escalation Triggers to Watch, ## Diplomatic Opportunities. Be specific and analytical.`;
     try {
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
@@ -692,9 +704,11 @@ function DemoEarlyWarningPage() {
           </div>
         </div>
         <div className="flex items-center gap-4">
+          {!isReal && (
           <div className="rounded-lg border border-gold-500/20 bg-gold-500/8 px-3 py-1.5 text-[10px] text-gold-400 font-medium">
             DEMO MODE — Nordalia scenario active
           </div>
+          )}
           <div className="flex items-center gap-1.5 text-[10px] text-navy-500">
             <Clock className="h-3 w-3" />
             Updated 5 min ago
@@ -715,7 +729,7 @@ function DemoEarlyWarningPage() {
               <TrendingUp className="h-4 w-4 text-crimson shrink-0" />
               <h2 className="text-sm font-bold text-navy-900">Glasl 9-Stage Escalation Model</h2>
             </div>
-            <p className="mt-0.5 text-[10px] text-navy-500">Active conflict: The Nordalia Crisis</p>
+            <p className="mt-0.5 text-[10px] text-navy-500">Active conflict: {situationName}</p>
 
             {/* Active stage summary */}
             <div className={cn('mt-3 flex items-center gap-2 rounded-lg border px-3 py-2', activeZoneStyles.bg, activeZoneStyles.border)}>
@@ -754,7 +768,11 @@ function DemoEarlyWarningPage() {
               </div>
               {/* Conflict selector */}
               <div className="mt-2 flex gap-1 flex-wrap">
-                {conflicts.map((c) => (
+                {isReal ? (
+                  <span className="rounded-full px-2 py-0.5 text-[9px] font-medium border border-diplomatic-blue/50 bg-diplomatic-blue/15 text-diplomatic-blue">
+                    {situationName}
+                  </span>
+                ) : conflicts.map((c) => (
                   <button
                     key={c.id}
                     onClick={() => setRadarConflictId(c.id)}
@@ -815,7 +833,13 @@ function DemoEarlyWarningPage() {
           </div>
 
           <div className="divide-y divide-[var(--color-app-border-light)]">
-            {TRIGGERS.map((trigger, i) => (
+            {isReal ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <p className="text-xs text-navy-500">
+                  Trigger events for <span className="font-semibold text-navy-700">{situationName}</span> will appear here as AI populates this view.
+                </p>
+              </div>
+            ) : TRIGGERS.map((trigger, i) => (
               <div key={i} className="px-4 py-3 hover:bg-[var(--color-app-surface-alt)] transition-colors">
                 <p className="text-[11px] font-medium text-navy-700 leading-tight">{trigger.event}</p>
                 <div className="mt-1.5 flex items-center gap-2 flex-wrap">
@@ -834,7 +858,8 @@ function DemoEarlyWarningPage() {
         </div>
       </div>
 
-      {/* ── Situation Cards — horizontal scroll ── */}
+      {/* ── Situation Cards — horizontal scroll (demo only) ── */}
+      {!isReal && (
       <div>
         <div className="mb-3 flex items-center gap-2">
           <Globe className="h-4 w-4 text-teal shrink-0" />
@@ -847,6 +872,7 @@ function DemoEarlyWarningPage() {
           ))}
         </div>
       </div>
+      )}
 
       {/* ── Horizon Scan ── */}
       <div className="rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden">
@@ -880,7 +906,11 @@ function DemoEarlyWarningPage() {
                 <Sparkles className="h-6 w-6 text-gold-400/60" />
               </div>
               <p className="text-sm text-navy-500">Click &quot;Generate Horizon Scan&quot; to get an AI-powered 30-day outlook</p>
-              <p className="mt-1 text-[10px] text-navy-600">Analyzes all {conflicts.length} monitored conflicts for risks, triggers, and opportunities</p>
+              <p className="mt-1 text-[10px] text-navy-600">
+                {isReal
+                  ? `Analyzes ${situationName} for risks, triggers, and opportunities`
+                  : `Analyzes all ${conflicts.length} monitored conflicts for risks, triggers, and opportunities`}
+              </p>
             </div>
           )}
 
@@ -911,14 +941,14 @@ function DemoEarlyWarningPage() {
 
 export default function EarlyWarningPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
-  
+
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoEarlyWarningPage />;
-  
+
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
-  
-  // Real mode — AI populate prompt, then show tool
+
+  // Real mode — AI populate prompt, then show tool with situation data
   return (
     <AiPopulate
       toolId="early-warning"
@@ -928,7 +958,7 @@ export default function EarlyWarningPage() {
       hasExistingData={false}
       onDataGenerated={() => {}}
     >
-      <DemoEarlyWarningPage />
+      <DemoEarlyWarningPage situation={situation} />
     </AiPopulate>
   );
 }

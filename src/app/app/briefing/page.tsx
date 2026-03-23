@@ -93,7 +93,8 @@ function SlideContent({ slide }: { slide: BriefingSlide }) {
   );
 }
 
-function DemoBriefingPage() {
+function DemoBriefingPage({ situationName }: { situationName?: string }) {
+  const isRealMode = !!situationName;
 
   const [view, setView] = useState<'builder' | 'presentation'>('builder');
   const [selectedCase, setSelectedCase] = useState(caseEntries[0]?.id ?? '');
@@ -105,7 +106,8 @@ function DemoBriefingPage() {
   const [noDataMessage, setNoDataMessage] = useState('');
 
   const handleGenerate = () => {
-    if (briefingType === 'morning' && selectedCase.includes('nordalia')) {
+    // Real mode: always allow generation; Demo mode: only for Nordalia morning brief
+    if (briefingType === 'morning' && (isRealMode || selectedCase.includes('nordalia'))) {
       setGenerating(true);
       setNoDataMessage('');
       setTimeout(() => {
@@ -350,10 +352,10 @@ export default function BriefingPage() {
   
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoBriefingPage />;
-  
+
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
-  
+
   // Real mode — AI populate prompt, then show tool
   return (
     <AiPopulate
@@ -364,7 +366,7 @@ export default function BriefingPage() {
       hasExistingData={false}
       onDataGenerated={() => {}}
     >
-      <DemoBriefingPage />
+      <DemoBriefingPage situationName={situation.name} />
     </AiPopulate>
   );
 }
