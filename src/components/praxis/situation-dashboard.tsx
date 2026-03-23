@@ -192,27 +192,112 @@ export function SituationDashboard({ situation }: { situation: Situation }) {
 /**
  * Welcome state when user has no situations yet.
  */
+const TEMPLATE_SITUATIONS = [
+  {
+    name: 'Syrian Civil War & Ceasefire Process',
+    type: 'international' as const,
+    description: 'Monitoring the Syrian conflict including the Astana/Geneva peace processes, HTS governance in northwest Syria, US/Russia/Turkey/Iran dynamics, humanitarian access, and reconstruction debates.',
+    region: 'Middle East',
+    actors: ['Government of Syria', 'HTS (Hayat Tahrir al-Sham)', 'SDF / AANES', 'Turkey', 'Russia', 'Iran', 'United States', 'UN Special Envoy'],
+    userRole: 'analyst' as const,
+    sources: ['Wikipedia', 'Reuters', 'Crisis Group', 'UN News', 'Al Jazeera'],
+    tag: 'Armed conflict',
+  },
+  {
+    name: 'Myanmar Crisis & Resistance Movement',
+    type: 'civil' as const,
+    description: 'Tracking the post-coup situation in Myanmar including the National Unity Government (NUG), ethnic armed organizations (EAOs), SAC military operations, humanitarian emergency, and ASEAN response.',
+    region: 'Southeast Asia',
+    actors: ['State Administration Council (SAC)', 'National Unity Government (NUG)', 'Peoples Defence Force (PDF)', 'Karen National Union (KNU)', 'Arakan Army', 'ASEAN', 'China', 'UN Special Envoy'],
+    userRole: 'analyst' as const,
+    sources: ['Wikipedia', 'Reuters', 'ACLED', 'The Irrawaddy', 'Crisis Group'],
+    tag: 'Armed conflict',
+  },
+  {
+    name: 'EU AI Act Implementation & Digital Governance',
+    type: 'political' as const,
+    description: 'Monitoring the implementation of the EU Artificial Intelligence Act, its impact on tech companies, compliance timelines, enforcement mechanisms, and the global regulatory ripple effect.',
+    region: 'Europe',
+    actors: ['European Commission', 'EU AI Office', 'Member States', 'Big Tech (Meta, Google, Microsoft)', 'Civil Society Organizations', 'European Parliament'],
+    userRole: 'analyst' as const,
+    sources: ['Wikipedia', 'Reuters', 'Financial Times', 'European Commission', 'IAPP'],
+    tag: 'Policy/Regulatory',
+  },
+  {
+    name: 'South China Sea Territorial Disputes',
+    type: 'international' as const,
+    description: 'Tracking competing territorial claims in the South China Sea between China, Philippines, Vietnam, and other ASEAN claimants. Includes UNCLOS arbitration, freedom of navigation operations, and island-building activities.',
+    region: 'East Asia',
+    actors: ['China (PRC)', 'Philippines', 'Vietnam', 'United States', 'ASEAN', 'Japan', 'Permanent Court of Arbitration'],
+    userRole: 'observer' as const,
+    sources: ['Wikipedia', 'Reuters', 'IISS', 'Asia Maritime Transparency Initiative', 'Nikkei Asia'],
+    tag: 'Geopolitical',
+  },
+];
+
+/**
+ * Welcome state when user has no situations yet.
+ */
 export function WelcomeState() {
   const router = useRouter();
   const route = usePraxisRoute();
+  const { addSituation } = useSituationStore();
+  const [creating, setCreating] = useState<string | null>(null);
 
-  const examples = [
-    { name: 'Syria Ceasefire Monitoring', type: 'International Conflict', region: 'Middle East' },
-    { name: 'Ethiopia-Eritrea Border Dispute', type: 'International Conflict', region: 'Horn of Africa' },
-    { name: 'Workplace Mediation — TechCo', type: 'Workplace Dispute', region: 'N/A' },
-    { name: 'South China Sea Tensions', type: 'Political Crisis', region: 'East Asia' },
-  ];
+  const handleCreateTemplate = async (template: typeof TEMPLATE_SITUATIONS[number]) => {
+    setCreating(template.name);
+    try {
+      // Create the situation via API
+      const res = await fetch('/api/situations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: template.name,
+          type: template.type,
+          description: template.description,
+          region: template.region,
+          actors: template.actors,
+          userRole: template.userRole,
+          status: 'active',
+        }),
+      });
+
+      if (res.ok) {
+        const { situation } = await res.json();
+        addSituation(situation);
+
+        // Kick off background AI research
+        fetch('/api/ai/deep-research', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: `${template.name} latest developments background overview key actors`,
+            mode: 'background',
+            depth: 'standard',
+            situationContext: template.description,
+            sourcePreferences: template.sources,
+          }),
+        }).catch(() => {}); // Fire and forget
+
+        router.push(route('/dashboard'));
+      } else {
+        setCreating(null);
+      }
+    } catch {
+      setCreating(null);
+    }
+  };
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center">
-      <div className="max-w-xl text-center">
+    <div className="mx-auto max-w-3xl py-8">
+      <div className="text-center">
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gold-500/10">
           <Sparkles className="h-8 w-8 text-gold-600" />
         </div>
         <h1 className="text-2xl font-semibold text-navy-900">Welcome to PRAXIS</h1>
-        <p className="mt-3 text-sm text-navy-500 leading-relaxed">
-          Create your first situation to start building conflict intelligence.
-          PRAXIS will help you research, analyze, and report on any conflict or dispute.
+        <p className="mt-3 max-w-lg mx-auto text-sm text-navy-500 leading-relaxed">
+          Create a situation to start building conflict intelligence.
+          PRAXIS will research, analyze, and help you produce professional intelligence products.
         </p>
 
         <button
@@ -220,23 +305,66 @@ export function WelcomeState() {
           className="mt-6 inline-flex items-center gap-2 rounded-lg bg-gold-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-gold-500/20 hover:bg-gold-600"
         >
           <Plus className="h-4 w-4" />
-          Create Your First Situation
+          Create Your Own Situation
         </button>
+      </div>
 
-        <div className="mt-8">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-navy-400">Example situations</p>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {examples.map((ex) => (
-              <button
-                key={ex.name}
-                onClick={() => router.push(route('/situations/new'))}
-                className="rounded-lg border border-navy-200 bg-white px-4 py-3 text-left transition-colors hover:border-gold-500/30 hover:bg-gold-500/5"
-              >
-                <p className="text-xs font-medium text-navy-800">{ex.name}</p>
-                <p className="text-[10px] text-navy-500">{ex.type} &middot; {ex.region}</p>
-              </button>
-            ))}
-          </div>
+      {/* Template situations */}
+      <div className="mt-12">
+        <div className="text-center mb-6">
+          <p className="text-sm font-semibold text-navy-700">Or start with a template</p>
+          <p className="mt-1 text-xs text-navy-400">
+            AI will create the situation and research it using Wikipedia, Reuters, Crisis Group, and other trusted sources
+          </p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          {TEMPLATE_SITUATIONS.map((tpl) => (
+            <button
+              key={tpl.name}
+              onClick={() => handleCreateTemplate(tpl)}
+              disabled={!!creating}
+              className="group rounded-xl border border-navy-200 bg-white p-5 text-left transition-all hover:border-gold-500/40 hover:shadow-md disabled:opacity-60"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={cn(
+                      'rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                      tpl.tag === 'Armed conflict' ? 'bg-red-50 text-red-700' :
+                      tpl.tag === 'Geopolitical' ? 'bg-blue-50 text-blue-700' :
+                      'bg-purple-50 text-purple-700'
+                    )}>
+                      {tpl.tag}
+                    </span>
+                    <span className="text-[10px] text-navy-400">{tpl.region}</span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-navy-900 group-hover:text-gold-700 transition-colors">
+                    {creating === tpl.name ? 'Creating...' : tpl.name}
+                  </h3>
+                  <p className="mt-1.5 text-[11px] text-navy-500 leading-relaxed line-clamp-2">
+                    {tpl.description}
+                  </p>
+                </div>
+                {creating === tpl.name && (
+                  <div className="ml-3 shrink-0">
+                    <Sparkles className="h-5 w-5 animate-pulse text-gold-500" />
+                  </div>
+                )}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1">
+                {tpl.actors.slice(0, 4).map((a) => (
+                  <span key={a} className="rounded-full bg-navy-50 px-2 py-0.5 text-[9px] text-navy-500">{a}</span>
+                ))}
+                {tpl.actors.length > 4 && (
+                  <span className="rounded-full bg-navy-50 px-2 py-0.5 text-[9px] text-navy-500">+{tpl.actors.length - 4} more</span>
+                )}
+              </div>
+              <p className="mt-2 text-[9px] text-navy-400">
+                Sources: {tpl.sources.join(', ')}
+              </p>
+            </button>
+          ))}
         </div>
       </div>
     </div>
