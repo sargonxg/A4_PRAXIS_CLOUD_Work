@@ -2,6 +2,7 @@
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
+import { NoDataState } from '@/components/praxis/no-data-state';
 
 import { useState, useCallback } from 'react';
 import { Calendar, ChevronRight, Filter, Sparkles, FileText, Users, Loader2, CheckSquare, Square, RefreshCw, X } from 'lucide-react';
@@ -37,31 +38,6 @@ const INSTITUTION_META: Record<string, { full: string; color: string }> = {
   ASEAN:  { full: 'ASEAN',                       color: '#2D6A4F' },
 };
 
-const CALENDAR_EVENTS: CalendarEvent[] = [
-  // Week 1
-  { id: 'e1', date: '2026-03-12', time: '10:00', institution: 'UNSC', institutionFull: 'UN Security Council', color: '#1B3A5C', title: 'Open Debate: Protection of Civilians', topics: ['POC', 'Nordalia', 'Sahel'], relevantConflicts: ['nordalia-crisis'], keyIssues: 'Expect focus on explosive weapons in populated areas. P5 divisions may surface over accountability provisions for Nordalia.', relevantBackground: 'Follows SG annual report (S/2026/88) documenting 16,000+ civilian casualties. DRM implicated in 38% of documented incidents.' },
-  { id: 'e2', date: '2026-03-12', time: '15:00', institution: 'UNHRC', institutionFull: 'UN Human Rights Council', color: '#C8961E', title: 'Special Session: Human Rights in Conflict Zones', topics: ['HRL', 'Armed Conflict', 'Accountability'], relevantConflicts: ['nordalia-crisis'], keyIssues: 'NGOs expected to present evidence on detention conditions. Government of Nordalia likely to resist resolution language on investigations.', relevantBackground: 'Called under Rule 9 following OHCHR report on systematic civilian detention by government forces.' },
-  { id: 'e3', date: '2026-03-13', time: '09:00', institution: 'AU PSC', institutionFull: 'AU Peace & Security Council', color: '#5B8C5A', title: 'PSC Meeting: Sahel Crisis Update', topics: ['Sahel', 'MNJTF', 'Ceasefire'], relevantConflicts: ['sahel'], keyIssues: 'MNJTF funding gap of $240M requires emergency authorization. Niger transition government posture to be discussed.', relevantBackground: 'Meeting convened following escalation in Burkina Faso and renewed cross-border attacks from Mali.' },
-  { id: 'e4', date: '2026-03-13', time: '14:00', institution: 'EU', institutionFull: 'EU Council', color: '#3D5A80', title: 'Foreign Affairs Council: Nordalia Sanctions Review', topics: ['Sanctions', 'Nordalia', 'EU Policy'], relevantConflicts: ['nordalia-crisis'], keyIssues: 'Discussion of extending the EU framework with additional designations. Hungary and Serbia may block consensus.', relevantBackground: 'Annual review under Council Regulation 2025/2241. 12 new designations under consideration.' },
-  { id: 'e5', date: '2026-03-14', time: '10:00', institution: 'UNSC', institutionFull: 'UN Security Council', color: '#1B3A5C', title: 'Private Consultations: Nordalia Situation', topics: ['Nordalia', 'UNMN Mandate'], relevantConflicts: ['nordalia-crisis'], keyIssues: 'SRSG to brief on DRM troop movements threatening ceasefire line. Troop contributing countries pushing for strengthened ROE.', relevantBackground: 'Closed Arria-Formula session following breakdown of Kessara talks. Mandate renewal in 47 days.' },
-  { id: 'e6', date: '2026-03-14', time: '11:00', institution: 'OSCE', institutionFull: 'OSCE', color: '#7B6D8D', title: 'Special Committee on Conflicts', topics: ['Mediation', 'Confidence Building', 'CSBMs'], relevantConflicts: [], keyIssues: 'Discussion of confidence-building measures for frozen conflicts. Vienna Document compliance to be reviewed.', relevantBackground: 'Part of the 2026 OSCE structured dialogue on conflict prevention.' },
-  { id: 'e7', date: '2026-03-15', time: '09:00', institution: 'ICC', institutionFull: 'International Criminal Court', color: '#A63D40', title: 'Pre-Trial Chamber Hearing: War Crimes Cases', topics: ['IHL', 'Accountability', 'Nordalia'], relevantConflicts: ['nordalia-crisis'], keyIssues: 'Pre-trial confirmation of charges against DRM field commanders. Defense expected to challenge jurisdiction.', relevantBackground: 'Three suspects transferred to The Hague in January 2026. Charges include wilful killing and destruction of civilian property.' },
-  { id: 'e8', date: '2026-03-15', time: '14:00', institution: 'UNSC', institutionFull: 'UN Security Council', color: '#1B3A5C', title: 'Briefing by SRSG on Nordalia', topics: ['Nordalia', 'UNMN', 'Framework Agreement'], relevantConflicts: ['nordalia-crisis'], keyIssues: 'SRSG Diallo to brief on Framework Agreement implementation gaps. Expect call for expanded UNMN capacity.', relevantBackground: 'Monthly briefing under agenda item "The situation in Nordalia." UNMN Force Commander will also brief.' },
-  { id: 'e9', date: '2026-03-16', time: '10:00', institution: 'ECOWAS', institutionFull: 'ECOWAS', color: '#C75B39', title: 'Emergency Summit on Regional Security', topics: ['Sahel', 'Border Security', 'Counterterrorism'], relevantConflicts: ['sahel'], keyIssues: 'Summit called after cross-border attack killed 47 civilians. Joint force deployment timeline to be agreed.', relevantBackground: 'Emergency convocation by ECOWAS Chair. AES bloc participation uncertain following earlier walkouts.' },
-  { id: 'e10', date: '2026-03-16', time: '15:00', institution: 'UNGA', institutionFull: 'UN General Assembly', color: '#2E8A8A', title: 'High-Level Dialogue on Sustaining Peace', topics: ['Peacebuilding', 'Financing', 'PBC'], relevantConflicts: [], keyIssues: 'Peacebuilding Fund replenishment pledging conference. $500M target for 2026–2028 cycle.', relevantBackground: 'Jointly convened with the Peacebuilding Commission following the 2025 Sustaining Peace review.' },
-  // Week 2
-  { id: 'e11', date: '2026-03-17', time: '10:00', institution: 'UNSC', institutionFull: 'UN Security Council', color: '#1B3A5C', title: 'Vote: Nordalia Arms Embargo Renewal', topics: ['Sanctions', 'Nordalia', 'P5 Dynamics'], relevantConflicts: ['nordalia-crisis'], keyIssues: 'Expected veto threat from P5 member backing DRM. US and France co-sponsoring renewal. Procedural vote may be necessary.', relevantBackground: 'UNSC Res 2875 (2025) expires 31 March. Panel of Experts report found widespread violations.' },
-  { id: 'e12', date: '2026-03-17', time: '14:00', institution: 'NATO', institutionFull: 'NATO', color: '#1A3050', title: 'Defense Ministers Meeting: Regional Security Assessment', topics: ['Collective Defense', 'SCS', 'Hybrid Threats'], relevantConflicts: ['scs'], keyIssues: 'South China Sea freedom of navigation assessments. Alliance burden-sharing for Indo-Pacific presence.', relevantBackground: 'Quarterly ministerial. Enhanced Forward Presence readiness to be reviewed alongside global threats assessment.' },
-  { id: 'e13', date: '2026-03-18', time: '09:00', institution: 'UNHRC', institutionFull: 'UN Human Rights Council', color: '#C8961E', title: 'Side Event: Civilian Protection in Nordalia', topics: ['POC', 'NGO Briefings', 'Nordalia'], relevantConflicts: ['nordalia-crisis'], keyIssues: 'MSF, Oxfam, and Refugees International to present on humanitarian access. Hospitals-under-attack data central.', relevantBackground: 'Organized on margins of 55th HRC session. Expected to feed into draft resolution being tabled by EU bloc.' },
-  { id: 'e14', date: '2026-03-18', time: '15:00', institution: 'AU PSC', institutionFull: 'AU Peace & Security Council', color: '#5B8C5A', title: 'Continental Early Warning Report', topics: ['EW', 'Prevention', 'Africa'], relevantConflicts: [], keyIssues: 'CEWARN annual report presenting 12 high-risk scenarios for 2026. Preventive diplomacy mandates to be reviewed.', relevantBackground: 'Part of AU reform agenda on early warning and early response. Structured around AU Silence Procedure.' },
-  { id: 'e15', date: '2026-03-19', time: '10:00', institution: 'ASEAN', institutionFull: 'ASEAN', color: '#2D6A4F', title: 'South China Sea Consultations', topics: ['SCS', 'UNCLOS', 'Maritime', 'COC'], relevantConflicts: ['scs'], keyIssues: 'Code of Conduct negotiations: China proposing to exclude non-ASEAN parties. Philippines, Vietnam resistant.', relevantBackground: 'Special consultations ahead of ASEAN Summit. US observer presence contested by China.' },
-  { id: 'e16', date: '2026-03-19', time: '14:00', institution: 'UNSC', institutionFull: 'UN Security Council', color: '#1B3A5C', title: 'Arria Formula: Mediation in Nordalia', topics: ['Nordalia', 'Mediation', 'Framework Agreement'], relevantConflicts: ['nordalia-crisis'], keyIssues: 'AU Special Envoy to brief on Kessara II process. DRM representative attending in observer capacity.', relevantBackground: 'Organized by elected UNSC members. Framework Agreement parties to present implementation report.' },
-  { id: 'e17', date: '2026-03-20', time: '09:00', institution: 'ICC', institutionFull: 'International Criminal Court', color: '#A63D40', title: 'Appeals Chamber: Victim Reparations', topics: ['Reparations', 'Accountability', 'TJ'], relevantConflicts: [], keyIssues: 'Ruling on reparations framework for 2,400 registered victims. Trust Fund for Victims capacity in focus.', relevantBackground: 'Appeals from conviction of former commander. Reparations jurisprudence highly watched by practitioners.' },
-  { id: 'e18', date: '2026-03-20', time: '11:00', institution: 'EU', institutionFull: 'EU Council', color: '#3D5A80', title: 'EUCO: EU-Africa Partnership Discussion', topics: ['Partnership', 'Sahel', 'Development'], relevantConflicts: ['sahel'], keyIssues: 'Global Gateway funding for Sahel stabilization: €3.2B package under negotiation. AES conditionality terms contested.', relevantBackground: 'Part of the EU-AU Partnership review. EUTM Sahel mandate modifications also on agenda.' },
-  { id: 'e19', date: '2026-03-21', time: '10:00', institution: 'UNSC', institutionFull: 'UN Security Council', color: '#1B3A5C', title: 'UNMN Mandate Renewal Consultations', topics: ['Nordalia', 'UNMN', 'Mandate', 'TCCs'], relevantConflicts: ['nordalia-crisis'], keyIssues: 'Troop Contributing Countries pushing for enhanced ROE and counter-IED mandate. P5 split on Chapter VII language.', relevantBackground: 'Informal consultations ahead of 31 March expiry. Draft resolution S/2026/XXX circulated by France and Kenya.' },
-  { id: 'e20', date: '2026-03-21', time: '14:00', institution: 'OSCE', institutionFull: 'OSCE', color: '#7B6D8D', title: 'Vienna Document Compliance Review', topics: ['CSBMs', 'Military Transparency', 'Verification'], relevantConflicts: [], keyIssues: 'Annual military exercises notification review. Several states under scrutiny for non-notification.', relevantBackground: 'Routine review under Vienna Document 2011. Recent hybrid threat activities complicating standard verification.' },
-];
-
 const INSTITUTION_FILTERS = [
   { id: 'all', label: 'All', color: '#475569' },
   { id: 'UNSC',   label: 'UNSC',   color: '#1B3A5C' },
@@ -88,11 +64,72 @@ export default function CalendarPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
   if (showGuard) return <NoSituationState />;
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [generating, setGenerating] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set(['all']));
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [briefings, setBriefings] = useState<Record<string, string>>({});
   const [loadingBriefId, setLoadingBriefId] = useState<string | null>(null);
   const [checklists, setChecklists] = useState<Record<string, Record<number, boolean>>>({});
+
+  const handleGenerateCalendar = useCallback(async () => {
+    if (generating) return;
+    setGenerating(true);
+
+    const situationName = situation?.name ?? 'the active situation';
+    const situationDesc = situation?.description ?? '';
+    const situationRegion = situation?.region ?? '';
+    const situationActors = situation?.actors?.join(', ') ?? '';
+
+    const prompt = `You are a senior institutional calendar analyst. Generate 15-20 upcoming institutional calendar events relevant to "${situationName}".
+
+Context:
+${situationDesc ? `- Description: ${situationDesc}` : ''}
+${situationRegion ? `- Region: ${situationRegion}` : ''}
+${situationActors ? `- Key actors: ${situationActors}` : ''}
+
+Generate events across the next 10 days from today spanning these institutions: UNSC, UNGA, UNHRC, AU PSC, EU, OSCE, ECOWAS, ICC, NATO, ASEAN.
+
+For each event include: date (YYYY-MM-DD), time (HH:MM), institution abbreviation, full institution name, title, topics array, relevantConflicts array (kebab-case IDs), keyIssues (1-2 sentences on what to watch), relevantBackground (1-2 sentences of context).
+
+IMPORTANT: Return ONLY a valid JSON array of objects. No markdown, no code fences, no explanation. Each object must have these exact fields:
+{ "id": "e1", "date": "YYYY-MM-DD", "time": "HH:MM", "institution": "ABBREV", "institutionFull": "Full Name", "color": "#hex", "title": "Event Title", "topics": ["topic1"], "relevantConflicts": ["conflict-id"], "keyIssues": "...", "relevantBackground": "..." }
+
+Use these colors for institutions: UNSC=#1B3A5C, UNGA=#2E8A8A, UNHRC=#C8961E, AU PSC=#5B8C5A, EU=#3D5A80, OSCE=#7B6D8D, ECOWAS=#C75B39, ICC=#A63D40, NATO=#1A3050, ASEAN=#2D6A4F.`;
+
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+      });
+
+      if (!response.ok || !response.body) throw new Error('Stream failed');
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        for (const line of chunk.split('\n')) {
+          const parsed = parseDataStreamChunk(line);
+          if (parsed) accumulated += parsed;
+        }
+      }
+
+      // Extract JSON array from accumulated text
+      const jsonMatch = accumulated.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]) as CalendarEvent[];
+        setEvents(parsed.map((e, i) => ({ ...e, id: e.id || `e${i + 1}` })));
+      }
+    } catch {
+      // Silently fail — user can retry
+    } finally {
+      setGenerating(false);
+    }
+  }, [generating, situation]);
 
   const toggleFilter = useCallback((filterId: string) => {
     if (filterId === 'all') {
@@ -122,7 +159,7 @@ export default function CalendarPage() {
 Agenda topics: ${event.topics.join(', ')}.
 ${event.keyIssues ? `Key issues: ${event.keyIssues}` : ''}
 ${event.relevantBackground ? `Background: ${event.relevantBackground}` : ''}
-In context of the Nordalia crisis and current peace process.
+In context of ${situation?.name ?? 'the active situation'} and current developments.
 
 Cover these three paragraphs:
 1) **What to Expect** — likely agenda flow, format, and institutional dynamics
@@ -158,7 +195,7 @@ Keep it action-oriented and diplomatically precise.`;
     } finally {
       setLoadingBriefId(null);
     }
-  }, [loadingBriefId]);
+  }, [loadingBriefId, situation]);
 
   const toggleChecklistItem = useCallback((eventId: string, idx: number) => {
     setChecklists((prev) => ({
@@ -169,8 +206,8 @@ Keep it action-oriented and diplomatically precise.`;
 
   const isAll = activeFilters.has('all');
   const filtered = isAll
-    ? CALENDAR_EVENTS
-    : CALENDAR_EVENTS.filter((e) => activeFilters.has(e.institution));
+    ? events
+    : events.filter((e) => activeFilters.has(e.institution));
 
   const grouped = filtered.reduce<Record<string, CalendarEvent[]>>((acc, event) => {
     if (!acc[event.date]) acc[event.date] = [];
@@ -245,7 +282,9 @@ Keep it action-oriented and diplomatically precise.`;
               <h3 className="text-sm font-semibold text-navy-900">Today&apos;s Focus</h3>
             </div>
             <p className="text-xs text-navy-600 leading-relaxed">
-              2 high-priority sessions today. The UNSC Open Debate is most critical — DRM civilian targeting documentation expected. UNHRC special session may trigger accountability resolution.
+              {events.length > 0
+                ? `${filtered.length} institutional session${filtered.length !== 1 ? 's' : ''} tracked for ${situation?.name ?? 'your situation'}. Select an event to generate an AI pre-brief.`
+                : `Generate calendar events to track institutional sessions relevant to ${situation?.name ?? 'your situation'}.`}
             </p>
             <PraxisLink href="/talking-points" className="mt-3 flex items-center gap-1 text-[11px] font-medium text-gold-600 hover:text-gold-700">
               Prepare talking points <ChevronRight className="h-3 w-3" />
@@ -259,7 +298,7 @@ Keep it action-oriented and diplomatically precise.`;
             </div>
             <div className="space-y-2">
               {Object.entries(
-                CALENDAR_EVENTS.reduce<Record<string, number>>((acc, e) => {
+                events.reduce<Record<string, number>>((acc, e) => {
                   acc[e.institution] = (acc[e.institution] || 0) + 1;
                   return acc;
                 }, {})
@@ -284,6 +323,15 @@ Keep it action-oriented and diplomatically precise.`;
 
         {/* Main content */}
         <div className="flex-1 min-w-0">
+          {events.length === 0 ? (
+            <NoDataState
+              toolName="Calendar Monitor"
+              situationName={situation?.name ?? ''}
+              creditCost={2}
+              onGenerate={handleGenerateCalendar}
+              loading={generating}
+            />
+          ) : (
           <div className="rounded-xl border border-[var(--color-app-border)] bg-white">
             {sortedDates.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -292,9 +340,9 @@ Keep it action-oriented and diplomatically precise.`;
               </div>
             ) : (
               sortedDates.map((date) => {
-                const events = grouped[date];
+                const dayEvents = grouped[date];
                 const dateObj = new Date(date + 'T12:00:00Z');
-                const isToday = date === '2026-03-12';
+                const isToday = date === new Date().toISOString().slice(0, 10);
                 return (
                   <div key={date}>
                     <div className={cn(
@@ -308,11 +356,11 @@ Keep it action-oriented and diplomatically precise.`;
                       {isToday && (
                         <span className="rounded-full bg-diplomatic-blue px-2 py-0.5 text-[10px] font-semibold text-white">TODAY</span>
                       )}
-                      <span className="text-xs text-navy-400">{events.length} event{events.length !== 1 ? 's' : ''}</span>
+                      <span className="text-xs text-navy-400">{dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''}</span>
                     </div>
 
                     <div className="divide-y divide-[var(--color-app-border-light)]">
-                      {events.map((event) => {
+                      {dayEvents.map((event) => {
                         const isExpanded = selectedEvent === event.id;
                         const hasBrief = !!briefings[event.id];
                         return (
@@ -332,9 +380,9 @@ Keep it action-oriented and diplomatically precise.`;
                                   >
                                     {event.institution}
                                   </span>
-                                  {event.relevantConflicts.includes('nordalia-crisis') && (
-                                    <span className="rounded-full bg-crimson/8 px-2 py-0.5 text-[10px] font-medium text-crimson">
-                                      Nordalia
+                                  {event.relevantConflicts.length > 0 && (
+                                    <span className="rounded-full bg-crimson/8 px-2 py-0.5 text-[10px] font-medium text-crimson capitalize">
+                                      {event.relevantConflicts[0].replace(/-/g, ' ')}
                                     </span>
                                   )}
                                   {hasBrief && (
@@ -478,6 +526,7 @@ Keep it action-oriented and diplomatically precise.`;
               })
             )}
           </div>
+          )}
         </div>
       </div>
     </div>

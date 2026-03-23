@@ -1,15 +1,19 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { useSituationStore } from '@/stores/situation-store';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
-import { useState, useCallback, Suspense } from 'react';
+import { useState, useCallback, useMemo, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { PraxisLink } from '@/components/shared/praxis-link';
-import { GitCompare, ChevronDown, Sparkles, Loader2, ArrowLeftRight, BookOpen } from 'lucide-react';
+import { usePraxisRoute } from '@/lib/utils/routes';
+import { GitCompare, ChevronDown, Sparkles, Loader2, ArrowLeftRight, BookOpen, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
+import type { Situation } from '@/types/situation';
 
 interface CaseData {
   id: string;
@@ -29,7 +33,10 @@ interface CaseData {
   dimensions: { political: number; security: number; humanitarian: number; economic: number; social: number };
 }
 
-const CASES: CaseData[] = [
+// ---------------------------------------------------------------------------
+// Demo-only hardcoded cases (shown in /demo path)
+// ---------------------------------------------------------------------------
+const DEMO_CASES: CaseData[] = [
   {
     id: 'ukraine-russia',
     name: 'Ukraine-Russia Conflict',
@@ -133,10 +140,76 @@ const CASES: CaseData[] = [
     startYear: 1992,
     endYear: 1997,
     description: 'Historical case: civil war resolved through comprehensive peace agreement brokered by OSCE.',
-    primaryConflictType: 'Internal armed conflict — resolved',
+    primaryConflictType: 'Internal armed conflict \u2014 resolved',
     dimensions: { political: 6.0, security: 7.0, humanitarian: 6.5, economic: 5.5, social: 7.0 },
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Map a real Situation to the CaseData format used by the comparison UI
+// ---------------------------------------------------------------------------
+const SITUATION_TYPE_LABELS: Record<string, string> = {
+  international: 'International conflict',
+  civil: 'Civil / internal conflict',
+  political: 'Political crisis',
+  trade: 'Trade / economic dispute',
+  workplace: 'Workplace dispute',
+  community: 'Community conflict',
+  legal: 'Legal dispute',
+  custom: 'Custom situation',
+};
+
+function situationToCaseData(s: Situation): CaseData {
+  // Map Situation.status + escalationTrend -> CaseData.status
+  let status: CaseData['status'] = 'active';
+  if (s.status === 'resolved') status = 'resolved';
+  else if (s.status === 'archived') status = 'frozen';
+  else if (s.escalationTrend === 'escalating') status = 'escalating';
+
+  // Derive spider-chart dimensions from available metadata.
+  // riskScore is 0-10 and serves as the baseline. We vary each dimension
+  // slightly based on situation type so comparisons are meaningful.
+  const base = Math.min(s.riskScore, 10);
+  const typeWeights: Record<string, { political: number; security: number; humanitarian: number; economic: number; social: number }> = {
+    international: { political: 1.1, security: 1.15, humanitarian: 0.95, economic: 0.9, social: 0.85 },
+    civil:         { political: 0.95, security: 1.1, humanitarian: 1.15, economic: 0.85, social: 1.0 },
+    political:     { political: 1.2, security: 0.8, humanitarian: 0.7, economic: 0.9, social: 1.1 },
+    trade:         { political: 0.8, security: 0.5, humanitarian: 0.4, economic: 1.3, social: 0.7 },
+    workplace:     { political: 0.6, security: 0.3, humanitarian: 0.5, economic: 0.9, social: 1.3 },
+    community:     { political: 0.7, security: 0.5, humanitarian: 0.8, economic: 0.6, social: 1.3 },
+    legal:         { political: 1.0, security: 0.4, humanitarian: 0.5, economic: 1.1, social: 0.8 },
+    custom:        { political: 1.0, security: 1.0, humanitarian: 1.0, economic: 1.0, social: 1.0 },
+  };
+  const w = typeWeights[s.type] ?? typeWeights.custom;
+  const clamp = (v: number) => Math.round(Math.min(10, Math.max(0, v)) * 10) / 10;
+
+  // Glasl stage (1-9) influences the security/humanitarian dimensions upward
+  const glaslBoost = s.glaslStage ? (s.glaslStage / 9) * 2 : 0;
+
+  const dimensions = {
+    political: clamp(base * w.political),
+    security: clamp(base * w.security + glaslBoost * 0.7),
+    humanitarian: clamp(base * w.humanitarian + glaslBoost * 0.5),
+    economic: clamp(base * w.economic),
+    social: clamp(base * w.social),
+  };
+
+  return {
+    id: s.id,
+    name: s.name,
+    region: s.region || 'Unspecified',
+    status,
+    riskScore: s.riskScore,
+    actorCount: s.actorCount || s.actors.length,
+    eventCount: s.documentCount || 0,
+    themes: s.actors.slice(0, 5), // Use actor names as stand-in tags
+    institutions: [],
+    startYear: new Date(s.createdAt).getFullYear(),
+    description: s.description,
+    primaryConflictType: SITUATION_TYPE_LABELS[s.type] ?? s.type,
+    dimensions,
+  };
+}
 
 const STATUS_COLORS: Record<string, string> = {
   active: 'text-crimson',
@@ -244,7 +317,7 @@ function RiskBar({ score, maxScore = 10 }: { score: number; maxScore?: number })
       <div className="w-20 h-1.5 rounded-full bg-[var(--color-app-surface-alt)] overflow-hidden">
         <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
-      <span className="font-mono text-xs font-semibold text-navy-700">{score > 0 ? score.toFixed(1) : '—'}</span>
+      <span className="font-mono text-xs font-semibold text-navy-700">{score > 0 ? score.toFixed(1) : '\u2014'}</span>
     </div>
   );
 }
@@ -259,18 +332,21 @@ function CompRow({ label, a, b, highlight }: { label: string; a: React.ReactNode
   );
 }
 
-function ComparePageInner() {
+// ---------------------------------------------------------------------------
+// Inner component — accepts the case list as a prop
+// ---------------------------------------------------------------------------
+function ComparePageInner({ cases }: { cases: CaseData[] }) {
   const searchParams = useSearchParams();
   const initialA = searchParams.get('a') ?? '';
   const initialB = searchParams.get('b') ?? '';
 
-  const [caseAId, setCaseAId] = useState(initialA || CASES[0].id);
-  const [caseBId, setCaseBId] = useState(initialB || (CASES[1]?.id ?? ''));
+  const [caseAId, setCaseAId] = useState(initialA || (cases[0]?.id ?? ''));
+  const [caseBId, setCaseBId] = useState(initialB || (cases[1]?.id ?? ''));
   const [comparison, setComparison] = useState('');
   const [isComparing, setIsComparing] = useState(false);
 
-  const caseA = CASES.find((c) => c.id === caseAId);
-  const caseB = CASES.find((c) => c.id === caseBId);
+  const caseA = cases.find((c) => c.id === caseAId);
+  const caseB = cases.find((c) => c.id === caseBId);
 
   const runComparison = useCallback(async () => {
     if (!caseA || !caseB || isComparing || caseAId === caseBId) return;
@@ -279,14 +355,14 @@ function ComparePageInner() {
 
     const prompt = `Compare these two conflict cases for a senior conflict analyst:
 
-CASE A: ${caseA.name} (${caseA.region}, ${caseA.startYear}${caseA.endYear ? `–${caseA.endYear}` : '–present'})
+CASE A: ${caseA.name} (${caseA.region}, ${caseA.startYear}${caseA.endYear ? `\u2013${caseA.endYear}` : '\u2013present'})
 Type: ${caseA.primaryConflictType}
 Status: ${caseA.status} | Risk: ${caseA.riskScore}/10
 Description: ${caseA.description}
 Key themes: ${caseA.themes.join(', ')}
 Institutions: ${caseA.institutions.join(', ')}
 
-CASE B: ${caseB.name} (${caseB.region}, ${caseB.startYear}${caseB.endYear ? `–${caseB.endYear}` : '–present'})
+CASE B: ${caseB.name} (${caseB.region}, ${caseB.startYear}${caseB.endYear ? `\u2013${caseB.endYear}` : '\u2013present'})
 Type: ${caseB.primaryConflictType}
 Status: ${caseB.status} | Risk: ${caseB.riskScore}/10
 Description: ${caseB.description}
@@ -299,7 +375,7 @@ Provide a structured comparative analysis with these headers:
 What core conflict dynamics are shared? What makes these structurally analogous?
 
 ## Key Differences
-Where do they diverge most significantly — causes, actors, internationalization, resolution prospects?
+Where do they diverge most significantly \u2014 causes, actors, internationalization, resolution prospects?
 
 ## Applicable Precedents
 Which precedents from ${caseB.name} apply to ${caseA.name}? Be specific about lessons, mechanisms, and analogous situations.
@@ -369,7 +445,7 @@ Be analytically specific. Cite conflict resolution theory where relevant. Avoid 
               onChange={(e) => setCaseAId(e.target.value)}
               className="w-full appearance-none rounded-lg border border-[var(--color-app-border)] bg-white px-4 py-3 text-sm font-medium text-navy-900 focus:border-diplomatic-blue/30 focus:outline-none"
             >
-              {CASES.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {cases.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400 pointer-events-none" />
           </div>
@@ -392,7 +468,7 @@ Be analytically specific. Cite conflict resolution theory where relevant. Avoid 
               onChange={(e) => setCaseBId(e.target.value)}
               className="w-full appearance-none rounded-lg border border-[var(--color-app-border)] bg-white px-4 py-3 text-sm font-medium text-navy-900 focus:border-diplomatic-blue/30 focus:outline-none"
             >
-              {CASES.filter((c) => c.id !== caseAId).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {cases.filter((c) => c.id !== caseAId).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400 pointer-events-none" />
           </div>
@@ -483,8 +559,8 @@ Be analytically specific. Cite conflict resolution theory where relevant. Avoid 
                     />
                     <CompRow
                       label="Institutions"
-                      a={<span className="text-xs text-navy-700">{caseA.institutions.join(', ')}</span>}
-                      b={<span className="text-xs text-navy-700">{caseB.institutions.join(', ')}</span>}
+                      a={<span className="text-xs text-navy-700">{caseA.institutions.join(', ') || '\u2014'}</span>}
+                      b={<span className="text-xs text-navy-700">{caseB.institutions.join(', ') || '\u2014'}</span>}
                     />
                   </tbody>
                 </table>
@@ -502,7 +578,7 @@ Be analytically specific. Cite conflict resolution theory where relevant. Avoid 
                 colorA={colorA}
                 colorB={colorB}
               />
-              <p className="mt-3 text-[10px] text-navy-400 text-center">Score 0–10 across five conflict dimensions</p>
+              <p className="mt-3 text-[10px] text-navy-400 text-center">Score 0\u201310 across five conflict dimensions</p>
             </div>
           </div>
 
@@ -566,17 +642,78 @@ Be analytically specific. Cite conflict resolution theory where relevant. Avoid 
   );
 }
 
-export default function ComparePage() {
+// ---------------------------------------------------------------------------
+// Minimum situations message for real users with < 2 situations
+// ---------------------------------------------------------------------------
+function NeedMoreSituations({ count }: { count: number }) {
+  const router = useRouter();
+  const route = usePraxisRoute();
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
+  return (
+    <div className="flex flex-col items-center justify-center py-20">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-purple/10">
+        <GitCompare className="h-8 w-8 text-purple" />
+      </div>
+      <h2 className="mt-6 text-lg font-semibold text-navy-900">
+        {count === 0 ? 'No situations yet' : 'Need at least 2 situations'}
+      </h2>
+      <p className="mt-2 max-w-md text-center text-sm text-navy-500">
+        {count === 0
+          ? 'Create your first situation to get started. The Compare tool lets you run side-by-side structural analysis across your situations once you have two or more.'
+          : 'The Compare tool runs side-by-side structural analysis between two situations. Create one more situation to unlock comparative insights and radar visualization.'}
+      </p>
+      <button
+        onClick={() => router.push(route('/situations/new'))}
+        className="mt-6 inline-flex items-center gap-2 rounded-lg bg-gold-500 px-5 py-2.5 text-sm font-semibold text-navy-950 transition-colors hover:bg-gold-400"
+      >
+        <Plus className="h-4 w-4" />
+        Create New Situation
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Default export — routes demo vs real users to the right experience
+// ---------------------------------------------------------------------------
+export default function ComparePage() {
+  const { isDemo, showGuard } = useSituationGuard();
+  const situations = useSituationStore((s) => s.situations);
+
+  // Convert real user situations to CaseData format (memoised for stability)
+  const userCases = useMemo(
+    () => situations.map(situationToCaseData),
+    [situations],
+  );
+
+  // Guard: no active situation selected (real users only)
   if (showGuard) return <NoSituationState />;
+
+  // Demo path: always use the curated demo cases
+  if (isDemo) {
+    return (
+      <Suspense fallback={
+        <div className="flex items-center justify-center p-16">
+          <Loader2 className="h-6 w-6 animate-spin text-navy-400" />
+        </div>
+      }>
+        <ComparePageInner cases={DEMO_CASES} />
+      </Suspense>
+    );
+  }
+
+  // Real user: need at least 2 situations to compare
+  if (userCases.length < 2) {
+    return <NeedMoreSituations count={userCases.length} />;
+  }
+
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center p-16">
         <Loader2 className="h-6 w-6 animate-spin text-navy-400" />
       </div>
     }>
-      <ComparePageInner />
+      <ComparePageInner cases={userCases} />
     </Suspense>
   );
 }

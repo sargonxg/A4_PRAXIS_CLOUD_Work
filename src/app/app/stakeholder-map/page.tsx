@@ -2,6 +2,7 @@
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
+import { NoDataState } from '@/components/praxis/no-data-state';
 
 import { useState, useCallback, useRef } from 'react';
 import {
@@ -17,9 +18,29 @@ import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 
+// ─── Types ──────────────────────────────────────────────────────────────────────
+
+interface StakeholderActor {
+  id: string;
+  name: string;
+  type: string;
+  power: number;
+  interest: number;
+  color: string;
+  relationships: number;
+}
+
+interface StakeholderRelationship {
+  from: string;
+  to: string;
+  type: string;
+  strength: number;
+  description: string;
+}
+
 // ─── Demo Data ─────────────────────────────────────────────────────────────────
 
-const ACTORS = [
+const DEMO_ACTORS: StakeholderActor[] = [
   { id: 'gov',      name: 'Government of Nordalia',       type: 'state',          power: 8,  interest: 9,  color: '#1A2332', relationships: 5 },
   { id: 'drm',      name: 'DRM',                          type: 'armed-group',    power: 6,  interest: 10, color: '#A63D40', relationships: 4 },
   { id: 'unmn',     name: 'UN Mission',                   type: 'international',  power: 7,  interest: 8,  color: '#4B92DB', relationships: 6 },
@@ -29,7 +50,7 @@ const ACTORS = [
   { id: 'sertania', name: 'Sertania',                     type: 'state',          power: 5,  interest: 5,  color: '#8395a7', relationships: 2 },
 ];
 
-const RELATIONSHIPS = [
+const DEMO_RELATIONSHIPS: StakeholderRelationship[] = [
   { from: 'gov',      to: 'drm',      type: 'rivalry',    strength: 9, description: 'Armed conflict since 2025' },
   { from: 'unmn',     to: 'gov',      type: 'diplomatic', strength: 6, description: 'Mission mandate holder' },
   { from: 'unmn',     to: 'drm',      type: 'diplomatic', strength: 5, description: 'Mediation engagement' },
@@ -65,7 +86,8 @@ const TYPE_LABELS: Record<string, string> = {
 
 // ─── Power-Interest Grid (SVG Mendelow Matrix) ─────────────────────────────────
 
-function PowerInterestGrid({ onSelectActor, selectedId }: {
+function PowerInterestGrid({ actors, onSelectActor, selectedId }: {
+  actors: StakeholderActor[];
   onSelectActor: (id: string | null) => void;
   selectedId: string | null;
 }) {
@@ -83,7 +105,7 @@ function PowerInterestGrid({ onSelectActor, selectedId }: {
   const toSvgX = (interest: number) => PAD_LEFT + (interest / 10) * PLOT_W;
   const toSvgY = (power: number)    => PAD_TOP + ((10 - power) / 10) * PLOT_H;
 
-  const [tooltip, setTooltip] = useState<{ actor: typeof ACTORS[0]; x: number; y: number } | null>(null);
+  const [tooltip, setTooltip] = useState<{ actor: StakeholderActor; x: number; y: number } | null>(null);
 
   return (
     <div className="relative">
@@ -147,7 +169,7 @@ function PowerInterestGrid({ onSelectActor, selectedId }: {
         ))}
 
         {/* Actor bubbles */}
-        {ACTORS.map((actor) => {
+        {actors.map((actor) => {
           const cx = toSvgX(actor.interest);
           const cy = toSvgY(actor.power);
           const r = 16 + actor.relationships * 3;
@@ -223,11 +245,15 @@ function PowerInterestGrid({ onSelectActor, selectedId }: {
 
 // ─── Relationship Matrix (HTML table) ─────────────────────────────────────────
 
-function RelationshipMatrix({ onSelectActor }: { onSelectActor: (id: string | null) => void }) {
+function RelationshipMatrix({ actors, relationships, onSelectActor }: {
+  actors: StakeholderActor[];
+  relationships: StakeholderRelationship[];
+  onSelectActor: (id: string | null) => void;
+}) {
   const [hoveredCell, setHoveredCell] = useState<{ from: string; to: string } | null>(null);
 
   const getRelationship = (from: string, to: string) =>
-    RELATIONSHIPS.find(r => (r.from === from && r.to === to) || (r.from === to && r.to === from));
+    relationships.find(r => (r.from === from && r.to === to) || (r.from === to && r.to === from));
 
   const cellTooltip = hoveredCell ? getRelationship(hoveredCell.from, hoveredCell.to) : null;
 
@@ -239,7 +265,7 @@ function RelationshipMatrix({ onSelectActor }: { onSelectActor: (id: string | nu
             <th className="w-28 border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-2 text-left text-[9px] font-semibold uppercase tracking-wider text-navy-400">
               Actor →
             </th>
-            {ACTORS.map(a => (
+            {actors.map(a => (
               <th
                 key={a.id}
                 className="border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-2 text-center"
@@ -254,7 +280,7 @@ function RelationshipMatrix({ onSelectActor }: { onSelectActor: (id: string | nu
           </tr>
         </thead>
         <tbody>
-          {ACTORS.map(rowActor => (
+          {actors.map(rowActor => (
             <tr key={rowActor.id}>
               <td className="border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-2">
                 <button
@@ -265,7 +291,7 @@ function RelationshipMatrix({ onSelectActor }: { onSelectActor: (id: string | nu
                   <span className="text-[9px] font-semibold text-navy-700">{rowActor.name.split(' ').slice(0, 2).join(' ')}</span>
                 </button>
               </td>
-              {ACTORS.map(colActor => {
+              {actors.map(colActor => {
                 if (rowActor.id === colActor.id) {
                   return (
                     <td
@@ -355,22 +381,26 @@ function RelationshipMatrix({ onSelectActor }: { onSelectActor: (id: string | nu
 // ─── Actor Detail Panel ────────────────────────────────────────────────────────
 
 function ActorDetailPanel({
+  actors,
+  relationships,
   actorId,
   onClose,
   liveInsight,
   loadingInsightId,
   onGenerateInsight,
 }: {
+  actors: StakeholderActor[];
+  relationships: StakeholderRelationship[];
   actorId: string;
   onClose: () => void;
   liveInsight: string;
   loadingInsightId: string | null;
   onGenerateInsight: (actorId: string) => void;
 }) {
-  const actor = ACTORS.find(a => a.id === actorId);
+  const actor = actors.find(a => a.id === actorId);
   if (!actor) return null;
 
-  const actorRels = RELATIONSHIPS.filter(r => r.from === actor.id || r.to === actor.id);
+  const actorRels = relationships.filter(r => r.from === actor.id || r.to === actor.id);
 
   return (
     <div className="rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden">
@@ -430,7 +460,7 @@ function ActorDetailPanel({
           <div className="space-y-1.5">
             {actorRels.map((rel, i) => {
               const otherId = rel.from === actor.id ? rel.to : rel.from;
-              const other = ACTORS.find(a => a.id === otherId);
+              const other = actors.find(a => a.id === otherId);
               if (!other) return null;
               const relType = rel.type as RelType;
               const color = REL_COLORS[relType] ?? '#94A3B8';
@@ -523,6 +553,12 @@ export default function StakeholderMapPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
   if (showGuard) return <NoSituationState />;
+
+  // ─── Dynamic state: demo uses hardcoded data, real starts empty ────────────
+  const [actors, setActors] = useState<StakeholderActor[]>(isDemo ? DEMO_ACTORS : []);
+  const [relationships, setRelationships] = useState<StakeholderRelationship[]>(isDemo ? DEMO_RELATIONSHIPS : []);
+  const [generatingMap, setGeneratingMap] = useState(false);
+
   const [activeTab, setActiveTab] = useState<TabType>('grid');
   const [selectedActorId, setSelectedActorId] = useState<string | null>(null);
   const [liveInsights, setLiveInsights] = useState<Record<string, string>>({});
@@ -533,23 +569,98 @@ export default function StakeholderMapPage() {
   const [loadingSpoiler, setLoadingSpoiler] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const hasData = actors.length > 0;
+
+  // ─── Generate stakeholder map from AI ──────────────────────────────────────
+  const handleGenerateMap = useCallback(async () => {
+    if (generatingMap) return;
+    setGeneratingMap(true);
+
+    const situationName = situation?.name ?? 'the active situation';
+    const situationDesc = situation?.description ?? '';
+    const situationRegion = situation?.region ?? '';
+    const situationActors = situation?.actors?.join(', ') ?? '';
+
+    const prompt = `You are a senior conflict analyst. Generate a stakeholder power map for "${situationName}".
+
+Context:
+${situationDesc ? `- Description: ${situationDesc}` : ''}
+${situationRegion ? `- Region: ${situationRegion}` : ''}
+${situationActors ? `- Key actors: ${situationActors}` : ''}
+
+Generate 5-8 key stakeholder actors and their relationships.
+
+IMPORTANT: Return ONLY a valid JSON object with two arrays. No markdown, no code fences, no explanation.
+
+{
+  "actors": [
+    { "id": "short-id", "name": "Full Name", "type": "state|armed-group|international|civil-society", "power": 1-10, "interest": 1-10, "color": "#hex", "relationships": 0 }
+  ],
+  "relationships": [
+    { "from": "actor-id", "to": "actor-id", "type": "alliance|rivalry|diplomatic|support", "strength": 1-10, "description": "Brief description" }
+  ]
+}
+
+Use these color conventions: states=#1A2332 or #5B8C5A or #8395a7, armed groups=#A63D40, international orgs=#4B92DB or #4B6584, civil society=#C8961E.
+Set each actor's "relationships" count to the number of relationships they appear in.
+Make the analysis realistic and grounded in conflict dynamics.`;
+
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+      });
+
+      if (!response.ok || !response.body) throw new Error('Stream failed');
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        for (const line of chunk.split('\n')) {
+          const parsed = parseDataStreamChunk(line);
+          if (parsed) fullText += parsed;
+        }
+      }
+
+      // Extract JSON from the response
+      const jsonMatch = fullText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const data = JSON.parse(jsonMatch[0]);
+        if (Array.isArray(data.actors) && Array.isArray(data.relationships)) {
+          setActors(data.actors);
+          setRelationships(data.relationships);
+        }
+      }
+    } catch {
+      // Silent fail — user can retry
+    } finally {
+      setGeneratingMap(false);
+    }
+  }, [generatingMap, situation]);
+
   const generateInsight = useCallback(async (actorId: string) => {
     if (loadingInsightId) return;
-    const actor = ACTORS.find(a => a.id === actorId);
+    const actor = actors.find(a => a.id === actorId);
     if (!actor) return;
 
     setLoadingInsightId(actorId);
     setLiveInsights(prev => ({ ...prev, [actorId]: '' }));
 
-    const actorRels = RELATIONSHIPS
+    const actorRels = relationships
       .filter(r => r.from === actorId || r.to === actorId)
       .map(r => {
         const otherId = r.from === actorId ? r.to : r.from;
-        const other = ACTORS.find(a => a.id === otherId);
+        const other = actors.find(a => a.id === otherId);
         return `${REL_LABELS[r.type as RelType]} with ${other?.name} (strength ${r.strength}/10: ${r.description})`;
       });
 
-    const prompt = `Provide a strategic intelligence analysis for this actor in the Nordalia conflict:
+    const situationContext = situation?.name ?? 'the conflict';
+
+    const prompt = `Provide a strategic intelligence analysis for this actor in ${situationContext}:
 
 Actor: ${actor.name}
 Type: ${TYPE_LABELS[actor.type] ?? actor.type}
@@ -584,7 +695,7 @@ Be concise, analytically rigorous, and diplomatically precise.`;
     } finally {
       setLoadingInsightId(null);
     }
-  }, [loadingInsightId]);
+  }, [loadingInsightId, actors, relationships, situation]);
 
   const analyzeCoalitions = useCallback(async () => {
     if (loadingCoalition) return;
@@ -592,14 +703,16 @@ Be concise, analytically rigorous, and diplomatically precise.`;
     setCoalitionAnalysis('');
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
 
-    const actorList = ACTORS.map(a => `${a.name} (power: ${a.power}/10, interest: ${a.interest}/10, type: ${a.type})`).join('\n');
-    const relList = RELATIONSHIPS.map(r => {
-      const from = ACTORS.find(a => a.id === r.from)?.name;
-      const to = ACTORS.find(a => a.id === r.to)?.name;
+    const actorList = actors.map(a => `${a.name} (power: ${a.power}/10, interest: ${a.interest}/10, type: ${a.type})`).join('\n');
+    const relList = relationships.map(r => {
+      const from = actors.find(a => a.id === r.from)?.name;
+      const to = actors.find(a => a.id === r.to)?.name;
       return `${from} ↔ ${to}: ${REL_LABELS[r.type as RelType]}, strength ${r.strength}/10 — ${r.description}`;
     }).join('\n');
 
-    const prompt = `Analyze coalition dynamics in the Nordalia conflict based on this stakeholder map:
+    const situationContext = situation?.name ?? 'the conflict';
+
+    const prompt = `Analyze coalition dynamics in ${situationContext} based on this stakeholder map:
 
 ACTORS:
 ${actorList}
@@ -633,7 +746,7 @@ Be analytically precise and operationally focused.`;
     } finally {
       setLoadingCoalition(false);
     }
-  }, [loadingCoalition]);
+  }, [loadingCoalition, actors, relationships, situation]);
 
   const analyzeSpoilers = useCallback(async () => {
     if (loadingSpoiler) return;
@@ -641,16 +754,16 @@ Be analytically precise and operationally focused.`;
     setSpoilerAnalysis('');
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
 
-    const prompt = `Using Stephen Stedman's spoiler typology, analyze potential spoilers to the Nordalia peace process.
+    const actorList = actors.map(a =>
+      `- ${a.name} (power ${a.power}/10, interest ${a.interest}/10) — ${TYPE_LABELS[a.type] ?? a.type}`
+    ).join('\n');
+
+    const situationContext = situation?.name ?? 'the peace process';
+
+    const prompt = `Using Stephen Stedman's spoiler typology, analyze potential spoilers to ${situationContext}.
 
 Conflict actors:
-- Government of Nordalia (power 8/10, interest 9/10) — controls state institutions
-- DRM Armed Group (power 6/10, interest 10/10) — armed faction with internal divisions
-- UN Mission UNMN (power 7/10, interest 8/10) — mandate holder
-- Karovia (power 8/10, interest 7/10) — suspected DRM supporter with rivalry with Gov
-- Civil Society Coalition (power 3/10, interest 8/10) — democratic accountability advocates
-- African Union (power 6/10, interest 6/10) — joint mediation with UNMN
-- Sertania (power 5/10, interest 5/10) — neighboring state with border interests
+${actorList}
 
 Apply Stedman's three spoiler types:
 
@@ -678,7 +791,7 @@ Be precise and operationally actionable.`;
     } finally {
       setLoadingSpoiler(false);
     }
-  }, [loadingSpoiler]);
+  }, [loadingSpoiler, actors, situation]);
 
   return (
     <div className="space-y-6">
@@ -691,22 +804,33 @@ Be precise and operationally actionable.`;
           <div>
             <h1 className="text-2xl font-semibold text-navy-900">Stakeholder Power Map</h1>
             <p className="text-sm text-navy-500">
-              Mendelow matrix, relationship network, coalition and spoiler analysis — Nordalia conflict
+              Mendelow matrix, relationship network, coalition and spoiler analysis{situation?.name ? ` — ${situation.name}` : isDemo ? ' — Nordalia conflict' : ''}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <div className="rounded-lg border border-[var(--color-app-border)] bg-white px-4 py-2 text-center">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Actors</p>
-            <p className="text-sm font-semibold text-navy-800">{ACTORS.length}</p>
+            <p className="text-sm font-semibold text-navy-800">{actors.length}</p>
           </div>
           <div className="rounded-lg border border-[var(--color-app-border)] bg-white px-4 py-2 text-center">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Relationships</p>
-            <p className="text-sm font-semibold text-navy-800">{RELATIONSHIPS.length}</p>
+            <p className="text-sm font-semibold text-navy-800">{relationships.length}</p>
           </div>
         </div>
       </div>
 
+      {/* ── No data state for real users ──────────────────────────── */}
+      {!hasData ? (
+        <NoDataState
+          toolName="Stakeholder Map"
+          situationName={situation?.name ?? ''}
+          creditCost={3}
+          onGenerate={handleGenerateMap}
+          loading={generatingMap}
+        />
+      ) : (
+      <>
       {/* ── Tab toggle ───────────────────────────────────────────── */}
       <div className="flex gap-1 rounded-xl border border-[var(--color-app-border)] bg-white p-1.5 w-fit">
         <button
@@ -746,7 +870,7 @@ Be precise and operationally actionable.`;
                     </p>
                   </div>
                   <div className="flex items-center gap-3 text-[10px] text-navy-400">
-                    {ACTORS.map(a => (
+                    {actors.map(a => (
                       <button
                         key={a.id}
                         onClick={() => setSelectedActorId(selectedActorId === a.id ? null : a.id)}
@@ -760,6 +884,7 @@ Be precise and operationally actionable.`;
                 </div>
                 <div className="p-4">
                   <PowerInterestGrid
+                    actors={actors}
                     onSelectActor={setSelectedActorId}
                     selectedId={selectedActorId}
                   />
@@ -776,7 +901,7 @@ Be precise and operationally actionable.`;
                   </p>
                 </div>
                 <div className="p-4">
-                  <RelationshipMatrix onSelectActor={setSelectedActorId} />
+                  <RelationshipMatrix actors={actors} relationships={relationships} onSelectActor={setSelectedActorId} />
                 </div>
               </>
             )}
@@ -787,6 +912,8 @@ Be precise and operationally actionable.`;
         <div className="w-80 shrink-0 space-y-4">
           {selectedActorId ? (
             <ActorDetailPanel
+              actors={actors}
+              relationships={relationships}
               actorId={selectedActorId}
               onClose={() => setSelectedActorId(null)}
               liveInsight={liveInsights[selectedActorId] ?? ''}
@@ -810,7 +937,7 @@ Be precise and operationally actionable.`;
             <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400 mb-3">Relationship Network</p>
             <div className="space-y-2">
               {Object.entries(REL_COLORS).map(([type, color]) => {
-                const count = RELATIONSHIPS.filter(r => r.type === type).length;
+                const count = relationships.filter(r => r.type === type).length;
                 if (count === 0) return null;
                 return (
                   <div key={type} className="flex items-center gap-2">
@@ -898,6 +1025,8 @@ Be precise and operationally actionable.`;
       </div>
 
       <div ref={bottomRef} />
+      </>
+      )}
     </div>
   );
 }

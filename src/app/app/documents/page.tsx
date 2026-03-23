@@ -416,9 +416,9 @@ function formatDate(dateStr: string): string {
 /* ====================================================================
    MAIN PAGE
    ==================================================================== */
-function DemoDocumentVaultPage() {
+function DocumentVaultUI({ initialDocuments = [] }: { initialDocuments?: DocumentItem[] }) {
 
-  const [documents, setDocuments] = useState<DocumentItem[]>(MOCK_DOCUMENTS);
+  const [documents, setDocuments] = useState<DocumentItem[]>(initialDocuments);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -643,9 +643,20 @@ function DemoDocumentVaultPage() {
                   {filteredDocs.length === 0 ? (
                     <div className="px-4 py-12 text-center">
                       <FileText className="h-10 w-10 mx-auto text-navy-600 mb-3" />
-                      <p className="text-sm text-navy-400">
-                        No documents match your filters.
-                      </p>
+                      {documents.length === 0 ? (
+                        <>
+                          <p className="text-sm text-navy-400 font-medium">
+                            No documents yet
+                          </p>
+                          <p className="text-xs text-navy-500 mt-1 max-w-sm mx-auto">
+                            Upload documents to the vault or let PRAXIS AI extract key documents from your situation.
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-navy-400">
+                          No documents match your filters.
+                        </p>
+                      )}
                     </div>
                   ) : (
                     filteredDocs.map((doc, i) => (
@@ -897,9 +908,30 @@ function DemoDocumentVaultPage() {
   );
 }
 
+// ============================================================================
+// Real mode wrapper — separates demo data from situation-specific data
+// ============================================================================
+
 export default function DocumentVaultPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
-  if (isDemo) return <DemoDocumentVaultPage />;
+
+  // Demo mode — render with hardcoded Nordalia mock data
+  if (isDemo) return <DocumentVaultUI initialDocuments={MOCK_DOCUMENTS} />;
+
+  // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
-  return <DemoDocumentVaultPage />;
+
+  // Real mode — empty vault with upload capability, AI populate prompt
+  return (
+    <AiPopulate
+      toolId="documents"
+      toolName="Document Vault"
+      apiEndpoint="/api/ai/extract"
+      creditCost={3}
+      hasExistingData={false}
+      onDataGenerated={() => {}}
+    >
+      <DocumentVaultUI initialDocuments={[]} />
+    </AiPopulate>
+  );
 }

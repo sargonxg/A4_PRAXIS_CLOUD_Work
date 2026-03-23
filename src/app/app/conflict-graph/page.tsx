@@ -2,9 +2,10 @@
 
 import { useSituationGuard } from "@/hooks/use-situation-guard";
 import { NoSituationState } from "@/components/praxis/no-situation-state";
-import { RealToolView } from "@/components/praxis/real-tool-view";
 import { AiPopulate } from "@/components/praxis/ai-populate";
-import { GitBranch } from "lucide-react";
+import { useSituationStore } from "@/stores/situation-store";
+import { useAuth } from "@/lib/auth/auth-context";
+import { getGraph } from "@/lib/firebase/graph-service";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils/cn";
@@ -519,13 +520,484 @@ function mapEdgeType(type: string): GraphEdge['type'] {
   return 'supports';
 }
 
+// ── Real Conflict Graph Page (situation-driven) ──────────────────
+function RealConflictGraphPage() {
+  const { activeSituation } = useSituationStore();
+  const { user } = useAuth();
+
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [activeTypes, setActiveTypes] = useState<Set<string>>(
+    new Set(ENTITY_TYPE_TOGGLES.map((t) => t.key))
+  );
+  const [dateRange, setDateRange] = useState<[Date, Date]>([
+    new Date("2024-03-01"),
+    new Date("2026-03-18"),
+  ]);
+  const [extractOpen, setExtractOpen] = useState(false);
+  const [extractText, setExtractText] = useState('');
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractedResult, setExtractedResult] = useState<ExtractedResult | null>(null);
+  const [extractError, setExtractError] = useState<string | null>(null);
+
+  // ── API-fetched graph data ────────────────────────────────────
+  const [allNodes, setAllNodes] = useState<GraphNode[]>([]);
+  const [allEdges, setAllEdges] = useState<GraphEdge[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch graph data from Firestore for active situation
+  useEffect(() => {
+    if (!user || !activeSituation) {
+      setIsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoading(true);
+
+    async function fetchGraph() {
+      try {
+        const graphData = await getGraph(user!.id, activeSituation!.id);
+        if (cancelled) return;
+        if (!graphData || graphData.nodes.length === 0) {
+          setAllNodes([]);
+          setAllEdges([]);
+          return;
+        }
+
+        // Map Firestore graph nodes to UI GraphNode format with layout
+        const LAYOUT_CENTERS: Record<string, { cx: number; cy: number }> = {
+          actor: { cx: 400, cy: 220 },
+          claim: { cx: 300, cy: 140 },
+          interest: { cx: 550, cy: 170 },
+          constraint: { cx: 150, cy: 160 },
+          leverage: { cx: 600, cy: 300 },
+          commitment: { cx: 450, cy: 380 },
+          event: { cx: 400, cy: 460 },
+          narrative: { cx: 200, cy: 350 },
+        };
+
+        const typeCounts: Record<string, number> = {};
+        const nodes: GraphNode[] = graphData.nodes.map((n) => {
+          const typeKey = n.type;
+          typeCounts[typeKey] = (typeCounts[typeKey] ?? 0) + 1;
+          const idx = typeCounts[typeKey] - 1;
+          const center = LAYOUT_CENTERS[typeKey] ?? { cx: 400, cy: 275 };
+          const angle = (2 * Math.PI * idx) / Math.max(graphData.nodes.filter(gn => gn.type === typeKey).length, 1);
+          const radius = 80 + (idx % 2) * 40;
+          return {
+            id: n.id,
+            label: n.label,
+            type: n.type as GraphNode['type'],
+            description: n.properties?.description as string | undefined,
+            importance: (n.properties?.importance as number) ?? 0.5,
+            x: Math.round(center.cx + Math.cos(angle) * radius),
+            y: Math.round(center.cy + Math.sin(angle) * radius),
+            date: n.properties?.date as string | undefined,
+          };
+        });
+
+        const edges: GraphEdge[] = graphData.edges.map((e) => ({
+          source: e.source,
+          target: e.target,
+          label: e.label ?? e.type,
+          type: mapEdgeType(e.type),
+        }));
+
+        setAllNodes(nodes);
+        setAllEdges(edges);
+      } catch (err) {
+        if (!cancelled) console.error('Failed to fetch graph:', err);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    fetchGraph();
+    return () => { cancelled = true; };
+  }, [user, activeSituation]);
+
+  const handleExtract = useCallback(async () => {
+    if (!extractText.trim() || isExtracting) return;
+    setIsExtracting(true);
+    setExtractedResult(null);
+    setExtractError(null);
+    try {
+      const res = await fetch('/api/ai/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: extractText }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setExtractedResult(data.entities);
+    } catch {
+      setExtractError('Extraction failed. Check AI service configuration.');
+    } finally {
+      setIsExtracting(false);
+    }
+  }, [extractText, isExtracting]);
+
+  const toggleType = useCallback((type: string) => {
+    setActiveTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return next;
+    });
+  }, []);
+
+  const showAllTypes = useCallback(() => {
+    setActiveTypes(new Set(ENTITY_TYPE_TOGGLES.map((t) => t.key)));
+  }, []);
+
+  const filteredNodes = useMemo(() => {
+    return allNodes.filter(
+      (n) => activeTypes.has(n.type) || n.id === selectedNodeId
+    );
+  }, [allNodes, activeTypes, selectedNodeId]);
+
+  const filteredEdges = useMemo(() => {
+    const nodeIds = new Set(filteredNodes.map((n) => n.id));
+    return allEdges.filter(
+      (e) => nodeIds.has(e.source) && nodeIds.has(e.target)
+    );
+  }, [filteredNodes, allEdges]);
+
+  const timelineEvents = useMemo(() => {
+    return allNodes
+      .filter((n) => n.type === "event" && n.date)
+      .map((n) => ({
+        id: n.id,
+        label: n.label,
+        date: new Date(n.date!),
+        nodeId: n.id,
+      }));
+  }, [allNodes]);
+
+  const selectedNode = selectedNodeId
+    ? allNodes.find((n) => n.id === selectedNodeId) ?? null
+    : null;
+
+  const handleSelectNode = useCallback((id: string | null) => {
+    setSelectedNodeId(id);
+  }, []);
+
+  const handleTimelineSelectNode = useCallback((id: string) => {
+    setSelectedNodeId(id);
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <div className="mx-auto max-w-[1400px]">
+        {/* ── Header ─────────────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-6"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-500/10 text-gold-500">
+              <Network className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="font-serif text-2xl font-normal tracking-wide text-navy-900">
+                Conflict Intelligence Graph
+              </h1>
+              <p className="text-sm text-navy-400">
+                {activeSituation?.name ?? 'Situation graph'} — actor networks and relationships
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ── Controls Bar (no conflict dropdown — situation is already selected) */}
+        <motion.div
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="mb-4 flex flex-wrap items-center gap-3"
+        >
+          {/* Node count + actions */}
+          <div className="ml-auto flex items-center gap-3 text-xs text-navy-500">
+            {isLoading ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="h-3 w-3 animate-spin" /> Loading graph...
+              </span>
+            ) : (
+              <span>
+                {filteredNodes.length} node{filteredNodes.length !== 1 ? "s" : ""},{" "}
+                {filteredEdges.length} edge{filteredEdges.length !== 1 ? "s" : ""}
+              </span>
+            )}
+            <button
+              onClick={() => {
+                setSelectedNodeId(null);
+                showAllTypes();
+              }}
+              className="rounded-md px-2 py-1 text-navy-600 transition-colors hover:bg-navy-100 hover:text-navy-800"
+            >
+              Reset
+            </button>
+            <button
+              onClick={() => setExtractOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-gold-500/30 bg-gold-500/10 px-3 py-1.5 text-xs font-medium text-gold-400 transition-colors hover:bg-gold-500/15"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Extract from Text
+            </button>
+          </div>
+        </motion.div>
+
+        {/* ── Entity Type Filter Toggles ──────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1.5"
+        >
+          {ENTITY_TYPE_TOGGLES.map(({ key, label, color }) => {
+            const isActive = activeTypes.has(key);
+            return (
+              <button
+                key={key}
+                onClick={() => toggleType(key)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-all border",
+                  isActive
+                    ? "border-current/20 shadow-sm"
+                    : "border-transparent bg-navy-100/50 text-navy-400 line-through opacity-60 hover:opacity-80"
+                )}
+                style={
+                  isActive
+                    ? {
+                        backgroundColor: `${color}15`,
+                        color: color,
+                        borderColor: `${color}30`,
+                      }
+                    : undefined
+                }
+              >
+                <div
+                  className={cn(
+                    "h-2.5 w-2.5 rounded-full transition-opacity",
+                    !isActive && "opacity-40"
+                  )}
+                  style={{ backgroundColor: color }}
+                />
+                {label}
+              </button>
+            );
+          })}
+
+          {/* Edge legend */}
+          <div className="ml-2 flex items-center gap-3 border-l border-[var(--color-app-border)] pl-3">
+            <div className="flex items-center gap-1.5">
+              <div className="h-px w-4 bg-[#5B8C5A]" />
+              <span className="text-[10px] text-navy-600">Ally</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-px w-4 border-b border-dashed border-[#A63D40]" />
+              <span className="text-[10px] text-navy-600">Adversary</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-px w-4 bg-[#4A90A4]" />
+              <span className="text-[10px] text-navy-600">Mediator</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ── Main Content: Graph + Entity Panel ─────────────── */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-4 grid gap-4 lg:grid-cols-[1fr_340px]"
+        >
+          {/* Graph Area */}
+          <div className="relative rounded-xl border border-[var(--color-app-border)] bg-white p-2">
+            <div className="absolute right-3 top-3 z-10">
+              <button className="rounded-md p-1.5 text-navy-600 transition-colors hover:bg-navy-100 hover:text-navy-800">
+                <Maximize2 className="h-4 w-4" />
+              </button>
+            </div>
+            {isLoading ? (
+              <div className="flex min-h-[450px] items-center justify-center lg:min-h-[500px]">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-navy-400" />
+                  <span className="text-sm text-navy-500">Loading conflict graph...</span>
+                </div>
+              </div>
+            ) : allNodes.length === 0 ? (
+              <div className="flex min-h-[450px] items-center justify-center lg:min-h-[500px]">
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <Network className="h-10 w-10 text-navy-300" />
+                  <h3 className="text-sm font-semibold text-navy-700">No graph data yet</h3>
+                  <p className="max-w-xs text-xs text-navy-500">
+                    Use the AI populate feature above or extract entities from text to build the conflict graph for this situation.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <GraphViewer
+                nodes={filteredNodes}
+                edges={filteredEdges}
+                selectedNodeId={selectedNodeId}
+                onSelectNode={handleSelectNode}
+                className="min-h-[450px] lg:min-h-[500px]"
+              />
+            )}
+          </div>
+
+          {/* Entity Panel */}
+          <EntityPanel
+            node={selectedNode}
+            edges={allEdges}
+            nodes={allNodes}
+            onClose={() => setSelectedNodeId(null)}
+            onSelectNode={(id) => setSelectedNodeId(id)}
+            className="min-h-[450px] lg:min-h-[500px]"
+          />
+        </motion.div>
+
+        {/* ── Timeline ───────────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <TimelineSlider
+            events={timelineEvents}
+            nodes={allNodes}
+            selectedNodeId={selectedNodeId}
+            onSelectNode={handleTimelineSelectNode}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+          />
+        </motion.div>
+      </div>
+
+      {/* ── Extract from Text Modal ─────────────────────────── */}
+      <AnimatePresence>
+        {extractOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/20 backdrop-blur-sm p-4"
+            onClick={(e) => e.target === e.currentTarget && setExtractOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              className="w-full max-w-2xl rounded-xl border border-[var(--color-app-border)] bg-white p-6 shadow-2xl"
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-gold-500" />
+                  <h2 className="text-base font-semibold text-navy-900">Extract Conflict Entities</h2>
+                </div>
+                <button onClick={() => setExtractOpen(false)} className="rounded-md p-1 text-navy-600 hover:bg-navy-100 hover:text-navy-800 transition-colors">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="mb-4 text-sm text-navy-400">
+                Paste any conflict-related text — reports, cables, press releases — and AI will extract actors, events, claims, and other entities using the Conflict Grammar framework.
+              </p>
+
+              <textarea
+                value={extractText}
+                onChange={(e) => setExtractText(e.target.value)}
+                rows={6}
+                placeholder="Paste your source text here..."
+                className="w-full rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-3 py-2.5 text-sm text-navy-800 placeholder-navy-400 focus:border-gold-500/50 focus:outline-none focus:ring-1 focus:ring-gold-500/30 resize-none"
+              />
+
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-xs text-navy-500">{extractText.length} characters</span>
+                <button
+                  onClick={handleExtract}
+                  disabled={!extractText.trim() || isExtracting}
+                  className="flex items-center gap-2 rounded-lg bg-gold-500 px-4 py-2 text-sm font-medium text-navy-950 transition-colors hover:bg-gold-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isExtracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  {isExtracting ? 'Extracting...' : 'Extract Entities'}
+                </button>
+              </div>
+
+              {extractError && (
+                <p className="mt-3 text-sm text-crimson">{extractError}</p>
+              )}
+
+              {extractedResult && (
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center gap-2 border-t border-[var(--color-app-border)] pt-4">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-navy-400">Extracted Entities</span>
+                    <span className="rounded-full bg-gold-500/15 px-2 py-0.5 text-[10px] font-medium text-gold-400">
+                      {Object.values(extractedResult).flat().length} total
+                    </span>
+                  </div>
+                  {extractedResult.actors.length > 0 && (
+                    <div>
+                      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-teal">Actors ({extractedResult.actors.length})</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {extractedResult.actors.map((a) => (
+                          <span key={a.id} className="rounded-md border border-teal/20 bg-teal/10 px-2 py-0.5 text-xs text-teal" title={a.description}>
+                            {a.name} <span className="text-teal/60">({Math.round(a.confidence * 100)}%)</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {extractedResult.events.length > 0 && (
+                    <div>
+                      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gold-400">Events ({extractedResult.events.length})</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {extractedResult.events.map((e) => (
+                          <span key={e.id} className="rounded-md border border-gold-500/20 bg-gold-500/10 px-2 py-0.5 text-xs text-gold-400">
+                            {e.title} <span className="text-gold-400/60">({Math.round(e.confidence * 100)}%)</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {extractedResult.claims.length > 0 && (
+                    <div>
+                      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-crimson">Claims ({extractedResult.claims.length})</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {extractedResult.claims.map((c) => (
+                          <span key={c.id} className="rounded-md border border-crimson/20 bg-crimson/10 px-2 py-0.5 text-xs text-crimson">
+                            {(c as { title: string }).title} <span className="text-crimson/60">({Math.round(c.confidence * 100)}%)</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function ConflictGraphPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
   if (isDemo) return <DemoConflictGraphPage />;
   if (showGuard || !situation) return <NoSituationState />;
   return (
-    <AiPopulate toolId="conflict-graph" toolName="Conflict Graph" apiEndpoint="/api/graph/build" creditCost={3} hasExistingData={false} onDataGenerated={() => {}}>
-      <RealToolView situation={situation} toolName="Conflict Graph" toolDescription="Interactive knowledge graph of actors, events, and relationships" icon={GitBranch} capabilities={["Map all actors and their relationships","Visualize conflict dynamics over time","Identify leverage points and alliances","Track escalation patterns"]} />
+    <AiPopulate
+      toolId="conflict-graph"
+      toolName="Conflict Graph"
+      apiEndpoint="/api/graph/build"
+      creditCost={3}
+      hasExistingData={false}
+      onDataGenerated={() => {}}
+    >
+      <RealConflictGraphPage />
     </AiPopulate>
   );
 }

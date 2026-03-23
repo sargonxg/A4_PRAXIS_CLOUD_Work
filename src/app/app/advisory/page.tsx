@@ -2,8 +2,10 @@
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
+import { buildSituationContext } from '@/lib/ai/situation-context';
+import type { Situation } from '@/types/situation';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { Sparkles, MessageSquare, Send, X, Loader2, Users, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
@@ -26,14 +28,14 @@ const ADVISORS: AdvisorDef[] = [
     id: 'amara',
     name: 'Dr. Amara Okafor',
     title: 'Chief Conflict Analyst',
-    expertise: 'Escalation modeling, political violence, West African conflicts',
+    expertise: 'Escalation modeling, political violence, conflict dynamics',
     avatar: 'AO',
     color: '#4B92DB',
-    bio: 'Former DPPA political affairs officer with 12 years experience in West Africa. Specializes in escalation dynamics and electoral violence.',
-    systemPrompt: 'You are Dr. Amara Okafor, a leading conflict analyst specializing in escalation modeling. Focus on political dynamics, escalation indicators, and conflict prevention. Reference the Glasl escalation model and structural violence theories. Be analytical and evidence-based. Provide specific, expert-level analysis grounded in conflict research.',
+    bio: 'Former DPPA political affairs officer with 12 years field experience. Specializes in escalation dynamics and electoral violence.',
+    systemPrompt: 'You are Dr. Amara Okafor, a leading conflict analyst specializing in escalation modeling. Focus on political dynamics, escalation indicators, and conflict prevention. Reference the Glasl escalation model and structural violence theories. Be analytical and evidence-based. Provide specific, expert-level analysis grounded in conflict research. Always ground your analysis in the active situation context provided.',
     suggestedPrompts: [
       'What are the escalation risks in the next 30 days?',
-      "Analyze the DRM's political trajectory and end-game",
+      'Analyze the key armed group\'s political trajectory and end-game',
       'Which actors have the most destabilizing potential?',
     ],
   },
@@ -45,11 +47,11 @@ const ADVISORS: AdvisorDef[] = [
     avatar: 'SM',
     color: '#A63D40',
     bio: 'Retired military officer with NATO and UN peacekeeping experience. Specializes in armed group behavior, terrain analysis, and force protection.',
-    systemPrompt: 'You are Col. Sarah Mitchell, a military analyst and former NATO officer. Analyze conflicts through a security and military lens. Focus on armed group capabilities, terrain, logistics, and peacekeeping operations. Be direct and operationally focused. Give practical military assessments based on doctrinal knowledge.',
+    systemPrompt: 'You are Col. Sarah Mitchell, a military analyst and former NATO officer. Analyze conflicts through a security and military lens. Focus on armed group capabilities, terrain, logistics, and peacekeeping operations. Be direct and operationally focused. Give practical military assessments based on doctrinal knowledge. Always ground your analysis in the active situation context provided.',
     suggestedPrompts: [
-      'Assess DRM military capabilities vs. Government forces',
-      'What are the UNMN force protection risks?',
-      'Is the ceasefire militarily sustainable?',
+      'Assess the military balance between the main armed groups',
+      'What are the key force protection risks for peacekeepers?',
+      'Is the current ceasefire militarily sustainable?',
     ],
   },
   {
@@ -60,10 +62,10 @@ const ADVISORS: AdvisorDef[] = [
     avatar: 'LH',
     color: '#5B8C5A',
     bio: 'International human rights lawyer with ICJ and ICC experience. Specializes in IHL compliance, accountability, and transitional justice.',
-    systemPrompt: 'You are Dr. Layla Hassan, an expert in international humanitarian law and human rights. Analyze conflicts through legal frameworks: IHL compliance, human rights violations, accountability mechanisms, and international criminal law. Reference relevant conventions and precedents. Be precise about legal thresholds and obligations.',
+    systemPrompt: 'You are Dr. Layla Hassan, an expert in international humanitarian law and human rights. Analyze conflicts through legal frameworks: IHL compliance, human rights violations, accountability mechanisms, and international criminal law. Reference relevant conventions and precedents. Be precise about legal thresholds and obligations. Always ground your analysis in the active situation context provided.',
     suggestedPrompts: [
-      'What IHL violations have occurred in Nordalia?',
-      'Does the Framework Agreement meet international standards?',
+      'What IHL violations are most concerning in this situation?',
+      'Do existing agreements meet international legal standards?',
       'What accountability mechanisms should be established?',
     ],
   },
@@ -75,20 +77,14 @@ const ADVISORS: AdvisorDef[] = [
     avatar: 'WC',
     color: '#C8961E',
     bio: 'Former OCHA coordinator and conflict economist. Specializes in humanitarian access negotiation, sanctions impact analysis, and conflict economics.',
-    systemPrompt: 'You are Dr. Wei Chen, a humanitarian and economic analyst. Focus on humanitarian conditions, access negotiations, economic impacts of conflict, and sanctions effectiveness. Be practical and solution-oriented with a humanitarian lens. Draw on OCHA methodology and conflict economy research.',
+    systemPrompt: 'You are Dr. Wei Chen, a humanitarian and economic analyst. Focus on humanitarian conditions, access negotiations, economic impacts of conflict, and sanctions effectiveness. Be practical and solution-oriented with a humanitarian lens. Draw on OCHA methodology and conflict economy research. Always ground your analysis in the active situation context provided.',
     suggestedPrompts: [
-      'What are the humanitarian access barriers in Nordalia?',
+      'What are the main humanitarian access barriers in this situation?',
       'Assess the economic impact of the conflict on civilians',
-      'How effective are the current sanctions?',
+      'How effective are the current sanctions or economic measures?',
     ],
   },
 ];
-
-const CONFLICT_CONTEXT = `Current conflict context: Nordalia Crisis, East Africa.
-DRM forces advancing on government-held territory. Ceasefire signed February 2026 is fragile — three violations documented. UNMN mandate renewal in 19 days.
-Karovia suspected of providing military advisors to DRM. Framework Agreement has 4 of 12 benchmarks implemented.
-2.1 million food-insecure civilians. MSF expelled from eastern provinces. Kessara peace talks collapsed January 2026.
-ICC issued arrest warrants for three DRM commanders. Nordalia arms embargo renewal vote scheduled 17 March.`;
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -107,7 +103,7 @@ function AdvisorAvatar({ advisor, size = 'md' }: { advisor: AdvisorDef; size?: '
   );
 }
 
-function AdvisorChatPanel({ advisor, onClose }: { advisor: AdvisorDef; onClose: () => void }) {
+function AdvisorChatPanel({ advisor, onClose, situationContext }: { advisor: AdvisorDef; onClose: () => void; situationContext: string }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -121,7 +117,7 @@ function AdvisorChatPanel({ advisor, onClose }: { advisor: AdvisorDef; onClose: 
     setIsLoading(true);
 
     const allMessages = [
-      { role: 'system', content: advisor.systemPrompt + '\n\n' + CONFLICT_CONTEXT },
+      { role: 'system', content: advisor.systemPrompt + '\n\n' + situationContext },
       ...messages,
       userMsg,
     ];
@@ -159,7 +155,7 @@ function AdvisorChatPanel({ advisor, onClose }: { advisor: AdvisorDef; onClose: 
       setIsLoading(false);
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
-  }, [messages, isLoading, advisor]);
+  }, [messages, isLoading, advisor, situationContext]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -287,7 +283,7 @@ function AdvisorChatPanel({ advisor, onClose }: { advisor: AdvisorDef; onClose: 
   );
 }
 
-function PanelDiscussion() {
+function PanelDiscussion({ situationContext }: { situationContext: string }) {
   const [question, setQuestion] = useState('');
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [isRunning, setIsRunning] = useState(false);
@@ -309,7 +305,7 @@ function PanelDiscussion() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: [
-              { role: 'system', content: advisor.systemPrompt + '\n\n' + CONFLICT_CONTEXT },
+              { role: 'system', content: advisor.systemPrompt + '\n\n' + situationContext },
               { role: 'user', content: question },
             ],
           }),
@@ -334,7 +330,7 @@ function PanelDiscussion() {
 
     await Promise.all(ADVISORS.filter((a) => selectedIds.includes(a.id)).map(streamAdvisor));
     setIsRunning(false);
-  }, [question, isRunning, selectedIds]);
+  }, [question, isRunning, selectedIds, situationContext]);
 
   const hasResponses = Object.keys(responses).length > 0;
   const activeAdvisors = ADVISORS.filter((a) => selectedIds.includes(a.id));
@@ -436,6 +432,11 @@ export default function AdvisoryPage() {
   const [chatAdvisor, setChatAdvisor] = useState<AdvisorDef | null>(null);
   const [mode, setMode] = useState<'individual' | 'panel'>('individual');
 
+  const situationContext = useMemo(() => {
+    if (situation) return buildSituationContext(situation as Situation);
+    return 'No active situation context available. Provide general expert analysis.';
+  }, [situation]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -446,7 +447,7 @@ export default function AdvisoryPage() {
           </div>
           <div>
             <h1 className="text-2xl font-semibold text-navy-900">Advisory Council</h1>
-            <p className="text-sm text-navy-500">{ADVISORS.length} AI experts with specialized domain knowledge. Grounded in Nordalia conflict context.</p>
+            <p className="text-sm text-navy-500">{ADVISORS.length} AI experts with specialized domain knowledge.{situation ? ` Grounded in ${(situation as Situation).name} context.` : ''}</p>
           </div>
         </div>
         <div className="flex rounded-lg border border-[var(--color-app-border)] bg-white p-1">
@@ -469,7 +470,7 @@ export default function AdvisoryPage() {
         <>
           <div className="flex items-start gap-3 rounded-xl border border-gold-500/15 bg-gold-500/4 p-4">
             <Sparkles className="h-4 w-4 shrink-0 text-gold-600 mt-0.5" />
-            <p className="text-sm text-navy-700">Each advisor has a specialized system prompt shaped by their domain expertise. They give substantive, expert-level guidance grounded in their specific field and the Nordalia conflict context.</p>
+            <p className="text-sm text-navy-700">Each advisor has a specialized system prompt shaped by their domain expertise. They give substantive, expert-level guidance grounded in their specific field and your active situation context.</p>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4">
             {ADVISORS.map((advisor) => (
@@ -525,12 +526,12 @@ export default function AdvisoryPage() {
             <Users className="h-4 w-4 shrink-0 text-diplomatic-blue mt-0.5" />
             <p className="text-sm text-navy-700">Panel Discussion sends your question to multiple advisors simultaneously. Compare different expert perspectives — military, legal, analytical, humanitarian — side-by-side in real time.</p>
           </div>
-          <PanelDiscussion />
+          <PanelDiscussion situationContext={situationContext} />
         </>
       )}
 
       {chatAdvisor && (
-        <AdvisorChatPanel advisor={chatAdvisor} onClose={() => setChatAdvisor(null)} />
+        <AdvisorChatPanel advisor={chatAdvisor} onClose={() => setChatAdvisor(null)} situationContext={situationContext} />
       )}
     </div>
   );
