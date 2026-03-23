@@ -3,13 +3,14 @@
 import { useSituationGuard } from "@/hooks/use-situation-guard";
 import { NoSituationState } from "@/components/praxis/no-situation-state";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils/cn";
 import { motion } from "framer-motion";
 import { SpectrumChart } from "@/components/media/spectrum-chart";
 import { SourceCard, type MediaSource } from "@/components/media/source-card";
 import { CoverageComparison } from "@/components/media/coverage-comparison";
 import { SentimentHeatmap } from "@/components/media/sentiment-heatmap";
+import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import {
   Compass,
   ChevronDown,
@@ -18,6 +19,8 @@ import {
   Filter,
   BarChart3,
   Thermometer,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 
 type MediaTab = "source-map" | "coverage" | "sentiment";
@@ -109,6 +112,136 @@ const TYPE_COLORS: Record<string, string> = {
   international_org: "#E8B931",
 };
 
+// ── AI Media Scan state for real users ──────────────────────────────
+interface MediaScanResult {
+  outlets: {
+    name: string;
+    articles: { url: string; title: string; sentiment: string; framing: string }[];
+    overallBias: string;
+  }[];
+  comparativeAnalysis: string;
+}
+
+function RealMediaPanel({ situation }: { situation: import("@/types/situation").Situation }) {
+  const [scanResult, setScanResult] = useState<MediaScanResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleGenerate = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/ai/media-scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          outlets: ["Reuters", "BBC", "Al Jazeera", "Associated Press", "Local media"],
+          topic: situation.name,
+          conflictContext: `${situation.name}: ${situation.description}. Region: ${situation.region}. Actors: ${situation.actors.join(", ")}`,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: "Scan failed" }));
+        setError(data.error || "Media scan failed");
+        return;
+      }
+      const data = await res.json();
+      setScanResult(data);
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [situation]);
+
+  if (!scanResult && !loading) {
+    return (
+      <div className="mb-6 rounded-xl border border-dashed border-teal/30 bg-white p-8 text-center">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-teal/10">
+          <Sparkles className="h-6 w-6 text-teal/60" />
+        </div>
+        <h3 className="text-sm font-semibold text-navy-900">
+          Generate Media Analysis for &ldquo;{situation.name}&rdquo;
+        </h3>
+        <p className="mt-1.5 text-xs text-navy-500">
+          AI will scan major outlets for coverage of your situation, analyzing framing, sentiment, and bias
+        </p>
+        {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+        <button
+          onClick={handleGenerate}
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal/90"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          Generate Media Analysis
+        </button>
+        <p className="mt-2 text-[11px] text-navy-400">Uses 2 credits</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="mb-6 flex flex-col items-center justify-center rounded-xl border border-teal/20 bg-white py-12">
+        <Loader2 className="mb-3 h-8 w-8 animate-spin text-teal" />
+        <p className="text-sm font-medium text-navy-700">Scanning media outlets...</p>
+        <p className="mt-1 text-xs text-navy-500">Analyzing framing and bias for &ldquo;{situation.name}&rdquo;</p>
+      </div>
+    );
+  }
+
+  if (!scanResult) return null;
+
+  return (
+    <div className="mb-6 space-y-4">
+      {/* Outlet results */}
+      {scanResult.outlets.map((outlet, i) => (
+        <div key={i} className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+          <h3 className="text-sm font-semibold text-navy-900">{outlet.name}</h3>
+          <p className="mt-1 text-xs text-navy-500 italic">{outlet.overallBias}</p>
+          {outlet.articles.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {outlet.articles.map((article, j) => (
+                <div key={j} className="rounded-lg border border-[var(--color-app-border-light)] bg-[var(--color-app-surface-alt)] p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-diplomatic-blue hover:underline">
+                      {article.title}
+                    </a>
+                    <span className={cn(
+                      "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase",
+                      article.sentiment === "positive" ? "bg-green-100 text-green-700" :
+                      article.sentiment === "negative" ? "bg-red-100 text-red-700" :
+                      article.sentiment === "mixed" ? "bg-amber-100 text-amber-700" :
+                      "bg-gray-100 text-gray-700"
+                    )}>
+                      {article.sentiment}
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-navy-600">{article.framing}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Comparative analysis */}
+      {scanResult.comparativeAnalysis && (
+        <div className="rounded-xl border border-teal/20 bg-teal/5 p-5">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-teal">Comparative Analysis</h3>
+          <MarkdownRenderer content={scanResult.comparativeAnalysis} className="text-sm" />
+        </div>
+      )}
+
+      {/* Regenerate */}
+      <div className="text-center">
+        <button onClick={handleGenerate} disabled={loading} className="text-xs text-navy-500 hover:text-navy-700">
+          Regenerate analysis
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function MediaCompassPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
@@ -199,6 +332,11 @@ export default function MediaCompassPage() {
             </div>
           </div>
         </motion.div>
+
+        {/* ── AI Media Scan (real users only) ──────────────────── */}
+        {!isDemo && situation && (
+          <RealMediaPanel situation={situation} />
+        )}
 
         {/* ── Tab Navigation ──────────────────────────────────── */}
         <div className="mb-6 flex gap-1 rounded-xl border border-[var(--color-app-border)] bg-white p-1.5 w-fit">

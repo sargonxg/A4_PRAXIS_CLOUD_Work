@@ -1,7 +1,6 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
-import { RealToolView } from '@/components/praxis/real-tool-view';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
@@ -584,7 +583,16 @@ function SituationCard({ conflict }: { conflict: ReturnType<typeof useConflictSt
 // Main Page
 // ─────────────────────────────────────────────────────────────────────────────
 
-function DemoEarlyWarningPage({ situation }: { situation?: import('@/types/situation').Situation | null }) {
+interface RiskRegionData {
+  name: string;
+  riskScore: number;
+  dimensions: { political: number; security: number; humanitarian: number; economic: number; social: number };
+  glaslStage: number;
+  trend: string;
+  forecast: string;
+}
+
+function DemoEarlyWarningPage({ situation, aiRiskData }: { situation?: import('@/types/situation').Situation | null; aiRiskData?: RiskRegionData[] }) {
 
   const conflicts = useConflictStore((s) => s.conflicts);
   const isReal = !!situation;
@@ -593,8 +601,8 @@ function DemoEarlyWarningPage({ situation }: { situation?: import('@/types/situa
   const situationName = situation?.name ?? 'Nordalia Crisis';
   const situationRegion = situation?.region ?? 'Nordalia (fictional)';
   const situationActors = situation?.actors ?? [];
-  const situationGlaslStage = situation?.glaslStage ?? 4;
-  const situationRiskScore = situation?.riskScore ?? 7.8;
+  const situationGlaslStage = aiRiskData?.[0]?.glaslStage ?? situation?.glaslStage ?? 4;
+  const situationRiskScore = aiRiskData?.[0]?.riskScore != null ? aiRiskData[0].riskScore / 10 : (situation?.riskScore ?? 7.8);
 
   // Glasl stage state (local)
   const [activeStage, setActiveStage] = useState(situationGlaslStage);
@@ -608,7 +616,13 @@ function DemoEarlyWarningPage({ situation }: { situation?: import('@/types/situa
   // Active conflict selection for radar (only relevant in demo mode)
   const [radarConflictId, setRadarConflictId] = useState(isReal ? '__real__' : 'nordalia-crisis');
   const radarConflict = isReal ? null : (conflicts.find((c) => c.id === radarConflictId) ?? conflicts[0]);
-  const radarValues = isReal ? [5, 5, 5, 5, 5] : (radarConflictId === 'nordalia-crisis' ? NORDALIA_RADAR : [5, 5, 5, 5, 5]);
+
+  // Use AI-generated risk dimensions when available, otherwise fallback
+  const aiDims = aiRiskData?.[0]?.dimensions;
+  const radarValues = isReal && aiDims
+    ? [aiDims.political / 10, aiDims.security / 10, aiDims.humanitarian / 10, aiDims.economic / 10, aiDims.social / 10]
+    : isReal ? [5, 5, 5, 5, 5]
+    : (radarConflictId === 'nordalia-crisis' ? NORDALIA_RADAR : [5, 5, 5, 5, 5]);
   const compositeScore = isReal ? situationRiskScore : (radarValues.reduce((a, b) => a + b, 0) / radarValues.length);
 
   const handleAIAssessStage = useCallback(async () => {
@@ -833,10 +847,26 @@ function DemoEarlyWarningPage({ situation }: { situation?: import('@/types/situa
           </div>
 
           <div className="divide-y divide-[var(--color-app-border-light)]">
-            {isReal ? (
+            {isReal && aiRiskData && aiRiskData.length > 0 ? (
+              aiRiskData.map((region, i) => (
+                <div key={i} className="px-4 py-3 hover:bg-[var(--color-app-surface-alt)] transition-colors">
+                  <p className="text-[11px] font-medium text-navy-700 leading-tight">{region.name}</p>
+                  <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                    <span className="flex items-center gap-1 text-[9px] text-navy-500">
+                      <Target className="h-2.5 w-2.5" />
+                      Risk: {region.riskScore}/100
+                    </span>
+                    <span className={cn('text-[9px] font-bold uppercase', region.trend === 'escalating' ? 'text-crimson' : region.trend === 'de-escalating' ? 'text-sage' : 'text-gold-400')}>
+                      {region.trend}
+                    </span>
+                    <span className="ml-auto text-[9px] text-navy-500 italic">Glasl S{region.glaslStage}</span>
+                  </div>
+                </div>
+              ))
+            ) : isReal ? (
               <div className="flex flex-col items-center justify-center py-10 text-center">
                 <p className="text-xs text-navy-500">
-                  Trigger events for <span className="font-semibold text-navy-700">{situationName}</span> will appear here as AI populates this view.
+                  Trigger events for <span className="font-semibold text-navy-700">{situationName}</span> will appear after AI generation.
                 </p>
               </div>
             ) : TRIGGERS.map((trigger, i) => (
@@ -941,6 +971,7 @@ function DemoEarlyWarningPage({ situation }: { situation?: import('@/types/situa
 
 export default function EarlyWarningPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const [aiRiskData, setAiRiskData] = useState<RiskRegionData[]>([]);
 
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoEarlyWarningPage />;
@@ -954,11 +985,15 @@ export default function EarlyWarningPage() {
       toolId="early-warning"
       toolName="Early Warning"
       apiEndpoint="/api/ai/risk-assessment"
+      extraBody={{ regions: [situation.region], conflictContext: `${situation.name}: ${situation.description}. Actors: ${situation.actors.join(', ')}` }}
       creditCost={3}
-      hasExistingData={false}
-      onDataGenerated={() => {}}
+      hasExistingData={aiRiskData.length > 0}
+      onDataGenerated={(data) => {
+        const d = data as { regions?: RiskRegionData[] };
+        if (d?.regions) setAiRiskData(d.regions);
+      }}
     >
-      <DemoEarlyWarningPage situation={situation} />
+      <DemoEarlyWarningPage situation={situation} aiRiskData={aiRiskData.length > 0 ? aiRiskData : undefined} />
     </AiPopulate>
   );
 }

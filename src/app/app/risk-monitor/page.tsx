@@ -1,7 +1,6 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
-import { RealToolView } from '@/components/praxis/real-tool-view';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
@@ -229,8 +228,9 @@ function SubScoreBar({ label, value }: { label: string; value: number }) {
 // Main Page
 // ─────────────────────────────────────────────────────────────────────────────
 
-function DemoRiskMonitorPage({ situationName }: { situationName?: string }) {
+function DemoRiskMonitorPage({ situationName, aiRegions }: { situationName?: string; aiRegions?: MonitoredRegion[] }) {
 
+  const regions = aiRegions && aiRegions.length > 0 ? aiRegions : MONITORED_REGIONS;
   const [selectedRegion, setSelectedRegion] = useState<MonitoredRegion | null>(null);
 
   return (
@@ -243,15 +243,17 @@ function DemoRiskMonitorPage({ situationName }: { situationName?: string }) {
         <div>
           <h1 className="text-xl font-serif font-semibold text-navy-900">Risk Heatmap &amp; Conflict Forecasting</h1>
           <p className="text-sm text-navy-500">
-            Monitoring 8 conflict-affected regions with AI-assisted risk scoring and 30-day forecasts
+            {aiRegions && aiRegions.length > 0
+              ? `Monitoring ${aiRegions.length} region${aiRegions.length !== 1 ? 's' : ''} for "${situationName}" with AI-assisted risk scoring`
+              : 'Monitoring 8 conflict-affected regions with AI-assisted risk scoring and 30-day forecasts'}
           </p>
         </div>
       </div>
 
       {/* ─── Heatmap Grid ─── */}
       <section>
-        <div className="grid grid-cols-4 gap-3">
-          {MONITORED_REGIONS.map((region) => {
+        <div className={cn('grid gap-3', regions.length <= 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-4')}>
+          {regions.map((region) => {
             const style = RISK_LEVEL_STYLES[region.riskLevel];
             const trendMeta = TREND_META[region.escalationTrend];
             const TrendIc = trendMeta.icon;
@@ -495,12 +497,59 @@ function RegionDetail({ region, situationName }: { region: MonitoredRegion; situ
 }
 
 // ============================================================================
+// AI response → MonitoredRegion converter
+// ============================================================================
+
+interface AiRiskRegion {
+  name: string;
+  riskScore: number;
+  dimensions: { political: number; security: number; humanitarian: number; economic: number; social: number };
+  glaslStage: number;
+  trend: string;
+  forecast: string;
+}
+
+function riskLevel(score: number): RiskLevel {
+  if (score >= 75) return 'critical';
+  if (score >= 55) return 'high';
+  if (score >= 35) return 'elevated';
+  if (score >= 20) return 'moderate';
+  return 'low';
+}
+
+function toMonitoredRegion(r: AiRiskRegion, idx: number): MonitoredRegion {
+  return {
+    id: `ai-region-${idx}`,
+    name: r.name,
+    riskScore: r.riskScore,
+    riskLevel: riskLevel(r.riskScore),
+    glaslStage: r.glaslStage,
+    escalationTrend: (r.trend === 'escalating' || r.trend === 'de-escalating' || r.trend === 'stable') ? r.trend : 'stable',
+    subScores: {
+      political: r.dimensions.political,
+      armed: r.dimensions.security,
+      humanitarian: r.dimensions.humanitarian,
+      economic: r.dimensions.economic,
+      displacement: Math.round((r.dimensions.humanitarian + r.dimensions.social) / 2),
+    },
+    keyIndicators: [
+      { label: 'Political Stability', value: `${r.dimensions.political}/100`, trend: r.dimensions.political > 60 ? 'up' as const : 'stable' as const },
+      { label: 'Security Risk', value: `${r.dimensions.security}/100`, trend: r.dimensions.security > 60 ? 'up' as const : 'stable' as const },
+      { label: 'Humanitarian', value: `${r.dimensions.humanitarian}/100`, trend: r.dimensions.humanitarian > 60 ? 'up' as const : 'down' as const },
+    ],
+    forecast30Day: r.forecast,
+    coordinates: { x: 0, y: 0 },
+  };
+}
+
+// ============================================================================
 // Real mode wrapper — separates demo data from situation-specific data
 // ============================================================================
 
 export default function RiskMonitorPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
-  
+  const [aiRegions, setAiRegions] = useState<MonitoredRegion[]>([]);
+
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoRiskMonitorPage />;
 
@@ -513,11 +562,17 @@ export default function RiskMonitorPage() {
       toolId="risk-monitor"
       toolName="Risk Monitor"
       apiEndpoint="/api/ai/risk-assessment"
+      extraBody={{ regions: [situation.region], conflictContext: `${situation.name}: ${situation.description}. Actors: ${situation.actors.join(', ')}` }}
       creditCost={3}
-      hasExistingData={false}
-      onDataGenerated={() => {}}
+      hasExistingData={aiRegions.length > 0}
+      onDataGenerated={(data) => {
+        const d = data as { regions?: AiRiskRegion[] };
+        if (d?.regions) {
+          setAiRegions(d.regions.map((r, i) => toMonitoredRegion(r, i)));
+        }
+      }}
     >
-      <DemoRiskMonitorPage situationName={situation.name} />
+      <DemoRiskMonitorPage situationName={situation.name} aiRegions={aiRegions.length > 0 ? aiRegions : undefined} />
     </AiPopulate>
   );
 }

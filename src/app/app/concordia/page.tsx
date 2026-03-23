@@ -1,8 +1,6 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
-import { RealToolView } from '@/components/praxis/real-tool-view';
-import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useEffect, useRef } from 'react';
@@ -49,7 +47,8 @@ const SPEAKER_LABEL_STYLES: Record<string, string> = {
 
 /* ── Section 1: Mediation Session Planner ───────────────────────────── */
 
-function SessionPlannerSection() {
+function SessionPlannerSection({ situation }: { situation?: import('@/types/situation').Situation | null }) {
+  const isReal = !!situation;
   const [selectedCase, setSelectedCase] = useState('');
   const [selectedFramework, setSelectedFramework] = useState('');
   const [plan, setPlan] = useState<SessionPlan | null>(null);
@@ -58,22 +57,67 @@ function SessionPlannerSection() {
 
   const framework = MEDIATION_FRAMEWORKS.find((f) => f.id === selectedFramework);
 
-  function handleGenerate() {
-    if (!selectedCase || !selectedFramework) return;
+  async function handleGenerate() {
+    if (!selectedFramework) return;
+    // Demo mode: require case selection and use local lookup
+    if (!isReal && !selectedCase) return;
     setLoading(true);
     setNoMatch(false);
     setPlan(null);
 
-    const key = `${selectedCase}+${selectedFramework}`;
-    setTimeout(() => {
-      const match = DEMO_SESSION_PLANS[key];
-      if (match) {
-        setPlan(match);
-      } else {
+    if (isReal) {
+      // Real mode: call /api/ai/mediation with action 'plan'
+      try {
+        const frameworkObj = MEDIATION_FRAMEWORKS.find((f) => f.id === selectedFramework);
+        const res = await fetch('/api/ai/mediation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'plan',
+            conflictContext: `${situation.name}: ${situation.description}. Region: ${situation.region}. Actors: ${situation.actors.join(', ')}`,
+            parties: situation.actors,
+            issues: [frameworkObj?.name ?? selectedFramework],
+          }),
+        });
+        if (!res.ok) {
+          setNoMatch(true);
+          setLoading(false);
+          return;
+        }
+        const data = await res.json();
+        // Map API response to SessionPlan shape
+        setPlan({
+          title: `${situation.name} — ${frameworkObj?.name ?? 'Mediation'} Plan`,
+          caseName: situation.name,
+          framework: data.framework ?? frameworkObj?.name ?? selectedFramework,
+          estimatedDuration: data.timeline ?? 'AI-generated timeline',
+          phases: (data.phases ?? []).map((p: { name: string; objectives: string[]; keyQuestions?: string[]; riskFactors?: string[] }) => ({
+            name: p.name,
+            duration: '',
+            objectives: p.objectives ?? [],
+            mediatorNotes: (p.riskFactors ?? []).join('; ') || 'See risk factors below',
+          })),
+          keyQuestions: (data.phases ?? []).flatMap((p: { keyQuestions?: string[] }) => p.keyQuestions ?? []),
+          riskFactors: (data.phases ?? []).flatMap((p: { riskFactors?: string[] }) => p.riskFactors ?? []),
+        });
+      } catch {
         setNoMatch(true);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }, 1500);
+    } else {
+      // Demo mode: use pre-computed plans
+      const key = `${selectedCase}+${selectedFramework}`;
+      setTimeout(() => {
+        const match = DEMO_SESSION_PLANS[key];
+        if (match) {
+          setPlan(match);
+        } else {
+          setNoMatch(true);
+        }
+        setLoading(false);
+      }, 1500);
+    }
   }
 
   return (
@@ -87,6 +131,16 @@ function SessionPlannerSection() {
 
       {/* Dropdowns */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {isReal ? (
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-navy-400">
+            Active Situation
+          </label>
+          <div className="rounded-lg border border-violet-200 bg-violet-50/30 py-2.5 pl-3 pr-3 text-sm text-navy-800">
+            {situation.name}
+          </div>
+        </div>
+        ) : (
         <div>
           <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-navy-400">
             Case
@@ -111,6 +165,7 @@ function SessionPlannerSection() {
             <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400" />
           </div>
         </div>
+        )}
 
         <div>
           <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-navy-400">
@@ -162,7 +217,7 @@ function SessionPlannerSection() {
       {/* Generate button */}
       <button
         onClick={handleGenerate}
-        disabled={!selectedCase || !selectedFramework || loading}
+        disabled={(!isReal && !selectedCase) || !selectedFramework || loading}
         className="rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? (
@@ -495,7 +550,7 @@ function SettlementSection() {
 
 /* ── Main Page ──────────────────────────────────────────────────────── */
 
-function DemoConcordiaPage() {
+function DemoConcordiaPage({ situation }: { situation?: import('@/types/situation').Situation | null }) {
 
   return (
     <div className="space-y-10">
@@ -508,7 +563,7 @@ function DemoConcordiaPage() {
         </p>
       </div>
 
-      <SessionPlannerSection />
+      <SessionPlannerSection situation={situation} />
 
       <div className="h-px bg-[var(--color-app-border)]" />
 
@@ -550,24 +605,15 @@ function DemoConcordiaPage() {
 
 export default function ConcordiaPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
-  
+
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoConcordiaPage />;
-  
+
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
-  
-  // Real mode — AI populate prompt, then show tool
+
+  // Real mode — pass situation so SessionPlannerSection calls the real API
   return (
-    <AiPopulate
-      toolId="concordia"
-      toolName="CONCORDIA Mediation"
-      apiEndpoint="/api/ai/mediation"
-      creditCost={3}
-      hasExistingData={false}
-      onDataGenerated={() => {}}
-    >
-      <DemoConcordiaPage />
-    </AiPopulate>
+    <DemoConcordiaPage situation={situation} />
   );
 }
