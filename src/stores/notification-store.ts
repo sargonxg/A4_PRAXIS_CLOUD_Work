@@ -15,12 +15,15 @@ export interface Notification {
 interface NotificationStore {
   notifications: Notification[];
   unreadCount: number;
+  addNotification: (n: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
   markRead: (id: string) => void;
   markAllRead: () => void;
   dismiss: (id: string) => void;
+  seedDemoNotifications: () => void;
+  clearAll: () => void;
 }
 
-const SEED_NOTIFICATIONS: Notification[] = [
+const DEMO_NOTIFICATIONS: Notification[] = [
   {
     id: 'n1',
     type: 'alert',
@@ -50,15 +53,6 @@ const SEED_NOTIFICATIONS: Notification[] = [
   },
   {
     id: 'n4',
-    type: 'warning',
-    title: 'Open Debate Tomorrow — 10:00',
-    body: 'UNSC Open Debate: Protection of Civilians. Prepare talking points and delegation list.',
-    href: '/calendar',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 8),
-    read: false,
-  },
-  {
-    id: 'n5',
     type: 'success',
     title: 'Report Published',
     body: 'Q1 Nordalia Situation Report has been finalized and shared with team.',
@@ -66,20 +60,27 @@ const SEED_NOTIFICATIONS: Notification[] = [
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
     read: true,
   },
-  {
-    id: 'n6',
-    type: 'alert',
-    title: 'Risk Score Increase: Sahel',
-    body: 'ACLED data shows 40% increase in violent incidents in Burkina Faso. Early warning threshold breached.',
-    href: '/early-warning',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 36),
-    read: true,
-  },
 ];
 
+let counter = 0;
+
 export const useNotificationStore = create<NotificationStore>((set) => ({
-  notifications: SEED_NOTIFICATIONS,
-  unreadCount: SEED_NOTIFICATIONS.filter((n) => !n.read).length,
+  // Start empty — demo mode seeds notifications via seedDemoNotifications()
+  notifications: [],
+  unreadCount: 0,
+
+  addNotification: (n) =>
+    set((state) => {
+      const notification: Notification = {
+        ...n,
+        id: `notif-${Date.now()}-${counter++}`,
+        timestamp: new Date(),
+        read: false,
+      };
+      const updated = [notification, ...state.notifications];
+      return { notifications: updated, unreadCount: updated.filter((x) => !x.read).length };
+    }),
+
   markRead: (id) =>
     set((state) => {
       const updated = state.notifications.map((n) =>
@@ -87,14 +88,24 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
       );
       return { notifications: updated, unreadCount: updated.filter((n) => !n.read).length };
     }),
+
   markAllRead: () =>
     set((state) => ({
       notifications: state.notifications.map((n) => ({ ...n, read: true })),
       unreadCount: 0,
     })),
+
   dismiss: (id) =>
     set((state) => {
       const updated = state.notifications.filter((n) => n.id !== id);
       return { notifications: updated, unreadCount: updated.filter((n) => !n.read).length };
     }),
+
+  seedDemoNotifications: () =>
+    set({
+      notifications: DEMO_NOTIFICATIONS,
+      unreadCount: DEMO_NOTIFICATIONS.filter((n) => !n.read).length,
+    }),
+
+  clearAll: () => set({ notifications: [], unreadCount: 0 }),
 }));

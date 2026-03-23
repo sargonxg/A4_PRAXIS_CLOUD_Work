@@ -12,6 +12,7 @@ import { DemoModeBanner } from '@/components/onboarding/demo-mode-banner';
 import { OnboardingWrapper } from '@/components/onboarding/onboarding-wrapper';
 import { GlobalSearch } from '@/components/shared/global-search';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { useNotificationStore } from '@/stores/notification-store';
 import { Loader2 } from 'lucide-react';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -38,8 +39,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         orgName: user.orgName,
         isDemo: user.isDemo,
       });
-      if (user.isDemo) setDemoMode(true);
-      else setDemoMode(false);
+      if (user.isDemo) {
+        setDemoMode(true);
+        useNotificationStore.getState().seedDemoNotifications();
+      } else {
+        setDemoMode(false);
+      }
     }
   }, [user, setUser, setDemoMode]);
 

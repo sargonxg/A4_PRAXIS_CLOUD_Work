@@ -9,6 +9,7 @@ export async function GET() {
       googleAI: !!process.env.GOOGLE_AI_API_KEY,
       anthropic: !!process.env.ANTHROPIC_API_KEY,
       firecrawl: !!process.env.FIRECRAWL_API_KEY,
+      parallel: !!process.env.PARALLEL_API_KEY,
     },
   });
 }
