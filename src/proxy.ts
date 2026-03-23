@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const session = request.cookies.get(SESSION_COOKIE);
 
@@ -61,7 +61,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
     "style-src 'self' 'unsafe-inline' fonts.googleapis.com; " +
     "img-src 'self' data: blob: *.googleapis.com *.googleusercontent.com; " +
     "font-src 'self' fonts.gstatic.com; " +
-    "connect-src 'self' *.firebaseio.com *.googleapis.com *.firebaseapp.com api.acleddata.com api.gdeltproject.org api.reliefweb.int *.firecrawl.dev api.parallel.ai; " +
+    "connect-src 'self' *.firebaseio.com *.googleapis.com *.firebaseapp.com api.acleddata.com api.gdeltproject.org api.reliefweb.int *.firecrawl.dev api.parallel.ai va.vercel-scripts.com; " +
     "frame-src 'self' *.firebaseapp.com accounts.google.com;"
   );
   return response;
