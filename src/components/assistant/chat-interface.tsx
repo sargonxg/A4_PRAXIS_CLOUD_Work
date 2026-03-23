@@ -26,8 +26,8 @@ import { SuggestedPrompts } from "@/components/assistant/suggested-prompts";
 import { useSituationStore } from "@/stores/situation-store";
 import { useAppStore } from "@/stores/app-store";
 
-const CONFLICT_CONTEXTS = [
-  { id: '', label: 'No conflict context' },
+// Conflict contexts are now derived from the active situation — no hardcoded list
+const DEMO_CONFLICT_CONTEXTS = [
   { id: 'nordalia', label: 'Nordalia Crisis' },
   { id: 'drc', label: 'DRC / M23' },
   { id: 'sahel', label: 'Sahel Region' },
@@ -80,10 +80,19 @@ export function ChatInterface() {
   const { demoMode } = useAppStore();
 
   const [uploadedContext, setUploadedContext] = useState<{ name: string; text: string } | null>(null);
-  const [conflictContext, setConflictContext] = useState('');
+  const [conflictContext, setConflictContext] = useState(
+    !demoMode && activeSituation ? activeSituation.id : ''
+  );
   const [isUploading, setIsUploading] = useState(false);
   const [showContextDropdown, setShowContextDropdown] = useState(false);
   const [useGroundedMode, setUseGroundedMode] = useState(false);
+
+  // Build context options: real situation for authenticated users, demo list for demo mode
+  const CONFLICT_CONTEXTS = demoMode
+    ? [{ id: '', label: 'No conflict context' }, ...DEMO_CONFLICT_CONTEXTS]
+    : activeSituation
+      ? [{ id: activeSituation.id, label: activeSituation.name }]
+      : [{ id: '', label: 'No situation selected' }];
 
   const conflictLabel = CONFLICT_CONTEXTS.find((c) => c.id === conflictContext)?.label ?? '';
 
