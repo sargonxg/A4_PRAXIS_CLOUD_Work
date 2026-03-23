@@ -34,6 +34,7 @@ import {
   UsersRound,
   Presentation,
   Newspaper,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -86,6 +87,7 @@ const navSections: NavSection[] = [
       { label: 'Treaty Analyzer', icon: FileCheck, href: '/treaty-analyzer', badge: 'NEW' },
       { label: 'Sanctions Tracker', icon: Shield, href: '/sanctions' },
       { label: 'Calendar Monitor', icon: Calendar, href: '/calendar' },
+      { label: 'Alert Center', icon: Bell, href: '/alerts' },
       { label: 'UN Toolkit', icon: Building2, href: '/un-toolkit' },
     ],
   },

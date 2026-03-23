@@ -7,7 +7,7 @@ const bareRoutes = [
   'talking-points', 'stakeholder-map', 'early-warning', 'sanctions',
   'scenarios', 'negotiation-prep', 'cases', 'compare', 'argus',
   'concordia', 'dossier', 'treaty-analyzer', 'risk-monitor', 'actors',
-  'briefing', 'team', 'situations', 'media-roundup',
+  'briefing', 'team', 'situations', 'media-roundup', 'alerts',
 ];
 
 const nextConfig: NextConfig = {

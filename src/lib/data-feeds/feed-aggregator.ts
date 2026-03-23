@@ -6,6 +6,8 @@
 import { fetchEvents, isACLEDConfigured, type ACLEDEvent } from './acled-client';
 import { searchArticles, type GDELTArticle } from './gdelt-client';
 import { searchReports, type RWReport } from './reliefweb-client';
+import { countryNameToIso3, getDisplacement, getFoodSecurity, getFunding } from './hdx-client';
+import { getCurrentStability } from './gdelt-stability';
 
 export interface IntelligenceItem {
   id: string;
@@ -21,10 +23,23 @@ export interface IntelligenceItem {
   metadata: Record<string, unknown>;
 }
 
+export interface HumanitarianSnapshot {
+  displacement?: { idps: number; refugees: number };
+  foodSecurity?: { phase: string; population: number; pct: number }[];
+  funding?: { required: number; funded: number; pct: number };
+}
+
+export interface StabilitySnapshot {
+  score: number;
+  trend: 'improving' | 'stable' | 'worsening';
+}
+
 export interface SituationIntelligence {
   events: IntelligenceItem[];
   totalCount: number;
   sources: { acled: number; gdelt: number; reliefweb: number };
+  humanitarian?: HumanitarianSnapshot;
+  stability?: StabilitySnapshot;
   fetchedAt: string;
 }
 
@@ -85,17 +100,27 @@ export async function getSituationIntelligence(options: {
   dateStart?: string;
   limit?: number;
 }): Promise<SituationIntelligence> {
+  const iso3 = countryNameToIso3(options.country);
+
   const results = await Promise.allSettled([
     isACLEDConfigured()
       ? fetchEvents({ country: options.country, dateStart: options.dateStart, limit: options.limit || 50 })
       : Promise.resolve([]),
     searchArticles({ query: options.query || options.country, timespan: '7d', maxRecords: 20 }),
     searchReports({ country: options.country, limit: 10 }),
+    iso3 ? getDisplacement(iso3) : Promise.resolve({ idps: 0, refugees: 0, source: '' }),
+    iso3 ? getFoodSecurity(iso3) : Promise.resolve([]),
+    iso3 ? getFunding(iso3) : Promise.resolve(null),
+    getCurrentStability(options.country.slice(0, 2).toUpperCase()),
   ]);
 
   const acledEvents = results[0].status === 'fulfilled' ? results[0].value as ACLEDEvent[] : [];
   const gdeltArticles = results[1].status === 'fulfilled' ? results[1].value as GDELTArticle[] : [];
   const rwReports = results[2].status === 'fulfilled' ? results[2].value as RWReport[] : [];
+  const displacement = results[3].status === 'fulfilled' ? results[3].value as { idps: number; refugees: number } : undefined;
+  const foodSecurity = results[4].status === 'fulfilled' ? results[4].value as { phase: string; population: number; pct: number }[] : undefined;
+  const funding = results[5].status === 'fulfilled' ? results[5].value as { required: number; funded: number; pct: number } | null : undefined;
+  const stability = results[6].status === 'fulfilled' ? results[6].value as { score: number; trend: 'improving' | 'stable' | 'worsening' } | null : undefined;
 
   const items: IntelligenceItem[] = [
     ...acledEvents.map(acledToIntel),
@@ -115,6 +140,12 @@ export async function getSituationIntelligence(options: {
     events: items,
     totalCount: items.length,
     sources: { acled: acledEvents.length, gdelt: gdeltArticles.length, reliefweb: rwReports.length },
+    humanitarian: (displacement || foodSecurity?.length || funding) ? {
+      displacement: displacement?.idps || displacement?.refugees ? displacement : undefined,
+      foodSecurity: foodSecurity?.length ? foodSecurity : undefined,
+      funding: funding || undefined,
+    } : undefined,
+    stability: stability ? { score: stability.score, trend: stability.trend } : undefined,
     fetchedAt: new Date().toISOString(),
   };
 }
