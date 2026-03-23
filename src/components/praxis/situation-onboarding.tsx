@@ -66,14 +66,16 @@ export function SituationOnboarding({ situation, onComplete }: SituationOnboardi
     setResearchResult('');
 
     try {
-      const res = await fetch('/api/ai/deep-research', {
+      const res = await fetch('/api/ai/auto-structure', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query: `${situation.name} conflict situation overview background key actors recent developments`,
-          mode: 'background',
-          depth: 'standard',
-          situationContext: situation.description,
+          situationName: situation.name,
+          situationType: situation.type,
+          region: situation.region,
+          description: situation.description,
+          actors: situation.actors,
+          userRole: situation.userRole || 'analyst',
           sourcePreferences: preferredSources,
         }),
       });

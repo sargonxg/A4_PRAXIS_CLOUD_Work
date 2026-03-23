@@ -538,6 +538,25 @@ export default function NewSituationPage() {
       }
       const { situation } = await res.json();
       addSituation(situation);
+
+      // Kick off auto-structure in background (fire-and-forget)
+      // The dashboard will show the streaming results
+      try {
+        fetch('/api/ai/auto-structure', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            situationName: form.name,
+            situationType: form.type,
+            region: form.region,
+            description: form.description,
+            actors: form.actors,
+            userRole: form.userRole,
+            situationId: situation.id,
+          }),
+        }).catch(() => { /* background — ignore errors */ });
+      } catch { /* fire and forget */ }
+
       router.push(route('/dashboard'));
     } catch {
       setError('Network error. Please check your connection and try again.');
