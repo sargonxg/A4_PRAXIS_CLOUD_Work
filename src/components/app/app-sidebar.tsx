@@ -33,6 +33,7 @@ import {
   UserCircle,
   UsersRound,
   Presentation,
+  Newspaper,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -81,6 +82,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'ARGUS Intelligence', icon: Network, href: '/argus', badge: 'TACITUS' },
       { label: 'Media Compass', icon: Compass, href: '/media-compass' },
+      { label: 'Media Roundup', icon: Newspaper, href: '/media-roundup', badge: 'NEW' },
       { label: 'Treaty Analyzer', icon: FileCheck, href: '/treaty-analyzer', badge: 'NEW' },
       { label: 'Sanctions Tracker', icon: Shield, href: '/sanctions' },
       { label: 'Calendar Monitor', icon: Calendar, href: '/calendar' },

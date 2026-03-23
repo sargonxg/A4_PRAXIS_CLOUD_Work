@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { usePraxisRoute } from '@/lib/utils/routes';
 import { useSituationStore } from '@/stores/situation-store';
 import { cn } from '@/lib/utils/cn';
-import { ChevronDown, Plus, Globe, Loader2 } from 'lucide-react';
+import { ChevronDown, Plus, Globe, Loader2, Trash2 } from 'lucide-react';
 
 interface SituationSelectorProps {
   collapsed?: boolean;
@@ -18,7 +18,7 @@ export function SituationSelector({ collapsed, activeSituationId, onSelect }: Si
   const { user } = useAuth();
   const router = useRouter();
   const route = usePraxisRoute();
-  const { situations, setSituations, setLoading: setStoreLoading } = useSituationStore();
+  const { situations, setSituations, removeSituation, setLoading: setStoreLoading } = useSituationStore();
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
@@ -113,22 +113,35 @@ export function SituationSelector({ collapsed, activeSituationId, onSelect }: Si
         <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-[var(--color-app-border)] bg-white shadow-lg">
           <div className="max-h-48 overflow-y-auto py-1">
             {situations.map((sit) => (
-              <button
-                key={sit.id}
-                onClick={() => { onSelect(sit.id); setOpen(false); }}
-                className={cn(
-                  'flex w-full items-center gap-2 px-3 py-2 text-left transition-colors',
-                  sit.id === activeSituationId
-                    ? 'bg-diplomatic-blue/5 text-diplomatic-blue'
-                    : 'text-navy-700 hover:bg-[var(--color-app-surface-alt)]'
-                )}
-              >
-                <Globe className="h-3 w-3 shrink-0" />
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-medium">{sit.name}</p>
-                  <p className="truncate text-[10px] text-navy-500">{sit.region} · {sit.actorCount} actors</p>
-                </div>
-              </button>
+              <div key={sit.id} className="flex items-center">
+                <button
+                  onClick={() => { onSelect(sit.id); setOpen(false); }}
+                  className={cn(
+                    'flex flex-1 items-center gap-2 px-3 py-2 text-left transition-colors',
+                    sit.id === activeSituationId
+                      ? 'bg-diplomatic-blue/5 text-diplomatic-blue'
+                      : 'text-navy-700 hover:bg-[var(--color-app-surface-alt)]'
+                  )}
+                >
+                  <Globe className="h-3 w-3 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-medium">{sit.name}</p>
+                    <p className="truncate text-[10px] text-navy-500">{sit.region} · {sit.actorCount} actors</p>
+                  </div>
+                </button>
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!confirm(`Delete "${sit.name}"? This cannot be undone.`)) return;
+                    await fetch(`/api/situations/${sit.id}`, { method: 'DELETE' });
+                    removeSituation(sit.id);
+                  }}
+                  className="shrink-0 p-2 text-navy-300 hover:text-red-500 transition-colors"
+                  title="Delete situation"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
             ))}
           </div>
           <div className="border-t border-[var(--color-app-border)] p-1">
