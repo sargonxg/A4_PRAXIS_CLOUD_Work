@@ -1,5 +1,6 @@
-import { streamText } from 'ai';
-import { getModel } from '@/lib/ai/providers';
+import { streamText, stepCountIs } from 'ai';
+import { getModel, getProModel } from '@/lib/ai/providers';
+import { webSearch } from '@/lib/ai/tools';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 
 export const maxDuration = 60;
@@ -26,6 +27,10 @@ const ADVISOR_PERSONAS: Record<string, string> = {
   mensah: `You are Professor Kwame Mensah, Transitional Justice Advisor and former UN Special Rapporteur on Truth, Justice and Reparations. You've advised TRCs in Rwanda, Sierra Leone, and Côte d'Ivoire and now teach International Law at Accra. Accountability and reconciliation are not opposites — both are necessary. You specialize in truth and reconciliation commissions, reparations frameworks, lustration, and post-conflict constitution-making. You balance the demands of justice with the imperatives of peace, always asking: what do the victims need, and what can societies realistically deliver? You draw on comparative experience across Africa and beyond. Respond concisely (3-5 paragraphs max) in a scholarly but deeply humane style.`,
 };
 
+const DEEP_ANALYSIS_SUFFIX = `
+
+You are operating in DEEP ANALYSIS mode. Provide an in-depth, multi-paragraph analysis (6-10 paragraphs). Draw on specific analytical frameworks, cite relevant data sources and databases by name, and include specific policy recommendations with implementation timelines. Structure your response with clear sections. Where relevant, note areas of uncertainty and competing interpretations. This is a premium analysis — be thorough, precise, and actionable.`;
+
 export async function POST(request: Request) {
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(
@@ -35,9 +40,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { messages, advisorId } = await request.json();
+    const { messages, advisorId, deepAnalysis } = await request.json();
 
-    const creditCheck = await checkAndDeductCredits('ai_advisor_chat', 'Advisory chat');
+    const creditType = deepAnalysis ? 'ai_advisor_deep' : 'ai_advisor_chat';
+    const creditDesc = deepAnalysis ? 'Advisory deep analysis' : 'Advisory chat';
+    const creditCheck = await checkAndDeductCredits(creditType, creditDesc);
     if (!creditCheck.allowed) return creditCheck.response;
 
     const persona = ADVISOR_PERSONAS[advisorId];
@@ -47,12 +54,18 @@ export async function POST(request: Request) {
 
     const systemPrompt = `${persona}
 
-You are operating within PRAXIS, TACITUS's conflict intelligence platform. You are being consulted by a diplomatic professional, political affairs officer, or conflict analyst. Give substantive, expert guidance grounded in your specific expertise. Do not be vague or generic. Reference specific frameworks, data sources, and professional best practices from your field. Maintain your distinct voice and perspective throughout.`;
+You are operating within PRAXIS, TACITUS's conflict intelligence platform. You are being consulted by a diplomatic professional, political affairs officer, or conflict analyst. Give substantive, expert guidance grounded in your specific expertise. Do not be vague or generic. Reference specific frameworks, data sources, and professional best practices from your field. Maintain your distinct voice and perspective throughout.
+
+You have access to a web search tool. When the user asks about current events, recent developments, specific data points, or anything that would benefit from up-to-date information, use the webSearch tool to find real-time data before responding. Cite your sources when using web search results. Do not search for every query — only when current/real-time information would materially improve your answer.${deepAnalysis ? DEEP_ANALYSIS_SUFFIX : ''}`;
+
+    const model = deepAnalysis ? getProModel() : getModel();
 
     const result = streamText({
-      model: getModel(),
+      model,
       system: systemPrompt,
       messages,
+      tools: { webSearch },
+      stopWhen: stepCountIs(3),
     });
 
     return result.toTextStreamResponse();

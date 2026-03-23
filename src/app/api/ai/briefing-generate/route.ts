@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { generateText, streamText, Output } from 'ai';
 import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
@@ -18,6 +18,59 @@ const BriefingSchema = z.object({
     })
   ).describe('Briefing slides'),
 });
+
+// ---------------------------------------------------------------------------
+// Morning Digest System Prompt
+// ---------------------------------------------------------------------------
+
+const MORNING_DIGEST_SYSTEM_PROMPT = `You are generating a morning intelligence digest for a conflict analyst. Structure as:
+
+## OVERNIGHT DEVELOPMENTS
+[Key events in the past 24 hours affecting this situation]
+
+## RISK ASSESSMENT UPDATE
+[Any changes to risk indicators, escalation signals]
+
+## KEY ACTORS TO WATCH
+[Which actors are most active/concerning right now and why]
+
+## TODAY'S RECOMMENDED FOCUS
+[Top 3 priorities for the analyst today, with specific actions]
+
+## UPCOMING DEADLINES & MILESTONES
+[Events in the next 7 days that need preparation]
+
+Be concise and action-oriented. Use bullet points. Flag items by urgency: 🔴 CRITICAL / 🟡 IMPORTANT / 🟢 ROUTINE.`;
+
+const MORNING_DIGEST_DEMO = `## OVERNIGHT DEVELOPMENTS
+- 🔴 CRITICAL: Buffer zone incursion reported near Kessara corridor — third incident this week. UNMN observers confirmed vehicle movement from GoN side at 0300 UTC.
+- 🟡 IMPORTANT: Karovian military transport flight KV-4112 landed at Nordalia City International at 0145 UTC. Sixth flight in 10 days — logistics pattern suggests materiel buildup.
+- 🟢 ROUTINE: OCHA convoy reached Sector 3 distribution point. DRM taxation checkpoint extracted 8% "transit fee." Within recent norms but concerning trend.
+
+## RISK ASSESSMENT UPDATE
+- **Overall risk score:** 7.2/10 (up from 6.8 last week)
+- **Escalation indicator:** GoN cabinet reshuffle bringing in AFN hardliner General Mensah as Defence Minister signals shift from diplomatic to military posture
+- **De-escalation anchor:** SRSG back-channel remains active; prisoner exchange framework still on table
+- **Glasl assessment:** Stage 5 (Loss of Face) — two of four Stage 6 indicators now partially present
+
+## KEY ACTORS TO WATCH
+- 🔴 **General Mensah (new GoN Defence Minister):** Hardline AFN faction. First public statement expected today — will signal policy direction
+- 🟡 **DRM Eastern Command:** Unusual communications pattern detected. Possible repositioning in response to GoN incursions
+- 🟡 **Karovian Embassy:** Ambassador Volkov requested urgent meeting with SRSG. Agenda unknown but timing correlates with military flights
+- 🟢 **CSCN leadership:** Civil society coalition press conference scheduled for 1400 local time on journalist detentions
+
+## TODAY'S RECOMMENDED FOCUS
+1. **Monitor General Mensah's first statement** — Content and tone will indicate whether GoN is preparing escalation or using appointment as bargaining leverage. Draft talking points for SRSG response.
+2. **Track Karovian logistics pattern** — Request updated satellite imagery of Nordalia City airfield. Cross-reference with Panel of Experts shipping data for arms embargo compliance.
+3. **Prepare humanitarian access brief** — Planting season (April-May) window approaching. Draft options paper for OCHA on checkpoint negotiations before agricultural disruption becomes irreversible.
+
+## UPCOMING DEADLINES & MILESTONES
+- 🔴 **Today:** General Mensah expected first public statement
+- 🟡 **Wednesday:** UNSC informal consultations on Nordalia mandate
+- 🟡 **Friday:** SRSG weekly briefing to P5 ambassadors
+- 🟢 **Next Monday:** AU PSC consultative meeting on Sahel/Nordalia regional dynamics
+- 🟢 **April 1:** Eastern Province planting season begins — humanitarian access critical`;
+
 
 // Static demo response
 const DEMO_RESPONSE = {
@@ -99,11 +152,73 @@ const DEMO_RESPONSE = {
 
 export async function POST(request: Request) {
   try {
-    const { caseId, briefingType, conflictContext } = await request.json() as {
+    const { caseId, briefingType, conflictContext, situationContext } = await request.json() as {
       caseId: string;
       briefingType: string;
       conflictContext?: string;
+      situationContext?: {
+        name: string;
+        region: string;
+        actors: string[];
+        riskScore: number;
+        escalationTrend: string;
+        glaslStage: number | null;
+        description: string;
+      };
     };
+
+    // ---------------------------------------------------------------------------
+    // Morning Digest — streamed markdown (not structured slides)
+    // ---------------------------------------------------------------------------
+    if (briefingType === 'morning-digest') {
+      // Demo mode returns static markdown
+      if (isServerDemoMode()) {
+        return new Response(MORNING_DIGEST_DEMO, {
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        });
+      }
+
+      // Credit check — 2 credits (cheaper than full briefing; runs daily)
+      const digestCreditCheck = await checkAndDeductCredits('ai_morning_digest', 'Morning digest generation');
+      if (!digestCreditCheck.allowed) return digestCreditCheck.response;
+
+      // Web search for latest developments
+      const searchQuery = situationContext
+        ? `${situationContext.name} ${situationContext.region} latest developments today`
+        : `${conflictContext || caseId} latest news today`;
+      const searchResults = await searchWeb(searchQuery, { numResults: 5 });
+      const webContext = formatResultsAsContext(searchResults);
+
+      // Build situation context block
+      const sitBlock = situationContext
+        ? `SITUATION: ${situationContext.name}
+REGION: ${situationContext.region}
+KEY ACTORS: ${situationContext.actors.join(', ')}
+CURRENT RISK SCORE: ${situationContext.riskScore}/10
+ESCALATION TREND: ${situationContext.escalationTrend}
+${situationContext.glaslStage ? `GLASL STAGE: ${situationContext.glaslStage}/9` : ''}
+DESCRIPTION: ${situationContext.description}`
+        : `SITUATION: ${caseId}\n${conflictContext ? `CONTEXT: ${conflictContext}` : ''}`;
+
+      const result = streamText({
+        model: getModel(),
+        system: MORNING_DIGEST_SYSTEM_PROMPT,
+        prompt: `Generate today's morning intelligence digest for the following situation.
+
+${sitBlock}
+
+LATEST INTELLIGENCE FROM WEB SOURCES:
+${webContext || 'No web results available. Base analysis on the situation context provided and your knowledge of the region/actors.'}
+
+Generate the digest now. Be specific with actor names, locations, and timeline references. Ground every claim in the context or web intelligence above.`,
+      });
+
+      return result.toTextStreamResponse();
+    }
+
+    // ---------------------------------------------------------------------------
+    // Standard briefing (slide-based)
+    // ---------------------------------------------------------------------------
 
     // --- Demo mode ---
     if (isServerDemoMode()) {

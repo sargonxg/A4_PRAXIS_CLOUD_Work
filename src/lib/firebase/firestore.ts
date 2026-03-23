@@ -171,6 +171,7 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   'ai_talking_points': 2,
   'ai_grounded_search': 2,
   'ai_advisor_chat': 2,
+  'ai_advisor_deep': 5,
   'ai_analysis': 3,
   'ai_research': 3,
   'ai_resolution': 3,
@@ -187,11 +188,13 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   // Phase 3: Production pages
   'ai_dossier_generate': 5,
   'ai_briefing_generate': 4,
+  'ai_morning_digest': 2,
   'ai_mediation': 3,
   'ai_risk_assessment': 4,
   'ai_treaty_analyze': 4,
   'ai_negotiation': 3,
   'ai_argus': 3,
+  'ai_actor_brief': 3,
 };
 
 /**

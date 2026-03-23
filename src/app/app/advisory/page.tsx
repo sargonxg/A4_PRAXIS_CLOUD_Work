@@ -6,10 +6,33 @@ import { buildSituationContext } from '@/lib/ai/situation-context';
 import type { Situation } from '@/types/situation';
 
 import { useState, useCallback, useRef, useMemo } from 'react';
-import { Sparkles, MessageSquare, Send, X, Loader2, Users, ChevronRight } from 'lucide-react';
+import {
+  Sparkles,
+  MessageSquare,
+  Send,
+  X,
+  Loader2,
+  Users,
+  ChevronRight,
+  ChevronDown,
+  BookOpen,
+  ExternalLink,
+  Zap,
+  Shield,
+} from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
+
+// ============================================================================
+// Advisor definitions — 10 experts with full metadata
+// ============================================================================
+
+interface AdvisorResource {
+  name: string;
+  url: string;
+  description: string;
+}
 
 interface AdvisorDef {
   id: string;
@@ -21,75 +44,248 @@ interface AdvisorDef {
   bio: string;
   systemPrompt: string;
   suggestedPrompts: string[];
+  resources: AdvisorResource[];
+  /** Topics this advisor tends to agree with others on */
+  alignsWith: string[];
+  /** Topics where this advisor often disagrees or pushes back */
+  tensionsWith: string[];
 }
 
 const ADVISORS: AdvisorDef[] = [
   {
-    id: 'amara',
+    id: 'okafor',
     name: 'Dr. Amara Okafor',
     title: 'Chief Conflict Analyst',
-    expertise: 'Escalation modeling, political violence, conflict dynamics',
+    expertise: 'Escalation modeling, political violence, conflict dynamics, early warning systems',
     avatar: 'AO',
     color: '#4B92DB',
-    bio: 'Former DPPA political affairs officer with 12 years field experience. Specializes in escalation dynamics and electoral violence.',
+    bio: 'Former DPPA political affairs officer with 15 years at ICG. Developed risk frameworks deployed across 40+ conflict zones. Specializes in sub-Saharan Africa and the Sahel.',
     systemPrompt: 'You are Dr. Amara Okafor, a leading conflict analyst specializing in escalation modeling. Focus on political dynamics, escalation indicators, and conflict prevention. Reference the Glasl escalation model and structural violence theories. Be analytical and evidence-based. Provide specific, expert-level analysis grounded in conflict research. Always ground your analysis in the active situation context provided.',
     suggestedPrompts: [
       'What are the escalation risks in the next 30 days?',
       'Analyze the key armed group\'s political trajectory and end-game',
       'Which actors have the most destabilizing potential?',
     ],
+    resources: [
+      { name: 'ACLED Explorer', url: 'https://acleddata.com/dashboard/', description: 'Real-time conflict event data and analysis' },
+      { name: 'ICG CrisisWatch', url: 'https://www.crisisgroup.org/crisiswatch', description: 'Monthly conflict tracker covering 70+ situations' },
+      { name: 'SIPRI Yearbook', url: 'https://www.sipri.org/yearbook', description: 'Annual data on armaments, disarmament, and security' },
+    ],
+    alignsWith: ['mitchell', 'eriksen'],
+    tensionsWith: ['al-rashid', 'nakamura'],
+  },
+  {
+    id: 'tanaka',
+    name: 'Amb. Kenji Tanaka',
+    title: 'Diplomatic Strategy Advisor',
+    expertise: 'Multilateral negotiations, UNSC dynamics, back-channel diplomacy, consensus-building',
+    avatar: 'KT',
+    color: '#7C5CBF',
+    bio: 'Former Japanese diplomat with postings at UN New York and Geneva. Led back-channel facilitation for three Asian territorial disputes. Deep expertise in UNSC dynamics.',
+    systemPrompt: 'You are Ambassador Kenji Tanaka, a diplomatic strategy advisor and former Japanese diplomat. Analyze through the lens of multilateral diplomacy, UNSC dynamics, and consensus-building. Be strategic, measured, and attentive to face-saving considerations. Always ground your analysis in the active situation context provided.',
+    suggestedPrompts: [
+      'What diplomatic openings exist for de-escalation?',
+      'How would the P5 likely respond to a new UNSC resolution?',
+      'Design a back-channel approach for the key parties',
+    ],
+    resources: [
+      { name: 'UN Security Council Report', url: 'https://www.securitycouncilreport.org/', description: 'Independent analysis of UNSC activities' },
+      { name: 'What\'s In Blue', url: 'https://www.whatsinblue.org/', description: 'Insights on UNSC behind-the-scenes dynamics' },
+      { name: 'Security Council Report', url: 'https://www.securitycouncilreport.org/monthly-forecast/', description: 'Monthly forecast of UNSC agenda items' },
+    ],
+    alignsWith: ['al-rashid', 'nakamura'],
+    tensionsWith: ['mitchell', 'okafor'],
   },
   {
     id: 'mitchell',
     name: 'Col. Sarah Mitchell',
     title: 'Security & Military Analyst',
-    expertise: 'Armed group dynamics, peacekeeping, military strategy',
+    expertise: 'Armed group dynamics, peacekeeping, military strategy, DDR processes',
     avatar: 'SM',
     color: '#A63D40',
-    bio: 'Retired military officer with NATO and UN peacekeeping experience. Specializes in armed group behavior, terrain analysis, and force protection.',
+    bio: 'Retired military officer with 20 years in NATO and OSCE missions. Directed security assessments for UNMISS and MINUSMA. Specializes in armed group behavior and force protection.',
     systemPrompt: 'You are Col. Sarah Mitchell, a military analyst and former NATO officer. Analyze conflicts through a security and military lens. Focus on armed group capabilities, terrain, logistics, and peacekeeping operations. Be direct and operationally focused. Give practical military assessments based on doctrinal knowledge. Always ground your analysis in the active situation context provided.',
     suggestedPrompts: [
       'Assess the military balance between the main armed groups',
       'What are the key force protection risks for peacekeepers?',
       'Is the current ceasefire militarily sustainable?',
     ],
+    resources: [
+      { name: 'IISS Military Balance', url: 'https://www.iiss.org/publications/the-military-balance', description: 'Authoritative assessment of global military capabilities' },
+      { name: 'Jane\'s Defence', url: 'https://www.janes.com/', description: 'Defence intelligence and analysis platform' },
+      { name: 'SIPRI Arms Transfers', url: 'https://www.sipri.org/databases/armstransfers', description: 'International arms transfers database' },
+    ],
+    alignsWith: ['okafor', 'eriksen'],
+    tensionsWith: ['sharma', 'tanaka'],
   },
   {
     id: 'hassan',
     name: 'Dr. Layla Hassan',
     title: 'International Law Expert',
-    expertise: 'IHL, human rights law, accountability mechanisms',
+    expertise: 'IHL, human rights law, ICC jurisprudence, accountability mechanisms',
     avatar: 'LH',
     color: '#5B8C5A',
-    bio: 'International human rights lawyer with ICJ and ICC experience. Specializes in IHL compliance, accountability, and transitional justice.',
+    bio: 'International human rights lawyer with ICJ and ICC experience. Published extensively on accountability mechanisms and transitional justice. Former Legal Counsel at the ICC.',
     systemPrompt: 'You are Dr. Layla Hassan, an expert in international humanitarian law and human rights. Analyze conflicts through legal frameworks: IHL compliance, human rights violations, accountability mechanisms, and international criminal law. Reference relevant conventions and precedents. Be precise about legal thresholds and obligations. Always ground your analysis in the active situation context provided.',
     suggestedPrompts: [
       'What IHL violations are most concerning in this situation?',
       'Do existing agreements meet international legal standards?',
       'What accountability mechanisms should be established?',
     ],
+    resources: [
+      { name: 'ICC Case Law Database', url: 'https://www.icc-cpi.int/cases', description: 'International Criminal Court case information' },
+      { name: 'ICRC IHL Database', url: 'https://ihl-databases.icrc.org/', description: 'Comprehensive IHL treaties and customary law database' },
+      { name: 'UN Treaty Collection', url: 'https://treaties.un.org/', description: 'Depositary of multilateral treaties' },
+    ],
+    alignsWith: ['mensah', 'nakamura'],
+    tensionsWith: ['mitchell', 'eriksen'],
   },
   {
-    id: 'chen',
-    name: 'Dr. Wei Chen',
-    title: 'Humanitarian & Economics Analyst',
-    expertise: 'Humanitarian response, sanctions, economic warfare',
-    avatar: 'WC',
+    id: 'ferreira',
+    name: 'Marco Ferreira',
+    title: 'Media & Narratives Strategist',
+    expertise: 'Information warfare, disinformation, strategic communications, media analysis',
+    avatar: 'MF',
+    color: '#D4722C',
+    bio: 'Former BBC World Service editor and UNDPPA communications lead. Expert in information warfare in conflict zones. Analyzes media landscapes and disinformation operations.',
+    systemPrompt: 'You are Marco Ferreira, a media and narratives strategist. Analyze the information landscape, media framing, disinformation campaigns, and strategic communications around this conflict. Be direct about propaganda vs. legitimate framing. Always ground your analysis in the active situation context provided.',
+    suggestedPrompts: [
+      'Map the key narratives competing around this conflict',
+      'Identify potential disinformation campaigns targeting this situation',
+      'How should the international community frame its messaging?',
+    ],
+    resources: [
+      { name: 'GDELT Project', url: 'https://www.gdeltproject.org/', description: 'Global media monitoring and event database' },
+      { name: 'Media Bias/Fact Check', url: 'https://mediabiasfactcheck.com/', description: 'Media source credibility assessments' },
+      { name: 'DFRLab', url: 'https://www.atlanticcouncil.org/programs/digital-forensic-research-lab/', description: 'Digital forensic research on disinformation' },
+    ],
+    alignsWith: ['okafor', 'tanaka'],
+    tensionsWith: ['mitchell', 'eriksen'],
+  },
+  {
+    id: 'sharma',
+    name: 'Dr. Priya Sharma',
+    title: 'Humanitarian Operations Advisor',
+    expertise: 'Humanitarian response, access negotiation, civ-mil coordination, protection',
+    avatar: 'PS',
     color: '#C8961E',
-    bio: 'Former OCHA coordinator and conflict economist. Specializes in humanitarian access negotiation, sanctions impact analysis, and conflict economics.',
-    systemPrompt: 'You are Dr. Wei Chen, a humanitarian and economic analyst. Focus on humanitarian conditions, access negotiations, economic impacts of conflict, and sanctions effectiveness. Be practical and solution-oriented with a humanitarian lens. Draw on OCHA methodology and conflict economy research. Always ground your analysis in the active situation context provided.',
+    bio: 'Former OCHA coordinator with 12 years leading emergency responses in Syria, Yemen, and the DRC. Specializes in humanitarian access negotiation and civ-mil coordination.',
+    systemPrompt: 'You are Dr. Priya Sharma, a humanitarian and operations advisor. Focus on humanitarian conditions, access negotiations, civilian protection, and operational coordination. Be practical and solution-oriented with a humanitarian lens. Draw on OCHA methodology and field experience. Always ground your analysis in the active situation context provided.',
     suggestedPrompts: [
       'What are the main humanitarian access barriers in this situation?',
-      'Assess the economic impact of the conflict on civilians',
-      'How effective are the current sanctions or economic measures?',
+      'Assess the civilian protection gaps and recommend responses',
+      'How should humanitarian coordination be structured here?',
     ],
+    resources: [
+      { name: 'ReliefWeb', url: 'https://reliefweb.int/', description: 'UN humanitarian information service' },
+      { name: 'OCHA Financial Tracking', url: 'https://fts.unocha.org/', description: 'Humanitarian funding flows and gaps' },
+      { name: 'IPC Food Security', url: 'https://www.ipcinfo.org/', description: 'Integrated food security phase classification' },
+    ],
+    alignsWith: ['nakamura', 'hassan'],
+    tensionsWith: ['mitchell', 'eriksen'],
+  },
+  {
+    id: 'eriksen',
+    name: 'Dr. Thomas Eriksen',
+    title: 'Political Economy Analyst',
+    expertise: 'Conflict economics, illicit finance, sanctions, resource conflicts',
+    avatar: 'TE',
+    color: '#2D6A6A',
+    bio: 'Former World Bank conflict advisor who mapped financial networks sustaining armed groups in Central Africa and Myanmar. Follows the money to find the conflict.',
+    systemPrompt: 'You are Dr. Thomas Eriksen, a political economy analyst. Follow the money — analyze economic drivers of conflict, illicit financial flows, sanctions effectiveness, and natural resource dynamics. Be forensic and follow the economic incentives that explain political behavior. Always ground your analysis in the active situation context provided.',
+    suggestedPrompts: [
+      'Who is financing the armed groups and through what channels?',
+      'Assess the economic incentives perpetuating this conflict',
+      'How effective are current sanctions and what evasion routes exist?',
+    ],
+    resources: [
+      { name: 'FATF Reports', url: 'https://www.fatf-gafi.org/en/publications.html', description: 'Financial Action Task Force anti-money laundering reports' },
+      { name: 'Global Witness', url: 'https://www.globalwitness.org/', description: 'Investigations into natural resource-linked conflict and corruption' },
+      { name: 'EITI', url: 'https://eiti.org/', description: 'Extractive Industries Transparency Initiative data' },
+    ],
+    alignsWith: ['okafor', 'mitchell'],
+    tensionsWith: ['sharma', 'al-rashid'],
+  },
+  {
+    id: 'al-rashid',
+    name: 'Amb. Fatima Al-Rashid',
+    title: 'Mediation & Process Design',
+    expertise: 'Mediation process design, Track II diplomacy, inclusive dialogue, constitution-making',
+    avatar: 'FA',
+    color: '#8B5E3C',
+    bio: 'Led AU mediation support for the Horn of Africa. Designed inclusive dialogue frameworks adopted by UN DPA. Peace is not signed — it is designed.',
+    systemPrompt: 'You are Ambassador Fatima Al-Rashid, a mediation and process design expert. Focus on process architecture — how to create conditions for sustainable agreements. Analyze mediation design, Track II diplomacy, and inclusive dialogue. Always ground your analysis in the active situation context provided.',
+    suggestedPrompts: [
+      'Design an inclusive mediation process for the key parties',
+      'What Track II channels could build momentum for negotiations?',
+      'How should spoilers be managed in a peace process?',
+    ],
+    resources: [
+      { name: 'PA-X Peace Agreements', url: 'https://www.peaceagreements.org/', description: 'Comprehensive database of peace agreements worldwide' },
+      { name: 'HD Centre', url: 'https://www.hdcentre.org/', description: 'Centre for Humanitarian Dialogue mediation resources' },
+      { name: 'CMI Resources', url: 'https://cmi.fi/publications/', description: 'Crisis Management Initiative mediation publications' },
+    ],
+    alignsWith: ['tanaka', 'nakamura'],
+    tensionsWith: ['okafor', 'mitchell'],
+  },
+  {
+    id: 'nakamura',
+    name: 'Dr. Yuki Nakamura',
+    title: 'Gender & WPS Specialist',
+    expertise: 'UNSCR 1325, gender analysis, GBV prevention, inclusive peace processes',
+    avatar: 'YN',
+    color: '#9B4DCA',
+    bio: 'Former UN Women Senior Advisor and co-author of NAP 1325 frameworks adopted in 14 countries. Led gender analysis for peace talks in South Sudan and Colombia.',
+    systemPrompt: 'You are Dr. Yuki Nakamura, a Gender and WPS specialist. Ground every analysis in UNSCR 1325 and successor resolutions. Identify where gender dynamics shape conflict, where GBV is weaponized, and how to design inclusive processes. Be frank about tokenism vs. substantive inclusion. Always ground your analysis in the active situation context provided.',
+    suggestedPrompts: [
+      'Assess the gender dimensions of this conflict and their policy implications',
+      'How can women\'s meaningful participation be ensured in peace talks?',
+      'What GBV patterns are emerging and what protection frameworks apply?',
+    ],
+    resources: [
+      { name: 'PeaceWomen', url: 'https://www.peacewomen.org/', description: 'WILPF monitoring of WPS agenda implementation' },
+      { name: 'UN Women', url: 'https://www.unwomen.org/en/what-we-do/peace-and-security', description: 'UN Women peace and security resources' },
+      { name: 'Georgetown WPS Index', url: 'https://giwps.georgetown.edu/the-index/', description: 'Women, Peace and Security Index rankings and data' },
+    ],
+    alignsWith: ['al-rashid', 'hassan'],
+    tensionsWith: ['mitchell', 'eriksen'],
+  },
+  {
+    id: 'mensah',
+    name: 'Prof. Kwame Mensah',
+    title: 'Transitional Justice Advisor',
+    expertise: 'Truth commissions, reparations, post-conflict justice, reconciliation',
+    avatar: 'KM',
+    color: '#4A6741',
+    bio: 'Former UN Special Rapporteur on Truth, Justice and Reparations. Advised TRCs in Rwanda, Sierra Leone, and Cote d\'Ivoire. Teaches International Law at Accra.',
+    systemPrompt: 'You are Professor Kwame Mensah, a transitional justice advisor. Specialize in truth and reconciliation commissions, reparations frameworks, and post-conflict constitution-making. Balance demands of justice with imperatives of peace. Draw on comparative experience across Africa and beyond. Always ground your analysis in the active situation context provided.',
+    suggestedPrompts: [
+      'What transitional justice mechanisms are appropriate for this situation?',
+      'How should a truth and reconciliation process be designed here?',
+      'What reparations framework would address the harms in this conflict?',
+    ],
+    resources: [
+      { name: 'ICTJ', url: 'https://www.ictj.org/', description: 'International Center for Transitional Justice resources' },
+      { name: 'Amnesty International', url: 'https://www.amnesty.org/', description: 'Global human rights monitoring and reports' },
+      { name: 'Human Rights Watch', url: 'https://www.hrw.org/', description: 'Human rights investigations and documentation' },
+    ],
+    alignsWith: ['hassan', 'nakamura'],
+    tensionsWith: ['mitchell', 'eriksen'],
   },
 ];
+
+// ============================================================================
+// Chat message type
+// ============================================================================
 
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
+
+// ============================================================================
+// Advisor Avatar Component
+// ============================================================================
 
 function AdvisorAvatar({ advisor, size = 'md' }: { advisor: AdvisorDef; size?: 'sm' | 'md' | 'lg' }) {
   const sizes = { sm: 'h-8 w-8 text-xs', md: 'h-10 w-10 text-sm', lg: 'h-14 w-14 text-lg' };
@@ -103,10 +299,63 @@ function AdvisorAvatar({ advisor, size = 'md' }: { advisor: AdvisorDef; size?: '
   );
 }
 
-function AdvisorChatPanel({ advisor, onClose, situationContext }: { advisor: AdvisorDef; onClose: () => void; situationContext: string }) {
+// ============================================================================
+// Resources Section (collapsible)
+// ============================================================================
+
+function AdvisorResources({ advisor }: { advisor: AdvisorDef }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="mb-4">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex w-full items-center gap-1.5 text-[10px] font-semibold text-navy-400 uppercase tracking-wide hover:text-navy-600 transition-colors"
+      >
+        <BookOpen className="h-3 w-3" />
+        Key Resources
+        <ChevronDown className={cn('h-3 w-3 ml-auto transition-transform', isOpen && 'rotate-180')} />
+      </button>
+      {isOpen && (
+        <div className="mt-2 space-y-1.5">
+          {advisor.resources.map((resource) => (
+            <a
+              key={resource.name}
+              href={resource.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-start gap-2 rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-3 py-2 text-[11px] text-navy-600 hover:border-navy-300 hover:text-navy-800 transition-colors group"
+            >
+              <ExternalLink className="h-3 w-3 mt-0.5 shrink-0 text-navy-300 group-hover:text-navy-500" />
+              <div className="min-w-0">
+                <span className="font-medium">{resource.name}</span>
+                <p className="text-[10px] text-navy-400 leading-tight mt-0.5">{resource.description}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Advisor Chat Panel (modal)
+// ============================================================================
+
+function AdvisorChatPanel({
+  advisor,
+  onClose,
+  situationContext,
+}: {
+  advisor: AdvisorDef;
+  onClose: () => void;
+  situationContext: string;
+}) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [deepAnalysis, setDeepAnalysis] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const sendMessage = useCallback(async (text: string) => {
@@ -117,16 +366,19 @@ function AdvisorChatPanel({ advisor, onClose, situationContext }: { advisor: Adv
     setIsLoading(true);
 
     const allMessages = [
-      { role: 'system', content: advisor.systemPrompt + '\n\n' + situationContext },
-      ...messages,
-      userMsg,
+      ...messages.map((m) => ({ role: m.role, content: m.content })),
+      { role: userMsg.role, content: situationContext + '\n\n' + userMsg.content },
     ];
 
     try {
-      const response = await fetch('/api/ai/chat', {
+      const response = await fetch('/api/ai/advisor-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: allMessages }),
+        body: JSON.stringify({
+          messages: allMessages,
+          advisorId: advisor.id,
+          deepAnalysis,
+        }),
       });
       if (!response.ok || !response.body) throw new Error();
       const reader = response.body.getReader();
@@ -150,12 +402,15 @@ function AdvisorChatPanel({ advisor, onClose, situationContext }: { advisor: Adv
         }
       }
     } catch {
-      setMessages((prev) => [...prev, { role: 'assistant', content: `*${advisor.name} is temporarily unavailable. Please try again.*` }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: `*${advisor.name} is temporarily unavailable. Please try again.*` },
+      ]);
     } finally {
       setIsLoading(false);
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
-  }, [messages, isLoading, advisor, situationContext]);
+  }, [messages, isLoading, advisor, situationContext, deepAnalysis]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -172,6 +427,22 @@ function AdvisorChatPanel({ advisor, onClose, situationContext }: { advisor: Adv
             <h3 className="text-sm font-semibold text-navy-900">{advisor.name}</h3>
             <p className="text-[11px]" style={{ color: advisor.color }}>{advisor.title}</p>
           </div>
+
+          {/* Deep Analysis Toggle */}
+          <button
+            onClick={() => setDeepAnalysis(!deepAnalysis)}
+            className={cn(
+              'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide border transition-all',
+              deepAnalysis
+                ? 'border-gold-500/30 bg-gold-500/10 text-gold-700'
+                : 'border-[var(--color-app-border)] bg-white text-navy-400 hover:text-navy-600 hover:border-navy-300'
+            )}
+            title={deepAnalysis ? 'Deep Analysis ON (5 credits)' : 'Deep Analysis OFF (2 credits)'}
+          >
+            <Zap className="h-3 w-3" />
+            {deepAnalysis ? 'Deep' : 'Standard'}
+          </button>
+
           <div className="flex items-center gap-1.5 text-xs text-sage">
             <div className="h-2 w-2 rounded-full bg-sage animate-pulse" />Live AI
           </div>
@@ -179,6 +450,16 @@ function AdvisorChatPanel({ advisor, onClose, situationContext }: { advisor: Adv
             <X className="h-4 w-4" />
           </button>
         </div>
+
+        {/* Deep Analysis banner */}
+        {deepAnalysis && (
+          <div className="flex items-center gap-2 border-b border-gold-500/20 bg-gold-500/5 px-5 py-2 shrink-0">
+            <Zap className="h-3.5 w-3.5 text-gold-600" />
+            <p className="text-[11px] text-gold-700">
+              <span className="font-semibold">Deep Analysis Mode</span> — Uses Gemini 2.5 Pro for extended multi-paragraph analysis with specific frameworks and policy recommendations. Costs 5 credits per message.
+            </p>
+          </div>
+        )}
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
@@ -231,7 +512,7 @@ function AdvisorChatPanel({ advisor, onClose, situationContext }: { advisor: Adv
               </div>
               <div className="flex items-center gap-1.5 rounded-xl rounded-tl-none border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-4 py-3">
                 <Loader2 className="h-3.5 w-3.5 animate-spin text-navy-400" />
-                <span className="text-xs text-navy-400">Consulting...</span>
+                <span className="text-xs text-navy-400">{deepAnalysis ? 'Deep analysis in progress...' : 'Consulting...'}</span>
               </div>
             </div>
           )}
@@ -277,17 +558,26 @@ function AdvisorChatPanel({ advisor, onClose, situationContext }: { advisor: Adv
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </button>
           </div>
+          <div className="mt-2 flex items-center gap-2 text-[10px] text-navy-400">
+            <Shield className="h-3 w-3" />
+            {deepAnalysis ? '5 credits per message (Gemini 2.5 Pro)' : '2 credits per message (Gemini 2.5 Flash)'}
+            {' '}&middot; Web search enabled
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
+// ============================================================================
+// Panel Discussion — with alignment/tension indicators
+// ============================================================================
+
 function PanelDiscussion({ situationContext }: { situationContext: string }) {
   const [question, setQuestion] = useState('');
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [isRunning, setIsRunning] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<string[]>(ADVISORS.map((a) => a.id));
+  const [selectedIds, setSelectedIds] = useState<string[]>(ADVISORS.slice(0, 4).map((a) => a.id));
 
   const toggleAdvisor = (id: string) => {
     setSelectedIds((prev) => prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]);
@@ -300,14 +590,15 @@ function PanelDiscussion({ situationContext }: { situationContext: string }) {
 
     const streamAdvisor = async (advisor: AdvisorDef) => {
       try {
-        const response = await fetch('/api/ai/chat', {
+        const response = await fetch('/api/ai/advisor-chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: [
-              { role: 'system', content: advisor.systemPrompt + '\n\n' + situationContext },
-              { role: 'user', content: question },
+              { role: 'user', content: situationContext + '\n\n' + question },
             ],
+            advisorId: advisor.id,
+            deepAnalysis: false,
           }),
         });
         if (!response.ok || !response.body) throw new Error();
@@ -335,6 +626,41 @@ function PanelDiscussion({ situationContext }: { situationContext: string }) {
   const hasResponses = Object.keys(responses).length > 0;
   const activeAdvisors = ADVISORS.filter((a) => selectedIds.includes(a.id));
 
+  // Compute alignment and tension pairs among selected advisors
+  const alignmentPairs = useMemo(() => {
+    const pairs: Array<[AdvisorDef, AdvisorDef]> = [];
+    const seen = new Set<string>();
+    for (const a of activeAdvisors) {
+      for (const b of activeAdvisors) {
+        if (a.id === b.id) continue;
+        const key = [a.id, b.id].sort().join('-');
+        if (seen.has(key)) continue;
+        if (a.alignsWith.includes(b.id)) {
+          pairs.push([a, b]);
+          seen.add(key);
+        }
+      }
+    }
+    return pairs;
+  }, [activeAdvisors]);
+
+  const tensionPairs = useMemo(() => {
+    const pairs: Array<[AdvisorDef, AdvisorDef]> = [];
+    const seen = new Set<string>();
+    for (const a of activeAdvisors) {
+      for (const b of activeAdvisors) {
+        if (a.id === b.id) continue;
+        const key = [a.id, b.id].sort().join('-');
+        if (seen.has(key)) continue;
+        if (a.tensionsWith.includes(b.id)) {
+          pairs.push([a, b]);
+          seen.add(key);
+        }
+      }
+    }
+    return pairs;
+  }, [activeAdvisors]);
+
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
@@ -357,6 +683,33 @@ function PanelDiscussion({ situationContext }: { situationContext: string }) {
             </button>
           ))}
         </div>
+
+        {/* Alignment/Tension preview */}
+        {activeAdvisors.length >= 2 && (alignmentPairs.length > 0 || tensionPairs.length > 0) && (
+          <div className="mb-4 flex flex-wrap gap-3 text-[10px]">
+            {alignmentPairs.length > 0 && (
+              <div className="flex items-center gap-1.5 text-sage">
+                <span className="font-semibold uppercase tracking-wide">Likely aligned:</span>
+                {alignmentPairs.map(([a, b]) => (
+                  <span key={a.id + '-' + b.id} className="rounded-full bg-sage/10 px-2 py-0.5">
+                    {a.name.split(' ').slice(-1)[0]} &amp; {b.name.split(' ').slice(-1)[0]}
+                  </span>
+                ))}
+              </div>
+            )}
+            {tensionPairs.length > 0 && (
+              <div className="flex items-center gap-1.5 text-alert-red">
+                <span className="font-semibold uppercase tracking-wide">Likely tension:</span>
+                {tensionPairs.map(([a, b]) => (
+                  <span key={a.id + '-' + b.id} className="rounded-full bg-alert-red/10 px-2 py-0.5">
+                    {a.name.split(' ').slice(-1)[0]} &amp; {b.name.split(' ').slice(-1)[0]}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex gap-3">
           <input
             value={question}
@@ -375,6 +728,7 @@ function PanelDiscussion({ situationContext }: { situationContext: string }) {
             Ask Panel
           </button>
         </div>
+        <p className="mt-2 text-[10px] text-navy-400">2 credits per advisor &middot; {activeAdvisors.length} advisors selected = {activeAdvisors.length * 2} credits total</p>
       </div>
 
       {hasResponses && (
@@ -425,6 +779,10 @@ function PanelDiscussion({ situationContext }: { situationContext: string }) {
   );
 }
 
+// ============================================================================
+// Main Page
+// ============================================================================
+
 export default function AdvisoryPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
@@ -470,9 +828,9 @@ export default function AdvisoryPage() {
         <>
           <div className="flex items-start gap-3 rounded-xl border border-gold-500/15 bg-gold-500/4 p-4">
             <Sparkles className="h-4 w-4 shrink-0 text-gold-600 mt-0.5" />
-            <p className="text-sm text-navy-700">Each advisor has a specialized system prompt shaped by their domain expertise. They give substantive, expert-level guidance grounded in their specific field and your active situation context.</p>
+            <p className="text-sm text-navy-700">Each advisor has a specialized persona, domain expertise, and access to web search for current data. Toggle <strong>Deep Analysis</strong> mode in the chat for extended, research-grade responses using Gemini 2.5 Pro (5 credits).</p>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4">
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-5">
             {ADVISORS.map((advisor) => (
               <div
                 key={advisor.id}
@@ -503,6 +861,10 @@ export default function AdvisoryPage() {
                     </button>
                   ))}
                 </div>
+
+                {/* Key Resources (collapsible) */}
+                <AdvisorResources advisor={advisor} />
+
                 <div className="flex items-center justify-between border-t border-[var(--color-app-border)] pt-4">
                   <div className="flex items-center gap-1.5 text-xs text-sage font-medium">
                     <div className="h-2 w-2 rounded-full bg-sage animate-pulse" />Online
@@ -524,7 +886,10 @@ export default function AdvisoryPage() {
         <>
           <div className="flex items-start gap-3 rounded-xl border border-diplomatic-blue/15 bg-diplomatic-blue/4 p-4">
             <Users className="h-4 w-4 shrink-0 text-diplomatic-blue mt-0.5" />
-            <p className="text-sm text-navy-700">Panel Discussion sends your question to multiple advisors simultaneously. Compare different expert perspectives — military, legal, analytical, humanitarian — side-by-side in real time.</p>
+            <div className="text-sm text-navy-700">
+              <p>Panel Discussion sends your question to multiple advisors simultaneously. Compare different expert perspectives side-by-side in real time.</p>
+              <p className="mt-1 text-[11px] text-navy-500">Advisors who are <span className="text-sage font-medium">likely aligned</span> share analytical frameworks. Those with <span className="text-alert-red font-medium">likely tension</span> may offer competing assessments — this is where the best insights emerge.</p>
+            </div>
           </div>
           <PanelDiscussion situationContext={situationContext} />
         </>

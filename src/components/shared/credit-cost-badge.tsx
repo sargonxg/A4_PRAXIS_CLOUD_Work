@@ -25,6 +25,7 @@ const CREDIT_COSTS: Record<string, number> = {
   'ai_claude_analyze': 4,
   'ai_dossier': 4,
   'ai_briefing_generate': 4,
+  'ai_morning_digest': 2,
   'ai_risk_assessment': 4,
   'ai_treaty_analyze': 4,
   'ai_sanctions_scan': 4,
