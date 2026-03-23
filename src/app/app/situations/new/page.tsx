@@ -116,6 +116,34 @@ const stepVariants = {
 function StepDescribe({ form, setForm, onNext }: { form: SituationForm; setForm: React.Dispatch<React.SetStateAction<SituationForm>>; onNext: () => void }) {
   const isValid = form.name.trim().length > 0;
   const [showRegions, setShowRegions] = useState(false);
+  const [intelPreview, setIntelPreview] = useState<{ articles: { title: string; url: string; domain: string }[]; reports: { title: string; source: string }[]; loading: boolean }>({ articles: [], reports: [], loading: false });
+  const [previewFetched, setPreviewFetched] = useState(false);
+
+  // Auto-fetch intelligence preview when name has 3+ words
+  const fetchPreview = useCallback(async () => {
+    if (previewFetched || !form.name.trim()) return;
+    setIntelPreview((p) => ({ ...p, loading: true }));
+    setPreviewFetched(true);
+    try {
+      const res = await fetch('/api/data/intelligence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ country: form.region || form.name, query: form.name, limit: 10 }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIntelPreview({
+          articles: (data.events || []).filter((e: { source: string }) => e.source === 'gdelt').slice(0, 5).map((e: { title: string; url?: string; metadata?: { domain?: string } }) => ({ title: e.title, url: e.url || '', domain: e.metadata?.domain || '' })),
+          reports: (data.events || []).filter((e: { source: string }) => e.source === 'reliefweb').slice(0, 3).map((e: { title: string; metadata?: { source?: string } }) => ({ title: e.title, source: e.metadata?.source || 'ReliefWeb' })),
+          loading: false,
+        });
+      } else {
+        setIntelPreview((p) => ({ ...p, loading: false }));
+      }
+    } catch {
+      setIntelPreview((p) => ({ ...p, loading: false }));
+    }
+  }, [form.name, form.region, previewFetched]);
 
   return (
     <div className="space-y-5">
@@ -171,6 +199,46 @@ function StepDescribe({ form, setForm, onNext }: { form: SituationForm; setForm:
           </select>
         </div>
       </div>
+
+      {/* Intelligence Preview */}
+      {isValid && !previewFetched && (
+        <button onClick={fetchPreview} className="flex w-full items-center justify-center gap-2 rounded-lg border border-gold-500/30 bg-gold-500/5 px-4 py-2.5 text-xs font-medium text-gold-700 hover:bg-gold-500/10 transition-colors">
+          <Sparkles className="h-3.5 w-3.5" />
+          Scan for live intelligence on &ldquo;{form.name}&rdquo;
+        </button>
+      )}
+
+      {intelPreview.loading && (
+        <div className="flex items-center gap-2 rounded-lg border border-navy-200 bg-navy-50 px-4 py-3">
+          <Loader2 className="h-4 w-4 animate-spin text-gold-600" />
+          <span className="text-xs text-navy-600">Scanning GDELT + ReliefWeb for live data...</span>
+        </div>
+      )}
+
+      {(intelPreview.articles.length > 0 || intelPreview.reports.length > 0) && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4 space-y-3">
+          <p className="text-xs font-semibold text-emerald-700 flex items-center gap-1.5">
+            <Check className="h-3.5 w-3.5" />
+            Live data found — PRAXIS will use this to build your situation
+          </p>
+          {intelPreview.articles.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold text-navy-500 mb-1">Recent articles ({intelPreview.articles.length})</p>
+              {intelPreview.articles.slice(0, 3).map((a, i) => (
+                <p key={i} className="text-[11px] text-navy-700 truncate">{a.title} <span className="text-navy-400">— {a.domain}</span></p>
+              ))}
+            </div>
+          )}
+          {intelPreview.reports.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold text-navy-500 mb-1">ReliefWeb reports ({intelPreview.reports.length})</p>
+              {intelPreview.reports.map((r, i) => (
+                <p key={i} className="text-[11px] text-navy-700 truncate">{r.title} <span className="text-navy-400">— {r.source}</span></p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex justify-end pt-2">
         <button onClick={onNext} disabled={!isValid}

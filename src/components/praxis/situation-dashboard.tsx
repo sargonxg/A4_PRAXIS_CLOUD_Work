@@ -6,6 +6,7 @@ import { usePraxisRoute } from '@/lib/utils/routes';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { useSituationStore } from '@/stores/situation-store';
 import { SituationOnboarding } from '@/components/praxis/situation-onboarding';
+import { IntelligenceFeed } from '@/components/praxis/intelligence-feed';
 import { cn } from '@/lib/utils/cn';
 import {
   MessageSquare, FileText, Search, Upload, Compass, Network,
@@ -163,6 +164,9 @@ export function SituationDashboard({ situation }: { situation: Situation }) {
           ))}
         </div>
       </div>
+
+      {/* Live Intelligence Feed */}
+      <IntelligenceFeed situation={situation} />
 
       {/* Getting Started Tips — show when situation is empty */}
       {situation.documentCount === 0 && situation.graphEntities === 0 && onboardingComplete && (
