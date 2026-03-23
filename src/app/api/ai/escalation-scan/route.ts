@@ -5,6 +5,9 @@ import { getModel } from '@/lib/ai/providers';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
+import { computeEscalation } from '@/lib/analytics/escalation-scorer';
+import { fetchEvents, isACLEDConfigured } from '@/lib/data-feeds/acled-client';
+import { getCurrentStability } from '@/lib/data-feeds/gdelt-stability';
 
 export const maxDuration = 60;
 
@@ -86,6 +89,29 @@ export async function POST(request: Request) {
     const creditCheck = await checkAndDeductCredits('ai_escalation_scan', 'Escalation scan');
     if (!creditCheck.allowed) return creditCheck.response;
 
+    // --- Fetch real escalation data ---
+    let dataContext = '';
+    try {
+      const country = conflictContext?.split(' ')[0] || conflictId;
+      const [events, stability] = await Promise.all([
+        isACLEDConfigured() ? fetchEvents({ country, limit: 100 }) : Promise.resolve([]),
+        getCurrentStability(country.slice(0, 2).toUpperCase()),
+      ]);
+      if (events.length > 0 || stability) {
+        const assessment = computeEscalation(events, stability?.score);
+        dataContext = `\nDATA-DRIVEN ASSESSMENT (use as baseline):
+Computed Glasl Stage: ${assessment.glaslStage} (${assessment.stageName})
+Evidence: ${assessment.evidence.join('; ')}
+Weekly events: ${assessment.weeklyEventCount} vs ${assessment.weeklyBaseline} baseline
+Fatality trend: ${assessment.fatalityTrend}
+${assessment.eventTypeShift ? `Event type shift: ${assessment.eventTypeShift}` : ''}
+30-day escalation probability: ${(assessment.probability30d * 100).toFixed(0)}%
+Key drivers: ${assessment.keyDrivers.join(', ')}
+${stability ? `GDELT stability: ${stability.score.toFixed(1)} (${stability.trend})` : ''}
+Confidence: ${assessment.confidence}\n`;
+      }
+    } catch { /* continue without data */ }
+
     // --- Web search ---
     const searchQuery = conflictContext
       ? `${conflictContext} escalation latest`
@@ -98,7 +124,7 @@ export async function POST(request: Request) {
       model: getModel(),
       output: Output.object({ schema: EscalationScanSchema }),
       prompt: `You are a senior conflict analyst specializing in the Glasl escalation model. Conduct a rigorous escalation assessment.
-
+${dataContext}
 CONFLICT: ${conflictId}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
 

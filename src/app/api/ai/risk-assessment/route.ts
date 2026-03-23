@@ -5,6 +5,8 @@ import { getModel } from '@/lib/ai/providers';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
+import { computeRiskScore } from '@/lib/analytics/risk-engine';
+import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 
 export const maxDuration = 60;
 
@@ -105,6 +107,33 @@ export async function POST(request: Request) {
     const creditCheck = await checkAndDeductCredits('ai_risk_assessment', 'Risk assessment');
     if (!creditCheck.allowed) return creditCheck.response;
 
+    // --- Fetch real data for evidence-based scoring ---
+    const country = regions[0] || '';
+    let dataContext = '';
+    try {
+      const intel = await getSituationIntelligence({ country, limit: 30 });
+      const dataRisk = computeRiskScore({
+        acledEvents: intel.events.filter((e) => e.source === 'acled').map((e) => e.metadata as never),
+        stabilityScore: intel.stability?.score,
+        stabilityTrend: intel.stability?.trend,
+        foodSecurityPct: intel.humanitarian?.foodSecurity?.[0]?.pct,
+        displacementCount: intel.humanitarian?.displacement?.idps,
+        fundingGapPct: intel.humanitarian?.funding?.pct,
+      });
+      dataContext = `\nDATA-DRIVEN PRE-SCORES (from ACLED, GDELT, HDX — use as baseline, refine with your analysis):
+Security: ${dataRisk.dimensions.security.score}/100 — ${dataRisk.dimensions.security.evidence.join('; ')}
+Political: ${dataRisk.dimensions.political.score}/100 — ${dataRisk.dimensions.political.evidence.join('; ')}
+Humanitarian: ${dataRisk.dimensions.humanitarian.score}/100 — ${dataRisk.dimensions.humanitarian.evidence.join('; ')}
+Economic: ${dataRisk.dimensions.economic.score}/100 — ${dataRisk.dimensions.economic.evidence.join('; ')}
+Social: ${dataRisk.dimensions.social.score}/100 — ${dataRisk.dimensions.social.evidence.join('; ')}
+Composite: ${dataRisk.composite}/100 (confidence: ${dataRisk.confidence})
+Data sources: ${dataRisk.dataSources.join(', ')}
+${intel.stability ? `Stability: score=${intel.stability.score}, trend=${intel.stability.trend}` : ''}
+${intel.humanitarian?.displacement ? `Displacement: ${intel.humanitarian.displacement.idps} IDPs, ${intel.humanitarian.displacement.refugees} refugees` : ''}`;
+    } catch {
+      dataContext = '\nNo live data feeds available — base scores on AI analysis only.';
+    }
+
     // --- Web search for crisis indicators ---
     const searchResults = await searchWeb(
       `${regions.join(' ')} conflict crisis risk indicators latest`,
@@ -120,6 +149,7 @@ export async function POST(request: Request) {
 
 REGIONS TO ASSESS: ${regions.join(', ')}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
+${dataContext}
 
 LATEST INTELLIGENCE:
 ${webContext || 'No web results available. Base analysis on your training data and the conflict context provided.'}

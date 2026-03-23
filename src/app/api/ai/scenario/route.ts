@@ -1,6 +1,7 @@
 import { streamText } from 'ai';
 import { getModel } from '@/lib/ai/providers';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
@@ -18,12 +19,29 @@ export async function POST(request: Request) {
       ? `Involved actors: ${actors.join(', ')}`
       : '';
 
+    // Inject real data context
+    let dataContext = '';
+    try {
+      const country = conflictContext?.split(' ').find((w: string) => w.length > 3) || '';
+      if (country) {
+        const intel = await getSituationIntelligence({ country, limit: 15 });
+        if (intel.events.length > 0) {
+          dataContext = `\nCURRENT DATA (ground your analysis in this):
+- ${intel.sources.acled} ACLED events, ${intel.sources.gdelt} GDELT articles, ${intel.sources.reliefweb} ReliefWeb reports
+${intel.stability ? `- GDELT stability: ${intel.stability.score.toFixed(1)} (${intel.stability.trend})` : ''}
+${intel.humanitarian?.displacement ? `- Displacement: ${intel.humanitarian.displacement.idps} IDPs` : ''}
+- Recent events: ${intel.events.slice(0, 5).map((e) => e.title).join('; ')}\n`;
+        }
+      }
+    } catch { /* continue */ }
+
     const prompt = `You are a senior conflict analyst at a major international crisis organization. Conduct a rigorous scenario analysis.
 
 CONFLICT CONTEXT: ${conflictContext}
 SCENARIO TRIGGER: ${scenarioTrigger}
 ${actorList}
 TIME HORIZON: ${timeHorizon}
+${dataContext}
 
 Analyze the likely consequences of this scenario trigger across the following dimensions. For each dimension, provide: (1) most likely outcome, (2) best case, (3) worst case. Use calibrated confidence language (high confidence / moderate confidence / uncertain).
 

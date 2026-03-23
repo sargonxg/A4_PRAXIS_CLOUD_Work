@@ -5,6 +5,7 @@ import { getModel } from '@/lib/ai/providers';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
+import { searchArticles, getVolumeTimeline, getToneTimeline } from '@/lib/data-feeds/gdelt-client';
 
 export const maxDuration = 60;
 
@@ -86,6 +87,29 @@ export async function POST(request: Request) {
     const creditCheck = await checkAndDeductCredits('ai_media_scan', 'Media scan analysis');
     if (!creditCheck.allowed) return creditCheck.response;
 
+    // --- GDELT real-time media data ---
+    let gdeltContext = '';
+    try {
+      const [gdeltArticles, volume, tone] = await Promise.all([
+        searchArticles({ query: topic, timespan: '7d', maxRecords: 15 }),
+        getVolumeTimeline(topic, '30d'),
+        getToneTimeline(topic, '30d'),
+      ]);
+      if (gdeltArticles.length > 0) {
+        const sourceCounts: Record<string, number> = {};
+        gdeltArticles.forEach((a) => { sourceCounts[a.domain] = (sourceCounts[a.domain] || 0) + 1; });
+        const topSources = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+        const avgTone = gdeltArticles.reduce((s, a) => s + a.tone, 0) / gdeltArticles.length;
+        gdeltContext = `\nGDELT REAL-TIME DATA (last 7 days):
+${gdeltArticles.length} articles found across ${Object.keys(sourceCounts).length} domains
+Top sources: ${topSources.map(([d, c]) => `${d}(${c})`).join(', ')}
+Average tone: ${avgTone.toFixed(1)} (negative=critical, positive=favorable)
+Volume trend (30d): ${volume.length > 0 ? `${volume[0].value} → ${volume[volume.length - 1].value}` : 'N/A'}
+Tone trend (30d): ${tone.length > 0 ? `${tone[0].value.toFixed(1)} → ${tone[tone.length - 1].value.toFixed(1)}` : 'N/A'}
+Recent headlines: ${gdeltArticles.slice(0, 5).map((a) => `"${a.title}" (${a.domain})`).join('; ')}\n`;
+      }
+    } catch { /* continue without GDELT */ }
+
     // --- Gather web sources for each outlet ---
     const searchResults = await Promise.all(
       outlets.map((outlet) =>
@@ -109,7 +133,7 @@ export async function POST(request: Request) {
 
 TOPIC: ${topic}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
-
+${gdeltContext}
 OUTLETS TO ANALYZE: ${outlets.join(', ')}
 
 WEB SEARCH RESULTS:

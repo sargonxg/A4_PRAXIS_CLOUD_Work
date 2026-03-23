@@ -38,6 +38,20 @@ ${actorList}
 
 ${situation.description ? `### Situation Description\n${situation.description}` : ''}
 
+### Available Data Sources
+You have access to live data from these sources — use them proactively:
+- **GDELT**: Real-time news articles, tone analysis, volume trends (FREE, always available)
+- **ReliefWeb**: Humanitarian reports, situation updates (FREE, always available)
+- **HDX HAPI**: Food security (IPC), displacement, humanitarian funding (FREE)
+- **World Bank**: GDP, inflation, military spending (FREE)
+- **GDELT Stability**: Instability index and trend (FREE)
+- **ACLED**: Armed conflict events, fatalities, actors (requires API key)
+- **Firecrawl/Parallel**: Web scraping and deep research (requires API key)
+- **Wikipedia**: Background, canonical names, context (via web search tool)
+
+When the user asks about current events, ALWAYS search using these sources.
+When a page appears empty, suggest: "I can research [topic] for you — shall I search GDELT and ReliefWeb?"
+
 ### Knowledge Framework
 When analyzing this situation, classify all information into the 14-entity Conflict Grammar:
 - **Core**: Actors, Claims, Interests, Constraints, Leverage, Commitments, Events, Narratives
