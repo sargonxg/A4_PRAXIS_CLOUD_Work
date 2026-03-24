@@ -13,36 +13,48 @@ export const maxDuration = 60;
 const BriefingSchema = z.object({
   slides: z.array(
     z.object({
-      title: z.string().describe('Slide title'),
-      content: z.string().describe('Slide content in markdown format — concise, bullet-pointed where appropriate'),
-      speakerNotes: z.string().optional().describe('Speaker notes with additional context and talking points for the presenter'),
-      sources: z.array(z.string()).optional().describe('Sources referenced in this slide'),
+      title: z.string().describe('Section heading using UN DPPA conventions: HEADLINE ASSESSMENT, KEY DEVELOPMENTS, POLITICAL DYNAMICS, RISK FACTORS, OPPORTUNITIES, INFORMATION GAPS, or UPCOMING DECISION POINTS'),
+      content: z.string().describe('Section body in markdown format following UN DPPA analytical standards. Use calibrated confidence language, bracketed source tags [GDELT] [ACLED] [PRAXIS Graph] [Web] [AI Assessment], and formal register throughout. No contractions.'),
+      speakerNotes: z.string().optional().describe('Presenter guidance with additional analytical context, recommended emphasis, and suggested responses to anticipated questions from senior leadership'),
+      sources: z.array(z.string()).optional().describe('Formal source attributions referenced in this section, using standard UN citation format'),
     })
-  ).describe('Briefing slides'),
+  ).describe('Structured political affairs briefing sections for UN Senior Leadership, following DPPA analytical standards'),
 });
 
 // ---------------------------------------------------------------------------
 // Morning Digest System Prompt
 // ---------------------------------------------------------------------------
 
-const MORNING_DIGEST_SYSTEM_PROMPT = `You are generating a morning intelligence digest for a conflict analyst. Structure as:
+const MORNING_DIGEST_SYSTEM_PROMPT = `You are drafting a morning political affairs digest for a UN Senior Leadership audience, following DPPA analytical standards. Structure exactly as follows:
+
+## HEADLINE ASSESSMENT
+[One sentence. The single most consequential overnight development or analytical judgment. Present tense, analytical voice. Use calibrated language: "It is assessed that..." for high confidence, "Available information suggests..." for medium confidence.]
 
 ## OVERNIGHT DEVELOPMENTS
-[Key events in the past 24 hours affecting this situation]
+[3-5 bullet points. Each begins with a time in brackets [HH:MM UTC], followed by a factual statement, followed by analytical significance in parentheses. Prioritize: political, then security, then humanitarian, then economic. Each bullet 2-3 sentences maximum. Append a bracketed source tag to each claim: [GDELT], [ACLED], [PRAXIS Graph], [Web], or [AI Assessment].]
 
 ## RISK ASSESSMENT UPDATE
-[Any changes to risk indicators, escalation signals]
+[Changes to risk indicators and escalation signals since previous digest. Reference the Glasl escalation model stage if available. Use numbered risk items with likelihood qualifiers: likely, possible, unlikely. Specify trigger conditions and actors involved for each risk.]
 
 ## KEY ACTORS TO WATCH
-[Which actors are most active/concerning right now and why]
+[Which actors are most active or concerning. For each actor, state: (a) what they have done, (b) what it is assessed they may do next, and (c) what indicators to monitor. Refer to all actors by their names from the situation data.]
 
-## TODAY'S RECOMMENDED FOCUS
-[Top 3 priorities for the analyst today, with specific actions]
+## RECOMMENDED PRIORITIES
+[Top 3 priorities for the day, framed as recommended actions for senior leadership. Each priority should specify the responsible actor or office and the recommended timeframe. Frame as diplomatic opportunities or risk mitigation measures, not merely intelligence collection tasks.]
 
-## UPCOMING DEADLINES & MILESTONES
-[Events in the next 7 days that need preparation]
+## UPCOMING DECISION POINTS
+[Events in the next 7 days requiring senior-level attention or preparation. Use standard UN date format: DD Month YYYY.]
 
-Be concise and action-oriented. Use bullet points. Flag items by urgency: 🔴 CRITICAL / 🟡 IMPORTANT / 🟢 ROUTINE.`;
+## INFORMATION GAPS
+[2-3 questions this digest cannot answer. Frame as: "Reporting is insufficient to assess whether..."]
+
+FORMAT RULES:
+- No contractions. Formal register throughout.
+- All actors referred to by their names from the situation data.
+- Hedging calibration: HIGH confidence = "it is assessed that", MEDIUM = "available information suggests", LOW = "it cannot be confirmed whether".
+- Every factual claim should have a bracketed source tag: [GDELT], [ACLED], [PRAXIS Graph], [Web], [AI Assessment].
+- Use standard UN date format: DD Month YYYY.
+- Flag items by urgency where appropriate: CRITICAL / IMPORTANT / ROUTINE.`;
 
 const MORNING_DIGEST_DEMO = `## OVERNIGHT DEVELOPMENTS
 - 🔴 CRITICAL: Buffer zone incursion reported near Kessara corridor — third incident this week. UNMN observers confirmed vehicle movement from GoN side at 0300 UTC.
@@ -244,32 +256,54 @@ Generate the digest now. Be specific with actor names, locations, and timeline r
     const result = await generateText({
       model: getModel(),
       output: Output.object({ schema: BriefingSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior briefing officer preparing a ${briefingType} briefing for senior diplomatic officials.
+      prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are drafting a political affairs briefing for a UN Senior Leadership audience. This is a ${briefingType} briefing.
 
 CASE: ${caseId}
 BRIEFING TYPE: ${briefingType}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
 
 LATEST INTELLIGENCE:
-${webContext || 'No web results available. Base analysis on the conflict context provided.'}
+${webContext || 'No web results available. Base analysis on the conflict context provided and your knowledge of the region and actors.'}
 
-Generate a complete briefing with 5-7 slides. Each slide should have:
-- A clear, concise title
-- Bullet-pointed content suitable for presentation (not dense paragraphs)
-- Speaker notes with additional context and talking points for the presenter
-- Source attribution where applicable
+Generate a complete briefing with exactly 7 sections, each as a separate slide. Structure exactly as follows:
 
-The briefing should follow a logical arc:
-1. Situation overview / current status
-2. Key recent developments
-3. Analytical assessment (escalation, trends)
-4. Humanitarian/economic dimensions
-5. Regional/international dynamics
-6. Policy options and recommendations
-7. Key dates and decision points
+SLIDE 1 — HEADLINE ASSESSMENT
+Title: "Headline Assessment"
+Content: One sentence only. The single most important development or analytical judgment. Written in present tense, analytical voice. Example format: "The cessation of hostilities framework faces imminent collapse following [actor]'s withdrawal from the Joint Implementation Committee." Use calibrated confidence language.
 
-Write in authoritative diplomatic language suitable for UNSC, AU PSC, or similar senior forums.`,
-      system: 'You are a senior briefing officer at a major international organization. Produce concise, analytically rigorous briefing content for senior diplomatic and security officials. Use bullet points for clarity. Speaker notes should provide the depth and nuance that slides cannot.',
+SLIDE 2 — KEY DEVELOPMENTS
+Title: "Key Developments"
+Content: 3-5 bullet points. Each begins with a date in brackets [DD Month], followed by a factual statement, followed by analytical significance in parentheses. Each bullet 2-3 sentences maximum. Prioritize: first political, then security, then humanitarian, then economic. Append a bracketed source tag to every factual claim: [GDELT], [ACLED], [PRAXIS Graph], [Web], or [AI Assessment].
+
+SLIDE 3 — POLITICAL DYNAMICS
+Title: "Political Dynamics"
+Content: 2-3 paragraphs analysing shifts in actor positions, coalition changes, and political calculations. Use calibrated language: "It is assessed that...", "Available information suggests...", "Sources indicate...". Name specific actors from the situation data. Address the motivations, constraints, and leverage of each principal actor.
+
+SLIDE 4 — RISK FACTORS
+Title: "Risk Factors"
+Content: Numbered list of 3-5 risks. Each risk must include: (a) a likelihood qualifier — likely, possible, or unlikely; (b) a timeframe; (c) the specific actors involved; and (d) the trigger conditions. Format each as a substantive paragraph, not a single sentence.
+
+SLIDE 5 — OPPORTUNITIES
+Title: "Opportunities for Diplomatic Action"
+Content: 2-3 specific diplomatic openings or de-escalation windows. For each, specify: the recommended action, the responsible actor or office, the window of opportunity, and the conditions under which the opening would close. Frame as actionable recommendations for senior leadership.
+
+SLIDE 6 — INFORMATION GAPS
+Title: "Information Gaps"
+Content: 2-3 questions that this briefing cannot answer due to insufficient data. Frame each as: "Reporting is insufficient to assess whether..." followed by an explanation of why this gap matters for decision-making.
+
+SLIDE 7 — UPCOMING DECISION POINTS
+Title: "Upcoming Decision Points and Key Dates"
+Content: Chronological list of events, deadlines, and milestones in the coming 30-90 days that require senior-level attention. Use standard UN date format: DD Month YYYY. For each, note the decision required and the responsible entity.
+
+FORMAT RULES:
+- Use standard UN date format: DD Month YYYY.
+- All actors referred to by their names from the situation data.
+- No contractions. Formal register throughout.
+- Hedging calibration: HIGH confidence = "it is assessed that", MEDIUM = "available information suggests", LOW = "it cannot be confirmed whether".
+- Every factual claim should have a bracketed source tag: [GDELT], [ACLED], [PRAXIS Graph], [Web], [AI Assessment].
+- Speaker notes for each slide should provide additional analytical depth, anticipated questions from senior leadership, and suggested responses.
+- Source attributions should use formal UN citation conventions where possible.`,
+      system: `You are a senior political affairs officer in the United Nations Department of Political and Peacebuilding Affairs (DPPA). You produce analytically rigorous briefing content for the Secretary-General, Under-Secretary-General, and Assistant Secretaries-General. Your analysis follows DPPA standards: calibrated confidence language, source attribution, formal register, and structured analytical judgments. Speaker notes should provide the depth, nuance, and anticipatory guidance that briefing slides cannot convey. Every assessment must distinguish between what is known, what is assessed, and what remains uncertain.`,
     });
 
     return NextResponse.json(result.output);
