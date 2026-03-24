@@ -4,7 +4,7 @@
 
 AI-powered analysis, knowledge graphs, and automated report generation — from raw data to decisive intelligence in minutes. 35+ tool pages, situation-driven AI pipeline, real-time data feeds.
 
-> **v3.2** — Build 2024.03.24 · Deployed at [praxis.tacitus.me](https://praxis.tacitus.me)
+> **v3.3** — Build 2026.03.24 · Deployed at [praxis.tacitus.me](https://praxis.tacitus.me)
 
 ## Quick Start
 

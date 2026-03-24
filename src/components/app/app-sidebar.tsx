@@ -48,7 +48,40 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Coins } from 'lucide-react';
+import { Coins, X, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
+
+const CHANGELOG = [
+  {
+    version: 'v3.3',
+    date: '2026.03.24',
+    notes: [
+      'Onboarding research now saved to situation context (all tools benefit immediately)',
+      'ARGUS: Live Web Research tab with Firecrawl-powered deep research',
+      'Media Compass: Live News Search powered by grounded web search',
+      'Situation-driven context propagated to all 35+ tool pages',
+    ],
+  },
+  {
+    version: 'v3.2',
+    date: '2024.03.24',
+    notes: [
+      'AiPopulate pattern — auto-generates structured data on first tool visit',
+      'Pro model pipeline (gemini-2.5-pro) for all analytical tools',
+      'Daily Intelligence Brief with cron-based auto-generation',
+      'Floating Ask PRAXIS chat (all pages, / shortcut)',
+    ],
+  },
+  {
+    version: 'v3.1',
+    date: '2024.02.01',
+    notes: [
+      'Mobile-responsive sidebar with drawer overlay',
+      'CONCORDIA Mediation Designer and Mediation process flow',
+      'Actor Profiles with AI-generated profiles per situation',
+    ],
+  },
+];
 
 interface NavSection {
   label: string;
@@ -106,6 +139,53 @@ const navSections: NavSection[] = [
     ],
   },
 ];
+
+function ChangelogButton() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="mt-1 w-full text-center text-[9px] text-navy-300 hover:text-navy-500 transition-colors"
+      >
+        PRAXIS v3.3 · Build 2026.03.24
+      </button>
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setOpen(false)}>
+          <div className="w-full max-w-md rounded-xl border border-navy-200 bg-white shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-navy-100 px-5 py-3">
+              <div>
+                <h3 className="text-sm font-semibold text-navy-900">PRAXIS Changelog</h3>
+                <p className="text-[11px] text-navy-500">Release history</p>
+              </div>
+              <button onClick={() => setOpen(false)} className="text-navy-400 hover:text-navy-600">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="max-h-80 overflow-y-auto p-5 space-y-5">
+              {CHANGELOG.map((release) => (
+                <div key={release.version}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="rounded-full bg-gold-500/10 px-2 py-0.5 text-[11px] font-semibold text-gold-700">{release.version}</span>
+                    <span className="text-[11px] text-navy-400">{release.date}</span>
+                  </div>
+                  <ul className="space-y-1">
+                    {release.notes.map((note, i) => (
+                      <li key={i} className="flex items-start gap-1.5 text-[12px] text-navy-700">
+                        <ChevronRight className="mt-0.5 h-3 w-3 shrink-0 text-navy-400" />
+                        {note}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -456,12 +536,8 @@ export function AppSidebar() {
           </Tooltip>
         )}
 
-        {/* Build version */}
-        {sidebarOpen && (
-          <p className="mt-1 text-center text-[9px] text-navy-300">
-            PRAXIS v3.2 · Build 2024.03.24
-          </p>
-        )}
+        {/* Build version + changelog */}
+        {sidebarOpen && <ChangelogButton />}
 
         {/* Toggle button */}
         <button

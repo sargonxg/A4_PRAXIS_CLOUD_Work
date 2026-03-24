@@ -94,7 +94,7 @@ Glasl escalation model, Fisher/Ury negotiation (ZOPA/BATNA), OCHA humanitarian s
 - Sidebar auto-closes on route navigation
 - Content padding reduced on mobile (`px-4 py-4` vs `px-6 py-6`)
 
-## AiPopulate Pattern (v3.2)
+## AiPopulate Pattern (v3.3)
 - `src/components/praxis/ai-populate.tsx` — Auto-generates data on first tool visit
 - All structured tools: `generateText + Output.object()` with Zod schemas via `getProModel()` (gemini-2.5-pro)
 - Scenarios: streaming text via `streamText`, rendered directly (no AiPopulate)
@@ -103,7 +103,7 @@ Glasl escalation model, Fisher/Ury negotiation (ZOPA/BATNA), OCHA humanitarian s
 - **CRITICAL**: Real mode (`/app/*`) NEVER shows hardcoded demo data — all content is AI-generated from the user's active situation context via `buildToolContext(situation)`
 - Demo mode (`/demo/*`) uses hardcoded Nordalia crisis constants scoped to demo components only
 
-## Tool Pages (v3.2)
+## Tool Pages (v3.3)
 ### Situation Room
 - Dashboard, Early Warning, Risk Monitor, Conflict Graph, Stakeholder Map, Actor Profiles
 
