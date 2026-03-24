@@ -1,10 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
-import { RealToolView } from '@/components/praxis/real-tool-view';
-import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
-import { NoDataState } from '@/components/praxis/no-data-state';
 import type { Situation } from '@/types/situation';
 
 import { useState, useCallback, useRef } from 'react';
@@ -648,55 +645,296 @@ function DemoScenariosPage() {
 // ============================================================================
 
 function RealScenariosPage({ situation }: { situation: Situation }) {
-  const [generating, setGenerating] = useState(false);
-
   const actors = situation.actors ?? [];
-  const hasData = false; // TODO: wire to Firestore scenarios data
+  const [trigger, setTrigger] = useState('');
+  const [selectedActors, setSelectedActors] = useState<string[]>([]);
+  const [timeHorizon, setTimeHorizon] = useState('90 days');
+  const [analysis, setAnalysis] = useState('');
+  const [isRunning, setIsRunning] = useState(false);
+  const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>([]);
+  const [compareIdx, setCompareIdx] = useState<number | null>(null);
+  const analysisRef = useRef<HTMLDivElement>(null);
 
-  if (!hasData) {
-    return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-steel/8">
-            <GitCompare className="h-5 w-5 text-steel" />
+  const conflictContext = `${situation.name} — ${situation.description}`;
+
+  const toggleActor = (actor: string) => {
+    setSelectedActors((prev) =>
+      prev.includes(actor) ? prev.filter((a) => a !== actor) : [...prev, actor]
+    );
+  };
+
+  const runScenario = useCallback(async () => {
+    if (!trigger.trim() || isRunning) return;
+    setIsRunning(true);
+    setAnalysis('');
+    setTimeout(() => analysisRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+
+    try {
+      const response = await fetch('/api/ai/scenario', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conflictContext,
+          scenarioTrigger: trigger,
+          actors: selectedActors,
+          timeHorizon,
+        }),
+      });
+
+      if (!response.ok || !response.body) throw new Error('Stream failed');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += parseDataStreamChunk(decoder.decode(value, { stream: true }));
+        setAnalysis(accumulated);
+      }
+    } catch {
+      setAnalysis(`**Scenario analysis failed.** Please try again.\n\n*Trigger: ${trigger}*\n\n*Situation: ${situation.name}*\n\n*Time horizon: ${timeHorizon}*`);
+    } finally {
+      setIsRunning(false);
+    }
+  }, [trigger, isRunning, conflictContext, selectedActors, timeHorizon, situation.name]);
+
+  const saveScenario = () => {
+    if (!analysis) return;
+    const scenario: SavedScenario = {
+      id: Date.now().toString(),
+      title: trigger.slice(0, 60) + (trigger.length > 60 ? '...' : ''),
+      trigger,
+      conflictContext: situation.name,
+      timeHorizon,
+      analysis,
+      savedAt: new Date(),
+    };
+    setSavedScenarios((prev) => [scenario, ...prev]);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-steel/8">
+          <GitCompare className="h-5 w-5 text-steel" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-semibold text-navy-900">Scenario Planner</h1>
+          <p className="text-sm text-navy-500">
+            {situation.name} — model &ldquo;what if&rdquo; scenarios across political, security, humanitarian, and economic dimensions
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
+        {/* Left: Setup Panel */}
+        <div className="space-y-4">
+          <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5 space-y-5">
+            {/* Situation context (read-only) */}
+            <div>
+              <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">Situation</label>
+              <div className="rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-3 py-2.5 text-sm text-navy-700">
+                {situation.name}
+              </div>
+              <p className="mt-1.5 text-[11px] text-navy-500">{situation.description.slice(0, 120)}{situation.description.length > 120 ? '...' : ''}</p>
+            </div>
+
+            {/* Scenario trigger */}
+            <div>
+              <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">Scenario Trigger</label>
+              <textarea
+                value={trigger}
+                onChange={(e) => setTrigger(e.target.value)}
+                placeholder="Describe the hypothetical event triggering this scenario..."
+                rows={3}
+                className="w-full rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-3 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue/30 focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/10 resize-none"
+              />
+            </div>
+
+            {/* Involved actors */}
+            {actors.length > 0 && (
+              <div>
+                <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">Involved Actors</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {actors.map((actor) => (
+                    <button
+                      key={actor}
+                      onClick={() => toggleActor(actor)}
+                      className={cn(
+                        'rounded-full border px-2.5 py-1 text-[10px] font-medium transition-all',
+                        selectedActors.includes(actor)
+                          ? 'bg-diplomatic-blue text-white border-diplomatic-blue'
+                          : 'border-[var(--color-app-border)] text-navy-600 bg-white hover:bg-[var(--color-app-surface-alt)]'
+                      )}
+                    >
+                      {actor}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Time horizon */}
+            <div>
+              <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">Time Horizon</label>
+              <div className="flex gap-2">
+                {TIME_HORIZONS.map((h) => (
+                  <button
+                    key={h}
+                    onClick={() => setTimeHorizon(h)}
+                    className={cn(
+                      'flex-1 rounded-lg border py-2 text-[11px] font-medium transition-all',
+                      timeHorizon === h
+                        ? 'bg-navy-900 text-white border-navy-900'
+                        : 'border-[var(--color-app-border)] text-navy-600 bg-white hover:bg-[var(--color-app-surface-alt)]'
+                    )}
+                  >
+                    {h}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={runScenario}
+              disabled={!trigger.trim() || isRunning}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-diplomatic-blue py-3 text-sm font-semibold text-white hover:bg-diplomatic-blue/90 disabled:opacity-50 transition-colors"
+            >
+              {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+              {isRunning ? 'Running Scenario...' : 'Run Scenario Analysis'}
+            </button>
+
+            <p className="text-center text-[10px] text-navy-400">Uses 3 credits per analysis</p>
           </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-navy-900">Scenario Planner</h1>
-            <p className="text-sm text-navy-500">
-              {situation.name} — model &ldquo;what if&rdquo; scenarios across political, security, humanitarian, and economic dimensions
-            </p>
-          </div>
+
+          {/* Saved Scenarios */}
+          {savedScenarios.length > 0 && (
+            <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-4">
+              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">Saved Scenarios ({savedScenarios.length})</p>
+              <div className="space-y-2">
+                {savedScenarios.map((s, idx) => (
+                  <div
+                    key={s.id}
+                    className={cn(
+                      'flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer transition-colors',
+                      compareIdx === idx
+                        ? 'border-diplomatic-blue/30 bg-diplomatic-blue/5'
+                        : 'border-[var(--color-app-border)] hover:bg-[var(--color-app-surface-alt)]'
+                    )}
+                    onClick={() => setCompareIdx(compareIdx === idx ? null : idx)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-medium text-navy-800 truncate">{s.title}</p>
+                      <p className="text-[10px] text-navy-400">{s.conflictContext} · {s.timeHorizon}</p>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setSavedScenarios((prev) => prev.filter((_, i) => i !== idx)); }}
+                      className="text-navy-300 hover:text-crimson"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {actors.length > 0 && (
-          <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400 mb-2">Situation Actors</p>
-            <div className="flex flex-wrap gap-2">
-              {actors.map((actor) => (
-                <span
-                  key={actor}
-                  className="rounded-full border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-3 py-1 text-xs font-medium text-navy-700"
-                >
-                  {actor}
-                </span>
-              ))}
+        {/* Right: Analysis Panel */}
+        <div ref={analysisRef}>
+          {!analysis && !isRunning ? (
+            <div className="flex h-full min-h-[400px] flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-app-border)] bg-white p-8 text-center">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-diplomatic-blue/8">
+                <GitCompare className="h-6 w-6 text-diplomatic-blue" />
+              </div>
+              <p className="text-base font-semibold text-navy-800">Configure Your Scenario</p>
+              <p className="mt-2 text-sm text-navy-500 max-w-xs">
+                Define a trigger event and choose a time horizon. Gemini will analyze consequences across 5 dimensions for {situation.name}.
+              </p>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="rounded-xl border border-[var(--color-app-border)] bg-white">
+              {/* Analysis header */}
+              <div className="flex items-center justify-between border-b border-[var(--color-app-border)] px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-500/10">
+                    <Sparkles className="h-4 w-4 text-gold-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-navy-900">Scenario Analysis</p>
+                    <p className="text-[11px] text-navy-500">{situation.name} · {timeHorizon}</p>
+                  </div>
+                </div>
+                {analysis && !isRunning && (
+                  <button
+                    onClick={saveScenario}
+                    className="flex items-center gap-1.5 rounded-lg border border-[var(--color-app-border)] px-3 py-1.5 text-[11px] font-medium text-navy-600 hover:text-diplomatic-blue transition-colors"
+                  >
+                    <Save className="h-3.5 w-3.5" />
+                    Save Scenario
+                  </button>
+                )}
+              </div>
 
-        <NoDataState
-          toolName="Scenario Analysis"
-          situationName={situation.name}
-          creditCost={3}
-          onGenerate={() => setGenerating(true)}
-          loading={generating}
-        />
+              {/* Trigger display */}
+              <div className="border-b border-[var(--color-app-border-light)] bg-[var(--color-app-surface-alt)] px-5 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400 mb-1">Trigger Event</p>
+                <p className="text-sm text-navy-800 italic">&ldquo;{trigger}&rdquo;</p>
+              </div>
+
+              {/* Analysis content */}
+              <div className="px-5 py-5">
+                {isRunning && !analysis && (
+                  <div className="flex items-center gap-2 text-sm text-navy-400">
+                    <Loader2 className="h-4 w-4 animate-spin text-diplomatic-blue" />
+                    Analyzing scenario across 5 dimensions...
+                  </div>
+                )}
+                {analysis && (
+                  <div className="prose prose-sm max-w-none text-navy-700">
+                    <MarkdownRenderer content={analysis} />
+                    {isRunning && (
+                      <span className="inline-block h-4 w-0.5 animate-pulse bg-diplomatic-blue ml-0.5" />
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Comparison view */}
+              {compareIdx !== null && savedScenarios[compareIdx] && (
+                <div className="border-t border-[var(--color-app-border)] px-5 py-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm font-semibold text-navy-900">Comparing with: <span className="text-diplomatic-blue">{savedScenarios[compareIdx].title}</span></p>
+                    <button onClick={() => setCompareIdx(null)} className="text-navy-400 hover:text-navy-600"><X className="h-4 w-4" /></button>
+                  </div>
+                  <div className="rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-4 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400 mb-2">Trigger: {savedScenarios[compareIdx].trigger}</p>
+                    <div className="prose prose-sm max-w-none text-navy-700 text-xs">
+                      <MarkdownRenderer content={savedScenarios[compareIdx].analysis.slice(0, 600) + '...'} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    );
-  }
 
-  return null;
+      {/* Methodology note */}
+      <div className="flex items-start gap-3 rounded-xl border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-4">
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-navy-200 text-[10px] font-semibold text-navy-400">?</div>
+        <div>
+          <p className="text-[11px] font-semibold text-navy-700">Analytical Framework</p>
+          <p className="text-[11px] text-navy-500 leading-relaxed mt-0.5">
+            Scenarios are analyzed across Political, Security, Humanitarian, Economic, and Regional dimensions. Each dimension provides most likely / best case / worst case outcomes with calibrated confidence language. Policy responses are categorized by type and implementing actor.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ============================================================================
@@ -712,17 +950,6 @@ export default function ScenariosPage() {
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
 
-  // Real mode — AI populate prompt, then show tool
-  return (
-    <AiPopulate
-      toolId="scenarios"
-      toolName="Scenario Analysis"
-      apiEndpoint="/api/ai/scenario"
-      creditCost={3}
-      hasExistingData={false}
-      onDataGenerated={() => {}}
-    >
-      <RealScenariosPage situation={situation} />
-    </AiPopulate>
-  );
+  // Real mode — render scenario planner directly (uses streamText, not AiPopulate)
+  return <RealScenariosPage situation={situation} />;
 }

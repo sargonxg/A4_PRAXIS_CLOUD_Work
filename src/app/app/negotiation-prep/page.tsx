@@ -27,6 +27,23 @@ import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 
+// ─── AI-generated negotiation data type ──────────────────────────────────────
+
+interface NegotiationData {
+  zopaAnalysis: {
+    issue: string;
+    partyPositions: { party: string; min: string; max: string; ideal: string }[];
+    overlapExists: boolean;
+  }[];
+  batnaAssessments: {
+    party: string;
+    alternatives: string[];
+    strength: 'strong' | 'moderate' | 'weak';
+  }[];
+  dealProbability: number;
+  recommendations: string[];
+}
+
 // ─── Demo Data ────────────────────────────────────────────────────────────────
 
 const NORDALIA_PARTIES = [
@@ -1058,11 +1075,11 @@ Use the precise diplomatic language appropriate for a joint communiqué or closi
 // Real mode — situation-driven, no hardcoded Nordalia data
 // ============================================================================
 
-function RealNegotiationPrepPage({ situation }: { situation: Situation }) {
+function RealNegotiationPrepPage({ situation, negotiationData }: { situation: Situation; negotiationData: NegotiationData | null }) {
   const [generating, setGenerating] = useState(false);
 
   const actors = situation.actors ?? [];
-  const hasData = false; // TODO: wire to Firestore negotiation data
+  const hasData = !!negotiationData;
 
   if (!hasData) {
     return (
@@ -1109,7 +1126,179 @@ function RealNegotiationPrepPage({ situation }: { situation: Situation }) {
     );
   }
 
-  return null;
+  const strengthColor = (s: 'strong' | 'moderate' | 'weak') =>
+    s === 'strong' ? 'bg-sage/15 text-sage-700 border-sage/25' :
+    s === 'moderate' ? 'bg-gold-500/15 text-gold-700 border-gold-500/25' :
+    'bg-crimson/10 text-crimson border-crimson/20';
+
+  const strengthLabel = (s: 'strong' | 'moderate' | 'weak') =>
+    s === 'strong' ? 'Strong' : s === 'moderate' ? 'Moderate' : 'Weak';
+
+  const probabilityColor =
+    negotiationData.dealProbability >= 70 ? 'bg-sage' :
+    negotiationData.dealProbability >= 40 ? 'bg-gold-500' :
+    'bg-crimson';
+
+  return (
+    <div className="space-y-6">
+      {/* ── Header ────────────────────────────────────────────────── */}
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-diplomatic-blue/8">
+            <Scale className="h-5 w-5 text-diplomatic-blue" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-navy-900">Negotiation Preparation Module</h1>
+            <p className="text-sm text-navy-500">
+              {situation.name} — {actors.length} actor{actors.length !== 1 ? 's' : ''} identified
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="rounded-lg border border-[var(--color-app-border)] bg-white px-4 py-2 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Deal Probability</p>
+            <p className="text-sm font-semibold text-navy-800">{negotiationData.dealProbability}%</p>
+          </div>
+          <div className="rounded-lg border border-[var(--color-app-border)] bg-white px-4 py-2 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">ZOPA Issues</p>
+            <p className="text-sm font-semibold text-sage-700">
+              {negotiationData.zopaAnalysis.filter(z => z.overlapExists).length} of {negotiationData.zopaAnalysis.length}
+            </p>
+          </div>
+          <div className="rounded-lg border border-[var(--color-app-border)] bg-white px-4 py-2 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Parties</p>
+            <p className="text-sm font-semibold text-navy-800">{negotiationData.batnaAssessments.length}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Deal Probability ──────────────────────────────────────── */}
+      <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <TrendingUp className="h-4 w-4 text-diplomatic-blue" />
+          <h2 className="text-base font-semibold text-navy-900">Deal Probability</h2>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex-1 h-4 rounded-full bg-navy-100 overflow-hidden">
+            <div
+              className={cn('h-full rounded-full transition-all', probabilityColor)}
+              style={{ width: `${negotiationData.dealProbability}%` }}
+            />
+          </div>
+          <span className="text-lg font-bold text-navy-900 tabular-nums w-16 text-right">
+            {negotiationData.dealProbability}%
+          </span>
+        </div>
+        <p className="text-xs text-navy-500 mt-2">
+          {negotiationData.dealProbability >= 70
+            ? 'High likelihood of reaching a negotiated agreement based on current positions.'
+            : negotiationData.dealProbability >= 40
+            ? 'Moderate likelihood — bridging strategies may be needed on key issues.'
+            : 'Low likelihood — significant gaps remain between parties. Intensive mediation recommended.'}
+        </p>
+      </div>
+
+      {/* ── ZOPA Analysis ─────────────────────────────────────────── */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <ArrowRightLeft className="h-4 w-4 text-diplomatic-blue" />
+          <h2 className="text-base font-semibold text-navy-900">ZOPA Analysis</h2>
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {negotiationData.zopaAnalysis.map((zopa, i) => (
+            <div key={i} className="rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)]">
+                <h3 className="text-sm font-semibold text-navy-900">{zopa.issue}</h3>
+                {zopa.overlapExists ? (
+                  <span className="inline-flex items-center rounded-full bg-sage/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sage-700 border border-sage/20">
+                    ZOPA Found
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full bg-crimson/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-crimson border border-crimson/20">
+                    No ZOPA
+                  </span>
+                )}
+              </div>
+              <div className="p-4">
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">
+                      <th className="text-left pb-2 pr-3">Party</th>
+                      <th className="text-left pb-2 pr-3">Min</th>
+                      <th className="text-left pb-2 pr-3">Max</th>
+                      <th className="text-left pb-2">Ideal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {zopa.partyPositions.map((pos, j) => (
+                      <tr key={j} className="border-t border-[var(--color-app-border)]">
+                        <td className="py-2 pr-3 text-xs font-semibold text-navy-800">{pos.party}</td>
+                        <td className="py-2 pr-3 text-xs text-navy-600">{pos.min}</td>
+                        <td className="py-2 pr-3 text-xs text-navy-600">{pos.max}</td>
+                        <td className="py-2 text-xs text-navy-600">{pos.ideal}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── BATNA Assessments ──────────────────────────────────────── */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Shield className="h-4 w-4 text-diplomatic-blue" />
+          <h2 className="text-base font-semibold text-navy-900">BATNA Assessments</h2>
+        </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {negotiationData.batnaAssessments.map((batna, i) => (
+            <div key={i} className="rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)]">
+                <h3 className="text-sm font-semibold text-navy-900">{batna.party}</h3>
+                <span className={cn(
+                  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+                  strengthColor(batna.strength)
+                )}>
+                  {strengthLabel(batna.strength)}
+                </span>
+              </div>
+              <div className="p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400 mb-2">Alternatives</p>
+                <ul className="space-y-1.5">
+                  {batna.alternatives.map((alt, j) => (
+                    <li key={j} className="flex items-start gap-2 text-xs text-navy-600 leading-relaxed">
+                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-diplomatic-blue" />
+                      {alt}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Recommendations ───────────────────────────────────────── */}
+      <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Target className="h-4 w-4 text-diplomatic-blue" />
+          <h2 className="text-base font-semibold text-navy-900">Strategic Recommendations</h2>
+        </div>
+        <ol className="space-y-3">
+          {negotiationData.recommendations.map((rec, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-diplomatic-blue/10 text-xs font-bold text-diplomatic-blue">
+                {i + 1}
+              </span>
+              <p className="text-sm text-navy-700 leading-relaxed pt-0.5">{rec}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  );
 }
 
 // ============================================================================
@@ -1118,6 +1307,7 @@ function RealNegotiationPrepPage({ situation }: { situation: Situation }) {
 
 export default function NegotiationPrepPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const [negotiationData, setNegotiationData] = useState<NegotiationData | null>(null);
 
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoNegotiationPrepPage />;
@@ -1132,10 +1322,10 @@ export default function NegotiationPrepPage() {
       toolName="Negotiation Analysis"
       apiEndpoint="/api/ai/negotiation"
       creditCost={3}
-      hasExistingData={false}
-      onDataGenerated={() => {}}
+      hasExistingData={!!negotiationData}
+      onDataGenerated={(data) => setNegotiationData(data as NegotiationData)}
     >
-      <RealNegotiationPrepPage situation={situation} />
+      <RealNegotiationPrepPage situation={situation} negotiationData={negotiationData} />
     </AiPopulate>
   );
 }

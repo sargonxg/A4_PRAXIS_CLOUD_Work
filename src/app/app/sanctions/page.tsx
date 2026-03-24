@@ -30,6 +30,29 @@ interface Sanction {
   description: string;
 }
 
+interface SanctionsUpdate {
+  entity: string;
+  changeType: string;
+  source: string;
+  date: string;
+  details: string;
+}
+
+interface SanctionsData {
+  updates: SanctionsUpdate[];
+  analysis: string;
+  riskAssessment: string;
+}
+
+const CHANGE_TYPE_META: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  new_designation:  { label: 'New Designation',  color: 'text-crimson',          bg: 'bg-crimson/8',          border: 'border-crimson/15' },
+  delisting:        { label: 'Delisting',        color: 'text-teal',             bg: 'bg-teal/8',             border: 'border-teal/15' },
+  modification:     { label: 'Modification',     color: 'text-gold-600',         bg: 'bg-gold-500/8',         border: 'border-gold-500/15' },
+  investigation:    { label: 'Investigation',    color: 'text-diplomatic-blue',  bg: 'bg-diplomatic-blue/8',  border: 'border-diplomatic-blue/15' },
+  evasion_detected: { label: 'Evasion Detected', color: 'text-crimson',          bg: 'bg-crimson/8',          border: 'border-crimson/15' },
+  no_change:        { label: 'No Change',        color: 'text-navy-500',         bg: 'bg-navy-100/50',        border: 'border-navy-200/30' },
+};
+
 const NORDALIA_SANCTIONS: Sanction[] = [
   { id: 's1', entity: 'Gen. Viktor Raskov', entityType: 'individual', type: 'asset_freeze+travel_ban', imposingBody: 'Westmark Coalition', date: '2025-09-15', legalBasis: 'Executive Order 847', status: 'active', description: 'Minister of Defense, responsible for civilian targeting in eastern provinces. Documented in OHCHR report of August 2025.' },
   { id: 's2', entity: 'Col. Dmitri Volkov', entityType: 'individual', type: 'travel_ban', imposingBody: 'EU', date: '2025-10-01', legalBasis: 'Council Decision 2025/1847', status: 'active', description: 'Commander, Eastern Security Forces. Linked to detention of 400+ civilians in Kessara region.' },
@@ -469,11 +492,11 @@ Format with clear headers. Be specific about Nordalia context.`;
 // Real mode — situation-driven, no hardcoded Nordalia data
 // ============================================================================
 
-function RealSanctionsPage({ situation }: { situation: Situation }) {
+function RealSanctionsPage({ situation, sanctionsData }: { situation: Situation; sanctionsData: SanctionsData | null }) {
   const [generating, setGenerating] = useState(false);
 
   const actors = situation.actors ?? [];
-  const hasData = false; // TODO: wire to Firestore sanctions data
+  const hasData = !!sanctionsData;
 
   if (!hasData) {
     return (
@@ -518,7 +541,105 @@ function RealSanctionsPage({ situation }: { situation: Situation }) {
     );
   }
 
-  return null;
+  const { updates, analysis, riskAssessment } = sanctionsData;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-crimson/8">
+          <Shield className="h-5 w-5 text-crimson" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-semibold text-navy-900">Sanctions Tracker</h1>
+          <p className="text-sm text-navy-500">
+            {situation.name} — {updates.length} update{updates.length !== 1 ? 's' : ''} identified
+          </p>
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { label: 'Total Updates', value: updates.length, icon: Shield, color: 'text-crimson' },
+          { label: 'New Designations', value: updates.filter(u => u.changeType === 'new_designation').length, icon: Users, color: 'text-crimson' },
+          { label: 'Investigations', value: updates.filter(u => u.changeType === 'investigation').length, icon: Search, color: 'text-diplomatic-blue' },
+          { label: 'Evasions Detected', value: updates.filter(u => u.changeType === 'evasion_detected').length, icon: TrendingUp, color: 'text-gold-600' },
+        ].map(({ label, value, icon: Icon, color }) => (
+          <div key={label} className="rounded-xl border border-[var(--color-app-border)] bg-white p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Icon className={cn('h-4 w-4', color)} />
+              <span className="text-[10px] text-navy-400 uppercase tracking-wide">{label}</span>
+            </div>
+            <p className="font-mono text-2xl font-bold text-navy-900">{value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Sanctions Updates */}
+      <div className="rounded-xl border border-[var(--color-app-border)] bg-white">
+        <div className="flex items-center justify-between border-b border-[var(--color-app-border)] px-5 py-3">
+          <span className="text-xs font-semibold text-navy-700">Sanctions Updates</span>
+          <span className="text-[10px] text-navy-400">{updates.length} update{updates.length !== 1 ? 's' : ''}</span>
+        </div>
+        <div className="divide-y divide-[var(--color-app-border-light)]">
+          {updates.map((update, idx) => {
+            const meta = CHANGE_TYPE_META[update.changeType] ?? CHANGE_TYPE_META.no_change;
+            return (
+              <div key={idx} className="px-5 py-4">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <h4 className="text-sm font-semibold text-navy-900">{update.entity}</h4>
+                  <span className={cn(
+                    'rounded-full border px-2 py-0.5 text-[10px] font-semibold',
+                    meta.bg, meta.color, meta.border
+                  )}>
+                    {meta.label}
+                  </span>
+                </div>
+                <div className="mb-2 flex flex-wrap items-center gap-3 text-[11px] text-navy-500">
+                  <span className="flex items-center gap-1">
+                    <Link2 className="h-3 w-3" />
+                    {update.source}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {update.date}
+                  </span>
+                </div>
+                <p className="text-xs leading-relaxed text-navy-600">{update.details}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Cross-Cutting Analysis */}
+      {analysis && (
+        <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+          <div className="mb-4 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-diplomatic-blue" />
+            <h3 className="text-sm font-semibold text-navy-900">Cross-Cutting Analysis</h3>
+          </div>
+          <div className="prose prose-sm max-w-none text-navy-700">
+            <MarkdownRenderer content={analysis} />
+          </div>
+        </div>
+      )}
+
+      {/* Risk Assessment */}
+      {riskAssessment && (
+        <div className="rounded-xl border-2 border-gold-500/30 bg-gold-500/4 p-5">
+          <div className="mb-4 flex items-center gap-2">
+            <Shield className="h-4 w-4 text-gold-600" />
+            <h3 className="text-sm font-semibold text-gold-700">Risk Assessment</h3>
+          </div>
+          <div className="prose prose-sm max-w-none text-navy-700">
+            <MarkdownRenderer content={riskAssessment} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ============================================================================
@@ -527,6 +648,7 @@ function RealSanctionsPage({ situation }: { situation: Situation }) {
 
 export default function SanctionsPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const [sanctionsData, setSanctionsData] = useState<SanctionsData | null>(null);
 
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoSanctionsPage />;
@@ -541,10 +663,10 @@ export default function SanctionsPage() {
       toolName="Sanctions Scan"
       apiEndpoint="/api/ai/sanctions-scan"
       creditCost={2}
-      hasExistingData={false}
-      onDataGenerated={() => {}}
+      hasExistingData={!!sanctionsData}
+      onDataGenerated={(data) => setSanctionsData(data as SanctionsData)}
     >
-      <RealSanctionsPage situation={situation} />
+      <RealSanctionsPage situation={situation} sanctionsData={sanctionsData} />
     </AiPopulate>
   );
 }
