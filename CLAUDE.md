@@ -1,6 +1,6 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 3.1 — Floating PRAXIS Chat, Mobile-Ready, Wired Tool Pages
+> Version 3.2 — Situation-Driven AI, Pro Model Pipeline, 35+ Tool Pages
 
 ## What This Is
 The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Two separate experiences in one codebase: a demo for prospects and a real situation-driven workspace for authenticated users. Deployed at praxis.tacitus.me (Vercel, iad1).
@@ -13,7 +13,7 @@ Next.js 16.1.6 (App Router), TypeScript 5.9, Tailwind CSS 4, Radix UI, Vercel AI
 ### Route Structure
 - `src/app/(landing)/` — Public landing page
 - `src/app/(auth)/` — Login (Google + email/password + Demo Mode)
-- `src/app/app/` — Real PRAXIS workspace (Firebase auth required, situation-driven, 30 pages at /app/*)
+- `src/app/app/` — Real PRAXIS workspace (Firebase auth required, situation-driven, 35+ pages at /app/*)
 - `src/app/demo/` — Demo workspace (cookie auth, pre-loaded Nordalia data, 30 pages at /demo/*)
 - `src/app/api/` — API routes (auth-protected via withAuth + Admin SDK)
 
@@ -56,7 +56,7 @@ All tool pages use `useSituationGuard()` hook — if no situation selected, show
 
 ## TACITUS Credits
 - 100 credits on sign-up (Firestore `users` collection)
-- Credit costs: chat=1, terminology=1, extract=3, scenario=3, research=5, report=5, dossier=4, briefing=3, risk=3, media=2, sanctions=2, negotiation=3, mediation=3
+- Credit costs: chat=1, terminology=1, extract=3, scenario=3, research=5, report=5, dossier=4, briefing=3, risk=3, media=2, sanctions=2, negotiation=3, mediation=3, commitments=2, info_environment=3, actor_profiles=3, auto_briefing=2, power_map=3
 - Demo users: unlimited (shown as infinity)
 - Deducted via `with-credits.ts` in each AI route
 
@@ -68,8 +68,12 @@ All tool pages use `useSituationGuard()` hook — if no situation selected, show
 ## Conflict Grammar (ACO v2.0)
 8 primitives: Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, Narrative. Zod schemas in `src/lib/ai/schemas/conflict-grammar.ts`.
 
-## AI Tools (18 tools in src/lib/ai/tools.ts)
-Glasl escalation model, Fisher/Ury negotiation (ZOPA/BATNA), OCHA humanitarian standards, UN Editorial Manual, historical parallel analysis, narrative ecosystem mapping, UNSC resolution drafting.
+## AI Tools (25+ tools across src/lib/ai/tools.ts and src/app/api/ai/)
+Glasl escalation model, Fisher/Ury negotiation (ZOPA/BATNA), OCHA humanitarian standards, UN Editorial Manual, historical parallel analysis, narrative ecosystem mapping, UNSC resolution drafting, INFORM Risk Index, Mitchell/Agle/Wood stakeholder analysis, CRAAP test media analysis, NATO STRATCOM info-environment, UN DPPA morning brief, Berghof process design, commitment compliance monitoring.
+
+## Cron Jobs (vercel.json)
+- `/api/cron/check-alerts` — 06:00 UTC daily, GDELT-based alert generation
+- `/api/cron/generate-briefing` — 05:00 UTC daily, auto-generates daily intelligence briefs for all active situations
 
 ## Demo vs Live Mode
 - **Demo** (`/demo/*`): Pre-loaded Nordalia Crisis, cached AI responses, no API keys needed, unlimited credits
@@ -90,12 +94,33 @@ Glasl escalation model, Fisher/Ury negotiation (ZOPA/BATNA), OCHA humanitarian s
 - Sidebar auto-closes on route navigation
 - Content padding reduced on mobile (`px-4 py-4` vs `px-6 py-6`)
 
-## AiPopulate Pattern (v3.1)
+## AiPopulate Pattern (v3.2)
 - `src/components/praxis/ai-populate.tsx` — Auto-generates data on first tool visit
-- Negotiation Prep, Sanctions Tracker: structured JSON via `generateText + Output.object()`
+- All structured tools: `generateText + Output.object()` with Zod schemas via `getProModel()` (gemini-2.5-pro)
 - Scenarios: streaming text via `streamText`, rendered directly (no AiPopulate)
-- Data stored in component state; not yet persisted to Firestore
+- Data persisted to Firestore via `usePersistedToolData` hook (24h TTL, auto-restore)
 - Source mode picker: all / web+docs / docs-only / llm-only
+- **CRITICAL**: Real mode (`/app/*`) NEVER shows hardcoded demo data — all content is AI-generated from the user's active situation context via `buildToolContext(situation)`
+- Demo mode (`/demo/*`) uses hardcoded Nordalia crisis constants scoped to demo components only
+
+## Tool Pages (v3.2)
+### Situation Room
+- Dashboard, Early Warning, Risk Monitor, Conflict Graph, Stakeholder Map, Actor Profiles
+
+### Analysis & Drafting
+- PRAXIS Assistant, Report Studio, Dossier Generator, Talking Points, Scenario Planner, Negotiation Prep, CONCORDIA Mediation, Mediation Designer, Briefing Room, Daily Brief
+
+### Intelligence Tools
+- ARGUS Intelligence, Media Compass, Media Roundup, Info Environment, Commitment Tracker, Treaty Analyzer, Sanctions Tracker, Calendar Monitor, Alert Center, UN Toolkit
+
+### Workspace
+- Documents, Case Library, Team Hub
+
+## AI Model Tiers
+- `getModel()` → gemini-2.5-flash — Chat, terminology, lightweight tasks
+- `getProModel()` → gemini-2.5-pro — All structured tool generation (risk, power-map, commitments, negotiation, mediation, scenarios, sanctions, escalation, actor profiles, briefings, info-environment, media-scan)
+- `getAnalysisModel()` → claude-sonnet-4 (falls back to pro if no ANTHROPIC_API_KEY) — Deep analysis, bias detection
+- `getGroundedModel()` → gemini-2.5-flash + Google Search grounding — Research tasks
 
 ## Conventions
 - `PraxisLink` for all internal navigation (auto-prefixes /app or /demo)

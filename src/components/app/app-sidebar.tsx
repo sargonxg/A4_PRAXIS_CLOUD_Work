@@ -456,6 +456,13 @@ export function AppSidebar() {
           </Tooltip>
         )}
 
+        {/* Build version */}
+        {sidebarOpen && (
+          <p className="mt-1 text-center text-[9px] text-navy-300">
+            PRAXIS v3.2 · Build 2024.03.24
+          </p>
+        )}
+
         {/* Toggle button */}
         <button
           onClick={toggleSidebar}
