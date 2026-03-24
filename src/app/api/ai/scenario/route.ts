@@ -1,7 +1,10 @@
 import { streamText } from 'ai';
+import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { validateAiRequest } from '@/lib/api/validate-request';
+import { handleRouteError } from '@/lib/api/standard-error';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 import type { Situation } from '@/types/situation';
 export const maxDuration = 60;
@@ -12,14 +15,20 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { conflictContext, scenarioTrigger, actors, timeHorizon, situation } = await request.json() as {
-      conflictContext: string;
-      scenarioTrigger: string;
-      actors?: string[];
-      timeHorizon: string;
-      situation?: Situation;
-    };
-    const sitContext = situation ? buildToolContext(situation) : '';
+    const body = await request.json();
+
+    const requestSchema = z.object({
+      conflictContext: z.string(),
+      scenarioTrigger: z.string(),
+      actors: z.array(z.string()).optional(),
+      timeHorizon: z.string(),
+      situation: z.any().optional(),
+    });
+
+    const validation = validateAiRequest(body, requestSchema);
+    if (!validation.success) return validation.response;
+    const { conflictContext, scenarioTrigger, actors, timeHorizon, situation } = validation.data;
+    const sitContext = situation ? buildToolContext(situation as Situation) : '';
 
     const creditCheck = await checkAndDeductCredits('ai_scenario', 'Scenario analysis');
     if (!creditCheck.allowed) return creditCheck.response;
@@ -90,7 +99,6 @@ Be analytically rigorous, calibrate confidence appropriately, and avoid generic 
 
     return result.toTextStreamResponse();
   } catch (err) {
-    console.error('Scenario route error:', err);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500 });
+    return handleRouteError(err, 'scenario');
   }
 }

@@ -1,16 +1,26 @@
+import { z } from 'zod';
 import { conductResearch, type ResearchMode } from '@/lib/ai/research-engine';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { validateAiRequest } from '@/lib/api/validate-request';
+import { handleRouteError } from '@/lib/api/standard-error';
 
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
   try {
-    const { query, mode = 'briefing', conflictContext } = await request.json() as {
-      query: string;
-      mode?: ResearchMode;
-      conflictContext?: string;
-    };
+    const body = await request.json();
+
+    const requestSchema = z.object({
+      query: z.string(),
+      mode: z.enum(['briefing', 'background', 'media-scan', 'actor-profile']).optional(),
+      conflictContext: z.string().optional(),
+    });
+
+    const validation = validateAiRequest(body, requestSchema);
+    if (!validation.success) return validation.response;
+    const { query, conflictContext } = validation.data;
+    const mode: ResearchMode = validation.data.mode ?? 'briefing';
 
     // --- Demo mode: return pre-computed responses when no API key is set ---
     if (isServerDemoMode()) {
@@ -38,10 +48,6 @@ export async function POST(request: Request) {
 
     return result.toTextStreamResponse();
   } catch (err) {
-    console.error('Research route error:', err);
-    return new Response(JSON.stringify({ error: 'Research request failed' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return handleRouteError(err, 'research');
   }
 }

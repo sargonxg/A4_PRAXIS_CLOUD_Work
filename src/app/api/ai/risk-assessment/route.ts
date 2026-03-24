@@ -5,6 +5,8 @@ import { getModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { validateAiRequest } from '@/lib/api/validate-request';
+import { handleRouteError } from '@/lib/api/standard-error';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import { computeRiskScore } from '@/lib/analytics/risk-engine';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
@@ -95,12 +97,18 @@ const DEMO_RESPONSE = {
 
 export async function POST(request: Request) {
   try {
-    const { regions, conflictContext, situation } = await request.json() as {
-      regions: string[];
-      conflictContext?: string;
-      situation?: Situation;
-    };
-    const sitContext = situation ? buildToolContext(situation) : '';
+    const body = await request.json();
+
+    const requestSchema = z.object({
+      regions: z.array(z.string()),
+      conflictContext: z.string().optional(),
+      situation: z.any().optional(),
+    });
+
+    const validation = validateAiRequest(body, requestSchema);
+    if (!validation.success) return validation.response;
+    const { regions, conflictContext, situation } = validation.data;
+    const sitContext = situation ? buildToolContext(situation as Situation) : '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -170,7 +178,6 @@ Use calibrated risk scoring. A score of 0-25 = low, 25-50 = moderate, 50-75 = el
 
     return NextResponse.json(result.output);
   } catch (err) {
-    console.error('Risk assessment route error:', err);
-    return NextResponse.json({ error: 'Risk assessment failed' }, { status: 500 });
+    return handleRouteError(err, 'risk-assessment');
   }
 }

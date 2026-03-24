@@ -1,10 +1,13 @@
 import { streamText, stepCountIs } from 'ai';
+import { z } from 'zod';
 import { getModel, getModelForUser } from '@/lib/ai/providers';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
 import { tacitusTools } from '@/lib/ai/tools';
 import { buildSituationContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { validateAiRequest } from '@/lib/api/validate-request';
+import { handleRouteError } from '@/lib/api/standard-error';
 import { retrieveRelevantChunks } from '@/lib/firebase/documents-service';
 import type { Situation } from '@/types/situation';
 
@@ -12,7 +15,18 @@ export const maxDuration = 60;
 
 export async function POST(request: Request) {
   try {
-    const { messages, conflictContext, situation, aiSettings } = await request.json();
+    const body = await request.json();
+
+    const requestSchema = z.object({
+      messages: z.array(z.object({ role: z.enum(['user', 'assistant', 'system', 'tool']), content: z.any() })),
+      conflictContext: z.string().optional(),
+      situation: z.any().optional(),
+      aiSettings: z.any().optional(),
+    });
+
+    const validation = validateAiRequest(body, requestSchema);
+    if (!validation.success) return validation.response;
+    const { messages, conflictContext, situation, aiSettings } = validation.data;
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -135,10 +149,6 @@ Learn more at tacitus.me. For questions about pricing, partnerships, or enterpri
 
     return result.toTextStreamResponse();
   } catch (err) {
-    console.error('Chat route error:', err);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return handleRouteError(err, 'chat');
   }
 }

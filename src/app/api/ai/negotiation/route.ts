@@ -5,6 +5,8 @@ import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { validateAiRequest } from '@/lib/api/validate-request';
+import { handleRouteError } from '@/lib/api/standard-error';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -126,13 +128,19 @@ const DEMO_RESPONSE = {
 
 export async function POST(request: Request) {
   try {
-    const { parties, issues, conflictContext, situation } = await request.json() as {
-      parties: string[];
-      issues: string[];
-      conflictContext?: string;
-      situation?: Situation;
-    };
-    const sitContext = situation ? buildToolContext(situation) : '';
+    const body = await request.json();
+
+    const requestSchema = z.object({
+      parties: z.array(z.string()),
+      issues: z.array(z.string()),
+      conflictContext: z.string().optional(),
+      situation: z.any().optional(),
+    });
+
+    const validation = validateAiRequest(body, requestSchema);
+    if (!validation.success) return validation.response;
+    const { parties, issues, conflictContext, situation } = validation.data;
+    const sitContext = situation ? buildToolContext(situation as Situation) : '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -169,7 +177,6 @@ Apply Fisher/Ury principled negotiation framework. Be specific to the parties an
 
     return NextResponse.json(result.output);
   } catch (err) {
-    console.error('Negotiation route error:', err);
-    return NextResponse.json({ error: 'Negotiation analysis failed' }, { status: 500 });
+    return handleRouteError(err, 'negotiation');
   }
 }
