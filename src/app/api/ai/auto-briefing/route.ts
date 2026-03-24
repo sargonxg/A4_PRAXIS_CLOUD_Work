@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
-import { getModel } from '@/lib/ai/providers';
+import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     const sitContext = situation ? buildToolContext(situation as Situation) : '';
 
     const result = await generateText({
-      model: getModel(),
+      model: getProModel(),
       output: Output.object({ schema: AutoBriefingSchema }),
       prompt: `${sitContext ? `${sitContext}\n\n` : ''}Generate a concise daily intelligence brief for this conflict situation.
 

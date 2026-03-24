@@ -328,7 +328,7 @@ function SessionPlannerSection({ situation }: { situation?: import('@/types/situ
 
 /* ── Section 2: Live Mediation Assistant (Preview) ──────────────────── */
 
-function LiveMediationSection() {
+function LiveMediationSection({ situation }: { situation?: import('@/types/situation').Situation | null }) {
   const [visibleCount, setVisibleCount] = useState(0);
   const [playing, setPlaying] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -367,7 +367,7 @@ function LiveMediationSection() {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="font-serif text-xl text-navy-900">Live Mediation Assistant</h2>
-            {playing && (
+            {!situation && playing && (
               <span className="flex items-center gap-1 text-[11px] text-violet-600">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-violet-500" />
                 Live Preview
@@ -378,87 +378,110 @@ function LiveMediationSection() {
             Real-time AI guidance during mediation sessions — analysis, suggestions, and risk alerts
           </p>
         </div>
-        <button
-          onClick={handlePlay}
-          disabled={playing}
-          className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-violet-700 disabled:opacity-50"
-        >
-          <Play className="h-3.5 w-3.5" />
-          {visibleCount >= DEMO_MEDIATION_SEQUENCE.length ? 'Replay' : 'Play Demo'}
-        </button>
+        {!situation && (
+          <button
+            onClick={handlePlay}
+            disabled={playing}
+            className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-violet-700 disabled:opacity-50"
+          >
+            <Play className="h-3.5 w-3.5" />
+            {visibleCount >= DEMO_MEDIATION_SEQUENCE.length ? 'Replay' : 'Play Demo'}
+          </button>
+        )}
       </div>
 
-      {/* Chat display */}
-      <div className="max-h-[500px] space-y-3 overflow-y-auto rounded-xl border border-[var(--color-app-border)] bg-white p-4">
-        {visibleTurns.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <Scale className="mb-3 h-10 w-10 text-navy-300" />
-            <p className="text-sm text-navy-400">
-              Click &quot;Play Demo&quot; to see a simulated mediation session
-            </p>
-          </div>
-        ) : (
-          visibleTurns.map((turn, i) => (
-            <div
-              key={i}
-              className={cn(
-                'rounded-lg border p-3 transition-all',
-                SPEAKER_STYLES[turn.speaker],
-              )}
-            >
-              <div className="mb-1 flex items-center gap-2">
-                <span
+      {situation ? (
+        <div className="rounded-xl border border-diplomatic-blue/15 bg-diplomatic-blue/4 p-6 text-center">
+          <Scale className="mx-auto h-8 w-8 text-diplomatic-blue/50" />
+          <h3 className="mt-3 text-sm font-semibold text-navy-800">Live Mediation Assistant</h3>
+          <p className="mt-1 text-xs text-navy-500">
+            Connect to CONCORDIA for live AI-assisted mediation sessions grounded in {situation.name}.
+            Session plans above are generated from your situation data.
+          </p>
+          <a
+            href="https://concordia.tacitus.me"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2 text-xs font-semibold text-white hover:bg-violet-700"
+          >
+            Launch CONCORDIA
+          </a>
+        </div>
+      ) : (
+        <>
+          {/* Chat display */}
+          <div className="max-h-[500px] space-y-3 overflow-y-auto rounded-xl border border-[var(--color-app-border)] bg-white p-4">
+            {visibleTurns.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Scale className="mb-3 h-10 w-10 text-navy-300" />
+                <p className="text-sm text-navy-400">
+                  Click &quot;Play Demo&quot; to see a simulated mediation session
+                </p>
+              </div>
+            ) : (
+              visibleTurns.map((turn, i) => (
+                <div
+                  key={i}
                   className={cn(
-                    'text-[11px] font-bold uppercase tracking-wider',
-                    SPEAKER_LABEL_STYLES[turn.speaker],
+                    'rounded-lg border p-3 transition-all',
+                    SPEAKER_STYLES[turn.speaker],
                   )}
                 >
-                  {turn.name}
-                </span>
-                {turn.speaker === 'system' && (
-                  <span className="rounded border border-violet-200 bg-violet-100 px-1.5 py-0.5 text-[9px] font-bold text-violet-600">
-                    AI ANALYSIS
-                  </span>
-                )}
-              </div>
-              <p
-                className={cn(
-                  'text-[13px] leading-relaxed',
-                  turn.speaker === 'system'
-                    ? 'font-mono text-[12px] text-violet-800'
-                    : 'text-navy-700',
-                )}
-              >
-                {turn.text}
-              </p>
-            </div>
-          ))
-        )}
-        <div ref={bottomRef} />
-      </div>
+                  <div className="mb-1 flex items-center gap-2">
+                    <span
+                      className={cn(
+                        'text-[11px] font-bold uppercase tracking-wider',
+                        SPEAKER_LABEL_STYLES[turn.speaker],
+                      )}
+                    >
+                      {turn.name}
+                    </span>
+                    {turn.speaker === 'system' && (
+                      <span className="rounded border border-violet-200 bg-violet-100 px-1.5 py-0.5 text-[9px] font-bold text-violet-600">
+                        AI ANALYSIS
+                      </span>
+                    )}
+                  </div>
+                  <p
+                    className={cn(
+                      'text-[13px] leading-relaxed',
+                      turn.speaker === 'system'
+                        ? 'font-mono text-[12px] text-violet-800'
+                        : 'text-navy-700',
+                    )}
+                  >
+                    {turn.text}
+                  </p>
+                </div>
+              ))
+            )}
+            <div ref={bottomRef} />
+          </div>
 
-      {/* CTA */}
-      <div className="rounded-lg border border-violet-200 bg-violet-50/50 p-4 text-center">
-        <p className="text-[12px] text-violet-700">
-          In production, CONCORDIA provides real-time AI analysis during live mediation sessions —
-          detecting interests, suggesting questions, and flagging risks as the conversation unfolds.
-        </p>
-        <a
-          href="https://concordia.tacitus.me"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-violet-600 hover:text-violet-700"
-        >
-          Learn more about CONCORDIA Live <ExternalLink className="h-3 w-3" />
-        </a>
-      </div>
+          {/* CTA */}
+          <div className="rounded-lg border border-violet-200 bg-violet-50/50 p-4 text-center">
+            <p className="text-[12px] text-violet-700">
+              In production, CONCORDIA provides real-time AI analysis during live mediation sessions —
+              detecting interests, suggesting questions, and flagging risks as the conversation unfolds.
+            </p>
+            <a
+              href="https://concordia.tacitus.me"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-violet-600 hover:text-violet-700"
+            >
+              Learn more about CONCORDIA Live <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+        </>
+      )}
     </section>
   );
 }
 
 /* ── Section 3: Settlement Generator ────────────────────────────────── */
 
-function SettlementSection() {
+function SettlementSection({ situation }: { situation?: import('@/types/situation').Situation | null }) {
   const s = DEMO_SETTLEMENT;
 
   function handleExport(format: string) {
@@ -475,75 +498,87 @@ function SettlementSection() {
             standards
           </p>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleExport('PDF')}
-            className="flex items-center gap-1.5 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-[12px] font-medium text-navy-600 transition-colors hover:bg-navy-50"
-          >
-            <FileDown className="h-3.5 w-3.5" /> PDF
-          </button>
-          <button
-            onClick={() => handleExport('DOCX')}
-            className="flex items-center gap-1.5 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-[12px] font-medium text-navy-600 transition-colors hover:bg-navy-50"
-          >
-            <FileText className="h-3.5 w-3.5" /> DOCX
-          </button>
-          <button
-            onClick={() => handleExport('Share Link')}
-            className="flex items-center gap-1.5 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-[12px] font-medium text-navy-600 transition-colors hover:bg-navy-50"
-          >
-            <Share2 className="h-3.5 w-3.5" /> Share
-          </button>
-        </div>
+        {!situation && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleExport('PDF')}
+              className="flex items-center gap-1.5 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-[12px] font-medium text-navy-600 transition-colors hover:bg-navy-50"
+            >
+              <FileDown className="h-3.5 w-3.5" /> PDF
+            </button>
+            <button
+              onClick={() => handleExport('DOCX')}
+              className="flex items-center gap-1.5 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-[12px] font-medium text-navy-600 transition-colors hover:bg-navy-50"
+            >
+              <FileText className="h-3.5 w-3.5" /> DOCX
+            </button>
+            <button
+              onClick={() => handleExport('Share Link')}
+              className="flex items-center gap-1.5 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-[12px] font-medium text-navy-600 transition-colors hover:bg-navy-50"
+            >
+              <Share2 className="h-3.5 w-3.5" /> Share
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Settlement document */}
-      <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-8">
-        {/* Title */}
-        <h3 className="text-center font-serif text-lg font-bold text-navy-900">{s.title}</h3>
-        <div className="mx-auto mt-3 h-px w-24 bg-violet-300" />
-
-        {/* Preamble */}
-        <p className="mt-6 text-[13px] italic leading-relaxed text-navy-600">{s.preamble}</p>
-
-        {/* Clauses */}
-        <div className="mt-6 space-y-4">
-          {s.clauses.map((clause) => (
-            <div key={clause.number} className="border-b border-[var(--color-app-border)] pb-4 last:border-0">
-              <div className="flex items-start justify-between gap-3">
-                <h4 className="text-sm font-semibold text-navy-800">
-                  Article {clause.number}: {clause.title}
-                </h4>
-                <span className="shrink-0 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-600">
-                  {clause.responsibleParty}
-                </span>
-              </div>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-navy-600">{clause.text}</p>
-            </div>
-          ))}
+      {situation ? (
+        <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-6 text-center">
+          <FileText className="mx-auto h-8 w-8 text-navy-300" />
+          <h3 className="mt-3 text-sm font-semibold text-navy-800">Settlement Drafting</h3>
+          <p className="mt-1 text-xs text-navy-500">
+            Generate situation-specific settlement frameworks via CONCORDIA, grounded in the session plans and negotiation analysis for {situation.name}.
+          </p>
         </div>
+      ) : (
+        /* Settlement document */
+        <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-8">
+          {/* Title */}
+          <h3 className="text-center font-serif text-lg font-bold text-navy-900">{s.title}</h3>
+          <div className="mx-auto mt-3 h-px w-24 bg-violet-300" />
 
-        {/* Signatures */}
-        <div className="mt-8 border-t border-[var(--color-app-border)] pt-6">
-          <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-navy-400">
-            Signatories
-          </h4>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {s.signatures.map((sig, i) => (
-              <div key={i} className="rounded-lg border border-[var(--color-app-border)] p-3">
-                <div className="mb-6 border-b border-dashed border-navy-300" />
-                <p className="text-[12px] font-semibold text-navy-800">{sig.name}</p>
-                <p className="text-[11px] text-navy-500">{sig.role}</p>
+          {/* Preamble */}
+          <p className="mt-6 text-[13px] italic leading-relaxed text-navy-600">{s.preamble}</p>
+
+          {/* Clauses */}
+          <div className="mt-6 space-y-4">
+            {s.clauses.map((clause) => (
+              <div key={clause.number} className="border-b border-[var(--color-app-border)] pb-4 last:border-0">
+                <div className="flex items-start justify-between gap-3">
+                  <h4 className="text-sm font-semibold text-navy-800">
+                    Article {clause.number}: {clause.title}
+                  </h4>
+                  <span className="shrink-0 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-600">
+                    {clause.responsibleParty}
+                  </span>
+                </div>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-navy-600">{clause.text}</p>
               </div>
             ))}
           </div>
-        </div>
 
-        {/* Effective date */}
-        <p className="mt-6 text-center text-[11px] italic text-navy-400">
-          Effective: {s.effectiveDate}
-        </p>
-      </div>
+          {/* Signatures */}
+          <div className="mt-8 border-t border-[var(--color-app-border)] pt-6">
+            <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-navy-400">
+              Signatories
+            </h4>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {s.signatures.map((sig, i) => (
+                <div key={i} className="rounded-lg border border-[var(--color-app-border)] p-3">
+                  <div className="mb-6 border-b border-dashed border-navy-300" />
+                  <p className="text-[12px] font-semibold text-navy-800">{sig.name}</p>
+                  <p className="text-[11px] text-navy-500">{sig.role}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Effective date */}
+          <p className="mt-6 text-center text-[11px] italic text-navy-400">
+            Effective: {s.effectiveDate}
+          </p>
+        </div>
+      )}
     </section>
   );
 }
@@ -567,11 +602,11 @@ function DemoConcordiaPage({ situation }: { situation?: import('@/types/situatio
 
       <div className="h-px bg-[var(--color-app-border)]" />
 
-      <LiveMediationSection />
+      <LiveMediationSection situation={situation} />
 
       <div className="h-px bg-[var(--color-app-border)]" />
 
-      <SettlementSection />
+      <SettlementSection situation={situation} />
 
       {/* Footer */}
       <div className="flex items-center justify-between rounded-xl border border-[var(--color-app-border)] bg-white px-6 py-4">

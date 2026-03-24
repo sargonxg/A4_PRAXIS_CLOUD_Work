@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
-import { getModel } from '@/lib/ai/providers';
+import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -125,7 +125,7 @@ Confidence: ${assessment.confidence}\n`;
 
     // --- AI analysis ---
     const result = await generateText({
-      model: getModel(),
+      model: getProModel(),
       output: Output.object({ schema: EscalationScanSchema }),
       prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior conflict analyst specializing in the Glasl escalation model. Conduct a rigorous escalation assessment.
 ${dataContext}

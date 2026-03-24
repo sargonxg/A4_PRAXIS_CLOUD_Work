@@ -598,8 +598,8 @@ function DemoEarlyWarningPage({ situation, aiRiskData }: { situation?: import('@
   const isReal = !!situation;
 
   // For real mode, derive the situation name and context dynamically
-  const situationName = situation?.name ?? 'Nordalia Crisis';
-  const situationRegion = situation?.region ?? 'Nordalia (fictional)';
+  const situationName = situation?.name ?? 'Active Situation';
+  const situationRegion = situation?.region ?? '';
   const situationActors = situation?.actors ?? [];
   const situationGlaslStage = aiRiskData?.[0]?.glaslStage ?? situation?.glaslStage ?? 4;
   const situationRiskScore = aiRiskData?.[0]?.riskScore != null ? aiRiskData[0].riskScore / 10 : (situation?.riskScore ?? 7.8);
@@ -621,7 +621,7 @@ function DemoEarlyWarningPage({ situation, aiRiskData }: { situation?: import('@
   const aiDims = aiRiskData?.[0]?.dimensions;
   const radarValues = isReal && aiDims
     ? [aiDims.political / 10, aiDims.security / 10, aiDims.humanitarian / 10, aiDims.economic / 10, aiDims.social / 10]
-    : isReal ? [5, 5, 5, 5, 5]
+    : isReal ? [0, 0, 0, 0, 0]
     : (radarConflictId === 'nordalia-crisis' ? NORDALIA_RADAR : [5, 5, 5, 5, 5]);
   const compositeScore = isReal ? situationRiskScore : (radarValues.reduce((a, b) => a + b, 0) / radarValues.length);
 

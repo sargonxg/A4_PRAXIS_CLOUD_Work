@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
-import { getModel } from '@/lib/ai/providers';
+import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -155,7 +155,7 @@ ${intel.humanitarian?.displacement ? `Displacement: ${intel.humanitarian.displac
 
     // --- AI analysis ---
     const result = await generateText({
-      model: getModel(),
+      model: getProModel(),
       output: Output.object({ schema: RiskAssessmentSchema }),
       prompt: `${sitContext ? `${sitContext}\n\n` : ''}Conduct a rigorous multi-dimensional risk assessment using INFORM Risk Index methodology and UNDP conflict-sensitive early warning indicators.
 

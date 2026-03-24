@@ -1,6 +1,6 @@
 import { streamText } from 'ai';
 import { z } from 'zod';
-import { getModel } from '@/lib/ai/providers';
+import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
@@ -92,7 +92,7 @@ Provide recommended responses categorized by:
 Be analytically rigorous, calibrate confidence appropriately, and avoid generic analysis. Reference specific actors, instruments, and precedents where relevant.`;
 
     const result = streamText({
-      model: getModel(),
+      model: getProModel(),
       prompt,
       system: 'You are a senior conflict analyst at the International Crisis Group. Provide rigorous, structured, evidence-based scenario analysis for diplomatic and security professionals.',
     });

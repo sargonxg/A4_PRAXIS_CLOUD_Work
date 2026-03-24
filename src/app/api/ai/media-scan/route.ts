@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
-import { getModel } from '@/lib/ai/providers';
+import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -131,7 +131,7 @@ Recent headlines: ${gdeltArticles.slice(0, 5).map((a) => `"${a.title}" (${a.doma
 
     // --- AI analysis ---
     const result = await generateText({
-      model: getModel(),
+      model: getProModel(),
       output: Output.object({ schema: MediaScanSchema }),
       prompt: `${sitContext ? `${sitContext}\n\n` : ''}Conduct a rigorous media landscape analysis applying the CRAAP test methodology, narrative ecosystem mapping, and cross-outlet triangulation.
 

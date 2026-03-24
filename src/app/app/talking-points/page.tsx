@@ -2,6 +2,7 @@
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
+import type { Situation } from '@/types/situation';
 
 import { useState, useRef, useCallback } from 'react';
 import { MessageCircle, Sparkles, Copy, FileText, Users, Shield, Check, Download, RefreshCw, AlertTriangle, Loader2, ChevronDown } from 'lucide-react';
@@ -54,7 +55,7 @@ interface TopicOption {
   context: string;
 }
 
-const TOPIC_OPTIONS: TopicOption[] = [
+const DEMO_TOPIC_OPTIONS: TopicOption[] = [
   { id: 'ceasefire', label: 'DRM-Government ceasefire status', context: 'The ceasefire brokered in February 2026 is fragile. DRM forces have made three reported incursions. Government forces have shelled two villages in violation. Both parties publicly claim adherence.' },
   { id: 'mandate', label: 'UNMN mandate renewal', context: 'UNMN mandate expires 31 March 2026 (in 19 days). France and Kenya co-sponsor renewal resolution. P5 member has threatened veto without ROE restrictions. TCCs want Chapter VII strengthening.' },
   { id: 'humanitarian', label: 'Humanitarian access crisis', context: 'MSF expelled from eastern provinces 14 February. WFP convoys blocked 8 times in 6 weeks. 340,000 civilians without sustained access. OCHA estimates 2.1 million food-insecure.' },
@@ -62,6 +63,17 @@ const TOPIC_OPTIONS: TopicOption[] = [
   { id: 'framework', label: 'Framework Agreement implementation', context: 'Framework Agreement signed November 2025. Ceasefire, prisoner exchange (paused), joint monitoring. DRM has not formed its side of joint verification commission. 4 of 12 benchmarks met.' },
   { id: 'custom', label: 'Custom topic...', context: '' },
 ];
+
+function buildRealTopicOptions(situation: Situation): TopicOption[] {
+  const options: TopicOption[] = [];
+  options.push({ id: 'security', label: 'Security situation update', context: `Current security dynamics in ${situation.name}. ${situation.description || ''}` });
+  options.push({ id: 'political', label: 'Political dynamics', context: `Political developments and actor positions in ${situation.name}. Key actors: ${situation.actors.join(', ')}.` });
+  options.push({ id: 'humanitarian', label: 'Humanitarian situation', context: `Humanitarian situation and access in ${situation.region || 'the affected region'}. ${situation.description || ''}` });
+  options.push({ id: 'negotiations', label: 'Negotiation/mediation progress', context: `Peace process and negotiation dynamics for ${situation.name}. Key parties: ${situation.actors.join(', ')}.` });
+  options.push({ id: 'risk', label: 'Risk assessment update', context: `Risk level: ${situation.riskScore}/10, trend: ${situation.escalationTrend}. ${situation.description || ''}` });
+  options.push({ id: 'custom', label: 'Custom topic...', context: '' });
+  return options;
+}
 
 const DEMO_CONFLICT_OPTIONS = [
   { id: 'nordalia', label: 'Nordalia Crisis', riskScore: 7.8 },
@@ -84,8 +96,10 @@ export default function TalkingPointsPage() {
 
   const defaultConflictId = isDemo ? 'nordalia' : (situation?.id ?? 'nordalia');
 
+  const topicOptions = isDemo ? DEMO_TOPIC_OPTIONS : buildRealTopicOptions(situation!);
+
   const [selectedAudience, setSelectedAudience] = useState('council');
-  const [selectedTopic, setSelectedTopic] = useState('ceasefire');
+  const [selectedTopic, setSelectedTopic] = useState(isDemo ? 'ceasefire' : 'security');
   const [selectedConflict, setSelectedConflict] = useState(defaultConflictId);
   const [customTopic, setCustomTopic] = useState('');
   const [additionalContext, setAdditionalContext] = useState('');
@@ -95,7 +109,7 @@ export default function TalkingPointsPage() {
   const abortRef = useRef<AbortController | null>(null);
 
   const audienceOption = AUDIENCE_OPTIONS.find((a) => a.id === selectedAudience)!;
-  const topicOption = TOPIC_OPTIONS.find((t) => t.id === selectedTopic)!;
+  const topicOption = topicOptions.find((t) => t.id === selectedTopic)!;
   const conflictOption = CONFLICT_OPTIONS.find((c) => c.id === selectedConflict) ?? CONFLICT_OPTIONS[0];
 
   const topicLabel = selectedTopic === 'custom' ? customTopic : topicOption?.label ?? '';
@@ -110,9 +124,9 @@ export default function TalkingPointsPage() {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    const situationContext = !isDemo && situation
-      ? `Situation: ${situation.name} (${situation.region}). Risk score: ${situation.riskScore}/10. Status: ${situation.status}. Actors: ${situation.actors.join(', ') || 'not specified'}.`
-      : 'Current situation: DRM advancing, ceasefire fragile, UNMN mandate renewal in 19 days, Karovia proxy involvement suspected, Framework Agreement partially implemented.';
+    const situationContext = situation
+      ? `Situation: ${situation.name} (${situation.region}). Risk score: ${situation.riskScore}/10. Trend: ${situation.escalationTrend}. Status: ${situation.status}. Actors: ${situation.actors.join(', ') || 'not specified'}. ${situation.description || ''}`
+      : '';
 
     const prompt = `Generate talking points for: ${topicLabel}
 Audience: ${audienceOption.label}
@@ -264,7 +278,7 @@ A: [answer]
           <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
             <h3 className="mb-3 text-sm font-semibold text-navy-900">Topic</h3>
             <div className="space-y-1.5">
-              {TOPIC_OPTIONS.map((topic) => (
+              {topicOptions.map((topic) => (
                 <button
                   key={topic.id}
                   onClick={() => setSelectedTopic(topic.id)}
@@ -401,7 +415,7 @@ A: [answer]
               </div>
               <div className="mt-5 flex items-center gap-1.5 rounded-lg border border-gold-500/15 bg-gold-500/4 px-3 py-2 text-xs text-gold-700">
                 <Sparkles className="h-3.5 w-3.5 shrink-0" />
-                Grounded in UN diplomatic standards and {situation?.name ?? 'Nordalia'} context
+                Grounded in UN diplomatic standards and {situation?.name ?? 'situation'} context
               </div>
             </div>
           )}
