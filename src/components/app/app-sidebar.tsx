@@ -79,6 +79,7 @@ const navSections: NavSection[] = [
       { label: 'CONCORDIA Mediation', icon: Scale, href: '/concordia', badge: 'TACITUS' },
       { label: 'Mediation Designer', icon: Handshake, href: '/mediation-design', badge: 'NEW' },
       { label: 'Briefing Room', icon: Presentation, href: '/briefing', badge: 'NEW' },
+      { label: 'Daily Brief', icon: Newspaper, href: '/auto-briefings', badge: 'NEW' },
     ],
   },
   {

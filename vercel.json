@@ -13,12 +13,19 @@
     },
     "src/app/api/cron/check-alerts/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/cron/generate-briefing/route.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [
     {
       "path": "/api/cron/check-alerts",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/generate-briefing",
+      "schedule": "0 5 * * *"
     }
   ]
 }
