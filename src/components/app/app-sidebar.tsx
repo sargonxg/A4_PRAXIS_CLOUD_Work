@@ -36,6 +36,7 @@ import {
   Newspaper,
   Bell,
   Radio,
+  Handshake,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -76,6 +77,7 @@ const navSections: NavSection[] = [
       { label: 'Scenario Planner', icon: GitCompare, href: '/scenarios', badge: 'NEW' },
       { label: 'Negotiation Prep', icon: Scale, href: '/negotiation-prep', badge: 'NEW' },
       { label: 'CONCORDIA Mediation', icon: Scale, href: '/concordia', badge: 'TACITUS' },
+      { label: 'Mediation Designer', icon: Handshake, href: '/mediation-design', badge: 'NEW' },
       { label: 'Briefing Room', icon: Presentation, href: '/briefing', badge: 'NEW' },
     ],
   },
