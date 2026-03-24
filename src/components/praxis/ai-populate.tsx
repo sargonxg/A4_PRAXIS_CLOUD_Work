@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Loader2, Check, X, Settings2 } from 'lucide-react';
+import { Sparkles, Loader2, Check, X, Settings2, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { usePreferencesStore, type DataSourceMode } from '@/stores/preferences-store';
 import { useSituationStore } from '@/stores/situation-store';
 import { useAuth } from '@/lib/auth/auth-context';
+import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 import type { Situation } from '@/types/situation';
+
+const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 
 interface AiPopulateProps {
   /** Unique tool identifier (e.g., 'risk-monitor', 'early-warning') */
@@ -53,11 +56,30 @@ export function AiPopulate({
   const { credits } = useAuth();
   const { aiAutoPopulate, getEffectiveMode, setToolOverride } = usePreferencesStore();
 
+  const persisted = usePersistedToolData(toolId, activeSituation?.id);
+  const restoredRef = useRef(false);
+
   const [status, setStatus] = useState<'idle' | 'generating' | 'done' | 'error' | 'skipped'>('idle');
   const [showSourcePicker, setShowSourcePicker] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const sourceMode = getEffectiveMode(toolId);
+
+  // Check for persisted data before showing the AI generation prompt
+  useEffect(() => {
+    if (restoredRef.current || persisted.isLoading || hasExistingData) return;
+    if (!activeSituation) return;
+
+    if (persisted.data != null && persisted.generatedAt) {
+      const age = Date.now() - new Date(persisted.generatedAt).getTime();
+      if (age < TWENTY_FOUR_HOURS_MS) {
+        restoredRef.current = true;
+        onDataGenerated(persisted.data);
+        setStatus('done');
+        return;
+      }
+    }
+  }, [persisted.isLoading, persisted.data, persisted.generatedAt, hasExistingData, activeSituation, onDataGenerated]);
 
   // Auto-populate when tool opens for the first time with no data
   useEffect(() => {
@@ -65,6 +87,8 @@ export function AiPopulate({
       setStatus('skipped');
       return;
     }
+    // Wait for persistence check to complete
+    if (persisted.isLoading || restoredRef.current) return;
     if (!activeSituation || status !== 'idle') return;
 
     // Auto-trigger generation on first visit if auto-populate is enabled
@@ -72,7 +96,7 @@ export function AiPopulate({
       generate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasExistingData, aiAutoPopulate, activeSituation]);
+  }, [hasExistingData, aiAutoPopulate, activeSituation, persisted.isLoading]);
 
   const generate = useCallback(async () => {
     if (!activeSituation) return;
@@ -100,16 +124,41 @@ export function AiPopulate({
 
       const data = await res.json();
       onDataGenerated(data);
+      // Persist the generated data to Firestore
+      persisted.save(data);
       setStatus('done');
     } catch {
       setErrorMsg('Network error. Please try again.');
       setStatus('error');
     }
-  }, [activeSituation, apiEndpoint, sourceMode, extraBody, toolName, onDataGenerated]);
+  }, [activeSituation, apiEndpoint, sourceMode, extraBody, toolName, onDataGenerated, persisted]);
 
-  // If data exists or user skipped, just show the tool
+  const handleRegenerate = useCallback(async () => {
+    restoredRef.current = false;
+    await persisted.clear();
+    setStatus('idle');
+    // Immediately trigger new generation
+    generate();
+  }, [persisted, generate]);
+
+  // If data exists or user skipped, just show the tool with a Regenerate button
   if (status === 'skipped' || status === 'done' || hasExistingData) {
-    return <>{children}</>;
+    return (
+      <>
+        {(status === 'done' || hasExistingData) && (
+          <div className="mb-4 flex items-center justify-end">
+            <button
+              onClick={handleRegenerate}
+              className="flex items-center gap-1.5 rounded-lg border border-navy-200 px-3 py-1.5 text-xs font-medium text-navy-500 transition-colors hover:border-navy-300 hover:text-navy-700"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Regenerate
+            </button>
+          </div>
+        )}
+        {children}
+      </>
+    );
   }
 
   // Generating state
