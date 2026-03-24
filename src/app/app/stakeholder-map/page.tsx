@@ -569,72 +569,52 @@ export default function StakeholderMapPage() {
   const [loadingSpoiler, setLoadingSpoiler] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const [quadrantSummary, setQuadrantSummary] = useState<{
+    keyPlayers: string[]; keepSatisfied: string[]; keepInformed: string[]; monitor: string[];
+  } | null>(isDemo ? { keyPlayers: ['gov', 'drm', 'unmn'], keepSatisfied: ['karovia'], keepInformed: ['cso'], monitor: ['au'] } : null);
+  const [engagementPriorities, setEngagementPriorities] = useState<string[]>([]);
+
   const hasData = actors.length > 0;
 
-  // ─── Generate stakeholder map from AI ──────────────────────────────────────
+  // ─── Generate stakeholder map from dedicated power-map API ────────────────
   const handleGenerateMap = useCallback(async () => {
     if (generatingMap) return;
     setGeneratingMap(true);
 
-    const situationName = situation?.name ?? 'the active situation';
-    const situationDesc = situation?.description ?? '';
-    const situationRegion = situation?.region ?? '';
-    const situationActors = situation?.actors?.join(', ') ?? '';
-
-    const prompt = `You are a senior conflict analyst. Generate a stakeholder power map for "${situationName}".
-
-Context:
-${situationDesc ? `- Description: ${situationDesc}` : ''}
-${situationRegion ? `- Region: ${situationRegion}` : ''}
-${situationActors ? `- Key actors: ${situationActors}` : ''}
-
-Generate 5-8 key stakeholder actors and their relationships.
-
-IMPORTANT: Return ONLY a valid JSON object with two arrays. No markdown, no code fences, no explanation.
-
-{
-  "actors": [
-    { "id": "short-id", "name": "Full Name", "type": "state|armed-group|international|civil-society", "power": 1-10, "interest": 1-10, "color": "#hex", "relationships": 0 }
-  ],
-  "relationships": [
-    { "from": "actor-id", "to": "actor-id", "type": "alliance|rivalry|diplomatic|support", "strength": 1-10, "description": "Brief description" }
-  ]
-}
-
-Use these color conventions: states=#1A2332 or #5B8C5A or #8395a7, armed groups=#A63D40, international orgs=#4B92DB or #4B6584, civil society=#C8961E.
-Set each actor's "relationships" count to the number of relationships they appear in.
-Make the analysis realistic and grounded in conflict dynamics.`;
-
     try {
-      const response = await fetch('/api/ai/chat', {
+      const response = await fetch('/api/ai/power-map', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+        body: JSON.stringify({ situation }),
       });
 
-      if (!response.ok || !response.body) throw new Error('Stream failed');
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let fullText = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value);
-        for (const line of chunk.split('\n')) {
-          const parsed = parseDataStreamChunk(line);
-          if (parsed) fullText += parsed;
-        }
-      }
+      if (!response.ok) throw new Error('Power map generation failed');
+      const data = await response.json();
 
-      // Extract JSON from the response
-      const jsonMatch = fullText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const data = JSON.parse(jsonMatch[0]);
-        if (Array.isArray(data.actors) && Array.isArray(data.relationships)) {
-          setActors(data.actors);
-          setRelationships(data.relationships);
-        }
+      if (Array.isArray(data.actors)) {
+        // Map API actor types to legacy page types for compatibility
+        const typeMap: Record<string, string> = {
+          non_state_armed: 'armed-group',
+          international: 'international',
+          regional: 'international',
+          civil_society: 'civil-society',
+          private_sector: 'civil-society',
+          media: 'civil-society',
+          state: 'state',
+        };
+        setActors(data.actors.map((a: { id: string; type: string; [k: string]: unknown }) => ({
+          ...a,
+          type: typeMap[a.type] ?? a.type,
+          relationships: (data.relationships ?? []).filter(
+            (r: { from: string; to: string }) => r.from === a.id || r.to === a.id
+          ).length,
+        })));
       }
+      if (Array.isArray(data.relationships)) setRelationships(data.relationships);
+      if (data.quadrantSummary) setQuadrantSummary(data.quadrantSummary);
+      if (data.coalitionDynamics) setCoalitionAnalysis(data.coalitionDynamics);
+      if (data.spoilerRisks) setSpoilerAnalysis(data.spoilerRisks);
+      if (Array.isArray(data.engagementPriorities)) setEngagementPriorities(data.engagementPriorities);
     } catch {
       // Silent fail — user can retry
     } finally {
@@ -1023,6 +1003,29 @@ Be precise and operationally actionable.`;
           )}
         </div>
       </div>
+
+      {/* Engagement Priorities — populated from power-map API */}
+      {engagementPriorities.length > 0 && (
+        <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Target className="h-4 w-4 text-diplomatic-blue" />
+            <h3 className="text-sm font-semibold text-navy-900">Engagement Priorities</h3>
+            <span className="ml-auto text-[10px] font-medium text-diplomatic-blue bg-diplomatic-blue/8 rounded-full px-2 py-0.5">
+              Mitchell/Agle/Wood Framework
+            </span>
+          </div>
+          <ol className="space-y-2">
+            {engagementPriorities.map((p, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-diplomatic-blue/10 text-[10px] font-bold text-diplomatic-blue">
+                  {i + 1}
+                </span>
+                <p className="text-xs text-navy-700 leading-relaxed">{p}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       <div ref={bottomRef} />
       </>
