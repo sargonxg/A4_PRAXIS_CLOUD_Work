@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
+import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
+import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
@@ -60,10 +62,12 @@ const DEMO_RESPONSE = {
 
 export async function POST(request: Request) {
   try {
-    const { entities, conflictContext } = await request.json() as {
+    const { entities, conflictContext, situation } = await request.json() as {
       entities: string[];
       conflictContext?: string;
+      situation?: Situation;
     };
+    const sitContext = situation ? buildToolContext(situation) : '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -85,7 +89,7 @@ export async function POST(request: Request) {
     const result = await generateText({
       model: getModel(),
       output: Output.object({ schema: SanctionsScanSchema }),
-      prompt: `You are a senior sanctions compliance analyst. Monitor and analyze the latest sanctions developments for the following entities.
+      prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior sanctions compliance analyst. Monitor and analyze the latest sanctions developments for the following entities.
 
 ENTITIES: ${entities.join(', ')}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}

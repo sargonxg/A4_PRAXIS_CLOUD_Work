@@ -1,8 +1,10 @@
 import { streamText } from 'ai';
 import { getProModel } from '@/lib/ai/providers';
+import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { withAuth } from '@/lib/api/with-auth';
+import type { Situation } from '@/types/situation';
 
 export const maxDuration = 120;
 
@@ -104,12 +106,14 @@ The Government of Nordalia under President Osei is at an inflection point betwee
 
 export const POST = withAuth(async (request: Request) => {
   try {
-    const { actorName, situationId, situationContext, meetingContext } = await request.json() as {
+    const { actorName, situationId, situationContext, meetingContext, situation } = await request.json() as {
       actorName: string;
       situationId: string;
       situationContext: string;
       meetingContext?: string;
+      situation?: Situation;
     };
+    const sitContext = situation ? buildToolContext(situation) : '';
 
     if (!actorName || !situationContext) {
       return new Response(
@@ -130,7 +134,7 @@ export const POST = withAuth(async (request: Request) => {
     // --- Stream the brief ---
     const result = streamText({
       model: getProModel(),
-      system: ACTOR_BRIEF_SYSTEM_PROMPT,
+      system: sitContext ? `${sitContext}\n\n${ACTOR_BRIEF_SYSTEM_PROMPT}` : ACTOR_BRIEF_SYSTEM_PROMPT,
       messages: [
         {
           role: 'user',

@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server';
 import { generateText, streamText, Output } from 'ai';
 import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
+import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
+import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
@@ -152,7 +154,7 @@ const DEMO_RESPONSE = {
 
 export async function POST(request: Request) {
   try {
-    const { caseId, briefingType, conflictContext, situationContext } = await request.json() as {
+    const { caseId, briefingType, conflictContext, situationContext, situation } = await request.json() as {
       caseId: string;
       briefingType: string;
       conflictContext?: string;
@@ -165,7 +167,9 @@ export async function POST(request: Request) {
         glaslStage: number | null;
         description: string;
       };
+      situation?: Situation;
     };
+    const sitContext = situation ? buildToolContext(situation) : '';
 
     // ---------------------------------------------------------------------------
     // Morning Digest — streamed markdown (not structured slides)
@@ -202,7 +206,7 @@ DESCRIPTION: ${situationContext.description}`
 
       const result = streamText({
         model: getModel(),
-        system: MORNING_DIGEST_SYSTEM_PROMPT,
+        system: sitContext ? `${sitContext}\n\n${MORNING_DIGEST_SYSTEM_PROMPT}` : MORNING_DIGEST_SYSTEM_PROMPT,
         prompt: `Generate today's morning intelligence digest for the following situation.
 
 ${sitBlock}
@@ -240,7 +244,7 @@ Generate the digest now. Be specific with actor names, locations, and timeline r
     const result = await generateText({
       model: getModel(),
       output: Output.object({ schema: BriefingSchema }),
-      prompt: `You are a senior briefing officer preparing a ${briefingType} briefing for senior diplomatic officials.
+      prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior briefing officer preparing a ${briefingType} briefing for senior diplomatic officials.
 
 CASE: ${caseId}
 BRIEFING TYPE: ${briefingType}

@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
+import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
+import type { Situation } from '@/types/situation';
 
 export const maxDuration = 120;
 
@@ -86,6 +88,7 @@ export async function POST(request: Request) {
       classification,
       audience,
       conflictContext,
+      situation,
     } = await request.json() as {
       caseId: string;
       type: string;
@@ -93,7 +96,9 @@ export async function POST(request: Request) {
       classification?: string;
       audience?: string;
       conflictContext?: string;
+      situation?: Situation;
     };
+    const sitContext = situation ? buildToolContext(situation) : '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -115,7 +120,7 @@ export async function POST(request: Request) {
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: DossierSectionSchema }),
-      prompt: `You are a senior intelligence analyst producing a formal dossier. Generate the following sections for a ${type} dossier.
+      prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior intelligence analyst producing a formal dossier. Generate the following sections for a ${type} dossier.
 
 CASE: ${caseId}
 ${classification ? `CLASSIFICATION: ${classification}` : ''}

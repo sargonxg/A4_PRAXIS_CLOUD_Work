@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
+import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
+import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
@@ -65,11 +67,13 @@ const DEMO_RESPONSE = {
 
 export async function POST(request: Request) {
   try {
-    const { actorName, actorType, conflictContext } = await request.json() as {
+    const { actorName, actorType, conflictContext, situation } = await request.json() as {
       actorName: string;
       actorType: string;
       conflictContext?: string;
+      situation?: Situation;
     };
+    const sitContext = situation ? buildToolContext(situation) : '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -91,7 +95,7 @@ export async function POST(request: Request) {
     const result = await generateText({
       model: getModel(),
       output: Output.object({ schema: ActorEnrichmentSchema }),
-      prompt: `You are a senior conflict intelligence analyst. Enrich the profile of the following actor with the latest available information.
+      prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior conflict intelligence analyst. Enrich the profile of the following actor with the latest available information.
 
 ACTOR: ${actorName}
 TYPE: ${actorType}

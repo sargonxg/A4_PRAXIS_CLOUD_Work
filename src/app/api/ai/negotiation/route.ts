@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
+import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
@@ -124,11 +126,13 @@ const DEMO_RESPONSE = {
 
 export async function POST(request: Request) {
   try {
-    const { parties, issues, conflictContext } = await request.json() as {
+    const { parties, issues, conflictContext, situation } = await request.json() as {
       parties: string[];
       issues: string[];
       conflictContext?: string;
+      situation?: Situation;
     };
+    const sitContext = situation ? buildToolContext(situation) : '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -143,7 +147,7 @@ export async function POST(request: Request) {
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: NegotiationSchema }),
-      prompt: `You are a senior negotiation analyst specializing in Fisher/Ury interest-based negotiation and conflict resolution. Conduct a comprehensive negotiation analysis.
+      prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior negotiation analyst specializing in Fisher/Ury interest-based negotiation and conflict resolution. Conduct a comprehensive negotiation analysis.
 
 PARTIES: ${parties.join(', ')}
 KEY ISSUES: ${issues.join(', ')}

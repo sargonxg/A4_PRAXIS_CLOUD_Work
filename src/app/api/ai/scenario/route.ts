@@ -1,7 +1,9 @@
 import { streamText } from 'ai';
 import { getModel } from '@/lib/ai/providers';
+import { buildToolContext } from '@/lib/ai/situation-context';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
+import type { Situation } from '@/types/situation';
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
@@ -10,7 +12,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { conflictContext, scenarioTrigger, actors, timeHorizon } = await request.json();
+    const { conflictContext, scenarioTrigger, actors, timeHorizon, situation } = await request.json() as {
+      conflictContext: string;
+      scenarioTrigger: string;
+      actors?: string[];
+      timeHorizon: string;
+      situation?: Situation;
+    };
+    const sitContext = situation ? buildToolContext(situation) : '';
 
     const creditCheck = await checkAndDeductCredits('ai_scenario', 'Scenario analysis');
     if (!creditCheck.allowed) return creditCheck.response;
@@ -35,7 +44,7 @@ ${intel.humanitarian?.displacement ? `- Displacement: ${intel.humanitarian.displ
       }
     } catch { /* continue */ }
 
-    const prompt = `You are a senior conflict analyst at a major international crisis organization. Conduct a rigorous scenario analysis.
+    const prompt = `${sitContext ? `${sitContext}\n\n` : ''}You are a senior conflict analyst at a major international crisis organization. Conduct a rigorous scenario analysis.
 
 CONFLICT CONTEXT: ${conflictContext}
 SCENARIO TRIGGER: ${scenarioTrigger}

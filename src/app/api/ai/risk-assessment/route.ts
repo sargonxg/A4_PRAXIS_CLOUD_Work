@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
+import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import { computeRiskScore } from '@/lib/analytics/risk-engine';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
+import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
@@ -93,10 +95,12 @@ const DEMO_RESPONSE = {
 
 export async function POST(request: Request) {
   try {
-    const { regions, conflictContext } = await request.json() as {
+    const { regions, conflictContext, situation } = await request.json() as {
       regions: string[];
       conflictContext?: string;
+      situation?: Situation;
     };
+    const sitContext = situation ? buildToolContext(situation) : '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -145,7 +149,7 @@ ${intel.humanitarian?.displacement ? `Displacement: ${intel.humanitarian.displac
     const result = await generateText({
       model: getModel(),
       output: Output.object({ schema: RiskAssessmentSchema }),
-      prompt: `You are a senior risk analyst specializing in conflict and political instability assessment. Conduct a multi-dimensional risk assessment.
+      prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior risk analyst specializing in conflict and political instability assessment. Conduct a multi-dimensional risk assessment.
 
 REGIONS TO ASSESS: ${regions.join(', ')}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}

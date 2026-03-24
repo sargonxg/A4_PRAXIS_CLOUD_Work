@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
+import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import { computeEscalation } from '@/lib/analytics/escalation-scorer';
 import { fetchEvents, isACLEDConfigured } from '@/lib/data-feeds/acled-client';
 import { getCurrentStability } from '@/lib/data-feeds/gdelt-stability';
+import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
@@ -75,10 +77,12 @@ const DEMO_RESPONSE = {
 
 export async function POST(request: Request) {
   try {
-    const { conflictId, conflictContext } = await request.json() as {
+    const { conflictId, conflictContext, situation } = await request.json() as {
       conflictId: string;
       conflictContext?: string;
+      situation?: Situation;
     };
+    const sitContext = situation ? buildToolContext(situation) : '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -123,7 +127,7 @@ Confidence: ${assessment.confidence}\n`;
     const result = await generateText({
       model: getModel(),
       output: Output.object({ schema: EscalationScanSchema }),
-      prompt: `You are a senior conflict analyst specializing in the Glasl escalation model. Conduct a rigorous escalation assessment.
+      prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior conflict analyst specializing in the Glasl escalation model. Conduct a rigorous escalation assessment.
 ${dataContext}
 CONFLICT: ${conflictId}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}

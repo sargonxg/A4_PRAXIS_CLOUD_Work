@@ -2,10 +2,12 @@ import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
+import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import { searchArticles, getVolumeTimeline, getToneTimeline } from '@/lib/data-feeds/gdelt-client';
+import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
@@ -72,11 +74,13 @@ const DEMO_RESPONSE = {
 
 export async function POST(request: Request) {
   try {
-    const { outlets, topic, conflictContext } = await request.json() as {
+    const { outlets, topic, conflictContext, situation } = await request.json() as {
       outlets: string[];
       topic: string;
       conflictContext?: string;
+      situation?: Situation;
     };
+    const sitContext = situation ? buildToolContext(situation) : '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -129,7 +133,7 @@ Recent headlines: ${gdeltArticles.slice(0, 5).map((a) => `"${a.title}" (${a.doma
     const result = await generateText({
       model: getModel(),
       output: Output.object({ schema: MediaScanSchema }),
-      prompt: `You are a senior media analyst specializing in conflict coverage analysis. Analyze how the following media outlets cover the given topic.
+      prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior media analyst specializing in conflict coverage analysis. Analyze how the following media outlets cover the given topic.
 
 TOPIC: ${topic}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}

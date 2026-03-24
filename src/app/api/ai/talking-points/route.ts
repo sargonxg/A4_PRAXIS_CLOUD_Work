@@ -1,7 +1,9 @@
 import { streamText } from 'ai';
 import { getModel } from '@/lib/ai/providers';
+import { buildToolContext } from '@/lib/ai/situation-context';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
@@ -14,14 +16,21 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { situation, audience, tone, context } = await request.json();
+    const { situation, audience, tone, context, situationData } = await request.json() as {
+      situation: string;
+      audience: string;
+      tone?: string;
+      context?: string;
+      situationData?: Situation;
+    };
+    const sitContext = situationData ? buildToolContext(situationData) : '';
 
     const creditCheck = await checkAndDeductCredits('ai_talking_points', 'Talking points');
     if (!creditCheck.allowed) return creditCheck.response;
 
     const result = streamText({
       model: getModel(),
-      system: DIPLOMATIC_SYSTEM_PROMPT,
+      system: sitContext ? `${sitContext}\n\n${DIPLOMATIC_SYSTEM_PROMPT}` : DIPLOMATIC_SYSTEM_PROMPT,
       messages: [
         {
           role: 'user',
