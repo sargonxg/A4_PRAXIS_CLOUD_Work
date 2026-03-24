@@ -1,6 +1,6 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 3.0 — Dual-App Architecture, Situation-Driven Workspace
+> Version 3.1 — Floating PRAXIS Chat, Mobile-Ready, Wired Tool Pages
 
 ## What This Is
 The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Two separate experiences in one codebase: a demo for prospects and a real situation-driven workspace for authenticated users. Deployed at praxis.tacitus.me (Vercel, iad1).
@@ -75,14 +75,37 @@ Glasl escalation model, Fisher/Ury negotiation (ZOPA/BATNA), OCHA humanitarian s
 - **Demo** (`/demo/*`): Pre-loaded Nordalia Crisis, cached AI responses, no API keys needed, unlimited credits
 - **Real** (`/app/*`): User creates situations, live AI (Gemini/Claude), Firecrawl web research, credits deducted, data persisted in Firestore
 
+## Floating Ask PRAXIS (v3.1)
+- `src/components/app/floating-praxis.tsx` — Slide-over chat panel, dark navy theme
+- Available on all /app/* and /demo/* pages except /assistant
+- Header "Ask PRAXIS" button + `/` keyboard shortcut opens it, `Esc` closes
+- Messages persist to localStorage (last 50 messages, keyed `praxis-floating-chat`)
+- Streaming markdown rendering with custom dark CSS (`.floating-praxis-md` in globals.css)
+- Connected via `window.dispatchEvent(new CustomEvent('open-praxis-chat'))`
+
+## Mobile Responsive (v3.1)
+- AppShell detects mobile via `matchMedia('(max-width: 768px)')`
+- Sidebar becomes a fixed drawer overlay on mobile with backdrop
+- Hamburger menu button in header (visible only on mobile)
+- Sidebar auto-closes on route navigation
+- Content padding reduced on mobile (`px-4 py-4` vs `px-6 py-6`)
+
+## AiPopulate Pattern (v3.1)
+- `src/components/praxis/ai-populate.tsx` — Auto-generates data on first tool visit
+- Negotiation Prep, Sanctions Tracker: structured JSON via `generateText + Output.object()`
+- Scenarios: streaming text via `streamText`, rendered directly (no AiPopulate)
+- Data stored in component state; not yet persisted to Firestore
+- Source mode picker: all / web+docs / docs-only / llm-only
+
 ## Conventions
 - `PraxisLink` for all internal navigation (auto-prefixes /app or /demo)
 - `useSituationGuard()` at top of every tool page
 - `usePraxisRoute()` for programmatic navigation (router.push)
 - API routes use `withAuth()` wrapper (Admin SDK verification + rate limiting)
-- AI routes use `checkAndDeductCredits()` before AI calls
+- AI routes use `checkAndDeductCredits()` before AI calls (rejects unauthenticated)
 - Colors: Navy #0F172A, Emerald #10B981, Gold #E8B931, Diplomatic Blue #1B3A5C
 - Fonts: EB Garamond headings, Inter body, JetBrains Mono code
+- OG image: Dynamic via `src/app/opengraph-image.tsx` (no static file needed)
 
 ## Env Vars
 - `GOOGLE_AI_API_KEY` — Required for live AI (demo works without)
