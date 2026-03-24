@@ -270,16 +270,18 @@ export function WelcomeState() {
         const { situation } = await res.json();
         addSituation(situation);
 
-        // Kick off background AI research
-        fetch('/api/ai/deep-research', {
+        // Kick off comprehensive AI auto-structure research
+        fetch('/api/ai/auto-structure', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            query: `${template.name} latest developments background overview key actors`,
-            mode: 'background',
-            depth: 'standard',
-            situationContext: template.description,
-            sourcePreferences: template.sources,
+            situationName: template.name,
+            situationType: template.type,
+            region: template.region,
+            description: template.description,
+            actors: template.actors,
+            userRole: template.userRole,
+            situationId: situation.id,
           }),
         }).catch(() => {}); // Fire and forget
 
