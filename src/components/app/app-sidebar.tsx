@@ -35,6 +35,7 @@ import {
   Presentation,
   Newspaper,
   Bell,
+  Radio,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -84,6 +85,7 @@ const navSections: NavSection[] = [
       { label: 'ARGUS Intelligence', icon: Network, href: '/argus', badge: 'TACITUS' },
       { label: 'Media Compass', icon: Compass, href: '/media-compass' },
       { label: 'Media Roundup', icon: Newspaper, href: '/media-roundup', badge: 'NEW' },
+      { label: 'Info Environment', icon: Radio, href: '/info-environment', badge: 'NEW' },
       { label: 'Commitment Tracker', icon: FileCheck, href: '/commitments', badge: 'NEW' },
       { label: 'Treaty Analyzer', icon: BookMarked, href: '/treaty-analyzer', badge: 'NEW' },
       { label: 'Sanctions Tracker', icon: Shield, href: '/sanctions' },
