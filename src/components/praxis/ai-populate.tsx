@@ -61,12 +61,18 @@ export function AiPopulate({
 
   // Auto-populate when tool opens for the first time with no data
   useEffect(() => {
-    if (hasExistingData || !aiAutoPopulate || !activeSituation || status !== 'idle') {
-      if (hasExistingData) setStatus('skipped');
+    if (hasExistingData) {
+      setStatus('skipped');
       return;
     }
-    // Don't auto-generate, just show the prompt
-  }, [hasExistingData, aiAutoPopulate, activeSituation, status]);
+    if (!activeSituation || status !== 'idle') return;
+
+    // Auto-trigger generation on first visit if auto-populate is enabled
+    if (aiAutoPopulate) {
+      generate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasExistingData, aiAutoPopulate, activeSituation]);
 
   const generate = useCallback(async () => {
     if (!activeSituation) return;
@@ -117,13 +123,23 @@ export function AiPopulate({
         >
           <Sparkles className="h-10 w-10 text-gold-600" />
         </motion.div>
-        <h3 className="text-base font-semibold text-navy-900">PRAXIS is analyzing</h3>
+        <h3 className="text-base font-semibold text-navy-900">Populating {toolName} for the first time</h3>
         <p className="mt-2 text-sm text-navy-600">
-          Generating {toolName} data for &ldquo;{activeSituation?.name}&rdquo;...
+          PRAXIS is researching &ldquo;{activeSituation?.name}&rdquo; and building your {toolName.toLowerCase()} intelligence...
         </p>
-        <div className="mt-4 flex items-center gap-2 text-xs text-navy-400">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Researching, analyzing, and structuring intelligence
+        <div className="mt-4 space-y-2">
+          <div className="flex items-center gap-2 text-xs text-navy-500">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-gold-600" />
+            Searching Wikipedia, GDELT, and web sources for context
+          </div>
+          <div className="flex items-center gap-2 text-xs text-navy-400">
+            <Sparkles className="h-3.5 w-3.5 text-gold-500/50" />
+            Extracting actors, relationships, and key dynamics
+          </div>
+          <div className="flex items-center gap-2 text-xs text-navy-400">
+            <Sparkles className="h-3.5 w-3.5 text-gold-500/30" />
+            Structuring intelligence into actionable format
+          </div>
         </div>
       </div>
     );

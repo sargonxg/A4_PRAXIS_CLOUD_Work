@@ -98,7 +98,10 @@ export async function searchWeb(
   if (cached) return cached;
 
   const client = getClient();
-  if (!client) return [];
+  if (!client) {
+    // Fallback: use free Wikipedia + GDELT APIs when Firecrawl is not configured
+    return searchFreeApis(query, options);
+  }
 
   try {
     const numResults = options.numResults || 5;
@@ -182,6 +185,82 @@ export async function scrapeMultiple(urls: string[]): Promise<ScrapeResult[]> {
  */
 export function isFirecrawlConfigured(): boolean {
   return !!process.env.FIRECRAWL_API_KEY;
+}
+
+// ---------------------------------------------------------------------------
+// Free API fallback (Wikipedia + GDELT) when Firecrawl is not configured
+// ---------------------------------------------------------------------------
+
+async function searchWikipedia(query: string, limit = 3): Promise<WebSearchResult[]> {
+  try {
+    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&srlimit=${limit}&format=json&origin=*`;
+    const res = await fetch(searchUrl, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const results: WebSearchResult[] = [];
+
+    for (const item of data?.query?.search || []) {
+      // Fetch the page extract for content
+      const extractUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro&explaintext&titles=${encodeURIComponent(item.title)}&format=json&origin=*`;
+      try {
+        const extractRes = await fetch(extractUrl, { signal: AbortSignal.timeout(5000) });
+        const extractData = await extractRes.json();
+        const pages = extractData?.query?.pages || {};
+        const page = Object.values(pages)[0] as { extract?: string } | undefined;
+        results.push({
+          title: item.title,
+          url: `https://en.wikipedia.org/wiki/${encodeURIComponent(item.title.replace(/ /g, '_'))}`,
+          content: (page?.extract || item.snippet?.replace(/<[^>]*>/g, '') || '').slice(0, 5000),
+          description: item.snippet?.replace(/<[^>]*>/g, '') || '',
+        });
+      } catch {
+        results.push({
+          title: item.title,
+          url: `https://en.wikipedia.org/wiki/${encodeURIComponent(item.title.replace(/ /g, '_'))}`,
+          content: item.snippet?.replace(/<[^>]*>/g, '') || '',
+          description: item.snippet?.replace(/<[^>]*>/g, '') || '',
+        });
+      }
+    }
+    return results;
+  } catch (err) {
+    console.warn('[wikipedia] Search failed:', err);
+    return [];
+  }
+}
+
+async function searchGDELT(query: string, limit = 3): Promise<WebSearchResult[]> {
+  try {
+    const gdeltUrl = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=ArtList&maxrecords=${limit}&format=json&sort=DateDesc`;
+    const res = await fetch(gdeltUrl, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data?.articles || []).map((a: { title?: string; url?: string; seendate?: string; domain?: string; sourcecountry?: string }) => ({
+      title: a.title || 'Untitled',
+      url: a.url || '',
+      content: `${a.title || ''} — Source: ${a.domain || 'Unknown'}, Country: ${a.sourcecountry || 'Unknown'}`,
+      publishedDate: a.seendate ? `${a.seendate.slice(0, 4)}-${a.seendate.slice(4, 6)}-${a.seendate.slice(6, 8)}` : undefined,
+      description: `${a.domain || 'Unknown source'} — ${a.sourcecountry || ''}`,
+    }));
+  } catch (err) {
+    console.warn('[gdelt] Search failed:', err);
+    return [];
+  }
+}
+
+async function searchFreeApis(query: string, options: SearchOptions = {}): Promise<WebSearchResult[]> {
+  const limit = options.numResults || 5;
+  const wikiLimit = Math.min(3, limit);
+  const gdeltLimit = Math.max(2, limit - wikiLimit);
+
+  const [wikiResults, gdeltResults] = await Promise.all([
+    searchWikipedia(query, wikiLimit),
+    searchGDELT(query, gdeltLimit),
+  ]);
+
+  const results = [...wikiResults, ...gdeltResults];
+  setCache(searchCache, `${query}:${limit}`, results);
+  return results;
 }
 
 /**
