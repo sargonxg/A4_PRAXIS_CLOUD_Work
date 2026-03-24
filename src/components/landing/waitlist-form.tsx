@@ -100,7 +100,7 @@ export function WaitlistForm() {
                   </p>
                 </div>
                 <a
-                  href="/dashboard"
+                  href="/login"
                   className="mt-2 inline-flex items-center justify-center gap-2 rounded-md border border-diplomatic-blue/20 px-6 py-2.5 text-sm font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
                 >
                   Explore the Demo Now
@@ -174,7 +174,7 @@ export function WaitlistForm() {
 
                 {/* Secondary CTA */}
                 <a
-                  href="/dashboard"
+                  href="/login"
                   className="inline-flex items-center justify-center gap-2 rounded-md border border-diplomatic-blue/20 px-8 py-3.5 text-sm font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
                 >
                   Explore the Demo First

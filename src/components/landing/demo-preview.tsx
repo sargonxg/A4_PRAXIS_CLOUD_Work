@@ -368,7 +368,7 @@ export function DemoPreview() {
           className="mt-10 text-center"
         >
           <Link
-            href="/dashboard"
+            href="/login"
             className="group inline-flex items-center gap-2 text-gold-700 transition-colors hover:text-gold-600"
           >
             <span className="text-sm font-semibold">Try the Full Demo</span>

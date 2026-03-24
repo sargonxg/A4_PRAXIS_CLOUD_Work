@@ -55,7 +55,7 @@ export function Cta() {
 
           {/* Demo access */}
           <a
-            href="/dashboard"
+            href="/login"
             className="group inline-flex items-center justify-center gap-2 rounded-md border border-diplomatic-blue/20 px-8 py-3.5 text-sm font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
           >
             <MessageSquare className="h-4 w-4" />
