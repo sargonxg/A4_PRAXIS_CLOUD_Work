@@ -13,6 +13,21 @@ const google = createGoogleGenerativeAI({
 // Convenience helper — single place to swap model version
 const gemini = (model = 'gemini-2.5-flash') => google(model);
 
+// ---------------------------------------------------------------------------
+// Shared helpers — truncation and timeout
+// ---------------------------------------------------------------------------
+
+function truncate(s: string, max = 12000): string {
+  if (s.length <= max) return s;
+  return s.slice(0, max) + '\n[...truncated]';
+}
+
+const TOOL_TIMEOUT_MS = 30_000;
+
+function timeoutSignal(): AbortSignal {
+  return AbortSignal.timeout(TOOL_TIMEOUT_MS);
+}
+
 // ============================================================================
 // Tool 1: webSearch
 // Firecrawl-powered web search returning real results with full page content.
@@ -33,7 +48,13 @@ export const webSearch = tool({
   execute: async ({ query, region }) => {
     try {
       const fullQuery = region ? `${query} ${region}` : query;
-      const webResults = await searchWeb(fullQuery, { numResults: 5 });
+      let webResults: Awaited<ReturnType<typeof searchWeb>> = [];
+      try {
+        webResults = await searchWeb(fullQuery, { numResults: 5 });
+      } catch (searchErr) {
+        console.error('[webSearch] searchWeb call failed', searchErr instanceof Error ? searchErr.message : searchErr);
+        webResults = [];
+      }
 
       if (webResults.length === 0) {
         return {
@@ -41,6 +62,7 @@ export const webSearch = tool({
           query,
           analysisNote:
             'No web results returned. Firecrawl may not be configured (set FIRECRAWL_API_KEY) or the query returned no matches.',
+          _generatedAt: new Date().toISOString(),
         };
       }
 
@@ -80,13 +102,18 @@ export const webSearch = tool({
         results,
         query,
         analysisNote: `Found ${results.length} web sources for "${query}". Results are from live Firecrawl search.`,
+        _generatedAt: new Date().toISOString(),
       };
-    } catch {
+    } catch (err) {
+      console.error('[webSearch]', err instanceof Error ? err.message : err);
       return {
+        error: true,
+        message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)),
         results: [],
         query,
         analysisNote:
           'Web search failed due to an unexpected error. Check Firecrawl configuration and API key.',
+        _generatedAt: new Date().toISOString(),
       };
     }
   },
@@ -119,34 +146,36 @@ export const analyzeDocument = tool({
     conflictContext: z.string().optional().describe('Known conflict context to improve extraction accuracy'),
   }),
   execute: async ({ text, extractionTargets, conflictContext }) => {
-    const { object } = await generateObject({
-      model: gemini(),
-      schema: z.object({
-        entities: z.array(
-          z.object({
-            type: z.enum([
-              'actor',
-              'claim',
-              'interest',
-              'constraint',
-              'leverage',
-              'commitment',
-              'event',
-              'narrative',
-            ]),
-            name: z.string(),
-            description: z.string(),
-            sourcePassage: z
-              .string()
-              .describe('The exact passage from the text this entity was extracted from'),
-            confidence: z.number().min(0).max(1),
-            attributes: z.record(z.string(), z.string()).optional(),
-          })
-        ),
-        summary: z.string(),
-        informationGaps: z.array(z.string()),
-      }),
-      prompt: `You are a TACITUS Conflict Grammar entity extraction engine. Analyze this text and extract structured conflict entities.
+    try {
+      const { object } = await generateObject({
+        model: gemini(),
+        abortSignal: timeoutSignal(),
+        schema: z.object({
+          entities: z.array(
+            z.object({
+              type: z.enum([
+                'actor',
+                'claim',
+                'interest',
+                'constraint',
+                'leverage',
+                'commitment',
+                'event',
+                'narrative',
+              ]),
+              name: z.string(),
+              description: z.string(),
+              sourcePassage: z
+                .string()
+                .describe('The exact passage from the text this entity was extracted from'),
+              confidence: z.number().min(0).max(1),
+              attributes: z.record(z.string(), z.string()).optional(),
+            })
+          ),
+          summary: z.string(),
+          informationGaps: z.array(z.string()),
+        }),
+        prompt: `You are a TACITUS Conflict Grammar entity extraction engine. Analyze this text and extract structured conflict entities.
 
 CONFLICT GRAMMAR FRAMEWORK:
 - Actor: Any entity with agency (states, armed groups, IOs, individuals, civil society)
@@ -159,14 +188,21 @@ CONFLICT GRAMMAR FRAMEWORK:
 - Narrative: How actors frame the conflict for specific audiences
 
 Extract: ${extractionTargets.join(', ')}
-${conflictContext ? `Known conflict context: ${conflictContext}` : ''}
+${conflictContext ? `Known conflict context: ${truncate(conflictContext)}` : ''}
 
 TEXT TO ANALYZE:
-${text.slice(0, 8000)}
+${truncate(text)}
 
 For each entity, include the exact source passage it was extracted from. Rate confidence 0-1 based on how clearly the text supports the extraction. Also identify information gaps — what an analyst would want to know that this text does not provide.`,
-    });
-    return object;
+      });
+      return { ...object, _generatedAt: new Date().toISOString() };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'analyzeDocument', entities: [], summary: '', informationGaps: [], _generatedAt: new Date().toISOString() };
+      }
+      console.error('[analyzeDocument]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), entities: [], summary: '', informationGaps: [], _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -198,84 +234,90 @@ export const queryConflictGraph = tool({
     query: z.string().optional().describe('Natural language query to guide result filtering'),
   }),
   execute: async ({ conflictId, entityType, actorId, query }) => {
-    // In production: fetch conflict from database by conflictId.
-    // For demo, use the pre-loaded Nordalia Crisis dataset.
-    const conflict = DEMO_CONFLICT;
+    try {
+      // In production: fetch conflict from database by conflictId.
+      // For demo, use the pre-loaded Nordalia Crisis dataset.
+      const conflict = DEMO_CONFLICT;
 
-    let results: unknown[] = [];
+      let results: unknown[] = [];
 
-    switch (entityType) {
-      case 'actor':
-        results = conflict.actors;
-        break;
-      case 'event':
-        results = (conflict as unknown as Record<string, unknown[]>).events || [];
-        break;
-      case 'relationship':
-        results = (conflict as unknown as Record<string, unknown[]>).relationships || [];
-        break;
-      case 'all':
-        results = [
-          ...conflict.actors.map((a) => ({ ...a, _entityType: 'actor' })),
-          ...((conflict as unknown as Record<string, unknown[]>).events || []).map((e) => ({
-            ...(e as object),
-            _entityType: 'event',
-          })),
-          ...((conflict as unknown as Record<string, unknown[]>).claims || []).map((c) => ({
-            ...(c as object),
-            _entityType: 'claim',
-          })),
-          ...((conflict as unknown as Record<string, unknown[]>).interests || []).map((i) => ({
-            ...(i as object),
-            _entityType: 'interest',
-          })),
-          ...((conflict as unknown as Record<string, unknown[]>).commitments || []).map((c) => ({
-            ...(c as object),
-            _entityType: 'commitment',
-          })),
-          ...((conflict as unknown as Record<string, unknown[]>).leverage || []).map((l) => ({
-            ...(l as object),
-            _entityType: 'leverage',
-          })),
-          ...((conflict as unknown as Record<string, unknown[]>).constraints || []).map((c) => ({
-            ...(c as object),
-            _entityType: 'constraint',
-          })),
-          ...((conflict as unknown as Record<string, unknown[]>).narratives || []).map((n) => ({
-            ...(n as object),
-            _entityType: 'narrative',
-          })),
-        ];
-        break;
-      default: {
-        const key = entityType + 's';
-        const conflictData = conflict as Record<string, unknown>;
-        results = (conflictData[key] as unknown[] | undefined) ?? (conflictData[entityType] as unknown[] | undefined) ?? [];
+      switch (entityType) {
+        case 'actor':
+          results = conflict.actors;
+          break;
+        case 'event':
+          results = (conflict as unknown as Record<string, unknown[]>).events || [];
+          break;
+        case 'relationship':
+          results = (conflict as unknown as Record<string, unknown[]>).relationships || [];
+          break;
+        case 'all':
+          results = [
+            ...conflict.actors.map((a) => ({ ...a, _entityType: 'actor' })),
+            ...((conflict as unknown as Record<string, unknown[]>).events || []).map((e) => ({
+              ...(e as object),
+              _entityType: 'event',
+            })),
+            ...((conflict as unknown as Record<string, unknown[]>).claims || []).map((c) => ({
+              ...(c as object),
+              _entityType: 'claim',
+            })),
+            ...((conflict as unknown as Record<string, unknown[]>).interests || []).map((i) => ({
+              ...(i as object),
+              _entityType: 'interest',
+            })),
+            ...((conflict as unknown as Record<string, unknown[]>).commitments || []).map((c) => ({
+              ...(c as object),
+              _entityType: 'commitment',
+            })),
+            ...((conflict as unknown as Record<string, unknown[]>).leverage || []).map((l) => ({
+              ...(l as object),
+              _entityType: 'leverage',
+            })),
+            ...((conflict as unknown as Record<string, unknown[]>).constraints || []).map((c) => ({
+              ...(c as object),
+              _entityType: 'constraint',
+            })),
+            ...((conflict as unknown as Record<string, unknown[]>).narratives || []).map((n) => ({
+              ...(n as object),
+              _entityType: 'narrative',
+            })),
+          ];
+          break;
+        default: {
+          const key = entityType + 's';
+          const conflictData = conflict as Record<string, unknown>;
+          results = (conflictData[key] as unknown[] | undefined) ?? (conflictData[entityType] as unknown[] | undefined) ?? [];
+        }
       }
-    }
 
-    // Filter by actor if specified
-    if (actorId) {
-      results = results.filter((e) => {
-        const entity = e as Record<string, unknown>;
-        return (
-          entity.id === actorId ||
-          entity.actorId === actorId ||
-          entity.source === actorId ||
-          entity.target === actorId ||
-          (Array.isArray(entity.actorIds) && entity.actorIds.includes(actorId))
-        );
-      });
-    }
+      // Filter by actor if specified
+      if (actorId) {
+        results = results.filter((e) => {
+          const entity = e as Record<string, unknown>;
+          return (
+            entity.id === actorId ||
+            entity.actorId === actorId ||
+            entity.source === actorId ||
+            entity.target === actorId ||
+            (Array.isArray(entity.actorIds) && entity.actorIds.includes(actorId))
+          );
+        });
+      }
 
-    return {
-      conflictId,
-      conflictName: conflict.name,
-      entityType,
-      query: query ?? null,
-      results: results.slice(0, 20), // Limit for context window
-      totalCount: results.length,
-    };
+      return {
+        conflictId,
+        conflictName: conflict.name,
+        entityType,
+        query: query ?? null,
+        results: results.slice(0, 20), // Limit for context window
+        totalCount: results.length,
+        _generatedAt: new Date().toISOString(),
+      };
+    } catch (err) {
+      console.error('[queryConflictGraph]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), conflictId, conflictName: '', entityType, query: query ?? null, results: [], totalCount: 0, _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -310,25 +352,27 @@ export const draftSection = tool({
       .describe('Desired tone for the section'),
   }),
   execute: async ({ sectionTitle, templateType, conflictId, instructions, wordLimit, tone }) => {
-    // Load real conflict data for grounding
-    const conflict = DEMO_CONFLICT;
-    const actorSummary = conflict.actors
-      .map((a) => `${a.name} (${a.type}): ${a.description.slice(0, 120)}...`)
-      .join('\n');
-    const conflictData = conflict as Record<string, unknown>;
-    const events = (conflictData.events as Array<Record<string, unknown>> | undefined) ?? [];
-    const recentEvents = events
-      .slice(-5)
-      .map((e) => `${e.date} [${e.type}]: ${String(e.description ?? '').slice(0, 120)}...`)
-      .join('\n');
+    try {
+      // Load real conflict data for grounding
+      const conflict = DEMO_CONFLICT;
+      const actorSummary = conflict.actors
+        .map((a) => `${a.name} (${a.type}): ${a.description.slice(0, 120)}...`)
+        .join('\n');
+      const conflictData = conflict as Record<string, unknown>;
+      const events = (conflictData.events as Array<Record<string, unknown>> | undefined) ?? [];
+      const recentEvents = events
+        .slice(-5)
+        .map((e) => `${e.date} [${e.type}]: ${String(e.description ?? '').slice(0, 120)}...`)
+        .join('\n');
 
-    const { text } = await generateText({
-      model: gemini(),
-      system: DIPLOMATIC_SYSTEM_PROMPT,
-      prompt: `Draft the "${sectionTitle}" section for a ${templateType.replace(/_/g, ' ')} report.
+      const { text } = await generateText({
+        model: gemini(),
+        abortSignal: timeoutSignal(),
+        system: DIPLOMATIC_SYSTEM_PROMPT,
+        prompt: `Draft the "${sectionTitle}" section for a ${templateType.replace(/_/g, ' ')} report.
 
 CONFLICT: ${conflict.name}
-DESCRIPTION: ${conflict.description}
+DESCRIPTION: ${truncate(conflict.description)}
 
 KEY ACTORS:
 ${actorSummary}
@@ -336,7 +380,7 @@ ${actorSummary}
 RECENT EVENTS:
 ${recentEvents}
 
-${instructions ? `SPECIAL INSTRUCTIONS: ${instructions}` : ''}
+${instructions ? `SPECIAL INSTRUCTIONS: ${truncate(instructions)}` : ''}
 TONE: ${tone || 'formal diplomatic'}
 TARGET LENGTH: ~${wordLimit || 300} words
 
@@ -350,15 +394,23 @@ Requirements:
 - For SG reports/SC briefings: use third-person UN voice
 - For political cables: use analytical first-person mission voice
 - For sitrep: lead with most significant development`,
-    });
+      });
 
-    return {
-      sectionTitle,
-      content: text,
-      wordCount: text.split(/\s+/).length,
-      templateType,
-      status: 'draft' as const,
-    };
+      return {
+        sectionTitle,
+        content: text,
+        wordCount: text.split(/\s+/).length,
+        templateType,
+        status: 'draft' as const,
+        _generatedAt: new Date().toISOString(),
+      };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'draftSection', sectionTitle, content: '', wordCount: 0, templateType, status: 'draft' as const, _generatedAt: new Date().toISOString() };
+      }
+      console.error('[draftSection]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), sectionTitle, content: '', wordCount: 0, templateType, status: 'draft' as const, _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -388,30 +440,32 @@ export const editForDiplomaticTone = tool({
       .describe('How diplomatically sensitive the topic is'),
   }),
   execute: async ({ text, targetAudience, sensitivityLevel }) => {
-    // Pass 1: Quick regex for well-established UN terminology substitutions
-    const pass1 = text
-      .replace(/\bwar\b/gi, 'armed conflict')
-      .replace(/\brebels?\b/gi, 'opposition armed group')
-      .replace(/\bregime\b/gi, 'authorities')
-      .replace(/\bterrorist\b/gi, 'non-State armed group')
-      .replace(/\binvasion\b/gi, 'military operation')
-      .replace(/\bethnic cleansing\b/gi, '[term requires determination by competent body]')
-      .replace(/\bcivil war\b/gi, 'non-international armed conflict')
-      .replace(/\bfailed state\b/gi, 'State facing governance challenges')
-      .replace(/\bchild soldier/gi, 'child associated with armed forces and armed groups')
-      .replace(/\bboots on the ground\b/gi, 'military deployment')
-      .replace(/\bpeace deal\b/gi, 'peace agreement')
-      .replace(/\bwarlord\b/gi, 'armed group leader')
-      .replace(/\bno-fly zone\b/gi, 'flight restriction zone')
-      .replace(/\bsanctions busting\b/gi, 'sanctions violations')
-      .replace(/\bkilling\b/gi, 'killing')
-      .replace(/\bextremists?\b/gi, 'extremist elements')
-      .replace(/\bjihadi(st)?\b/gi, 'armed extremist group member');
+    try {
+      // Pass 1: Quick regex for well-established UN terminology substitutions
+      const pass1 = text
+        .replace(/\bwar\b/gi, 'armed conflict')
+        .replace(/\brebels?\b/gi, 'opposition armed group')
+        .replace(/\bregime\b/gi, 'authorities')
+        .replace(/\bterrorist\b/gi, 'non-State armed group')
+        .replace(/\binvasion\b/gi, 'military operation')
+        .replace(/\bethnic cleansing\b/gi, '[term requires determination by competent body]')
+        .replace(/\bcivil war\b/gi, 'non-international armed conflict')
+        .replace(/\bfailed state\b/gi, 'State facing governance challenges')
+        .replace(/\bchild soldier/gi, 'child associated with armed forces and armed groups')
+        .replace(/\bboots on the ground\b/gi, 'military deployment')
+        .replace(/\bpeace deal\b/gi, 'peace agreement')
+        .replace(/\bwarlord\b/gi, 'armed group leader')
+        .replace(/\bno-fly zone\b/gi, 'flight restriction zone')
+        .replace(/\bsanctions busting\b/gi, 'sanctions violations')
+        .replace(/\bkilling\b/gi, 'killing')
+        .replace(/\bextremists?\b/gi, 'extremist elements')
+        .replace(/\bjihadi(st)?\b/gi, 'armed extremist group member');
 
-    // Pass 2: Gemini for nuanced diplomatic revision
-    const { text: finalText } = await generateText({
-      model: gemini(),
-      prompt: `You are a UN editorial specialist with expertise in diplomatic language and the UN Editorial Manual. Review and revise this text for a ${targetAudience.replace(/_/g, ' ')} audience at sensitivity level: ${sensitivityLevel || 'medium'}.
+      // Pass 2: Gemini for nuanced diplomatic revision
+      const { text: finalText } = await generateText({
+        model: gemini(),
+        abortSignal: timeoutSignal(),
+        prompt: `You are a UN editorial specialist with expertise in diplomatic language and the UN Editorial Manual. Review and revise this text for a ${targetAudience.replace(/_/g, ' ')} audience at sensitivity level: ${sensitivityLevel || 'medium'}.
 
 Rules:
 1. Ensure balanced framing — no passage should advantage any party over another
@@ -419,31 +473,39 @@ Rules:
 3. Use gender-inclusive language throughout (chairperson not chairman, etc.)
 4. Ensure terminology complies with the UN Editorial Manual
 5. For ${targetAudience}:${
-        targetAudience === 'security_council'
-          ? ' Use formal Council language. Reference relevant resolutions where appropriate. Avoid policy recommendations unless in an "Observations" section.'
-          : targetAudience === 'press'
-            ? ' Use accessible language. Avoid jargon. Keep sentences short. Attribute all claims explicitly.'
-            : targetAudience === 'general_assembly'
-              ? ' Use formal multilateral language. Reference Charter principles and resolution precedents.'
-              : targetAudience === 'secretary_general'
-                ? ' Use clear analytical language. Lead with key judgements. Be frank about information gaps.'
-                : ' Use standard diplomatic register with appropriate hedging.'
-      }
+          targetAudience === 'security_council'
+            ? ' Use formal Council language. Reference relevant resolutions where appropriate. Avoid policy recommendations unless in an "Observations" section.'
+            : targetAudience === 'press'
+              ? ' Use accessible language. Avoid jargon. Keep sentences short. Attribute all claims explicitly.'
+              : targetAudience === 'general_assembly'
+                ? ' Use formal multilateral language. Reference Charter principles and resolution precedents.'
+                : targetAudience === 'secretary_general'
+                  ? ' Use clear analytical language. Lead with key judgements. Be frank about information gaps.'
+                  : ' Use standard diplomatic register with appropriate hedging.'
+        }
 
 Text to edit:
-${pass1}
+${truncate(pass1)}
 
 Return ONLY the revised text, with no preamble or explanation.`,
-    });
+      });
 
-    return {
-      originalText: text,
-      editedText: finalText,
-      targetAudience,
-      sensitivityLevel: sensitivityLevel || 'medium',
-      overallAssessment:
-        'Text revised for diplomatic appropriateness per UN editorial standards. Key terminology adjusted and balanced framing applied.',
-    };
+      return {
+        originalText: text,
+        editedText: finalText,
+        targetAudience,
+        sensitivityLevel: sensitivityLevel || 'medium',
+        overallAssessment:
+          'Text revised for diplomatic appropriateness per UN editorial standards. Key terminology adjusted and balanced framing applied.',
+        _generatedAt: new Date().toISOString(),
+      };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'editForDiplomaticTone', originalText: text, editedText: '', targetAudience, sensitivityLevel: sensitivityLevel || 'medium', overallAssessment: '', _generatedAt: new Date().toISOString() };
+      }
+      console.error('[editForDiplomaticTone]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), originalText: text, editedText: '', targetAudience, sensitivityLevel: sensitivityLevel || 'medium', overallAssessment: '', _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -465,30 +527,32 @@ export const analyzeMediaSource = tool({
     topicContext: z.string().optional().describe('Specific topic to assess the source coverage of'),
   }),
   execute: async ({ sourceName, analysisDepth, topicContext }) => {
-    const dbEntry = findMediaOutlet(sourceName);
+    try {
+      const dbEntry = findMediaOutlet(sourceName);
 
-    if (dbEntry && analysisDepth === 'quick') {
-      // Return database entry directly without Gemini call for quick lookups
-      return {
-        sourceName: dbEntry.name,
-        country: dbEntry.country,
-        ownershipType: dbEntry.ownershipType,
-        politicalOrientation: dbEntry.politicalOrientation,
-        reliability: dbEntry.reliabilityScore,
-        editorialIndependence: dbEntry.editorialIndependence,
-        knownStrengths: dbEntry.knownStrengths,
-        knownLimitations: dbEntry.knownLimitations,
-        notableFor: dbEntry.notableFor,
-        topicAssessment: topicContext
-          ? `For coverage of "${topicContext}", consult ${dbEntry.name}'s known limitations for relevant bias factors.`
-          : null,
-        analysisDepth: 'quick',
-      };
-    }
+      if (dbEntry && analysisDepth === 'quick') {
+        // Return database entry directly without Gemini call for quick lookups
+        return {
+          sourceName: dbEntry.name,
+          country: dbEntry.country,
+          ownershipType: dbEntry.ownershipType,
+          politicalOrientation: dbEntry.politicalOrientation,
+          reliability: dbEntry.reliabilityScore,
+          editorialIndependence: dbEntry.editorialIndependence,
+          knownStrengths: dbEntry.knownStrengths,
+          knownLimitations: dbEntry.knownLimitations,
+          notableFor: dbEntry.notableFor,
+          topicAssessment: topicContext
+            ? `For coverage of "${topicContext}", consult ${dbEntry.name}'s known limitations for relevant bias factors.`
+            : null,
+          analysisDepth: 'quick',
+          _generatedAt: new Date().toISOString(),
+        };
+      }
 
-    // Build database context for Gemini
-    const dbContext = dbEntry
-      ? `PRAXIS DATABASE ENTRY for ${dbEntry.name}:
+      // Build database context for Gemini
+      const dbContext = dbEntry
+        ? `PRAXIS DATABASE ENTRY for ${dbEntry.name}:
 - Country: ${dbEntry.country}
 - Ownership: ${dbEntry.ownershipType}
 - Political orientation: ${dbEntry.politicalOrientation} (-1 far left, +1 far right, 0 neutral)
@@ -497,28 +561,29 @@ export const analyzeMediaSource = tool({
 - Strengths: ${dbEntry.knownStrengths.join(', ')}
 - Limitations: ${dbEntry.knownLimitations.join(', ')}
 - Notable for: ${dbEntry.notableFor}`
-      : `No entry found in PRAXIS database for "${sourceName}". Generate analysis based on general knowledge.`;
+        : `No entry found in PRAXIS database for "${sourceName}". Generate analysis based on general knowledge.`;
 
-    const { object } = await generateObject({
-      model: gemini(),
-      schema: z.object({
-        sourceName: z.string(),
-        country: z.string(),
-        ownershipType: z.enum(['state', 'private', 'public', 'wire_service', 'ngo', 'think_tank']),
-        politicalOrientation: z.number().min(-1).max(1),
-        reliability: z.number().min(0).max(1),
-        editorialIndependence: z.number().min(0).max(1),
-        analysis: z.string(),
-        knownBiases: z.array(z.string()),
-        coverageStrengths: z.array(z.string()),
-        topicAssessment: z.string().optional(),
-        recommendedPairing: z.array(z.string()),
-        usageGuidance: z.string(),
-      }),
-      prompt: `Analyze the media source "${sourceName}" for diplomatic and conflict analysis purposes.
+      const { object } = await generateObject({
+        model: gemini(),
+        abortSignal: timeoutSignal(),
+        schema: z.object({
+          sourceName: z.string(),
+          country: z.string(),
+          ownershipType: z.enum(['state', 'private', 'public', 'wire_service', 'ngo', 'think_tank']),
+          politicalOrientation: z.number().min(-1).max(1),
+          reliability: z.number().min(0).max(1),
+          editorialIndependence: z.number().min(0).max(1),
+          analysis: z.string(),
+          knownBiases: z.array(z.string()),
+          coverageStrengths: z.array(z.string()),
+          topicAssessment: z.string().optional(),
+          recommendedPairing: z.array(z.string()),
+          usageGuidance: z.string(),
+        }),
+        prompt: `Analyze the media source "${sourceName}" for diplomatic and conflict analysis purposes.
 
 ${dbContext}
-${topicContext ? `\nSpecific topic for coverage assessment: "${topicContext}"` : ''}
+${topicContext ? `\nSpecific topic for coverage assessment: "${truncate(topicContext)}"` : ''}
 
 Provide a comprehensive ${analysisDepth || 'standard'} analysis including:
 - Editorial positioning and political orientation (-1 to 1 scale)
@@ -528,9 +593,16 @@ Provide a comprehensive ${analysisDepth || 'standard'} analysis including:
 - Coverage strengths that make this outlet valuable
 - Recommended outlets to pair with this source for triangulation
 - Practical guidance on how to use this source in diplomatic analysis`,
-    });
+      });
 
-    return { ...object, analysisDepth: analysisDepth || 'standard' };
+      return { ...object, analysisDepth: analysisDepth || 'standard', _generatedAt: new Date().toISOString() };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'analyzeMediaSource', _generatedAt: new Date().toISOString() };
+      }
+      console.error('[analyzeMediaSource]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -548,40 +620,42 @@ export const compareMediaCoverage = tool({
     timeRange: z.enum(['day', 'week', 'month']).optional().describe('Time range for coverage comparison'),
   }),
   execute: async ({ topic, sourceNames, timeRange }) => {
-    // Build media database context for sources requested
-    const sourceProfiles = sourceNames.map((name) => {
-      const entry = findMediaOutlet(name);
-      return entry
-        ? `${entry.name} (${entry.ownershipType}, orientation: ${entry.politicalOrientation}, reliability: ${entry.reliabilityScore}): ${entry.notableFor}`
-        : `${name}: no PRAXIS database entry`;
-    });
+    try {
+      // Build media database context for sources requested
+      const sourceProfiles = sourceNames.map((name) => {
+        const entry = findMediaOutlet(name);
+        return entry
+          ? `${entry.name} (${entry.ownershipType}, orientation: ${entry.politicalOrientation}, reliability: ${entry.reliabilityScore}): ${entry.notableFor}`
+          : `${name}: no PRAXIS database entry`;
+      });
 
-    const { object } = await generateObject({
-      model: gemini(),
-      schema: z.object({
-        topic: z.string(),
-        timeRange: z.string(),
-        sources: z.array(
-          z.object({
-            sourceName: z.string(),
-            headline: z.string().describe('Representative headline this outlet would likely run'),
-            tone: z.enum(['positive', 'negative', 'neutral', 'alarming', 'cautious']),
-            framing: z.string().describe('How this outlet frames the issue and why'),
-            keyActorsMentioned: z.array(z.string()),
-            narrativesIdentified: z.array(z.string()),
-            notableAngles: z.string().describe('Distinctive coverage angles this outlet brings'),
-          })
-        ),
-        convergencePoints: z.array(z.string()),
-        divergencePoints: z.array(z.string()),
-        notableOmissions: z.array(z.string()),
-        reliabilityRanking: z
-          .array(z.string())
-          .describe('Sources ranked from most to least reliable for this topic'),
-        overallAssessment: z.string(),
-        recommendedReadingOrder: z.string().describe('Which sources to read first and why'),
-      }),
-      prompt: `Analyze how these media sources cover the topic: "${topic}" (time range: ${timeRange || 'recent week'}).
+      const { object } = await generateObject({
+        model: gemini(),
+        abortSignal: timeoutSignal(),
+        schema: z.object({
+          topic: z.string(),
+          timeRange: z.string(),
+          sources: z.array(
+            z.object({
+              sourceName: z.string(),
+              headline: z.string().describe('Representative headline this outlet would likely run'),
+              tone: z.enum(['positive', 'negative', 'neutral', 'alarming', 'cautious']),
+              framing: z.string().describe('How this outlet frames the issue and why'),
+              keyActorsMentioned: z.array(z.string()),
+              narrativesIdentified: z.array(z.string()),
+              notableAngles: z.string().describe('Distinctive coverage angles this outlet brings'),
+            })
+          ),
+          convergencePoints: z.array(z.string()),
+          divergencePoints: z.array(z.string()),
+          notableOmissions: z.array(z.string()),
+          reliabilityRanking: z
+            .array(z.string())
+            .describe('Sources ranked from most to least reliable for this topic'),
+          overallAssessment: z.string(),
+          recommendedReadingOrder: z.string().describe('Which sources to read first and why'),
+        }),
+        prompt: `Analyze how these media sources cover the topic: "${truncate(topic)}" (time range: ${timeRange || 'recent week'}).
 
 SOURCE PROFILES FROM PRAXIS DATABASE:
 ${sourceProfiles.join('\n')}
@@ -595,9 +669,16 @@ For each source, assess:
 Then assess: where do sources converge (likely factual baseline)? Where do they diverge (contested framing)? What do ALL sources miss?
 
 Provide a reliability ranking of these sources for this specific topic and guidance on recommended reading order.`,
-    });
+      });
 
-    return object;
+      return { ...object, _generatedAt: new Date().toISOString() };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'compareMediaCoverage', _generatedAt: new Date().toISOString() };
+      }
+      console.error('[compareMediaCoverage]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -617,6 +698,7 @@ export const checkUNTerminology = tool({
       .describe('The document context for terminology checking'),
   }),
   execute: async ({ text, context }) => {
+    try {
     // Core UN terminology rules — expanded to 30+ regex checks
     const termChecks = [
       { pattern: /\bwar\b/gi, suggestion: 'armed conflict', severity: 'error' as const },
@@ -696,7 +778,12 @@ export const checkUNTerminology = tool({
         dedupedIssues.length === 0
           ? 'Text conforms to UN terminology standards.'
           : `Found ${dedupedIssues.length} terminology issue(s) (${dedupedIssues.filter((i) => i.severity === 'error').length} errors, ${dedupedIssues.filter((i) => i.severity === 'warning').length} warnings). Review suggested replacements before finalizing.`,
+      _generatedAt: new Date().toISOString(),
     };
+    } catch (err) {
+      console.error('[checkUNTerminology]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), text, context: context || 'general', issueCount: 0, issues: [], overallCompliance: 'compliant', recommendation: '', _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -725,8 +812,10 @@ export const draftResolutionLanguage = tool({
     chapterVII: z.boolean().optional().describe('Whether to include Chapter VII authorization language'),
   }),
   execute: async ({ topic, type, keyPoints, strength, previousResolutions, chapterVII }) => {
+    try {
     const { object } = await generateObject({
       model: gemini(),
+      abortSignal: timeoutSignal(),
       schema: z.object({
         topic: z.string(),
         type: z.string(),
@@ -765,7 +854,15 @@ Draft authentic UNSC resolution language for each element requested. Each preamb
     return {
       ...object,
       note: 'This is AI-generated draft language. All resolution text must be reviewed and approved through proper diplomatic channels before formal use.',
+      _generatedAt: new Date().toISOString(),
     };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'draftResolutionLanguage', topic: '', type: '', preambular: [], operative: [], strength: '', referencedResolutions: [], draftingNotes: '', note: '', _generatedAt: new Date().toISOString() };
+      }
+      console.error('[draftResolutionLanguage]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), topic: '', type: '', preambular: [], operative: [], strength: '', referencedResolutions: [], draftingNotes: '', note: '', _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -794,6 +891,7 @@ export const generateTalkingPoints = tool({
     maxPoints: z.number().min(3).max(10).optional().describe('Maximum number of talking points to generate'),
   }),
   execute: async ({ topic, audience, position, conflictId, maxPoints }) => {
+    try {
     // Ground in real conflict data if available
     const conflict = DEMO_CONFLICT;
     const actorContext = conflict.actors
@@ -803,6 +901,7 @@ export const generateTalkingPoints = tool({
 
     const { object } = await generateObject({
       model: gemini(),
+      abortSignal: timeoutSignal(),
       schema: z.object({
         topic: z.string(),
         audience: z.string(),
@@ -848,7 +947,14 @@ For each talking point: provide the main point, 2-3 supporting facts, and a sens
 Also provide: 3 anticipated tough questions with suggested responses, 3 key messages that must land regardless of how the conversation goes, and a list of phrases/framings to avoid with this audience.`,
     });
 
-    return { ...object, conflictId: conflictId || null };
+    return { ...object, conflictId: conflictId || null, _generatedAt: new Date().toISOString() };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'generateTalkingPoints', topic: '', audience: '', position: '', talkingPoints: [], anticipatedQuestions: [], keyMessages: [], avoidList: [], conflictId: null, _generatedAt: new Date().toISOString() };
+      }
+      console.error('[generateTalkingPoints]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), topic: '', audience: '', position: '', talkingPoints: [], anticipatedQuestions: [], keyMessages: [], avoidList: [], conflictId: null, _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -872,6 +978,7 @@ export const escalationAssessment = tool({
       .describe('Time horizon for risk assessment (default: short_term)'),
   }),
   execute: async ({ conflictId, specificConcern, timeHorizon }) => {
+    try {
     // Load conflict data
     const conflict = DEMO_CONFLICT;
     const conflictData = conflict as Record<string, unknown>;
@@ -884,6 +991,7 @@ export const escalationAssessment = tool({
 
     const { object } = await generateObject({
       model: gemini(),
+      abortSignal: timeoutSignal(),
       schema: z.object({
         conflictName: z.string(),
         currentStage: z.number().min(1).max(9).describe('Current Glasl escalation stage (1-9)'),
@@ -949,7 +1057,14 @@ Assess the current stage and provide a rigorous escalation analysis including:
 - Confidence level in this assessment and key caveats`,
     });
 
-    return object;
+    return { ...object, _generatedAt: new Date().toISOString() };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'escalationAssessment', _generatedAt: new Date().toISOString() };
+      }
+      console.error('[escalationAssessment]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -973,6 +1088,7 @@ export const negotiationSpaceAnalysis = tool({
       .describe('Current mediation format and state of talks'),
   }),
   execute: async ({ conflictId, issuesOfFocus, mediationContext }) => {
+    try {
     const conflict = DEMO_CONFLICT;
     const conflictData = conflict as Record<string, unknown>;
     const actors = conflict.actors.slice(0, 6).map((a) => ({
@@ -993,6 +1109,7 @@ export const negotiationSpaceAnalysis = tool({
 
     const { object } = await generateObject({
       model: gemini(),
+      abortSignal: timeoutSignal(),
       schema: z.object({
         conflictName: z.string(),
         parties: z.array(
@@ -1059,7 +1176,14 @@ Conduct a rigorous negotiation space analysis:
 7. Recommend specific mediator strategies`,
     });
 
-    return object;
+    return { ...object, _generatedAt: new Date().toISOString() };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'negotiationSpaceAnalysis', _generatedAt: new Date().toISOString() };
+      }
+      console.error('[negotiationSpaceAnalysis]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -1083,6 +1207,7 @@ export const narrativeEcosystemMap = tool({
       .describe('Specific audience to examine narrative targeting for'),
   }),
   execute: async ({ conflictId, focus, audienceFocus }) => {
+    try {
     const conflict = DEMO_CONFLICT;
     const conflictData = conflict as Record<string, unknown>;
     const narratives = ((conflictData.narratives as Array<Record<string, unknown>> | undefined) ?? [])
@@ -1098,6 +1223,7 @@ export const narrativeEcosystemMap = tool({
 
     const { object } = await generateObject({
       model: gemini(),
+      abortSignal: timeoutSignal(),
       schema: z.object({
         conflictName: z.string(),
         dominantNarratives: z.array(
@@ -1168,7 +1294,14 @@ Conduct a comprehensive narrative ecosystem analysis:
 7. Provide strategic communication recommendations for international mediators`,
     });
 
-    return object;
+    return { ...object, _generatedAt: new Date().toISOString() };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'narrativeEcosystemMap', _generatedAt: new Date().toISOString() };
+      }
+      console.error('[narrativeEcosystemMap]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -1192,6 +1325,7 @@ export const historicalParallelAnalysis = tool({
       .describe('Historical timeframe to search within (default: any)'),
   }),
   execute: async ({ conflictId, dimension, timeframe }) => {
+    try {
     const conflict = DEMO_CONFLICT;
     const conflictData = conflict as Record<string, unknown>;
     const actors = conflict.actors.slice(0, 6).map((a) => `${a.name} (${a.type})`).join(', ');
@@ -1203,6 +1337,7 @@ export const historicalParallelAnalysis = tool({
 
     const { object } = await generateObject({
       model: gemini(),
+      abortSignal: timeoutSignal(),
       schema: z.object({
         conflictName: z.string(),
         analysisScope: z.string().describe('What dimension and timeframe was analyzed'),
@@ -1246,7 +1381,14 @@ Cross-cutting: What patterns emerge across multiple parallels? What is genuinely
 Be intellectually rigorous — resist superficial parallels. Prioritize cases where the mechanism of similarity is clear and the lessons are transferable.`,
     });
 
-    return { ...object, conflictId };
+    return { ...object, conflictId, _generatedAt: new Date().toISOString() };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'historicalParallelAnalysis', conflictId, _generatedAt: new Date().toISOString() };
+      }
+      console.error('[historicalParallelAnalysis]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), conflictId, _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -1272,6 +1414,7 @@ export const generateTimeline = tool({
       .describe('Whether to include projected/anticipated future events (default: false)'),
   }),
   execute: async ({ conflictId, startDate, endDate, eventTypes, includeProjected }) => {
+    try {
     const conflict = DEMO_CONFLICT;
     const conflictData = conflict as Record<string, unknown>;
     const allEvents = (conflictData.events as Array<Record<string, unknown>> | undefined) ?? [];
@@ -1295,6 +1438,7 @@ export const generateTimeline = tool({
 
     const { object } = await generateObject({
       model: gemini(),
+      abortSignal: timeoutSignal(),
       schema: z.object({
         conflictName: z.string(),
         timelineRange: z.object({
@@ -1363,7 +1507,14 @@ For each event:
 Calculate overall escalation trajectory across the timeline period.`,
     });
 
-    return { ...object, conflictId };
+    return { ...object, conflictId, _generatedAt: new Date().toISOString() };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'generateTimeline', conflictId, _generatedAt: new Date().toISOString() };
+      }
+      console.error('[generateTimeline]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), conflictId, _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -1394,11 +1545,13 @@ export const sanctionsCheck = tool({
       .describe('Whether to include compliance and due diligence guidance (default: true)'),
   }),
   execute: async ({ entityName, conflictId, sanctionsBody, includeGuidance }) => {
+    try {
     const conflict = DEMO_CONFLICT;
     const conflictActors = conflict.actors.map((a) => `${a.name} (${a.type}): ${a.description.slice(0, 80)}`).join('\n');
 
     const { object } = await generateObject({
       model: gemini(),
+      abortSignal: timeoutSignal(),
       schema: z.object({
         queryType: z.enum(['entity', 'conflict', 'combined']),
         disclaimer: z.string().describe('Legal/analytical disclaimer about the nature of this output'),
@@ -1483,7 +1636,15 @@ Provide realistic, analytically useful output that helps conflict analysts under
       ...object,
       disclaimer: 'ANALYTICAL PURPOSE ONLY. For actual sanctions compliance, consult official government databases: UN Consolidated List, US OFAC SDN List, EU Sanctions Map, UK OFSI Consolidated List. This AI-generated output does not constitute legal advice.',
       conflictId: conflictId || null,
+      _generatedAt: new Date().toISOString(),
     };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'sanctionsCheck', conflictId: conflictId || null, _generatedAt: new Date().toISOString() };
+      }
+      console.error('[sanctionsCheck]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), conflictId: conflictId || null, _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -1504,6 +1665,7 @@ export const humanitarianSnapshot = tool({
     asOfDate: z.string().optional().describe('Snapshot reference date (ISO format, default: current)'),
   }),
   execute: async ({ conflictId, focusSectors, asOfDate }) => {
+    try {
     const conflict = DEMO_CONFLICT;
     const conflictData = conflict as Record<string, unknown>;
     const actors = conflict.actors.map((a) => `${a.name} (${a.type})`).join(', ');
@@ -1516,6 +1678,7 @@ export const humanitarianSnapshot = tool({
 
     const { object } = await generateObject({
       model: gemini(),
+      abortSignal: timeoutSignal(),
       schema: z.object({
         conflictName: z.string(),
         snapshotDate: z.string(),
@@ -1596,7 +1759,14 @@ Generate a realistic, analytically substantive snapshot following OCHA's Situati
 Lead with the most urgent/life-threatening concerns. Be frank about access constraints. Include realistic funding gaps.`,
     });
 
-    return { ...object, conflictId };
+    return { ...object, conflictId, _generatedAt: new Date().toISOString() };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'humanitarianSnapshot', conflictId, _generatedAt: new Date().toISOString() };
+      }
+      console.error('[humanitarianSnapshot]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), conflictId, _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -1632,6 +1802,7 @@ export const compareConflicts = tool({
       .describe('Purpose of the comparison (shapes depth and framing)'),
   }),
   execute: async ({ conflictId1, conflictId2, dimensions, purpose }) => {
+    try {
     const conflict1 = DEMO_CONFLICT;
     const conflictData1 = conflict1 as Record<string, unknown>;
     const actors1 = conflict1.actors.slice(0, 5).map((a) => `${a.name} (${a.type})`).join(', ');
@@ -1648,6 +1819,7 @@ export const compareConflicts = tool({
 
     const { object } = await generateObject({
       model: gemini(),
+      abortSignal: timeoutSignal(),
       schema: z.object({
         conflict1Name: z.string(),
         conflict2Name: z.string(),
@@ -1709,7 +1881,14 @@ Synthesize: What does conflict 2's experience suggest for the trajectory or reso
 Be rigorous — avoid superficial comparisons. Focus on causal mechanisms, not surface similarities.`,
     });
 
-    return { ...object, conflictId1, conflictId2 };
+    return { ...object, conflictId1, conflictId2, _generatedAt: new Date().toISOString() };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'compareConflicts', conflictId1, conflictId2, _generatedAt: new Date().toISOString() };
+      }
+      console.error('[compareConflicts]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), conflictId1, conflictId2, _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -1728,6 +1907,7 @@ export const canonicalNameLookup = tool({
     context: z.string().optional().describe('Situation context to disambiguate'),
   }),
   execute: async ({ entity, entityType, context }) => {
+    try {
     // Try Firecrawl web search for authoritative sources
     const sources = [
       `"${entity}" site:wikipedia.org ${entityType}`,
@@ -1749,6 +1929,7 @@ export const canonicalNameLookup = tool({
       // Fallback to AI knowledge
       const { text } = await generateText({
         model: gemini(),
+        abortSignal: timeoutSignal(),
         prompt: `What is the canonical/official name for "${entity}" (${entityType})?
 ${context ? `Context: ${context}` : ''}
 
@@ -1766,16 +1947,18 @@ Be precise and cite the authoritative source for each name variant.`,
         source: 'AI knowledge (no web results available)',
         analysis: text,
         webResults: [],
+        _generatedAt: new Date().toISOString(),
       };
     }
 
     // Use AI to synthesize the authoritative name from search results
     const sourceTexts = allResults.slice(0, 5).map((r) =>
-      `[${r.title}](${r.url}): ${(r.description || r.content || '').slice(0, 500)}`
+      `[${r.title}](${r.url}): ${truncate(r.description || r.content || '', 500)}`
     ).join('\n\n');
 
     const { object } = await generateObject({
       model: gemini(),
+      abortSignal: timeoutSignal(),
       schema: z.object({
         canonicalName: z.string().describe('The most authoritative/official name'),
         unDesignation: z.string().optional().describe('UN official designation if different'),
@@ -1787,12 +1970,12 @@ Be precise and cite the authoritative source for each name variant.`,
           designation: z.string(),
         })),
       }),
-      prompt: `Based on these authoritative sources, determine the canonical name for "${entity}" (${entityType}).
+      prompt: `Based on these authoritative sources, determine the canonical name for "${truncate(entity)}" (${entityType}).
 
 SOURCES:
 ${sourceTexts}
 
-${context ? `CONTEXT: ${context}` : ''}
+${context ? `CONTEXT: ${truncate(context)}` : ''}
 
 Identify:
 1. The most authoritative/official name (UN usage preferred)
@@ -1805,7 +1988,12 @@ Identify:
       entity,
       ...object,
       webResults: allResults.slice(0, 5).map((r) => ({ title: r.title, url: r.url })),
+      _generatedAt: new Date().toISOString(),
     };
+  } catch (err) {
+    console.error('[canonicalNameLookup]', err instanceof Error ? err.message : err);
+    return { entity, canonicalName: entity, error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), webResults: [], _generatedAt: new Date().toISOString() };
+  }
   },
 });
 
@@ -1826,6 +2014,7 @@ export const deepSourceResearch = tool({
     timeRange: z.enum(['week', 'month', 'quarter', 'year']).optional(),
   }),
   execute: async ({ topic, situationContext, depth, sourcePreferences, timeRange }) => {
+    try {
     const numResults = depth === 'quick' ? 5 : depth === 'comprehensive' ? 15 : 8;
 
     // Build targeted queries for different source categories
@@ -1864,6 +2053,7 @@ export const deepSourceResearch = tool({
         findings: [],
         summary: 'No sources found. Firecrawl may not be configured.',
         sources: [],
+        _generatedAt: new Date().toISOString(),
       };
     }
 
@@ -1874,6 +2064,7 @@ export const deepSourceResearch = tool({
 
     const { object } = await generateObject({
       model: gemini(),
+      abortSignal: timeoutSignal(),
       schema: z.object({
         summary: z.string().describe('Executive summary of findings (2-3 paragraphs)'),
         keyFindings: z.array(z.object({
@@ -1919,7 +2110,15 @@ Produce:
           try { return new URL(r.url).hostname.replace('www.', ''); } catch { return 'unknown'; }
         })(),
       })),
+      _generatedAt: new Date().toISOString(),
     };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'deepSourceResearch', topic, sources: [], _generatedAt: new Date().toISOString() };
+      }
+      console.error('[deepSourceResearch]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), topic, sources: [], _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
@@ -1937,6 +2136,7 @@ export const verifyAndStandardize = tool({
     context: z.string().optional(),
   }),
   execute: async ({ claim, claimType, context }) => {
+    try {
     // Search for verification
     const verifyResults = await searchWeb(`"${claim}" verify fact check`, { numResults: 5 }).catch(() => []);
     const officialResults = await searchWeb(`"${claim}" site:un.org OR site:reuters.com OR site:icj-cij.org`, { numResults: 3 }).catch(() => []);
@@ -1948,6 +2148,7 @@ export const verifyAndStandardize = tool({
 
     const { object } = await generateObject({
       model: gemini(),
+      abortSignal: timeoutSignal(),
       schema: z.object({
         verified: z.boolean().describe('Whether the claim is verified as accurate'),
         confidence: z.enum(['confirmed', 'likely', 'contested', 'unverified', 'false']),
@@ -1972,7 +2173,15 @@ Assess:
       claim,
       ...object,
       sources: allSources.map((r) => ({ title: r.title, url: r.url })),
+      _generatedAt: new Date().toISOString(),
     };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'verifyAndStandardize', claim, sources: [], _generatedAt: new Date().toISOString() };
+      }
+      console.error('[verifyAndStandardize]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), claim, sources: [], _generatedAt: new Date().toISOString() };
+    }
   },
 });
 
