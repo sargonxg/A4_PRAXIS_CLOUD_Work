@@ -157,23 +157,46 @@ ${intel.humanitarian?.displacement ? `Displacement: ${intel.humanitarian.displac
     const result = await generateText({
       model: getModel(),
       output: Output.object({ schema: RiskAssessmentSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior risk analyst specializing in conflict and political instability assessment. Conduct a multi-dimensional risk assessment.
+      prompt: `${sitContext ? `${sitContext}\n\n` : ''}Conduct a rigorous multi-dimensional risk assessment using INFORM Risk Index methodology and UNDP conflict-sensitive early warning indicators.
 
 REGIONS TO ASSESS: ${regions.join(', ')}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
 ${dataContext}
 
 LATEST INTELLIGENCE:
-${webContext || 'No web results available. Base analysis on your training data and the conflict context provided.'}
+${webContext || 'No web results available. Draw on established country risk knowledge and the conflict context provided.'}
 
-For each region, assess:
-1. Overall risk score (0-100) based on five dimensions: political, security, humanitarian, economic, social
-2. Glasl escalation stage (0 for no active conflict, 1-9 for active escalation)
-3. Current trend: escalating, stable, or de-escalating
-4. 90-day forecast with specific drivers, indicators to monitor, and trigger scenarios
+## SCORING METHODOLOGY
 
-Use calibrated risk scoring. A score of 0-25 = low, 25-50 = moderate, 50-75 = elevated, 75-100 = critical. Be specific about what drives each dimension score.`,
-      system: 'You are a senior risk analyst at a major international crisis monitoring organization. Provide rigorous, multi-dimensional risk assessments for diplomatic and security decision-makers. Use established conflict early warning methodologies and calibrate scores based on available evidence quality.',
+Apply calibrated scoring across five dimensions (0-100):
+
+**Political (governance + institutional fragility)**
+Indicators: government effectiveness percentile, rule of law score, press freedom index, political stability index, CPIA ratings, electoral integrity, legislative functionality. Cross-reference against World Bank Governance Indicators and Freedom House.
+
+**Security (armed violence + conflict intensity)**
+Indicators: ACLED event count trend (fatalities/month), territorial control changes, armed group mobilization, militarization rate, security force behavior, ceasefire violation frequency. Apply Glasl model to classify escalation stage with behavioral evidence.
+
+**Humanitarian (civilian impact + access)**
+Indicators: IDP/refugee flows (UNHCR), IPC Phase 3+ food insecurity %, health system functionality, protection incident rate, humanitarian access constraints. Cross-reference OCHA HDX and ReliefWeb data.
+
+**Economic (fragility + criminalization)**
+Indicators: GDP per capita decline, currency depreciation, inflation rate, debt sustainability (IMF DSA), remittance dependency, informal economy size, sanctions exposure, resource curse dynamics.
+
+**Social (cohesion + grievance)**
+Indicators: inter-communal tension events, hate speech/incitement monitoring, horizontal inequality (ethnic/regional), youth bulge + unemployment intersection, diaspora mobilization, displacement-induced social stress.
+
+## OUTPUT REQUIREMENTS
+
+For each region:
+1. Score each dimension (0-100) with 2-3 specific evidence anchors from the indicators above
+2. Overall risk = weighted average (Security 30%, Political 25%, Humanitarian 25%, Economic 10%, Social 10%)
+3. Glasl stage with behavioral justification (cite observable actions that match stage definition)
+4. Trend direction with quantified change drivers
+5. 90-day forecast covering: (a) baseline trajectory, (b) positive trigger scenario, (c) negative trigger scenario with probability estimate for each
+
+SCORING SCALE: 0-20 = minimal, 21-40 = low, 41-60 = moderate, 61-80 = elevated, 81-100 = critical.
+Assign Glasl Stage 0 only when there is no active organized violence. Stages 7-9 require evidence of systematic destructive intent.`,
+      system: 'You are a senior risk analyst trained in INFORM Risk Index methodology, UNDP conflict-sensitive programming, and UN DPPA early warning frameworks. Provide evidence-anchored, calibrated risk assessments for diplomatic and security decision-makers. Distinguish confirmed facts from credible estimates and note data quality limitations.',
     });
 
     return NextResponse.json(result.output);

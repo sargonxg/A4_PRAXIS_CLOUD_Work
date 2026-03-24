@@ -133,7 +133,7 @@ Recent headlines: ${gdeltArticles.slice(0, 5).map((a) => `"${a.title}" (${a.doma
     const result = await generateText({
       model: getModel(),
       output: Output.object({ schema: MediaScanSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior media analyst specializing in conflict coverage analysis. Analyze how the following media outlets cover the given topic.
+      prompt: `${sitContext ? `${sitContext}\n\n` : ''}Conduct a rigorous media landscape analysis applying the CRAAP test methodology, narrative ecosystem mapping, and cross-outlet triangulation.
 
 TOPIC: ${topic}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
@@ -143,17 +143,41 @@ OUTLETS TO ANALYZE: ${outlets.join(', ')}
 WEB SEARCH RESULTS:
 ${allContext}
 
-For each outlet, analyze:
-1. The articles found — their sentiment and narrative framing
-2. The overall editorial bias on this topic
-3. What is emphasized, what is omitted, and what narrative angle is adopted
+## ANALYSIS FRAMEWORK
 
-Then provide a comparative analysis highlighting:
-- Divergent framing between outlets
-- Shared narratives or consensus points
-- Information gaps that require cross-referencing
-- Potential propaganda or influence operation indicators`,
-      system: 'You are a senior media analyst at a conflict monitoring organization. Provide rigorous, evidence-based media bias assessments for diplomatic and security professionals. Always distinguish between factual reporting and editorial framing.',
+**Per-Outlet CRAAP Test Assessment**
+For each outlet, evaluate each article/coverage using:
+- **Currency**: Is the information timely? Publication date vs. event date lag.
+- **Relevance**: Does coverage address the core conflict dynamics or peripheral issues?
+- **Authority**: What is the outlet's track record, ownership, funding, editorial independence?
+- **Accuracy**: Are claims verifiable? Are sources cited? Are opposing views represented?
+- **Purpose**: What is the evident purpose — inform, persuade, advocate, entertain, destabilize?
+
+**Narrative Framing Analysis**
+For each outlet, identify:
+1. Primary narrative frame (security threat, humanitarian crisis, political dispute, development failure, etc.)
+2. Actor legitimization: who is portrayed as legitimate, who as spoiler?
+3. Omission patterns: what context, actors, or events are systematically absent?
+4. Language choices: use of loaded terms, passive/active voice, casualty asymmetry
+5. Source selection bias: which voices are amplified, which silenced?
+
+**Triangulation Matrix**
+Compare coverage across outlets to identify:
+- **Consensus facts**: claims appearing in 3+ independent outlets with divergent editorial lines (high reliability)
+- **Disputed claims**: contradictory factual assertions requiring further verification
+- **Exclusive narratives**: claims appearing only in single outlet or outlet cluster (requires scrutiny)
+- **Information operations indicators**: coordinated messaging, astroturfing, attribution without evidence
+
+**Reliability Scoring**
+Score each outlet on a 1-5 scale:
+5 = Highly reliable (multiple independent sources, editorial independence, corrections policy)
+4 = Generally reliable with known editorial bias clearly disclosed
+3 = Mixed reliability, requires cross-referencing
+2 = Significant accuracy problems or undisclosed conflicts of interest
+1 = Propaganda outlet or systematically unreliable
+
+Then synthesize comparative analysis with specific evidence for all claims. Do not offer generic assessments.`,
+      system: 'You are a senior media analyst trained in CRAAP test methodology, narrative ecosystem mapping, and information operations analysis. You have experience as a UN DPPA media advisor and conflict journalism monitor. Provide evidence-anchored assessments that help diplomatic professionals distinguish reliable intelligence from noise and identify influence operations.',
     });
 
     return NextResponse.json(result.output);

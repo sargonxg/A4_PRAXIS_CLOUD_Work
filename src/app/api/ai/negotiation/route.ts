@@ -155,24 +155,54 @@ export async function POST(request: Request) {
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: NegotiationSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior negotiation analyst specializing in Fisher/Ury interest-based negotiation and conflict resolution. Conduct a comprehensive negotiation analysis.
+      prompt: `${sitContext ? `${sitContext}\n\n` : ''}Conduct a rigorous negotiation space analysis applying the Harvard PON framework (Fisher/Ury), Lax/Sebenius deal design theory, and Zartman ripeness assessment.
 
 PARTIES: ${parties.join(', ')}
 KEY ISSUES: ${issues.join(', ')}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
 
-Provide:
+## ANALYTICAL FRAMEWORK
 
-1. **ZOPA Analysis** — For each issue, map each party's position range (minimum acceptable, maximum desired, ideal outcome). Determine whether a Zone of Possible Agreement exists. Be specific about what each party's reservation point and aspiration point are.
+Apply these frameworks in sequence:
 
-2. **BATNA Assessment** — For each party, identify their Best Alternative to Negotiated Agreement. What are their options if negotiations fail? How strong are these alternatives? A stronger BATNA means less incentive to compromise.
+**1. ZOPA MAPPING (per issue)**
+For each negotiation issue:
+- Each party's reservation point (minimum threshold — walk-away point)
+- Each party's aspiration point (maximum desired — opening position)
+- Each party's ideal outcome (full satisfaction scenario)
+- Zone of Possible Agreement: identify overlap between parties' ranges
+- Issue linkage potential: can this issue be traded against another?
+- Value creation options: are there integrative solutions that expand the pie?
 
-3. **Deal Probability** — Estimate the overall probability of reaching a deal based on ZOPA overlap, BATNA strength, and conflict dynamics.
+Use Fisher/Ury's distinction between positions (what they say they want) and interests (why they want it). Surface underlying interests to find creative solutions beyond stated positions.
 
-4. **Recommendations** — Provide strategic recommendations for advancing the negotiation. Focus on issue sequencing, BATNA modification strategies, and creative options that expand the pie.
+**2. BATNA STRENGTH ASSESSMENT**
+For each party:
+- List 2-3 realistic alternatives if negotiations collapse
+- Assess each alternative's feasibility, cost, and attractiveness
+- Determine overall BATNA strength: Strong = viable unilateral alternative; Moderate = costly but possible; Weak = no realistic alternative
+- How does BATNA strength affect negotiating behavior and concession willingness?
+- Identify BATNA modification strategies: how can a mediator weaken spoiler BATNAs?
 
-Apply Fisher/Ury principled negotiation framework. Be specific to the parties and issues involved.`,
-      system: 'You are a senior negotiation analyst trained in Fisher/Ury interest-based negotiation, Lax/Sebenius deal design, and Zartman ripeness theory. Provide rigorous negotiation analysis for mediators and diplomatic professionals. Map positions precisely and identify creative solutions that create value for all parties.',
+**3. DEAL PROBABILITY (Zartman Ripeness Assessment)**
+Apply William Zartman's Mutually Hurting Stalemate (MHS) test:
+- Is there a Mutually Hurting Stalemate? (both sides losing from status quo)
+- Is there a Mutually Enticing Opportunity? (both sides see gains from deal)
+- Are there valid spokespersons with mandate to negotiate?
+- Is there a formula (shared framework) for a solution?
+Weight these factors to produce an overall deal probability (0-100).
+
+**4. STRATEGIC RECOMMENDATIONS**
+Apply Lax/Sebenius deal design principles:
+- Issue sequencing: start with easier issues to build momentum?
+- Package deals: link issues for cross-issue value creation?
+- Process architecture: bilateral vs multilateral vs proximity talks?
+- Spoiler management: who has veto power and how to neutralize?
+- Commitment design: what enforcement mechanisms make agreements credible?
+- Confidence building measures to shift negotiating climate?
+
+Be specific to the actual parties and issues. Do not give generic advice.`,
+      system: 'You are a senior negotiation analyst trained at Harvard PON in Fisher/Ury principled negotiation, Lax/Sebenius deal design, and Zartman ripeness theory. You have extensive experience as a UN mediator and peace negotiation advisor. Produce analysis-grade assessments for senior mediators and diplomatic professionals. Be precise about reservation points, quantify BATNA strength, and generate actionable deal-design recommendations.',
     });
 
     return NextResponse.json(result.output);
