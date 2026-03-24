@@ -5,7 +5,8 @@ import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useCallback } from 'react';
-import { Search, Upload, Network, FileText, GitCompare, ExternalLink, Loader2, Sparkles } from 'lucide-react';
+import { Search, Upload, Network, FileText, GitCompare, ExternalLink, Loader2, Sparkles, Database } from 'lucide-react';
+import { PraxisLink } from '@/components/shared/praxis-link';
 import { cn } from '@/lib/utils/cn';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EcosystemBadge } from '@/components/shared/ecosystem-badge';
@@ -384,9 +385,16 @@ function DemoArgusPage({ situationName }: { situationName?: string }) {
       <div>
         <h1 className="font-serif text-2xl text-navy-900">ARGUS Intelligence</h1>
         <p className="mt-1 text-sm text-navy-500">
-          Graph-augmented RAG — knowledge graph queries, entity extraction, and cross-case pattern
-          matching
+          Conflict Grammar Engine — structured knowledge store for entity queries and cross-case analysis
         </p>
+        <div className="mt-2 flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/4 px-4 py-2.5 text-xs text-navy-600">
+          <Database className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600/70" />
+          <span>
+            <strong className="text-navy-700">Conflict Grammar Engine</strong> — Structured knowledge store indexing all entities (Actors, Claims, Interests, Constraints, Leverage, Commitments, Events, Narratives) extracted from documents and AI analysis. This is the machine-readable layer powering all PRAXIS AI tools.
+            {' '}For visual network exploration, use{' '}
+            <PraxisLink href="/conflict-graph" className="font-medium text-emerald-700 hover:underline">Conflict Intelligence Graph</PraxisLink>.
+          </span>
+        </div>
       </div>
 
       <Tabs defaultValue="knowledge-graph">
@@ -508,8 +516,16 @@ function RealArgusPage({ situation, argusData }: { situation: import('@/types/si
       <div>
         <h1 className="font-serif text-2xl text-navy-900">ARGUS Intelligence</h1>
         <p className="mt-1 text-sm text-navy-500">
-          Graph-augmented RAG for &ldquo;{situation.name}&rdquo; — entity network, live queries, and relationship analysis
+          Conflict Grammar Engine for &ldquo;{situation.name}&rdquo; — entity knowledge store, live queries, and relationship analysis
         </p>
+        <div className="mt-2 flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/4 px-4 py-2.5 text-xs text-navy-600">
+          <Database className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600/70" />
+          <span>
+            <strong className="text-navy-700">Conflict Grammar Engine</strong> — Structured knowledge store indexing all entities (Actors, Claims, Interests, Constraints, Leverage, Commitments, Events, Narratives). The machine-readable layer that grounds every AI analysis.
+            {' '}For visual network exploration, use{' '}
+            <PraxisLink href="/conflict-graph" className="font-medium text-emerald-700 hover:underline">Conflict Intelligence Graph</PraxisLink>.
+          </span>
+        </div>
       </div>
 
       <Tabs defaultValue="entity-network">

@@ -18,8 +18,9 @@ import {
   NODE_TYPE_CONFIG,
 } from "@/components/graph/entity-panel";
 import { TimelineSlider } from "@/components/graph/timeline-slider";
-import { Network, ChevronDown, Maximize2, Sparkles, X, Loader2 } from "lucide-react";
+import { Network, ChevronDown, Maximize2, Sparkles, X, Loader2, Info } from "lucide-react";
 import { ENTITY_COLORS, ENTITY_TYPES } from "@/lib/constants/entity-colors";
+import { PraxisLink } from "@/components/shared/praxis-link";
 
 // ── Entity type toggle config ───────────────────────────────────
 const ENTITY_TYPE_TOGGLES = ENTITY_TYPES.map((t) => ({
@@ -224,9 +225,19 @@ function DemoConflictGraphPage() {
                 Conflict Intelligence Graph
               </h1>
               <p className="text-sm text-navy-400">
-                Visualize conflict actor networks and relationships
+                Visual actor network — interactive force-directed exploration
               </p>
             </div>
+          </div>
+
+          {/* ── Disambiguation banner ────────────────────────── */}
+          <div className="mt-3 flex items-start gap-2 rounded-lg border border-diplomatic-blue/15 bg-diplomatic-blue/4 px-4 py-2.5 text-xs text-navy-600">
+            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-diplomatic-blue/60" />
+            <span>
+              <strong className="text-navy-700">Visual Graph</strong> — Explore actor relationships, alliances, and tensions as an interactive network map. This is designed for human visual exploration.
+              {' '}For structured entity queries and AI-powered knowledge extraction, use{' '}
+              <PraxisLink href="/argus" className="font-medium text-diplomatic-blue hover:underline">ARGUS → Conflict Grammar Engine</PraxisLink>.
+            </span>
           </div>
         </motion.div>
 
@@ -705,9 +716,19 @@ function RealConflictGraphPage() {
                 Conflict Intelligence Graph
               </h1>
               <p className="text-sm text-navy-400">
-                {activeSituation?.name ?? 'Situation graph'} — actor networks and relationships
+                {activeSituation?.name ?? 'Situation graph'} — visual actor network
               </p>
             </div>
+          </div>
+
+          {/* ── Disambiguation banner ────────────────────────── */}
+          <div className="mt-3 flex items-start gap-2 rounded-lg border border-diplomatic-blue/15 bg-diplomatic-blue/4 px-4 py-2.5 text-xs text-navy-600">
+            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-diplomatic-blue/60" />
+            <span>
+              <strong className="text-navy-700">Visual Graph</strong> — Interactive force-directed map for exploring actor relationships and network topology. Designed for human visual exploration.
+              {' '}For structured entity queries, use{' '}
+              <PraxisLink href="/argus" className="font-medium text-diplomatic-blue hover:underline">ARGUS → Conflict Grammar Engine</PraxisLink>.
+            </span>
           </div>
         </motion.div>
 

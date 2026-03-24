@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePraxisRoute } from '@/lib/utils/routes';
 import { PraxisLink } from '@/components/shared/praxis-link';
@@ -12,8 +12,177 @@ import {
   MessageSquare, FileText, Search, Upload, Compass, Network,
   Globe, Users, AlertTriangle, BarChart3, GitBranch, Scale,
   Sparkles, Plus, ArrowRight, TrendingUp, TrendingDown, Minus,
+  Loader2, Clock, RefreshCw, X,
 } from 'lucide-react';
 import type { Situation } from '@/types/situation';
+import { recordActivity, getRecentActivity, type ActivityEntry } from '@/lib/utils/activity';
+
+function formatRelTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+// ---------------------------------------------------------------------------
+// Daily Digest Card
+// ---------------------------------------------------------------------------
+
+function DailyDigestCard({ situation }: { situation: Situation }) {
+  const [brief, setBrief] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const generated = useRef(false);
+
+  const generate = useCallback(async () => {
+    if (loading) return;
+    setLoading(true);
+    setBrief('');
+    try {
+      const prompt = `Generate a concise morning intelligence brief for the situation: "${situation.name}" (${situation.region || 'unspecified region'}).
+
+Key details:
+- Type: ${situation.type}
+- Status: ${situation.status}
+- Risk Score: ${situation.riskScore}/10
+- Escalation Trend: ${situation.escalationTrend}
+- Key Actors: ${situation.actors.slice(0, 6).join(', ') || 'to be identified'}
+- Description: ${situation.description || 'No description provided'}
+
+Structure your brief in 3 short sections using **bold headers**:
+**Situation Update** — current status and key developments
+**Priority Actions** — what the analyst should focus on today
+**Watch Points** — indicators to monitor in the next 24-48 hours
+
+Keep it under 120 words, professional, UN-standard diplomatic language.`;
+
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+      });
+      if (!res.ok) throw new Error('Brief failed');
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let acc = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split('\n')) {
+          const m = line.match(/^0:"(.*)"$/);
+          if (m) {
+            acc += JSON.parse(`"${m[1]}"`);
+            setBrief(acc);
+          }
+        }
+      }
+    } catch {
+      setBrief('_Brief generation failed. Check AI service configuration._');
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, situation]);
+
+  // Auto-generate on first mount
+  useEffect(() => {
+    if (!generated.current) {
+      generated.current = true;
+      generate();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (dismissed) return null;
+
+  return (
+    <div className="rounded-xl border border-gold-500/20 bg-gradient-to-br from-gold-500/4 via-white to-transparent">
+      <div className="flex items-center justify-between border-b border-gold-500/15 px-5 py-3">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-gold-600" />
+          <h2 className="text-sm font-semibold text-navy-900">Daily Intelligence Brief</h2>
+          <span className="rounded-full bg-gold-500/12 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-gold-700">
+            {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={generate}
+            disabled={loading}
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-navy-500 hover:text-navy-700 disabled:opacity-40"
+          >
+            <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
+            {loading ? 'Generating…' : 'Refresh'}
+          </button>
+          <button onClick={() => setDismissed(true)} className="text-navy-400 hover:text-navy-600">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+      <div className="px-5 py-4">
+        {loading && !brief ? (
+          <div className="space-y-2">
+            {[1, 0.8, 0.6].map((w, i) => (
+              <div key={i} className="h-3 animate-pulse rounded-full bg-navy-100" style={{ width: `${w * 100}%` }} />
+            ))}
+          </div>
+        ) : brief ? (
+          <div className="space-y-2 text-xs leading-relaxed text-navy-700">
+            {brief.split(/\*\*([^*]+)\*\*/g).map((part, i) =>
+              i % 2 === 1 ? (
+                <strong key={i} className="block mt-2 font-semibold text-navy-900 first:mt-0">{part}</strong>
+              ) : (
+                <span key={i}>{part}</span>
+              )
+            )}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Recent Activity Feed
+// ---------------------------------------------------------------------------
+
+function RecentActivityFeed({ situationId }: { situationId: string }) {
+  const [activity, setActivity] = useState<ActivityEntry[]>([]);
+
+  useEffect(() => {
+    setActivity(getRecentActivity(situationId));
+  }, [situationId]);
+
+  if (activity.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-[var(--color-app-border)] bg-white">
+      <div className="flex items-center gap-2 border-b border-[var(--color-app-border)] px-5 py-3">
+        <Clock className="h-4 w-4 text-navy-400" />
+        <h2 className="text-sm font-semibold text-navy-900">Recent Activity</h2>
+      </div>
+      <div className="divide-y divide-[var(--color-app-border-light)]">
+        {activity.map((entry, i) => (
+          <div key={i} className="flex items-center justify-between px-5 py-2.5">
+            <div className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-diplomatic-blue/40" />
+              <PraxisLink
+                href={entry.href}
+                className="text-xs text-navy-700 hover:text-diplomatic-blue hover:underline"
+              >
+                {entry.tool}
+              </PraxisLink>
+            </div>
+            <span className="text-[10px] text-navy-400">{formatRelTime(entry.timestamp)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const TREND_ICONS = {
   escalating: TrendingUp,
@@ -39,6 +208,12 @@ export function SituationDashboard({ situation }: { situation: Situation }) {
   const [onboardingComplete, setOnboardingComplete] = useState(
     situation.documentCount > 0 || situation.graphEntities > 0
   );
+
+  // Record dashboard visit in activity log
+  useEffect(() => {
+    recordActivity({ tool: 'Dashboard', href: '/dashboard', situationId: situation.id });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [situation.id]);
 
   const TrendIcon = TREND_ICONS[situation.escalationTrend] || Minus;
   const trendColor = TREND_COLORS[situation.escalationTrend] || TREND_COLORS.stable;
@@ -142,6 +317,9 @@ export function SituationDashboard({ situation }: { situation: Situation }) {
         />
       )}
 
+      {/* Daily Intelligence Brief */}
+      <DailyDigestCard situation={situation} />
+
       {/* Quick Actions */}
       <div>
         <h2 className="mb-3 text-sm font-semibold text-navy-700">Quick Actions</h2>
@@ -164,6 +342,9 @@ export function SituationDashboard({ situation }: { situation: Situation }) {
           ))}
         </div>
       </div>
+
+      {/* Recent Activity Feed */}
+      <RecentActivityFeed situationId={situation.id} />
 
       {/* Live Intelligence Feed */}
       <IntelligenceFeed situation={situation} />
