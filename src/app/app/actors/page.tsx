@@ -317,18 +317,18 @@ function ActorBriefPanel({
 
 /* ── List View ──────────────────────────────────────────────────────── */
 
-function ActorList({ onSelect }: { onSelect: (id: string) => void }) {
+function ActorList({ onSelect, profiles }: { onSelect: (id: string) => void; profiles: ActorProfile[] }) {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [threatFilters, setThreatFilters] = useState<Set<string>>(new Set());
 
   const allTypes = useMemo(
-    () => [...new Set(ACTOR_PROFILES.map((a) => a.type))],
-    [],
+    () => [...new Set(profiles.map((a) => a.type))],
+    [profiles],
   );
 
   const filtered = useMemo(() => {
-    return ACTOR_PROFILES.filter((a) => {
+    return profiles.filter((a) => {
       if (search && !a.name.toLowerCase().includes(search.toLowerCase())) return false;
       if (typeFilter && a.type !== typeFilter) return false;
       if (threatFilters.size > 0 && !threatFilters.has(a.threatLevel)) return false;
@@ -680,16 +680,18 @@ function ActorDetail({
 
 /* ── Main Page ──────────────────────────────────────────────────────── */
 
-function DemoActorsPage({ situation }: { situation: Situation | null }) {
+function DemoActorsPage({ situation, profiles }: { situation: Situation | null; profiles?: ActorProfile[] }) {
   const [view, setView] = useState<'list' | string>('list');
   const [briefActorId, setBriefActorId] = useState<string | null>(null);
 
+  const allProfiles = profiles ?? ACTOR_PROFILES;
+
   const selectedActor = view !== 'list'
-    ? ACTOR_PROFILES.find((a) => a.id === view)
+    ? allProfiles.find((a) => a.id === view)
     : null;
 
   const briefActor = briefActorId
-    ? ACTOR_PROFILES.find((a) => a.id === briefActorId)
+    ? allProfiles.find((a) => a.id === briefActorId)
     : null;
 
   return (
@@ -699,13 +701,15 @@ function DemoActorsPage({ situation }: { situation: Situation | null }) {
         <div>
           <h1 className="font-serif text-2xl text-navy-900">Actor Registry</h1>
           <p className="mt-0.5 text-sm text-navy-500">
-            Intelligence profiles for {ACTOR_PROFILES.length} monitored actors across active cases
+            {situation
+              ? `Intelligence profiles for ${allProfiles.length} actors — ${situation.name}`
+              : `Intelligence profiles for ${allProfiles.length} monitored actors across active cases`}
           </p>
         </div>
       </div>
 
       {view === 'list' ? (
-        <ActorList onSelect={(id) => setView(id)} />
+        <ActorList onSelect={(id) => setView(id)} profiles={allProfiles} />
       ) : selectedActor ? (
         <ActorDetail
           actor={selectedActor}
@@ -733,6 +737,7 @@ function DemoActorsPage({ situation }: { situation: Situation | null }) {
 
 export default function ActorsPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const [actorProfiles, setActorProfiles] = useState<ActorProfile[] | null>(null);
 
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoActorsPage situation={null} />;
@@ -740,17 +745,22 @@ export default function ActorsPage() {
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
 
-  // Real mode — AI populate prompt, then show tool
+  // Real mode — AI populate generates situation-specific actor profiles
   return (
     <AiPopulate
       toolId="actors"
       toolName="Actor Profiles"
-      apiEndpoint="/api/ai/actor-enrichment"
-      creditCost={2}
-      hasExistingData={false}
-      onDataGenerated={() => {}}
+      apiEndpoint="/api/ai/actor-profiles"
+      creditCost={3}
+      hasExistingData={!!actorProfiles}
+      onDataGenerated={(data) => {
+        try {
+          const parsed = data as { actors: ActorProfile[] };
+          if (parsed.actors?.length) setActorProfiles(parsed.actors);
+        } catch { /* ignore */ }
+      }}
     >
-      <DemoActorsPage situation={situation} />
+      <DemoActorsPage situation={situation} profiles={actorProfiles ?? undefined} />
     </AiPopulate>
   );
 }
