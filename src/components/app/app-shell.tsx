@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useAppStore } from '@/stores/app-store';
 import { usePraxisRoute } from '@/lib/utils/routes';
@@ -14,13 +14,33 @@ import { GlobalSearch } from '@/components/shared/global-search';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useNotificationStore } from '@/stores/notification-store';
 import { Loader2 } from 'lucide-react';
+import { FloatingPraxis } from '@/components/app/floating-praxis';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  const { setUser, setDemoMode } = useAppStore();
+  const { setUser, setDemoMode, sidebarOpen, setSidebarOpen } = useAppStore();
   const router = useRouter();
+  const pathname = usePathname();
   const route = usePraxisRoute();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 768px)');
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(e.matches);
+      if (e.matches) setSidebarOpen(false);
+    };
+    handler(mql);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, [setSidebarOpen]);
+
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false);
+  }, [pathname, isMobile, setSidebarOpen]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -77,12 +97,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <TooltipProvider delayDuration={0}>
       <div className="app-light flex h-screen overflow-hidden bg-[var(--color-app-bg)]">
-        <AppSidebar />
+        {/* Mobile sidebar overlay */}
+        {isMobile && sidebarOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar — fixed drawer on mobile, inline on desktop */}
+        <div
+          className={
+            isMobile
+              ? `fixed inset-y-0 left-0 z-50 transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+              : ''
+          }
+        >
+          <AppSidebar />
+        </div>
+
         <div className="flex flex-1 flex-col overflow-hidden">
           <DemoModeBanner />
-          <Header />
+          <Header isMobile={isMobile} />
           <main className="flex-1 overflow-y-auto">
-            <div className="mx-auto max-w-7xl px-6 py-6">
+            <div className="mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-6">
               {children}
             </div>
           </main>
@@ -92,6 +130,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {searchOpen && <GlobalSearch onClose={closeSearch} />}
       {/* Onboarding: welcome modal + guided walkthrough */}
       <OnboardingWrapper />
+      {/* Floating Ask PRAXIS button + chat panel */}
+      <FloatingPraxis />
     </TooltipProvider>
   );
 }

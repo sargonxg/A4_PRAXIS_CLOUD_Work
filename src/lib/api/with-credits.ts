@@ -38,8 +38,16 @@ export async function checkAndDeductCredits(
 ): Promise<{ allowed: true } | { allowed: false; response: Response }> {
   const session = await getSessionUid();
 
-  // No session — let the route's own auth handling deal with it
-  if (!session) return { allowed: true };
+  // No session — reject unauthenticated requests
+  if (!session) {
+    return {
+      allowed: false,
+      response: new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      ),
+    };
+  }
 
   // Demo users are unlimited
   if (session.isDemo) return { allowed: true };

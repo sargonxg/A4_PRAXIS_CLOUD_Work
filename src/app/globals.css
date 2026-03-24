@@ -199,6 +199,108 @@ body {
   background: var(--color-navy-300);
 }
 
+/* Floating PRAXIS chat markdown — dark panel */
+.floating-praxis-md {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-navy-200);
+}
+.floating-praxis-md h1,
+.floating-praxis-md h2,
+.floating-praxis-md h3,
+.floating-praxis-md h4 {
+  color: var(--color-navy-50);
+  font-weight: 600;
+  margin-top: 0.75em;
+  margin-bottom: 0.35em;
+}
+.floating-praxis-md h1 { font-size: 15px; }
+.floating-praxis-md h2 { font-size: 14px; }
+.floating-praxis-md h3 { font-size: 13px; }
+.floating-praxis-md p {
+  margin-top: 0.25em;
+  margin-bottom: 0.5em;
+}
+.floating-praxis-md strong {
+  color: var(--color-navy-50);
+  font-weight: 600;
+}
+.floating-praxis-md em {
+  color: var(--color-navy-300);
+}
+.floating-praxis-md a {
+  color: var(--color-gold-400);
+  text-decoration: none;
+}
+.floating-praxis-md a:hover {
+  text-decoration: underline;
+}
+.floating-praxis-md ul,
+.floating-praxis-md ol {
+  padding-left: 1.25em;
+  margin-top: 0.25em;
+  margin-bottom: 0.5em;
+}
+.floating-praxis-md li {
+  margin-top: 0.15em;
+  color: var(--color-navy-200);
+}
+.floating-praxis-md li::marker {
+  color: var(--color-navy-500);
+}
+.floating-praxis-md blockquote {
+  border-left: 3px solid var(--color-gold-600);
+  padding-left: 0.75em;
+  margin-left: 0;
+  color: var(--color-navy-300);
+  font-style: italic;
+}
+.floating-praxis-md code {
+  background: var(--color-navy-950);
+  color: var(--color-gold-400);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+.floating-praxis-md pre {
+  background: var(--color-navy-950);
+  border: 1px solid var(--color-navy-700);
+  border-radius: 8px;
+  padding: 0.75em;
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+.floating-praxis-md pre code {
+  background: transparent;
+  padding: 0;
+}
+.floating-praxis-md table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin: 0.5em 0;
+}
+.floating-praxis-md th {
+  color: var(--color-navy-200);
+  border-bottom: 1px solid var(--color-navy-600);
+  padding: 4px 8px;
+  text-align: left;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+.floating-praxis-md td {
+  color: var(--color-navy-300);
+  border-bottom: 1px solid var(--color-navy-700);
+  padding: 4px 8px;
+}
+.floating-praxis-md hr {
+  border-color: var(--color-navy-700);
+  margin: 0.75em 0;
+}
+
 /* Animated counter for landing page */
 @keyframes counter-pulse {
   0%, 100% { opacity: 1; }

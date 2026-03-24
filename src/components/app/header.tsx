@@ -4,7 +4,8 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePraxisRoute } from '@/lib/utils/routes';
-import { Search, ChevronRight, User, Settings, LogOut, Sparkles, X, Send, Coins } from 'lucide-react';
+import { Search, ChevronRight, User, Settings, LogOut, Sparkles, Coins, Menu } from 'lucide-react';
+import { useAppStore } from '@/stores/app-store';
 import { NotificationBell } from '@/components/shared/notifications';
 import { GlobalSearch } from '@/components/shared/global-search';
 import { cn } from '@/lib/utils/cn';
@@ -40,13 +41,12 @@ const routeLabels: Record<string, string> = {
   compare: 'Conflict Comparison',
 };
 
-export function Header() {
+export function Header({ isMobile }: { isMobile?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const route = usePraxisRoute();
   const { user, credits, logout } = useAuth();
-  const [assistOpen, setAssistOpen] = useState(false);
-  const [assistQuery, setAssistQuery] = useState('');
+  const { toggleSidebar } = useAppStore();
   const [searchOpen, setSearchOpen] = useState(false);
 
   // Cmd+K / Ctrl+K global shortcut
@@ -97,9 +97,18 @@ export function Header() {
 
   return (
     <>
-      <header className="flex h-14 items-center justify-between border-b border-[var(--color-app-border)] bg-white/80 px-6 backdrop-blur-md">
-        {/* Breadcrumbs */}
+      <header className="flex h-14 items-center justify-between border-b border-[var(--color-app-border)] bg-white/80 px-4 md:px-6 backdrop-blur-md">
+        {/* Mobile hamburger + Breadcrumbs */}
         <nav className="flex items-center gap-1 text-sm">
+          {isMobile && (
+            <button
+              onClick={toggleSidebar}
+              className="mr-2 rounded-lg p-1.5 text-navy-500 hover:bg-navy-50 hover:text-navy-700"
+              aria-label="Toggle sidebar"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          )}
           {breadcrumbs.map((crumb, index) => (
             <span key={crumb.href} className="flex items-center gap-1">
               {index > 0 && (
@@ -121,9 +130,9 @@ export function Header() {
 
         {/* Right section */}
         <div className="flex items-center gap-2">
-          {/* AI Quick Ask */}
+          {/* AI Quick Ask — opens floating PRAXIS panel */}
           <button
-            onClick={() => setAssistOpen(true)}
+            onClick={() => window.dispatchEvent(new CustomEvent('open-praxis-chat'))}
             className="flex items-center gap-2 rounded-lg border border-gold-500/20 bg-gold-500/5 px-3 py-1.5 text-sm text-gold-700 transition-all hover:border-gold-500/40 hover:bg-gold-500/10"
           >
             <Sparkles className="h-3.5 w-3.5" />
@@ -196,60 +205,6 @@ export function Header() {
       {/* Global Search */}
       {searchOpen && <GlobalSearch onClose={closeSearch} />}
 
-      {/* AI Assistant Overlay */}
-      {assistOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20" onClick={() => setAssistOpen(false)}>
-          <div className="absolute inset-0 bg-navy-950/20 backdrop-blur-sm" />
-          <div
-            className="relative z-10 w-full max-w-2xl rounded-2xl border border-[var(--color-app-border)] bg-white shadow-2xl shadow-navy-950/10"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3 border-b border-[var(--color-app-border)] px-5 py-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-500/10">
-                <Sparkles className="h-4 w-4 text-gold-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold text-navy-900">Ask PRAXIS Anything</h3>
-                <p className="text-[11px] text-navy-500">AI-powered intelligence assistant for your current context</p>
-              </div>
-              <button onClick={() => setAssistOpen(false)} className="rounded-md p-1 text-navy-400 hover:text-navy-600">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="p-5">
-              <div className="flex items-center gap-3">
-                <input
-                  type="text"
-                  value={assistQuery}
-                  onChange={(e) => setAssistQuery(e.target.value)}
-                  placeholder='e.g., "Summarize today&apos;s UNSC developments" or "Draft talking points on Sahel"'
-                  className="flex-1 rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-4 py-3 text-sm text-navy-900 placeholder:text-navy-400 focus:border-gold-500/50 focus:outline-none focus:ring-2 focus:ring-gold-500/10"
-                  autoFocus
-                />
-                <button className="flex h-11 w-11 items-center justify-center rounded-lg bg-diplomatic-blue text-white transition-colors hover:bg-diplomatic-blue/90">
-                  <Send className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {[
-                  'What are today\'s key developments?',
-                  'Brief me on the Nordalia situation',
-                  'Draft a cable on Sahel security',
-                  'Summarize recent UNSC resolutions',
-                ].map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    onClick={() => setAssistQuery(suggestion)}
-                    className="rounded-full border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-xs text-navy-600 transition-colors hover:border-gold-500/30 hover:bg-gold-500/5 hover:text-navy-900"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
