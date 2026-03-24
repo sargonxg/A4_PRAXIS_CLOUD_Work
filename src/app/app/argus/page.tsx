@@ -5,7 +5,8 @@ import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useCallback } from 'react';
-import { Search, Upload, Network, FileText, GitCompare, ExternalLink, Loader2, Sparkles, Database } from 'lucide-react';
+import { Search, Upload, Network, FileText, GitCompare, ExternalLink, Loader2, Sparkles, Database, Globe } from 'lucide-react';
+import { buildToolContext } from '@/lib/ai/situation-context';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { cn } from '@/lib/utils/cn';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -464,6 +465,120 @@ interface ArgusData {
 }
 
 // ============================================================================
+// Live Web Research — Grounded search + deep research using Firecrawl
+// ============================================================================
+
+function LiveWebResearchPanel({ situation }: { situation: import('@/types/situation').Situation }) {
+  const [query, setQuery] = useState('');
+  const [result, setResult] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSearch = useCallback(async () => {
+    if (!query.trim() || loading) return;
+    setLoading(true);
+    setResult('');
+    try {
+      const res = await fetch('/api/ai/deep-research', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `${query} — focus on "${situation.name}" in ${situation.region || 'the relevant region'}`,
+          mode: 'briefing',
+          depth: 'comprehensive',
+          conflictContext: buildToolContext(situation),
+        }),
+      });
+      if (!res.ok) throw new Error('Research failed');
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let acc = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        acc += decoder.decode(value, { stream: true });
+        setResult(acc);
+      }
+    } catch {
+      setResult('_Research failed. Check your AI service configuration and FIRECRAWL_API_KEY._');
+    } finally {
+      setLoading(false);
+    }
+  }, [query, loading, situation]);
+
+  const SUGGESTED_QUERIES = [
+    `Latest developments in ${situation.name}`,
+    `Key actors and their positions in ${situation.name}`,
+    `International response to ${situation.name}`,
+    `Peace process and negotiations for ${situation.name}`,
+    `Human rights situation in ${situation.region || situation.name}`,
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-blue-500/20 bg-blue-500/4 px-4 py-2.5 text-xs text-navy-600">
+        <Globe className="inline h-3.5 w-3.5 text-blue-600 mr-1.5" />
+        <strong className="text-navy-700">Live Web Research</strong> — searches across real-time news, UN reports, NGO briefings, and academic sources. Results are grounded in current, sourced information about <strong>{situation.name}</strong>.
+      </div>
+
+      <div className="relative flex gap-2">
+        <div className="relative flex-1">
+          <Globe className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            placeholder={`Research "${situation.name}"...`}
+            className="w-full rounded-xl border border-[var(--color-app-border)] bg-white py-3 pl-11 pr-4 text-sm text-navy-900 placeholder:text-navy-400 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+          />
+        </div>
+        <button
+          onClick={handleSearch}
+          disabled={loading || !query.trim()}
+          className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+          {loading ? 'Searching...' : 'Search Web'}
+        </button>
+      </div>
+
+      {/* Suggested queries */}
+      {!result && !loading && (
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-medium text-navy-400">Suggested queries:</p>
+          <div className="flex flex-wrap gap-2">
+            {SUGGESTED_QUERIES.map((q) => (
+              <button
+                key={q}
+                onClick={() => { setQuery(q); }}
+                className="rounded-full border border-navy-200 bg-white px-3 py-1 text-[11px] text-navy-600 hover:border-blue-400 hover:text-blue-700 transition-colors"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Result */}
+      {(result || loading) && (
+        <div className="rounded-xl border border-blue-500/20 border-l-4 border-l-blue-500 bg-white p-5">
+          {loading && !result ? (
+            <div className="space-y-2">
+              {[1, 0.85, 0.7, 0.6].map((w, i) => (
+                <div key={i} className="h-3 animate-pulse rounded-full bg-navy-100" style={{ width: `${w * 100}%` }} />
+              ))}
+            </div>
+          ) : (
+            <MarkdownRenderer content={result} className="text-sm" />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
 // Real mode ARGUS page — renders AI-generated entity graph + live queries
 // ============================================================================
 
@@ -535,6 +650,9 @@ function RealArgusPage({ situation, argusData }: { situation: import('@/types/si
           </TabsTrigger>
           <TabsTrigger value="live-query" className="gap-1.5">
             <Search className="h-3.5 w-3.5" /> Knowledge Graph Query
+          </TabsTrigger>
+          <TabsTrigger value="web-research" className="gap-1.5">
+            <Globe className="h-3.5 w-3.5" /> Live Web Research
           </TabsTrigger>
         </TabsList>
 
@@ -656,6 +774,11 @@ function RealArgusPage({ situation, argusData }: { situation: import('@/types/si
               </div>
             )}
           </div>
+        </TabsContent>
+
+        {/* ── Tab 3: Live Web Research ── */}
+        <TabsContent value="web-research">
+          <LiveWebResearchPanel situation={situation} />
         </TabsContent>
       </Tabs>
 

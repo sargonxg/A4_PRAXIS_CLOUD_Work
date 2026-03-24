@@ -21,7 +21,9 @@ import {
   Thermometer,
   Sparkles,
   Loader2,
+  Globe,
 } from "lucide-react";
+import { buildToolContext } from "@/lib/ai/situation-context";
 
 type MediaTab = "source-map" | "coverage" | "sentiment";
 
@@ -126,6 +128,41 @@ function RealMediaPanel({ situation }: { situation: import("@/types/situation").
   const [scanResult, setScanResult] = useState<MediaScanResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [liveQuery, setLiveQuery] = useState('');
+  const [liveResult, setLiveResult] = useState('');
+  const [liveLoading, setLiveLoading] = useState(false);
+
+  const handleLiveSearch = useCallback(async () => {
+    if (!liveQuery.trim() || liveLoading) return;
+    setLiveLoading(true);
+    setLiveResult('');
+    try {
+      const res = await fetch('/api/ai/deep-research', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `Media coverage and news: ${liveQuery} — situation: "${situation.name}" in ${situation.region || 'relevant region'}`,
+          mode: 'briefing',
+          depth: 'standard',
+          conflictContext: buildToolContext(situation),
+        }),
+      });
+      if (!res.ok) throw new Error('Search failed');
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let acc = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        acc += decoder.decode(value, { stream: true });
+        setLiveResult(acc);
+      }
+    } catch {
+      setLiveResult('_Live search failed. Ensure FIRECRAWL_API_KEY and GOOGLE_AI_API_KEY are configured._');
+    } finally {
+      setLiveLoading(false);
+    }
+  }, [liveQuery, liveLoading, situation]);
 
   const handleGenerate = useCallback(async () => {
     setLoading(true);
@@ -237,6 +274,38 @@ function RealMediaPanel({ situation }: { situation: import("@/types/situation").
         <button onClick={handleGenerate} disabled={loading} className="text-xs text-navy-500 hover:text-navy-700">
           Regenerate analysis
         </button>
+      </div>
+
+      {/* Live News Search */}
+      <div className="rounded-xl border border-blue-500/20 bg-white p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Globe className="h-4 w-4 text-blue-600" />
+          <h3 className="text-sm font-semibold text-navy-900">Live News Search</h3>
+          <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">Firecrawl</span>
+        </div>
+        <p className="mb-3 text-xs text-navy-500">Search current news and reporting on any aspect of &ldquo;{situation.name}&rdquo; using live web research.</p>
+        <div className="flex gap-2">
+          <input
+            value={liveQuery}
+            onChange={(e) => setLiveQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleLiveSearch()}
+            placeholder={`e.g. "latest ceasefire talks", "media coverage of ${situation.actors[0] ?? situation.name}"`}
+            className="flex-1 rounded-lg border border-navy-200 px-3 py-2 text-sm text-navy-900 placeholder:text-navy-400 focus:border-blue-500/50 focus:outline-none"
+          />
+          <button
+            onClick={handleLiveSearch}
+            disabled={liveLoading || !liveQuery.trim()}
+            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {liveLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+            {liveLoading ? 'Searching...' : 'Search'}
+          </button>
+        </div>
+        {liveResult && (
+          <div className="mt-4 rounded-lg border border-blue-500/20 bg-blue-50/50 p-4">
+            <MarkdownRenderer content={liveResult} className="text-sm" />
+          </div>
+        )}
       </div>
     </div>
   );

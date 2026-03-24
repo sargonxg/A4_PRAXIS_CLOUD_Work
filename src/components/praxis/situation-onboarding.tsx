@@ -31,6 +31,7 @@ export function SituationOnboarding({ situation, onComplete }: SituationOnboardi
   const [isResearching, setIsResearching] = useState(false);
   const [researchResult, setResearchResult] = useState('');
   const [researchDone, setResearchDone] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [preferredSources, setPreferredSources] = useState<string[]>([]);
   const [customSource, setCustomSource] = useState('');
   const [expanded, setExpanded] = useState(true);
@@ -101,13 +102,34 @@ export function SituationOnboarding({ situation, onComplete }: SituationOnboardi
       }
 
       setResearchDone(true);
+
+      // Extract a concise description from the research (SITUATION OVERVIEW section)
+      // and save it back to the situation so all tools benefit from the richer context.
+      try {
+        const overviewMatch = fullText.match(/##\s*SITUATION OVERVIEW\s*\n([\s\S]*?)(?=\n##|$)/i);
+        const summary = overviewMatch
+          ? overviewMatch[1].trim().slice(0, 800)
+          : fullText.slice(0, 600).trim();
+
+        if (summary) {
+          await fetch(`/api/situations/${situation.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ description: summary }),
+          });
+          updateSituation(situation.id, { description: summary });
+          setSaved(true);
+        }
+      } catch {
+        // Non-fatal — research still shown, just not persisted
+      }
     } catch {
       setResearchResult('Research failed. You can proceed without it and add data later.');
       setResearchDone(true);
     } finally {
       setIsResearching(false);
     }
-  }, [situation, preferredSources]);
+  }, [situation, preferredSources, updateSituation]);
 
   if (!expanded) {
     return (
@@ -248,7 +270,9 @@ export function SituationOnboarding({ situation, onComplete }: SituationOnboardi
               {researchDone && (
                 <div className="flex items-center justify-between pt-2">
                   <p className="text-xs text-navy-500">
-                    This research will be saved to your situation for all tools to use.
+                    {saved
+                      ? 'Research saved — all tools will now use this context.'
+                      : 'Research complete. Proceed to start working with your situation.'}
                   </p>
                   <div className="flex items-center gap-3">
                     <button onClick={runResearch} className="text-xs text-navy-500 hover:text-navy-700">
