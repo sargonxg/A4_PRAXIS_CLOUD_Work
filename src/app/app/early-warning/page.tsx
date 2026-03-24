@@ -699,7 +699,7 @@ function DemoEarlyWarningPage({ situation, aiRiskData }: { situation?: import('@
     } finally {
       setHorizonLoading(false);
     }
-  }, [horizonLoading, conflicts]);
+  }, [horizonLoading, conflicts, isReal, situationName, situationRegion, situationRiskScore, situation?.status, situationActors]);
 
   const activeStageData = GLASL_STAGES.find((s) => s.stage === activeStage);
   const activeZoneStyles = activeStageData ? STAGE_ZONE_STYLES[activeStageData.zone] : STAGE_ZONE_STYLES['amber'];

@@ -1,16 +1,16 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
-import { RealToolView } from '@/components/praxis/real-tool-view';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
-import { useState } from 'react';
-import { Search, Upload, Network, FileText, GitCompare, ExternalLink } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Search, Upload, Network, FileText, GitCompare, ExternalLink, Loader2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EcosystemBadge } from '@/components/shared/ecosystem-badge';
 import { PoweredByTacitus } from '@/components/shared/powered-by-tacitus';
+import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import {
   ARGUS_DEMO_QUERIES,
   ARGUS_DEMO_DOCUMENTS,
@@ -440,29 +440,263 @@ function DemoArgusPage({ situationName }: { situationName?: string }) {
 }
 
 // ============================================================================
+// AI-generated ARGUS data type (matches /api/ai/argus extract response)
+// ============================================================================
+
+interface ArgusEntity {
+  name: string;
+  type: string;
+  description: string;
+  relationships: { target: string; type: string; strength: number }[];
+}
+
+interface ArgusData {
+  entities: ArgusEntity[];
+  summary: string;
+}
+
+// ============================================================================
+// Real mode ARGUS page — renders AI-generated entity graph + live queries
+// ============================================================================
+
+function RealArgusPage({ situation, argusData }: { situation: import('@/types/situation').Situation; argusData: ArgusData | null }) {
+  const [searchValue, setSearchValue] = useState('');
+  const [queryResult, setQueryResult] = useState('');
+  const [queryLoading, setQueryLoading] = useState(false);
+
+  const hasData = !!argusData;
+
+  const handleQuery = useCallback(async () => {
+    if (!searchValue.trim() || queryLoading) return;
+    setQueryLoading(true);
+    setQueryResult('');
+    try {
+      const res = await fetch('/api/ai/argus', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'query',
+          query: `${searchValue}. Context: ${situation.name} — ${situation.description}. Actors: ${situation.actors.join(', ')}`,
+        }),
+      });
+      if (!res.ok) throw new Error('Query failed');
+      const text = await res.text();
+      setQueryResult(text);
+    } catch {
+      setQueryResult('_Query failed. Check your AI service configuration._');
+    } finally {
+      setQueryLoading(false);
+    }
+  }, [searchValue, queryLoading, situation]);
+
+  // Relationship type to readable label
+  const relationLabel = (type: string) => type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+  // Map API entity types to ARGUS badge colors
+  const typeToACO: Record<string, string> = {
+    actor: 'Actor',
+    organization: 'Actor',
+    location: 'Event',
+    event: 'Event',
+    agreement: 'Commitment',
+    resource: 'Interest',
+    concept: 'Narrative',
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-serif text-2xl text-navy-900">ARGUS Intelligence</h1>
+        <p className="mt-1 text-sm text-navy-500">
+          Graph-augmented RAG for &ldquo;{situation.name}&rdquo; — entity network, live queries, and relationship analysis
+        </p>
+      </div>
+
+      <Tabs defaultValue="entity-network">
+        <TabsList>
+          <TabsTrigger value="entity-network" className="gap-1.5">
+            <Network className="h-3.5 w-3.5" /> Entity Network
+          </TabsTrigger>
+          <TabsTrigger value="live-query" className="gap-1.5">
+            <Search className="h-3.5 w-3.5" /> Knowledge Graph Query
+          </TabsTrigger>
+        </TabsList>
+
+        {/* ── Tab 1: Entity Network ── */}
+        <TabsContent value="entity-network">
+          {hasData ? (
+            <div className="space-y-4">
+              {/* Summary */}
+              <div className="rounded-xl border border-emerald-500/20 border-l-4 border-l-emerald-500 bg-white p-5">
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-navy-400">Network Summary</h3>
+                <p className="text-sm leading-relaxed text-navy-700">{argusData.summary}</p>
+                <div className="mt-3 flex items-center gap-3 text-[11px] text-navy-500">
+                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-600 font-medium">
+                    {argusData.entities.length} entities extracted
+                  </span>
+                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-blue-600 font-medium">
+                    {argusData.entities.reduce((acc, e) => acc + e.relationships.length, 0)} relationships mapped
+                  </span>
+                </div>
+              </div>
+
+              {/* Entity cards */}
+              <div className="grid gap-3 md:grid-cols-2">
+                {argusData.entities.map((entity, idx) => {
+                  const acoType = typeToACO[entity.type] ?? 'Actor';
+                  return (
+                    <div
+                      key={idx}
+                      className="rounded-xl border border-[var(--color-app-border)] bg-white p-4"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h4 className="text-sm font-semibold text-navy-800">{entity.name}</h4>
+                          <EntityBadge name={entity.type} type={acoType} />
+                        </div>
+                      </div>
+                      <p className="mt-2 text-[12px] leading-relaxed text-navy-600">{entity.description}</p>
+
+                      {entity.relationships.length > 0 && (
+                        <div className="mt-3 border-t border-[var(--color-app-border-light)] pt-3">
+                          <h5 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-navy-400">
+                            Relationships
+                          </h5>
+                          <div className="flex flex-wrap gap-1.5">
+                            {entity.relationships.map((rel, ri) => (
+                              <span
+                                key={ri}
+                                className="inline-flex items-center gap-1 rounded-md border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-2 py-1 text-[10px] text-navy-600"
+                              >
+                                <span className="font-medium text-emerald-600">{relationLabel(rel.type)}</span>
+                                <span className="text-navy-400">&rarr;</span>
+                                <span className="font-medium">{rel.target}</span>
+                                <span className="ml-1 rounded-full bg-emerald-50 px-1 py-0.5 text-[9px] font-bold text-emerald-600">
+                                  {Math.round(rel.strength * 100)}%
+                                </span>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-app-border)] bg-white/50 py-16">
+              <Network className="mb-3 h-10 w-10 text-navy-300" />
+              <p className="text-sm text-navy-400">
+                Entity network will appear after AI generation completes.
+              </p>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* ── Tab 2: Live Knowledge Graph Query ── */}
+        <TabsContent value="live-query">
+          <div className="space-y-4">
+            {/* Search bar */}
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-navy-400" />
+              <input
+                type="text"
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleQuery()}
+                placeholder={`Query the knowledge graph for "${situation.name}"...`}
+                className="w-full rounded-xl border border-[var(--color-app-border)] bg-white py-3.5 pl-12 pr-24 text-sm text-navy-900 placeholder:text-navy-400 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+              />
+              <button
+                onClick={handleQuery}
+                disabled={queryLoading || !searchValue.trim()}
+                className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {queryLoading ? (
+                  <><Loader2 className="h-3 w-3 animate-spin" /> Querying...</>
+                ) : (
+                  <><Sparkles className="h-3 w-3" /> Query</>
+                )}
+              </button>
+            </div>
+
+            {/* Query result */}
+            {queryResult ? (
+              <div className="rounded-xl border border-[var(--color-app-border)] border-l-4 border-l-emerald-500 bg-white p-6">
+                <div className="prose max-w-none text-sm text-navy-700">
+                  <MarkdownRenderer content={queryResult} className="text-sm" />
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-app-border)] bg-white/50 py-16">
+                <Network className="mb-3 h-10 w-10 text-navy-300" />
+                <p className="text-sm text-navy-400">
+                  Enter a question to query the ARGUS knowledge graph
+                </p>
+                <p className="mt-1 text-[11px] text-navy-400">
+                  e.g. &quot;What are the key relationships between {situation.actors?.[0] ?? 'actors'}?&quot;
+                </p>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between rounded-xl border border-[var(--color-app-border)] bg-white px-6 py-4">
+        <EcosystemBadge product="ARGUS" size="md" />
+        <div className="text-center">
+          <p className="text-[12px] text-navy-500">
+            ARGUS intelligence generated for &ldquo;{situation.name}&rdquo;
+          </p>
+        </div>
+        <a
+          href="https://argus.tacitus.me"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-emerald-700"
+        >
+          Open ARGUS <ExternalLink className="h-3 w-3" />
+        </a>
+      </div>
+      <PoweredByTacitus />
+    </div>
+  );
+}
+
+// ============================================================================
 // Real mode wrapper — separates demo data from situation-specific data
 // ============================================================================
 
 export default function ArgusPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
-  
+  const [argusData, setArgusData] = useState<ArgusData | null>(null);
+
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoArgusPage />;
 
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
 
-  // Real mode — AI populate prompt, then show tool
+  // Real mode — AI populate with entity extraction, then show real tool
   return (
     <AiPopulate
       toolId="argus"
       toolName="ARGUS Intelligence"
       apiEndpoint="/api/ai/argus"
+      extraBody={{
+        action: 'extract',
+        text: `${situation.name}: ${situation.description}. Region: ${situation.region}. Actors: ${situation.actors.join(', ')}. Status: ${situation.status}. Risk score: ${situation.riskScore}/10.`,
+      }}
       creditCost={2}
-      hasExistingData={false}
-      onDataGenerated={() => {}}
+      hasExistingData={!!argusData}
+      onDataGenerated={(data) => {
+        const d = data as ArgusData;
+        if (d?.entities) setArgusData(d);
+      }}
     >
-      <DemoArgusPage situationName={situation.name} />
+      <RealArgusPage situation={situation} argusData={argusData} />
     </AiPopulate>
   );
 }

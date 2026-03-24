@@ -1,7 +1,6 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
-import { RealToolView } from '@/components/praxis/real-tool-view';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
@@ -20,6 +19,7 @@ import { cn } from '@/lib/utils/cn';
 import { PoweredByTacitus } from '@/components/shared/powered-by-tacitus';
 import { CASE_REGISTRY } from '@/lib/constants/case-registry';
 import { DEMO_MORNING_BRIEF, type BriefingSlide } from '@/lib/constants/briefing-data';
+import type { Situation } from '@/types/situation';
 
 const BRIEFING_TYPES = [
   { id: 'morning', label: 'Morning Intelligence Brief', description: 'Daily situation update for senior leadership' },
@@ -93,21 +93,102 @@ function SlideContent({ slide }: { slide: BriefingSlide }) {
   );
 }
 
-function DemoBriefingPage({ situationName }: { situationName?: string }) {
+/** Data shape returned by /api/ai/briefing-generate */
+interface BriefingData {
+  slides: {
+    title: string;
+    content: string;
+    speakerNotes?: string;
+    sources?: string[];
+  }[];
+}
+
+/** Map API slide to the BriefingSlide type used by the renderer */
+function toBriefingSlides(data: BriefingData): BriefingSlide[] {
+  const SLIDE_TYPES: BriefingSlide['type'][] = [
+    'title', 'summary', 'map', 'timeline', 'risk', 'actions', 'discussion',
+  ];
+  return data.slides.map((s, i) => ({
+    id: `slide-${i + 1}`,
+    type: SLIDE_TYPES[i] ?? 'summary',
+    title: s.title,
+    content: s.content,
+    speakerNotes: s.speakerNotes ?? '',
+    sources: s.sources,
+  }));
+}
+
+function DemoBriefingPage({ situationName, situation, preloadedSlides }: {
+  situationName?: string;
+  situation?: Situation;
+  preloadedSlides?: BriefingSlide[];
+}) {
   const isRealMode = !!situationName;
 
-  const [view, setView] = useState<'builder' | 'presentation'>('builder');
+  const [view, setView] = useState<'builder' | 'presentation'>(() =>
+    preloadedSlides ? 'presentation' : 'builder'
+  );
   const [selectedCase, setSelectedCase] = useState(caseEntries[0]?.id ?? '');
   const [briefingType, setBriefingType] = useState('morning');
   const [generating, setGenerating] = useState(false);
-  const [slides, setSlides] = useState<BriefingSlide[] | null>(null);
+  const [slides, setSlides] = useState<BriefingSlide[] | null>(preloadedSlides ?? null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showNotes, setShowNotes] = useState(false);
   const [noDataMessage, setNoDataMessage] = useState('');
 
-  const handleGenerate = () => {
-    // Real mode: always allow generation; Demo mode: only for Nordalia morning brief
-    if (briefingType === 'morning' && (isRealMode || selectedCase.includes('nordalia'))) {
+  // If preloaded slides arrive after mount (AiPopulate completes), pick them up
+  useEffect(() => {
+    if (preloadedSlides && !slides) {
+      setSlides(preloadedSlides);
+      setView('presentation');
+    }
+  }, [preloadedSlides, slides]);
+
+  const handleGenerate = async () => {
+    // Real mode: call the API endpoint for live generation
+    if (isRealMode && situation) {
+      setGenerating(true);
+      setNoDataMessage('');
+      try {
+        const res = await fetch('/api/ai/briefing-generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            caseId: situation.id,
+            briefingType,
+            conflictContext: `${situation.name}: ${situation.description}. Actors: ${situation.actors.join(', ')}`,
+            situationContext: {
+              name: situation.name,
+              region: situation.region,
+              actors: situation.actors,
+              riskScore: situation.riskScore,
+              escalationTrend: situation.escalationTrend,
+              glaslStage: situation.glaslStage,
+              description: situation.description,
+            },
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: 'Generation failed' }));
+          setNoDataMessage(err.error || 'Failed to generate briefing. Please try again.');
+          setGenerating(false);
+          return;
+        }
+        const data = (await res.json()) as BriefingData;
+        const newSlides = toBriefingSlides(data);
+        setSlides(newSlides);
+        setCurrentSlide(0);
+        setGenerating(false);
+        setView('presentation');
+      } catch {
+        setNoDataMessage('Network error. Please check your connection and try again.');
+        setGenerating(false);
+      }
+      return;
+    }
+
+    // Demo mode: only for Nordalia morning brief
+    if (briefingType === 'morning' && selectedCase.includes('nordalia')) {
       setGenerating(true);
       setNoDataMessage('');
       setTimeout(() => {
@@ -165,24 +246,35 @@ function DemoBriefingPage({ situationName }: { situationName?: string }) {
         </div>
 
         <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-6 space-y-6">
-          {/* Case Selector */}
-          <div>
-            <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">
-              Select Case
-            </label>
-            <div className="relative">
-              <select
-                value={selectedCase}
-                onChange={(e) => { setSelectedCase(e.target.value); setNoDataMessage(''); }}
-                className="w-full appearance-none rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-2.5 text-sm text-navy-900 focus:border-diplomatic-blue/30 focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/10"
-              >
-                {caseEntries.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400 pointer-events-none" />
+          {/* Case Selector — hidden in real mode (situation already selected) */}
+          {isRealMode ? (
+            <div>
+              <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">
+                Situation
+              </label>
+              <div className="rounded-lg border border-diplomatic-blue/20 bg-diplomatic-blue/5 px-3 py-2.5 text-sm font-medium text-navy-900">
+                {situationName}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div>
+              <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">
+                Select Case
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedCase}
+                  onChange={(e) => { setSelectedCase(e.target.value); setNoDataMessage(''); }}
+                  className="w-full appearance-none rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-2.5 text-sm text-navy-900 focus:border-diplomatic-blue/30 focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/10"
+                >
+                  {caseEntries.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400 pointer-events-none" />
+              </div>
+            </div>
+          )}
 
           {/* Briefing Type */}
           <div>
@@ -347,9 +439,46 @@ function DemoBriefingPage({ situationName }: { situationName?: string }) {
 // Real mode wrapper — separates demo data from situation-specific data
 // ============================================================================
 
+function RealBriefingPage({ situation }: { situation: Situation }) {
+  const [briefingData, setBriefingData] = useState<BriefingData | null>(null);
+
+  const preloadedSlides = briefingData ? toBriefingSlides(briefingData) : undefined;
+
+  return (
+    <AiPopulate
+      toolId="briefing"
+      toolName="Briefing"
+      apiEndpoint="/api/ai/briefing-generate"
+      extraBody={{
+        caseId: situation.id,
+        briefingType: 'morning',
+        conflictContext: `${situation.name}: ${situation.description}. Actors: ${situation.actors.join(', ')}`,
+        situationContext: {
+          name: situation.name,
+          region: situation.region,
+          actors: situation.actors,
+          riskScore: situation.riskScore,
+          escalationTrend: situation.escalationTrend,
+          glaslStage: situation.glaslStage,
+          description: situation.description,
+        },
+      }}
+      creditCost={3}
+      hasExistingData={!!briefingData}
+      onDataGenerated={(data) => setBriefingData(data as BriefingData)}
+    >
+      <DemoBriefingPage
+        situationName={situation.name}
+        situation={situation}
+        preloadedSlides={preloadedSlides}
+      />
+    </AiPopulate>
+  );
+}
+
 export default function BriefingPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
-  
+
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoBriefingPage />;
 
@@ -357,16 +486,5 @@ export default function BriefingPage() {
   if (showGuard || !situation) return <NoSituationState />;
 
   // Real mode — AI populate prompt, then show tool
-  return (
-    <AiPopulate
-      toolId="briefing"
-      toolName="Briefing"
-      apiEndpoint="/api/ai/briefing-generate"
-      creditCost={3}
-      hasExistingData={false}
-      onDataGenerated={() => {}}
-    >
-      <DemoBriefingPage situationName={situation.name} />
-    </AiPopulate>
-  );
+  return <RealBriefingPage situation={situation} />;
 }
