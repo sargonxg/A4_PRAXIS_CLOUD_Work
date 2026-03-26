@@ -6,6 +6,7 @@ import { tacitusTools } from '@/lib/ai/tools';
 import { buildSituationContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withAuth } from '@/lib/api/with-auth';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { retrieveRelevantChunks } from '@/lib/firebase/documents-service';
@@ -13,7 +14,7 @@ import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request, _user) => {
   try {
     const body = await request.json();
 
@@ -104,6 +105,11 @@ Learn more at tacitus.me. For questions about pricing, partnerships, or enterpri
     if (situation) {
       const sit = situation as Situation;
       systemPrompt += '\n\n' + buildSituationContext(sit);
+
+      // Include source URLs when available so the AI can reference them
+      if (sit.sourceUrls && sit.sourceUrls.length > 0) {
+        systemPrompt += `\n\n## Reference URLs\nThe user provided these source URLs for this situation:\n${sit.sourceUrls.map((u) => `- ${u}`).join('\n')}\nYou may reference or search these sources for grounding.`;
+      }
     } else if (conflictContext) {
       systemPrompt += `\n\n## Active Conflict Context\nThe user is analyzing: **${conflictContext}**\nUse queryConflictGraph to retrieve structured data before answering.`;
     }
@@ -151,4 +157,4 @@ Learn more at tacitus.me. For questions about pricing, partnerships, or enterpri
   } catch (err) {
     return handleRouteError(err, 'chat');
   }
-}
+});

@@ -1,7 +1,10 @@
 import { streamText, stepCountIs } from 'ai';
 import { getModel, getProModel } from '@/lib/ai/providers';
 import { webSearch } from '@/lib/ai/tools';
+import { buildToolContext } from '@/lib/ai/situation-context';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withAuth } from '@/lib/api/with-auth';
+import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
@@ -31,7 +34,7 @@ const DEEP_ANALYSIS_SUFFIX = `
 
 You are operating in DEEP ANALYSIS mode. Provide an in-depth, multi-paragraph analysis (6-10 paragraphs). Draw on specific analytical frameworks, cite relevant data sources and databases by name, and include specific policy recommendations with implementation timelines. Structure your response with clear sections. Where relevant, note areas of uncertainty and competing interpretations. This is a premium analysis — be thorough, precise, and actionable.`;
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request, _user) => {
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(
       JSON.stringify({ error: 'AI service not configured.' }),
@@ -40,7 +43,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { messages, advisorId, deepAnalysis } = await request.json();
+    const { messages, advisorId, deepAnalysis, situation } = await request.json();
 
     const creditType = deepAnalysis ? 'ai_advisor_deep' : 'ai_advisor_chat';
     const creditDesc = deepAnalysis ? 'Advisory deep analysis' : 'Advisory chat';
@@ -56,7 +59,7 @@ export async function POST(request: Request) {
 
 You are operating within PRAXIS, TACITUS's conflict intelligence platform. You are being consulted by a diplomatic professional, political affairs officer, or conflict analyst. Give substantive, expert guidance grounded in your specific expertise. Do not be vague or generic. Reference specific frameworks, data sources, and professional best practices from your field. Maintain your distinct voice and perspective throughout.
 
-You have access to a web search tool. When the user asks about current events, recent developments, specific data points, or anything that would benefit from up-to-date information, use the webSearch tool to find real-time data before responding. Cite your sources when using web search results. Do not search for every query — only when current/real-time information would materially improve your answer.${deepAnalysis ? DEEP_ANALYSIS_SUFFIX : ''}`;
+You have access to a web search tool. When the user asks about current events, recent developments, specific data points, or anything that would benefit from up-to-date information, use the webSearch tool to find real-time data before responding. Cite your sources when using web search results. Do not search for every query — only when current/real-time information would materially improve your answer.${deepAnalysis ? DEEP_ANALYSIS_SUFFIX : ''}${situation ? `\n\n## Active Situation Context\n${buildToolContext(situation as Situation)}` : ''}`;
 
     const model = deepAnalysis ? getProModel() : getModel();
 
@@ -76,4 +79,4 @@ You have access to a web search tool. When the user asks about current events, r
       headers: { 'Content-Type': 'application/json' },
     });
   }
-}
+});

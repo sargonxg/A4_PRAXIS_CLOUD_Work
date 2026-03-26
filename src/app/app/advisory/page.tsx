@@ -347,10 +347,12 @@ function AdvisorChatPanel({
   advisor,
   onClose,
   situationContext,
+  situation,
 }: {
   advisor: AdvisorDef;
   onClose: () => void;
   situationContext: string;
+  situation?: Situation | null;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -378,6 +380,7 @@ function AdvisorChatPanel({
           messages: allMessages,
           advisorId: advisor.id,
           deepAnalysis,
+          situation: situation || undefined,
         }),
       });
       if (!response.ok || !response.body) throw new Error();
@@ -410,7 +413,7 @@ function AdvisorChatPanel({
       setIsLoading(false);
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
-  }, [messages, isLoading, advisor, situationContext, deepAnalysis]);
+  }, [messages, isLoading, advisor, situationContext, deepAnalysis, situation]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -573,7 +576,7 @@ function AdvisorChatPanel({
 // Panel Discussion — with alignment/tension indicators
 // ============================================================================
 
-function PanelDiscussion({ situationContext }: { situationContext: string }) {
+function PanelDiscussion({ situationContext, situation }: { situationContext: string; situation?: Situation | null }) {
   const [question, setQuestion] = useState('');
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [isRunning, setIsRunning] = useState(false);
@@ -599,6 +602,7 @@ function PanelDiscussion({ situationContext }: { situationContext: string }) {
             ],
             advisorId: advisor.id,
             deepAnalysis: false,
+            situation: situation || undefined,
           }),
         });
         if (!response.ok || !response.body) throw new Error();
@@ -621,7 +625,7 @@ function PanelDiscussion({ situationContext }: { situationContext: string }) {
 
     await Promise.all(ADVISORS.filter((a) => selectedIds.includes(a.id)).map(streamAdvisor));
     setIsRunning(false);
-  }, [question, isRunning, selectedIds, situationContext]);
+  }, [question, isRunning, selectedIds, situationContext, situation]);
 
   const hasResponses = Object.keys(responses).length > 0;
   const activeAdvisors = ADVISORS.filter((a) => selectedIds.includes(a.id));
@@ -891,12 +895,12 @@ export default function AdvisoryPage() {
               <p className="mt-1 text-[11px] text-navy-500">Advisors who are <span className="text-sage font-medium">likely aligned</span> share analytical frameworks. Those with <span className="text-alert-red font-medium">likely tension</span> may offer competing assessments — this is where the best insights emerge.</p>
             </div>
           </div>
-          <PanelDiscussion situationContext={situationContext} />
+          <PanelDiscussion situationContext={situationContext} situation={situation as Situation | null} />
         </>
       )}
 
       {chatAdvisor && (
-        <AdvisorChatPanel advisor={chatAdvisor} onClose={() => setChatAdvisor(null)} situationContext={situationContext} />
+        <AdvisorChatPanel advisor={chatAdvisor} onClose={() => setChatAdvisor(null)} situationContext={situationContext} situation={situation as Situation | null} />
       )}
     </div>
   );
