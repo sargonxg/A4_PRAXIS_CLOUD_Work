@@ -2,7 +2,7 @@
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   Newspaper, Loader2, Clock, Sparkles, RefreshCw,
   AlertTriangle, Star, ChevronDown, Plus, X,
@@ -10,6 +10,7 @@ import {
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { useAuth } from '@/lib/auth/auth-context';
+import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 import type { Situation } from '@/types/situation';
 
 const TIME_RANGES = [
@@ -21,6 +22,7 @@ const TIME_RANGES = [
 
 function MediaRoundupTool({ situation }: { situation: Situation }) {
   const { credits } = useAuth();
+  const persisted = usePersistedToolData('media-roundup', situation.id);
   const [timeRange, setTimeRange] = useState('24h');
   const [maxSections, setMaxSections] = useState(8);
   const [customQueries, setCustomQueries] = useState<string[]>([]);
@@ -28,6 +30,16 @@ function MediaRoundupTool({ situation }: { situation: Situation }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [roundupContent, setRoundupContent] = useState('');
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
+
+  // Restore from persisted data on mount / data change
+  useEffect(() => {
+    if (persisted.data && !roundupContent && !isGenerating) {
+      const saved = persisted.data as { content: string; timeRange?: string };
+      setRoundupContent(saved.content);
+      if (saved.timeRange) setTimeRange(saved.timeRange);
+      if (persisted.generatedAt) setGeneratedAt(persisted.generatedAt);
+    }
+  }, [persisted.data, persisted.generatedAt, roundupContent, isGenerating]);
 
   const addQuery = () => {
     if (queryInput.trim() && customQueries.length < 5) {
@@ -69,6 +81,7 @@ function MediaRoundupTool({ situation }: { situation: Situation }) {
       }
 
       setGeneratedAt(new Date().toISOString());
+      persisted.save({ content: text, timeRange });
     } catch {
       setRoundupContent('**Error**: Network error. Please try again.');
     } finally {

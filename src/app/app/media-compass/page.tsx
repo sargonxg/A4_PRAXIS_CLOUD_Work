@@ -3,7 +3,8 @@
 import { useSituationGuard } from "@/hooks/use-situation-guard";
 import { NoSituationState } from "@/components/praxis/no-situation-state";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { usePersistedToolData } from "@/hooks/use-persisted-tool-data";
 import { cn } from "@/lib/utils/cn";
 import { motion } from "framer-motion";
 import { SpectrumChart } from "@/components/media/spectrum-chart";
@@ -131,6 +132,14 @@ function RealMediaPanel({ situation }: { situation: import("@/types/situation").
   const [liveQuery, setLiveQuery] = useState('');
   const [liveResult, setLiveResult] = useState('');
   const [liveLoading, setLiveLoading] = useState(false);
+  const persisted = usePersistedToolData('media-compass', situation.id);
+
+  // Restore persisted scan data on mount
+  useEffect(() => {
+    if (persisted.data && !scanResult) {
+      setScanResult(persisted.data as MediaScanResult);
+    }
+  }, [persisted.data, scanResult]);
 
   const handleLiveSearch = useCallback(async () => {
     if (!liveQuery.trim() || liveLoading) return;
@@ -184,12 +193,13 @@ function RealMediaPanel({ situation }: { situation: import("@/types/situation").
       }
       const data = await res.json();
       setScanResult(data);
+      persisted.save(data);
     } catch {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [situation]);
+  }, [situation, persisted]);
 
   if (!scanResult && !loading) {
     return (

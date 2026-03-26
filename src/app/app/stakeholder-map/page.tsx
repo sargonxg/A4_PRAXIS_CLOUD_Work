@@ -4,7 +4,7 @@ import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { NoDataState } from '@/components/praxis/no-data-state';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   Users,
   Sparkles,
@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
+import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
@@ -554,6 +555,9 @@ export default function StakeholderMapPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
   if (showGuard) return <NoSituationState />;
 
+  // ─── Persistence ──────────────────────────────────────────────────────────
+  const persisted = usePersistedToolData('stakeholder-map', situation?.id);
+
   // ─── Dynamic state: demo uses hardcoded data, real starts empty ────────────
   const [actors, setActors] = useState<StakeholderActor[]>(isDemo ? DEMO_ACTORS : []);
   const [relationships, setRelationships] = useState<StakeholderRelationship[]>(isDemo ? DEMO_RELATIONSHIPS : []);
@@ -575,6 +579,25 @@ export default function StakeholderMapPage() {
   const [engagementPriorities, setEngagementPriorities] = useState<string[]>([]);
 
   const hasData = actors.length > 0;
+
+  // ─── Restore persisted data on mount ──────────────────────────────────────
+  useEffect(() => {
+    if (!persisted.data || isDemo) return;
+    const d = persisted.data as {
+      actors?: StakeholderActor[];
+      relationships?: StakeholderRelationship[];
+      quadrantSummary?: { keyPlayers: string[]; keepSatisfied: string[]; keepInformed: string[]; monitor: string[] };
+      coalitionDynamics?: string;
+      spoilerRisks?: string;
+      engagementPriorities?: string[];
+    };
+    if (Array.isArray(d.actors) && d.actors.length > 0) setActors(d.actors);
+    if (Array.isArray(d.relationships)) setRelationships(d.relationships);
+    if (d.quadrantSummary) setQuadrantSummary(d.quadrantSummary);
+    if (d.coalitionDynamics) setCoalitionAnalysis(d.coalitionDynamics);
+    if (d.spoilerRisks) setSpoilerAnalysis(d.spoilerRisks);
+    if (Array.isArray(d.engagementPriorities)) setEngagementPriorities(d.engagementPriorities);
+  }, [persisted.data, isDemo]);
 
   // ─── Generate stakeholder map from dedicated power-map API ────────────────
   const handleGenerateMap = useCallback(async () => {
@@ -615,12 +638,15 @@ export default function StakeholderMapPage() {
       if (data.coalitionDynamics) setCoalitionAnalysis(data.coalitionDynamics);
       if (data.spoilerRisks) setSpoilerAnalysis(data.spoilerRisks);
       if (Array.isArray(data.engagementPriorities)) setEngagementPriorities(data.engagementPriorities);
+
+      // Persist the full AI response for future visits
+      persisted.save(data);
     } catch {
       // Silent fail — user can retry
     } finally {
       setGeneratingMap(false);
     }
-  }, [generatingMap, situation]);
+  }, [generatingMap, situation, persisted]);
 
   const generateInsight = useCallback(async (actorId: string) => {
     if (loadingInsightId) return;

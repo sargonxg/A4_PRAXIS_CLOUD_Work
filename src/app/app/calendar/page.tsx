@@ -1,10 +1,11 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { NoDataState } from '@/components/praxis/no-data-state';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Calendar, ChevronRight, Filter, Sparkles, FileText, Users, Loader2, CheckSquare, Square, RefreshCw, X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { PraxisLink } from '@/components/shared/praxis-link';
@@ -72,6 +73,17 @@ export default function CalendarPage() {
   const [loadingBriefId, setLoadingBriefId] = useState<string | null>(null);
   const [checklists, setChecklists] = useState<Record<string, Record<number, boolean>>>({});
 
+  const persisted = usePersistedToolData('calendar-briefs', situation?.id);
+
+  // Restore persisted data on mount
+  useEffect(() => {
+    if (persisted.data && !events.length && !generating) {
+      const restored = persisted.data as { events?: CalendarEvent[]; briefings?: Record<string, string> };
+      if (restored.events?.length) setEvents(restored.events);
+      if (restored.briefings) setBriefings(restored.briefings);
+    }
+  }, [persisted.data]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleGenerateCalendar = useCallback(async () => {
     if (generating) return;
     setGenerating(true);
@@ -122,14 +134,16 @@ Use these colors for institutions: UNSC=#1B3A5C, UNGA=#2E8A8A, UNHRC=#C8961E, AU
       const jsonMatch = accumulated.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]) as CalendarEvent[];
-        setEvents(parsed.map((e, i) => ({ ...e, id: e.id || `e${i + 1}` })));
+        const normalised = parsed.map((e, i) => ({ ...e, id: e.id || `e${i + 1}` }));
+        setEvents(normalised);
+        persisted.save({ events: normalised, briefings: {} });
       }
     } catch {
       // Silently fail — user can retry
     } finally {
       setGenerating(false);
     }
-  }, [generating, situation]);
+  }, [generating, situation, persisted]);
 
   const toggleFilter = useCallback((filterId: string) => {
     if (filterId === 'all') {
@@ -194,8 +208,13 @@ Keep it action-oriented and diplomatically precise.`;
       }));
     } finally {
       setLoadingBriefId(null);
+      // Persist updated briefings alongside events
+      setBriefings((prev) => {
+        persisted.save({ events, briefings: prev });
+        return prev;
+      });
     }
-  }, [loadingBriefId, situation]);
+  }, [loadingBriefId, situation, events, persisted]);
 
   const toggleChecklistItem = useCallback((eventId: string, idx: number) => {
     setChecklists((prev) => ({

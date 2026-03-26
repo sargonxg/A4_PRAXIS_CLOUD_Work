@@ -4,11 +4,12 @@ import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import type { Situation } from '@/types/situation';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { MessageCircle, Sparkles, Copy, FileText, Users, Shield, Check, Download, RefreshCw, AlertTriangle, Loader2, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
+import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 
 interface AudienceOption {
   id: string;
@@ -85,6 +86,7 @@ const DEMO_CONFLICT_OPTIONS = [
 export default function TalkingPointsPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const persisted = usePersistedToolData('talking-points', situation?.id);
   if (showGuard) return <NoSituationState />;
 
   // In real mode, build conflict options from the active situation
@@ -107,6 +109,19 @@ export default function TalkingPointsPage() {
   const [output, setOutput] = useState('');
   const [copied, setCopied] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Restore persisted talking points on mount
+  useEffect(() => {
+    if (persisted.data && !output && !isGenerating) {
+      const saved = persisted.data as { content?: string; audience?: string };
+      if (saved.content) {
+        setOutput(saved.content);
+      }
+      if (saved.audience) {
+        setSelectedAudience(saved.audience);
+      }
+    }
+  }, [persisted.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const audienceOption = AUDIENCE_OPTIONS.find((a) => a.id === selectedAudience)!;
   const topicOption = topicOptions.find((t) => t.id === selectedTopic)!;
@@ -184,6 +199,9 @@ A: [answer]
           if (parsed) { accumulated += parsed; setOutput(accumulated); }
         }
       }
+      if (accumulated) {
+        persisted.save({ content: accumulated, audience: selectedAudience, generatedAt: new Date().toISOString() });
+      }
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== 'AbortError') {
         setOutput('**Error:** Failed to generate talking points. Please check your connection and try again.');
@@ -191,7 +209,7 @@ A: [answer]
     } finally {
       setIsGenerating(false);
     }
-  }, [isGenerating, topicLabel, topicContext, audienceOption, conflictOption, selectedAudience, selectedTopic, additionalContext]);
+  }, [isGenerating, topicLabel, topicContext, audienceOption, conflictOption, selectedAudience, selectedTopic, additionalContext, persisted]);
 
   const handleCopy = useCallback(() => {
     if (!output) return;
