@@ -12,8 +12,9 @@ import {
   MessageSquare, FileText, Search, Upload, Compass, Network,
   Globe, Users, AlertTriangle, BarChart3, GitBranch, Scale,
   Sparkles, Plus, ArrowRight, TrendingUp, TrendingDown, Minus,
-  Loader2, Clock, RefreshCw, X,
+  Loader2, Clock, RefreshCw, X, CheckCircle2,
 } from 'lucide-react';
+import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 import type { Situation } from '@/types/situation';
 import { recordActivity, getRecentActivity, type ActivityEntry } from '@/lib/utils/activity';
 
@@ -198,6 +199,95 @@ const TREND_COLORS = {
   volatile: 'text-amber-600 bg-amber-50',
 };
 
+// ---------------------------------------------------------------------------
+// Situation Health Widget — shows tool population status
+// ---------------------------------------------------------------------------
+
+const HEALTH_TOOLS = [
+  { id: 'actor-profiles', label: 'Actor Profiles', href: '/actor-profiles', icon: Users },
+  { id: 'risk-monitor', label: 'Risk Monitor', href: '/risk-monitor', icon: AlertTriangle },
+  { id: 'early-warning', label: 'Early Warning', href: '/early-warning', icon: BarChart3 },
+  { id: 'conflict-graph', label: 'Conflict Graph', href: '/conflict-graph', icon: GitBranch },
+  { id: 'stakeholder-map', label: 'Stakeholder Map', href: '/stakeholder-map', icon: Network },
+] as const;
+
+function SituationHealthWidget({
+  situation,
+  persisted,
+}: {
+  situation: Situation;
+  persisted: ReturnType<typeof usePersistedToolData>;
+}) {
+  const route = usePraxisRoute();
+  const router = useRouter();
+
+  // Determine if the situation was just created (within last 5 minutes)
+  const isRecentlyCreated = Date.now() - new Date(situation.updatedAt).getTime() < 5 * 60 * 1000;
+
+  // If persisted data is loading, don't show anything yet
+  if (persisted.isLoading) return null;
+
+  // If no snapshot data and situation was just created, show building state
+  if (!persisted.data && isRecentlyCreated) {
+    return (
+      <div className="rounded-xl border border-diplomatic-blue/20 bg-gradient-to-r from-diplomatic-blue/4 via-white to-diplomatic-blue/4 p-5">
+        <div className="flex items-center gap-3">
+          <Loader2 className="h-5 w-5 animate-spin text-diplomatic-blue" />
+          <div>
+            <p className="text-sm font-semibold text-navy-900">PRAXIS is building your intelligence...</p>
+            <p className="mt-0.5 text-xs text-navy-500">
+              Auto-populating situation tools with initial analysis. This may take a minute.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const snapshotData = persisted.data as { seededTools?: string[] } | null;
+  const seededTools = snapshotData?.seededTools ?? [];
+
+  return (
+    <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+      <h2 className="mb-3 text-sm font-semibold text-navy-700">Situation Health</h2>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        {HEALTH_TOOLS.map((tool) => {
+          const isSeeded = seededTools.includes(tool.id);
+          const Icon = tool.icon;
+          return (
+            <div
+              key={tool.id}
+              className={cn(
+                'flex items-center gap-2 rounded-lg border px-3 py-2.5 transition-colors',
+                isSeeded
+                  ? 'border-emerald-200 bg-emerald-50/50'
+                  : 'border-navy-200 bg-navy-50/30'
+              )}
+            >
+              <Icon className={cn('h-3.5 w-3.5 shrink-0', isSeeded ? 'text-emerald-600' : 'text-navy-400')} />
+              <div className="min-w-0 flex-1">
+                <p className={cn('truncate text-xs font-medium', isSeeded ? 'text-emerald-700' : 'text-navy-600')}>
+                  {tool.label}
+                </p>
+              </div>
+              {isSeeded ? (
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+              ) : (
+                <button
+                  onClick={() => router.push(route(tool.href))}
+                  className="shrink-0 rounded bg-diplomatic-blue/10 px-2 py-0.5 text-[10px] font-medium text-diplomatic-blue hover:bg-diplomatic-blue/20 transition-colors"
+                >
+                  Generate
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Real PRAXIS dashboard — shows the active situation's data only.
  * No demo data, no hardcoded conflicts. Everything comes from the situation.
@@ -208,6 +298,9 @@ export function SituationDashboard({ situation }: { situation: Situation }) {
   const [onboardingComplete, setOnboardingComplete] = useState(
     situation.documentCount > 0 || situation.graphEntities > 0
   );
+
+  // Dashboard snapshot — tracks which tools have been seeded
+  const persisted = usePersistedToolData('dashboard-snapshot', situation?.id);
 
   // Record dashboard visit in activity log
   useEffect(() => {
@@ -348,6 +441,9 @@ export function SituationDashboard({ situation }: { situation: Situation }) {
 
       {/* Live Intelligence Feed */}
       <IntelligenceFeed situation={situation} />
+
+      {/* Situation Health — tool population status */}
+      <SituationHealthWidget situation={situation} persisted={persisted} />
 
       {/* Getting Started Tips — show when situation is empty */}
       {situation.documentCount === 0 && situation.graphEntities === 0 && onboardingComplete && (
