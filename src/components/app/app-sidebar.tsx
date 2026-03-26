@@ -53,6 +53,18 @@ import { useState } from 'react';
 
 const CHANGELOG = [
   {
+    version: 'v3.4',
+    date: '2026.03.25',
+    notes: [
+      'Full situation creation → tool population pipeline: user context (URLs, docs, notes) flows to all 27 tools',
+      'Situation Initializer: auto-seeds actor profiles, risk monitor, early warning, conflict graph, stakeholder map',
+      'Media Compass: situation-specific AI-researched sources plotted alongside global outlets',
+      'PRAXIS AI assistant: enhanced guardrails, TACITUS product awareness, full data interaction',
+      'All 27 AI routes secured with withAuth, live GDELT/ReliefWeb intel feeds wired to 4 tools',
+      'Vitest smoke tests (35 tests), end-to-end TOOL_AUDIT.md — 27/27 Working',
+    ],
+  },
+  {
     version: 'v3.3',
     date: '2026.03.24',
     notes: [
@@ -148,7 +160,7 @@ function ChangelogButton() {
         onClick={() => setOpen(true)}
         className="mt-1 w-full text-center text-[9px] text-navy-300 hover:text-navy-500 transition-colors"
       >
-        PRAXIS v3.3 · Build 2026.03.24
+        PRAXIS v3.4 · Build 2026.03.25
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setOpen(false)}>

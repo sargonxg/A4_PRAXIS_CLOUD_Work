@@ -29,6 +29,16 @@ const MediaScanSchema = z.object({
     })
   ).describe('Per-outlet analysis results'),
   comparativeAnalysis: z.string().describe('Cross-outlet comparative analysis highlighting divergent framing, shared narratives, and information gaps'),
+  situationSources: z.array(z.object({
+    name: z.string().describe('Name of the media source'),
+    x: z.number().min(-1).max(1).describe('Political orientation: -1 (far left) to 1 (far right)'),
+    y: z.number().min(0).max(1).describe('Reliability: 0 (unreliable) to 1 (highly reliable)'),
+    type: z.string().describe('Source type: wire, public, private, state, local, diaspora, think_tank'),
+    region: z.string().describe('Geographic region of this source'),
+    description: z.string().describe('Brief description of this source'),
+    relevance: z.string().describe('Why this source is specifically relevant to this situation'),
+    url: z.string().optional().describe('Homepage URL of the source'),
+  })).describe('5-10 media sources that are particularly relevant to this specific situation — local media, regional outlets, think tanks, diaspora media. Include sources that international analysts should monitor for this conflict. Assign x (orientation) and y (reliability) coordinates for plotting on a bias/reliability chart.'),
 });
 
 // Static demo response
@@ -195,7 +205,16 @@ Score each outlet on a 1-5 scale:
 2 = Significant accuracy problems or undisclosed conflicts of interest
 1 = Propaganda outlet or systematically unreliable
 
-Then synthesize comparative analysis with specific evidence for all claims. Do not offer generic assessments.`,
+Then synthesize comparative analysis with specific evidence for all claims. Do not offer generic assessments.
+
+Additionally, identify 5-10 media sources that are SPECIFICALLY relevant to this situation:
+- Local media outlets from the conflict region
+- Diaspora media covering this issue
+- Think tanks and research institutes with expertise
+- Regional outlets with special correspondents
+- Online platforms/channels that are influential in this conflict
+
+For each, provide a political orientation score (x: -1 to 1) and reliability score (y: 0 to 1).`,
       system: 'You are a senior media analyst trained in CRAAP test methodology, narrative ecosystem mapping, and information operations analysis. You have experience as a UN DPPA media advisor and conflict journalism monitor. Provide evidence-anchored assessments that help diplomatic professionals distinguish reliable intelligence from noise and identify influence operations.',
     });
 

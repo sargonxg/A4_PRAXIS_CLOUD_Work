@@ -123,9 +123,22 @@ interface MediaScanResult {
     overallBias: string;
   }[];
   comparativeAnalysis: string;
+  situationSources?: {
+    name: string;
+    x: number; // political orientation -1 to 1
+    y: number; // reliability 0 to 1
+    type: string; // wire, public, private, state, local, diaspora, think_tank
+    region: string;
+    description: string;
+    relevance: string; // why this source matters for this situation
+    url?: string;
+  }[];
 }
 
-function RealMediaPanel({ situation }: { situation: import("@/types/situation").Situation }) {
+function RealMediaPanel({ situation, onSituationSources }: {
+  situation: import("@/types/situation").Situation;
+  onSituationSources?: (sources: NonNullable<MediaScanResult['situationSources']>) => void;
+}) {
   const [scanResult, setScanResult] = useState<MediaScanResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -137,9 +150,13 @@ function RealMediaPanel({ situation }: { situation: import("@/types/situation").
   // Restore persisted scan data on mount
   useEffect(() => {
     if (persisted.data && !scanResult) {
-      setScanResult(persisted.data as MediaScanResult);
+      const restored = persisted.data as MediaScanResult;
+      setScanResult(restored);
+      if (restored.situationSources?.length && onSituationSources) {
+        onSituationSources(restored.situationSources);
+      }
     }
-  }, [persisted.data, scanResult]);
+  }, [persisted.data, scanResult, onSituationSources]);
 
   const handleLiveSearch = useCallback(async () => {
     if (!liveQuery.trim() || liveLoading) return;
@@ -191,9 +208,12 @@ function RealMediaPanel({ situation }: { situation: import("@/types/situation").
         setError(data.error || "Media scan failed");
         return;
       }
-      const data = await res.json();
+      const data = await res.json() as MediaScanResult;
       setScanResult(data);
       persisted.save(data);
+      if (data.situationSources?.length && onSituationSources) {
+        onSituationSources(data.situationSources);
+      }
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -279,6 +299,43 @@ function RealMediaPanel({ situation }: { situation: import("@/types/situation").
         </div>
       )}
 
+      {/* Situation-Specific Sources */}
+      {scanResult.situationSources && scanResult.situationSources.length > 0 && (
+        <div className="rounded-xl border border-gold-500/20 bg-gold-500/5 p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Compass className="h-4 w-4 text-gold-600" />
+            <h3 className="text-sm font-semibold text-navy-900">
+              Situation-Specific Sources ({scanResult.situationSources.length})
+            </h3>
+            <span className="rounded-full bg-gold-500/10 px-2 py-0.5 text-[10px] font-semibold text-gold-700">
+              AI-Discovered
+            </span>
+          </div>
+          <p className="mb-3 text-xs text-navy-500">
+            Sources identified by PRAXIS as particularly relevant to &ldquo;{situation.name}&rdquo;. These are plotted on the compass with gold markers.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {scanResult.situationSources.map((src, i) => (
+              <div key={i} className="rounded-lg border border-gold-500/20 bg-white p-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-2.5 w-2.5 rounded-full bg-gold-500" />
+                  <span className="text-xs font-semibold text-navy-900">{src.name}</span>
+                  <span className="ml-auto rounded-full bg-navy-100 px-1.5 py-0.5 text-[9px] font-medium text-navy-600 capitalize">
+                    {src.type.replace('_', ' ')}
+                  </span>
+                </div>
+                <p className="mt-1.5 text-[11px] text-navy-600">{src.description}</p>
+                <p className="mt-1 text-[10px] text-gold-700 italic">{src.relevance}</p>
+                <div className="mt-2 flex items-center gap-3 text-[10px] text-navy-500">
+                  <span>Orientation: {src.x > 0.1 ? 'Right' : src.x < -0.1 ? 'Left' : 'Center'} ({src.x > 0 ? '+' : ''}{src.x.toFixed(1)})</span>
+                  <span>Reliability: {Math.round(src.y * 100)}%</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Regenerate */}
       <div className="text-center">
         <button onClick={handleGenerate} disabled={loading} className="text-xs text-navy-500 hover:text-navy-700">
@@ -333,9 +390,16 @@ export default function MediaCompassPage() {
   const [compareTopic, setCompareTopic] = useState("");
   const [compareSourcesOpen, setCompareSourcesOpen] = useState(false);
   const [selectedCompare, setSelectedCompare] = useState<string[]>([]);
+  const [situationSources, setSituationSources] = useState<MediaSource[]>([]);
+  const [showSituationSources, setShowSituationSources] = useState(true);
+
+  const allSources = useMemo(() => [
+    ...MEDIA_SOURCES,
+    ...(showSituationSources ? situationSources : []),
+  ], [situationSources, showSituationSources]);
 
   const filteredSources = useMemo(() => {
-    let result = MEDIA_SOURCES;
+    let result = allSources;
 
     if (regionFilter !== "All Regions") {
       result = result.filter((s) => s.region === regionFilter);
@@ -344,37 +408,43 @@ export default function MediaCompassPage() {
       result = result.filter((s) => s.type === typeFilter);
     }
 
-    // Re-color based on colorBy
+    // Re-color based on colorBy — preserve gold for situation sources
     if (colorBy === "Type") {
       result = result.map((s) => ({
         ...s,
-        color: TYPE_COLORS[s.type] ?? s.color,
+        color: s.region === 'Situation' ? '#E8B931' : (TYPE_COLORS[s.type] ?? s.color),
       }));
     } else {
       result = result.map((s) => ({
         ...s,
-        color: REGION_COLORS[s.region] ?? s.color,
+        color: s.region === 'Situation' ? '#E8B931' : (REGION_COLORS[s.region] ?? s.color),
       }));
     }
 
     return result;
-  }, [regionFilter, typeFilter, colorBy]);
+  }, [regionFilter, typeFilter, colorBy, allSources]);
 
   const legendItems = useMemo(() => {
+    const hasSituation = filteredSources.some((s) => s.region === 'Situation');
+    let items: { label: string; color: string }[];
     if (colorBy === "Region") {
       const activeRegions = new Set(filteredSources.map((s) => s.region));
-      return Object.entries(REGION_COLORS)
+      items = Object.entries(REGION_COLORS)
         .filter(([region]) => activeRegions.has(region))
         .map(([label, color]) => ({ label, color }));
     } else {
       const activeTypes = new Set(filteredSources.map((s) => s.type));
-      return Object.entries(TYPE_COLORS)
+      items = Object.entries(TYPE_COLORS)
         .filter(([type]) => activeTypes.has(type))
         .map(([type, color]) => ({
           label: TYPE_LABELS[type] ?? type,
           color,
         }));
     }
+    if (hasSituation) {
+      items.push({ label: 'Situation-Specific', color: '#E8B931' });
+    }
+    return items;
   }, [colorBy, filteredSources]);
 
   const toggleCompareSource = (name: string) => {
@@ -414,7 +484,20 @@ export default function MediaCompassPage() {
 
         {/* ── AI Media Scan (real users only) ──────────────────── */}
         {!isDemo && situation && (
-          <RealMediaPanel situation={situation} />
+          <RealMediaPanel
+            situation={situation}
+            onSituationSources={(sources) => {
+              setSituationSources(sources.map(s => ({
+                name: s.name,
+                x: s.x,
+                y: s.y,
+                type: s.type,
+                region: 'Situation',
+                color: '#E8B931',
+                description: s.description,
+              })));
+            }}
+          />
         )}
 
         {/* ── Tab Navigation ──────────────────────────────────── */}
@@ -484,7 +567,7 @@ export default function MediaCompassPage() {
               onChange={(e) => setRegionFilter(e.target.value)}
               className="appearance-none rounded-lg border border-[var(--color-app-border)] bg-white py-2 pl-9 pr-8 text-sm text-navy-700 transition-colors hover:border-navy-300 focus:border-teal/50 focus:outline-none focus:ring-1 focus:ring-teal/30"
             >
-              {REGIONS.map((r) => (
+              {[...REGIONS, ...(situationSources.length > 0 ? ["Situation"] : [])].map((r) => (
                 <option key={r} value={r}>
                   {r}
                 </option>
@@ -500,9 +583,9 @@ export default function MediaCompassPage() {
               onChange={(e) => setTypeFilter(e.target.value)}
               className="appearance-none rounded-lg border border-[var(--color-app-border)] bg-white py-2 pl-3.5 pr-8 text-sm text-navy-700 transition-colors hover:border-navy-300 focus:border-teal/50 focus:outline-none focus:ring-1 focus:ring-teal/30"
             >
-              {TYPES.map((t) => (
+              {[...TYPES, ...(situationSources.length > 0 ? ["situation_specific"] : [])].map((t) => (
                 <option key={t} value={t}>
-                  {TYPE_LABELS[t] ?? t}
+                  {TYPE_LABELS[t] ?? t.replace('_', ' ')}
                 </option>
               ))}
             </select>
@@ -530,9 +613,36 @@ export default function MediaCompassPage() {
             ))}
           </div>
 
+          {/* Situation sources toggle */}
+          {situationSources.length > 0 && (
+            <button
+              onClick={() => setShowSituationSources(!showSituationSources)}
+              className={cn(
+                "flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+                showSituationSources
+                  ? "border-gold-500/30 bg-gold-500/10 text-gold-700"
+                  : "border-navy-200 bg-white text-navy-500"
+              )}
+            >
+              <div className={cn(
+                "h-3 w-6 rounded-full transition-colors",
+                showSituationSources ? "bg-gold-500" : "bg-navy-200"
+              )}>
+                <div className={cn(
+                  "h-3 w-3 rounded-full bg-white shadow-sm transition-transform",
+                  showSituationSources ? "translate-x-3" : "translate-x-0"
+                )} />
+              </div>
+              Situation sources
+            </button>
+          )}
+
           {/* Source count */}
           <div className="ml-auto text-xs text-navy-500">
             {filteredSources.length} source{filteredSources.length !== 1 ? "s" : ""}
+            {situationSources.length > 0 && showSituationSources && (
+              <span className="text-gold-600"> ({situationSources.length} situation-specific)</span>
+            )}
           </div>
         </motion.div>
 
