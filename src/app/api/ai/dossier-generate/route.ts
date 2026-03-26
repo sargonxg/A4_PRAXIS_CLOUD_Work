@@ -3,8 +3,10 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { handleRouteError } from '@/lib/api/standard-error';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import type { Situation } from '@/types/situation';
 
@@ -79,7 +81,7 @@ The September 2025 ceasefire marked a significant diplomatic achievement but has
   ],
 };
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   try {
     const {
       caseId,
@@ -145,7 +147,6 @@ Requirements:
 
     return NextResponse.json(result.output);
   } catch (err) {
-    console.error('Dossier generate route error:', err);
-    return NextResponse.json({ error: 'Dossier generation failed' }, { status: 500 });
+    return handleRouteError(err, 'dossier-generate');
   }
-}
+});

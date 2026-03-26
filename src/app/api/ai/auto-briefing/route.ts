@@ -3,6 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
@@ -51,7 +52,7 @@ const DEMO_RESPONSE = {
   nextReview: '24 hours — monitor Karovian diplomatic signals, OCHA convoy status, and any DRM statement on Kessara',
 };
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   try {
     const creditCheck = await checkAndDeductCredits('ai_auto_briefing', 'Daily intelligence brief');
     if (!creditCheck.allowed) return creditCheck.response!;
@@ -119,4 +120,4 @@ Be specific, evidence-grounded, and actionable. Avoid diplomatic boilerplate. Wr
   } catch (err) {
     return handleRouteError(err, 'auto-briefing');
   }
-}
+});

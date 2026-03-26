@@ -3,6 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
@@ -172,7 +173,7 @@ const DEMO_RESPONSE = {
   designRationale: 'Hybrid format reflects deep mutual distrust. Economic-first sequencing applies Lax/Sebenius momentum-building principle. Karovia framing as guarantor transforms spoiler potential into vested interest in success.',
 };
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   try {
     const creditCheck = await checkAndDeductCredits('ai_mediation_design', 'Mediation process design');
     if (!creditCheck.allowed) return creditCheck.response!;
@@ -237,4 +238,4 @@ Be specific to the actual parties, issues, and context. Design a process that ha
   } catch (err) {
     return handleRouteError(err, 'mediation-design');
   }
-}
+});

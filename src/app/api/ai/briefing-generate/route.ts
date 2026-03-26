@@ -3,8 +3,10 @@ import { generateText, streamText, Output } from 'ai';
 import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { handleRouteError } from '@/lib/api/standard-error';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 import type { Situation } from '@/types/situation';
@@ -165,7 +167,7 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   try {
     const { caseId, briefingType, conflictContext, situationContext, situation } = await request.json() as {
       caseId: string;
@@ -326,7 +328,6 @@ FORMAT RULES:
 
     return NextResponse.json(result.output);
   } catch (err) {
-    console.error('Briefing generate route error:', err);
-    return NextResponse.json({ error: 'Briefing generation failed' }, { status: 500 });
+    return handleRouteError(err, 'briefing-generate');
   }
-}
+});

@@ -3,8 +3,10 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { handleRouteError } from '@/lib/api/standard-error';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import type { Situation } from '@/types/situation';
 
@@ -60,7 +62,7 @@ const DEMO_RESPONSE = {
   riskAssessment: 'HIGH RISK: Arms embargo enforcement is the critical weakness. Without improved monitoring of Karovian logistics flights and third-country transfer routes, military capability accumulation will continue to lower the escalation threshold. MEDIUM RISK: Financial sanctions evasion through informal value transfer systems and diaspora networks requires enhanced financial intelligence cooperation between Westmark and regional financial centres. RECOMMENDATION: Priority should be on enforcement of existing measures rather than expansion — particularly strengthening the Panel of Experts\' investigation capacity and implementing the maritime and aviation monitoring recommendations from the interim report.',
 };
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   try {
     const { entities, conflictContext, situation } = await request.json() as {
       entities: string[];
@@ -112,7 +114,6 @@ Cover UNSC, US (OFAC), EU, and any relevant regional sanctions regimes.`,
 
     return NextResponse.json(result.output);
   } catch (err) {
-    console.error('Sanctions scan route error:', err);
-    return NextResponse.json({ error: 'Sanctions scan failed' }, { status: 500 });
+    return handleRouteError(err, 'sanctions-scan');
   }
-}
+});
