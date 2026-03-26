@@ -4,11 +4,12 @@ import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { useSituationStore } from '@/stores/situation-store';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
-import { useState, useCallback, useMemo, Suspense } from 'react';
+import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { usePraxisRoute } from '@/lib/utils/routes';
+import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 import { GitCompare, ChevronDown, Sparkles, Loader2, ArrowLeftRight, BookOpen, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
@@ -23,6 +24,8 @@ interface CaseData {
   riskScore: number;
   actorCount: number;
   eventCount: number;
+  glaslStage: number | null;
+  escalationTrend: string;
   themes: string[];
   institutions: string[];
   startYear: number;
@@ -45,6 +48,8 @@ const DEMO_CASES: CaseData[] = [
     riskScore: 9.2,
     actorCount: 12,
     eventCount: 156,
+    glaslStage: 8,
+    escalationTrend: 'stable',
     themes: ['International Armed Conflict', 'Nuclear Deterrence', 'Sanctions', 'War Crimes', 'Energy Security'],
     institutions: ['UNGA', 'UNSC', 'ICJ', 'ICC', 'OSCE', 'NATO', 'EU'],
     startYear: 2022,
@@ -60,6 +65,8 @@ const DEMO_CASES: CaseData[] = [
     riskScore: 8.8,
     actorCount: 10,
     eventCount: 89,
+    glaslStage: 7,
+    escalationTrend: 'escalating',
     themes: ['Internal Armed Conflict', 'Mass Displacement', 'Famine Risk', 'Mediation Failure', 'Regional Spillover'],
     institutions: ['UNSC', 'AU', 'IGAD', 'League of Arab States'],
     startYear: 2023,
@@ -75,6 +82,8 @@ const DEMO_CASES: CaseData[] = [
     riskScore: 7.8,
     actorCount: 12,
     eventCount: 47,
+    glaslStage: 6,
+    escalationTrend: 'escalating',
     themes: ['Electoral Violence', 'Armed Conflict', 'Peace Process', 'Sanctions', 'Humanitarian Crisis'],
     institutions: ['UNSC', 'AU', 'EU', 'UNMN', 'ICC'],
     startYear: 2025,
@@ -90,6 +99,8 @@ const DEMO_CASES: CaseData[] = [
     riskScore: 6.2,
     actorCount: 8,
     eventCount: 31,
+    glaslStage: 5,
+    escalationTrend: 'stable',
     themes: ['Terrorism', 'Governance Failure', 'Displacement', 'Climate Fragility', 'Cross-Border'],
     institutions: ['AU PSC', 'ECOWAS', 'UN MINUSMA', 'EU'],
     startYear: 2020,
@@ -105,6 +116,8 @@ const DEMO_CASES: CaseData[] = [
     riskScore: 5.8,
     actorCount: 6,
     eventCount: 23,
+    glaslStage: 4,
+    escalationTrend: 'escalating',
     themes: ['Maritime Dispute', 'Territorial Conflict', 'Great Power Competition', 'UNCLOS'],
     institutions: ['ASEAN', 'UN', 'US', 'NATO'],
     startYear: 2010,
@@ -120,6 +133,8 @@ const DEMO_CASES: CaseData[] = [
     riskScore: 3.2,
     actorCount: 4,
     eventCount: 12,
+    glaslStage: 3,
+    escalationTrend: 'de-escalating',
     themes: ['Border Dispute', 'Natural Resources', 'Frozen Conflict', 'ICJ Proceedings'],
     institutions: ['AU', 'ICJ'],
     startYear: 2018,
@@ -135,6 +150,8 @@ const DEMO_CASES: CaseData[] = [
     riskScore: 0,
     actorCount: 5,
     eventCount: 89,
+    glaslStage: null,
+    escalationTrend: 'resolved',
     themes: ['Civil War', 'Peace Agreement', 'Post-Conflict Reconstruction', 'OSCE Mediation'],
     institutions: ['OSCE', 'UN', 'EU'],
     startYear: 1992,
@@ -202,6 +219,8 @@ function situationToCaseData(s: Situation): CaseData {
     riskScore: s.riskScore,
     actorCount: s.actorCount || s.actors.length,
     eventCount: s.documentCount || 0,
+    glaslStage: s.glaslStage,
+    escalationTrend: s.escalationTrend || 'stable',
     themes: s.actors.slice(0, 5), // Use actor names as stand-in tags
     institutions: [],
     startYear: new Date(s.createdAt).getFullYear(),
@@ -335,7 +354,7 @@ function CompRow({ label, a, b, highlight }: { label: string; a: React.ReactNode
 // ---------------------------------------------------------------------------
 // Inner component — accepts the case list as a prop
 // ---------------------------------------------------------------------------
-function ComparePageInner({ cases }: { cases: CaseData[] }) {
+function ComparePageInner({ cases, activeSituationId }: { cases: CaseData[]; activeSituationId?: string }) {
   const searchParams = useSearchParams();
   const initialA = searchParams.get('a') ?? '';
   const initialB = searchParams.get('b') ?? '';
@@ -344,6 +363,22 @@ function ComparePageInner({ cases }: { cases: CaseData[] }) {
   const [caseBId, setCaseBId] = useState(initialB || (cases[1]?.id ?? ''));
   const [comparison, setComparison] = useState('');
   const [isComparing, setIsComparing] = useState(false);
+
+  // Persist comparison results
+  const persisted = usePersistedToolData('compare', activeSituationId);
+
+  // Restore persisted comparison on load
+  useEffect(() => {
+    if (persisted.data && !comparison) {
+      const saved = persisted.data as { caseAId?: string; caseBId?: string; comparison?: string };
+      if (saved.comparison) {
+        setComparison(saved.comparison);
+        if (saved.caseAId && cases.find((c) => c.id === saved.caseAId)) setCaseAId(saved.caseAId);
+        if (saved.caseBId && cases.find((c) => c.id === saved.caseBId)) setCaseBId(saved.caseBId);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [persisted.data]);
 
   const caseA = cases.find((c) => c.id === caseAId);
   const caseB = cases.find((c) => c.id === caseBId);
@@ -412,7 +447,15 @@ Be analytically specific. Cite conflict resolution theory where relevant. Avoid 
     } finally {
       setIsComparing(false);
     }
-  }, [caseA, caseB, isComparing, caseAId, caseBId]);
+  }, [caseA, caseB, isComparing, caseAId, caseBId, persisted]);
+
+  // Auto-persist when comparison finishes
+  useEffect(() => {
+    if (comparison && !isComparing && activeSituationId) {
+      persisted.save({ caseAId, caseBId, comparison });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isComparing]);
 
   const colorA = '#4B92DB';
   const colorB = '#A63D40';
@@ -533,6 +576,17 @@ Be analytically specific. Cite conflict resolution theory where relevant. Avoid 
                       label="Event Count"
                       a={<span className="font-mono">{caseA.eventCount}</span>}
                       b={<span className="font-mono">{caseB.eventCount}</span>}
+                    />
+                    <CompRow
+                      label="Glasl Stage"
+                      a={<span className="font-mono font-semibold">{caseA.glaslStage != null ? `${caseA.glaslStage}/9` : '\u2014'}</span>}
+                      b={<span className="font-mono font-semibold">{caseB.glaslStage != null ? `${caseB.glaslStage}/9` : '\u2014'}</span>}
+                      highlight
+                    />
+                    <CompRow
+                      label="Escalation"
+                      a={<span className={cn('text-xs font-medium capitalize', caseA.escalationTrend === 'escalating' ? 'text-crimson' : caseA.escalationTrend === 'de-escalating' ? 'text-sage' : 'text-navy-600')}>{caseA.escalationTrend}</span>}
+                      b={<span className={cn('text-xs font-medium capitalize', caseB.escalationTrend === 'escalating' ? 'text-crimson' : caseB.escalationTrend === 'de-escalating' ? 'text-sage' : 'text-navy-600')}>{caseB.escalationTrend}</span>}
                     />
                     <CompRow
                       label="Conflict Type"
@@ -678,7 +732,7 @@ function NeedMoreSituations({ count }: { count: number }) {
 // ---------------------------------------------------------------------------
 export default function ComparePage() {
   const { isDemo, showGuard } = useSituationGuard();
-  const situations = useSituationStore((s) => s.situations);
+  const { situations, activeSituation } = useSituationStore();
 
   // Convert real user situations to CaseData format (memoised for stability)
   const userCases = useMemo(
@@ -697,7 +751,7 @@ export default function ComparePage() {
           <Loader2 className="h-6 w-6 animate-spin text-navy-400" />
         </div>
       }>
-        <ComparePageInner cases={DEMO_CASES} />
+        <ComparePageInner cases={DEMO_CASES} activeSituationId={undefined} />
       </Suspense>
     );
   }
@@ -713,7 +767,7 @@ export default function ComparePage() {
         <Loader2 className="h-6 w-6 animate-spin text-navy-400" />
       </div>
     }>
-      <ComparePageInner cases={userCases} />
+      <ComparePageInner cases={userCases} activeSituationId={activeSituation?.id} />
     </Suspense>
   );
 }

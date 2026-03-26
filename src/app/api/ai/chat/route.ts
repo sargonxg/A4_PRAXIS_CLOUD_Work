@@ -174,7 +174,9 @@ You have access to the user's active situation data. When answering questions:
       }
     }
 
-    // Select model based on user preferences
+    // Select model based on user preferences.
+    // Default: gemini-2.5-flash for fast conversational chat. Users can override
+    // to Pro or Claude via aiSettings. Analytical tools use getProModel() instead.
     const model = aiSettings ? getModelForUser(aiSettings) : getModel();
 
     const result = streamText({

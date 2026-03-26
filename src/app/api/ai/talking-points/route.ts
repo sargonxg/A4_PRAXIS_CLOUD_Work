@@ -1,5 +1,5 @@
 import { streamText } from 'ai';
-import { getModel } from '@/lib/ai/providers';
+import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
 import { withAuth } from '@/lib/api/with-auth';
@@ -32,7 +32,7 @@ export const POST = withAuth(async (request, _user) => {
     if (!creditCheck.allowed) return creditCheck.response;
 
     const result = streamText({
-      model: getModel(),
+      model: getProModel(),
       system: sitContext ? `${sitContext}\n\n${DIPLOMATIC_SYSTEM_PROMPT}` : DIPLOMATIC_SYSTEM_PROMPT,
       messages: [
         {

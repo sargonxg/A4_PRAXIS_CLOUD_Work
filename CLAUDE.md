@@ -1,6 +1,6 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 3.4 — Full Pipeline Wiring, Situation-Specific Media, Enhanced AI Assistant
+> Version 3.5 — Sources Library, Unified Web Crawlers, Tool Improvements, 29 Tool Pages
 
 ## What This Is
 The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Two separate experiences in one codebase: a demo for prospects and a real situation-driven workspace for authenticated users. Deployed at praxis.tacitus.me (Vercel, iad1).

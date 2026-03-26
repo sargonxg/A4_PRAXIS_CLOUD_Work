@@ -372,6 +372,20 @@ const TOOL_DOCS: ToolDoc[] = [
     status: 'working',
   },
   {
+    name: 'Sources Library',
+    path: '/sources',
+    icon: Search,
+    section: 'Intelligence Tools',
+    creditCost: 5,
+    aiModel: 'Gemini 2.5 Pro',
+    description: 'AI-managed trusted source database with nomenclature tracking, reliability scoring, and priority management.',
+    purpose: 'Maintain a curated library of intelligence sources for your situation: local media, Telegram channels, X accounts, think tanks, diaspora outlets, NGO feeds. AI discovers sources, tracks their naming conventions (nomenclature), and scores reliability and political orientation.',
+    howItWorks: 'AI source discovery via /api/ai/discover-sources generates 8-12 situation-specific sources. Each source is characterized with type, platform, language, reliability (0-1), orientation (-1 to 1), nomenclature analysis, coverage strengths, and known biases. Users can add manual sources, set priority levels, and add notes. All persisted to Firestore.',
+    analyticalFramework: 'Source Credibility Assessment + Nomenclature Analysis',
+    dataSource: 'AI discovery + user curation + web research',
+    status: 'working',
+  },
+  {
     name: 'Alert Center',
     path: '/alerts',
     icon: Bell,
@@ -659,12 +673,12 @@ export default function DocsPage() {
           35 smoke tests passing via Vitest.
         </p>
         <p className="mt-2 text-[10px] text-emerald-600">
-          Last audit: v3.4 / Build 2026.03.25
+          Last audit: v3.5 / Build 2026.03.26
         </p>
       </div>
 
       <p className="text-center text-[10px] text-navy-400 pb-8">
-        PRAXIS v3.4 by TACITUS. All tools situation-scoped and authenticated. AI analysis supplements, not replaces, human judgment.
+        PRAXIS v3.5 by TACITUS. All tools situation-scoped and authenticated. AI analysis supplements, not replaces, human judgment.
       </p>
     </div>
   );

@@ -37,6 +37,7 @@ import {
   Bell,
   Radio,
   Handshake,
+  Library,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -52,6 +53,19 @@ import { Coins, X, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
 const CHANGELOG = [
+  {
+    version: 'v3.5',
+    date: '2026.03.26',
+    notes: [
+      'Sources Library: AI-managed trusted source database with nomenclature tracking, reliability scoring, and priority management',
+      'Unified Web Crawlers: Firecrawl + Parallel.ai as optional research boosters for all intelligence tools',
+      'Compare tool: real situation comparison with Glasl stage, escalation trend, AI-generated analysis',
+      'Team Hub: Situation Activity Log showing tool population status, expanded Quick Analysis cards',
+      'Alerts: severity-based styling, manual "Check for Updates" with streaming AI response',
+      'AI model upgrades: talking-points and media-roundup upgraded to Gemini 2.5 Pro',
+      'PRAXIS Documentation page: full 28-tool reference with frameworks, credits, and audit status',
+    ],
+  },
   {
     version: 'v3.4',
     date: '2026.03.25',
@@ -138,6 +152,7 @@ const navSections: NavSection[] = [
       { label: 'Treaty Analyzer', icon: BookMarked, href: '/treaty-analyzer', badge: 'NEW' },
       { label: 'Sanctions Tracker', icon: Shield, href: '/sanctions' },
       { label: 'Calendar Monitor', icon: Calendar, href: '/calendar' },
+      { label: 'Sources Library', icon: Library, href: '/sources', badge: 'NEW' },
       { label: 'Alert Center', icon: Bell, href: '/alerts' },
       { label: 'UN Toolkit', icon: Building2, href: '/un-toolkit' },
     ],
@@ -161,7 +176,7 @@ function ChangelogButton() {
         onClick={() => setOpen(true)}
         className="mt-1 w-full text-center text-[9px] text-navy-300 hover:text-navy-500 transition-colors"
       >
-        PRAXIS v3.4 · Build 2026.03.25
+        PRAXIS v3.5 · Build 2026.03.26
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setOpen(false)}>

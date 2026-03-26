@@ -1,5 +1,5 @@
 import { streamText } from 'ai';
-import { getModel } from '@/lib/ai/providers';
+import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -102,7 +102,7 @@ export const POST = withAuth(async (request, _user) => {
 
     // Stream the roundup
     const result = streamText({
-      model: getModel(),
+      model: getProModel(),
       system: `You are PRAXIS Media Intelligence, a professional media roundup generator for conflict/policy analysts.
 
 ${sitContext}
