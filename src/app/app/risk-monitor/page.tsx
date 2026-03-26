@@ -3,6 +3,7 @@
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
+import { useSituationStore } from '@/stores/situation-store';
 
 import { useState } from 'react';
 import { TrendingUp, TrendingDown, Minus, BarChart3 } from 'lucide-react';
@@ -549,6 +550,7 @@ function toMonitoredRegion(r: AiRiskRegion, idx: number): MonitoredRegion {
 export default function RiskMonitorPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
   const [aiRegions, setAiRegions] = useState<MonitoredRegion[]>([]);
+  const updateSituation = useSituationStore((s) => s.updateSituation);
 
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoRiskMonitorPage />;
@@ -569,6 +571,11 @@ export default function RiskMonitorPage() {
         const d = data as { regions?: AiRiskRegion[] };
         if (d?.regions) {
           setAiRegions(d.regions.map((r, i) => toMonitoredRegion(r, i)));
+          // Update parent situation's riskScore with the highest region score
+          const maxScore = Math.max(...d.regions.map((r) => r.riskScore));
+          if (maxScore > 0) {
+            updateSituation(situation.id, { riskScore: maxScore });
+          }
         }
       }}
     >

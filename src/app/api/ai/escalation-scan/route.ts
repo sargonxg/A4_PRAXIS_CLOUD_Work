@@ -3,8 +3,11 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { validateAiRequest } from '@/lib/api/validate-request';
+import { handleRouteError } from '@/lib/api/standard-error';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import { computeEscalation } from '@/lib/analytics/escalation-scorer';
 import { fetchEvents, isACLEDConfigured } from '@/lib/data-feeds/acled-client';
@@ -75,14 +78,20 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   try {
-    const { conflictId, conflictContext, situation } = await request.json() as {
-      conflictId: string;
-      conflictContext?: string;
-      situation?: Situation;
-    };
-    const sitContext = situation ? buildToolContext(situation) : '';
+    const body = await request.json();
+
+    const requestSchema = z.object({
+      conflictId: z.string().optional().default(''),
+      conflictContext: z.string().optional(),
+      situation: z.any().optional(),
+    });
+
+    const validation = validateAiRequest(body, requestSchema);
+    if (!validation.success) return validation.response;
+    const { conflictId, conflictContext, situation } = validation.data;
+    const sitContext = situation ? buildToolContext(situation as Situation) : '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -148,7 +157,6 @@ Calibrate your confidence score based on the quality and recency of available ev
 
     return NextResponse.json(result.output);
   } catch (err) {
-    console.error('Escalation scan route error:', err);
-    return NextResponse.json({ error: 'Escalation scan failed' }, { status: 500 });
+    return handleRouteError(err, 'escalation-scan');
   }
-}
+});

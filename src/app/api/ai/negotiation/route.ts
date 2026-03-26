@@ -3,6 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
@@ -126,7 +127,7 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   try {
     const body = await request.json();
 
@@ -209,4 +210,4 @@ Be specific to the actual parties and issues. Do not give generic advice.`,
   } catch (err) {
     return handleRouteError(err, 'negotiation');
   }
-}
+});

@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import type { Situation } from '@/types/situation';
 
@@ -644,14 +645,16 @@ function DemoScenariosPage() {
 // Real mode — situation-driven, no hardcoded Nordalia data
 // ============================================================================
 
-function RealScenariosPage({ situation }: { situation: Situation }) {
+function RealScenariosPage({ situation, persisted }: { situation: Situation; persisted: ReturnType<typeof usePersistedToolData> }) {
   const actors = situation.actors ?? [];
   const [trigger, setTrigger] = useState('');
   const [selectedActors, setSelectedActors] = useState<string[]>([]);
   const [timeHorizon, setTimeHorizon] = useState('90 days');
   const [analysis, setAnalysis] = useState('');
   const [isRunning, setIsRunning] = useState(false);
-  const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>([]);
+  const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>(
+    () => (persisted.data as SavedScenario[] | null) ?? []
+  );
   const [compareIdx, setCompareIdx] = useState<number | null>(null);
   const analysisRef = useRef<HTMLDivElement>(null);
 
@@ -678,6 +681,7 @@ function RealScenariosPage({ situation }: { situation: Situation }) {
           scenarioTrigger: trigger,
           actors: selectedActors,
           timeHorizon,
+          situation,
         }),
       });
 
@@ -711,7 +715,9 @@ function RealScenariosPage({ situation }: { situation: Situation }) {
       analysis,
       savedAt: new Date(),
     };
-    setSavedScenarios((prev) => [scenario, ...prev]);
+    const updated = [scenario, ...savedScenarios];
+    setSavedScenarios(updated);
+    persisted.save(updated);
   };
 
   return (
@@ -831,7 +837,7 @@ function RealScenariosPage({ situation }: { situation: Situation }) {
                       <p className="text-[10px] text-navy-400">{s.conflictContext} · {s.timeHorizon}</p>
                     </div>
                     <button
-                      onClick={(e) => { e.stopPropagation(); setSavedScenarios((prev) => prev.filter((_, i) => i !== idx)); }}
+                      onClick={(e) => { e.stopPropagation(); const updated = savedScenarios.filter((_, i) => i !== idx); setSavedScenarios(updated); persisted.save(updated); }}
                       className="text-navy-300 hover:text-crimson"
                     >
                       <Trash2 className="h-3 w-3" />
@@ -943,6 +949,7 @@ function RealScenariosPage({ situation }: { situation: Situation }) {
 
 export default function ScenariosPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const persisted = usePersistedToolData('scenarios', situation?.id);
 
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoScenariosPage />;
@@ -951,5 +958,5 @@ export default function ScenariosPage() {
   if (showGuard || !situation) return <NoSituationState />;
 
   // Real mode — render scenario planner directly (uses streamText, not AiPopulate)
-  return <RealScenariosPage situation={situation} />;
+  return <RealScenariosPage situation={situation} persisted={persisted} />;
 }

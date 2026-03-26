@@ -1321,6 +1321,7 @@ export default function NegotiationPrepPage() {
       toolId="negotiation-prep"
       toolName="Negotiation Analysis"
       apiEndpoint="/api/ai/negotiation"
+      extraBody={{ parties: situation.actors, issues: [`${situation.name} peace process`], conflictContext: `${situation.name}: ${situation.description}. Actors: ${situation.actors.join(', ')}` }}
       creditCost={3}
       hasExistingData={!!negotiationData}
       onDataGenerated={(data) => setNegotiationData(data as NegotiationData)}
