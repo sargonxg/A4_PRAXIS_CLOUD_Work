@@ -110,6 +110,7 @@ function ActorBriefPanel({
           situationId: situation?.id ?? 'nordalia-crisis',
           situationContext,
           meetingContext: undefined,
+          situation: situation ?? undefined,
         }),
         signal: controller.signal,
       });

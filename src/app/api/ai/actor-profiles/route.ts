@@ -6,6 +6,7 @@ import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
+import { withAuth } from '@/lib/api/with-auth';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -59,14 +60,14 @@ const ActorProfilesSchema = z.object({
   actors: z.array(ActorProfileSchema).min(2).max(10).describe('Full intelligence profiles for key actors'),
 });
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   try {
-    const creditCheck = await checkAndDeductCredits('ai_actor_profiles', 'Actor profile generation');
-    if (!creditCheck.allowed) return creditCheck.response!;
-
     if (isServerDemoMode()) {
       return NextResponse.json({ actors: [] });
     }
+
+    const creditCheck = await checkAndDeductCredits('ai_actor_profiles', 'Actor profile generation');
+    if (!creditCheck.allowed) return creditCheck.response!;
 
     const body = await request.json();
     const { situation } = body as { situation?: Situation };
@@ -105,4 +106,4 @@ Generate profiles for 3-8 actors depending on the complexity of the situation.`,
   } catch (err) {
     return handleRouteError(err, 'actor-profiles');
   }
-}
+});

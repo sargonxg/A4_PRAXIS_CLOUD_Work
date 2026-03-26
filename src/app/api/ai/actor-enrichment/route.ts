@@ -5,6 +5,8 @@ import { getModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { handleRouteError } from '@/lib/api/standard-error';
+import { withAuth } from '@/lib/api/with-auth';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import type { Situation } from '@/types/situation';
 
@@ -65,7 +67,7 @@ const DEMO_RESPONSE = {
   assessment: 'The Government of Nordalia is at a critical inflection point. The cabinet reshuffle, increased Karovian military cooperation, and restrictions on UNMN access collectively suggest preparation for a potential military escalation if the political track does not produce results within 60-90 days. However, the GoN faces significant constraints: fiscal pressure from the currency depreciation (36.4% since March 2024), international legitimacy concerns, and uncertain military capacity for sustained operations in eastern terrain. The most likely trajectory is continued brinkmanship — using the threat of military action to extract concessions in the AU-mediated process — rather than an actual offensive. Confidence: Medium. Key uncertainty: internal GoN decision-making dynamics between Osei and the AFN command.',
 };
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   try {
     const { actorName, actorType, conflictContext, situation } = await request.json() as {
       actorName: string;
@@ -116,7 +118,6 @@ Use calibrated confidence language. Distinguish between confirmed reporting and 
 
     return NextResponse.json(result.output);
   } catch (err) {
-    console.error('Actor enrichment route error:', err);
-    return NextResponse.json({ error: 'Actor enrichment failed' }, { status: 500 });
+    return handleRouteError(err, 'actor-enrichment');
   }
-}
+});
