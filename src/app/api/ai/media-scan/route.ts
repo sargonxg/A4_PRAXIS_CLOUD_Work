@@ -7,6 +7,7 @@ import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import { searchArticles, getVolumeTimeline, getToneTimeline } from '@/lib/data-feeds/gdelt-client';
+import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -114,6 +115,23 @@ Recent headlines: ${gdeltArticles.slice(0, 5).map((a) => `"${a.title}" (${a.doma
       }
     } catch { /* continue without GDELT */ }
 
+    // --- Live intelligence feed ---
+    let intelContext = '';
+    try {
+      if (situation) {
+        const intel = await getSituationIntelligence({
+          country: situation.region || situation.name,
+          query: situation.name,
+          limit: 15,
+        });
+        if (intel.events.length > 0) {
+          intelContext = '\n\nLIVE INTELLIGENCE FEED:\n' + intel.events.slice(0, 10).map(e =>
+            `- [${e.source.toUpperCase()}] ${e.date}: ${e.title} (${e.severity})`
+          ).join('\n');
+        }
+      }
+    } catch { /* data feeds optional */ }
+
     // --- Gather web sources for each outlet ---
     const searchResults = await Promise.all(
       outlets.map((outlet) =>
@@ -137,7 +155,7 @@ Recent headlines: ${gdeltArticles.slice(0, 5).map((a) => `"${a.title}" (${a.doma
 
 TOPIC: ${topic}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
-${gdeltContext}
+${gdeltContext}${intelContext}
 OUTLETS TO ANALYZE: ${outlets.join(', ')}
 
 WEB SEARCH RESULTS:

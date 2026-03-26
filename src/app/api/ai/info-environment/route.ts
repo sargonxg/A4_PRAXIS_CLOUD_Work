@@ -6,6 +6,7 @@ import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
+import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 45;
@@ -163,10 +164,27 @@ export async function POST(request: Request) {
     const { situation } = body as { situation?: Situation };
     const sitContext = situation ? buildToolContext(situation as Situation) : '';
 
+    // --- Live intelligence feed (GDELT stability data) ---
+    let intelContext = '';
+    try {
+      if (situation) {
+        const intel = await getSituationIntelligence({
+          country: situation.region || situation.name,
+          query: situation.name,
+          limit: 15,
+        });
+        if (intel.events.length > 0) {
+          intelContext = '\n\nLIVE INTELLIGENCE FEED:\n' + intel.events.slice(0, 10).map(e =>
+            `- [${e.source.toUpperCase()}] ${e.date}: ${e.title} (${e.severity})`
+          ).join('\n');
+        }
+      }
+    } catch { /* data feeds optional */ }
+
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: InfoEnvironmentSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}Conduct a rigorous information environment analysis for this conflict situation.
+      prompt: `${sitContext ? `${sitContext}\n\n` : ''}${intelContext ? `${intelContext}\n\n` : ''}Conduct a rigorous information environment analysis for this conflict situation.
 
 ## ANALYTICAL FRAMEWORK
 
