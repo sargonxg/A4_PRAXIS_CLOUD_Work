@@ -2,10 +2,10 @@
 
 import { useSituationGuard } from "@/hooks/use-situation-guard";
 import { NoSituationState } from "@/components/praxis/no-situation-state";
-import { AiPopulate } from "@/components/praxis/ai-populate";
 import { useSituationStore } from "@/stores/situation-store";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getGraph } from "@/lib/firebase/graph-service";
+import { usePersistedToolData } from "@/hooks/use-persisted-tool-data";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils/cn";
@@ -15,10 +15,9 @@ import {
   EntityPanel,
   type GraphNode,
   type GraphEdge,
-  NODE_TYPE_CONFIG,
 } from "@/components/graph/entity-panel";
 import { TimelineSlider } from "@/components/graph/timeline-slider";
-import { Network, ChevronDown, Maximize2, Sparkles, X, Loader2, Info } from "lucide-react";
+import { Network, ChevronDown, Maximize2, Sparkles, RefreshCw, X, Loader2, Info } from "lucide-react";
 import { ENTITY_COLORS, ENTITY_TYPES } from "@/lib/constants/entity-colors";
 import { PraxisLink } from "@/components/shared/praxis-link";
 
@@ -521,6 +520,78 @@ function DemoConflictGraphPage() {
 }
 
 // ── Helpers ─────────────────────────────────────────────────────
+
+/** Layout centers for spreading nodes by entity type */
+const LAYOUT_CENTERS: Record<string, { cx: number; cy: number }> = {
+  actor: { cx: 400, cy: 220 },
+  claim: { cx: 300, cy: 140 },
+  interest: { cx: 550, cy: 170 },
+  constraint: { cx: 150, cy: 160 },
+  leverage: { cx: 600, cy: 300 },
+  commitment: { cx: 450, cy: 380 },
+  event: { cx: 400, cy: 460 },
+  narrative: { cx: 200, cy: 350 },
+};
+
+interface PersistedGraphNode {
+  id: string;
+  name: string;
+  type: string;
+  description?: string;
+}
+
+interface PersistedGraphEdge {
+  source: string;
+  target: string;
+  type: string;
+  label: string;
+}
+
+interface PersistedGraphData {
+  nodes?: PersistedGraphNode[];
+  edges?: PersistedGraphEdge[];
+}
+
+/** Convert pre-seeded tool-data graph into UI GraphNode[] / GraphEdge[] */
+function convertPersistedGraph(data: PersistedGraphData): { nodes: GraphNode[]; edges: GraphEdge[] } {
+  const rawNodes = data.nodes ?? [];
+  const rawEdges = data.edges ?? [];
+
+  const typeCounts: Record<string, number> = {};
+  const typeTotals: Record<string, number> = {};
+  rawNodes.forEach((n) => { typeTotals[n.type] = (typeTotals[n.type] ?? 0) + 1; });
+
+  const nodes: GraphNode[] = rawNodes.map((n) => {
+    const typeKey = n.type;
+    typeCounts[typeKey] = (typeCounts[typeKey] ?? 0) + 1;
+    const idx = typeCounts[typeKey] - 1;
+    const center = LAYOUT_CENTERS[typeKey] ?? { cx: 400, cy: 275 };
+    const angle = (2 * Math.PI * idx) / Math.max(typeTotals[typeKey] ?? 1, 1);
+    const radius = 80 + (idx % 2) * 40;
+    return {
+      id: n.id,
+      label: n.name,
+      type: typeKey as GraphNode['type'],
+      description: n.description,
+      importance: 0.5,
+      x: Math.round(center.cx + Math.cos(angle) * radius),
+      y: Math.round(center.cy + Math.sin(angle) * radius),
+    };
+  });
+
+  const nodeIdSet = new Set(nodes.map((n) => n.id));
+  const edges: GraphEdge[] = rawEdges
+    .filter((e) => nodeIdSet.has(e.source) && nodeIdSet.has(e.target))
+    .map((e) => ({
+      source: e.source,
+      target: e.target,
+      label: e.label ?? e.type,
+      type: mapEdgeType(e.type),
+    }));
+
+  return { nodes, edges };
+}
+
 function mapEdgeType(type: string): GraphEdge['type'] {
   const validTypes: GraphEdge['type'][] = ['adversary', 'ally', 'mediator', 'coordination', 'leads', 'supports', 'threatens'];
   if (validTypes.includes(type as GraphEdge['type'])) return type as GraphEdge['type'];
@@ -536,6 +607,9 @@ function RealConflictGraphPage() {
   const { activeSituation } = useSituationStore();
   const { user } = useAuth();
 
+  // ── Check for pre-seeded graph data from situation-initializer ──
+  const persisted = usePersistedToolData('conflict-graph', activeSituation?.id);
+
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeTypes, setActiveTypes] = useState<Set<string>>(
     new Set(ENTITY_TYPE_TOGGLES.map((t) => t.key))
@@ -549,17 +623,40 @@ function RealConflictGraphPage() {
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractedResult, setExtractedResult] = useState<ExtractedResult | null>(null);
   const [extractError, setExtractError] = useState<string | null>(null);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   // ── API-fetched graph data ────────────────────────────────────
   const [allNodes, setAllNodes] = useState<GraphNode[]>([]);
   const [allEdges, setAllEdges] = useState<GraphEdge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch graph data from Firestore for active situation
+  // Restore from persisted tool-data (pre-seeded by situation-initializer)
+  useEffect(() => {
+    if (persisted.isLoading) return;
+    if (persisted.data) {
+      const converted = convertPersistedGraph(persisted.data as PersistedGraphData);
+      if (converted.nodes.length > 0) {
+        setAllNodes(converted.nodes);
+        setAllEdges(converted.edges);
+        setIsLoading(false);
+        return;
+      }
+    }
+    // No persisted data — fall through to Firestore graph fetch
+  }, [persisted.isLoading, persisted.data]);
+
+  // Fetch graph data from Firestore graph subcollection as fallback
   useEffect(() => {
     if (!user || !activeSituation) {
       setIsLoading(false);
       return;
+    }
+    // If persisted tool-data is still loading, wait
+    if (persisted.isLoading) return;
+    // If persisted data already populated nodes, skip Firestore fetch
+    if (persisted.data) {
+      const converted = convertPersistedGraph(persisted.data as PersistedGraphData);
+      if (converted.nodes.length > 0) return;
     }
 
     let cancelled = false;
@@ -574,18 +671,6 @@ function RealConflictGraphPage() {
           setAllEdges([]);
           return;
         }
-
-        // Map Firestore graph nodes to UI GraphNode format with layout
-        const LAYOUT_CENTERS: Record<string, { cx: number; cy: number }> = {
-          actor: { cx: 400, cy: 220 },
-          claim: { cx: 300, cy: 140 },
-          interest: { cx: 550, cy: 170 },
-          constraint: { cx: 150, cy: 160 },
-          leverage: { cx: 600, cy: 300 },
-          commitment: { cx: 450, cy: 380 },
-          event: { cx: 400, cy: 460 },
-          narrative: { cx: 200, cy: 350 },
-        };
 
         const typeCounts: Record<string, number> = {};
         const nodes: GraphNode[] = graphData.nodes.map((n) => {
@@ -625,7 +710,58 @@ function RealConflictGraphPage() {
 
     fetchGraph();
     return () => { cancelled = true; };
-  }, [user, activeSituation]);
+  }, [user, activeSituation, persisted.isLoading, persisted.data]);
+
+  // ── Regenerate Graph via AI extract ────────────────────────────
+  const handleRegenerateGraph = useCallback(async () => {
+    if (!activeSituation || isRegenerating) return;
+    setIsRegenerating(true);
+    try {
+      const res = await fetch('/api/ai/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: [
+            activeSituation.name,
+            activeSituation.description,
+            (activeSituation.actors ?? []).join(', '),
+            activeSituation.contextNotes,
+          ].filter(Boolean).join('\n\n'),
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      // Build nodes + edges from extraction result in the persisted shape
+      const nodes: PersistedGraphNode[] = [];
+      const edges: PersistedGraphEdge[] = [];
+      const entities = data.entities as ExtractedResult;
+      if (entities) {
+        for (const [type, items] of Object.entries(entities)) {
+          if (!Array.isArray(items)) continue;
+          for (const item of items) {
+            nodes.push({
+              id: item.id,
+              name: (item as Record<string, unknown>).name as string ?? (item as Record<string, unknown>).title as string ?? item.id,
+              type,
+              description: (item as Record<string, unknown>).description as string | undefined,
+            });
+          }
+        }
+      }
+      // Save to persisted tool-data
+      const graphPayload = { nodes, edges };
+      await persisted.save(graphPayload);
+      // Convert and display
+      const converted = convertPersistedGraph(graphPayload);
+      setAllNodes(converted.nodes);
+      setAllEdges(converted.edges);
+    } catch (err) {
+      console.error('Regenerate graph failed:', err);
+    } finally {
+      setIsRegenerating(false);
+    }
+  }, [activeSituation, isRegenerating, persisted]);
 
   const handleExtract = useCallback(async () => {
     if (!extractText.trim() || isExtracting) return;
@@ -741,7 +877,7 @@ function RealConflictGraphPage() {
         >
           {/* Node count + actions */}
           <div className="ml-auto flex items-center gap-3 text-xs text-navy-500">
-            {isLoading ? (
+            {isLoading || persisted.isLoading ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 className="h-3 w-3 animate-spin" /> Loading graph...
               </span>
@@ -759,6 +895,14 @@ function RealConflictGraphPage() {
               className="rounded-md px-2 py-1 text-navy-600 transition-colors hover:bg-navy-100 hover:text-navy-800"
             >
               Reset
+            </button>
+            <button
+              onClick={handleRegenerateGraph}
+              disabled={isRegenerating}
+              className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-500/15 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isRegenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              {isRegenerating ? 'Regenerating...' : 'Regenerate Graph'}
             </button>
             <button
               onClick={() => setExtractOpen(true)}
@@ -842,7 +986,7 @@ function RealConflictGraphPage() {
                 <Maximize2 className="h-4 w-4" />
               </button>
             </div>
-            {isLoading ? (
+            {isLoading || persisted.isLoading ? (
               <div className="flex min-h-[450px] items-center justify-center lg:min-h-[500px]">
                 <div className="flex flex-col items-center gap-3">
                   <Loader2 className="h-8 w-8 animate-spin text-navy-400" />
@@ -855,7 +999,7 @@ function RealConflictGraphPage() {
                   <Network className="h-10 w-10 text-navy-300" />
                   <h3 className="text-sm font-semibold text-navy-700">No graph data yet</h3>
                   <p className="max-w-xs text-xs text-navy-500">
-                    Use the AI populate feature above or extract entities from text to build the conflict graph for this situation.
+                    Use the Regenerate Graph button or extract entities from text to build the conflict graph for this situation.
                   </p>
                 </div>
               </div>
@@ -1009,16 +1153,5 @@ export default function ConflictGraphPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
   if (isDemo) return <DemoConflictGraphPage />;
   if (showGuard || !situation) return <NoSituationState />;
-  return (
-    <AiPopulate
-      toolId="conflict-graph"
-      toolName="Conflict Graph"
-      apiEndpoint="/api/graph/build"
-      creditCost={3}
-      hasExistingData={false}
-      onDataGenerated={() => {}}
-    >
-      <RealConflictGraphPage />
-    </AiPopulate>
-  );
+  return <RealConflictGraphPage />;
 }

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getConflict } from '@/lib/services/conflict-service';
 import { ENTITY_COLORS } from '@/lib/constants/entity-colors';
 import { ensureNordaliaData } from '@/lib/services/nordalia-initializer';
+import { getToolData } from '@/lib/firebase/tool-data-service';
+import { verifyIdToken } from '@/lib/firebase/admin';
+import { cookies } from 'next/headers';
 
 // Map conflict-grammar lowercase types to display EntityType keys
 const TYPE_DISPLAY_MAP: Record<string, string> = {
@@ -26,6 +29,58 @@ export async function POST(request: NextRequest) {
     const conflictId: string = body.conflictId ?? 'nordalia-crisis';
     const entityTypes: string[] | undefined = body.entityTypes;
     const actorId: string | undefined = body.actorId;
+    const situationId: string | undefined = body.situationId;
+
+    // If situationId is provided, try to read pre-seeded graph from tool-data first
+    if (situationId) {
+      try {
+        const cookieStore = await cookies();
+        const sessionCookie = cookieStore.get('tacitus-auth-session');
+        if (sessionCookie?.value) {
+          const decoded = await verifyIdToken(sessionCookie.value);
+          if (decoded.uid) {
+            const toolData = await getToolData(decoded.uid, situationId, 'conflict-graph');
+            if (toolData?.data) {
+              const persisted = toolData.data as {
+                nodes?: Array<{ id: string; name: string; type: string; description?: string }>;
+                edges?: Array<{ source: string; target: string; type: string; label: string }>;
+              };
+              if (persisted.nodes && persisted.nodes.length > 0) {
+                const nodes = persisted.nodes.map((n) => ({
+                  id: n.id,
+                  label: n.name,
+                  type: n.type,
+                  color: getColor(n.type),
+                  size: 16,
+                  description: n.description,
+                  importance: 0.5,
+                  x: 0,
+                  y: 0,
+                }));
+                const nodeIdSet = new Set(nodes.map((n) => n.id));
+                const edges = (persisted.edges ?? [])
+                  .filter((e) => nodeIdSet.has(e.source) && nodeIdSet.has(e.target))
+                  .map((e) => ({
+                    source: e.source,
+                    target: e.target,
+                    type: e.type,
+                    label: e.label ?? e.type,
+                  }));
+                return NextResponse.json({
+                  nodes,
+                  edges,
+                  totalNodes: nodes.length,
+                  totalEdges: edges.length,
+                  source: 'persisted-tool-data',
+                });
+              }
+            }
+          }
+        }
+      } catch {
+        // Fall through to demo data logic
+      }
+    }
 
     // Ensure the conflict exists, populating from demo data if needed
     ensureNordaliaData(conflictId);
