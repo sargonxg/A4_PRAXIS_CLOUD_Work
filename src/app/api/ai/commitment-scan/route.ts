@@ -6,6 +6,7 @@ import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
+import { withAuth } from '@/lib/api/with-auth';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 45;
@@ -117,7 +118,7 @@ const DEMO_RESPONSE = {
   analysis: 'The compliance landscape reflects a pattern of selective implementation: economic commitments with third-party oversight show high compliance, while commitments requiring unilateral political restraint are systematically violated. Priority: invoke UNMN monitoring mandate for ceasefire violations; activate OCHA escalation mechanism for access blockages; refer journalist detentions to HRC.',
 };
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   try {
     const creditCheck = await checkAndDeductCredits('ai_commitment_scan', 'Commitment compliance scan');
     if (!creditCheck.allowed) return creditCheck.response!;
@@ -175,4 +176,4 @@ Generate 3-6 commitments relevant to this specific situation. Be specific about 
   } catch (err) {
     return handleRouteError(err, 'commitment-scan');
   }
-}
+});

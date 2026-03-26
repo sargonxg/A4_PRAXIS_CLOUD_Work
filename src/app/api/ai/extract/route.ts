@@ -1,6 +1,7 @@
 import { generateObject } from 'ai';
 import { getModel } from '@/lib/ai/providers';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withAuth } from '@/lib/api/with-auth';
 import { z } from 'zod';
 
 const ExtractedEntitySchema = z.object({
@@ -75,7 +76,7 @@ const ExtractedEntitySchema = z.object({
   })),
 });
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(
       JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in Vercel environment variables.' }),
@@ -124,4 +125,4 @@ If a category has no clear entities in the text, return an empty array for that 
     console.error('Extract route error:', err);
     return Response.json({ error: 'Extraction failed' }, { status: 500 });
   }
-}
+});

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getModel, getProModel } from '@/lib/ai/providers';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withAuth } from '@/lib/api/with-auth';
 
 export const maxDuration = 60;
 
@@ -154,7 +155,7 @@ const DEMO_ASSIST_TEXT = `Based on the current dynamics, I recommend focusing on
 
 **Risk to manage:** Ensure the exchange is not perceived as a transactional quid pro quo but rather as a parallel humanitarian gesture by both parties. This preserves each side's ability to present it as their own initiative.`;
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   try {
     const { action, conflictContext, parties, issues } = await request.json() as {
       action: 'plan' | 'assist' | 'settle';
@@ -255,4 +256,4 @@ Be practical, specific, and sensitive to each party's political constraints. Avo
     console.error('Mediation route error:', err);
     return NextResponse.json({ error: 'Mediation request failed' }, { status: 500 });
   }
-}
+});

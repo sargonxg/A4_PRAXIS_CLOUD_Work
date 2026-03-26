@@ -2,10 +2,11 @@ import { streamText } from 'ai';
 import { getModel } from '@/lib/ai/providers';
 import { UN_STYLE_PROMPT } from '@/lib/ai/prompts/un-style';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withAuth } from '@/lib/api/with-auth';
 
 export const maxDuration = 60;
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(
       JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in Vercel environment variables.' }),
@@ -58,4 +59,4 @@ Follow UN Security Council resolution format precisely. Include standard preambu
       headers: { 'Content-Type': 'application/json' },
     });
   }
-}
+});

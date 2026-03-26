@@ -5,6 +5,7 @@ import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withAuth } from '@/lib/api/with-auth';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 120;
@@ -91,7 +92,7 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   try {
     const { treatyText, conflictContext, situation } = await request.json() as {
       treatyText: string;
@@ -139,4 +140,4 @@ Reference comparable peace agreements and international legal standards where re
     console.error('Treaty analyze route error:', err);
     return NextResponse.json({ error: 'Treaty analysis failed' }, { status: 500 });
   }
-}
+});

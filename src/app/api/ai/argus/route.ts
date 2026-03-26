@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withAuth } from '@/lib/api/with-auth';
 
 export const maxDuration = 60;
 
@@ -194,7 +195,7 @@ const DEMO_COMPARE_RESPONSE = {
   ],
 };
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   try {
     const { action, query, text, conflictIds } = await request.json() as {
       action: 'query' | 'extract' | 'compare';
@@ -283,4 +284,4 @@ For each similarity and difference, assess its significance (high/medium/low) fo
     console.error('ARGUS route error:', err);
     return NextResponse.json({ error: 'ARGUS request failed' }, { status: 500 });
   }
-}
+});
