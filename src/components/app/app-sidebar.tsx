@@ -148,6 +148,7 @@ const navSections: NavSection[] = [
       { label: 'Documents', icon: FolderOpen, href: '/documents' },
       { label: 'Case Library', icon: BookOpen, href: '/cases', badge: 'NEW' },
       { label: 'Team Hub', icon: UsersRound, href: '/team' },
+      { label: 'Docs', icon: BookOpen, href: '/docs' },
     ],
   },
 ];
