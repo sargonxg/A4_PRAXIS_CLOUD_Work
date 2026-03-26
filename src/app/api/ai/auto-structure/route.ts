@@ -3,9 +3,10 @@ import { getProModel } from '@/lib/ai/providers';
 import { withAuth } from '@/lib/api/with-auth';
 import { tacitusTools } from '@/lib/ai/tools';
 import { scrapeMultiple } from '@/lib/ai/firecrawl';
-import { updateSituation } from '@/lib/firebase/situations-service';
+import { updateSituation, getSituation } from '@/lib/firebase/situations-service';
 import { getAllDocumentText } from '@/lib/firebase/documents-service';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
+import { initializeSituationTools } from '@/lib/services/situation-initializer';
 
 export const maxDuration = 120;
 
@@ -186,6 +187,16 @@ Ground every claim in evidence. Flag uncertainty. Use UN diplomatic language sta
           if (Object.keys(updates).length > 0) {
             await updateSituation(user.uid, situationId, updates as Partial<import('@/types/situation').Situation>);
             console.log('[auto-structure] Updated situation metadata:', Object.keys(updates));
+          }
+
+          // Seed all tool-data subcollections from the auto-structure output
+          const updatedSituation = await getSituation(user.uid, situationId);
+          if (updatedSituation) {
+            initializeSituationTools(user.uid, situationId, updatedSituation, text)
+              .then(({ seeded, failed }) => {
+                console.log(`[auto-structure] Tool init complete: ${seeded.length} seeded, ${failed.length} failed`);
+              })
+              .catch((err) => console.error('[auto-structure] Tool init error:', err));
           }
         } catch (err) {
           console.error('[auto-structure] Failed to update situation metadata:', err);
