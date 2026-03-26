@@ -2,6 +2,7 @@ import { streamText } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
@@ -9,7 +10,7 @@ import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 import type { Situation } from '@/types/situation';
 export const maxDuration = 60;
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(JSON.stringify({ error: 'AI not configured' }), { status: 503 });
   }
@@ -101,4 +102,4 @@ Be analytically rigorous, calibrate confidence appropriately, and avoid generic 
   } catch (err) {
     return handleRouteError(err, 'scenario');
   }
-}
+});

@@ -1,6 +1,7 @@
 import { streamText } from 'ai';
 import { getModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { searchWeb } from '@/lib/ai/firecrawl';
 import { GLOBAL_MEDIA_SOURCES, getSourcesForRegion } from '@/lib/constants/global-media-sources';
@@ -9,7 +10,7 @@ import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   try {
     const { situation, timeRange = '24h', maxSections = 8, customQueries } = await request.json();
 
@@ -129,4 +130,4 @@ If fewer than 5 sources were found, note the limited coverage and suggest additi
     console.error('[media-roundup] Error:', err);
     return new Response(JSON.stringify({ error: 'Media roundup generation failed' }), { status: 500 });
   }
-}
+});

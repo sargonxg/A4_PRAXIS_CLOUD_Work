@@ -2,12 +2,13 @@ import { streamText } from 'ai';
 import { getModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
+import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(
       JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in Vercel environment variables.' }),
@@ -17,13 +18,15 @@ export async function POST(request: Request) {
 
   try {
     const { situation, audience, tone, context, situationData } = await request.json() as {
-      situation: string;
+      situation: string | Situation;
       audience: string;
       tone?: string;
       context?: string;
       situationData?: Situation;
     };
-    const sitContext = situationData ? buildToolContext(situationData) : '';
+    // Accept situation as object (new) or situationData (legacy)
+    const sitObj = (typeof situation === 'object' && situation !== null ? situation : situationData) as Situation | undefined;
+    const sitContext = sitObj ? buildToolContext(sitObj) : '';
 
     const creditCheck = await checkAndDeductCredits('ai_talking_points', 'Talking points');
     if (!creditCheck.allowed) return creditCheck.response;
@@ -36,7 +39,7 @@ export async function POST(request: Request) {
           role: 'user',
           content: `Generate structured diplomatic talking points for the following:
 
-Situation: ${situation}
+Situation: ${typeof situation === 'string' ? situation : sitObj?.name || 'Unknown'}
 Audience: ${audience}
 Tone: ${tone || 'formal and balanced'}
 ${context ? `Additional context: ${context}` : ''}
@@ -60,4 +63,4 @@ Adhere strictly to UN diplomatic language standards. Be precise, balanced, and a
       headers: { 'Content-Type': 'application/json' },
     });
   }
-}
+});

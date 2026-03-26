@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
+import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
 import type { Situation } from '@/types/situation';
@@ -79,7 +80,7 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   try {
     const creditCheck = await checkAndDeductCredits('ai_power_map', 'Stakeholder power map generation');
     if (!creditCheck.allowed) return creditCheck.response!;
@@ -139,4 +140,4 @@ Generate 5-10 actors. Be specific about leverage, stance, and engagement strateg
   } catch (err) {
     return handleRouteError(err, 'power-map');
   }
-}
+});
