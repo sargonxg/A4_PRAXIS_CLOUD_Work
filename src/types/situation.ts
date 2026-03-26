@@ -34,6 +34,9 @@ export interface Situation {
   actorCount: number;
   graphEntities: number;
   documentCount: number;
+  sourceUrls?: string[];
+  contextNotes?: string;
+  initialDocumentIds?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -46,4 +49,7 @@ export interface CreateSituationInput {
   actors: string[];
   userRole: UserRole;
   status?: SituationStatus;
+  sourceUrls?: string[];
+  contextNotes?: string;
+  initialDocumentIds?: string[];
 }

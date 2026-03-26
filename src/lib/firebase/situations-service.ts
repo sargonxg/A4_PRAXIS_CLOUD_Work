@@ -29,7 +29,10 @@ export async function createSituation(
     escalationTrend: 'stable',
     actorCount: data.actors.length,
     graphEntities: 0,
-    documentCount: 0,
+    documentCount: data.initialDocumentIds?.length ?? 0,
+    ...(data.sourceUrls?.length ? { sourceUrls: data.sourceUrls } : {}),
+    ...(data.contextNotes ? { contextNotes: data.contextNotes } : {}),
+    ...(data.initialDocumentIds?.length ? { initialDocumentIds: data.initialDocumentIds } : {}),
     createdAt: now,
     updatedAt: now,
   };

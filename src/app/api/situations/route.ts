@@ -28,11 +28,14 @@ export const POST = withAuth(async (req, user) => {
 
   try {
     const body = await req.json();
-    const { name, type, description, region, actors, userRole, status } = body;
+    const { name, type, description, region, actors, userRole, status, sourceUrls, contextNotes, initialDocumentIds } = body;
 
     if (!name?.trim()) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
+
+    // Filter out empty URL strings
+    const filteredUrls = (sourceUrls as string[] | undefined)?.filter((u: string) => u.trim()) || [];
 
     const situation = await createSituation(user.uid, {
       name: name.trim(),
@@ -42,6 +45,9 @@ export const POST = withAuth(async (req, user) => {
       actors: actors || [],
       userRole: userRole || 'analyst',
       status: status || 'active',
+      ...(filteredUrls.length ? { sourceUrls: filteredUrls } : {}),
+      ...(contextNotes?.trim() ? { contextNotes: contextNotes.trim() } : {}),
+      ...(initialDocumentIds?.length ? { initialDocumentIds } : {}),
     });
 
     return NextResponse.json({ situation });

@@ -327,10 +327,17 @@ function StepActors({ form, setForm, onNext, onBack }: { form: SituationForm; se
 
 /* ---------- Step 3: Context (optional) ---------- */
 
-function StepContext({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
-  const [urls, setUrls] = useState<string[]>(['']);
-  const [notes, setNotes] = useState('');
-  const [files, setFiles] = useState<File[]>([]);
+interface ContextData {
+  urls: string[];
+  notes: string;
+  files: File[];
+}
+
+function StepContext({ context, setContext, onNext, onBack }: { context: ContextData; setContext: React.Dispatch<React.SetStateAction<ContextData>>; onNext: () => void; onBack: () => void }) {
+  const { urls, notes, files } = context;
+  const setUrls = (u: string[] | ((prev: string[]) => string[])) => setContext((c) => ({ ...c, urls: typeof u === 'function' ? u(c.urls) : u }));
+  const setNotes = (n: string) => setContext((c) => ({ ...c, notes: n }));
+  const setFiles = (f: File[] | ((prev: File[]) => File[])) => setContext((c) => ({ ...c, files: typeof f === 'function' ? f(c.files) : f }));
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -504,6 +511,12 @@ export default function NewSituationPage() {
     userRole: 'analyst',
   });
 
+  const [context, setContext] = useState<ContextData>({
+    urls: [''],
+    notes: '',
+    files: [],
+  });
+
   const goNext = useCallback(() => { setDirection(1); setStep((s) => Math.min(s + 1, 4) as Step); }, []);
   const goBack = useCallback(() => { setDirection(-1); setStep((s) => Math.max(s - 1, 1) as Step); }, []);
 
@@ -521,10 +534,36 @@ export default function NewSituationPage() {
         });
       }
 
+      // Upload files first (if any) — we need a temporary situationId placeholder
+      // We'll upload without situationId first, then re-associate after creation
+      const uploadedDocIds: string[] = [];
+      const filteredUrls = context.urls.filter((u) => u.trim());
+
+      if (context.files.length > 0) {
+        for (const file of context.files) {
+          try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const uploadRes = await fetch('/api/documents/upload', { method: 'POST', body: formData });
+            if (uploadRes.ok) {
+              const uploadData = await uploadRes.json();
+              if (uploadData.document?.id) uploadedDocIds.push(uploadData.document.id);
+            }
+          } catch {
+            // Continue with remaining files
+          }
+        }
+      }
+
       const res = await fetch('/api/situations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          sourceUrls: filteredUrls.length ? filteredUrls : undefined,
+          contextNotes: context.notes.trim() || undefined,
+          initialDocumentIds: uploadedDocIds.length ? uploadedDocIds : undefined,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: 'Request failed' }));
@@ -539,8 +578,19 @@ export default function NewSituationPage() {
       const { situation } = await res.json();
       addSituation(situation);
 
+      // Re-upload files with the actual situationId so they get stored in Firestore
+      if (context.files.length > 0) {
+        for (const file of context.files) {
+          try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('situationId', situation.id);
+            fetch('/api/documents/upload', { method: 'POST', body: formData }).catch(() => {});
+          } catch { /* background */ }
+        }
+      }
+
       // Kick off auto-structure in background (fire-and-forget)
-      // The dashboard will show the streaming results
       try {
         fetch('/api/ai/auto-structure', {
           method: 'POST',
@@ -553,6 +603,9 @@ export default function NewSituationPage() {
             actors: form.actors,
             userRole: form.userRole,
             situationId: situation.id,
+            urls: filteredUrls.length ? filteredUrls : undefined,
+            notes: context.notes.trim() || undefined,
+            documentIds: uploadedDocIds.length ? uploadedDocIds : undefined,
           }),
         }).catch(() => { /* background — ignore errors */ });
       } catch { /* fire and forget */ }
@@ -562,7 +615,7 @@ export default function NewSituationPage() {
       setError('Network error. Please check your connection and try again.');
       setIsCreating(false);
     }
-  }, [form, router, route, addSituation, firebaseUser]);
+  }, [form, context, router, route, addSituation, firebaseUser]);
 
   if (user?.isDemo) {
     return (
@@ -596,7 +649,7 @@ export default function NewSituationPage() {
           <motion.div key={step} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25, ease: 'easeInOut' }}>
             {step === 1 && <StepDescribe form={form} setForm={setForm} onNext={goNext} />}
             {step === 2 && <StepActors form={form} setForm={setForm} onNext={goNext} onBack={goBack} />}
-            {step === 3 && <StepContext onNext={goNext} onBack={goBack} />}
+            {step === 3 && <StepContext context={context} setContext={setContext} onNext={goNext} onBack={goBack} />}
             {step === 4 && <StepReview form={form} onBack={goBack} onCreate={handleCreate} isCreating={isCreating} />}
           </motion.div>
         </AnimatePresence>
