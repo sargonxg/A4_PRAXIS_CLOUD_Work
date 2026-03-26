@@ -3,6 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
@@ -73,7 +74,7 @@ const DEMO_RESPONSE = {
   comparativeAnalysis: 'The two outlets present fundamentally divergent narratives of the same conflict. NSB frames the situation as a government-led stabilization effort against terrorism, while NIMN frames it as a humanitarian crisis driven by both parties\' actions. Key information gaps: NSB omits displacement figures and ceasefire violations by AFN forces; NIMN provides limited coverage of DRM internal politics and command disputes. Neither outlet adequately covers the Karovia-Westmark proxy dimension. Cross-referencing both sources with UNMN reporting provides the most complete picture.',
 };
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   try {
     const { outlets, topic, conflictContext, situation } = await request.json() as {
       outlets: string[];
@@ -203,4 +204,4 @@ Then synthesize comparative analysis with specific evidence for all claims. Do n
     console.error('Media scan route error:', err);
     return NextResponse.json({ error: 'Media scan failed' }, { status: 500 });
   }
-}
+});

@@ -3,6 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
@@ -151,7 +152,7 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, _user) => {
   try {
     const creditCheck = await checkAndDeductCredits('ai_info_environment', 'Information environment scan');
     if (!creditCheck.allowed) return creditCheck.response!;
@@ -164,7 +165,7 @@ export async function POST(request: Request) {
     const { situation } = body as { situation?: Situation };
     const sitContext = situation ? buildToolContext(situation as Situation) : '';
 
-    // --- Live intelligence feed (GDELT stability data) ---
+    // --- Live intelligence feed (GDELT stability + events data) ---
     let intelContext = '';
     try {
       if (situation) {
@@ -177,6 +178,9 @@ export async function POST(request: Request) {
           intelContext = '\n\nLIVE INTELLIGENCE FEED:\n' + intel.events.slice(0, 10).map(e =>
             `- [${e.source.toUpperCase()}] ${e.date}: ${e.title} (${e.severity})`
           ).join('\n');
+        }
+        if (intel.stability) {
+          intelContext += `\n\nGDELT STABILITY INDEX:\nCurrent score: ${intel.stability.score} | Trend: ${intel.stability.trend}`;
         }
       }
     } catch { /* data feeds optional */ }
@@ -228,4 +232,4 @@ Be specific to this situation. Do not produce generic frameworks — ground ever
   } catch (err) {
     return handleRouteError(err, 'info-environment');
   }
-}
+});
