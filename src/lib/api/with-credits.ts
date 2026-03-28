@@ -1,9 +1,11 @@
 import { cookies } from 'next/headers';
 import { deductCredits, AI_CREDIT_COSTS } from '@/lib/firebase/firestore';
+import { verifyIdToken } from '@/lib/firebase/admin';
 
 /**
  * Extracts the user UID from the session cookie.
- * Returns null if no session or demo mode.
+ * Uses Firebase Admin SDK to verify token cryptographically.
+ * Returns null if no session or invalid token.
  */
 async function getSessionUid(): Promise<{ uid: string; isDemo: boolean } | null> {
   const cookieStore = await cookies();
@@ -14,13 +16,13 @@ async function getSessionUid(): Promise<{ uid: string; isDemo: boolean } | null>
     const data = JSON.parse(session.value);
     if (data.demo) return { uid: 'demo-user-001', isDemo: true };
     if (data.token) {
-      const payload = JSON.parse(
-        Buffer.from(data.token.split('.')[1], 'base64').toString()
-      );
-      return { uid: payload.user_id || payload.sub || '', isDemo: false };
+      // Verify token cryptographically via Firebase Admin SDK
+      const verified = await verifyIdToken(data.token);
+      if (!verified.uid) return null;
+      return { uid: verified.uid, isDemo: false };
     }
   } catch {
-    // invalid session
+    // Token verification failed — reject
   }
   return null;
 }
@@ -77,9 +79,17 @@ export async function checkAndDeductCredits(
 
     return { allowed: true };
   } catch (err) {
-    // If Firestore is unavailable, allow the request to proceed
+    // Firestore unavailable — reject the request to prevent free usage
     console.error('[credits] Failed to check credits:', err);
-    return { allowed: true };
+    return {
+      allowed: false,
+      response: new Response(
+        JSON.stringify({
+          error: 'Credit system temporarily unavailable. Please try again.',
+        }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      ),
+    };
   }
 }
 

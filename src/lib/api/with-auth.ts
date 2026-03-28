@@ -9,13 +9,26 @@ export interface AuthenticatedUser {
   isDemo: boolean;
 }
 
-// Simple in-memory rate limiter
+// In-memory rate limiter with periodic garbage collection
 const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
 const RATE_LIMIT = 100;
 const RATE_WINDOW_MS = 60_000;
+const GC_INTERVAL_MS = 5 * 60_000; // Clean up every 5 minutes
+let lastGc = Date.now();
 
 function checkRateLimit(uid: string): boolean {
   const now = Date.now();
+
+  // Periodic garbage collection — remove expired entries
+  if (now - lastGc > GC_INTERVAL_MS) {
+    lastGc = now;
+    for (const [key, entry] of rateLimitMap) {
+      if (now - entry.windowStart > RATE_WINDOW_MS) {
+        rateLimitMap.delete(key);
+      }
+    }
+  }
+
   const entry = rateLimitMap.get(uid);
   if (!entry || now - entry.windowStart > RATE_WINDOW_MS) {
     rateLimitMap.set(uid, { count: 1, windowStart: now });

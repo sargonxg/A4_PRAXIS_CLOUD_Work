@@ -5,8 +5,18 @@
 ## What This Is
 The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Two separate experiences in one codebase: a demo for prospects and a real situation-driven workspace for authenticated users. Deployed at praxis.tacitus.me (Vercel, iad1).
 
-## v3.6 Audit Summary (2026-03-28)
-- 7 security fixes: 6 API routes wrapped with `withAuth()`, 1 route added credit deduction
+## v3.6.1 Auth Hardening (2026-03-28)
+- Removed unsafe JWT fallback decode (admin.ts) — tokens now always verified cryptographically
+- Fixed credit deduction race condition — uses `runTransaction()` for atomic check + deduct
+- Removed silent credit bypass on Firestore failure — returns 503 instead of allowing free usage
+- Token verified server-side before storing in session cookie
+- CSRF/origin validation on session POST
+- Rate limiter garbage collection to prevent memory leaks
+- Firestore rules hardened: client SDK cannot modify credits/subscription fields
+- Firebase client config moved to NEXT_PUBLIC_ env vars
+
+## v3.6.0 Route Audit (2026-03-28)
+- 7 route fixes: 6 API routes wrapped with `withAuth()`, 1 route added credit deduction
 - All 59 API routes verified: auth, credits, situation context, error handling
 - All 21 chat tools confirmed wired via `tacitusTools` in chat route
 - All 42 app pages verified for `useSituationGuard()`

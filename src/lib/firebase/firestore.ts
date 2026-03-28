@@ -9,6 +9,7 @@ import {
   getDocs,
   serverTimestamp,
   increment,
+  runTransaction,
   type Timestamp,
 } from 'firebase/firestore';
 import { db } from './config';
@@ -198,7 +199,8 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
 };
 
 /**
- * Deducts credits from a user account.
+ * Deducts credits from a user account using a Firestore transaction
+ * to prevent race conditions from concurrent requests.
  * Returns true if the user had enough credits, false otherwise.
  */
 export async function deductCredits(
@@ -209,33 +211,41 @@ export async function deductCredits(
 ): Promise<{ success: boolean; remainingCredits: number }> {
   const cost = AI_CREDIT_COSTS[operationType] || 1;
   const userRef = doc(db, USERS_COLLECTION, uid);
-  const userSnap = await getDoc(userRef);
 
-  if (!userSnap.exists()) {
-    return { success: false, remainingCredits: 0 };
-  }
+  // Use a Firestore transaction to atomically check + deduct
+  const result = await runTransaction(db, async (transaction) => {
+    const userSnap = await transaction.get(userRef);
 
-  const profile = userSnap.data() as UserProfile;
+    if (!userSnap.exists()) {
+      return { success: false, remainingCredits: 0 };
+    }
 
-  if (profile.credits < cost) {
-    return { success: false, remainingCredits: profile.credits };
-  }
+    const profile = userSnap.data() as UserProfile;
 
-  // Deduct credits
-  await updateDoc(userRef, {
-    credits: increment(-cost),
-    totalCreditsUsed: increment(cost),
+    if (profile.credits < cost) {
+      return { success: false, remainingCredits: profile.credits };
+    }
+
+    // Atomically deduct within the transaction
+    transaction.update(userRef, {
+      credits: increment(-cost),
+      totalCreditsUsed: increment(cost),
+    });
+
+    return { success: true, remainingCredits: profile.credits - cost };
   });
 
-  // Record the transaction
-  await recordCreditTransaction(uid, {
-    amount: -cost,
-    type: operationType as CreditTransaction['type'],
-    description,
-    route,
-  });
+  // Record the transaction log outside the atomic transaction (non-critical)
+  if (result.success) {
+    await recordCreditTransaction(uid, {
+      amount: -cost,
+      type: operationType as CreditTransaction['type'],
+      description,
+      route,
+    }).catch((err) => console.error('[credits] Failed to record transaction:', err));
+  }
 
-  return { success: true, remainingCredits: profile.credits - cost };
+  return result;
 }
 
 /**

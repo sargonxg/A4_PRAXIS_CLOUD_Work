@@ -1,40 +1,60 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { verifyIdToken } from '@/lib/firebase/admin';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
 
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  maxAge: 60 * 60 * 24, // 24 hours
+  path: '/',
+};
+
 /**
  * POST — Sets the auth session cookie.
- * Accepts either a Firebase ID token or a demo flag.
+ * Accepts either a Firebase ID token (verified server-side) or a demo flag.
+ * Validates origin to prevent CSRF attacks.
  */
 export async function POST(request: Request) {
   try {
+    // CSRF protection: validate same-origin
+    const origin = request.headers.get('origin');
+    const host = request.headers.get('host');
+    if (origin && host) {
+      const originHost = new URL(origin).host;
+      if (originHost !== host) {
+        return NextResponse.json({ error: 'Invalid origin' }, { status: 403 });
+      }
+    }
+
     const body = await request.json();
     const cookieStore = await cookies();
 
     if (body.demo === true) {
       // Demo mode session
-      cookieStore.set(SESSION_COOKIE, JSON.stringify({ demo: true }), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24, // 24 hours
-        path: '/',
-      });
+      cookieStore.set(SESSION_COOKIE, JSON.stringify({ demo: true }), COOKIE_OPTIONS);
       return NextResponse.json({ success: true });
     }
 
-    if (body.token) {
-      // Firebase auth session — store the token in a cookie
-      // The middleware will check for the cookie's existence.
-      // API routes that need verified auth will verify the token server-side.
-      cookieStore.set(SESSION_COOKIE, JSON.stringify({ token: body.token }), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24, // 24 hours
-        path: '/',
-      });
+    if (body.token && typeof body.token === 'string') {
+      // Verify the Firebase ID token before storing it
+      try {
+        const verified = await verifyIdToken(body.token);
+        if (!verified.uid) {
+          return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+        }
+      } catch {
+        return NextResponse.json({ error: 'Token verification failed' }, { status: 401 });
+      }
+
+      // Token is valid — store in cookie for subsequent requests
+      cookieStore.set(
+        SESSION_COOKIE,
+        JSON.stringify({ token: body.token }),
+        COOKIE_OPTIONS,
+      );
       return NextResponse.json({ success: true });
     }
 

@@ -2,22 +2,28 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // User profiles: owner-only access
+    // User profiles: owner-only access with field-level protection
     match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      // Read: owner only
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      // Write: owner only, but NEVER allow direct modification of credit fields.
+      // Credits must only be changed via Admin SDK (server-side).
+      allow write: if request.auth != null
+                   && request.auth.uid == uid
+                   && (!request.resource.data.diff(resource.data).affectedKeys()
+                       .hasAny(['credits', 'totalCreditsUsed', 'subscription', 'subscriptionExpiresAt']));
+
+      // Allow create (first sign-up) — ensureUserProfile sets initial credits server-side
+      allow create: if request.auth != null && request.auth.uid == uid;
 
       // All situation subcollections: owner-only
       match /situations/{situationId}/{document=**} {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }
-
-      // AI-generated tool data persistence: owner-only
-      match /situations/{sitId}/tool-data/{toolId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
-      }
     }
 
-    // Credit transactions: read own, write denied (server-only via Admin SDK)
+    // Credit transactions: read own only, write denied (server-only via Admin SDK)
     match /credit_transactions/{transactionId} {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
       allow write: if false;

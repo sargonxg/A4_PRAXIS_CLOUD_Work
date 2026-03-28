@@ -76,29 +76,19 @@ export async function verifyIdToken(token: string): Promise<{
   email: string;
   name: string;
 }> {
-  try {
-    if (!_auth) throw new Error('Auth not initialized');
-    const decoded = await _auth.verifyIdToken(token);
-    return {
-      uid: decoded.uid,
-      email: decoded.email || '',
-      name: decoded.name || decoded.email?.split('@')[0] || 'User',
-    };
-  } catch {
-    // Fallback: decode JWT payload without verification
-    try {
-      const payload = JSON.parse(
-        Buffer.from(token.split('.')[1], 'base64').toString()
-      );
-      return {
-        uid: payload.user_id || payload.sub || '',
-        email: payload.email || '',
-        name: payload.name || payload.email?.split('@')[0] || 'User',
-      };
-    } catch {
-      throw new Error('Invalid token format');
-    }
+  if (!_auth) {
+    throw new Error(
+      'Firebase Auth not initialized. Set FIREBASE_SERVICE_ACCOUNT_KEY.'
+    );
   }
+
+  // Always verify token cryptographically — never decode without verification
+  const decoded = await _auth.verifyIdToken(token);
+  return {
+    uid: decoded.uid,
+    email: decoded.email || '',
+    name: decoded.name || decoded.email?.split('@')[0] || 'User',
+  };
 }
 
 export default _app!;
