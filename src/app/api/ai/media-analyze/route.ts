@@ -1,6 +1,7 @@
 import { generateObject } from 'ai';
 import { getModel } from '@/lib/ai/providers';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withAuth } from '@/lib/api/with-auth';
 import { z } from 'zod';
 
 const MediaAnalysisSchema = z.object({
@@ -16,7 +17,7 @@ const MediaAnalysisSchema = z.object({
   recommendedCrossReferences: z.array(z.string()).describe('Sources to cross-reference with this outlet'),
 });
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(
       JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in Vercel environment variables.' }),
@@ -43,4 +44,4 @@ Provide a professional assessment of political orientation (-1 left to +1 right)
     console.error('Media analyze route error:', err);
     return Response.json({ error: 'Media analysis failed' }, { status: 500 });
   }
-}
+});

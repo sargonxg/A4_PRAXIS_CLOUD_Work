@@ -1,6 +1,7 @@
 import { streamText, stepCountIs } from 'ai';
 import { getProModel } from '@/lib/ai/providers';
 import { withAuth } from '@/lib/api/with-auth';
+import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { tacitusTools } from '@/lib/ai/tools';
 import { scrapeMultiple } from '@/lib/ai/firecrawl';
 import { updateSituation, getSituation } from '@/lib/firebase/situations-service';
@@ -39,6 +40,10 @@ export const POST = withAuth(async (req, user) => {
     if (!situationName?.trim()) {
       return new Response(JSON.stringify({ error: 'Situation name required' }), { status: 400 });
     }
+
+    // Deduct credits for this resource-intensive operation
+    const creditCheck = await checkAndDeductCredits('ai_research', 'Auto-structure analysis');
+    if (!creditCheck.allowed) return creditCheck.response;
 
     const actorList = (actors || []).join(', ') || 'not yet identified';
 

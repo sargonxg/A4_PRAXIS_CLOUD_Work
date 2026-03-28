@@ -1,9 +1,17 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 3.5 — Sources Library, Unified Web Crawlers, Tool Improvements, 29 Tool Pages
+> Version 3.6 — Security Audit, Full Route Wiring, Documentation Overhaul
 
 ## What This Is
 The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Two separate experiences in one codebase: a demo for prospects and a real situation-driven workspace for authenticated users. Deployed at praxis.tacitus.me (Vercel, iad1).
+
+## v3.6 Audit Summary (2026-03-28)
+- 7 security fixes: 6 API routes wrapped with `withAuth()`, 1 route added credit deduction
+- All 59 API routes verified: auth, credits, situation context, error handling
+- All 21 chat tools confirmed wired via `tacitusTools` in chat route
+- All 42 app pages verified for `useSituationGuard()`
+- See [TOOL_AUDIT.md](./TOOL_AUDIT.md) for complete route-by-route status
+- See [CHANGELOG.md](./CHANGELOG.md) for version history
 
 ## Tech Stack
 Next.js 16.1.6 (App Router), TypeScript 5.9, Tailwind CSS 4, Radix UI, Vercel AI SDK (ai@6.0.105 + @ai-sdk/google + @ai-sdk/anthropic), Firebase Auth + Firestore + Admin SDK, Firecrawl (web intelligence), Zustand 5, D3.js 7, Framer Motion 12, Zod 4.
@@ -68,7 +76,7 @@ All tool pages use `useSituationGuard()` hook — if no situation selected, show
 ## Conflict Grammar (ACO v2.0)
 8 primitives: Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, Narrative. Zod schemas in `src/lib/ai/schemas/conflict-grammar.ts`.
 
-## AI Tools (25+ tools across src/lib/ai/tools.ts and src/app/api/ai/)
+## AI Tools (21 chat tools in tools.ts + 34 API routes)
 Glasl escalation model, Fisher/Ury negotiation (ZOPA/BATNA), OCHA humanitarian standards, UN Editorial Manual, historical parallel analysis, narrative ecosystem mapping, UNSC resolution drafting, INFORM Risk Index, Mitchell/Agle/Wood stakeholder analysis, CRAAP test media analysis, NATO STRATCOM info-environment, UN DPPA morning brief, Berghof process design, commitment compliance monitoring.
 
 ## Cron Jobs (vercel.json)

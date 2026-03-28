@@ -1,6 +1,7 @@
 import { generateObject } from 'ai';
 import { getModel } from '@/lib/ai/providers';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withAuth } from '@/lib/api/with-auth';
 import { z } from 'zod';
 
 const TermIssueSchema = z.object({
@@ -54,7 +55,7 @@ function runProgrammaticChecks(text: string) {
   return issues;
 }
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(
       JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in Vercel environment variables.' }),
@@ -125,4 +126,4 @@ Include BOTH the programmatic issues AND any additional issues you identify. Cal
     console.error('Terminology route error:', err);
     return Response.json({ error: 'Terminology check failed' }, { status: 500 });
   }
-}
+});

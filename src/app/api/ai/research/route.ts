@@ -2,12 +2,13 @@ import { z } from 'zod';
 import { conductResearch, type ResearchMode } from '@/lib/ai/research-engine';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withAuth } from '@/lib/api/with-auth';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 
 export const maxDuration = 60;
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   try {
     const body = await request.json();
 
@@ -50,4 +51,4 @@ export async function POST(request: Request) {
   } catch (err) {
     return handleRouteError(err, 'research');
   }
-}
+});

@@ -1,6 +1,7 @@
 import { streamText } from 'ai';
 import { getAnalysisModel, getAvailableProviders } from '@/lib/ai/providers';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withAuth } from '@/lib/api/with-auth';
 
 export const maxDuration = 120;
 
@@ -10,7 +11,7 @@ export const maxDuration = 120;
  * Claude is used for nuanced diplomatic analysis, bias detection,
  * and complex geopolitical reasoning.
  */
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   const providers = getAvailableProviders();
   const hasAnthropic = providers.anthropic.configured;
   const hasGoogle = providers.google.configured;
@@ -104,4 +105,4 @@ ${context ? `## Context Provided\n${context}` : ''}
       headers: { 'Content-Type': 'application/json' },
     });
   }
-}
+});

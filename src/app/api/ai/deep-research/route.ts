@@ -1,13 +1,14 @@
 import { conductResearch, type ResearchMode, type ResearchDepth } from '@/lib/ai/research-engine';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withAuth } from '@/lib/api/with-auth';
 
 export const maxDuration = 120;
 
 type RequestResearchMode = ResearchMode;
 type RequestResearchDepth = ResearchDepth;
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   try {
     const body = await request.json();
     const {
@@ -54,4 +55,4 @@ export async function POST(request: Request) {
       headers: { 'Content-Type': 'application/json' },
     });
   }
-}
+});
