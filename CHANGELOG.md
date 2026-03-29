@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [3.6.3] — 2026-03-29
+
+### Fixed
+
+- **Unified subscription tiers** — `SubscriptionTier` type in `firestore.ts` was `free|pro|enterprise` but pricing page and Stripe checkout used `free|analyst|team|enterprise`. Aligned to match pricing page tiers (analyst/team/enterprise). Dead code in `subscription/tiers.ts` identified.
+- **Stripe webhook hardened** — Added idempotency (skip duplicate events), audit trail logging (credit_transactions collection), and proper error responses (500 for Firestore failures so Stripe retries). Field name corrected from `subscriptionTier` to `subscription` to match Firestore schema.
+- **Stripe env var documentation** — Added `STRIPE_PRICE_ANALYST`, `STRIPE_PRICE_TEAM`, `STRIPE_PRICE_ENTERPRISE`, `STRIPE_PRICE_CREDITS_100` to `.env.local.example`.
+
+---
+
 ## [3.6.2] — 2026-03-29
 
 ### Added

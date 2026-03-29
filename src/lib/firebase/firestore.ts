@@ -34,7 +34,7 @@ export const DEFAULT_AI_SETTINGS: AISettings = {
   maxTokens: 4096,
 };
 
-export type SubscriptionTier = 'free' | 'pro' | 'enterprise';
+export type SubscriptionTier = 'free' | 'analyst' | 'team' | 'enterprise';
 
 export interface UserProfile {
   uid: string;

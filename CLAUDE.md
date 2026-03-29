@@ -1,6 +1,6 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 3.6.2 — Token Refresh, Error Boundaries, Auth Hardening, Security Audit
+> Version 3.6.3 — Stripe Hardening, Tier Alignment, Token Refresh, Error Boundaries, Security Audit
 
 ## What This Is
 The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Two separate experiences in one codebase: a demo for prospects and a real situation-driven workspace for authenticated users. Deployed at praxis.tacitus.me (Vercel, iad1).
