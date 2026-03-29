@@ -6,13 +6,24 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [3.6.3] — 2026-03-29
+## [3.7.0] — 2026-03-29
+
+### Added
+
+- **Real-time credit sync** — Firestore `onSnapshot` listener on user profile. Credits update instantly in the UI after Stripe payments, AI tool usage, or admin adjustments. No page refresh needed.
+- **Pricing → checkout flow** — Clicking "Start Analyst Plan" on pricing page passes `?plan=analyst` through login, which redirects to `/app/settings?upgrade=analyst`, auto-triggering Stripe checkout. Full end-to-end payment flow now works.
+- **Payment success/cancelled banners** — Settings page shows styled banners when arriving from Stripe (`?payment=success` or `?payment=cancelled`). Includes dismiss buttons.
+- **CSP hardened** — Removed `unsafe-eval` from Content-Security-Policy (XSS protection). Added Stripe, HDX HAPI, World Bank API to `connect-src` and `frame-src` allowlists.
 
 ### Fixed
 
-- **Unified subscription tiers** — `SubscriptionTier` type in `firestore.ts` was `free|pro|enterprise` but pricing page and Stripe checkout used `free|analyst|team|enterprise`. Aligned to match pricing page tiers (analyst/team/enterprise). Dead code in `subscription/tiers.ts` identified.
-- **Stripe webhook hardened** — Added idempotency (skip duplicate events), audit trail logging (credit_transactions collection), and proper error responses (500 for Firestore failures so Stripe retries). Field name corrected from `subscriptionTier` to `subscription` to match Firestore schema.
-- **Stripe env var documentation** — Added `STRIPE_PRICE_ANALYST`, `STRIPE_PRICE_TEAM`, `STRIPE_PRICE_ENTERPRISE`, `STRIPE_PRICE_CREDITS_100` to `.env.local.example`.
+- **Unified subscription tiers** — `SubscriptionTier` type aligned to `free|analyst|team|enterprise` matching pricing page and Stripe metadata.
+- **Stripe webhook hardened** — Added idempotency, audit trail logging, proper error responses for Stripe retries.
+- **Stripe env var documentation** — Added all `STRIPE_PRICE_*` vars to `.env.local.example`.
+
+### Removed
+
+- **Dead code: `src/lib/subscription/tiers.ts`** — Conflicting pricing definitions with zero imports. Deleted.
 
 ---
 

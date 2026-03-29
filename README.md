@@ -4,7 +4,7 @@
 
 AI-powered conflict intelligence, knowledge graphs, and automated report generation — from raw data to decisive intelligence in minutes. 42 tool pages, 59 API routes, 21 AI-powered chat tools, situation-driven data pipeline, real-time intelligence feeds.
 
-> **v3.6.3** — Build 2026.03.29 | Deployed at [praxis.tacitus.me](https://praxis.tacitus.me)
+> **v3.7.0** — Build 2026.03.29 | Deployed at [praxis.tacitus.me](https://praxis.tacitus.me)
 
 ---
 

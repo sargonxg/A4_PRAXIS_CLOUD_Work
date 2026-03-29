@@ -12,7 +12,8 @@ import {
   updateProfile,
   type User as FirebaseUser,
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase/config';
+import { auth, db } from '@/lib/firebase/config';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -215,6 +216,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
   }, [syncTokenCookie]);
+
+  // ---------------------------------------------------------------------------
+  // Real-time credit sync: listen for Firestore profile changes so credits
+  // update instantly after Stripe payments, AI usage, or admin adjustments.
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (!firebaseUser || isDemoMode) return;
+
+    const userDocRef = doc(db, 'users', firebaseUser.uid);
+    const unsubscribe = onSnapshot(
+      userDocRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          const newCredits = typeof data.credits === 'number' ? data.credits : 0;
+          setCredits(newCredits);
+          setUser((prev) =>
+            prev ? { ...prev, credits: newCredits, role: data.role || prev.role } : null,
+          );
+        }
+      },
+      (err) => {
+        // Non-fatal — user keeps working with last known credits
+        console.warn('[auth] Firestore snapshot listener error:', err);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [firebaseUser, isDemoMode]);
 
   // Email/password sign in
   const signInWithEmail = useCallback(async (email: string, password: string) => {

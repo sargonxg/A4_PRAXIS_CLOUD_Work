@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   User,
   Building2,
@@ -20,6 +21,8 @@ import {
   GitBranch,
   Layers,
   ArrowRight,
+  CreditCard,
+  Sparkles,
 } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -174,11 +177,102 @@ function EcosystemACOSection() {
  * Component
  * -------------------------------------------------------------------------*/
 
+/* ---------------------------------------------------------------------------
+ * Payment & Upgrade Banner (reads ?payment=success or ?upgrade=analyst)
+ * Wrapped in Suspense because useSearchParams requires it in App Router.
+ * -------------------------------------------------------------------------*/
+
+function PaymentBanner() {
+  const searchParams = useSearchParams();
+  const payment = searchParams.get('payment');
+  const upgrade = searchParams.get('upgrade');
+  const { user } = useAuth();
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  // Auto-trigger checkout when user arrives with ?upgrade=analyst
+  useEffect(() => {
+    if (upgrade && !isCheckingOut && user && !user.isDemo) {
+      handleUpgrade(upgrade);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [upgrade, user]);
+
+  async function handleUpgrade(planId: string) {
+    setIsCheckingOut(true);
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setIsCheckingOut(false);
+      }
+    } catch {
+      setIsCheckingOut(false);
+    }
+  }
+
+  if (dismissed) return null;
+
+  // Payment success toast
+  if (payment === 'success') {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+        <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-emerald-800">Payment Successful</p>
+          <p className="text-xs text-emerald-600">Your plan has been upgraded and credits have been added to your account.</p>
+        </div>
+        <button onClick={() => setDismissed(true)} className="text-emerald-400 hover:text-emerald-600 text-xs">Dismiss</button>
+      </div>
+    );
+  }
+
+  // Payment cancelled
+  if (payment === 'cancelled') {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-gold-300 bg-gold-50 p-4">
+        <AlertCircle className="h-5 w-5 shrink-0 text-gold-600" />
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-gold-800">Payment Cancelled</p>
+          <p className="text-xs text-gold-600">No charges were made. You can upgrade anytime from the pricing page.</p>
+        </div>
+        <button onClick={() => setDismissed(true)} className="text-gold-400 hover:text-gold-600 text-xs">Dismiss</button>
+      </div>
+    );
+  }
+
+  // Upgrade in progress
+  if (isCheckingOut) {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-diplomatic-blue/20 bg-diplomatic-blue/5 p-4">
+        <CreditCard className="h-5 w-5 shrink-0 text-diplomatic-blue animate-pulse" />
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-navy-800">Redirecting to checkout...</p>
+          <p className="text-xs text-navy-500">You&apos;ll be taken to Stripe to complete your upgrade.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 export default function SettingsPage() {
   const { user } = useAuth();
 
   return (
     <div className="space-y-6">
+      {/* Payment/upgrade banners */}
+      <Suspense fallback={null}>
+        <PaymentBanner />
+      </Suspense>
+
       {/* Page title */}
       <div>
         <h1 className="text-2xl font-semibold text-navy-900">Settings</h1>

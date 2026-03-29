@@ -78,7 +78,7 @@ export default function PricingPage() {
               </ul>
 
               <Link
-                href={tier.id === 'enterprise' ? 'mailto:hello@tacitus.me' : '/login'}
+                href={tier.id === 'enterprise' ? 'mailto:hello@tacitus.me' : tier.id === 'free' ? '/login' : `/login?plan=${tier.id}`}
                 className={cn(
                   'mt-6 block rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition-colors',
                   tier.highlighted

@@ -12,7 +12,10 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const queryMode = searchParams.get('mode');
   const rawRedirect = searchParams.get('redirect');
-  const appRedirect = rawRedirect?.startsWith('/app') ? rawRedirect : '/app/dashboard';
+  const planParam = searchParams.get('plan'); // e.g. ?plan=analyst from pricing page
+  const appRedirect = planParam
+    ? `/app/settings?upgrade=${planParam}` // Send to settings with upgrade prompt
+    : rawRedirect?.startsWith('/app') ? rawRedirect : '/app/dashboard';
   const demoRedirect = rawRedirect?.startsWith('/demo') ? rawRedirect : '/demo/dashboard';
   const { signInWithEmail, signUpWithEmail, signInWithGoogle, signInAsDemo } = useAuth();
 

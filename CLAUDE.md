@@ -1,9 +1,17 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 3.6.3 — Stripe Hardening, Tier Alignment, Token Refresh, Error Boundaries, Security Audit
+> Version 3.7.0 — Full UX Wiring, Real-Time Credits, Checkout Flow, CSP Hardening, Security Audit
 
 ## What This Is
 The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Two separate experiences in one codebase: a demo for prospects and a real situation-driven workspace for authenticated users. Deployed at praxis.tacitus.me (Vercel, iad1).
+
+## v3.7.0 Full UX Wiring (2026-03-29)
+- Real-time credit sync via Firestore `onSnapshot` listener — credits update instantly after payments/AI usage
+- Pricing → login → checkout flow: `?plan=analyst` propagates through login to auto-trigger Stripe checkout
+- Settings page: payment success/cancelled banners, auto-checkout redirect on `?upgrade=` param
+- CSP hardened: removed `unsafe-eval`, added Stripe/HDX/WorldBank to connect-src/frame-src
+- Deleted dead `subscription/tiers.ts` (zero imports, conflicting pricing definitions)
+- Verified: dashboard + cases pages already properly wired (real mode reads Firestore, demo uses hardcoded)
 
 ## v3.6.2 Token Refresh & Error Boundaries (2026-03-29)
 - Token refresh loop: `onIdTokenChanged()` + proactive refresh at 50 minutes (tokens expire at 60)
