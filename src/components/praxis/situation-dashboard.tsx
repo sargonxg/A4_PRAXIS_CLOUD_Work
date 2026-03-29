@@ -203,13 +203,58 @@ const TREND_COLORS = {
 // Situation Health Widget — shows tool population status
 // ---------------------------------------------------------------------------
 
-const HEALTH_TOOLS = [
-  { id: 'actor-profiles', label: 'Actor Profiles', href: '/actor-profiles', icon: Users },
+const HEALTH_TOOLS_CORE = [
+  { id: 'actor-profiles', label: 'Actor Profiles', href: '/actors', icon: Users },
   { id: 'risk-monitor', label: 'Risk Monitor', href: '/risk-monitor', icon: AlertTriangle },
   { id: 'early-warning', label: 'Early Warning', href: '/early-warning', icon: BarChart3 },
   { id: 'conflict-graph', label: 'Conflict Graph', href: '/conflict-graph', icon: GitBranch },
   { id: 'stakeholder-map', label: 'Stakeholder Map', href: '/stakeholder-map', icon: Network },
 ] as const;
+
+const HEALTH_TOOLS_EXTENDED = [
+  { id: 'dossier', label: 'Dossier', href: '/dossier', icon: FileText },
+  { id: 'negotiation', label: 'Negotiation Prep', href: '/negotiation-prep', icon: Scale },
+  { id: 'media-roundup', label: 'Media Roundup', href: '/media-roundup', icon: Compass },
+  { id: 'sanctions', label: 'Sanctions Tracker', href: '/sanctions', icon: Globe },
+  { id: 'briefing', label: 'Briefing Room', href: '/briefing', icon: FileText },
+] as const;
+
+function ToolSemaphore({
+  tool,
+  isSeeded,
+  onNavigate,
+}: {
+  tool: { id: string; label: string; href: string; icon: React.ElementType };
+  isSeeded: boolean;
+  onNavigate: () => void;
+}) {
+  const Icon = tool.icon;
+  return (
+    <button
+      onClick={onNavigate}
+      className={cn(
+        'flex items-center gap-2 rounded-lg border px-3 py-2.5 transition-all text-left group',
+        isSeeded
+          ? 'border-emerald-200 bg-emerald-50/50 hover:border-emerald-300'
+          : 'border-navy-200 bg-navy-50/30 hover:border-diplomatic-blue/30 hover:bg-diplomatic-blue/5'
+      )}
+    >
+      <Icon className={cn('h-3.5 w-3.5 shrink-0', isSeeded ? 'text-emerald-600' : 'text-navy-400')} />
+      <div className="min-w-0 flex-1">
+        <p className={cn('truncate text-xs font-medium', isSeeded ? 'text-emerald-700' : 'text-navy-600 group-hover:text-diplomatic-blue')}>
+          {tool.label}
+        </p>
+      </div>
+      {isSeeded ? (
+        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+      ) : (
+        <span className="shrink-0 rounded bg-diplomatic-blue/10 px-2 py-0.5 text-[10px] font-medium text-diplomatic-blue group-hover:bg-diplomatic-blue/20 transition-colors">
+          Generate
+        </span>
+      )}
+    </button>
+  );
+}
 
 function SituationHealthWidget({
   situation,
@@ -224,8 +269,25 @@ function SituationHealthWidget({
   // Determine if the situation was just created (within last 5 minutes)
   const isRecentlyCreated = Date.now() - new Date(situation.updatedAt).getTime() < 5 * 60 * 1000;
 
-  // If persisted data is loading, don't show anything yet
-  if (persisted.isLoading) return null;
+  // Auto-poll for seeded tools when situation is recently created
+  // Re-fetch every 8 seconds until all core tools are seeded or 3 minutes pass
+  const [pollCount, setPollCount] = useState(0);
+  useEffect(() => {
+    if (!isRecentlyCreated) return;
+    const snapshotData = persisted.data as { seededTools?: string[] } | null;
+    const seeded = snapshotData?.seededTools ?? [];
+    const allCoreSeeded = HEALTH_TOOLS_CORE.every((t) => seeded.includes(t.id));
+    if (allCoreSeeded || pollCount > 22) return; // Stop after ~3 min
+
+    const timer = setTimeout(() => {
+      persisted.clear(); // Triggers re-fetch
+      setPollCount((c) => c + 1);
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [isRecentlyCreated, persisted, pollCount]);
+
+  // If persisted data is loading on first mount, show skeleton
+  if (persisted.isLoading && !persisted.data) return null;
 
   // If no snapshot data and situation was just created, show building state
   if (!persisted.data && isRecentlyCreated) {
@@ -236,9 +298,19 @@ function SituationHealthWidget({
           <div>
             <p className="text-sm font-semibold text-navy-900">PRAXIS is building your intelligence...</p>
             <p className="mt-0.5 text-xs text-navy-500">
-              Auto-populating situation tools with initial analysis. This may take a minute.
+              Researching, analyzing actors, assessing risks, mapping stakeholders. Tools will light up as they complete.
             </p>
           </div>
+        </div>
+        {/* Progress skeleton for core tools */}
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          {HEALTH_TOOLS_CORE.map((tool) => (
+            <div key={tool.id} className="flex items-center gap-2 rounded-lg border border-navy-100 bg-white/60 px-3 py-2.5">
+              <tool.icon className="h-3.5 w-3.5 text-navy-300 animate-pulse" />
+              <span className="text-xs text-navy-400">{tool.label}</span>
+              <Loader2 className="ml-auto h-3.5 w-3.5 animate-spin text-diplomatic-blue/40" />
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -246,43 +318,54 @@ function SituationHealthWidget({
 
   const snapshotData = persisted.data as { seededTools?: string[] } | null;
   const seededTools = snapshotData?.seededTools ?? [];
+  const coreSeeded = HEALTH_TOOLS_CORE.filter((t) => seededTools.includes(t.id)).length;
+  const totalCore = HEALTH_TOOLS_CORE.length;
 
   return (
     <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
-      <h2 className="mb-3 text-sm font-semibold text-navy-700">Situation Health</h2>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-navy-700">Intelligence Readiness</h2>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <div className={cn(
+              'h-2 w-2 rounded-full',
+              coreSeeded === totalCore ? 'bg-emerald-500' : coreSeeded > 0 ? 'bg-gold-500' : 'bg-navy-300'
+            )} />
+            <span className="text-[10px] font-medium text-navy-500">
+              {coreSeeded}/{totalCore} core tools ready
+            </span>
+          </div>
+          {isRecentlyCreated && coreSeeded < totalCore && (
+            <Loader2 className="h-3 w-3 animate-spin text-diplomatic-blue" />
+          )}
+        </div>
+      </div>
+
+      {/* Core tools */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        {HEALTH_TOOLS.map((tool) => {
-          const isSeeded = seededTools.includes(tool.id);
-          const Icon = tool.icon;
-          return (
-            <div
+        {HEALTH_TOOLS_CORE.map((tool) => (
+          <ToolSemaphore
+            key={tool.id}
+            tool={tool}
+            isSeeded={seededTools.includes(tool.id)}
+            onNavigate={() => router.push(route(tool.href))}
+          />
+        ))}
+      </div>
+
+      {/* Extended tools */}
+      <div className="mt-3 border-t border-navy-100 pt-3">
+        <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-navy-400">Analysis & Intelligence Tools</p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          {HEALTH_TOOLS_EXTENDED.map((tool) => (
+            <ToolSemaphore
               key={tool.id}
-              className={cn(
-                'flex items-center gap-2 rounded-lg border px-3 py-2.5 transition-colors',
-                isSeeded
-                  ? 'border-emerald-200 bg-emerald-50/50'
-                  : 'border-navy-200 bg-navy-50/30'
-              )}
-            >
-              <Icon className={cn('h-3.5 w-3.5 shrink-0', isSeeded ? 'text-emerald-600' : 'text-navy-400')} />
-              <div className="min-w-0 flex-1">
-                <p className={cn('truncate text-xs font-medium', isSeeded ? 'text-emerald-700' : 'text-navy-600')}>
-                  {tool.label}
-                </p>
-              </div>
-              {isSeeded ? (
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
-              ) : (
-                <button
-                  onClick={() => router.push(route(tool.href))}
-                  className="shrink-0 rounded bg-diplomatic-blue/10 px-2 py-0.5 text-[10px] font-medium text-diplomatic-blue hover:bg-diplomatic-blue/20 transition-colors"
-                >
-                  Generate
-                </button>
-              )}
-            </div>
-          );
-        })}
+              tool={tool}
+              isSeeded={seededTools.includes(tool.id)}
+              onNavigate={() => router.push(route(tool.href))}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
