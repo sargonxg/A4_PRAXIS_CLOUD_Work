@@ -1,8 +1,9 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
 import {
   onAuthStateChanged,
+  onIdTokenChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
@@ -167,6 +168,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => unsubscribe();
   }, [syncTokenCookie, isDemoMode]);
+
+  // ---------------------------------------------------------------------------
+  // Token refresh: listen for token changes AND proactively refresh before expiry
+  // Firebase ID tokens expire after 1 hour. This ensures the session cookie
+  // always has a valid token, preventing 401s on long-lived sessions.
+  // ---------------------------------------------------------------------------
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    // onIdTokenChanged fires when:
+    // 1. User signs in/out
+    // 2. Token is refreshed (automatic or manual)
+    // 3. Custom claims change
+    const unsubscribe = onIdTokenChanged(auth, async (fbUser) => {
+      if (fbUser) {
+        // Sync the fresh token to the session cookie
+        await syncTokenCookie(fbUser);
+
+        // Schedule a proactive refresh 5 minutes before expiry
+        // Firebase tokens expire in 3600s. Refresh at 50 minutes.
+        if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = setTimeout(async () => {
+          try {
+            // Force-refresh the token — Firebase SDK handles the refresh call
+            await fbUser.getIdToken(true);
+            // onIdTokenChanged will fire again with the new token
+          } catch (err) {
+            console.warn('[auth] Proactive token refresh failed:', err);
+          }
+        }, 50 * 60 * 1000); // 50 minutes
+      } else {
+        // User signed out — clear the refresh timer
+        if (refreshTimerRef.current) {
+          clearTimeout(refreshTimerRef.current);
+          refreshTimerRef.current = null;
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
+    };
+  }, [syncTokenCookie]);
 
   // Email/password sign in
   const signInWithEmail = useCallback(async (email: string, password: string) => {

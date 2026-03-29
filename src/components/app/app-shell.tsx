@@ -15,6 +15,7 @@ import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useNotificationStore } from '@/stores/notification-store';
 import { Loader2 } from 'lucide-react';
 import { FloatingPraxis } from '@/components/app/floating-praxis';
+import { ErrorBoundary } from '@/components/shared/error-boundary';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -121,7 +122,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Header isMobile={isMobile} />
           <main className="flex-1 overflow-y-auto">
             <div className="mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-6">
-              {children}
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
             </div>
           </main>
         </div>

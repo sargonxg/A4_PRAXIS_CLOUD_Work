@@ -1,9 +1,15 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 3.6.1 — Auth Hardening, Security Audit, Full Route Wiring, Documentation Overhaul
+> Version 3.6.2 — Token Refresh, Error Boundaries, Auth Hardening, Security Audit
 
 ## What This Is
 The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Two separate experiences in one codebase: a demo for prospects and a real situation-driven workspace for authenticated users. Deployed at praxis.tacitus.me (Vercel, iad1).
+
+## v3.6.2 Token Refresh & Error Boundaries (2026-03-29)
+- Token refresh loop: `onIdTokenChanged()` + proactive refresh at 50 minutes (tokens expire at 60)
+- Session cookie auto-updated with fresh tokens — no more 401s on long sessions
+- Error boundaries: Next.js `error.tsx` at root, `/app`, `/demo` + `ErrorBoundary` in AppShell
+- Tool page crashes show styled fallback with retry button instead of white screen
 
 ## v3.6.1 Auth Hardening (2026-03-28)
 - Removed unsafe JWT fallback decode (admin.ts) — tokens now always verified cryptographically
