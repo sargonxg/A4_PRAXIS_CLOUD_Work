@@ -1,6 +1,7 @@
 import { Hero } from "@/components/landing/hero";
 import { ProblemSection } from "@/components/landing/problem-section";
 import { Features } from "@/components/landing/features";
+import { LivePlatformPreview } from "@/components/landing/live-platform-preview";
 import { ConflictGrammarHighlight } from "@/components/landing/conflict-grammar-highlight";
 import { AdvisoryCouncil } from "@/components/landing/advisory-council";
 import { SecuritySection } from "@/components/landing/security-section";
@@ -18,6 +19,7 @@ export default function LandingPage() {
       <Hero />
       <ProblemSection />
       <Features />
+      <LivePlatformPreview />
       <ConflictGrammarHighlight />
       <UseCaseCards />
       <BuiltByPractitioners />

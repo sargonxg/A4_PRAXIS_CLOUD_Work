@@ -3,6 +3,7 @@
 import { Component, type ReactNode } from "react";
 import { AlertTriangle, RefreshCw, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import * as Sentry from "@sentry/nextjs";
 
 /* ------------------------------------------------------------------ */
 /*  ErrorFallback — the UI shown when an error is caught              */
@@ -71,6 +72,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    Sentry.captureException(error, { extra: { componentStack: errorInfo.componentStack } });
   }
 
   handleReset = () => {

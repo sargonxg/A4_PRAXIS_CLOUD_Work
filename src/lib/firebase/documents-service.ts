@@ -18,6 +18,8 @@
 
 import { getAdminDbOrThrow } from './admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { embed, embedMany } from 'ai';
+import { google } from '@ai-sdk/google';
 
 export interface StoredDocument {
   id: string;
@@ -40,6 +42,20 @@ export interface DocumentChunk {
   index: number;
   charStart: number;
   charEnd: number;
+  embedding?: number[]; // Gemini text-embedding-004 vector (768 dimensions)
+}
+
+// Embedding model for semantic search
+const embeddingModel = google.textEmbeddingModel('text-embedding-004');
+
+function cosineSimilarity(a: number[], b: number[]): number {
+  let dot = 0, normA = 0, normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB) || 1);
 }
 
 // ---------------------------------------------------------------------------
@@ -152,7 +168,9 @@ export function chunkText(
 }
 
 /**
- * Chunk a document and save chunks to Firestore.
+ * Chunk a document, generate embeddings, and save to Firestore.
+ * Uses Gemini text-embedding-004 for semantic search.
+ * Falls back gracefully if embedding generation fails.
  */
 export async function chunkAndSaveDocument(
   uid: string,
@@ -163,6 +181,21 @@ export async function chunkAndSaveDocument(
 ): Promise<number> {
   const chunks = chunkText(fullText);
   const col = chunksCollection(uid, situationId, docId);
+
+  // Generate embeddings for all chunks in batch (if API key available)
+  let embeddings: number[][] | null = null;
+  try {
+    if (process.env.GOOGLE_AI_API_KEY) {
+      const result = await embedMany({
+        model: embeddingModel,
+        values: chunks.map((c) => c.text),
+      });
+      embeddings = result.embeddings;
+      console.log(`[documents] Generated ${embeddings.length} embeddings for ${docTitle}`);
+    }
+  } catch (err) {
+    console.warn('[documents] Embedding generation failed (using keyword fallback):', err);
+  }
 
   const batch = getAdminDbOrThrow().batch();
   for (let i = 0; i < chunks.length; i++) {
@@ -175,6 +208,7 @@ export async function chunkAndSaveDocument(
       index: i,
       charStart: chunks[i].charStart,
       charEnd: chunks[i].charEnd,
+      ...(embeddings?.[i] ? { embedding: embeddings[i] } : {}),
     };
     batch.set(ref, chunk);
   }
@@ -191,9 +225,9 @@ export async function chunkAndSaveDocument(
 // ---------------------------------------------------------------------------
 
 /**
- * Simple retrieval: fetches all chunks for a situation's documents
- * and scores them by keyword overlap with the query.
- * This is a practical first step before vector embeddings.
+ * Hybrid retrieval: uses vector cosine similarity when embeddings are available,
+ * falls back to keyword overlap scoring otherwise.
+ * Combines both signals for best results.
  */
 export async function retrieveRelevantChunks(
   uid: string,
@@ -207,23 +241,46 @@ export async function retrieveRelevantChunks(
   const docs = await listDocuments(uid, situationId);
   if (docs.length === 0) return [];
 
+  // Generate query embedding if API key is available
+  let queryEmbedding: number[] | null = null;
+  try {
+    if (process.env.GOOGLE_AI_API_KEY) {
+      const result = await embed({ model: embeddingModel, value: query });
+      queryEmbedding = result.embedding;
+    }
+  } catch {
+    // Fall back to keyword-only
+  }
+
   // Collect all chunks across documents
   const allChunks: (DocumentChunk & { score: number })[] = [];
+  const queryTerms = query.toLowerCase().split(/\s+/).filter((t) => t.length > 2);
 
   for (const doc of docs) {
     const snap = await chunksCollection(uid, situationId, doc.id).orderBy('index').get();
-    const queryTerms = query.toLowerCase().split(/\s+/).filter((t) => t.length > 2);
 
     for (const chunkSnap of snap.docs) {
       const chunk = chunkSnap.data() as DocumentChunk;
       const lowerText = chunk.text.toLowerCase();
 
-      // Score by keyword overlap
-      let score = 0;
+      // Keyword score (always computed)
+      let keywordScore = 0;
       for (const term of queryTerms) {
         const matches = lowerText.split(term).length - 1;
-        score += matches;
+        keywordScore += matches;
       }
+
+      // Vector similarity score (when both query and chunk have embeddings)
+      let vectorScore = 0;
+      if (queryEmbedding && chunk.embedding) {
+        vectorScore = cosineSimilarity(queryEmbedding, chunk.embedding);
+      }
+
+      // Combined score: vector similarity (weighted 0.7) + keyword overlap (weighted 0.3)
+      const hasVector = queryEmbedding && chunk.embedding;
+      const score = hasVector
+        ? vectorScore * 0.7 + Math.min(keywordScore / 5, 1) * 0.3
+        : keywordScore;
 
       if (score > 0) {
         allChunks.push({ ...chunk, score });
