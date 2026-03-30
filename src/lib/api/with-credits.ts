@@ -34,6 +34,16 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   'ai_negotiation': 3,
   'ai_argus': 3,
   'ai_actor_brief': 3,
+  // Routes that previously defaulted to 1 credit — now explicit
+  'ai_actor_profiles': 4,
+  'ai_commitment_scan': 2,
+  'ai_info_environment': 3,
+  'ai_mediation_design': 3,
+  'ai_power_map': 3,
+  'ai_media_roundup': 2,
+  // Aliases used by some routes (non-standard keys)
+  'media-roundup': 2,
+  'research': 3,
 };
 
 /**

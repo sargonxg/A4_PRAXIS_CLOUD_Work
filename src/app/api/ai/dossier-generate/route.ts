@@ -18,7 +18,7 @@ const DossierSectionSchema = z.object({
       title: z.string().describe('Section title'),
       content: z.string().describe('Full section content in markdown format'),
       sources: z.array(z.string()).describe('Sources referenced in this section'),
-      confidence: z.number().min(0).max(1).describe('Confidence score for this section (0-1)'),
+      confidence: z.number().min(0).max(1).describe('Confidence score for this section (0 to 1)'),
     })
   ).describe('Generated dossier sections'),
 });
@@ -111,12 +111,17 @@ export const POST = withAuth(async (request, _user) => {
     const creditCheck = await checkAndDeductCredits('ai_dossier_generate', 'Dossier generation');
     if (!creditCheck.allowed) return creditCheck.response;
 
-    // --- Web research for context enrichment ---
-    const searchResults = await searchWeb(
-      `${conflictContext || caseId} latest developments analysis`,
-      { numResults: 5 }
-    );
-    const webContext = formatResultsAsContext(searchResults);
+    // --- Web research for context enrichment (8s timeout — never block dossier) ---
+    let webContext = '';
+    try {
+      const searchResults = await Promise.race([
+        searchWeb(`${conflictContext || caseId} latest developments analysis`, { numResults: 5 }),
+        new Promise<[]>((resolve) => setTimeout(() => resolve([]), 8000)),
+      ]);
+      webContext = formatResultsAsContext(searchResults);
+    } catch {
+      // Web search failure is non-blocking — continue without web context
+    }
 
     // --- Generate all sections via a single structured call ---
     const result = await generateText({

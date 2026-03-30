@@ -9,7 +9,7 @@ import { handleRouteError } from '@/lib/api/standard-error';
 import { withAuth } from '@/lib/api/with-auth';
 import type { Situation } from '@/types/situation';
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const ActorProfileSchema = z.object({
   id: z.string().describe('Short unique identifier (slug)'),

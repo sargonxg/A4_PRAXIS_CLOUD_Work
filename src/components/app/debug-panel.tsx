@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trash2, Bug, CheckCircle, AlertCircle, Loader2, Info, RefreshCw } from 'lucide-react';
+import { X, Trash2, Bug, CheckCircle, AlertCircle, Loader2, Info, RefreshCw, Coins } from 'lucide-react';
+import { useAuth } from '@/lib/auth/auth-context';
 import { useDebugStore, type DebugEntry } from '@/stores/debug-store';
 import { cn } from '@/lib/utils/cn';
 
@@ -48,8 +49,29 @@ function EntryRow({ entry }: { entry: DebugEntry }) {
 
 export function DebugPanel() {
   const { entries, isOpen, toggle, clear } = useDebugStore();
+  const { credits } = useAuth();
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);
+  const [topUpLoading, setTopUpLoading] = useState(false);
+  const [topUpMsg, setTopUpMsg] = useState<string | null>(null);
+
+  const handleTopUp = async () => {
+    setTopUpLoading(true);
+    setTopUpMsg(null);
+    try {
+      const res = await fetch('/api/admin/add-credits', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        setTopUpMsg(`✓ Added 500 credits — balance now ${data.credits}`);
+      } else {
+        setTopUpMsg(`✗ ${data.error}`);
+      }
+    } catch {
+      setTopUpMsg('✗ Network error');
+    } finally {
+      setTopUpLoading(false);
+    }
+  };
 
   const fetchHealth = async () => {
     setHealthLoading(true);
@@ -144,6 +166,30 @@ export function DebugPanel() {
                 </button>
                 <button onClick={toggle} className="rounded p-1 text-navy-500 hover:text-navy-200">
                   <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Credits + top-up */}
+            <div className="flex items-center justify-between border-b border-navy-800 bg-navy-900/40 px-3 py-1.5">
+              <div className="flex items-center gap-1.5 text-[10px]">
+                <Coins className="h-3 w-3 text-gold-500" />
+                <span className={cn('font-mono', typeof credits === 'number' && credits < 10 ? 'text-red-400 font-bold' : 'text-navy-300')}>
+                  {typeof credits === 'number' ? credits : '…'} credits
+                </span>
+                {typeof credits === 'number' && credits < 10 && (
+                  <span className="text-red-400 font-bold">— LOW!</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {topUpMsg && <span className="text-[10px] text-emerald-400">{topUpMsg}</span>}
+                <button
+                  onClick={handleTopUp}
+                  disabled={topUpLoading}
+                  className="flex items-center gap-1 rounded bg-gold-600/20 px-2 py-0.5 text-[10px] text-gold-400 hover:bg-gold-600/30 disabled:opacity-50"
+                >
+                  {topUpLoading ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Coins className="h-2.5 w-2.5" />}
+                  +500 credits
                 </button>
               </div>
             </div>
