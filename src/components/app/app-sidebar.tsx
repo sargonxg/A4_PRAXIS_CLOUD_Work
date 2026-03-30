@@ -38,6 +38,9 @@ import {
   Radio,
   Handshake,
   Library,
+  Clock,
+  Heart,
+  Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -116,54 +119,66 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    label: 'Situation Room',
+    label: 'Context',
     items: [
       { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-      { label: 'Early Warning', icon: AlertTriangle, href: '/early-warning', badge: '3' },
-      { label: 'Risk Monitor', icon: BarChart3, href: '/risk-monitor', badge: '8' },
-      { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
-      { label: 'Stakeholder Map', icon: Users, href: '/stakeholder-map' },
-      { label: 'Actor Profiles', icon: UserCircle, href: '/actors' },
+      { label: 'Documents', icon: FolderOpen, href: '/documents' },
+      { label: 'Sources Library', icon: Library, href: '/sources' },
+      { label: 'Timeline', icon: Clock, href: '/timeline', badge: 'NEW' },
+      { label: 'Humanitarian', icon: Heart, href: '/humanitarian', badge: 'NEW' },
+      { label: 'Calendar', icon: Calendar, href: '/calendar' },
     ],
   },
   {
-    label: 'Analysis & Drafting',
+    label: 'Analysis',
+    items: [
+      { label: 'Risk Monitor', icon: BarChart3, href: '/risk-monitor' },
+      { label: 'Early Warning', icon: AlertTriangle, href: '/early-warning' },
+      { label: 'Actor Profiles', icon: UserCircle, href: '/actors' },
+      { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
+      { label: 'Stakeholder Map', icon: Users, href: '/stakeholder-map' },
+      { label: 'Compare', icon: GitCompare, href: '/compare' },
+    ],
+  },
+  {
+    label: 'Drafting',
     items: [
       { label: 'PRAXIS Assistant', icon: MessageSquare, href: '/assistant' },
       { label: 'Report Studio', icon: FileText, href: '/reports' },
-      { label: 'Dossier Generator', icon: BookMarked, href: '/dossier', badge: 'NEW' },
+      { label: 'Dossier Generator', icon: BookMarked, href: '/dossier' },
       { label: 'Talking Points', icon: MessageCircle, href: '/talking-points' },
-      { label: 'Scenario Planner', icon: GitCompare, href: '/scenarios', badge: 'NEW' },
-      { label: 'Negotiation Prep', icon: Scale, href: '/negotiation-prep', badge: 'NEW' },
-      { label: 'CONCORDIA Mediation', icon: Scale, href: '/concordia', badge: 'TACITUS' },
-      { label: 'Mediation Designer', icon: Handshake, href: '/mediation-design', badge: 'NEW' },
-      { label: 'Briefing Room', icon: Presentation, href: '/briefing', badge: 'NEW' },
-      { label: 'Daily Brief', icon: Newspaper, href: '/auto-briefings', badge: 'NEW' },
+      { label: 'Briefing Room', icon: Presentation, href: '/briefing' },
+      { label: 'Daily Brief', icon: Newspaper, href: '/auto-briefings' },
+      { label: 'UN Toolkit', icon: Building2, href: '/un-toolkit' },
     ],
   },
   {
-    label: 'Intelligence Tools',
+    label: 'Simulation',
     items: [
-      { label: 'ARGUS Intelligence', icon: Network, href: '/argus', badge: 'TACITUS' },
+      { label: 'Scenario Planner', icon: GitCompare, href: '/scenarios' },
+      { label: 'Negotiation Prep', icon: Scale, href: '/negotiation-prep' },
+      { label: 'CONCORDIA', icon: Handshake, href: '/concordia', badge: 'TACITUS' },
+      { label: 'Mediation Designer', icon: Handshake, href: '/mediation-design' },
+    ],
+  },
+  {
+    label: 'Intelligence',
+    items: [
+      { label: 'ARGUS Deep Research', icon: Network, href: '/argus', badge: 'TACITUS' },
       { label: 'Media Compass', icon: Compass, href: '/media-compass' },
-      { label: 'Media Roundup', icon: Newspaper, href: '/media-roundup', badge: 'NEW' },
-      { label: 'Info Environment', icon: Radio, href: '/info-environment', badge: 'NEW' },
-      { label: 'Commitment Tracker', icon: FileCheck, href: '/commitments', badge: 'NEW' },
-      { label: 'Treaty Analyzer', icon: BookMarked, href: '/treaty-analyzer', badge: 'NEW' },
+      { label: 'Media Roundup', icon: Newspaper, href: '/media-roundup' },
+      { label: 'Info Environment', icon: Radio, href: '/info-environment' },
       { label: 'Sanctions Tracker', icon: Shield, href: '/sanctions' },
-      { label: 'Calendar Monitor', icon: Calendar, href: '/calendar' },
-      { label: 'Sources Library', icon: Library, href: '/sources', badge: 'NEW' },
+      { label: 'Commitment Tracker', icon: FileCheck, href: '/commitments' },
+      { label: 'Treaty Analyzer', icon: BookMarked, href: '/treaty-analyzer' },
       { label: 'Alert Center', icon: Bell, href: '/alerts' },
-      { label: 'UN Toolkit', icon: Building2, href: '/un-toolkit' },
     ],
   },
   {
     label: 'Workspace',
     items: [
-      { label: 'Documents', icon: FolderOpen, href: '/documents' },
-      { label: 'Case Library', icon: BookOpen, href: '/cases', badge: 'NEW' },
+      { label: 'Case Library', icon: BookOpen, href: '/cases' },
       { label: 'Team Hub', icon: UsersRound, href: '/team' },
-      { label: 'Docs', icon: BookOpen, href: '/docs' },
     ],
   },
 ];
@@ -176,7 +191,7 @@ function ChangelogButton() {
         onClick={() => setOpen(true)}
         className="mt-1 w-full text-center text-[9px] text-navy-300 hover:text-navy-500 transition-colors"
       >
-        PRAXIS v3.5 · Build 2026.03.26
+        PRAXIS v3.9 · Build 2026.03.29
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setOpen(false)}>
