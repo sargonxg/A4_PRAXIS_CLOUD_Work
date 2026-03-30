@@ -63,15 +63,58 @@ Each piece of intelligence you produce should enrich this knowledge graph. When 
 }
 
 /**
- * Builds a concise context for tool-specific AI calls (not chat).
+ * Builds a rich context for tool-specific AI calls (used by all 34 API routes).
+ * Provides structured situation intelligence to ensure every AI tool call is
+ * grounded in the user's specific conflict, not generic templates.
  */
 export function buildToolContext(situation: Situation): string {
-  return `Situation: "${situation.name}" (${formatType(situation.type)})
+  const actorList = situation.actors.length > 0
+    ? situation.actors.join(', ')
+    : 'None defined yet';
+
+  const riskLabel = situation.riskScore >= 7 ? 'HIGH' :
+    situation.riskScore >= 4 ? 'MODERATE' : 'LOW';
+
+  const glaslLabel = situation.glaslStage
+    ? `Stage ${situation.glaslStage}/9 — ${getGlaslLabel(situation.glaslStage)}`
+    : 'Not yet assessed';
+
+  const dataAvailable = [
+    situation.actorCount > 0 ? `${situation.actorCount} actors profiled` : null,
+    situation.graphEntities > 0 ? `${situation.graphEntities} conflict graph entities` : null,
+    situation.documentCount > 0 ? `${situation.documentCount} documents uploaded` : null,
+  ].filter(Boolean).join(', ') || 'No structured data yet — rely on situation description and live feeds';
+
+  return `SITUATION CONTEXT
+=================
+Name: "${situation.name}"
+Type: ${formatType(situation.type)}
 Region: ${situation.region || 'Unspecified'}
-Actors: ${situation.actors.join(', ') || 'None defined'}
-Risk: ${situation.riskScore}/10, Trend: ${situation.escalationTrend}
-User Role: ${formatRole(situation.userRole)}
-${situation.description ? `\nContext: ${situation.description}` : ''}`;
+Status: ${situation.status}
+Analyst Role: ${formatRole(situation.userRole)}
+
+KEY ACTORS: ${actorList}
+
+RISK PROFILE
+- Risk Score: ${situation.riskScore}/10 (${riskLabel})
+- Glasl Escalation: ${glaslLabel}
+- Trend: ${situation.escalationTrend}
+${situation.description ? `\nSITUATION SUMMARY\n${situation.description}` : ''}
+
+KNOWLEDGE BASE: ${dataAvailable}
+
+CONFLICT GRAMMAR FRAMEWORK
+Classify all outputs using these 14 ACO entities:
+Core (8): Actors · Claims · Interests · Constraints · Leverage · Commitments · Events · Narratives
+Extended (6): Institutions · Norms · Resources · Risks · Policies · Grievances
+
+ANALYTICAL STANDARDS
+- Apply Glasl escalation model for stage-appropriate analysis
+- Apply INFORM Risk Index (5 dimensions) for risk assessments
+- Reference actors by their exact names from this situation
+- Ground analysis in the region, conflict type, and role of: ${formatRole(situation.userRole)}
+- When data is missing, flag the gap explicitly and recommend GDELT/ACLED/ReliefWeb sources
+- Write for professional conflict analysis (UN/NGO/diplomatic standards)`;
 }
 
 function formatType(type: string): string {

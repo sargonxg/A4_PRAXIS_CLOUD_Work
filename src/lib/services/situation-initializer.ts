@@ -8,7 +8,7 @@
  * Firestore path: users/{uid}/situations/{situationId}/tool-data/{toolId}
  */
 
-import { generateObject } from 'ai';
+import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
 import { saveToolData } from '@/lib/firebase/tool-data-service';
@@ -94,7 +94,7 @@ const TOOL_SEEDS: ToolSeed[] = [
   {
     toolId: 'risk-monitor',
     schema: RiskSeedSchema,
-    extractionPrompt: 'Extract the risk assessment: risk score (1-10), Glasl escalation stage (1-9 or null), escalation trend, key risk factors with severity, and any window of opportunity.',
+    extractionPrompt: 'Extract the risk assessment: risk score (scale 1 to 10), Glasl escalation stage (scale 1 to 9, or null if unknown), escalation trend, key risk factors with severity, and any window of opportunity.',
   },
   {
     toolId: 'early-warning',
@@ -109,7 +109,7 @@ const TOOL_SEEDS: ToolSeed[] = [
   {
     toolId: 'stakeholder-map',
     schema: StakeholderSeedSchema,
-    extractionPrompt: 'Extract stakeholders with their power level (1-10), interest level (1-10), alignment (supportive/neutral/opposed/ambiguous), and category.',
+    extractionPrompt: 'Extract stakeholders with their power level (scale 1 to 10), interest level (scale 1 to 10), alignment (supportive/neutral/opposed/ambiguous), and category.',
   },
 ];
 
@@ -136,9 +136,9 @@ export async function initializeSituationTools(
   // Process all tool seeds in parallel
   const promises = TOOL_SEEDS.map(async ({ toolId, schema, extractionPrompt }) => {
     try {
-      const { object } = await generateObject({
+      const result = await generateText({
         model: getModel(), // flash — fast and cheap for extraction
-        schema,
+        output: Output.object({ schema }),
         prompt: `You are a data extraction engine. Given the following intelligence briefing about "${situation.name}", extract structured data.
 
 INSTRUCTION: ${extractionPrompt}
@@ -149,7 +149,7 @@ ${autoStructureResult.slice(0, 30000)}
 Extract the data precisely. Do not invent information not present in the briefing.`,
       });
 
-      await saveToolData(uid, situationId, toolId, object);
+      await saveToolData(uid, situationId, toolId, result.output);
       seeded.push(toolId);
     } catch (err) {
       console.error(`[situation-init] Failed to seed ${toolId}:`, err);
