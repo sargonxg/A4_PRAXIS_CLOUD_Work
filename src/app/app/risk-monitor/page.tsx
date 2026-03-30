@@ -579,7 +579,16 @@ export default function RiskMonitorPage() {
         }
       }}
     >
-      <DemoRiskMonitorPage situationName={situation.name} aiRegions={aiRegions.length > 0 ? aiRegions : undefined} />
+      {aiRegions.length > 0
+        ? <DemoRiskMonitorPage situationName={situation.name} aiRegions={aiRegions} />
+        : (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <BarChart3 className="h-10 w-10 text-navy-200 mb-4" />
+            <p className="text-sm font-medium text-navy-500">Risk analysis pending for &ldquo;{situation.name}&rdquo;</p>
+            <p className="mt-1 text-xs text-navy-400">Generate above to build your INFORM risk assessment with live data.</p>
+          </div>
+        )
+      }
     </AiPopulate>
   );
 }

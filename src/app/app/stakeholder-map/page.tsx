@@ -599,6 +599,13 @@ export default function StakeholderMapPage() {
     if (Array.isArray(d.engagementPriorities)) setEngagementPriorities(d.engagementPriorities);
   }, [persisted.data, isDemo]);
 
+  // ─── Auto-generate on first visit if no data exists ──────────────────────
+  useEffect(() => {
+    if (isDemo || persisted.isLoading || hasData || generatingMap) return;
+    handleGenerateMap();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDemo, persisted.isLoading, hasData]);
+
   // ─── Generate stakeholder map from dedicated power-map API ────────────────
   const handleGenerateMap = useCallback(async () => {
     if (generatingMap) return;

@@ -993,7 +993,16 @@ export default function EarlyWarningPage() {
         if (d?.regions) setAiRiskData(d.regions);
       }}
     >
-      <DemoEarlyWarningPage situation={situation} aiRiskData={aiRiskData.length > 0 ? aiRiskData : undefined} />
+      {aiRiskData.length > 0
+        ? <DemoEarlyWarningPage situation={situation} aiRiskData={aiRiskData} />
+        : (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <AlertTriangle className="h-10 w-10 text-navy-200 mb-4" />
+            <p className="text-sm font-medium text-navy-500">Escalation analysis pending for &ldquo;{situation.name}&rdquo;</p>
+            <p className="mt-1 text-xs text-navy-400">Generate above to start tracking the Glasl escalation stage with live data.</p>
+          </div>
+        )
+      }
     </AiPopulate>
   );
 }
