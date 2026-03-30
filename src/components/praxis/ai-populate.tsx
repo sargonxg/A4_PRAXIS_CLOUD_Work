@@ -2,13 +2,17 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Loader2, Check, X, Settings2, RotateCcw } from 'lucide-react';
+import { Sparkles, Loader2, X, Settings2, RotateCcw, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { usePreferencesStore, type DataSourceMode } from '@/stores/preferences-store';
 import { useSituationStore } from '@/stores/situation-store';
 import { useAuth } from '@/lib/auth/auth-context';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
+import { useDebugStore } from '@/stores/debug-store';
 import type { Situation } from '@/types/situation';
+
+// Hard cap: abort after 90 seconds to avoid infinite hangs
+const GENERATION_TIMEOUT_MS = 90_000;
 
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 
@@ -62,6 +66,10 @@ export function AiPopulate({
   const [status, setStatus] = useState<'idle' | 'generating' | 'done' | 'error' | 'skipped'>('idle');
   const [showSourcePicker, setShowSourcePicker] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [elapsed, setElapsed] = useState(0);
+  const abortRef = useRef<AbortController | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { log: debugLog } = useDebugStore();
 
   const sourceMode = getEffectiveMode(toolId);
 
@@ -98,15 +106,41 @@ export function AiPopulate({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasExistingData, aiAutoPopulate, activeSituation, persisted.isLoading]);
 
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      abortRef.current?.abort();
+    };
+  }, []);
+
   const generate = useCallback(async () => {
     if (!activeSituation) return;
     setStatus('generating');
     setErrorMsg('');
+    setElapsed(0);
+
+    // AbortController: cancel the fetch after GENERATION_TIMEOUT_MS
+    const abort = new AbortController();
+    abortRef.current = abort;
+
+    // Elapsed-time counter (updates every second)
+    const startTime = Date.now();
+    timerRef.current = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
+    // Hard timeout: abort after 90s
+    const timeoutId = setTimeout(() => abort.abort(), GENERATION_TIMEOUT_MS);
+
+    const requestId = `${toolId}-${Date.now()}`;
+    debugLog({ id: requestId, type: 'request', tool: toolId, endpoint: apiEndpoint, situation: activeSituation.name, ts: new Date().toISOString() });
 
     try {
       const res = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: abort.signal,
         body: JSON.stringify({
           situationId: activeSituation.id,
           situation: activeSituation,
@@ -115,23 +149,35 @@ export function AiPopulate({
         }),
       });
 
+      clearTimeout(timeoutId);
+      if (timerRef.current) clearInterval(timerRef.current);
+
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: 'Generation failed' }));
-        setErrorMsg(data.error || `Failed to generate ${toolName} data`);
+        const errMsg = data.error || `Failed to generate ${toolName} data (HTTP ${res.status})`;
+        debugLog({ id: requestId, type: 'error', tool: toolId, status: res.status, error: errMsg, ts: new Date().toISOString() });
+        setErrorMsg(errMsg);
         setStatus('error');
         return;
       }
 
       const data = await res.json();
+      debugLog({ id: requestId, type: 'success', tool: toolId, elapsed: Math.floor((Date.now() - startTime) / 1000), ts: new Date().toISOString() });
       onDataGenerated(data);
-      // Persist the generated data to Firestore
       persisted.save(data);
       setStatus('done');
-    } catch {
-      setErrorMsg('Network error. Please try again.');
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      if (timerRef.current) clearInterval(timerRef.current);
+      const isAbort = err instanceof Error && err.name === 'AbortError';
+      const errMsg = isAbort
+        ? `Generation timed out after ${GENERATION_TIMEOUT_MS / 1000}s — the AI model took too long. Try again or check your GOOGLE_AI_API_KEY.`
+        : 'Network error. Please check your connection and try again.';
+      debugLog({ id: requestId, type: 'error', tool: toolId, error: errMsg, aborted: isAbort, ts: new Date().toISOString() });
+      setErrorMsg(errMsg);
       setStatus('error');
     }
-  }, [activeSituation, apiEndpoint, sourceMode, extraBody, toolName, onDataGenerated, persisted]);
+  }, [activeSituation, apiEndpoint, sourceMode, extraBody, toolName, toolId, onDataGenerated, persisted, debugLog]);
 
   const handleRegenerate = useCallback(async () => {
     restoredRef.current = false;
@@ -163,6 +209,13 @@ export function AiPopulate({
 
   // Generating state
   if (status === 'generating') {
+    const step = elapsed < 10 ? 0 : elapsed < 30 ? 1 : elapsed < 55 ? 2 : 3;
+    const steps = [
+      'Sending request to PRAXIS AI...',
+      `Gemini Pro analyzing "${activeSituation?.name}"...`,
+      'Structuring intelligence into actionable format...',
+      'Almost done — finalizing output...',
+    ];
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <motion.div
@@ -172,24 +225,34 @@ export function AiPopulate({
         >
           <Sparkles className="h-10 w-10 text-gold-600" />
         </motion.div>
-        <h3 className="text-base font-semibold text-navy-900">Populating {toolName} for the first time</h3>
-        <p className="mt-2 text-sm text-navy-600">
-          PRAXIS is researching &ldquo;{activeSituation?.name}&rdquo; and building your {toolName.toLowerCase()} intelligence...
+        <h3 className="text-base font-semibold text-navy-900">Generating {toolName}</h3>
+        <p className="mt-2 text-sm text-navy-600 max-w-sm text-center">
+          {steps[step]}
         </p>
-        <div className="mt-4 space-y-2">
-          <div className="flex items-center gap-2 text-xs text-navy-500">
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-gold-600" />
-            Searching Wikipedia, GDELT, and web sources for context
-          </div>
-          <div className="flex items-center gap-2 text-xs text-navy-400">
-            <Sparkles className="h-3.5 w-3.5 text-gold-500/50" />
-            Extracting actors, relationships, and key dynamics
-          </div>
-          <div className="flex items-center gap-2 text-xs text-navy-400">
-            <Sparkles className="h-3.5 w-3.5 text-gold-500/30" />
-            Structuring intelligence into actionable format
-          </div>
+        <div className="mt-4 flex items-center gap-2 rounded-full bg-navy-50 px-4 py-1.5 text-xs text-navy-500">
+          <Clock className="h-3 w-3" />
+          {elapsed}s elapsed · up to 60s for complex situations
         </div>
+        <div className="mt-4 space-y-2">
+          {[
+            { label: 'Analysing situation context & actors', done: elapsed >= 5 },
+            { label: 'Applying conflict grammar framework', done: elapsed >= 20 },
+            { label: 'Structuring structured output', done: elapsed >= 45 },
+          ].map(({ label, done }) => (
+            <div key={label} className="flex items-center gap-2 text-xs text-navy-500">
+              {done
+                ? <span className="h-3.5 w-3.5 text-emerald-500">✓</span>
+                : <Loader2 className="h-3.5 w-3.5 animate-spin text-gold-600" />}
+              {label}
+            </div>
+          ))}
+        </div>
+        <button
+          onClick={() => { abortRef.current?.abort(); }}
+          className="mt-6 text-xs text-navy-400 underline hover:text-navy-600"
+        >
+          Cancel
+        </button>
       </div>
     );
   }

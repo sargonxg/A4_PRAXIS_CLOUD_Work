@@ -15,6 +15,7 @@ import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useNotificationStore } from '@/stores/notification-store';
 import { Loader2 } from 'lucide-react';
 import { FloatingPraxis } from '@/components/app/floating-praxis';
+import { DebugPanel } from '@/components/app/debug-panel';
 import { ErrorBoundary } from '@/components/shared/error-boundary';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -135,6 +136,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <OnboardingWrapper />
       {/* Floating Ask PRAXIS button + chat panel */}
       <FloatingPraxis />
+      {/* Debug panel — Ctrl+Shift+D to toggle, bottom-left corner */}
+      <DebugPanel />
     </TooltipProvider>
   );
 }

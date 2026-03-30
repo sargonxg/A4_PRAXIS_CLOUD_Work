@@ -1,6 +1,6 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 3.9.6 — buildToolContext expanded (all 34 AI routes), situation-initializer fixed (generateObject→generateText+Output.object)
+> Version 3.9.7 — CSP GA4 fix, AiPopulate timeout+cancel, Debug Panel (Ctrl+Shift+D)
 
 ## What This Is
 The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Two separate experiences in one codebase: a demo for prospects and a real situation-driven workspace for authenticated users. Deployed at praxis.tacitus.me (Vercel, iad1).
