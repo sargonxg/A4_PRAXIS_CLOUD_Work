@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const session = request.cookies.get(SESSION_COOKIE);
 
@@ -56,12 +56,11 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-  // COOP: Allow popups for Firebase Auth (Google sign-in opens a popup window
-  // that needs to communicate back to the opener via postMessage)
+  // COOP: same-origin-allow-popups is required for Google Sign-In redirect flow
+  // to communicate back to the opener via postMessage after redirect completes.
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
 
-  // CSP: Firebase Auth requires unsafe-eval for the popup auth flow.
-  // Google Identity Services also needs *.google.com and *.gstatic.com.
+  // CSP: Google Identity Services needs *.google.com and *.gstatic.com.
   response.headers.set('Content-Security-Policy',
     "default-src 'self'; " +
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' apis.google.com *.firebaseapp.com *.googleapis.com *.google.com *.gstatic.com; " +

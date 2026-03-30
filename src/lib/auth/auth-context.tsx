@@ -6,7 +6,8 @@ import {
   onIdTokenChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut as firebaseSignOut,
   GoogleAuthProvider,
   updateProfile,
@@ -176,6 +177,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [syncTokenCookie, isDemoMode]);
 
   // ---------------------------------------------------------------------------
+  // Handle Google redirect result on page load.
+  // signInWithRedirect navigates the user to Google; on return, getRedirectResult
+  // resolves the credential. onAuthStateChanged handles the user state update;
+  // this effect only catches errors from the redirect flow.
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    getRedirectResult(auth).catch((err: unknown) => {
+      const code = (err as { code?: string }).code || '';
+      console.error('[auth] Google redirect result error:', code, err);
+    });
+  }, []);
+
+  // ---------------------------------------------------------------------------
   // Token refresh: listen for token changes AND proactively refresh before expiry
   // Firebase ID tokens expire after 1 hour. This ensures the session cookie
   // always has a valid token, preventing 401s on long-lived sessions.
@@ -292,22 +306,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Google sign in
+  // Google sign in — uses redirect flow to avoid COOP popup blocking
   const signInWithGoogle = useCallback(async () => {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      await signInWithRedirect(auth, provider);
+      // Page navigates to Google — this line is never reached
       return { success: true };
     } catch (err: unknown) {
       const code = (err as { code?: string }).code || '';
-      if (code === 'auth/popup-closed-by-user') {
-        return { success: false, error: 'Sign-in popup was closed.' };
-      }
       if (code === 'auth/unauthorized-domain') {
         return { success: false, error: 'This domain is not authorized for Google sign-in. Please add it in Firebase Console > Authentication > Settings > Authorized domains.' };
-      }
-      if (code === 'auth/popup-blocked') {
-        return { success: false, error: 'Pop-up was blocked by the browser. Please allow pop-ups for this site.' };
       }
       console.error('[auth] Google sign-in error:', code, err);
       return { success: false, error: `Google sign-in failed (${code}). Please try again.` };

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils/cn';
@@ -17,7 +17,14 @@ function LoginForm() {
     ? `/app/settings?upgrade=${planParam}` // Send to settings with upgrade prompt
     : rawRedirect?.startsWith('/app') ? rawRedirect : '/app/dashboard';
   const demoRedirect = rawRedirect?.startsWith('/demo') ? rawRedirect : '/demo/dashboard';
-  const { signInWithEmail, signUpWithEmail, signInWithGoogle, signInAsDemo } = useAuth();
+  const { user, loading, signInWithEmail, signUpWithEmail, signInWithGoogle, signInAsDemo } = useAuth();
+
+  // After Google redirect, onAuthStateChanged sets user — auto-redirect to app
+  useEffect(() => {
+    if (!loading && user && !user.isDemo) {
+      router.push(appRedirect);
+    }
+  }, [user, loading, router, appRedirect]);
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
