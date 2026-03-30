@@ -53,7 +53,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Coins, X, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const CHANGELOG = [
   {
@@ -230,6 +230,50 @@ function ChangelogButton() {
   );
 }
 
+// Map sidebar hrefs to tool-data IDs for status indicators
+const HREF_TO_TOOL_ID: Record<string, string> = {
+  '/actors': 'actor-profiles',
+  '/risk-monitor': 'risk-monitor',
+  '/early-warning': 'early-warning',
+  '/conflict-graph': 'conflict-graph',
+  '/stakeholder-map': 'stakeholder-map',
+  '/dossier': 'dossier',
+  '/negotiation-prep': 'negotiation',
+  '/media-roundup': 'media-roundup',
+  '/sanctions': 'sanctions',
+  '/briefing': 'briefing',
+  '/auto-briefings': 'auto-briefing',
+  '/info-environment': 'info-environment',
+  '/commitments': 'commitment-tracker',
+  '/treaty-analyzer': 'treaty-analyzer',
+  '/mediation-design': 'mediation-design',
+  '/scenarios': 'scenarios',
+  '/talking-points': 'talking-points',
+  '/argus': 'argus',
+  '/media-compass': 'media-compass',
+  '/compare': 'compare',
+  '/timeline': 'early-warning',
+};
+
+function useToolStatuses(situationId: string | null): Set<string> {
+  const [seeded, setSeeded] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!situationId) { setSeeded(new Set()); return; }
+
+    fetch(`/api/tool-data?toolId=dashboard-snapshot&situationId=${situationId}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.data?.seededTools) {
+          setSeeded(new Set(data.data.seededTools));
+        }
+      })
+      .catch(() => {});
+  }, [situationId]);
+
+  return seeded;
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -237,6 +281,7 @@ export function AppSidebar() {
   const { user, credits, logout } = useAuth();
   const { sidebarOpen, toggleSidebar } = useAppStore();
   const { activeSituationId, setActiveSituation } = useSituationStore();
+  const seededTools = useToolStatuses(activeSituationId);
 
   // Strip /app or /demo prefix for active matching against nav hrefs
   const barePath = pathname.replace(/^\/(app|demo)/, '') || '/';
@@ -359,8 +404,17 @@ export function AppSidebar() {
                       </motion.span>
                     )}
                   </AnimatePresence>
+                  {/* Tool status dot */}
+                  {sidebarOpen && HREF_TO_TOOL_ID[item.href] && (
+                    <span className={cn(
+                      'ml-auto h-2 w-2 shrink-0 rounded-full',
+                      seededTools.has(HREF_TO_TOOL_ID[item.href])
+                        ? 'bg-emerald-500'
+                        : 'bg-navy-200'
+                    )} />
+                  )}
                   {/* Badge */}
-                  {item.badge && sidebarOpen && (
+                  {item.badge && sidebarOpen && !HREF_TO_TOOL_ID[item.href] && (
                     <span className={cn(
                       'ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold',
                       item.badge === 'TACITUS'

@@ -55,21 +55,26 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set('X-DNS-Prefetch-Control', 'on');
   response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  // CSP: removed unsafe-eval, kept unsafe-inline for Next.js style injection.
-  // Next.js requires unsafe-inline for style-src (CSS-in-JS) and script-src
-  // (inline script tags for hydration). unsafe-eval removed for XSS protection.
+
+  // COOP: Allow popups for Firebase Auth (Google sign-in opens a popup window
+  // that needs to communicate back to the opener via postMessage)
+  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+
+  // CSP: Firebase Auth requires unsafe-eval for the popup auth flow.
+  // Google Identity Services also needs *.google.com and *.gstatic.com.
   response.headers.set('Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' apis.google.com *.firebaseapp.com *.googleapis.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' apis.google.com *.firebaseapp.com *.googleapis.com *.google.com *.gstatic.com; " +
     "style-src 'self' 'unsafe-inline' fonts.googleapis.com; " +
-    "img-src 'self' data: blob: *.googleapis.com *.googleusercontent.com; " +
+    "img-src 'self' data: blob: *.googleapis.com *.googleusercontent.com *.gstatic.com; " +
     "font-src 'self' fonts.gstatic.com; " +
-    "connect-src 'self' *.firebaseio.com *.googleapis.com *.firebaseapp.com api.acleddata.com api.gdeltproject.org api.reliefweb.int hapi.humdata.org api.worldbank.org *.firecrawl.dev api.parallel.ai js.stripe.com va.vercel-scripts.com; " +
-    "frame-src 'self' *.firebaseapp.com accounts.google.com js.stripe.com;"
+    "connect-src 'self' *.firebaseio.com *.googleapis.com *.firebaseapp.com identitytoolkit.googleapis.com securetoken.googleapis.com api.acleddata.com api.gdeltproject.org api.reliefweb.int hapi.humdata.org api.worldbank.org *.firecrawl.dev api.parallel.ai js.stripe.com va.vercel-scripts.com wss://*.firebaseio.com; " +
+    "frame-src 'self' *.firebaseapp.com accounts.google.com *.google.com js.stripe.com;"
   );
+
   return response;
 }
 
 export const config = {
-  matcher: ['/demo/:path*', '/app/:path*'],
+  matcher: ['/demo/:path*', '/app/:path*', '/login', '/pricing'],
 };

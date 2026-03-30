@@ -88,11 +88,22 @@ Keep it under 120 words, professional, UN-standard diplomatic language.`;
     }
   }, [loading, situation]);
 
-  // Auto-generate on first mount
+  // Auto-generate on first mount (skip if AI service not configured)
   useEffect(() => {
     if (!generated.current) {
       generated.current = true;
-      generate();
+      fetch('/api/health')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data?.services?.googleAI) {
+            generate();
+          } else {
+            setBrief('_AI service is being configured. Set GOOGLE_AI_API_KEY in Vercel environment variables to enable intelligence briefs._');
+          }
+        })
+        .catch(() => {
+          setBrief('_Unable to check AI service status._');
+        });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
