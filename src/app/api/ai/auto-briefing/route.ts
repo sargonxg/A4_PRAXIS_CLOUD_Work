@@ -1,16 +1,17 @@
 import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { getProModel, getGroundedModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
+import { searchWeb, isFirecrawlConfigured } from '@/lib/ai/firecrawl';
 import type { Situation } from '@/types/situation';
 
-export const maxDuration = 45;
+export const maxDuration = 60;
 
 const AutoBriefingSchema = z.object({
   situationName: z.string().describe('Name of the conflict situation'),
@@ -24,6 +25,7 @@ const AutoBriefingSchema = z.object({
   mediaEnvironment: z.string().describe('Information environment — key narratives, media coverage, disinformation'),
   actionItems: z.array(z.string()).min(3).max(6).describe('Prioritized action items for the analyst or mission'),
   nextReview: z.string().describe('When and what to monitor for the next briefing cycle'),
+  sourcesSummary: z.string().optional().describe('Brief note on data sources used (deep research mode only)'),
 });
 
 const DEMO_RESPONSE = {
@@ -52,9 +54,17 @@ const DEMO_RESPONSE = {
   nextReview: '24 hours — monitor Karovian diplomatic signals, OCHA convoy status, and any DRM statement on Kessara',
 };
 
+/** Races a promise against a timeout. Returns null instead of throwing on timeout. */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  return Promise.race([
+    promise.catch(() => null),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
+
 export const POST = withAuth(async (request, _user) => {
   try {
-    const creditCheck = await checkAndDeductCredits('ai_auto_briefing', 'Daily intelligence brief');
+    const creditCheck = await checkAndDeductCredits('ai_morning_digest', 'Daily intelligence brief');
     if (!creditCheck.allowed) return creditCheck.response!;
 
     if (isServerDemoMode()) {
@@ -62,61 +72,100 @@ export const POST = withAuth(async (request, _user) => {
     }
 
     const body = await request.json();
-    const { situation } = body as { situation?: Situation };
+    const { situation, deepResearch } = body as { situation?: Situation; deepResearch?: boolean };
     const sitContext = situation ? buildToolContext(situation as Situation) : '';
 
-    // --- Live intelligence feed ---
+    // ── 1. Live intel feeds (8s timeout — never block the brief on slow feeds) ──
     let intelContext = '';
-    try {
-      if (situation) {
-        const intel = await getSituationIntelligence({
+    if (situation) {
+      const intel = await withTimeout(
+        getSituationIntelligence({
           country: situation.region || situation.name,
           query: situation.name,
           limit: 15,
-        });
-        if (intel.events.length > 0) {
-          intelContext = '\n\nLIVE INTELLIGENCE FEED:\n' + intel.events.slice(0, 10).map(e =>
-            `- [${e.source.toUpperCase()}] ${e.date}: ${e.title} (${e.severity})`
+        }),
+        8000
+      );
+      if (intel && intel.events.length > 0) {
+        intelContext = '\n\nLIVE INTEL FEED (ACLED/GDELT/ReliefWeb — ' + new Date().toDateString() + '):\n' +
+          intel.events.slice(0, 10).map(e =>
+            `- [${e.source.toUpperCase()}] ${e.date}: ${e.title} (severity: ${e.severity})`
           ).join('\n');
+      }
+    }
+
+    // ── 2. Deep research: Firecrawl + Google-grounded web search ──
+    let webResearchContext = '';
+    let sourcesUsed: string[] = [];
+    if (deepResearch && situation) {
+      const searchQuery = `${situation.name} latest news ${new Date().getFullYear()} conflict situation`;
+
+      // 2a. Firecrawl web search
+      if (isFirecrawlConfigured()) {
+        const fcResults = await withTimeout(
+          searchWeb(searchQuery, { numResults: 5 }),
+          12000
+        );
+        if (fcResults && fcResults.length > 0) {
+          sourcesUsed.push(`Firecrawl (${fcResults.length} sources)`);
+          webResearchContext += '\n\nFIRECRAWL WEB RESEARCH (live):\n' +
+            fcResults.map(r =>
+              `SOURCE: ${r.title} | ${r.url}\n${r.content.slice(0, 1200)}`
+            ).join('\n\n---\n');
         }
       }
-    } catch { /* data feeds optional */ }
+
+      // 2b. Google Search grounding via Gemini
+      const groundedResult = await withTimeout(
+        generateText({
+          model: getGroundedModel(),
+          prompt: `Current date: ${new Date().toDateString()}. Search for and summarize the very latest developments (last 7 days) in: ${situation.name}. Context: ${sitContext}. Provide: (1) Recent headlines with dates, (2) Security/military updates, (3) Diplomatic or political developments, (4) Humanitarian situation. Be specific with facts and dates. Max 600 words.`,
+        }),
+        15000
+      );
+      if (groundedResult?.text) {
+        sourcesUsed.push('Google Search grounding');
+        webResearchContext += '\n\nGOOGLE-GROUNDED REAL-TIME RESEARCH:\n' + groundedResult.text.slice(0, 2000);
+      }
+    }
+
+    // ── 3. Generate structured brief ──
+    const deepResearchNote = deepResearch && webResearchContext
+      ? '\n\n⚡ DEEP RESEARCH MODE: You have live web search results and Google-grounded research above. Prioritize this fresh real-time information. Be specific about what the sources say.'
+      : '';
 
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: AutoBriefingSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}${intelContext ? `${intelContext}\n\n` : ''}Generate a concise daily intelligence brief for this conflict situation.
+      prompt: `${sitContext ? `SITUATION CONTEXT:\n${sitContext}\n` : ''}${intelContext}${webResearchContext}${deepResearchNote}
 
-## BRIEF FORMAT (UN DPPA Morning Note standard)
+Generate a daily intelligence brief for this conflict situation in UN DPPA Morning Note format.
 
-**Purpose**: A morning intelligence brief for senior diplomatic/political staff. Must be scannable in under 5 minutes. Leads with the most critical development and provides sufficient context for immediate decision-making.
+RISK LEVEL: critical = active large-scale hostilities or atrocity risk; high = significant violations or blocked access; medium = tension but process ongoing; low = stable, implementation on track.
+TREND: escalating = increasing violence or diplomatic deterioration; stable = no significant change; de-escalating = fewer incidents, positive signals.
 
-**RISK LEVEL CALIBRATION**
-- Critical: Active large-scale hostilities, imminent atrocity risk, or full peace process collapse
-- High: Significant ceasefire violations, blocked humanitarian access, active spoiler pressure
-- Medium: Tension but ceasefire holding, process ongoing with obstacles
-- Low: Stable situation, implementation on track
+STRUCTURE:
+1. headline: single most significant development (one sentence)
+2. keyDevelopments: 3-5 specific factual bullet points
+3. securitySituation: military/security dynamics with specific indicators
+4. politicalDynamics: negotiation track, actor positions, spoiler activity
+5. humanitarianUpdate: access, displacement, protection (flag CRITICAL if warranted)
+6. mediaEnvironment: narratives, international coverage, info operations
+7. actionItems: 3-5 concrete, time-bound recommendations
+8. nextReview: specific monitoring triggers for next cycle
+${deepResearch ? '9. sourcesSummary: which sources (Firecrawl/grounded search/GDELT/ACLED) informed this brief' : ''}
 
-**TREND CALIBRATION**
-- Escalating: Increasing violence, more violations, diplomatic deterioration
-- Stable: No significant change from previous reporting period
-- De-escalating: Fewer incidents, positive diplomatic signals, improved access
-
-**CONTENT REQUIREMENTS**
-1. Headline: One sentence — the single most significant development
-2. Key Developments: 3-5 specific, factual bullet points (not generic statements)
-3. Security Situation: Current military/security dynamics with specific indicators
-4. Political Dynamics: Negotiation track status, actor positions, spoiler activity
-5. Humanitarian Update: Access, displacement, protection — flag CRITICAL if warranted
-6. Media Environment: Key narratives and information operation activity
-7. Action Items: Concrete, time-bound recommendations for the mission/analyst
-8. Next Review: Specific monitoring triggers for the next cycle
-
-Be specific, evidence-grounded, and actionable. Avoid diplomatic boilerplate. Write as a senior UN DPPA political affairs officer would for the Special Representative's morning briefing.`,
-      system: 'You are a senior UN DPPA political affairs officer responsible for daily conflict situation briefings. You write for senior UN officials and diplomatic professionals who need precise, actionable intelligence. Apply the UN Morning Note standard: concise, specific, evidence-based, and actionable. Never use vague diplomatic language when specific facts are available.',
+Be specific and evidence-grounded. Write for a senior UN Special Representative's morning briefing.`,
+      system: 'You are a senior UN DPPA political affairs officer writing the daily morning intelligence brief for the Special Representative. Be precise, specific, and actionable. Apply the UN Morning Note standard.',
     });
 
-    return NextResponse.json(result.output);
+    // Attach source metadata for deep research
+    const output = result.output as Record<string, unknown>;
+    if (deepResearch && sourcesUsed.length > 0 && !output.sourcesSummary) {
+      output.sourcesSummary = `Sources: ${sourcesUsed.join(', ')}${intelContext ? ', ACLED/GDELT/ReliefWeb feeds' : ''}`;
+    }
+
+    return NextResponse.json(output);
   } catch (err) {
     return handleRouteError(err, 'auto-briefing');
   }
