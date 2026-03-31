@@ -71,7 +71,7 @@ export interface CreditTransaction {
 // Constants
 // ---------------------------------------------------------------------------
 
-const INITIAL_CREDITS = 100;
+const INITIAL_CREDITS = 5000;
 const USERS_COLLECTION = 'users';
 const CREDIT_TRANSACTIONS_COLLECTION = 'credit_transactions';
 const CONFLICTS_COLLECTION = 'conflicts';
@@ -131,7 +131,7 @@ export async function ensureUserProfile(user: {
   await recordCreditTransaction(user.uid, {
     amount: INITIAL_CREDITS,
     type: 'signup',
-    description: 'Welcome bonus — 100 TACITUS Credits',
+    description: 'Welcome bonus — 5,000 TACITUS Credits',
   });
 
   return profile;

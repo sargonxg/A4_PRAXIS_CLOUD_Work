@@ -157,8 +157,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
           setCredits(profile.credits);
 
-          // Send welcome email for brand-new users (credits === 100 means just created)
-          if (profile.credits === 100 && profile.totalCreditsUsed === 0) {
+          // Send welcome email for brand-new users (0 credits used = never used the app)
+          if (profile.totalCreditsUsed === 0) {
             fetch('/api/email/welcome', { method: 'POST' }).catch(() => {});
           }
         } catch (err) {
