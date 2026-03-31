@@ -267,12 +267,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Email/password sign in
   const signInWithEmail = useCallback(async (email: string, password: string) => {
+    // Set loading=true immediately so AppShell doesn't redirect to /login while
+    // React hasn't yet re-rendered with the new user state from onAuthStateChanged.
+    setLoading(true);
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
-      // Sync cookie before returning so middleware sees the token when router.push fires
+      // Sync cookie before returning so middleware sees the token when router.push fires.
+      // onAuthStateChanged will call setLoading(false) once it finishes.
       await syncTokenCookie(cred.user);
       return { success: true };
     } catch (err: unknown) {
+      setLoading(false); // Reset on error — onAuthStateChanged won't fire
       const code = (err as { code?: string }).code || '';
       if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
         return { success: false, error: 'Invalid email or password.' };
@@ -289,13 +294,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Email/password sign up
   const signUpWithEmail = useCallback(async (email: string, password: string, name: string) => {
+    setLoading(true);
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: name });
-      // Sync cookie before returning so middleware sees the token when router.push fires
       await syncTokenCookie(cred.user);
       return { success: true };
     } catch (err: unknown) {
+      setLoading(false);
       const code = (err as { code?: string }).code || '';
       if (code === 'auth/email-already-in-use') {
         return { success: false, error: 'An account with this email already exists. Sign in instead.' };
