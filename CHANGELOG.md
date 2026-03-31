@@ -6,6 +6,44 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [4.1.0] — 2026-03-31
+
+### Added
+
+- **UNHCR Client** (`src/lib/data-feeds/unhcr-client.ts`) — UNHCR Refugee Data Finder API (no key required). `getDisplacementStats()` returns population figures by country (refugees, IDPs, returnees, asylum seekers). `getDisplacementTimeSeries()` and `getDisplacedToCountries()`. 1-hour cache.
+
+- **UCDP Client** (`src/lib/data-feeds/ucdp-client.ts`) — UCDP Georeferenced Event Dataset API (no key required). `getEvents()` for conflict events with coordinates and best/low/high casualty estimates. `getConflicts()` for active conflict records. `getBattleDeaths()` for aggregated annual figures. 2-hour cache.
+
+- **CrisisGroup Client** (`src/lib/data-feeds/crisisgroup-client.ts`) — CrisisWatch status scraper via Firecrawl (requires `FIRECRAWL_API_KEY`). `getCrisisWatch()` returns `CrisisWatchEntry` with status (deteriorated/unchanged/improved), summary, and alert/opportunity flags. 6-hour cache.
+
+- **SIPRI Client** (`src/lib/data-feeds/sipri-client.ts`) — SIPRI arms transfer data scraper via Firecrawl. `getArmsTransfers()` returns `SIPRIArmsSnapshot` with total value, top suppliers, top recipients, year. 12-hour cache.
+
+- **Geospatial Engine** (`src/lib/analytics/geospatial-engine.ts`) — NEW analytics module. `haversineDistance()` for exact earth-surface distances in km. `clusterEvents()` implements iterative DBSCAN (no recursion — stack-safe on 15k events). Each `HotspotCluster` carries: centroid lat/lng, radius_km, event count, fatalities, dominant event type, actor list, trend (expanding/stable/contracting from density ratio), and admin1. `geographicSpreadIndex()` normalises bounding-box area to 0–100. `detectMovement()` compares 7-day vs 7–14-day centroids to return direction and distance.
+
+- **ConflictProfile aggregation** (`src/lib/data-feeds/feed-aggregator.ts`) — `getConflictProfile()` fetches all 9 data sources in parallel via `Promise.allSettled`, records per-source latency, and returns a `ConflictProfile` with: full intelligence stream, risk assessment, Glasl escalation stage, humanitarian snapshot, governance snapshot (WGI), arms flows (SIPRI), population stats (UNHCR), UCDP conflicts, CrisisWatch status, `SourceHealth[]` per source, `DataQuality` score. 15-minute in-memory cache. New interfaces: `SourceHealth`, `DataQuality`, `GovernanceSnapshot`, `ArmsFlowSnapshot`, `PopulationSnapshot`, `ConflictProfile`.
+
+### Changed
+
+- **ACLED Client** — Added rate limiting (1200 ms between requests), 1-hour cache, `ACLEDActorSummary` and `ACLEDWeeklyTrend` types. New functions: `fetchActors()`, `fetchEventTrend()` (12 weeks), `aggregateFatalities()`, `clusterByLocation()`. Pagination up to 15,000 events.
+
+- **GDELT Client** — Added `detectVolumeSpike()` Z-score anomaly detection, `aggregateTone()`, `getSourceCountries()`. CAMEO theme, country, and language filtering on `searchArticles()`.
+
+- **World Bank Client** — Added `WBGovernanceIndicators` and `WBEconomicSnapshot` types. `getGovernanceIndicators()` fetches all 6 WGI indicators. `getFragilityIndicators()`, `getTimeSeries()`, full `getEconomicSnapshot()` including Gini coefficient and poverty headcount.
+
+- **HDX Client** — Expanded ISO3 mapping to 60+ countries with partial-match fallback. Added `getIDPsByAdmin()`, `getNutrition()`, `getOperationalPresence()`. Cache reduced to 30 minutes for fresher IDP data.
+
+- **ReliefWeb Client** — Added `fetchLatestSituationReports()`, `fetchDisasterUpdates()`. Full filter support: theme, source, language, date range.
+
+- **UN News Client** — Expanded from 3 to 6 RSS feeds (added Africa, Middle East, International Law topics). `UNNewsItem` now carries `isSGStatement` and `isSecurityCouncil` boolean flags. Added `fetchTopicalNews()` with topic-to-feed-slug mapping. SG/SC items ranked higher in search results.
+
+- **Risk Engine** — INFORM Risk Index geometric mean formula: `Composite = (Hazard × Vulnerability × LackOfCoping)^(1/3)`. New `INFORMComponents` interface and `computeINFORM()` function. WGI integration: `wgiPoliticalStability`, `wgiRuleOfLaw`, `wgiGovEffectiveness` params feed directly into political risk dimension via `wgiToRiskScore()`. New `getStageTransitionRisk()` helper.
+
+- **Escalation Scorer** — Weighted event type scoring (Battles ×4, VAC/Explosions ×3, Riots ×2, Protests/Strategic ×1). Actor fragmentation index (0–1). Geographic spread index (0–100 from unique admin1 count). New `getStageTransitionProbability()` export. `EscalationAssessment` extended with `actorFragmentation`, `geographicSpread`, `weightedIntensity`, `stageTransitionProbability`.
+
+- **`/api/data/intelligence`** — 15-minute server-side cache keyed per user + country. New `profile: true` body flag activates `getConflictProfile()` (all 9 sources). `maxDuration` set to 60s.
+
+---
+
 ## [4.0.0] — 2026-03-31
 
 ### Added

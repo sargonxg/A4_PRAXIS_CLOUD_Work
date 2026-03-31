@@ -1,9 +1,30 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 4.0.0 — Full Platform Architecture Overhaul: Tool Registry, Analytical Frameworks Library, Situation Type System v2, Entity Enrichment Schema
+> Version 4.1.0 — Data Layer & Intelligence Feeds: 9-source data pipeline, ConflictProfile aggregation, INFORM risk engine, DBSCAN geospatial clustering
 
 ## What This Is
 The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Two separate experiences in one codebase: a demo for prospects and a real situation-driven workspace for authenticated users. Deployed at praxis.tacitus.me (Vercel, iad1).
+
+## v4.1.0 Data Layer & Intelligence Feeds (2026-03-31)
+
+### New Files
+- **`src/lib/data-feeds/unhcr-client.ts`** — UNHCR Refugee Data Finder (no API key). `getDisplacementStats()`, `getDisplacementTimeSeries()`, `getDisplacedToCountries()`. 1h cache.
+- **`src/lib/data-feeds/ucdp-client.ts`** — UCDP Georeferenced Event Dataset (no API key). `getEvents()`, `getConflicts()`, `getBattleDeaths()`. 2h cache.
+- **`src/lib/data-feeds/crisisgroup-client.ts`** — CrisisWatch scraper via Firecrawl (requires `FIRECRAWL_API_KEY`). `getCrisisWatch()` → `CrisisWatchEntry` with status/summary. 6h cache.
+- **`src/lib/data-feeds/sipri-client.ts`** — SIPRI arms transfer scraper via Firecrawl. `getArmsTransfers()` → `SIPRIArmsSnapshot`. 12h cache.
+- **`src/lib/analytics/geospatial-engine.ts`** — Geospatial analytics: `haversineDistance()`, `clusterEvents()` (iterative DBSCAN, stack-safe for 15k events), `geographicSpreadIndex()` (bounding box, 0–100), `detectMovement()` (N/S/E/W direction from centroid shift). Exports `HotspotCluster` and `MovementDetection`.
+
+### Updated Files
+- **`src/lib/data-feeds/acled-client.ts`** — Rate limiting (1200ms), 1h cache, `ACLEDActorSummary`/`ACLEDWeeklyTrend`, pagination to 15k, `fetchActors()`, `fetchEventTrend()`, `aggregateFatalities()`, `clusterByLocation()`.
+- **`src/lib/data-feeds/gdelt-client.ts`** — `detectVolumeSpike()` Z-score anomaly, `aggregateTone()`, `getSourceCountries()`, CAMEO filtering on `searchArticles()`.
+- **`src/lib/data-feeds/worldbank-client.ts`** — `WBGovernanceIndicators`/`WBEconomicSnapshot`, `getGovernanceIndicators()` (6 WGI), `getFragilityIndicators()`, `getTimeSeries()`, `getEconomicSnapshot()` with Gini/poverty.
+- **`src/lib/data-feeds/hdx-client.ts`** — 60+ ISO3 mappings, `getIDPsByAdmin()`, `getNutrition()`, `getOperationalPresence()`, 30min cache.
+- **`src/lib/data-feeds/reliefweb-client.ts`** — `fetchLatestSituationReports()`, `fetchDisasterUpdates()`, theme/source/language/date filter support.
+- **`src/lib/data-feeds/unnews-client.ts`** — 6 RSS feeds (added Africa, Middle East, Int'l Law), `isSGStatement`/`isSecurityCouncil` flags, `fetchTopicalNews()`, SG/SC relevance boost.
+- **`src/lib/data-feeds/feed-aggregator.ts`** — New `getConflictProfile()` merging all 9 sources with `SourceHealth[]`, `DataQuality`, `GovernanceSnapshot`, `ArmsFlowSnapshot`, `PopulationSnapshot`, UCDP conflicts, CrisisWatch status. 15-minute in-memory cache. Backwards-compatible `getSituationIntelligence()` unchanged.
+- **`src/lib/analytics/risk-engine.ts`** — INFORM geometric mean `(H×V×C)^(1/3)`, `INFORMComponents`, `computeINFORM()`, `wgiToRiskScore()`, `getStageTransitionRisk()`. WGI params integrated into political risk dimension.
+- **`src/lib/analytics/escalation-scorer.ts`** — Weighted event types (Battles×4, VAC/Explosions×3, Riots×2), `actorFragmentation`, `geographicSpread`, `weightedIntensity`, `stageTransitionProbability` on `EscalationAssessment`. New export `getStageTransitionProbability()`.
+- **`src/app/api/data/intelligence/route.ts`** — 15-min per-user cache, `profile: true` mode activates `getConflictProfile()`, `maxDuration = 60`.
 
 ## v4.0.0 Foundation & Architecture Overhaul (2026-03-31)
 
