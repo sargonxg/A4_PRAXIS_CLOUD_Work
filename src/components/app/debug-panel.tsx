@@ -62,7 +62,7 @@ export function DebugPanel() {
       const res = await fetch('/api/admin/add-credits', { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
-        setTopUpMsg(`✓ Added 500 credits — balance now ${data.credits}`);
+        setTopUpMsg(`✓ Added credits — balance now ${data.credits}`);
       } else {
         setTopUpMsg(`✗ ${data.error}`);
       }
@@ -189,7 +189,7 @@ export function DebugPanel() {
                   className="flex items-center gap-1 rounded bg-gold-600/20 px-2 py-0.5 text-[10px] text-gold-400 hover:bg-gold-600/30 disabled:opacity-50"
                 >
                   {topUpLoading ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Coins className="h-2.5 w-2.5" />}
-                  +500 credits
+                  +1000 credits
                 </button>
               </div>
             </div>

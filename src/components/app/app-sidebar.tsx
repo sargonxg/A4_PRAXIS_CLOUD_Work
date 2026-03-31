@@ -41,6 +41,7 @@ import {
   Clock,
   Heart,
   Globe,
+  Telescope,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -56,6 +57,30 @@ import { Coins, X, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const CHANGELOG = [
+  {
+    version: 'v3.10',
+    date: '2026.03.30',
+    notes: [
+      'Deep Research Agent — Vertex AI ADK multi-agent system: Planning → Web Research → Synthesis pipeline',
+      'Live agent activity feed showing each sub-agent\'s work in real-time',
+      'Session persistence for multi-turn research conversations',
+      'New users now start with 5,000 credits (was 100)',
+      'Admin bulk credit reset: POST /api/admin/set-all-credits',
+      'Debug Panel top-up increased to +1,000 credits',
+    ],
+  },
+  {
+    version: 'v3.9',
+    date: '2026.03.30',
+    notes: [
+      'Debug Panel (Ctrl+Shift+D): live API call log, service health, credit counter, self-service top-up',
+      'AiPopulate: 90s timeout, elapsed counter, cancel button — no more infinite hangs',
+      'buildToolContext() expanded to 25 lines with ACO grammar, Glasl stage, risk labels',
+      'All 34 AI routes now receive rich situation context',
+      'Timeline and Humanitarian dashboard pages added',
+      'New users: 5000 credits, all 34 AI routes secured, 68 total API endpoints',
+    ],
+  },
   {
     version: 'v3.5',
     date: '2026.03.26',
@@ -164,6 +189,7 @@ const navSections: NavSection[] = [
   {
     label: 'Intelligence',
     items: [
+      { label: 'Deep Research Agent', icon: Telescope, href: '/deep-search-agent', badge: 'TACITUS' },
       { label: 'ARGUS Deep Research', icon: Network, href: '/argus', badge: 'TACITUS' },
       { label: 'Media Compass', icon: Compass, href: '/media-compass' },
       { label: 'Media Roundup', icon: Newspaper, href: '/media-roundup' },
@@ -191,7 +217,7 @@ function ChangelogButton() {
         onClick={() => setOpen(true)}
         className="mt-1 w-full text-center text-[9px] text-navy-300 hover:text-navy-500 transition-colors"
       >
-        PRAXIS v3.9 · Build 2026.03.29
+        PRAXIS v3.10 · Build 2026.03.30
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setOpen(false)}>

@@ -136,6 +136,9 @@ export async function searchWeb(
 
 /**
  * Scrape a single URL and return clean markdown content.
+ * Falls back to free alternatives when Firecrawl is not configured:
+ *  - Wikipedia URLs → Wikipedia REST API (full article extract)
+ *  - Any URL → native fetch() + HTML stripping
  */
 export async function scrapeUrl(url: string): Promise<ScrapeResult> {
   const cached = getCached(scrapeCache, url);
@@ -143,7 +146,10 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
 
   const client = getClient();
   if (!client) {
-    return { url, content: '', success: false, error: 'Firecrawl not configured' };
+    // Free fallbacks — no Firecrawl required
+    const result = await scrapeUrlFree(url);
+    if (result.success) setCache(scrapeCache, url, result);
+    return result;
   }
 
   try {
@@ -153,7 +159,8 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
     });
 
     if (!response.success) {
-      return { url, content: '', success: false, error: 'Scrape failed' };
+      // Firecrawl failed — try free fallback
+      return scrapeUrlFree(url);
     }
 
     const result: ScrapeResult = {
@@ -167,7 +174,79 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
     setCache(scrapeCache, url, result);
     return result;
   } catch (err) {
-    console.error('[firecrawl] Scrape failed for', url, err);
+    console.error('[firecrawl] Scrape failed for', url, '— trying free fallback:', err);
+    return scrapeUrlFree(url);
+  }
+}
+
+/**
+ * Free URL scraper — no API key required.
+ * Wikipedia → REST API for clean article text.
+ * Any other URL → native fetch + HTML tag stripping.
+ */
+async function scrapeUrlFree(url: string): Promise<ScrapeResult> {
+  try {
+    // Wikipedia: use the REST API for clean plain-text extract
+    const wikiMatch = url.match(/wikipedia\.org\/wiki\/([^#?]+)/);
+    if (wikiMatch) {
+      const title = decodeURIComponent(wikiMatch[1]);
+      const apiUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&exsectionformat=plain&titles=${encodeURIComponent(title)}&format=json&origin=*`;
+      const res = await fetch(apiUrl, { signal: AbortSignal.timeout(10000) });
+      if (res.ok) {
+        const data = await res.json();
+        const pages = data?.query?.pages || {};
+        const page = Object.values(pages)[0] as { title?: string; extract?: string } | undefined;
+        if (page?.extract) {
+          const result: ScrapeResult = {
+            url,
+            content: page.extract.slice(0, 12000),
+            title: page.title || title,
+            description: page.extract.slice(0, 300),
+            success: true,
+          };
+          return result;
+        }
+      }
+    }
+
+    // General URL: fetch + strip HTML tags
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(10000),
+      headers: { 'User-Agent': 'PRAXIS/3.10 TACITUS (+https://praxis.tacitus.me)' },
+    });
+    if (!res.ok) return { url, content: '', success: false, error: `HTTP ${res.status}` };
+
+    const html = await res.text();
+
+    // Strip scripts, styles, nav, footer — keep main content
+    const cleaned = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+      .replace(/<[^>]+>/g, ' ')             // strip all remaining tags
+      .replace(/&[a-z]+;/gi, ' ')           // decode common HTML entities to space
+      .replace(/\s{2,}/g, ' ')              // collapse whitespace
+      .trim();
+
+    // Extract title from <title> tag
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    const title = titleMatch ? titleMatch[1].trim() : url;
+
+    if (!cleaned || cleaned.length < 100) {
+      return { url, content: '', success: false, error: 'No content extracted' };
+    }
+
+    return {
+      url,
+      content: cleaned.slice(0, 12000),
+      title,
+      description: cleaned.slice(0, 300),
+      success: true,
+    };
+  } catch (err) {
+    console.warn('[scrapeUrlFree] Failed for', url, err);
     return { url, content: '', success: false, error: String(err) };
   }
 }

@@ -41,6 +41,8 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   'ai_mediation_design': 3,
   'ai_power_map': 3,
   'ai_media_roundup': 2,
+  // Deep Research Agent (Vertex AI ADK)
+  'ai_deep_search_agent': 10,
   // Aliases used by some routes (non-standard keys)
   'media-roundup': 2,
   'research': 3,
@@ -88,7 +90,7 @@ async function deductCreditsAdmin(
 
     if (!userSnap.exists) {
       // No profile yet — create one with initial credits then deduct
-      const initial = 100;
+      const initial = 5000;
       if (initial < cost) return { success: false, remainingCredits: 0 };
       tx.set(userRef, {
         uid,

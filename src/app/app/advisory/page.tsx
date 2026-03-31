@@ -369,7 +369,7 @@ function AdvisorChatPanel({
 
     const allMessages = [
       ...messages.map((m) => ({ role: m.role, content: m.content })),
-      { role: userMsg.role, content: situationContext + '\n\n' + userMsg.content },
+      { role: userMsg.role, content: userMsg.content },
     ];
 
     try {
@@ -391,17 +391,15 @@ function AdvisorChatPanel({
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value);
-        for (const line of chunk.split('\n')) {
-          const parsed = parseDataStreamChunk(line);
-          if (parsed) {
-            accumulated += parsed;
-            setMessages((prev) => {
-              const next = [...prev];
-              next[next.length - 1] = { role: 'assistant', content: accumulated };
-              return next;
-            });
-          }
+        const chunk = decoder.decode(value, { stream: true });
+        const parsed = parseDataStreamChunk(chunk);
+        if (parsed) {
+          accumulated += parsed;
+          setMessages((prev) => {
+            const next = [...prev];
+            next[next.length - 1] = { role: 'assistant', content: accumulated };
+            return next;
+          });
         }
       }
     } catch {
@@ -598,7 +596,7 @@ function PanelDiscussion({ situationContext, situation }: { situationContext: st
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: [
-              { role: 'user', content: situationContext + '\n\n' + question },
+              { role: 'user', content: question },
             ],
             advisorId: advisor.id,
             deepAnalysis: false,
@@ -612,11 +610,9 @@ function PanelDiscussion({ situationContext, situation }: { situationContext: st
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const chunk = decoder.decode(value);
-          for (const line of chunk.split('\n')) {
-            const parsed = parseDataStreamChunk(line);
-            if (parsed) { accumulated += parsed; setResponses((prev) => ({ ...prev, [advisor.id]: accumulated })); }
-          }
+          const chunk = decoder.decode(value, { stream: true });
+          const parsed = parseDataStreamChunk(chunk);
+          if (parsed) { accumulated += parsed; setResponses((prev) => ({ ...prev, [advisor.id]: accumulated })); }
         }
       } catch {
         setResponses((prev) => ({ ...prev, [advisor.id]: `*${advisor.name} is currently unavailable.*` }));

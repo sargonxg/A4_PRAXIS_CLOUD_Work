@@ -8,11 +8,12 @@ import { searchArticles, type GDELTArticle } from './gdelt-client';
 import { searchReports, type RWReport } from './reliefweb-client';
 import { countryNameToIso3, getDisplacement, getFoodSecurity, getFunding } from './hdx-client';
 import { getCurrentStability } from './gdelt-stability';
+import { searchUNNews, type UNNewsItem } from './unnews-client';
 
 export interface IntelligenceItem {
   id: string;
-  source: 'acled' | 'gdelt' | 'reliefweb';
-  type: 'event' | 'article' | 'report';
+  source: 'acled' | 'gdelt' | 'reliefweb' | 'unnews';
+  type: 'event' | 'article' | 'report' | 'statement';
   title: string;
   description: string;
   date: string;
@@ -37,7 +38,7 @@ export interface StabilitySnapshot {
 export interface SituationIntelligence {
   events: IntelligenceItem[];
   totalCount: number;
-  sources: { acled: number; gdelt: number; reliefweb: number };
+  sources: { acled: number; gdelt: number; reliefweb: number; unnews: number };
   humanitarian?: HumanitarianSnapshot;
   stability?: StabilitySnapshot;
   fetchedAt: string;
@@ -91,6 +92,21 @@ function rwToIntel(r: RWReport): IntelligenceItem {
   };
 }
 
+function unToIntel(item: UNNewsItem): IntelligenceItem {
+  return {
+    id: `un-${Buffer.from(item.url).toString('base64').slice(0, 20)}`,
+    source: 'unnews',
+    type: 'statement',
+    title: item.title,
+    description: item.summary,
+    date: item.date,
+    url: item.url,
+    actors: ['United Nations'],
+    severity: item.topic === 'Peace & Security' ? 'high' : 'medium',
+    metadata: { topic: item.topic },
+  };
+}
+
 /**
  * Fetch intelligence from all available data sources for a country/situation
  */
@@ -112,6 +128,7 @@ export async function getSituationIntelligence(options: {
     iso3 ? getFoodSecurity(iso3) : Promise.resolve([]),
     iso3 ? getFunding(iso3) : Promise.resolve(null),
     getCurrentStability(options.country.slice(0, 2).toUpperCase()),
+    searchUNNews(options.query || options.country, 8),
   ]);
 
   const acledEvents = results[0].status === 'fulfilled' ? results[0].value as ACLEDEvent[] : [];
@@ -121,11 +138,13 @@ export async function getSituationIntelligence(options: {
   const foodSecurity = results[4].status === 'fulfilled' ? results[4].value as { phase: string; population: number; pct: number }[] : undefined;
   const funding = results[5].status === 'fulfilled' ? results[5].value as { required: number; funded: number; pct: number } | null : undefined;
   const stability = results[6].status === 'fulfilled' ? results[6].value as { score: number; trend: 'improving' | 'stable' | 'worsening' } | null : undefined;
+  const unNews = results[7].status === 'fulfilled' ? results[7].value as UNNewsItem[] : [];
 
   const items: IntelligenceItem[] = [
     ...acledEvents.map(acledToIntel),
     ...gdeltArticles.map(gdeltToIntel),
     ...rwReports.map(rwToIntel),
+    ...unNews.map(unToIntel),
   ];
 
   // Sort by date descending, then severity
@@ -139,7 +158,7 @@ export async function getSituationIntelligence(options: {
   return {
     events: items,
     totalCount: items.length,
-    sources: { acled: acledEvents.length, gdelt: gdeltArticles.length, reliefweb: rwReports.length },
+    sources: { acled: acledEvents.length, gdelt: gdeltArticles.length, reliefweb: rwReports.length, unnews: unNews.length },
     humanitarian: (displacement || foodSecurity?.length || funding) ? {
       displacement: displacement?.idps || displacement?.refugees ? displacement : undefined,
       foodSecurity: foodSecurity?.length ? foodSecurity : undefined,

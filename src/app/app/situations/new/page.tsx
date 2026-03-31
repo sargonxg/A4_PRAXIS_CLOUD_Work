@@ -17,6 +17,15 @@ import {
   Users,
   Upload,
   X,
+  BookOpen,
+  Shield,
+  Heart,
+  Building2,
+  Newspaper,
+  Brain,
+  DollarSign,
+  Sword,
+  Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -70,8 +79,96 @@ const REGION_SUGGESTIONS = [
 const STEPS: { step: Step; label: string; icon: React.ElementType }[] = [
   { step: 1, label: 'Describe', icon: FileText },
   { step: 2, label: 'Actors', icon: Users },
-  { step: 3, label: 'Context', icon: Upload },
+  { step: 3, label: 'Sources', icon: BookOpen },
   { step: 4, label: 'Create', icon: Check },
+];
+
+// ── Source category definitions ──────────────────────────────────────────────
+
+interface SourceCategory {
+  id: string;
+  label: string;
+  description: string;
+  icon: React.ElementType;
+  sources: string[];
+  searchTerms: string[];
+  alwaysOn?: boolean;
+  useFirecrawl?: boolean;
+}
+
+const SOURCE_CATEGORIES: SourceCategory[] = [
+  {
+    id: 'foundational',
+    label: 'Foundational',
+    description: 'Wikipedia, encyclopedic context, geo & demographic data',
+    icon: BookOpen,
+    sources: ['Wikipedia', 'CIA World Factbook', 'CFR Country Profiles'],
+    searchTerms: ['history background', 'geography demographics', 'overview'],
+    alwaysOn: true,
+  },
+  {
+    id: 'conflict-security',
+    label: 'Conflict & Security',
+    description: 'Armed groups, violence data, conflict dynamics',
+    icon: Shield,
+    sources: ['ICG CrisisWatch', 'ACLED', 'SIPRI', 'IISS', 'Geneva Academy'],
+    searchTerms: ['armed conflict violence escalation', 'security forces ceasefire'],
+    useFirecrawl: true,
+  },
+  {
+    id: 'humanitarian',
+    label: 'Humanitarian',
+    description: 'Displacement, protection, aid operations, civilian impact',
+    icon: Heart,
+    sources: ['ReliefWeb', 'UNHCR', 'Human Rights Watch', 'Amnesty International', 'ICRC', 'MSF'],
+    searchTerms: ['humanitarian crisis displacement refugees civilians'],
+    useFirecrawl: true,
+  },
+  {
+    id: 'diplomatic-official',
+    label: 'Diplomatic & Official',
+    description: 'UN bodies, foreign ministry statements, official positions',
+    icon: Building2,
+    sources: ['UN News', 'UNSC Resolutions', "What's In Blue", 'State Dept', 'EU EEAS', 'African Union'],
+    searchTerms: ['diplomatic negotiations peace talks UN Security Council resolution'],
+    useFirecrawl: true,
+  },
+  {
+    id: 'news-media',
+    label: 'News & Media',
+    description: 'Breaking news, frontline reporting, regional press',
+    icon: Newspaper,
+    sources: ['Reuters', 'AP', 'BBC', 'Al Jazeera', 'AFP', 'Financial Times'],
+    searchTerms: ['latest news developments today situation update'],
+    useFirecrawl: true,
+  },
+  {
+    id: 'think-tanks',
+    label: 'Think Tanks & Policy',
+    description: 'Expert analysis, policy briefs, scenario reports',
+    icon: Brain,
+    sources: ['RAND', 'Carnegie Endowment', 'Chatham House', 'Brookings', 'Wilson Center'],
+    searchTerms: ['analysis policy brief expert assessment scenario'],
+    useFirecrawl: true,
+  },
+  {
+    id: 'military-intelligence',
+    label: 'Military & Intelligence',
+    description: 'Armed forces, weapons, open-source intelligence',
+    icon: Sword,
+    sources: ["Jane's Defence", 'IISS Military Balance', 'Bellingcat', 'ISW'],
+    searchTerms: ['military forces weapons capabilities troop movements'],
+    useFirecrawl: true,
+  },
+  {
+    id: 'economic-development',
+    label: 'Economic & Development',
+    description: 'Economic drivers, sanctions, development indicators',
+    icon: DollarSign,
+    sources: ['World Bank', 'IMF', 'UNDP', 'Oxford Analytica', 'Fitch/Moody\'s'],
+    searchTerms: ['economic sanctions poverty development GDP trade'],
+    useFirecrawl: true,
+  },
 ];
 
 function StepIndicator({ current }: { current: Step }) {
@@ -325,19 +422,32 @@ function StepActors({ form, setForm, onNext, onBack }: { form: SituationForm; se
   );
 }
 
-/* ---------- Step 3: Context (optional) ---------- */
+/* ---------- Step 3: Sources ---------- */
 
 interface ContextData {
   urls: string[];
   notes: string;
   files: File[];
+  selectedSources: string[];
 }
 
-function StepContext({ context, setContext, onNext, onBack }: { context: ContextData; setContext: React.Dispatch<React.SetStateAction<ContextData>>; onNext: () => void; onBack: () => void }) {
-  const { urls, notes, files } = context;
+function StepSources({ context, setContext, onNext, onBack, situationName }: { context: ContextData; setContext: React.Dispatch<React.SetStateAction<ContextData>>; onNext: () => void; onBack: () => void; situationName: string }) {
+  const { urls, notes, files, selectedSources } = context;
   const setUrls = (u: string[] | ((prev: string[]) => string[])) => setContext((c) => ({ ...c, urls: typeof u === 'function' ? u(c.urls) : u }));
   const setNotes = (n: string) => setContext((c) => ({ ...c, notes: n }));
   const setFiles = (f: File[] | ((prev: File[]) => File[])) => setContext((c) => ({ ...c, files: typeof f === 'function' ? f(c.files) : f }));
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const toggleSource = (id: string) => {
+    const cat = SOURCE_CATEGORIES.find((c) => c.id === id);
+    if (cat?.alwaysOn) return;
+    setContext((c) => ({
+      ...c,
+      selectedSources: c.selectedSources.includes(id)
+        ? c.selectedSources.filter((s) => s !== id)
+        : [...c.selectedSources, id],
+    }));
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -348,50 +458,147 @@ function StepContext({ context, setContext, onNext, onBack }: { context: Context
     }
   };
 
+  const firecrawlCount = SOURCE_CATEGORIES.filter((c) => selectedSources.includes(c.id) && c.useFirecrawl).length;
+
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-semibold text-navy-900">Add Context <span className="ml-2 text-xs font-normal text-navy-400">Optional</span></h2>
-        <p className="mt-1 text-sm text-navy-500">Upload documents, paste URLs, or add notes. PRAXIS will analyze these to build your conflict knowledge graph.</p>
+        <h2 className="text-lg font-semibold text-navy-900">Research Sources</h2>
+        <p className="mt-1 text-sm text-navy-500">
+          Select which source categories to include. PRAXIS will scrape Wikipedia first, then run targeted research across your selected categories to build the conflict knowledge graph for <span className="font-medium text-navy-700">&ldquo;{situationName}&rdquo;</span>.
+        </p>
       </div>
 
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium text-navy-700">Documents (PDF, DOCX, TXT)</label>
-        <div className="rounded-lg border-2 border-dashed border-navy-200 bg-navy-50/50 p-6 text-center hover:border-diplomatic-blue/30 transition-colors">
-          <Upload className="mx-auto h-8 w-8 text-navy-400" />
-          <p className="mt-2 text-sm text-navy-600">Drag & drop files or <label className="cursor-pointer text-diplomatic-blue hover:underline">browse<input type="file" multiple accept=".pdf,.docx,.txt" onChange={handleFileChange} className="hidden" /></label></p>
-          <p className="mt-1 text-[11px] text-navy-400">Max 25MB per file</p>
+      {/* Wikipedia always-first notice */}
+      <div className="flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3">
+        <BookOpen className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
+        <div>
+          <p className="text-xs font-semibold text-emerald-700">Wikipedia is always scraped first</p>
+          <p className="text-[11px] text-emerald-600 mt-0.5">Provides canonical background, geography, actors, and historical context for all conflict tools.</p>
         </div>
-        {files.length > 0 && (
-          <div className="space-y-1 mt-2">
-            {files.map((f, i) => (
-              <div key={i} className="flex items-center justify-between rounded-lg border border-navy-200 bg-white px-3 py-2">
-                <span className="text-xs text-navy-700 truncate">{f.name}</span>
-                <button onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))} className="text-navy-400 hover:text-red-500"><X className="h-3.5 w-3.5" /></button>
+      </div>
+
+      {/* Source category grid */}
+      <div className="grid gap-2.5 sm:grid-cols-2">
+        {SOURCE_CATEGORIES.map((cat) => {
+          const isSelected = cat.alwaysOn || selectedSources.includes(cat.id);
+          const Icon = cat.icon;
+          return (
+            <button
+              key={cat.id}
+              onClick={() => toggleSource(cat.id)}
+              disabled={cat.alwaysOn}
+              className={cn(
+                'relative rounded-xl border p-3.5 text-left transition-all text-sm',
+                isSelected
+                  ? 'border-diplomatic-blue/40 bg-diplomatic-blue/5 ring-1 ring-diplomatic-blue/20'
+                  : 'border-navy-200 bg-white hover:border-navy-300',
+                cat.alwaysOn && 'cursor-default'
+              )}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2.5">
+                  <div className={cn(
+                    'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',
+                    isSelected ? 'bg-diplomatic-blue/10' : 'bg-navy-100'
+                  )}>
+                    <Icon className={cn('h-3.5 w-3.5', isSelected ? 'text-diplomatic-blue' : 'text-navy-400')} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className={cn('text-xs font-semibold leading-tight', isSelected ? 'text-diplomatic-blue' : 'text-navy-700')}>
+                      {cat.label}
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-navy-400 leading-tight">{cat.description}</p>
+                  </div>
+                </div>
+                <div className="shrink-0">
+                  {cat.alwaysOn ? (
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-600">Always</span>
+                  ) : (
+                    <div className={cn(
+                      'h-4 w-4 rounded border flex items-center justify-center transition-all',
+                      isSelected ? 'border-diplomatic-blue bg-diplomatic-blue' : 'border-navy-300 bg-white'
+                    )}>
+                      {isSelected && <Check className="h-2.5 w-2.5 text-white" />}
+                    </div>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
-        )}
+              <div className="mt-2.5 flex flex-wrap gap-1">
+                {cat.sources.slice(0, 4).map((s) => (
+                  <span key={s} className="rounded-full bg-navy-100/80 px-1.5 py-0.5 text-[9px] font-medium text-navy-500">{s}</span>
+                ))}
+                {cat.sources.length > 4 && (
+                  <span className="rounded-full bg-navy-100/80 px-1.5 py-0.5 text-[9px] font-medium text-navy-400">+{cat.sources.length - 4} more</span>
+                )}
+              </div>
+              {cat.useFirecrawl && isSelected && (
+                <div className="absolute top-2 right-2">
+                  <span className="rounded bg-gold-500/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-gold-600">Firecrawl</span>
+                </div>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium text-navy-700">URLs (up to 5 articles/reports)</label>
-        {urls.map((url, i) => (
-          <div key={i} className="flex gap-2">
-            <input type="url" value={url} onChange={(e) => { const u = [...urls]; u[i] = e.target.value; setUrls(u); }} placeholder="https://..."
-              className="flex-1 rounded-lg border border-navy-200 bg-white px-4 py-2 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20" />
-            {urls.length > 1 && <button onClick={() => setUrls(urls.filter((_, j) => j !== i))} className="text-navy-400 hover:text-red-500"><X className="h-4 w-4" /></button>}
-          </div>
-        ))}
-        {urls.length < 5 && (
-          <button onClick={() => setUrls([...urls, ''])} className="text-xs text-diplomatic-blue hover:underline mt-1">+ Add another URL</button>
-        )}
+      {/* Research summary */}
+      <div className="rounded-lg border border-navy-200 bg-navy-50/40 px-4 py-3 text-[11px] text-navy-500 flex items-start gap-2">
+        <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-navy-400" />
+        <span>
+          <span className="font-semibold text-navy-700">{selectedSources.length + 1} source categories selected</span>
+          {firecrawlCount > 0 && <> — {firecrawlCount} will use Firecrawl web search</>}. Research is capped at ~20,000 characters for preliminary ACO ontology construction. Full deep research is available via the <span className="font-semibold text-navy-700">Deep Research Agent</span> after setup.
+        </span>
       </div>
 
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium text-navy-700">Notes / Raw Text</label>
-        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Paste any relevant notes, meeting summaries, or raw intelligence..." rows={3}
-          className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20 resize-none" />
+      {/* Advanced: custom URLs, notes, files */}
+      <div>
+        <button onClick={() => setShowAdvanced(!showAdvanced)} className="flex items-center gap-1.5 text-xs text-navy-500 hover:text-navy-700 transition-colors">
+          <Plus className={cn('h-3.5 w-3.5 transition-transform', showAdvanced && 'rotate-45')} />
+          {showAdvanced ? 'Hide' : 'Add'} custom sources (URLs, documents, notes)
+        </button>
+
+        {showAdvanced && (
+          <div className="mt-3 space-y-4 rounded-xl border border-navy-200 bg-white p-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-navy-700">Custom URLs (up to 5)</label>
+              {urls.map((url, i) => (
+                <div key={i} className="flex gap-2">
+                  <input type="url" value={url} onChange={(e) => { const u = [...urls]; u[i] = e.target.value; setUrls(u); }} placeholder="https://..."
+                    className="flex-1 rounded-lg border border-navy-200 bg-white px-4 py-2 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20" />
+                  {urls.length > 1 && <button onClick={() => setUrls(urls.filter((_, j) => j !== i))} className="text-navy-400 hover:text-red-500"><X className="h-4 w-4" /></button>}
+                </div>
+              ))}
+              {urls.length < 5 && (
+                <button onClick={() => setUrls([...urls, ''])} className="text-xs text-diplomatic-blue hover:underline mt-1">+ Add another URL</button>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-navy-700">Documents (PDF, DOCX, TXT)</label>
+              <div className="rounded-lg border-2 border-dashed border-navy-200 bg-navy-50/50 p-4 text-center hover:border-diplomatic-blue/30 transition-colors">
+                <Upload className="mx-auto h-6 w-6 text-navy-400" />
+                <p className="mt-1.5 text-xs text-navy-600">Drag & drop or <label className="cursor-pointer text-diplomatic-blue hover:underline">browse<input type="file" multiple accept=".pdf,.docx,.txt" onChange={handleFileChange} className="hidden" /></label></p>
+              </div>
+              {files.length > 0 && (
+                <div className="space-y-1 mt-1">
+                  {files.map((f, i) => (
+                    <div key={i} className="flex items-center justify-between rounded-lg border border-navy-200 bg-white px-3 py-2">
+                      <span className="text-xs text-navy-700 truncate">{f.name}</span>
+                      <button onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))} className="text-navy-400 hover:text-red-500"><X className="h-3.5 w-3.5" /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-navy-700">Notes / Raw Intelligence</label>
+              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Paste any relevant notes, meeting summaries, or raw intelligence..." rows={3}
+                className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20 resize-none" />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between pt-2">
@@ -399,7 +606,7 @@ function StepContext({ context, setContext, onNext, onBack }: { context: Context
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
         <div className="flex items-center gap-3">
-          <button onClick={onNext} className="text-sm font-medium text-navy-500 hover:text-navy-700">Skip for now</button>
+          <button onClick={onNext} className="text-sm font-medium text-navy-500 hover:text-navy-700">Skip research</button>
           <button onClick={onNext}
             className="flex items-center gap-2 rounded-lg bg-gold-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-gold-600 shadow-md shadow-gold-500/20">
             Continue <ArrowRight className="h-4 w-4" />
@@ -515,6 +722,7 @@ export default function NewSituationPage() {
     urls: [''],
     notes: '',
     files: [],
+    selectedSources: ['conflict-security', 'humanitarian', 'diplomatic-official', 'news-media'],
   });
 
   const goNext = useCallback(() => { setDirection(1); setStep((s) => Math.min(s + 1, 4) as Step); }, []);
@@ -606,6 +814,7 @@ export default function NewSituationPage() {
             urls: filteredUrls.length ? filteredUrls : undefined,
             notes: context.notes.trim() || undefined,
             documentIds: uploadedDocIds.length ? uploadedDocIds : undefined,
+            selectedSources: context.selectedSources.length > 0 ? context.selectedSources : undefined,
           }),
         }).catch(() => { /* background — ignore errors */ });
       } catch { /* fire and forget */ }
@@ -649,7 +858,7 @@ export default function NewSituationPage() {
           <motion.div key={step} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25, ease: 'easeInOut' }}>
             {step === 1 && <StepDescribe form={form} setForm={setForm} onNext={goNext} />}
             {step === 2 && <StepActors form={form} setForm={setForm} onNext={goNext} onBack={goBack} />}
-            {step === 3 && <StepContext context={context} setContext={setContext} onNext={goNext} onBack={goBack} />}
+            {step === 3 && <StepSources context={context} setContext={setContext} onNext={goNext} onBack={goBack} situationName={form.name} />}
             {step === 4 && <StepReview form={form} onBack={goBack} onCreate={handleCreate} isCreating={isCreating} />}
           </motion.div>
         </AnimatePresence>

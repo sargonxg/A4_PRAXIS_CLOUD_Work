@@ -3,11 +3,24 @@ import { getProModel } from '@/lib/ai/providers';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { tacitusTools } from '@/lib/ai/tools';
-import { scrapeMultiple } from '@/lib/ai/firecrawl';
+import { scrapeUrl, scrapeMultiple, searchWeb, isFirecrawlConfigured } from '@/lib/ai/firecrawl';
 import { updateSituation, getSituation } from '@/lib/firebase/situations-service';
 import { getAllDocumentText } from '@/lib/firebase/documents-service';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
+import { countryNameToIso3 } from '@/lib/data-feeds/hdx-client';
+import { getEconomicSnapshot } from '@/lib/data-feeds/worldbank-client';
 import { initializeSituationTools } from '@/lib/services/situation-initializer';
+
+// Source category search term definitions (mirrors UI in situations/new)
+const CATEGORY_SEARCH_TERMS: Record<string, string> = {
+  'conflict-security': 'armed conflict violence escalation ceasefire security forces',
+  'humanitarian': 'humanitarian crisis displacement refugees civilians protection',
+  'diplomatic-official': 'diplomatic negotiations peace talks UN Security Council resolution',
+  'news-media': 'latest news developments situation update today',
+  'think-tanks': 'analysis policy brief expert assessment scenario outlook',
+  'military-intelligence': 'military forces weapons capabilities troop movements armed groups',
+  'economic-development': 'economic sanctions poverty development GDP trade',
+};
 
 export const maxDuration = 120;
 
@@ -34,7 +47,7 @@ export const POST = withAuth(async (req, user) => {
   try {
     const {
       situationName, situationType, region, description, actors, userRole,
-      situationId, urls, notes, documentIds,
+      situationId, urls, notes, selectedSources,
     } = await req.json();
 
     if (!situationName?.trim()) {
@@ -46,20 +59,61 @@ export const POST = withAuth(async (req, user) => {
     if (!creditCheck.allowed) return creditCheck.response;
 
     const actorList = (actors || []).join(', ') || 'not yet identified';
+    const searchQuery = `${situationName}${region ? ` ${region}` : ''}`;
+    const firecrawlAvailable = isFirecrawlConfigured();
 
-    // --- Gather supplementary context in parallel ---
+    // --- Gather supplementary context ---
     const contextSections: string[] = [];
-
     const gatherPromises: Promise<void>[] = [];
 
-    // Scrape user-provided URLs
+    // Phase 1: Wikipedia always first — canonical background context
+    gatherPromises.push(
+      (async () => {
+        const wikiSlug = encodeURIComponent(situationName.replace(/\s+/g, '_'));
+        const wikiResult = await scrapeUrl(`https://en.wikipedia.org/wiki/${wikiSlug}`).catch(() => null);
+        if (wikiResult?.success && wikiResult.content) {
+          contextSections.push(`\n\nWIKIPEDIA (primary background):\n${wikiResult.content.slice(0, 6000)}`);
+        } else if (region) {
+          // Fallback: try the region article
+          const regionSlug = encodeURIComponent(region.replace(/\s+/g, '_'));
+          const regionResult = await scrapeUrl(`https://en.wikipedia.org/wiki/${regionSlug}`).catch(() => null);
+          if (regionResult?.success && regionResult.content) {
+            contextSections.push(`\n\nWIKIPEDIA (region background):\n${regionResult.content.slice(0, 4000)}`);
+          }
+        }
+      })()
+    );
+
+    // Phase 2: Firecrawl searches per selected source category (cap total at ~12,000 chars)
+    if (firecrawlAvailable && Array.isArray(selectedSources) && selectedSources.length > 0) {
+      const categoriesToSearch = selectedSources
+        .filter((id: string) => id !== 'foundational' && CATEGORY_SEARCH_TERMS[id])
+        .slice(0, 5); // max 5 categories to stay within limits
+
+      for (const catId of categoriesToSearch) {
+        const terms = CATEGORY_SEARCH_TERMS[catId];
+        gatherPromises.push(
+          searchWeb(`${searchQuery} ${terms}`, { numResults: 3 }).then((results) => {
+            if (results.length > 0) {
+              const formatted = results
+                .map((r) => `- ${r.title}: ${r.description || r.content.slice(0, 200) || r.url}`)
+                .join('\n');
+              const label = catId.replace(/-/g, ' ').toUpperCase();
+              contextSections.push(`\n\n${label} SOURCES:\n${formatted}`);
+            }
+          }).catch(() => {})
+        );
+      }
+    }
+
+    // Phase 3: Scrape user-provided URLs
     if (urls?.length) {
       gatherPromises.push(
         scrapeMultiple(urls).then((results) => {
           const successful = results.filter((r) => r.success && r.content);
           if (successful.length) {
             const formatted = successful
-              .map((r) => `### ${r.title || r.url}\nURL: ${r.url}\n\n${r.content.slice(0, 8000)}`)
+              .map((r) => `### ${r.title || r.url}\nURL: ${r.url}\n\n${r.content.slice(0, 4000)}`)
               .join('\n\n---\n\n');
             contextSections.push(`\n\nUSER-PROVIDED SOURCE MATERIAL:\n${formatted}`);
           }
@@ -67,10 +121,10 @@ export const POST = withAuth(async (req, user) => {
       );
     }
 
-    // Fetch uploaded document content
+    // Phase 4: Uploaded document content
     if (situationId && user.uid) {
       gatherPromises.push(
-        getAllDocumentText(user.uid, situationId, { maxChars: 15000 }).then((text) => {
+        getAllDocumentText(user.uid, situationId, { maxChars: 8000 }).then((text) => {
           if (text.trim()) {
             contextSections.push(`\n\nUPLOADED DOCUMENTS:\n${text}`);
           }
@@ -78,28 +132,66 @@ export const POST = withAuth(async (req, user) => {
       );
     }
 
-    // Fetch live intelligence feeds
+    // Phase 5: Live intelligence feeds + World Bank economic data
+    const countryIso3 = countryNameToIso3(region || situationName);
+
     gatherPromises.push(
       getSituationIntelligence({ country: region || situationName, query: situationName, limit: 20 }).then((intel) => {
         if (intel.events.length > 0) {
-          const feedItems = intel.events.slice(0, 10).map((e) =>
+          const feedItems = intel.events.slice(0, 12).map((e) =>
             `- [${e.source.toUpperCase()}] ${e.date || 'recent'}: ${e.title}${e.severity ? ` (severity: ${e.severity})` : ''}`
           ).join('\n');
           contextSections.push(`\n\nLIVE INTELLIGENCE FEED (${intel.events.length} items):\n${feedItems}`);
         }
+        // Include humanitarian snapshot if available
+        if (intel.humanitarian) {
+          const hum = intel.humanitarian;
+          const parts: string[] = [];
+          if (hum.displacement?.idps || hum.displacement?.refugees) {
+            parts.push(`IDPs: ${(hum.displacement.idps || 0).toLocaleString()}, Refugees: ${(hum.displacement.refugees || 0).toLocaleString()}`);
+          }
+          if (hum.foodSecurity?.length) {
+            const worst = hum.foodSecurity.reduce((a, b) => (parseInt(a.phase) > parseInt(b.phase) ? a : b));
+            parts.push(`Food security: ${worst.pct}% of population in Phase ${worst.phase}`);
+          }
+          if (hum.funding?.required) {
+            parts.push(`Humanitarian funding: ${hum.funding.pct}% of $${(hum.funding.required / 1e6).toFixed(0)}M required funded`);
+          }
+          if (parts.length > 0) {
+            contextSections.push(`\n\nHUMANITARIAN SNAPSHOT:\n${parts.join('\n')}`);
+          }
+        }
+        if (intel.stability) {
+          contextSections.push(`\n\nSTABILITY INDEX: Score ${intel.stability.score}/10 (trend: ${intel.stability.trend})`);
+        }
       }).catch(() => {})
     );
 
-    await Promise.all(gatherPromises);
-
-    // User-provided analyst notes
-    if (notes?.trim()) {
-      contextSections.push(`\n\nANALYST NOTES PROVIDED BY USER:\n${notes}`);
+    // Phase 5b: World Bank economic indicators (free)
+    if (countryIso3) {
+      gatherPromises.push(
+        getEconomicSnapshot(countryIso3).then((econ) => {
+          const parts: string[] = [];
+          if (econ.gdp?.value) parts.push(`GDP: $${(econ.gdp.value / 1e9).toFixed(1)}B (${econ.gdp.year})`);
+          if (econ.inflation?.value) parts.push(`Inflation: ${econ.inflation.value.toFixed(1)}% (${econ.inflation.year})`);
+          if (econ.militarySpending?.value) parts.push(`Military spending: ${econ.militarySpending.value.toFixed(1)}% of GDP`);
+          if (parts.length > 0) {
+            contextSections.push(`\n\nECONOMIC INDICATORS (World Bank):\n${parts.join('\n')}`);
+          }
+        }).catch(() => {})
+      );
     }
 
-    const systemPrompt = `You are TACITUS, an elite conflict intelligence system. A user has just created a new situation and you must produce a comprehensive initial intelligence briefing.
+    await Promise.all(gatherPromises);
 
-Your task: research and structure "${situationName}" into actionable intelligence.
+    // Cap total context at ~20,000 chars to stay within model limits
+    const rawContext = contextSections.join('\n');
+    const cappedContext = rawContext.slice(0, 20000);
+
+    // Analyst notes appended last
+    const notesSection = notes?.trim() ? `\n\nANALYST NOTES:\n${notes}` : '';
+
+    const systemPrompt = `You are TACITUS, an elite conflict intelligence system built on the ACO (Actor-Claim-Ontology) v2.0 framework. A user has just created a situation and you must produce a comprehensive initial intelligence briefing that will seed all conflict analysis tools.
 
 SITUATION CONTEXT:
 - Name: ${situationName}
@@ -108,44 +200,52 @@ SITUATION CONTEXT:
 - Description: ${description || 'none provided'}
 - Known actors: ${actorList}
 - User role: ${userRole || 'analyst'}
-${contextSections.join('\n')}
+${cappedContext}${notesSection}
 
-IMPORTANT: Use the webSearch tool to find current, real information about this situation. Do NOT fabricate or hallucinate details. If you cannot find information, say so clearly.
+ACO v2.0 CORE ENTITIES (structure your analysis around these):
+Core 8: Actor · Claim · Interest · Constraint · Leverage · Commitment · Event · Narrative
+Extended 6: Institutions · Norms · Resources · Risks · Policies · Grievances
+
+IMPORTANT: Use the webSearch tool ONCE for current developments if needed. Do NOT fabricate details. Flag uncertainty. Do NOT repeat yourself.
 
 Generate your analysis in this EXACT structure:
 
 ## SITUATION OVERVIEW
-[2-3 paragraph executive summary of the current state of this conflict/situation, grounded in real sources]
+[2-3 paragraph executive summary grounded in sources above + web search if needed]
 
 ## KEY ACTORS & DYNAMICS
-For each major actor (aim for 5-8):
+For each major actor (aim for 5 to 8):
 ### [Actor Name]
 - **Type**: [State / Armed Group / International Org / Civil Society / External Power]
-- **Position**: [What they publicly demand or advocate]
-- **Interests**: [Underlying interests, including unstated ones]
-- **Leverage**: [What power/influence they have and over whom]
-- **Constraints**: [What limits their action]
+- **Position**: [What they publicly demand or advocate — Claim]
+- **Interests**: [Underlying interests, including unstated ones — Interest]
+- **Leverage**: [What power/influence they have and over whom — Leverage]
+- **Constraints**: [What limits their action — Constraint]
+- **Narrative**: [How they frame the conflict — Narrative]
 
 ## RELATIONSHIP MAP
-[Describe the key relationships: alliances, rivalries, dependencies, patron-client ties]
+[Key relationships: alliances, rivalries, dependencies, patron-client ties — include Commitments and Norms where relevant]
 
 ## RISK ASSESSMENT
 - **Current Glasl Escalation Stage**: [1-9, with justification]
 - **Escalation Trend**: [Escalating / Stable / De-escalating]
 - **Risk Score**: [1-10 with explanation]
-- **Key Risk Factors**: [3-5 specific risk factors]
+- **Key Risk Factors**: [3-5 specific risk factors — map to ACO Risks and Grievances]
 - **Window of Opportunity**: [If any exists, what is it and when does it close?]
 
 ## TIMELINE OF KEY EVENTS
-[5-10 most important recent events in chronological order, with dates]
+[5-10 most important recent events in chronological order, with dates — ACO Events]
+
+## RESOURCES & ECONOMIC DRIVERS
+[Key resources, economic interests, and financial flows driving the conflict — ACO Resources + Policies]
 
 ## RECOMMENDED ANALYST ACTIONS
-[5 specific next steps the ${userRole} should take to deepen their understanding]
+[5 specific next steps the ${userRole} should take]
 
 ## SOURCES
-[List all sources consulted, with dates]
+[List all sources consulted]
 
-Ground every claim in evidence. Flag uncertainty. Use UN diplomatic language standards.`;
+Ground every claim in the pre-scraped context above first, then use web search only for missing current details. Use UN diplomatic language standards.`;
 
     const result = streamText({
       model: getProModel(),
@@ -154,7 +254,7 @@ Ground every claim in evidence. Flag uncertainty. Use UN diplomatic language sta
       tools: {
         webSearch: tacitusTools.webSearch,
       },
-      stopWhen: stepCountIs(8),
+      stopWhen: stepCountIs(2),
       onFinish: async ({ text }) => {
         // Background: update situation metadata from the generated analysis
         if (!situationId || !user.uid) return;

@@ -5,13 +5,13 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 export const maxDuration = 10;
 
-const TOP_UP_AMOUNT = 500;
+const TOP_UP_AMOUNT = 1000;
 
 /**
  * POST /api/admin/add-credits
  *
  * Self-service credit top-up for the authenticated user.
- * Intended for development and testing — adds 500 credits to the caller's account.
+ * Intended for development and testing — adds 1000 credits to the caller's account.
  * Rate-limited to prevent abuse via the standard withAuth wrapper.
  */
 export const POST = withAuth(async (_req, user) => {
