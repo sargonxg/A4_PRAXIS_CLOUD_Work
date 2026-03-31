@@ -6,6 +6,27 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [4.0.0] — 2026-03-31
+
+### Added
+
+- **Tool Registry** (`src/lib/constants/tool-registry.ts`) — Single source of truth for all 40 PRAXIS tools. Each entry provides `id`, `name`, `category`, `description`, `shortDescription`, `credits`, `icon`, `aiRoute`, `dataSchema`, `requiredSituationFields`, `outputType`, `frameworks[]`, `dataSources[]`, `relatedTools[]`, and a `methodology` paragraph with full academic citations. Lookup helpers: `TOOL_BY_ID`, `TOOLS_BY_CATEGORY`, `getToolById()`, `getToolsByCategory()`, `getRelatedTools()`. Replaces scattered, inconsistent tool metadata spread across sidebar, AI routes, and page components.
+
+- **Frameworks Library** (`src/lib/constants/frameworks.ts`) — 15 fully documented analytical framework constants with complete academic citations, structured components, and usage mappings. Covers: Glasl 9-Stage Escalation Model (all stages with indicators and interventions), Fisher-Ury Principled Negotiation (BATNA/ZOPA definitions), INFORM Risk Index (formula and dimensions), Barnett-Duvall Power Taxonomy (4 faces with examples), Zartman Ripeness Theory (MHS + WO conditions), Stedman Spoiler Theory (3 types + management strategies), Mitchell-Agle-Wood Stakeholder Salience (7 types), OCHA Humanitarian Principles, IPC Food Security Phases (all 5 with colors), Lederach Peacebuilding Pyramid (3 tiers), Galtung Conflict Triangle (ABC + violence typology), UN DPPA Brief Format (sections + language standards), Berghof Mediation Framework (6 phases), Putnam Two-Level Games, Fearon Rationalist War Causes (3 mechanisms).
+
+- **Situation Type System v2** (`src/types/situation.ts`) — New optional fields on `Situation` interface for richer conflict classification: `conflictClassification` (UCDP typology: interstate/intrastate/internationalized_intrastate/non_state/extrastate), `ucdpIntensity` (minor/war/non_state), `informRiskIndex` (hazard/vulnerability/lackOfCoping/composite), `fragileStatesIndex`, `gdpPerCapita`, `populationAffected`, `conflictOnsetDate`, `latestEventDate`, `geoBoundingBox`, `keyDates[]`, `linkedSituations[]`, `tags[]`, `analysisPhase` (intake/mapping/assessment/monitoring/reporting), `lastAiRefresh`, `dataCompleteness`. All new fields are optional — fully backwards compatible. New types: `ToolCategory`, `ToolDefinition`, `ToolOutputType`, `ConflictClassification`, `UcdpIntensity`, `AnalysisPhase`.
+
+- **Entity Enrichment Schema** (`src/lib/ai/schemas/conflict-grammar.ts`) — New `EntityEnrichmentSchema` with confidence scoring (0–1), source attribution (`sourcePassage`, `sourceDocument`, `retrievalMethod`), temporal validity (`validFrom`, `validUntil`, `lastVerified`), and `qualityScore` (0–100). Added to `ConflictGraphSchema` as `enrichments: Record<entityId, EntityEnrichment>` (optional, backwards compatible) and `dataCompleteness` field. New export: `EntityEnrichment` TypeScript type.
+
+- **New tool registry entries**: `game-theory` (Simulation — strategic interaction modeling with payoff matrices, Nash equilibria, Schelling focal points, Fearon rationalist war causes) and `geospatial-monitor` (Intelligence — map-based ACLED/GDELT event visualization with hotspot clustering).
+
+### Changed
+
+- **Tool count**: 38 → 40 tools (game-theory + geospatial-monitor added to registry; pages in Phase 4)
+- **CLAUDE.md**: Updated to v4.0.0. Added full frameworks library table, updated tool registry reference, updated sidebar sections to reflect 40-tool structure.
+
+---
+
 ## [3.10.0] — 2026-03-30
 
 ### Added

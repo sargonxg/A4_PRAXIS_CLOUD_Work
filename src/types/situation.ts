@@ -1,3 +1,37 @@
+// ============================================================================
+// Tool Registry Types
+// ============================================================================
+
+export type ToolCategory =
+  | 'context'
+  | 'analysis'
+  | 'drafting'
+  | 'simulation'
+  | 'intelligence'
+  | 'workspace';
+
+export type ToolOutputType = 'structured' | 'streaming' | 'hybrid';
+
+export interface ToolDefinition {
+  id: string;
+  name: string;
+  category: ToolCategory;
+  description: string;
+  shortDescription: string;
+  credits: number;
+  icon: string;
+  aiRoute: string;
+  dataSchema: string;
+  requiredSituationFields: string[];
+  outputType: ToolOutputType;
+  frameworks: string[];
+  dataSources: string[];
+  relatedTools: string[];
+  methodology: string;
+}
+
+// ============================================================================
+
 export type SituationType =
   | 'international'
   | 'civil'
@@ -19,6 +53,19 @@ export type UserRole =
 export type SituationStatus = 'active' | 'archived' | 'resolved';
 export type EscalationTrend = 'stable' | 'escalating' | 'de-escalating' | 'volatile';
 
+// v4.0 additions
+export type ConflictClassification =
+  | 'interstate'
+  | 'intrastate'
+  | 'internationalized_intrastate'
+  | 'non_state'
+  | 'extrastate'
+  | 'other';
+
+export type UcdpIntensity = 'minor' | 'war' | 'non_state' | null;
+
+export type AnalysisPhase = 'intake' | 'mapping' | 'assessment' | 'monitoring' | 'reporting';
+
 export interface Situation {
   id: string;
   name: string;
@@ -39,6 +86,27 @@ export interface Situation {
   initialDocumentIds?: string[];
   createdAt: string;
   updatedAt: string;
+  // v4.0 — all optional for backwards compatibility
+  conflictClassification?: ConflictClassification;
+  ucdpIntensity?: UcdpIntensity;
+  informRiskIndex?: {
+    hazard: number;
+    vulnerability: number;
+    lackOfCoping: number;
+    composite: number;
+  } | null;
+  fragileStatesIndex?: number | null;
+  gdpPerCapita?: number | null;
+  populationAffected?: number | null;
+  conflictOnsetDate?: string | null;
+  latestEventDate?: string | null;
+  geoBoundingBox?: { north: number; south: number; east: number; west: number } | null;
+  keyDates?: { date: string; label: string; significance: 'critical' | 'high' | 'medium' | 'low' }[];
+  linkedSituations?: string[];
+  tags?: string[];
+  analysisPhase?: AnalysisPhase;
+  lastAiRefresh?: string | null;
+  dataCompleteness?: number;
 }
 
 export interface CreateSituationInput {

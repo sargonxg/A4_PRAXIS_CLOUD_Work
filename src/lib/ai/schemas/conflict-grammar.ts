@@ -435,6 +435,57 @@ export const GrievanceSchema = z.object({
 });
 
 // ============================================================================
+// Entity Enrichment — v4.0
+// Optional metadata added to any entity for confidence, provenance, and time.
+// ============================================================================
+
+/**
+ * EntityEnrichment — attached to individual entities to track extraction quality.
+ * Stored separately in ConflictGraph.enrichments keyed by entity ID.
+ */
+export const EntityEnrichmentSchema = z.object({
+  entityId: z.string().describe('ID of the entity this enrichment belongs to'),
+  confidence: z
+    .number()
+    .min(0)
+    .max(1)
+    .optional()
+    .describe('Extraction confidence 0–1. 1 = explicitly stated in source text; 0 = highly speculative inference'),
+  sourcePassage: z
+    .string()
+    .optional()
+    .describe('Verbatim text passage from source document that supports this entity'),
+  sourceDocument: z
+    .string()
+    .optional()
+    .describe('Document ID or URL from which this entity was extracted'),
+  retrievalMethod: z
+    .enum(['extraction', 'inference', 'manual', 'lookup'])
+    .optional()
+    .describe(
+      'How this entity was identified: extraction (NLP from text), inference (reasoned from context), manual (human entry), lookup (registry/database)'
+    ),
+  validFrom: z
+    .string()
+    .optional()
+    .describe('ISO 8601 date from which this entity/fact is valid'),
+  validUntil: z
+    .string()
+    .optional()
+    .describe('ISO 8601 date after which this entity/fact may no longer hold'),
+  lastVerified: z
+    .string()
+    .optional()
+    .describe('ISO 8601 timestamp of last independent verification'),
+  qualityScore: z
+    .number()
+    .min(0)
+    .max(100)
+    .optional()
+    .describe('Overall data quality score 0–100 computed from confidence, recency, and source reliability'),
+});
+
+// ============================================================================
 // Discriminated Union
 // ============================================================================
 
@@ -494,6 +545,16 @@ export const ConflictGraphSchema = z.object({
   grievances: z.array(GrievanceSchema).optional(),
   lastUpdated: z.string(),
   metadata: z.record(z.string(), z.unknown()).optional(),
+  // v4.0 enrichment — keyed by entity ID, optional for backwards compatibility
+  enrichments: z.record(z.string(), EntityEnrichmentSchema).optional().describe(
+    'Per-entity enrichment metadata (confidence, provenance, temporal validity). Keys are entity IDs.'
+  ),
+  dataCompleteness: z
+    .number()
+    .min(0)
+    .max(100)
+    .optional()
+    .describe('Percentage of expected entity fields populated across all entities in this graph'),
 });
 
 // ============================================================================
@@ -516,6 +577,7 @@ export type Policy = z.infer<typeof PolicySchema>;
 export type Grievance = z.infer<typeof GrievanceSchema>;
 export type ConflictEntity = z.infer<typeof ConflictEntitySchema>;
 export type ConflictGraph = z.infer<typeof ConflictGraphSchema>;
+export type EntityEnrichment = z.infer<typeof EntityEnrichmentSchema>;
 
 export type ConflictEntityType = ConflictEntity['type'];
 

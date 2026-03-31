@@ -1,9 +1,23 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 3.10.0 — Deep Research Agent (Vertex AI ADK), Credits 5000, full tool audit
+> Version 4.0.0 — Full Platform Architecture Overhaul: Tool Registry, Analytical Frameworks Library, Situation Type System v2, Entity Enrichment Schema
 
 ## What This Is
 The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Two separate experiences in one codebase: a demo for prospects and a real situation-driven workspace for authenticated users. Deployed at praxis.tacitus.me (Vercel, iad1).
+
+## v4.0.0 Foundation & Architecture Overhaul (2026-03-31)
+
+### New Files
+- **`src/types/situation.ts`** — Situation type system v2. New optional fields: `conflictClassification` (UCDP typology), `ucdpIntensity`, `informRiskIndex` (Hazard/Vulnerability/Coping), `fragileStatesIndex`, `gdpPerCapita`, `populationAffected`, `conflictOnsetDate`, `latestEventDate`, `geoBoundingBox`, `keyDates`, `linkedSituations`, `tags`, `analysisPhase`, `lastAiRefresh`, `dataCompleteness`. New types: `ToolCategory`, `ToolDefinition`, `ToolOutputType`, `ConflictClassification`, `UcdpIntensity`, `AnalysisPhase`.
+- **`src/lib/constants/tool-registry.ts`** — Single source of truth for all 40 PRAXIS tools. Each entry has: id, name, category, description (2–3 sentences), shortDescription, credits, icon (Lucide), aiRoute, dataSchema, requiredSituationFields, outputType, frameworks[], dataSources[], relatedTools[], methodology (1–2 paragraphs with academic citations). Lookup helpers: `TOOL_BY_ID`, `TOOLS_BY_CATEGORY`, `getToolById()`, `getToolsByCategory()`, `getRelatedTools()`.
+- **`src/lib/constants/frameworks.ts`** — 15 fully documented analytical framework constants with academic citations: Glasl Escalation (all 9 stages + zones + interventions), Fisher-Ury (all 4 principles + BATNA/ZOPA definitions), INFORM Risk Index, Barnett-Duvall Power Taxonomy (4 faces), Zartman Ripeness Theory, Stedman Spoiler Theory (3 types + management strategies), Mitchell-Agle-Wood Stakeholder Salience (7 types), OCHA Humanitarian Principles, IPC Food Security Phases (all 5), Lederach Peacebuilding Pyramid, Galtung Conflict Triangle (ABC + violence types), UN DPPA Brief Format, Berghof Mediation Framework (6 phases), Putnam Two-Level Games, Fearon Rationalist War Causes.
+
+### Updated Files
+- **`src/lib/ai/schemas/conflict-grammar.ts`** — Added `EntityEnrichmentSchema` with: `entityId`, `confidence` (0–1), `sourcePassage`, `sourceDocument`, `retrievalMethod` (extraction/inference/manual/lookup), `validFrom`, `validUntil`, `lastVerified`, `qualityScore` (0–100). Added `enrichments` map and `dataCompleteness` to `ConflictGraphSchema`. New export: `EntityEnrichment` type.
+
+### New Tools (registry entries only — pages in Phase 4/5)
+- **Game Theory** (`game-theory`) — Strategic interaction modeling: payoff matrices, Nash equilibria, Schelling focal points, Putnam two-level games, Fearon rationalist war causes. Category: simulation.
+- **Geospatial Monitor** (`geospatial-monitor`) — Map-based ACLED/GDELT event visualization with hotspot clustering and territorial control overlays. Category: intelligence.
 
 ## v3.10.0 Deep Research Agent + Credits Overhaul (2026-03-30)
 - **Deep Research Agent** — New tool at `/app/deep-search-agent` powered by Google ADK Multi-Agent System on Vertex AI Agent Engine (project: `praxisbytacitus`). Three-phase pipeline: Planning → Research (parallel web agents) → Synthesis (report composer). Live agent activity feed. Session persistence for multi-turn queries. Requires `VERTEX_AGENT_ENGINE_ID`.
@@ -109,19 +123,27 @@ Core 8: Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, Narrati
 Extended 6: Institutions, Norms, Resources, Risks, Policies, Grievances
 Zod schemas in `src/lib/ai/schemas/conflict-grammar.ts`.
 
-## AI Tools — Complete List (38 tools + 68 API routes)
+## AI Tools — Complete List (40 tools + 68 API routes)
+> Authoritative source: `src/lib/constants/tool-registry.ts` — `TOOL_REGISTRY` array.
+> Each tool has: id, name, category, credits, aiRoute, frameworks[], dataSources[], methodology.
 
-### Situation Room
-- Dashboard, Early Warning, Risk Monitor, Conflict Graph, Stakeholder Map, Actor Profiles, Timeline, Humanitarian
+### Context (7 tools)
+dashboard · documents · sources-library · timeline · humanitarian · calendar · conflict-graph
 
-### Analysis & Drafting
-- PRAXIS Assistant, Report Studio, Dossier Generator, Talking Points, Scenario Planner, Negotiation Prep, CONCORDIA Mediation, Mediation Designer, Briefing Room, Daily Brief, UN Toolkit
+### Analysis (7 tools)
+risk-monitor · early-warning · actor-profiles · stakeholder-map · compare · info-environment · power-map
 
-### Intelligence Tools
-- **Deep Research Agent** (NEW — Vertex AI ADK), ARGUS Deep Research, Media Compass, Media Roundup, Info Environment, Commitment Tracker, Treaty Analyzer, Sanctions Tracker, Calendar Monitor, Alert Center, Sources Library
+### Drafting (7 tools)
+assistant · report-studio · dossier · talking-points · briefing · auto-briefings · un-toolkit
 
-### Workspace
-- Documents, Case Library, Team Hub, Settings, Advisory Council
+### Simulation (5 tools)
+scenarios · negotiation-prep · concordia · mediation-design · **game-theory** (v4.0 NEW)
+
+### Intelligence (10 tools)
+deep-search-agent · argus · media-compass · media-roundup · sanctions · commitments · treaty-analyzer · alert-center · deep-research · **geospatial-monitor** (v4.0 NEW)
+
+### Workspace (4 tools)
+cases · team · advisory · settings
 
 ## Cron Jobs (vercel.json)
 - `/api/cron/check-alerts` — 06:00 UTC daily, GDELT-based alert generation
@@ -197,27 +219,46 @@ Zod schemas in `src/lib/ai/schemas/conflict-grammar.ts`.
 - `NEXT_PUBLIC_SENTRY_DSN` — Optional, Sentry error monitoring
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` — Stripe payments
 
-## Sidebar Tool Sections (v3.10.0)
-### Context (6 items)
-Dashboard · Documents · Sources Library · Timeline (NEW) · Humanitarian (NEW) · Calendar
+## Sidebar Tool Sections (v4.0.0)
+### Context (7 items)
+Dashboard · Documents · Sources Library · Timeline · Humanitarian · Calendar · Conflict Graph
 
-### Analysis (6 items)
-Risk Monitor · Early Warning · Actor Profiles · Conflict Graph · Stakeholder Map · Compare
+### Analysis (7 items)
+Risk Monitor · Early Warning · Actor Profiles · Stakeholder Map · Power Map · Info Environment · Compare
 
 ### Drafting (7 items)
 PRAXIS Assistant · Report Studio · Dossier Generator · Talking Points · Briefing Room · Daily Brief · UN Toolkit
 
-### Simulation (4 items)
-Scenario Planner · Negotiation Prep · CONCORDIA (TACITUS badge) · Mediation Designer
+### Simulation (5 items)
+Scenario Planner · Negotiation Prep · **Game Theory** (v4.0) · CONCORDIA (TACITUS badge) · Mediation Designer
 
-### Intelligence (9 items)
-**Deep Research Agent (TACITUS ADK)** · ARGUS Deep Research (TACITUS) · Media Compass · Media Roundup · Info Environment · Sanctions Tracker · Commitment Tracker · Treaty Analyzer · Alert Center
+### Intelligence (10 items)
+**Deep Research Agent (TACITUS ADK)** · ARGUS Deep Research · ARGUS Grounded · Media Compass · Media Roundup · **Geospatial Monitor** (v4.0) · Sanctions Tracker · Commitment Tracker · Treaty Analyzer · Alert Center
 
-### Workspace (2 items)
-Case Library · Team Hub
+### Workspace (4 items)
+Case Library · Team Hub · Advisory Council · Settings
 
-### Special
-Advisory Council (gold theme) · Settings
+## Analytical Frameworks Library (v4.0)
+> Source: `src/lib/constants/frameworks.ts` — `ALL_FRAMEWORKS` export.
+> Each constant includes: name, full academic citation, description, and structured components.
+
+| Constant | Framework | Used By |
+|---|---|---|
+| `GLASL_ESCALATION_MODEL` | Glasl 9-Stage Escalation | early-warning, dashboard, timeline, scenarios |
+| `FISHER_URY_FRAMEWORK` | Fisher-Ury Principled Negotiation | negotiation-prep, talking-points, actor-profiles |
+| `INFORM_RISK_INDEX` | INFORM Risk Index (IASC) | risk-monitor, dashboard, humanitarian |
+| `BARNETT_DUVALL_POWER` | Barnett-Duvall 4 Faces of Power | power-map, stakeholder-map |
+| `ZARTMAN_RIPENESS` | Zartman Ripeness Theory | mediation-design, calendar, scenarios |
+| `STEDMAN_SPOILER_THEORY` | Stedman Spoiler Management | mediation-design, scenarios |
+| `MITCHELL_AGLE_WOOD` | Mitchell-Agle-Wood Stakeholder Salience | stakeholder-map, actor-profiles |
+| `OCHA_HUMANITARIAN_PRINCIPLES` | OCHA Humanitarian Principles | humanitarian, briefing |
+| `IPC_FOOD_SECURITY_PHASES` | IPC Food Security Phases | humanitarian, risk-monitor |
+| `LEDERACH_PEACEBUILDING_PYRAMID` | Lederach Peacebuilding Pyramid | mediation-design, stakeholder-map |
+| `GALTUNG_CONFLICT_TRIANGLE` | Galtung ABC Conflict Triangle | risk-monitor, info-environment |
+| `UN_DPPA_BRIEF_FORMAT` | UN DPPA Situation Report Format | auto-briefings, briefing, report-studio |
+| `BERGHOF_MEDIATION_FRAMEWORK` | Berghof Mediation Process | mediation-design, concordia |
+| `PUTNAM_TWO_LEVEL_GAMES` | Putnam Two-Level Games | game-theory, negotiation-prep |
+| `FEARON_RATIONALIST_WAR` | Fearon Rationalist War Causes | game-theory, scenarios |
 
 ## Tool Status Indicators (sidebar)
 - Green dot: Tool has AI-generated data for the active situation
