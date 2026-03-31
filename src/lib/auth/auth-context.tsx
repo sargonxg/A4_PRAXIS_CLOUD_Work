@@ -268,7 +268,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Email/password sign in
   const signInWithEmail = useCallback(async (email: string, password: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      // Sync cookie before returning so middleware sees the token when router.push fires
+      await syncTokenCookie(cred.user);
       return { success: true };
     } catch (err: unknown) {
       const code = (err as { code?: string }).code || '';
@@ -283,13 +285,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return { success: false, error: 'Authentication failed. Please try again.' };
     }
-  }, []);
+  }, [syncTokenCookie]);
 
   // Email/password sign up
   const signUpWithEmail = useCallback(async (email: string, password: string, name: string) => {
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: name });
+      // Sync cookie before returning so middleware sees the token when router.push fires
+      await syncTokenCookie(cred.user);
       return { success: true };
     } catch (err: unknown) {
       const code = (err as { code?: string }).code || '';
@@ -304,7 +308,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return { success: false, error: 'Sign up failed. Please try again.' };
     }
-  }, []);
+  }, [syncTokenCookie]);
 
   // Google sign in — uses redirect flow to avoid COOP popup blocking
   const signInWithGoogle = useCallback(async () => {
