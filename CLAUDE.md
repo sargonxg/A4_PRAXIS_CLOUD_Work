@@ -1,6 +1,26 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 5.1.0 — Tool Methodology Panels, Auth Hardening, Sidebar Changelog, Landing Footer, Login Credits
+> Version 5.2.0 — Auth Hardening, Password Reset, Firebase Diagnostic, Session CSRF Fix
+
+## v5.2.0 Auth Hardening & Password Reset (2026-04-01)
+
+### New Features
+- **Password Reset** (`src/app/(auth)/login/page.tsx`, `src/lib/auth/auth-context.tsx`) — Full self-service password recovery.
+  - `resetPassword(email: string): Promise<{success, error?}>` added to `AuthContextValue` interface and implemented in `AuthProvider` using Firebase `sendPasswordResetEmail`.
+  - Returns success even for unknown emails (OWASP enumeration prevention). Only `auth/too-many-requests` and network errors surface as errors.
+  - Login page: "Forgot password?" link inline next to Password label → switches to email-only reset sub-form → green success message on send.
+
+- **Firebase Auth Diagnostic** (`src/app/api/auth/test-firebase/route.ts`) — `GET /api/auth/test-firebase` endpoint (no auth required). Tests Admin SDK initialisation status and Email/Password provider availability by sending a deliberate bad-credential request to Identity Toolkit. Returns `{ diagnosis, firebaseReachable, emailPasswordEnabled, firebaseErrorCode, adminSdkStatus }`.
+
+### Bug Fixes
+- **`queryMode` not applied to initial state** (`src/app/(auth)/login/page.tsx`) — `useSearchParams().get('mode')` was read but never used to initialise `useState('signin')`. Corrected to `useState(queryMode === 'signup' ? 'signup' : 'signin')`.
+- **Session CSRF check uses `x-forwarded-host`** (`src/app/api/auth/session/route.ts`) — Added `x-forwarded-host` as primary source for host comparison. Vercel's edge proxy rewrites the `host` header, causing false 403s for legitimate requests without this fallback.
+- **Auth error codes surfaced** (`src/lib/auth/auth-context.tsx`) — `signInWithEmail` / `signUpWithEmail` catch blocks now handle `auth/user-disabled`, `auth/network-request-failed`, `auth/operation-not-allowed`, `auth/invalid-email` with specific copy. Generic fallback now includes the raw Firebase code.
+
+### Security Hardening
+- `console.error` added to CSRF mismatch, token verification failure, and unhandled exception paths in session route — errors now appear in Vercel runtime logs.
+
+---
 
 ## v5.1.0 Tool Methodology Panels & Auth Hardening (2026-04-01)
 

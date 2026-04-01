@@ -6,6 +6,36 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [5.2.0] — 2026-04-01
+
+### Added
+
+- **Password Reset Flow** (`src/lib/auth/auth-context.tsx`, `src/app/(auth)/login/page.tsx`) — Full self-service password recovery via Firebase `sendPasswordResetEmail`.
+  - `resetPassword(email)` added to `AuthContextValue` interface and implemented in `AuthProvider`. Returns `{success, error?}`. Deliberately returns success even for unknown emails (prevents user enumeration attacks per OWASP).
+  - Login page: "Forgot password?" link appears inline next to the Password label in sign-in mode. Switches to a reset sub-form (email-only, no password field).
+  - Submit sends the reset link via Firebase. On success: green confirmation message ("If an account exists for that email, a reset link has been sent"). On network failure: specific error shown.
+  - Mode toggle text updated to cover all three states: `signin ↔ signup ↔ reset`.
+
+- **Firebase Auth Diagnostic Endpoint** (`GET /api/auth/test-firebase`) — Ops diagnostic that confirms Firebase Auth is configured correctly from the Vercel runtime:
+  - Checks Firebase Admin SDK initialisation status (calls `verifyIdToken` with a junk token and inspects the error class).
+  - Checks whether Email/Password sign-in provider is enabled by sending a known-invalid credential to Identity Toolkit and inspecting the error code (`OPERATION_NOT_ALLOWED` → disabled; `INVALID_LOGIN_CREDENTIALS` → enabled).
+  - Returns JSON: `{ diagnosis, firebaseReachable, emailPasswordEnabled, firebaseErrorCode, adminSdkStatus, apiKeyUsed, timestamp }`.
+  - Does not require auth — intentionally public for ops use. Uses a clearly invalid `@praxis.tacitus.invalid` test email.
+
+### Fixed
+
+- **Login page: `queryMode` not applied to initial state** (`src/app/(auth)/login/page.tsx`) — The `?mode=` search param was read from the URL but never used to initialise the `mode` state. Links like `/login?mode=signup` (e.g., from pricing page CTAs) now correctly open the sign-up form instead of defaulting to sign-in.
+
+- **Session route: CSRF `host` header fallback** (`src/app/api/auth/session/route.ts`) — Added `x-forwarded-host` as primary source for the host comparison in the CSRF origin check. Vercel's edge network can rewrite the `host` header on proxied requests, causing false 403s for legitimate same-origin requests. `x-forwarded-host` preserves the original host.
+
+- **Auth error codes surfaced on sign-in failure** (`src/lib/auth/auth-context.tsx`) — Catch blocks in `signInWithEmail` and `signUpWithEmail` previously collapsed all unhandled Firebase errors into a generic "Authentication failed" message, hiding the real cause. Now handles `auth/user-disabled`, `auth/network-request-failed`, `auth/operation-not-allowed`, `auth/invalid-email` with specific copy, and the fallback message now includes the raw Firebase error code for easier debugging.
+
+### Security
+
+- **Session route logging hardened** — `console.error` added to CSRF mismatch, token verification failure, and unhandled exception paths in `/api/auth/session`. Previously these failed silently; errors now surface in Vercel runtime logs.
+
+---
+
 ## [5.1.0] — 2026-04-01
 
 ### Added

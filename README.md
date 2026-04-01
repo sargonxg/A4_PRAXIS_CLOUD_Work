@@ -2,9 +2,9 @@
 
 **The conflict operating system for peace and security professionals.**
 
-AI-powered conflict intelligence, knowledge graphs, and automated report generation — from raw data to decisive intelligence in minutes. 42 tool pages, 59 API routes, 21 AI-powered chat tools, situation-driven data pipeline, real-time intelligence feeds.
+AI-native workspace for UN Political Affairs Officers, diplomatic mediators, and conflict analysts. 40+ specialised tool pages, 68 API routes, 27 AI chat tools, situation-driven data pipeline, and real-time intelligence feeds from ACLED, GDELT, UCDP, UNHCR, and the UN.
 
-> **v3.9.5** — Build 2026.03.30 | Deployed at [praxis.tacitus.me](https://praxis.tacitus.me)
+> **v5.2.0** — Build 2026.04.01 | Deployed at [praxis.tacitus.me](https://praxis.tacitus.me)
 
 ---
 
@@ -17,234 +17,376 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The demo works with zero configuration.
+Open [http://localhost:3000](http://localhost:3000). **The demo works with zero configuration** — no API keys needed.
 
 ### Environment Setup
 
-Copy `.env.local.example` to `.env.local` and configure:
+Copy `.env.local.example` to `.env.local`:
 
 ```bash
 # Required for live AI (demo works without)
-GOOGLE_AI_API_KEY=your_key
+GOOGLE_AI_API_KEY=your_gemini_key
 
-# Required for server-side Firestore (auth, situations, persistence)
+# Required for server-side Firestore + Vertex AI auth
 FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"praxisbytacitus",...}
 
 # Optional — enables Claude deep analysis
 ANTHROPIC_API_KEY=your_key
 
-# Optional — enables web research crawling
+# Optional — enables Firecrawl web research
 FIRECRAWL_API_KEY=your_key
 
-# Optional — Vercel cron job auth
+# Required for Deep Research Agent (Vertex AI ADK)
+VERTEX_AGENT_ENGINE_ID=your_numeric_engine_id
+
+# Required for cron job auth
 CRON_SECRET=your_secret
 ```
 
 ---
 
-## Two Experiences
+## Two Experiences in One Codebase
 
 | | Demo (`/demo/*`) | Real App (`/app/*`) |
 |---|---|---|
-| **Auth** | Cookie-only, no account needed | Firebase Google + email/password |
-| **Data** | Pre-loaded Nordalia Crisis | User creates own situations |
+| **Auth** | Cookie-only, no account needed | Firebase — Google + email/password |
+| **Data** | Pre-loaded Nordalia Crisis | User creates situations; all data in Firestore |
 | **AI** | Cached demo responses | Live Gemini Pro / Claude + Firecrawl |
-| **Credits** | Unlimited | 100 on sign-up, deducted per use |
-| **Persistence** | In-memory (Zustand) | Firestore (user-scoped) |
-| **Purpose** | Investor demos, exploration | Real conflict intelligence work |
+| **Credits** | Unlimited (shown as ∞) | 5,000 on sign-up, deducted per use |
+| **Persistence** | In-memory (Zustand + localStorage) | Firestore (user-scoped subcollections) |
+| **Purpose** | Investor demos, prospect exploration | Real conflict intelligence work |
 
 ---
 
-## Platform Architecture
+## Architecture
 
 ```
 src/
-  app/
-    (landing)/          Public landing page
-    (auth)/             Login (Google + email/password + demo)
-    app/                42 authenticated workspace pages
-    demo/               30 demo pages (Nordalia Crisis)
-    api/                59 API routes (auth + AI + data + system)
-
-  components/
-    ui/                 Radix UI primitives
-    shared/             Cross-app reusable components
-    app/                Shell, header, sidebar
-    praxis/             AiPopulate, situation states, error states
-    assistant/          Chat interface
-    graph/              D3.js conflict graph
-    reports/            Report composer & export
-    negotiation/        ZOPA visualizer
-    media/              Media analysis
-    landing/            Landing page sections
-    onboarding/         Wizards & tooltips
-
-  lib/
-    ai/                 Providers, 21 tools, prompts, schemas, Firecrawl
-    firebase/           Config, admin, Firestore services (9 service files)
-    api/                withAuth, withCredits, validation, error handling
-    auth/               AuthProvider context
-    analytics/          Risk engine, escalation scorer
-    data-feeds/         ACLED, GDELT, HDX, ReliefWeb, World Bank, aggregator
-    services/           AI orchestration, export, document, situation init
-    constants/          Demo data, case registry, pricing, templates
-    subscription/       Tier configs & feature gates
-    demo/               Demo mode detection, cached responses
-    utils/              Routes, formatting, streaming
-
-  stores/              Zustand: situation, app, conflict, report, prefs
-  hooks/               Situation guard, API streaming, keyboard, persisted data
-  types/               Situation, conflict grammar, report, API types
+├── app/
+│   ├── (landing)/          Public landing page
+│   ├── (auth)/             Login — Google, email/password, demo, password reset
+│   ├── app/                40+ authenticated workspace pages (/app/*)
+│   ├── demo/               30 demo pages (/demo/*) — Nordalia Crisis data
+│   └── api/                68 API routes (auth, AI, data, admin, cron)
+│
+├── components/
+│   ├── ui/                 Radix UI primitives
+│   ├── shared/             Cross-app reusable components
+│   ├── app/                AppShell, AppSidebar, Header, DebugPanel, FloatingPRAXIS
+│   ├── praxis/             AiPopulate, ToolInfoPanel, situation/error states
+│   ├── assistant/          Chat interface, tool invocation renderer
+│   ├── visualizations/     10 SVG/D3 components (RiskGauge, ForceGraph, etc.)
+│   ├── graph/              D3.js conflict knowledge graph
+│   ├── reports/            Report composer & DOCX/PDF export
+│   └── landing/            Landing page sections
+│
+├── lib/
+│   ├── ai/                 Providers, 27 chat tools, prompts, schemas, Firecrawl, Vertex AI ADK
+│   ├── firebase/           Client config, Admin SDK, Firestore services (9 service files)
+│   ├── api/                withAuth, withCredits, rate limiting, error handling
+│   ├── auth/               AuthProvider (auth-context.tsx)
+│   ├── analytics/          Risk engine (INFORM), escalation scorer (Glasl), geospatial engine
+│   ├── data-feeds/         ACLED, GDELT, UCDP, UNHCR, HDX, ReliefWeb, UN News, World Bank, CrisisWatch
+│   ├── constants/          Tool registry (40 tools), frameworks (15), demo data, pricing
+│   └── utils/              Routes, formatting, cn, streaming helpers
+│
+├── stores/                 Zustand — situation, app, conflict, report, debug, notification, preferences
+├── hooks/                  useSituationGuard, usePraxisApi, useKeyboardShortcuts, usePersistedToolData
+└── types/                  Situation v2, conflict grammar (ACO), report, API types
 ```
 
 ---
 
-## Tool Pages (42 in Real App)
+## Authentication
 
-### Situation Room
-| Tool | Route | Description |
-|------|-------|-------------|
-| Dashboard | `/app/dashboard` | Overview with risk scores, Glasl stage, AI suggestions |
-| Early Warning | `/app/early-warning` | Glasl escalation tracking with de-escalation windows |
-| Risk Monitor | `/app/risk-monitor` | INFORM Risk Index (5 dimensions) |
-| Conflict Graph | `/app/conflict-graph` | D3.js knowledge graph (actors, events, claims, edges) |
-| Stakeholder Map | `/app/stakeholder-map` | Mitchell/Agle/Wood power-legitimacy-urgency mapping |
-| Actor Profiles | `/app/actors` | Deep actor intelligence with Fisher/Ury framework |
+See [`docs/AUTH.md`](./docs/AUTH.md) for the full token lifecycle, CSRF protection design, and session architecture.
 
-### Analysis & Drafting
-| Tool | Route | Description |
-|------|-------|-------------|
-| PRAXIS Assistant | `/app/assistant` | AI chat with 21 tools, super-agent mode |
-| Report Studio | `/app/reports` | DOCX/PDF generation with UN templates |
-| Dossier Generator | `/app/dossier` | AI-generated actor/event dossiers |
-| Talking Points | `/app/talking-points` | UNSC briefing prep with Q&A |
-| Scenario Planner | `/app/scenarios` | Streaming scenario modeling |
-| Negotiation Prep | `/app/negotiation-prep` | ZOPA/BATNA analysis (Fisher/Ury) |
-| CONCORDIA | `/app/concordia` | Mediation design tool |
-| Mediation Designer | `/app/mediation-design` | Berghof process framework |
-| Briefing Room | `/app/briefing` | Briefing with speaker notes |
-| Daily Brief | `/app/auto-briefings` | Auto-generated intelligence briefs |
+**Summary:**
 
-### Intelligence Tools
-| Tool | Route | Description |
-|------|-------|-------------|
-| ARGUS Intelligence | `/app/argus` | Deep web research with Firecrawl |
-| Media Compass | `/app/media-compass` | Source bias & reliability mapping |
-| Media Roundup | `/app/media-roundup` | Daily media summary with sentiment |
-| Info Environment | `/app/info-environment` | NATO STRATCOM assessment |
-| Commitment Tracker | `/app/commitments` | Compliance monitoring |
-| Treaty Analyzer | `/app/treaty-analyzer` | Clause analysis & ambiguity flagging |
-| Sanctions Tracker | `/app/sanctions` | Sanctions exposure with escalation scan |
-| Calendar Monitor | `/app/calendar` | Diplomatic event calendar |
-| Alert Center | `/app/alerts` | GDELT-based early warning alerts |
-| UN Toolkit | `/app/un-toolkit` | UNSC resolution builder + terminology checker |
-| Compare | `/app/compare` | Comparative conflict analysis |
-| Advisory Council | `/app/advisory` | Multi-actor perspective chatbot |
+| Method | Provider | Notes |
+|--------|----------|-------|
+| Google OAuth | Firebase (redirect flow) | `signInWithRedirect` — avoids COOP popup blocking |
+| Email/Password | Firebase | Full error code surface + password reset |
+| Demo Mode | Cookie-only | `{demo: true}` JSON cookie, no Firebase involved |
 
-### Workspace
-| Tool | Route | Description |
-|------|-------|-------------|
-| Documents | `/app/documents` | Upload PDF/DOCX/TXT/MD with RAG chunking |
-| Case Library | `/app/cases` | Situation browser |
-| Sources | `/app/sources` | Intelligence feed library |
-| Team Hub | `/app/team` | Team collaboration (coming soon) |
-| Settings | `/app/settings` | AI model, temperature, custom instructions |
+**Password reset:** Users click "Forgot password?" on the sign-in form → enter email → Firebase sends a reset link. The response is deliberately ambiguous (no confirmation of whether the email exists) to prevent enumeration attacks.
+
+**Diagnostic:** `GET /api/auth/test-firebase` confirms Admin SDK initialisation, Firebase reachability, and Email/Password provider status from the Vercel runtime — without requiring auth credentials.
+
+---
+
+## Tool Pages
+
+### Context (7)
+| Tool | Route |
+|------|-------|
+| Dashboard | `/app/dashboard` |
+| Documents | `/app/documents` |
+| Sources Library | `/app/sources` |
+| Timeline | `/app/timeline` |
+| Humanitarian | `/app/humanitarian` |
+| Calendar | `/app/calendar` |
+| Conflict Graph | `/app/conflict-graph` |
+
+### Analysis (7)
+| Tool | Route |
+|------|-------|
+| Risk Monitor | `/app/risk-monitor` |
+| Early Warning | `/app/early-warning` |
+| Actor Profiles | `/app/actors` |
+| Stakeholder Map | `/app/stakeholder-map` |
+| Power Map | `/app/power-map` |
+| Info Environment | `/app/info-environment` |
+| Compare | `/app/compare` |
+
+### Drafting (7)
+| Tool | Route |
+|------|-------|
+| PRAXIS Assistant | `/app/assistant` |
+| Report Studio | `/app/reports` |
+| Dossier Generator | `/app/dossier` |
+| Talking Points | `/app/talking-points` |
+| Briefing Room | `/app/briefing` |
+| Daily Brief | `/app/auto-briefings` |
+| UN Toolkit | `/app/un-toolkit` |
+
+### Simulation (5)
+| Tool | Route |
+|------|-------|
+| Scenario Planner | `/app/scenarios` |
+| Negotiation Prep | `/app/negotiation-prep` |
+| Game Theory | `/app/game-theory` |
+| CONCORDIA | `/app/concordia` |
+| Mediation Designer | `/app/mediation-design` |
+
+### Intelligence (11)
+| Tool | Route |
+|------|-------|
+| Deep Research Agent | `/app/deep-search-agent` |
+| ARGUS Deep Research | `/app/argus` |
+| ARGUS Grounded | `/app/argus-grounded` |
+| Media Compass | `/app/media-compass` |
+| Media Roundup | `/app/media-roundup` |
+| Geospatial Monitor | `/app/geospatial-monitor` |
+| Sanctions Tracker | `/app/sanctions` |
+| Commitment Tracker | `/app/commitments` |
+| Treaty Analyzer | `/app/treaty-analyzer` |
+| Alert Center | `/app/alerts` |
+| Deep Research | `/app/deep-research` |
+
+### Workspace (4)
+| Tool | Route |
+|------|-------|
+| Case Library | `/app/cases` |
+| Team Hub | `/app/team` |
+| Advisory Council | `/app/advisory` |
+| Settings | `/app/settings` |
 
 ---
 
 ## AI Pipeline
 
 ### Model Tiers
-| Function | Model | Purpose |
-|----------|-------|---------|
-| `getModel()` | gemini-2.5-flash | Chat, terminology, lightweight tasks |
-| `getProModel()` | gemini-2.5-pro | All structured tool generation |
-| `getAnalysisModel()` | claude-sonnet-4 | Deep analysis, bias detection (falls back to Pro) |
-| `getGroundedModel()` | gemini-2.5-flash + Google Search | Research with grounding |
 
-### 21 Chat Tools
-All tools use `generateObject()` with Zod schemas for structured output. Available to the AI assistant via tool-calling:
+| Helper | Model | Used for |
+|--------|-------|----------|
+| `getModel()` | `gemini-2.5-flash` | Chat, terminology, lightweight tasks |
+| `getProModel()` | `gemini-2.5-pro` | All structured tool generation (Zod schemas) |
+| `getAnalysisModel()` | `claude-sonnet-4` | Deep analysis, bias detection (falls back to Pro) |
+| `getGroundedModel()` | `gemini-2.5-flash + Google Search` | Research with real-time grounding |
+| `streamAgentTurn()` | Vertex AI Agent Engine (ADK) | Deep Research Agent — 3-phase pipeline |
 
-`webSearch` | `analyzeDocument` | `queryConflictGraph` | `draftSection` | `editForDiplomaticTone` | `analyzeMediaSource` | `compareMediaCoverage` | `checkUNTerminology` | `draftResolutionLanguage` | `generateTalkingPoints` | `escalationAssessment` | `negotiationSpaceAnalysis` | `narrativeEcosystemMap` | `historicalParallelAnalysis` | `generateTimeline` | `sanctionsCheck` | `humanitarianSnapshot` | `compareConflicts` | `canonicalNameLookup` | `deepSourceResearch` | `verifyAndStandardize`
+### 27 AI Chat Tools
 
-### Analytical Frameworks
-- **INFORM Risk Index** — 5-dimension conflict risk scoring
-- **Glasl Escalation Model** — 9-stage escalation pathway
-- **Fisher/Ury** — ZOPA/BATNA negotiation analysis
-- **Mitchell/Agle/Wood** — Stakeholder power-legitimacy-urgency
-- **CRAAP Test** — Media reliability scoring
-- **NATO STRATCOM** — Information environment assessment
-- **Berghof** — Mediation process design
-- **UN Editorial Manual** — Diplomatic language standards
-- **UN DPPA** — Morning brief format
-- **OCHA** — Humanitarian standards
+All tools call `generateText + Output.object()` with Zod schemas via `getProModel()`:
 
-### Live Data Feeds
-| Feed | Type | Auth |
-|------|------|------|
-| GDELT | Events, tone, instability index | Free |
-| ReliefWeb | UN humanitarian reports | Free |
-| HDX HAPI | Food security, displacement | Free |
-| World Bank | GDP, inflation, military spend | Free |
-| ACLED | Armed conflict events | API key |
-| Firecrawl | Custom URL scraping | API key |
+| # | Tool | Credits |
+|---|------|---------|
+| 1 | `webSearch` | 1 |
+| 2 | `analyzeDocument` | 2 |
+| 3 | `queryConflictGraph` | 1 |
+| 4 | `draftSection` | 2 |
+| 5 | `editForDiplomaticTone` | 1 |
+| 6 | `analyzeMediaSource` | 2 |
+| 7 | `compareMediaCoverage` | 2 |
+| 8 | `checkUNTerminology` | 1 |
+| 9 | `draftResolutionLanguage` | 2 |
+| 10 | `generateTalkingPoints` | 2 |
+| 11 | `escalationAssessment` | 3 |
+| 12 | `negotiationSpaceAnalysis` | 3 |
+| 13 | `narrativeEcosystemMap` | 3 |
+| 14 | `historicalParallelAnalysis` | 3 |
+| 15 | `generateTimeline` | 2 |
+| 16 | `sanctionsCheck` | 2 |
+| 17 | `humanitarianSnapshot` | 2 |
+| 18 | `compareConflicts` | 3 |
+| 19 | `canonicalNameLookup` | 1 |
+| 20 | `deepSourceResearch` | 4 |
+| 21 | `verifyAndStandardize` | 1 |
+| 22 | `stakeholderInfluenceMap` | 3 |
+| 23 | `ceasefireMonitor` | 3 |
+| 24 | `peaceAgreementAnalyzer` | 4 |
+| 25 | `earlyWarningBrief` | 3 |
+| 26 | `gameTheoryAnalysis` | 3 |
+| 27 | `protectionOfCiviliansAssessment` | 4 |
+
+### Analytical Frameworks (15)
+
+| Framework | Used by |
+|-----------|---------|
+| Glasl 9-Stage Escalation | Early Warning, Dashboard, Scenarios, Timeline |
+| INFORM Risk Index (IASC) | Risk Monitor, Dashboard, Humanitarian |
+| Fisher-Ury Principled Negotiation | Negotiation Prep, Talking Points, Actor Profiles |
+| Mitchell-Agle-Wood Stakeholder Salience | Stakeholder Map, Actor Profiles |
+| Barnett-Duvall 4 Faces of Power | Power Map, Stakeholder Map |
+| Zartman Ripeness Theory | Mediation Design, Scenarios, Calendar |
+| Stedman Spoiler Management | Mediation Design, Scenarios |
+| OCHA Humanitarian Principles | Humanitarian, Briefing |
+| IPC Food Security Phases | Humanitarian, Risk Monitor |
+| Lederach Peacebuilding Pyramid | Mediation Design, Stakeholder Map |
+| Galtung ABC Conflict Triangle | Risk Monitor, Info Environment |
+| UN DPPA Brief Format | Auto-Briefings, Briefing, Report Studio |
+| Berghof Mediation Framework | Mediation Design, CONCORDIA |
+| Putnam Two-Level Games | Game Theory, Negotiation Prep |
+| Fearon Rationalist War Causes | Game Theory, Scenarios |
+
+### Live Data Feeds (9)
+
+| Feed | Covers | Auth |
+|------|--------|------|
+| ACLED | Armed conflict events (pagination to 15k, 1h cache) | API key |
+| GDELT | Media events, tone, instability (Z-score anomaly detection) | Free |
+| UCDP GED | Georeferenced conflict event dataset | Free |
+| UNHCR Refugee Data Finder | Displacement statistics, time-series | Free |
+| HDX HAPI | IDP figures, nutrition, operational presence | Free |
+| ReliefWeb | UN situation reports and disaster updates | Free |
+| UN News RSS | 6 feeds — SG statements, Security Council, regional desks | Free |
+| World Bank | GDP, governance indicators (WGI), fragility indices | Free |
+| CrisisWatch (ICG) | Monthly conflict status via Firecrawl scraper | Firecrawl key |
 
 ---
 
-## API Routes (59 total)
+## API Routes (68 total)
 
-### AI Generation (34 routes)
-All wrapped with `withAuth()` (JWT verification + rate limiting) and `checkAndDeductCredits()`.
+### Auth (4)
+`POST /api/auth/session` — Set session cookie (Firebase token or demo flag). CSRF-protected.
+`DELETE /api/auth/session` — Clear session cookie (logout).
+`GET /api/auth/session` — Check session status.
+`GET /api/auth/test-firebase` — Ops diagnostic: Admin SDK status + Email/Password provider check.
 
-**Core**: `chat`, `research`, `deep-research`, `grounded-search`, `claude-analyze`
-**Structured Analysis**: `risk-assessment`, `actor-profiles`, `actor-brief`, `actor-enrichment`, `power-map`, `escalation-scan`, `scenario`, `commitment-scan`, `sanctions-scan`, `treaty-analyze`, `negotiation`, `mediation`, `mediation-design`, `info-environment`
+### AI Generation (35 routes, all behind `withAuth()` + `checkAndDeductCredits()`)
+**Core**: `chat`, `research`, `deep-research`, `grounded-search`, `claude-analyze`, `deep-search-agent` (Vertex AI ADK)
+**Structured Analysis**: `risk-assessment`, `actor-profiles`, `actor-brief`, `actor-enrichment`, `power-map`, `escalation-scan`, `scenario`, `commitment-scan`, `sanctions-scan`, `treaty-analyze`, `negotiation`, `mediation`, `mediation-design`, `info-environment`, `game-theory`
 **Content Generation**: `report`, `briefing-generate`, `auto-briefing`, `dossier-generate`, `talking-points`, `resolution`, `terminology`
 **Research**: `argus`, `media-scan`, `media-roundup`, `media-analyze`, `discover-sources`, `extract`, `auto-structure`, `advisor-chat`
 
-### Data Routes (17 routes)
-`situations` (CRUD) | `documents` (upload, retrieve, extract) | `graph` (ingest, query) | `reports` (CRUD, export) | `settings/ai` | `tool-data` | `sources` | `data/conflicts` | `export`
+### Data (17 routes)
+`situations` (CRUD) | `documents` (upload, retrieve, extract) | `graph` (ingest, query) | `reports` (CRUD, export) | `settings/ai` | `tool-data` | `sources` | `data/conflicts` | `data/geospatial` | `export`
 
-### System Routes (8 routes)
-`auth/login` | `auth/session` | `auth/logout` | `health` | `stripe/checkout` | `stripe/webhook` | `cron/check-alerts` | `cron/generate-briefing`
+### System (5 routes)
+`health` | `stripe/checkout` | `stripe/webhook` | `cron/check-alerts` | `cron/generate-briefing`
+
+### Admin (3 routes)
+`admin/add-credits` (self-service +1000 via Debug Panel) | `admin/set-all-credits` (bulk reset, CRON_SECRET required) | `account` (GDPR Art. 17 erasure — cascade-deletes all user data)
 
 ---
 
 ## Credit System
 
-| Operation | Credits |
-|-----------|---------|
-| Chat message | 1 |
-| Terminology check | 1 |
-| Document extraction | 3 |
-| Scenario modeling | 3 |
-| Risk assessment | 3 |
-| Negotiation prep | 3 |
-| Mediation design | 3 |
-| Actor profiles | 3 |
-| Power map | 3 |
-| Info environment | 3 |
-| Briefing generation | 3 |
-| Media scan | 2 |
-| Sanctions scan | 2 |
-| Commitment scan | 2 |
-| Auto-briefing | 2 |
-| Dossier generation | 4 |
-| Research query | 5 |
-| Full report | 5 |
+New users receive **5,000 credits** on sign-up. Demo users have unlimited credits (shown as ∞).
 
-New users receive **100 credits** on sign-up. Demo users have unlimited credits.
+| Tier | Cost | Operations |
+|------|------|------------|
+| 1 credit | Basic | Chat, terminology check, canonical name lookup |
+| 2 credits | Standard | Scenario, media roundup, talking points, commitment scan, morning digest |
+| 3 credits | Analysis | Risk assessment, actor profiles, negotiation, mediation, power map, info environment, web crawl |
+| 4 credits | Deep | Claude analysis, dossier, briefing generation, treaty analysis, sanctions scan, peace agreement analyzer, PoC assessment |
+| 5 credits | Research | Report generation, deep research |
+| 8 credits | Advisory | Advisor panel discussion (parallel calls + synthesis) |
+| 10 credits | Agent | Deep Research Agent (Vertex AI ADK, 3-phase pipeline) |
+
+Credits are pre-deducted before AI calls and refunded on error (atomic Firestore transaction).
 
 ---
 
 ## Security
 
-- **Authentication**: Firebase Auth (Google + email/password), JWT in httpOnly secure cookie
-- **API Protection**: All routes wrapped with `withAuth()` — verifies Firebase ID tokens via Admin SDK
-- **Rate Limiting**: 100 requests/minute per user (in-memory)
-- **Credit System**: Pre-deduction before AI calls, refund on error
-- **Firestore Rules**: Owner-only access (`auth.uid == uid`), server-only credit writes
-- **Demo Isolation**: Demo data never touches production Firestore
-- **Session**: `tacitus-auth-session` cookie, 24h expiry, httpOnly + secure + sameSite=lax
+| Layer | Mechanism |
+|-------|-----------|
+| **Authentication** | Firebase Auth — Google OAuth + email/password. Session in `httpOnly` `secure` `sameSite=lax` cookie |
+| **Token verification** | All API routes use `withAuth()` — verifies Firebase ID token via Admin SDK (`verifyIdToken`) |
+| **Session cookie** | `tacitus-auth-session` — stores raw Firebase ID token (not Firebase session cookie). 24h expiry |
+| **Token refresh** | Client-side: `onIdTokenChanged` listener + proactive forced refresh at 50 min (tokens expire at 60 min) |
+| **CSRF** | Origin vs `x-forwarded-host` / `host` comparison on session POST. Rejects cross-origin requests with 403 |
+| **Rate limiting** | 100 req/min per user (in-memory, per Vercel function cold start) |
+| **Firestore rules** | Owner-only: `auth.uid == uid`. Credit writes server-only (Admin SDK). Demo data never touches production |
+| **Password reset** | Firebase `sendPasswordResetEmail`. Response is always success for unknown emails (prevents enumeration) |
+| **Demo isolation** | Demo cookie never touches Firebase. Separate session branch in middleware |
+
+---
+
+## Situation-Driven Data Model
+
+Every piece of data belongs to a user-created situation:
+
+```
+Firestore:
+  users/{uid}/
+    profile (credits, role, orgId, subscription, consent fields)
+    situations/{situationId}/
+      metadata         — name, type, region, actors, risk score, Glasl stage
+      conflict-grammar — extracted ACO v2.0 entities (8 core + 6 extended)
+      graph            — nodes + edges (ConflictGraphSchema)
+      documents/{id}   — uploaded files + RAG extraction results
+      reports/{id}     — generated reports
+      scenarios/{id}   — what-if analyses
+      chats/{id}       — conversation history (tool calls + responses)
+      briefings/{id}
+      dossiers/{id}
+      talking-points/{id}
+      risk-assessments/{id}
+      timeline-events/{id}
+      stakeholder-map
+      negotiation-preps/{id}
+      media-analyses/{id}
+      treaty-analyses/{id}
+      sanctions-scans/{id}
+```
+
+All tool pages call `useSituationGuard()` — if no situation is active, they render `<NoSituationState />` prompting the user to create or select one.
+
+---
+
+## Conflict Grammar (ACO v2.0)
+
+The 14-entity conflict grammar is the backbone of PRAXIS's knowledge representation:
+
+**Core 8**: Actor · Claim · Interest · Constraint · Leverage · Commitment · Event · Narrative
+
+**Extended 6**: Institutions · Norms · Resources · Risks · Policies · Grievances
+
+Defined as Zod schemas in `src/lib/ai/schemas/conflict-grammar.ts`. Every structured AI output is typed against these schemas.
+
+---
+
+## Visualization Components
+
+10 reusable SVG/D3 dark-theme components in `src/components/visualizations/`:
+
+| Component | Uses | Used by |
+|-----------|------|---------|
+| `RiskGauge` | SVG arc, animated stroke-dashoffset | Dashboard, Risk Monitor |
+| `RadarChart` | SVG spider, animated polygon | Dashboard, Risk Monitor |
+| `EscalationLadder` | Glasl 9-stage, interactive | Dashboard, Early Warning |
+| `ProbabilityTree` | SVG BFS tree, probability-colored nodes | Scenarios |
+| `TornadoChart` | Horizontal sensitivity bars | Risk Monitor |
+| `SankeyFlow` | Layered column flow, curved fill paths | Scenarios |
+| `TimeSeriesChart` | SVG multi-series, ResizeObserver responsive, hover crosshair | Risk Monitor, Early Warning |
+| `HeatmapGrid` | RGB lerp color interpolation | Early Warning |
+| `ForceGraph` | D3 v7, force simulation, drag+zoom | Stakeholder Map, Conflict Graph |
+| `ComplianceTracker` | Progress bar, collapsible categories | Treaty Analyzer, Commitments |
+
+Import individually for tree-shaking: `import { RiskGauge } from '@/components/visualizations/risk-gauge'`
 
 ---
 
@@ -252,55 +394,61 @@ New users receive **100 credits** on sign-up. Demo users have unlimited credits.
 
 | Layer | Technology |
 |-------|------------|
-| Framework | Next.js 16.1.6 (App Router) |
+| Framework | Next.js 16.1.6 (App Router, Turbopack) |
 | Language | TypeScript 5.9 (strict mode) |
-| Styling | Tailwind CSS 4, Radix UI |
-| AI | Vercel AI SDK 6.0, Google Gemini, Anthropic Claude |
+| Styling | Tailwind CSS 4 (`@theme inline` CSS variables), Radix UI |
+| AI SDK | Vercel AI SDK 6.0.105 |
+| AI Providers | Google Gemini 2.5 Flash/Pro, Anthropic Claude Sonnet 4, Vertex AI Agent Engine (ADK) |
 | Auth & DB | Firebase Auth + Firestore + Admin SDK |
 | State | Zustand 5 (persisted) |
 | Validation | Zod 4 |
-| Visualization | D3.js 7 |
+| Visualization | D3.js 7, react-leaflet (Geospatial Monitor) |
 | Animation | Framer Motion 12 |
 | Documents | pdf-parse, mammoth, docx, jspdf |
 | Web Research | Firecrawl |
 | Payments | Stripe |
-| Analytics | Vercel Analytics |
-| Testing | Vitest 4 |
-| Deployment | Vercel (iad1 region) |
+| Deployment | Vercel (iad1 region, Node.js 24.x) |
 
 ---
 
 ## Firebase Setup
 
-Project: `praxisbytacitus`
+**Project ID**: `praxisbytacitus`
 
-1. Enable Authentication: Google + Email/Password
-2. Add your domain to Firebase Auth > Authorized domains
-3. Generate service account key: Firebase Console > Project Settings > Service Accounts
-4. Set `FIREBASE_SERVICE_ACCOUNT_KEY` in Vercel with the JSON contents
-5. Deploy Firestore rules and indexes:
-   ```bash
-   firebase use praxisbytacitus
-   firebase deploy --only firestore:rules,firestore:indexes
-   ```
+1. Firebase Console → Authentication → Sign-in method → Enable **Google** and **Email/Password**
+2. Authentication → Settings → Authorized domains → add your domain
+3. Project Settings → Service Accounts → Generate new private key → set as `FIREBASE_SERVICE_ACCOUNT_KEY` in Vercel
+4. Deploy security rules and indexes:
+
+```bash
+firebase use praxisbytacitus
+firebase deploy --only firestore:rules,firestore:indexes
+```
+
+**Verify the setup is working:**
+```
+GET https://your-domain/api/auth/test-firebase
+```
+Expected: `{"diagnosis":"✅ Email/Password auth is ENABLED", "adminSdkStatus":"INITIALIZED_OK"}`
 
 ---
 
 ## Deployment
 
-Deployed on Vercel (iad1). Push to `main` triggers automatic deployment.
+Deployed on Vercel (iad1 region). Push to `main` triggers automatic deployment.
 
 ```bash
-npm run build     # Verify build passes locally
-npm run lint      # ESLint check
+npm run build     # Verify build passes locally (Turbopack)
 npx tsc --noEmit  # Type check
+npm run lint      # ESLint check
 git push          # Auto-deploys to Vercel
 ```
 
 ### Vercel Configuration
-- Function timeouts: AI routes 60s, document upload 300s
-- Cron: alerts at 06:00 UTC, briefings at 05:00 UTC
-- Node.js 24.x
+- Function timeouts: standard routes 60s, document upload 300s, Deep Research Agent 120s
+- Cron jobs: `check-alerts` at 06:00 UTC, `generate-briefing` at 05:00 UTC
+- Node.js 24.x runtime
+- `middleware.ts` handles auth routing (NOT `proxy.ts` — proxy.ts broke Google Sign-In in v3.9.1)
 
 ---
 
@@ -308,24 +456,35 @@ git push          # Auto-deploys to Vercel
 
 | File | Purpose |
 |------|---------|
-| [CLAUDE.md](./CLAUDE.md) | Architecture guide for AI assistants & developers |
-| [CHANGELOG.md](./CHANGELOG.md) | Version history |
-| [TOOL_AUDIT.md](./TOOL_AUDIT.md) | Complete tool-by-tool wiring audit |
-| `.env.local.example` | Environment variable template |
-| `firestore.rules` | Firestore security rules |
+| [docs/AUTH.md](./docs/AUTH.md) | Auth architecture — token lifecycle, CSRF, session design |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Dual-app architecture, route structure, data flow |
+| [CHANGELOG.md](./CHANGELOG.md) | Full version history (v3.7.0 → present) |
+| [CLAUDE.md](./CLAUDE.md) | AI-assistant guide — comprehensive codebase reference |
+| [TOOL_AUDIT.md](./TOOL_AUDIT.md) | Tool-by-tool wiring audit |
+
+---
+
+## Cron Jobs
+
+| Job | Schedule | Route |
+|-----|----------|-------|
+| Alert check | 06:00 UTC daily | `POST /api/cron/check-alerts` |
+| Briefing generation | 05:00 UTC daily | `POST /api/cron/generate-briefing` |
+
+Both require `Authorization: Bearer {CRON_SECRET}` header (set automatically by Vercel).
 
 ---
 
 ## Scripts
 
 ```bash
-npm run dev       # Development server (port 3000)
-npm run build     # Production build
-npm start         # Production server
-npm run lint      # ESLint
-npm test          # Vitest unit tests
+npm run dev    # Development server with Turbopack (port 3000)
+npm run build  # Production build
+npm start      # Production server
+npm run lint   # ESLint
+npm test       # Vitest unit tests
 ```
 
 ---
 
-Built by [TACITUS](https://tacitus.me) | Contact: giulio@tacitus.me
+Built by [TACITUS](https://tacitus.me) · Contact: giulio@tacitus.me

@@ -24,14 +24,54 @@ flowchart TD
     LP[Landing Page] -->|"Sign In / Create Account"| LOGIN[/login]
     LP -->|"Try Demo / Explore Demo"| DEMO_LOGIN["/login?mode=demo"]
 
-    LOGIN -->|Firebase Google or Email auth| APP[/app/dashboard]
+    LOGIN -->|Google OAuth redirect| GOOGLE[Google OAuth]
+    GOOGLE -->|Redirect back| LOGIN
+    LOGIN -->|Email/Password auth| COOKIE[Set session cookie]
     DEMO_LOGIN -->|Sets demo cookie| DEMO[/demo/dashboard]
+    COOKIE --> APP[/app/dashboard]
+
+    LOGIN -->|"Forgot password?"| RESET[Reset mode]
+    RESET -->|"sendPasswordResetEmail"| EMAIL[Firebase sends reset link]
+    EMAIL -->|User clicks link| LOGIN
 
     APP -->|No situations| WIZARD[Situation Creation Wizard]
     WIZARD -->|Created| DASH[/app/dashboard with active situation]
 
     DEMO -->|"Exit Demo"| LP
     DEMO -->|"Get Full Access"| LOGIN
+```
+
+## Token Lifecycle
+
+```mermaid
+sequenceDiagram
+    participant U as Browser
+    participant FB as Firebase Auth
+    participant API as /api/auth/session
+    participant MW as middleware.ts
+    participant APP as /app/* routes
+
+    U->>FB: signIn (email/pass or Google)
+    FB-->>U: FirebaseUser + ID token (60min TTL)
+    U->>API: POST { token }
+    API->>FB: verifyIdToken(token) — Admin SDK
+    FB-->>API: decoded { uid }
+    API-->>U: Set httpOnly cookie (24h)
+    U->>APP: Navigate to /app/dashboard
+    APP->>MW: Check cookie present
+    MW-->>APP: Allow (cookie exists)
+
+    Note over U,FB: At 50 minutes...
+    U->>FB: getIdToken(true) — forced refresh
+    FB-->>U: New ID token
+    U->>API: POST { newToken }
+    API-->>U: Cookie updated
+
+    Note over U,FB: On sign-out...
+    U->>API: DELETE /api/auth/session
+    API-->>U: Cookie cleared
+    U->>MW: Request /app/*
+    MW-->>U: Redirect /login
 ```
 
 ## Situation-Driven Data Model (Real App Only)
@@ -106,12 +146,15 @@ flowchart LR
 
 ## Auth Matrix
 
-| Route       | Auth Required       | Data Source         | Credits   |
-|-------------|---------------------|---------------------|-----------|
-| `/demo/*`   | Demo cookie only    | In-memory constants | Unlimited |
-| `/app/*`    | Firebase JWT        | Firestore           | Deducted  |
-| `/api/*`    | withAuth() wrapper  | Per-route           | Per-route |
-| `/`, etc.   | None (public)       | Static              | N/A       |
+| Route | Auth Required | Verification | Data Source | Credits |
+|-------|--------------|-------------|-------------|---------|
+| `/demo/*` | Demo cookie `{demo:true}` | Middleware cookie check | In-memory constants | Unlimited |
+| `/app/*` | Firebase JWT cookie | Middleware cookie presence check | Firestore | Deducted |
+| `/api/*` | `withAuth()` — `verifyIdToken` | Firebase Admin SDK (cryptographic) | Per-route | Per-route |
+| `/api/auth/test-firebase` | None | Public ops endpoint | Firebase REST API | N/A |
+| `/`, `/login`, etc. | None | Public | Static | N/A |
+
+> Note: Middleware checks cookie **presence** only (UX guard). API routes do full cryptographic token verification — this is where actual security is enforced.
 
 ## Middleware Rules
 
