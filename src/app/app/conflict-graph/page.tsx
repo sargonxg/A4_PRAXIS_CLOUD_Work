@@ -10,16 +10,41 @@ import { usePersistedToolData } from "@/hooks/use-persisted-tool-data";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils/cn";
 import { motion, AnimatePresence } from "framer-motion";
-import { GraphViewer } from "@/components/graph/graph-viewer";
 import {
   EntityPanel,
   type GraphNode,
   type GraphEdge,
 } from "@/components/graph/entity-panel";
 import { TimelineSlider } from "@/components/graph/timeline-slider";
-import { Network, ChevronDown, Maximize2, Sparkles, RefreshCw, X, Loader2, Info } from "lucide-react";
+import { ForceGraph } from "@/components/visualizations/force-graph";
+import {
+  Network,
+  ChevronDown,
+  Maximize2,
+  Sparkles,
+  RefreshCw,
+  X,
+  Loader2,
+  Info,
+  Search,
+} from "lucide-react";
 import { ENTITY_COLORS, ENTITY_TYPES } from "@/lib/constants/entity-colors";
 import { PraxisLink } from "@/components/shared/praxis-link";
+
+// ── ForceGraph color mapping by entity type ─────────────────────
+const COLOR_BY_TYPE: Record<string, string> = {
+  actor:       '#EF4444',
+  event:       '#F59E0B',
+  claim:       '#3B82F6',
+  institution: '#8B5CF6',
+  resource:    '#10B981',
+  norm:        '#6B7280',
+  interest:    '#06B6D4',
+  constraint:  '#F97316',
+  leverage:    '#EC4899',
+  commitment:  '#84CC16',
+  narrative:   '#A78BFA',
+};
 
 // ── Entity type toggle config ───────────────────────────────────
 const ENTITY_TYPE_TOGGLES = ENTITY_TYPES.map((t) => ({
@@ -43,6 +68,122 @@ interface ExtractedResult {
   [key: string]: Array<{ id: string; confidence: number; [k: string]: unknown }>;
 }
 
+// ── Selected entity details panel ──────────────────────────────
+function SelectedEntityPanel({
+  node,
+  allNodes,
+  allEdges,
+  onClose,
+  onSelectNode,
+}: {
+  node: GraphNode;
+  allNodes: GraphNode[];
+  allEdges: GraphEdge[];
+  onClose: () => void;
+  onSelectNode: (id: string) => void;
+}) {
+  const connected = useMemo(() => {
+    return allEdges
+      .filter(e => e.source === node.id || e.target === node.id)
+      .map(e => {
+        const otherId = e.source === node.id ? e.target : e.source;
+        const other = allNodes.find(n => n.id === otherId);
+        return other ? { node: other, edge: e } : null;
+      })
+      .filter((x): x is { node: GraphNode; edge: GraphEdge } => x !== null);
+  }, [node.id, allNodes, allEdges]);
+
+  const typeColor = COLOR_BY_TYPE[node.type] ?? '#94A3B8';
+
+  // Extract human-readable data fields
+  const dataEntries = node.description
+    ? [['Description', node.description] as [string, unknown]]
+    : [];
+  if (node.importance !== undefined) {
+    dataEntries.push(['Importance', `${Math.round(node.importance * 100)}%`]);
+  }
+  if (node.date) {
+    dataEntries.push(['Date', node.date]);
+  }
+
+  return (
+    <div className="rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden h-full flex flex-col">
+      {/* Header */}
+      <div
+        className="px-4 py-3 flex items-start justify-between shrink-0"
+        style={{ backgroundColor: `${typeColor}10`, borderBottom: `2px solid ${typeColor}25` }}
+      >
+        <div className="flex items-start gap-2.5 min-w-0">
+          <div
+            className="h-8 w-8 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-bold text-white mt-0.5"
+            style={{ backgroundColor: typeColor }}
+          >
+            {node.label.slice(0, 2).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-navy-900 leading-tight truncate">{node.label}</p>
+            <span
+              className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize mt-1"
+              style={{ backgroundColor: `${typeColor}15`, color: typeColor }}
+            >
+              {node.type}
+            </span>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-1 rounded-md text-navy-400 hover:text-navy-600 hover:bg-white/50 transition-colors shrink-0"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Data fields */}
+        {dataEntries.length > 0 && (
+          <div className="space-y-2">
+            {dataEntries.map(([key, value]) => (
+              <div key={key as string}>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400 mb-0.5">
+                  {key as string}
+                </p>
+                <p className="text-xs text-navy-700 leading-relaxed">{String(value)}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Connected entities */}
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400 mb-2">
+            Connected Entities ({connected.length})
+          </p>
+          {connected.length === 0 ? (
+            <p className="text-xs text-navy-400">No connections in current view.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {connected.map(({ node: other, edge }) => {
+                const otherColor = COLOR_BY_TYPE[other.type] ?? '#94A3B8';
+                return (
+                  <button
+                    key={other.id}
+                    onClick={() => onSelectNode(other.id)}
+                    className="w-full flex items-center gap-2 rounded-lg bg-[var(--color-app-surface-alt)] px-3 py-2 text-left hover:bg-navy-50 transition-colors"
+                  >
+                    <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: otherColor }} />
+                    <span className="text-[11px] font-medium text-navy-700 flex-1 truncate">{other.label}</span>
+                    <span className="text-[10px] text-navy-400 shrink-0 capitalize">{edge.label ?? edge.type}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DemoConflictGraphPage() {
   const [selectedConflict, setSelectedConflict] = useState("nordalia-crisis");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -58,6 +199,14 @@ function DemoConflictGraphPage() {
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractedResult, setExtractedResult] = useState<ExtractedResult | null>(null);
   const [extractError, setExtractError] = useState<string | null>(null);
+
+  // ── Search state ─────────────────────────────────────────────
+  const [graphSearch, setGraphSearch] = useState('');
+
+  // ── AI Analyze panel state ───────────────────────────────────
+  const [aiAnalysisOpen, setAiAnalysisOpen] = useState(false);
+  const [aiAnalysisResult, setAiAnalysisResult] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // ── API-fetched graph data ────────────────────────────────────
   const [allNodes, setAllNodes] = useState<GraphNode[]>([]);
@@ -82,7 +231,6 @@ function DemoConflictGraphPage() {
           console.error('Graph query error:', data.error);
           return;
         }
-        // Map API nodes to GraphNode format
         const nodes: GraphNode[] = (data.nodes ?? []).map((n: {
           id: string;
           label: string;
@@ -102,7 +250,6 @@ function DemoConflictGraphPage() {
           y: n.y ?? 275,
           date: n.date,
         }));
-        // Map API edges to GraphEdge format
         const edges: GraphEdge[] = (data.edges ?? []).map((e: {
           source: string;
           target: string;
@@ -148,6 +295,32 @@ function DemoConflictGraphPage() {
     }
   }, [extractText, isExtracting]);
 
+  const handleAiAnalyzeGraph = useCallback(async () => {
+    if (isAnalyzing || allNodes.length === 0) return;
+    setIsAnalyzing(true);
+    setAiAnalysisOpen(true);
+    setAiAnalysisResult('');
+    try {
+      const res = await fetch('/api/ai/graph-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conflictId: selectedConflict,
+          nodes: allNodes.map(n => ({ id: n.id, label: n.label, type: n.type })),
+          edges: allEdges.map(e => ({ source: e.source, target: e.target, label: e.label, type: e.type })),
+        }),
+      });
+      if (!res.ok) throw new Error('Analysis failed');
+      const data = await res.json();
+      setAiAnalysisResult(data.analysis ?? data.result ?? JSON.stringify(data, null, 2));
+    } catch (err) {
+      setAiAnalysisResult('Graph analysis unavailable. Please check your AI configuration.');
+      console.error('AI graph analysis failed:', err);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [isAnalyzing, allNodes, allEdges, selectedConflict]);
+
   // Toggle a single entity type on/off
   const toggleType = useCallback((type: string) => {
     setActiveTypes((prev) => {
@@ -166,13 +339,28 @@ function DemoConflictGraphPage() {
     setActiveTypes(new Set(ENTITY_TYPE_TOGGLES.map((t) => t.key)));
   }, []);
 
-  const filteredNodes = useMemo(() => {
+  const filteredByType = useMemo(() => {
     return allNodes.filter(
       (n) =>
         activeTypes.has(n.type) ||
         n.id === selectedNodeId
     );
   }, [allNodes, activeTypes, selectedNodeId]);
+
+  // Apply search filter on top of type filter
+  const filteredNodes = useMemo(() => {
+    const q = graphSearch.toLowerCase().trim();
+    if (!q) return filteredByType;
+    const matchingIds = new Set(
+      filteredByType.filter(n => n.label.toLowerCase().includes(q)).map(n => n.id)
+    );
+    const connectedIds = new Set<string>();
+    allEdges.forEach(e => {
+      if (matchingIds.has(e.source)) connectedIds.add(e.target);
+      if (matchingIds.has(e.target)) connectedIds.add(e.source);
+    });
+    return filteredByType.filter(n => matchingIds.has(n.id) || connectedIds.has(n.id));
+  }, [filteredByType, graphSearch, allEdges]);
 
   const filteredEdges = useMemo(() => {
     const nodeIds = new Set(filteredNodes.map((n) => n.id));
@@ -197,8 +385,36 @@ function DemoConflictGraphPage() {
     ? allNodes.find((n) => n.id === selectedNodeId) ?? null
     : null;
 
+  // ForceGraph nodes mapped with type colors
+  const forceNodes = useMemo(() => {
+    return filteredNodes.map(n => ({
+      id: n.id,
+      label: n.label,
+      type: n.type,
+      size: n.importance ? Math.round(8 + n.importance * 14) : 12,
+      data: {
+        description: n.description,
+        importance: n.importance,
+        date: n.date,
+      } as Record<string, unknown>,
+    }));
+  }, [filteredNodes]);
+
+  const forceEdges = useMemo(() => {
+    return filteredEdges.map(e => ({
+      source: e.source,
+      target: e.target,
+      label: e.label,
+      type: e.type,
+    }));
+  }, [filteredEdges]);
+
   const handleSelectNode = useCallback((id: string | null) => {
     setSelectedNodeId(id);
+  }, []);
+
+  const handleForceNodeClick = useCallback((node: { id: string }) => {
+    setSelectedNodeId(prev => prev === node.id ? null : node.id);
   }, []);
 
   const handleTimelineSelectNode = useCallback((id: string) => {
@@ -215,18 +431,29 @@ function DemoConflictGraphPage() {
           transition={{ duration: 0.5 }}
           className="mb-6"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-500/10 text-gold-500">
-              <Network className="h-5 w-5" />
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-500/10 text-gold-500">
+                <Network className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="font-serif text-2xl font-normal tracking-wide text-navy-900">
+                  Conflict Intelligence Graph
+                </h1>
+                <p className="text-sm text-navy-400">
+                  Visual actor network — interactive force-directed exploration
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-serif text-2xl font-normal tracking-wide text-navy-900">
-                Conflict Intelligence Graph
-              </h1>
-              <p className="text-sm text-navy-400">
-                Visual actor network — interactive force-directed exploration
-              </p>
-            </div>
+            {/* AI Analyze Graph button */}
+            <button
+              onClick={handleAiAnalyzeGraph}
+              disabled={isAnalyzing || allNodes.length === 0}
+              className="flex items-center gap-2 rounded-lg border border-gold-500/30 bg-gold-500/10 px-4 py-2 text-sm font-medium text-gold-600 transition-colors hover:bg-gold-500/15 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {isAnalyzing ? 'Analyzing...' : 'AI Analyze Graph'}
+            </button>
           </div>
 
           {/* ── Disambiguation banner ────────────────────────── */}
@@ -263,6 +490,26 @@ function DemoConflictGraphPage() {
             <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-navy-500" />
           </div>
 
+          {/* Search filter */}
+          <div className="relative flex items-center">
+            <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-navy-400" />
+            <input
+              type="text"
+              value={graphSearch}
+              onChange={e => setGraphSearch(e.target.value)}
+              placeholder="Search entities..."
+              className="rounded-lg border border-[var(--color-app-border)] bg-white py-2 pl-8 pr-8 text-sm text-navy-800 placeholder-navy-400 focus:border-gold-500/50 focus:outline-none focus:ring-1 focus:ring-gold-500/30 w-48"
+            />
+            {graphSearch && (
+              <button
+                onClick={() => setGraphSearch('')}
+                className="absolute right-2.5 text-navy-400 hover:text-navy-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
           {/* Node count + actions */}
           <div className="ml-auto flex items-center gap-3 text-xs text-navy-500">
             {isLoading ? (
@@ -279,6 +526,7 @@ function DemoConflictGraphPage() {
               onClick={() => {
                 setSelectedNodeId(null);
                 showAllTypes();
+                setGraphSearch('');
               }}
               className="rounded-md px-2 py-1 text-navy-600 transition-colors hover:bg-navy-100 hover:text-navy-800"
             >
@@ -373,27 +621,93 @@ function DemoConflictGraphPage() {
                   <span className="text-sm text-navy-500">Loading conflict graph...</span>
                 </div>
               </div>
+            ) : filteredNodes.length === 0 ? (
+              <div className="flex min-h-[450px] items-center justify-center lg:min-h-[500px]">
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <Network className="h-10 w-10 text-navy-300" />
+                  <h3 className="text-sm font-semibold text-navy-700">
+                    {graphSearch ? `No entities match "${graphSearch}"` : 'No entities in current filter'}
+                  </h3>
+                  <button
+                    onClick={() => { setGraphSearch(''); showAllTypes(); }}
+                    className="text-xs text-gold-600 hover:text-gold-700 font-medium"
+                  >
+                    Reset filters
+                  </button>
+                </div>
+              </div>
             ) : (
-              <GraphViewer
-                nodes={filteredNodes}
-                edges={filteredEdges}
-                selectedNodeId={selectedNodeId}
-                onSelectNode={handleSelectNode}
-                className="min-h-[450px] lg:min-h-[500px]"
+              <ForceGraph
+                nodes={forceNodes}
+                edges={forceEdges}
+                height={500}
+                onNodeClick={handleForceNodeClick}
+                selectedNodeId={selectedNodeId ?? undefined}
+                colorByType={COLOR_BY_TYPE}
               />
             )}
           </div>
 
-          {/* Entity Panel */}
-          <EntityPanel
-            node={selectedNode}
-            edges={allEdges}
-            nodes={allNodes}
-            onClose={() => setSelectedNodeId(null)}
-            onSelectNode={(id) => setSelectedNodeId(id)}
-            className="min-h-[450px] lg:min-h-[500px]"
-          />
+          {/* Entity Panel: show custom panel when node selected, else default EntityPanel */}
+          {selectedNode ? (
+            <SelectedEntityPanel
+              node={selectedNode}
+              allNodes={allNodes}
+              allEdges={allEdges}
+              onClose={() => setSelectedNodeId(null)}
+              onSelectNode={(id) => setSelectedNodeId(id)}
+            />
+          ) : (
+            <EntityPanel
+              node={null}
+              edges={allEdges}
+              nodes={allNodes}
+              onClose={() => setSelectedNodeId(null)}
+              onSelectNode={(id) => setSelectedNodeId(id)}
+              className="min-h-[450px] lg:min-h-[500px]"
+            />
+          )}
         </motion.div>
+
+        {/* ── AI Analysis Results Panel ───────────────────────── */}
+        <AnimatePresence>
+          {aiAnalysisOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.3 }}
+              className="mb-4 rounded-xl border border-gold-500/20 bg-white p-5"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-gold-500" />
+                  <h3 className="text-sm font-semibold text-navy-900">AI Graph Analysis</h3>
+                  {isAnalyzing && (
+                    <span className="flex items-center gap-1 text-xs text-navy-500">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Analyzing...
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setAiAnalysisOpen(false)}
+                  className="rounded-md p-1 text-navy-400 hover:text-navy-600 hover:bg-navy-100 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              {aiAnalysisResult ? (
+                <div className="prose prose-sm max-w-none text-sm text-navy-700 whitespace-pre-wrap">
+                  {aiAnalysisResult}
+                </div>
+              ) : isAnalyzing ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-gold-500" />
+                </div>
+              ) : null}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ── Timeline ───────────────────────────────────────── */}
         <motion.div
@@ -595,7 +909,6 @@ function convertPersistedGraph(data: PersistedGraphData): { nodes: GraphNode[]; 
 function mapEdgeType(type: string): GraphEdge['type'] {
   const validTypes: GraphEdge['type'][] = ['adversary', 'ally', 'mediator', 'coordination', 'leads', 'supports', 'threatens'];
   if (validTypes.includes(type as GraphEdge['type'])) return type as GraphEdge['type'];
-  // Map relationship types to edge display types
   if (type === 'neutral') return 'coordination';
   if (type === 'patron' || type === 'proxy' || type === 'dependent') return 'ally';
   if (type === 'competitor') return 'adversary';
@@ -607,7 +920,6 @@ function RealConflictGraphPage() {
   const { activeSituation } = useSituationStore();
   const { user } = useAuth();
 
-  // ── Check for pre-seeded graph data from situation-initializer ──
   const persisted = usePersistedToolData('conflict-graph', activeSituation?.id);
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -625,12 +937,19 @@ function RealConflictGraphPage() {
   const [extractError, setExtractError] = useState<string | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
 
-  // ── API-fetched graph data ────────────────────────────────────
+  // ── Search state ─────────────────────────────────────────────
+  const [graphSearch, setGraphSearch] = useState('');
+
+  // ── AI Analyze panel state ───────────────────────────────────
+  const [aiAnalysisOpen, setAiAnalysisOpen] = useState(false);
+  const [aiAnalysisResult, setAiAnalysisResult] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
   const [allNodes, setAllNodes] = useState<GraphNode[]>([]);
   const [allEdges, setAllEdges] = useState<GraphEdge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restore from persisted tool-data (pre-seeded by situation-initializer)
+  // Restore from persisted tool-data
   useEffect(() => {
     if (persisted.isLoading) return;
     if (persisted.data) {
@@ -642,18 +961,15 @@ function RealConflictGraphPage() {
         return;
       }
     }
-    // No persisted data — fall through to Firestore graph fetch
   }, [persisted.isLoading, persisted.data]);
 
-  // Fetch graph data from Firestore graph subcollection as fallback
+  // Fetch graph data from Firestore as fallback
   useEffect(() => {
     if (!user || !activeSituation) {
       setIsLoading(false);
       return;
     }
-    // If persisted tool-data is still loading, wait
     if (persisted.isLoading) return;
-    // If persisted data already populated nodes, skip Firestore fetch
     if (persisted.data) {
       const converted = convertPersistedGraph(persisted.data as PersistedGraphData);
       if (converted.nodes.length > 0) return;
@@ -732,7 +1048,6 @@ function RealConflictGraphPage() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      // Build nodes + edges from extraction result in the persisted shape
       const nodes: PersistedGraphNode[] = [];
       const edges: PersistedGraphEdge[] = [];
       const entities = data.entities as ExtractedResult;
@@ -749,10 +1064,8 @@ function RealConflictGraphPage() {
           }
         }
       }
-      // Save to persisted tool-data
       const graphPayload = { nodes, edges };
       await persisted.save(graphPayload);
-      // Convert and display
       const converted = convertPersistedGraph(graphPayload);
       setAllNodes(converted.nodes);
       setAllEdges(converted.edges);
@@ -762,6 +1075,33 @@ function RealConflictGraphPage() {
       setIsRegenerating(false);
     }
   }, [activeSituation, isRegenerating, persisted]);
+
+  const handleAiAnalyzeGraph = useCallback(async () => {
+    if (isAnalyzing || allNodes.length === 0) return;
+    setIsAnalyzing(true);
+    setAiAnalysisOpen(true);
+    setAiAnalysisResult('');
+    try {
+      const res = await fetch('/api/ai/graph-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          situationId: activeSituation?.id,
+          situationName: activeSituation?.name,
+          nodes: allNodes.map(n => ({ id: n.id, label: n.label, type: n.type, description: n.description })),
+          edges: allEdges.map(e => ({ source: e.source, target: e.target, label: e.label, type: e.type })),
+        }),
+      });
+      if (!res.ok) throw new Error('Analysis failed');
+      const data = await res.json();
+      setAiAnalysisResult(data.analysis ?? data.result ?? JSON.stringify(data, null, 2));
+    } catch (err) {
+      setAiAnalysisResult('Graph analysis unavailable. Please check your AI configuration.');
+      console.error('AI graph analysis failed:', err);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [isAnalyzing, allNodes, allEdges, activeSituation]);
 
   const handleExtract = useCallback(async () => {
     if (!extractText.trim() || isExtracting) return;
@@ -797,11 +1137,26 @@ function RealConflictGraphPage() {
     setActiveTypes(new Set(ENTITY_TYPE_TOGGLES.map((t) => t.key)));
   }, []);
 
-  const filteredNodes = useMemo(() => {
+  const filteredByType = useMemo(() => {
     return allNodes.filter(
       (n) => activeTypes.has(n.type) || n.id === selectedNodeId
     );
   }, [allNodes, activeTypes, selectedNodeId]);
+
+  // Apply search on top of type filter
+  const filteredNodes = useMemo(() => {
+    const q = graphSearch.toLowerCase().trim();
+    if (!q) return filteredByType;
+    const matchingIds = new Set(
+      filteredByType.filter(n => n.label.toLowerCase().includes(q)).map(n => n.id)
+    );
+    const connectedIds = new Set<string>();
+    allEdges.forEach(e => {
+      if (matchingIds.has(e.source)) connectedIds.add(e.target);
+      if (matchingIds.has(e.target)) connectedIds.add(e.source);
+    });
+    return filteredByType.filter(n => matchingIds.has(n.id) || connectedIds.has(n.id));
+  }, [filteredByType, graphSearch, allEdges]);
 
   const filteredEdges = useMemo(() => {
     const nodeIds = new Set(filteredNodes.map((n) => n.id));
@@ -825,8 +1180,36 @@ function RealConflictGraphPage() {
     ? allNodes.find((n) => n.id === selectedNodeId) ?? null
     : null;
 
+  // ForceGraph node/edge mapping
+  const forceNodes = useMemo(() => {
+    return filteredNodes.map(n => ({
+      id: n.id,
+      label: n.label,
+      type: n.type,
+      size: n.importance ? Math.round(8 + n.importance * 14) : 12,
+      data: {
+        description: n.description,
+        importance: n.importance,
+        date: n.date,
+      } as Record<string, unknown>,
+    }));
+  }, [filteredNodes]);
+
+  const forceEdges = useMemo(() => {
+    return filteredEdges.map(e => ({
+      source: e.source,
+      target: e.target,
+      label: e.label,
+      type: e.type,
+    }));
+  }, [filteredEdges]);
+
   const handleSelectNode = useCallback((id: string | null) => {
     setSelectedNodeId(id);
+  }, []);
+
+  const handleForceNodeClick = useCallback((node: { id: string }) => {
+    setSelectedNodeId(prev => prev === node.id ? null : node.id);
   }, []);
 
   const handleTimelineSelectNode = useCallback((id: string) => {
@@ -843,18 +1226,29 @@ function RealConflictGraphPage() {
           transition={{ duration: 0.5 }}
           className="mb-6"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-500/10 text-gold-500">
-              <Network className="h-5 w-5" />
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-500/10 text-gold-500">
+                <Network className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="font-serif text-2xl font-normal tracking-wide text-navy-900">
+                  Conflict Intelligence Graph
+                </h1>
+                <p className="text-sm text-navy-400">
+                  {activeSituation?.name ?? 'Situation graph'} — visual actor network
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-serif text-2xl font-normal tracking-wide text-navy-900">
-                Conflict Intelligence Graph
-              </h1>
-              <p className="text-sm text-navy-400">
-                {activeSituation?.name ?? 'Situation graph'} — visual actor network
-              </p>
-            </div>
+            {/* AI Analyze Graph button */}
+            <button
+              onClick={handleAiAnalyzeGraph}
+              disabled={isAnalyzing || allNodes.length === 0}
+              className="flex items-center gap-2 rounded-lg border border-gold-500/30 bg-gold-500/10 px-4 py-2 text-sm font-medium text-gold-600 transition-colors hover:bg-gold-500/15 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {isAnalyzing ? 'Analyzing...' : 'AI Analyze Graph'}
+            </button>
           </div>
 
           {/* ── Disambiguation banner ────────────────────────── */}
@@ -868,13 +1262,33 @@ function RealConflictGraphPage() {
           </div>
         </motion.div>
 
-        {/* ── Controls Bar (no conflict dropdown — situation is already selected) */}
+        {/* ── Controls Bar ───────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
           className="mb-4 flex flex-wrap items-center gap-3"
         >
+          {/* Search filter */}
+          <div className="relative flex items-center">
+            <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-navy-400" />
+            <input
+              type="text"
+              value={graphSearch}
+              onChange={e => setGraphSearch(e.target.value)}
+              placeholder="Search entities..."
+              className="rounded-lg border border-[var(--color-app-border)] bg-white py-2 pl-8 pr-8 text-sm text-navy-800 placeholder-navy-400 focus:border-gold-500/50 focus:outline-none focus:ring-1 focus:ring-gold-500/30 w-48"
+            />
+            {graphSearch && (
+              <button
+                onClick={() => setGraphSearch('')}
+                className="absolute right-2.5 text-navy-400 hover:text-navy-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
           {/* Node count + actions */}
           <div className="ml-auto flex items-center gap-3 text-xs text-navy-500">
             {isLoading || persisted.isLoading ? (
@@ -891,6 +1305,7 @@ function RealConflictGraphPage() {
               onClick={() => {
                 setSelectedNodeId(null);
                 showAllTypes();
+                setGraphSearch('');
               }}
               className="rounded-md px-2 py-1 text-navy-600 transition-colors hover:bg-navy-100 hover:text-navy-800"
             >
@@ -993,37 +1408,104 @@ function RealConflictGraphPage() {
                   <span className="text-sm text-navy-500">Loading conflict graph...</span>
                 </div>
               </div>
-            ) : allNodes.length === 0 ? (
+            ) : filteredNodes.length === 0 ? (
               <div className="flex min-h-[450px] items-center justify-center lg:min-h-[500px]">
                 <div className="flex flex-col items-center gap-3 text-center">
                   <Network className="h-10 w-10 text-navy-300" />
-                  <h3 className="text-sm font-semibold text-navy-700">No graph data yet</h3>
+                  <h3 className="text-sm font-semibold text-navy-700">
+                    {allNodes.length === 0
+                      ? 'No graph data yet'
+                      : graphSearch
+                        ? `No entities match "${graphSearch}"`
+                        : 'No entities in current filter'}
+                  </h3>
                   <p className="max-w-xs text-xs text-navy-500">
-                    Use the Regenerate Graph button or extract entities from text to build the conflict graph for this situation.
+                    {allNodes.length === 0
+                      ? 'Use the Regenerate Graph button or extract entities from text to build the conflict graph for this situation.'
+                      : 'Try adjusting your filters or search query.'}
                   </p>
+                  {(graphSearch || allNodes.length > 0) && (
+                    <button
+                      onClick={() => { setGraphSearch(''); showAllTypes(); }}
+                      className="text-xs text-gold-600 hover:text-gold-700 font-medium"
+                    >
+                      Reset filters
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
-              <GraphViewer
-                nodes={filteredNodes}
-                edges={filteredEdges}
-                selectedNodeId={selectedNodeId}
-                onSelectNode={handleSelectNode}
-                className="min-h-[450px] lg:min-h-[500px]"
+              <ForceGraph
+                nodes={forceNodes}
+                edges={forceEdges}
+                height={500}
+                onNodeClick={handleForceNodeClick}
+                selectedNodeId={selectedNodeId ?? undefined}
+                colorByType={COLOR_BY_TYPE}
               />
             )}
           </div>
 
-          {/* Entity Panel */}
-          <EntityPanel
-            node={selectedNode}
-            edges={allEdges}
-            nodes={allNodes}
-            onClose={() => setSelectedNodeId(null)}
-            onSelectNode={(id) => setSelectedNodeId(id)}
-            className="min-h-[450px] lg:min-h-[500px]"
-          />
+          {/* Entity Panel: selected entity details or default EntityPanel */}
+          {selectedNode ? (
+            <SelectedEntityPanel
+              node={selectedNode}
+              allNodes={allNodes}
+              allEdges={allEdges}
+              onClose={() => setSelectedNodeId(null)}
+              onSelectNode={(id) => setSelectedNodeId(id)}
+            />
+          ) : (
+            <EntityPanel
+              node={null}
+              edges={allEdges}
+              nodes={allNodes}
+              onClose={() => setSelectedNodeId(null)}
+              onSelectNode={(id) => setSelectedNodeId(id)}
+              className="min-h-[450px] lg:min-h-[500px]"
+            />
+          )}
         </motion.div>
+
+        {/* ── AI Analysis Results Panel ───────────────────────── */}
+        <AnimatePresence>
+          {aiAnalysisOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.3 }}
+              className="mb-4 rounded-xl border border-gold-500/20 bg-white p-5"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-gold-500" />
+                  <h3 className="text-sm font-semibold text-navy-900">AI Graph Analysis</h3>
+                  {isAnalyzing && (
+                    <span className="flex items-center gap-1 text-xs text-navy-500">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Analyzing...
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setAiAnalysisOpen(false)}
+                  className="rounded-md p-1 text-navy-400 hover:text-navy-600 hover:bg-navy-100 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              {aiAnalysisResult ? (
+                <div className="prose prose-sm max-w-none text-sm text-navy-700 whitespace-pre-wrap">
+                  {aiAnalysisResult}
+                </div>
+              ) : isAnalyzing ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-gold-500" />
+                </div>
+              ) : null}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ── Timeline ───────────────────────────────────────── */}
         <motion.div

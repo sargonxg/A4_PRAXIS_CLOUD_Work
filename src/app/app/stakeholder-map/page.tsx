@@ -4,7 +4,7 @@ import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { NoDataState } from '@/components/praxis/no-data-state';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   Users,
   Sparkles,
@@ -13,11 +13,17 @@ import {
   BarChart3,
   Target,
   AlertTriangle,
+  Network,
+  Search,
+  X,
+  ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
+import { ForceGraph } from '@/components/visualizations/force-graph';
+import { PraxisLink } from '@/components/shared/praxis-link';
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
@@ -85,6 +91,47 @@ const TYPE_LABELS: Record<string, string> = {
   'civil-society': 'Civil Society',
 };
 
+// Colors for ForceGraph colorByType
+const ACTOR_TYPE_COLORS: Record<string, string> = {
+  'state':         '#1A2332',
+  'armed-group':   '#A63D40',
+  'civil-society': '#10B981',
+  'international': '#8B5CF6',
+};
+
+// Map relationship type to ForceGraph edge type label
+const REL_TYPE_TO_EDGE_TYPE: Record<string, string> = {
+  alliance:   'alliance',
+  rivalry:    'conflict',
+  diplomatic: 'negotiation',
+  support:    'support',
+};
+
+// ─── Edge Type Legend ──────────────────────────────────────────────────────────
+
+function EdgeLegend() {
+  return (
+    <div className="flex flex-wrap items-center gap-4">
+      <div className="flex items-center gap-1.5">
+        <div className="h-px w-6 bg-emerald-500" />
+        <span className="text-[10px] text-navy-600 font-medium">Alliance</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <div className="h-px w-6 bg-red-500" />
+        <span className="text-[10px] text-navy-600 font-medium">Conflict</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <div className="h-px w-6 border-b border-dashed border-amber-500" />
+        <span className="text-[10px] text-navy-600 font-medium">Negotiation</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <div className="h-px w-6 bg-blue-500" />
+        <span className="text-[10px] text-navy-600 font-medium">Support</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Power-Interest Grid (SVG Mendelow Matrix) ─────────────────────────────────
 
 function PowerInterestGrid({ actors, onSelectActor, selectedId }: {
@@ -117,13 +164,9 @@ function PowerInterestGrid({ actors, onSelectActor, selectedId }: {
         onMouseLeave={() => setTooltip(null)}
       >
         {/* Quadrant backgrounds */}
-        {/* Bottom-left: Monitor */}
         <rect x={PAD_LEFT} y={MID_Y} width={PLOT_W / 2} height={PLOT_H / 2} fill="#F1F5F9" fillOpacity="0.8" />
-        {/* Bottom-right: Keep Informed */}
         <rect x={MID_X} y={MID_Y} width={PLOT_W / 2} height={PLOT_H / 2} fill="#EFF6FF" fillOpacity="0.9" />
-        {/* Top-left: Keep Satisfied */}
         <rect x={PAD_LEFT} y={PAD_TOP} width={PLOT_W / 2} height={PLOT_H / 2} fill="#FEFCE8" fillOpacity="0.9" />
-        {/* Top-right: Manage Closely */}
         <rect x={MID_X} y={PAD_TOP} width={PLOT_W / 2} height={PLOT_H / 2} fill="#FFF1F2" fillOpacity="0.9" />
 
         {/* Quadrant labels */}
@@ -379,28 +422,25 @@ function RelationshipMatrix({ actors, relationships, onSelectActor }: {
   );
 }
 
-// ─── Actor Detail Panel ────────────────────────────────────────────────────────
+// ─── Node Details Panel (shown when a ForceGraph node is clicked) ─────────────
 
-function ActorDetailPanel({
+function NodeDetailsPanel({
+  actor,
   actors,
   relationships,
-  actorId,
-  onClose,
   liveInsight,
   loadingInsightId,
   onGenerateInsight,
+  onClose,
 }: {
+  actor: StakeholderActor;
   actors: StakeholderActor[];
   relationships: StakeholderRelationship[];
-  actorId: string;
-  onClose: () => void;
   liveInsight: string;
   loadingInsightId: string | null;
   onGenerateInsight: (actorId: string) => void;
+  onClose: () => void;
 }) {
-  const actor = actors.find(a => a.id === actorId);
-  if (!actor) return null;
-
   const actorRels = relationships.filter(r => r.from === actor.id || r.to === actor.id);
 
   return (
@@ -419,14 +459,19 @@ function ActorDetailPanel({
           </div>
           <div>
             <h3 className="text-sm font-semibold text-navy-900 leading-tight">{actor.name}</h3>
-            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize mt-1"
-              style={{ backgroundColor: `${actor.color}15`, color: actor.color }}>
+            <span
+              className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize mt-1"
+              style={{ backgroundColor: `${actor.color}15`, color: actor.color }}
+            >
               {TYPE_LABELS[actor.type] ?? actor.type}
             </span>
           </div>
         </div>
-        <button onClick={onClose} className="text-navy-400 hover:text-navy-600 p-1 rounded-md hover:bg-white/50 transition-colors">
-          <span className="text-base leading-none">×</span>
+        <button
+          onClick={onClose}
+          className="text-navy-400 hover:text-navy-600 p-1 rounded-md hover:bg-white/50 transition-colors"
+        >
+          <X className="h-4 w-4" />
         </button>
       </div>
 
@@ -474,8 +519,20 @@ function ActorDetailPanel({
                 </div>
               );
             })}
+            {actorRels.length === 0 && (
+              <p className="text-xs text-navy-400 text-center py-2">No relationships mapped.</p>
+            )}
           </div>
         </div>
+
+        {/* Quick action: Generate Actor Brief */}
+        <PraxisLink
+          href="/actor-profiles"
+          className="flex items-center justify-center gap-2 w-full rounded-lg border border-diplomatic-blue/20 bg-diplomatic-blue/5 px-3 py-2.5 text-xs font-medium text-diplomatic-blue hover:bg-diplomatic-blue/10 transition-colors"
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+          Generate Actor Brief
+        </PraxisLink>
 
         {/* AI Insight */}
         <div className="rounded-lg border border-gold-500/15 bg-gold-500/4 p-4">
@@ -496,7 +553,6 @@ function ActorDetailPanel({
               {liveInsight ? 'Refresh' : 'Generate'}
             </button>
           </div>
-
           {liveInsight ? (
             <div className="prose prose-sm max-w-none text-xs text-navy-700">
               <MarkdownRenderer content={liveInsight} />
@@ -520,6 +576,41 @@ function ActorDetailPanel({
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Actor Detail Panel (used in non-graph tabs) ───────────────────────────────
+
+function ActorDetailPanel({
+  actors,
+  relationships,
+  actorId,
+  onClose,
+  liveInsight,
+  loadingInsightId,
+  onGenerateInsight,
+}: {
+  actors: StakeholderActor[];
+  relationships: StakeholderRelationship[];
+  actorId: string;
+  onClose: () => void;
+  liveInsight: string;
+  loadingInsightId: string | null;
+  onGenerateInsight: (actorId: string) => void;
+}) {
+  const actor = actors.find(a => a.id === actorId);
+  if (!actor) return null;
+
+  return (
+    <NodeDetailsPanel
+      actor={actor}
+      actors={actors}
+      relationships={relationships}
+      liveInsight={liveInsight}
+      loadingInsightId={loadingInsightId}
+      onGenerateInsight={onGenerateInsight}
+      onClose={onClose}
+    />
   );
 }
 
@@ -548,7 +639,7 @@ async function streamAI(prompt: string, onChunk: (text: string) => void): Promis
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
-type TabType = 'grid' | 'matrix';
+type TabType = 'network' | 'grid' | 'matrix';
 
 export default function StakeholderMapPage() {
 
@@ -563,7 +654,7 @@ export default function StakeholderMapPage() {
   const [relationships, setRelationships] = useState<StakeholderRelationship[]>(isDemo ? DEMO_RELATIONSHIPS : []);
   const [generatingMap, setGeneratingMap] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<TabType>('grid');
+  const [activeTab, setActiveTab] = useState<TabType>('network');
   const [selectedActorId, setSelectedActorId] = useState<string | null>(null);
   const [liveInsights, setLiveInsights] = useState<Record<string, string>>({});
   const [loadingInsightId, setLoadingInsightId] = useState<string | null>(null);
@@ -572,6 +663,9 @@ export default function StakeholderMapPage() {
   const [spoilerAnalysis, setSpoilerAnalysis] = useState('');
   const [loadingSpoiler, setLoadingSpoiler] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // ─── Search/filter for ForceGraph ─────────────────────────────────────────
+  const [graphSearch, setGraphSearch] = useState('');
 
   const [quadrantSummary, setQuadrantSummary] = useState<{
     keyPlayers: string[]; keepSatisfied: string[]; keepInformed: string[]; monitor: string[];
@@ -622,7 +716,6 @@ export default function StakeholderMapPage() {
       const data = await response.json();
 
       if (Array.isArray(data.actors)) {
-        // Map API actor types to legacy page types for compatibility
         const typeMap: Record<string, string> = {
           non_state_armed: 'armed-group',
           international: 'international',
@@ -646,7 +739,6 @@ export default function StakeholderMapPage() {
       if (data.spoilerRisks) setSpoilerAnalysis(data.spoilerRisks);
       if (Array.isArray(data.engagementPriorities)) setEngagementPriorities(data.engagementPriorities);
 
-      // Persist the full AI response for future visits
       persisted.save(data);
     } catch {
       // Silent fail — user can retry
@@ -806,6 +898,61 @@ Be precise and operationally actionable.`;
     }
   }, [loadingSpoiler, actors, situation]);
 
+  // ─── ForceGraph node/edge mapping ─────────────────────────────────────────
+
+  const forceNodes = useMemo(() => {
+    const q = graphSearch.toLowerCase().trim();
+    return actors.map(a => ({
+      id: a.id,
+      label: a.name,
+      type: a.type,
+      size: 8 + a.relationships * 2,
+      data: {
+        power: a.power,
+        interest: a.interest,
+        relationships: a.relationships,
+        dimmed: q.length > 0 && !a.name.toLowerCase().includes(q),
+      } as Record<string, unknown>,
+    }));
+  }, [actors, graphSearch]);
+
+  const forceEdges = useMemo(() => {
+    return relationships.map(r => ({
+      source: r.from,
+      target: r.to,
+      label: REL_LABELS[r.type as RelType] ?? r.type,
+      type: REL_TYPE_TO_EDGE_TYPE[r.type] ?? r.type,
+      weight: r.strength / 10,
+    }));
+  }, [relationships]);
+
+  const handleForceNodeClick = useCallback((node: { id: string }) => {
+    setSelectedActorId(prev => prev === node.id ? null : node.id);
+  }, []);
+
+  // Nodes visible to ForceGraph: when searching, only pass matching nodes
+  const visibleForceNodes = useMemo(() => {
+    const q = graphSearch.toLowerCase().trim();
+    if (!q) return forceNodes;
+    // Keep matching nodes + nodes connected to matching nodes (so graph context is preserved)
+    const matchingIds = new Set(
+      actors.filter(a => a.name.toLowerCase().includes(q)).map(a => a.id)
+    );
+    const connectedIds = new Set<string>();
+    relationships.forEach(r => {
+      if (matchingIds.has(r.from)) connectedIds.add(r.to);
+      if (matchingIds.has(r.to)) connectedIds.add(r.from);
+    });
+    return forceNodes.filter(n => matchingIds.has(n.id) || connectedIds.has(n.id));
+  }, [forceNodes, graphSearch, actors, relationships]);
+
+  const visibleForceEdges = useMemo(() => {
+    const nodeIds = new Set(visibleForceNodes.map(n => n.id));
+    return forceEdges.filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
+  }, [visibleForceNodes, forceEdges]);
+
+  const selectedActor = selectedActorId ? actors.find(a => a.id === selectedActorId) ?? null : null;
+
   return (
     <div className="space-y-6">
       {/* ── Header ───────────────────────────────────────────────── */}
@@ -847,6 +994,16 @@ Be precise and operationally actionable.`;
       {/* ── Tab toggle ───────────────────────────────────────────── */}
       <div className="flex gap-1 rounded-xl border border-[var(--color-app-border)] bg-white p-1.5 w-fit">
         <button
+          onClick={() => setActiveTab('network')}
+          className={cn(
+            'flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-all',
+            activeTab === 'network' ? 'bg-navy-900 text-white shadow-sm' : 'text-navy-500 hover:bg-[var(--color-app-surface-alt)] hover:text-navy-700'
+          )}
+        >
+          <Network className="h-4 w-4" />
+          Network Graph
+        </button>
+        <button
           onClick={() => setActiveTab('grid')}
           className={cn(
             'flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-all',
@@ -870,9 +1027,74 @@ Be precise and operationally actionable.`;
 
       {/* ── Main content area ────────────────────────────────────── */}
       <div className="flex gap-6">
-        {/* Left: Map / Matrix */}
+        {/* Left: Network / Grid / Matrix */}
         <div className="flex-1 min-w-0">
           <div className="rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden">
+
+            {/* ── Network Graph Tab ─────────────────────────────── */}
+            {activeTab === 'network' && (
+              <>
+                <div className="border-b border-[var(--color-app-border)] px-5 py-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold text-navy-800">Stakeholder Network Graph</p>
+                    <p className="text-[10px] text-navy-500 mt-0.5">
+                      Force-directed map. Click a node to view actor details.
+                    </p>
+                  </div>
+                  {/* Search filter */}
+                  <div className="relative flex items-center">
+                    <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-navy-400" />
+                    <input
+                      type="text"
+                      value={graphSearch}
+                      onChange={e => setGraphSearch(e.target.value)}
+                      placeholder="Filter actors..."
+                      className="rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] py-1.5 pl-8 pr-8 text-xs text-navy-800 placeholder-navy-400 focus:border-gold-500/50 focus:outline-none focus:ring-1 focus:ring-gold-500/30 w-44"
+                    />
+                    {graphSearch && (
+                      <button
+                        onClick={() => setGraphSearch('')}
+                        className="absolute right-2 text-navy-400 hover:text-navy-600"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="p-4">
+                  {visibleForceNodes.length === 0 ? (
+                    <div className="flex min-h-[360px] items-center justify-center">
+                      <div className="text-center space-y-2">
+                        <Search className="h-8 w-8 text-navy-300 mx-auto" />
+                        <p className="text-sm font-semibold text-navy-600">No actors match &ldquo;{graphSearch}&rdquo;</p>
+                        <button
+                          onClick={() => setGraphSearch('')}
+                          className="text-xs text-gold-600 hover:text-gold-700 font-medium"
+                        >
+                          Clear filter
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <ForceGraph
+                      nodes={visibleForceNodes}
+                      edges={visibleForceEdges}
+                      height={400}
+                      onNodeClick={handleForceNodeClick}
+                      selectedNodeId={selectedActorId ?? undefined}
+                      colorByType={ACTOR_TYPE_COLORS}
+                    />
+                  )}
+                </div>
+                {/* Edge type legend */}
+                <div className="border-t border-[var(--color-app-border)] px-5 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400 mb-2">Edge Types</p>
+                  <EdgeLegend />
+                </div>
+              </>
+            )}
+
+            {/* ── Power-Interest Grid Tab ───────────────────────── */}
             {activeTab === 'grid' && (
               <>
                 <div className="border-b border-[var(--color-app-border)] px-5 py-3 flex items-center justify-between">
@@ -905,6 +1127,7 @@ Be precise and operationally actionable.`;
               </>
             )}
 
+            {/* ── Relationship Matrix Tab ───────────────────────── */}
             {activeTab === 'matrix' && (
               <>
                 <div className="border-b border-[var(--color-app-border)] px-5 py-3">
@@ -923,15 +1146,15 @@ Be precise and operationally actionable.`;
 
         {/* Right: Detail panel */}
         <div className="w-80 shrink-0 space-y-4">
-          {selectedActorId ? (
-            <ActorDetailPanel
+          {selectedActor ? (
+            <NodeDetailsPanel
+              actor={selectedActor}
               actors={actors}
               relationships={relationships}
-              actorId={selectedActorId}
-              onClose={() => setSelectedActorId(null)}
-              liveInsight={liveInsights[selectedActorId] ?? ''}
+              liveInsight={liveInsights[selectedActor.id] ?? ''}
               loadingInsightId={loadingInsightId}
               onGenerateInsight={generateInsight}
+              onClose={() => setSelectedActorId(null)}
             />
           ) : (
             <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-8 text-center">
@@ -940,7 +1163,7 @@ Be precise and operationally actionable.`;
               </div>
               <p className="text-sm font-semibold text-navy-700">Select an Actor</p>
               <p className="mt-1.5 text-xs text-navy-500 leading-relaxed">
-                Click any actor bubble or row label to view their profile, relationships, and AI strategic intelligence analysis.
+                Click any actor node, bubble, or row label to view their profile, relationships, and AI strategic intelligence analysis.
               </p>
             </div>
           )}
@@ -956,6 +1179,24 @@ Be precise and operationally actionable.`;
                   <div key={type} className="flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
                     <span className="text-xs text-navy-600 flex-1">{REL_LABELS[type as RelType]}</span>
+                    <span className="text-xs font-semibold text-navy-800 font-mono">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Actor type legend */}
+          <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400 mb-3">Actor Types</p>
+            <div className="space-y-2">
+              {Object.entries(ACTOR_TYPE_COLORS).map(([type, color]) => {
+                const count = actors.filter(a => a.type === type).length;
+                if (count === 0) return null;
+                return (
+                  <div key={type} className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                    <span className="text-xs text-navy-600 flex-1">{TYPE_LABELS[type] ?? type}</span>
                     <span className="text-xs font-semibold text-navy-800 font-mono">{count}</span>
                   </div>
                 );
@@ -1057,6 +1298,43 @@ Be precise and operationally actionable.`;
               </li>
             ))}
           </ol>
+        </div>
+      )}
+
+      {/* Quadrant summary if available */}
+      {quadrantSummary && (
+        <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="h-4 w-4 text-navy-500" />
+            <h3 className="text-sm font-semibold text-navy-900">Quadrant Summary</h3>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { label: 'Manage Closely', ids: quadrantSummary.keyPlayers, color: '#E11D48' },
+              { label: 'Keep Satisfied', ids: quadrantSummary.keepSatisfied, color: '#CA8A04' },
+              { label: 'Keep Informed', ids: quadrantSummary.keepInformed, color: '#60A5FA' },
+              { label: 'Monitor', ids: quadrantSummary.monitor, color: '#94A3B8' },
+            ].map(({ label, ids, color }) => (
+              <div key={label} className="rounded-lg bg-[var(--color-app-surface-alt)] p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color }}>{label}</p>
+                <div className="space-y-1">
+                  {ids.map(id => {
+                    const a = actors.find(x => x.id === id);
+                    return a ? (
+                      <button
+                        key={id}
+                        onClick={() => setSelectedActorId(id)}
+                        className="block w-full text-left text-[11px] text-navy-700 hover:text-navy-900 font-medium truncate hover:underline"
+                      >
+                        {a.name}
+                      </button>
+                    ) : null;
+                  })}
+                  {ids.length === 0 && <p className="text-[10px] text-navy-400">None</p>}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

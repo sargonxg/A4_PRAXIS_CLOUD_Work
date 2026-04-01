@@ -43,6 +43,7 @@ import {
   Globe,
   Telescope,
   Sigma,
+  Map,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -199,6 +200,7 @@ const navSections: NavSection[] = [
       { label: 'Sanctions Tracker', icon: Shield, href: '/sanctions' },
       { label: 'Commitment Tracker', icon: FileCheck, href: '/commitments' },
       { label: 'Treaty Analyzer', icon: BookMarked, href: '/treaty-analyzer' },
+      { label: 'Geospatial Monitor', icon: Map, href: '/geospatial-monitor' },
       { label: 'Alert Center', icon: Bell, href: '/alerts' },
     ],
   },
@@ -282,6 +284,7 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   '/media-compass': 'media-compass',
   '/compare': 'compare',
   '/timeline': 'early-warning',
+  '/geospatial-monitor': 'geospatial-monitor',
 };
 
 function useToolStatuses(situationId: string | null): Set<string> {

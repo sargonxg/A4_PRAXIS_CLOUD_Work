@@ -6,6 +6,40 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [4.3.0] — 2026-03-31
+
+### Added
+
+- **Visualization Component Library** (`src/components/visualizations/`) — 10 new reusable, dark-theme SVG/D3 visualization components: `RiskGauge` (SVG arc gauge, animated stroke-dashoffset), `RadarChart` (SVG spider chart, animated polygon), `EscalationLadder` (Glasl 9-stage vertical/horizontal, pulse ring on active stage), `ProbabilityTree` (SVG BFS tree layout, probability-colored nodes), `TornadoChart` (horizontal sensitivity bars centered on baseline), `SankeyFlow` (layered column flow diagram with curved paths), `TimeSeriesChart` (SVG multi-series line chart, ResizeObserver responsive, hover crosshair), `HeatmapGrid` (div grid with risk/blue/diverging color scales), `ForceGraph` (D3 v7 force simulation, drag, zoom, arrow markers, click/hover), `ComplianceTracker` (progress bar, collapsible category groups, status dots). Barrel export at `index.ts`.
+
+- **Geospatial Monitor** (`/app/geospatial-monitor`, `/demo/geospatial-monitor`, `POST /api/data/geospatial`) — New intelligence tool. Interactive Leaflet map (CartoDB Dark Matter tiles) with ACLED conflict event markers sized by fatalities, colored by event type (battles=red, explosions=orange, VAC=amber, protests=blue, riots=purple, strategic=slate). Top-5 hotspot sidebar with cluster name, event count, fatalities, dominant type, risk badge. Timeline slider for date-range filtering. Stats bar: Total Events, Total Fatalities, Active Actors, Conflict Intensity Index. API route calls `getSituationIntelligence()` + `clusterEvents()`, 15-min cache, 200-event cap, demo fallback with 50 Sudan/Darfur events. Added to sidebar under Intelligence (Map icon).
+
+- **Dashboard KPI Cards** — 5-card row: RiskGauge (sm), Glasl stage + zone badge, actor count, graph entities, data completeness progress ring. Inserted after ActiveConflictSnapshot.
+
+- **Dashboard Risk Radar** — "Multi-Dimensional Risk Assessment" with `<RadarChart>` (6 dimensions: Political, Military, Humanitarian, Economic, Information, Diplomatic) + bar breakdown list.
+
+- **Dashboard Escalation Indicator** — Compact horizontal `<EscalationLadder>` showing current Glasl stage.
+
+- **Dashboard AI Insights Panel** — Collapsible "PRAXIS Intelligence Brief" card with streaming brief fetch, skeleton loading state.
+
+### Changed
+
+- **Risk Monitor** — Added Overall Risk Gauge (lg, computed mean of all regions), 90-day TimeSeriesChart (Risk Score series with area fill), Risk Factor Sensitivity TornadoChart (5 factors), Multi-Dimensional RadarChart.
+
+- **Early Warning** — Replaced static Glasl stage display with interactive `<EscalationLadder>` (clickable stages). Added 60-day Indicator Trend TimeSeriesChart (Incident Frequency + Intensity). Added Indicator Matrix HeatmapGrid (5 categories × 8 weeks, risk color scale).
+
+- **Stakeholder Map** — Added "Network Graph" tab using `<ForceGraph>` (D3 v7). Actors mapped with type-based colors (government=navy, armed=red, civil=emerald, international=purple). Search/filter bar dims non-matching nodes. Edge type legend. NodeDetailsPanel on click with actor detail, "Generate Actor Brief" link.
+
+- **Conflict Graph** — Replaced internal `GraphViewer` with `<ForceGraph>`. Entity type toggle filters (Actors, Events, Claims, Institutions, Resources, Norms). Search filter. "AI Analyze Graph" button posting to `/api/ai/graph-analysis`. SelectedEntityPanel on node click with type badge, description, connected entities.
+
+- **App Sidebar** — Added Geospatial Monitor under Intelligence section (Map icon, `/geospatial-monitor`, tool ID `geospatial-monitor`).
+
+### Dependencies
+
+- Added: `leaflet@1.9.x`, `react-leaflet@4.x`, `@types/leaflet`
+
+---
+
 ## [4.2.0] — 2026-03-31
 
 ### Added

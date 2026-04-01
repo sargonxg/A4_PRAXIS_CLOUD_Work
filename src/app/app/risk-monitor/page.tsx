@@ -16,6 +16,10 @@ import {
   type RiskLevel,
   type TrendDirection,
 } from '@/lib/constants/risk-monitor-data';
+import { RiskGauge } from '@/components/visualizations/risk-gauge';
+import { TimeSeriesChart } from '@/components/visualizations/time-series-chart';
+import { TornadoChart } from '@/components/visualizations/tornado-chart';
+import { RadarChart } from '@/components/visualizations/radar-chart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -226,6 +230,21 @@ function SubScoreBar({ label, value }: { label: string; value: number }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Build time-series data from RISK_TIMELINE_DATA (actual points only, day → Date)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function buildTimeSeriesFromTimeline(): { date: Date; value: number }[] {
+  const today = new Date();
+  return RISK_TIMELINE_DATA
+    .filter((d) => d.actual !== undefined)
+    .map((d) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() - (90 - d.day));
+      return { date, value: d.actual! };
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main Page
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -233,6 +252,31 @@ function DemoRiskMonitorPage({ situationName, aiRegions }: { situationName?: str
 
   const regions = aiRegions && aiRegions.length > 0 ? aiRegions : MONITORED_REGIONS;
   const [selectedRegion, setSelectedRegion] = useState<MonitoredRegion | null>(null);
+
+  // Compute overall risk as average of all monitored regions
+  const overallRisk = Math.round(
+    regions.reduce((sum, r) => sum + r.riskScore, 0) / regions.length
+  );
+
+  // Build time-series data for the trajectory chart
+  const trajectoryData = buildTimeSeriesFromTimeline();
+
+  // Build radar dimensions from the average sub-scores across all regions
+  const avgSubScores = {
+    political: Math.round(regions.reduce((s, r) => s + r.subScores.political, 0) / regions.length),
+    armed: Math.round(regions.reduce((s, r) => s + r.subScores.armed, 0) / regions.length),
+    humanitarian: Math.round(regions.reduce((s, r) => s + r.subScores.humanitarian, 0) / regions.length),
+    economic: Math.round(regions.reduce((s, r) => s + r.subScores.economic, 0) / regions.length),
+    displacement: Math.round(regions.reduce((s, r) => s + r.subScores.displacement, 0) / regions.length),
+  };
+
+  const radarDimensions = [
+    { label: 'Political', value: avgSubScores.political },
+    { label: 'Armed', value: avgSubScores.armed },
+    { label: 'Humanitarian', value: avgSubScores.humanitarian },
+    { label: 'Economic', value: avgSubScores.economic },
+    { label: 'Displacement', value: avgSubScores.displacement },
+  ];
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-[1400px] mx-auto">
@@ -250,6 +294,40 @@ function DemoRiskMonitorPage({ situationName, aiRegions }: { situationName?: str
           </p>
         </div>
       </div>
+
+      {/* ─── Overall Risk Gauge Panel ─── */}
+      <section className="rounded-xl border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-6">
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-12">
+          <div className="flex flex-col items-center gap-2">
+            <RiskGauge score={overallRisk} size="lg" label="Overall Risk" />
+            <p className="text-xs text-navy-500 text-center max-w-[180px]">
+              Composite across {regions.length} monitored region{regions.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 min-w-[200px]">
+            <div className="text-xs font-medium text-navy-600 uppercase tracking-wide">Risk Distribution</div>
+            {(['critical', 'high', 'elevated', 'moderate', 'low'] as RiskLevel[]).map((level) => {
+              const count = regions.filter((r) => r.riskLevel === level).length;
+              if (count === 0) return null;
+              const style = RISK_LEVEL_STYLES[level];
+              return (
+                <div key={level} className="flex items-center gap-3">
+                  <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase w-20 justify-center', style.badge)}>
+                    {style.label}
+                  </span>
+                  <div className="flex-1 h-1.5 rounded-full bg-navy-100 overflow-hidden">
+                    <div
+                      className={cn('h-full rounded-full', style.cell.split(' ')[0].replace('/15', '/60'))}
+                      style={{ width: `${(count / regions.length) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-medium text-navy-600 w-4 text-right">{count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
       {/* ─── Heatmap Grid ─── */}
       <section>
@@ -317,6 +395,77 @@ function DemoRiskMonitorPage({ situationName, aiRegions }: { situationName?: str
               <span className="text-[10px] text-navy-500 capitalize">{level}</span>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ─── Visualization Row: Time Series + Sensitivity ─── */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        {/* Risk Over Time */}
+        <div className="rounded-xl border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-5">
+          <div className="text-xs font-medium text-navy-600 uppercase tracking-wide mb-3">
+            Risk Trajectory (90 days)
+          </div>
+          <TimeSeriesChart
+            series={[
+              {
+                label: 'Risk Score',
+                data: trajectoryData,
+                color: '#EF4444',
+              },
+            ]}
+            title=""
+            height={200}
+            showArea
+          />
+        </div>
+
+        {/* Sensitivity Analysis */}
+        <div className="rounded-xl border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-5">
+          <TornadoChart
+            items={[
+              { label: 'Military Activity', low: overallRisk - 15, high: overallRisk + 20, baseline: overallRisk },
+              { label: 'Political Stability', low: overallRisk - 10, high: overallRisk + 12, baseline: overallRisk },
+              { label: 'Economic Conditions', low: overallRisk - 8, high: overallRisk + 15, baseline: overallRisk },
+              { label: 'Humanitarian Access', low: overallRisk - 5, high: overallRisk + 8, baseline: overallRisk },
+              { label: 'Regional Spillover', low: overallRisk - 12, high: overallRisk + 18, baseline: overallRisk },
+            ]}
+            title="Risk Factor Sensitivity"
+            unit="%"
+          />
+        </div>
+      </section>
+
+      {/* ─── Multi-Dimensional Radar ─── */}
+      <section className="rounded-xl border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-5">
+        <div className="text-xs font-medium text-navy-600 uppercase tracking-wide mb-4">
+          Risk Dimensions — Multi-Factor Radar
+        </div>
+        <div className="flex flex-col items-center sm:flex-row sm:justify-center gap-8">
+          <RadarChart
+            dimensions={radarDimensions}
+            size={260}
+            color="#EF4444"
+          />
+          <div className="flex flex-col gap-2 min-w-[180px]">
+            <div className="text-xs font-medium text-navy-600 uppercase tracking-wide mb-1">Dimension Scores</div>
+            {radarDimensions.map((dim) => {
+              const barColor =
+                dim.value >= 75 ? 'bg-red-500' : dim.value >= 55 ? 'bg-amber-500' : dim.value >= 35 ? 'bg-yellow-500' : 'bg-green-500';
+              return (
+                <div key={dim.label} className="flex items-center gap-3">
+                  <span className="w-24 text-xs text-navy-500 capitalize shrink-0">{dim.label}</span>
+                  <div className="flex-1 h-1.5 rounded-full bg-navy-100 overflow-hidden">
+                    <div
+                      className={cn('h-full rounded-full transition-all', barColor)}
+                      style={{ width: `${dim.value}%` }}
+                    />
+                  </div>
+                  <span className="w-8 text-xs text-navy-600 text-right font-medium">{dim.value}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 

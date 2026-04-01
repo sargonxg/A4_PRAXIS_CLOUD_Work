@@ -1,6 +1,51 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 4.2.0 — Simulation Engine: Game Theory tool, Scenario Planner overhaul, Negotiation Prep upgrades, Mediation Design additions
+> Version 4.3.0 — Visualizations & Dashboard Overhaul: 10 visualization components, Geospatial Monitor, Dashboard KPIs, upgraded Risk Monitor / Early Warning / Stakeholder Map / Conflict Graph
+
+## v4.3.0 Visualizations & Dashboard Overhaul (2026-03-31)
+
+### New Files
+- **`src/components/visualizations/risk-gauge.tsx`** — SVG arc gauge (270° sweep, 0-100, animated stroke-dashoffset). Props: `score`, `label?`, `size?` (sm/md/lg), `showValue?`. Color zones: emerald/amber/orange/red.
+- **`src/components/visualizations/radar-chart.tsx`** — SVG spider/radar chart. Props: `dimensions[]` ({label, value, maxValue?}), `size?`, `showLabels?`, `color?`. Animated polygon on mount.
+- **`src/components/visualizations/escalation-ladder.tsx`** — Glasl 9-stage visual ladder. Props: `currentStage` (1-9), `orientation?` (vertical/horizontal), `interactive?`, `onStageClick?`. Pulse ring on active stage, zone colors.
+- **`src/components/visualizations/probability-tree.tsx`** — SVG BFS decision tree. Props: `nodes[]` ({id, label, probability, children?, type?}), `width?`, `height?`. Probability-colored nodes, bezier edges.
+- **`src/components/visualizations/tornado-chart.tsx`** — Horizontal sensitivity/uncertainty chart. Props: `items[]` ({label, low, high, baseline?}), `title?`, `unit?`. Sorted by range width (most sensitive first).
+- **`src/components/visualizations/sankey-flow.tsx`** — Flow diagram (layered column layout). Props: `nodes[]`, `links[]`, `width?`, `height?`. Curved fill paths proportional to value.
+- **`src/components/visualizations/time-series-chart.tsx`** — SVG multi-series line chart. Props: `series[]` ({label, data: [{date, value}], color?}), `title?`, `height?`, `showArea?`. ResizeObserver responsive, hover crosshair.
+- **`src/components/visualizations/heatmap-grid.tsx`** — Grid heatmap. Props: `rows`, `cols`, `data` (number[][]), `colorScale?` (risk/blue/diverging), `showValues?`. RGB lerp color interpolation.
+- **`src/components/visualizations/force-graph.tsx`** — D3 v7 force-directed network. Props: `nodes[]` ({id, label, type?, size?, color?, data?}), `edges[]` ({source, target, label?, type?, weight?}), `onNodeClick?`, `selectedNodeId?`, `colorByType?`. D3 drag + zoom, arrow markers, hover tooltip.
+- **`src/components/visualizations/compliance-tracker.tsx`** — Checklist tracker. Props: `items[]` ({id, label, status: compliant/partial/non-compliant/pending, category?, notes?}), `groupByCategory?`. Progress bar, collapsible categories.
+- **`src/components/visualizations/index.ts`** — Barrel export for all 10 components.
+- **`src/app/app/geospatial-monitor/page.tsx`** — Full geospatial monitor. `react-leaflet` (all imports via `dynamic(..., {ssr: false})`). CartoDB Dark Matter tiles. ACLED event markers by type (battles/explosions/VAC/protests/riots/strategic). Top-5 hotspot sidebar (cluster name, event count, fatalities, dominant type, risk badge). Timeline slider for date filtering. Stats bar (Events, Fatalities, Active Actors, Intensity Index). Fetches from `POST /api/data/geospatial`. Demo fallback: 50 Sudan events.
+- **`src/app/demo/geospatial-monitor/page.tsx`** — Re-exports from `app/geospatial-monitor/page`.
+- **`src/app/api/data/geospatial/route.ts`** — `POST` + `withAuth`. Demo: 50 hardcoded Sudan/Darfur events. Real: calls `getSituationIntelligence()` + `clusterEvents()`, extracts lat/lng events, 15-min cache, 200-event cap. Returns `{ events: GeospatialEvent[], hotspots: HotspotCluster[], fetchedAt }`.
+
+### Updated Files
+- **`src/app/app/dashboard/page.tsx`** — New `KpiCardsRow` (RiskGauge sm, Glasl stage badge, actor count, graph entities, data completeness ring). New `RiskRadarSection` (RadarChart 6 dimensions + bar list). New `EscalationStageSection` (horizontal EscalationLadder). New `AiInsightsPanel` (collapsible, streams `/api/ai/brief` on expand). All inserted after ActiveConflictSnapshot.
+- **`src/app/app/risk-monitor/page.tsx`** — Overall Risk Gauge (lg, mean of monitored regions). 90-day TimeSeriesChart (Risk Score with area fill from RISK_TIMELINE_DATA). Risk Factor Sensitivity TornadoChart (5 factors, baseline=overallRisk). Multi-Dimensional RadarChart (5 dimensions averaged from regions).
+- **`src/app/app/early-warning/page.tsx`** — Static Glasl stages replaced with interactive `<EscalationLadder currentStage={activeStage} interactive onStageClick>`. 60-day Indicator Trend TimeSeriesChart (2 series). Indicator Matrix HeatmapGrid (5 categories × 8 weeks, risk scale).
+- **`src/app/app/stakeholder-map/page.tsx`** — New "Network Graph" tab with ForceGraph (D3 v7), type-colored nodes (government/armed/civil/international), search/filter bar, edge type legend, NodeDetailsPanel on click.
+- **`src/app/app/conflict-graph/page.tsx`** — Internal GraphViewer replaced with ForceGraph. Entity type toggles + search filter. "AI Analyze Graph" button (POST `/api/ai/graph-analysis`). SelectedEntityPanel on node click.
+- **`src/components/app/app-sidebar.tsx`** — Geospatial Monitor added to Intelligence section (Map icon). `'/geospatial-monitor': 'geospatial-monitor'` in HREF_TO_TOOL_ID.
+
+### Sidebar Update (v4.3.0)
+**Intelligence (11 items)**
+Deep Research Agent · ARGUS Deep Research · ARGUS Grounded · Media Compass · Media Roundup · **Geospatial Monitor** (NEW) · Sanctions Tracker · Commitment Tracker · Treaty Analyzer · Alert Center · Deep Research
+
+### Visualization Component Usage
+Import individual components (not barrel) for tree-shaking:
+```tsx
+import { RiskGauge } from '@/components/visualizations/risk-gauge';
+import { ForceGraph } from '@/components/visualizations/force-graph';
+```
+Or import from barrel for convenience: `import { RiskGauge, ForceGraph } from '@/components/visualizations'`
+
+### Leaflet Notes
+- Leaflet CSS: loaded via `useEffect(() => { import('leaflet/dist/leaflet.css') })` to avoid SSR
+- All react-leaflet components: `dynamic(() => import('react-leaflet').then(m => m.Component), { ssr: false })`
+- Icon path: `L.Icon.Default.imagePath = '/_next/static/...'` fixed in ConflictMap's useEffect
+
+## v4.2.0 Simulation Engine: Game Theory tool, Scenario Planner overhaul, Negotiation Prep upgrades, Mediation Design additions
 
 ## What This Is
 The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Two separate experiences in one codebase: a demo for prospects and a real situation-driven workspace for authenticated users. Deployed at praxis.tacitus.me (Vercel, iad1).

@@ -28,6 +28,9 @@ import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { Badge } from '@/components/ui/badge';
+import { EscalationLadder } from '@/components/visualizations/escalation-ladder';
+import { TimeSeriesChart } from '@/components/visualizations/time-series-chart';
+import { HeatmapGrid } from '@/components/visualizations/heatmap-grid';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Glasl 9-Stage Escalation Model Data
@@ -134,7 +137,38 @@ const TRIGGERS = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Radar Chart Component (pure SVG)
+// Trend data generators for new visualization sections
+// ─────────────────────────────────────────────────────────────────────────────
+
+function generateTrendData(shifted: boolean = false): { date: Date; value: number }[] {
+  const today = new Date();
+  const points: { date: Date; value: number }[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i * 2); // 30 points over 60 days
+    const base = shifted ? 45 : 55;
+    const noise = Math.sin(i * 0.4 + (shifted ? 1.2 : 0)) * 12 + Math.cos(i * 0.7) * 8;
+    const trend = shifted ? (i / 29) * 15 : -(i / 29) * 10;
+    const value = Math.max(10, Math.min(95, base + noise + trend));
+    points.push({ date, value });
+  }
+  return points;
+}
+
+function generateHeatmapData(): number[][] {
+  // 5 rows (categories) × 8 cols (weeks), values 0-100
+  const seeds = [
+    [65, 72, 68, 75, 80, 78, 82, 85], // Political
+    [45, 52, 58, 62, 70, 75, 72, 78], // Military
+    [30, 35, 40, 38, 45, 50, 55, 60], // Economic
+    [55, 60, 65, 70, 68, 72, 75, 80], // Social
+    [20, 25, 28, 32, 38, 42, 45, 50], // Information
+  ];
+  return seeds;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Radar Chart Component (pure SVG — local, for the existing indicator radar)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function RadarChart({ values, labels, maxVal = 10 }: { values: number[]; labels: string[]; maxVal?: number }) {
@@ -237,116 +271,6 @@ function RadarChart({ values, labels, maxVal = 10 }: { values: number[]; labels:
         );
       })}
     </svg>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Glasl Escalation Ladder Component
-// ─────────────────────────────────────────────────────────────────────────────
-
-function GlaslLadder({
-  activeStage,
-  onStageChange,
-  onAssess,
-  isAssessing,
-}: {
-  activeStage: number;
-  onStageChange: (s: number) => void;
-  onAssess: () => void;
-  isAssessing: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-0">
-      {GLASL_STAGES.map((s, idx) => {
-        const styles = STAGE_ZONE_STYLES[s.zone];
-        const isActive = s.stage === activeStage;
-        const isThresholdAbove6 = s.stage === 6; // after stage 6 = win-lose
-        const isThresholdAbove3 = s.stage === 3; // after stage 3 = win-win still possible
-
-        return (
-          <div key={s.stage}>
-            {/* Threshold divider: Win-lose dynamics — between stage 7 and 6 */}
-            {s.stage === 6 && (
-              <div className="relative my-1 flex items-center gap-2">
-                <div className="h-px flex-1 bg-crimson/40" />
-                <span className="shrink-0 rounded-full border border-crimson/40 bg-crimson/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-crimson">
-                  Threshold: Win-lose dynamics
-                </span>
-                <div className="h-px flex-1 bg-crimson/40" />
-              </div>
-            )}
-
-            {/* Threshold divider: Win-win still possible — between stage 4 and 3 */}
-            {s.stage === 3 && (
-              <div className="relative my-1 flex items-center gap-2">
-                <div className="h-px flex-1 bg-gold-500/40" />
-                <span className="shrink-0 rounded-full border border-gold-500/40 bg-gold-500/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-gold-400">
-                  Threshold: Win-win still possible
-                </span>
-                <div className="h-px flex-1 bg-gold-500/40" />
-              </div>
-            )}
-
-            <button
-              onClick={() => onStageChange(s.stage)}
-              className={cn(
-                'group relative w-full rounded-lg border px-3 py-2.5 text-left transition-all duration-200',
-                styles.bg,
-                styles.border,
-                isActive
-                  ? 'ring-2 ring-offset-1 ring-offset-white'
-                  : 'hover:opacity-90',
-                isActive && s.zone === 'green' && 'ring-sage/60',
-                isActive && s.zone === 'amber' && 'ring-gold-500/60',
-                isActive && s.zone === 'red' && 'ring-crimson/60',
-              )}
-            >
-              <div className="flex items-start gap-3">
-                {/* Stage number */}
-                <div className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold', styles.bg, styles.text, 'border', styles.border)}>
-                  {s.stage}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className={cn('text-xs font-semibold', styles.text)}>{s.name}</span>
-                    {isActive && (
-                      <span className={cn('h-2 w-2 rounded-full animate-pulse', styles.dot)} />
-                    )}
-                  </div>
-                  <p className="mt-0.5 text-[10px] text-navy-500 leading-tight">{s.description}</p>
-                </div>
-
-                {/* Staircase indent indicator */}
-                <div
-                  className={cn('shrink-0 self-stretch w-1 rounded-full opacity-40', styles.dot)}
-                  style={{ minHeight: 20, width: Math.max(3, (s.stage - 1) * 2) }}
-                />
-              </div>
-            </button>
-          </div>
-        );
-      })}
-
-      {/* AI Assess Button */}
-      <button
-        onClick={onAssess}
-        disabled={isAssessing}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-diplomatic-blue/30 bg-diplomatic-blue/10 px-4 py-2.5 text-xs font-semibold text-diplomatic-blue transition-colors hover:bg-diplomatic-blue/20 disabled:opacity-50"
-      >
-        {isAssessing ? (
-          <>
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Assessing stage...
-          </>
-        ) : (
-          <>
-            <Sparkles className="h-3.5 w-3.5" />
-            AI Assess Stage
-          </>
-        )}
-      </button>
-    </div>
   );
 }
 
@@ -625,6 +549,23 @@ function DemoEarlyWarningPage({ situation, aiRiskData }: { situation?: import('@
     : (radarConflictId === 'nordalia-crisis' ? NORDALIA_RADAR : [5, 5, 5, 5, 5]);
   const compositeScore = isReal ? situationRiskScore : (radarValues.reduce((a, b) => a + b, 0) / radarValues.length);
 
+  // Precompute trend data for the indicator trend chart (stable reference)
+  const indicatorTrendSeries = [
+    {
+      label: 'Incident Frequency',
+      data: generateTrendData(false),
+      color: '#EF4444' as const,
+    },
+    {
+      label: 'Intensity Score',
+      data: generateTrendData(true),
+      color: '#F59E0B' as const,
+    },
+  ];
+
+  // Precompute heatmap data
+  const heatmapData = generateHeatmapData();
+
   const handleAIAssessStage = useCallback(async () => {
     if (isAssessingStage) return;
     setIsAssessingStage(true);
@@ -704,6 +645,9 @@ function DemoEarlyWarningPage({ situation, aiRiskData }: { situation?: import('@
   const activeStageData = GLASL_STAGES.find((s) => s.stage === activeStage);
   const activeZoneStyles = activeStageData ? STAGE_ZONE_STYLES[activeStageData.zone] : STAGE_ZONE_STYLES['amber'];
 
+  // Suppress unused variable warning for radarConflict (kept for future use)
+  void radarConflict;
+
   return (
     <div className="space-y-5 pb-8">
       {/* ── Page Header ── */}
@@ -736,7 +680,7 @@ function DemoEarlyWarningPage({ situation, aiRiskData }: { situation?: import('@
       {/* ── Main 3-Column Layout ── */}
       <div className="grid grid-cols-12 gap-4">
 
-        {/* LEFT: Glasl Escalation Ladder (40%) */}
+        {/* LEFT: Glasl Escalation Ladder — now using EscalationLadder component (40%) */}
         <div className="col-span-12 lg:col-span-5 rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden">
           <div className="border-b border-[var(--color-app-border)] px-4 py-3">
             <div className="flex items-center gap-2">
@@ -756,12 +700,31 @@ function DemoEarlyWarningPage({ situation, aiRiskData }: { situation?: import('@
           </div>
 
           <div className="p-4">
-            <GlaslLadder
-              activeStage={activeStage}
-              onStageChange={setActiveStage}
-              onAssess={handleAIAssessStage}
-              isAssessing={isAssessingStage}
+            {/* EscalationLadder component replaces/enhances the static GlaslLadder */}
+            <EscalationLadder
+              currentStage={activeStage}
+              interactive={true}
+              onStageClick={(stage: number) => setActiveStage(stage)}
             />
+
+            {/* AI Assess Button */}
+            <button
+              onClick={handleAIAssessStage}
+              disabled={isAssessingStage}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-diplomatic-blue/30 bg-diplomatic-blue/10 px-4 py-2.5 text-xs font-semibold text-diplomatic-blue transition-colors hover:bg-diplomatic-blue/20 disabled:opacity-50"
+            >
+              {isAssessingStage ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Assessing stage...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-3.5 w-3.5" />
+                  AI Assess Stage
+                </>
+              )}
+            </button>
 
             {stageAssessment && (
               <div className="mt-3 rounded-lg border border-diplomatic-blue/20 bg-diplomatic-blue/5 p-3">
@@ -885,6 +848,44 @@ function DemoEarlyWarningPage({ situation, aiRiskData }: { situation?: import('@
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* ── Indicator Trend Chart ── */}
+      <div className="rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden">
+        <div className="border-b border-[var(--color-app-border)] px-5 py-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-crimson shrink-0" />
+            <h2 className="text-sm font-bold text-navy-900">Warning Indicator Trends (60 days)</h2>
+          </div>
+          <p className="mt-0.5 text-[10px] text-navy-500">Incident frequency and intensity score over time</p>
+        </div>
+        <div className="px-5 py-4">
+          <TimeSeriesChart
+            series={indicatorTrendSeries}
+            title=""
+            height={180}
+          />
+        </div>
+      </div>
+
+      {/* ── Indicator Matrix Heatmap ── */}
+      <div className="rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden">
+        <div className="border-b border-[var(--color-app-border)] px-5 py-3">
+          <div className="flex items-center gap-2">
+            <Radio className="h-4 w-4 text-diplomatic-blue shrink-0" />
+            <h2 className="text-sm font-bold text-navy-900">Risk Indicator Matrix</h2>
+          </div>
+          <p className="mt-0.5 text-[10px] text-navy-500">Indicator intensity by category across 8 weeks</p>
+        </div>
+        <div className="px-5 py-4">
+          <HeatmapGrid
+            rows={['Political', 'Military', 'Economic', 'Social', 'Information']}
+            cols={['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7', 'Week 8']}
+            data={heatmapData}
+            title=""
+            colorScale="risk"
+          />
         </div>
       </div>
 

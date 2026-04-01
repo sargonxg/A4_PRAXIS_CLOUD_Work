@@ -43,6 +43,7 @@ import {
   Network,
   Scale,
   Wind,
+  ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -62,6 +63,9 @@ import { formatDiplomaticDate, formatRelativeTime } from '@/lib/utils/format';
 import { useConflictStore } from '@/stores/conflict-store';
 import { useConflictDetail } from '@/hooks/use-conflict-data';
 import { isDemoMode, getCachedResponse } from '@/lib/demo/demo-mode';
+import { RiskGauge } from '@/components/visualizations/risk-gauge';
+import { RadarChart } from '@/components/visualizations/radar-chart';
+import { EscalationLadder } from '@/components/visualizations/escalation-ladder';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -755,6 +759,261 @@ function AIFeedSection() {
 }
 
 // ---------------------------------------------------------------------------
+// KPI Cards Row — situation-level at-a-glance metrics
+// ---------------------------------------------------------------------------
+
+interface KpiCardsProps {
+  riskScore: number;
+  glaslStage: number;
+  actorCount: number;
+  graphEntities: number;
+  dataCompleteness: number;
+}
+
+function KpiCardsRow({ riskScore, glaslStage, actorCount, graphEntities, dataCompleteness }: KpiCardsProps) {
+  const stageInfo = GLASL_STAGES[glaslStage - 1];
+  const stageZone = glaslStage <= 3 ? 'Win–Win' : glaslStage <= 6 ? 'Lose–Lose' : 'No Return';
+  const stageZoneColor = glaslStage <= 3 ? 'text-sage' : glaslStage <= 6 ? 'text-gold-600' : 'text-crimson';
+
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      {/* Risk Score */}
+      <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-4 flex flex-col items-center gap-2">
+        <RiskGauge score={riskScore} size="sm" showValue />
+        <p className="text-[10px] font-medium uppercase tracking-wide text-navy-400 text-center">Risk Score</p>
+      </div>
+
+      {/* Escalation Stage */}
+      <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-4 flex flex-col items-center justify-center gap-1">
+        <div className="text-3xl font-bold text-navy-900">{glaslStage}<span className="text-base font-normal text-navy-400">/9</span></div>
+        <p className="text-xs font-semibold text-navy-700">{stageInfo?.label ?? 'Unknown'}</p>
+        <span className={cn('rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider', stageZoneColor, 'bg-current/10')}
+          style={{ backgroundColor: `${stageInfo?.color ?? '#888'}18` }}>
+          {stageZone}
+        </span>
+        <p className="text-[10px] font-medium uppercase tracking-wide text-navy-400 mt-1">Escalation Stage</p>
+      </div>
+
+      {/* Active Actors */}
+      <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-4 flex flex-col items-center justify-center gap-1">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-diplomatic-blue/8">
+          <Users className="h-5 w-5 text-diplomatic-blue" />
+        </div>
+        <div className="text-2xl font-bold text-navy-900">{actorCount}</div>
+        <p className="text-[10px] font-medium uppercase tracking-wide text-navy-400">Active Actors</p>
+      </div>
+
+      {/* Graph Entities */}
+      <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-4 flex flex-col items-center justify-center gap-1">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/8">
+          <Network className="h-5 w-5 text-emerald-600" />
+        </div>
+        <div className="text-2xl font-bold text-navy-900">{graphEntities}</div>
+        <p className="text-[10px] font-medium uppercase tracking-wide text-navy-400">Graph Entities</p>
+      </div>
+
+      {/* Data Completeness */}
+      <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-4 flex flex-col items-center justify-center gap-2">
+        <div className="relative flex h-10 w-10 items-center justify-center">
+          <svg viewBox="0 0 40 40" className="h-10 w-10 -rotate-90">
+            <circle cx="20" cy="20" r="16" fill="none" stroke="#E2E8F0" strokeWidth="4" />
+            <circle
+              cx="20" cy="20" r="16" fill="none"
+              stroke={dataCompleteness >= 70 ? '#5B8C5A' : dataCompleteness >= 40 ? '#E8B931' : '#A63D40'}
+              strokeWidth="4"
+              strokeDasharray={`${(dataCompleteness / 100) * 100.53} 100.53`}
+              strokeLinecap="round"
+            />
+          </svg>
+          <span className="absolute text-[11px] font-bold text-navy-900">{dataCompleteness}%</span>
+        </div>
+        <p className="text-[10px] font-medium uppercase tracking-wide text-navy-400">Data Complete</p>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Risk Radar Chart Section
+// ---------------------------------------------------------------------------
+
+interface RiskRadarSectionProps {
+  riskScore: number;
+  glaslStage: number;
+  informVulnerability?: number;
+  fragileStatesIndex?: number;
+}
+
+function RiskRadarSection({ riskScore, glaslStage, informVulnerability, fragileStatesIndex }: RiskRadarSectionProps) {
+  const dimensions = [
+    { label: 'Political', value: +(riskScore * 0.9).toFixed(1) },
+    { label: 'Military', value: +(Math.min(100, glaslStage * 10)).toFixed(1) },
+    { label: 'Humanitarian', value: informVulnerability != null ? +(informVulnerability * 100).toFixed(1) : 35 },
+    { label: 'Economic', value: fragileStatesIndex != null ? +((fragileStatesIndex / 120) * 100).toFixed(1) : 40 },
+    { label: 'Information', value: 50 },
+    { label: 'Diplomatic', value: +(100 - riskScore).toFixed(1) },
+  ];
+
+  return (
+    <div className="rounded-xl border border-[var(--color-app-border)] bg-white">
+      <div className="flex items-center gap-2 border-b border-[var(--color-app-border)] px-5 py-4">
+        <BarChart3 className="h-4 w-4 text-diplomatic-blue" />
+        <h2 className="text-sm font-semibold text-navy-900">Multi-Dimensional Risk Assessment</h2>
+        <span className="ml-auto text-[10px] text-navy-400">6 risk dimensions · Glasl-informed</span>
+      </div>
+      <div className="flex flex-col items-center gap-4 p-5 sm:flex-row sm:items-start">
+        <div className="shrink-0">
+          <RadarChart dimensions={dimensions} size={260} showLabels color="#1B3A5C" />
+        </div>
+        <div className="flex-1 space-y-2 min-w-0">
+          <p className="text-[11px] text-navy-500 leading-relaxed">
+            Six-axis risk assessment synthesising political, military, humanitarian, economic, information, and diplomatic dimensions. Higher scores indicate greater risk exposure across each axis.
+          </p>
+          <div className="mt-3 space-y-2">
+            {dimensions.map((d) => {
+              const pct = Math.min(100, Math.max(0, d.value));
+              const barColor = pct >= 70 ? '#A63D40' : pct >= 45 ? '#E8B931' : '#5B8C5A';
+              return (
+                <div key={d.label}>
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="text-[11px] font-medium text-navy-700">{d.label}</span>
+                    <span className="text-[11px] font-bold" style={{ color: barColor }}>{pct.toFixed(0)}</span>
+                  </div>
+                  <div className="h-1 w-full overflow-hidden rounded-full bg-navy-100">
+                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: barColor }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Escalation Stage Indicator — compact horizontal
+// ---------------------------------------------------------------------------
+
+function EscalationStageSection({ stage }: { stage: number }) {
+  const stageInfo = GLASL_STAGES[stage - 1];
+  return (
+    <div className="rounded-xl border border-[var(--color-app-border)] bg-white">
+      <div className="flex items-center gap-2 border-b border-[var(--color-app-border)] px-5 py-4">
+        <TrendingUp className="h-4 w-4 text-gold-600" />
+        <h2 className="text-sm font-semibold text-navy-900">Current Escalation Stage</h2>
+        <span
+          className="ml-auto rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+          style={{ backgroundColor: stageInfo ? `${stageInfo.color}18` : '#88888818', color: stageInfo?.color ?? '#888' }}
+        >
+          Stage {stage}/9 — {stageInfo?.label ?? 'Unknown'}
+        </span>
+      </div>
+      <div className="px-5 py-4">
+        <EscalationLadder currentStage={stage} orientation="horizontal" />
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AI Insights Panel — collapsible, calls /api/ai/brief or shows placeholder
+// ---------------------------------------------------------------------------
+
+function AiInsightsPanel({ situationName }: { situationName: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [brief, setBrief] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [generated, setGenerated] = useState(false);
+
+  const handleExpand = useCallback(async () => {
+    setExpanded((prev) => !prev);
+    if (generated || loading) return;
+    setLoading(true);
+    setGenerated(true);
+    setBrief('');
+    try {
+      const res = await fetch('/api/ai/brief', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situationName }),
+      });
+      if (!res.ok) throw new Error('brief-failed');
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let acc = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split('\n')) {
+          const parsed = parseDataStreamChunk(line);
+          if (parsed) { acc += parsed; setBrief(acc); }
+        }
+      }
+    } catch {
+      setBrief('_AI briefing unavailable. The /api/ai/brief endpoint may not be configured for this situation._');
+    } finally {
+      setLoading(false);
+    }
+  }, [generated, loading, situationName]);
+
+  return (
+    <div className="rounded-xl border border-diplomatic-blue/20 bg-gradient-to-br from-diplomatic-blue/3 to-transparent">
+      {/* Header — always visible */}
+      <button
+        onClick={handleExpand}
+        className="flex w-full items-center gap-2 border-b border-diplomatic-blue/10 px-5 py-4 text-left transition-colors hover:bg-diplomatic-blue/4"
+      >
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-diplomatic-blue/10">
+          <Sparkles className="h-4 w-4 text-diplomatic-blue" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm font-semibold text-navy-900">PRAXIS Intelligence Brief</h2>
+          <p className="text-[10px] text-navy-500">AI-generated situation summary · click to {expanded ? 'collapse' : 'expand'}</p>
+        </div>
+        {loading && <Loader2 className="h-4 w-4 animate-spin text-diplomatic-blue" />}
+        <ChevronDown className={cn('h-4 w-4 text-navy-400 transition-transform', expanded && 'rotate-180')} />
+      </button>
+
+      {/* Body — visible when expanded */}
+      {expanded && (
+        <div className="p-5">
+          {loading && !brief ? (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-2/5 bg-navy-100" />
+              <Skeleton className="h-3 w-full bg-navy-100" />
+              <Skeleton className="h-3 w-5/6 bg-navy-100" />
+              <Skeleton className="h-3 w-4/5 bg-navy-100" />
+            </div>
+          ) : brief ? (
+            <div className="rounded-lg border border-diplomatic-blue/10 bg-white p-4">
+              <MarkdownRenderer content={brief} className="text-sm" />
+              {loading && (
+                <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-diplomatic-blue align-text-bottom" />
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <Sparkles className="h-8 w-8 text-diplomatic-blue/40" />
+              <p className="text-sm text-navy-500">Click to generate AI briefing for this situation</p>
+              <button
+                onClick={handleExpand}
+                className="flex items-center gap-1.5 rounded-lg border border-diplomatic-blue/25 bg-diplomatic-blue/8 px-4 py-2 text-xs font-medium text-diplomatic-blue transition-colors hover:bg-diplomatic-blue/15"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Generate Intelligence Brief
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main Dashboard Page
 // ---------------------------------------------------------------------------
 
@@ -1126,6 +1385,49 @@ Format with bold section headers using **text**. Be concise, professional, and a
           glaslStage={activeConflict.id === 'nordalia-crisis' ? (demoConflict?.glaslStage ?? null) : null}
           escalationTrend={activeConflict.id === 'nordalia-crisis' ? ((demoConflict?.escalationTrend as 'volatile' | 'escalating' | 'de-escalating' | 'stable') ?? 'stable') : 'stable'}
         />
+      )}
+
+      {/* ─── NEW: KPI Cards Row ─────────────────────────────────────────────── */}
+      {activeConflict && (
+        <KpiCardsRow
+          riskScore={Math.round(activeConflict.riskScore * 10)}
+          glaslStage={
+            activeConflict.id === 'nordalia-crisis'
+              ? (demoConflict?.glaslStage ?? 3)
+              : 3
+          }
+          actorCount={activeConflict.actorCount}
+          graphEntities={activeConflict.graphEntities}
+          dataCompleteness={
+            activeConflict.id === 'nordalia-crisis' ? 72 : 0
+          }
+        />
+      )}
+
+      {/* ─── NEW: Risk Radar + Escalation Stage ─────────────────────────────── */}
+      {activeConflict && (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,60fr)_minmax(0,40fr)]">
+          <RiskRadarSection
+            riskScore={Math.round(activeConflict.riskScore * 10)}
+            glaslStage={
+              activeConflict.id === 'nordalia-crisis'
+                ? (demoConflict?.glaslStage ?? 3)
+                : 3
+            }
+          />
+          <EscalationStageSection
+            stage={
+              activeConflict.id === 'nordalia-crisis'
+                ? (demoConflict?.glaslStage ?? 3)
+                : 3
+            }
+          />
+        </div>
+      )}
+
+      {/* ─── NEW: AI Insights Panel (collapsible) ───────────────────────────── */}
+      {activeConflict && (
+        <AiInsightsPanel situationName={activeConflict.name} />
       )}
 
       {/* Metrics Row */}
