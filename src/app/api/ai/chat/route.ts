@@ -191,7 +191,7 @@ You have access to the user's active situation data. When answering questions:
         glaslStage: typeof sit.glaslStage === 'number' ? sit.glaslStage : undefined,
         riskScore: typeof sit.riskScore === 'number' ? sit.riskScore : undefined,
       };
-      if (!sit.isDemo && _user.uid && sit.id) {
+      if (!_user.isDemo && _user.uid && sit.id) {
         try {
           graphSnapshot = await getConflictGraphAdmin(_user.uid, sit.id);
         } catch {
