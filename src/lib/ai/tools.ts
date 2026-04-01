@@ -2819,7 +2819,8 @@ export function createSituationBoundTools(
         }
 
         // Fall back to DEMO_CONFLICT for demo users
-        return queryConflictGraph.execute!({ conflictId, entityType, actorId, query });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (queryConflictGraph.execute as any)({ conflictId, entityType, actorId, query });
       } catch (err) {
         console.error('[boundQueryConflictGraph]', err instanceof Error ? err.message : err);
         return { error: true, message: 'Tool failed', conflictId, conflictName: ctxName, entityType, query: query ?? null, results: [], totalCount: 0, _generatedAt: new Date().toISOString() };
