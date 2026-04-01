@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils/cn';
@@ -19,9 +19,15 @@ function LoginForm() {
   const demoRedirect = rawRedirect?.startsWith('/demo') ? rawRedirect : '/demo/dashboard';
   const { user, loading, signInWithEmail, signUpWithEmail, signInWithGoogle, signInAsDemo } = useAuth();
 
-  // After Google redirect, onAuthStateChanged sets user — auto-redirect to app
+  // Guard: prevents double-navigation when both handleEmailSubmit and this
+  // useEffect are triggered for the same sign-in event.
+  const didNavigate = useRef(false);
+
+  // Handles Google redirect return AND already-logged-in users visiting /login.
+  // For email/password, handleEmailSubmit sets didNavigate first so this is a no-op.
   useEffect(() => {
-    if (!loading && user && !user.isDemo) {
+    if (!loading && user && !user.isDemo && !didNavigate.current) {
+      didNavigate.current = true;
       router.push(appRedirect);
     }
   }, [user, loading, router, appRedirect]);
@@ -60,12 +66,16 @@ function LoginForm() {
         result = await signInWithEmail(email, password);
       }
 
-      if (!result.success) {
+      if (result.success) {
+        // Navigate immediately — cookie is already set by signInWithEmail/signUpWithEmail.
+        // Mark didNavigate so the useEffect below doesn't double-push when
+        // onAuthStateChanged later fires and sets loading=false.
+        didNavigate.current = true;
+        router.push(appRedirect);
+      } else {
         setError(result.error || 'Authentication failed.');
         setIsLoading(false);
       }
-      // On success: keep spinner showing. The useEffect watches for user+loading=false
-      // (set by onAuthStateChanged) and handles navigation — avoids double-push race.
     } catch {
       setError('Network error. Please try again.');
       setIsLoading(false);
