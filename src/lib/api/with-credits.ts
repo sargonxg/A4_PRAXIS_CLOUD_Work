@@ -45,6 +45,15 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   'ai_game_theory': 3,
   // Deep Research Agent (Vertex AI ADK)
   'ai_deep_search_agent': 10,
+  // Phase 5 — Advanced Analytical Tools (tools 22-27)
+  'ai_stakeholder_influence': 3,
+  'ai_ceasefire_monitor': 3,
+  'ai_peace_agreement': 4,
+  'ai_early_warning_brief': 3,
+  'ai_game_theory_analysis': 3,
+  'ai_poc_assessment': 4,
+  // Advisory panel discussion mode (parallel advisor calls)
+  'ai_advisor_panel': 8,
   // Aliases used by some routes (non-standard keys)
   'media-roundup': 2,
   'research': 3,

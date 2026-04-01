@@ -17,6 +17,114 @@ interface ChatMessage {
   content: string;
 }
 
+interface QuickAction {
+  label: string;
+  prompt: string;
+}
+
+function getContextGreeting(pathname: string, situationName?: string): string {
+  const page = pathname?.split('/').filter(Boolean).pop() || '';
+  const sitName = situationName ? `"${situationName}"` : 'your situation';
+
+  const greetings: Record<string, string> = {
+    'dashboard': `I can see you're reviewing the dashboard for ${sitName}. Want me to summarize the latest developments or generate a risk snapshot?`,
+    'risk-monitor': `You're on Risk Monitor. Want me to explain what's driving the current risk indicators, or run an updated escalation assessment?`,
+    'early-warning': `I see you're in Early Warning. I can run a CEWARN-methodology early warning brief, or explain any of the current indicators.`,
+    'stakeholder-map': `You're viewing the stakeholder map. Want me to analyze actor power dynamics, identify spoilers, or build an influence matrix?`,
+    'conflict-graph': `I can help you interpret the conflict graph — explain entity relationships, identify missing connections, or run a graph analysis.`,
+    'scenarios': `You're in the Scenario Planner. I can help design a scenario, interpret results, or compare outcomes across different parameter settings.`,
+    'negotiation-prep': `Ready to help with negotiation preparation. I can analyze ZOPA, assess BATNAs, or draft talking points for a specific session.`,
+    'game-theory': `Game Theory mode. I can analyze strategic interactions, identify Nash equilibria, or model a specific actor dilemma.`,
+    'mediation-design': `You're designing a mediation process. Want help with process architecture, CBM sequencing, or spoiler management strategy?`,
+    'geospatial-monitor': `I see you're on the Geospatial Monitor. I can interpret hotspot patterns, explain event clusters, or correlate spatial data with political dynamics.`,
+    'reports': `In the Report Studio. I can draft sections, check diplomatic language, or help structure the full document.`,
+    'assistant': ``,
+  };
+
+  return greetings[page] || `How can I help you with ${sitName}? I can research developments, analyze actors, draft reports, or answer any conflict intelligence question.`;
+}
+
+function getQuickActions(pathname: string, situationName?: string): QuickAction[] {
+  const page = pathname?.split('/').filter(Boolean).pop() || '';
+  const name = situationName || 'this situation';
+
+  const pageActions: Record<string, QuickAction[]> = {
+    'dashboard': [
+      { label: 'Risk snapshot', prompt: `Give me a quick risk snapshot for ${name}` },
+      { label: 'Key actors', prompt: `Who are the key actors in ${name} right now?` },
+      { label: 'Latest events', prompt: `What are the most significant recent events in ${name}?` },
+      { label: 'Escalation trend', prompt: `What is the current escalation trend for ${name}?` },
+    ],
+    'risk-monitor': [
+      { label: 'Top risks', prompt: `What are the top 3 risk factors in ${name}?` },
+      { label: 'INFORM score', prompt: `Explain the INFORM risk components for ${name}` },
+      { label: 'Risk drivers', prompt: `What is driving the current risk level in ${name}?` },
+      { label: 'Mitigation', prompt: `What risk mitigation actions would be most effective?` },
+    ],
+    'early-warning': [
+      { label: 'Alert level', prompt: `What is the current early warning alert level for ${name}?` },
+      { label: 'Trigger events', prompt: `What trigger events should we watch for?` },
+      { label: 'EW brief', prompt: `Generate a CEWARN early warning brief for ${name}` },
+      { label: 'Window', prompt: `Is there a window of opportunity for de-escalation?` },
+    ],
+    'stakeholder-map': [
+      { label: 'Profile actor', prompt: `Profile the most influential actor in ${name}` },
+      { label: 'Map relationships', prompt: `Map the key relationships and alliances between actors` },
+      { label: 'Find leverage', prompt: `What leverage points exist for each party?` },
+      { label: 'Check media', prompt: `How are the key actors framing the conflict in media?` },
+    ],
+    'conflict-graph': [
+      { label: 'Key entities', prompt: `What are the most central entities in the conflict graph?` },
+      { label: 'Missing links', prompt: `What connections in the conflict graph seem incomplete?` },
+      { label: 'Entity profile', prompt: `Profile the most significant actor in the graph` },
+      { label: 'Relationships', prompt: `Analyze the key relationships in the conflict graph` },
+    ],
+    'scenarios': [
+      { label: 'Best case', prompt: `What would a best-case scenario look like for ${name}?` },
+      { label: 'Worst case', prompt: `What are the worst-case scenario risks?` },
+      { label: 'Most likely', prompt: `What is the most likely trajectory in the next 90 days?` },
+      { label: 'Tipping points', prompt: `What are the key tipping points that could change the trajectory?` },
+    ],
+    'game-theory': [
+      { label: 'Nash equilibria', prompt: `What Nash equilibria exist in the current actor configuration for ${name}?` },
+      { label: 'Payoff matrix', prompt: `Model a payoff matrix for the two main actors in ${name}` },
+      { label: 'Dominant strategy', prompt: `What is the dominant strategy for each actor?` },
+      { label: 'Cooperation', prompt: `What conditions would enable cooperative outcomes?` },
+    ],
+    'negotiation-prep': [
+      { label: 'ZOPA', prompt: `Define the ZOPA for the current negotiation in ${name}` },
+      { label: 'BATNAs', prompt: `Assess BATNAs for each party in ${name}` },
+      { label: 'Talking points', prompt: `Draft opening talking points for the lead mediator` },
+      { label: 'Red lines', prompt: `What are the likely red lines for each party?` },
+    ],
+    'mediation-design': [
+      { label: 'Process design', prompt: `Suggest a mediation process architecture for ${name}` },
+      { label: 'CBM sequence', prompt: `What confidence-building measures should come first?` },
+      { label: 'Spoiler analysis', prompt: `Who are the likely spoilers and how should they be managed?` },
+      { label: 'Ripeness', prompt: `Assess conflict ripeness using Zartman's criteria` },
+    ],
+    'geospatial-monitor': [
+      { label: 'Hotspot analysis', prompt: `Explain the main hotspot clusters on the map` },
+      { label: 'Event patterns', prompt: `What patterns do you see in the conflict event data?` },
+      { label: 'Territorial shifts', prompt: `Are there any notable territorial control shifts?` },
+      { label: 'Civilian impact', prompt: `How is civilian population affected by the conflict geography?` },
+    ],
+    'reports': [
+      { label: 'Draft intro', prompt: `Draft an executive summary for a situation report on ${name}` },
+      { label: 'Key findings', prompt: `What should be the key findings in this report?` },
+      { label: 'Language check', prompt: `What diplomatic language considerations apply to this report?` },
+      { label: 'Structure', prompt: `Suggest a structure for a UN DPPA-format report on ${name}` },
+    ],
+  };
+
+  return pageActions[page] ?? [
+    { label: 'Research', prompt: `Research the latest on ${name}` },
+    { label: 'Risk brief', prompt: `Give me a quick risk brief for ${name}` },
+    { label: 'Key actors', prompt: `Who are the key actors in ${name}?` },
+    { label: 'Draft report', prompt: `Help me draft a situation report for ${name}` },
+  ];
+}
+
 /**
  * Floating Ask PRAXIS button + slide-over chat panel.
  * Available on every /app/* and /demo/* page.
@@ -27,16 +135,13 @@ export function FloatingPraxis() {
   const { activeSituation } = useSituationStore();
   const { demoMode } = useAppStore();
 
+  // Per-situation storage key
+  const storageKey = activeSituation
+    ? `praxis-floating-chat-${activeSituation.id}`
+    : 'praxis-floating-chat-global';
+
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const saved = localStorage.getItem('praxis-floating-chat');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -45,16 +150,28 @@ export function FloatingPraxis() {
   // Don't show on the full assistant page
   const isAssistantPage = pathname?.includes('/assistant');
 
+  // Load conversation from localStorage when storageKey changes (situation switch)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const saved = localStorage.getItem(storageKey);
+      setMessages(saved ? (JSON.parse(saved) as ChatMessage[]) : []);
+    } catch {
+      setMessages([]);
+    }
+  }, [storageKey]);
+
   // Persist messages to localStorage
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     try {
       // Keep only last 50 messages to avoid bloating storage
       const toSave = messages.slice(-50);
-      localStorage.setItem('praxis-floating-chat', JSON.stringify(toSave));
+      localStorage.setItem(storageKey, JSON.stringify(toSave));
     } catch {
       // localStorage may be full or unavailable
     }
-  }, [messages]);
+  }, [messages, storageKey]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -197,22 +314,13 @@ export function FloatingPraxis() {
   const clearChat = () => {
     setMessages([]);
     setInput('');
-    localStorage.removeItem('praxis-floating-chat');
+    localStorage.removeItem(storageKey);
   };
 
   if (isAssistantPage) return null;
 
-  const suggestedPrompts = activeSituation
-    ? [
-        `What are the latest developments in ${activeSituation.name}?`,
-        `Generate a risk assessment for this situation`,
-        `Who are the key actors and what are their interests?`,
-      ]
-    : [
-        'What can PRAXIS do?',
-        'How do I create my first situation?',
-        'Tell me about the TACITUS platform',
-      ];
+  const contextGreeting = getContextGreeting(pathname ?? '', activeSituation?.name);
+  const quickActions = getQuickActions(pathname ?? '', activeSituation?.name);
 
   return (
     <>
@@ -292,26 +400,33 @@ export function FloatingPraxis() {
               {/* Messages */}
               <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
                 {messages.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="flex flex-col items-center justify-center py-6 text-center">
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-diplomatic-blue/15">
                       <Sparkles className="h-6 w-6 text-gold-400" />
                     </div>
                     <h4 className="mt-3 text-sm font-semibold text-navy-100">
                       How can PRAXIS help?
                     </h4>
-                    <p className="mt-1 max-w-xs text-xs text-navy-400">
-                      {activeSituation
-                        ? `Ask anything about "${activeSituation.name}" — research, analysis, reports, risk assessment, or platform guidance.`
-                        : 'Ask about conflict analysis, TACITUS tools, diplomatic reporting, or get help navigating the platform.'}
-                    </p>
-                    <div className="mt-4 space-y-1.5 w-full max-w-xs">
-                      {suggestedPrompts.map((prompt) => (
+                    {contextGreeting ? (
+                      <p className="mt-1.5 max-w-xs text-xs text-navy-400 leading-relaxed">
+                        {contextGreeting}
+                      </p>
+                    ) : (
+                      <p className="mt-1 max-w-xs text-xs text-navy-400">
+                        {activeSituation
+                          ? `Ask anything about "${activeSituation.name}" — research, analysis, reports, risk assessment, or platform guidance.`
+                          : 'Ask about conflict analysis, TACITUS tools, diplomatic reporting, or get help navigating the platform.'}
+                      </p>
+                    )}
+                    {/* Quick action pills */}
+                    <div className="flex flex-wrap gap-1.5 mt-3 justify-center">
+                      {quickActions.map((action) => (
                         <button
-                          key={prompt}
-                          onClick={() => sendWithText(prompt)}
-                          className="w-full rounded-lg border border-navy-700 px-3 py-2 text-left text-xs text-navy-300 hover:border-gold-600/40 hover:bg-navy-800 hover:text-navy-100 transition-colors"
+                          key={action.label}
+                          onClick={() => sendWithText(action.prompt)}
+                          className="rounded-full border border-navy-700 px-2.5 py-1 text-[11px] text-navy-300 hover:border-gold-600/40 hover:bg-navy-800 hover:text-gold-400 transition-colors"
                         >
-                          {prompt}
+                          {action.label}
                         </button>
                       ))}
                     </div>

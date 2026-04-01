@@ -6,6 +6,38 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [5.0.0] — 2026-03-31
+
+### Added
+
+- **6 New AI Chat Tools** (`src/lib/ai/tools.ts`) — Tools 22-27 added to the assistant's tool belt:
+  - `stakeholderInfluenceMap` (tool 22) — Mendelow Power-Interest Matrix + Mitchell-Agle-Wood stakeholder salience. Returns quadrant assignments, influence vectors, and engagement strategies.
+  - `ceasefireMonitor` (tool 23) — Ceasefire robustness scoring (mechanism, verification, sanctions, political will). Draws on ACLED event data and PA-X provisions.
+  - `peaceAgreementAnalyzer` (tool 24) — PA-X coding categories: power-sharing, security arrangements, transitional justice, civil society, gender provisions. Returns implementation pathway and spoiler risks.
+  - `earlyWarningBrief` (tool 25) — IGAD/CEWARN-format structured brief: situation summary, indicator trends, Base/Escalation/De-escalation scenarios, trigger events, preventive actions.
+  - `gameTheoryAnalysis` (tool 26) — Nash equilibrium, Prisoner's Dilemma, Stag Hunt, Chicken game archetypes. Payoff matrices, Schelling focal points, diplomatic leverage implications.
+  - `protectionOfCiviliansAssessment` (tool 27) — OCHA PoC Three-Tier Framework. Atrocity risk scoring via UN Atrocity Prevention Framework indicators. R2P trigger assessment.
+
+- **System Prompt v5.0** (`src/lib/ai/prompts/system.ts`) — Major upgrade:
+  - **Chain of Analysis** — 5-step internal reasoning chain (Situation Grounding → Data Availability → Tool Selection → Uncertainty Mapping → Output Calibration).
+  - **Source Hierarchy** — 5-tier citation framework: Tier 1 (UN/treaty/official), Tier 2 (ACLED/ICG/SIPRI/UCDP), Tier 3 (credible journalism), Tier 4 (PRAXIS Graph), Tier 5 (AI Assessment).
+  - **27 tool descriptions** — All tools described with proactive usage triggers and chaining guidance.
+  - **Output Quality Checklist** — 6-point pre-delivery checklist: Grounded, Calibrated, Complete, Actionable, UN-standard, Sourced.
+
+- **Credit costs for new tools** (`src/lib/api/with-credits.ts`) — `ai_stakeholder_influence: 3`, `ai_ceasefire_monitor: 3`, `ai_peace_agreement: 4`, `ai_early_warning_brief: 3`, `ai_game_theory_analysis: 3`, `ai_poc_assessment: 4`, `ai_advisor_panel: 8`.
+
+### Changed
+
+- **Chat Interface** (`src/components/assistant/chat-interface.tsx`) — Phase-aware contextual prompt suggestions (`getContextualPrompts()`), Standard/Deep Analysis mode selector, Export Chat button (downloads timestamped `.txt`).
+
+- **Tool Invocation** (`src/components/assistant/tool-invocation.tsx`) — Enhanced renderer with framework badges (Glasl, Nash, PA-X, Mendelow, OCHA PoC, Zartman), loading timers, and rich per-tool result display (payoff matrices, stakeholder quadrant cards, ceasefire robustness bars, scenario triplets).
+
+- **Advisory Council** (`src/app/app/advisory/page.tsx`) — Panel Discussion mode (convene panel, parallel advisor calls with `Promise.allSettled`, synthesized consensus). Advisory Brief generation. Enhanced advisor profiles with research databases, known blind spots, and inter-advisor disagreements. Star rating display.
+
+- **Floating PRAXIS** (`src/components/app/floating-praxis.tsx`) — Context-aware greeting per page route (`getContextGreeting()`). Per-page quick action buttons (`getQuickActions()`). Per-situation localStorage key (`praxis-floating-chat-${situation.id}` or `-global`).
+
+---
+
 ## [4.3.0] — 2026-03-31
 
 ### Added

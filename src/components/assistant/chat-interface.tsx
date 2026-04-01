@@ -25,6 +25,7 @@ import { ToolInvocation } from "@/components/assistant/tool-invocation";
 import { SuggestedPrompts } from "@/components/assistant/suggested-prompts";
 import { useSituationStore } from "@/stores/situation-store";
 import { useAppStore } from "@/stores/app-store";
+import type { Situation } from "@/types/situation";
 
 // Conflict contexts are now derived from the active situation — no hardcoded list
 const DEMO_CONFLICT_CONTEXTS = [
@@ -50,21 +51,136 @@ const QUICK_ACTIONS = [
 ];
 
 /* -------------------------------------------------------------------------- */
+/*  Phase-aware suggested prompts                                             */
+/* -------------------------------------------------------------------------- */
+
+function getContextualPrompts(situation: Situation | null, phase?: string): string[] {
+  if (!situation) return [
+    'What can PRAXIS do?',
+    'How do I create my first situation?',
+    'Walk me through the PRAXIS workflow',
+  ];
+
+  const name = situation.name;
+  switch (phase) {
+    case 'intake': return [
+      `Help me map the key actors in ${name}`,
+      `What are the root causes of ${name}?`,
+      `Identify the main claims and competing interests`,
+      `Classify this conflict using UCDP typology`,
+    ];
+    case 'mapping': return [
+      `Build a stakeholder influence map for ${name}`,
+      `What leverage does each party hold?`,
+      `Map the narrative ecosystem and information environment`,
+      `Who are the potential spoilers in ${name}?`,
+    ];
+    case 'assessment': return [
+      `What is the current Glasl escalation stage for ${name}?`,
+      `Run an early warning scan`,
+      `Assess protection of civilians in ${name}`,
+      `What are the ripeness indicators for negotiation?`,
+    ];
+    case 'monitoring': return [
+      `What are the latest developments in ${name}?`,
+      `Generate a situation update for this week`,
+      `Check ceasefire compliance status`,
+      `Any new ACLED events or GDELT spikes?`,
+    ];
+    case 'reporting': return [
+      `Draft a situation report for ${name}`,
+      `Prepare talking points for Security Council`,
+      `Generate a briefing note on recent developments`,
+      `Draft an options paper for intervention`,
+    ];
+    default: return [
+      `What are the latest developments in ${name}?`,
+      `Generate a risk assessment for this situation`,
+      `Who are the key actors and what are their interests?`,
+      `What's the current Glasl escalation stage?`,
+    ];
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /*  Map AI SDK tool names to ToolInvocation display types                    */
 /* -------------------------------------------------------------------------- */
 
-function getToolDisplayType(toolName: string): "web-search" | "draft" | "graph-query" | "terminology-check" {
+type ToolDisplayType =
+  | "web-search" | "draft" | "graph-query" | "terminology-check"
+  | "escalation" | "negotiation" | "narrative" | "humanitarian"
+  | "sanctions" | "ceasefire" | "stakeholder" | "game-theory" | "protection"
+  | "historical" | "timeline" | "verification" | "early-warning" | "agreement";
+
+function getToolDisplayType(toolName: string): ToolDisplayType {
   if (toolName === "webSearch") return "web-search";
   if (toolName === "draftSection" || toolName === "editForDiplomaticTone" || toolName === "draftResolutionLanguage") return "draft";
+  if (toolName === "escalationAssessment") return "escalation";
+  if (toolName === "negotiationSpaceAnalysis") return "negotiation";
+  if (toolName === "narrativeEcosystemMap") return "narrative";
+  if (toolName === "humanitarianSnapshot") return "humanitarian";
+  if (toolName === "sanctionsCheck") return "sanctions";
+  if (toolName === "ceasefireMonitor") return "ceasefire";
+  if (toolName === "stakeholderAnalysis") return "stakeholder";
+  if (toolName === "gameTheoryAnalysis") return "game-theory";
+  if (toolName === "pocAssessment") return "protection";
+  if (toolName === "historicalPrecedents") return "historical";
+  if (toolName === "timelineConstruction") return "timeline";
+  if (toolName === "sourceVerification") return "verification";
+  if (toolName === "earlyWarning") return "early-warning";
+  if (toolName === "agreementAnalysis") return "agreement";
   if (
     toolName === "queryConflictGraph" ||
-    toolName === "analyzeDocument" ||
-    toolName === "escalationAssessment" ||
-    toolName === "negotiationSpaceAnalysis" ||
-    toolName === "narrativeEcosystemMap"
+    toolName === "analyzeDocument"
   ) return "graph-query";
   if (toolName === "checkUNTerminology") return "terminology-check";
   return "graph-query";
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Export chat to Markdown                                                   */
+/* -------------------------------------------------------------------------- */
+
+type ChatMessage = {
+  id: string;
+  role: string;
+  content: string;
+  parts?: Array<{ type: string; text?: string; toolName?: string }>;
+};
+
+function exportChat(messages: ChatMessage[], situationName?: string): void {
+  const date = new Date().toISOString().slice(0, 10);
+  const title = situationName
+    ? `PRAXIS Chat — ${situationName} — ${date}`
+    : `PRAXIS Chat — ${date}`;
+
+  let md = `# ${title}\n\n`;
+  md += `*Exported from PRAXIS by TACITUS*\n\n---\n\n`;
+
+  for (const msg of messages) {
+    if (msg.role === 'user') {
+      md += `## User\n\n${msg.content}\n\n`;
+    } else {
+      md += `## PRAXIS\n\n`;
+      if (msg.parts && msg.parts.length > 0) {
+        for (const part of msg.parts) {
+          if (part.type === 'text' && part.text) md += part.text + '\n\n';
+          if (part.type === 'tool-result' && part.toolName) md += `*[Tool: ${part.toolName}]*\n\n`;
+        }
+      } else {
+        md += (msg.content || '') + '\n\n';
+      }
+      md += '\n';
+    }
+  }
+
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `praxis-chat-${date}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -86,6 +202,7 @@ export function ChatInterface() {
   const [isUploading, setIsUploading] = useState(false);
   const [showContextDropdown, setShowContextDropdown] = useState(false);
   const [useGroundedMode, setUseGroundedMode] = useState(false);
+  const [analysisMode, setAnalysisMode] = useState<'standard' | 'deep'>('standard');
 
   // Build context options: real situation for authenticated users, demo list for demo mode
   const CONFLICT_CONTEXTS = demoMode
@@ -100,6 +217,7 @@ export function ChatInterface() {
   const chatBody = {
     conflictContext: conflictLabel || undefined,
     situation: !demoMode && activeSituation ? activeSituation : undefined,
+    mode: analysisMode,
   };
 
   const toolChat = useChat({
@@ -139,22 +257,6 @@ export function ChatInterface() {
       setIsUploading(false);
     }
   }, []);
-
-  const exportConversation = useCallback(() => {
-    if (messages.length === 0) return;
-    const header = `# TACITUS Diplomatic Assistant — Conversation Export\n\n${conflictLabel ? `**Context:** ${conflictLabel}\n` : ''}**Mode:** ${useGroundedMode ? 'Live Research (Google Search)' : 'Tool-based Analysis'}\n\n---\n\n`;
-    const body = messages
-      .filter((m) => m.content)
-      .map((m) => `### ${m.role === 'user' ? 'You' : 'TACITUS'}\n\n${m.content}`)
-      .join('\n\n---\n\n');
-    const blob = new Blob([header + body], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `tacitus-${Date.now()}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [messages, conflictLabel, useGroundedMode]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -233,7 +335,17 @@ export function ChatInterface() {
     setUseGroundedMode((prev) => !prev);
   }, []);
 
+  const handleExportChat = useCallback(() => {
+    exportChat(messages as ChatMessage[], activeSituation?.name);
+  }, [messages, activeSituation]);
+
   const isEmpty = messages.length === 0 && !isLoading;
+
+  // Phase-aware contextual prompts for the empty state inline banner
+  const contextualPrompts = getContextualPrompts(
+    activeSituation ?? null,
+    activeSituation?.analysisPhase
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -275,7 +387,7 @@ export function ChatInterface() {
           </button>
 
           {messages.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={exportConversation} className="gap-1.5 text-navy-400">
+            <Button variant="ghost" size="sm" onClick={handleExportChat} className="gap-1.5 text-navy-400">
               <Download className="h-3.5 w-3.5" />
               Export
             </Button>
@@ -336,6 +448,33 @@ export function ChatInterface() {
                     : 'AI-powered diplomatic intelligence with structured tool access. Query the conflict graph, draft reports, analyze media, assess escalation, and map negotiation space.'}
                 </p>
               </div>
+
+              {/* Phase-aware quick prompts (shown when situation has analysisPhase; falls back to SuggestedPrompts grid) */}
+              {activeSituation?.analysisPhase && !demoMode ? (
+                <div className="mb-6">
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">
+                      {activeSituation.analysisPhase.charAt(0).toUpperCase() + activeSituation.analysisPhase.slice(1)} phase suggestions
+                    </span>
+                    <span className="rounded-full bg-gold-500/10 px-2 py-0.5 text-[10px] font-medium text-gold-600 border border-gold-500/20">
+                      {activeSituation.name}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                    {contextualPrompts.map((prompt) => (
+                      <button
+                        key={prompt}
+                        type="button"
+                        onClick={() => handlePromptSelect(prompt)}
+                        className="rounded-lg border border-navy-200 bg-white px-3 py-2.5 text-left text-xs text-navy-600 transition-colors hover:border-gold-500/30 hover:bg-gold-500/5 hover:text-navy-900"
+                      >
+                        {prompt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               <SuggestedPrompts onSelect={handlePromptSelect} mode={useGroundedMode ? "research" : "analysis"} />
             </motion.div>
           )}
@@ -416,6 +555,9 @@ export function ChatInterface() {
                 <div className="flex items-center gap-1.5 rounded-xl bg-white border-l-2 border-gold-500/30 px-4 py-3">
                   {useGroundedMode && (
                     <span className="text-[10px] text-diplomatic-blue mr-2">Searching the web...</span>
+                  )}
+                  {analysisMode === 'deep' && !useGroundedMode && (
+                    <span className="text-[10px] text-amber-500 mr-2">Deep Analysis running...</span>
                   )}
                   <span className="flex gap-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-gold-400 animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -511,7 +653,7 @@ export function ChatInterface() {
             </div>
           </form>
 
-          {/* Quick actions + context selector */}
+          {/* Quick actions + analysis mode selector + context selector */}
           <div className="mt-2 flex items-center gap-1.5 flex-wrap">
             <span className="text-[10px] text-navy-500 mr-1">Quick:</span>
             {QUICK_ACTIONS.map((action) => {
@@ -535,6 +677,41 @@ export function ChatInterface() {
                 </button>
               );
             })}
+
+            {/* Analysis mode toggle — Standard / Deep */}
+            <div className="ml-1 flex items-center rounded-md border border-navy-200 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setAnalysisMode('standard')}
+                className={cn(
+                  "px-2.5 py-1 text-[11px] font-medium transition-colors",
+                  analysisMode === 'standard'
+                    ? "bg-navy-800 text-white"
+                    : "bg-white text-navy-400 hover:bg-navy-50 hover:text-navy-700"
+                )}
+              >
+                Standard
+              </button>
+              <button
+                type="button"
+                onClick={() => setAnalysisMode('deep')}
+                className={cn(
+                  "px-2.5 py-1 text-[11px] font-medium transition-colors border-l border-navy-200",
+                  analysisMode === 'deep'
+                    ? "bg-navy-800 text-white"
+                    : "bg-white text-navy-400 hover:bg-navy-50 hover:text-navy-700"
+                )}
+              >
+                Deep Analysis{" "}
+                <span className={cn(
+                  "text-[10px]",
+                  analysisMode === 'deep' ? "text-amber-300" : "text-amber-400"
+                )}>
+                  2× credits
+                </span>
+              </button>
+            </div>
+
             <div className="ml-auto relative">
               <button
                 type="button"

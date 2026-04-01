@@ -1,6 +1,35 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 4.3.0 — Visualizations & Dashboard Overhaul: 10 visualization components, Geospatial Monitor, Dashboard KPIs, upgraded Risk Monitor / Early Warning / Stakeholder Map / Conflict Graph
+> Version 5.0.0 — AI Tools, Assistant & Advisory System Overhaul: 6 new tools (22-27), system prompt v5.0 (Chain of Analysis + Source Hierarchy + 27 tool descriptions + Output Quality Checklist), enhanced Chat Interface, Advisory Panel Discussion mode, context-aware Floating PRAXIS
+
+## v5.0.0 AI Tools, Assistant & Advisory System Overhaul (2026-03-31)
+
+### New AI Tools (tools.ts — tools 22-27)
+- **`stakeholderInfluenceMap`** (tool 22) — Mendelow Power-Interest Matrix + Mitchell-Agle-Wood stakeholder salience. Quadrant assignments, influence vectors, engagement strategies.
+- **`ceasefireMonitor`** (tool 23) — Ceasefire robustness scoring: mechanism, verification, sanctions, political will. PA-X + ACLED sourced.
+- **`peaceAgreementAnalyzer`** (tool 24) — PA-X coding: power-sharing, security arrangements, transitional justice, civil society, gender. Implementation pathway + spoiler risk.
+- **`earlyWarningBrief`** (tool 25) — IGAD/CEWARN format: situation summary, indicator trends, Base/Escalation/De-escalation scenarios, triggers, preventive actions.
+- **`gameTheoryAnalysis`** (tool 26) — Nash equilibrium, Prisoner's Dilemma, Stag Hunt, Chicken. Payoff matrices, Schelling focal points, diplomatic leverage.
+- **`protectionOfCiviliansAssessment`** (tool 27) — OCHA PoC Three-Tier Framework. UN Atrocity Prevention Framework scoring. R2P trigger assessment.
+
+### System Prompt v5.0 (src/lib/ai/prompts/system.ts)
+- **Chain of Analysis** — 5-step reasoning chain before every substantive response (Grounding → Data → Tools → Uncertainty → Calibration)
+- **Source Hierarchy** — 5 tiers with explicit citation labels: [UN SC Res.], [ACLED], [Reuters], [PRAXIS Graph], [AI Assessment]
+- **27 tool descriptions** — All tools with proactive usage triggers and chaining guidance
+- **Output Quality Checklist** — 6-point pre-delivery gate: Grounded, Calibrated, Complete, Actionable, UN-standard, Sourced
+
+### Updated Files
+- **`src/components/assistant/chat-interface.tsx`** — `getContextualPrompts()` (phase-aware suggestions), Standard/Deep Analysis mode selector, Export Chat button (.txt download)
+- **`src/components/assistant/tool-invocation.tsx`** — Framework badges (Glasl/Nash/PA-X/Mendelow/OCHA/Zartman), loading timers, rich per-tool rendering
+- **`src/app/app/advisory/page.tsx`** — Panel Discussion mode (parallel advisor calls + consensus synthesis), Advisory Brief, enhanced profiles (databases/blindSpots/disagreements), star ratings
+- **`src/components/app/floating-praxis.tsx`** — `getContextGreeting()` per page, `getQuickActions()` per page, per-situation localStorage key
+
+### Credits (with-credits.ts — new keys)
+- `ai_stakeholder_influence: 3`, `ai_ceasefire_monitor: 3`, `ai_peace_agreement: 4`
+- `ai_early_warning_brief: 3`, `ai_game_theory_analysis: 3`, `ai_poc_assessment: 4`
+- `ai_advisor_panel: 8` (parallel panel discussion)
+
+---
 
 ## v4.3.0 Visualizations & Dashboard Overhaul (2026-03-31)
 

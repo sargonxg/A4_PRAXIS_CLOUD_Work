@@ -1,4 +1,4 @@
-import { tool, generateObject, generateText } from 'ai';
+import { tool, generateText, Output } from 'ai';
 import { z } from 'zod';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { DEMO_CONFLICT } from '@/lib/constants/demo-conflict';
@@ -147,10 +147,10 @@ export const analyzeDocument = tool({
   }),
   execute: async ({ text, extractionTargets, conflictContext }) => {
     try {
-      const { object } = await generateObject({
+      const { output } = await generateText({
         model: gemini(),
         abortSignal: timeoutSignal(),
-        schema: z.object({
+        output: Output.object({ schema: z.object({
           entities: z.array(
             z.object({
               type: z.enum([
@@ -174,7 +174,7 @@ export const analyzeDocument = tool({
           ),
           summary: z.string(),
           informationGaps: z.array(z.string()),
-        }),
+        }) }),
         prompt: `You are a TACITUS Conflict Grammar entity extraction engine. Analyze this text and extract structured conflict entities.
 
 CONFLICT GRAMMAR FRAMEWORK:
@@ -195,7 +195,7 @@ ${truncate(text)}
 
 For each entity, include the exact source passage it was extracted from. Rate confidence 0-1 based on how clearly the text supports the extraction. Also identify information gaps — what an analyst would want to know that this text does not provide.`,
       });
-      return { ...object, _generatedAt: new Date().toISOString() };
+      return { ...output, _generatedAt: new Date().toISOString() };
     } catch (err) {
       if (err instanceof Error && err.name === 'TimeoutError') {
         return { error: true, message: 'Tool timed out after 30s', toolName: 'analyzeDocument', entities: [], summary: '', informationGaps: [], _generatedAt: new Date().toISOString() };
@@ -563,10 +563,10 @@ export const analyzeMediaSource = tool({
 - Notable for: ${dbEntry.notableFor}`
         : `No entry found in PRAXIS database for "${sourceName}". Generate analysis based on general knowledge.`;
 
-      const { object } = await generateObject({
+      const { output } = await generateText({
         model: gemini(),
         abortSignal: timeoutSignal(),
-        schema: z.object({
+        output: Output.object({ schema: z.object({
           sourceName: z.string(),
           country: z.string(),
           ownershipType: z.enum(['state', 'private', 'public', 'wire_service', 'ngo', 'think_tank']),
@@ -579,8 +579,8 @@ export const analyzeMediaSource = tool({
           topicAssessment: z.string().optional(),
           recommendedPairing: z.array(z.string()),
           usageGuidance: z.string(),
-        }),
-        prompt: `Analyze the media source "${sourceName}" for diplomatic and conflict analysis purposes.
+        }) }),
+        prompt: `
 
 ${dbContext}
 ${topicContext ? `\nSpecific topic for coverage assessment: "${truncate(topicContext)}"` : ''}
@@ -595,7 +595,7 @@ Provide a comprehensive ${analysisDepth || 'standard'} analysis including:
 - Practical guidance on how to use this source in diplomatic analysis`,
       });
 
-      return { ...object, analysisDepth: analysisDepth || 'standard', _generatedAt: new Date().toISOString() };
+      return { ...output, analysisDepth: analysisDepth || 'standard', _generatedAt: new Date().toISOString() };
     } catch (err) {
       if (err instanceof Error && err.name === 'TimeoutError') {
         return { error: true, message: 'Tool timed out after 30s', toolName: 'analyzeMediaSource', _generatedAt: new Date().toISOString() };
@@ -629,10 +629,10 @@ export const compareMediaCoverage = tool({
           : `${name}: no PRAXIS database entry`;
       });
 
-      const { object } = await generateObject({
+      const { output } = await generateText({
         model: gemini(),
         abortSignal: timeoutSignal(),
-        schema: z.object({
+        output: Output.object({ schema: z.object({
           topic: z.string(),
           timeRange: z.string(),
           sources: z.array(
@@ -654,8 +654,8 @@ export const compareMediaCoverage = tool({
             .describe('Sources ranked from most to least reliable for this topic'),
           overallAssessment: z.string(),
           recommendedReadingOrder: z.string().describe('Which sources to read first and why'),
-        }),
-        prompt: `Analyze how these media sources cover the topic: "${truncate(topic)}" (time range: ${timeRange || 'recent week'}).
+        }) }),
+        prompt: `
 
 SOURCE PROFILES FROM PRAXIS DATABASE:
 ${sourceProfiles.join('\n')}
@@ -671,7 +671,7 @@ Then assess: where do sources converge (likely factual baseline)? Where do they 
 Provide a reliability ranking of these sources for this specific topic and guidance on recommended reading order.`,
       });
 
-      return { ...object, _generatedAt: new Date().toISOString() };
+      return { ...output, _generatedAt: new Date().toISOString() };
     } catch (err) {
       if (err instanceof Error && err.name === 'TimeoutError') {
         return { error: true, message: 'Tool timed out after 30s', toolName: 'compareMediaCoverage', _generatedAt: new Date().toISOString() };
@@ -813,10 +813,10 @@ export const draftResolutionLanguage = tool({
   }),
   execute: async ({ topic, type, keyPoints, strength, previousResolutions, chapterVII }) => {
     try {
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: gemini(),
       abortSignal: timeoutSignal(),
-      schema: z.object({
+      output: Output.object({ schema: z.object({
         topic: z.string(),
         type: z.string(),
         preambular: z.array(z.string()).describe('Preambular paragraphs (gerund form: "Recalling...", "Expressing concern...")'),
@@ -825,8 +825,8 @@ export const draftResolutionLanguage = tool({
         strength: z.string(),
         referencedResolutions: z.array(z.string()),
         draftingNotes: z.string(),
-      }),
-      prompt: `Draft UN Security Council resolution language on: "${topic}"
+      }) }),
+      prompt: `
 
 Type requested: ${type}
 Strength level: ${strength || 'moderate'}
@@ -852,7 +852,7 @@ Draft authentic UNSC resolution language for each element requested. Each preamb
     });
 
     return {
-      ...object,
+      ...output,
       note: 'This is AI-generated draft language. All resolution text must be reviewed and approved through proper diplomatic channels before formal use.',
       _generatedAt: new Date().toISOString(),
     };
@@ -899,10 +899,10 @@ export const generateTalkingPoints = tool({
       .map((a) => `${a.name}: ${a.description.slice(0, 80)}...`)
       .join('\n');
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: gemini(),
       abortSignal: timeoutSignal(),
-      schema: z.object({
+      output: Output.object({ schema: z.object({
         topic: z.string(),
         audience: z.string(),
         position: z.string(),
@@ -921,8 +921,8 @@ export const generateTalkingPoints = tool({
         ),
         keyMessages: z.array(z.string()).describe('3 core messages that must come across regardless'),
         avoidList: z.array(z.string()).describe('Specific phrases or framing to avoid for this audience'),
-      }),
-      prompt: `Generate diplomatic talking points for: "${topic}"
+      }) }),
+      prompt: `
 Audience: ${audience.replace(/_/g, ' ')}
 Position/Perspective: ${position || 'UN Secretary-General / SRSG'}
 Number of points: ${maxPoints || 5}
@@ -947,7 +947,7 @@ For each talking point: provide the main point, 2-3 supporting facts, and a sens
 Also provide: 3 anticipated tough questions with suggested responses, 3 key messages that must land regardless of how the conversation goes, and a list of phrases/framings to avoid with this audience.`,
     });
 
-    return { ...object, conflictId: conflictId || null, _generatedAt: new Date().toISOString() };
+    return { ...output, conflictId: conflictId || null, _generatedAt: new Date().toISOString() };
     } catch (err) {
       if (err instanceof Error && err.name === 'TimeoutError') {
         return { error: true, message: 'Tool timed out after 30s', toolName: 'generateTalkingPoints', topic: '', audience: '', position: '', talkingPoints: [], anticipatedQuestions: [], keyMessages: [], avoidList: [], conflictId: null, _generatedAt: new Date().toISOString() };
@@ -989,10 +989,10 @@ export const escalationAssessment = tool({
       .join('\n');
     const actorList = conflict.actors.map((a) => `${a.name} (${a.type})`).join(', ');
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: gemini(),
       abortSignal: timeoutSignal(),
-      schema: z.object({
+      output: Output.object({ schema: z.object({
         conflictName: z.string(),
         currentStage: z.number().min(1).max(9).describe('Current Glasl escalation stage (1-9)'),
         stageName: z.string().describe('Name of the current escalation stage'),
@@ -1025,8 +1025,8 @@ export const escalationAssessment = tool({
         recommendedActions: z.array(z.string()),
         analystConfidence: z.enum(['low', 'medium', 'high']),
         assessmentCaveats: z.array(z.string()),
-      }),
-      prompt: `Conduct an escalation assessment for: ${conflict.name}
+      }) }),
+      prompt: `
 
 CONFLICT DESCRIPTION: ${conflict.description}
 
@@ -1057,7 +1057,7 @@ Assess the current stage and provide a rigorous escalation analysis including:
 - Confidence level in this assessment and key caveats`,
     });
 
-    return { ...object, _generatedAt: new Date().toISOString() };
+    return { ...output, _generatedAt: new Date().toISOString() };
     } catch (err) {
       if (err instanceof Error && err.name === 'TimeoutError') {
         return { error: true, message: 'Tool timed out after 30s', toolName: 'escalationAssessment', _generatedAt: new Date().toISOString() };
@@ -1107,10 +1107,10 @@ export const negotiationSpaceAnalysis = tool({
       .map((c) => `${c.type} [${c.status}]: ${String(c.description ?? '').slice(0, 120)}`)
       .join('\n');
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: gemini(),
       abortSignal: timeoutSignal(),
-      schema: z.object({
+      output: Output.object({ schema: z.object({
         conflictName: z.string(),
         parties: z.array(
           z.object({
@@ -1146,8 +1146,8 @@ export const negotiationSpaceAnalysis = tool({
         criticalPathToAgreement: z.array(z.string()),
         spoilerRisks: z.array(z.string()),
         mediatorRecommendations: z.array(z.string()),
-      }),
-      prompt: `Analyze the negotiation space for: ${conflict.name}
+      }) }),
+      prompt: `
 
 CONFLICT DESCRIPTION: ${conflict.description}
 
@@ -1176,7 +1176,7 @@ Conduct a rigorous negotiation space analysis:
 7. Recommend specific mediator strategies`,
     });
 
-    return { ...object, _generatedAt: new Date().toISOString() };
+    return { ...output, _generatedAt: new Date().toISOString() };
     } catch (err) {
       if (err instanceof Error && err.name === 'TimeoutError') {
         return { error: true, message: 'Tool timed out after 30s', toolName: 'negotiationSpaceAnalysis', _generatedAt: new Date().toISOString() };
@@ -1221,10 +1221,10 @@ export const narrativeEcosystemMap = tool({
       .map((a) => `${a.name}: ${a.description.slice(0, 100)}`)
       .join('\n');
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: gemini(),
       abortSignal: timeoutSignal(),
-      schema: z.object({
+      output: Output.object({ schema: z.object({
         conflictName: z.string(),
         dominantNarratives: z.array(
           z.object({
@@ -1271,8 +1271,8 @@ export const narrativeEcosystemMap = tool({
         ),
         informationEnvironmentAssessment: z.string(),
         strategicCommunicationRecommendations: z.array(z.string()),
-      }),
-      prompt: `Map the narrative ecosystem for: ${conflict.name}
+      }) }),
+      prompt: `
 
 CONFLICT DESCRIPTION: ${conflict.description}
 
@@ -1294,7 +1294,7 @@ Conduct a comprehensive narrative ecosystem analysis:
 7. Provide strategic communication recommendations for international mediators`,
     });
 
-    return { ...object, _generatedAt: new Date().toISOString() };
+    return { ...output, _generatedAt: new Date().toISOString() };
     } catch (err) {
       if (err instanceof Error && err.name === 'TimeoutError') {
         return { error: true, message: 'Tool timed out after 30s', toolName: 'narrativeEcosystemMap', _generatedAt: new Date().toISOString() };
@@ -1335,10 +1335,10 @@ export const historicalParallelAnalysis = tool({
       .map((e) => `${e.date}: ${String(e.description ?? '').slice(0, 80)}`)
       .join('\n');
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: gemini(),
       abortSignal: timeoutSignal(),
-      schema: z.object({
+      output: Output.object({ schema: z.object({
         conflictName: z.string(),
         analysisScope: z.string().describe('What dimension and timeframe was analyzed'),
         parallels: z.array(
@@ -1358,8 +1358,8 @@ export const historicalParallelAnalysis = tool({
         crossCuttingInsights: z.array(z.string()).describe('Insights that emerge across multiple parallels'),
         keyDivergenceFromHistory: z.string().describe('What makes the current conflict genuinely novel'),
         analystNotes: z.string().describe('Methodological caveats on historical comparison'),
-      }),
-      prompt: `Identify historical conflict parallels for: ${conflict.name}
+      }) }),
+      prompt: `
 
 CONFLICT DESCRIPTION: ${conflict.description}
 KEY ACTORS: ${actors}
@@ -1381,7 +1381,7 @@ Cross-cutting: What patterns emerge across multiple parallels? What is genuinely
 Be intellectually rigorous — resist superficial parallels. Prioritize cases where the mechanism of similarity is clear and the lessons are transferable.`,
     });
 
-    return { ...object, conflictId, _generatedAt: new Date().toISOString() };
+    return { ...output, conflictId, _generatedAt: new Date().toISOString() };
     } catch (err) {
       if (err instanceof Error && err.name === 'TimeoutError') {
         return { error: true, message: 'Tool timed out after 30s', toolName: 'historicalParallelAnalysis', conflictId, _generatedAt: new Date().toISOString() };
@@ -1436,10 +1436,10 @@ export const generateTimeline = tool({
       .map((e) => `[${e.date}] [${e.type}] ${String(e.description ?? '').slice(0, 100)}`)
       .join('\n');
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: gemini(),
       abortSignal: timeoutSignal(),
-      schema: z.object({
+      output: Output.object({ schema: z.object({
         conflictName: z.string(),
         timelineRange: z.object({
           start: z.string(),
@@ -1479,8 +1479,8 @@ export const generateTimeline = tool({
           currentStage: z.number().min(1).max(9),
         }),
         timelineNote: z.string().describe('Methodological note on data coverage and gaps'),
-      }),
-      prompt: `Generate enriched timeline data for: ${conflict.name}
+      }) }),
+      prompt: `
 
 CONFLICT DESCRIPTION: ${conflict.description}
 
@@ -1507,7 +1507,7 @@ For each event:
 Calculate overall escalation trajectory across the timeline period.`,
     });
 
-    return { ...object, conflictId, _generatedAt: new Date().toISOString() };
+    return { ...output, conflictId, _generatedAt: new Date().toISOString() };
     } catch (err) {
       if (err instanceof Error && err.name === 'TimeoutError') {
         return { error: true, message: 'Tool timed out after 30s', toolName: 'generateTimeline', conflictId, _generatedAt: new Date().toISOString() };
@@ -1549,10 +1549,10 @@ export const sanctionsCheck = tool({
     const conflict = DEMO_CONFLICT;
     const conflictActors = conflict.actors.map((a) => `${a.name} (${a.type}): ${a.description.slice(0, 80)}`).join('\n');
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: gemini(),
       abortSignal: timeoutSignal(),
-      schema: z.object({
+      output: Output.object({ schema: z.object({
         queryType: z.enum(['entity', 'conflict', 'combined']),
         disclaimer: z.string().describe('Legal/analytical disclaimer about the nature of this output'),
         entityResults: z
@@ -1601,8 +1601,8 @@ export const sanctionsCheck = tool({
           })
           .optional(),
         analyticalNote: z.string().describe('Analytical context on how sanctions are affecting the conflict dynamics'),
-      }),
-      prompt: `Generate a sanctions regime analysis for${entityName ? ` entity: "${entityName}"` : ''}${conflictId ? ` conflict context: ${conflict.name}` : ''}.
+      }) }),
+      prompt: `
 
 CONFLICT CONTEXT (${conflict.name}):
 ${conflictActors}
@@ -1633,7 +1633,7 @@ Provide realistic, analytically useful output that helps conflict analysts under
     });
 
     return {
-      ...object,
+      ...output,
       disclaimer: 'ANALYTICAL PURPOSE ONLY. For actual sanctions compliance, consult official government databases: UN Consolidated List, US OFAC SDN List, EU Sanctions Map, UK OFSI Consolidated List. This AI-generated output does not constitute legal advice.',
       conflictId: conflictId || null,
       _generatedAt: new Date().toISOString(),
@@ -1676,10 +1676,10 @@ export const humanitarianSnapshot = tool({
       .map((e) => `${e.date}: ${String(e.description ?? '').slice(0, 100)}`)
       .join('\n');
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: gemini(),
       abortSignal: timeoutSignal(),
-      schema: z.object({
+      output: Output.object({ schema: z.object({
         conflictName: z.string(),
         snapshotDate: z.string(),
         classification: z.enum(['L1', 'L2', 'L3']).describe('IASC emergency classification level'),
@@ -1736,7 +1736,7 @@ export const humanitarianSnapshot = tool({
           mediaContact: z.string(),
         }),
         dataQualityNote: z.string().describe('Note on data sources, gaps, and reliability'),
-      }),
+      }) }),
       prompt: `Generate an OCHA-style humanitarian snapshot for: ${conflict.name}
 
 CONFLICT DESCRIPTION: ${conflict.description}
@@ -1759,7 +1759,7 @@ Generate a realistic, analytically substantive snapshot following OCHA's Situati
 Lead with the most urgent/life-threatening concerns. Be frank about access constraints. Include realistic funding gaps.`,
     });
 
-    return { ...object, conflictId, _generatedAt: new Date().toISOString() };
+    return { ...output, conflictId, _generatedAt: new Date().toISOString() };
     } catch (err) {
       if (err instanceof Error && err.name === 'TimeoutError') {
         return { error: true, message: 'Tool timed out after 30s', toolName: 'humanitarianSnapshot', conflictId, _generatedAt: new Date().toISOString() };
@@ -1817,10 +1817,10 @@ export const compareConflicts = tool({
       'humanitarian', 'economics', 'narrative', 'peace_prospects',
     ];
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: gemini(),
       abortSignal: timeoutSignal(),
-      schema: z.object({
+      output: Output.object({ schema: z.object({
         conflict1Name: z.string(),
         conflict2Name: z.string(),
         comparisonDate: z.string(),
@@ -1851,8 +1851,8 @@ export const compareConflicts = tool({
         synthesisInsights: z.array(z.string()).describe('High-level insights that emerge from the comparison'),
         comparisonCaveats: z.array(z.string()).describe('Methodological limits and risks of this comparison'),
         recommendedNextSteps: z.array(z.string()).describe('Actions or analyses this comparison suggests'),
-      }),
-      prompt: `Conduct a comparative analysis of two conflicts:
+      }) }),
+      prompt: `
 
 CONFLICT 1: ${conflict1.name}
 Description: ${conflict1.description}
@@ -1881,7 +1881,7 @@ Synthesize: What does conflict 2's experience suggest for the trajectory or reso
 Be rigorous — avoid superficial comparisons. Focus on causal mechanisms, not surface similarities.`,
     });
 
-    return { ...object, conflictId1, conflictId2, _generatedAt: new Date().toISOString() };
+    return { ...output, conflictId1, conflictId2, _generatedAt: new Date().toISOString() };
     } catch (err) {
       if (err instanceof Error && err.name === 'TimeoutError') {
         return { error: true, message: 'Tool timed out after 30s', toolName: 'compareConflicts', conflictId1, conflictId2, _generatedAt: new Date().toISOString() };
@@ -1956,10 +1956,10 @@ Be precise and cite the authoritative source for each name variant.`,
       `[${r.title}](${r.url}): ${truncate(r.description || r.content || '', 500)}`
     ).join('\n\n');
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: gemini(),
       abortSignal: timeoutSignal(),
-      schema: z.object({
+      output: Output.object({ schema: z.object({
         canonicalName: z.string().describe('The most authoritative/official name'),
         unDesignation: z.string().optional().describe('UN official designation if different'),
         alternativeNames: z.array(z.string()).describe('Other commonly used names'),
@@ -1969,8 +1969,8 @@ Be precise and cite the authoritative source for each name variant.`,
           url: z.string(),
           designation: z.string(),
         })),
-      }),
-      prompt: `Based on these authoritative sources, determine the canonical name for "${truncate(entity)}" (${entityType}).
+      }) }),
+      prompt: `
 
 SOURCES:
 ${sourceTexts}
@@ -1986,7 +1986,7 @@ Identify:
 
     return {
       entity,
-      ...object,
+      ...output,
       webResults: allResults.slice(0, 5).map((r) => ({ title: r.title, url: r.url })),
       _generatedAt: new Date().toISOString(),
     };
@@ -2062,10 +2062,10 @@ export const deepSourceResearch = tool({
       `[Source ${i + 1}] ${r.title} (${r.url})\n${(r.description || r.content || '').slice(0, 800)}`
     ).join('\n\n---\n\n');
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: gemini(),
       abortSignal: timeoutSignal(),
-      schema: z.object({
+      output: Output.object({ schema: z.object({
         summary: z.string().describe('Executive summary of findings (2-3 paragraphs)'),
         keyFindings: z.array(z.object({
           finding: z.string(),
@@ -2080,8 +2080,8 @@ export const deepSourceResearch = tool({
           newEvents: z.array(z.string()),
           newClaims: z.array(z.string()),
         }),
-      }),
-      prompt: `You are a TACITUS intelligence analyst. Synthesize these ${unique.length} sources into actionable intelligence.
+      }) }),
+      prompt: `
 
 RESEARCH TOPIC: ${topic}
 ${situationContext ? `SITUATION CONTEXT: ${situationContext}` : ''}
@@ -2101,7 +2101,7 @@ Produce:
 
     return {
       topic,
-      ...object,
+      ...output,
       sources: unique.map((r, i) => ({
         index: i + 1,
         title: r.title || 'Untitled',
@@ -2146,17 +2146,17 @@ export const verifyAndStandardize = tool({
       `${r.title} (${r.url}): ${(r.description || '').slice(0, 300)}`
     ).join('\n');
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: gemini(),
       abortSignal: timeoutSignal(),
-      schema: z.object({
+      output: Output.object({ schema: z.object({
         verified: z.boolean().describe('Whether the claim is verified as accurate'),
         confidence: z.enum(['confirmed', 'likely', 'contested', 'unverified', 'false']),
         standardizedVersion: z.string().describe('The corrected/standardized version of the claim'),
         discrepancies: z.array(z.string()).describe('Any discrepancies found between sources'),
         notes: z.string().describe('Important caveats or context'),
-      }),
-      prompt: `Verify this ${claimType}: "${claim}"
+      }) }),
+      prompt: `
 ${context ? `Context: ${context}` : ''}
 
 Sources found:
@@ -2171,7 +2171,7 @@ Assess:
 
     return {
       claim,
-      ...object,
+      ...output,
       sources: allSources.map((r) => ({ title: r.title, url: r.url })),
       _generatedAt: new Date().toISOString(),
     };
@@ -2181,6 +2181,500 @@ Assess:
       }
       console.error('[verifyAndStandardize]', err instanceof Error ? err.message : err);
       return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), claim, sources: [], _generatedAt: new Date().toISOString() };
+    }
+  },
+});
+
+// ============================================================================
+// Tool 22: stakeholderInfluenceMap
+// Maps stakeholders on a power-interest grid using Mendelow's matrix
+// ============================================================================
+
+export const stakeholderInfluenceMap = tool({
+  description:
+    'Map stakeholders on a power-interest grid using Mendelow\'s Power-Interest Matrix. Identifies who to engage, inform, consult, and monitor. Returns quadrant assignments, engagement strategies, and coalition building opportunities.',
+  inputSchema: z.object({
+    actors: z.array(z.string()).describe('List of actors/stakeholders to map'),
+    situationContext: z.string().describe('Description of the conflict or situation context'),
+    analysisScope: z.string().optional().describe('Optional scope or focus of the analysis'),
+  }),
+  execute: async ({ actors, situationContext, analysisScope }) => {
+    try {
+      const { output } = await generateText({
+        model: gemini('gemini-2.5-flash'),
+        abortSignal: timeoutSignal(),
+        output: Output.object({ schema: z.object({
+          quadrants: z.object({
+            manageCloesly: z.array(z.object({
+              actor: z.string(),
+              power: z.number(),
+              interest: z.number(),
+              rationale: z.string(),
+              engagementStrategy: z.string(),
+            })),
+            keepSatisfied: z.array(z.object({
+              actor: z.string(),
+              power: z.number(),
+              interest: z.number(),
+              rationale: z.string(),
+              engagementStrategy: z.string(),
+            })),
+            keepInformed: z.array(z.object({
+              actor: z.string(),
+              power: z.number(),
+              interest: z.number(),
+              rationale: z.string(),
+              engagementStrategy: z.string(),
+            })),
+            monitor: z.array(z.object({
+              actor: z.string(),
+              power: z.number(),
+              interest: z.number(),
+              rationale: z.string(),
+              engagementStrategy: z.string(),
+            })),
+          }),
+          coalitionOpportunities: z.array(z.string()),
+          spoilerRisks: z.array(z.string()),
+          recommendations: z.string(),
+        }) }),
+        prompt: `
+
+Situation: ${truncate(situationContext, 3000)}
+${analysisScope ? `Analysis Scope: ${analysisScope}` : ''}
+
+Actors to map: ${actors.join(', ')}
+
+For each actor, assess:
+- Power (0-10): Ability to influence outcomes, resources, political capital, veto power
+- Interest (0-10): Level of stake in the situation outcome, motivation to act
+
+Assign each actor to the appropriate quadrant:
+- Manage Closely (High Power, High Interest): Key players — engage intensively
+- Keep Satisfied (High Power, Low Interest): Latent stakeholders — keep content but don't overburden
+- Keep Informed (Low Power, High Interest): Active supporters/critics — communicate regularly
+- Monitor (Low Power, Low Interest): Peripheral stakeholders — watch for changes
+
+Also identify coalition-building opportunities between complementary stakeholders and spoiler risks from actors whose interests are threatened.`,
+      });
+
+      return {
+        ...output,
+        actors,
+        framework: "Mendelow's Power-Interest Matrix (1991)",
+        _generatedAt: new Date().toISOString(),
+      };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'stakeholderInfluenceMap', _generatedAt: new Date().toISOString() };
+      }
+      console.error('[stakeholderInfluenceMap]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), toolName: 'stakeholderInfluenceMap', _generatedAt: new Date().toISOString() };
+    }
+  },
+});
+
+// ============================================================================
+// Tool 23: ceasefireMonitor
+// Analyzes ceasefire compliance using UN DPKO monitoring methodology
+// ============================================================================
+
+export const ceasefireMonitor = tool({
+  description:
+    'Analyze ceasefire compliance and violation patterns using UN DPKO monitoring methodology. Assesses compliance per party, identifies violation patterns, and estimates collapse risk.',
+  inputSchema: z.object({
+    conflictContext: z.string().describe('Description of the conflict and ceasefire context'),
+    parties: z.array(z.string()).describe('List of parties to the ceasefire'),
+    ceasefireDate: z.string().optional().describe('Date the ceasefire was agreed or entered into force'),
+    terms: z.string().optional().describe('Key terms of the ceasefire agreement'),
+    recentEvents: z.string().optional().describe('Recent incidents or events affecting compliance'),
+  }),
+  execute: async ({ conflictContext, parties, ceasefireDate, terms, recentEvents }) => {
+    try {
+      const { output } = await generateText({
+        model: gemini('gemini-2.5-flash'),
+        abortSignal: timeoutSignal(),
+        output: Output.object({ schema: z.object({
+          complianceScores: z.array(z.object({
+            party: z.string(),
+            score: z.number().min(0).max(100),
+            violations: z.array(z.string()),
+            trends: z.string(),
+          })),
+          overallStatus: z.enum(['holding', 'fragile', 'deteriorating', 'collapsed']),
+          violationPatterns: z.array(z.string()),
+          riskOfCollapse: z.number().min(0).max(1),
+          monitoringGaps: z.array(z.string()),
+          recommendations: z.array(z.string()),
+          timelineToCollapse: z.string(),
+        }) }),
+        prompt: `
+
+Conflict Context: ${truncate(conflictContext, 3000)}
+Parties: ${parties.join(', ')}
+${ceasefireDate ? `Ceasefire Date: ${ceasefireDate}` : ''}
+${terms ? `Ceasefire Terms: ${truncate(terms, 1500)}` : ''}
+${recentEvents ? `Recent Events: ${truncate(recentEvents, 1500)}` : ''}
+
+Assess:
+1. Compliance score (0-100) for each party, listing specific violations and trends
+2. Overall ceasefire status: holding / fragile / deteriorating / collapsed
+3. Recurring violation patterns (e.g., use of prohibited weapons, access denial, provocation tactics)
+4. Risk of collapse (0.0-1.0): 0 = stable, 1.0 = imminent breakdown
+5. Monitoring gaps: what the international community cannot observe
+6. Actionable recommendations for the monitoring mission
+7. Estimated timeline to collapse if deterioration continues unchecked`,
+      });
+
+      return {
+        ...output,
+        parties,
+        methodology: 'UN DPKO Ceasefire Monitoring Methodology',
+        _generatedAt: new Date().toISOString(),
+      };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'ceasefireMonitor', _generatedAt: new Date().toISOString() };
+      }
+      console.error('[ceasefireMonitor]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), toolName: 'ceasefireMonitor', _generatedAt: new Date().toISOString() };
+    }
+  },
+});
+
+// ============================================================================
+// Tool 24: peaceAgreementAnalyzer
+// Analyzes peace agreement provisions using PA-X Database categories
+// ============================================================================
+
+export const peaceAgreementAnalyzer = tool({
+  description:
+    'Analyze peace agreement provisions, implementation status, and gaps using PA-X Peace Agreements Database categories. Identifies critical implementation gaps and makes recommendations.',
+  inputSchema: z.object({
+    agreementText: z.string().describe('The text or summary of the peace agreement to analyze'),
+    parties: z.array(z.string()).describe('Parties to the agreement'),
+    signedDate: z.string().optional().describe('Date the agreement was signed'),
+    situationContext: z.string().optional().describe('Current situation context for implementation assessment'),
+  }),
+  execute: async ({ agreementText, parties, signedDate, situationContext }) => {
+    try {
+      const { output } = await generateText({
+        model: gemini('gemini-2.5-flash'),
+        abortSignal: timeoutSignal(),
+        output: Output.object({ schema: z.object({
+          provisions: z.array(z.object({
+            category: z.string(),
+            provision: z.string(),
+            status: z.enum(['implemented', 'partial', 'pending', 'violated', 'unknown']),
+            implementationGaps: z.string(),
+            criticality: z.enum(['critical', 'high', 'medium', 'low']),
+          })),
+          overallImplementation: z.number().min(0).max(100),
+          criticalGaps: z.array(z.string()),
+          spoilerThreats: z.array(z.string()),
+          recommendations: z.array(z.string()),
+          riskAssessment: z.string(),
+        }) }),
+        prompt: `
+
+Agreement Text: ${truncate(agreementText, 5000)}
+Parties: ${parties.join(', ')}
+${signedDate ? `Signed: ${signedDate}` : ''}
+${situationContext ? `Current Situation: ${truncate(situationContext, 2000)}` : ''}
+
+PA-X Database categories to assess (where relevant):
+- Security arrangements (ceasefire, DDR, SSR, transitional security)
+- Power sharing (executive, legislative, judicial, electoral)
+- Territorial arrangements (autonomy, federalism, decentralization)
+- Rights provisions (human rights, minority rights, women's rights, IHL)
+- Transitional justice (accountability, reparations, truth commissions)
+- Economic provisions (resource sharing, reconstruction, sanctions)
+- Implementation mechanisms (verification, monitoring, guarantors)
+- Spoiler management provisions
+
+For each provision found:
+- Identify the PA-X category
+- Assess implementation status: implemented / partial / pending / violated / unknown
+- Describe implementation gaps
+- Rate criticality: critical / high / medium / low
+
+Provide overall implementation score (0-100), critical gaps summary, spoiler threats, and recommendations.`,
+      });
+
+      return {
+        ...output,
+        parties,
+        signedDate,
+        framework: 'PA-X Peace Agreements Database',
+        _generatedAt: new Date().toISOString(),
+      };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'peaceAgreementAnalyzer', _generatedAt: new Date().toISOString() };
+      }
+      console.error('[peaceAgreementAnalyzer]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), toolName: 'peaceAgreementAnalyzer', _generatedAt: new Date().toISOString() };
+    }
+  },
+});
+
+// ============================================================================
+// Tool 25: earlyWarningBrief
+// Generates early warning intelligence brief using CEWARN/IGAD methodology
+// ============================================================================
+
+export const earlyWarningBrief = tool({
+  description:
+    'Generate a focused early warning intelligence brief using CEWARN/IGAD methodology. Identifies trigger events, alert level, and actionable recommendations with timeline estimates.',
+  inputSchema: z.object({
+    conflictContext: z.string().describe('Description of the conflict situation and current dynamics'),
+    recentEvents: z.string().optional().describe('Recent events, incidents, or developments'),
+    region: z.string().optional().describe('Geographic region or area of focus'),
+    timeHorizon: z.enum(['72hours', '1week', '30days', '90days']).optional().describe('Early warning time horizon'),
+  }),
+  execute: async ({ conflictContext, recentEvents, region, timeHorizon }) => {
+    try {
+      const { output } = await generateText({
+        model: gemini('gemini-2.5-flash'),
+        abortSignal: timeoutSignal(),
+        output: Output.object({ schema: z.object({
+          alertLevel: z.enum(['green', 'yellow', 'orange', 'red']),
+          alertLevelJustification: z.string(),
+          keyIndicators: z.array(z.object({
+            indicator: z.string(),
+            status: z.enum(['normal', 'elevated', 'critical']),
+            trend: z.string(),
+          })),
+          triggerEvents: z.array(z.string()),
+          windowOfOpportunity: z.string(),
+          recommendedActions: z.array(z.object({
+            action: z.string(),
+            timeline: z.string(),
+            actor: z.string(),
+          })),
+          timelineToEscalation: z.string(),
+          informationGaps: z.array(z.string()),
+        }) }),
+        prompt: `
+
+Conflict Context: ${truncate(conflictContext, 3000)}
+${recentEvents ? `Recent Events: ${truncate(recentEvents, 1500)}` : ''}
+${region ? `Region: ${region}` : ''}
+Time Horizon: ${timeHorizon || '30days'}
+
+CEWARN Alert Levels:
+- GREEN: Peaceful situation, no significant risk indicators
+- YELLOW: Tension rising, early warning indicators present, monitor closely
+- ORANGE: High alert, significant risk of violent escalation, preventive action required
+- RED: Crisis imminent or ongoing, emergency response required
+
+Assess the following CEWARN/IGAD indicators:
+- Political indicators (governance failure, election tensions, power disputes)
+- Security indicators (armed group mobilization, arms flows, troop movements)
+- Socioeconomic indicators (displacement, food insecurity, resource competition)
+- Human rights indicators (violations, targeted violence, hate speech)
+- Cross-border indicators (refugee flows, regional spillover)
+
+Identify:
+1. Alert level with justification
+2. Key indicators by status (normal/elevated/critical) with trends
+3. Trigger events that could precipitate escalation within the time horizon
+4. Window of opportunity for preventive action
+5. Recommended actions with timelines and responsible actors
+6. Timeline estimate to escalation if no action taken
+7. Critical information gaps`,
+      });
+
+      return {
+        ...output,
+        region,
+        timeHorizon: timeHorizon || '30days',
+        methodology: 'CEWARN/IGAD Early Warning Methodology',
+        _generatedAt: new Date().toISOString(),
+      };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'earlyWarningBrief', _generatedAt: new Date().toISOString() };
+      }
+      console.error('[earlyWarningBrief]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), toolName: 'earlyWarningBrief', _generatedAt: new Date().toISOString() };
+    }
+  },
+});
+
+// ============================================================================
+// Tool 26: gameTheoryAnalysis
+// Analyzes strategic interactions using formal game theory
+// ============================================================================
+
+export const gameTheoryAnalysis = tool({
+  description:
+    'Analyze strategic interactions between conflict actors using formal game theory. Identifies game type, Nash equilibria, dominant strategies, and cooperation conditions. Uses Gemini Pro for complex strategic reasoning.',
+  inputSchema: z.object({
+    actors: z.array(z.string()).describe('List of actors in the strategic interaction'),
+    strategies: z.record(z.string(), z.array(z.string())).optional().describe('Optional map of actor to their available strategies'),
+    conflictContext: z.string().describe('Description of the conflict and strategic situation'),
+    specificQuestion: z.string().optional().describe('Specific strategic question to answer'),
+  }),
+  execute: async ({ actors, strategies, conflictContext, specificQuestion }) => {
+    try {
+      const strategiesText = strategies
+        ? Object.entries(strategies).map(([actor, strats]) => `${actor}: ${strats.join(', ')}`).join('\n')
+        : null;
+
+      const { output } = await generateText({
+        model: gemini('gemini-2.5-pro'),
+        abortSignal: timeoutSignal(),
+        output: Output.object({ schema: z.object({
+          gameType: z.string(),
+          gameArchetype: z.enum(['prisoners_dilemma', 'chicken', 'stag_hunt', 'assurance', 'zero_sum', 'coordination', 'mixed']),
+          payoffMatrix: z.array(z.array(z.string())),
+          nashEquilibria: z.array(z.object({
+            strategies: z.record(z.string(), z.string()),
+            outcome: z.string(),
+            stability: z.string(),
+          })),
+          dominantStrategies: z.array(z.object({
+            actor: z.string(),
+            strategy: z.string(),
+            rationale: z.string(),
+          })),
+          cooperationConditions: z.array(z.string()),
+          schelingFocalPoints: z.array(z.string()),
+          analysis: z.string(),
+          policyImplications: z.array(z.string()),
+        }) }),
+        prompt: `
+
+Frameworks: Nash (1950), Schelling (1960), Fearon (1995)
+
+Actors: ${actors.join(', ')}
+${strategiesText ? `Available Strategies:\n${strategiesText}` : ''}
+Conflict Context: ${truncate(conflictContext, 4000)}
+${specificQuestion ? `Specific Question: ${specificQuestion}` : ''}
+
+Analyze:
+1. Game Type: Describe the nature of this strategic interaction
+2. Game Archetype: Classify as one of: prisoners_dilemma, chicken, stag_hunt, assurance, zero_sum, coordination, mixed
+3. Payoff Matrix: Construct a payoff matrix (rows = strategies of actor 1, columns = strategies of actor 2+)
+   - Each cell should show outcomes like "(Cooperate/Defect, 3/1)" in string format
+4. Nash Equilibria: Identify all Nash equilibria — strategy profiles where no actor benefits from unilateral deviation
+   - For each: specify strategies chosen, outcome, and stability assessment
+5. Dominant Strategies: Identify any dominant strategies per actor with rationale
+6. Cooperation Conditions: What conditions would enable cooperative outcomes?
+   - Apply Schelling's focal points theory and repeated game logic
+7. Schelling Focal Points: Identify salient coordination points that actors might gravitate toward
+8. Analysis: Comprehensive strategic analysis explaining the game dynamics (Fearon's rationalist explanations for war if applicable)
+9. Policy Implications: Actionable recommendations for mediators, guarantors, and international actors`,
+      });
+
+      return {
+        ...output,
+        actors,
+        frameworks: ['Nash (1950)', 'Schelling (1960)', 'Fearon (1995)'],
+        _generatedAt: new Date().toISOString(),
+      };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'gameTheoryAnalysis', _generatedAt: new Date().toISOString() };
+      }
+      console.error('[gameTheoryAnalysis]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), toolName: 'gameTheoryAnalysis', _generatedAt: new Date().toISOString() };
+    }
+  },
+});
+
+// ============================================================================
+// Tool 27: protectionOfCiviliansAssessment
+// Assesses PoC situation using OCHA framework and IHL/IHRL standards
+// ============================================================================
+
+export const protectionOfCiviliansAssessment = tool({
+  description:
+    'Assess protection of civilians (PoC) situation using OCHA PoC framework and IHL/IHRL standards. Identifies threats, legal violations, protection gaps, and priority actions.',
+  inputSchema: z.object({
+    conflictContext: z.string().describe('Description of the conflict and humanitarian situation'),
+    actors: z.array(z.string()).describe('Armed actors and parties to the conflict'),
+    recentEvents: z.string().optional().describe('Recent incidents affecting civilians'),
+    affectedAreas: z.string().optional().describe('Geographic areas and communities affected'),
+  }),
+  execute: async ({ conflictContext, actors, recentEvents, affectedAreas }) => {
+    try {
+      const { output } = await generateText({
+        model: gemini('gemini-2.5-flash'),
+        abortSignal: timeoutSignal(),
+        output: Output.object({ schema: z.object({
+          pocThreats: z.array(z.object({
+            threat: z.string(),
+            responsibleActors: z.array(z.string()),
+            severity: z.enum(['critical', 'high', 'medium', 'low']),
+            affectedPopulation: z.string(),
+            trend: z.enum(['increasing', 'stable', 'decreasing']),
+          })),
+          ihrlViolations: z.array(z.object({
+            violation: z.string(),
+            article: z.string(),
+            perpetrators: z.array(z.string()),
+          })),
+          ihlViolations: z.array(z.object({
+            violation: z.string(),
+            genevaReference: z.string(),
+            perpetrators: z.array(z.string()),
+          })),
+          protectionGaps: z.array(z.string()),
+          recommendations: z.array(z.object({
+            action: z.string(),
+            actor: z.string(),
+            urgency: z.enum(['immediate', 'short-term', 'medium-term']),
+          })),
+          overallPoCSituation: z.enum(['critical', 'severe', 'serious', 'concerning', 'stable']),
+        }) }),
+        prompt: `
+
+Conflict Context: ${truncate(conflictContext, 3000)}
+Conflict Parties/Armed Actors: ${actors.join(', ')}
+${recentEvents ? `Recent Incidents: ${truncate(recentEvents, 1500)}` : ''}
+${affectedAreas ? `Affected Areas: ${affectedAreas}` : ''}
+
+Apply the OCHA three-pillar PoC framework:
+1. Protection through dialogue and engagement
+2. Provision of physical protection
+3. Establishment of a protective environment
+
+Assess threats to civilians across:
+- Direct targeting (indiscriminate attacks, deliberate targeting of civilians)
+- Conflict-induced harm (displacement, family separation, access to aid)
+- Abuse of power (arbitrary detention, torture, sexual violence)
+
+For IHL violations, reference Geneva Conventions and Additional Protocols:
+- Geneva Convention IV (civilian protection)
+- Additional Protocol I Articles 48, 51, 52, 54 (distinction, proportionality, precaution)
+- Common Article 3 (non-international armed conflicts)
+
+For IHRL violations, reference key instruments:
+- ICCPR Articles (right to life Art.6, prohibition of torture Art.7, liberty Art.9)
+- ICESCR (economic and social rights violations)
+- CEDAW (gender-based violence)
+- CRC (child protection)
+
+Rate each threat by severity (critical/high/medium/low) and trend (increasing/stable/decreasing).
+Identify protection gaps — what is not being done that should be.
+Recommend priority actions with responsible actors and urgency levels.
+Provide overall PoC situation rating: critical / severe / serious / concerning / stable.`,
+      });
+
+      return {
+        ...output,
+        actors,
+        framework: 'OCHA Protection of Civilians Framework + IHL/IHRL',
+        _generatedAt: new Date().toISOString(),
+      };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'protectionOfCiviliansAssessment', _generatedAt: new Date().toISOString() };
+      }
+      console.error('[protectionOfCiviliansAssessment]', err instanceof Error ? err.message : err);
+      return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), toolName: 'protectionOfCiviliansAssessment', _generatedAt: new Date().toISOString() };
     }
   },
 });
@@ -2211,6 +2705,12 @@ export const tacitusTools = {
   canonicalNameLookup,
   deepSourceResearch,
   verifyAndStandardize,
+  stakeholderInfluenceMap,
+  ceasefireMonitor,
+  peaceAgreementAnalyzer,
+  earlyWarningBrief,
+  gameTheoryAnalysis,
+  protectionOfCiviliansAssessment,
 };
 
 export type TacitusToolName = keyof typeof tacitusTools;
