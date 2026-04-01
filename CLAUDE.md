@@ -1,9 +1,30 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 4.1.0 — Data Layer & Intelligence Feeds: 9-source data pipeline, ConflictProfile aggregation, INFORM risk engine, DBSCAN geospatial clustering
+> Version 4.2.0 — Simulation Engine: Game Theory tool, Scenario Planner overhaul, Negotiation Prep upgrades, Mediation Design additions
 
 ## What This Is
 The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Two separate experiences in one codebase: a demo for prospects and a real situation-driven workspace for authenticated users. Deployed at praxis.tacitus.me (Vercel, iad1).
+
+## v4.2.0 Simulation Engine & Analytical Tools (2026-03-31)
+
+### New Files
+- **`src/app/app/game-theory/page.tsx`** — Game Theory tool. 3-column layout: Setup (actor selector, strategy inputs) / Visualizations (Payoff Matrix SVG, Sequential Tree SVG, Archetype cards) / AI Analysis (6 collapsible sections). Demo mode: pre-computed Nordalia Prisoner's Dilemma. Real mode: situation actors auto-loaded, calls `/api/ai/game-theory`.
+- **`src/app/demo/game-theory/page.tsx`** — Re-exports from `app/game-theory/page`.
+- **`src/app/api/ai/game-theory/route.ts`** — Game theory AI route. `generateText + Output.object({ schema: GameTheoryOutputSchema })`. Returns actors, payoffMatrix, equilibria, gameArchetype, sequentialTree, analysis. 3 credits.
+
+### Updated Files
+- **`src/lib/constants/scenario-configs.ts`** — New `ScenarioParams` (8 numeric 0–100), `DEFAULT_PARAMS`, `PARAM_METADATA`. 10 presets (5 migrated + 5 new).
+- **`src/app/app/scenarios/page.tsx`** — 8-slider panel, 10 preset cards, 3 methodology tabs, Theory Grounding Panel.
+- **`src/app/api/ai/scenario/route.ts`** — Structured 6-section output, Glasl staging, probability estimates, 3 policy recommendations.
+- **`src/app/app/negotiation-prep/page.tsx`** — ZOPAVisualizer wired, BATNA Matrix, Strategy Advisory, Historical Precedents, Theoretical Frameworks.
+- **`src/app/app/mediation-design/page.tsx`** — Process Architecture Timeline, CBMs Designer, Spoiler Analysis, Ripeness Assessment, UNSCR 1325 Checklist.
+- **`src/app/app/concordia/page.tsx`** — Hero section, Launch button, Feature Comparison Table, Integration Status.
+- **`src/components/app/app-sidebar.tsx`** — Game Theory under Simulation (Σ icon), HREF mapping added.
+- **`src/lib/api/with-credits.ts`** — `ai_game_theory: 3` added.
+
+### Sidebar Update (v4.2.0)
+**Simulation (5 items)**
+Scenario Planner · Negotiation Prep · **Game Theory** (NEW) · CONCORDIA (TACITUS badge) · Mediation Designer
 
 ## v4.1.0 Data Layer & Intelligence Feeds (2026-03-31)
 

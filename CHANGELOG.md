@@ -6,6 +6,30 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [4.2.0] — 2026-03-31
+
+### Added
+
+- **Game Theory Tool** (`/app/game-theory`, `/demo/game-theory`, `POST /api/ai/game-theory`) — New simulation tool. Strategic Form Game Builder: select 2–4 actors, define per-actor strategies, AI auto-populates payoff matrix with Nash Equilibria detection (gold highlight), Pareto Optimal identification (emerald), and dominant strategy analysis. Sequential Game Tree: React SVG visualization with actor-colored nodes, probability-annotated edges, and backward induction. Game Archetype detection: maps situation to Prisoner's Dilemma, Chicken, Stag Hunt, Assurance, Zero-Sum, or mixed types with canonical 2×2 display and conflict implications. AI Analysis panel (6 collapsible sections): strategic landscape, dominant patterns, cooperation barriers, commitment mechanisms, historical parallels, policy recommendations. Grounded in Nash (1950), von Neumann & Morgenstern (1944), Schelling (1960), Fearon (1995). 3 credits. Demo mode: pre-computed Nordalia Crisis game (Prisoner's Dilemma). Added to sidebar under Simulation (Σ icon).
+
+### Changed
+
+- **Scenario Planner** (`/app/scenarios`) — Overhauled simulation engine: 8 numeric sliders (0–100) replacing enum-based params (ceasefire compliance, external intervention, economic pressure, humanitarian access, media environment, domestic stability, regional contagion, diplomatic engagement). 10 preset cards in expandable 2-column grid (5 existing + 5 new: Diplomatic Breakthrough, Humanitarian Catastrophe, Power Transition, Regional Contagion, Frozen Conflict). 3 methodology tabs: Narrative Analysis (streaming AI with structured 6-section output) / Probability Tree (static SVG from preset outcome branches) / Sensitivity Analysis (client-side tornado chart, no API call). Theory Grounding Panel: Glasl stage estimate, Zartman ripeness window, Stedman spoiler risk — all reactive to current slider values. API prompt upgraded with required section headers, Glasl staging, probability estimates, 3 policy recommendations with actor + 30/60/90 day timelines.
+
+- **Negotiation Prep** (`/app/negotiation-prep`) — ZOPA Visualizer (`ZOPAVisualizer` component) wired into demo and real modes with `ZOPAIssue[]` mapped from AI-generated `zopaAnalysis`. BATNA Assessment Matrix: comparison table with strength color-coding (strong=red, moderate=amber, weak=green), cost of no agreement, time sensitivity. Strategy Advisory section: issue sequencing, logrolling opportunities, pre-negotiation CBMs, spoiler risk alert. Historical Precedents: Dayton Accords (1995), Good Friday Agreement (1998), Minsk Process (2014) with similarity scores and extracted lessons. Theoretical Frameworks: Fisher-Ury (1981), Lax-Sebenius (1986), Mnookin (2000).
+
+- **Mediation Design** (`/app/mediation-design`) — Process Architecture Timeline: horizontal 4-phase visualization (Pre-negotiation → Framework Agreement → Substance → Implementation) with status dots and expandable detail panels. CBMs Designer: type-grouped list with urgency-sequenced sub-panel (symbolic → humanitarian → military). Spoiler Analysis: Stedman 3-column grid (Total/Limited/Greedy) + 2×2 risk matrix (Motivation × Capacity). Ripeness Assessment: interactive MHS/MEO checkboxes with live score + ripeness thermometer (Zartman 1989). UNSCR 1325 Inclusivity Checklist: 11 items across 5 categories with live progress bar.
+
+- **CONCORDIA** (`/app/concordia`) — Hero section with product description, 3 feature cards (Live Transcription, Mediator Coaching, Session Documentation), prominent "Launch CONCORDIA" button. Feature comparison table: PRAXIS text tools vs CONCORDIA across 5 dimensions. Integration status panel: 4 data-flow indicators showing how CONCORDIA data feeds back into PRAXIS.
+
+- **`src/lib/constants/scenario-configs.ts`** — Full rewrite. New `ScenarioParams` (all 8 numeric 0–100). New `ScenarioPreset` with `riskDirection` and `probability` fields. `DEFAULT_PARAMS` and `PARAM_METADATA` (label, tooltip, lowLabel, highLabel for all 8 params) exported.
+
+- **`src/lib/api/with-credits.ts`** — Added `ai_game_theory: 3`.
+
+- **`src/components/app/app-sidebar.tsx`** — Game Theory added under Simulation section (Sigma icon). `/game-theory` added to `HREF_TO_TOOL_ID`.
+
+---
+
 ## [4.1.0] — 2026-03-31
 
 ### Added
