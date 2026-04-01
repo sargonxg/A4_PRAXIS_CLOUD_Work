@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { verifyIdToken, getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { DEFAULT_AI_SETTINGS, type AISettings } from '@/lib/firebase/firestore';
 
 export async function GET() {
@@ -21,18 +20,20 @@ export async function GET() {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 
-    const payload = JSON.parse(Buffer.from(data.token.split('.')[1], 'base64').toString());
-    const uid = payload.user_id || payload.sub;
+    const verified = await verifyIdToken(data.token);
+    if (!verified?.uid) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
 
-    const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
+    const adminDb = getAdminDbOrThrow();
+    const userSnap = await adminDb.collection('users').doc(verified.uid).get();
 
-    if (!userSnap.exists()) {
+    if (!userSnap.exists) {
       return NextResponse.json({ settings: DEFAULT_AI_SETTINGS });
     }
 
-    const profile = userSnap.data();
-    return NextResponse.json({ settings: profile.aiSettings || DEFAULT_AI_SETTINGS });
+    const profile = userSnap.data() as Record<string, unknown>;
+    return NextResponse.json({ settings: profile.aiSettings ?? DEFAULT_AI_SETTINGS });
   } catch {
     return NextResponse.json({ error: 'Failed to load settings' }, { status: 500 });
   }
@@ -55,8 +56,11 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 
-    const payload = JSON.parse(Buffer.from(sessionData.token.split('.')[1], 'base64').toString());
-    const uid = payload.user_id || payload.sub;
+    const verified = await verifyIdToken(sessionData.token);
+    if (!verified?.uid) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+    const uid = verified.uid;
 
     const body: Partial<AISettings> = await request.json();
 
@@ -78,8 +82,8 @@ export async function PUT(request: Request) {
       settings.maxTokens = Math.max(256, Math.min(8192, Math.round(body.maxTokens)));
     }
 
-    const userRef = doc(db, 'users', uid);
-    await updateDoc(userRef, { aiSettings: settings });
+    const adminDb = getAdminDbOrThrow();
+    await adminDb.collection('users').doc(uid).update({ aiSettings: settings });
 
     return NextResponse.json({ success: true, settings });
   } catch {
