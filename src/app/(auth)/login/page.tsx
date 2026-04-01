@@ -17,7 +17,7 @@ function LoginForm() {
     ? `/app/settings?upgrade=${planParam}` // Send to settings with upgrade prompt
     : rawRedirect?.startsWith('/app') ? rawRedirect : '/app/dashboard';
   const demoRedirect = rawRedirect?.startsWith('/demo') ? rawRedirect : '/demo/dashboard';
-  const { user, loading, signInWithEmail, signUpWithEmail, signInWithGoogle, signInAsDemo } = useAuth();
+  const { user, loading, signInWithEmail, signUpWithEmail, signInWithGoogle, signInAsDemo, resetPassword } = useAuth();
 
   // Guard: prevents double-navigation when both handleEmailSubmit and this
   // useEffect are triggered for the same sign-in event.
@@ -32,11 +32,14 @@ function LoginForm() {
     }
   }, [user, loading, router, appRedirect]);
 
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>(
+    queryMode === 'signup' ? 'signup' : 'signin',
+  );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleEmailSubmit(e: React.FormEvent) {
@@ -97,6 +100,29 @@ function LoginForm() {
       // On success: page is navigating away — no further action needed
     } catch {
       setError('Google sign-in failed. Please try again.');
+      setIsLoading(false);
+    }
+  }
+
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) {
+      setError('Please enter your email address.');
+      return;
+    }
+    setError('');
+    setSuccessMsg('');
+    setIsLoading(true);
+    try {
+      const result = await resetPassword(email);
+      if (result.success) {
+        setSuccessMsg('If an account exists for that email, a reset link has been sent. Check your inbox.');
+      } else {
+        setError(result.error || 'Failed to send reset email.');
+      }
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   }
@@ -198,9 +224,15 @@ function LoginForm() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.35, duration: 0.5 }}
-            onSubmit={handleEmailSubmit}
+            onSubmit={mode === 'reset' ? handleResetPassword : handleEmailSubmit}
             className="space-y-3.5"
           >
+            {mode === 'reset' && (
+              <p className="text-xs text-navy-400">
+                Enter your email and we&apos;ll send a password reset link.
+              </p>
+            )}
+
             {mode === 'signup' && (
               <div>
                 <label
@@ -239,7 +271,7 @@ function LoginForm() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                onChange={(e) => { setEmail(e.target.value); setError(''); setSuccessMsg(''); }}
                 placeholder="your.name@organization.gov"
                 disabled={isLoading}
                 className={cn(
@@ -253,30 +285,43 @@ function LoginForm() {
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="mb-1.5 block text-xs font-medium tracking-wide text-navy-300 uppercase"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                placeholder={mode === 'signup' ? 'Create a password (min 6 chars)' : 'Enter your password'}
-                disabled={isLoading}
-                className={cn(
-                  'w-full rounded-lg border bg-navy-950/60 px-4 py-3 text-sm text-navy-100',
-                  'placeholder:text-navy-600',
-                  'transition-colors duration-200',
-                  'focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/30 focus:outline-none',
-                  'disabled:cursor-not-allowed disabled:opacity-50',
-                  error ? 'border-crimson/50' : 'border-navy-700/60 hover:border-navy-600'
-                )}
-              />
-            </div>
+            {mode !== 'reset' && (
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label
+                    htmlFor="password"
+                    className="block text-xs font-medium tracking-wide text-navy-300 uppercase"
+                  >
+                    Password
+                  </label>
+                  {mode === 'signin' && (
+                    <button
+                      type="button"
+                      onClick={() => { setMode('reset'); setError(''); setSuccessMsg(''); }}
+                      className="text-xs text-navy-500 hover:text-gold-500/80 hover:underline"
+                    >
+                      Forgot password?
+                    </button>
+                  )}
+                </div>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                  placeholder={mode === 'signup' ? 'Create a password (min 6 chars)' : 'Enter your password'}
+                  disabled={isLoading}
+                  className={cn(
+                    'w-full rounded-lg border bg-navy-950/60 px-4 py-3 text-sm text-navy-100',
+                    'placeholder:text-navy-600',
+                    'transition-colors duration-200',
+                    'focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/30 focus:outline-none',
+                    'disabled:cursor-not-allowed disabled:opacity-50',
+                    error ? 'border-crimson/50' : 'border-navy-700/60 hover:border-navy-600'
+                  )}
+                />
+              </div>
+            )}
 
             {error && (
               <motion.p
@@ -285,6 +330,16 @@ function LoginForm() {
                 className="text-xs text-crimson"
               >
                 {error}
+              </motion.p>
+            )}
+
+            {successMsg && (
+              <motion.p
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="text-xs text-emerald-400"
+              >
+                {successMsg}
               </motion.p>
             )}
 
@@ -305,23 +360,34 @@ function LoginForm() {
               ) : (
                 <>
                   <Mail className="h-4 w-4" />
-                  {mode === 'signup' ? 'Create Account' : 'Sign In'}
+                  {mode === 'signup' ? 'Create Account' : mode === 'reset' ? 'Send Reset Link' : 'Sign In'}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </>
               )}
             </button>
 
-            {/* Toggle sign in / sign up */}
+            {/* Toggle sign in / sign up / reset */}
             <p className="text-center text-xs text-navy-500">
               {mode === 'signin' ? (
                 <>
                   Don&apos;t have an account?{' '}
                   <button
                     type="button"
-                    onClick={() => { setMode('signup'); setError(''); }}
+                    onClick={() => { setMode('signup'); setError(''); setSuccessMsg(''); }}
                     className="text-gold-500/80 hover:text-gold-400 hover:underline"
                   >
                     Create one
+                  </button>
+                </>
+              ) : mode === 'reset' ? (
+                <>
+                  Remember your password?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setMode('signin'); setError(''); setSuccessMsg(''); }}
+                    className="text-gold-500/80 hover:text-gold-400 hover:underline"
+                  >
+                    Sign in
                   </button>
                 </>
               ) : (
@@ -329,7 +395,7 @@ function LoginForm() {
                   Already have an account?{' '}
                   <button
                     type="button"
-                    onClick={() => { setMode('signin'); setError(''); }}
+                    onClick={() => { setMode('signin'); setError(''); setSuccessMsg(''); }}
                     className="text-gold-500/80 hover:text-gold-400 hover:underline"
                   >
                     Sign in

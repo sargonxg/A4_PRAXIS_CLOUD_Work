@@ -9,6 +9,7 @@ import {
   signInWithRedirect,
   getRedirectResult,
   signOut as firebaseSignOut,
+  sendPasswordResetEmail,
   GoogleAuthProvider,
   updateProfile,
   type User as FirebaseUser,
@@ -43,6 +44,7 @@ interface AuthContextValue {
   signInAsDemo: () => Promise<void>;
   logout: () => Promise<void>;
   refreshCredits: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -75,6 +77,7 @@ const AuthContext = createContext<AuthContextValue>({
   signInAsDemo: async () => {},
   logout: async () => {},
   refreshCredits: async () => {},
+  resetPassword: async () => ({ success: false }),
 });
 
 // ---------------------------------------------------------------------------
@@ -432,6 +435,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [firebaseUser]);
 
+  // Send password reset email
+  const resetPassword = useCallback(async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      return { success: true };
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code || '';
+      if (code === 'auth/user-not-found' || code === 'auth/invalid-email') {
+        // Don't reveal whether the email exists — return success to prevent enumeration
+        return { success: true };
+      }
+      if (code === 'auth/too-many-requests') {
+        return { success: false, error: 'Too many requests. Please wait a moment before trying again.' };
+      }
+      if (code === 'auth/network-request-failed') {
+        return { success: false, error: 'Network error — could not reach authentication servers.' };
+      }
+      console.error('[auth] resetPassword unhandled error:', code, err);
+      return { success: false, error: 'Failed to send reset email. Please try again.' };
+    }
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -445,6 +470,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signInAsDemo,
         logout,
         refreshCredits,
+        resetPassword,
       }}
     >
       {children}
