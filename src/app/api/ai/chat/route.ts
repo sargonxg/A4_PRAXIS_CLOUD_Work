@@ -2,7 +2,7 @@ import { streamText, stepCountIs } from 'ai';
 import { z } from 'zod';
 import { getModel, getModelForUser } from '@/lib/ai/providers';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
-import { createSituationBoundTools, type SituationToolContext } from '@/lib/ai/tools';
+import { createSituationBoundTools, type SituationToolContext, type ConflictGraphSnapshot } from '@/lib/ai/tools';
 import { getConflictGraphAdmin } from '@/lib/firebase/situations-service';
 import { buildSituationContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
@@ -179,7 +179,7 @@ You have access to the user's active situation data. When answering questions:
     // For real users, pre-fetch the conflict graph from Firestore so that
     // queryConflictGraph returns actual knowledge-graph data rather than demo content.
     let situationCtx: SituationToolContext | null = null;
-    let graphSnapshot = null;
+    let graphSnapshot: ConflictGraphSnapshot | null = null;
     if (situation) {
       const sit = situation as Situation;
       situationCtx = {
@@ -193,7 +193,7 @@ You have access to the user's active situation data. When answering questions:
       };
       if (!_user.isDemo && _user.uid && sit.id) {
         try {
-          graphSnapshot = await getConflictGraphAdmin(_user.uid, sit.id);
+          graphSnapshot = (await getConflictGraphAdmin(_user.uid, sit.id)) as ConflictGraphSnapshot | null;
         } catch {
           // Non-fatal — tools will degrade gracefully without graph data
         }
