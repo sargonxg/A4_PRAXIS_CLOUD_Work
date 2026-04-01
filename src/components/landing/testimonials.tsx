@@ -34,7 +34,7 @@ export function Testimonials() {
           transition={{ duration: 0.7 }}
           className="mb-4 text-center"
         >
-          <span className="text-overline text-gold-700">Early Feedback</span>
+          <span className="text-overline text-gold-700">Practitioner Testing</span>
         </motion.div>
 
         <motion.div
@@ -45,8 +45,21 @@ export function Testimonials() {
           className="mb-4 text-center"
         >
           <h2 className="font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl">
-            Initial Feedback from Practitioners
+            Tested With Professionals in the Field
           </h2>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="mb-4 text-center"
+        >
+          <p className="mx-auto max-w-2xl text-sm text-navy-600">
+            PRAXIS is currently being piloted with practitioners from UN agencies, Chatham House,
+            leading diplomatic think tanks, and permanent missions to international organisations.
+          </p>
         </motion.div>
 
         {/* Disclaimer */}
@@ -58,9 +71,9 @@ export function Testimonials() {
           className="mb-12 text-center"
         >
           <p className="mx-auto max-w-xl text-xs text-navy-400 italic">
-            Quotes are from early-stage demo testers. Names and identifying details are
-            withheld for confidentiality. Feedback is illustrative and does not constitute
-            an endorsement by any institution or organisation.
+            Feedback is from individual practitioners testing the platform in a personal capacity.
+            Names and identifying details are withheld for confidentiality. Quotes do not constitute
+            an endorsement by, or on behalf of, any institution or organisation.
           </p>
         </motion.div>
 

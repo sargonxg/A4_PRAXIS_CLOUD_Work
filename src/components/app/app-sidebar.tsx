@@ -60,6 +60,17 @@ import { useState, useEffect } from 'react';
 
 const CHANGELOG = [
   {
+    version: 'v5.1',
+    date: '2026.04.01',
+    notes: [
+      'ToolInfoPanel on 10 tool pages: framework name, academic citation, methodology, data sources',
+      'Auth hardening: syncTokenCookie retry logic (3 attempts, exponential backoff), removed double-render on token refresh',
+      'Landing: updated headline, use-case personas (UN PAO, Think Tank, NGO, Academic, Diplomat), social links',
+      'Pricing tiers corrected: Analyst $49/5,000 credits/5 situations, Team $199/25,000 credits/25 situations',
+      'Login page: credits copy corrected to 5,000 TACITUS Credits',
+    ],
+  },
+  {
     version: 'v5.0',
     date: '2026.03.31',
     notes: [
@@ -264,7 +275,7 @@ function ChangelogButton() {
         onClick={() => setOpen(true)}
         className="mt-1 w-full text-center text-[9px] text-navy-300 hover:text-navy-500 transition-colors"
       >
-        PRAXIS v5.0 · Build 2026.03.31
+        PRAXIS v5.1 · Build 2026.04.01
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setOpen(false)}>
