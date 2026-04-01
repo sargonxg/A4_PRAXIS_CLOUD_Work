@@ -19,12 +19,23 @@ const COOKIE_OPTIONS = {
  */
 export async function POST(request: Request) {
   try {
-    // CSRF protection: validate same-origin
+    // CSRF protection: validate same-origin.
+    // Use x-forwarded-host as fallback since Vercel may transform the host header.
     const origin = request.headers.get('origin');
-    const host = request.headers.get('host');
+    const host =
+      request.headers.get('x-forwarded-host') ||
+      request.headers.get('host');
+
     if (origin && host) {
-      const originHost = new URL(origin).host;
+      let originHost: string;
+      try {
+        originHost = new URL(origin).host;
+      } catch {
+        console.error('[auth/session] Malformed origin header:', origin);
+        return NextResponse.json({ error: 'Invalid origin' }, { status: 403 });
+      }
       if (originHost !== host) {
+        console.error('[auth/session] CSRF: origin mismatch', { origin, originHost, host });
         return NextResponse.json({ error: 'Invalid origin' }, { status: 403 });
       }
     }
@@ -43,9 +54,12 @@ export async function POST(request: Request) {
       try {
         const verified = await verifyIdToken(body.token);
         if (!verified.uid) {
+          console.error('[auth/session] verifyIdToken returned no uid');
           return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
         }
-      } catch {
+        console.log('[auth/session] Token verified for uid:', verified.uid);
+      } catch (err) {
+        console.error('[auth/session] Token verification failed:', err instanceof Error ? err.message : String(err));
         return NextResponse.json({ error: 'Token verification failed' }, { status: 401 });
       }
 
@@ -59,7 +73,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ error: 'Missing token or demo flag' }, { status: 400 });
-  } catch {
+  } catch (err) {
+    console.error('[auth/session] Unhandled error:', err instanceof Error ? err.message : String(err));
     return NextResponse.json({ error: 'Failed to set session' }, { status: 500 });
   }
 }
