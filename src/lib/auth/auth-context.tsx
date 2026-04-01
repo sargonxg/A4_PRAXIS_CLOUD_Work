@@ -81,7 +81,7 @@ const AuthContext = createContext<AuthContextValue>({
 // Helper: create AuthUser from Firebase user (no Firestore dependency)
 // ---------------------------------------------------------------------------
 
-function fbUserToAuthUser(fbUser: FirebaseUser, credits = 100): AuthUser {
+function fbUserToAuthUser(fbUser: FirebaseUser, credits = 0): AuthUser {
   return {
     id: fbUser.uid,
     email: fbUser.email || '',
@@ -152,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const authUser = fbUserToAuthUser(fbUser);
         setUser(authUser);
         setFirebaseUser(fbUser);
-        setCredits(100);
+        setCredits(0);
         setIsDemoMode(false);
 
         // Second: sync cookie (needed for middleware)

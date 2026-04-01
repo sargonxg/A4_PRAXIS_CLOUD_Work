@@ -60,12 +60,12 @@ function LoginForm() {
         result = await signInWithEmail(email, password);
       }
 
-      if (result.success) {
-        router.push(appRedirect);
-      } else {
+      if (!result.success) {
         setError(result.error || 'Authentication failed.');
         setIsLoading(false);
       }
+      // On success: keep spinner showing. The useEffect watches for user+loading=false
+      // (set by onAuthStateChanged) and handles navigation — avoids double-push race.
     } catch {
       setError('Network error. Please try again.');
       setIsLoading(false);
@@ -97,7 +97,6 @@ function LoginForm() {
     // Small delay to ensure cookie is set before navigation
     await new Promise((r) => setTimeout(r, 100));
     router.push(demoRedirect);
-    router.refresh();
   }
 
   return (
