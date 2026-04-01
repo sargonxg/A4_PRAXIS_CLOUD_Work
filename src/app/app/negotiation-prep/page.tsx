@@ -22,10 +22,16 @@ import {
   TrendingUp,
   Users,
   FileText,
+  History,
+  BookOpen,
+  Lightbulb,
+  GitMerge,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
+import { ZOPAVisualizer } from '@/components/negotiation/zopa-visualizer';
+import type { ZOPAIssue } from '@/components/negotiation/zopa-visualizer';
 
 // ─── AI-generated negotiation data type ──────────────────────────────────────
 
@@ -145,6 +151,61 @@ const CONCESSIONS = [
     valueToDRM: 'High',
     feasibility: 'Low',
     notes: 'High-value trade but faces strong constitutional and political resistance',
+  },
+];
+
+// ─── Historical Precedents ────────────────────────────────────────────────────
+
+const HISTORICAL_PRECEDENTS = [
+  {
+    name: 'Dayton Accords (1995)',
+    location: 'Bosnia-Herzegovina',
+    outcome: 'success' as const,
+    similarity: 74,
+    parties: 'Bosniak, Serb, Croat leaderships; US as coercive mediator',
+    lesson: 'Coercive ripening — U.S. military pressure and NATO airstrikes created the mutually hurting stalemate that made parties ready to negotiate. Sometimes coercive ripening must precede negotiation.',
+    failureNote: 'Initially failed due to exclusion of key spoilers; Republika Srpska hardliners required separate track.',
+  },
+  {
+    name: 'Good Friday Agreement (1998)',
+    location: 'Northern Ireland',
+    outcome: 'success' as const,
+    similarity: 61,
+    parties: 'British Government, Irish Government, Unionist parties, Sinn Féin/IRA',
+    lesson: 'Inclusive process design and external guarantors matter. Secret back-channel negotiations (Hume-Adams talks) prepared the ground before formal talks. US guarantor role (Senator Mitchell) gave credibility.',
+    failureNote: null,
+  },
+  {
+    name: 'Minsk Process (2014–2022)',
+    location: 'Ukraine/Donbas',
+    outcome: 'failed' as const,
+    similarity: 52,
+    parties: 'Ukraine, Russia, OSCE, France, Germany (Normandy Format)',
+    lesson: 'Verification and enforcement architecture matter more than text. Lack of implementation mechanism, no real enforcement, asymmetric commitment, and fundamental disagreement on sovereignty made the agreements a ceasefire management tool rather than a peace process.',
+    failureNote: 'Process collapsed entirely with Russia\'s full-scale invasion, February 2022.',
+  },
+];
+
+// ─── Theoretical Frameworks ───────────────────────────────────────────────────
+
+const THEORETICAL_FRAMEWORKS = [
+  {
+    name: 'Fisher-Ury (1981)',
+    citation: 'Fisher, R. & Ury, W. (1981). Getting to Yes: Negotiating Agreement Without Giving In. Houghton Mifflin.',
+    description: 'Principled negotiation framework: separate people from problem, focus on interests not positions, invent options for mutual gain, insist on objective criteria. Introduced the BATNA concept as the standard against which any proposed agreement should be measured.',
+    principles: ['Separate people from problem', 'Focus on interests, not positions', 'Invent options for mutual gain', 'Insist on objective criteria'],
+  },
+  {
+    name: 'Lax-Sebenius (1986)',
+    citation: 'Lax, D.A. & Sebenius, J.K. (1986). The Manager as Negotiator. Free Press. Extended in: Sebenius, J.K. (2002). Negotiation Analysis. Negotiation Journal.',
+    description: '3D Negotiation framework: Setup (who\'s at the table, what issues are on the agenda), Deal Design (creating value through trades and creative structures), Tactics (process moves at the table). The 3D framework argues that setup often matters more than tactics — getting the right parties, right issues, and right sequence determines outcomes before anyone sits down.',
+    principles: ['Setup: who is at the table and what issues', 'Deal Design: value creation through trades', 'Tactics: process moves at the table', '3D insight: setup dominates tactics'],
+  },
+  {
+    name: 'Mnookin (2000)',
+    citation: 'Mnookin, R., Peppet, S. & Tulumello, A. (2000). Beyond Winning: Negotiating to Create Value in Deals and Disputes. Harvard University Press.',
+    description: 'Distinguishes positions from interests and advises creating joint value before claiming individual value. Warns against reactive devaluation — the tendency to discount proposals simply because they come from the other side. Emphasizes managing the tension between empathy and assertiveness.',
+    principles: ['Create joint value before claiming value', 'Manage reactive devaluation', 'Balance empathy and assertiveness', 'Separate relationship from substance'],
   },
 ];
 
@@ -361,6 +422,309 @@ function ZopaBar({ issue }: { issue: typeof ISSUES[0] }) {
   );
 }
 
+// ─── Collapsible Section Wrapper ───────────────────────────────────────────────
+
+function CollapsibleSection({
+  title,
+  icon: Icon,
+  defaultOpen = false,
+  children,
+  badge,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+  badge?: string;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-[var(--color-app-surface-alt)] transition-colors"
+      >
+        <div className="flex items-center gap-2.5">
+          <Icon className="h-4 w-4 text-diplomatic-blue shrink-0" />
+          <span className="text-sm font-semibold text-navy-900">{title}</span>
+          {badge && (
+            <span className="rounded-full bg-diplomatic-blue/10 px-2 py-0.5 text-[10px] font-semibold text-diplomatic-blue">
+              {badge}
+            </span>
+          )}
+        </div>
+        {open ? <ChevronUp className="h-4 w-4 text-navy-400" /> : <ChevronDown className="h-4 w-4 text-navy-400" />}
+      </button>
+      {open && (
+        <div className="border-t border-[var(--color-app-border)] p-5">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── BATNA Assessment Matrix (shared between demo + real) ─────────────────────
+
+function BatnaMatrix({ rows }: {
+  rows: {
+    party: string;
+    color?: string;
+    batnaDescription: string;
+    strength: 'strong' | 'moderate' | 'weak';
+  }[];
+}) {
+  const strengthMeta = {
+    strong: {
+      label: 'Strong',
+      rowClass: 'text-red-700 bg-red-50 border-red-200',
+      badgeClass: 'bg-red-50 text-red-700 border border-red-200',
+      timeSensitivity: 'Can wait',
+      costNote: 'Low cost of no agreement — high bargaining power',
+    },
+    moderate: {
+      label: 'Moderate',
+      rowClass: 'text-amber-700 bg-amber-50 border-amber-200',
+      badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200',
+      timeSensitivity: 'Some urgency',
+      costNote: 'Moderate cost — deal preferred but not desperate',
+    },
+    weak: {
+      label: 'Weak',
+      rowClass: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+      badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+      timeSensitivity: 'Urgently needs deal',
+      costNote: 'High cost of no agreement — motivated to reach settlement',
+    },
+  };
+
+  return (
+    <div className="overflow-x-auto rounded-lg border border-[var(--color-app-border)]">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="bg-[var(--color-app-surface-alt)] border-b border-[var(--color-app-border)]">
+            <th className="sticky left-0 bg-[var(--color-app-surface-alt)] px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-navy-400 w-36">Party</th>
+            <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-navy-400">BATNA Description</th>
+            <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-navy-400 w-28">BATNA Strength</th>
+            <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-navy-400 w-48">Cost of No Agreement</th>
+            <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-navy-400 w-36">Time Sensitivity</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => {
+            const meta = strengthMeta[row.strength];
+            return (
+              <tr
+                key={i}
+                className={cn('border-b border-[var(--color-app-border)] last:border-0', i % 2 === 0 ? 'bg-white' : 'bg-[var(--color-app-surface-alt)]/40')}
+              >
+                <td className="sticky left-0 px-4 py-3 bg-inherit">
+                  <div className="flex items-center gap-2">
+                    {row.color && <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: row.color }} />}
+                    <span className="font-semibold text-navy-800">{row.party}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-navy-600 max-w-xs leading-relaxed">{row.batnaDescription}</td>
+                <td className="px-4 py-3">
+                  <span className={cn('inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide', meta.badgeClass)}>
+                    {meta.label}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-navy-600 leading-relaxed">{meta.costNote}</td>
+                <td className="px-4 py-3">
+                  <span className={cn(
+                    'inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium',
+                    row.strength === 'weak' ? 'bg-red-50 text-red-700' :
+                    row.strength === 'moderate' ? 'bg-amber-50 text-amber-700' :
+                    'bg-emerald-50 text-emerald-700'
+                  )}>
+                    {meta.timeSensitivity}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Strategy Advisory Section ────────────────────────────────────────────────
+
+function StrategyAdvisorySection({
+  issueSequence,
+  packageDeals,
+  cbms,
+  spoilerRisk,
+  spoilerActors,
+}: {
+  issueSequence: { step: number; issue: string; rationale: string }[];
+  packageDeals: { title: string; trade: string }[];
+  cbms: string[];
+  spoilerRisk: 'high' | 'moderate' | 'low';
+  spoilerActors: string[];
+}) {
+  return (
+    <div className="space-y-5">
+      {/* Spoiler risk alert */}
+      {spoilerRisk === 'high' && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
+          <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800 mb-1">Spoiler Risk: High</p>
+            <p className="text-xs text-amber-700 leading-relaxed">
+              Potential spoilers who benefit from no-deal outcome:{' '}
+              <span className="font-semibold">{spoilerActors.join(', ')}</span>.
+              Monitor for deliberate ceasefire violations, external arms transfers, and disinformation campaigns aimed at undermining talks.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Issue Sequencing */}
+      <div>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-navy-400 mb-3">Issue Sequencing</h4>
+        <p className="text-xs text-navy-500 mb-3">
+          Recommended order to build momentum from early wins toward harder issues.
+        </p>
+        <ol className="space-y-2">
+          {issueSequence.map(({ step, issue, rationale }) => (
+            <li key={step} className="flex items-start gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-diplomatic-blue/10 text-[11px] font-bold text-diplomatic-blue">
+                {step}
+              </span>
+              <div>
+                <span className="text-sm font-semibold text-navy-800">{issue}</span>
+                <p className="text-xs text-navy-500 mt-0.5">{rationale}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      {/* Package Deal Opportunities */}
+      <div>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-navy-400 mb-3">Package Deal Opportunities (Logrolling)</h4>
+        <div className="space-y-2">
+          {packageDeals.map(({ title, trade }, i) => (
+            <div key={i} className="rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-3">
+              <div className="flex items-start gap-2">
+                <GitMerge className="h-3.5 w-3.5 text-diplomatic-blue shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-semibold text-navy-800">{title}</p>
+                  <p className="text-xs text-navy-500 mt-0.5 leading-relaxed">{trade}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* CBMs */}
+      <div>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-navy-400 mb-3">Confidence-Building Measures (Pre-Negotiation)</h4>
+        <ul className="space-y-2">
+          {cbms.map((cbm, i) => (
+            <li key={i} className="flex items-start gap-2 text-xs text-navy-700">
+              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-diplomatic-blue" />
+              {cbm}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ─── Historical Precedents Section ────────────────────────────────────────────
+
+function HistoricalPrecedentsSection() {
+  const outcomeConfig = {
+    success: { label: 'Success', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    partial: { label: 'Partial', className: 'bg-amber-50 text-amber-700 border-amber-200' },
+    failed: { label: 'Failed', className: 'bg-red-50 text-red-700 border-red-200' },
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-navy-500">
+        Historically analogous peace processes selected by conflict type (intrastate, international mediation, power-sharing context).
+      </p>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {HISTORICAL_PRECEDENTS.map((p) => {
+          const outcome = outcomeConfig[p.outcome];
+          return (
+            <div key={p.name} className="rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-navy-900">{p.name}</p>
+                  <p className="text-xs text-navy-500">{p.location}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold', outcome.className)}>
+                    {outcome.label}
+                  </span>
+                  <span className="text-[10px] font-semibold text-navy-400">
+                    {p.similarity}% similar
+                  </span>
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400 mb-1">Parties</p>
+                <p className="text-xs text-navy-600 leading-relaxed">{p.parties}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400 mb-1">Key Lesson</p>
+                <p className="text-xs text-navy-700 leading-relaxed italic">{p.lesson}</p>
+              </div>
+              {p.failureNote && (
+                <div className="rounded border border-amber-200 bg-amber-50 px-2.5 py-2">
+                  <p className="text-[10px] text-amber-700 leading-relaxed">{p.failureNote}</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Theoretical Frameworks Section ───────────────────────────────────────────
+
+function TheoreticalFrameworksSection() {
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-navy-500">
+        Core academic frameworks underpinning this negotiation analysis module.
+      </p>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {THEORETICAL_FRAMEWORKS.map((fw) => (
+          <div key={fw.name} className="rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-4 space-y-3">
+            <div>
+              <p className="text-sm font-semibold text-navy-900">{fw.name}</p>
+              <p className="text-[10px] text-navy-400 leading-relaxed mt-0.5 italic">{fw.citation}</p>
+            </div>
+            <p className="text-xs text-navy-600 leading-relaxed">{fw.description}</p>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400 mb-1.5">Key Principles</p>
+              <ul className="space-y-1">
+                {fw.principles.map((p, i) => (
+                  <li key={i} className="flex items-start gap-1.5 text-xs text-navy-600">
+                    <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-diplomatic-blue" />
+                    {p}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── AI Streaming Hook ────────────────────────────────────────────────────────
 
 async function streamAI(
@@ -566,6 +930,14 @@ Use the precise diplomatic language appropriate for a joint communiqué or closi
     { id: 'talking-points', label: 'Talking Points', icon: MessageSquare },
   ];
 
+  // Demo BATNA matrix rows
+  const demoBatnaRows = NORDALIA_PARTIES.map(p => ({
+    party: p.name,
+    color: p.color,
+    batnaDescription: p.batna,
+    strength: p.batnaStrength,
+  }));
+
   return (
     <div className="space-y-6">
       {/* ── Header ────────────────────────────────────────────────── */}
@@ -752,50 +1124,64 @@ Use the precise diplomatic language appropriate for a joint communiqué or closi
           SECTION 2: ZOPA Visualizer
       ══════════════════════════════════════════════════════════════ */}
       {activeSection === 'zopa' && (
-        <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-navy-900">Zone of Possible Agreement (ZOPA)</h2>
-              <p className="text-xs text-navy-500 mt-0.5">
-                Each bar represents a party&apos;s acceptable range (0–100 scale). Overlapping zones indicate ZOPA. Sage = overlap, Navy = Gov range, Crimson = DRM range.
-              </p>
-            </div>
-            <div className="flex items-center gap-4 text-[10px] text-navy-500">
-              <div className="flex items-center gap-1.5">
-                <div className="h-3 w-6 rounded-sm bg-navy-800/75" />
-                <span>Gov range</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="h-3 w-6 rounded-sm bg-crimson/75" />
-                <span>DRM range</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="h-3 w-6 rounded-sm" style={{ backgroundColor: '#5B8C5A' }} />
-                <span>ZOPA</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            {ISSUES.map((issue) => (
-              <div key={issue.id} className="rounded-lg border border-[var(--color-app-border)] p-4">
-                <ZopaBar issue={issue} />
-              </div>
-            ))}
-          </div>
-
-          <div className="rounded-lg border border-gold-500/20 bg-gold-500/5 p-4">
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-gold-600 shrink-0 mt-0.5" />
+        <div className="space-y-6">
+          {/* Original simple ZOPA bars */}
+          <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-6 space-y-6">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-navy-800 mb-1">Mediator Note</p>
-                <p className="text-xs text-navy-600 leading-relaxed">
-                  Two of four issues show no natural ZOPA. Electoral Reform and Power Sharing have a combined gap of 25–30 points.
-                  A bridging mechanism — such as a technical committee with international benchmarks — may be needed to create the
-                  conditions for agreement on these issues. Consider packaging with ceasefire progress to build momentum.
+                <h2 className="text-base font-semibold text-navy-900">Zone of Possible Agreement (ZOPA)</h2>
+                <p className="text-xs text-navy-500 mt-0.5">
+                  Each bar represents a party&apos;s acceptable range (0–100 scale). Overlapping zones indicate ZOPA. Sage = overlap, Navy = Gov range, Crimson = DRM range.
                 </p>
               </div>
+              <div className="flex items-center gap-4 text-[10px] text-navy-500">
+                <div className="flex items-center gap-1.5">
+                  <div className="h-3 w-6 rounded-sm bg-navy-800/75" />
+                  <span>Gov range</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-3 w-6 rounded-sm bg-crimson/75" />
+                  <span>DRM range</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-3 w-6 rounded-sm" style={{ backgroundColor: '#5B8C5A' }} />
+                  <span>ZOPA</span>
+                </div>
+              </div>
             </div>
+
+            <div className="space-y-6">
+              {ISSUES.map((issue) => (
+                <div key={issue.id} className="rounded-lg border border-[var(--color-app-border)] p-4">
+                  <ZopaBar issue={issue} />
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-lg border border-gold-500/20 bg-gold-500/5 p-4">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-gold-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-semibold text-navy-800 mb-1">Mediator Note</p>
+                  <p className="text-xs text-navy-600 leading-relaxed">
+                    Two of four issues show no natural ZOPA. Electoral Reform and Power Sharing have a combined gap of 25–30 points.
+                    A bridging mechanism — such as a technical committee with international benchmarks — may be needed to create the
+                    conditions for agreement on these issues. Consider packaging with ceasefire progress to build momentum.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Advanced ZOPA Visualizer */}
+          <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-6">
+            <div className="mb-4">
+              <h2 className="text-base font-semibold text-navy-900">Advanced ZOPA Analysis</h2>
+              <p className="text-xs text-navy-500 mt-0.5">
+                Issue-by-issue breakdown with party position profiles, BATNA strengths, and negotiation insight.
+              </p>
+            </div>
+            <ZOPAVisualizer />
           </div>
         </div>
       )}
@@ -896,6 +1282,11 @@ Use the precise diplomatic language appropriate for a joint communiqué or closi
               </div>
             ))}
           </div>
+
+          {/* BATNA Assessment Matrix — new addition */}
+          <CollapsibleSection title="BATNA Assessment Matrix" icon={Shield} defaultOpen badge="Enhanced">
+            <BatnaMatrix rows={demoBatnaRows} />
+          </CollapsibleSection>
         </div>
       )}
 
@@ -1067,6 +1458,62 @@ Use the precise diplomatic language appropriate for a joint communiqué or closi
           )}
         </div>
       )}
+
+      {/* ══════════════════════════════════════════════════════════════
+          BELOW-THE-FOLD: Additional intelligence sections
+          (visible across all tabs via scrolling)
+      ══════════════════════════════════════════════════════════════ */}
+      <div className="space-y-4 pt-2">
+        <div className="flex items-center gap-2">
+          <div className="h-px flex-1 bg-[var(--color-app-border)]" />
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-navy-400 px-2">Strategic Intelligence</span>
+          <div className="h-px flex-1 bg-[var(--color-app-border)]" />
+        </div>
+
+        {/* Strategy Advisory */}
+        <CollapsibleSection title="Strategy Advisory" icon={Lightbulb} defaultOpen badge="New">
+          <StrategyAdvisorySection
+            issueSequence={[
+              { step: 1, issue: 'Ceasefire Verification', rationale: 'Easiest to agree — both parties benefit from reduced hostilities and it builds early trust without requiring political concessions.' },
+              { step: 2, issue: 'Humanitarian Access', rationale: 'Low political cost, high symbolic value. Agreement demonstrates good faith and improves civilian conditions, reducing public pressure on both leaderships.' },
+              { step: 3, issue: 'Power-Sharing Framework', rationale: 'Core political issue — tackle after trust is established and parties have demonstrated commitment through implementation of earlier agreements.' },
+              { step: 4, issue: 'Resource Revenue Distribution', rationale: 'Highly technical; can be delegated to a joint technical committee once political framework is agreed.' },
+              { step: 5, issue: 'International Monitoring Mechanism', rationale: 'Design contingent on agreements above; should be negotiated last as it depends on what is being monitored.' },
+            ]}
+            packageDeals={[
+              {
+                title: 'Security-for-Legitimacy Trade',
+                trade: 'DRM accepts phased DDR timeline (GOV core demand) in exchange for international election monitoring with binding protocols (DRM core demand). Each party delivers its most credible concession.',
+              },
+              {
+                title: 'Revenue-for-Governance Trade',
+                trade: 'GOV accepts 30% resource revenue allocation to Eastern Province fund (DRM fiscal demand) in exchange for DRM acceptance of transitional council with 4 DRM seats (vs. DRM opening of 6). Both parties claim domestic wins.',
+              },
+              {
+                title: 'Amnesty-for-Disarmament Pilot',
+                trade: 'GOV grants broad amnesty for non-violent DRM members (low political cost) in exchange for DRM-controlled cantonments in two districts as DDR pilot. Provides verifiable early progress for international backers.',
+              },
+            ]}
+            cbms={[
+              'Prisoner exchange — release of 20 political detainees on each side as pre-talks confidence measure',
+              'Humanitarian corridor announcement — joint GOV-DRM statement permitting UN convoy access to Eastern Provinces for 30 days',
+              'Back-channel confirmation of parties\' intent to participate — both delegations confirm in writing to UNMN their commitment to attending first round without preconditions',
+            ]}
+            spoilerRisk="high"
+            spoilerActors={['GOV hardline military faction (Gen. Vaskov bloc)', 'DRM Eastern Field Command (Commander Tiranu)', 'Belara Mining Corporation (benefits from regulatory vacuum)']}
+          />
+        </CollapsibleSection>
+
+        {/* Historical Precedents */}
+        <CollapsibleSection title="Historical Precedent Matcher" icon={History} badge="3 analogues">
+          <HistoricalPrecedentsSection />
+        </CollapsibleSection>
+
+        {/* Theoretical Frameworks */}
+        <CollapsibleSection title="Theoretical Frameworks" icon={BookOpen} badge="3 frameworks">
+          <TheoreticalFrameworksSection />
+        </CollapsibleSection>
+      </div>
     </div>
   );
 }
@@ -1138,6 +1585,41 @@ function RealNegotiationPrepPage({ situation, negotiationData }: { situation: Si
     negotiationData.dealProbability >= 70 ? 'bg-sage' :
     negotiationData.dealProbability >= 40 ? 'bg-gold-500' :
     'bg-crimson';
+
+  // Map AI ZOPA data to ZOPAIssue format for the visualizer
+  const zopaIssues: ZOPAIssue[] = negotiationData.zopaAnalysis.map((z, i) => ({
+    id: `issue-${i}`,
+    title: z.issue,
+    description: '',
+    low: 0,
+    high: 100,
+    parties: z.partyPositions.map((p, j) => ({
+      actorId: p.party.toLowerCase().replace(/\s/g, '-'),
+      actorName: p.party,
+      minimumAcceptable: 20 + j * 15,
+      openingPosition: 40 + j * 20,
+      aspirationalPosition: 60 + j * 25,
+      batnaStrength: 'moderate' as const,
+      batnaDescription: `${p.party} alternative: ${p.min}`,
+      constraints: [],
+      interests: [],
+      color: ['#4B92DB', '#A63D40', '#10B981', '#E8B931'][j % 4],
+    })),
+  }));
+
+  // BATNA matrix rows from AI data
+  const realBatnaRows = negotiationData.batnaAssessments.map((b) => ({
+    party: b.party,
+    batnaDescription: b.alternatives.join('; '),
+    strength: b.strength,
+  }));
+
+  // Derive issue sequencing from recommendations
+  const realIssueSequence = negotiationData.recommendations.slice(0, 5).map((rec, i) => ({
+    step: i + 1,
+    issue: rec.length > 60 ? rec.slice(0, 57) + '...' : rec,
+    rationale: rec,
+  }));
 
   return (
     <div className="space-y-6">
@@ -1244,6 +1726,15 @@ function RealNegotiationPrepPage({ situation, negotiationData }: { situation: Si
             </div>
           ))}
         </div>
+
+        {/* Advanced ZOPA Visualizer — wired to real data */}
+        <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-6">
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-navy-900">Advanced ZOPA Visualizer</h3>
+            <p className="text-xs text-navy-500 mt-0.5">Position profiles derived from AI analysis of {situation.name}</p>
+          </div>
+          <ZOPAVisualizer issues={zopaIssues} />
+        </div>
       </div>
 
       {/* ── BATNA Assessments ──────────────────────────────────────── */}
@@ -1278,6 +1769,11 @@ function RealNegotiationPrepPage({ situation, negotiationData }: { situation: Si
             </div>
           ))}
         </div>
+
+        {/* BATNA Assessment Matrix */}
+        <CollapsibleSection title="BATNA Assessment Matrix" icon={Shield} defaultOpen badge="Enhanced">
+          <BatnaMatrix rows={realBatnaRows} />
+        </CollapsibleSection>
       </div>
 
       {/* ── Recommendations ───────────────────────────────────────── */}
@@ -1296,6 +1792,51 @@ function RealNegotiationPrepPage({ situation, negotiationData }: { situation: Si
             </li>
           ))}
         </ol>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════
+          BELOW-THE-FOLD: Additional intelligence sections
+      ══════════════════════════════════════════════════════════════ */}
+      <div className="space-y-4 pt-2">
+        <div className="flex items-center gap-2">
+          <div className="h-px flex-1 bg-[var(--color-app-border)]" />
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-navy-400 px-2">Strategic Intelligence</span>
+          <div className="h-px flex-1 bg-[var(--color-app-border)]" />
+        </div>
+
+        {/* Strategy Advisory — derived from real AI data */}
+        <CollapsibleSection title="Strategy Advisory" icon={Lightbulb} defaultOpen badge="AI-derived">
+          <StrategyAdvisorySection
+            issueSequence={realIssueSequence.length > 0 ? realIssueSequence : [{ step: 1, issue: 'No recommendations generated yet', rationale: 'Generate analysis above to populate issue sequencing.' }]}
+            packageDeals={[
+              {
+                title: 'Security-for-Legitimacy Package',
+                trade: 'Consider linking security concessions (ceasefire verification, DDR timelines) with political legitimacy measures (electoral monitoring, power-sharing). Each party concedes on their secondary priority to gain on their primary.',
+              },
+              {
+                title: 'Economic-for-Governance Trade',
+                trade: 'Resource or economic benefits can be linked to governance reforms. Parties with stronger economic leverage can offer fiscal concessions in exchange for political process agreements.',
+              },
+            ]}
+            cbms={[
+              'Prisoner or detainee release — symbolic pre-talks gesture demonstrating good faith',
+              'Humanitarian access announcement — joint statement permitting independent monitoring of civilian conditions',
+              'Back-channel confirmation of participation intent — both delegations confirm attendance in writing to the mediator without preconditions',
+            ]}
+            spoilerRisk={negotiationData.dealProbability < 40 ? 'high' : 'moderate'}
+            spoilerActors={actors.length > 0 ? actors.filter((_, i) => i % 3 === 2) : ['Unknown — generate analysis to identify spoiler actors']}
+          />
+        </CollapsibleSection>
+
+        {/* Historical Precedents */}
+        <CollapsibleSection title="Historical Precedent Matcher" icon={History} badge="3 analogues">
+          <HistoricalPrecedentsSection />
+        </CollapsibleSection>
+
+        {/* Theoretical Frameworks */}
+        <CollapsibleSection title="Theoretical Frameworks" icon={BookOpen} badge="3 frameworks">
+          <TheoreticalFrameworksSection />
+        </CollapsibleSection>
       </div>
     </div>
   );

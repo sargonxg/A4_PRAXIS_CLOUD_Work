@@ -13,6 +13,8 @@ import {
   ExternalLink,
   ChevronDown,
   Loader2,
+  Mic,
+  Brain,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { EcosystemBadge } from '@/components/shared/ecosystem-badge';
@@ -44,6 +46,177 @@ const SPEAKER_LABEL_STYLES: Record<string, string> = {
   party_b: 'text-amber-700',
   system: 'text-violet-700',
 };
+
+// ─── NEW: Hero Intro Section ──────────────────────────────────────────────────
+
+function ConcordiaHeroSection({ situation }: { situation?: import('@/types/situation').Situation | null }) {
+  return (
+    <section className="space-y-5">
+      {/* Title block */}
+      <div className="rounded-2xl border border-violet-200/60 bg-gradient-to-br from-violet-50/80 to-white p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Scale className="h-8 w-8 text-violet-600" />
+              <h1 className="font-serif text-3xl font-normal text-navy-900">CONCORDIA</h1>
+            </div>
+            <p className="text-sm italic text-navy-500 max-w-lg">
+              &ldquo;Real-time AI-assisted mediation using voice, language understanding, and structured dialogue techniques&rdquo;
+            </p>
+
+            {/* Description card */}
+            <div className="rounded-xl border border-violet-100 bg-white/80 p-4 max-w-xl">
+              <p className="text-xs leading-relaxed text-navy-600">
+                CONCORDIA is TACITUS&apos;s voice-native mediation assistant. It listens to real negotiation sessions, provides
+                real-time suggestions to mediators, tracks emotional tone, and generates structured summaries. Powered by
+                Gemini Live API.
+              </p>
+            </div>
+          </div>
+
+          {/* Launch button */}
+          <div className="shrink-0">
+            <a
+              href="https://concordia.tacitus.me"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-diplomatic-blue px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:opacity-90"
+            >
+              Launch CONCORDIA
+              <ExternalLink className="h-4 w-4" />
+            </a>
+            {situation && (
+              <p className="mt-2 text-center text-[10px] text-navy-400">
+                Grounded in {situation.name}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Three feature cards */}
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="flex items-start gap-3 rounded-xl border border-violet-100 bg-white p-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100">
+              <Mic className="h-4 w-4 text-violet-600" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-navy-800">Live Transcription</p>
+              <p className="mt-0.5 text-[11px] text-navy-500">Streams and analyzes conversation in real time</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 rounded-xl border border-violet-100 bg-white p-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100">
+              <Brain className="h-4 w-4 text-violet-600" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-navy-800">Mediator Coaching</p>
+              <p className="mt-0.5 text-[11px] text-navy-500">Suggests reframes, de-escalation tactics, and questions</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 rounded-xl border border-violet-100 bg-white p-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100">
+              <FileText className="h-4 w-4 text-violet-600" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-navy-800">Session Documentation</p>
+              <p className="mt-0.5 text-[11px] text-navy-500">Auto-generates structured post-session summaries</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── NEW: Feature Comparison Table ───────────────────────────────────────────
+
+const COMPARISON_ROWS = [
+  { feature: 'Input format',       praxis: 'Text / documents',         concordia: 'Voice / real-time'          },
+  { feature: 'Response speed',     praxis: 'Minutes (generation)',      concordia: 'Real-time (<2s)'            },
+  { feature: 'Session tracking',   praxis: 'Async post-session',        concordia: 'Live during session'        },
+  { feature: 'Mediator coaching',  praxis: 'Pre-session strategy',      concordia: 'In-session prompts'         },
+  { feature: 'Use case',           praxis: 'Preparation & analysis',    concordia: 'Active mediation sessions'  },
+];
+
+function FeatureComparisonTable() {
+  return (
+    <section className="space-y-3">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-navy-400">
+        CONCORDIA vs PRAXIS Text Tools
+      </h2>
+      <div className="overflow-hidden rounded-xl border border-[var(--color-app-border)]">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-[var(--color-app-border)] bg-navy-50/80">
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-navy-500">
+                Feature
+              </th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-navy-500">
+                PRAXIS Text Tools
+              </th>
+              <th className="bg-violet-50 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-violet-700">
+                CONCORDIA
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {COMPARISON_ROWS.map((row, i) => (
+              <tr
+                key={i}
+                className={cn(
+                  'border-b border-[var(--color-app-border)] last:border-0',
+                  i % 2 === 0 ? 'bg-white' : 'bg-navy-50/40',
+                )}
+              >
+                <td className="px-4 py-3 text-xs font-medium text-navy-700">{row.feature}</td>
+                <td className="px-4 py-3 text-xs text-navy-500">{row.praxis}</td>
+                <td className="bg-violet-50/60 px-4 py-3 text-xs font-medium text-violet-800">
+                  {row.concordia}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+// ─── NEW: Integration Status Section ─────────────────────────────────────────
+
+const INTEGRATION_ITEMS = [
+  { label: 'Session recordings',   status: 'Available after session',         dot: 'bg-emerald-500' },
+  { label: 'Actor sentiment data', status: 'Syncs to Risk Monitor',            dot: 'bg-emerald-500' },
+  { label: 'Agreement drafts',     status: 'Available in Report Studio',       dot: 'bg-emerald-500' },
+  { label: 'Live coaching',        status: 'CONCORDIA-native only',            dot: 'bg-amber-400'   },
+];
+
+function IntegrationStatusSection() {
+  return (
+    <section className="rounded-xl border border-[var(--color-app-border)] bg-white p-5 space-y-3">
+      <div>
+        <h2 className="text-sm font-semibold text-navy-900">CONCORDIA ↔ PRAXIS Integration</h2>
+        <p className="mt-1 text-[11px] text-navy-500">
+          Data generated in CONCORDIA sessions automatically enriches your PRAXIS situation analysis
+        </p>
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        {INTEGRATION_ITEMS.map((item, i) => (
+          <div key={i} className="flex items-center gap-3 rounded-lg border border-[var(--color-app-border)] bg-navy-50/30 px-3 py-2.5">
+            <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', item.dot)} />
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-navy-700 truncate">{item.label}</p>
+              <p className="text-[10px] text-navy-400">{item.status}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 /* ── Section 1: Mediation Session Planner ───────────────────────────── */
 
@@ -419,7 +592,7 @@ function LiveMediationSection({ situation }: { situation?: import('@/types/situa
                 </p>
               </div>
             ) : (
-              visibleTurns.map((turn, i) => (
+              visibleTurns.map((turn: MediationTurn, i: number) => (
                 <div
                   key={i}
                   className={cn(
@@ -589,14 +762,16 @@ function DemoConcordiaPage({ situation }: { situation?: import('@/types/situatio
 
   return (
     <div className="space-y-10">
-      {/* Header */}
-      <div>
-        <h1 className="font-serif text-2xl text-navy-900">CONCORDIA Mediation</h1>
-        <p className="mt-1 text-sm text-navy-500">
-          AI-assisted mediation guidance — session planning, live mediation assistant, and
-          settlement generation
-        </p>
-      </div>
+      {/* NEW: Hero intro + launch button */}
+      <ConcordiaHeroSection situation={situation} />
+
+      {/* NEW: Feature comparison table */}
+      <FeatureComparisonTable />
+
+      {/* NEW: Integration status */}
+      <IntegrationStatusSection />
+
+      <div className="h-px bg-[var(--color-app-border)]" />
 
       <SessionPlannerSection situation={situation} />
 

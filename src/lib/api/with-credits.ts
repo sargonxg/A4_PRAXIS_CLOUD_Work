@@ -41,6 +41,8 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   'ai_mediation_design': 3,
   'ai_power_map': 3,
   'ai_media_roundup': 2,
+  // Game Theory Analysis
+  'ai_game_theory': 3,
   // Deep Research Agent (Vertex AI ADK)
   'ai_deep_search_agent': 10,
   // Aliases used by some routes (non-standard keys)

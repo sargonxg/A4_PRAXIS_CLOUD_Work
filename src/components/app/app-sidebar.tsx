@@ -42,6 +42,7 @@ import {
   Heart,
   Globe,
   Telescope,
+  Sigma,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -182,6 +183,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Scenario Planner', icon: GitCompare, href: '/scenarios' },
       { label: 'Negotiation Prep', icon: Scale, href: '/negotiation-prep' },
+      { label: 'Game Theory', icon: Sigma, href: '/game-theory' },
       { label: 'CONCORDIA', icon: Handshake, href: '/concordia', badge: 'TACITUS' },
       { label: 'Mediation Designer', icon: Handshake, href: '/mediation-design' },
     ],
@@ -265,6 +267,7 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   '/stakeholder-map': 'stakeholder-map',
   '/dossier': 'dossier',
   '/negotiation-prep': 'negotiation',
+  '/game-theory': 'game-theory',
   '/media-roundup': 'media-roundup',
   '/sanctions': 'sanctions',
   '/briefing': 'briefing',
