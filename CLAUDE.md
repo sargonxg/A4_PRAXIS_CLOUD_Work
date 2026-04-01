@@ -1,6 +1,20 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 5.0.0 — AI Tools, Assistant & Advisory System Overhaul: 6 new tools (22-27), system prompt v5.0 (Chain of Analysis + Source Hierarchy + 27 tool descriptions + Output Quality Checklist), enhanced Chat Interface, Advisory Panel Discussion mode, context-aware Floating PRAXIS
+> Version 5.1.0 — Tool Methodology Panels, Auth Hardening, Sidebar Changelog, Landing Footer, Login Credits
+
+## v5.1.0 Tool Methodology Panels & Auth Hardening (2026-04-01)
+
+### New Components
+- **`src/components/praxis/tool-info-panel.tsx`** — Reusable collapsible methodology panel for tool pages. Renders framework name, academic citation, description, and structured components. Accepts `toolId` prop and looks up entry from `TOOL_REGISTRY`. Used on 10 tool pages.
+
+### Updated Files (Phase 6)
+- **10 tool pages enriched with ToolInfoPanel** — Each page now renders a `<ToolInfoPanel toolId="..." />` collapsible methodology section, surfacing the academic frameworks and data sources behind the AI output. Pages updated: `risk-monitor`, `early-warning`, `actor-profiles`, `stakeholder-map`, `negotiation-prep`, `mediation-design`, `game-theory`, `scenarios`, `info-environment`, `power-map`.
+- **Auth hardening** (`src/lib/auth/auth-context.tsx`) — `syncTokenCookie` now includes retry logic (up to 3 attempts with exponential backoff), response status check, and removed `router.refresh()` call that caused double-renders on token sync.
+- **App sidebar** (`src/components/app/app-sidebar.tsx`) — Changelog section at the bottom of the sidebar showing v4.0→v5.0 release history with date and summary. Collapsed by default, expandable.
+- **Landing footer** (`src/components/landing/footer.tsx`) — PRAXIS v5.0.0 version badge added to bottom-right security badges row.
+- **Login page** (`src/app/(auth)/login/page.tsx`) — Credits copy corrected from "100 TACITUS Credits" to "5,000 TACITUS Credits" to match actual sign-up grant (v3.10.0).
+
+---
 
 ## v5.0.0 AI Tools, Assistant & Advisory System Overhaul (2026-03-31)
 

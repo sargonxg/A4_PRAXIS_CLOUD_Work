@@ -4,69 +4,58 @@ import { motion } from "framer-motion";
 import {
   Globe,
   Handshake,
-  Shield,
   HeartHandshake,
-  BarChart2,
-  Lightbulb,
+  BookOpen,
+  Users,
 } from "lucide-react";
 
 const useCases = [
   {
     icon: Globe,
     role: "UN Political Affairs Officer",
-    tagline: "Draft an SG report in hours, not weeks",
+    tagline: "Monitor a peace process in real time",
     description:
-      "Auto-generate Secretary-General reports, background notes, and SITREPs with UN formatting, source citations, and structured analysis — ready for review in minutes.",
+      "Track ceasefire compliance, commitment implementation, and actor positions across a live peace process. PRAXIS synthesizes ACLED events, UN reporting, and media intelligence into a single dashboard — with SG report drafts ready for review in minutes.",
     color: "text-diplomatic-blue",
     bgColor: "bg-diplomatic-blue/5",
     borderHover: "hover:border-diplomatic-blue/30",
   },
   {
-    icon: Handshake,
-    role: "Mediation Team Leader",
-    tagline: "Map every party's BATNA before you enter the room",
+    icon: BookOpen,
+    role: "Think Tank Analyst",
+    tagline: "Produce a conflict assessment backed by data",
     description:
-      "Build comprehensive negotiation prep kits: actor interests, red lines, BATNA/ZOPA analysis, and historical precedents — structured and ready before your first session.",
-    color: "text-sage",
-    bgColor: "bg-sage/5",
-    borderHover: "hover:border-sage/30",
-  },
-  {
-    icon: Shield,
-    role: "Multilateral Analyst",
-    tagline: "Synthesize intelligence across sources in minutes",
-    description:
-      "Rapidly synthesize cross-source intelligence into concise briefings with risk scoring, escalation indicators, and recommended actions — ready for senior decision-makers.",
-    color: "text-crimson",
-    bgColor: "bg-crimson/5",
-    borderHover: "hover:border-crimson/30",
-  },
-  {
-    icon: HeartHandshake,
-    role: "Humanitarian Coordinator",
-    tagline: "Negotiate access with structured leverage analysis",
-    description:
-      "Identify leverage points, map party interests, and build structured access negotiation frameworks for complex humanitarian situations.",
+      "Run structured escalation scoring, actor network analysis, and scenario simulations grounded in ACLED, GDELT, and UCDP data. Export publication-ready assessments with full source citations and analytical methodology.",
     color: "text-gold-600",
     bgColor: "bg-gold-600/5",
     borderHover: "hover:border-gold-600/30",
   },
   {
-    icon: BarChart2,
-    role: "Conflict Researcher",
-    tagline: "Track 50 conflicts with one dashboard",
+    icon: HeartHandshake,
+    role: "NGO Field Coordinator",
+    tagline: "Track humanitarian access conditions on the ground",
     description:
-      "Monitor multiple conflict situations simultaneously with AI-synthesized updates, entity tracking, and temporal analysis across your entire research portfolio.",
+      "Monitor access constraints, displacement trends, and protection incidents across operational areas. PRAXIS cross-references HDX, UNHCR, and ReliefWeb feeds — giving field teams the intelligence to negotiate access and prioritize response.",
     color: "text-teal",
     bgColor: "bg-teal/5",
     borderHover: "hover:border-teal/30",
   },
   {
-    icon: Lightbulb,
-    role: "Policy Planner",
-    tagline: "Test policy options against AI-simulated actor responses",
+    icon: Users,
+    role: "Academic Researcher",
+    tagline: "Study conflict dynamics with structured data tools",
     description:
-      "Run scenario analysis to stress-test policy options, model actor reactions, and identify second-order consequences before committing to a course of action.",
+      "Build longitudinal conflict timelines, extract entity relationships from primary documents, and run comparative analysis across cases. PRAXIS applies Glasl, Galtung, and Zartman frameworks to structure your research systematically.",
+    color: "text-sage",
+    bgColor: "bg-sage/5",
+    borderHover: "hover:border-sage/30",
+  },
+  {
+    icon: Handshake,
+    role: "Diplomat",
+    tagline: "Prepare for Security Council consultations",
+    description:
+      "Build comprehensive briefing packages in minutes: political context, actor positions, key resolutions, talking points, and anticipated objections — structured for closed Security Council consultations or bilateral preparation.",
     color: "text-navy-600",
     bgColor: "bg-navy-600/5",
     borderHover: "hover:border-navy-600/20",
@@ -114,7 +103,7 @@ export function UseCaseCards() {
           the workflows that matter most.
         </motion.p>
 
-        {/* 3×2 Card Grid */}
+        {/* Cards Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {useCases.map((item, i) => {
             const Icon = item.icon;

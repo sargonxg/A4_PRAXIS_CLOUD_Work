@@ -173,13 +173,36 @@ export function Features() {
           className="mb-6 text-center"
         >
           <h2 className="mb-4 font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl">
-            15 Tools. One Workspace. Zero Switching.
+            40+ Tools. 6 Categories. One Workspace.
           </h2>
           <p className="mx-auto max-w-2xl text-lg text-navy-500">
-            Not another chatbot. Not another dashboard. The first platform
-            purpose-built for the daily work of conflict analysis and diplomatic
-            reporting.
+            Context, Analysis, Drafting, Simulation, Intelligence, Workspace
+            — purpose-built for conflict professionals, grounded in 9+ real data
+            feeds and a 14-entity Conflict Grammar.
           </p>
+        </motion.div>
+
+        {/* Differentiator badges */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="mb-10 flex flex-wrap justify-center gap-3"
+        >
+          {[
+            "40+ specialized tools",
+            "9+ real data feeds",
+            "14-entity Conflict Grammar",
+            "ACLED / GDELT / UN data",
+          ].map((badge) => (
+            <span
+              key={badge}
+              className="rounded-full border border-diplomatic-blue/15 bg-diplomatic-blue/5 px-4 py-1.5 text-xs font-semibold text-diplomatic-blue"
+            >
+              {badge}
+            </span>
+          ))}
         </motion.div>
 
         {/* Tab selector */}

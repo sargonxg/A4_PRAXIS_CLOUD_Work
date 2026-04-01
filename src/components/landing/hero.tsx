@@ -151,9 +151,9 @@ export function Hero() {
           transition={{ delay: 1.2, duration: 0.7 }}
           className="mb-12 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
         >
-          The conflict operating system for peace and security professionals.
-          AI-powered analysis, knowledge graphs, and automated report generation
-          — from raw data to decisive intelligence in minutes.
+          The intelligence platform for conflict professionals. AI-powered
+          analysis grounded in ACLED, GDELT, and UN data — designed for
+          diplomats, analysts, and mediators who need decisions, not summaries.
         </motion.p>
 
         {/* CTAs */}
@@ -164,20 +164,20 @@ export function Hero() {
           className="flex flex-col items-center gap-4 sm:flex-row"
         >
           <Link
-            href="/login"
-            className="group inline-flex items-center justify-center rounded-md bg-gold-600 px-8 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-xl hover:shadow-gold-600/20"
+            href="/demo/dashboard"
+            className="group inline-flex items-center justify-center gap-2 rounded-md bg-gold-600 px-8 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-xl hover:shadow-gold-600/20"
           >
-            Start Using PRAXIS
+            <Play className="h-4 w-4" />
+            Explore Demo
+          </Link>
+          <Link
+            href="/login"
+            className="group inline-flex items-center justify-center rounded-md border border-diplomatic-blue/20 px-8 py-3.5 text-sm font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
+          >
+            Get Started Free
             <span className="ml-2 transition-transform duration-200 group-hover:translate-x-0.5">
               &rarr;
             </span>
-          </Link>
-          <Link
-            href="/login?mode=demo"
-            className="group inline-flex items-center justify-center gap-2 rounded-md border border-diplomatic-blue/20 px-8 py-3.5 text-sm font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
-          >
-            <Play className="h-4 w-4" />
-            Try the Demo
           </Link>
         </motion.div>
 

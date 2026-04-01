@@ -6,6 +6,26 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [5.1.0] — 2026-04-01
+
+### Added
+
+- **ToolInfoPanel Component** (`src/components/praxis/tool-info-panel.tsx`) — Reusable collapsible methodology panel for tool pages. Accepts `toolId` prop, looks up entry from `TOOL_REGISTRY`, and renders framework name, academic citation, description, and structured components. Deployed on 10 tool pages.
+
+- **10 Tool Pages — Methodology Panels** — `risk-monitor`, `early-warning`, `actor-profiles`, `stakeholder-map`, `negotiation-prep`, `mediation-design`, `game-theory`, `scenarios`, `info-environment`, and `power-map` each now surface the analytical frameworks and data sources behind AI output via `<ToolInfoPanel />`.
+
+- **App Sidebar — v5.0 Changelog** (`src/components/app/app-sidebar.tsx`) — Collapsible release history section at sidebar bottom. Displays v4.0 through v5.0 with dates and one-line summaries. Collapsed by default.
+
+- **Landing Footer — Version Badge** (`src/components/landing/footer.tsx`) — PRAXIS v5.0.0 badge added to the bottom-right security badges row, alongside SOC 2, AES-256, and GDPR status badges.
+
+### Changed
+
+- **Auth: `syncTokenCookie` hardening** (`src/lib/auth/auth-context.tsx`) — Cookie sync now retries up to 3 times with exponential backoff, checks HTTP response status before resolving, and removes `router.refresh()` call that caused unnecessary double-renders on every token cycle.
+
+- **Login Page — Credits copy** (`src/app/(auth)/login/page.tsx`) — Credit grant copy corrected from "100 TACITUS Credits" to "5,000 TACITUS Credits" to match the actual sign-up grant introduced in v3.10.0.
+
+---
+
 ## [5.0.0] — 2026-03-31
 
 ### Added
