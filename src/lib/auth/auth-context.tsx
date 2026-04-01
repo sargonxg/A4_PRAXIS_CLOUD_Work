@@ -307,12 +307,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: 'Invalid email or password.' };
       }
       if (code === 'auth/wrong-password') {
-        return { success: false, error: 'Invalid password.' };
+        return { success: false, error: 'Incorrect password.' };
       }
       if (code === 'auth/too-many-requests') {
-        return { success: false, error: 'Too many attempts. Please try again later.' };
+        return { success: false, error: 'Too many attempts. Please try again later or reset your password.' };
       }
-      return { success: false, error: 'Authentication failed. Please try again.' };
+      if (code === 'auth/user-disabled') {
+        return { success: false, error: 'This account has been disabled. Contact support.' };
+      }
+      if (code === 'auth/network-request-failed') {
+        return { success: false, error: 'Network error — could not reach authentication servers. Check your connection.' };
+      }
+      if (code === 'auth/operation-not-allowed') {
+        return { success: false, error: 'Email/password sign-in is not enabled. Please contact support.' };
+      }
+      if (code === 'auth/invalid-email') {
+        return { success: false, error: 'Invalid email address.' };
+      }
+      console.error('[auth] signInWithEmail unhandled error:', code, err);
+      return { success: false, error: `Sign-in failed (${code || 'unknown'}). Please try again or use Google sign-in.` };
     }
   }, [syncTokenCookie]);
 
@@ -340,7 +353,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (code === 'auth/invalid-email') {
         return { success: false, error: 'Please enter a valid email address.' };
       }
-      return { success: false, error: 'Sign up failed. Please try again.' };
+      if (code === 'auth/network-request-failed') {
+        return { success: false, error: 'Network error — could not reach authentication servers. Check your connection.' };
+      }
+      if (code === 'auth/operation-not-allowed') {
+        return { success: false, error: 'Email/password sign-in is not enabled. Please contact support.' };
+      }
+      console.error('[auth] signUpWithEmail unhandled error:', code, err);
+      return { success: false, error: `Sign-up failed (${code || 'unknown'}). Please try again or use Google sign-in.` };
     }
   }, [syncTokenCookie]);
 
