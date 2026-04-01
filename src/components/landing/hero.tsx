@@ -151,9 +151,10 @@ export function Hero() {
           transition={{ delay: 1.2, duration: 0.7 }}
           className="mb-12 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
         >
-          The intelligence platform for conflict professionals. AI-powered
-          analysis grounded in ACLED, GDELT, and UN data — designed for
-          diplomats, analysts, and mediators who need decisions, not summaries.
+          The intelligence workspace for peace and security professionals.
+          Built by practitioners — bring your sources and context, and let AI
+          structure them into credible assessments for diplomats, analysts,
+          think tanks, and multilateral organizations.
         </motion.p>
 
         {/* CTAs */}

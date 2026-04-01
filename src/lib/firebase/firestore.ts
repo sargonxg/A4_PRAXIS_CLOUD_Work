@@ -56,6 +56,11 @@ export interface UserProfile {
   researchProviders?: string[];   // enabled provider IDs
   calendarSources?: string[];     // connected calendar source IDs
   savedItems?: string[];          // bookmarked report/analysis IDs
+  // GDPR consent fields
+  tosAcceptedAt?: string;         // ISO timestamp of ToS acceptance
+  gdprConsentDate?: string;       // ISO timestamp of GDPR consent
+  cookieConsentVersion?: string;  // Cookie policy version accepted
+  marketingConsent?: boolean;     // Explicit opt-in for marketing emails
 }
 
 export interface CreditTransaction {

@@ -90,7 +90,7 @@ const tier2 = [
     title: "Early Warning Dashboard",
     icon: AlertTriangle,
     description:
-      "Risk scoring across monitored situations using predictive indicators and ACLED-integrated analysis.",
+      "Risk scoring across monitored situations using multi-source predictive indicators and structured escalation analysis.",
   },
   {
     title: "Secure Document Vault",
@@ -194,7 +194,7 @@ export function Features() {
             "40+ specialized tools",
             "9+ real data feeds",
             "14-entity Conflict Grammar",
-            "ACLED / GDELT / UN data",
+            "Multi-source intelligence feeds",
           ].map((badge) => (
             <span
               key={badge}

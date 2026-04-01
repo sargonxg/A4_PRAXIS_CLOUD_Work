@@ -85,5 +85,42 @@ export async function deleteSituation(
   uid: string,
   situationId: string
 ): Promise<void> {
-  await situationsCol(uid).doc(situationId).delete();
+  if (!adminDb) throw new Error('Firebase Admin SDK not initialized.');
+  const db = adminDb;
+  const sitRef = situationsCol(uid).doc(situationId);
+  const subcollections = [
+    'graph', 'documents', 'reports', 'scenarios', 'chats',
+    'tool-data', 'briefings', 'dossiers', 'talking-points',
+    'risk-assessments', 'conflict-grammar',
+  ];
+  for (const name of subcollections) {
+    let snap = await sitRef.collection(name).limit(200).get();
+    while (!snap.empty) {
+      const batch = db.batch();
+      snap.docs.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+      if (snap.size < 200) break;
+      snap = await sitRef.collection(name).limit(200).get();
+    }
+  }
+  await sitRef.delete();
+}
+
+/**
+ * Reads the conflict knowledge graph for a situation using the Admin SDK.
+ * Used server-side to pre-load graph data into AI tool context.
+ */
+export async function getConflictGraphAdmin(
+  uid: string,
+  situationId: string
+): Promise<{ nodes: unknown[]; edges: unknown[] } | null> {
+  if (!adminDb) return null;
+  const snap = await situationsCol(uid)
+    .doc(situationId)
+    .collection('graph')
+    .doc('main')
+    .get();
+  if (!snap.exists) return null;
+  const data = snap.data() as { nodes?: unknown[]; edges?: unknown[] };
+  return { nodes: data.nodes ?? [], edges: data.edges ?? [] };
 }

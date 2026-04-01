@@ -58,6 +58,11 @@ function baseTemplate(title: string, content: string): string {
 <div style="text-align:center;margin-top:24px;color:#94A3B8;font-size:12px">
   <p>TACITUS — Conflict Intelligence for Peace & Security Professionals</p>
   <p><a href="https://praxis.tacitus.me" style="color:#1B3A5C;text-decoration:none">praxis.tacitus.me</a></p>
+  <p style="margin-top:12px">
+    <a href="https://praxis.tacitus.me/privacy" style="color:#94A3B8;text-decoration:none">Privacy Policy</a>
+    &nbsp;&middot;&nbsp;
+    <a href="https://praxis.tacitus.me/app/settings" style="color:#94A3B8;text-decoration:none">Email Preferences</a>
+  </p>
 </div>
 </div>
 </body>
@@ -74,14 +79,14 @@ function baseTemplate(title: string, content: string): string {
 export async function sendWelcomeEmail(email: string, name: string): Promise<boolean> {
   return send({
     to: email,
-    subject: 'Welcome to PRAXIS — Your 100 TACITUS Credits Are Ready',
+    subject: 'Welcome to PRAXIS — Your 5,000 TACITUS Credits Are Ready',
     html: baseTemplate('Welcome to PRAXIS', `
       <p style="color:#475569;line-height:1.6">Hi ${name},</p>
-      <p style="color:#475569;line-height:1.6">Welcome to PRAXIS — the conflict intelligence platform by TACITUS. Your account is ready with <strong>100 TACITUS Credits</strong> to get started.</p>
+      <p style="color:#475569;line-height:1.6">Welcome to PRAXIS — the conflict intelligence platform by TACITUS. Your account is ready with <strong>5,000 TACITUS Credits</strong> to get started.</p>
       <p style="color:#475569;line-height:1.6">Here&apos;s what you can do:</p>
       <ul style="color:#475569;line-height:1.8;padding-left:20px">
         <li><strong>Create a situation</strong> — PRAXIS will auto-research and populate 5+ intelligence tools</li>
-        <li><strong>Ask PRAXIS</strong> — AI assistant with 21 specialized conflict analysis tools</li>
+        <li><strong>Ask PRAXIS</strong> — AI assistant with 27 specialized conflict analysis tools</li>
         <li><strong>Generate reports</strong> — UN-standard situation reports, dossiers, and briefings</li>
         <li><strong>Monitor media</strong> — Track bias, sentiment, and narrative shifts across 50+ outlets</li>
       </ul>

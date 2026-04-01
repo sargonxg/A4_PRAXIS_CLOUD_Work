@@ -211,6 +211,45 @@ export async function checkAndDeductCredits(
 }
 
 /**
+ * Checks and deducts credits for a user whose UID has already been verified
+ * by withAuth(). Skips the second verifyIdToken call to avoid redundant work.
+ */
+export async function checkAndDeductCreditsForUid(
+  uid: string,
+  operationType: string,
+  description: string,
+): Promise<{ allowed: true } | { allowed: false; response: Response }> {
+  const cost = AI_CREDIT_COSTS[operationType] || 1;
+  try {
+    const result = await deductCreditsAdmin(uid, operationType, description);
+    if (!result.success) {
+      return {
+        allowed: false,
+        response: new Response(
+          JSON.stringify({
+            error: 'Insufficient TACITUS Credits',
+            creditsRequired: cost,
+            creditsRemaining: result.remainingCredits,
+            message: `This operation requires ${cost} credit(s). You have ${result.remainingCredits} remaining.`,
+          }),
+          { status: 402, headers: { 'Content-Type': 'application/json' } }
+        ),
+      };
+    }
+    return { allowed: true };
+  } catch (err) {
+    console.error('[credits] Failed to check credits:', err);
+    return {
+      allowed: false,
+      response: new Response(
+        JSON.stringify({ error: 'Credit system temporarily unavailable. Please try again.' }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      ),
+    };
+  }
+}
+
+/**
  * Refunds credits to a user after a failed AI operation.
  * Uses Admin SDK — no auth context needed server-side.
  */

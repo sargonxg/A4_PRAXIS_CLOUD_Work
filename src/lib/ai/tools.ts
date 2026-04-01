@@ -2205,7 +2205,7 @@ export const stakeholderInfluenceMap = tool({
         abortSignal: timeoutSignal(),
         output: Output.object({ schema: z.object({
           quadrants: z.object({
-            manageCloesly: z.array(z.object({
+            manageClosely: z.array(z.object({
               actor: z.string(),
               power: z.number(),
               interest: z.number(),
@@ -2540,7 +2540,7 @@ export const gameTheoryAnalysis = tool({
             rationale: z.string(),
           })),
           cooperationConditions: z.array(z.string()),
-          schelingFocalPoints: z.array(z.string()),
+          schellingFocalPoints: z.array(z.string()),
           analysis: z.string(),
           policyImplications: z.array(z.string()),
         }) }),
@@ -2714,3 +2714,248 @@ export const tacitusTools = {
 };
 
 export type TacitusToolName = keyof typeof tacitusTools;
+
+// ============================================================================
+// Situation-Aware Tool Factory
+// Creates tool instances bound to the current user's active situation.
+// Use this in the chat route instead of the static tacitusTools export.
+// ============================================================================
+
+export interface SituationToolContext {
+  name: string;
+  description: string;
+  actorSummary: string;
+  eventSummary: string;
+  region: string;
+  glaslStage?: number;
+  riskScore?: number;
+}
+
+export interface ConflictGraphSnapshot {
+  nodes: Array<{ id: string; type: string; label: string; properties?: Record<string, unknown> }>;
+  edges: Array<{ source: string; target: string; type: string; label?: string }>;
+}
+
+/**
+ * Creates situation-bound tool instances for the authenticated chat route.
+ * Tools that used to hardcode DEMO_CONFLICT will now use real situation data.
+ *
+ * @param situationCtx - Structured context from the user's active situation
+ * @param graphSnapshot - Pre-fetched conflict graph data from Firestore (optional)
+ */
+export function createSituationBoundTools(
+  situationCtx?: SituationToolContext | null,
+  graphSnapshot?: ConflictGraphSnapshot | null,
+) {
+  // Derive a context string for prompt injection
+  const ctxName = situationCtx?.name ?? DEMO_CONFLICT.name;
+  const ctxDescription = situationCtx?.description ?? DEMO_CONFLICT.description;
+  const ctxActors = situationCtx?.actorSummary ?? DEMO_CONFLICT.actors.slice(0, 5).map((a) => `${a.name}: ${a.description.slice(0, 80)}`).join('\n');
+  const ctxEvents = situationCtx?.eventSummary ?? '';
+  const ctxRegion = situationCtx?.region ?? 'Unknown region';
+  const isRealSituation = !!situationCtx;
+
+  // --- Bound: queryConflictGraph ---
+  // Uses the pre-fetched graph snapshot when available; falls back to DEMO_CONFLICT.
+  const boundQueryConflictGraph = tool({
+    description: queryConflictGraph.description,
+    inputSchema: queryConflictGraph.inputSchema,
+    execute: async ({ conflictId, entityType, actorId, query }) => {
+      try {
+        // If we have a real graph snapshot, use it
+        if (isRealSituation && graphSnapshot) {
+          const { nodes, edges } = graphSnapshot;
+          let results: unknown[] = [];
+          switch (entityType) {
+            case 'actor':
+              results = nodes.filter((n) => n.type === 'actor');
+              break;
+            case 'event':
+              results = nodes.filter((n) => n.type === 'event');
+              break;
+            case 'relationship':
+              results = edges;
+              break;
+            case 'all':
+              results = [
+                ...nodes.map((n) => ({ ...n, _entityType: n.type })),
+                ...edges.map((e) => ({ ...e, _entityType: 'relationship' })),
+              ];
+              break;
+            default:
+              results = nodes.filter((n) => n.type === entityType);
+          }
+          if (actorId) {
+            results = results.filter((e) => {
+              const entity = e as Record<string, unknown>;
+              return entity.id === actorId || entity.source === actorId || entity.target === actorId;
+            });
+          }
+          return {
+            conflictId,
+            conflictName: ctxName,
+            entityType,
+            query: query ?? null,
+            results: results.slice(0, 25),
+            totalCount: results.length,
+            dataSource: 'live_situation',
+            _generatedAt: new Date().toISOString(),
+          };
+        }
+
+        // No graph data available — return descriptive context from situation
+        if (isRealSituation) {
+          return {
+            conflictId,
+            conflictName: ctxName,
+            entityType,
+            query: query ?? null,
+            results: [],
+            totalCount: 0,
+            dataSource: 'no_graph_data',
+            note: `The conflict graph for "${ctxName}" has not been populated yet. Use the Conflict Graph tool to build the knowledge graph, then retry.`,
+            _generatedAt: new Date().toISOString(),
+          };
+        }
+
+        // Fall back to DEMO_CONFLICT for demo users
+        return queryConflictGraph.execute({ conflictId, entityType, actorId, query });
+      } catch (err) {
+        console.error('[boundQueryConflictGraph]', err instanceof Error ? err.message : err);
+        return { error: true, message: 'Tool failed', conflictId, conflictName: ctxName, entityType, query: query ?? null, results: [], totalCount: 0, _generatedAt: new Date().toISOString() };
+      }
+    },
+  });
+
+  // --- Bound: escalationAssessment ---
+  // Uses real situation context instead of DEMO_CONFLICT.
+  const boundEscalationAssessment = tool({
+    description: escalationAssessment.description,
+    inputSchema: escalationAssessment.inputSchema,
+    execute: async ({ conflictId, specificConcern, timeHorizon }) => {
+      try {
+        const { output } = await generateText({
+          model: gemini(),
+          abortSignal: timeoutSignal(),
+          output: Output.object({
+            schema: z.object({
+              conflictName: z.string(),
+              currentStage: z.number().min(1).max(9),
+              stageName: z.string(),
+              stageDescription: z.string(),
+              escalationTrend: z.enum(['escalating', 'stable', 'de-escalating', 'volatile']),
+              trendExplanation: z.string(),
+              keyDrivers: z.array(z.object({ driver: z.string(), actorsInvolved: z.array(z.string()), severity: z.enum(['low', 'medium', 'high', 'critical']) })),
+              deEscalationOpportunities: z.array(z.object({ opportunity: z.string(), requiredConditions: z.string(), feasibility: z.enum(['low', 'medium', 'high']), leadActors: z.array(z.string()) })),
+              triggerRisks: z.array(z.object({ trigger: z.string(), likelihood: z.enum(['low', 'medium', 'high']), potentialImpact: z.string(), earlyWarningIndicators: z.array(z.string()) })),
+              recommendedActions: z.array(z.string()),
+              analystConfidence: z.enum(['low', 'medium', 'high']),
+              assessmentCaveats: z.array(z.string()),
+            }),
+          }),
+          prompt: `Analyze conflict escalation using the Glasl 9-stage model.
+
+SITUATION: ${ctxName}
+REGION: ${ctxRegion}
+DESCRIPTION: ${truncate(ctxDescription)}
+KEY ACTORS: ${ctxActors}
+${ctxEvents ? `RECENT EVENTS:\n${ctxEvents}` : ''}
+${specificConcern ? `SPECIFIC CONCERN: ${specificConcern}` : ''}
+TIME HORIZON: ${timeHorizon || 'short_term'} (immediate=72hrs, short_term=1-4wks, medium_term=1-3mo)
+
+GLASL 9-STAGE MODEL: 1 Hardening→2 Debates→3 Actions→4 Coalitions→5 Loss of face→6 Threats→7 Limited blows→8 Fragmentation→9 Abyss
+
+Provide: current stage, key drivers, de-escalation opportunities, trigger risks, and recommended actions with confidence level and caveats.`,
+        });
+        return { ...output, _generatedAt: new Date().toISOString() };
+      } catch (err) {
+        if (err instanceof Error && err.name === 'TimeoutError') return { error: true, message: 'Tool timed out after 30s', toolName: 'escalationAssessment', _generatedAt: new Date().toISOString() };
+        return { error: true, message: String(err), _generatedAt: new Date().toISOString() };
+      }
+    },
+  });
+
+  // --- Bound: generateTalkingPoints ---
+  const boundGenerateTalkingPoints = tool({
+    description: generateTalkingPoints.description,
+    inputSchema: generateTalkingPoints.inputSchema,
+    execute: async ({ topic, audience, position, conflictId, maxPoints }) => {
+      try {
+        const { output } = await generateText({
+          model: gemini(),
+          abortSignal: timeoutSignal(),
+          output: Output.object({
+            schema: z.object({
+              topic: z.string(),
+              audience: z.string(),
+              position: z.string(),
+              talkingPoints: z.array(z.object({ point: z.string(), supporting: z.array(z.string()), sensitivityNote: z.string() })),
+              anticipatedQuestions: z.array(z.object({ question: z.string(), suggestedResponse: z.string() })),
+              keyMessages: z.array(z.string()),
+              avoidList: z.array(z.string()),
+            }),
+          }),
+          prompt: `Generate structured talking points on: "${topic}"
+
+SITUATION: ${ctxName} (${ctxRegion})
+DESCRIPTION: ${truncate(ctxDescription, 500)}
+KEY ACTORS: ${ctxActors}
+AUDIENCE: ${audience.replace(/_/g, ' ')}
+POSITION: ${position || 'UN Secretary-General / SRSG'}
+POINTS REQUESTED: ${maxPoints || 5}
+
+For each talking point: main point (1-2 sentences), 2-3 supporting facts, diplomatic sensitivity note.
+Also provide: 3 anticipated questions with suggested responses, 3 key messages that must land, phrases/framings to avoid for this audience.`,
+        });
+        return { ...output, conflictId: conflictId ?? null, _generatedAt: new Date().toISOString() };
+      } catch (err) {
+        if (err instanceof Error && err.name === 'TimeoutError') return { error: true, message: 'Tool timed out after 30s', toolName: 'generateTalkingPoints', topic: '', audience: '', position: '', talkingPoints: [], anticipatedQuestions: [], keyMessages: [], avoidList: [], conflictId: null, _generatedAt: new Date().toISOString() };
+        return { error: true, message: String(err), topic: '', audience: '', position: '', talkingPoints: [], anticipatedQuestions: [], keyMessages: [], avoidList: [], conflictId: null, _generatedAt: new Date().toISOString() };
+      }
+    },
+  });
+
+  // --- Bound: draftSection ---
+  const boundDraftSection = tool({
+    description: draftSection.description,
+    inputSchema: draftSection.inputSchema,
+    execute: async ({ sectionTitle, templateType, conflictId, instructions, wordLimit, tone }) => {
+      try {
+        const { text } = await generateText({
+          model: gemini(),
+          abortSignal: timeoutSignal(),
+          system: DIPLOMATIC_SYSTEM_PROMPT,
+          prompt: `Draft the "${sectionTitle}" section for a ${templateType.replace(/_/g, ' ')} report.
+
+SITUATION: ${ctxName} (${ctxRegion})
+DESCRIPTION: ${truncate(ctxDescription, 600)}
+KEY ACTORS: ${ctxActors}
+${ctxEvents ? `RECENT EVENTS:\n${ctxEvents}` : ''}
+${instructions ? `SPECIAL INSTRUCTIONS: ${truncate(instructions)}` : ''}
+TONE: ${tone || 'formal diplomatic'}
+TARGET LENGTH: ~${wordLimit || 300} words
+
+Requirements:
+- Use standard UN formatting and language conventions
+- Include bracketed source references where appropriate
+- Use calibrated confidence language
+- Maintain strict impartiality
+- Structure with clear topic sentences and analytical depth`,
+        });
+        return { sectionTitle, content: text, wordCount: text.split(/\s+/).length, templateType, status: 'draft' as const, _generatedAt: new Date().toISOString() };
+      } catch (err) {
+        if (err instanceof Error && err.name === 'TimeoutError') return { error: true, message: 'Tool timed out after 30s', toolName: 'draftSection', sectionTitle, content: '', wordCount: 0, templateType, status: 'draft' as const, _generatedAt: new Date().toISOString() };
+        return { error: true, message: String(err), sectionTitle, content: '', wordCount: 0, templateType, status: 'draft' as const, _generatedAt: new Date().toISOString() };
+      }
+    },
+  });
+
+  // Return merged tool set — bound tools override the static defaults
+  return {
+    ...tacitusTools,
+    queryConflictGraph: boundQueryConflictGraph,
+    escalationAssessment: boundEscalationAssessment,
+    generateTalkingPoints: boundGenerateTalkingPoints,
+    draftSection: boundDraftSection,
+  };
+}

@@ -15,7 +15,7 @@ const useCases = [
     role: "UN Political Affairs Officer",
     tagline: "Monitor a peace process in real time",
     description:
-      "Track ceasefire compliance, commitment implementation, and actor positions across a live peace process. PRAXIS synthesizes ACLED events, UN reporting, and media intelligence into a single dashboard — with SG report drafts ready for review in minutes.",
+      "Track ceasefire compliance, commitment implementation, and actor positions across a live peace process. PRAXIS synthesizes open-source events, UN reporting, and media intelligence into a single dashboard — with SG report drafts ready for review in minutes.",
     color: "text-diplomatic-blue",
     bgColor: "bg-diplomatic-blue/5",
     borderHover: "hover:border-diplomatic-blue/30",
@@ -25,7 +25,7 @@ const useCases = [
     role: "Think Tank Analyst",
     tagline: "Produce a conflict assessment backed by data",
     description:
-      "Run structured escalation scoring, actor network analysis, and scenario simulations grounded in ACLED, GDELT, and UCDP data. Export publication-ready assessments with full source citations and analytical methodology.",
+      "Run structured escalation scoring, actor network analysis, and scenario simulations grounded in open-source conflict and humanitarian data. Export publication-ready assessments with full source citations and analytical methodology.",
     color: "text-gold-600",
     bgColor: "bg-gold-600/5",
     borderHover: "hover:border-gold-600/30",

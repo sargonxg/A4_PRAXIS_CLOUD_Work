@@ -2,10 +2,11 @@ import { streamText, stepCountIs } from 'ai';
 import { z } from 'zod';
 import { getModel, getModelForUser } from '@/lib/ai/providers';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
-import { tacitusTools } from '@/lib/ai/tools';
+import { createSituationBoundTools, type SituationToolContext } from '@/lib/ai/tools';
+import { getConflictGraphAdmin } from '@/lib/firebase/situations-service';
 import { buildSituationContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { checkAndDeductCreditsForUid } from '@/lib/api/with-credits';
 import { withAuth } from '@/lib/api/with-auth';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
@@ -53,7 +54,7 @@ export const POST = withAuth(async (request: Request, _user) => {
     }
 
     // --- Live mode ---
-    const creditCheck = await checkAndDeductCredits('ai_chat', 'Chat message');
+    const creditCheck = await checkAndDeductCreditsForUid(_user.uid, 'ai_chat', 'Chat message');
     if (!creditCheck.allowed) return creditCheck.response;
 
     // Build situation-aware system prompt with super-agent capabilities
@@ -174,6 +175,32 @@ You have access to the user's active situation data. When answering questions:
       }
     }
 
+    // Build situation-aware tool instances.
+    // For real users, pre-fetch the conflict graph from Firestore so that
+    // queryConflictGraph returns actual knowledge-graph data rather than demo content.
+    let situationCtx: SituationToolContext | null = null;
+    let graphSnapshot = null;
+    if (situation) {
+      const sit = situation as Situation;
+      situationCtx = {
+        name: sit.name ?? '',
+        description: sit.description ?? '',
+        actorSummary: Array.isArray(sit.actors) ? sit.actors.slice(0, 8).join(', ') : '',
+        eventSummary: '',
+        region: sit.region ?? '',
+        glaslStage: typeof sit.glaslStage === 'number' ? sit.glaslStage : undefined,
+        riskScore: typeof sit.riskScore === 'number' ? sit.riskScore : undefined,
+      };
+      if (!sit.isDemo && _user.uid && sit.id) {
+        try {
+          graphSnapshot = await getConflictGraphAdmin(_user.uid, sit.id);
+        } catch {
+          // Non-fatal — tools will degrade gracefully without graph data
+        }
+      }
+    }
+    const tools = createSituationBoundTools(situationCtx, graphSnapshot);
+
     // Select model based on user preferences.
     // Default: gemini-2.5-flash for fast conversational chat. Users can override
     // to Pro or Claude via aiSettings. Analytical tools use getProModel() instead.
@@ -183,7 +210,7 @@ You have access to the user's active situation data. When answering questions:
       model,
       system: systemPrompt,
       messages,
-      tools: tacitusTools,
+      tools,
       stopWhen: stepCountIs(8),
     });
 
