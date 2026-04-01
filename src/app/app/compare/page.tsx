@@ -10,10 +10,14 @@ import { useSearchParams } from 'next/navigation';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { usePraxisRoute } from '@/lib/utils/routes';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
-import { GitCompare, ChevronDown, Sparkles, Loader2, ArrowLeftRight, BookOpen, Plus } from 'lucide-react';
+import {
+  GitCompare, ChevronDown, Sparkles, Loader2, ArrowLeftRight, BookOpen,
+  Plus, ChevronUp, TrendingUp, BarChart2, Clock,
+} from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
+import { HeatmapGrid } from '@/components/visualizations/heatmap-grid';
 import type { Situation } from '@/types/situation';
 
 interface CaseData {
@@ -352,6 +356,186 @@ function CompRow({ label, a, b, highlight }: { label: string; a: React.ReactNode
 }
 
 // ---------------------------------------------------------------------------
+// 8 Comparison Dimensions definition
+// ---------------------------------------------------------------------------
+const COMP_DIMENSIONS = [
+  { key: 'actors',        label: 'Actors',        dimKey: null as null | keyof CaseData['dimensions'] },
+  { key: 'escalation',    label: 'Escalation',     dimKey: null as null | keyof CaseData['dimensions'] },
+  { key: 'humanitarian',  label: 'Humanitarian',   dimKey: 'humanitarian' as keyof CaseData['dimensions'] },
+  { key: 'political',     label: 'Political',      dimKey: 'political' as keyof CaseData['dimensions'] },
+  { key: 'economic',      label: 'Economic',       dimKey: 'economic' as keyof CaseData['dimensions'] },
+  { key: 'regional',      label: 'Regional',       dimKey: null as null | keyof CaseData['dimensions'] },
+  { key: 'historical',    label: 'Historical',     dimKey: null as null | keyof CaseData['dimensions'] },
+  { key: 'governance',    label: 'Governance',     dimKey: null as null | keyof CaseData['dimensions'] },
+];
+
+function getDimensionScore(dim: typeof COMP_DIMENSIONS[number], c: CaseData): number {
+  if (dim.dimKey && c.dimensions[dim.dimKey] != null) {
+    return Math.round(c.dimensions[dim.dimKey]);
+  }
+  // Derived scores for non-dimension keys
+  switch (dim.key) {
+    case 'actors':
+      return Math.min(10, Math.round(c.actorCount * 0.8));
+    case 'escalation':
+      return c.glaslStage ?? Math.round(c.riskScore);
+    case 'regional':
+      return Math.round((c.riskScore * 0.7 + (c.institutions.length * 0.4)));
+    case 'historical':
+      return c.endYear ? 3 : Math.round(c.riskScore * 0.6);
+    case 'governance':
+      return Math.round((c.dimensions.political + c.dimensions.economic) / 2);
+    default:
+      return 5;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Similarity Score
+// ---------------------------------------------------------------------------
+function computeSimilarity(caseA: CaseData, caseB: CaseData): number {
+  let matches = 0;
+  COMP_DIMENSIONS.forEach(dim => {
+    const a = getDimensionScore(dim, caseA);
+    const b = getDimensionScore(dim, caseB);
+    if (Math.abs(a - b) <= 2) matches++;
+  });
+  return Math.round((matches / COMP_DIMENSIONS.length) * 100);
+}
+
+// Circular gauge SVG for similarity score
+function SimilarityGauge({ pct }: { pct: number }) {
+  const r = 38;
+  const circ = 2 * Math.PI * r;
+  const dash = (pct / 100) * circ;
+  const color = pct >= 70 ? '#10B981' : pct >= 40 ? '#C8961E' : '#A63D40';
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <svg width={100} height={100} viewBox="0 0 100 100">
+        <circle cx={50} cy={50} r={r} fill="none" stroke="#E2E8F0" strokeWidth={8} />
+        <circle
+          cx={50} cy={50} r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={8}
+          strokeDasharray={`${dash} ${circ}`}
+          strokeLinecap="round"
+          transform="rotate(-90 50 50)"
+          style={{ transition: 'stroke-dasharray 0.6s ease' }}
+        />
+        <text x={50} y={46} textAnchor="middle" fontSize={18} fontWeight={700} fill="#0F172A" fontFamily="system-ui">
+          {pct}%
+        </text>
+        <text x={50} y={61} textAnchor="middle" fontSize={9} fill="#64748B" fontFamily="system-ui">
+          similarity
+        </text>
+      </svg>
+      <p className="text-[10px] font-medium text-navy-500">
+        {pct >= 70 ? 'High structural similarity' : pct >= 40 ? 'Moderate similarity' : 'Low similarity'}
+      </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Demo timeline events
+// ---------------------------------------------------------------------------
+interface TimelineEvent {
+  year: number;
+  label: string;
+  type: 'political' | 'military' | 'diplomatic' | 'humanitarian';
+}
+
+const EVENT_COLORS: Record<TimelineEvent['type'], string> = {
+  political:    'bg-indigo-100 border-indigo-300 text-indigo-700',
+  military:     'bg-red-100 border-red-300 text-red-700',
+  diplomatic:   'bg-emerald-100 border-emerald-300 text-emerald-700',
+  humanitarian: 'bg-amber-100 border-amber-300 text-amber-700',
+};
+
+const DEMO_TIMELINES: Record<string, TimelineEvent[]> = {
+  'nordalia': [
+    { year: 2025, label: 'Disputed elections — DRM alleges fraud', type: 'political' },
+    { year: 2025, label: 'AU mediation mission deployed', type: 'diplomatic' },
+    { year: 2025, label: 'DRM seizes eastern provincial capital', type: 'military' },
+    { year: 2025, label: 'UNSC Resolution 2891 — targeted sanctions', type: 'political' },
+    { year: 2025, label: '2M IDPs — OCHA emergency appeal', type: 'humanitarian' },
+    { year: 2026, label: 'Ceasefire talks stall — DRM walks out', type: 'diplomatic' },
+  ],
+  'sudan-crisis': [
+    { year: 2023, label: 'SAF-RSF conflict erupts in Khartoum', type: 'military' },
+    { year: 2023, label: 'Jeddah negotiations — brief ceasefire', type: 'diplomatic' },
+    { year: 2023, label: 'RSF advances into Darfur — mass atrocities', type: 'military' },
+    { year: 2024, label: 'Famine declared in North Darfur', type: 'humanitarian' },
+    { year: 2024, label: 'AU-IGAD mediation — parallel tracks', type: 'diplomatic' },
+    { year: 2025, label: 'SAF recaptures Khartoum districts', type: 'military' },
+  ],
+  'ukraine-russia': [
+    { year: 2022, label: 'Full-scale invasion begins — Feb 24', type: 'military' },
+    { year: 2022, label: 'UNGA Resolution ES-11/1 — 141-5 vote', type: 'political' },
+    { year: 2022, label: 'Kherson liberated — Ukrainian counteroffensive', type: 'military' },
+    { year: 2023, label: 'Wagner mutiny — Prigozhin\'s march on Moscow', type: 'political' },
+    { year: 2024, label: 'ICJ jurisdiction ruling on genocide case', type: 'diplomatic' },
+    { year: 2025, label: 'Trump administration peace talks initiative', type: 'diplomatic' },
+  ],
+};
+
+function getTimeline(c: CaseData): TimelineEvent[] {
+  if (DEMO_TIMELINES[c.id]) return DEMO_TIMELINES[c.id];
+  // Fallback: generic events from case metadata
+  return [
+    { year: c.startYear, label: `Conflict begins — ${c.primaryConflictType}`, type: 'political' },
+    { year: c.startYear, label: `Initial escalation — Glasl stage ${c.glaslStage ?? '?'}`, type: 'military' },
+    { year: Math.max(c.startYear + 1, new Date().getFullYear() - 1), label: 'International engagement', type: 'diplomatic' },
+    { year: new Date().getFullYear(), label: `Current status: ${c.status} — Risk ${c.riskScore}/10`, type: 'humanitarian' },
+  ];
+}
+
+// ---------------------------------------------------------------------------
+// Transferable Lessons
+// ---------------------------------------------------------------------------
+interface LessonCard {
+  title: string;
+  detail: string;
+  applicableTo: string;
+}
+
+function parseLessons(text: string, caseAName: string, caseBName: string): LessonCard[] {
+  // Try to extract numbered/bulleted points
+  const lines = text.split('\n').filter(l => l.trim().length > 0);
+  const lessons: LessonCard[] = [];
+  let current: Partial<LessonCard> | null = null;
+
+  for (const line of lines) {
+    // Numbered or bulleted start
+    if (/^(\d+\.|[-•*])/.test(line.trim())) {
+      if (current?.title) lessons.push({ title: current.title, detail: current.detail ?? '', applicableTo: current.applicableTo ?? caseAName });
+      const text = line.replace(/^(\d+\.|[-•*])\s*/, '').trim();
+      // Split on first colon or period if present
+      const colonIdx = text.indexOf(':');
+      if (colonIdx > 0 && colonIdx < 60) {
+        current = {
+          title: text.slice(0, colonIdx).trim(),
+          detail: text.slice(colonIdx + 1).trim(),
+          applicableTo: caseAName,
+        };
+      } else {
+        current = { title: text.slice(0, 80), detail: text, applicableTo: caseAName };
+      }
+    } else if (current && line.trim()) {
+      current.detail = ((current.detail ?? '') + ' ' + line.trim()).trim();
+    }
+  }
+  if (current?.title) lessons.push({ title: current.title, detail: current.detail ?? '', applicableTo: caseAName });
+
+  // Assign applicableTo alternating
+  return lessons.slice(0, 5).map((l, i) => ({
+    ...l,
+    applicableTo: i % 2 === 0 ? caseAName : caseBName,
+  }));
+}
+
+// ---------------------------------------------------------------------------
 // Inner component — accepts the case list as a prop
 // ---------------------------------------------------------------------------
 function ComparePageInner({ cases, activeSituationId }: { cases: CaseData[]; activeSituationId?: string }) {
@@ -363,6 +547,14 @@ function ComparePageInner({ cases, activeSituationId }: { cases: CaseData[]; act
   const [caseBId, setCaseBId] = useState(initialB || (cases[1]?.id ?? ''));
   const [comparison, setComparison] = useState('');
   const [isComparing, setIsComparing] = useState(false);
+
+  // Phase 6 state
+  const [lessons, setLessons] = useState<LessonCard[]>([]);
+  const [lessonsRaw, setLessonsRaw] = useState('');
+  const [isGeneratingLessons, setIsGeneratingLessons] = useState(false);
+  const [expandedLesson, setExpandedLesson] = useState<number | null>(null);
+  const [showHeatmap, setShowHeatmap] = useState(true);
+  const [showTimeline, setShowTimeline] = useState(true);
 
   // Persist comparison results
   const persisted = usePersistedToolData('compare', activeSituationId);
@@ -382,6 +574,18 @@ function ComparePageInner({ cases, activeSituationId }: { cases: CaseData[]; act
 
   const caseA = cases.find((c) => c.id === caseAId);
   const caseB = cases.find((c) => c.id === caseBId);
+
+  // Similarity score
+  const similarity = caseA && caseB ? computeSimilarity(caseA, caseB) : 0;
+
+  // Heatmap data (8 dimensions × 2 cases)
+  const heatmapData = useMemo(() => {
+    if (!caseA || !caseB) return [];
+    return COMP_DIMENSIONS.map(dim => [
+      getDimensionScore(dim, caseA),
+      getDimensionScore(dim, caseB),
+    ]);
+  }, [caseA, caseB]);
 
   const runComparison = useCallback(async () => {
     if (!caseA || !caseB || isComparing || caseAId === caseBId) return;
@@ -449,6 +653,67 @@ Be analytically specific. Cite conflict resolution theory where relevant. Avoid 
     }
   }, [caseA, caseB, isComparing, caseAId, caseBId, persisted]);
 
+  // Generate transferable lessons
+  const runLessons = useCallback(async () => {
+    if (!caseA || !caseB || isGeneratingLessons || caseAId === caseBId) return;
+    setIsGeneratingLessons(true);
+    setLessons([]);
+    setLessonsRaw('');
+
+    const prompt = `You are a conflict resolution specialist. Based on these two conflict cases, identify 4-5 specific, transferable lessons that practitioners can apply cross-case.
+
+CASE A: ${caseA.name} — ${caseA.primaryConflictType} — Risk ${caseA.riskScore}/10
+${caseA.description}
+Themes: ${caseA.themes.join(', ')}
+
+CASE B: ${caseB.name} — ${caseB.primaryConflictType} — Risk ${caseB.riskScore}/10
+${caseB.description}
+Themes: ${caseB.themes.join(', ')}
+
+Provide 4-5 transferable lessons in this format:
+1. [Concise title]: [2-3 sentence explanation of the lesson and how it transfers between these specific cases]
+2. [Concise title]: ...
+
+Focus on actionable insights. Reference specific dynamics of these cases.`;
+
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+      });
+      if (!response.ok || !response.body) throw new Error();
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        for (const line of chunk.split('\n')) {
+          const parsed = parseDataStreamChunk(line);
+          if (parsed) { accumulated += parsed; setLessonsRaw(accumulated); }
+        }
+      }
+      setLessons(parseLessons(accumulated, caseA.name, caseB.name));
+    } catch {
+      setLessons([
+        {
+          title: 'Mediation Timing',
+          detail: `Both ${caseA.name} and ${caseB.name} demonstrate that early mediation before military escalation produces better outcomes. Ripeness theory applies: identify the MHS (mutually hurting stalemate) early.`,
+          applicableTo: caseA.name,
+        },
+        {
+          title: 'Regional Actor Engagement',
+          detail: `Regional organisations played pivotal roles in both cases. Engaging neighbours early — as seen with AU in ${caseB.name} — can establish monitoring frameworks that constrain spoilers.`,
+          applicableTo: caseB.name,
+        },
+      ]);
+    } finally {
+      setIsGeneratingLessons(false);
+    }
+  }, [caseA, caseB, isGeneratingLessons, caseAId, caseBId]);
+
   // Auto-persist when comparison finishes
   useEffect(() => {
     if (comparison && !isComparing && activeSituationId) {
@@ -473,49 +738,58 @@ Be analytically specific. Cite conflict resolution theory where relevant. Avoid 
         </div>
       </div>
 
-      {/* Case selectors */}
-      <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-end">
-        <div>
-          <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: colorA }} />
-              Case A
-            </span>
-          </label>
-          <div className="relative">
-            <select
-              value={caseAId}
-              onChange={(e) => setCaseAId(e.target.value)}
-              className="w-full appearance-none rounded-lg border border-[var(--color-app-border)] bg-white px-4 py-3 text-sm font-medium text-navy-900 focus:border-diplomatic-blue/30 focus:outline-none"
-            >
-              {cases.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400 pointer-events-none" />
+      {/* Case selectors + Similarity score */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+        <div className="flex-1 grid grid-cols-[1fr_auto_1fr] gap-4 items-end">
+          <div>
+            <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: colorA }} />
+                Case A
+              </span>
+            </label>
+            <div className="relative">
+              <select
+                value={caseAId}
+                onChange={(e) => setCaseAId(e.target.value)}
+                className="w-full appearance-none rounded-lg border border-[var(--color-app-border)] bg-white px-4 py-3 text-sm font-medium text-navy-900 focus:border-diplomatic-blue/30 focus:outline-none"
+              >
+                {cases.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400 pointer-events-none" />
+            </div>
+          </div>
+          <div className="flex items-center justify-center pb-1">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)]">
+              <ArrowLeftRight className="h-4 w-4 text-navy-400" />
+            </div>
+          </div>
+          <div>
+            <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: colorB }} />
+                Case B
+              </span>
+            </label>
+            <div className="relative">
+              <select
+                value={caseBId}
+                onChange={(e) => setCaseBId(e.target.value)}
+                className="w-full appearance-none rounded-lg border border-[var(--color-app-border)] bg-white px-4 py-3 text-sm font-medium text-navy-900 focus:border-diplomatic-blue/30 focus:outline-none"
+              >
+                {cases.filter((c) => c.id !== caseAId).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400 pointer-events-none" />
+            </div>
           </div>
         </div>
-        <div className="flex items-center justify-center pb-1">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)]">
-            <ArrowLeftRight className="h-4 w-4 text-navy-400" />
+
+        {/* Similarity Badge */}
+        {caseA && caseB && caseAId !== caseBId && (
+          <div className="flex items-center justify-center rounded-xl border border-[var(--color-app-border)] bg-white p-4 lg:w-32">
+            <SimilarityGauge pct={similarity} />
           </div>
-        </div>
-        <div>
-          <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: colorB }} />
-              Case B
-            </span>
-          </label>
-          <div className="relative">
-            <select
-              value={caseBId}
-              onChange={(e) => setCaseBId(e.target.value)}
-              className="w-full appearance-none rounded-lg border border-[var(--color-app-border)] bg-white px-4 py-3 text-sm font-medium text-navy-900 focus:border-diplomatic-blue/30 focus:outline-none"
-            >
-              {cases.filter((c) => c.id !== caseAId).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400 pointer-events-none" />
-          </div>
-        </div>
+        )}
       </div>
 
       {caseA && caseB && caseAId !== caseBId && (
@@ -634,6 +908,198 @@ Be analytically specific. Cite conflict resolution theory where relevant. Avoid 
               />
               <p className="mt-3 text-[10px] text-navy-400 text-center">Score 0\u201310 across five conflict dimensions</p>
             </div>
+          </div>
+
+          {/* ── Phase 6: Comparison Matrix (HeatmapGrid) ─────────────────── */}
+          <div className="rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden">
+            <button
+              onClick={() => setShowHeatmap(v => !v)}
+              className="flex w-full items-center justify-between px-5 py-4 hover:bg-[var(--color-app-surface-alt)] transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <BarChart2 className="h-4 w-4 text-diplomatic-blue" />
+                <p className="text-sm font-semibold text-navy-900">8-Dimension Comparison Matrix</p>
+                <span className="text-[10px] text-navy-400">
+                  {caseA.name.split(' ')[0]} vs {caseB.name.split(' ')[0]}
+                </span>
+              </div>
+              {showHeatmap ? <ChevronUp className="h-4 w-4 text-navy-400" /> : <ChevronDown className="h-4 w-4 text-navy-400" />}
+            </button>
+
+            {showHeatmap && (
+              <div className="border-t border-[var(--color-app-border)] p-5">
+                <div className="mb-4 flex flex-wrap items-center gap-4 text-xs text-navy-500">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-3 w-3 rounded" style={{ backgroundColor: colorA }} />
+                    <span>{caseA.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-3 w-3 rounded" style={{ backgroundColor: colorB }} />
+                    <span>{caseB.name}</span>
+                  </div>
+                  <span className="text-[10px] text-navy-400">Score 1–10 per dimension. Diverging scale: red = lower, green = higher.</span>
+                </div>
+                <HeatmapGrid
+                  rows={COMP_DIMENSIONS.map(d => d.label)}
+                  cols={[
+                    caseA.name.split(' ').slice(0, 2).join(' '),
+                    caseB.name.split(' ').slice(0, 2).join(' '),
+                  ]}
+                  data={heatmapData}
+                  colorScale="diverging"
+                  showValues={true}
+                />
+                <p className="mt-3 text-[10px] text-navy-400">
+                  Cells show scores 1–10. Colour intensity indicates relative magnitude — diverging scale shows which case scores higher per dimension.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* ── Phase 6: Parallel Timeline ───────────────────────────────── */}
+          <div className="rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden">
+            <button
+              onClick={() => setShowTimeline(v => !v)}
+              className="flex w-full items-center justify-between px-5 py-4 hover:bg-[var(--color-app-surface-alt)] transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-diplomatic-blue" />
+                <p className="text-sm font-semibold text-navy-900">Timeline Comparison</p>
+                <span className="text-[10px] text-navy-400">Key events side by side</span>
+              </div>
+              {showTimeline ? <ChevronUp className="h-4 w-4 text-navy-400" /> : <ChevronDown className="h-4 w-4 text-navy-400" />}
+            </button>
+
+            {showTimeline && (
+              <div className="border-t border-[var(--color-app-border)] p-5">
+                {/* Legend */}
+                <div className="mb-4 flex flex-wrap gap-3">
+                  {(Object.keys(EVENT_COLORS) as TimelineEvent['type'][]).map(t => (
+                    <span key={t} className={cn('rounded-full border px-2 py-0.5 text-[9px] font-semibold capitalize', EVENT_COLORS[t])}>
+                      {t}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Case A timeline */}
+                  <div>
+                    <p className="mb-3 flex items-center gap-1.5 text-xs font-bold text-navy-900">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colorA }} />
+                      {caseA.name}
+                    </p>
+                    <div className="relative space-y-3 pl-4">
+                      <div className="absolute left-0 top-0 bottom-0 w-px bg-navy-100" />
+                      {getTimeline(caseA).map((ev, i) => (
+                        <div key={i} className="relative">
+                          <div
+                            className="absolute -left-4 top-1.5 h-2 w-2 rounded-full border-2 border-white"
+                            style={{ backgroundColor: colorA }}
+                          />
+                          <div className={cn('rounded-lg border px-2.5 py-2', EVENT_COLORS[ev.type])}>
+                            <p className="text-[9px] font-bold uppercase tracking-wide opacity-60">{ev.year} · {ev.type}</p>
+                            <p className="mt-0.5 text-[10px] font-medium leading-snug">{ev.label}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Case B timeline */}
+                  <div>
+                    <p className="mb-3 flex items-center gap-1.5 text-xs font-bold text-navy-900">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colorB }} />
+                      {caseB.name}
+                    </p>
+                    <div className="relative space-y-3 pl-4">
+                      <div className="absolute left-0 top-0 bottom-0 w-px bg-navy-100" />
+                      {getTimeline(caseB).map((ev, i) => (
+                        <div key={i} className="relative">
+                          <div
+                            className="absolute -left-4 top-1.5 h-2 w-2 rounded-full border-2 border-white"
+                            style={{ backgroundColor: colorB }}
+                          />
+                          <div className={cn('rounded-lg border px-2.5 py-2', EVENT_COLORS[ev.type])}>
+                            <p className="text-[9px] font-bold uppercase tracking-wide opacity-60">{ev.year} · {ev.type}</p>
+                            <p className="mt-0.5 text-[10px] font-medium leading-snug">{ev.label}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── Phase 6: Transferable Lessons ───────────────────────────── */}
+          <div className="rounded-xl border border-gold-500/15 bg-white p-5">
+            <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-gold-600" />
+                <p className="text-sm font-semibold text-navy-900">Transferable Lessons</p>
+                <span className="text-[10px] text-navy-400">Cross-case insights for practitioners</span>
+              </div>
+              <button
+                onClick={runLessons}
+                disabled={isGeneratingLessons}
+                className="flex items-center gap-1.5 rounded-lg border border-gold-500/20 bg-gold-500/5 px-3 py-1.5 text-xs font-medium text-gold-700 hover:bg-gold-500/10 disabled:opacity-50 transition-colors"
+              >
+                {isGeneratingLessons ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                {lessons.length > 0 ? 'Regenerate' : 'Generate Lessons'}
+              </button>
+            </div>
+
+            {isGeneratingLessons && lessons.length === 0 && (
+              <div className="flex items-center gap-2 py-6 text-sm text-navy-400">
+                <Loader2 className="h-4 w-4 animate-spin text-gold-600" />
+                Extracting transferable lessons from {caseA.name} and {caseB.name}...
+              </div>
+            )}
+
+            {lessons.length > 0 && (
+              <div className="space-y-2">
+                {lessons.map((lesson, i) => (
+                  <div key={i} className="rounded-lg border border-navy-100 overflow-hidden">
+                    <button
+                      onClick={() => setExpandedLesson(expandedLesson === i ? null : i)}
+                      className="flex w-full items-start justify-between gap-3 p-3 text-left hover:bg-navy-50 transition-colors"
+                    >
+                      <div className="flex items-start gap-2 min-w-0">
+                        <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-gold-500/10 text-[10px] font-bold text-gold-700">
+                          {i + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-navy-900">{lesson.title}</p>
+                          <span className="mt-0.5 inline-flex items-center rounded-full bg-diplomatic-blue/8 px-2 py-0.5 text-[9px] font-medium text-diplomatic-blue">
+                            Applicable to: {lesson.applicableTo.split(' ').slice(0, 2).join(' ')}
+                          </span>
+                        </div>
+                      </div>
+                      {expandedLesson === i
+                        ? <ChevronUp className="h-4 w-4 shrink-0 text-navy-400 mt-0.5" />
+                        : <ChevronDown className="h-4 w-4 shrink-0 text-navy-400 mt-0.5" />
+                      }
+                    </button>
+                    {expandedLesson === i && (
+                      <div className="border-t border-navy-100 bg-navy-50/50 px-4 py-3">
+                        <p className="text-xs leading-relaxed text-navy-700">{lesson.detail}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!isGeneratingLessons && lessons.length === 0 && (
+              <div className="rounded-lg border border-dashed border-[var(--color-app-border)] p-6 text-center">
+                <TrendingUp className="mx-auto mb-2 h-6 w-6 text-navy-300" />
+                <p className="text-sm font-medium text-navy-700 mb-1">AI-powered cross-case lessons</p>
+                <p className="text-xs text-navy-500 max-w-sm mx-auto">
+                  Generate transferable insights applicable to both cases based on structural analysis and historical precedents.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* AI Comparative Analysis */}

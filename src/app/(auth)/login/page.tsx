@@ -62,7 +62,6 @@ function LoginForm() {
 
       if (result.success) {
         router.push(appRedirect);
-        router.refresh();
       } else {
         setError(result.error || 'Authentication failed.');
         setIsLoading(false);
@@ -78,13 +77,14 @@ function LoginForm() {
     setIsLoading(true);
     try {
       const result = await signInWithGoogle();
-      if (result.success) {
-        router.push(appRedirect);
-        router.refresh();
-      } else {
+      // signInWithRedirect navigates the page away to Google — success/failure is handled
+      // on return via onAuthStateChanged → useEffect auto-redirect above.
+      // Only handle explicit pre-redirect errors here (e.g. auth/unauthorized-domain).
+      if (!result.success) {
         setError(result.error || 'Google sign-in failed.');
         setIsLoading(false);
       }
+      // On success: page is navigating away — no further action needed
     } catch {
       setError('Google sign-in failed. Please try again.');
       setIsLoading(false);
@@ -385,7 +385,7 @@ function LoginForm() {
             className="mt-5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3"
           >
             <p className="text-center text-xs text-emerald-400">
-              <span className="font-semibold">100 TACITUS Credits</span> awarded on sign-up — power your AI analysis
+              <span className="font-semibold">5,000 TACITUS Credits</span> awarded on sign-up — power your AI analysis
             </p>
           </motion.div>
         </div>

@@ -11,16 +11,25 @@ import {
   AlertTriangle,
   Shield,
   ChevronDown,
+  ChevronRight,
   Clock,
   Users,
   BarChart3,
   Eye,
   Scale,
   CheckCircle2,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  BookOpen,
+  Grid3X3,
+  ListChecks,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { EcosystemBadge } from '@/components/shared/ecosystem-badge';
 import { PoweredByTacitus } from '@/components/shared/powered-by-tacitus';
+import { ComplianceTracker } from '@/components/visualizations/compliance-tracker';
+import { HeatmapGrid } from '@/components/visualizations/heatmap-grid';
 import {
   DEMO_AGREEMENTS,
   NORDALIA_CEASEFIRE_CLAUSES,
@@ -64,6 +73,101 @@ const AGREEMENT_STATUS_STYLES: Record<
   expired: { label: 'Expired', bg: 'bg-gray-500/10', text: 'text-gray-500' },
 };
 
+// ============================================================================
+// Legal Framework Data (IHL / UNSCR / ICCPR references per clause)
+// ============================================================================
+const LEGAL_FRAMEWORK: Record<number, { instruments: { label: string; ref: string }[] }> = {
+  1: { instruments: [
+    { label: 'IHL', ref: 'Geneva Conventions Common Art. 3' },
+    { label: 'AP I', ref: 'Additional Protocol I, Art. 57' },
+    { label: 'UNSCR', ref: 'UNSCR 2417 (2018) — Conflict & Hunger' },
+  ]},
+  2: { instruments: [
+    { label: 'AP I', ref: 'Additional Protocol I, Art. 35' },
+    { label: 'CCW', ref: 'Convention on Certain Conventional Weapons' },
+    { label: 'UNSCR', ref: 'UNSCR 2118 (2013) — WMD/Heavy Weapons' },
+  ]},
+  3: { instruments: [
+    { label: 'IHL', ref: 'Geneva Convention IV, Art. 23' },
+    { label: 'UNSCR', ref: 'UNSCR 2417 (2018) — Humanitarian Access' },
+    { label: 'OCHA', ref: 'OCHA Humanitarian Principles (Neutrality, Impartiality)' },
+  ]},
+  4: { instruments: [
+    { label: 'GCIII', ref: 'Geneva Convention III — Prisoners of War' },
+    { label: 'ICCPR', ref: 'ICCPR Art. 9 — Liberty and Security' },
+    { label: 'ICRC', ref: 'ICRC Detention Standards' },
+  ]},
+  5: { instruments: [
+    { label: 'AP II', ref: 'Additional Protocol II, Art. 4' },
+    { label: 'UNSCR', ref: 'UNSCR 2151 (2014) — SSR' },
+    { label: 'PA-X', ref: 'PA-X Coding: Security Arrangements' },
+  ]},
+  6: { instruments: [
+    { label: 'UN Charter', ref: 'UN Charter, Chapter VI — Pacific Settlement' },
+    { label: 'UNSCR', ref: 'UNSCR 2282 (2016) — Sustaining Peace' },
+  ]},
+  7: { instruments: [
+    { label: 'UN Charter', ref: 'UN Charter, Art. 33 — Peaceful Settlement' },
+    { label: 'ICCPR', ref: 'ICCPR Art. 25 — Political Participation' },
+    { label: 'PA-X', ref: 'PA-X Coding: Political Framework' },
+  ]},
+  8: { instruments: [
+    { label: 'ICESCR', ref: 'ICESCR Art. 1 — Natural Resources Sovereignty' },
+    { label: 'UNSCR', ref: 'UNSCR 2206 (2015) — Targeted Measures (Resources)' },
+  ]},
+  9: { instruments: [
+    { label: 'ICCPR', ref: 'ICCPR Art. 19 — Freedom of Expression' },
+    { label: 'ICERD', ref: 'ICERD Art. 4 — Incitement Prohibition' },
+    { label: 'UNSCR', ref: 'UNSCR 1738 (2006) — Safety of Journalists' },
+  ]},
+  10: { instruments: [
+    { label: 'IHL', ref: 'Geneva Conventions, Common Art. 3 — ICRC Access' },
+    { label: 'UNSCR', ref: 'UNSCR 2286 (2016) — Medical Facilities' },
+    { label: 'OHCHR', ref: 'Paris Principles — Human Rights Monitoring' },
+  ]},
+  11: { instruments: [
+    { label: 'UN Charter', ref: 'UN Charter, Art. 41 — Measures not involving Force' },
+    { label: 'UNSCR', ref: 'UNSCR 2875 / 2890 — Nordalia Sanctions' },
+  ]},
+  12: { instruments: [
+    { label: 'DPPA', ref: 'UN DPPA Implementation Planning Framework' },
+    { label: 'PA-X', ref: 'PA-X Coding: Implementation Mechanisms' },
+    { label: 'UNSCR', ref: 'UNSCR 2282 (2016) — Review and Assessment' },
+  ]},
+};
+
+// ============================================================================
+// Heatmap data: Parties × Key Obligations
+// ============================================================================
+const HEATMAP_ROWS = [
+  'Art. 1 — Cessation',
+  'Art. 2 — Heavy Weapons',
+  'Art. 3 — Humanitarian',
+  'Art. 4 — Detainees',
+  'Art. 5 — Cantonment',
+  'Art. 6 — JMC',
+  'Art. 7 — Dialogue',
+  'Art. 8 — Resources',
+  'Art. 9 — Media',
+  'Art. 10 — Observers',
+];
+
+const HEATMAP_COLS = ['Gov. Nordalia', 'EMLF', 'Joint / AU'];
+
+// Values: 0 = non-compliant, 5 = partial, 10 = compliant
+const HEATMAP_DATA: number[][] = [
+  [5, 5, 10],  // Art. 1
+  [0, 0, 10],  // Art. 2
+  [10, 10, 10], // Art. 3
+  [5, 0, 10],  // Art. 4
+  [0, 0, 5],   // Art. 5
+  [10, 10, 10], // Art. 6
+  [5, 5, 5],   // Art. 7
+  [5, 5, 5],   // Art. 8
+  [5, 5, 10],  // Art. 9
+  [10, 10, 10], // Art. 10
+];
+
 function CircularGauge({ value, size = 120 }: { value: number; size?: number }) {
   const strokeWidth = 10;
   const radius = (size - strokeWidth) / 2;
@@ -102,12 +206,225 @@ function CircularGauge({ value, size = 120 }: { value: number; size?: number }) 
   );
 }
 
+// ============================================================================
+// Implementation Tracker Summary Bar
+// ============================================================================
+function ImplementationTrackerBar({ clauses }: { clauses: Clause[] }) {
+  const total = clauses.length;
+  const compliant = clauses.filter(c => c.complianceStatus === 'compliant').length;
+  const partial = clauses.filter(c => c.complianceStatus === 'partial').length;
+  const nonCompliant = clauses.filter(c => c.complianceStatus === 'non-compliant').length;
+  const pending = clauses.filter(c => c.complianceStatus === 'pending').length;
+  const pct = Math.round((compliant / total) * 100);
+  const partialPct = Math.round((partial / total) * 100);
+  const nonPct = Math.round((nonCompliant / total) * 100);
+
+  // Trend: compare current overall to historical median (58 vs ~64%)
+  const trend: 'up' | 'down' | 'stable' = pct >= 64 ? 'up' : pct >= 55 ? 'stable' : 'down';
+
+  return (
+    <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400 mb-1">
+            Implementation Tracker
+          </p>
+          <p className="text-2xl font-bold font-mono text-navy-900">
+            {compliant} <span className="text-base font-medium text-navy-400">of {total} clauses implemented</span>
+          </p>
+        </div>
+        <div className={cn(
+          'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold',
+          trend === 'up' ? 'bg-emerald-500/10 text-emerald-700' :
+          trend === 'down' ? 'bg-red-500/10 text-red-700' :
+          'bg-gray-500/10 text-gray-600'
+        )}>
+          {trend === 'up' && <TrendingUp className="h-3.5 w-3.5" />}
+          {trend === 'down' && <TrendingDown className="h-3.5 w-3.5" />}
+          {trend === 'stable' && <Minus className="h-3.5 w-3.5" />}
+          {trend === 'up' ? 'Improved since last assessment' :
+           trend === 'down' ? 'Deteriorated since last assessment' :
+           'Stable — within historical range'}
+        </div>
+      </div>
+
+      {/* Stacked progress bar */}
+      <div className="h-2.5 w-full rounded-full bg-[var(--color-app-surface-alt)] overflow-hidden mb-3">
+        <div className="flex h-full">
+          <div className="h-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+          <div className="h-full bg-amber-400 transition-all" style={{ width: `${partialPct}%` }} />
+          <div className="h-full bg-red-400 transition-all" style={{ width: `${nonPct}%` }} />
+        </div>
+      </div>
+
+      {/* Breakdown chips */}
+      <div className="flex flex-wrap gap-3">
+        {[
+          { count: compliant, label: 'Fully Implemented', color: 'text-emerald-700', dot: 'bg-emerald-500' },
+          { count: partial, label: 'Partially Implemented', color: 'text-amber-700', dot: 'bg-amber-400' },
+          { count: nonCompliant, label: 'Not Implemented', color: 'text-red-700', dot: 'bg-red-400' },
+          { count: pending, label: 'Pending Verification', color: 'text-gray-600', dot: 'bg-gray-400' },
+        ].map(({ count, label, color, dot }) => (
+          <span key={label} className={cn('flex items-center gap-1.5 text-xs', color)}>
+            <span className={cn('h-2 w-2 rounded-full shrink-0', dot)} />
+            {count} {label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Legal Framework Section (accordion)
+// ============================================================================
+function LegalFrameworkSection({ clauses }: { clauses: Clause[] }) {
+  const [expandedClause, setExpandedClause] = useState<number | null>(null);
+
+  return (
+    <div className="rounded-xl border border-[var(--color-app-border)] bg-white">
+      <div className="flex items-center gap-2 border-b border-[var(--color-app-border)] px-5 py-3">
+        <BookOpen className="h-4 w-4 text-diplomatic-blue" />
+        <h2 className="font-serif text-sm font-semibold text-navy-900">
+          Legal Framework
+        </h2>
+        <span className="ml-auto text-[10px] text-navy-400">IHL · UNSCR · ICCPR references</span>
+      </div>
+      <div className="divide-y divide-[var(--color-app-border-light)]">
+        {clauses.map((clause) => {
+          const framework = LEGAL_FRAMEWORK[clause.number];
+          if (!framework) return null;
+          const isOpen = expandedClause === clause.number;
+          const catColor = CATEGORY_COLORS[clause.category];
+
+          return (
+            <div key={clause.number}>
+              <button
+                onClick={() => setExpandedClause(isOpen ? null : clause.number)}
+                className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-[var(--color-app-surface-alt)]"
+              >
+                <span
+                  className="h-1.5 w-1.5 rounded-full shrink-0"
+                  style={{ backgroundColor: catColor }}
+                />
+                <span className="flex-1 text-xs font-medium text-navy-800">
+                  Art. {clause.number}: {clause.title}
+                </span>
+                <span className="text-[10px] text-navy-400 mr-2">
+                  {framework.instruments.length} instrument{framework.instruments.length !== 1 ? 's' : ''}
+                </span>
+                <ChevronRight className={cn('h-3.5 w-3.5 text-navy-300 transition-transform', isOpen && 'rotate-90')} />
+              </button>
+              {isOpen && (
+                <div className="px-5 pb-3 pt-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400 mb-2">
+                    Grounded in:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {framework.instruments.map((inst, i) => (
+                      <span
+                        key={i}
+                        className="rounded-md border border-diplomatic-blue/15 bg-diplomatic-blue/5 px-2.5 py-1 text-[11px] text-navy-700"
+                      >
+                        <span className="font-semibold text-diplomatic-blue mr-1">[{inst.label}]</span>
+                        {inst.ref}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Compliance Matrix Tab Content
+// ============================================================================
+function ComplianceMatrixTab() {
+  return (
+    <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+      <div className="flex items-center gap-2 mb-1">
+        <Grid3X3 className="h-4 w-4 text-diplomatic-blue" />
+        <h2 className="font-serif text-sm font-semibold text-navy-900">Compliance Matrix</h2>
+        <span className="ml-auto text-[10px] text-navy-400">Parties × Obligations · 0=Non-compliant · 5=Partial · 10=Compliant</span>
+      </div>
+      <p className="text-[11px] text-navy-400 mb-4 ml-6">
+        Diverging scale: red (non-compliant) → slate (partial) → green (compliant)
+      </p>
+      <HeatmapGrid
+        rows={HEATMAP_ROWS}
+        cols={HEATMAP_COLS}
+        data={HEATMAP_DATA}
+        colorScale="diverging"
+        showValues
+      />
+    </div>
+  );
+}
+
+// ============================================================================
+// Compliance Overview Tab Content (ComplianceTracker)
+// ============================================================================
+function ComplianceOverviewTab({ clauses, overall }: { clauses: Clause[]; overall: number }) {
+  const trackerItems = clauses.map((clause) => ({
+    id: `clause-${clause.number}`,
+    label: `Art. ${clause.number}: ${clause.title}`,
+    status: clause.complianceStatus,
+    category: CATEGORY_LABELS[clause.category],
+    notes: clause.ambiguityFlags.length > 0
+      ? `Score: ${clause.complianceScore}% · Flags: ${clause.ambiguityFlags.join('; ')}`
+      : `Compliance score: ${clause.complianceScore}%`,
+  }));
+
+  return (
+    <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <ListChecks className="h-4 w-4 text-diplomatic-blue" />
+        <h2 className="font-serif text-sm font-semibold text-navy-900">Compliance Overview</h2>
+      </div>
+
+      {/* Overall percentage callout */}
+      <div className="mb-5 rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-4 py-3 flex items-center gap-4">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Overall Compliance</p>
+          <p
+            className="font-mono text-3xl font-bold"
+            style={{ color: overall >= 70 ? '#10B981' : overall >= 50 ? '#F59E0B' : '#EF4444' }}
+          >
+            {overall}%
+          </p>
+        </div>
+        <div className="flex-1 text-xs text-navy-500 leading-relaxed">
+          Across {clauses.length} articles · Grouped by IHL category ·
+          {' '}{clauses.filter(c => c.complianceStatus === 'compliant').length} fully compliant,
+          {' '}{clauses.filter(c => c.complianceStatus === 'partial').length} partial,
+          {' '}{clauses.filter(c => c.complianceStatus === 'non-compliant').length} non-compliant,
+          {' '}{clauses.filter(c => c.complianceStatus === 'pending').length} pending
+        </div>
+      </div>
+
+      <ComplianceTracker
+        items={trackerItems}
+        groupByCategory
+      />
+    </div>
+  );
+}
+
+// ============================================================================
+// Main Demo component
+// ============================================================================
 function DemoTreatyAnalyzerPage({ situationName }: { situationName?: string }) {
 
   const [selectedAgreementId, setSelectedAgreementId] = useState<string>(
     DEMO_AGREEMENTS[0].id
   );
   const [expandedClause, setExpandedClause] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'clauses' | 'compliance' | 'matrix' | 'legal'>('clauses');
 
   const selectedAgreement = DEMO_AGREEMENTS.find(
     (a) => a.id === selectedAgreementId
@@ -143,6 +460,13 @@ function DemoTreatyAnalyzerPage({ situationName }: { situationName?: string }) {
     () => clauses.filter((c) => c.ambiguityFlags.length > 0),
     [clauses]
   );
+
+  const TABS = [
+    { id: 'clauses' as const, label: 'Clause Analysis', icon: FileCheck },
+    { id: 'compliance' as const, label: 'Compliance Overview', icon: ListChecks },
+    { id: 'matrix' as const, label: 'Compliance Matrix', icon: Grid3X3 },
+    { id: 'legal' as const, label: 'Legal Framework', icon: BookOpen },
+  ];
 
   return (
     <div className="space-y-6">
@@ -225,8 +549,36 @@ function DemoTreatyAnalyzerPage({ situationName }: { situationName?: string }) {
         </div>
       )}
 
-      {/* Main two-panel layout */}
+      {/* Implementation Tracker Summary — shown when data available */}
       {clauses.length > 0 && summary && stats && (
+        <ImplementationTrackerBar clauses={clauses} />
+      )}
+
+      {/* Tab Navigation */}
+      {clauses.length > 0 && summary && stats && (
+        <div className="rounded-xl border border-[var(--color-app-border)] bg-white">
+          <div className="flex overflow-x-auto border-b border-[var(--color-app-border)]">
+            {TABS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={cn(
+                  'flex items-center gap-2 px-5 py-3 text-xs font-medium whitespace-nowrap transition-colors border-b-2 -mb-px',
+                  activeTab === id
+                    ? 'border-diplomatic-blue text-diplomatic-blue bg-diplomatic-blue/4'
+                    : 'border-transparent text-navy-500 hover:text-navy-700 hover:bg-[var(--color-app-surface-alt)]'
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB: Clause-by-Clause Analysis (original layout) */}
+      {activeTab === 'clauses' && clauses.length > 0 && summary && stats && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
           {/* Left Panel: Agreement Text */}
           <div className="lg:col-span-3">
@@ -357,6 +709,26 @@ function DemoTreatyAnalyzerPage({ situationName }: { situationName?: string }) {
                                 </div>
                               </div>
                             </div>
+
+                            {/* Legal Framework inline */}
+                            {LEGAL_FRAMEWORK[clause.number] && (
+                              <div className="rounded-lg border border-diplomatic-blue/15 bg-diplomatic-blue/4 p-3">
+                                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-diplomatic-blue">
+                                  Legal Basis
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {LEGAL_FRAMEWORK[clause.number].instruments.map((inst, i) => (
+                                    <span
+                                      key={i}
+                                      className="rounded-md border border-diplomatic-blue/20 bg-white px-2 py-0.5 text-[10px] text-navy-700"
+                                    >
+                                      <span className="font-semibold text-diplomatic-blue mr-1">[{inst.label}]</span>
+                                      {inst.ref}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
 
                             {hasAmbiguity && (
                               <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
@@ -578,6 +950,21 @@ function DemoTreatyAnalyzerPage({ situationName }: { situationName?: string }) {
         </div>
       )}
 
+      {/* TAB: Compliance Overview (ComplianceTracker) */}
+      {activeTab === 'compliance' && clauses.length > 0 && summary && (
+        <ComplianceOverviewTab clauses={clauses} overall={summary.overall} />
+      )}
+
+      {/* TAB: Compliance Matrix (HeatmapGrid) */}
+      {activeTab === 'matrix' && clauses.length > 0 && (
+        <ComplianceMatrixTab />
+      )}
+
+      {/* TAB: Legal Framework */}
+      {activeTab === 'legal' && clauses.length > 0 && (
+        <LegalFrameworkSection clauses={clauses} />
+      )}
+
       {/* Footer */}
       <div className="flex items-center justify-between rounded-xl border border-[var(--color-app-border)] bg-white px-5 py-3">
         <div className="flex items-center gap-3">
@@ -599,7 +986,7 @@ function DemoTreatyAnalyzerPage({ situationName }: { situationName?: string }) {
 
 export default function TreatyAnalyzerPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
-  
+
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoTreatyAnalyzerPage />;
 

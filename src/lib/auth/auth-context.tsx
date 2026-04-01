@@ -106,21 +106,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [credits, setCredits] = useState(0);
   const [isDemoMode, setIsDemoMode] = useState(false);
 
-  // Sync auth token to a cookie so the Next.js middleware can check it
-  const syncTokenCookie = useCallback(async (fbUser: FirebaseUser | null) => {
+  // Sync auth token to a cookie so the Next.js middleware can check it.
+  // Returns true if the cookie was successfully set, false otherwise.
+  const syncTokenCookie = useCallback(async (fbUser: FirebaseUser | null): Promise<boolean> => {
     try {
       if (fbUser) {
-        const token = await fbUser.getIdToken();
-        await fetch('/api/auth/session', {
+        let token = await fbUser.getIdToken();
+        let res = await fetch('/api/auth/session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token }),
         });
+
+        // If token verification failed (e.g. slightly stale token), retry once with a force-refreshed token
+        if (!res.ok && res.status === 401) {
+          console.warn('[auth] Cookie sync: token rejected (401), retrying with fresh token...');
+          token = await fbUser.getIdToken(true);
+          res = await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token }),
+          });
+        }
+
+        if (!res.ok) {
+          console.error('[auth] Cookie sync failed with status:', res.status);
+          return false;
+        }
+        return true;
       } else if (!isDemoMode) {
         await fetch('/api/auth/session', { method: 'DELETE' });
       }
+      return true;
     } catch (err) {
       console.error('[auth] Cookie sync failed:', err);
+      return false;
     }
   }, [isDemoMode]);
 
@@ -273,8 +293,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
       // Sync cookie before returning so middleware sees the token when router.push fires.
+      const synced = await syncTokenCookie(cred.user);
+      if (!synced) {
+        setLoading(false);
+        return { success: false, error: 'Session initialization failed. Please try again.' };
+      }
       // onAuthStateChanged will call setLoading(false) once it finishes.
-      await syncTokenCookie(cred.user);
       return { success: true };
     } catch (err: unknown) {
       setLoading(false); // Reset on error — onAuthStateChanged won't fire
@@ -298,7 +322,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: name });
-      await syncTokenCookie(cred.user);
+      const synced = await syncTokenCookie(cred.user);
+      if (!synced) {
+        setLoading(false);
+        return { success: false, error: 'Session initialization failed. Please try again.' };
+      }
       return { success: true };
     } catch (err: unknown) {
       setLoading(false);

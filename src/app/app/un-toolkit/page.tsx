@@ -20,6 +20,17 @@ import {
   Check,
   ChevronRight,
   Gauge,
+  ChevronDown,
+  Info,
+  LayoutGrid,
+  ClipboardList,
+  FileText,
+  Newspaper,
+  ScrollText,
+  Globe,
+  CheckCircle2,
+  XCircle,
+  ListChecks,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -197,6 +208,42 @@ const TERMINOLOGY_DB: Record<
     suggestion: "children associated with armed forces and groups",
     note: "UN standard terminology (Paris Principles)",
     severity: "warning",
+  },
+  /* --- Phase 6 additions --- */
+  war: {
+    suggestion: "armed conflict",
+    note: "UN avoids the term 'war' for legal and political reasons; 'armed conflict' is the standard under IHL",
+    severity: "warning",
+  },
+  rebel: {
+    suggestion: "non-State armed group",
+    note: "Neutral IHL-aligned terminology",
+    severity: "warning",
+  },
+  terrorism: {
+    suggestion: "check if SC-designated before using",
+    note: "Highly politicized — confirm Security Council designation before applying",
+    severity: "warning",
+  },
+  "refugee camp": {
+    suggestion: "refugee settlement",
+    note: "Many UNHCR and host-government guidelines prefer 'settlement' as less militarized",
+    severity: "suggestion",
+  },
+  "illegal migrants": {
+    suggestion: "persons in an irregular migration situation",
+    note: "People are not illegal; their status may be irregular",
+    severity: "warning",
+  },
+  "illegal immigrant": {
+    suggestion: "person in an irregular migration situation",
+    note: "People are not illegal; their status may be irregular",
+    severity: "warning",
+  },
+  "conflict zone": {
+    suggestion: "conflict-affected area",
+    note: "More precise and less sensationalist than 'zone'",
+    severity: "suggestion",
   },
 };
 
@@ -606,6 +653,425 @@ function getDiplomaticTransform(
 }
 
 /* ====================================================================
+   TEMPLATE LIBRARY DATA
+   ==================================================================== */
+
+interface TemplateSection {
+  heading: string;
+  placeholder: string;
+}
+
+interface DraftTemplate {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  targetTab: string;
+  sections: TemplateSection[];
+  starterText: string;
+}
+
+const DRAFT_TEMPLATES: DraftTemplate[] = [
+  {
+    id: "options-paper",
+    name: "Options Paper",
+    description: "Issue analysis with multiple courses of action and recommendation",
+    icon: <ClipboardList className="h-5 w-5 text-gold-500" />,
+    targetTab: "formatter",
+    sections: [
+      { heading: "I. Issue", placeholder: "Concise statement of the policy question or problem requiring decision." },
+      { heading: "II. Options", placeholder: "Option A — [Name]: Description, pros, cons.\nOption B — [Name]: Description, pros, cons.\nOption C — [Name]: Description, pros, cons." },
+      { heading: "III. Analysis", placeholder: "Comparative assessment of options against agreed criteria (feasibility, cost, political acceptability, time horizon)." },
+      { heading: "IV. Recommendation", placeholder: "Recommended course of action with rationale and proposed next steps." },
+    ],
+    starterText: "I. Issue\n[State the policy question requiring a decision.]\n\nII. Options\nOption A — [Name]: [Description. Pros: … Cons: …]\nOption B — [Name]: [Description. Pros: … Cons: …]\nOption C — Status quo: [Description. Pros: … Cons: …]\n\nIII. Analysis\n[Comparative assessment against agreed criteria.]\n\nIV. Recommendation\n[Recommended course of action with rationale.]",
+  },
+  {
+    id: "press-points",
+    name: "Points for the Press",
+    description: "Press briefing note with header, key messages, and Q&A guidance",
+    icon: <Newspaper className="h-5 w-5 text-teal" />,
+    targetTab: "talking-points",
+    sections: [
+      { heading: "Header", placeholder: "Subject, Date, Spokesperson name/role." },
+      { heading: "Key Messages", placeholder: "3-5 core messages the spokesperson should convey." },
+      { heading: "Q&A", placeholder: "Anticipated questions and approved responses." },
+    ],
+    starterText: "Press Briefing — [Date]\n\nSubject: [Briefing subject]\n\nKey Messages:\n1. [First key message]\n2. [Second key message]\n3. [Third key message]\n\nAnticipated Q&A:\nQ: [Expected question]\nA: [Approved response]",
+  },
+  {
+    id: "sg-aide-memoire",
+    name: "SG Aide-Mémoire",
+    description: "Meeting preparation note for the Secretary-General",
+    icon: <ScrollText className="h-5 w-5 text-purple-400" />,
+    targetTab: "formatter",
+    sections: [
+      { heading: "Meeting Objectives", placeholder: "What the SG should achieve in this meeting (1-3 objectives)." },
+      { heading: "Key Points", placeholder: "3-5 substantive points the SG should raise, with supporting data." },
+      { heading: "Follow-up Actions", placeholder: "Concrete next steps and responsible offices after the meeting." },
+    ],
+    starterText: "AIDE-MÉMOIRE\n\nMeeting with: [Name, Title, Organization]\nDate/Time: [Date]\nLocation: [Location]\n\nMeeting Objectives:\n1. [Objective]\n2. [Objective]\n\nKey Points to Raise:\n1. [Key point with supporting evidence]\n2. [Key point with supporting evidence]\n3. [Key point with supporting evidence]\n\nFollow-up Actions:\n- [Action] — Responsible office: [Office] — Deadline: [Date]",
+  },
+  {
+    id: "sc-concept-note",
+    name: "Security Council Concept Note",
+    description: "Concept note for an informal Security Council session or Arria-formula meeting",
+    icon: <Globe className="h-5 w-5 text-sage" />,
+    targetTab: "formatter",
+    sections: [
+      { heading: "Background", placeholder: "Context and mandate basis for the meeting." },
+      { heading: "Proposed Agenda", placeholder: "Questions for discussion; proposed briefers." },
+      { heading: "Desired Outcomes", placeholder: "What the convening delegation hopes to achieve from the meeting." },
+    ],
+    starterText: "CONCEPT NOTE\n\nInformal Meeting of the Security Council\n[Date]\n\nBackground:\n[Context and mandate basis for the meeting.]\n\nProposed Agenda:\n1. [Agenda item / question for discussion]\n2. [Agenda item / question for discussion]\n\nProposed Briefers:\n- [Name, Title]\n\nDesired Outcomes:\n[What the convening delegation hopes to achieve.]",
+  },
+];
+
+/* ====================================================================
+   RESOLUTION QUALITY CHECK DATA
+   ==================================================================== */
+
+const PREAMBULAR_VERBS = [
+  "Recalling", "Reaffirming", "Noting", "Acknowledging", "Bearing in mind",
+  "Convinced", "Determined", "Deeply concerned", "Expressing", "Gravely",
+  "Having considered", "Mindful", "Recognizing", "Reiterating", "Taking note",
+  "Welcoming",
+];
+const OPERATIVE_VERBS = [
+  "Decides", "Requests", "Urges", "Calls upon", "Demands", "Encourages",
+  "Authorizes", "Invites", "Welcomes", "Stresses", "Affirms", "Condemns",
+  "Deplores", "Notes", "Expresses",
+];
+
+interface QualityCheckItem {
+  id: string;
+  label: string;
+  pass: boolean;
+  detail?: string;
+}
+
+function runResolutionQualityCheck(text: string): QualityCheckItem[] {
+  const upper = text.trimStart();
+  const hasPreambular = PREAMBULAR_VERBS.some((v) =>
+    upper.includes(v)
+  );
+  const hasOperative = OPERATIVE_VERBS.some((v) =>
+    upper.includes(v)
+  );
+  const hasDate = /\b(20\d{2}|January|February|March|April|May|June|July|August|September|October|November|December)\b/.test(text);
+  const hasReaffirmation = /reaffirm/i.test(text);
+  const hasResolutionRef = /resolution\s+\d+/i.test(text);
+  const endsWithSemicolon = /;\s*$/.test(text.trim()) || /;\s*\n\s*$/.test(text);
+
+  return [
+    {
+      id: "preambular",
+      label: "Correct preambular verb form",
+      pass: hasPreambular,
+      detail: hasPreambular
+        ? `Found: ${PREAMBULAR_VERBS.filter((v) => upper.includes(v)).slice(0, 3).join(", ")}`
+        : "Expected verbs like Recalling, Reaffirming, Bearing in mind, etc.",
+    },
+    {
+      id: "operative",
+      label: "Correct operative verb form",
+      pass: hasOperative,
+      detail: hasOperative
+        ? `Found: ${OPERATIVE_VERBS.filter((v) => upper.includes(v)).slice(0, 3).join(", ")}`
+        : "Expected verbs like Decides, Requests, Urges, Calls upon, etc.",
+    },
+    {
+      id: "date",
+      label: "Date reference present",
+      pass: hasDate,
+      detail: hasDate ? "Date or year reference detected." : "No date reference found. Resolutions typically reference relevant dates.",
+    },
+    {
+      id: "reaffirmation",
+      label: "Reaffirmation clause present",
+      pass: hasReaffirmation,
+      detail: hasReaffirmation
+        ? "Reaffirming clause detected."
+        : "Consider adding a Reaffirming clause to anchor the resolution to prior commitments.",
+    },
+    {
+      id: "resolution-ref",
+      label: "Prior resolution reference",
+      pass: hasResolutionRef,
+      detail: hasResolutionRef
+        ? "Reference to prior resolution detected."
+        : "Consider referencing prior relevant resolutions for continuity.",
+    },
+    {
+      id: "punctuation",
+      label: "Operative paragraph ends with semicolon",
+      pass: endsWithSemicolon,
+      detail: endsWithSemicolon
+        ? "Paragraph ends with semicolon (correct for operative paragraphs)."
+        : "Operative paragraphs typically end with a semicolon; final paragraph ends with a period.",
+    },
+  ];
+}
+
+/* ====================================================================
+   METHODOLOGY PANEL (custom collapsible — no Radix dependency)
+   ==================================================================== */
+
+function MethodologyPanel() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="rounded-xl border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] overflow-hidden">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-navy-800/30 transition-colors cursor-pointer"
+        aria-expanded={open}
+      >
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-gold-500/10 p-2 border border-gold-500/20">
+            <Info className="h-4 w-4 text-gold-500" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-navy-200">UN Diplomatic Writing Conventions</p>
+            <p className="text-xs text-navy-500">Editorial standards, language conventions, and hedging requirements</p>
+          </div>
+        </div>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 text-navy-500 transition-transform duration-200",
+            open && "rotate-180"
+          )}
+        />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-5 pt-1 space-y-4 border-t border-[var(--color-app-border)]">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-gold-400 uppercase tracking-wider">Editorial Standards</h4>
+                  <p className="text-xs text-navy-400 leading-relaxed">
+                    UN editorial style follows the <span className="text-navy-300 font-medium">United Nations Editorial Manual</span>, which governs capitalization, abbreviations, punctuation, and document structure. Titles of UN bodies are capitalized (Security Council, General Assembly). Member State names follow the official UN protocol list. Numbers below ten are spelled out; above ten use numerals, except in technical contexts.
+                  </p>
+                  <p className="text-[11px] text-navy-600">
+                    Reference: UN Editorial Manual (ST/DCS/4/Rev.1)
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-teal uppercase tracking-wider">Language Conventions</h4>
+                  <p className="text-xs text-navy-400 leading-relaxed">
+                    UN documents use formal, precise language and avoid colloquialisms, contractions, and politically loaded terms. The six official languages are Arabic, Chinese, English, French, Russian, and Spanish. English UN documents use British spelling conventions (e.g., "recognise," "programme"). Gender-inclusive language is required per the <span className="text-navy-300 font-medium">UNDP Style Guide</span> — use "chairperson" not "chairman," "humankind" not "mankind," and singular "they" where appropriate.
+                  </p>
+                  <p className="text-[11px] text-navy-600">
+                    Reference: UNDP Style Guide (2020 edition)
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-sage uppercase tracking-wider">Hedging Requirements</h4>
+                  <p className="text-xs text-navy-400 leading-relaxed">
+                    Diplomatic language requires calibrated hedging to preserve Member State consensus. Accusations must be attributed ("reports allege," "allegedly," "according to OHCHR") rather than stated as established facts without corroboration. Causality is expressed cautiously ("may constitute," "could amount to," "warrants further investigation"). Preambular paragraphs use present participles (Recalling, Noting, Reaffirming); operative paragraphs use third-person verbs in the present tense (Decides, Requests, Urges). Strength escalates from Encourages → Calls upon → Urges → Demands → Decides.
+                  </p>
+                  <p className="text-[11px] text-navy-600">
+                    Reference: UNSC Resolution Drafting Practice (Repertoire of the Security Council)
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[var(--color-app-border)]">
+                <span className="text-[11px] text-navy-600">Key references:</span>
+                <span className="text-[11px] text-navy-500 bg-navy-800/50 rounded px-2 py-0.5 border border-navy-700">UN Editorial Manual (ST/DCS/4/Rev.1)</span>
+                <span className="text-[11px] text-navy-500 bg-navy-800/50 rounded px-2 py-0.5 border border-navy-700">UNDP Style Guide (2020)</span>
+                <span className="text-[11px] text-navy-500 bg-navy-800/50 rounded px-2 py-0.5 border border-navy-700">Repertoire of the SC</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ====================================================================
+   TEMPLATE LIBRARY TAB
+   ==================================================================== */
+
+interface TemplateLibraryProps {
+  onLoadTemplate: (tab: string, text: string) => void;
+}
+
+function TemplateLibrary({ onLoadTemplate }: TemplateLibraryProps) {
+  const [loadedId, setLoadedId] = useState<string | null>(null);
+
+  function handleLoad(template: DraftTemplate) {
+    setLoadedId(template.id);
+    onLoadTemplate(template.targetTab, template.starterText);
+    setTimeout(() => setLoadedId(null), 2000);
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <p className="text-sm text-navy-400">
+          Select a template to load it into the relevant drafting tool. Templates follow official UN document formats.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {DRAFT_TEMPLATES.map((tpl) => (
+          <motion.div
+            key={tpl.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.01 }}
+            transition={{ duration: 0.15 }}
+          >
+            <Card className="h-full border-[var(--color-app-border)] hover:border-navy-500 transition-colors">
+              <CardContent className="p-5 flex flex-col gap-3 h-full">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-navy-800 p-2 border border-navy-700 shrink-0">
+                      {tpl.icon}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-navy-200">{tpl.name}</p>
+                      <p className="text-xs text-navy-500 mt-0.5">{tpl.description}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-1 space-y-1.5">
+                  {tpl.sections.map((sec, i) => (
+                    <div key={i} className="flex items-start gap-2 text-xs text-navy-500">
+                      <span className="shrink-0 mt-0.5 text-navy-700 font-mono">{i + 1}.</span>
+                      <span className="font-medium text-navy-400">{sec.heading}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-[var(--color-app-border)]">
+                  <Badge variant="secondary" className="text-[10px] capitalize">
+                    → {tpl.targetTab === "formatter" ? "Doc Formatter" : tpl.targetTab === "talking-points" ? "Talking Points" : tpl.targetTab}
+                  </Badge>
+                  <Button
+                    size="sm"
+                    variant={loadedId === tpl.id ? "outline" : "default"}
+                    onClick={() => handleLoad(tpl)}
+                    className="gap-1.5 text-xs h-7"
+                  >
+                    {loadedId === tpl.id ? (
+                      <>
+                        <Check className="h-3 w-3 text-sage" />
+                        Loaded
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="h-3 w-3" />
+                        Load Template
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      <Card className="border-[var(--color-app-border)]/50 bg-navy-900/30">
+        <CardContent className="p-4">
+          <p className="text-xs text-navy-500">
+            <span className="font-medium text-navy-400">How templates work:</span> Click "Load Template" to pre-fill the corresponding drafting tool tab with the template structure. Switch to the indicated tab to edit and customize the pre-loaded content.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/* ====================================================================
+   RESOLUTION QUALITY CHECKER (added to ResolutionDrafter)
+   ==================================================================== */
+
+function ResolutionQualityPanel({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const [items, setItems] = useState<QualityCheckItem[]>([]);
+
+  function runCheck() {
+    setItems(runResolutionQualityCheck(text));
+    setChecked(true);
+    setOpen(true);
+  }
+
+  const passCount = items.filter((i) => i.pass).length;
+
+  return (
+    <div className="space-y-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={runCheck}
+        className="gap-2 text-xs"
+        disabled={!text.trim()}
+      >
+        <ListChecks className="h-3.5 w-3.5" />
+        Quality Check
+      </Button>
+
+      <AnimatePresence>
+        {checked && open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            <div className="rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-navy-300 flex items-center gap-2">
+                  <ListChecks className="h-3.5 w-3.5 text-gold-500" />
+                  Resolution Quality Check
+                </p>
+                <Badge
+                  variant={passCount === items.length ? "sage" : passCount >= items.length * 0.6 ? "gold" : "crimson"}
+                  className="text-[10px]"
+                >
+                  {passCount}/{items.length} passed
+                </Badge>
+              </div>
+              <div className="space-y-2">
+                {items.map((item) => (
+                  <div key={item.id} className="flex items-start gap-2.5 text-xs">
+                    {item.pass ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-sage shrink-0 mt-0.5" />
+                    ) : (
+                      <XCircle className="h-3.5 w-3.5 text-crimson shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                      <span className={cn("font-medium", item.pass ? "text-navy-300" : "text-navy-400")}>
+                        {item.label}
+                      </span>
+                      {item.detail && (
+                        <p className="text-navy-500 mt-0.5">{item.detail}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ====================================================================
    TYPING EFFECT HOOK
    ==================================================================== */
 function useTypingEffect(text: string, speed: number = 12) {
@@ -643,7 +1109,7 @@ interface TermMatch {
   index: number;
   suggestion: string;
   note: string;
-  severity: "warning" | "suggestion";
+  severity: "error" | "warning" | "suggestion";
 }
 
 function TerminologyChecker() {
@@ -671,7 +1137,7 @@ function TerminologyChecker() {
         index: idx,
         suggestion: issue.suggestion,
         note: issue.reason,
-        severity: issue.severity === 'error' ? 'warning' : 'suggestion',
+        severity: issue.severity === 'error' ? 'error' : issue.severity === 'warning' ? 'warning' : 'suggestion',
       }));
       setResults(matches);
       setComplianceScore(data.complianceScore ?? null);
@@ -685,7 +1151,13 @@ function TerminologyChecker() {
         while (true) {
           const idx = lower.indexOf(term, searchFrom);
           if (idx === -1) break;
-          matches.push({ term: inputText.slice(idx, idx + term.length), index: idx, suggestion: data.suggestion, note: data.note, severity: data.severity });
+          matches.push({
+            term: inputText.slice(idx, idx + term.length),
+            index: idx,
+            suggestion: data.suggestion,
+            note: data.note,
+            severity: data.severity === "warning" ? "error" : "suggestion",
+          });
           searchFrom = idx + term.length;
         }
       }
@@ -748,25 +1220,29 @@ function TerminologyChecker() {
             <div className="flex items-center gap-3 rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-4 py-3">
               {results.length === 0 ? (
                 <>
-                  <Check className="h-5 w-5 text-sage" />
+                  <CheckCircle2 className="h-5 w-5 text-sage shrink-0" />
                   <span className="text-sm text-sage font-medium">
-                    No terminology issues found. Your text follows UN
-                    standards.
+                    No terminology issues found — text follows UN standards.
                   </span>
+                  <Badge variant="sage" className="ml-auto text-xs gap-1">
+                    <Check className="h-3 w-3" />
+                    Compliant
+                  </Badge>
                 </>
               ) : (
                 <>
-                  <AlertTriangle className="h-5 w-5 text-gold-500" />
+                  <AlertTriangle className="h-5 w-5 text-gold-500 shrink-0" />
                   <span className="text-sm text-navy-800">
                     Found{" "}
                     <span className="font-semibold text-gold-400">
                       {results.length}
                     </span>{" "}
-                    terminology {results.length === 1 ? "issue" : "issues"} (
-                    {results.filter((r) => r.severity === "warning").length}{" "}
-                    warnings,{" "}
-                    {results.filter((r) => r.severity === "suggestion").length}{" "}
-                    suggestions)
+                    {results.length === 1 ? "issue" : "issues"}{" "}
+                    <span className="text-navy-500 text-xs">
+                      ({results.filter((r) => r.severity === "error").length} errors &middot;{" "}
+                      {results.filter((r) => r.severity === "warning").length} warnings &middot;{" "}
+                      {results.filter((r) => r.severity === "suggestion").length} info)
+                    </span>
                   </span>
                   {complianceScore !== null && (
                     <span className="ml-auto text-xs font-semibold" style={{ color: complianceScore >= 80 ? '#5B8C5A' : complianceScore >= 50 ? '#C8961E' : '#A63D40' }}>
@@ -797,16 +1273,19 @@ function TerminologyChecker() {
                         {/* Severity badge */}
                         <Badge
                           variant={
+                            match.severity === "error" ? "crimson" :
                             match.severity === "warning" ? "gold" : "teal"
                           }
                           className="shrink-0 mt-0.5"
                         >
-                          {match.severity === "warning" ? (
+                          {match.severity === "error" ? (
+                            <XCircle className="h-3 w-3 mr-1" />
+                          ) : match.severity === "warning" ? (
                             <AlertTriangle className="h-3 w-3 mr-1" />
                           ) : (
                             <Lightbulb className="h-3 w-3 mr-1" />
                           )}
-                          {match.severity}
+                          {match.severity === "error" ? "Error" : match.severity === "warning" ? "Warning" : "Info"}
                         </Badge>
 
                         <div className="flex-1 min-w-0 space-y-2">
@@ -1040,6 +1519,11 @@ function ResolutionDrafter() {
                     )}
                   </p>
                 </div>
+                {!isGenerating && generatedText && (
+                  <div className="pt-2">
+                    <ResolutionQualityPanel text={generatedText} />
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -1052,11 +1536,23 @@ function ResolutionDrafter() {
 /* ====================================================================
    TAB 3: TALKING POINTS GENERATOR
    ==================================================================== */
-function TalkingPointsGenerator() {
+interface TalkingPointsGeneratorProps {
+  preloadedText?: string | null;
+  onPreloadConsumed?: () => void;
+}
+
+function TalkingPointsGenerator({ preloadedText, onPreloadConsumed }: TalkingPointsGeneratorProps) {
   const [situation, setSituation] = useState("");
   const [audience, setAudience] = useState("");
   const [keyMessages, setKeyMessages] = useState("");
   const [sensitivities, setSensitivities] = useState("");
+
+  useEffect(() => {
+    if (preloadedText) {
+      setSituation(preloadedText);
+      onPreloadConsumed?.();
+    }
+  }, [preloadedText, onPreloadConsumed]);
   const [generated, setGenerated] = useState(false);
   const [revealedSections, setRevealedSections] = useState(0);
 
@@ -1289,10 +1785,22 @@ function TalkingPointsGenerator() {
 /* ====================================================================
    TAB 4: DOCUMENT FORMATTER
    ==================================================================== */
-function DocumentFormatter() {
+interface DocumentFormatterProps {
+  preloadedText?: string | null;
+  onPreloadConsumed?: () => void;
+}
+
+function DocumentFormatter({ preloadedText, onPreloadConsumed }: DocumentFormatterProps) {
   const [format, setFormat] = useState("sg-report");
   const [inputText, setInputText] = useState("");
   const [formattedOutput, setFormattedOutput] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (preloadedText) {
+      setInputText(preloadedText);
+      onPreloadConsumed?.();
+    }
+  }, [preloadedText, onPreloadConsumed]);
 
   const handleFormat = () => {
     const structure = DOC_STRUCTURES[format];
@@ -1423,11 +1931,31 @@ function DocumentFormatter() {
 /* ====================================================================
    TAB 5: DIPLOMATIC LANGUAGE EDITOR
    ==================================================================== */
+
+function computeDiplomaticScore(input: string, transformed: string, diff: DiffSegment[]): number {
+  if (!transformed) return 0;
+  // Score based on: reduction in terminology violations, diff changes, length
+  const inputViolations = Object.keys(TERMINOLOGY_DB).filter((term) =>
+    input.toLowerCase().includes(term)
+  ).length;
+  const outputViolations = Object.keys(TERMINOLOGY_DB).filter((term) =>
+    transformed.toLowerCase().includes(term)
+  ).length;
+  const violationReduction = Math.max(0, inputViolations - outputViolations);
+  const diffChanges = diff.filter((s) => s.type !== "unchanged").length;
+  // Base: 5. +1 per violation removed (max +3). +1 per diff pair (max +2).
+  const base = 5;
+  const violationBonus = Math.min(3, violationReduction);
+  const diffBonus = Math.min(2, Math.floor(diffChanges / 2));
+  return Math.min(10, base + violationBonus + diffBonus);
+}
+
 function DiplomaticEditor() {
   const [inputText, setInputText] = useState("");
   const [mode, setMode] = useState("diplomatic");
   const [result, setResult] = useState<TransformResult | null>(null);
   const [isTransforming, setIsTransforming] = useState(false);
+  const [diplomaticScore, setDiplomaticScore] = useState<number | null>(null);
 
   const modes = [
     {
@@ -1448,6 +1976,7 @@ function DiplomaticEditor() {
     if (!inputText.trim()) return;
     setIsTransforming(true);
     setResult(null);
+    setDiplomaticScore(null);
     const modeInstructions: Record<string, string> = {
       diplomatic: 'Transform this text to be more diplomatically phrased. Soften direct accusations, use passive voice where appropriate, employ cautious language, and ensure it meets UN diplomatic standards.',
       direct: 'Transform this text to be more direct and clear. Remove diplomatic hedging, state facts plainly, and be specific about responsibilities and deadlines.',
@@ -1480,8 +2009,11 @@ function DiplomaticEditor() {
         }
         setResult({ transformed, diff: [] });
       }
+      setDiplomaticScore(computeDiplomaticScore(inputText, transformed, []));
     } catch {
-      setResult(getDiplomaticTransform(inputText, mode));
+      const fallback = getDiplomaticTransform(inputText, mode);
+      setResult(fallback);
+      setDiplomaticScore(computeDiplomaticScore(inputText, fallback.transformed, fallback.diff));
     } finally {
       setIsTransforming(false);
     }
@@ -1557,15 +2089,49 @@ function DiplomaticEditor() {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className={result.diff.length > 0 ? "grid grid-cols-1 lg:grid-cols-2 gap-4" : ""}
+            className="space-y-4"
           >
+            {/* Diplomatic Score */}
+            {diplomaticScore !== null && !isTransforming && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center gap-3 rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-4 py-3"
+              >
+                <Gauge className="h-4 w-4 text-gold-500 shrink-0" />
+                <span className="text-sm text-navy-400">Diplomatic Score</span>
+                <div className="flex items-center gap-1 ml-1">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "h-2 w-4 rounded-sm transition-colors",
+                        i < diplomaticScore
+                          ? diplomaticScore >= 8 ? "bg-sage" : diplomaticScore >= 5 ? "bg-gold-500" : "bg-crimson"
+                          : "bg-navy-700"
+                      )}
+                    />
+                  ))}
+                </div>
+                <span className={cn(
+                  "text-sm font-bold ml-1",
+                  diplomaticScore >= 8 ? "text-sage" : diplomaticScore >= 5 ? "text-gold-400" : "text-crimson"
+                )}>
+                  {diplomaticScore}/10
+                </span>
+                <span className="text-xs text-navy-500 ml-1">
+                  {diplomaticScore >= 8 ? "Excellent" : diplomaticScore >= 6 ? "Good" : diplomaticScore >= 4 ? "Fair" : "Needs work"}
+                </span>
+              </motion.div>
+            )}
+
             {result.diff.length > 0 ? (
-              <>
-                {/* Original (with diff markings) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Before — Original (with diff markings) */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm text-navy-600">
-                      Original (with changes)
+                      Before (original)
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -1579,12 +2145,12 @@ function DiplomaticEditor() {
                   </CardContent>
                 </Card>
 
-                {/* Transformed */}
+                {/* After — Transformed (amber highlights on changed phrases) */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm text-gold-400 flex items-center gap-2">
                       <Sparkles className="h-4 w-4" />
-                      Transformed
+                      After (transformed)
                       <Badge variant="gold" className="ml-2 capitalize">
                         {modes.find((m) => m.value === mode)?.label}
                       </Badge>
@@ -1593,14 +2159,16 @@ function DiplomaticEditor() {
                   <CardContent>
                     <div className="rounded-md bg-[var(--color-app-surface-alt)] border border-[var(--color-app-border)] p-4 text-sm leading-relaxed">
                       {result.diff.map((seg, i) => {
-                        if (seg.type === "added") return <span key={i} className="bg-sage/20 text-sage">{seg.text}</span>;
+                        if (seg.type === "added") return (
+                          <span key={i} className="bg-amber-500/20 text-amber-300 rounded px-0.5">{seg.text}</span>
+                        );
                         if (seg.type === "removed") return null;
                         return <span key={i} className="text-navy-600">{seg.text}</span>;
                       })}
                     </div>
                   </CardContent>
                 </Card>
-              </>
+              </div>
             ) : (
               <Card>
                 <CardHeader className="pb-2">
@@ -1660,11 +2228,30 @@ const TABS = [
     label: "Diplomatic Editor",
     icon: Languages,
   },
+  {
+    value: "templates",
+    label: "Templates",
+    icon: LayoutGrid,
+  },
 ];
 
 export default function UNToolkitPage() {
+  const { showGuard } = useSituationGuard();
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
+  // Template loading: tab value → pre-filled text
+  const [activeTab, setActiveTab] = useState("terminology");
+  const [preloadedFormatterText, setPreloadedFormatterText] = useState<string | null>(null);
+  const [preloadedTalkingText, setPreloadedTalkingText] = useState<string | null>(null);
+
+  function handleLoadTemplate(targetTab: string, text: string) {
+    if (targetTab === "formatter") {
+      setPreloadedFormatterText(text);
+    } else if (targetTab === "talking-points") {
+      setPreloadedTalkingText(text);
+    }
+    setActiveTab(targetTab);
+  }
+
   if (showGuard) return <NoSituationState />;
   return (
     <div className="space-y-6">
@@ -1673,7 +2260,7 @@ export default function UNToolkitPage() {
         <motion.div
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6"
         >
           <h1 className="text-2xl font-bold text-navy-50 font-serif tracking-wide">
             UN Toolkit
@@ -1684,8 +2271,18 @@ export default function UNToolkitPage() {
           </p>
         </motion.div>
 
+        {/* Methodology Panel — collapsible, collapsed by default */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-6"
+        >
+          <MethodologyPanel />
+        </motion.div>
+
         {/* Tabs */}
-        <Tabs defaultValue="terminology" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="w-full h-auto flex-wrap gap-1 bg-[var(--color-app-surface-alt)] p-1.5 rounded-xl">
             {TABS.map((tab) => (
               <TabsTrigger
@@ -1748,7 +2345,7 @@ export default function UNToolkitPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <TalkingPointsGenerator />
+                <TalkingPointsGenerator preloadedText={preloadedTalkingText} onPreloadConsumed={() => setPreloadedTalkingText(null)} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -1766,7 +2363,7 @@ export default function UNToolkitPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <DocumentFormatter />
+                <DocumentFormatter preloadedText={preloadedFormatterText} onPreloadConsumed={() => setPreloadedFormatterText(null)} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -1780,11 +2377,29 @@ export default function UNToolkitPage() {
                 </CardTitle>
                 <CardDescription>
                   Transform text to adjust diplomatic tone, urgency, and
-                  neutrality with track-changes visualization.
+                  neutrality with track-changes visualization and Diplomatic Score.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <DiplomaticEditor />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="templates">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LayoutGrid className="h-5 w-5 text-gold-500" />
+                  Template Library
+                </CardTitle>
+                <CardDescription>
+                  Standard UN document templates. Click to load into the
+                  relevant drafting tool.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <TemplateLibrary onLoadTemplate={handleLoadTemplate} />
               </CardContent>
             </Card>
           </TabsContent>

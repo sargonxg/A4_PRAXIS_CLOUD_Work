@@ -60,6 +60,49 @@ import { useState, useEffect } from 'react';
 
 const CHANGELOG = [
   {
+    version: 'v5.0',
+    date: '2026.03.31',
+    notes: [
+      '6 new AI tools (22-27): Stakeholder Influence Map, Ceasefire Monitor, Peace Agreement Analyzer, Early Warning Brief, Game Theory Analysis, Protection of Civilians Assessment',
+      'System Prompt v5.0: Chain of Analysis, 5-tier Source Hierarchy, Output Quality Checklist',
+      'Advisory Panel Discussion mode: parallel multi-advisor synthesis',
+      'Context-aware floating PRAXIS with per-page greetings and quick actions',
+      'Chat Interface: Standard/Deep Analysis mode selector, Export Chat button',
+    ],
+  },
+  {
+    version: 'v4.3',
+    date: '2026.03.31',
+    notes: [
+      '10 reusable visualization components: RiskGauge, RadarChart, EscalationLadder, ForceGraph, TimeSeriesChart, HeatmapGrid, TornadoChart, SankeyFlow, ProbabilityTree, ComplianceTracker',
+      'Geospatial Monitor: map-based ACLED event visualization with hotspot clustering',
+      'Dashboard redesigned as command center with KPI cards, risk radar, live AI insights',
+      'Interactive ForceGraph on Stakeholder Map and Conflict Graph pages',
+      'D3 v7 force-directed network with type-colored nodes, zoom, drag, click-to-detail',
+    ],
+  },
+  {
+    version: 'v4.2',
+    date: '2026.03.31',
+    notes: [
+      'Game Theory tool: payoff matrices, Nash equilibria, Prisoner\'s Dilemma / Stag Hunt / Chicken archetypes',
+      'Scenario Planner: 8 sliders, 10 presets, 3 methodology modes (Narrative/Probability Tree/Monte Carlo)',
+      'Negotiation Prep: interactive ZOPA visualizer, BATNA matrix, historical precedents',
+      'Mediation Design: process architecture timeline, CBMs designer, Stedman spoiler analysis',
+    ],
+  },
+  {
+    version: 'v4.0',
+    date: '2026.03.31',
+    notes: [
+      'Full data layer: ACLED, GDELT, ReliefWeb, HDX, WorldBank, UNHCR, UCDP, CrisisGroup, SIPRI — 9 real-time feeds',
+      'INFORM Risk Index: geometric mean (H×V×C)^(1/3) — rigorous multi-dimensional risk scoring',
+      'DBSCAN geospatial clustering, movement detection, geographic spread index',
+      'Tool Registry: single source of truth for 40 tools with frameworks, methodology, citations',
+      '15 fully documented analytical frameworks with academic citations',
+    ],
+  },
+  {
     version: 'v3.10',
     date: '2026.03.30',
     notes: [
@@ -221,7 +264,7 @@ function ChangelogButton() {
         onClick={() => setOpen(true)}
         className="mt-1 w-full text-center text-[9px] text-navy-300 hover:text-navy-500 transition-colors"
       >
-        PRAXIS v3.10 · Build 2026.03.30
+        PRAXIS v5.0 · Build 2026.03.31
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setOpen(false)}>
