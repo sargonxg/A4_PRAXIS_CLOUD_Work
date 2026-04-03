@@ -26,11 +26,22 @@ function LoginForm() {
   // Handles Google redirect return AND already-logged-in users visiting /login.
   // For email/password, handleEmailSubmit sets didNavigate first so this is a no-op.
   useEffect(() => {
-    if (!loading && user && !user.isDemo && !didNavigate.current) {
+    if (loading || didNavigate.current) return;
+
+    // Already logged-in real user → redirect to app
+    if (user && !user.isDemo) {
       didNavigate.current = true;
       router.push(appRedirect);
+      return;
     }
-  }, [user, loading, router, appRedirect]);
+
+    // Already logged-in demo user → redirect to demo
+    if (user && user.isDemo) {
+      didNavigate.current = true;
+      router.push(demoRedirect);
+      return;
+    }
+  }, [user, loading, router, appRedirect, demoRedirect]);
 
   const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>(
     queryMode === 'signup' ? 'signup' : 'signin',
@@ -134,6 +145,16 @@ function LoginForm() {
     await new Promise((r) => setTimeout(r, 100));
     router.push(demoRedirect);
   }
+
+  // Auto-enter demo mode when redirected from middleware with ?mode=demo
+  const demoAutoEntered = useRef(false);
+  useEffect(() => {
+    if (queryMode === 'demo' && !loading && !user && !demoAutoEntered.current) {
+      demoAutoEntered.current = true;
+      handleDemoMode();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryMode, loading, user]);
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-navy-950 px-4">
