@@ -109,6 +109,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [credits, setCredits] = useState(0);
   const [isDemoMode, setIsDemoMode] = useState(false);
 
+  // ---------------------------------------------------------------------------
+  // Restore demo session on mount / page refresh.
+  // The demo cookie survives refreshes but the in-memory state does not.
+  // Check the session endpoint to see if a demo cookie exists and restore it.
+  //
+  // We track completion so onAuthStateChanged knows whether it's safe to
+  // set loading=false. Without this, the Firebase listener can set
+  // loading=false (with user=null) before the demo check resolves,
+  // causing AppShell to briefly redirect to /login.
+  // ---------------------------------------------------------------------------
+  const demoCheckDoneRef = useRef(false);
+  const firebaseAuthDoneRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/auth/session')
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data?.user?.isDemo) {
+          setUser(DEMO_USER);
+          setCredits(999);
+          setIsDemoMode(true);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (cancelled) return;
+        demoCheckDoneRef.current = true;
+        // If Firebase auth already resolved (no user), NOW set loading=false
+        if (firebaseAuthDoneRef.current) {
+          setLoading(false);
+        }
+      });
+    return () => { cancelled = true; };
+  }, []);
+
   // Sync auth token to a cookie so the Next.js middleware can check it.
   // Returns true if the cookie was successfully set, false otherwise.
   const syncTokenCookie = useCallback(async (fbUser: FirebaseUser | null): Promise<boolean> => {
@@ -147,7 +184,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [isDemoMode]);
 
-  // Listen to Firebase auth state
+  // Listen to Firebase auth state.
+  // Use a ref for isDemoMode to avoid re-subscribing on demo toggle
+  // (re-subscribing triggers an immediate onAuthStateChanged callback that
+  // can flash user=null before the demo state is re-applied).
+  const isDemoModeRef = useRef(isDemoMode);
+  isDemoModeRef.current = isDemoMode;
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
@@ -188,16 +231,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Firestore failed — that's OK, user is still logged in with defaults
           console.warn('[auth] Firestore profile load failed (using defaults):', err);
         }
-      } else if (!isDemoMode) {
+      } else if (!isDemoModeRef.current) {
         setUser(null);
         setFirebaseUser(null);
         setCredits(0);
       }
-      setLoading(false);
+      firebaseAuthDoneRef.current = true;
+      // If a Firebase user was found, we can set loading=false immediately.
+      // If no Firebase user, only set loading=false after the demo check has
+      // also completed — otherwise AppShell sees user=null too early.
+      if (fbUser || demoCheckDoneRef.current) {
+        setLoading(false);
+      }
     });
 
     return () => unsubscribe();
-  }, [syncTokenCookie, isDemoMode]);
+  }, [syncTokenCookie]);
 
   // ---------------------------------------------------------------------------
   // Handle Google redirect result on page load.
