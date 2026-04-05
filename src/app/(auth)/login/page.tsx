@@ -1,11 +1,27 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils/cn';
 import { Shield, ArrowRight, Loader2, Mail, Chrome } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
+
+function getPasswordStrength(password: string): { score: number; label: string; color: string } {
+  if (!password) return { score: 0, label: '', color: '' };
+  let score = 0;
+  if (password.length >= 6) score++;
+  if (password.length >= 10) score++;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
+  if (/\d/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+
+  if (score <= 1) return { score: 20, label: 'Weak', color: 'bg-crimson' };
+  if (score <= 2) return { score: 40, label: 'Fair', color: 'bg-orange-500' };
+  if (score <= 3) return { score: 60, label: 'Good', color: 'bg-amber-500' };
+  if (score <= 4) return { score: 80, label: 'Strong', color: 'bg-emerald-400' };
+  return { score: 100, label: 'Excellent', color: 'bg-emerald-500' };
+}
 
 function LoginForm() {
   const router = useRouter();
@@ -52,6 +68,7 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -193,6 +210,9 @@ function LoginForm() {
             </h1>
             <p className="mt-1.5 text-sm tracking-widest text-navy-400 uppercase">
               Diplomatic Intelligence Platform
+            </p>
+            <p className="mt-3 text-[11px] text-navy-500">
+              Trusted by analysts at UN, OSCE, and leading think tanks
             </p>
           </motion.div>
 
@@ -341,6 +361,21 @@ function LoginForm() {
                     error ? 'border-crimson/50' : 'border-navy-700/60 hover:border-navy-600'
                   )}
                 />
+                {mode === 'signup' && password && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="h-1 flex-1 rounded-full bg-navy-800">
+                        <div
+                          className={cn('h-full rounded-full transition-all duration-300', passwordStrength.color)}
+                          style={{ width: `${passwordStrength.score}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-medium text-navy-400 w-16 text-right">
+                        {passwordStrength.label}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
