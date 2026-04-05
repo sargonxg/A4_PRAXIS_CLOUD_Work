@@ -153,7 +153,7 @@ export function Footer() {
           {/* Security badges + version */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-diplomatic-blue/30 bg-diplomatic-blue/5 px-3 py-1 text-[10px] font-semibold text-diplomatic-blue">
-              PRAXIS v5.1.0
+              PRAXIS v5.3.0
             </span>
             <span className="rounded-full border border-cream-300 bg-white px-3 py-1 text-[10px] font-medium text-navy-500">
               SOC 2 (Planned)

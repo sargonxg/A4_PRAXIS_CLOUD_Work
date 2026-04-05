@@ -60,6 +60,17 @@ import { useState, useEffect } from 'react';
 
 const CHANGELOG = [
   {
+    version: 'v5.3',
+    date: '2026.04.05',
+    notes: [
+      'Security hardening: timing-safe admin auth, CSP tightened, demo rate-limiting, daily credit top-up caps',
+      'SEO: sitemap.xml, robots.txt, JSON-LD structured data, OG image metadata, waitlist form on landing page',
+      'Login: password strength meter, social proof line, improved signup UX',
+      'Onboarding: redesigned no-situation state with value proposition cards',
+      '3-state tool health semaphore (green/yellow/red) on 30+ sidebar tools with freshness tracking',
+    ],
+  },
+  {
     version: 'v5.1',
     date: '2026.04.01',
     notes: [
@@ -275,7 +286,7 @@ function ChangelogButton() {
         onClick={() => setOpen(true)}
         className="mt-1 w-full text-center text-[9px] text-navy-300 hover:text-navy-500 transition-colors"
       >
-        PRAXIS v5.1 · Build 2026.04.01
+        PRAXIS v5.3 · Build 2026.04.05
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setOpen(false)}>
