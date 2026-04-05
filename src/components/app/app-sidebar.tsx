@@ -316,48 +316,87 @@ function ChangelogButton() {
 
 // Map sidebar hrefs to tool-data IDs for status indicators
 const HREF_TO_TOOL_ID: Record<string, string> = {
+  // Context
+  '/documents': 'documents',
+  '/sources': 'sources-library',
+  '/timeline': 'timeline',
+  '/humanitarian': 'humanitarian',
+  '/calendar': 'calendar',
+  // Analysis
   '/actors': 'actor-profiles',
   '/risk-monitor': 'risk-monitor',
   '/early-warning': 'early-warning',
   '/conflict-graph': 'conflict-graph',
   '/stakeholder-map': 'stakeholder-map',
+  '/compare': 'compare',
+  // Drafting
   '/dossier': 'dossier',
-  '/negotiation-prep': 'negotiation',
-  '/game-theory': 'game-theory',
-  '/media-roundup': 'media-roundup',
-  '/sanctions': 'sanctions',
+  '/talking-points': 'talking-points',
   '/briefing': 'briefing',
   '/auto-briefings': 'auto-briefing',
-  '/info-environment': 'info-environment',
-  '/commitments': 'commitment-tracker',
-  '/treaty-analyzer': 'treaty-analyzer',
-  '/mediation-design': 'mediation-design',
+  '/un-toolkit': 'un-toolkit',
+  // Simulation
   '/scenarios': 'scenarios',
-  '/talking-points': 'talking-points',
+  '/negotiation-prep': 'negotiation',
+  '/game-theory': 'game-theory',
+  '/mediation-design': 'mediation-design',
+  // Intelligence
   '/argus': 'argus',
   '/media-compass': 'media-compass',
-  '/compare': 'compare',
-  '/timeline': 'early-warning',
+  '/media-roundup': 'media-roundup',
+  '/info-environment': 'info-environment',
+  '/sanctions': 'sanctions',
+  '/commitments': 'commitment-tracker',
+  '/treaty-analyzer': 'treaty-analyzer',
   '/geospatial-monitor': 'geospatial-monitor',
+  '/alerts': 'alert-center',
 };
 
-function useToolStatuses(situationId: string | null): Set<string> {
-  const [seeded, setSeeded] = useState<Set<string>>(new Set());
+// Three-state semaphore: green (ready), yellow (stale/needs update), red (not ready)
+type ToolHealth = 'green' | 'yellow' | 'red';
+
+// 24 hours in ms — data older than this is considered stale
+const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
+
+const EMPTY_HEALTH: Record<string, ToolHealth> = {};
+
+function useToolStatuses(situationId: string | null): Record<string, ToolHealth> {
+  const [statuses, setStatuses] = useState<Record<string, ToolHealth>>(EMPTY_HEALTH);
 
   useEffect(() => {
-    if (!situationId) { setSeeded(new Set()); return; }
+    if (!situationId) { setStatuses(EMPTY_HEALTH); return; }
 
     fetch(`/api/tool-data?toolId=dashboard-snapshot&situationId=${situationId}`)
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
-        if (data?.data?.seededTools) {
-          setSeeded(new Set(data.data.seededTools));
+        const healthMap: Record<string, ToolHealth> = {};
+        const seededTools: string[] = data?.data?.seededTools ?? [];
+        const toolTimestamps: Record<string, string> = data?.data?.toolTimestamps ?? {};
+        const now = Date.now();
+
+        // All tool IDs in the mapping
+        const allToolIds = new Set(Object.values(HREF_TO_TOOL_ID));
+
+        for (const toolId of allToolIds) {
+          if (seededTools.includes(toolId)) {
+            // Check freshness
+            const ts = toolTimestamps[toolId];
+            if (ts && (now - new Date(ts).getTime()) > STALE_THRESHOLD_MS) {
+              healthMap[toolId] = 'yellow'; // stale — needs update
+            } else {
+              healthMap[toolId] = 'green'; // fresh — ready
+            }
+          } else {
+            healthMap[toolId] = 'red'; // not seeded — not ready
+          }
         }
+
+        setStatuses(healthMap);
       })
       .catch(() => {});
   }, [situationId]);
 
-  return seeded;
+  return statuses;
 }
 
 export function AppSidebar() {
@@ -367,7 +406,7 @@ export function AppSidebar() {
   const { user, credits, logout } = useAuth();
   const { sidebarOpen, toggleSidebar } = useAppStore();
   const { activeSituationId, setActiveSituation } = useSituationStore();
-  const seededTools = useToolStatuses(activeSituationId);
+  const toolHealthMap = useToolStatuses(activeSituationId);
 
   // Strip /app or /demo prefix for active matching against nav hrefs
   const barePath = pathname.replace(/^\/(app|demo)/, '') || '/';
@@ -490,14 +529,23 @@ export function AppSidebar() {
                       </motion.span>
                     )}
                   </AnimatePresence>
-                  {/* Tool status dot */}
-                  {sidebarOpen && HREF_TO_TOOL_ID[item.href] && (
-                    <span className={cn(
-                      'ml-auto h-2 w-2 shrink-0 rounded-full',
-                      seededTools.has(HREF_TO_TOOL_ID[item.href])
-                        ? 'bg-emerald-500'
-                        : 'bg-navy-200'
-                    )} />
+                  {/* Tool health semaphore: green=ready, yellow=stale, red=not ready */}
+                  {sidebarOpen && HREF_TO_TOOL_ID[item.href] && activeSituationId && (
+                    <span
+                      className={cn(
+                        'ml-auto h-2 w-2 shrink-0 rounded-full',
+                        {
+                          'bg-emerald-500': toolHealthMap[HREF_TO_TOOL_ID[item.href]] === 'green',
+                          'bg-amber-400': toolHealthMap[HREF_TO_TOOL_ID[item.href]] === 'yellow',
+                          'bg-navy-300': toolHealthMap[HREF_TO_TOOL_ID[item.href]] === 'red',
+                        }
+                      )}
+                      title={
+                        toolHealthMap[HREF_TO_TOOL_ID[item.href]] === 'green' ? 'Ready — data is fresh' :
+                        toolHealthMap[HREF_TO_TOOL_ID[item.href]] === 'yellow' ? 'Stale — data may need updating' :
+                        'Not ready — no data yet'
+                      }
+                    />
                   )}
                   {/* Badge */}
                   {item.badge && sidebarOpen && !HREF_TO_TOOL_ID[item.href] && (
