@@ -33,12 +33,21 @@ export const metadata: Metadata = {
       "AI-native conflict intelligence for peace and security professionals. Live Gemini AI. Glasl escalation model. Conflict Grammar knowledge graph.",
     type: "website",
     siteName: "PRAXIS by TACITUS",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "PRAXIS by TACITUS — Conflict Intelligence Platform",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "PRAXIS by TACITUS — Conflict Intelligence Platform",
     description:
       "AI-native conflict intelligence for peace and security professionals.",
+    images: ["/opengraph-image"],
   },
   icons: {
     icon: [
