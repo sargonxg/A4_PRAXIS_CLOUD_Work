@@ -57,7 +57,7 @@ export function withAuth(
         return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
       }
 
-      // Demo mode
+      // Demo mode — still rate-limited to prevent abuse
       if (sessionData.demo === true) {
         const demoUser: AuthenticatedUser = {
           uid: 'demo-user-001',
@@ -65,6 +65,9 @@ export function withAuth(
           name: 'Demo Analyst',
           isDemo: true,
         };
+        if (!checkRateLimit(demoUser.uid)) {
+          return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+        }
         return handler(req, demoUser);
       }
 

@@ -93,7 +93,11 @@ async function deductCreditsAdmin(
   description: string,
 ): Promise<{ success: boolean; remainingCredits: number }> {
   const adminDb = getAdminDbOrThrow();
-  const cost = AI_CREDIT_COSTS[operationType] || 1;
+  const cost = AI_CREDIT_COSTS[operationType];
+  if (cost === undefined) {
+    console.error(`[credits] Unmapped operation type: "${operationType}" — refusing to default`);
+    return { success: false, remainingCredits: 0 };
+  }
   const userRef = adminDb.collection('users').doc(uid);
 
   const result = await adminDb.runTransaction(async (tx) => {
@@ -134,16 +138,20 @@ async function deductCreditsAdmin(
     return { success: true, remainingCredits: credits - cost };
   });
 
-  // Record transaction log (non-critical, fire-and-forget)
+  // Record transaction log
   if (result.success) {
-    const txRef = adminDb.collection('credit_transactions').doc();
-    txRef.set({
-      userId: uid,
-      amount: -cost,
-      type: operationType,
-      description,
-      createdAt: FieldValue.serverTimestamp(),
-    }).catch((err) => console.error('[credits] Failed to record transaction:', err));
+    try {
+      const txRef = adminDb.collection('credit_transactions').doc();
+      await txRef.set({
+        userId: uid,
+        amount: -cost,
+        type: operationType,
+        description,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+    } catch (err) {
+      console.error('[credits] Failed to record transaction:', err);
+    }
   }
 
   return result;
@@ -176,7 +184,7 @@ export async function checkAndDeductCredits(
   if (session.isDemo) return { allowed: true };
 
   // Deduct credits via Admin SDK (server-side, bypasses Firestore rules)
-  const cost = AI_CREDIT_COSTS[operationType] || 1;
+  const cost = AI_CREDIT_COSTS[operationType] ?? 1;
   try {
     const result = await deductCreditsAdmin(session.uid, operationType, description);
 
@@ -219,7 +227,7 @@ export async function checkAndDeductCreditsForUid(
   operationType: string,
   description: string,
 ): Promise<{ allowed: true } | { allowed: false; response: Response }> {
-  const cost = AI_CREDIT_COSTS[operationType] || 1;
+  const cost = AI_CREDIT_COSTS[operationType] ?? 1;
   try {
     const result = await deductCreditsAdmin(uid, operationType, description);
     if (!result.success) {

@@ -6,13 +6,14 @@ import { FieldValue } from 'firebase-admin/firestore';
 export const maxDuration = 10;
 
 const TOP_UP_AMOUNT = 1000;
+const MAX_DAILY_TOPUPS = 5;
 
 /**
  * POST /api/admin/add-credits
  *
  * Self-service credit top-up for the authenticated user.
  * Intended for development and testing — adds 1000 credits to the caller's account.
- * Rate-limited to prevent abuse via the standard withAuth wrapper.
+ * Rate-limited to prevent abuse: max 5 top-ups per day.
  */
 export const POST = withAuth(async (_req, user) => {
   if (user.isDemo) {
@@ -22,6 +23,23 @@ export const POST = withAuth(async (_req, user) => {
   try {
     const adminDb = getAdminDbOrThrow();
     const userRef = adminDb.collection('users').doc(user.uid);
+
+    // Check daily top-up limit to prevent abuse
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const recentTopups = await adminDb
+      .collection('credit_transactions')
+      .where('userId', '==', user.uid)
+      .where('type', '==', 'admin_topup')
+      .where('createdAt', '>=', oneDayAgo)
+      .limit(MAX_DAILY_TOPUPS)
+      .get();
+
+    if (recentTopups.size >= MAX_DAILY_TOPUPS) {
+      return NextResponse.json(
+        { error: `Maximum ${MAX_DAILY_TOPUPS} top-ups per day. Try again tomorrow.` },
+        { status: 429 }
+      );
+    }
 
     await adminDb.runTransaction(async (tx) => {
       const snap = await tx.get(userRef);

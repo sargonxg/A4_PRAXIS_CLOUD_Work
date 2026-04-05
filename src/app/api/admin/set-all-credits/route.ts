@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { timingSafeEqual } from 'crypto';
 
 export const maxDuration = 60;
 
 const TARGET_CREDITS = 5000;
+
+function timingSafeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
 
 /**
  * POST /api/admin/set-all-credits
@@ -18,11 +24,16 @@ const TARGET_CREDITS = 5000;
 export async function POST(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
-    return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 500 });
+    return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
   }
 
-  const authHeader = req.headers.get('Authorization');
-  if (authHeader !== `Bearer ${secret}`) {
+  const authHeader = req.headers.get('Authorization') ?? '';
+  const expected = `Bearer ${secret}`;
+  if (!authHeader || !timingSafeCompare(authHeader, expected)) {
+    console.warn('[set-all-credits] Unauthorized attempt', {
+      ip: req.headers.get('x-forwarded-for') ?? 'unknown',
+      timestamp: new Date().toISOString(),
+    });
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

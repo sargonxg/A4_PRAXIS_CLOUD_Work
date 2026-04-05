@@ -63,7 +63,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   // CSP: Google Identity Services needs *.google.com and *.gstatic.com.
   response.headers.set('Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' apis.google.com *.firebaseapp.com *.googleapis.com *.google.com *.gstatic.com www.googletagmanager.com; " +
+    "script-src 'self' 'unsafe-inline' apis.google.com *.firebaseapp.com *.googleapis.com *.google.com *.gstatic.com www.googletagmanager.com; " +
     "style-src 'self' 'unsafe-inline' fonts.googleapis.com; " +
     "img-src 'self' data: blob: *.googleapis.com *.googleusercontent.com *.gstatic.com; " +
     "font-src 'self' fonts.gstatic.com; " +
