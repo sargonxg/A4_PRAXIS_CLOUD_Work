@@ -470,12 +470,12 @@ function LoginForm() {
           >
             <div className="h-px flex-1 bg-navy-700/50" />
             <span className="text-xs tracking-wider text-navy-500 uppercase">
-              or explore the platform
+              or explore without an account
             </span>
             <div className="h-px flex-1 bg-navy-700/50" />
           </motion.div>
 
-          {/* Demo mode button */}
+          {/* Demo mode button — prominent, gold-accented */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -486,10 +486,10 @@ function LoginForm() {
               onClick={handleDemoMode}
               disabled={isLoading}
               className={cn(
-                'flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3',
-                'border border-navy-600/60 bg-transparent text-sm font-medium text-navy-200',
+                'flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3.5',
+                'border border-gold-500/30 bg-gold-500/5 text-sm font-semibold text-gold-400',
                 'transition-all duration-200',
-                'hover:border-gold-500/30 hover:bg-navy-800/50 hover:text-gold-400',
+                'hover:border-gold-500/50 hover:bg-gold-500/10 hover:text-gold-300',
                 'active:scale-[0.98]',
                 'disabled:cursor-not-allowed disabled:opacity-60'
               )}
@@ -499,12 +499,12 @@ function LoginForm() {
               ) : (
                 <>
                   <Shield className="h-4 w-4" />
-                  Enter Demo Mode
+                  Try the Demo — No Account Needed
                 </>
               )}
             </button>
-            <p className="mt-3 text-center text-[11px] text-navy-500">
-              Explore PRAXIS with pre-loaded conflict data — no account needed
+            <p className="mt-2 text-center text-[11px] text-navy-500">
+              Full platform with pre-loaded Nordalia crisis data. Explore all 40+ tools instantly.
             </p>
           </motion.div>
 

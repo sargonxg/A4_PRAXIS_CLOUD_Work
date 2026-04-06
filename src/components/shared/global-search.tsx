@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, ArrowRight, Clock, FileText, Users, Calendar, Shield, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { useRoutePrefix } from '@/lib/utils/routes';
 
 interface SearchResult {
   id: string;
@@ -74,39 +75,38 @@ function addRecentSearch(query: string) {
 
 export function GlobalSearch({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [recentSearches, setRecentSearches] = useState<string[]>(getRecentSearches);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const prefix = useRoutePrefix();
 
   useEffect(() => {
-    setRecentSearches(getRecentSearches());
     inputRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      setSelectedIdx(0);
-      return;
-    }
+  const results = useMemo(() => {
+    if (!query.trim()) return [];
     const q = query.toLowerCase();
-    const filtered = STATIC_RESULTS.filter(
+    return STATIC_RESULTS.filter(
       (r) =>
         r.label.toLowerCase().includes(q) ||
         r.description?.toLowerCase().includes(q)
-    );
-    setResults(filtered.slice(0, 8));
-    setSelectedIdx(0);
+    ).slice(0, 8);
   }, [query]);
+
+  // Derive a safe selection index — clamp to valid range when results change,
+  // avoiding the need for a set-state-in-effect.
+  const safeSelectedIdx = results.length === 0
+    ? 0
+    : Math.min(selectedIdx, results.length - 1);
 
   const navigate = useCallback((result: SearchResult) => {
     addRecentSearch(result.label);
     setRecentSearches(getRecentSearches());
-    router.push(result.href);
+    router.push(`${prefix}${result.href}`);
     onClose();
-  }, [router, onClose]);
+  }, [router, onClose, prefix]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
@@ -116,7 +116,7 @@ export function GlobalSearch({ onClose }: { onClose: () => void }) {
       e.preventDefault();
       setSelectedIdx((i) => Math.max(i - 1, 0));
     } else if (e.key === 'Enter') {
-      if (results[selectedIdx]) navigate(results[selectedIdx]);
+      if (results[safeSelectedIdx]) navigate(results[safeSelectedIdx]);
     } else if (e.key === 'Escape') {
       onClose();
     }
@@ -234,7 +234,7 @@ export function GlobalSearch({ onClose }: { onClose: () => void }) {
             <div className="border-t border-[var(--color-app-border-light)] px-4 py-3">
               <button
                 onClick={() => {
-                  router.push(`/assistant`);
+                  router.push(`${prefix}/assistant`);
                   onClose();
                 }}
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-gold-500/5"

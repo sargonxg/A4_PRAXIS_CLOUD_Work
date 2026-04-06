@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyIdToken } from '@/lib/firebase/admin';
+import { signCookie, verifyCookie } from '@/lib/auth/cookie-signer';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
 
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
 
     if (body.demo === true) {
       // Demo mode session
-      cookieStore.set(SESSION_COOKIE, JSON.stringify({ demo: true }), COOKIE_OPTIONS);
+      cookieStore.set(SESSION_COOKIE, signCookie(JSON.stringify({ demo: true })), COOKIE_OPTIONS);
       return NextResponse.json({ success: true });
     }
 
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
       // Token is valid — store in cookie for subsequent requests
       cookieStore.set(
         SESSION_COOKIE,
-        JSON.stringify({ token: body.token }),
+        signCookie(JSON.stringify({ token: body.token })),
         COOKIE_OPTIONS,
       );
       return NextResponse.json({ success: true });
@@ -91,7 +92,11 @@ export async function GET() {
   }
 
   try {
-    const data = JSON.parse(session.value);
+    const verified = verifyCookie(session.value);
+    if (!verified) {
+      return NextResponse.json({ user: null });
+    }
+    const data = JSON.parse(verified);
     if (data.demo) {
       return NextResponse.json({
         user: {

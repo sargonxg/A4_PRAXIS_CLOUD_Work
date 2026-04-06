@@ -3,18 +3,35 @@ import type { NextRequest } from 'next/server';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
 
+/**
+ * Edge-compatible session parser for routing decisions only.
+ * Middleware runs on Edge runtime where Node.js `crypto` is unavailable.
+ * Full HMAC signature verification happens in with-auth.ts (Node.js API handlers).
+ *
+ * Signed cookie format: JSON_PAYLOAD.HMAC_SIGNATURE
+ * We extract the JSON payload before the last dot for routing decisions.
+ * A forged cookie that gets past this check will still fail in with-auth.ts.
+ */
+function parseSessionForRouting(cookieValue: string): { demo?: boolean; token?: string } | null {
+  try {
+    // Signed format: JSON.SIGNATURE — extract JSON before last dot
+    const idx = cookieValue.lastIndexOf('.');
+    const jsonPart = idx !== -1 ? cookieValue.slice(0, idx) : cookieValue;
+    const parsed = JSON.parse(jsonPart);
+    if (typeof parsed === 'object' && parsed !== null) {
+      return parsed as { demo?: boolean; token?: string };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const session = request.cookies.get(SESSION_COOKIE);
 
-  let sessionData: { demo?: boolean; token?: string } | null = null;
-  if (session?.value) {
-    try {
-      sessionData = JSON.parse(session.value);
-    } catch {
-      sessionData = null;
-    }
-  }
+  const sessionData = session?.value ? parseSessionForRouting(session.value) : null;
 
   const isDemo = sessionData?.demo === true;
   const hasFirebaseToken = !!sessionData?.token;
@@ -57,7 +74,6 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
   // COOP: same-origin-allow-popups is required for Google Sign-In redirect flow
-  // to communicate back to the opener via postMessage after redirect completes.
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
 
   // CSP: Google Identity Services needs *.google.com and *.gstatic.com.

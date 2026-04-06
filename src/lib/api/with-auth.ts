@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { verifyIdToken } from '@/lib/firebase/admin';
+import { verifyIdToken, adminDb } from '@/lib/firebase/admin';
+import { verifyCookie } from '@/lib/auth/cookie-signer';
 
 export interface AuthenticatedUser {
   uid: string;
@@ -9,33 +10,30 @@ export interface AuthenticatedUser {
   isDemo: boolean;
 }
 
-// In-memory rate limiter with periodic garbage collection
-const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
 const RATE_LIMIT = 100;
-const RATE_WINDOW_MS = 60_000;
-const GC_INTERVAL_MS = 5 * 60_000; // Clean up every 5 minutes
-let lastGc = Date.now();
 
-function checkRateLimit(uid: string): boolean {
-  const now = Date.now();
+/**
+ * Firestore-backed rate limiter using 1-minute window buckets.
+ * Works across serverless instances (unlike in-memory Map).
+ * Fails open (allows request) if Firestore is unavailable.
+ */
+async function checkRateLimit(uid: string): Promise<boolean> {
+  const windowKey = Math.floor(Date.now() / 60_000).toString();
+  const docRef = adminDb.collection('rate_limits').doc(`${uid}_${windowKey}`);
 
-  // Periodic garbage collection — remove expired entries
-  if (now - lastGc > GC_INTERVAL_MS) {
-    lastGc = now;
-    for (const [key, entry] of rateLimitMap) {
-      if (now - entry.windowStart > RATE_WINDOW_MS) {
-        rateLimitMap.delete(key);
-      }
-    }
-  }
-
-  const entry = rateLimitMap.get(uid);
-  if (!entry || now - entry.windowStart > RATE_WINDOW_MS) {
-    rateLimitMap.set(uid, { count: 1, windowStart: now });
+  try {
+    const result = await adminDb.runTransaction(async (tx) => {
+      const doc = await tx.get(docRef);
+      const current = doc.exists ? (doc.data()?.count ?? 0) : 0;
+      if (current >= RATE_LIMIT) return false;
+      tx.set(docRef, { count: current + 1, uid, expiresAt: Date.now() + 120_000 }, { merge: true });
+      return true;
+    });
+    return result;
+  } catch {
+    // If Firestore fails, allow the request (fail open for availability)
     return true;
   }
-  entry.count++;
-  return entry.count <= RATE_LIMIT;
 }
 
 export function withAuth(
@@ -52,7 +50,11 @@ export function withAuth(
 
       let sessionData;
       try {
-        sessionData = JSON.parse(sessionCookie.value);
+        const verified = verifyCookie(sessionCookie.value);
+        if (!verified) {
+          return NextResponse.json({ error: 'Invalid session signature' }, { status: 401 });
+        }
+        sessionData = JSON.parse(verified);
       } catch {
         return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
       }
@@ -65,7 +67,7 @@ export function withAuth(
           name: 'Demo Analyst',
           isDemo: true,
         };
-        if (!checkRateLimit(demoUser.uid)) {
+        if (!(await checkRateLimit(demoUser.uid))) {
           return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
         }
         return handler(req, demoUser);
@@ -77,7 +79,7 @@ export function withAuth(
           const verified = await verifyIdToken(sessionData.token);
           const user: AuthenticatedUser = { ...verified, isDemo: false };
 
-          if (!checkRateLimit(user.uid)) {
+          if (!(await checkRateLimit(user.uid))) {
             return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
           }
 

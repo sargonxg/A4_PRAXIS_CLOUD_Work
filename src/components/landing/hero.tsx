@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ChevronDown, Shield, Play } from "lucide-react";
+import { ChevronDown, Shield, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 function IntelligenceCounter({ end }: { end: number }) {
@@ -157,29 +157,23 @@ export function Hero() {
           think tanks, and multilateral organizations.
         </motion.p>
 
-        {/* CTAs */}
+        {/* Single CTA — all paths go through /login */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.5, duration: 0.6 }}
-          className="flex flex-col items-center gap-4 sm:flex-row"
+          className="flex flex-col items-center gap-3"
         >
           <Link
-            href="/demo/dashboard"
-            className="group inline-flex items-center justify-center gap-2 rounded-md bg-gold-600 px-8 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-xl hover:shadow-gold-600/20"
-          >
-            <Play className="h-4 w-4" />
-            Explore Demo
-          </Link>
-          <Link
             href="/login"
-            className="group inline-flex items-center justify-center rounded-md border border-diplomatic-blue/20 px-8 py-3.5 text-sm font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
+            className="group inline-flex items-center justify-center gap-2 rounded-md bg-gold-600 px-10 py-4 text-base font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-xl hover:shadow-gold-600/20 active:scale-[0.98]"
           >
-            Get Started Free
-            <span className="ml-2 transition-transform duration-200 group-hover:translate-x-0.5">
-              &rarr;
-            </span>
+            Access PRAXIS
+            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
+          <p className="text-xs text-navy-400">
+            Sign in for full access · or try the demo — no account needed
+          </p>
         </motion.div>
 
         {/* Animated counter */}
