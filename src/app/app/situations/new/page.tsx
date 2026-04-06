@@ -41,6 +41,10 @@ interface SituationForm {
   status: 'active' | 'emerging' | 'frozen';
   actors: string[];
   userRole: UserRole;
+  // Optional initial assessment (helps tools from day 0)
+  riskScore: number;
+  glaslStage: number | null;
+  escalationTrend: 'stable' | 'escalating' | 'de-escalating';
 }
 
 type Step = 1 | 2 | 3 | 4;
@@ -409,6 +413,9 @@ function StepActors({ form, setForm, onNext, onBack }: { form: SituationForm; se
         </div>
       </div>
 
+      {/* Optional Initial Assessment */}
+      <InitialAssessment form={form} setForm={setForm} />
+
       <div className="flex items-center justify-between pt-2">
         <button onClick={onBack} className="flex items-center gap-2 rounded-lg border border-navy-200 px-5 py-2.5 text-sm font-medium text-navy-700 hover:bg-navy-50">
           <ArrowLeft className="h-4 w-4" /> Back
@@ -418,6 +425,149 @@ function StepActors({ form, setForm, onNext, onBack }: { form: SituationForm; se
           Continue <ArrowRight className="h-4 w-4" />
         </button>
       </div>
+    </div>
+  );
+}
+
+/* ---------- Initial Assessment (embedded in Step 2) ---------- */
+
+const GLASL_STAGE_OPTIONS = [
+  { value: null, label: 'Unknown / Not applicable' },
+  { value: 1, label: 'Stage 1 — Hardening (positions fix)' },
+  { value: 2, label: 'Stage 2 — Debate & Polemic' },
+  { value: 3, label: 'Stage 3 — Actions not Words' },
+  { value: 4, label: 'Stage 4 — Images & Coalitions' },
+  { value: 5, label: 'Stage 5 — Loss of Face' },
+  { value: 6, label: 'Stage 6 — Strategies of Threats' },
+  { value: 7, label: 'Stage 7 — Limited Destructive Blows' },
+  { value: 8, label: 'Stage 8 — Fragmentation' },
+  { value: 9, label: 'Stage 9 — Together into the Abyss' },
+];
+
+function InitialAssessment({
+  form,
+  setForm,
+}: {
+  form: SituationForm;
+  setForm: React.Dispatch<React.SetStateAction<SituationForm>>;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const riskLabel =
+    form.riskScore >= 8 ? 'Critical' :
+    form.riskScore >= 6 ? 'High' :
+    form.riskScore >= 4 ? 'Moderate' :
+    form.riskScore >= 2 ? 'Low' : 'Not rated';
+
+  const riskColor =
+    form.riskScore >= 8 ? 'text-red-600' :
+    form.riskScore >= 6 ? 'text-amber-600' :
+    form.riskScore >= 4 ? 'text-yellow-600' :
+    form.riskScore >= 2 ? 'text-emerald-600' : 'text-navy-400';
+
+  return (
+    <div className="rounded-xl border border-navy-100 bg-navy-50/50">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between px-4 py-3 text-left"
+      >
+        <div className="flex items-center gap-2">
+          <Info className="h-4 w-4 text-navy-400" />
+          <span className="text-xs font-semibold text-navy-700">
+            Initial Risk Assessment
+            {(form.riskScore > 0 || form.glaslStage) && (
+              <span className="ml-2 text-navy-400 font-normal">
+                {form.riskScore > 0 && <span className={riskColor}>{riskLabel} risk</span>}
+                {form.glaslStage && <span className="text-navy-400"> · Stage {form.glaslStage}</span>}
+              </span>
+            )}
+          </span>
+          <span className="rounded-full bg-navy-200 px-2 py-0.5 text-[9px] font-semibold text-navy-500 uppercase tracking-wide">Optional</span>
+        </div>
+        {open ? <X className="h-3.5 w-3.5 text-navy-400" /> : <Plus className="h-3.5 w-3.5 text-navy-400" />}
+      </button>
+
+      {open && (
+        <div className="border-t border-navy-100 px-4 py-4 space-y-4">
+          <p className="text-[11px] text-navy-500">
+            Help PRAXIS tools with an initial assessment. You can skip this — AI tools will estimate from your situation description.
+          </p>
+
+          {/* Risk Score */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-navy-700">Risk Score</label>
+              <span className={cn('text-xs font-semibold', riskColor)}>
+                {form.riskScore > 0 ? `${form.riskScore}/10 — ${riskLabel}` : 'Not rated'}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={10}
+              step={1}
+              value={form.riskScore}
+              onChange={(e) => setForm((f) => ({ ...f, riskScore: parseInt(e.target.value) }))}
+              className="w-full accent-diplomatic-blue"
+            />
+            <div className="flex justify-between text-[9px] text-navy-400">
+              <span>Not rated</span>
+              <span>Low</span>
+              <span>Moderate</span>
+              <span>High</span>
+              <span>Critical</span>
+            </div>
+          </div>
+
+          {/* Glasl Stage */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-navy-700">Glasl Escalation Stage</label>
+            <select
+              value={form.glaslStage ?? ''}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  glaslStage: e.target.value === '' ? null : parseInt(e.target.value),
+                }))
+              }
+              className="w-full rounded-lg border border-navy-200 bg-white px-3 py-2 text-xs text-navy-800 focus:border-diplomatic-blue focus:outline-none"
+            >
+              {GLASL_STAGE_OPTIONS.map((opt) => (
+                <option key={opt.value ?? 'null'} value={opt.value ?? ''}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Trend */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-navy-700">Escalation Trend</label>
+            <div className="flex gap-2">
+              {(['escalating', 'stable', 'de-escalating'] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, escalationTrend: t }))}
+                  className={cn(
+                    'flex-1 rounded-lg border py-1.5 text-[11px] font-medium transition-all',
+                    form.escalationTrend === t
+                      ? t === 'escalating'
+                        ? 'border-red-300 bg-red-50 text-red-700'
+                        : t === 'de-escalating'
+                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                        : 'border-amber-300 bg-amber-50 text-amber-700'
+                      : 'border-navy-200 text-navy-500 hover:border-navy-300'
+                  )}
+                >
+                  {t === 'escalating' ? '↑ Escalating' : t === 'de-escalating' ? '↓ De-escalating' : '→ Stable'}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -716,6 +866,9 @@ export default function NewSituationPage() {
     status: 'active',
     actors: [],
     userRole: 'analyst',
+    riskScore: 0,
+    glaslStage: null,
+    escalationTrend: 'stable',
   });
 
   const [context, setContext] = useState<ContextData>({
@@ -768,6 +921,9 @@ export default function NewSituationPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          riskScore: form.riskScore > 0 ? form.riskScore : undefined,
+          glaslStage: form.glaslStage ?? undefined,
+          escalationTrend: form.escalationTrend,
           sourceUrls: filteredUrls.length ? filteredUrls : undefined,
           contextNotes: context.notes.trim() || undefined,
           initialDocumentIds: uploadedDocIds.length ? uploadedDocIds : undefined,

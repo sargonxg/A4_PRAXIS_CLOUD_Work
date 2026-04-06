@@ -103,21 +103,61 @@ export function SituationOnboarding({ situation, onComplete }: SituationOnboardi
 
       setResearchDone(true);
 
-      // Extract a concise description from the research (SITUATION OVERVIEW section)
-      // and save it back to the situation so all tools benefit from the richer context.
+      // Extract description + risk signals from research, save back to situation
+      // so all tools immediately benefit from richer, grounded context.
       try {
         const overviewMatch = fullText.match(/##\s*SITUATION OVERVIEW\s*\n([\s\S]*?)(?=\n##|$)/i);
         const summary = overviewMatch
           ? overviewMatch[1].trim().slice(0, 800)
           : fullText.slice(0, 600).trim();
 
+        // Derive risk fields from research text (only if not already set by user)
+        const patchFields: Record<string, unknown> = {};
+
         if (summary) {
+          patchFields.description = summary;
+        }
+
+        // Extract risk score hint from text ("high risk", "critical", etc.)
+        if (!situation.riskScore || situation.riskScore === 0) {
+          const riskHint = fullText.toLowerCase();
+          if (/critical\s+risk|extremely\s+high\s+risk|level\s+9|stage\s+[7-9]/.test(riskHint)) {
+            patchFields.riskScore = 8;
+          } else if (/high\s+risk|serious\s+risk|stage\s+[5-6]|armed\s+conflict/.test(riskHint)) {
+            patchFields.riskScore = 6;
+          } else if (/moderate\s+risk|elevated|stage\s+[3-4]|political\s+crisis/.test(riskHint)) {
+            patchFields.riskScore = 4;
+          } else if (/low\s+risk|stage\s+[1-2]|early.stage/.test(riskHint)) {
+            patchFields.riskScore = 2;
+          }
+        }
+
+        // Extract Glasl stage from text
+        if (!situation.glaslStage) {
+          const stageMatch = fullText.match(/glasl\s+stage\s+(\d)/i) ||
+            fullText.match(/stage\s+(\d)\s*(?:of\s+9|\/9|escalation)/i);
+          if (stageMatch) {
+            const stage = parseInt(stageMatch[1]);
+            if (stage >= 1 && stage <= 9) patchFields.glaslStage = stage;
+          }
+        }
+
+        // Extract escalation trend
+        if (situation.escalationTrend === 'stable') {
+          if (/escalat|deteriorat|worsen|intensif/.test(fullText.toLowerCase())) {
+            patchFields.escalationTrend = 'escalating';
+          } else if (/de-escalat|improv|stabiliz|calm/.test(fullText.toLowerCase())) {
+            patchFields.escalationTrend = 'de-escalating';
+          }
+        }
+
+        if (Object.keys(patchFields).length > 0) {
           await fetch(`/api/situations/${situation.id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ description: summary }),
+            body: JSON.stringify(patchFields),
           });
-          updateSituation(situation.id, { description: summary });
+          updateSituation(situation.id, patchFields as Partial<typeof situation>);
           setSaved(true);
         }
       } catch {
