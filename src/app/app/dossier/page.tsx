@@ -1,8 +1,6 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
-import { RealToolView } from '@/components/praxis/real-tool-view';
-import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -40,6 +38,7 @@ import {
   DEMO_DOSSIER_CONTENT,
 } from '@/lib/constants/dossier-templates';
 import type { DossierType, DossierSection } from '@/lib/constants/dossier-templates';
+import type { Situation } from '@/types/situation';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -153,6 +152,8 @@ function moveSectionOrder(order: string[], id: string, dir: 'up' | 'down'): stri
 
 function ConfigureStep({
   onGenerate,
+  fixedCaseId,
+  fixedCaseName,
 }: {
   onGenerate: (config: {
     caseId: string;
@@ -162,8 +163,10 @@ function ConfigureStep({
     audience: string;
     wordLimits: WordLimitConfig;
   }) => void;
+  fixedCaseId?: string;
+  fixedCaseName?: string;
 }) {
-  const [selectedCase, setSelectedCase] = useState('');
+  const [selectedCase, setSelectedCase] = useState(fixedCaseId ?? '');
   const [selectedType, setSelectedType] = useState<DossierType | null>(null);
   const [checkedSections, setCheckedSections] = useState<Set<string>>(new Set());
   const [sectionOrder, setSectionOrder] = useState<string[]>(DOSSIER_SECTIONS.map((s) => s.id));
@@ -267,19 +270,25 @@ function ConfigureStep({
         <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-navy-400">
           Case
         </label>
-        <div className="relative">
-          <select
-            value={selectedCase}
-            onChange={(e) => setSelectedCase(e.target.value)}
-            className="w-full appearance-none rounded-lg border border-[var(--color-app-border)] bg-white py-2.5 pl-3 pr-8 text-sm text-navy-800 focus:border-diplomatic-blue/50 focus:ring-2 focus:ring-diplomatic-blue/20 focus:outline-none"
-          >
-            <option value="">Select a case...</option>
-            {CASE_OPTIONS.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400" />
-        </div>
+        {fixedCaseName ? (
+          <div className="rounded-lg border border-diplomatic-blue/20 bg-diplomatic-blue/5 px-3 py-2.5 text-sm font-medium text-navy-900">
+            {fixedCaseName}
+          </div>
+        ) : (
+          <div className="relative">
+            <select
+              value={selectedCase}
+              onChange={(e) => setSelectedCase(e.target.value)}
+              className="w-full appearance-none rounded-lg border border-[var(--color-app-border)] bg-white py-2.5 pl-3 pr-8 text-sm text-navy-800 focus:border-diplomatic-blue/50 focus:ring-2 focus:ring-diplomatic-blue/20 focus:outline-none"
+            >
+              <option value="">Select a case...</option>
+              {CASE_OPTIONS.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400" />
+          </div>
+        )}
       </div>
 
       {/* Dossier Type */}
@@ -477,15 +486,60 @@ function ConfigureStep({
 
 // ── Generating Step ───────────────────────────────────────────────────────────
 
-function GeneratingStep({ onComplete }: { onComplete: () => void }) {
+interface AiSection {
+  title: string;
+  content: string;
+  sources: string[];
+  confidence: number;
+}
+
+function GeneratingStep({ onComplete, situation, config }: {
+  onComplete: (aiSections?: AiSection[]) => void;
+  situation?: Situation;
+  config?: { caseId: string; sections: string[]; type: DossierType; classification: string; audience: string };
+}) {
   const [currentStep, setCurrentStep] = useState(0);
   const completedRef = useRef(false);
 
   useEffect(() => {
+    // If we have a real situation, call the API instead of fake animation
+    if (situation && config && !completedRef.current) {
+      completedRef.current = true;
+      (async () => {
+        try {
+          const res = await fetch('/api/ai/dossier-generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              situation,
+              situationId: situation.id,
+              caseId: situation.id,
+              sections: config.sections,
+              dossierType: config.type?.name ?? 'Situation Dossier',
+              classification: config.classification,
+              audience: config.audience,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json() as { sections?: AiSection[] };
+            onComplete(data.sections);
+          } else {
+            onComplete(undefined); // fall back to demo content
+          }
+        } catch {
+          onComplete(undefined);
+        }
+      })();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (situation) return; // API is handling generation
     if (currentStep >= GENERATION_STEPS.length) {
       if (!completedRef.current) {
         completedRef.current = true;
-        const timer = setTimeout(onComplete, 400);
+        const timer = setTimeout(() => onComplete(undefined), 400);
         return () => clearTimeout(timer);
       }
       return;
@@ -494,7 +548,7 @@ function GeneratingStep({ onComplete }: { onComplete: () => void }) {
       setCurrentStep((s) => s + 1);
     }, GENERATION_STEPS[currentStep].duration);
     return () => clearTimeout(timer);
-  }, [currentStep, onComplete]);
+  }, [currentStep, onComplete, situation]);
 
   const progress = Math.round((currentStep / GENERATION_STEPS.length) * 100);
 
@@ -634,6 +688,7 @@ function SourcesPanel({ sections }: { sections: string[] }) {
 function ViewStep({
   config,
   onReset,
+  aiSections,
 }: {
   config: {
     caseId: string;
@@ -644,6 +699,7 @@ function ViewStep({
     wordLimits?: WordLimitConfig;
   };
   onReset: () => void;
+  aiSections?: AiSection[];
 }) {
   const [copied, setCopied] = useState(false);
   const caseName = CASE_REGISTRY[config.caseId]?.meta.name || config.caseId;
@@ -762,7 +818,27 @@ function ViewStep({
       </div>
 
       {/* Sections */}
-      {sectionDetails.map((sec, i) => {
+      {aiSections && aiSections.length > 0
+        ? aiSections.map((sec, i) => (
+          <div key={i} id={`dossier-ai-${i}`} className="rounded-xl border border-[var(--color-app-border)] bg-white p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif text-lg text-navy-900">{i + 1}. {sec.title}</h2>
+              <span className={cn(
+                'rounded-full border px-2 py-0.5 text-[10px] font-bold',
+                sec.confidence >= 0.85 ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700',
+              )}>
+                {Math.round(sec.confidence * 100)}%
+              </span>
+            </div>
+            <div className="mt-4 whitespace-pre-line text-[13px] leading-relaxed text-navy-700">{sec.content}</div>
+            {sec.sources?.length > 0 && (
+              <div className="mt-4 border-t border-navy-100 pt-3 text-[11px] text-navy-400">
+                <span className="font-semibold">Sources: </span>{sec.sources.join(' · ')}
+              </div>
+            )}
+          </div>
+        ))
+        : sectionDetails.map((sec, i) => {
         const content = DEMO_DOSSIER_CONTENT[sec.id] || 'Content generation pending...';
         const confidence = confidenceScores[sec.id] || 82;
 
@@ -868,7 +944,7 @@ function ViewStep({
 
 // ── DemoDossierPage ───────────────────────────────────────────────────────────
 
-function DemoDossierPage() {
+function DemoDossierPage({ situation }: { situation?: Situation }) {
   const [step, setStep] = useState<Step>('configure');
   const [config, setConfig] = useState<{
     caseId: string;
@@ -878,18 +954,21 @@ function DemoDossierPage() {
     audience: string;
     wordLimits?: WordLimitConfig;
   } | null>(null);
+  const [aiSections, setAiSections] = useState<AiSection[] | undefined>(undefined);
 
   const handleGenerate = useCallback((cfg: NonNullable<typeof config>) => {
     setConfig(cfg);
     setStep('generating');
   }, []);
 
-  const handleGenerationComplete = useCallback(() => {
+  const handleGenerationComplete = useCallback((sections?: AiSection[]) => {
+    if (sections) setAiSections(sections);
     setStep('view');
   }, []);
 
   const handleReset = useCallback(() => {
     setConfig(null);
+    setAiSections(undefined);
     setStep('configure');
   }, []);
 
@@ -903,12 +982,22 @@ function DemoDossierPage() {
         </p>
       </div>
 
-      {step === 'configure' && <ConfigureStep onGenerate={handleGenerate} />}
+      {step === 'configure' && (
+        <ConfigureStep
+          onGenerate={handleGenerate}
+          fixedCaseId={situation?.id}
+          fixedCaseName={situation?.name}
+        />
+      )}
       {step === 'generating' && (
-        <GeneratingStep onComplete={handleGenerationComplete} />
+        <GeneratingStep
+          onComplete={handleGenerationComplete}
+          situation={situation}
+          config={config ?? undefined}
+        />
       )}
       {step === 'view' && config && (
-        <ViewStep config={config} onReset={handleReset} />
+        <ViewStep config={config} onReset={handleReset} aiSections={aiSections} />
       )}
       <PoweredByTacitus />
     </div>
@@ -926,17 +1015,6 @@ export default function DossierPage() {
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
 
-  // Real mode — AI populate prompt, then show tool
-  return (
-    <AiPopulate
-      toolId="dossier"
-      toolName="Dossier"
-      apiEndpoint="/api/ai/dossier-generate"
-      creditCost={4}
-      hasExistingData={false}
-      onDataGenerated={() => {}}
-    >
-      <DemoDossierPage />
-    </AiPopulate>
-  );
+  // Real mode — pass situation so ConfigureStep is pre-filled and GeneratingStep calls the API
+  return <DemoDossierPage situation={situation} />;
 }

@@ -170,6 +170,7 @@ A: [answer]
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           situation: topicLabel,
+          situationData: situation ?? undefined,
           audience: audienceOption.label,
           tone: selectedAudience,
           context: prompt,

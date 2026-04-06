@@ -25,6 +25,7 @@ import {
 import { useConflictStore } from '@/stores/conflict-store';
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
+import { buildToolContext } from '@/lib/ai/situation-context';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -394,8 +395,8 @@ export default function ReportEditorPage() {
         .map((s) => `${s.title}: ${sectionContents[s.id] || ''}`)
         .join('\n');
 
-      const conflictCtx = situation?.name ?? conflict?.name ?? 'the active conflict';
-      const prompt = `Generate the "${section.title}" section for a ${report.title} about ${conflictCtx}. Previous sections context: ${previousContent.slice(0, 400) || 'none'}. Write in formal UN diplomatic language. 200-300 words. Output only the section text, no headers.`;
+      const conflictCtx = situation ? buildToolContext(situation) : (conflict?.name ?? 'the active conflict');
+      const prompt = `Generate the "${section.title}" section for a ${report.title} about ${situation?.name ?? conflict?.name ?? 'the active conflict'}. Previous sections context: ${previousContent.slice(0, 400) || 'none'}. Write in formal UN diplomatic language. 200-300 words. Output only the section text, no headers.`;
 
       try {
         const response = await fetch('/api/ai/chat', {
@@ -626,7 +627,7 @@ export default function ReportEditorPage() {
                   templateName={title}
                   previousContent={prevContent}
                   onContentChange={(c) => handleSectionChange(section.id, c)}
-                  conflictContext={situation?.name ?? conflict?.name ?? 'the Nordalia Crisis'}
+                  conflictContext={situation ? buildToolContext(situation) : (conflict?.name ?? 'the active situation')}
                 />
               );
             })}

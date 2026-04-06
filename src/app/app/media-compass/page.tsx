@@ -201,6 +201,7 @@ function RealMediaPanel({ situation, onSituationSources }: {
           outlets: ["Reuters", "BBC", "Al Jazeera", "Associated Press", "Local media"],
           topic: situation.name,
           conflictContext: `${situation.name}: ${situation.description}. Region: ${situation.region}. Actors: ${situation.actors.join(", ")}`,
+          situation,
         }),
       });
       if (!res.ok) {

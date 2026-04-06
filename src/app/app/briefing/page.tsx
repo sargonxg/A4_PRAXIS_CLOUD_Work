@@ -156,6 +156,7 @@ function DemoBriefingPage({ situationName, situation, preloadedSlides }: {
           body: JSON.stringify({
             caseId: situation.id,
             briefingType,
+            situation,
             conflictContext: `${situation.name}: ${situation.description}. Actors: ${situation.actors.join(', ')}`,
             situationContext: {
               name: situation.name,
@@ -452,6 +453,7 @@ function RealBriefingPage({ situation }: { situation: Situation }) {
       extraBody={{
         caseId: situation.id,
         briefingType: 'morning',
+        situation,
         conflictContext: `${situation.name}: ${situation.description}. Actors: ${situation.actors.join(', ')}`,
         situationContext: {
           name: situation.name,
