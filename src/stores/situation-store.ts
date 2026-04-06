@@ -14,6 +14,7 @@ interface SituationStore {
   updateSituation: (id: string, updates: Partial<Situation>) => void;
   removeSituation: (id: string) => void;
   setLoading: (loading: boolean) => void;
+  fetchSituations: () => Promise<void>;
 }
 
 export const useSituationStore = create<SituationStore>()(
@@ -74,6 +75,29 @@ export const useSituationStore = create<SituationStore>()(
       },
 
       setLoading: (loading) => set({ loading }),
+      fetchSituations: async () => {
+        set({ loading: true });
+        try {
+          const res = await fetch('/api/situations');
+          if (!res.ok) throw new Error('Failed to fetch situations');
+          const data = await res.json();
+          const situations = data.situations || [];
+          
+          const { activeSituationId } = get();
+          const activeSituation =
+            situations.find((s: Situation) => s.id === activeSituationId) || situations[0] || null;
+            
+          set({
+            situations,
+            activeSituation,
+            activeSituationId: activeSituation?.id || null,
+            loading: false,
+          });
+        } catch (error) {
+          console.error('fetchSituations failed:', error);
+          set({ loading: false });
+        }
+      },
     }),
     {
       name: 'praxis-situation-store',

@@ -111,6 +111,9 @@ interface ConflictStore {
   // Auto-brief setting
   autoBriefEnabled: boolean;
   setAutoBrief: (enabled: boolean) => void;
+
+  // New: Sync from Situation
+  syncFromSituation: (situation: any) => void;
 }
 
 // ============================================================================
@@ -449,6 +452,39 @@ export const useConflictStore = create<ConflictStore>()(
       // Auto-brief — enabled by default so dashboard is populated on first load
       autoBriefEnabled: true,
       setAutoBrief: (enabled) => set({ autoBriefEnabled: enabled }),
+
+      syncFromSituation: (situation) => {
+        if (!situation) return;
+
+        // 1. Update the conflict summary for the dashboard list
+        const summary: ConflictSummary = {
+          id: situation.id,
+          name: situation.name,
+          region: situation.region || 'Unknown',
+          status: situation.status || 'active',
+          description: situation.description || '',
+          riskScore: situation.ontology?.riskScore || 5.0,
+          actorCount: situation.ontology?.actors?.length || 0,
+          graphEntities: (
+            (situation.ontology?.actors?.length || 0) +
+            (situation.ontology?.claims?.length || 0) +
+            (situation.ontology?.events?.length || 0)
+          ),
+          events: situation.ontology?.events?.map((e: any) => ({
+            title: e.description || e.name || 'Event',
+            date: e.date || new Date().toISOString()
+          })) || []
+        };
+
+        set((state) => ({
+          activeConflictId: situation.id,
+          activeCaseOntology: situation.ontology || null,
+          conflicts: [
+            summary,
+            ...state.conflicts.filter((c) => c.id !== situation.id)
+          ]
+        }));
+      },
     }),
     {
       name: 'praxis-conflict-store',
