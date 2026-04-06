@@ -1020,7 +1020,13 @@ function AiInsightsPanel({ situationName }: { situationName: string }) {
 export default function DashboardPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
-  const { situations } = useSituationStore();
+  const { situations, fetchSituations } = useSituationStore();
+
+  useEffect(() => {
+    if (!isDemo) {
+      fetchSituations();
+    }
+  }, [isDemo, fetchSituations]);
 
   // Real app — show situation-specific dashboard (no demo data)
   if (!isDemo) {

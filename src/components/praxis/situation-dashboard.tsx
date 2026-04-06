@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { usePraxisRoute } from '@/lib/utils/routes';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { useSituationStore } from '@/stores/situation-store';
+import { useConflictStore } from '@/stores/conflict-store';
 import { SituationOnboarding } from '@/components/praxis/situation-onboarding';
 import { IntelligenceFeed } from '@/components/praxis/intelligence-feed';
 import { cn } from '@/lib/utils/cn';
@@ -394,6 +395,13 @@ export function SituationDashboard({ situation }: { situation: Situation }) {
 
   // Dashboard snapshot — tracks which tools have been seeded
   const persisted = usePersistedToolData('dashboard-snapshot', situation?.id);
+
+  const syncFromSituation = useConflictStore((s: any) => s.syncFromSituation);
+
+  // Sync situation to conflict store for global access
+  useEffect(() => {
+    syncFromSituation(situation);
+  }, [situation, syncFromSituation]);
 
   // Record dashboard visit in activity log
   useEffect(() => {
