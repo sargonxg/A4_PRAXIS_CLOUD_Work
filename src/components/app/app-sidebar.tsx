@@ -348,7 +348,7 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   '/un-toolkit': 'un-toolkit',
   // Simulation
   '/scenarios': 'scenarios',
-  '/negotiation-prep': 'negotiation',
+  '/negotiation-prep': 'negotiation-prep',
   '/game-theory': 'game-theory',
   '/mediation-design': 'mediation-design',
   // Intelligence
@@ -357,7 +357,7 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   '/media-roundup': 'media-roundup',
   '/info-environment': 'info-environment',
   '/sanctions': 'sanctions',
-  '/commitments': 'commitment-tracker',
+  '/commitments': 'commitments',
   '/treaty-analyzer': 'treaty-analyzer',
   '/geospatial-monitor': 'geospatial-monitor',
   '/alerts': 'alert-center',

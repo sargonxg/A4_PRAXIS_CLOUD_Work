@@ -95,7 +95,7 @@ export const POST = withAuth(async (request, _user) => {
       additionalContext?: string;
     };
 
-    const sitContext = situation ? buildToolContext(situation as Situation) : '';
+    const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
     const result = await generateText({
       model: getProModel(),

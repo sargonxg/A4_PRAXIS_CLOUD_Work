@@ -87,7 +87,6 @@ export default function TalkingPointsPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
   const persisted = usePersistedToolData('talking-points', situation?.id);
-  if (showGuard) return <NoSituationState />;
 
   // In real mode, build conflict options from the active situation
   const CONFLICT_OPTIONS = isDemo
@@ -229,6 +228,8 @@ A: [answer]
     a.click();
     URL.revokeObjectURL(url);
   }, [output, topicLabel, audienceOption, conflictOption, selectedTopic, selectedAudience]);
+
+  if (showGuard) return <NoSituationState />;
 
   return (
     <div className="space-y-6">

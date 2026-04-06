@@ -17,6 +17,7 @@ import { Loader2 } from 'lucide-react';
 import { FloatingPraxis } from '@/components/app/floating-praxis';
 import { DebugPanel } from '@/components/app/debug-panel';
 import { ErrorBoundary } from '@/components/shared/error-boundary';
+import { ToolErrorBoundary } from '@/components/praxis/tool-error-boundary';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -124,7 +125,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <main className="flex-1 overflow-y-auto">
             <div className="mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-6">
               <ErrorBoundary>
-                {children}
+                <ToolErrorBoundary>
+                  {children}
+                </ToolErrorBoundary>
               </ErrorBoundary>
             </div>
           </main>

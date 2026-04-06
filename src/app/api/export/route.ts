@@ -10,7 +10,7 @@ export const POST = withAuth(async (req, user) => {
 
   try {
     const { type, situation, content } = await req.json();
-    const sit = situation as Situation;
+    const sit = situation as unknown as Situation;
 
     if (!sit?.name) {
       return NextResponse.json({ error: 'Situation data required' }, { status: 400 });

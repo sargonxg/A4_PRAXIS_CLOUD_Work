@@ -11,6 +11,7 @@ import { handleRouteError } from '@/lib/api/standard-error';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import { computeRiskScore } from '@/lib/analytics/risk-engine';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
+import { situationContextSchema } from '@/lib/api/schemas';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -109,7 +110,7 @@ export const POST = withAuth(async (request, _user) => {
     const validation = validateAiRequest(body, requestSchema);
     if (!validation.success) return validation.response;
     const { regions, conflictContext, situation } = validation.data;
-    const sitContext = situation ? buildToolContext(situation as Situation) : '';
+    const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {

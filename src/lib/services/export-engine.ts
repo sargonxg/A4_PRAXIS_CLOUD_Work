@@ -3,7 +3,7 @@
  * Generates professional DOCX, PDF, and data exports
  */
 
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, Table, TableRow, TableCell, WidthType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } from 'docx';
 import type { Situation } from '@/types/situation';
 
 // ============================================================================

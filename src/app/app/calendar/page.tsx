@@ -64,7 +64,6 @@ const DEFAULT_CHECKLIST = [
 export default function CalendarPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [generating, setGenerating] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set(['all']));
@@ -235,6 +234,8 @@ Keep it action-oriented and diplomatically precise.`;
   }, {});
 
   const sortedDates = Object.keys(grouped).sort();
+
+  if (showGuard) return <NoSituationState />;
 
   return (
     <div className="space-y-6">

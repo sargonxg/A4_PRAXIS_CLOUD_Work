@@ -73,7 +73,7 @@ export const POST = withAuth(async (request, _user) => {
 
     const body = await request.json();
     const { situation, deepResearch } = body as { situation?: Situation; deepResearch?: boolean };
-    const sitContext = situation ? buildToolContext(situation as Situation) : '';
+    const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
     // ── 1. Live intel feeds (8s timeout — never block the brief on slow feeds) ──
     let intelContext = '';
@@ -96,7 +96,7 @@ export const POST = withAuth(async (request, _user) => {
 
     // ── 2. Deep research: Firecrawl + Google-grounded web search ──
     let webResearchContext = '';
-    let sourcesUsed: string[] = [];
+    const sourcesUsed: string[] = [];
     if (deepResearch && situation) {
       const searchQuery = `${situation.name} latest news ${new Date().getFullYear()} conflict situation`;
 

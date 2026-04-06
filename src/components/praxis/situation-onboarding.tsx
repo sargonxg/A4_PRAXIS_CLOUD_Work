@@ -3,8 +3,8 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Sparkles, Globe, Users, FileText, Search, Check, Loader2,
-  ArrowRight, Upload, ChevronDown, ChevronUp, ExternalLink,
+  Sparkles, Search, Check, Loader2,
+  ArrowRight, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';

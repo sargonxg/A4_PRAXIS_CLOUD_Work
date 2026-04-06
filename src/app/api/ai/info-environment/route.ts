@@ -163,7 +163,7 @@ export const POST = withAuth(async (request, _user) => {
 
     const body = await request.json();
     const { situation } = body as { situation?: Situation };
-    const sitContext = situation ? buildToolContext(situation as Situation) : '';
+    const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
     // --- Live intelligence feed (GDELT stability + events data) ---
     let intelContext = '';

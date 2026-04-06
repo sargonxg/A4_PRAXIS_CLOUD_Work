@@ -381,7 +381,6 @@ function RealMediaPanel({ situation, onSituationSources }: {
 export default function MediaCompassPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const [activeTab, setActiveTab] = useState<MediaTab>("source-map");
   const [selectedSource, setSelectedSource] = useState<MediaSource | null>(null);
   const [regionFilter, setRegionFilter] = useState("All Regions");
@@ -446,6 +445,8 @@ export default function MediaCompassPage() {
     }
     return items;
   }, [colorBy, filteredSources]);
+
+  if (showGuard) return <NoSituationState />;
 
   const toggleCompareSource = (name: string) => {
     setSelectedCompare((prev) =>

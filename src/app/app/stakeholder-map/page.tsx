@@ -644,7 +644,6 @@ type TabType = 'network' | 'grid' | 'matrix';
 export default function StakeholderMapPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
 
   // ─── Persistence ──────────────────────────────────────────────────────────
   const persisted = usePersistedToolData('stakeholder-map', situation?.id);
@@ -952,6 +951,8 @@ Be precise and operationally actionable.`;
   }, [visibleForceNodes, forceEdges]);
 
   const selectedActor = selectedActorId ? actors.find(a => a.id === selectedActorId) ?? null : null;
+
+  if (showGuard) return <NoSituationState />;
 
   return (
     <div className="space-y-6">

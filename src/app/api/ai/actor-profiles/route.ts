@@ -71,7 +71,7 @@ export const POST = withAuth(async (request: Request) => {
 
     const body = await request.json();
     const { situation } = body as { situation?: Situation };
-    const sitContext = situation ? buildToolContext(situation as Situation) : '';
+    const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
     const result = await generateText({
       model: getProModel(),

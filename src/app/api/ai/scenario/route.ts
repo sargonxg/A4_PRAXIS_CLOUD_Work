@@ -33,7 +33,7 @@ export const POST = withAuth(async (request, _user) => {
     const { conflictContext, scenarioTrigger, actors, timeHorizon, situation, params } =
       validation.data;
 
-    const sitContext = situation ? buildToolContext(situation as Situation) : '';
+    const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
     const creditCheck = await checkAndDeductCredits('ai_scenario', 'Scenario analysis');
     if (!creditCheck.allowed) return creditCheck.response;

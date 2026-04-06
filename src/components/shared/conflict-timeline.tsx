@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { motion } from 'framer-motion';
-import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 
 export interface TimelineEvent {
   date: string;
@@ -27,7 +27,6 @@ const TYPE_STYLES: Record<string, { bg: string; border: string; text: string; do
 
 export function ConflictTimeline({ events, title, className }: ConflictTimelineProps) {
   const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [scrollOffset, setScrollOffset] = useState(0);
 
   const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
   const filtered = selectedType ? sorted.filter((e) => e.type === selectedType) : sorted;

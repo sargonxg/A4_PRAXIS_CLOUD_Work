@@ -317,7 +317,6 @@ function SectionEditor({
 export default function ReportEditorPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const params = useParams();
   const router = useRouter();
   const route = usePraxisRoute();
@@ -365,6 +364,8 @@ export default function ReportEditorPage() {
     },
     []
   );
+
+  if (showGuard) return <NoSituationState />;
 
   function handleSave() {
     if (!report) return;

@@ -1581,7 +1581,6 @@ function AdvisoryBriefModal({
 export default function AdvisoryPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const [chatAdvisor, setChatAdvisor] = useState<AdvisorDef | null>(null);
   const [mode, setMode] = useState<'individual' | 'panel'>('individual');
   const [showConvenePanel, setShowConvenePanel] = useState(false);
@@ -1618,6 +1617,8 @@ export default function AdvisoryPage() {
     if (situation) return buildSituationContext(situation as Situation);
     return 'No active situation context available. Provide general expert analysis.';
   }, [situation]);
+
+  if (showGuard) return <NoSituationState />;
 
   // Derive expertise tags from the expertise string (first 3 comma-split tokens, trimmed)
   const getExpertiseTags = (expertise: string): string[] => {

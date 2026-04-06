@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { DEMO_CONFLICT } from '@/lib/constants/demo-conflict';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
-import { MEDIA_DATABASE, findMediaOutlet } from '@/lib/constants/media-database';
+import { findMediaOutlet } from '@/lib/constants/media-database';
 import { searchWeb } from '@/lib/ai/firecrawl';
 
 const google = createGoogleGenerativeAI({
@@ -351,7 +351,7 @@ export const draftSection = tool({
       .optional()
       .describe('Desired tone for the section'),
   }),
-  execute: async ({ sectionTitle, templateType, conflictId, instructions, wordLimit, tone }) => {
+  execute: async ({ sectionTitle, templateType, conflictId: _conflictId, instructions, wordLimit, tone }) => {
     try {
       // Load real conflict data for grounding
       const conflict = DEMO_CONFLICT;
@@ -619,7 +619,7 @@ export const compareMediaCoverage = tool({
     sourceNames: z.array(z.string()).min(2).max(8).describe('Names of media sources to compare'),
     timeRange: z.enum(['day', 'week', 'month']).optional().describe('Time range for coverage comparison'),
   }),
-  execute: async ({ topic, sourceNames, timeRange }) => {
+  execute: async ({ topic: _topic, sourceNames, timeRange: _timeRange }) => {
     try {
       // Build media database context for sources requested
       const sourceProfiles = sourceNames.map((name) => {
@@ -811,7 +811,7 @@ export const draftResolutionLanguage = tool({
       .describe('Previous resolution numbers to recall and reference'),
     chapterVII: z.boolean().optional().describe('Whether to include Chapter VII authorization language'),
   }),
-  execute: async ({ topic, type, keyPoints, strength, previousResolutions, chapterVII }) => {
+  execute: async ({ topic: _topic, type, keyPoints, strength, previousResolutions, chapterVII }) => {
     try {
     const { output } = await generateText({
       model: gemini(),
@@ -890,7 +890,7 @@ export const generateTalkingPoints = tool({
     conflictId: z.string().optional().describe('Conflict ID to ground talking points in real knowledge graph data'),
     maxPoints: z.number().min(3).max(10).optional().describe('Maximum number of talking points to generate'),
   }),
-  execute: async ({ topic, audience, position, conflictId, maxPoints }) => {
+  execute: async ({ topic: _topic, audience, position, conflictId, maxPoints }) => {
     try {
     // Ground in real conflict data if available
     const conflict = DEMO_CONFLICT;
@@ -977,7 +977,7 @@ export const escalationAssessment = tool({
       .optional()
       .describe('Time horizon for risk assessment (default: short_term)'),
   }),
-  execute: async ({ conflictId, specificConcern, timeHorizon }) => {
+  execute: async ({ conflictId: _conflictId, specificConcern, timeHorizon }) => {
     try {
     // Load conflict data
     const conflict = DEMO_CONFLICT;
@@ -1087,7 +1087,7 @@ export const negotiationSpaceAnalysis = tool({
       .optional()
       .describe('Current mediation format and state of talks'),
   }),
-  execute: async ({ conflictId, issuesOfFocus, mediationContext }) => {
+  execute: async ({ conflictId: _conflictId, issuesOfFocus, mediationContext }) => {
     try {
     const conflict = DEMO_CONFLICT;
     const conflictData = conflict as Record<string, unknown>;
@@ -1206,7 +1206,7 @@ export const narrativeEcosystemMap = tool({
       .optional()
       .describe('Specific audience to examine narrative targeting for'),
   }),
-  execute: async ({ conflictId, focus, audienceFocus }) => {
+  execute: async ({ conflictId: _conflictId, focus, audienceFocus }) => {
     try {
     const conflict = DEMO_CONFLICT;
     const conflictData = conflict as Record<string, unknown>;
@@ -2135,7 +2135,7 @@ export const verifyAndStandardize = tool({
     claimType: z.enum(['date', 'statistic', 'event', 'quote', 'designation', 'general']),
     context: z.string().optional(),
   }),
-  execute: async ({ claim, claimType, context }) => {
+  execute: async ({ claim, claimType: _claimType, context }) => {
     try {
     // Search for verification
     const verifyResults = await searchWeb(`"${claim}" verify fact check`, { numResults: 5 }).catch(() => []);
@@ -2833,7 +2833,7 @@ export function createSituationBoundTools(
   const boundEscalationAssessment = tool({
     description: escalationAssessment.description,
     inputSchema: escalationAssessment.inputSchema,
-    execute: async ({ conflictId, specificConcern, timeHorizon }) => {
+    execute: async ({ conflictId: _conflictId, specificConcern, timeHorizon }) => {
       try {
         const { output } = await generateText({
           model: gemini(),
@@ -2920,7 +2920,7 @@ Also provide: 3 anticipated questions with suggested responses, 3 key messages t
   const boundDraftSection = tool({
     description: draftSection.description,
     inputSchema: draftSection.inputSchema,
-    execute: async ({ sectionTitle, templateType, conflictId, instructions, wordLimit, tone }) => {
+    execute: async ({ sectionTitle, templateType, conflictId: _conflictId, instructions, wordLimit, tone }) => {
       try {
         const { text } = await generateText({
           model: gemini(),

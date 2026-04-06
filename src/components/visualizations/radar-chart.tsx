@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface RadarDimension {
   label: string;
@@ -13,10 +13,6 @@ interface RadarChartProps {
   size?: number;
   showLabels?: boolean;
   color?: string;
-}
-
-function toRad(deg: number) {
-  return (deg * Math.PI) / 180;
 }
 
 function point(cx: number, cy: number, r: number, angle: number) {
@@ -69,7 +65,6 @@ export function RadarChart({
   useEffect(() => {
     const id = requestAnimationFrame(() => setAnimPoly(dataPolygon));
     return () => cancelAnimationFrame(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataPolygon]);
 
   return (

@@ -327,7 +327,6 @@ function TemplateCard({
 export default function NewReportPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const router = useRouter();
   const route = usePraxisRoute();
   const { addReport, activeConflictId } = useConflictStore();
@@ -346,6 +345,8 @@ export default function NewReportPage() {
       return matchesFilter && matchesSearch;
     });
   }, [search, filter]);
+
+  if (showGuard) return <NoSituationState />;
 
   function handleSelect(template: ReportTemplate) {
     const newId = `report-${Date.now()}`;

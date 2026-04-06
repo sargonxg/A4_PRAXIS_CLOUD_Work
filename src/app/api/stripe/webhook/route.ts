@@ -1,10 +1,21 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 
-// In-memory set of processed event IDs for idempotency
-// In production with multiple instances, use Redis or Firestore
-const processedEvents = new Set<string>();
-const MAX_PROCESSED = 1000;
+// Firestore-backed idempotency check for serverless environments
+async function isEventProcessed(eventId: string): Promise<boolean> {
+  const { adminDb } = await import('@/lib/firebase/admin');
+  if (!adminDb) return false;
+  const doc = await adminDb.collection('stripe_processed_events').doc(eventId).get();
+  return doc.exists;
+}
+
+async function markEventProcessed(eventId: string): Promise<void> {
+  const { adminDb } = await import('@/lib/firebase/admin');
+  if (!adminDb) return;
+  await adminDb.collection('stripe_processed_events').doc(eventId).set({
+    processedAt: new Date().toISOString(),
+  });
+}
 
 export async function POST(request: Request) {
   const stripeKey = process.env.STRIPE_SECRET_KEY;
@@ -27,8 +38,8 @@ export async function POST(request: Request) {
     // Verify webhook signature cryptographically
     const event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
 
-    // Idempotency: skip if we've already processed this event
-    if (processedEvents.has(event.id)) {
+    // Idempotency: skip if we've already processed this event (Firestore-backed)
+    if (await isEventProcessed(event.id)) {
       console.log(`[stripe] Duplicate event skipped: ${event.id}`);
       return NextResponse.json({ received: true });
     }
@@ -113,13 +124,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // Mark event as processed (idempotency)
-    processedEvents.add(event.id);
-    // Prevent memory leak — keep only recent events
-    if (processedEvents.size > MAX_PROCESSED) {
-      const oldest = processedEvents.values().next().value;
-      if (oldest) processedEvents.delete(oldest);
-    }
+    // Mark event as processed in Firestore (idempotency)
+    await markEventProcessed(event.id);
 
     return NextResponse.json({ received: true });
   } catch (err) {

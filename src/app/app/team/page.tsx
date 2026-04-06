@@ -47,7 +47,6 @@ const TRACKED_TOOLS = [
 
 export default function TeamPage() {
   const { showGuard, situation, isDemo } = useSituationGuard();
-  if (showGuard && !isDemo) return <NoSituationState />;
 
   const { activeSituation } = useSituationStore();
   const situationId = activeSituation?.id || 'default';
@@ -77,6 +76,8 @@ export default function TeamPage() {
 
   // Read dashboard-snapshot to get seeded tools info
   const dashboardData = usePersistedToolData('dashboard-snapshot', activeSituation?.id);
+
+  if (showGuard && !isDemo) return <NoSituationState />;
 
   // Parse which tools have been populated
   const seededTools: string[] = dashboardData.data

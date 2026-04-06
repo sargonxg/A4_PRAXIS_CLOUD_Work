@@ -31,7 +31,7 @@ function ensureInitialized() {
   }
 
   try {
-    let serviceAccount = JSON.parse(raw);
+    const serviceAccount = JSON.parse(raw);
 
     // Handle Vercel's literal \n in private_key
     if (serviceAccount.private_key && typeof serviceAccount.private_key === 'string') {

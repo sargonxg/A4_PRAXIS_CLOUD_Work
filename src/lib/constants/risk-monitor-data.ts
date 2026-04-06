@@ -260,7 +260,7 @@ function generateRiskTimeline(): RiskTimelinePoint[] {
   };
 
   // Historical data: days 1-90
-  let baseRisk = 55;
+  const baseRisk = 55;
   for (let day = 1; day <= 90; day++) {
     // General upward trend with event-driven variation
     const trendComponent = (day / 90) * 28; // 55 → ~83 base trend

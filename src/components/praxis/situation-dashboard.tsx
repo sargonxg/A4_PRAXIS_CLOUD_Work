@@ -278,7 +278,8 @@ function SituationHealthWidget({
   const router = useRouter();
 
   // Determine if the situation was just created (within last 5 minutes)
-  const isRecentlyCreated = Date.now() - new Date(situation.updatedAt).getTime() < 5 * 60 * 1000;
+  const [mountTime] = useState(() => Date.now());
+  const isRecentlyCreated = mountTime - new Date(situation.updatedAt).getTime() < 5 * 60 * 1000;
 
   // Auto-poll for seeded tools when situation is recently created
   // Re-fetch every 8 seconds until all core tools are seeded or 3 minutes pass
@@ -387,8 +388,6 @@ function SituationHealthWidget({
  * No demo data, no hardcoded conflicts. Everything comes from the situation.
  */
 export function SituationDashboard({ situation }: { situation: Situation }) {
-  const router = useRouter();
-  const route = usePraxisRoute();
   const [onboardingComplete, setOnboardingComplete] = useState(
     situation.documentCount > 0 || situation.graphEntities > 0
   );
@@ -399,7 +398,6 @@ export function SituationDashboard({ situation }: { situation: Situation }) {
   // Record dashboard visit in activity log
   useEffect(() => {
     recordActivity({ tool: 'Dashboard', href: '/dashboard', situationId: situation.id });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [situation.id]);
 
   const TrendIcon = TREND_ICONS[situation.escalationTrend] || Minus;

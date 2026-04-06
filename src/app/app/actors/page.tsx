@@ -335,7 +335,7 @@ function ActorList({ onSelect, profiles }: { onSelect: (id: string) => void; pro
       if (threatFilters.size > 0 && !threatFilters.has(a.threatLevel)) return false;
       return true;
     });
-  }, [search, typeFilter, threatFilters]);
+  }, [profiles, search, typeFilter, threatFilters]);
 
   function toggleThreat(level: string) {
     setThreatFilters((prev) => {
@@ -445,7 +445,7 @@ function ActorList({ onSelect, profiles }: { onSelect: (id: string) => void; pro
 
 function ActorDetail({
   actor,
-  situation,
+  situation: _situation,
   onBack,
   onOpenBrief,
 }: {

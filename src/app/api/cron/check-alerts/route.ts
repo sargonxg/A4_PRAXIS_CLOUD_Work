@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { searchArticles, type GDELTArticle } from '@/lib/data-feeds/gdelt-client';
+import { searchArticles } from '@/lib/data-feeds/gdelt-client';
 import { getCurrentStability } from '@/lib/data-feeds/gdelt-stability';
 
 export const maxDuration = 60;

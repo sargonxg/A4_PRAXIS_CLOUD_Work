@@ -11,7 +11,7 @@ export function WaitlistForm() {
   const [formState, setFormState] = useState<FormState>("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     if (!email || !email.includes("@")) {
@@ -23,23 +23,23 @@ export function WaitlistForm() {
     setFormState("loading");
     setErrorMessage("");
 
-    // Simulate a brief async save
-    setTimeout(() => {
-      try {
-        const stored = localStorage.getItem("praxis-waitlist");
-        const existing: string[] = stored ? JSON.parse(stored) : [];
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
 
-        if (!existing.includes(email)) {
-          existing.push(email);
-          localStorage.setItem("praxis-waitlist", JSON.stringify(existing));
-        }
-
-        setFormState("success");
-      } catch {
-        setErrorMessage("Something went wrong. Please try again.");
-        setFormState("error");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Something went wrong');
       }
-    }, 600);
+
+      setFormState("success");
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setFormState("error");
+    }
   }
 
   return (

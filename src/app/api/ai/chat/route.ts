@@ -1,4 +1,4 @@
-import { streamText, stepCountIs } from 'ai';
+import { streamText, stepCountIs, type ModelMessage } from 'ai';
 import { z } from 'zod';
 import { getModel, getModelForUser } from '@/lib/ai/providers';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
@@ -11,6 +11,7 @@ import { withAuth } from '@/lib/api/with-auth';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { retrieveRelevantChunks } from '@/lib/firebase/documents-service';
+import { messageContentSchema, situationContextSchema, aiSettingsSchema } from '@/lib/api/schemas';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -20,10 +21,10 @@ export const POST = withAuth(async (request: Request, _user) => {
     const body = await request.json();
 
     const requestSchema = z.object({
-      messages: z.array(z.object({ role: z.enum(['user', 'assistant', 'system', 'tool']), content: z.any() })),
+      messages: z.array(z.object({ role: z.enum(['user', 'assistant', 'system', 'tool']), content: messageContentSchema })),
       conflictContext: z.string().optional(),
-      situation: z.any().optional(),
-      aiSettings: z.any().optional(),
+      situation: situationContextSchema.optional(),
+      aiSettings: aiSettingsSchema,
     });
 
     const validation = validateAiRequest(body, requestSchema);
@@ -136,7 +137,7 @@ You have access to the user's active situation data. When answering questions:
 - If the user asks about something their situation data doesn't cover, suggest they run the relevant tool (e.g., "I'd recommend running the Risk Monitor to get a detailed assessment")`;
 
     if (situation) {
-      const sit = situation as Situation;
+      const sit = situation as unknown as Situation;
       systemPrompt += '\n\n' + buildSituationContext(sit);
 
       // Include source URLs when available so the AI can reference them
@@ -181,7 +182,7 @@ You have access to the user's active situation data. When answering questions:
     let situationCtx: SituationToolContext | null = null;
     let graphSnapshot: ConflictGraphSnapshot | null = null;
     if (situation) {
-      const sit = situation as Situation;
+      const sit = situation as unknown as Situation;
       situationCtx = {
         name: sit.name ?? '',
         description: sit.description ?? '',
@@ -209,12 +210,12 @@ You have access to the user's active situation data. When answering questions:
     const result = streamText({
       model,
       system: systemPrompt,
-      messages,
+      messages: messages as unknown as ModelMessage[],
       tools,
-      stopWhen: stepCountIs(8),
+      stopWhen: stepCountIs(15),
     });
 
-    return result.toTextStreamResponse();
+    return result.toUIMessageStreamResponse();
   } catch (err) {
     return handleRouteError(err, 'chat');
   }

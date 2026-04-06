@@ -459,7 +459,7 @@ export async function getConflictProfile(options: {
 
   const unhcrData = unhcrResult.result as UNHCRPopulation | null;
   const ucdpConflicts = (ucdpResult.result as UCDPConflict[] | null) ?? [];
-  const wbEcon = wbEconResult.result as WBEconomicSnapshot | null;
+  const _wbEcon = wbEconResult.result as WBEconomicSnapshot | null;
   const wbGov = wbGovResult.result as WBGovernanceIndicators | null;
   const crisisWatch = crisisWatchResult.result as CrisisWatchEntry | null;
   const sipri = sipriResult.result as SIPRIArmsSnapshot | null;

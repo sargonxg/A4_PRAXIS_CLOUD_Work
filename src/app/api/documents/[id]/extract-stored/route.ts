@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { getProModel } from '@/lib/ai/providers';
 import { z } from 'zod';

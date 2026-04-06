@@ -246,7 +246,6 @@ function AlertConfigPanel({ config, onChange }: {
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function AlertsPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
-  if (!isDemo && (showGuard || !situation)) return <NoSituationState />;
 
   const { notifications, markRead, markAllRead, dismiss, addNotification } = useNotificationStore();
   const { activeSituation } = useSituationStore();
@@ -365,6 +364,8 @@ export default function AlertsPage() {
       setIsChecking(false);
     }
   }, [isChecking, activeSituation?.name, situation?.name, addNotification]);
+
+  if (!isDemo && (showGuard || !situation)) return <NoSituationState />;
 
   return (
     <div className="space-y-6">

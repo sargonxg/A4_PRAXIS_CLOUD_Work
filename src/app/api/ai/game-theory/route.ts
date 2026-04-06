@@ -7,6 +7,7 @@ import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
+import { situationContextSchema } from '@/lib/api/schemas';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -19,7 +20,7 @@ const requestSchema = z.object({
   actors: z.array(z.string()).min(2).max(4),
   strategies: z.record(z.string(), z.array(z.string())),
   analysisType: z.enum(['strategic_form', 'sequential', 'archetypes']).default('strategic_form'),
-  situation: z.any().optional(),
+  situation: situationContextSchema.optional(),
   conflictContext: z.string().optional(),
 });
 
@@ -106,7 +107,7 @@ export const POST = withAuth(async (request: Request) => {
     const creditCheck = await checkAndDeductCredits('ai_game_theory', 'Game Theory Analysis');
     if (!creditCheck.allowed) return creditCheck.response!;
 
-    const sitContext = situation ? buildToolContext(situation as Situation) : '';
+    const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
     // Build actor strategy descriptions for the prompt
     const actorStrategyList = actors

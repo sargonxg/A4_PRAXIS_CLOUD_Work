@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Circle, BookOpen, Database, Wrench, ListOrdered, Clock } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
 import { PraxisLink } from '@/components/shared/praxis-link';
 
 export interface ToolInfoPanelProps {

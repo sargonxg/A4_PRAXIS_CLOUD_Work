@@ -37,9 +37,9 @@ export const POST = withAuth(async (request, user) => {
     } else if (fileType === 'pdf') {
       try {
         const pdfMod = await import('pdf-parse');
-        const pdfParse = (pdfMod as unknown as { default: Function }).default || pdfMod;
+        const pdfParse = (pdfMod as unknown as { default: (...args: unknown[]) => unknown }).default || pdfMod;
         const buffer = Buffer.from(await file.arrayBuffer());
-        const result = await pdfParse(buffer);
+        const result = await pdfParse(buffer) as { text: string };
         text = result.text;
       } catch {
         text = '[PDF text extraction failed — file stored but text could not be extracted automatically]';

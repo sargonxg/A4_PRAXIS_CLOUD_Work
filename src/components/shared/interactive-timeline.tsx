@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { createElement, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
@@ -8,7 +8,6 @@ import {
   ChevronUp,
   Filter,
   X,
-  AlertTriangle,
   Shield,
   Globe,
   Heart,
@@ -17,7 +16,6 @@ import {
   TrendingDown,
   Minus,
   BookOpen,
-  Download,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -43,7 +41,7 @@ interface InteractiveTimelineProps {
 
 type EventType = 'political' | 'military' | 'diplomatic' | 'humanitarian' | 'economic' | 'all';
 type EscalationFilter = 'all' | 'escalatory' | 'de_escalatory' | 'neutral';
-type SignificanceFilter = 'all' | 'critical' | 'major' | 'moderate' | 'minor';
+// type SignificanceFilter = 'all' | 'critical' | 'major' | 'moderate' | 'minor';
 
 // ============================================================================
 // Constants
@@ -213,7 +211,7 @@ interface EventDetailPanelProps {
 }
 
 function EventDetailPanel({ event, onClose }: EventDetailPanelProps) {
-  const EscalationIcon = getEscalationIcon(event.escalatoryDirection);
+  const escalationIcon = getEscalationIcon(event.escalatoryDirection);
   const escalationColor = getEscalationColor(event.escalatoryDirection);
   const badgeClass = EVENT_TYPE_BADGE[event.type] || 'bg-navy-50 text-navy-600';
   const TypeIcon = EVENT_TYPE_ICON[event.type] || Globe;
@@ -262,7 +260,7 @@ function EventDetailPanel({ event, onClose }: EventDetailPanelProps) {
       {/* Escalation & Impact */}
       <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[var(--color-app-border)]">
         <div className="flex items-center gap-1.5">
-          <EscalationIcon className={`w-4 h-4 ${escalationColor}`} />
+          {createElement(escalationIcon, { className: `w-4 h-4 ${escalationColor}` })}
           <span className={`text-xs ${escalationColor}`}>
             {event.escalatoryDirection === 'escalatory' ? 'Escalating'
               : event.escalatoryDirection === 'de_escalatory' ? 'De-escalating'
@@ -367,11 +365,6 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
     );
   }, [filteredEvents]);
 
-  const selectedEvent = useMemo(
-    () => sortedEvents.find((e) => e.id === selectedEventId) || null,
-    [sortedEvents, selectedEventId]
-  );
-
   const handleEventClick = useCallback((id: string) => {
     setSelectedEventId((prev) => (prev === id ? null : id));
   }, []);
@@ -387,11 +380,6 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
       escalatoryDirection: e.escalatoryDirection,
     }));
   }, [sortedEvents]);
-
-  const maxStage = useMemo(
-    () => Math.max(...trajectoryData.map((d) => d.stage), 1),
-    [trajectoryData]
-  );
 
   // Group events by year for timeline sections
   const eventsByYear = useMemo(() => {
@@ -452,7 +440,7 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
           >
             <div className="grid grid-cols-3 gap-2 p-3 bg-[var(--color-app-surface-alt)] rounded-lg border border-[var(--color-app-border)]">
               <p className="col-span-3 text-xs text-navy-400 mb-1">Glasl Model of Conflict Escalation</p>
-              {Object.entries(GLASL_STAGE_LABELS).map(([stage, label]) => (
+              {Object.entries(GLASL_STAGE_LABELS).map(([stage]) => (
                 <GlaslBand key={stage} stage={parseInt(stage)} />
               ))}
             </div>
@@ -520,7 +508,7 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
         <div className="bg-[var(--color-app-surface-alt)] rounded-lg border border-[var(--color-app-border)] p-3">
           <p className="text-xs text-navy-400 mb-2">Glasl Escalation Trajectory</p>
           <div className="relative h-16 flex items-end gap-1">
-            {trajectoryData.map((d, i) => {
+            {trajectoryData.map((d) => {
               const heightPct = (d.stage / 9) * 100;
               const color = d.stage >= 7 ? 'bg-red-500' : d.stage >= 5 ? 'bg-orange-500' : d.stage >= 3 ? 'bg-yellow-500' : 'bg-emerald-500';
               return (
@@ -567,8 +555,7 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
                 {eventsByYear[year].map((evt) => {
                   const isSelected = selectedEventId === evt.id;
                   const glaslStage = getGlaslStage(evt);
-                  const bgColor = glaslStage ? GLASL_STAGE_COLORS[glaslStage] : '';
-                  const EscIcon = getEscalationIcon(evt.escalatoryDirection);
+                  const escIcon = getEscalationIcon(evt.escalatoryDirection);
                   const escColor = getEscalationColor(evt.escalatoryDirection);
                   const textColor = EVENT_TYPE_TEXT[evt.type] || 'text-navy-500';
 
@@ -613,7 +600,7 @@ export function InteractiveTimeline({ events, className = '', compact = false }:
                               )}
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
-                              <EscIcon className={`w-3.5 h-3.5 ${escColor}`} />
+                              {createElement(escIcon, { className: `w-3.5 h-3.5 ${escColor}` })}
                               <button className="text-navy-300 hover:text-navy-500">
                                 {isSelected ? (
                                   <ChevronUp className="w-3.5 h-3.5" />

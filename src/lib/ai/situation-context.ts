@@ -114,7 +114,7 @@ ANALYTICAL STANDARDS
 - Reference actors by their exact names from this situation
 - Ground analysis in the region, conflict type, and role of: ${formatRole(situation.userRole)}
 - When data is missing, flag the gap explicitly and recommend GDELT/ACLED/ReliefWeb sources
-- Write for professional conflict analysis (UN/NGO/diplomatic standards)`;
+- Write for professional conflict analysis (UN/NGO/diplomatic standards)${situation.sourceUrls?.length ? `\n\nONBOARDING REFERENCE SOURCES\nThe analyst provided these URLs during situation setup — use them as primary references:\n${situation.sourceUrls.map((u) => `- ${u}`).join('\n')}` : ''}${situation.contextNotes ? `\n\nANALYST CONTEXT NOTES\n${situation.contextNotes}` : ''}`;
 }
 
 function formatType(type: string): string {

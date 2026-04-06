@@ -16,7 +16,6 @@ import { parseDataStreamChunk } from '@/lib/utils/stream';
 export default function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
-  if (showGuard) return <NoSituationState />;
   const { id } = use(params);
   const { data: detail, loading, error } = useConflictDetail(id);
   const { data: allCases } = useConflictList();
@@ -55,6 +54,8 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
       setIsSummarizing(false);
     }
   }, [isSummarizing, caseData]);
+
+  if (showGuard) return <NoSituationState />;
 
   // Loading skeleton
   if (loading) {

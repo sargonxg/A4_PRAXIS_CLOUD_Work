@@ -23,7 +23,7 @@ export const POST = withAuth(async (request, _user) => {
     const creditCheck = await checkAndDeductCredits('media-roundup', 'Media Roundup');
     if (!creditCheck.allowed) return creditCheck.response;
 
-    const sit = situation as Situation | undefined;
+    const sit = situation as unknown as Situation | undefined;
     const sitContext = sit ? buildToolContext(sit) : '';
     const region = sit?.region || '';
 

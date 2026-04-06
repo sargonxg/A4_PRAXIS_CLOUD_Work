@@ -12,6 +12,7 @@ import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import { computeEscalation } from '@/lib/analytics/escalation-scorer';
 import { fetchEvents, isACLEDConfigured } from '@/lib/data-feeds/acled-client';
 import { getCurrentStability } from '@/lib/data-feeds/gdelt-stability';
+import { situationContextSchema } from '@/lib/api/schemas';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -85,13 +86,13 @@ export const POST = withAuth(async (request, _user) => {
     const requestSchema = z.object({
       conflictId: z.string().optional().default(''),
       conflictContext: z.string().optional(),
-      situation: z.any().optional(),
+      situation: situationContextSchema.optional(),
     });
 
     const validation = validateAiRequest(body, requestSchema);
     if (!validation.success) return validation.response;
     const { conflictId, conflictContext, situation } = validation.data;
-    const sitContext = situation ? buildToolContext(situation as Situation) : '';
+    const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
