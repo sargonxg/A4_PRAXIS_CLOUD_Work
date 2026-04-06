@@ -229,6 +229,7 @@ const navSections: NavSection[] = [
       { label: 'Actor Profiles', icon: UserCircle, href: '/actors' },
       { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
       { label: 'Stakeholder Map', icon: Users, href: '/stakeholder-map' },
+      { label: 'Power Map', icon: UsersRound, href: '/power-map' },
       { label: 'Compare', icon: GitCompare, href: '/compare' },
     ],
   },
@@ -339,6 +340,7 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   '/early-warning': 'early-warning',
   '/conflict-graph': 'conflict-graph',
   '/stakeholder-map': 'stakeholder-map',
+  '/power-map': 'power-map',
   '/compare': 'compare',
   // Drafting
   '/dossier': 'dossier',
