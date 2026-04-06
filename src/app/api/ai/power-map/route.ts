@@ -3,6 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -96,6 +97,18 @@ export const POST = withAuth(async (request, _user) => {
     };
 
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+
+    // Live research — fetch current stakeholder positioning and recent developments
+    let liveResearch = '';
+    try {
+      if (situation) {
+        const query = `${situation.name} stakeholders actors power dynamics ${situation.region || ''} 2025 2026`;
+        const results = await searchWeb(query, { numResults: 5 });
+        if (results.length > 0) {
+          liveResearch = '\n\nLIVE STAKEHOLDER INTELLIGENCE:\n' + formatResultsAsContext(results);
+        }
+      }
+    } catch { /* non-blocking */ }
 
     const result = await generateText({
       model: getProModel(),

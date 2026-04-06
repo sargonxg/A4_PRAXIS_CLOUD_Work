@@ -556,6 +556,9 @@ function ComparePageInner({ cases, activeSituationId }: { cases: CaseData[]; act
   const [showHeatmap, setShowHeatmap] = useState(true);
   const [showTimeline, setShowTimeline] = useState(true);
 
+  // Active situation for context grounding
+  const { activeSituation } = useSituationStore();
+
   // Persist comparison results
   const persisted = usePersistedToolData('compare', activeSituationId);
 
@@ -631,7 +634,10 @@ Be analytically specific. Cite conflict resolution theory where relevant. Avoid 
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          ...(activeSituation && { situation: activeSituation }),
+        }),
       });
       if (!response.ok || !response.body) throw new Error();
       const reader = response.body.getReader();
@@ -680,7 +686,10 @@ Focus on actionable insights. Reference specific dynamics of these cases.`;
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          ...(activeSituation && { situation: activeSituation }),
+        }),
       });
       if (!response.ok || !response.body) throw new Error();
       const reader = response.body.getReader();

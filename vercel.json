@@ -2,21 +2,47 @@
   "framework": "nextjs",
   "regions": ["iad1"],
   "functions": {
-    "src/app/api/ai/**": {
-      "maxDuration": 60
-    },
-    "src/app/api/documents/upload/route.ts": {
-      "maxDuration": 300
-    },
-    "src/app/api/export/route.ts": {
-      "maxDuration": 60
-    },
-    "src/app/api/cron/check-alerts/route.ts": {
-      "maxDuration": 60
-    },
-    "src/app/api/cron/generate-briefing/route.ts": {
-      "maxDuration": 60
-    }
+    "src/app/api/ai/chat/route.ts": { "maxDuration": 60 },
+    "src/app/api/ai/terminology/route.ts": { "maxDuration": 30 },
+    "src/app/api/ai/grounded-search/route.ts": { "maxDuration": 60 },
+    "src/app/api/ai/advisor-chat/route.ts": { "maxDuration": 60 },
+    "src/app/api/ai/extract/route.ts": { "maxDuration": 60 },
+    "src/app/api/ai/media-analyze/route.ts": { "maxDuration": 60 },
+    "src/app/api/ai/talking-points/route.ts": { "maxDuration": 60 },
+    "src/app/api/ai/actor-brief/route.ts": { "maxDuration": 90 },
+    "src/app/api/ai/escalation-scan/route.ts": { "maxDuration": 90 },
+    "src/app/api/ai/commitment-scan/route.ts": { "maxDuration": 90 },
+    "src/app/api/ai/media-scan/route.ts": { "maxDuration": 90 },
+    "src/app/api/ai/media-roundup/route.ts": { "maxDuration": 90 },
+    "src/app/api/ai/sanctions-scan/route.ts": { "maxDuration": 90 },
+    "src/app/api/ai/negotiation/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/mediation/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/mediation-design/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/scenario/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/game-theory/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/info-environment/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/power-map/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/risk-assessment/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/actor-profiles/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/actor-enrichment/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/auto-structure/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/auto-briefing/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/resolution/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/research/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/argus/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/treaty-analyze/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/claude-analyze/route.ts": { "maxDuration": 120 },
+    "src/app/api/ai/report/route.ts": { "maxDuration": 180 },
+    "src/app/api/ai/briefing-generate/route.ts": { "maxDuration": 180 },
+    "src/app/api/ai/dossier-generate/route.ts": { "maxDuration": 180 },
+    "src/app/api/ai/deep-research/route.ts": { "maxDuration": 180 },
+    "src/app/api/ai/deep-search-agent/route.ts": { "maxDuration": 300 },
+    "src/app/api/documents/upload/route.ts": { "maxDuration": 120 },
+    "src/app/api/documents/[id]/extract/route.ts": { "maxDuration": 120 },
+    "src/app/api/export/route.ts": { "maxDuration": 60 },
+    "src/app/api/data/intelligence/route.ts": { "maxDuration": 90 },
+    "src/app/api/cron/check-alerts/route.ts": { "maxDuration": 300 },
+    "src/app/api/cron/generate-briefing/route.ts": { "maxDuration": 300 }
   },
   "crons": [
     {

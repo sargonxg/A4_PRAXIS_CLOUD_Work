@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
+import { FieldValue } from 'firebase-admin/firestore';
 
 // Firestore-backed idempotency check for serverless environments
 async function isEventProcessed(eventId: string): Promise<boolean> {
@@ -61,13 +62,19 @@ export async function POST(request: Request) {
                 credits_100: 100,
               };
               const credits = creditAmounts[tierId] || 0;
-              await adminDb.collection('users').doc(uid).update({
-                subscription: tierId === 'credits_100' ? undefined : tierId,
-                credits: credits,
+              const updatePayload: Record<string, unknown> = {
                 subscriptionUpdatedAt: new Date().toISOString(),
                 stripeCustomerId: session.customer,
                 stripeSubscriptionId: session.subscription,
-              });
+              };
+              if (tierId !== 'credits_100') {
+                updatePayload.subscription = tierId;
+              }
+              // Increment rather than replace so existing balance is preserved
+              if (credits > 0) {
+                updatePayload.credits = FieldValue.increment(credits);
+              }
+              await adminDb.collection('users').doc(uid).update(updatePayload);
 
               // Log the transaction for audit trail
               await adminDb.collection('credit_transactions').add({

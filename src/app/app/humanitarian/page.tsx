@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
+import type { Situation } from '@/types/situation';
 
 // ── IPC Phase config ───────────────────────────────────────────────────────────
 const IPC_PHASES = [
@@ -326,7 +327,8 @@ function FundingGapBar({
 }
 
 // ── AiHumanitarianBrief ───────────────────────────────────────────────────────
-function AiHumanitarianBrief({ situationName }: { situationName: string }) {
+function AiHumanitarianBrief({ situation }: { situation: Situation }) {
+  const situationName = situation.name;
   const [open, setOpen] = useState(false);
   const [content, setContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -347,6 +349,7 @@ function AiHumanitarianBrief({ situationName }: { situationName: string }) {
         body: JSON.stringify({
           messages: [{ role: 'user', content: userMessage }],
           systemOverride: systemPrompt,
+          situation,
         }),
       });
 
@@ -629,7 +632,7 @@ export default function HumanitarianPage() {
           )}
 
           {/* AI Humanitarian Brief */}
-          <AiHumanitarianBrief situationName={situation.name} />
+          <AiHumanitarianBrief situation={situation} />
 
           {/* ReliefWeb reports */}
           {data?.reports && data.reports.length > 0 && (

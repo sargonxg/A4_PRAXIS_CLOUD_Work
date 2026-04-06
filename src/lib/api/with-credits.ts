@@ -1,5 +1,7 @@
 import { cookies } from 'next/headers';
+import { after } from 'next/server';
 import { verifyIdToken, getAdminDbOrThrow } from '@/lib/firebase/admin';
+import { verifyCookie } from '@/lib/auth/cookie-signer';
 import { FieldValue } from 'firebase-admin/firestore';
 
 // Cost table for AI operations (in credits) — server-side authoritative copy
@@ -28,6 +30,7 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   'ai_dossier_generate': 5,
   'ai_briefing_generate': 4,
   'ai_morning_digest': 2,
+  'ai_brief': 2,
   'ai_mediation': 3,
   'ai_risk_assessment': 4,
   'ai_treaty_analyze': 4,
@@ -70,7 +73,9 @@ async function getSessionUid(): Promise<{ uid: string; isDemo: boolean } | null>
   if (!session?.value) return null;
 
   try {
-    const data = JSON.parse(session.value);
+    const unsigned = verifyCookie(session.value);
+    if (!unsigned) return null;
+    const data = JSON.parse(unsigned);
     if (data.demo) return { uid: 'demo-user-001', isDemo: true };
     if (data.token) {
       const verified = await verifyIdToken(data.token);
@@ -78,7 +83,7 @@ async function getSessionUid(): Promise<{ uid: string; isDemo: boolean } | null>
       return { uid: verified.uid, isDemo: false };
     }
   } catch {
-    // Token verification failed — reject
+    // Token verification or parsing failed — reject
   }
   return null;
 }
@@ -138,20 +143,22 @@ async function deductCreditsAdmin(
     return { success: true, remainingCredits: credits - cost };
   });
 
-  // Record transaction log
+  // Record transaction log post-response (non-blocking)
   if (result.success) {
-    try {
-      const txRef = adminDb.collection('credit_transactions').doc();
-      await txRef.set({
-        userId: uid,
-        amount: -cost,
-        type: operationType,
-        description,
-        createdAt: FieldValue.serverTimestamp(),
-      });
-    } catch (err) {
-      console.error('[credits] Failed to record transaction:', err);
-    }
+    after(async () => {
+      try {
+        const txRef = adminDb.collection('credit_transactions').doc();
+        await txRef.set({
+          userId: uid,
+          amount: -cost,
+          type: operationType,
+          description,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+      } catch (err) {
+        console.error('[credits] Failed to record transaction:', err);
+      }
+    });
   }
 
   return result;

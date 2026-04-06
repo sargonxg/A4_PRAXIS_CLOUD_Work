@@ -1,14 +1,17 @@
 import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
-import { getModel } from '@/lib/ai/providers';
+import { getModel, getProModel } from '@/lib/ai/providers';
+import { buildToolContext } from '@/lib/ai/situation-context';
+import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { withAuth } from '@/lib/api/with-auth';
+import type { Situation } from '@/types/situation';
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
-// --- Schemas per action ---
+// --- Schemas ---
 
 const EntityExtractionSchema = z.object({
   entities: z.array(
@@ -38,22 +41,22 @@ const ComparisonSchema = z.object({
   ).describe('The conflicts being compared'),
   similarities: z.array(
     z.object({
-      dimension: z.string().describe('Dimension of similarity (e.g., structural, actor dynamics, escalation pattern)'),
+      dimension: z.string().describe('Dimension of similarity'),
       description: z.string().describe('Description of the similarity'),
-      significance: z.enum(['high', 'medium', 'low']).describe('How significant this similarity is for analysis'),
+      significance: z.enum(['high', 'medium', 'low']),
     })
   ).describe('Key similarities between the conflicts'),
   differences: z.array(
     z.object({
       dimension: z.string().describe('Dimension of difference'),
       description: z.string().describe('Description of the difference'),
-      significance: z.enum(['high', 'medium', 'low']).describe('How significant this difference is for analysis'),
+      significance: z.enum(['high', 'medium', 'low']),
     })
   ).describe('Key differences between the conflicts'),
   lessons: z.array(z.string()).describe('Transferable lessons and analytical insights from the comparison'),
 });
 
-// --- Demo responses ---
+// --- Demo data ---
 
 const DEMO_QUERY_RESPONSE = `## ARGUS Knowledge Graph Query Result
 
@@ -65,12 +68,12 @@ Based on the Nordalia Crisis knowledge graph (847 indexed entities, 1,243 relati
 
 1. **September Ceasefire Agreement** (Confidence: 94%)
    - GoN -> Ceasefire Commitment -> DRM (bilateral, mediated by UNMN)
-   - Status: Strained -- 47 documented violations, framework intact
+   - Status: Strained — 47 documented violations, framework intact
    - Linked: UNMN Verification Commission, Kessara Corridor Buffer Zone
 
 2. **Humanitarian Corridor Protocol** (Confidence: 89%)
    - GoN -> Access Commitment -> OCHA/DRM
-   - Status: Partially implemented -- Checkpoint Bravo blockage ongoing
+   - Status: Partially implemented — Checkpoint Bravo blockage ongoing
 
 3. **Prisoner Exchange Framework** (Confidence: 91%)
    - GoN <-> DRM (facilitated by AU Panel of the Wise)
@@ -78,7 +81,7 @@ Based on the Nordalia Crisis knowledge graph (847 indexed entities, 1,243 relati
    - Strongest trust-building chain in the current graph
 
 ### Structural Gap Detected
-No commitment chains exist on the core dispute -- revenue sharing from the Belara Mining Complex. This absence correlates with the stalled political track and represents the critical missing link for conflict resolution.
+No commitment chains exist on the core dispute — revenue sharing from the Belara Mining Complex. This absence correlates with the stalled political track and represents the critical missing link for conflict resolution.
 
 ### Leverage Analysis
 Karovia holds indirect veto power over GoN commitments through the 2019 bilateral defence treaty (Leverage edge weight: 0.82). This means any GoN commitment that contradicts Karovian interests has a high probability of being walked back.
@@ -101,7 +104,7 @@ const DEMO_EXTRACT_RESPONSE = {
     {
       name: 'Democratic Reform Movement',
       type: 'actor' as const,
-      description: 'Armed opposition led by Commander Kwame Asante. ~8,000 fighters in three corps across the Eastern Provinces. Political wing operates Eastern Provincial Authority.',
+      description: 'Armed opposition led by Commander Kwame Asante. ~8,000 fighters across the Eastern Provinces. Political wing operates Eastern Provincial Authority.',
       relationships: [
         { target: 'Federal Republic of Westmark', type: 'political_sponsor', strength: 0.75 },
         { target: 'Government of Nordalia', type: 'adversary', strength: 0.9 },
@@ -111,7 +114,7 @@ const DEMO_EXTRACT_RESPONSE = {
     {
       name: 'Kessara Corridor',
       type: 'location' as const,
-      description: 'Strategic chokepoint controlling eastern supply routes. Primary flashpoint for ceasefire violations and buffer zone incursions.',
+      description: 'Strategic chokepoint controlling eastern supply routes. Primary flashpoint for ceasefire violations.',
       relationships: [
         { target: 'Government of Nordalia', type: 'contested_by', strength: 0.7 },
         { target: 'Democratic Reform Movement', type: 'contested_by', strength: 0.7 },
@@ -121,7 +124,7 @@ const DEMO_EXTRACT_RESPONSE = {
     {
       name: 'Belara Mining Complex',
       type: 'resource' as const,
-      description: 'Rare earth mining operations in the Eastern Provinces accounting for approximately 18% of GDP and 40% of export revenues. Core economic driver of the conflict.',
+      description: 'Rare earth mining operations accounting for ~18% of GDP. Core economic driver of the conflict.',
       relationships: [
         { target: 'Government of Nordalia', type: 'revenue_source_for', strength: 0.8 },
         { target: 'Republic of Karovia', type: 'commercial_interest', strength: 0.75 },
@@ -131,7 +134,7 @@ const DEMO_EXTRACT_RESPONSE = {
     {
       name: 'September 2025 Ceasefire',
       type: 'agreement' as const,
-      description: 'Ceasefire agreement brokered by UNMN and AU Panel of the Wise. Establishes Line of Contact, buffer zone, humanitarian corridors, and prisoner exchange framework.',
+      description: 'Ceasefire brokered by UNMN and AU Panel of the Wise. Establishes Line of Contact, buffer zone, humanitarian corridors, and prisoner exchange framework.',
       relationships: [
         { target: 'Government of Nordalia', type: 'binds', strength: 0.6 },
         { target: 'Democratic Reform Movement', type: 'binds', strength: 0.6 },
@@ -139,149 +142,157 @@ const DEMO_EXTRACT_RESPONSE = {
       ],
     },
   ],
-  summary: 'The entity network reveals a classic proxy conflict structure with two primary adversaries (GoN and DRM) supported by external patrons (Karovia and Westmark respectively). The Belara Mining Complex is the central economic node connecting multiple actor interests. The Kessara Corridor is the primary geographic flashpoint. The September 2025 Ceasefire is the key institutional framework but operates under strain. The structural gap in the network is the absence of any institutional mechanism for revenue-sharing -- this missing node represents the core unresolved issue.',
+  summary: 'The entity network reveals a classic proxy conflict structure with two primary adversaries (GoN and DRM) supported by external patrons. The Belara Mining Complex is the central economic node. The structural gap is the absence of any revenue-sharing mechanism — this missing node represents the core unresolved issue.',
 };
 
 const DEMO_COMPARE_RESPONSE = {
   conflicts: [
     { id: 'nordalia', name: 'Nordalia Crisis', summary: 'Disputed elections leading to armed insurgency with regional proxy dynamics, currently at Glasl Stage 5.' },
-    { id: 'south-sudan-2013', name: 'South Sudan Civil War (2013-2018)', summary: 'Political crisis escalating to civil war along ethnic lines with regional and international intervention.' },
+    { id: 'south-sudan-2013', name: 'South Sudan Civil War (2013–2018)', summary: 'Political crisis escalating to civil war along ethnic lines with regional and international intervention.' },
   ],
   similarities: [
-    {
-      dimension: 'Electoral trigger',
-      description: 'Both conflicts were triggered by contested political legitimacy following elections/power struggles. In both cases, initial political disputes escalated to armed conflict when one party was excluded from power.',
-      significance: 'high' as const,
-    },
-    {
-      dimension: 'Proxy dynamics',
-      description: 'Both feature regional powers supporting opposing sides, creating patron-client relationships that complicate mediation by giving external actors effective veto power over their clients\' concessions.',
-      significance: 'high' as const,
-    },
-    {
-      dimension: 'Resource competition',
-      description: 'Both conflicts involve control over natural resources (rare earths in Nordalia, oil in South Sudan) as both a driver of conflict and a potential basis for settlement.',
-      significance: 'medium' as const,
-    },
-    {
-      dimension: 'Peacekeeping presence',
-      description: 'Both have UN peacekeeping missions with Chapter VII mandates struggling to implement civilian protection with insufficient resources in challenging operational environments.',
-      significance: 'medium' as const,
-    },
+    { dimension: 'Electoral trigger', description: 'Both conflicts triggered by contested political legitimacy. Initial political disputes escalated to armed conflict when one party was excluded from power.', significance: 'high' as const },
+    { dimension: 'Proxy dynamics', description: 'Both feature regional powers supporting opposing sides, creating patron-client relationships that complicate mediation by giving external actors effective veto power.', significance: 'high' as const },
+    { dimension: 'Resource competition', description: 'Both involve control over natural resources (rare earths in Nordalia, oil in South Sudan) as both driver and potential basis for settlement.', significance: 'medium' as const },
   ],
   differences: [
-    {
-      dimension: 'Ethnic dimension',
-      description: 'The South Sudan conflict had a strong ethnic dimension (Dinka vs. Nuer) that the Nordalia conflict largely lacks. Nordalia\'s cleavage is primarily political-geographic rather than ethnic.',
-      significance: 'high' as const,
-    },
-    {
-      dimension: 'Escalation stage',
-      description: 'South Sudan reached Glasl Stage 7-8 (Destructive Blows/Fragmentation) with mass atrocities. Nordalia remains at Stage 5 (Loss of Face) with the third threshold not yet crossed.',
-      significance: 'high' as const,
-    },
-    {
-      dimension: 'International consensus',
-      description: 'South Sudan initially had broader international consensus on the need for intervention. The Nordalia crisis features a deeper P5 split that constrains UNSC action.',
-      significance: 'medium' as const,
-    },
+    { dimension: 'Ethnic dimension', description: 'South Sudan had a strong ethnic cleavage (Dinka vs. Nuer). Nordalia\'s cleavage is primarily political-geographic.', significance: 'high' as const },
+    { dimension: 'Escalation stage', description: 'South Sudan reached Glasl Stage 7–8 with mass atrocities. Nordalia remains at Stage 5 with the third threshold not yet crossed.', significance: 'high' as const },
   ],
   lessons: [
-    'South Sudan demonstrates the catastrophic cost of crossing the third Glasl threshold (Win-Lose to Lose-Lose). Nordalia\'s current Stage 5 position makes prevention of this transition the highest priority.',
-    'The 2015 ARCSS agreement in South Sudan showed that power-sharing arrangements imposed without addressing underlying interests are fragile. Any Nordalia settlement must address root causes, not just distribute positions.',
-    'South Sudan\'s experience confirms that DDR before political settlement is unachievable in practice. The phased, concurrent approach (political process alongside gradual security transition) is more realistic.',
-    'Regional guarantor commitment proved essential in South Sudan (IGAD/AU). The Karovia-Westmark dynamic must be addressed in a parallel track for any Nordalia agreement to hold.',
-    'The South Sudan case highlights the risk of ceasefire agreements that lack implementation mechanisms. Nordalia\'s September 2025 ceasefire would benefit from strengthened verification provisions before compliance deteriorates further.',
+    'South Sudan demonstrates the catastrophic cost of crossing the third Glasl threshold. Nordalia\'s Stage 5 position makes prevention of this transition the highest priority.',
+    'The 2015 ARCSS showed that power-sharing arrangements imposed without addressing underlying interests are fragile. Any Nordalia settlement must address root causes.',
+    'Regional guarantor commitment proved essential in South Sudan. The Karovia-Westmark dynamic must be addressed in a parallel track.',
   ],
 };
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   try {
-    const { action, query, text, conflictIds } = await request.json() as {
+    const body = await request.json() as {
       action: 'query' | 'extract' | 'compare';
       query?: string;
       text?: string;
       conflictIds?: string[];
+      situation?: Situation;
     };
+    const { action, query, text, conflictIds, situation } = body;
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
-      if (action === 'query') {
-        return new Response(DEMO_QUERY_RESPONSE, {
-          status: 200,
-          headers: {
-            'Content-Type': 'text/plain; charset=utf-8',
-            'X-Praxis-Demo': 'true',
-          },
-        });
-      }
+      if (action === 'query') return new Response(DEMO_QUERY_RESPONSE, { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'X-Praxis-Demo': 'true' } });
       if (action === 'extract') return NextResponse.json(DEMO_EXTRACT_RESPONSE);
       if (action === 'compare') return NextResponse.json(DEMO_COMPARE_RESPONSE);
     }
 
-    // --- Credit check ---
     const creditCheck = await checkAndDeductCredits('ai_argus', 'ARGUS intelligence');
     if (!creditCheck.allowed) return creditCheck.response;
 
-    // --- Action: query ---
+    // Build situation context — grounds ARGUS in the active conflict
+    const sitContext = situation ? buildToolContext(situation) : '';
+
+    // --- Action: query — graph-augmented retrieval with live research ---
     if (action === 'query') {
+      const queryText = query?.trim() || 'Provide a general analysis of the conflict knowledge graph.';
+
+      // Live web research to ground ARGUS responses in current reporting
+      let liveContext = '';
+      try {
+        const searchQuery = situation
+          ? `${situation.name} ${queryText} conflict analysis`
+          : queryText;
+        const results = await searchWeb(searchQuery, { numResults: 5 });
+        if (results.length > 0) {
+          liveContext = '\n\nLIVE INTELLIGENCE SOURCES:\n' + formatResultsAsContext(results);
+        }
+      } catch { /* non-blocking */ }
+
       const result = await generateText({
         model: getModel(),
-        prompt: `You are ARGUS, a graph-augmented retrieval intelligence system for conflict analysis. Answer the following knowledge graph query.
+        prompt: `${sitContext ? `${sitContext}\n\n---\n\n` : ''}You are ARGUS, a graph-augmented retrieval intelligence system for conflict analysis. Answer the following knowledge graph query grounded in the situation context above.
 
-QUERY: ${query || 'Provide a general analysis of the conflict knowledge graph.'}
+QUERY: ${queryText}
+${liveContext}
 
-Respond as if you are querying a structured knowledge graph with entities (actors, locations, organizations, events, agreements, resources) and typed relationship edges (allied_with, opposes, controls, committed_to, etc.). Reference entity counts, confidence scores, relationship weights, and structural patterns.
+Respond as if you are querying a structured knowledge graph with entities (actors, locations, organizations, events, agreements, resources) and typed relationship edges (allied_with, opposes, controls, committed_to, etc.).
 
-Format your response in markdown with clear sections, entity references, and analytical notes. Include confidence scores for key claims.`,
-        system: 'You are ARGUS, the graph-augmented retrieval intelligence engine within the TACITUS ecosystem. You analyze conflict knowledge graphs with structured entities and relationships. Respond with precise, structured intelligence that references graph entities, relationship edges, confidence scores, and structural patterns. Use professional intelligence assessment language.',
+Reference:
+- Specific actors from the situation by their exact names
+- Confidence scores for key claims (High/Medium/Low)
+- Relationship weights between entities (0-1)
+- Structural patterns and gaps in the network
+- Live intelligence sources where available (cite URLs)
+
+Format in markdown with clear sections. Include analytical notes on what the structural patterns imply for resolution prospects.`,
+        system: 'You are ARGUS, the graph-augmented retrieval intelligence engine within TACITUS PRAXIS. Analyze conflict knowledge graphs with structured entities and relationships. Respond with precise intelligence referencing entity types, relationship edges, confidence scores, and structural patterns. Use professional intelligence assessment language calibrated to UN/diplomatic standards.',
       });
 
-      return new Response(result.text, {
-        status: 200,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      });
+      return new Response(result.text, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     }
 
-    // --- Action: extract ---
+    // --- Action: extract — entity and relationship extraction from text ---
     if (action === 'extract') {
       const result = await generateText({
-        model: getModel(),
+        model: getProModel(),
         output: Output.object({ schema: EntityExtractionSchema }),
-        prompt: `You are ARGUS, a graph-augmented retrieval intelligence system. Extract structured entities and relationships from the following text.
+        prompt: `${sitContext ? `${sitContext}\n\n---\n\n` : ''}You are ARGUS. Extract structured entities and relationships from the following text, grounding them in the conflict situation context above.
 
 TEXT:
 ${text || 'No text provided.'}
 
-Extract all relevant conflict entities (actors, locations, organizations, events, agreements, resources, concepts) and map their relationships. For each entity, identify its type, provide a brief description, and map its relationships to other entities with typed edges and strength scores (0-1).
+Extract all relevant conflict entities and map their relationships. For each entity:
+- Assign a type (actor/location/organization/event/agreement/resource/concept)
+- Provide a description grounded in the situation context
+- Map relationships with typed edges and strength scores (0-1)
+- Use exact actor names from the situation context when they match
 
-Then provide a summary of the entity network highlighting structural patterns, central nodes, and gaps.`,
-        system: 'You are ARGUS, the entity extraction engine within the TACITUS ecosystem. Extract structured entities and relationships from unstructured text for knowledge graph construction. Be thorough and precise in entity identification and relationship mapping.',
+Provide a summary of the entity network highlighting: central nodes, structural gaps, and implications for conflict dynamics.`,
+        system: 'You are ARGUS, the entity extraction engine within TACITUS PRAXIS. Extract structured entities and relationships from unstructured text for knowledge graph construction. Be thorough, precise, and ground outputs in the conflict situation context provided.',
       });
 
       return NextResponse.json(result.output);
     }
 
-    // --- Action: compare ---
+    // --- Action: compare — cross-case comparison with live research ---
+    const conflictList = conflictIds?.join(', ') || 'comparable historical conflicts';
+
+    // Research comparable cases
+    let comparativeContext = '';
+    if (situation) {
+      try {
+        const searchQuery = `${situation.name} similar conflicts historical comparison peace process`;
+        const results = await searchWeb(searchQuery, { numResults: 4 });
+        if (results.length > 0) {
+          comparativeContext = '\n\nCOMPARATIVE RESEARCH SOURCES:\n' + formatResultsAsContext(results);
+        }
+      } catch { /* non-blocking */ }
+    }
+
     const result = await generateText({
-      model: getModel(),
+      model: getProModel(),
       output: Output.object({ schema: ComparisonSchema }),
-      prompt: `You are ARGUS, a graph-augmented retrieval intelligence system. Conduct a structured cross-case comparison.
+      prompt: `${sitContext ? `${sitContext}\n\n---\n\n` : ''}You are ARGUS. Conduct a structured cross-case comparison to inform analysis of the situation above.
 
-CONFLICTS TO COMPARE: ${conflictIds?.join(', ') || 'No conflicts specified.'}
+CONFLICTS TO COMPARE: ${conflictList}
+${comparativeContext}
 
-Compare these conflicts across key dimensions:
-1. Structural similarities (root causes, actor configurations, escalation patterns)
-2. Key differences (context, scale, international dynamics)
-3. Transferable lessons and analytical insights
+Compare across key dimensions:
+1. **Structural similarities** (root causes, actor configurations, escalation patterns, external patrons)
+2. **Key differences** (context, scale, international dynamics, institutional framework)
+3. **Transferable lessons** from resolved or managed cases that apply to the current situation
 
-For each similarity and difference, assess its significance (high/medium/low) for current analytical purposes. Identify lessons from historical cases that apply to ongoing situations.`,
-      system: 'You are ARGUS, the cross-case comparison engine within the TACITUS ecosystem. Conduct rigorous structured comparisons between conflicts using established conflict analysis frameworks. Identify transferable lessons and patterns.',
+Ground every comparison in:
+- The specific actors and dynamics from the situation context
+- Documented outcomes from historical cases (cite sources where available)
+- Glasl escalation stage comparisons
+- Specific lessons that could inform current mediation/negotiation strategy
+
+For each similarity/difference, assess significance: high (changes strategy), medium (contextual), low (background).`,
+      system: 'You are ARGUS, the cross-case comparison engine within TACITUS PRAXIS. Conduct rigorous structured comparisons between conflicts using established conflict analysis frameworks. Identify transferable lessons and patterns. Ground comparisons in verifiable historical record.',
     });
 
     return NextResponse.json(result.output);
   } catch (err) {
-    console.error('ARGUS route error:', err);
+    console.error('[argus] Route error:', err);
     return NextResponse.json({ error: 'ARGUS request failed' }, { status: 500 });
   }
 });

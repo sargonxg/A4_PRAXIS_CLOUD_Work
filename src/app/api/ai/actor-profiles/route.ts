@@ -3,6 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
@@ -73,10 +74,27 @@ export const POST = withAuth(async (request: Request) => {
     const { situation } = body as { situation?: Situation };
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
+    // Live research — fetch current reporting on each actor for grounded profiles
+    let liveResearch = '';
+    if (situation?.actors?.length) {
+      try {
+        const searchTargets = situation.actors.slice(0, 4); // top 4 actors
+        const searches = await Promise.allSettled(
+          searchTargets.map((actor) =>
+            searchWeb(`${actor} ${situation.region || ''} conflict 2025 2026`, { numResults: 2 })
+          )
+        );
+        const allResults = searches.flatMap((r) => r.status === 'fulfilled' ? r.value : []);
+        if (allResults.length > 0) {
+          liveResearch = '\n\nLIVE INTELLIGENCE ON KEY ACTORS:\n' + formatResultsAsContext(allResults.slice(0, 6));
+        }
+      } catch { /* non-blocking */ }
+    }
+
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: ActorProfilesSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}Generate comprehensive intelligence profiles for the key actors in this conflict situation.
+      prompt: `${sitContext ? `${sitContext}\n\n` : ''}${liveResearch ? `${liveResearch}\n\n` : ''}Generate comprehensive intelligence profiles for the key actors in this conflict situation.
 
 For EACH actor listed in the situation (and any critical actors you identify as missing), produce a full intelligence profile covering:
 

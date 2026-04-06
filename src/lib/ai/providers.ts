@@ -1,22 +1,26 @@
 /**
- * PRAXIS AI Provider Abstraction
+ * PRAXIS AI Provider Abstraction — v3 (Gateway-first)
  *
- * Supports three provider backends:
- *   - "google"    → Google AI Studio (default) — uses GOOGLE_AI_API_KEY
- *   - "vertex"    → Google Vertex AI           — uses GOOGLE_VERTEX_PROJECT + GOOGLE_VERTEX_LOCATION
- *   - "anthropic" → Anthropic Claude (analysis) — uses ANTHROPIC_API_KEY
+ * Auth priority:
+ *   1. VERCEL_OIDC_TOKEN — auto-provisioned by `vercel env pull`, auto-refreshed on Vercel.
+ *                          Run `vercel env pull .env.local` once; Vercel handles renewal.
+ *   2. Direct providers  — dev fallback when no gateway token is available.
  *
- * Set AI_PROVIDER env var to "vertex" to switch primary provider to Vertex AI.
- * Anthropic is available as a secondary analysis engine regardless of primary provider.
- * All routes should use getModel() / getGroundedModel() rather than constructing
- * provider instances directly.
+ * To enable AI Gateway (recommended for production):
+ *   vercel link && vercel env pull .env.local
+ *
+ * Gateway model slugs use provider/model dot-version format:
+ *   ✓ google/gemini-2.5-flash
+ *   ✓ google/gemini-2.5-pro
+ *   ✓ anthropic/claude-sonnet-4.6
+ *
+ * All routes call getModel() / getProModel() / getAnalysisModel().
+ * Use getModelForTool(toolTag, userId) for per-tool cost attribution.
  */
 
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { createAnthropic } from '@ai-sdk/anthropic';
 import type { LanguageModel } from 'ai';
 
-export type ProviderName = 'google' | 'vertex';
+export type ProviderName = 'gateway' | 'google' | 'vertex';
 
 export interface ProviderInfo {
   name: ProviderName;
@@ -28,217 +32,239 @@ export interface ProviderInfo {
 }
 
 // ---------------------------------------------------------------------------
-// Provider detection
+// Gateway model slugs — provider/model with dot-version format
 // ---------------------------------------------------------------------------
 
-function detectProvider(): ProviderName {
-  const requested = (process.env.AI_PROVIDER ?? 'google').toLowerCase();
-  return requested === 'vertex' ? 'vertex' : 'google';
+const GW_FLASH  = 'google/gemini-2.5-flash';
+const GW_PRO    = 'google/gemini-2.5-pro';
+const GW_CLAUDE = 'anthropic/claude-sonnet-4.6';
+
+// ---------------------------------------------------------------------------
+// Direct model IDs — only used in the dev fallback path (no gateway)
+// ---------------------------------------------------------------------------
+
+const DIRECT_FLASH = 'gemini-2.5-flash';
+const DIRECT_PRO   = 'gemini-2.5-pro';
+
+// ---------------------------------------------------------------------------
+// Gateway availability
+// ---------------------------------------------------------------------------
+
+function isGatewayConfigured(): boolean {
+  // VERCEL_OIDC_TOKEN is provisioned by `vercel env pull` and auto-refreshed
+  // on Vercel deployments. This is the only gateway auth method used here —
+  // OIDC eliminates manual key rotation and is the Vercel-recommended approach.
+  return !!process.env.VERCEL_OIDC_TOKEN;
 }
 
 // ---------------------------------------------------------------------------
-// Google AI Studio provider
+// Gateway model factory
+// Passing a "provider/model" string routes through AI Gateway automatically.
+// providerOptions.gateway enables failover, user tracking, and cost tags.
 // ---------------------------------------------------------------------------
 
-function createGoogleProvider() {
-  return createGoogleGenerativeAI({
-    apiKey: process.env.GOOGLE_AI_API_KEY || '',
+function gatewayModel(
+  slug: string,
+  opts?: { userId?: string; toolTag?: string }
+): LanguageModel {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { gateway } = require('ai') as { gateway: (slug: string, opts?: unknown) => LanguageModel };
+
+  const isAnthropic = slug.startsWith('anthropic/');
+  return gateway(slug, {
+    providerOptions: {
+      gateway: {
+        order: isAnthropic ? ['anthropic', 'bedrock'] : ['google', 'vertex'],
+        ...(opts?.userId  && { user: opts.userId }),
+        ...(opts?.toolTag && {
+          tags: [
+            `tool:${opts.toolTag}`,
+            `env:${process.env.NODE_ENV === 'production' ? 'production' : 'development'}`,
+            'app:praxis',
+          ],
+        }),
+      },
+    },
   });
 }
 
 // ---------------------------------------------------------------------------
-// Vertex AI provider stub
-// To enable: install @ai-sdk/google-vertex, set AI_PROVIDER=vertex,
-// GOOGLE_VERTEX_PROJECT, and GOOGLE_VERTEX_LOCATION env vars.
-// Until the package is installed, falls back to Google AI Studio.
+// Direct provider fallback — only when gateway is not configured
 // ---------------------------------------------------------------------------
 
-async function createVertexProvider() {
-  // @ai-sdk/google-vertex is an optional dependency not currently installed.
-  // Falls back gracefully to Google AI Studio.
-  console.warn('[providers] Vertex AI requested but @ai-sdk/google-vertex is not installed. Falling back to Google AI Studio. Run: npm install @ai-sdk/google-vertex');
-  return createGoogleProvider();
+function directModel(modelId: string): LanguageModel {
+  if (process.env.GOOGLE_VERTEX_PROJECT && process.env.AI_PROVIDER === 'vertex') {
+    const { createVertex } = require('@ai-sdk/google-vertex') as typeof import('@ai-sdk/google-vertex');
+    return createVertex({
+      project:  process.env.GOOGLE_VERTEX_PROJECT,
+      location: process.env.GOOGLE_VERTEX_LOCATION || 'us-central1',
+    })(modelId);
+  }
+  const { createGoogleGenerativeAI } = require('@ai-sdk/google') as typeof import('@ai-sdk/google');
+  return createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY || '' })(modelId);
 }
 
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
-const DEFAULT_MODEL = 'gemini-2.5-flash';
-const DEFAULT_PRO_MODEL = 'gemini-2.5-pro';
-
 /**
- * Returns a standard (non-grounded) language model.
- * @param modelId  Gemini model id — defaults to gemini-2.5-flash
+ * Standard model (gemini-2.5-flash) — chat, lightweight analysis, terminology.
  */
-export function getModel(modelId: string = DEFAULT_MODEL): LanguageModel {
-  const provider = detectProvider();
-
-  if (provider === 'vertex') {
-    // Vertex AI is async; for sync contexts return google fallback
-    // Full async usage: use getModelAsync()
-    const googleProvider = createGoogleProvider();
-    return googleProvider(modelId);
-  }
-
-  const googleProvider = createGoogleProvider();
-  return googleProvider(modelId);
+export function getModel(modelId?: string): LanguageModel {
+  if (isGatewayConfigured()) return gatewayModel(modelId ?? GW_FLASH);
+  return directModel(modelId ?? DIRECT_FLASH);
 }
 
 /**
- * Returns the base model to use for grounded search requests.
- * Search grounding in @ai-sdk/google v3.x is enabled via the tools option in streamText:
- *   tools: { google_search: google.tools.googleSearch({}) }
- * where `google` is the default export from '@ai-sdk/google'.
- */
-export function getGroundedModel(modelId: string = DEFAULT_MODEL): LanguageModel {
-  const googleProvider = createGoogleProvider();
-  return googleProvider(modelId);
-}
-
-/**
- * Returns the pro-tier model for complex generation tasks.
+ * Pro model (gemini-2.5-pro) — structured tool generation, dossiers, reports.
  */
 export function getProModel(): LanguageModel {
-  return getModel(DEFAULT_PRO_MODEL);
+  if (isGatewayConfigured()) return gatewayModel(GW_PRO);
+  return directModel(DIRECT_PRO);
 }
 
 /**
- * Returns a model based on user AI settings.
- * Falls back to getModel() defaults if no settings provided.
- */
-export function getModelForUser(settings?: { preferredModel?: string; temperature?: number }): LanguageModel {
-  if (!settings?.preferredModel) return getModel();
-
-  switch (settings.preferredModel) {
-    case 'gemini-2.5-pro':
-      return getProModel();
-    case 'claude-sonnet-4':
-      return getAnalysisModel();
-    case 'gemini-2.5-flash':
-    default:
-      return getModel();
-  }
-}
-
-/**
- * Async variant — currently equivalent to getModel() since Vertex AI
- * requires installing @ai-sdk/google-vertex separately.
- */
-export async function getModelAsync(modelId: string = DEFAULT_MODEL): Promise<LanguageModel> {
-  const provider = detectProvider();
-
-  if (provider === 'vertex') {
-    // Falls back to Google AI Studio until @ai-sdk/google-vertex is installed
-    await createVertexProvider();
-  }
-
-  const googleProvider = createGoogleProvider();
-  return googleProvider(modelId);
-}
-
-/**
- * Returns metadata about the currently configured provider.
- * Used by the settings page and status indicators.
- */
-export function getProviderInfo(): ProviderInfo {
-  const provider = detectProvider();
-
-  if (provider === 'vertex') {
-    const project = process.env.GOOGLE_VERTEX_PROJECT;
-    const location = process.env.GOOGLE_VERTEX_LOCATION || 'us-central1';
-    return {
-      name: 'vertex',
-      displayName: 'Google Vertex AI',
-      modelId: DEFAULT_MODEL,
-      groundedModelId: DEFAULT_MODEL,
-      isConfigured: !!project,
-      configNote: project
-        ? `Project: ${project} · Location: ${location}`
-        : 'Set GOOGLE_VERTEX_PROJECT environment variable',
-    };
-  }
-
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
-  return {
-    name: 'google',
-    displayName: 'Google AI Studio',
-    modelId: DEFAULT_MODEL,
-    groundedModelId: `${DEFAULT_MODEL} + Search Grounding`,
-    isConfigured: !!apiKey,
-    configNote: apiKey
-      ? `API key configured (${apiKey.slice(0, 6)}...)`
-      : 'Set GOOGLE_AI_API_KEY environment variable',
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Anthropic (secondary analysis engine)
-// ---------------------------------------------------------------------------
-
-const ANTHROPIC_MODEL = 'claude-sonnet-4-20250514';
-
-function isAnthropicConfigured(): boolean {
-  return !!process.env.ANTHROPIC_API_KEY;
-}
-
-/**
- * Returns an Anthropic Claude model for deep analysis tasks.
- * Falls back to Gemini Pro if ANTHROPIC_API_KEY is not set.
+ * Analysis model — Claude Sonnet via AI Gateway, or Gemini Pro as fallback.
+ * When gateway is active: OIDC auth handles Anthropic — no direct key needed.
+ * When gateway is absent: falls back gracefully to Gemini Pro.
  */
 export function getAnalysisModel(): LanguageModel {
-  if (isAnthropicConfigured()) {
-    const anthropicProvider = createAnthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY || '',
-    });
-    return anthropicProvider(ANTHROPIC_MODEL);
-  }
-  return getProModel();
+  if (isGatewayConfigured()) return gatewayModel(GW_CLAUDE);
+  return directModel(DIRECT_PRO);
 }
 
 /**
- * Returns a list of all configured providers and their status.
+ * Tool-specific model with per-tool cost attribution via AI Gateway.
+ * Visible in Vercel dashboard: AI → Usage, filterable by tag.
+ *
+ * @param toolTag  e.g. 'actor-profiles', 'power-map', 'dossier-generate'
+ * @param userId   Firebase UID — enables per-user spend tracking + rate limiting
+ * @param pro      true = gemini-2.5-pro, false = gemini-2.5-flash
  */
+export function getModelForTool(toolTag: string, userId?: string, pro = false): LanguageModel {
+  if (isGatewayConfigured()) return gatewayModel(pro ? GW_PRO : GW_FLASH, { userId, toolTag });
+  return directModel(pro ? DIRECT_PRO : DIRECT_FLASH);
+}
+
+/**
+ * Grounded search model — always uses Google AI Studio directly.
+ * Search grounding is a Google-specific capability unavailable through gateway.
+ */
+export function getGroundedModel(modelId: string = DIRECT_FLASH): LanguageModel {
+  const { createGoogleGenerativeAI } = require('@ai-sdk/google') as typeof import('@ai-sdk/google');
+  return createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY || '' })(modelId);
+}
+
+/**
+ * User-preference model — routes to the model the user selected in settings.
+ */
+export function getModelForUser(settings?: { preferredModel?: string; model?: string }): LanguageModel {
+  switch (settings?.preferredModel ?? settings?.model) {
+    case 'gemini-2.5-pro':  return getProModel();
+    case 'claude-sonnet-4': return getAnalysisModel();
+    default:                return getModel();
+  }
+}
+
+/** Async variant — kept for back-compat. */
+export async function getModelAsync(modelId?: string): Promise<LanguageModel> {
+  return getModel(modelId);
+}
+
+// ---------------------------------------------------------------------------
+// Provider info — used by settings page and status indicators
+// ---------------------------------------------------------------------------
+
+export function getProviderInfo(): ProviderInfo {
+  if (isGatewayConfigured()) {
+    const hasOidc = !!process.env.VERCEL_OIDC_TOKEN;
+    return {
+      name:            'gateway',
+      displayName:     'Vercel AI Gateway',
+      modelId:         GW_FLASH,
+      groundedModelId: `${DIRECT_FLASH} + Google Search (direct)`,
+      isConfigured:    true,
+      configNote:      hasOidc
+        ? 'OIDC auth — tokens auto-refreshed on Vercel'
+        : 'API key auth — consider `vercel env pull` for OIDC',
+    };
+  }
+  if (process.env.GOOGLE_VERTEX_PROJECT && process.env.AI_PROVIDER === 'vertex') {
+    return {
+      name:            'vertex',
+      displayName:     'Google Vertex AI (direct)',
+      modelId:         DIRECT_FLASH,
+      groundedModelId: DIRECT_FLASH,
+      isConfigured:    true,
+      configNote:      `Project: ${process.env.GOOGLE_VERTEX_PROJECT} · Location: ${process.env.GOOGLE_VERTEX_LOCATION ?? 'us-central1'}`,
+    };
+  }
+  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  return {
+    name:            'google',
+    displayName:     'Google AI Studio (direct)',
+    modelId:         DIRECT_FLASH,
+    groundedModelId: `${DIRECT_FLASH} + Search Grounding`,
+    isConfigured:    !!apiKey,
+    configNote:      apiKey
+      ? `API key configured (${apiKey.slice(0, 6)}…)`
+      : 'Set GOOGLE_AI_API_KEY or run `vercel env pull` for gateway OIDC',
+  };
+}
+
 export function getAvailableProviders() {
-  const googleKey = process.env.GOOGLE_AI_API_KEY;
-  const vertexProject = process.env.GOOGLE_VERTEX_PROJECT;
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const gatewayActive = isGatewayConfigured();
+  const hasOidc       = !!process.env.VERCEL_OIDC_TOKEN;
 
   return {
+    gateway: {
+      name:         'Vercel AI Gateway',
+      configured:   gatewayActive,
+      model:        GW_FLASH,
+      capabilities: ['Provider Failover', 'Cost Tracking', 'Per-User Rate Limits', 'Audit Logs', '100+ Models'],
+      note:         gatewayActive
+        ? hasOidc
+          ? 'Active (OIDC) — tokens auto-refresh on Vercel'
+          : 'Active (API key) — run `vercel env pull` for OIDC auto-refresh'
+        : 'Run `vercel env pull` to provision VERCEL_OIDC_TOKEN',
+    },
     google: {
-      name: 'Google AI Studio',
-      configured: !!googleKey,
-      model: DEFAULT_MODEL,
-      capabilities: ['Chat', 'Research (Google Search)', 'Tool Use', 'Streaming'],
-      note: googleKey ? 'Active — primary provider' : 'Set GOOGLE_AI_API_KEY',
+      name:         'Google AI Studio',
+      configured:   !!process.env.GOOGLE_AI_API_KEY,
+      model:        DIRECT_FLASH,
+      capabilities: ['Chat', 'Google Search Grounding', 'Tool Use', 'Streaming'],
+      note:         'Used for Search Grounding (gateway cannot access this capability)',
     },
     vertex: {
-      name: 'Google Vertex AI',
-      configured: !!vertexProject,
-      model: DEFAULT_MODEL,
-      capabilities: ['Chat', 'Research', 'Tool Use', 'Audit Logs', 'VPC-SC'],
-      note: vertexProject ? 'Available — enterprise tier' : 'Set GOOGLE_VERTEX_PROJECT',
+      name:         'Google Vertex AI',
+      configured:   !!process.env.GOOGLE_VERTEX_PROJECT,
+      model:        DIRECT_FLASH,
+      capabilities: ['VPC-SC', 'IAM', 'Audit Logs', 'Enterprise SLA'],
+      note:         'Available as gateway failover target (set AI_PROVIDER=vertex + GOOGLE_VERTEX_PROJECT)',
     },
     anthropic: {
-      name: 'Anthropic Claude',
-      configured: !!anthropicKey,
-      model: ANTHROPIC_MODEL,
-      capabilities: ['Deep Analysis', 'Bias Detection', 'Diplomatic Language', 'Complex Reasoning'],
-      note: anthropicKey
-        ? 'Active — enhanced analysis engine'
-        : 'Optional — set ANTHROPIC_API_KEY for enhanced analysis',
+      name:         'Anthropic Claude',
+      configured:   gatewayActive,
+      model:        GW_CLAUDE,
+      capabilities: ['Deep Analysis', 'Diplomatic Language', 'Complex Reasoning'],
+      note:         gatewayActive
+        ? 'Accessible via AI Gateway — OIDC auth, no direct key needed'
+        : 'Enable AI Gateway (run `vercel env pull`) to access Claude models',
     },
   };
 }
 
 // ---------------------------------------------------------------------------
-// Legacy export — maintained for backwards compat with files that import
-// the raw google provider instance directly
+// Legacy exports — back-compat for files that import raw provider instances
 // ---------------------------------------------------------------------------
 
-export const google = createGoogleProvider();
+export const google = (() => {
+  const { createGoogleGenerativeAI } = require('@ai-sdk/google') as typeof import('@ai-sdk/google');
+  return createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY || '' });
+})();
 
 export const models = {
-  flash: google(DEFAULT_MODEL),
-  pro: google(DEFAULT_PRO_MODEL),
+  flash: google(DIRECT_FLASH),
+  pro:   google(DIRECT_PRO),
 } as const;
