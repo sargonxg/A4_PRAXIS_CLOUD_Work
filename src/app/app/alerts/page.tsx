@@ -298,9 +298,12 @@ export default function AlertsPage() {
     setIsChecking(true);
     setToast(null);
 
-    const situationName = activeSituation?.name || situation?.name || 'the current situation';
-    const systemPrompt = `You are monitoring a conflict situation for significant developments. Generate 3-5 structured alerts in this exact JSON format: [{"title":"...","severity":"alert|warning|info|success","category":"security|political|humanitarian|economic|diplomatic","summary":"...","source":"..."}]. Response must be valid JSON only, no other text.`;
-    const userMessage = `Conflict situation: "${situationName}". Generate 3-5 current structured alerts covering recent developments. Return only the JSON array.`;
+    const activeSit = situation ?? activeSituation;
+    const situationName = activeSit?.name || 'the current situation';
+    const userMessage = `Generate 3-5 current structured intelligence alerts for: "${situationName}". Return ONLY a valid JSON array, no other text:
+[{"title":"...","severity":"alert|warning|info|success","category":"security|political|humanitarian|economic|diplomatic","summary":"...","source":"..."}]
+
+Focus on: security incidents, political developments, humanitarian access, ceasefire status, key actor movements. Make alerts specific to the situation context provided.`;
 
     try {
       const response = await fetch('/api/ai/chat', {
@@ -308,7 +311,7 @@ export default function AlertsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [{ role: 'user', content: userMessage }],
-          systemOverride: systemPrompt,
+          situation: activeSit ?? undefined,
         }),
       });
 

@@ -112,7 +112,7 @@ Use these colors for institutions: UNSC=#1B3A5C, UNGA=#2E8A8A, UNHRC=#C8961E, AU
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], situation: situation ?? undefined }),
       });
 
       if (!response.ok || !response.body) throw new Error('Stream failed');
@@ -184,7 +184,7 @@ Keep it action-oriented and diplomatically precise.`;
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], situation: situation ?? undefined }),
       });
 
       if (!response.ok || !response.body) throw new Error('Stream failed');
