@@ -25,6 +25,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useConflictStore } from '@/stores/conflict-store';
+import { useAuth } from '@/lib/auth/auth-context';
+import { useRouter } from 'next/navigation';
 import type { CaseOntology } from '@/lib/constants/case-registry';
 import { CASE_REGISTRY } from '@/lib/constants/case-registry';
 
@@ -832,6 +834,8 @@ export function CaseCreationWizard({ onComplete, onCancel }: CaseCreationWizardP
   const [isLaunching, setIsLaunching] = useState(false);
 
   const { addConflict, addCustomCase, setActiveConflict } = useConflictStore();
+  const { user } = useAuth();
+  const router = useRouter(); 
 
   const handleChange = useCallback((updates: Partial<WizardData>) => {
     setData((prev) => ({ ...prev, ...updates }));
@@ -949,7 +953,7 @@ export function CaseCreationWizard({ onComplete, onCancel }: CaseCreationWizardP
         escalationTrend: 'stable',
       };
 
-      // Add to store
+      // Add to store (for immediate UI update)
       addCustomCase(caseId, ontology);
       addConflict({
         id: caseId,
@@ -963,6 +967,34 @@ export function CaseCreationWizard({ onComplete, onCancel }: CaseCreationWizardP
         events: data.events.slice(0, 5).map((e) => ({ title: e.title, date: e.date })),
       });
       setActiveConflict(caseId);
+
+      // Persist to Firestore if not a demo user or guest
+      if (user && !user.isDemo) {
+        try {
+          const response = await fetch('/api/situations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: data.name,
+              type: data.conflictType === 'other' ? 'custom' : data.conflictType,
+              description: data.description,
+              region: data.region,
+              actors: data.actors.map(a => a.name),
+              userRole: 'analyst',
+              status: data.status,
+              ontology: ontology, // Save the full grammar
+            }),
+          });
+          
+          if (response.ok) {
+            const { situation } = await response.json();
+            // Optional: update active conflict ID to the real Firestore ID
+            // setActiveConflict(situation.id);
+          }
+        } catch (err) {
+          console.error('[wizard] Failed to persist situation to Firestore:', err);
+        }
+      }
 
       onComplete(caseId);
     } catch {

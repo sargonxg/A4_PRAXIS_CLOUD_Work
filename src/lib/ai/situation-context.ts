@@ -22,11 +22,19 @@ export function buildSituationContext(situation: Situation): string {
     ? `Stage ${situation.glaslStage}/9 — ${getGlaslLabel(situation.glaslStage)} (${getGlaslZone(situation.glaslStage)})`
     : 'Not assessed — estimate from description and escalation trend';
 
-  const dataPoints = [
+  const knowledgeBase = [
     situation.actorCount > 0 ? `${situation.actorCount} actor profiles` : null,
     situation.graphEntities > 0 ? `${situation.graphEntities} conflict-graph entities` : null,
     situation.documentCount > 0 ? `${situation.documentCount} documents in RAG` : null,
   ].filter(Boolean);
+
+  // v4.0 — Structured Conflict Grammar (ACO)
+  const ontologyBlock = situation.ontology ? `
+### Structured Mapping (Conflict Grammar v2.0)
+${situation.ontology.claims?.length ? `**Core Claims**:\n${situation.ontology.claims.map(c => `- [${c.actorId}] ${c.title}: ${c.description || 'No further details'}`).join('\n')}` : ''}
+${situation.ontology.interests?.length ? `\n**Deep Interests**:\n${situation.ontology.interests.map(i => `- [${i.actorId}] ${i.description} (${i.priority})`).join('\n')}` : ''}
+${situation.ontology.events?.length ? `\n**Timeline / Critical Events**:\n${situation.ontology.events.map(e => `- ${e.date}: ${e.title} (${e.type})`).join('\n')}` : ''}
+` : '';
 
   return `## Active Situation: "${situation.name}"
 
@@ -44,8 +52,8 @@ ${actorList}
 - **Trend**: ${situation.escalationTrend}
 
 ### Knowledge Base
-${dataPoints.length > 0 ? dataPoints.map((d) => `- ${d}`).join('\n') : '- No structured data yet — rely on the description below and live feeds'}
-
+${knowledgeBase.length > 0 ? knowledgeBase.map((d) => `- ${d}`).join('\n') : '- No structured data yet — rely on the description below and live feeds'}
+${ontologyBlock}
 ${situation.description ? `### Situation Intelligence\n${situation.description}` : ''}
 
 ### Live Data Sources (always available)
@@ -95,7 +103,18 @@ export function buildToolContext(situation: Situation): string {
     situation.actorCount > 0 ? `${situation.actorCount} actors profiled` : null,
     situation.graphEntities > 0 ? `${situation.graphEntities} graph entities` : null,
     situation.documentCount > 0 ? `${situation.documentCount} docs in RAG` : null,
+    situation.ontology ? 'Structured Grammar (ACO) Available' : null,
   ].filter(Boolean).join(' · ') || 'No structured data — use description + live feeds';
+
+  // v4.0 — High-fidelity mapping
+  const mappingBlock = situation.ontology ? `
+STRUCTURED MAPPING (v2.0):
+- Claims: ${situation.ontology.claims?.length || 0}
+- Interests: ${situation.ontology.interests?.length || 0}
+- Critical Events: ${situation.ontology.events?.length || 0}
+${situation.ontology.claims?.slice(0, 3).map(c => `  * [${c.actorId}] ${c.title}`).join('\n')}
+${situation.ontology.interests?.slice(0, 3).map(i => `  * [${i.actorId}] ${i.description}`).join('\n')}
+` : '';
 
   // Type-specific analytical guidance
   const typeGuidance = getTypeGuidance(situation.type);
@@ -117,6 +136,7 @@ RISK PROFILE
 - Trend: ${trendInfo}${situation.description ? `\n\nSITUATION INTELLIGENCE\n${situation.description}` : '\n\nNo intelligence summary yet — generate from actors and region.'}
 
 DATA AVAILABLE: ${dataAvailable}
+${mappingBlock}
 
 ANALYTICAL FRAMEWORK
 - Apply Glasl escalation model — stage determines appropriate intervention type

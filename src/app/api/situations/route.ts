@@ -28,7 +28,7 @@ export const POST = withAuth(async (req, user) => {
 
   try {
     const body = await req.json();
-    const { name, type, description, region, actors, userRole, status, sourceUrls, contextNotes, initialDocumentIds } = body;
+    const { name, type, description, region, actors, userRole, status, sourceUrls, contextNotes, initialDocumentIds, ontology } = body;
 
     if (!name?.trim()) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -48,6 +48,7 @@ export const POST = withAuth(async (req, user) => {
       ...(filteredUrls.length ? { sourceUrls: filteredUrls } : {}),
       ...(contextNotes?.trim() ? { contextNotes: contextNotes.trim() } : {}),
       ...(initialDocumentIds?.length ? { initialDocumentIds } : {}),
+      ...(ontology ? { ontology } : {}),
     });
 
     return NextResponse.json({ situation });

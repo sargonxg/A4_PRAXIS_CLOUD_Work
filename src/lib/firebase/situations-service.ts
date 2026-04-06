@@ -33,6 +33,7 @@ export async function createSituation(
     ...(data.sourceUrls?.length ? { sourceUrls: data.sourceUrls } : {}),
     ...(data.contextNotes ? { contextNotes: data.contextNotes } : {}),
     ...(data.initialDocumentIds?.length ? { initialDocumentIds: data.initialDocumentIds } : {}),
+    ...(data.ontology ? { ontology: data.ontology } : {}),
     createdAt: now,
     updatedAt: now,
   };

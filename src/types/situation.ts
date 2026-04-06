@@ -1,3 +1,5 @@
+import type { CaseOntology } from '@/lib/constants/case-registry';
+
 // ============================================================================
 // Tool Registry Types
 // ============================================================================
@@ -107,6 +109,7 @@ export interface Situation {
   analysisPhase?: AnalysisPhase;
   lastAiRefresh?: string | null;
   dataCompleteness?: number;
+  ontology?: CaseOntology;
 }
 
 export interface CreateSituationInput {
@@ -120,4 +123,5 @@ export interface CreateSituationInput {
   sourceUrls?: string[];
   contextNotes?: string;
   initialDocumentIds?: string[];
+  ontology?: CaseOntology;
 }
