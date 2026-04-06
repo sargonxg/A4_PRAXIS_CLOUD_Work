@@ -1361,7 +1361,8 @@ function ResolutionDrafter() {
           topic: userInput,
           type: paragraphType,
           strength: strengthMap[strength],
-          keyPoints: [],
+          keyPoints: situation?.actors ?? [],
+          situation: situation ?? undefined,
         }),
       });
       if (!response.ok) throw new Error('Draft failed');
