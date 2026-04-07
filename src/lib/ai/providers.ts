@@ -1,26 +1,17 @@
 /**
- * PRAXIS AI Provider Abstraction — v3 (Gateway-first)
+ * PRAXIS AI Provider Abstraction — Cloud Run Edition
  *
- * Auth priority:
- *   1. VERCEL_OIDC_TOKEN — auto-provisioned by `vercel env pull`, auto-refreshed on Vercel.
- *                          Run `vercel env pull .env.local` once; Vercel handles renewal.
- *   2. Direct providers  — dev fallback when no gateway token is available.
- *
- * To enable AI Gateway (recommended for production):
- *   vercel link && vercel env pull .env.local
- *
- * Gateway model slugs use provider/model dot-version format:
- *   ✓ google/gemini-2.5-flash
- *   ✓ google/gemini-2.5-pro
- *   ✓ anthropic/claude-sonnet-4.6
+ * Auth priority on Cloud Run:
+ *   1. Vertex AI via Application Default Credentials (ADC) — zero config on Cloud Run
+ *   2. Google AI Studio via GOOGLE_AI_API_KEY — dev fallback
+ *   3. Anthropic via ANTHROPIC_API_KEY — deep analysis
  *
  * All routes call getModel() / getProModel() / getAnalysisModel().
- * Use getModelForTool(toolTag, userId) for per-tool cost attribution.
  */
 
 import type { LanguageModel } from 'ai';
 
-export type ProviderName = 'gateway' | 'google' | 'vertex';
+export type ProviderName = 'google' | 'vertex';
 
 export interface ProviderInfo {
   name: ProviderName;
@@ -32,67 +23,17 @@ export interface ProviderInfo {
 }
 
 // ---------------------------------------------------------------------------
-// Gateway model slugs — provider/model with dot-version format
+// Model IDs
 // ---------------------------------------------------------------------------
 
-const GW_FLASH  = 'google/gemini-2.5-flash';
-const GW_PRO    = 'google/gemini-2.5-pro';
-const GW_CLAUDE = 'anthropic/claude-sonnet-4.6';
+const MODEL_FLASH = 'gemini-2.5-flash';
+const MODEL_PRO   = 'gemini-2.5-pro';
 
 // ---------------------------------------------------------------------------
-// Direct model IDs — only used in the dev fallback path (no gateway)
+// Provider factory
 // ---------------------------------------------------------------------------
 
-const DIRECT_FLASH = 'gemini-2.5-flash';
-const DIRECT_PRO   = 'gemini-2.5-pro';
-
-// ---------------------------------------------------------------------------
-// Gateway availability
-// ---------------------------------------------------------------------------
-
-function isGatewayConfigured(): boolean {
-  // VERCEL_OIDC_TOKEN is provisioned by `vercel env pull` and auto-refreshed
-  // on Vercel deployments. This is the only gateway auth method used here —
-  // OIDC eliminates manual key rotation and is the Vercel-recommended approach.
-  return !!process.env.VERCEL_OIDC_TOKEN;
-}
-
-// ---------------------------------------------------------------------------
-// Gateway model factory
-// Passing a "provider/model" string routes through AI Gateway automatically.
-// providerOptions.gateway enables failover, user tracking, and cost tags.
-// ---------------------------------------------------------------------------
-
-function gatewayModel(
-  slug: string,
-  opts?: { userId?: string; toolTag?: string }
-): LanguageModel {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { gateway } = require('ai') as { gateway: (slug: string, opts?: unknown) => LanguageModel };
-
-  const isAnthropic = slug.startsWith('anthropic/');
-  return gateway(slug, {
-    providerOptions: {
-      gateway: {
-        order: isAnthropic ? ['anthropic', 'bedrock'] : ['google', 'vertex'],
-        ...(opts?.userId  && { user: opts.userId }),
-        ...(opts?.toolTag && {
-          tags: [
-            `tool:${opts.toolTag}`,
-            `env:${process.env.NODE_ENV === 'production' ? 'production' : 'development'}`,
-            'app:praxis',
-          ],
-        }),
-      },
-    },
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Direct provider fallback — only when gateway is not configured
-// ---------------------------------------------------------------------------
-
-function directModel(modelId: string): LanguageModel {
+function createModel(modelId: string): LanguageModel {
   if (process.env.GOOGLE_VERTEX_PROJECT && process.env.AI_PROVIDER === 'vertex') {
     const { createVertex } = require('@ai-sdk/google-vertex') as typeof import('@ai-sdk/google-vertex');
     return createVertex({
@@ -104,61 +45,48 @@ function directModel(modelId: string): LanguageModel {
   return createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY || '' })(modelId);
 }
 
+function createAnthropicModel(): LanguageModel | null {
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+  const { createAnthropic } = require('@ai-sdk/anthropic') as typeof import('@ai-sdk/anthropic');
+  return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })('claude-sonnet-4');
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
-/**
- * Standard model (gemini-2.5-flash) — chat, lightweight analysis, terminology.
- */
+/** Standard model (gemini-2.5-flash) — chat, lightweight analysis, terminology. */
 export function getModel(modelId?: string): LanguageModel {
-  if (isGatewayConfigured()) return gatewayModel(modelId ?? GW_FLASH);
-  return directModel(modelId ?? DIRECT_FLASH);
+  return createModel(modelId ?? MODEL_FLASH);
 }
 
-/**
- * Pro model (gemini-2.5-pro) — structured tool generation, dossiers, reports.
- */
+/** Pro model (gemini-2.5-pro) — structured tool generation, dossiers, reports. */
 export function getProModel(): LanguageModel {
-  if (isGatewayConfigured()) return gatewayModel(GW_PRO);
-  return directModel(DIRECT_PRO);
+  return createModel(MODEL_PRO);
 }
 
 /**
- * Analysis model — Claude Sonnet via AI Gateway, or Gemini Pro as fallback.
- * When gateway is active: OIDC auth handles Anthropic — no direct key needed.
- * When gateway is absent: falls back gracefully to Gemini Pro.
+ * Analysis model — Claude Sonnet if ANTHROPIC_API_KEY is set, else Gemini Pro.
  */
 export function getAnalysisModel(): LanguageModel {
-  if (isGatewayConfigured()) return gatewayModel(GW_CLAUDE);
-  return directModel(DIRECT_PRO);
+  return createAnthropicModel() ?? createModel(MODEL_PRO);
 }
 
 /**
- * Tool-specific model with per-tool cost attribution via AI Gateway.
- * Visible in Vercel dashboard: AI → Usage, filterable by tag.
- *
- * @param toolTag  e.g. 'actor-profiles', 'power-map', 'dossier-generate'
- * @param userId   Firebase UID — enables per-user spend tracking + rate limiting
- * @param pro      true = gemini-2.5-pro, false = gemini-2.5-flash
+ * Tool-specific model — same as getModel/getProModel but accepts pro flag.
+ * userId param kept for future per-user tracking via BigQuery.
  */
-export function getModelForTool(toolTag: string, userId?: string, pro = false): LanguageModel {
-  if (isGatewayConfigured()) return gatewayModel(pro ? GW_PRO : GW_FLASH, { userId, toolTag });
-  return directModel(pro ? DIRECT_PRO : DIRECT_FLASH);
+export function getModelForTool(_toolTag: string, _userId?: string, pro = false): LanguageModel {
+  return createModel(pro ? MODEL_PRO : MODEL_FLASH);
 }
 
-/**
- * Grounded search model — always uses Google AI Studio directly.
- * Search grounding is a Google-specific capability unavailable through gateway.
- */
-export function getGroundedModel(modelId: string = DIRECT_FLASH): LanguageModel {
+/** Grounded search model — Google AI Studio with Search grounding. */
+export function getGroundedModel(modelId: string = MODEL_FLASH): LanguageModel {
   const { createGoogleGenerativeAI } = require('@ai-sdk/google') as typeof import('@ai-sdk/google');
   return createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY || '' })(modelId);
 }
 
-/**
- * User-preference model — routes to the model the user selected in settings.
- */
+/** User-preference model — routes to the model the user selected in settings. */
 export function getModelForUser(settings?: { preferredModel?: string; model?: string }): LanguageModel {
   switch (settings?.preferredModel ?? settings?.model) {
     case 'gemini-2.5-pro':  return getProModel();
@@ -177,25 +105,12 @@ export async function getModelAsync(modelId?: string): Promise<LanguageModel> {
 // ---------------------------------------------------------------------------
 
 export function getProviderInfo(): ProviderInfo {
-  if (isGatewayConfigured()) {
-    const hasOidc = !!process.env.VERCEL_OIDC_TOKEN;
-    return {
-      name:            'gateway',
-      displayName:     'Vercel AI Gateway',
-      modelId:         GW_FLASH,
-      groundedModelId: `${DIRECT_FLASH} + Google Search (direct)`,
-      isConfigured:    true,
-      configNote:      hasOidc
-        ? 'OIDC auth — tokens auto-refreshed on Vercel'
-        : 'API key auth — consider `vercel env pull` for OIDC',
-    };
-  }
   if (process.env.GOOGLE_VERTEX_PROJECT && process.env.AI_PROVIDER === 'vertex') {
     return {
       name:            'vertex',
-      displayName:     'Google Vertex AI (direct)',
-      modelId:         DIRECT_FLASH,
-      groundedModelId: DIRECT_FLASH,
+      displayName:     'Google Vertex AI',
+      modelId:         MODEL_FLASH,
+      groundedModelId: MODEL_FLASH,
       isConfigured:    true,
       configNote:      `Project: ${process.env.GOOGLE_VERTEX_PROJECT} · Location: ${process.env.GOOGLE_VERTEX_LOCATION ?? 'us-central1'}`,
     };
@@ -203,54 +118,40 @@ export function getProviderInfo(): ProviderInfo {
   const apiKey = process.env.GOOGLE_AI_API_KEY;
   return {
     name:            'google',
-    displayName:     'Google AI Studio (direct)',
-    modelId:         DIRECT_FLASH,
-    groundedModelId: `${DIRECT_FLASH} + Search Grounding`,
+    displayName:     'Google AI Studio',
+    modelId:         MODEL_FLASH,
+    groundedModelId: `${MODEL_FLASH} + Search Grounding`,
     isConfigured:    !!apiKey,
     configNote:      apiKey
-      ? `API key configured (${apiKey.slice(0, 6)}…)`
-      : 'Set GOOGLE_AI_API_KEY or run `vercel env pull` for gateway OIDC',
+      ? `API key configured (${apiKey.slice(0, 6)}...)`
+      : 'Set GOOGLE_AI_API_KEY in environment',
   };
 }
 
 export function getAvailableProviders() {
-  const gatewayActive = isGatewayConfigured();
-  const hasOidc       = !!process.env.VERCEL_OIDC_TOKEN;
-
   return {
-    gateway: {
-      name:         'Vercel AI Gateway',
-      configured:   gatewayActive,
-      model:        GW_FLASH,
-      capabilities: ['Provider Failover', 'Cost Tracking', 'Per-User Rate Limits', 'Audit Logs', '100+ Models'],
-      note:         gatewayActive
-        ? hasOidc
-          ? 'Active (OIDC) — tokens auto-refresh on Vercel'
-          : 'Active (API key) — run `vercel env pull` for OIDC auto-refresh'
-        : 'Run `vercel env pull` to provision VERCEL_OIDC_TOKEN',
-    },
     google: {
       name:         'Google AI Studio',
       configured:   !!process.env.GOOGLE_AI_API_KEY,
-      model:        DIRECT_FLASH,
+      model:        MODEL_FLASH,
       capabilities: ['Chat', 'Google Search Grounding', 'Tool Use', 'Streaming'],
-      note:         'Used for Search Grounding (gateway cannot access this capability)',
+      note:         'Primary provider — set GOOGLE_AI_API_KEY',
     },
     vertex: {
       name:         'Google Vertex AI',
       configured:   !!process.env.GOOGLE_VERTEX_PROJECT,
-      model:        DIRECT_FLASH,
-      capabilities: ['VPC-SC', 'IAM', 'Audit Logs', 'Enterprise SLA'],
-      note:         'Available as gateway failover target (set AI_PROVIDER=vertex + GOOGLE_VERTEX_PROJECT)',
+      model:        MODEL_FLASH,
+      capabilities: ['VPC-SC', 'IAM', 'Audit Logs', 'Enterprise SLA', 'ADC Auth'],
+      note:         'Set AI_PROVIDER=vertex + GOOGLE_VERTEX_PROJECT for Vertex',
     },
     anthropic: {
       name:         'Anthropic Claude',
-      configured:   gatewayActive,
-      model:        GW_CLAUDE,
+      configured:   !!process.env.ANTHROPIC_API_KEY,
+      model:        'claude-sonnet-4',
       capabilities: ['Deep Analysis', 'Diplomatic Language', 'Complex Reasoning'],
-      note:         gatewayActive
-        ? 'Accessible via AI Gateway — OIDC auth, no direct key needed'
-        : 'Enable AI Gateway (run `vercel env pull`) to access Claude models',
+      note:         process.env.ANTHROPIC_API_KEY
+        ? 'Active — used for deep analysis'
+        : 'Set ANTHROPIC_API_KEY to enable Claude models',
     },
   };
 }
@@ -265,6 +166,6 @@ export const google = (() => {
 })();
 
 export const models = {
-  flash: google(DIRECT_FLASH),
-  pro:   google(DIRECT_PRO),
+  flash: google(MODEL_FLASH),
+  pro:   google(MODEL_PRO),
 } as const;
