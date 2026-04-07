@@ -4,6 +4,8 @@
 set -e
 
 PROJECT_ID=$(gcloud config get-value project)
+PROJECT_NUMBER="852128226674"
+REGION="us-central1"
 if [ -z "$PROJECT_ID" ]; then
   echo "ERROR: No GCP project set. Run: gcloud config set project YOUR_PROJECT_ID"
   exit 1
@@ -64,6 +66,46 @@ gcloud scheduler jobs create http gdelt-poller \
   --oidc-service-account-email="${BACKEND_SA}" \
   --location=us-central1 \
   2>/dev/null || echo "Scheduler job gdelt-poller already exists"
+
+# ── Cloud Scheduler: Daily Alert Check (06:00 UTC) ──────────────────────
+echo "Creating Cloud Scheduler job: praxis-check-alerts..."
+gcloud scheduler jobs create http praxis-check-alerts \
+  --location="${REGION}" \
+  --schedule="0 6 * * *" \
+  --uri="https://praxis-frontend-${PROJECT_NUMBER}.${REGION}.run.app/api/cron/check-alerts" \
+  --http-method=GET \
+  --headers="Authorization=Bearer ${CRON_SECRET:-changeme}" \
+  --oidc-service-account-email="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --oidc-token-audience="https://praxis-frontend-${PROJECT_NUMBER}.${REGION}.run.app" \
+  --description="Daily conflict alert check" \
+  --quiet 2>/dev/null || \
+gcloud scheduler jobs update http praxis-check-alerts \
+  --location="${REGION}" \
+  --schedule="0 6 * * *" \
+  --uri="https://praxis-frontend-${PROJECT_NUMBER}.${REGION}.run.app/api/cron/check-alerts" \
+  --http-method=GET \
+  --oidc-service-account-email="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --quiet
+
+# ── Cloud Scheduler: Daily Briefing Generation (05:00 UTC) ───────────────
+echo "Creating Cloud Scheduler job: praxis-generate-briefing..."
+gcloud scheduler jobs create http praxis-generate-briefing \
+  --location="${REGION}" \
+  --schedule="0 5 * * *" \
+  --uri="https://praxis-frontend-${PROJECT_NUMBER}.${REGION}.run.app/api/cron/generate-briefing" \
+  --http-method=GET \
+  --headers="Authorization=Bearer ${CRON_SECRET:-changeme}" \
+  --oidc-service-account-email="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --oidc-token-audience="https://praxis-frontend-${PROJECT_NUMBER}.${REGION}.run.app" \
+  --description="Daily intelligence briefing generation" \
+  --quiet 2>/dev/null || \
+gcloud scheduler jobs update http praxis-generate-briefing \
+  --location="${REGION}" \
+  --schedule="0 5 * * *" \
+  --uri="https://praxis-frontend-${PROJECT_NUMBER}.${REGION}.run.app/api/cron/generate-briefing" \
+  --http-method=GET \
+  --oidc-service-account-email="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --quiet
 
 # ── Secret Manager — create placeholder secrets ───────────────────────────────
 # cloudbuild.yaml references these secrets. Create them now (you'll fill in values next).

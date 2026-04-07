@@ -1,9 +1,38 @@
 node_modules
 .next
 .git
+.gitignore
+
+# Backend and cloud functions are separate Docker builds
 backend/
 cloud_functions/
 infrastructure/
+
+# Documentation
 *.md
+docs/
+
+# Environment files
 .env*
 !.env.example
+
+# IDE and OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Test files
+vitest.config.ts
+src/__tests__/
+
+# Config files not needed in Docker
+firebase.json
+firestore.rules
+firestore.indexes.json
+storage.rules
+eslint.config.mjs
+postcss.config.mjs
+tsconfig.json
+sentry.*.config.ts
