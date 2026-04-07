@@ -678,7 +678,7 @@ export default function StakeholderMapPage() {
   const [graphSnapshot, setGraphSnapshot] = useState<GraphSnapshot | null>(null);
 
   useEffect(() => {
-    const uid = user?.uid;
+    const uid = user?.id;
     const sitId = situation?.id;
     if (!uid || !sitId || isDemo) return;
     const ref = doc(db, 'users', uid, 'situations', sitId, 'graph', 'snapshot');
@@ -688,7 +688,7 @@ export default function StakeholderMapPage() {
       }
     });
     return unsub;
-  }, [user?.uid, situation?.id, isDemo]);
+  }, [user?.id, situation?.id, isDemo]);
 
   // Filter only Actor primitive_type nodes
   const graphActors = useMemo(() => {

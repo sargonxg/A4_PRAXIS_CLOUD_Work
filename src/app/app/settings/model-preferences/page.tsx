@@ -33,16 +33,16 @@ export default function ModelPreferencesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.uid) return;
-    getDoc(doc(db, 'users', user.uid, 'settings', 'model_preferences')).then((snap) => {
+    if (!user?.id) return;
+    getDoc(doc(db, 'users', user.id, 'settings', 'model_preferences')).then((snap) => {
       if (snap.exists()) setPrefs({ ...DEFAULT_PREFS, ...(snap.data() as Partial<ModelPreferences>) });
       setLoading(false);
     });
-  }, [user?.uid]);
+  }, [user?.id]);
 
   async function handleSave() {
-    if (!user?.uid) return;
-    await setDoc(doc(db, 'users', user.uid, 'settings', 'model_preferences'), prefs, { merge: true });
+    if (!user?.id) return;
+    await setDoc(doc(db, 'users', user.id, 'settings', 'model_preferences'), prefs, { merge: true });
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   }

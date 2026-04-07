@@ -100,9 +100,9 @@ export default function ExportCenterPage() {
   const [exportingAll, setExportingAll] = useState(false);
 
   useEffect(() => {
-    if (!user?.uid || !situation?.id) { setLoading(false); return; }
+    if (!user?.id || !situation?.id) { setLoading(false); return; }
 
-    getDocs(collection(db, 'users', user.uid, 'situations', situation.id, 'tools'))
+    getDocs(collection(db, 'users', user.id, 'situations', situation.id, 'tools'))
       .then((snap) => {
         const data: Record<string, Record<string, unknown>> = {};
         const outputs: ToolOutput[] = [];
@@ -122,9 +122,9 @@ export default function ExportCenterPage() {
         setTools(outputs.sort((a, b) => a.displayName.localeCompare(b.displayName)));
       })
       .finally(() => setLoading(false));
-  }, [user?.uid, situation?.id]);
+  }, [user?.id, situation?.id]);
 
-  if (!hasSituation) return <NoSituationState toolName="Export Center" />;
+  if (!hasSituation) return <NoSituationState />;
 
   async function exportAll() {
     setExportingAll(true);

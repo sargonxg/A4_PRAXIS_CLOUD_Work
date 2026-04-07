@@ -486,7 +486,7 @@ function IntelligenceSummaryCard({ situationId }: { situationId: string }) {
 
   // Subscribe to Firestore graph/analysis in real time
   useEffect(() => {
-    const uid = user?.uid;
+    const uid = user?.id;
     if (!uid || !situationId) return;
     const ref = doc(db, 'users', uid, 'situations', situationId, 'graph', 'analysis');
     const unsub = onSnapshot(ref, (snap) => {
@@ -495,7 +495,7 @@ function IntelligenceSummaryCard({ situationId }: { situationId: string }) {
       }
     });
     return unsub;
-  }, [user?.uid, situationId]);
+  }, [user?.id, situationId]);
 
   const runPipeline = useCallback(async () => {
     if (pipelineLoading) return;

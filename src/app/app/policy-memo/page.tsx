@@ -68,7 +68,7 @@ export default function PolicyMemoPage() {
   const [memo, setMemo] = useState<PolicyMemoData | null>(savedMemo || null);
   const [error, setError] = useState('');
 
-  if (!hasSituation) return <NoSituationState toolName="Policy Memo" />;
+  if (!hasSituation) return <NoSituationState />;
 
   async function handleGenerate() {
     if (!situation) return;

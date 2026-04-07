@@ -831,7 +831,7 @@ function DemoConflictGraphPage() {
       </AnimatePresence>
 
       {/* ── Temporal Memory Panel ──────────────────────────── */}
-      <TemporalMemoryPanel situationId={situation.id} />
+      <TemporalMemoryPanel situationId="demo" />
     </div>
   );
 }

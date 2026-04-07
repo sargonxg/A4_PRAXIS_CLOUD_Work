@@ -41,7 +41,7 @@ export default function SourceMonitorPage() {
   );
   const [refreshingAll, setRefreshingAll] = useState(false);
 
-  if (!hasSituation) return <NoSituationState toolName="Source Monitor" />;
+  if (!hasSituation) return <NoSituationState />;
 
   async function fetchFeed(endpoint: string) {
     setFeeds((prev) =>

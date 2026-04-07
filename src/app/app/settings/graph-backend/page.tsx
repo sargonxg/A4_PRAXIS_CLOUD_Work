@@ -45,16 +45,16 @@ export default function GraphBackendPage() {
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   useEffect(() => {
-    if (!user?.uid) return;
-    getDoc(doc(db, 'users', user.uid, 'settings', 'graph_backend')).then((snap) => {
+    if (!user?.id) return;
+    getDoc(doc(db, 'users', user.id, 'settings', 'graph_backend')).then((snap) => {
       if (snap.exists()) setConfig({ ...DEFAULT_CONFIG, ...(snap.data() as Partial<GraphBackendConfig>) });
       setLoading(false);
     });
-  }, [user?.uid]);
+  }, [user?.id]);
 
   async function handleSave() {
-    if (!user?.uid) return;
-    await setDoc(doc(db, 'users', user.uid, 'settings', 'graph_backend'), config, { merge: true });
+    if (!user?.id) return;
+    await setDoc(doc(db, 'users', user.id, 'settings', 'graph_backend'), config, { merge: true });
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   }

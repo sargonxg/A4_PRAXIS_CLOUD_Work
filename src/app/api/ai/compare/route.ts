@@ -5,7 +5,6 @@ import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { NextResponse } from 'next/server';
 import { buildGraphContext } from '@/lib/ai/context-builder-server';
-import { buildToolContext } from '@/lib/ai/situation-context';
 
 export const maxDuration = 120;
 
@@ -28,7 +27,7 @@ const ComparisonSchema = z.object({
   analyticalCaveats: z.array(z.string()).describe('Important caveats and limitations of this comparison'),
 });
 
-export const POST = withAuth(async (request: Request, { user }: { user: { uid: string } }) => {
+export const POST = withAuth(async (request: Request, user) => {
   const body = await request.json();
   const { situationIdA, situationIdB, focusAreas } = body as {
     situationIdA: string;
@@ -43,9 +42,7 @@ export const POST = withAuth(async (request: Request, { user }: { user: { uid: s
   const creditCheck = await checkAndDeductCredits('ai_compare', 'Situation comparison');
   if (!creditCheck.allowed) return creditCheck.response;
 
-  const [contextA, contextB, graphA, graphB] = await Promise.all([
-    buildToolContext(situationIdA, user.uid).catch(() => ''),
-    buildToolContext(situationIdB, user.uid).catch(() => ''),
+  const [graphA, graphB] = await Promise.all([
     buildGraphContext(user.uid, situationIdA, 'compare').catch(() => ''),
     buildGraphContext(user.uid, situationIdB, 'compare').catch(() => ''),
   ]);
@@ -56,11 +53,9 @@ export const POST = withAuth(async (request: Request, { user }: { user: { uid: s
     prompt: `You are a senior UN conflict analyst conducting a comparative analysis of two situations.
 
 SITUATION A:
-${contextA}
 ${graphA}
 
 SITUATION B:
-${contextB}
 ${graphB}
 
 FOCUS AREAS: ${focusAreas || 'All dimensions — conflict dynamics, actors, escalation, opportunities for resolution'}

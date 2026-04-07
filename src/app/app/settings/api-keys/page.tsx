@@ -24,17 +24,17 @@ export default function ApiKeysPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.uid) return;
-    getDoc(doc(db, 'users', user.uid, 'settings', 'api_keys')).then((snap) => {
+    if (!user?.id) return;
+    getDoc(doc(db, 'users', user.id, 'settings', 'api_keys')).then((snap) => {
       if (snap.exists()) setKeys(snap.data() as ApiKeys);
       setLoading(false);
     });
-  }, [user?.uid]);
+  }, [user?.id]);
 
   async function handleSave() {
-    if (!user?.uid) return;
+    if (!user?.id) return;
     // TODO: In production, store keys in Secret Manager instead of Firestore
-    await setDoc(doc(db, 'users', user.uid, 'settings', 'api_keys'), keys, { merge: true });
+    await setDoc(doc(db, 'users', user.id, 'settings', 'api_keys'), keys, { merge: true });
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   }

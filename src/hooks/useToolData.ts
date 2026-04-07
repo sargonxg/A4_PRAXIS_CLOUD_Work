@@ -26,7 +26,7 @@ export function useToolData<T = unknown>(toolName: ToolName): UseToolDataResult<
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const uid = user?.uid ?? null;
+  const uid = user?.id ?? null;
   const situationId = activeSituation?.id ?? null;
 
   useEffect(() => {

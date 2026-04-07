@@ -1,7 +1,6 @@
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
-import { buildToolContext } from '@/lib/ai/situation-context';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { NextResponse } from 'next/server';
@@ -30,25 +29,19 @@ const PolicyMemoSchema = z.object({
   risks: z.string().describe('Key risks to the recommended approach and mitigation strategies'),
 });
 
-export const POST = withAuth(async (request: Request, { user }: { user: { uid: string } }) => {
+export const POST = withAuth(async (request: Request, user) => {
   const body = await request.json();
   const { situationId, policyQuestion, audience = 'Senior Leadership' } = body;
 
   const creditCheck = await checkAndDeductCredits('ai_policy_memo', 'Policy memo');
   if (!creditCheck.allowed) return creditCheck.response;
 
-  const [situationContext, graphContext] = await Promise.all([
-    buildToolContext(situationId, user.uid).catch(() => ''),
-    buildGraphContext(user.uid, situationId, 'policy-memo').catch(() => ''),
-  ]);
+  const graphContext = await buildGraphContext(user.uid, situationId, 'policy-memo').catch(() => '');
 
   const { text } = await generateText({
     model: getProModel(),
     experimental_output: Output.object({ schema: PolicyMemoSchema }),
     prompt: `You are a senior UN political affairs officer drafting a policy memorandum for ${audience}.
-
-SITUATION CONTEXT:
-${situationContext}
 
 GRAPH INTELLIGENCE:
 ${graphContext}
