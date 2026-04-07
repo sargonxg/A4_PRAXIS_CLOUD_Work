@@ -1,6 +1,7 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 6.0.0 — Cloud Architecture (dual-service: Next.js + Python FastAPI on GCP)
+> Version 6.1.0 — Pure GCP Cloud Run (Vercel removed, dual-service: Next.js + Python FastAPI)
+> Project: praxisbytacitus (852128226674) · Region: us-central1
 
 ## PRAXIS CLOUD — Complete Developer Guide
 
@@ -10,7 +11,7 @@ PRAXIS is a **dual-service** application deployed on Google Cloud Run:
 - **Frontend** (`/` root): Next.js 16 App Router → Cloud Run
 - **Backend** (`backend/`): Python FastAPI → Cloud Run
 - **Firebase**: Auth + Firestore (single source of truth — all writes from backend, all reads via `onSnapshot` from frontend)
-- **GCP Services**: Vertex AI (ADK), BigQuery (analytics), Cloud Storage (documents), Pub/Sub (async events), Cloud Functions (triggers)
+- **GCP Services**: Vertex AI (ADK), BigQuery (analytics), Cloud Storage (documents), Pub/Sub (async events), Cloud Functions (triggers), Cloud Scheduler (crons), Secret Manager, Artifact Registry
 
 ### Local Development
 
@@ -241,11 +242,11 @@ npx tsc --noEmit
 
 ### Bug Fixes
 - **`queryMode` not applied to initial state** (`src/app/(auth)/login/page.tsx`) — `useSearchParams().get('mode')` was read but never used to initialise `useState('signin')`. Corrected to `useState(queryMode === 'signup' ? 'signup' : 'signin')`.
-- **Session CSRF check uses `x-forwarded-host`** (`src/app/api/auth/session/route.ts`) — Added `x-forwarded-host` as primary source for host comparison. Vercel's edge proxy rewrites the `host` header, causing false 403s for legitimate requests without this fallback.
+- **Session CSRF check uses `x-forwarded-host`** (`src/app/api/auth/session/route.ts`) — Added `x-forwarded-host` as primary source for host comparison. Reverse proxy may rewrite the `host` header, causing false 403s for legitimate requests without this fallback.
 - **Auth error codes surfaced** (`src/lib/auth/auth-context.tsx`) — `signInWithEmail` / `signUpWithEmail` catch blocks now handle `auth/user-disabled`, `auth/network-request-failed`, `auth/operation-not-allowed`, `auth/invalid-email` with specific copy. Generic fallback now includes the raw Firebase code.
 
 ### Security Hardening
-- `console.error` added to CSRF mismatch, token verification failure, and unhandled exception paths in session route — errors now appear in Vercel runtime logs.
+- `console.error` added to CSRF mismatch, token verification failure, and unhandled exception paths in session route — errors now appear in Cloud Run logs.
 
 ---
 
@@ -338,7 +339,7 @@ Or import from barrel for convenience: `import { RiskGauge, ForceGraph } from '@
 ## v4.2.0 Simulation Engine: Game Theory tool, Scenario Planner overhaul, Negotiation Prep upgrades, Mediation Design additions
 
 ## What This Is
-The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Two separate experiences in one codebase: a demo for prospects and a real situation-driven workspace for authenticated users. Deployed at praxis.tacitus.me (Vercel, iad1).
+The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, diplomatic mediators. Two separate experiences in one codebase: a demo for prospects and a real situation-driven workspace for authenticated users. Deployed at praxis.tacitus.me (GCP Cloud Run, us-central1).
 
 ## v4.2.0 Simulation Engine & Analytical Tools (2026-03-31)
 
@@ -406,7 +407,7 @@ Scenario Planner · Negotiation Prep · **Game Theory** (NEW) · CONCORDIA (TACI
 
 ## v3.9.8 402/504/500 fixes (2026-03-30)
 - Self-service credit top-up at `/api/admin/add-credits` (+1000 credits, wired to Debug Panel)
-- actor-profiles `maxDuration` 60→120s (Gemini Pro + complex schema hit Vercel limit)
+- actor-profiles `maxDuration` 60→120s (Gemini Pro + complex schema hit timeout limit)
 - dossier-generate `searchWeb` wrapped in 8s `Promise.race` (non-blocking timeout)
 - 8 missing credit keys now explicit: `ai_actor_profiles`, `ai_commitment_scan`, `ai_info_environment`, `ai_mediation_design`, `ai_power_map`, `ai_media_roundup`, `media-roundup`, `research`
 
@@ -426,7 +427,7 @@ Scenario Planner · Negotiation Prep · **Game Theory** (NEW) · CONCORDIA (TACI
 - See [CHANGELOG.md](./CHANGELOG.md) for full version history
 
 ## Tech Stack
-Next.js 16.1.6 (App Router), TypeScript 5.9, Tailwind CSS 4, Radix UI, Vercel AI SDK (ai@6.0.105 + @ai-sdk/google + @ai-sdk/anthropic), Firebase Auth + Firestore + Admin SDK, Firecrawl (web intelligence), Google ADK (Vertex AI Agent Engine), google-auth-library, Zustand 5, D3.js 7, Framer Motion 12, Zod 4.
+Next.js 16.1.6 (App Router), TypeScript 5.9, Tailwind CSS 4, Radix UI, AI SDK (ai@6.0.105 + @ai-sdk/google + @ai-sdk/anthropic), Firebase Auth + Firestore + Admin SDK, Firecrawl (web intelligence), Google ADK (Vertex AI Agent Engine), google-auth-library, Zustand 5, D3.js 7, Framer Motion 12, Zod 4.
 
 ## Architecture (Dual-App)
 
@@ -522,9 +523,10 @@ deep-search-agent · argus · media-compass · media-roundup · sanctions · com
 ### Workspace (4 tools)
 cases · team · advisory · settings
 
-## Cron Jobs (vercel.json)
-- `/api/cron/check-alerts` — 06:00 UTC daily, GDELT-based alert generation
-- `/api/cron/generate-briefing` — 05:00 UTC daily, auto-generates daily intelligence briefs for all active situations
+## Cron Jobs (Cloud Scheduler)
+- `praxis-check-alerts` → `/api/cron/check-alerts` — 06:00 UTC daily, GDELT-based alert generation
+- `praxis-generate-briefing` → `/api/cron/generate-briefing` — 05:00 UTC daily, auto-generates daily intelligence briefs
+- `praxis-gdelt-poller` → Cloud Function — every 15 min, polls GDELT for active situations
 
 ## Deep Research Agent (Vertex AI ADK) — v3.10.0
 - **Required env var**: `VERTEX_AGENT_ENGINE_ID` — Numeric ID of the Reasoning Engine on Vertex AI
