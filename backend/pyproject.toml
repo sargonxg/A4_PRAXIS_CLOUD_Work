@@ -10,7 +10,7 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.34",
     "networkx>=3.4",
-    "graspologic>=3.4",
+    "graspologic",
     "pydantic>=2.10",
     "pydantic-settings>=2.7",
     "google-genai>=1.8",
@@ -20,24 +20,15 @@ dependencies = [
     "neo4j>=5.26",
     "httpx>=0.28",
     "python-multipart>=0.0.17",
-    # Genkit (added by E1)
-    "genkit>=0.5",
-    "genkit-google-genai>=0.5",
-    # Graph backends (added by E3)
+    # Graph backends
     "falkordb>=1.1",
-    "graphiti-core>=0.6",
+    "graphiti-core",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
-]
-anthropic = [
-    "genkit-anthropic>=0.5",
-]
-openai = [
-    "genkit-openai>=0.5",
 ]
 
 [tool.hatch.build.targets.wheel]
