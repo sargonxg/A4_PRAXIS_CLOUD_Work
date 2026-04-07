@@ -102,7 +102,7 @@ Keep it under 120 words, professional, UN-standard diplomatic language.`;
           if (data?.services?.googleAI) {
             generate();
           } else {
-            setBrief('_AI service is being configured. Set GOOGLE_AI_API_KEY in Vercel environment variables to enable intelligence briefs._');
+            setBrief('_AI service is being configured. Set GOOGLE_AI_API_KEY in environment variables to enable intelligence briefs._');
           }
         })
         .catch(() => {

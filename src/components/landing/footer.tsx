@@ -128,7 +128,7 @@ export function Footer() {
             Built on
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-            {["Gemini AI", "Vercel", "Neo4j"].map((name) => (
+            {["Gemini AI", "Cloud Run", "Neo4j"].map((name) => (
               <span
                 key={name}
                 className="text-xs font-semibold uppercase tracking-wider text-navy-300/60"

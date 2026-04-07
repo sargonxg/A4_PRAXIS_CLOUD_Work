@@ -21,7 +21,7 @@ const COOKIE_OPTIONS = {
 export async function POST(request: Request) {
   try {
     // CSRF protection: validate same-origin.
-    // Use x-forwarded-host as fallback since Vercel may transform the host header.
+    // Use x-forwarded-host as fallback since reverse proxy may transform the host header.
     const origin = request.headers.get('origin');
     const host =
       request.headers.get('x-forwarded-host') ||

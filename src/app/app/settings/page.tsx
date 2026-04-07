@@ -568,14 +568,14 @@ export default function SettingsPage() {
               <Globe className="h-4 w-4 text-diplomatic-blue" />
               <p className="text-xs font-semibold text-navy-900">Frontend</p>
             </div>
-            <p className="text-[11px] text-navy-600 leading-relaxed">Next.js 16 App Router · Vercel Edge · React 18 · Tailwind CSS v4</p>
+            <p className="text-[11px] text-navy-600 leading-relaxed">Next.js 16 App Router · Cloud Run · React 19 · Tailwind CSS v4</p>
           </div>
           <div className="rounded-lg border border-navy-200 bg-white p-4">
             <div className="mb-2 flex items-center gap-2">
               <Cpu className="h-4 w-4 text-teal" />
               <p className="text-xs font-semibold text-navy-900">AI Layer</p>
             </div>
-            <p className="text-[11px] text-navy-600 leading-relaxed">Vercel AI SDK v6 · Gemini 2.5 Flash · Tool-augmented generation · Streaming</p>
+            <p className="text-[11px] text-navy-600 leading-relaxed">AI SDK v6 · Gemini 2.5 Flash · Tool-augmented generation · Streaming</p>
           </div>
           <div className="rounded-lg border border-navy-200 bg-white p-4">
             <div className="mb-2 flex items-center gap-2">

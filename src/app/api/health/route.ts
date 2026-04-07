@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 /**
  * GET /api/health
- * Production health check — used by uptime monitors (UptimeRobot, Vercel, etc.)
+ * Production health check — used by uptime monitors (UptimeRobot, Cloud Run, etc.)
  * Returns 200 if all critical dependencies are reachable, 503 otherwise.
  */
 export async function GET() {

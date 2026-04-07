@@ -33,7 +33,7 @@ function ensureInitialized() {
   try {
     const serviceAccount = JSON.parse(raw);
 
-    // Handle Vercel's literal \n in private_key
+    // Handle literal \n in private_key (common in env vars)
     if (serviceAccount.private_key && typeof serviceAccount.private_key === 'string') {
       serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     }

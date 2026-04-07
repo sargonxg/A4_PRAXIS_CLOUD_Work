@@ -49,7 +49,7 @@ export const POST = withAuth(async (request: Request, _user) => {
       if (greeting) return formatAsStreamResponse(greeting);
 
       return new Response(
-        JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in Vercel environment variables.' }),
+        JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in environment variables.' }),
         { status: 503, headers: { 'Content-Type': 'application/json' } }
       );
     }
