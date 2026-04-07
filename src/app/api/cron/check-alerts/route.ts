@@ -31,7 +31,7 @@ const TONE_THRESHOLD_MEDIUM = 5;
 
 /**
  * Cron job: Check all active situations for alert conditions.
- * Runs daily at 06:00 UTC via Vercel Cron (configured in vercel.json).
+ * Runs daily at 06:00 UTC via Cloud Scheduler.
  * Secured by CRON_SECRET header.
  *
  * Process:

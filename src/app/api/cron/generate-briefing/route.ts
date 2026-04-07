@@ -7,7 +7,7 @@ export const maxDuration = 60;
 
 /**
  * Cron job: Generate daily intelligence briefs for all active situations.
- * Runs daily at 05:00 UTC via Vercel Cron (configured in vercel.json).
+ * Runs daily at 05:00 UTC via Cloud Scheduler.
  * Secured by CRON_SECRET header.
  *
  * Process:

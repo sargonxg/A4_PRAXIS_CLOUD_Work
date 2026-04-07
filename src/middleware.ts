@@ -83,7 +83,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
     "style-src 'self' 'unsafe-inline' fonts.googleapis.com; " +
     "img-src 'self' data: blob: *.googleapis.com *.googleusercontent.com *.gstatic.com; " +
     "font-src 'self' fonts.gstatic.com; " +
-    "connect-src 'self' *.firebaseio.com *.googleapis.com *.firebaseapp.com identitytoolkit.googleapis.com securetoken.googleapis.com api.acleddata.com api.gdeltproject.org api.reliefweb.int hapi.humdata.org api.worldbank.org *.firecrawl.dev api.parallel.ai js.stripe.com va.vercel-scripts.com wss://*.firebaseio.com www.google-analytics.com *.google-analytics.com www.googletagmanager.com; " +
+    "connect-src 'self' *.firebaseio.com *.googleapis.com *.firebaseapp.com identitytoolkit.googleapis.com securetoken.googleapis.com api.acleddata.com api.gdeltproject.org api.reliefweb.int hapi.humdata.org api.worldbank.org *.firecrawl.dev api.parallel.ai js.stripe.com wss://*.firebaseio.com www.google-analytics.com *.google-analytics.com www.googletagmanager.com; " +
     "frame-src 'self' *.firebaseapp.com accounts.google.com *.google.com js.stripe.com;"
   );
 
