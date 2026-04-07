@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { useToolData } from '@/hooks/useToolData';
 import { RealToolView } from '@/components/praxis/real-tool-view';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
@@ -1849,6 +1850,8 @@ function RealNegotiationPrepPage({ situation, negotiationData }: { situation: Si
 export default function NegotiationPrepPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
   const [negotiationData, setNegotiationData] = useState<NegotiationData | null>(null);
+  const { hasData, loading: firestoreLoading } = useToolData('negotiation_prep');
+  const [regenerating, setRegenerating] = useState(false);
 
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoNegotiationPrepPage />;
@@ -1856,18 +1859,59 @@ export default function NegotiationPrepPage() {
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
 
+  async function handleRegenerate() {
+    if (regenerating || !situation) return;
+    setRegenerating(true);
+    try {
+      await fetch('/api/ai/negotiation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situationId: situation.id }),
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
   // Real mode — AI populate prompt, then show tool
   return (
-    <AiPopulate
-      toolId="negotiation-prep"
-      toolName="Negotiation Analysis"
-      apiEndpoint="/api/ai/negotiation"
-      extraBody={{ parties: situation.actors, issues: [`${situation.name} peace process`], conflictContext: `${situation.name}: ${situation.description}. Actors: ${situation.actors.join(', ')}` }}
-      creditCost={3}
-      hasExistingData={!!negotiationData}
-      onDataGenerated={(data) => setNegotiationData(data as NegotiationData)}
-    >
-      <RealNegotiationPrepPage situation={situation} negotiationData={negotiationData} />
-    </AiPopulate>
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        {firestoreLoading ? (
+          <span className="inline-flex items-center gap-1.5 text-xs text-navy-400">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+          </span>
+        ) : hasData ? (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-navy-100 px-3 py-1.5 text-xs font-medium text-navy-700 hover:bg-navy-200 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Scale className="h-3.5 w-3.5" />}
+            Regenerate
+          </button>
+        ) : (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            Generate with PRAXIS
+          </button>
+        )}
+      </div>
+      <AiPopulate
+        toolId="negotiation-prep"
+        toolName="Negotiation Analysis"
+        apiEndpoint="/api/ai/negotiation"
+        extraBody={{ parties: situation.actors, issues: [`${situation.name} peace process`], conflictContext: `${situation.name}: ${situation.description}. Actors: ${situation.actors.join(', ')}` }}
+        creditCost={3}
+        hasExistingData={hasData || !!negotiationData}
+        onDataGenerated={(data) => setNegotiationData(data as NegotiationData)}
+      >
+        <RealNegotiationPrepPage situation={situation} negotiationData={negotiationData} />
+      </AiPopulate>
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { useToolData } from '@/hooks/useToolData';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { NoDataState } from '@/components/praxis/no-data-state';
 
@@ -17,6 +18,7 @@ import {
   Search,
   X,
   ExternalLink,
+  Database,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
@@ -24,6 +26,9 @@ import { parseDataStreamChunk } from '@/lib/utils/stream';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 import { ForceGraph } from '@/components/visualizations/force-graph';
 import { PraxisLink } from '@/components/shared/praxis-link';
+import { db } from '@/lib/firebase/config';
+import { onSnapshot, doc } from 'firebase/firestore';
+import { useAuth } from '@/lib/auth/auth-context';
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
@@ -641,9 +646,66 @@ async function streamAI(prompt: string, onChunk: (text: string) => void): Promis
 
 type TabType = 'network' | 'grid' | 'matrix';
 
+// ─── Graph Snapshot Types ─────────────────────────────────────────────────────
+
+interface GraphNode {
+  id: string;
+  label: string;
+  primitive_type: string;
+  faction?: string;
+  [key: string]: unknown;
+}
+
+interface GraphEdge {
+  source: string;
+  target: string;
+  [key: string]: unknown;
+}
+
+interface GraphSnapshot {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
 export default function StakeholderMapPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const { user } = useAuth();
+  const { hasData: firestoreHasData, loading: firestoreLoading } = useToolData('stakeholder_map');
+  const [regenerating, setRegenerating] = useState(false);
+
+  // ─── Graph snapshot from Firestore (Python backend writes here) ────────────
+  const [graphSnapshot, setGraphSnapshot] = useState<GraphSnapshot | null>(null);
+
+  useEffect(() => {
+    const uid = user?.uid;
+    const sitId = situation?.id;
+    if (!uid || !sitId || isDemo) return;
+    const ref = doc(db, 'users', uid, 'situations', sitId, 'graph', 'snapshot');
+    const unsub = onSnapshot(ref, (snap) => {
+      if (snap.exists()) {
+        setGraphSnapshot(snap.data() as GraphSnapshot);
+      }
+    });
+    return unsub;
+  }, [user?.uid, situation?.id, isDemo]);
+
+  // Filter only Actor primitive_type nodes
+  const graphActors = useMemo(() => {
+    if (!graphSnapshot?.nodes) return [];
+    return graphSnapshot.nodes.filter((n) => n.primitive_type === 'Actor');
+  }, [graphSnapshot]);
+
+  // Count edges per actor id
+  const actorEdgeCount = useMemo(() => {
+    const counts: Record<string, number> = {};
+    if (!graphSnapshot?.edges) return counts;
+    for (const e of graphSnapshot.edges) {
+      counts[e.source] = (counts[e.source] ?? 0) + 1;
+      counts[e.target] = (counts[e.target] ?? 0) + 1;
+    }
+    return counts;
+  }, [graphSnapshot]);
 
   // ─── Persistence ──────────────────────────────────────────────────────────
   const persisted = usePersistedToolData('stakeholder-map', situation?.id);
@@ -978,6 +1040,51 @@ Be precise and operationally actionable.`;
             <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Relationships</p>
             <p className="text-sm font-semibold text-navy-800">{relationships.length}</p>
           </div>
+          {!isDemo && (
+            firestoreLoading ? (
+              <span className="inline-flex items-center gap-1 text-xs text-navy-400">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              </span>
+            ) : firestoreHasData ? (
+              <button
+                onClick={async () => {
+                  if (regenerating || !situation) return;
+                  setRegenerating(true);
+                  try {
+                    await fetch('/api/ai/stakeholder-map', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ situationId: situation.id }),
+                    });
+                  } finally { setRegenerating(false); }
+                }}
+                disabled={regenerating}
+                className="inline-flex items-center gap-1.5 rounded-md bg-navy-100 px-3 py-1.5 text-xs font-medium text-navy-700 hover:bg-navy-200 disabled:opacity-50"
+              >
+                {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                Regenerate
+              </button>
+            ) : (
+              <button
+                onClick={async () => {
+                  if (regenerating || !situation) return;
+                  setRegenerating(true);
+                  try {
+                    await fetch('/api/ai/stakeholder-map', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ situationId: situation.id }),
+                    });
+                  } finally { setRegenerating(false); }
+                }}
+                disabled={regenerating}
+                className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                Generate with PRAXIS
+              </button>
+            )
+          )}
         </div>
       </div>
 
@@ -992,6 +1099,52 @@ Be precise and operationally actionable.`;
         />
       ) : (
       <>
+      {/* ── Knowledge Graph Actors (from Python backend pipeline) ─── */}
+      {!isDemo && graphActors.length > 0 && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <Database className="h-4 w-4 text-emerald-600" />
+            <h3 className="text-sm font-semibold text-navy-900">Actors from Knowledge Graph</h3>
+            <span className="ml-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+              From Knowledge Graph
+            </span>
+            <span className="ml-auto text-[10px] text-navy-400">{graphActors.length} actors · {graphSnapshot?.edges?.length ?? 0} edges</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {graphActors.map((actor) => {
+              const edgeCount = actorEdgeCount[actor.id] ?? 0;
+              // Pick a stable faction color from a small palette
+              const factionColors = ['#1A2332', '#A63D40', '#4B92DB', '#5B8C5A', '#C8961E', '#8395a7', '#8B5CF6'];
+              const colorIdx = Math.abs(
+                (actor.faction ?? actor.label ?? actor.id).split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
+              ) % factionColors.length;
+              const factionColor = factionColors[colorIdx];
+
+              return (
+                <div
+                  key={actor.id}
+                  className="flex items-start gap-3 rounded-lg border border-white bg-white p-3 shadow-sm"
+                >
+                  <div
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold text-white"
+                    style={{ backgroundColor: factionColor }}
+                  >
+                    {String(actor.label ?? actor.id).split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-semibold text-navy-900">{actor.label ?? actor.id}</p>
+                    {actor.faction && (
+                      <p className="mt-0.5 truncate text-[10px] text-navy-500">{String(actor.faction)}</p>
+                    )}
+                    <p className="mt-0.5 text-[10px] text-navy-400">{edgeCount} connection{edgeCount !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── Tab toggle ───────────────────────────────────────────── */}
       <div className="flex gap-1 rounded-xl border border-[var(--color-app-border)] bg-white p-1.5 w-fit">
         <button

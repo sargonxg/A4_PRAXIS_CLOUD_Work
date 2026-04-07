@@ -975,6 +975,22 @@ export default function NewSituationPage() {
         }).catch(() => { /* background — ignore errors */ });
       } catch { /* fire and forget */ }
 
+      // Kick off Python backend pipeline if sources were provided
+      if (filteredUrls.length > 0 || context.notes.trim()) {
+        try {
+          const { praxisBackend } = await import('@/lib/api/praxis-backend');
+          const pipelineSources = [
+            ...filteredUrls.map((url: string) => ({ type: 'url' as const, content: url })),
+            ...(context.notes.trim()
+              ? [{ type: 'text' as const, content: context.notes.trim(), filename: 'onboarding-notes' }]
+              : []),
+          ];
+          praxisBackend.runPipeline(situation.id, pipelineSources).catch(() => {
+            /* background — non-critical */
+          });
+        } catch { /* non-critical */ }
+      }
+
       router.push(route('/dashboard'));
     } catch {
       setError('Network error. Please check your connection and try again.');

@@ -3,6 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -128,7 +129,7 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   try {
     const body = await request.json();
 
@@ -143,6 +144,7 @@ export const POST = withAuth(async (request, _user) => {
     if (!validation.success) return validation.response;
     const { parties, issues, conflictContext, situation } = validation.data;
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+    const situationId = (situation as Situation | undefined)?.id ?? '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -153,11 +155,16 @@ export const POST = withAuth(async (request, _user) => {
     const creditCheck = await checkAndDeductCredits('ai_negotiation', 'Negotiation analysis');
     if (!creditCheck.allowed) return creditCheck.response;
 
+    // --- Graph context ---
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'negotiation_prep')
+      : '';
+
     // --- AI analysis ---
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: NegotiationSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}Conduct a rigorous negotiation space analysis applying the Harvard PON framework (Fisher/Ury), Lax/Sebenius deal design theory, and Zartman ripeness assessment.
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Conduct a rigorous negotiation space analysis applying the Harvard PON framework (Fisher/Ury), Lax/Sebenius deal design theory, and Zartman ripeness assessment.
 
 PARTIES: ${parties.join(', ')}
 KEY ISSUES: ${issues.join(', ')}
@@ -207,6 +214,9 @@ Be specific to the actual parties and issues. Do not give generic advice.`,
       system: 'You are a senior negotiation analyst trained at Harvard PON in Fisher/Ury principled negotiation, Lax/Sebenius deal design, and Zartman ripeness theory. You have extensive experience as a UN mediator and peace negotiation advisor. Produce analysis-grade assessments for senior mediators and diplomatic professionals. Be precise about reservation points, quantify BATNA strength, and generate actionable deal-design recommendations.',
     });
 
+    if (situationId) {
+      await writeToolDataServer(user.uid, situationId, 'negotiation_prep', result.output as Record<string, unknown>);
+    }
     return NextResponse.json(result.output);
   } catch (err) {
     return handleRouteError(err, 'negotiation');

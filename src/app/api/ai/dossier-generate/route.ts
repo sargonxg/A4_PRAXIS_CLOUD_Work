@@ -3,6 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -81,7 +82,7 @@ The September 2025 ceasefire marked a significant diplomatic achievement but has
   ],
 };
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   try {
     const {
       caseId,
@@ -101,6 +102,7 @@ export const POST = withAuth(async (request, _user) => {
       situation?: Situation;
     };
     const sitContext = situation ? buildToolContext(situation) : '';
+    const situationId = situation?.id ?? '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -110,6 +112,11 @@ export const POST = withAuth(async (request, _user) => {
     // --- Credit check ---
     const creditCheck = await checkAndDeductCredits('ai_dossier_generate', 'Dossier generation');
     if (!creditCheck.allowed) return creditCheck.response;
+
+    // --- Graph context ---
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'dossier')
+      : '';
 
     // --- Web research for context enrichment (8s timeout — never block dossier) ---
     let webContext = '';
@@ -127,7 +134,7 @@ export const POST = withAuth(async (request, _user) => {
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: DossierSectionSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior intelligence analyst producing a formal dossier. Generate the following sections for a ${type} dossier.
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}You are a senior intelligence analyst producing a formal dossier. Generate the following sections for a ${type} dossier.
 
 CASE: ${caseId}
 ${classification ? `CLASSIFICATION: ${classification}` : ''}
@@ -150,6 +157,9 @@ Requirements:
       system: 'You are a senior intelligence analyst at a major international crisis monitoring organization. Produce formal dossier content that meets the analytical standards of UN DPPA, ICG, and major diplomatic services. Write in authoritative, precise language. Always attribute key claims to specific sources and calibrate confidence.',
     });
 
+    if (situationId) {
+      await writeToolDataServer(user.uid, situationId, 'dossier', result.output as Record<string, unknown>);
+    }
     return NextResponse.json(result.output);
   } catch (err) {
     return handleRouteError(err, 'dossier-generate');

@@ -11,12 +11,16 @@ const bareRoutes = [
 ];
 
 const nextConfig: NextConfig = {
+  // Cloud Run: standalone output bundles only what's needed for Docker
+  output: 'standalone',
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',
     },
   },
   images: {
+    // Cloud Run doesn't have Vercel's image optimizer
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -30,6 +34,16 @@ const nextConfig: NextConfig = {
       destination: `/app/${route}/:path*`,
       permanent: false,
     }));
+  },
+
+  async rewrites() {
+    return [
+      // Proxy /backend/* to the Python Cloud Run backend for local dev
+      {
+        source: '/backend/:path*',
+        destination: `${process.env.NEXT_PUBLIC_PRAXIS_BACKEND_URL || 'http://localhost:8080'}/api/v1/:path*`,
+      },
+    ];
   },
 };
 

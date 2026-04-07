@@ -6,6 +6,7 @@ import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { withAuth } from '@/lib/api/with-auth';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 120;
@@ -22,7 +23,7 @@ const TreatyAnalysisSchema = z.object({
     })
   ).describe('Clause-by-clause analysis'),
   complianceSummary: z.object({
-    overall: z.number().min(0).max(100).describe('Overall compliance percentage (0-100)'),
+    overall: z.number().min(0).max(100).describe('Overall compliance percentage from 0 to 100'),
     byParty: z.record(z.string(), z.number()).describe('Compliance percentage by party name'),
   }).describe('Compliance summary statistics'),
   recommendations: z.array(z.string()).describe('Recommendations for improving compliance, resolving ambiguities, and strengthening the agreement'),
@@ -92,7 +93,7 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   try {
     const { treatyText, conflictContext, situation } = await request.json() as {
       treatyText: string;
@@ -100,6 +101,10 @@ export const POST = withAuth(async (request, _user) => {
       situation?: Situation;
     };
     const sitContext = situation ? buildToolContext(situation) : '';
+    const situationId = situation?.id ?? '';
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'treaty_analysis').catch(() => '')
+      : '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -111,10 +116,11 @@ export const POST = withAuth(async (request, _user) => {
     if (!creditCheck.allowed) return creditCheck.response;
 
     // --- AI analysis ---
+    const contextPrefix = [graphCtx, sitContext].filter(Boolean).join('\n\n');
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: TreatyAnalysisSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior legal analyst specializing in peace agreement analysis and international humanitarian law. Analyze the following treaty or agreement text.
+      prompt: `${contextPrefix ? `${contextPrefix}\n\n` : ''}You are a senior legal analyst specializing in peace agreement analysis and international humanitarian law. Analyze the following treaty or agreement text.
 
 TREATY TEXT:
 ${treatyText}
@@ -134,6 +140,10 @@ Then provide:
 Reference comparable peace agreements and international legal standards where relevant.`,
       system: 'You are a senior legal analyst specializing in peace agreement analysis, international humanitarian law, and compliance monitoring. Provide rigorous clause-by-clause analysis suitable for legal advisors, mediators, and senior diplomatic officials. Identify ambiguities that could be exploited and recommend specific remedial actions.',
     });
+
+    if (situationId) {
+      await writeToolDataServer(user.uid, situationId, 'treaty_analysis', result.output as Record<string, unknown>).catch(() => {});
+    }
 
     return NextResponse.json(result.output);
   } catch (err) {

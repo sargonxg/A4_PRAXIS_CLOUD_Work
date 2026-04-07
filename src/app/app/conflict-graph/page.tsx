@@ -829,6 +829,87 @@ function DemoConflictGraphPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Temporal Memory Panel ──────────────────────────── */}
+      <TemporalMemoryPanel situationId={situation.id} />
+    </div>
+  );
+}
+
+// ── Temporal Memory Panel ────────────────────────────────────────
+
+function TemporalMemoryPanel({ situationId }: { situationId: string }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<Array<{ fact: string; valid_at: string | null; source_node_name: string; target_node_name: string }>>([]);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSearch() {
+    if (!query.trim()) return;
+    setLoading(true);
+    try {
+      const { praxisBackend } = await import('@/lib/api/praxis-backend');
+      const res = await praxisBackend.temporalSearch(situationId, query) as { facts: typeof results };
+      setResults(res.facts || []);
+    } catch {
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden">
+      <button
+        className="w-full flex items-center justify-between px-5 py-3 text-sm font-medium text-navy-700 hover:bg-navy-50 transition-colors"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-purple-100 text-purple-600 text-[10px] font-bold">T</span>
+          Temporal Memory <span className="text-xs font-normal text-navy-400 ml-1">— Graphiti bi-temporal search</span>
+        </div>
+        <ChevronDown className={`h-4 w-4 text-navy-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="border-t border-[var(--color-app-border)] px-5 py-4 space-y-4">
+          <p className="text-xs text-navy-400">
+            Search for facts across time. Graphiti tracks when events were true, enabling temporal conflict analysis.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="e.g. Who controlled the port in January?"
+              className="flex-1 rounded-md border border-[var(--color-app-border)] bg-[var(--color-app-bg)] px-3 py-1.5 text-sm text-navy-700 placeholder:text-navy-300 focus:outline-none focus:ring-1 focus:ring-diplomatic-blue/40"
+            />
+            <button
+              onClick={handleSearch}
+              disabled={loading}
+              className="flex items-center gap-1.5 rounded-md bg-diplomatic-blue px-4 py-1.5 text-sm font-medium text-white hover:bg-diplomatic-blue/90 disabled:opacity-50 transition-colors"
+            >
+              {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+              Search
+            </button>
+          </div>
+          {results.length > 0 ? (
+            <div className="space-y-2">
+              {results.map((r, i) => (
+                <div key={i} className="rounded-lg border border-purple-100 bg-purple-50/50 px-3 py-2">
+                  <p className="text-sm text-navy-700">{r.fact}</p>
+                  <div className="mt-1 flex gap-3 text-[10px] text-navy-400">
+                    {r.valid_at && <span>Valid: {new Date(r.valid_at).toLocaleDateString()}</span>}
+                    {r.source_node_name && <span>{r.source_node_name} → {r.target_node_name}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : !loading && query && (
+            <p className="text-xs text-navy-400 italic">No temporal facts found. Ensure sources have been ingested via the pipeline.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

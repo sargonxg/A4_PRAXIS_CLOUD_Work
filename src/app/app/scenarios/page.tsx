@@ -2,6 +2,7 @@
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
+import { useToolData } from '@/hooks/useToolData';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import type { Situation } from '@/types/situation';
 
@@ -1585,9 +1586,54 @@ function RealScenariosPage({
 export default function ScenariosPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
   const persisted = usePersistedToolData('scenarios', situation?.id);
+  const { hasData, loading: firestoreLoading } = useToolData('scenario_analysis');
+  const [regenerating, setRegenerating] = useState(false);
 
   if (isDemo) return <DemoScenariosPage />;
   if (showGuard || !situation) return <NoSituationState />;
 
-  return <RealScenariosPage situation={situation} persisted={persisted} />;
+  async function handleRegenerate() {
+    if (regenerating || !situation) return;
+    setRegenerating(true);
+    try {
+      await fetch('/api/ai/scenario', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situationId: situation.id }),
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        {firestoreLoading ? (
+          <span className="inline-flex items-center gap-1.5 text-xs text-navy-400">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+          </span>
+        ) : hasData ? (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-navy-100 px-3 py-1.5 text-xs font-medium text-navy-700 hover:bg-navy-200 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
+            Regenerate
+          </button>
+        ) : (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            Generate with PRAXIS
+          </button>
+        )}
+      </div>
+      <RealScenariosPage situation={situation} persisted={persisted} />
+    </div>
+  );
 }

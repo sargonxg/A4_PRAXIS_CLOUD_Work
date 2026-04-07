@@ -2,6 +2,7 @@
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
+import { useToolData } from '@/hooks/useToolData';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import type { Situation } from '@/types/situation';
 
@@ -1462,6 +1463,8 @@ export default function GameTheoryPage() {
     'game-theory',
     guard.isDemo ? undefined : (guard.situation?.id ?? undefined)
   );
+  const { hasData, loading: firestoreLoading } = useToolData('game_theory');
+  const [regenerating, setRegenerating] = useState(false);
 
   if (guard.isDemo) {
     return <DemoGameTheoryPage />;
@@ -1483,5 +1486,48 @@ export default function GameTheoryPage() {
     return <NoSituationState />;
   }
 
-  return <RealGameTheoryPage situation={guard.situation} persisted={persisted} />;
+  async function handleRegenerate() {
+    if (regenerating || !guard.situation) return;
+    setRegenerating(true);
+    try {
+      await fetch('/api/ai/game-theory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situationId: guard.situation.id }),
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        {firestoreLoading ? (
+          <span className="inline-flex items-center gap-1.5 text-xs text-navy-400">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+          </span>
+        ) : hasData ? (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-navy-100 px-3 py-1.5 text-xs font-medium text-navy-700 hover:bg-navy-200 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Network className="h-3.5 w-3.5" />}
+            Regenerate
+          </button>
+        ) : (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            Generate with PRAXIS
+          </button>
+        )}
+      </div>
+      <RealGameTheoryPage situation={guard.situation} persisted={persisted} />
+    </div>
+  );
 }

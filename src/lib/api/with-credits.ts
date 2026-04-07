@@ -57,6 +57,9 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   'ai_poc_assessment': 4,
   // Advisory panel discussion mode (parallel advisor calls)
   'ai_advisor_panel': 8,
+  // E6 — Policy Memo + Situation Comparison
+  'ai_policy_memo': 4,
+  'ai_compare': 3,
   // Aliases used by some routes (non-standard keys)
   'media-roundup': 2,
   'research': 3,

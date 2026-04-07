@@ -1,13 +1,14 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { useToolData } from '@/hooks/useToolData';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 
 import { useState, useEffect } from 'react';
 import {
   Handshake, ChevronDown, ChevronUp, CheckCircle2, Clock,
-  MapPin, Users, AlertTriangle, Flag, ChevronRight,
+  MapPin, Users, AlertTriangle, Flag, ChevronRight, Loader2, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { recordActivity } from '@/lib/utils/activity';
@@ -1250,6 +1251,8 @@ function MediationDesignContent({ data }: { data: MediationDesign }) {
 export default function MediationDesignPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
   const [data, setData] = useState<MediationDesign | null>(null);
+  const { hasData, loading: firestoreLoading } = useToolData('mediation_design');
+  const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
     const situationId = isDemo ? 'demo' : situation?.id;
@@ -1277,18 +1280,57 @@ export default function MediationDesignPage() {
 
   if (showGuard) return <NoSituationState />;
 
+  async function handleRegenerate() {
+    if (regenerating || !situation) return;
+    setRegenerating(true);
+    try {
+      await fetch('/api/ai/mediation-design', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situationId: situation.id }),
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <div className="flex items-center gap-2">
-          <Handshake className="h-5 w-5 text-navy-400" />
-          <h1 className="font-serif text-2xl font-normal text-navy-900">Mediation Process Designer</h1>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <Handshake className="h-5 w-5 text-navy-400" />
+            <h1 className="font-serif text-2xl font-normal text-navy-900">Mediation Process Designer</h1>
+          </div>
+          <p className="mt-1 text-sm text-navy-500">
+            {situation?.name
+              ? `Process architecture, phased roadmap, and CBM sequencing — ${situation.name}`
+              : 'Design mediation process architecture, phase sequencing, and confidence-building measures'}
+          </p>
         </div>
-        <p className="mt-1 text-sm text-navy-500">
-          {situation?.name
-            ? `Process architecture, phased roadmap, and CBM sequencing — ${situation.name}`
-            : 'Design mediation process architecture, phase sequencing, and confidence-building measures'}
-        </p>
+        {firestoreLoading ? (
+          <span className="inline-flex items-center gap-1.5 text-xs text-navy-400 mt-1">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+          </span>
+        ) : hasData ? (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-navy-100 px-3 py-1.5 text-xs font-medium text-navy-700 hover:bg-navy-200 disabled:opacity-50 shrink-0"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ChevronRight className="h-3.5 w-3.5" />}
+            Regenerate
+          </button>
+        ) : (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50 shrink-0"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            Generate with PRAXIS
+          </button>
+        )}
       </div>
 
       <AiPopulate
@@ -1296,7 +1338,7 @@ export default function MediationDesignPage() {
         toolName="Mediation Process Design"
         apiEndpoint="/api/ai/mediation-design"
         creditCost={3}
-        hasExistingData={!!data}
+        hasExistingData={hasData || !!data}
         onDataGenerated={(raw) => setData(raw as MediationDesign)}
       >
         {data ? <MediationDesignContent data={data} /> : null}

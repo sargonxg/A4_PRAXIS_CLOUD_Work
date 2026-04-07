@@ -1,6 +1,7 @@
 "use client";
 
 import { useSituationGuard } from "@/hooks/use-situation-guard";
+import { useToolData } from "@/hooks/useToolData";
 import { NoSituationState } from "@/components/praxis/no-situation-state";
 
 import { useState, useCallback, useEffect } from "react";
@@ -31,6 +32,7 @@ import {
   CheckCircle2,
   XCircle,
   ListChecks,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -2237,7 +2239,9 @@ const TABS = [
 ];
 
 export default function UNToolkitPage() {
-  const { showGuard } = useSituationGuard();
+  const { showGuard, situation } = useSituationGuard();
+  const { hasData, loading: firestoreLoading } = useToolData('un_toolkit');
+  const [regenerating, setRegenerating] = useState(false);
 
   // Template loading: tab value → pre-filled text
   const [activeTab, setActiveTab] = useState("terminology");
@@ -2254,6 +2258,21 @@ export default function UNToolkitPage() {
   }
 
   if (showGuard) return <NoSituationState />;
+
+  async function handleRegenerate() {
+    if (regenerating || !situation) return;
+    setRegenerating(true);
+    try {
+      await fetch('/api/ai/un-toolkit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situationId: situation.id }),
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
@@ -2263,13 +2282,42 @@ export default function UNToolkitPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-6"
         >
-          <h1 className="text-2xl font-bold text-navy-50 font-serif tracking-wide">
-            UN Toolkit
-          </h1>
-          <p className="mt-1 text-sm text-navy-400">
-            Drafting, terminology, and language tools for diplomatic
-            professionals
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-navy-50 font-serif tracking-wide">
+                UN Toolkit
+              </h1>
+              <p className="mt-1 text-sm text-navy-400">
+                Drafting, terminology, and language tools for diplomatic
+                professionals
+              </p>
+            </div>
+            {situation && (
+              firestoreLoading ? (
+                <span className="inline-flex items-center gap-1.5 text-xs text-navy-400">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+                </span>
+              ) : hasData ? (
+                <button
+                  onClick={handleRegenerate}
+                  disabled={regenerating}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-navy-700 px-3 py-1.5 text-xs font-medium text-navy-200 hover:bg-navy-600 disabled:opacity-50"
+                >
+                  {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  Regenerate
+                </button>
+              ) : (
+                <button
+                  onClick={handleRegenerate}
+                  disabled={regenerating}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  Generate with PRAXIS
+                </button>
+              )
+            )}
+          </div>
         </motion.div>
 
         {/* Methodology Panel — collapsible, collapsed by default */}

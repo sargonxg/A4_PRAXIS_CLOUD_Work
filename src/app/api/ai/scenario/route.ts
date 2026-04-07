@@ -2,6 +2,7 @@ import { streamText } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildGraphContext } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
@@ -11,7 +12,7 @@ import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(JSON.stringify({ error: 'AI not configured' }), { status: 503 });
   }
@@ -34,9 +35,15 @@ export const POST = withAuth(async (request, _user) => {
       validation.data;
 
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+    const situationId = (situation as Situation | undefined)?.id ?? '';
 
     const creditCheck = await checkAndDeductCredits('ai_scenario', 'Scenario analysis');
     if (!creditCheck.allowed) return creditCheck.response;
+
+    // --- Graph context ---
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'scenario_analysis')
+      : '';
 
     const actorList =
       Array.isArray(actors) && actors.length > 0
@@ -68,7 +75,7 @@ ${intel.humanitarian?.displacement ? `- Displacement: ${intel.humanitarian.displ
       /* continue without live data */
     }
 
-    const prompt = `${sitContext ? `${sitContext}\n\n` : ''}You are a senior conflict analyst at a major international crisis organization. Conduct a rigorous, structured scenario analysis using the information below.
+    const prompt = `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}You are a senior conflict analyst at a major international crisis organization. Conduct a rigorous, structured scenario analysis using the information below.
 
 CONFLICT CONTEXT: ${conflictContext}
 SCENARIO TRIGGER: ${scenarioTrigger}

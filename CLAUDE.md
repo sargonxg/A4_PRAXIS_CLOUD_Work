@@ -1,5 +1,232 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
+> Version 6.0.0 — Cloud Architecture (dual-service: Next.js + Python FastAPI on GCP)
+
+## PRAXIS CLOUD — Complete Developer Guide
+
+### Architecture
+
+PRAXIS is a **dual-service** application deployed on Google Cloud Run:
+- **Frontend** (`/` root): Next.js 16 App Router → Cloud Run
+- **Backend** (`backend/`): Python FastAPI → Cloud Run
+- **Firebase**: Auth + Firestore (single source of truth — all writes from backend, all reads via `onSnapshot` from frontend)
+- **GCP Services**: Vertex AI (ADK), BigQuery (analytics), Cloud Storage (documents), Pub/Sub (async events), Cloud Functions (triggers)
+
+### Local Development
+
+```bash
+# Terminal 1 — Frontend
+npm run dev
+
+# Terminal 2 — Backend + Neo4j + FalkorDB
+docker-compose up
+
+# Backend health check
+curl http://localhost:8080/health
+```
+
+### File Structure
+
+```
+/                            Next.js frontend (root)
+├── src/app/app/             Tool pages (38+ pages)
+├── src/app/api/             Next.js API routes (68 total)
+├── src/lib/                 Shared utilities, auth, AI, data feeds
+├── src/components/          React components
+├── src/hooks/               Custom hooks (useToolData, useSituationGuard…)
+├── backend/                 Python FastAPI backend
+│   ├── graphify_tacitus/    ACO conflict intelligence pipeline
+│   │   ├── schemas/         Pydantic models (aco.py, relationships.py)
+│   │   ├── extract.py       LLM entity extraction (ACO_EXTRACTION_PROMPT)
+│   │   ├── build.py         NetworkX graph builder
+│   │   ├── cluster.py       Leiden community detection (graspologic)
+│   │   ├── analyze.py       Conflict analysis (pivot actors, factions, ZOPA…)
+│   │   ├── report.py        Markdown + JSON brief generator
+│   │   └── export.py        Neo4j push, HTML visualization, Cypher export
+│   ├── ai/
+│   │   ├── genkit_app.py    Multi-provider Genkit (user API key-aware)
+│   │   └── flows.py         Registered Genkit flows
+│   ├── services/
+│   │   ├── firestore_sync.py  Firestore read/write client
+│   │   ├── graph_adapter.py   Neo4j + FalkorDB adapter pattern
+│   │   ├── graphiti_client.py Temporal memory (Graphiti bi-temporal graph)
+│   │   └── bigquery_client.py Analytics logging
+│   ├── routers/
+│   │   ├── pipeline.py      POST /api/v1/pipeline/run|ingest-url|ingest-feeds
+│   │   ├── graph.py         GET/POST /api/v1/graph/{sitId}/* (+ temporal)
+│   │   └── analyze.py       GET /api/v1/analyze/{sitId}/pivot-actors|factions…
+│   ├── config.py            Pydantic BaseSettings
+│   ├── auth.py              Firebase ID token verification
+│   └── main.py              FastAPI app + CORS + routers
+├── cloud_functions/         GCP Cloud Functions (event-driven)
+│   ├── on_situation_created/ Trigger pipeline when situation is created with URLs
+│   ├── on_document_uploaded/ Extract text from uploaded documents
+│   └── gdelt_poller/        HTTP trigger (Cloud Scheduler, every 15 min)
+├── infrastructure/
+│   ├── setup-gcp.sh         One-time GCP project setup
+│   ├── deploy.sh            One-command deploy (gcloud builds submit)
+│   ├── deploy-backend.sh    Deploy backend only
+│   └── deploy-frontend.sh   Deploy frontend only
+├── cloudbuild.yaml          Cloud Build pipeline (backend → frontend in sequence)
+└── .env.example             All environment variables documented
+```
+
+### Firestore Data Model
+
+```
+users/{uid}/
+  settings/
+    api_keys           { google_ai_key, anthropic_key, openai_key, firecrawl_key }
+    model_preferences  { fast_analysis, deep_analysis, creative_drafting, research }
+    graph_backend      { provider, uri, host, port, user, password }
+  situations/{sitId}/
+    (metadata)         { name, type, region, actors, status, riskScore, glaslStage… }
+    graph/
+      snapshot         { nodes: [{id, label, primitive_type, …}], edges: […] }
+      analysis         { pivotActors, factionMap, hiddenLinkages, escalationAssessment… }
+    tools/
+      {toolName}       { generatedAt, …tool-specific output fields }
+    documents/{docId}  { name, extractedText, uploadedAt }
+    reports/{rptId}    { title, content, createdAt }
+```
+
+### ACO — Agentic Conflict Ontology
+
+**8 Primitive Types:**
+- `Actor` — Parties, states, armed groups, institutions
+- `Claim` — Contested assertions about facts, legitimacy, rights
+- `Interest` — Goals, motivations, red lines
+- `Constraint` — Limits on action (legal, physical, political)
+- `Leverage` — Power assets, coercive capacity, incentives
+- `Commitment` — Agreements, pledges, obligations (ceasefire, treaty, promise)
+- `Event` — Discrete happenings with escalation impact score
+- `Narrative` — Framing stories, propaganda, legitimacy discourses
+
+**42 Typed Relationships** — See `backend/graphify_tacitus/schemas/relationships.py`
+
+**ACO Visualization Colors:**
+- Actor `#4E79A7` · Claim `#F28E2B` · Interest `#59A14F` · Constraint `#E15759`
+- Leverage `#EDC948` · Commitment `#76B7B2` · Event `#B07AA1` · Narrative `#FF9DA7`
+
+### Graphify Pipeline
+
+```
+extract → build → cluster → analyze → report → export
+```
+
+1. **extract.py** — Gemini (via Genkit) reads source text → structured ACO nodes + edges
+2. **build.py** — Merges multiple extractions into a NetworkX graph
+3. **cluster.py** — Leiden community detection → faction assignments
+4. **analyze.py** — Pivot actors (centrality), hidden linkages (cross-faction), Glasl escalation, ZOPA
+5. **report.py** — Markdown brief + structured JSON output
+6. **export.py** — Push to Neo4j/FalkorDB, generate HTML visualization
+
+### Graphiti Temporal Memory
+
+Episodes (document text) are added via `ConflictMemory.add_episode()`. Graphiti extracts bi-temporal facts:
+- **Valid time**: When the fact was true in the conflict
+- **Transaction time**: When it was ingested into PRAXIS
+
+Temporal queries: `GET /api/v1/graph/{sitId}/temporal/search` + `entity/{name}`
+Frontend: `praxisBackend.temporalSearch(sitId, query, n, validAt)`
+
+### Graph Backend Adapter
+
+Users choose Neo4j AuraDB or FalkorDB in **Settings → Graph Backend**.
+Settings stored in Firestore `users/{uid}/settings/graph_backend`.
+Backend reads via `create_adapter_from_settings(user_settings)`.
+
+### Tool Wiring Pattern
+
+```
+Tool page (useToolData hook)
+  → Firestore onSnapshot (real-time updates)
+  
+User clicks Regenerate
+  → POST /api/ai/{tool-name}
+  → withAuth(request, { user })
+  → buildGraphContext(uid, sitId, toolKey)   ← graph intelligence from Firestore
+  → buildToolContext(sitId, uid)             ← situation metadata
+  → Gemini/Claude generate structured output
+  → writeToolDataServer(uid, sitId, toolName, data)
+  → Firestore write → onSnapshot fires → page updates
+```
+
+### Tool Categories (Sidebar)
+
+| Category | Description | Tools |
+|---|---|---|
+| **Situation** | Core data views | Dashboard, Conflict Graph, Timeline |
+| **Intelligence** | Graph-powered views (no extra AI call) | Stakeholder Map, Escalation Monitor, Commitments, Info Environment, Geospatial |
+| **Analysis** | AI + graph grounded | Scenarios, Risk, Negotiation, Media, Sanctions, Treaty, Historical, Game Theory, Power Map |
+| **Production** | Long-form AI drafting | Briefing, Dossier, Talking Points, Policy Memo, Mediation, UN Toolkit, Daily Brief |
+| **Research** | Internet + deep analysis | Deep Research Agent, ARGUS, Actor Enrichment, Source Monitor, Situation Comparison |
+| **Workspace** | Collaboration + export | Assistant, Documents, Reports, Export Center, Cases, Team, Settings |
+
+### User API Keys
+
+Users add their own provider keys in **Settings → API Keys** (stored in Firestore `settings/api_keys`).
+Per-request, the backend calls `get_ai_for_user(user_settings)` to create a Genkit instance with user keys.
+Model preferences: `get_model_for_category(user_settings, 'deep_analysis')`.
+
+### AI Model Tiers
+
+| Function | Model | Used For |
+|---|---|---|
+| `getModel()` | `gemini-2.5-flash` | Chat, terminology, quick tasks |
+| `getProModel()` | `gemini-2.5-pro` | All structured tool generation |
+| `getAnalysisModel()` | `claude-sonnet-4` | Deep analysis (falls back to Pro) |
+| `getGroundedModel()` | `gemini-2.5-flash` + Search | Grounded research |
+| Vertex ADK | Reasoning Engine | Deep Research Agent |
+
+### Deployment
+
+```bash
+# One-time GCP setup (enable APIs, BigQuery, Pub/Sub, Storage, IAM)
+./infrastructure/setup-gcp.sh
+
+# Full deploy via Cloud Build (backend first, then frontend with backend URL)
+./infrastructure/deploy.sh
+# Equivalent: gcloud builds submit --config=cloudbuild.yaml
+
+# Deploy individual services
+./infrastructure/deploy-backend.sh
+./infrastructure/deploy-frontend.sh
+
+# Custom domain
+gcloud run domain-mappings create --service=praxis-frontend \
+  --domain=praxis.tacitus.me --region=us-central1
+```
+
+### Environment Variables
+
+See `.env.example` for the complete grouped list. Critical variables:
+- `FIREBASE_SERVICE_ACCOUNT_KEY` — JSON string (Admin SDK + Vertex AI auth)
+- `GOOGLE_AI_API_KEY` — Platform Gemini key
+- `NEXT_PUBLIC_PRAXIS_BACKEND_URL` — Backend Cloud Run URL (auto-set by Cloud Build)
+- `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` — Graph database
+- `CRON_SECRET` — Cron job + admin endpoint auth
+- `COOKIE_SIGNING_SECRET` — Session cookie security
+
+### Design System
+
+**Colors**: Navy `#0F172A` · Emerald `#10B981` · Gold `#E8B931` · Diplomatic Blue `#1B3A5C`
+**Typography**: EB Garamond (headings) · Inter (body) · JetBrains Mono (code)
+
+### Running Tests
+
+```bash
+# Python backend tests
+cd backend
+pip install -e ".[dev]"
+python -m pytest tests/ -v
+
+# Frontend type check
+npx tsc --noEmit
+```
+
+---
+
 > Version 5.2.0 — Auth Hardening, Password Reset, Firebase Diagnostic, Session CSRF Fix
 
 ## v5.2.0 Auth Hardening & Password Reset (2026-04-01)

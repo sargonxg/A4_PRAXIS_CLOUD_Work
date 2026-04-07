@@ -1,13 +1,14 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { useToolData } from '@/hooks/useToolData';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 
 import { useState, useEffect } from 'react';
 import {
   FileCheck, AlertTriangle, CheckCircle2, Clock, XCircle,
-  ChevronDown, ChevronUp, ExternalLink, ShieldAlert,
+  ChevronDown, ChevronUp, ExternalLink, ShieldAlert, Loader2, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { recordActivity } from '@/lib/utils/activity';
@@ -318,6 +319,8 @@ function CommitmentsContent({ data }: { data: CommitmentsData }) {
 export default function CommitmentsPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
   const [data, setData] = useState<CommitmentsData | null>(null);
+  const { hasData, loading: firestoreLoading } = useToolData('commitment_scan');
+  const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
     const situationId = isDemo ? 'demo' : situation?.id;
@@ -345,18 +348,57 @@ export default function CommitmentsPage() {
 
   if (showGuard) return <NoSituationState />;
 
+  async function handleRegenerate() {
+    if (regenerating || !situation) return;
+    setRegenerating(true);
+    try {
+      await fetch('/api/ai/commitment-scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situationId: situation.id }),
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <div className="flex items-center gap-2">
-          <FileCheck className="h-5 w-5 text-navy-400" />
-          <h1 className="font-serif text-2xl font-normal text-navy-900">Commitment Tracker</h1>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <FileCheck className="h-5 w-5 text-navy-400" />
+            <h1 className="font-serif text-2xl font-normal text-navy-900">Commitment Tracker</h1>
+          </div>
+          <p className="mt-1 text-sm text-navy-500">
+            {situation?.name
+              ? `Monitor agreements, compliance, and deadlines — ${situation.name}`
+              : 'Monitor agreements, ceasefire compliance, and diplomatic commitments'}
+          </p>
         </div>
-        <p className="mt-1 text-sm text-navy-500">
-          {situation?.name
-            ? `Monitor agreements, compliance, and deadlines — ${situation.name}`
-            : 'Monitor agreements, ceasefire compliance, and diplomatic commitments'}
-        </p>
+        {firestoreLoading ? (
+          <span className="inline-flex items-center gap-1.5 text-xs text-navy-400 mt-1">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+          </span>
+        ) : hasData ? (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-navy-100 px-3 py-1.5 text-xs font-medium text-navy-700 hover:bg-navy-200 disabled:opacity-50 shrink-0"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+            Regenerate
+          </button>
+        ) : (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50 shrink-0"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            Generate with PRAXIS
+          </button>
+        )}
       </div>
 
       <AiPopulate
@@ -364,7 +406,7 @@ export default function CommitmentsPage() {
         toolName="Commitment Scan"
         apiEndpoint="/api/ai/commitment-scan"
         creditCost={2}
-        hasExistingData={!!data}
+        hasExistingData={hasData || !!data}
         onDataGenerated={(raw) => setData(raw as CommitmentsData)}
       >
         {data ? <CommitmentsContent data={data} /> : null}

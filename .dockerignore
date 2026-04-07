@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+backend/
+cloud_functions/
+infrastructure/
+*.md
+.env*
+!.env.example

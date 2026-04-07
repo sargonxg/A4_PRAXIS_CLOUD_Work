@@ -1,6 +1,7 @@
 "use client";
 
 import { useSituationGuard } from "@/hooks/use-situation-guard";
+import { useToolData } from "@/hooks/useToolData";
 import { NoSituationState } from "@/components/praxis/no-situation-state";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -382,6 +383,8 @@ function RealMediaPanel({ situation, onSituationSources }: {
 export default function MediaCompassPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const { hasData, loading: firestoreLoading } = useToolData("media_analysis");
+  const [regenerating, setRegenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<MediaTab>("source-map");
   const [selectedSource, setSelectedSource] = useState<MediaSource | null>(null);
   const [regionFilter, setRegionFilter] = useState("All Regions");
@@ -459,6 +462,20 @@ export default function MediaCompassPage() {
     );
   };
 
+  async function handleRegenerate() {
+    if (regenerating || !situation) return;
+    setRegenerating(true);
+    try {
+      await fetch("/api/ai/media-analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ situationId: situation.id }),
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="mx-auto max-w-[1400px]">
@@ -469,18 +486,45 @@ export default function MediaCompassPage() {
           transition={{ duration: 0.5 }}
           className="mb-6"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal/10 text-teal">
-              <Compass className="h-5 w-5" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal/10 text-teal">
+                <Compass className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="font-serif text-2xl font-normal tracking-wide text-navy-900">
+                  Media Compass
+                </h1>
+                <p className="text-sm text-navy-500">
+                  Map news sources by orientation and reliability
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-serif text-2xl font-normal tracking-wide text-navy-900">
-                Media Compass
-              </h1>
-              <p className="text-sm text-navy-500">
-                Map news sources by orientation and reliability
-              </p>
-            </div>
+            {!isDemo && situation && (
+              firestoreLoading ? (
+                <span className="inline-flex items-center gap-1.5 text-xs text-navy-400">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+                </span>
+              ) : hasData ? (
+                <button
+                  onClick={handleRegenerate}
+                  disabled={regenerating}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-navy-100 px-3 py-1.5 text-xs font-medium text-navy-700 hover:bg-navy-200 disabled:opacity-50"
+                >
+                  {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Globe className="h-3.5 w-3.5" />}
+                  Regenerate
+                </button>
+              ) : (
+                <button
+                  onClick={handleRegenerate}
+                  disabled={regenerating}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  Generate with PRAXIS
+                </button>
+              )
+            )}
           </div>
         </motion.div>
 

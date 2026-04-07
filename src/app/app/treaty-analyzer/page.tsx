@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { useToolData } from '@/hooks/useToolData';
 import { RealToolView } from '@/components/praxis/real-tool-view';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
@@ -24,6 +25,8 @@ import {
   BookOpen,
   Grid3X3,
   ListChecks,
+  Loader2,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { EcosystemBadge } from '@/components/shared/ecosystem-badge';
@@ -986,6 +989,8 @@ function DemoTreatyAnalyzerPage({ situationName }: { situationName?: string }) {
 
 export default function TreatyAnalyzerPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const { hasData, loading: firestoreLoading } = useToolData('treaty_analysis');
+  const [regenerating, setRegenerating] = useState(false);
 
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoTreatyAnalyzerPage />;
@@ -993,17 +998,58 @@ export default function TreatyAnalyzerPage() {
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
 
+  async function handleRegenerate() {
+    if (regenerating || !situation) return;
+    setRegenerating(true);
+    try {
+      await fetch('/api/ai/treaty-analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situationId: situation.id }),
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
   // Real mode — AI populate prompt, then show tool
   return (
-    <AiPopulate
-      toolId="treaty-analyzer"
-      toolName="Treaty Analysis"
-      apiEndpoint="/api/ai/treaty-analyze"
-      creditCost={3}
-      hasExistingData={false}
-      onDataGenerated={() => {}}
-    >
-      <DemoTreatyAnalyzerPage situationName={situation.name} />
-    </AiPopulate>
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        {firestoreLoading ? (
+          <span className="inline-flex items-center gap-1.5 text-xs text-navy-400">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+          </span>
+        ) : hasData ? (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-navy-100 px-3 py-1.5 text-xs font-medium text-navy-700 hover:bg-navy-200 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Scale className="h-3.5 w-3.5" />}
+            Regenerate
+          </button>
+        ) : (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            Generate with PRAXIS
+          </button>
+        )}
+      </div>
+      <AiPopulate
+        toolId="treaty-analyzer"
+        toolName="Treaty Analysis"
+        apiEndpoint="/api/ai/treaty-analyze"
+        creditCost={3}
+        hasExistingData={hasData}
+        onDataGenerated={() => {}}
+      >
+        <DemoTreatyAnalyzerPage situationName={situation.name} />
+      </AiPopulate>
+    </div>
   );
 }

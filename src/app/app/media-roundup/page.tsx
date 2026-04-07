@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { useToolData } from '@/hooks/useToolData';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { ToolInfoPanel } from '@/components/praxis/tool-info-panel';
 import { useState, useCallback, useEffect, useMemo } from 'react';
@@ -524,6 +525,8 @@ function MediaRoundupTool({ situation }: { situation: Situation }) {
 // ── Page export ───────────────────────────────────────────────────────────────
 export default function MediaRoundupPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const { hasData, loading: firestoreLoading } = useToolData('media_roundup');
+  const [regenerating, setRegenerating] = useState(false);
 
   if (isDemo) {
     return (
@@ -537,5 +540,48 @@ export default function MediaRoundupPage() {
 
   if (showGuard || !situation) return <NoSituationState />;
 
-  return <MediaRoundupTool situation={situation} />;
+  async function handleRegenerate() {
+    if (regenerating || !situation) return;
+    setRegenerating(true);
+    try {
+      await fetch('/api/ai/media-roundup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situationId: situation.id }),
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        {firestoreLoading ? (
+          <span className="inline-flex items-center gap-1.5 text-xs text-navy-400">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+          </span>
+        ) : hasData ? (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-navy-100 px-3 py-1.5 text-xs font-medium text-navy-700 hover:bg-navy-200 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            Regenerate
+          </button>
+        ) : (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            Generate with PRAXIS
+          </button>
+        )}
+      </div>
+      <MediaRoundupTool situation={situation} />
+    </div>
+  );
 }

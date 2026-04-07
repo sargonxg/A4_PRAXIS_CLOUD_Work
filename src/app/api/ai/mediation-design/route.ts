@@ -3,6 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -173,7 +174,7 @@ const DEMO_RESPONSE = {
   designRationale: 'Hybrid format reflects deep mutual distrust. Economic-first sequencing applies Lax/Sebenius momentum-building principle. Karovia framing as guarantor transforms spoiler potential into vested interest in success.',
 };
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   try {
     const creditCheck = await checkAndDeductCredits('ai_mediation_design', 'Mediation process design');
     if (!creditCheck.allowed) return creditCheck.response!;
@@ -185,11 +186,17 @@ export const POST = withAuth(async (request, _user) => {
     const body = await request.json();
     const { situation } = body as { situation?: Situation };
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+    const situationId = situation?.id ?? '';
+
+    // --- Graph context ---
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'mediation_design')
+      : '';
 
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: MediationDesignSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}Design a comprehensive mediation process architecture for this conflict situation.
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Design a comprehensive mediation process architecture for this conflict situation.
 
 ## DESIGN METHODOLOGY
 
@@ -234,6 +241,9 @@ Be specific to the actual parties, issues, and context. Design a process that ha
       system: 'You are a senior UN mediation advisor with extensive experience designing peace processes across multiple conflict contexts. You are trained in the UN Guidance for Effective Mediation, Berghof Foundation process design methodology, and Lax/Sebenius deal architecture. You have designed processes for intrastate conflicts involving non-state armed groups, international peace operations, and regional guarantor frameworks. Produce precise, operationally grounded process designs that a working mediator can actually use.',
     });
 
+    if (situationId) {
+      await writeToolDataServer(user.uid, situationId, 'mediation_design', result.output as Record<string, unknown>);
+    }
     return NextResponse.json(result.output);
   } catch (err) {
     return handleRouteError(err, 'mediation-design');

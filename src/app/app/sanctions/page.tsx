@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { useToolData } from '@/hooks/useToolData';
 import { RealToolView } from '@/components/praxis/real-tool-view';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
@@ -1380,6 +1381,8 @@ function RealSanctionsPage({ situation, sanctionsData }: { situation: Situation;
 export default function SanctionsPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
   const [sanctionsData, setSanctionsData] = useState<SanctionsData | null>(null);
+  const { hasData, loading: firestoreLoading } = useToolData('sanctions_scan');
+  const [regenerating, setRegenerating] = useState(false);
 
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoSanctionsPage />;
@@ -1387,17 +1390,58 @@ export default function SanctionsPage() {
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
 
+  async function handleRegenerate() {
+    if (regenerating || !situation) return;
+    setRegenerating(true);
+    try {
+      await fetch('/api/ai/sanctions-scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situationId: situation.id }),
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
   // Real mode — AI populate prompt, then show tool
   return (
-    <AiPopulate
-      toolId="sanctions"
-      toolName="Sanctions Scan"
-      apiEndpoint="/api/ai/sanctions-scan"
-      creditCost={2}
-      hasExistingData={!!sanctionsData}
-      onDataGenerated={(data) => setSanctionsData(data as SanctionsData)}
-    >
-      <RealSanctionsPage situation={situation} sanctionsData={sanctionsData} />
-    </AiPopulate>
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        {firestoreLoading ? (
+          <span className="inline-flex items-center gap-1.5 text-xs text-navy-400">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+          </span>
+        ) : hasData ? (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-navy-100 px-3 py-1.5 text-xs font-medium text-navy-700 hover:bg-navy-200 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            Regenerate
+          </button>
+        ) : (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            Generate with PRAXIS
+          </button>
+        )}
+      </div>
+      <AiPopulate
+        toolId="sanctions"
+        toolName="Sanctions Scan"
+        apiEndpoint="/api/ai/sanctions-scan"
+        creditCost={2}
+        hasExistingData={hasData || !!sanctionsData}
+        onDataGenerated={(data) => setSanctionsData(data as SanctionsData)}
+      >
+        <RealSanctionsPage situation={situation} sanctionsData={sanctionsData} />
+      </AiPopulate>
+    </div>
   );
 }

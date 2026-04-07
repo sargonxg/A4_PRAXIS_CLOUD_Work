@@ -735,20 +735,52 @@ export default function SettingsPage() {
       {/* ── API Keys ──────────────────────────────────────────────── */}
       <SettingsSection
         icon={Key}
-        title="API Keys"
-        description="Manage programmatic access tokens"
+        title="AI Provider Keys"
+        description="Configure API keys for AI providers and web research"
       >
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-navy-200 bg-navy-50 px-6 py-10 text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-navy-100">
-            <Lock className="h-5 w-5 text-navy-400" />
+        <div className="space-y-3">
+          <p className="text-xs text-navy-500">
+            Add your own provider API keys to use PRAXIS with your accounts.
+            Platform defaults are used when no key is provided.
+          </p>
+          <div className="flex gap-3">
+            <PraxisLink
+              href="/settings/api-keys"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-diplomatic-blue hover:bg-diplomatic-blue/90 text-white rounded-md text-sm font-medium transition-colors"
+            >
+              <Key className="h-3.5 w-3.5" />
+              Manage API Keys
+            </PraxisLink>
+            <PraxisLink
+              href="/settings/model-preferences"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-navy-200 hover:border-navy-400 text-navy-700 rounded-md text-sm font-medium transition-colors"
+            >
+              <Cpu className="h-3.5 w-3.5" />
+              Model Preferences
+            </PraxisLink>
           </div>
-          <p className="text-sm font-medium text-navy-700">
-            API key management is restricted
+        </div>
+      </SettingsSection>
+
+      {/* ── Graph Backend ─────────────────────────────────────────── */}
+      <SettingsSection
+        icon={GitBranch}
+        title="Graph Backend"
+        description="Choose where the conflict knowledge graph is stored"
+      >
+        <div className="space-y-3">
+          <p className="text-xs text-navy-500">
+            Select Neo4j AuraDB or FalkorDB as the graph database for PRAXIS conflict intelligence.
+            Connection settings are encrypted and stored in your user profile.
           </p>
-          <p className="mt-1 max-w-sm text-xs text-navy-500">
-            Contact your organization administrator to create, rotate, or revoke API access
-            tokens for the PRAXIS platform.
-          </p>
+          <PraxisLink
+            href="/settings/graph-backend"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-diplomatic-blue hover:bg-diplomatic-blue/90 text-white rounded-md text-sm font-medium transition-colors"
+          >
+            <Server className="h-3.5 w-3.5" />
+            Configure Graph Backend
+            <ArrowRight className="h-3.5 w-3.5" />
+          </PraxisLink>
         </div>
       </SettingsSection>
     </div>

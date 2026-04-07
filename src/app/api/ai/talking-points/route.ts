@@ -1,6 +1,7 @@
 import { streamText } from 'ai';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildGraphContext } from '@/lib/ai/context-builder-server';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -8,7 +9,7 @@ import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(
       JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in Vercel environment variables.' }),
@@ -27,13 +28,23 @@ export const POST = withAuth(async (request, _user) => {
     // Accept situation as object (new) or situationData (legacy)
     const sitObj = (typeof situation === 'object' && situation !== null ? situation : situationData) as Situation | undefined;
     const sitContext = sitObj ? buildToolContext(sitObj) : '';
+    const situationId = sitObj?.id ?? '';
 
     const creditCheck = await checkAndDeductCredits('ai_talking_points', 'Talking points');
     if (!creditCheck.allowed) return creditCheck.response;
 
+    // --- Graph context ---
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'talking_points')
+      : '';
+
+    const enrichedSystem = graphCtx
+      ? `${graphCtx}\n\n${sitContext ? `${sitContext}\n\n` : ''}${DIPLOMATIC_SYSTEM_PROMPT}`
+      : sitContext ? `${sitContext}\n\n${DIPLOMATIC_SYSTEM_PROMPT}` : DIPLOMATIC_SYSTEM_PROMPT;
+
     const result = streamText({
       model: getProModel(),
-      system: sitContext ? `${sitContext}\n\n${DIPLOMATIC_SYSTEM_PROMPT}` : DIPLOMATIC_SYSTEM_PROMPT,
+      system: enrichedSystem,
       messages: [
         {
           role: 'user',

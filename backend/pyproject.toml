@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "praxis-backend"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "networkx>=3.4",
+    "graspologic>=3.4",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+    "google-genai>=1.8",
+    "google-cloud-firestore>=2.19",
+    "google-cloud-bigquery>=3.27",
+    "firebase-admin>=6.6",
+    "neo4j>=5.26",
+    "httpx>=0.28",
+    "python-multipart>=0.0.17",
+    # Genkit (added by E1)
+    "genkit>=0.5",
+    "genkit-google-genai>=0.5",
+    # Graph backends (added by E3)
+    "falkordb>=1.1",
+    "graphiti-core>=0.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+anthropic = [
+    "genkit-anthropic>=0.5",
+]
+openai = [
+    "genkit-openai>=0.5",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

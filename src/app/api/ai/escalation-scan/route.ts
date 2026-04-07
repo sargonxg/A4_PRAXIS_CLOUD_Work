@@ -3,6 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -79,7 +80,7 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   try {
     const body = await request.json();
 
@@ -93,6 +94,7 @@ export const POST = withAuth(async (request, _user) => {
     if (!validation.success) return validation.response;
     const { conflictId, conflictContext, situation } = validation.data;
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+    const situationId = (situation as Situation | undefined)?.id ?? '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -102,6 +104,11 @@ export const POST = withAuth(async (request, _user) => {
     // --- Credit check ---
     const creditCheck = await checkAndDeductCredits('ai_escalation_scan', 'Escalation scan');
     if (!creditCheck.allowed) return creditCheck.response;
+
+    // --- Graph context ---
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'escalation_scan')
+      : '';
 
     // --- Fetch real escalation data ---
     let dataContext = '';
@@ -137,7 +144,7 @@ Confidence: ${assessment.confidence}\n`;
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: EscalationScanSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior conflict analyst specializing in the Glasl escalation model. Conduct a rigorous escalation assessment.
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}You are a senior conflict analyst specializing in the Glasl escalation model. Conduct a rigorous escalation assessment.
 ${dataContext}
 CONFLICT: ${conflictId}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
@@ -156,6 +163,9 @@ Calibrate your confidence score based on the quality and recency of available ev
       system: 'You are a senior conflict analyst trained in the Glasl 9-stage escalation model. Provide rigorous, evidence-based escalation assessments for diplomatic and security professionals. Always calibrate confidence and distinguish between confirmed indicators and analytical inference.',
     });
 
+    if (situationId) {
+      await writeToolDataServer(user.uid, situationId, 'escalation_scan', result.output as Record<string, unknown>);
+    }
     return NextResponse.json(result.output);
   } catch (err) {
     return handleRouteError(err, 'escalation-scan');

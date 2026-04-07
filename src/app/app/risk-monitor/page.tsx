@@ -1,12 +1,13 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { useToolData } from '@/hooks/useToolData';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { useSituationStore } from '@/stores/situation-store';
 
 import { useState } from 'react';
-import { TrendingUp, TrendingDown, Minus, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, BarChart3, Loader2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { PoweredByTacitus } from '@/components/shared/powered-by-tacitus';
 import {
@@ -700,6 +701,8 @@ export default function RiskMonitorPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
   const [aiRegions, setAiRegions] = useState<MonitoredRegion[]>([]);
   const updateSituation = useSituationStore((s) => s.updateSituation);
+  const { hasData, loading: firestoreLoading } = useToolData('risk_assessment');
+  const [regenerating, setRegenerating] = useState(false);
 
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoRiskMonitorPage />;
@@ -707,15 +710,55 @@ export default function RiskMonitorPage() {
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
 
+  async function handleRegenerate() {
+    if (regenerating || !situation) return;
+    setRegenerating(true);
+    try {
+      await fetch('/api/ai/risk-assessment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situationId: situation.id }),
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
   // Real mode — AI populate prompt, then show tool
   return (
-    <AiPopulate
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        {firestoreLoading ? (
+          <span className="inline-flex items-center gap-1.5 text-xs text-navy-400">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+          </span>
+        ) : hasData ? (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-navy-100 px-3 py-1.5 text-xs font-medium text-navy-700 hover:bg-navy-200 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <TrendingUp className="h-3.5 w-3.5" />}
+            Regenerate
+          </button>
+        ) : (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            Generate with PRAXIS
+          </button>
+        )}
+      </div>
+      <AiPopulate
       toolId="risk-monitor"
       toolName="Risk Monitor"
       apiEndpoint="/api/ai/risk-assessment"
       extraBody={{ regions: [situation.region], conflictContext: `${situation.name}: ${situation.description}. Actors: ${situation.actors.join(', ')}` }}
       creditCost={3}
-      hasExistingData={aiRegions.length > 0}
+      hasExistingData={hasData || aiRegions.length > 0}
       onDataGenerated={(data) => {
         const d = data as { regions?: AiRiskRegion[] };
         if (d?.regions) {
@@ -739,5 +782,6 @@ export default function RiskMonitorPage() {
         )
       }
     </AiPopulate>
+    </div>
   );
 }

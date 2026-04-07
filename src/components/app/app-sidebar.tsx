@@ -44,6 +44,9 @@ import {
   Telescope,
   Sigma,
   Map,
+  Rss,
+  Package,
+  Settings as SettingsIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -211,70 +214,70 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    label: 'Context',
+    label: 'Situation',
     items: [
       { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-      { label: 'Documents', icon: FolderOpen, href: '/documents' },
-      { label: 'Sources Library', icon: Library, href: '/sources' },
-      { label: 'Timeline', icon: Clock, href: '/timeline', badge: 'NEW' },
-      { label: 'Humanitarian', icon: Heart, href: '/humanitarian', badge: 'NEW' },
-      { label: 'Calendar', icon: Calendar, href: '/calendar' },
-    ],
-  },
-  {
-    label: 'Analysis',
-    items: [
-      { label: 'Risk Monitor', icon: BarChart3, href: '/risk-monitor' },
-      { label: 'Early Warning', icon: AlertTriangle, href: '/early-warning' },
-      { label: 'Actor Profiles', icon: UserCircle, href: '/actors' },
       { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
-      { label: 'Stakeholder Map', icon: Users, href: '/stakeholder-map' },
-      { label: 'Power Map', icon: UsersRound, href: '/power-map' },
-      { label: 'Compare', icon: GitCompare, href: '/compare' },
-    ],
-  },
-  {
-    label: 'Drafting',
-    items: [
-      { label: 'PRAXIS Assistant', icon: MessageSquare, href: '/assistant' },
-      { label: 'Report Studio', icon: FileText, href: '/reports' },
-      { label: 'Dossier Generator', icon: BookMarked, href: '/dossier' },
-      { label: 'Talking Points', icon: MessageCircle, href: '/talking-points' },
-      { label: 'Briefing Room', icon: Presentation, href: '/briefing' },
-      { label: 'Daily Brief', icon: Newspaper, href: '/auto-briefings' },
-      { label: 'UN Toolkit', icon: Building2, href: '/un-toolkit' },
-    ],
-  },
-  {
-    label: 'Simulation',
-    items: [
-      { label: 'Scenario Planner', icon: GitCompare, href: '/scenarios' },
-      { label: 'Negotiation Prep', icon: Scale, href: '/negotiation-prep' },
-      { label: 'Game Theory', icon: Sigma, href: '/game-theory' },
-      { label: 'CONCORDIA', icon: Handshake, href: '/concordia', badge: 'TACITUS' },
-      { label: 'Mediation Designer', icon: Handshake, href: '/mediation-design' },
+      { label: 'Timeline', icon: Clock, href: '/timeline' },
     ],
   },
   {
     label: 'Intelligence',
     items: [
-      { label: 'Deep Research Agent', icon: Telescope, href: '/deep-search-agent', badge: 'TACITUS' },
-      { label: 'ARGUS Deep Research', icon: Network, href: '/argus', badge: 'TACITUS' },
-      { label: 'Media Compass', icon: Compass, href: '/media-compass' },
-      { label: 'Media Roundup', icon: Newspaper, href: '/media-roundup' },
-      { label: 'Info Environment', icon: Radio, href: '/info-environment' },
-      { label: 'Sanctions Tracker', icon: Shield, href: '/sanctions' },
+      { label: 'Stakeholder Map', icon: Users, href: '/stakeholder-map' },
+      { label: 'Escalation Monitor', icon: AlertTriangle, href: '/early-warning' },
       { label: 'Commitment Tracker', icon: FileCheck, href: '/commitments' },
-      { label: 'Treaty Analyzer', icon: BookMarked, href: '/treaty-analyzer' },
+      { label: 'Info Environment', icon: Radio, href: '/info-environment' },
       { label: 'Geospatial Monitor', icon: Map, href: '/geospatial-monitor' },
-      { label: 'Alert Center', icon: Bell, href: '/alerts' },
+    ],
+  },
+  {
+    label: 'Analysis',
+    items: [
+      { label: 'Scenario Planner', icon: GitCompare, href: '/scenarios' },
+      { label: 'Risk Assessment', icon: BarChart3, href: '/risk-monitor' },
+      { label: 'Negotiation Prep', icon: Scale, href: '/negotiation-prep' },
+      { label: 'Media & Narrative', icon: Newspaper, href: '/media-compass' },
+      { label: 'Sanctions & Compliance', icon: Shield, href: '/sanctions' },
+      { label: 'Treaty Analysis', icon: BookMarked, href: '/treaty-analyzer' },
+      { label: 'Historical Parallels', icon: BookOpen, href: '/compare' },
+      { label: 'Game Theory', icon: Sigma, href: '/game-theory' },
+      { label: 'Power Map', icon: UsersRound, href: '/power-map' },
+    ],
+  },
+  {
+    label: 'Production',
+    items: [
+      { label: 'Intelligence Briefing', icon: Presentation, href: '/briefing' },
+      { label: 'Diplomatic Dossier', icon: BookMarked, href: '/dossier' },
+      { label: 'Talking Points', icon: MessageCircle, href: '/talking-points' },
+      { label: 'Policy Memo', icon: FileText, href: '/policy-memo' },
+      { label: 'Mediation Design', icon: Handshake, href: '/mediation-design' },
+      { label: 'UN Toolkit', icon: Building2, href: '/un-toolkit' },
+      { label: 'Daily Brief', icon: Newspaper, href: '/auto-briefings' },
+    ],
+  },
+  {
+    label: 'Research',
+    items: [
+      { label: 'Deep Research Agent', icon: Telescope, href: '/deep-search-agent', badge: 'TACITUS' },
+      { label: 'ARGUS', icon: Network, href: '/argus', badge: 'TACITUS' },
+      { label: 'Actor Enrichment', icon: UserCircle, href: '/actors' },
+      { label: 'Source Monitor', icon: Rss, href: '/source-monitor' },
+      { label: 'Situation Comparison', icon: GitCompare, href: '/compare' },
     ],
   },
   {
     label: 'Workspace',
     items: [
+      { label: 'PRAXIS Assistant', icon: MessageSquare, href: '/assistant' },
+      { label: 'Documents', icon: FolderOpen, href: '/documents' },
+      { label: 'Report Studio', icon: FileText, href: '/reports' },
+      { label: 'Export Center', icon: Package, href: '/export-center' },
       { label: 'Case Library', icon: BookOpen, href: '/cases' },
       { label: 'Team Hub', icon: UsersRound, href: '/team' },
+      { label: 'Humanitarian', icon: Heart, href: '/humanitarian' },
+      { label: 'Settings', icon: SettingsIcon, href: '/settings' },
     ],
   },
 ];
@@ -347,6 +350,7 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   '/talking-points': 'talking-points',
   '/briefing': 'briefing',
   '/auto-briefings': 'auto-briefing',
+  '/policy-memo': 'policy-memo',
   '/un-toolkit': 'un-toolkit',
   // Simulation
   '/scenarios': 'scenarios',
@@ -363,6 +367,8 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   '/treaty-analyzer': 'treaty-analyzer',
   '/geospatial-monitor': 'geospatial-monitor',
   '/alerts': 'alert-center',
+  '/source-monitor': 'source-monitor',
+  '/export-center': 'export-center',
 };
 
 // Three-state semaphore: green (ready), yellow (stale/needs update), red (not ready)

@@ -3,6 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -97,7 +98,7 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   try {
     const body = await request.json();
 
@@ -111,6 +112,7 @@ export const POST = withAuth(async (request, _user) => {
     if (!validation.success) return validation.response;
     const { regions, conflictContext, situation } = validation.data;
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+    const situationId = (situation as Situation | undefined)?.id ?? '';
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -120,6 +122,11 @@ export const POST = withAuth(async (request, _user) => {
     // --- Credit check ---
     const creditCheck = await checkAndDeductCredits('ai_risk_assessment', 'Risk assessment');
     if (!creditCheck.allowed) return creditCheck.response;
+
+    // --- Graph context ---
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'risk_assessment')
+      : '';
 
     // --- Fetch real data for evidence-based scoring ---
     const country = regions[0] || '';
@@ -159,7 +166,7 @@ ${intel.humanitarian?.displacement ? `Displacement: ${intel.humanitarian.displac
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: RiskAssessmentSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}Conduct a rigorous multi-dimensional risk assessment using INFORM Risk Index methodology and UNDP conflict-sensitive early warning indicators.
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Conduct a rigorous multi-dimensional risk assessment using INFORM Risk Index methodology and UNDP conflict-sensitive early warning indicators.
 
 REGIONS TO ASSESS: ${regions.join(', ')}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
@@ -201,6 +208,9 @@ Assign Glasl Stage 0 only when there is no active organized violence. Stages 7-9
       system: 'You are a senior risk analyst trained in INFORM Risk Index methodology, UNDP conflict-sensitive programming, and UN DPPA early warning frameworks. Provide evidence-anchored, calibrated risk assessments for diplomatic and security decision-makers. Distinguish confirmed facts from credible estimates and note data quality limitations.',
     });
 
+    if (situationId) {
+      await writeToolDataServer(user.uid, situationId, 'risk_assessment', result.output as Record<string, unknown>);
+    }
     return NextResponse.json(result.output);
   } catch (err) {
     return handleRouteError(err, 'risk-assessment');

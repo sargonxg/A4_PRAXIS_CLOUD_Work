@@ -3,6 +3,7 @@ import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { buildGraphContext } from '@/lib/ai/context-builder-server';
 import { searchWeb } from '@/lib/ai/firecrawl';
 import { GLOBAL_MEDIA_SOURCES, getSourcesForRegion } from '@/lib/constants/global-media-sources';
 import { isServerDemoMode, formatAsStreamResponse, getCachedResponse } from '@/lib/demo/demo-mode';
@@ -10,7 +11,7 @@ import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   try {
     const { situation, timeRange = '24h', maxSections = 8, customQueries } = await request.json();
 
@@ -26,6 +27,10 @@ export const POST = withAuth(async (request, _user) => {
     const sit = situation as unknown as Situation | undefined;
     const sitContext = sit ? buildToolContext(sit) : '';
     const region = sit?.region || '';
+    const situationId = sit?.id ?? '';
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'media_roundup').catch(() => '')
+      : '';
 
     // Build time-filtered search queries
     const timeLabel = timeRange === '24h' ? 'past 24 hours' : timeRange === '48h' ? 'past 48 hours' : timeRange === '7d' ? 'past week' : 'recent';
@@ -101,11 +106,12 @@ export const POST = withAuth(async (request, _user) => {
     ).join('\n\n---\n\n');
 
     // Stream the roundup
+    const systemCtx = graphCtx ? `${graphCtx}\n\n${sitContext}` : sitContext;
     const result = streamText({
       model: getProModel(),
       system: `You are PRAXIS Media Intelligence, a professional media roundup generator for conflict/policy analysts.
 
-${sitContext}
+${systemCtx}
 
 Generate a structured media intelligence roundup. Format as a professional briefing document.`,
       prompt: `Generate a Media Intelligence Roundup based on these ${topResults.length} sources gathered in the ${timeLabel}.

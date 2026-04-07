@@ -1,6 +1,7 @@
 'use client';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { useToolData } from '@/hooks/useToolData';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
@@ -973,6 +974,8 @@ function DemoEarlyWarningPage({ situation, aiRiskData }: { situation?: import('@
 export default function EarlyWarningPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
   const [aiRiskData, setAiRiskData] = useState<RiskRegionData[]>([]);
+  const { hasData, loading: firestoreLoading } = useToolData('early_warning');
+  const [regenerating, setRegenerating] = useState(false);
 
   // Demo mode — render with hardcoded demo data
   if (isDemo) return <DemoEarlyWarningPage />;
@@ -980,30 +983,71 @@ export default function EarlyWarningPage() {
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
 
+  async function handleRegenerate() {
+    if (regenerating || !situation) return;
+    setRegenerating(true);
+    try {
+      await fetch('/api/ai/early-warning', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situationId: situation.id }),
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
   // Real mode — AI populate prompt, then show tool with situation data
   return (
-    <AiPopulate
-      toolId="early-warning"
-      toolName="Early Warning"
-      apiEndpoint="/api/ai/risk-assessment"
-      extraBody={{ regions: [situation.region], conflictContext: `${situation.name}: ${situation.description}. Actors: ${situation.actors.join(', ')}` }}
-      creditCost={3}
-      hasExistingData={aiRiskData.length > 0}
-      onDataGenerated={(data) => {
-        const d = data as { regions?: RiskRegionData[] };
-        if (d?.regions) setAiRiskData(d.regions);
-      }}
-    >
-      {aiRiskData.length > 0
-        ? <DemoEarlyWarningPage situation={situation} aiRiskData={aiRiskData} />
-        : (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <AlertTriangle className="h-10 w-10 text-navy-200 mb-4" />
-            <p className="text-sm font-medium text-navy-500">Escalation analysis pending for &ldquo;{situation.name}&rdquo;</p>
-            <p className="mt-1 text-xs text-navy-400">Generate above to start tracking the Glasl escalation stage with live data.</p>
-          </div>
-        )
-      }
-    </AiPopulate>
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        {firestoreLoading ? (
+          <span className="inline-flex items-center gap-1.5 text-xs text-navy-400">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+          </span>
+        ) : hasData ? (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-navy-100 px-3 py-1.5 text-xs font-medium text-navy-700 hover:bg-navy-200 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
+            Regenerate
+          </button>
+        ) : (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            Generate with PRAXIS
+          </button>
+        )}
+      </div>
+      <AiPopulate
+        toolId="early-warning"
+        toolName="Early Warning"
+        apiEndpoint="/api/ai/risk-assessment"
+        extraBody={{ regions: [situation.region], conflictContext: `${situation.name}: ${situation.description}. Actors: ${situation.actors.join(', ')}` }}
+        creditCost={3}
+        hasExistingData={hasData || aiRiskData.length > 0}
+        onDataGenerated={(data) => {
+          const d = data as { regions?: RiskRegionData[] };
+          if (d?.regions) setAiRiskData(d.regions);
+        }}
+      >
+        {aiRiskData.length > 0
+          ? <DemoEarlyWarningPage situation={situation} aiRiskData={aiRiskData} />
+          : (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <AlertTriangle className="h-10 w-10 text-navy-200 mb-4" />
+              <p className="text-sm font-medium text-navy-500">Escalation analysis pending for &ldquo;{situation.name}&rdquo;</p>
+              <p className="mt-1 text-xs text-navy-400">Generate above to start tracking the Glasl escalation stage with live data.</p>
+            </div>
+          )
+        }
+      </AiPopulate>
+    </div>
   );
 }

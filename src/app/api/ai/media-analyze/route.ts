@@ -1,8 +1,10 @@
-import { generateObject } from 'ai';
+import { generateText, Output } from 'ai';
 import { getModel } from '@/lib/ai/providers';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { withAuth } from '@/lib/api/with-auth';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { z } from 'zod';
+import type { Situation } from '@/types/situation';
 
 const MediaAnalysisSchema = z.object({
   politicalOrientation: z.number().min(-1).max(1).describe('Political orientation from -1 (left) to +1 (right)'),
@@ -17,7 +19,7 @@ const MediaAnalysisSchema = z.object({
   recommendedCrossReferences: z.array(z.string()).describe('Sources to cross-reference with this outlet'),
 });
 
-export const POST = withAuth(async (request: Request) => {
+export const POST = withAuth(async (request: Request, user) => {
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(
       JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in Vercel environment variables.' }),
@@ -26,20 +28,37 @@ export const POST = withAuth(async (request: Request) => {
   }
 
   try {
-    const { source, topic } = await request.json();
+    const { source, topic, situation } = await request.json() as {
+      source: string;
+      topic?: string;
+      situation?: Situation;
+    };
+    const situationId = situation?.id ?? '';
 
     const creditCheck = await checkAndDeductCredits('ai_media', 'Media analysis');
     if (!creditCheck.allowed) return creditCheck.response;
 
-    const { object } = await generateObject({
-      model: getModel(),
-      schema: MediaAnalysisSchema,
-      prompt: `Analyze the media source "${source}" for a conflict/peace professional.
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'media_analysis').catch(() => '')
+      : '';
+
+    const basePrompt = `Analyze the media source "${source}" for a conflict/peace professional.
 ${topic ? `Specific topic context: ${topic}` : ''}
-Provide a professional assessment of political orientation (-1 left to +1 right), reliability (0-1), editorial independence (0-1), ownership type, country of origin, known biases, coverage strengths, and conflict coverage notes. Recommend cross-reference sources.`,
+Provide a professional assessment of political orientation (-1 left to +1 right), reliability (0-1), editorial independence (0-1), ownership type, country of origin, known biases, coverage strengths, and conflict coverage notes. Recommend cross-reference sources.`;
+
+    const fullPrompt = graphCtx ? `${graphCtx}\n\n${basePrompt}` : basePrompt;
+
+    const result = await generateText({
+      model: getModel(),
+      output: Output.object({ schema: MediaAnalysisSchema }),
+      prompt: fullPrompt,
     });
 
-    return Response.json({ source, topic, assessment: object });
+    if (situationId) {
+      await writeToolDataServer(user.uid, situationId, 'media_analysis', result.output as Record<string, unknown>).catch(() => {});
+    }
+
+    return Response.json({ source, topic, assessment: result.output });
   } catch (err) {
     console.error('Media analyze route error:', err);
     return Response.json({ error: 'Media analysis failed' }, { status: 500 });

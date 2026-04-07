@@ -2,6 +2,7 @@
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
+import { useToolData } from '@/hooks/useToolData';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { NoDataState } from '@/components/praxis/no-data-state';
 
@@ -64,6 +65,8 @@ const DEFAULT_CHECKLIST = [
 export default function CalendarPage() {
 
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const { hasData: firestoreHasData, loading: firestoreLoading } = useToolData('calendar');
+  const [regenerating, setRegenerating] = useState(false);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [generating, setGenerating] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set(['all']));
@@ -237,6 +240,20 @@ Keep it action-oriented and diplomatically precise.`;
 
   if (showGuard) return <NoSituationState />;
 
+  async function handleRegenerate() {
+    if (regenerating || !situation) return;
+    setRegenerating(true);
+    try {
+      await fetch('/api/ai/calendar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situationId: situation.id }),
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -252,9 +269,34 @@ Keep it action-oriented and diplomatically precise.`;
             </p>
           </div>
         </div>
-        <span className="rounded-full bg-diplomatic-blue/8 px-3 py-1 text-xs font-medium text-diplomatic-blue">
-          {filtered.length} events
-        </span>
+        <div className="flex items-center gap-2">
+          {firestoreLoading ? (
+            <span className="inline-flex items-center gap-1 text-xs text-navy-400">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            </span>
+          ) : firestoreHasData ? (
+            <button
+              onClick={handleRegenerate}
+              disabled={regenerating}
+              className="inline-flex items-center gap-1.5 rounded-md bg-navy-100 px-3 py-1.5 text-xs font-medium text-navy-700 hover:bg-navy-200 disabled:opacity-50"
+            >
+              {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              Regenerate
+            </button>
+          ) : (
+            <button
+              onClick={handleRegenerate}
+              disabled={regenerating}
+              className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              Generate with PRAXIS
+            </button>
+          )}
+          <span className="rounded-full bg-diplomatic-blue/8 px-3 py-1 text-xs font-medium text-diplomatic-blue">
+            {filtered.length} events
+          </span>
+        </div>
       </div>
 
       {/* Institution filter pills */}

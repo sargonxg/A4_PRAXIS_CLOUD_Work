@@ -13,11 +13,14 @@ import {
   MessageSquare, FileText, Search, Upload, Compass, Network,
   Globe, Users, AlertTriangle, BarChart3, GitBranch, Scale,
   Sparkles, Plus, ArrowRight, TrendingUp, TrendingDown, Minus,
-  Loader2, Clock, RefreshCw, X, CheckCircle2,
+  Loader2, Clock, RefreshCw, X, CheckCircle2, Link2, Play,
 } from 'lucide-react';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 import type { Situation } from '@/types/situation';
 import { recordActivity, getRecentActivity, type ActivityEntry } from '@/lib/utils/activity';
+import { db } from '@/lib/firebase/config';
+import { onSnapshot, doc } from 'firebase/firestore';
+import { useAuth } from '@/lib/auth/auth-context';
 
 function formatRelTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -384,6 +387,266 @@ function SituationHealthWidget({
   );
 }
 
+// ---------------------------------------------------------------------------
+// Graph Analysis types
+// ---------------------------------------------------------------------------
+
+interface GraphAnalysis {
+  glaslStage?: number;
+  pivotActors?: { id: string; label: string; centralityScore: number }[];
+  intelligenceGaps?: string[];
+  hiddenLinkages?: { source: string; target: string; description: string }[];
+  lastPipelineRun?: string;
+  pipelineStatus?: 'running' | 'complete' | 'failed' | 'idle';
+}
+
+// ---------------------------------------------------------------------------
+// Quick Ingest Card — URL ingestion via Python backend
+// ---------------------------------------------------------------------------
+
+function QuickIngestCard({ situationId }: { situationId: string }) {
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<'success' | 'error' | null>(null);
+
+  const handleIngest = useCallback(async () => {
+    if (!url.trim() || loading) return;
+    setLoading(true);
+    setResult(null);
+    try {
+      const { praxisBackend } = await import('@/lib/api/praxis-backend');
+      await praxisBackend.ingestUrl(situationId, url.trim());
+      setResult('success');
+      setUrl('');
+    } catch {
+      setResult('error');
+    } finally {
+      setLoading(false);
+    }
+  }, [url, loading, situationId]);
+
+  return (
+    <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <Link2 className="h-4 w-4 text-diplomatic-blue" />
+        <h3 className="text-sm font-semibold text-navy-900">Quick Ingest</h3>
+        <span className="ml-auto rounded-full bg-diplomatic-blue/10 px-2 py-0.5 text-[10px] font-semibold text-diplomatic-blue">
+          Knowledge Graph
+        </span>
+      </div>
+      <div className="flex gap-2">
+        <input
+          type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleIngest()}
+          placeholder="Paste a URL to ingest into the conflict graph..."
+          className="min-w-0 flex-1 rounded-lg border border-navy-200 bg-white px-3 py-2 text-xs text-navy-900 placeholder-navy-400 focus:border-diplomatic-blue/50 focus:outline-none focus:ring-1 focus:ring-diplomatic-blue/20"
+        />
+        <button
+          onClick={handleIngest}
+          disabled={loading || !url.trim()}
+          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-diplomatic-blue px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-diplomatic-blue/90 disabled:opacity-50"
+        >
+          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+          Ingest
+        </button>
+      </div>
+      {result === 'success' && (
+        <p className="mt-2 text-[11px] font-medium text-emerald-600">URL ingested — pipeline will update the graph shortly.</p>
+      )}
+      {result === 'error' && (
+        <p className="mt-2 text-[11px] font-medium text-red-600">Ingest failed. Ensure the Python backend is running and configured.</p>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Intelligence Summary Card — live from Firestore graph/analysis
+// ---------------------------------------------------------------------------
+
+const GLASL_STAGE_COLOR = (stage: number) =>
+  stage <= 3 ? '#5B8C5A' : stage <= 6 ? '#E8B931' : '#A63D40';
+
+const GLASL_STAGE_BG = (stage: number) =>
+  stage <= 3 ? 'bg-emerald-50 text-emerald-700' : stage <= 6 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700';
+
+const GLASL_STAGE_LABELS = [
+  '', 'Hardening', 'Debates', 'Actions',
+  'Coalitions', 'Loss of Face', 'Threats',
+  'Destructive Blows', 'Fragmentation', 'Abyss',
+];
+
+function IntelligenceSummaryCard({ situationId }: { situationId: string }) {
+  const { user } = useAuth();
+  const [analysis, setAnalysis] = useState<GraphAnalysis | null>(null);
+  const [pipelineLoading, setPipelineLoading] = useState(false);
+  const [pipelineMsg, setPipelineMsg] = useState<string | null>(null);
+
+  // Subscribe to Firestore graph/analysis in real time
+  useEffect(() => {
+    const uid = user?.uid;
+    if (!uid || !situationId) return;
+    const ref = doc(db, 'users', uid, 'situations', situationId, 'graph', 'analysis');
+    const unsub = onSnapshot(ref, (snap) => {
+      if (snap.exists()) {
+        setAnalysis(snap.data() as GraphAnalysis);
+      }
+    });
+    return unsub;
+  }, [user?.uid, situationId]);
+
+  const runPipeline = useCallback(async () => {
+    if (pipelineLoading) return;
+    setPipelineLoading(true);
+    setPipelineMsg(null);
+    try {
+      const { praxisBackend } = await import('@/lib/api/praxis-backend');
+      await praxisBackend.runPipeline(situationId, []);
+      setPipelineMsg('Pipeline started — graph will update in a few minutes.');
+    } catch {
+      setPipelineMsg('Pipeline failed to start. Ensure the Python backend is reachable.');
+    } finally {
+      setPipelineLoading(false);
+    }
+  }, [pipelineLoading, situationId]);
+
+  // If no analysis yet, show a muted placeholder
+  if (!analysis) {
+    return (
+      <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+        <div className="mb-3 flex items-center gap-2">
+          <Network className="h-4 w-4 text-diplomatic-blue" />
+          <h3 className="text-sm font-semibold text-navy-900">Intelligence Summary</h3>
+          <span className="ml-auto text-[10px] text-navy-400">From Knowledge Graph</span>
+        </div>
+        <p className="text-xs text-navy-400 text-center py-4">
+          No graph analysis yet. Run the pipeline to generate conflict intelligence.
+        </p>
+        <div className="flex justify-center">
+          <button
+            onClick={runPipeline}
+            disabled={pipelineLoading}
+            className="flex items-center gap-1.5 rounded-lg border border-diplomatic-blue/25 bg-diplomatic-blue/8 px-4 py-2 text-xs font-medium text-diplomatic-blue transition-colors hover:bg-diplomatic-blue/15 disabled:opacity-50"
+          >
+            {pipelineLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+            Run Full Pipeline
+          </button>
+        </div>
+        {pipelineMsg && <p className="mt-2 text-center text-[11px] text-navy-500">{pipelineMsg}</p>}
+      </div>
+    );
+  }
+
+  const pivotActors = (analysis.pivotActors ?? []).slice(0, 3);
+  const gapCount = (analysis.intelligenceGaps ?? []).length;
+  const linkageCount = (analysis.hiddenLinkages ?? []).length;
+  const stage = analysis.glaslStage ?? 0;
+  const statusColors: Record<string, string> = {
+    running: 'bg-blue-50 text-blue-700',
+    complete: 'bg-emerald-50 text-emerald-700',
+    failed: 'bg-red-50 text-red-700',
+    idle: 'bg-navy-50 text-navy-500',
+  };
+
+  return (
+    <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+      {/* Header */}
+      <div className="mb-4 flex items-center gap-2">
+        <Network className="h-4 w-4 text-diplomatic-blue" />
+        <h3 className="text-sm font-semibold text-navy-900">Intelligence Summary</h3>
+        <span className="ml-1 rounded-full bg-diplomatic-blue/10 px-2 py-0.5 text-[10px] font-semibold text-diplomatic-blue">
+          Knowledge Graph
+        </span>
+        {analysis.pipelineStatus && (
+          <span className={cn('ml-auto rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize', statusColors[analysis.pipelineStatus] ?? statusColors.idle)}>
+            {analysis.pipelineStatus}
+          </span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {/* Glasl Stage */}
+        <div className="rounded-lg bg-navy-50 p-3">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-navy-400">Glasl Stage</p>
+          {stage > 0 ? (
+            <>
+              <span
+                className={cn('inline-block rounded-full px-2.5 py-0.5 text-xs font-bold', GLASL_STAGE_BG(stage))}
+              >
+                {stage}/9
+              </span>
+              <p className="mt-1 text-[10px] text-navy-500">{GLASL_STAGE_LABELS[stage] ?? ''}</p>
+            </>
+          ) : (
+            <span className="text-xs text-navy-400">—</span>
+          )}
+        </div>
+
+        {/* Intel Gaps */}
+        <div className="rounded-lg bg-navy-50 p-3">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-navy-400">Intel Gaps</p>
+          <p className="text-2xl font-bold text-navy-900">{gapCount}</p>
+          <p className="text-[10px] text-navy-400">identified</p>
+        </div>
+
+        {/* Hidden Linkages */}
+        <div className="rounded-lg bg-navy-50 p-3">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-navy-400">Hidden Links</p>
+          <p className="text-2xl font-bold text-navy-900">{linkageCount}</p>
+          <p className="text-[10px] text-navy-400">detected</p>
+        </div>
+
+        {/* Last Run */}
+        <div className="rounded-lg bg-navy-50 p-3">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-navy-400">Last Run</p>
+          <p className="text-[11px] font-medium text-navy-700">
+            {analysis.lastPipelineRun
+              ? new Date(analysis.lastPipelineRun).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+              : '—'}
+          </p>
+        </div>
+      </div>
+
+      {/* Top pivot actors */}
+      {pivotActors.length > 0 && (
+        <div className="mt-4">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-navy-400">Top Pivot Actors</p>
+          <div className="space-y-1.5">
+            {pivotActors.map((actor, i) => (
+              <div key={actor.id ?? i} className="flex items-center gap-3">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-diplomatic-blue/10 text-[10px] font-bold text-diplomatic-blue">
+                  {i + 1}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-xs font-medium text-navy-800">{actor.label ?? actor.id}</span>
+                <span className="shrink-0 text-[11px] font-mono text-navy-500">
+                  {typeof actor.centralityScore === 'number' ? actor.centralityScore.toFixed(3) : '—'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Run Pipeline button */}
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <button
+          onClick={runPipeline}
+          disabled={pipelineLoading || analysis.pipelineStatus === 'running'}
+          className="flex items-center gap-1.5 rounded-lg border border-diplomatic-blue/25 bg-diplomatic-blue/8 px-4 py-2 text-xs font-medium text-diplomatic-blue transition-colors hover:bg-diplomatic-blue/15 disabled:opacity-50"
+        >
+          {pipelineLoading || analysis.pipelineStatus === 'running'
+            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            : <Play className="h-3.5 w-3.5" />}
+          Run Full Pipeline
+        </button>
+        {pipelineMsg && <p className="text-[11px] text-navy-500">{pipelineMsg}</p>}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Real PRAXIS dashboard — shows the active situation's data only.
  * No demo data, no hardcoded conflicts. Everything comes from the situation.
@@ -544,6 +807,12 @@ export function SituationDashboard({ situation }: { situation: Situation }) {
 
       {/* Situation Health — tool population status */}
       <SituationHealthWidget situation={situation} persisted={persisted} />
+
+      {/* Quick Ingest — URL ingestion into knowledge graph */}
+      <QuickIngestCard situationId={situation.id} />
+
+      {/* Intelligence Summary — live Firestore graph/analysis */}
+      <IntelligenceSummaryCard situationId={situation.id} />
 
       {/* Getting Started Tips — show when situation is empty */}
       {situation.documentCount === 0 && situation.graphEntities === 0 && onboardingComplete && (
