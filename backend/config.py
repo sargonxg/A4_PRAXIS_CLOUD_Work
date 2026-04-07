@@ -24,14 +24,22 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-2.5-flash"
     gemini_deep_model: str = "gemini-2.5-pro"
 
-    # CORS
-    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]
+    # CORS — comma-separated origins, e.g. "https://praxis.tacitus.me,http://localhost:3000"
+    # Defaults to localhost. Set CORS_ORIGINS env var in Cloud Run to include the frontend URL.
+    cors_origins_str: str = "http://localhost:3000,http://localhost:3001"
 
-    # Firebase Admin SDK credentials (path to service account JSON, or empty to use ADC)
-    firebase_credentials_path: str = ""
+    @property
+    def cors_origins(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins_str.split(",") if o.strip()]
 
-    # Optional: Google AI API key (for non-Vertex AI usage)
+    # Firebase Admin SDK credentials
+    # Priority: FIREBASE_SERVICE_ACCOUNT_KEY (JSON string) > firebase_credentials_path (file) > ADC
+    firebase_service_account_key: str = ""  # full JSON string (used in Cloud Run)
+    firebase_credentials_path: str = ""     # path to JSON file (used locally)
+
+    # AI API Keys (optional — falls back to ADC / Workload Identity on Cloud Run)
     google_ai_api_key: str = ""
+    anthropic_api_key: str = ""
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

@@ -4,6 +4,7 @@ Every protected endpoint uses Depends(verify_firebase_token) to authenticate
 the caller. The decoded token dict (which includes 'uid') is injected into
 the route handler.
 """
+import json
 import os
 from functools import lru_cache
 
@@ -19,17 +20,28 @@ _bearer = HTTPBearer(auto_error=True)
 
 @lru_cache(maxsize=1)
 def _init_firebase() -> None:
-    """Initialize firebase-admin once. Subsequent calls are no-ops."""
+    """Initialize firebase-admin once. Subsequent calls are no-ops.
+
+    Credential resolution order:
+    1. FIREBASE_SERVICE_ACCOUNT_KEY env var — JSON string (Cloud Run / CI)
+    2. firebase_credentials_path — path to a local JSON file (local dev)
+    3. Application Default Credentials — Workload Identity / gcloud auth
+    """
     if firebase_admin._apps:
         return
 
     settings = get_settings()
-    if settings.firebase_credentials_path and os.path.exists(
+
+    if settings.firebase_service_account_key:
+        # Cloud Run passes the full JSON as an env var string
+        sa_info = json.loads(settings.firebase_service_account_key)
+        cred = credentials.Certificate(sa_info)
+    elif settings.firebase_credentials_path and os.path.exists(
         settings.firebase_credentials_path
     ):
         cred = credentials.Certificate(settings.firebase_credentials_path)
     else:
-        # Use Application Default Credentials (Cloud Run / Workload Identity)
+        # Use Application Default Credentials (Cloud Run Workload Identity or gcloud auth)
         cred = credentials.ApplicationDefault()
 
     firebase_admin.initialize_app(cred)

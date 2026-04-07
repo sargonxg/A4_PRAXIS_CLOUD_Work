@@ -65,9 +65,40 @@ gcloud scheduler jobs create http gdelt-poller \
   --location=us-central1 \
   2>/dev/null || echo "Scheduler job gdelt-poller already exists"
 
+# ── Secret Manager — create placeholder secrets ───────────────────────────────
+# cloudbuild.yaml references these secrets. Create them now (you'll fill in values next).
+echo "Creating Secret Manager secrets (placeholders — you must fill these in)..."
+
+for secret in \
+  praxis-firebase-sa \
+  praxis-google-ai-key \
+  praxis-cron-secret \
+  praxis-cookie-secret; do
+  gcloud secrets create "$secret" --replication-policy=automatic 2>/dev/null \
+    || echo "Secret $secret already exists"
+done
+
+echo ""
+echo "  ⚠️  Fill in the secrets now:"
+echo "  printf 'YOUR_JSON_HERE' | gcloud secrets versions add praxis-firebase-sa --data-file=-"
+echo "  printf 'AIzaSy...' | gcloud secrets versions add praxis-google-ai-key --data-file=-"
+echo "  printf 'my-cron-secret' | gcloud secrets versions add praxis-cron-secret --data-file=-"
+echo "  printf 'my-cookie-secret-32chars' | gcloud secrets versions add praxis-cookie-secret --data-file=-"
+echo ""
+
 # ── IAM Permissions ──────────────────────────────────────────────────────────
-echo "Setting IAM permissions for service account..."
+echo "Setting IAM permissions..."
+
+# Cloud Build service account (needed to pull secrets during build)
+CB_SA="${PROJECT_ID}@cloudbuild.gserviceaccount.com"
+# App Engine / default service account (used by Cloud Run services)
 SA="${PROJECT_ID}@appspot.gserviceaccount.com"
+
+# Grant Cloud Build SA access to secrets
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member="serviceAccount:${CB_SA}" \
+  --role="roles/secretmanager.secretAccessor" \
+  --quiet 2>/dev/null || true
 
 for role in \
   roles/aiplatform.user \
@@ -83,9 +114,17 @@ for role in \
     --quiet 2>/dev/null || true
 done
 
+# Cloud Run service account also needs Secret Manager access
+CR_SA="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')-compute@developer.gserviceaccount.com"
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member="serviceAccount:${CR_SA}" \
+  --role="roles/secretmanager.secretAccessor" \
+  --quiet 2>/dev/null || true
+
 echo ""
 echo "✓ GCP setup complete for project: $PROJECT_ID"
-echo "  Next steps:"
-echo "  1. Set environment variables in Secret Manager or Cloud Run env vars"
+echo ""
+echo "  NEXT STEPS:"
+echo "  1. Fill in the Secret Manager secrets (see prompts above)"
 echo "  2. Run: gcloud builds submit --config=cloudbuild.yaml"
-echo "  3. Or use: ./infrastructure/deploy.sh"
+echo "  3. Or:  bash infrastructure/deploy.sh"

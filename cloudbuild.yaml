@@ -32,6 +32,9 @@ steps:
       - '10'
       - '--set-env-vars'
       - 'GCP_PROJECT_ID=$PROJECT_ID,GCP_REGION=us-central1'
+      # Secrets from Secret Manager (must be created before first deploy — see setup-gcp.sh)
+      - '--set-secrets'
+      - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest'
     id: 'deploy-backend'
     waitFor: ['push-backend']
 
@@ -85,6 +88,8 @@ steps:
       - '0'
       - '--max-instances'
       - '10'
+      - '--set-secrets'
+      - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest'
     id: 'deploy-frontend'
     waitFor: ['push-frontend']
 
