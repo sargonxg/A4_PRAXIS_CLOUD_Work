@@ -58,7 +58,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Coins, X, ChevronRight } from 'lucide-react';
+import { Coins, X, ChevronRight, ChevronDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const CHANGELOG = [
@@ -427,6 +427,13 @@ export function AppSidebar() {
   const { activeSituationId, setActiveSituation } = useSituationStore();
   const toolHealthMap = useToolStatuses(activeSituationId);
 
+  // Collapsible sections — all open by default
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(navSections.map((s) => [s.label, true]))
+  );
+  const toggleSection = (label: string) =>
+    setOpenSections((prev) => ({ ...prev, [label]: !prev[label] }));
+
   // Strip /app or /demo prefix for active matching against nav hrefs
   const barePath = pathname.replace(/^\/(app|demo)/, '') || '/';
 
@@ -489,23 +496,39 @@ export function AppSidebar() {
 
       {/* Navigation sections */}
       <nav className="flex-1 space-y-1 px-2 py-3 overflow-y-auto">
-        {navSections.map((section) => (
+        {navSections.map((section) => {
+          const isSectionOpen = openSections[section.label] ?? true;
+          return (
           <div key={section.label} className="mb-3">
-            {/* Section label */}
+            {/* Section label — clickable to collapse when sidebar is open */}
             <AnimatePresence mode="wait">
               {sidebarOpen && (
-                <motion.p
+                <motion.button
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.1 }}
-                  className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400"
+                  onClick={() => toggleSection(section.label)}
+                  className="mb-1 flex w-full items-center justify-between px-3 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400 hover:text-navy-600 transition-colors"
                 >
                   {section.label}
-                </motion.p>
+                  <ChevronDown
+                    className={cn('h-3 w-3 transition-transform duration-200', !isSectionOpen && '-rotate-90')}
+                  />
+                </motion.button>
               )}
             </AnimatePresence>
 
+            <AnimatePresence initial={false}>
+              {(isSectionOpen || !sidebarOpen) && (
+                <motion.div
+                  key="section-items"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.18, ease: 'easeInOut' }}
+                  style={{ overflow: 'hidden' }}
+                >
             {section.items.map((item) => {
               const isActive =
                 barePath === item.href || barePath.startsWith(item.href + '/');
@@ -603,8 +626,12 @@ export function AppSidebar() {
 
               return <div key={item.href}>{linkContent}</div>;
             })}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        ))}
+          );
+        })}
 
         {/* Advisory Council - special item */}
         <div className="mt-2 border-t border-[var(--color-app-border)] pt-3">

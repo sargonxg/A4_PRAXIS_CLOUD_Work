@@ -2,19 +2,23 @@
 
 **The conflict operating system for peace and security professionals.**
 
-AI-native workspace for UN Political Affairs Officers, diplomatic mediators, and conflict analysts. 40+ specialised tool pages, 68 API routes, 27 AI chat tools, situation-driven data pipeline, and real-time intelligence feeds from ACLED, GDELT, UCDP, UNHCR, and the UN.
+AI-native workspace for UN Political Affairs Officers, diplomatic mediators, and conflict analysts. 40+ specialised tool pages, 68+ API routes, Python FastAPI backend with ACO conflict intelligence pipeline, and real-time intelligence feeds from ACLED, GDELT, UCDP, UNHCR, and the UN.
 
-> **v5.2.0** — Build 2026.04.01 | Deployed at [praxis.tacitus.me](https://praxis.tacitus.me)
+> **v6.0.0** — Build 2026.04.07 | Dual-service GCP architecture (Next.js + Python FastAPI on Cloud Run)
 
 ---
 
 ## Quick Start
 
+### Local Development (dual-service)
+
 ```bash
-git clone https://github.com/sargonxg/PRAXIS_NEXTJS_TACITUS.git
-cd PRAXIS_NEXTJS_TACITUS
+# Terminal 1 — Next.js frontend (port 3000)
 npm install
 npm run dev
+
+# Terminal 2 — Python backend + Neo4j + FalkorDB (port 8080)
+docker-compose up
 ```
 
 Open [http://localhost:3000](http://localhost:3000). **The demo works with zero configuration** — no API keys needed.
@@ -30,6 +34,9 @@ GOOGLE_AI_API_KEY=your_gemini_key
 # Required for server-side Firestore + Vertex AI auth
 FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"praxisbytacitus",...}
 
+# Backend URL (auto-set by Cloud Build for production)
+NEXT_PUBLIC_PRAXIS_BACKEND_URL=http://localhost:8080
+
 # Optional — enables Claude deep analysis
 ANTHROPIC_API_KEY=your_key
 
@@ -42,6 +49,8 @@ VERTEX_AGENT_ENGINE_ID=your_numeric_engine_id
 # Required for cron job auth
 CRON_SECRET=your_secret
 ```
+
+See `.env.local.example` for the complete grouped list including Neo4j, FalkorDB, Stripe, and GCP variables.
 
 ---
 
@@ -58,7 +67,51 @@ CRON_SECRET=your_secret
 
 ---
 
-## Architecture
+## Architecture (v6.0.0 — Dual-Service GCP)
+
+```
+┌─────────────────────────────────┐    ┌──────────────────────────────────┐
+│   Next.js Frontend              │    │   Python FastAPI Backend          │
+│   Cloud Run (us-central1)       │◄──►│   Cloud Run (us-central1)         │
+│   /app/* — React workspace      │    │   /api/v1/* — Graphify pipeline   │
+│   /demo/* — Nordalia demo       │    │   NetworkX + Leiden clustering    │
+│   68 API routes (Next.js)       │    │   Genkit AI flows                 │
+└──────────────┬──────────────────┘    └─────────────┬────────────────────┘
+               │                                     │
+               ▼                                     ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│   Firebase / GCP                                                         │
+│   Firestore — users/{uid}/situations/{sitId}/graph,tools,documents       │
+│   Firebase Auth — Google + email/password                                │
+│   Vertex AI — Gemini Pro/Flash, ADK Deep Research Agent                  │
+│   BigQuery — analytics logging                                           │
+│   Cloud Storage — document uploads                                       │
+│   Cloud Functions — on_situation_created, on_document_uploaded, GDELT   │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+### Graphify ACO Pipeline (Backend)
+
+```
+extract → build → cluster → analyze → report → export
+```
+
+1. **extract.py** — Gemini reads source text → structured ACO nodes + edges (8 types, 42 relationships)
+2. **build.py** — Merges extractions into a NetworkX multigraph
+3. **cluster.py** — Leiden community detection (graspologic) → faction assignments
+4. **analyze.py** — Pivot actors (centrality), hidden linkages, Glasl escalation, ZOPA
+5. **report.py** — Markdown brief + structured JSON output
+6. **export.py** — Push to Neo4j/FalkorDB, HTML visualization
+
+### ACO — Agentic Conflict Ontology
+
+8 primitive types: `Actor` · `Claim` · `Interest` · `Constraint` · `Leverage` · `Commitment` · `Event` · `Narrative`
+
+42 typed relationships — see `backend/graphify_tacitus/schemas/relationships.py`
+
+Visualization colors: Actor `#4E79A7` · Claim `#F28E2B` · Interest `#59A14F` · Constraint `#E15759` · Leverage `#EDC948` · Commitment `#76B7B2` · Event `#B07AA1` · Narrative `#FF9DA7`
+
+### Frontend source layout
 
 ```
 src/
@@ -435,20 +488,40 @@ Expected: `{"diagnosis":"✅ Email/Password auth is ENABLED", "adminSdkStatus":"
 
 ## Deployment
 
-Deployed on Vercel (iad1 region). Push to `main` triggers automatic deployment.
+PRAXIS deploys to **Google Cloud Run** (no Vercel). Both services run as containers.
+
+### One-command deploy (Cloud Build)
 
 ```bash
-npm run build     # Verify build passes locally (Turbopack)
-npx tsc --noEmit  # Type check
-npm run lint      # ESLint check
-git push          # Auto-deploys to Vercel
+# First time: enable GCP APIs, create BigQuery dataset, Pub/Sub topics, etc.
+bash infrastructure/setup-gcp.sh
+
+# Deploy both services (backend first, then frontend with backend URL injected)
+bash infrastructure/deploy.sh
+# Equivalent: gcloud builds submit --config=cloudbuild.yaml
 ```
 
-### Vercel Configuration
-- Function timeouts: standard routes 60s, document upload 300s, Deep Research Agent 120s
-- Cron jobs: `check-alerts` at 06:00 UTC, `generate-briefing` at 05:00 UTC
-- Node.js 24.x runtime
-- `middleware.ts` handles auth routing (NOT `proxy.ts` — proxy.ts broke Google Sign-In in v3.9.1)
+### Deploy individual services
+
+```bash
+bash infrastructure/deploy-backend.sh   # Python FastAPI on Cloud Run
+bash infrastructure/deploy-frontend.sh  # Next.js on Cloud Run
+```
+
+### Custom domain
+
+```bash
+gcloud run domain-mappings create --service=praxis-frontend \
+  --domain=praxis.tacitus.me --region=us-central1
+```
+
+### Local build verification
+
+```bash
+npm run build     # Production Next.js build
+npx tsc --noEmit  # TypeScript check
+cd backend && python -m pytest tests/ -v  # Python tests
+```
 
 ---
 
