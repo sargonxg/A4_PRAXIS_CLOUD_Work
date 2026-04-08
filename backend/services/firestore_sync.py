@@ -78,9 +78,8 @@ class FirestoreSync:
     async def read_all_tool_data(self, uid: str, sit_id: str) -> dict[str, dict]:
         """Read all tool outputs for a situation. Returns {tool_name: data}."""
         tools_ref = self._sit_ref(uid, sit_id).collection("tools")
-        docs = tools_ref.stream()
         result = {}
-        async for doc in docs:
+        async for doc in tools_ref.stream():
             result[doc.id] = doc.to_dict()
         return result
 

@@ -25,7 +25,12 @@ gcloud services enable \
   cloudscheduler.googleapis.com \
   firestore.googleapis.com \
   secretmanager.googleapis.com \
-  storage.googleapis.com
+  storage.googleapis.com \
+  firebase.googleapis.com \
+  identitytoolkit.googleapis.com \
+  eventarc.googleapis.com \
+  logging.googleapis.com \
+  monitoring.googleapis.com
 
 # ── Artifact Registry ────────────────────────────────────────────────────────
 echo "Creating Artifact Registry repository..."
@@ -41,7 +46,11 @@ bq mk --dataset "${PROJECT_ID}:praxis_analytics" 2>/dev/null || echo "Dataset al
 
 bq mk --table "${PROJECT_ID}:praxis_analytics.pipeline_runs" \
   "run_id:STRING,user_id:STRING,situation_id:STRING,nodes:INTEGER,edges:INTEGER,duration_ms:INTEGER,status:STRING,timestamp:TIMESTAMP" \
-  2>/dev/null || echo "Table already exists"
+  2>/dev/null || echo "Table pipeline_runs already exists"
+
+bq mk --table "${PROJECT_ID}:praxis_analytics.extractions" \
+  "extraction_id:STRING,user_id:STRING,situation_id:STRING,source_type:STRING,source_file:STRING,nodes:INTEGER,edges:INTEGER,input_tokens:INTEGER,output_tokens:INTEGER,duration_ms:INTEGER,timestamp:TIMESTAMP" \
+  2>/dev/null || echo "Table extractions already exists"
 
 # ── Pub/Sub Topics ───────────────────────────────────────────────────────────
 echo "Creating Pub/Sub topics..."
@@ -59,13 +68,19 @@ echo "Creating Cloud Scheduler jobs..."
 BACKEND_SA="${PROJECT_ID}@appspot.gserviceaccount.com"
 BACKEND_URL="https://praxis-backend-${PROJECT_ID}-uc.a.run.app"
 
-gcloud scheduler jobs create http gdelt-poller \
-  --schedule="*/15 * * * *" \
-  --uri="${BACKEND_URL}/api/v1/feeds/gdelt-poll" \
-  --http-method=POST \
-  --oidc-service-account-email="${BACKEND_SA}" \
-  --location=us-central1 \
-  2>/dev/null || echo "Scheduler job gdelt-poller already exists"
+GDELT_FUNCTION_URL=$(gcloud functions describe gdelt-poller --region="${REGION}" --format="value(url)" 2>/dev/null || echo "")
+if [ -n "$GDELT_FUNCTION_URL" ]; then
+  gcloud scheduler jobs create http gdelt-poller \
+    --schedule="*/15 * * * *" \
+    --uri="${GDELT_FUNCTION_URL}" \
+    --http-method=POST \
+    --oidc-service-account-email="${BACKEND_SA}" \
+    --oidc-token-audience="${GDELT_FUNCTION_URL}" \
+    --location=us-central1 \
+    2>/dev/null || echo "Scheduler job gdelt-poller already exists"
+else
+  echo "⚠️  gdelt-poller Cloud Function not deployed yet — deploy it first, then re-run to create scheduler"
+fi
 
 # ── Cloud Scheduler: Daily Alert Check (06:00 UTC) ──────────────────────
 echo "Creating Cloud Scheduler job: praxis-check-alerts..."
@@ -147,9 +162,15 @@ for role in \
   roles/bigquery.dataEditor \
   roles/datastore.user \
   roles/pubsub.subscriber \
+  roles/pubsub.publisher \
   roles/storage.objectAdmin \
   roles/secretmanager.secretAccessor \
-  roles/iam.serviceAccountTokenCreator; do
+  roles/iam.serviceAccountTokenCreator \
+  roles/cloudfunctions.invoker \
+  roles/eventarc.eventReceiver \
+  roles/run.invoker \
+  roles/logging.logWriter \
+  roles/monitoring.metricWriter; do
   gcloud projects add-iam-policy-binding "$PROJECT_ID" \
     --member="serviceAccount:${SA}" \
     --role="$role" \
@@ -163,6 +184,60 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" \
   --role="roles/secretmanager.secretAccessor" \
   --quiet 2>/dev/null || true
 
+# ── Deploy Cloud Functions ───────────────────────────────────────────────────
+echo "Deploying Cloud Functions..."
+BACKEND_URL="https://praxis-backend-$(gcloud run services describe praxis-backend --region=$REGION --format='value(status.url)' 2>/dev/null | sed 's|https://||' || echo 'NOT_DEPLOYED_YET')"
+
+# on_situation_created — Firestore trigger
+if [ -d "cloud_functions/on_situation_created" ]; then
+  gcloud functions deploy on-situation-created \
+    --gen2 \
+    --runtime=python311 \
+    --region="${REGION}" \
+    --source=cloud_functions/on_situation_created \
+    --entry-point=on_situation_created \
+    --trigger-event-filters="type=google.cloud.firestore.document.v1.created" \
+    --trigger-event-filters="database=(default)" \
+    --trigger-event-filters-path-pattern="document=users/{uid}/situations/{sitId}" \
+    --set-env-vars="PRAXIS_BACKEND_URL=${BACKEND_URL}" \
+    --memory=256Mi \
+    --timeout=300s \
+    --quiet 2>/dev/null || echo "⚠️  on-situation-created deploy skipped (deploy backend first)"
+fi
+
+# on_document_uploaded — Firestore trigger
+if [ -d "cloud_functions/on_document_uploaded" ]; then
+  gcloud functions deploy on-document-uploaded \
+    --gen2 \
+    --runtime=python311 \
+    --region="${REGION}" \
+    --source=cloud_functions/on_document_uploaded \
+    --entry-point=on_document_uploaded \
+    --trigger-event-filters="type=google.cloud.firestore.document.v1.created" \
+    --trigger-event-filters="database=(default)" \
+    --trigger-event-filters-path-pattern="document=users/{uid}/situations/{sitId}/documents/{docId}" \
+    --set-env-vars="PRAXIS_BACKEND_URL=${BACKEND_URL}" \
+    --memory=256Mi \
+    --timeout=300s \
+    --quiet 2>/dev/null || echo "⚠️  on-document-uploaded deploy skipped (deploy backend first)"
+fi
+
+# gdelt_poller — HTTP trigger (called by Cloud Scheduler)
+if [ -d "cloud_functions/gdelt_poller" ]; then
+  gcloud functions deploy gdelt-poller \
+    --gen2 \
+    --runtime=python311 \
+    --region="${REGION}" \
+    --source=cloud_functions/gdelt_poller \
+    --entry-point=gdelt_poller \
+    --trigger-http \
+    --no-allow-unauthenticated \
+    --set-env-vars="PRAXIS_BACKEND_URL=${BACKEND_URL}" \
+    --memory=512Mi \
+    --timeout=540s \
+    --quiet 2>/dev/null || echo "⚠️  gdelt-poller deploy skipped (deploy backend first)"
+fi
+
 echo ""
 echo "✓ GCP setup complete for project: $PROJECT_ID"
 echo ""
@@ -170,3 +245,4 @@ echo "  NEXT STEPS:"
 echo "  1. Fill in the Secret Manager secrets (see prompts above)"
 echo "  2. Run: gcloud builds submit --config=cloudbuild.yaml"
 echo "  3. Or:  bash infrastructure/deploy.sh"
+echo "  4. After backend deploys, re-run this script to update Cloud Function env vars"

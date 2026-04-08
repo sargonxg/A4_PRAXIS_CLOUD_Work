@@ -93,6 +93,18 @@ steps:
     id: 'deploy-frontend'
     waitFor: ['push-frontend']
 
+  # ── Set frontend env var with backend URL ──────────────────────────────────
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - '-c'
+      - >-
+        gcloud run services update praxis-frontend
+        --region=us-central1
+        --update-env-vars=NEXT_PUBLIC_PRAXIS_BACKEND_URL=$(cat /workspace/backend_url.txt)
+    id: 'set-frontend-env'
+    waitFor: ['deploy-frontend']
+
 images:
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-backend'
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend'

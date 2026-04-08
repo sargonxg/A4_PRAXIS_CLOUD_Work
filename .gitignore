@@ -30,8 +30,15 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files — NEVER commit secrets
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+backend/.env
+# .env.example is safe to commit (no secrets)
+!.env.example
 
 # vercel
 .vercel
@@ -40,4 +47,19 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.vercel
+# GCP / Firebase credentials — NEVER commit
+*-service-account*.json
+*-credentials*.json
+firebase-adminsdk*.json
+*.p12
+
+# Python
+__pycache__/
+*.pyc
+backend/__pycache__/
+backend/**/__pycache__/
+*.egg-info/
+.pytest_cache/
+
+# Docker
+docker-compose.override.yml

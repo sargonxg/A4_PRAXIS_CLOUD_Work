@@ -39,9 +39,11 @@ class GeminiClient:
         response_mime_type: str = "application/json",
     ) -> str:
         """Generate content and return the text response."""
+        import asyncio
         client = self._get_client()
         used_model = model or self._model
-        response = client.models.generate_content(
+        response = await asyncio.to_thread(
+            client.models.generate_content,
             model=used_model,
             contents=prompt,
             config={"response_mime_type": response_mime_type},

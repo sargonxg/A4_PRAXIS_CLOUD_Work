@@ -24,9 +24,8 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-2.5-flash"
     gemini_deep_model: str = "gemini-2.5-pro"
 
-    # CORS — comma-separated origins, e.g. "https://praxis.tacitus.me,http://localhost:3000"
-    # Defaults to localhost. Set CORS_ORIGINS env var in Cloud Run to include the frontend URL.
-    cors_origins_str: str = "http://localhost:3000,http://localhost:3001"
+    # CORS — comma-separated origins. Cloud Run URLs auto-allowed via regex in main.py.
+    cors_origins_str: str = "http://localhost:3000,http://localhost:3001,https://praxis.tacitus.me"
 
     @property
     def cors_origins(self) -> list[str]:

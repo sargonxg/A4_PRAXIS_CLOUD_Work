@@ -121,10 +121,10 @@ export function LivePlatformPreview() {
         {/* Stats bar */}
         <div className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
-            { value: '42', label: 'Tool Pages', suffix: '' },
-            { value: '21', label: 'AI Chat Tools', suffix: '' },
-            { value: '59', label: 'API Routes', suffix: '' },
-            { value: '6', label: 'Live Data Feeds', suffix: '' },
+            { value: '42', label: 'Tool Pages', suffix: '+' },
+            { value: '27', label: 'AI Chat Tools', suffix: '' },
+            { value: '73', label: 'API Routes', suffix: '' },
+            { value: '11', label: 'Live Data Feeds', suffix: '' },
           ].map((stat) => (
             <div key={stat.label} className="rounded-xl border border-navy-200 bg-white p-4 text-center">
               <p className="font-mono text-2xl font-bold text-diplomatic-blue">{stat.value}{stat.suffix}</p>

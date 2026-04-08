@@ -1,9 +1,12 @@
 """BigQuery client — pipeline audit logs and usage metrics."""
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 
 from config import get_settings
+
+logger = logging.getLogger("praxis.bigquery")
 
 
 def _get_client():
@@ -41,8 +44,8 @@ def log_pipeline_run(
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }]
         client.insert_rows_json(table_id, rows)
-    except Exception:
-        pass  # Non-critical — don't fail pipeline on logging errors
+    except Exception as exc:
+        logger.warning("BigQuery pipeline_runs log failed: %s", exc)
 
 
 def log_extraction(
@@ -71,8 +74,8 @@ def log_extraction(
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }]
         client.insert_rows_json(table_id, rows)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("BigQuery extraction log failed: %s", exc)
 
 
 def get_usage_metrics(tenant_id: str, date_from: str, date_to: str) -> dict:

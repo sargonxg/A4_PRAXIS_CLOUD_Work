@@ -2,9 +2,9 @@
 
 **The conflict operating system for peace and security professionals.**
 
-AI-native workspace for UN Political Affairs Officers, diplomatic mediators, and conflict analysts. 40+ specialised tool pages, 68+ API routes, Python FastAPI backend with ACO conflict intelligence pipeline, and real-time intelligence feeds from ACLED, GDELT, UCDP, UNHCR, and the UN.
+AI-native workspace for UN Political Affairs Officers, diplomatic mediators, and conflict analysts. 42+ specialised tool pages, 73 API routes, Python FastAPI backend with ACO conflict intelligence pipeline, and real-time intelligence feeds from 11 sources (ACLED, GDELT, UCDP, UNHCR, HDX, ReliefWeb, UN News, World Bank, Crisis Group, SIPRI).
 
-> **v6.0.0** — Build 2026.04.07 | Dual-service GCP architecture (Next.js + Python FastAPI on Cloud Run)
+> **v6.2.0** — Build 2026.04.07 | Dual-service GCP Cloud Run (Next.js 16 + Python FastAPI) · Project: praxisbytacitus
 
 ---
 
@@ -25,7 +25,7 @@ Open [http://localhost:3000](http://localhost:3000). **The demo works with zero 
 
 ### Environment Setup
 
-Copy `.env.local.example` to `.env.local`:
+Copy `.env.example` to `.env.local`:
 
 ```bash
 # Required for live AI (demo works without)
