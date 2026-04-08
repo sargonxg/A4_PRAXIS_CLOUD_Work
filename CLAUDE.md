@@ -1,6 +1,6 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 6.2.0 — Pure GCP Cloud Run · Dual-service: Next.js + Python FastAPI
+> Version 6.3.0 — Pure GCP Cloud Run · Dual-service: Next.js + Python FastAPI
 > Project: `praxisbytacitus` (852128226674) · Region: `us-central1`
 > Domain: praxis.tacitus.me
 
@@ -55,8 +55,9 @@ The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Pol
 │   ├── firebase/            config.ts, admin.ts, firestore.ts, situations-service.ts
 │   ├── api/                 with-auth.ts, with-credits.ts
 │   ├── data-feeds/          11 source clients + feed-aggregator.ts
-│   ├── analytics/           risk-engine.ts, escalation-scorer.ts, geospatial-engine.ts
-│   └── constants/           tool-registry.ts, frameworks.ts, scenario-configs.ts
+│   ├── analytics/           risk-engine.ts, escalation-scorer.ts, geospatial-engine.ts, trustworthiness-engine.ts
+│   ├── services/            entity-extraction.ts, canonical-precheck.ts, feedback-service.ts, graphify-client.ts
+│   └── constants/           tool-registry.ts, frameworks.ts, scenario-configs.ts, entity-colors.ts, aco-colors.ts
 ├── src/components/
 │   ├── app/                 app-shell, sidebar, debug-panel, floating-praxis
 │   ├── praxis/              no-situation-state, ai-populate, tool-info-panel
@@ -105,12 +106,35 @@ users/{uid}/
 credit_transactions/{txId}  { userId, type, amount, description, createdAt }
 ```
 
-## ACO — Agentic Conflict Ontology
+## ACO v2.0 — Agentic Conflict Ontology
 
-**8 Primitive Types:** Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, Narrative
-**42 Typed Relationships** — See `backend/graphify_tacitus/schemas/relationships.py`
+**14 Entity Types** (8 core primitives + 6 extended, all first-class):
 
-**Colors:** Actor `#4E79A7` · Claim `#F28E2B` · Interest `#59A14F` · Constraint `#E15759` · Leverage `#EDC948` · Commitment `#76B7B2` · Event `#B07AA1` · Narrative `#FF9DA7`
+| Type | Color | Subtypes | Theoretical Basis |
+|------|-------|----------|-------------------|
+| Actor | `#4E79A7` | state, armed_group, non_state, individual, international_org, civil_society | Stedman spoiler theory |
+| Claim | `#F28E2B` | territorial, legal, political, economic, identity, self_determination | Fisher-Ury positions |
+| Interest | `#59A14F` | stated, unstated, security, economic, identity, survival | Fisher-Ury interests |
+| Constraint | `#E15759` | legal, political, resource, temporal, normative, geographic | Zartman ripeness |
+| Leverage | `#EDC948` | military, economic, diplomatic, informational, moral, territorial | Stedman spoiler dynamics |
+| Commitment | `#76B7B2` | ceasefire, treaty, verbal, written, binding, conditional | Zartman ripeness |
+| Event | `#B07AA1` | military, diplomatic, humanitarian, political, protest, election | CAMEO/Glasl |
+| Narrative | `#FF9DA7` | media, propaganda, historical, identity, victimhood, liberation | Galtung cultural violence |
+| Institution | `#9C755F` | government, judiciary, military, international_org, traditional, religious | Lederach multi-level |
+| Norm | `#BAB0AC` | legal, customary, religious, ethical, IHL | Galtung structural violence |
+| Resource | `#86BCB6` | natural, financial, human, strategic, informational, territory | Galtung structural violence |
+| Risk | `#FF6B6B` | security, humanitarian, political, economic, environmental | INFORM Risk Index |
+| Policy | `#4CC9F0` | sanctions, peace_plan, military, humanitarian, governance | Putnam two-level game |
+| Grievance | `#F72585` | identity, economic, political, historical, territorial, security | Burton basic human needs |
+
+**72 Typed Relationships** in 5 categories — See `backend/graphify_tacitus/schemas/relationships.py`
+- **Causal** (10): triggered_by, escalates, de_escalates, etc.
+- **Structural** (7): member_of, subordinate_to, parent_of, governs, etc.
+- **Antagonistic** (12): opposes, contradicts, conflicts_with, violates_norm, etc.
+- **Cooperative** (11): allied_with, supports_claim, addresses_grievance, etc.
+- **Foundational** (9): has_interest, claims, rooted_in_grievance, requires_resource, etc.
+
+**Confidence Levels:** EXTRACTED (directly stated) · INFERRED (deduced) · AMBIGUOUS (uncertain) · ASSESSED (analyst judgment)
 
 ## Key Flows
 
@@ -227,7 +251,11 @@ See `.env.example` for complete list. Critical:
 - `checkAndDeductCredits()` before AI calls
 - `usePersistedToolData()` for tool output caching
 - `middleware.ts` for route protection (NOT proxy.ts)
-- All AI routes: `generateText + Output.object()` with Zod schemas
+- All AI routes: `generateText + Output.object()` with Zod schemas (AI SDK v6)
+- Entity extraction: `extractEntities()` from `@/lib/services/entity-extraction`
+- Graph operations: `getGraph/saveGraph/saveSnapshot` from `@/lib/firebase/graph-service`
+- Trustworthiness: `computeTrustworthiness()` from `@/lib/analytics/trustworthiness-engine`
+- Canonical pre-check: `runCanonicalPreCheck()` from `@/lib/services/canonical-precheck`
 
 ## Design System
 

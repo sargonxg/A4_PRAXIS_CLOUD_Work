@@ -1,128 +1,208 @@
-import { generateObject } from 'ai';
-import { getModel } from '@/lib/ai/providers';
+import { generateText, Output } from 'ai';
+import { getProModel } from '@/lib/ai/providers';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { withAuth } from '@/lib/api/with-auth';
 import { z } from 'zod';
+import {
+  extractEntities,
+  mergeExtractions,
+  toFirestoreGraph,
+  type ExtractionResult,
+} from '@/lib/services/entity-extraction';
+import { scrapeUrl, searchWeb, isFirecrawlConfigured } from '@/lib/ai/firecrawl';
+import { saveToolData } from '@/lib/firebase/tool-data-service';
+import { getGraph, saveGraph } from '@/lib/firebase/graph-service';
 
-const ExtractedEntitySchema = z.object({
-  actors: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    actorType: z.string(),
-    description: z.string(),
-    confidence: z.number().min(0).max(1),
-  })),
-  claims: z.array(z.object({
-    id: z.string(),
-    actorId: z.string(),
-    title: z.string(),
-    description: z.string(),
-    claimType: z.string(),
-    status: z.string(),
-    confidence: z.number().min(0).max(1),
-  })),
-  interests: z.array(z.object({
-    id: z.string(),
-    actorId: z.string(),
-    title: z.string(),
-    description: z.string(),
-    interestType: z.string(),
-    priority: z.string(),
-    confidence: z.number().min(0).max(1),
-  })),
-  constraints: z.array(z.object({
-    id: z.string(),
-    actorId: z.string(),
-    title: z.string(),
-    description: z.string(),
-    constraintType: z.string(),
-    severity: z.string(),
-    confidence: z.number().min(0).max(1),
-  })),
-  leverage: z.array(z.object({
-    id: z.string(),
-    actorId: z.string(),
-    targetActorId: z.string(),
-    title: z.string(),
-    description: z.string(),
-    leverageType: z.string(),
-    confidence: z.number().min(0).max(1),
-  })),
-  commitments: z.array(z.object({
-    id: z.string(),
-    actorId: z.string(),
-    title: z.string(),
-    description: z.string(),
-    commitmentType: z.string(),
-    status: z.string(),
-    confidence: z.number().min(0).max(1),
-  })),
-  events: z.array(z.object({
-    id: z.string(),
-    title: z.string(),
-    description: z.string(),
-    eventType: z.string(),
-    date: z.string().optional(),
-    impact: z.string(),
-    confidence: z.number().min(0).max(1),
-  })),
-  narratives: z.array(z.object({
-    id: z.string(),
-    actorId: z.string(),
-    title: z.string(),
-    description: z.string(),
-    narrativeType: z.string(),
-    confidence: z.number().min(0).max(1),
-  })),
-});
+export const maxDuration = 120;
 
-export const POST = withAuth(async (request, _user) => {
-  if (!process.env.GOOGLE_AI_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in environment variables.' }),
-      { status: 503, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
+/**
+ * ACO v2.0 Entity Extraction Route
+ *
+ * Modes:
+ *   1. text   — Extract entities from provided text
+ *   2. url    — Scrape a URL then extract entities
+ *   3. search — Search the web for a query, scrape top results, extract entities
+ *
+ * All modes produce structured ACO v2.0 entities (14 types) with relationships,
+ * temporal metadata, confidence levels, and provenance tracking.
+ *
+ * Optionally merges results into the situation's existing graph.
+ */
+export const POST = withAuth(async (request, user) => {
   try {
-    const { text, extractionTargets } = await request.json();
+    const {
+      text,
+      url,
+      searchQuery,
+      situationId,
+      situationContext,
+      mergeIntoGraph = false,
+      maxResults = 3,
+    } = await request.json();
 
-    const creditCheck = await checkAndDeductCredits('ai_extract', 'Entity extraction');
-    if (!creditCheck.allowed) return creditCheck.response;
-
-    if (!text) {
-      return Response.json({ error: 'No text provided for extraction' }, { status: 400 });
+    if (!text && !url && !searchQuery) {
+      return Response.json(
+        { error: 'Provide text, url, or searchQuery for extraction' },
+        { status: 400 },
+      );
     }
 
-    const targets = extractionTargets?.length
-      ? extractionTargets.join(', ')
-      : 'actors, claims, interests, constraints, leverage, commitments, events, narratives';
+    const creditCheck = await checkAndDeductCredits('ai_extract', 'ACO entity extraction');
+    if (!creditCheck.allowed) return creditCheck.response;
 
-    const { object } = await generateObject({
-      model: getModel(),
-      schema: ExtractedEntitySchema,
-      prompt: `You are a conflict analysis expert. Extract structured conflict intelligence entities from the following text using the Conflict Grammar framework.
+    let result: ExtractionResult;
 
-Extract the following entity types: ${targets}
+    // ── Mode 1: Direct text extraction ─────────────────────────────────────
+    if (text) {
+      result = await extractEntities(text, {
+        sourceName: 'user-provided',
+        situationContext,
+      });
+    }
+    // ── Mode 2: URL scrape + extraction ────────────────────────────────────
+    else if (url) {
+      const scraped = await scrapeUrl(url);
+      if (!scraped?.success || !scraped.content) {
+        return Response.json(
+          { error: `Failed to scrape URL: ${url}` },
+          { status: 422 },
+        );
+      }
+      result = await extractEntities(scraped.content, {
+        sourceUrl: url,
+        sourceName: scraped.title || new URL(url).hostname,
+        situationContext,
+      });
+    }
+    // ── Mode 3: Web search + multi-source extraction ───────────────────────
+    else {
+      if (!isFirecrawlConfigured()) {
+        return Response.json(
+          { error: 'Web search requires Firecrawl API key. Set FIRECRAWL_API_KEY.' },
+          { status: 503 },
+        );
+      }
 
-For each entity, provide:
-- A unique ID (use format: type-n, e.g. actor-1, claim-2)
-- A confidence score (0-1) based on how clearly the entity is evidenced in the text
-- Appropriate classification fields
+      const searchResults = await searchWeb(searchQuery, { numResults: maxResults });
+      if (searchResults.length === 0) {
+        return Response.json(
+          { error: `No search results found for: ${searchQuery}` },
+          { status: 404 },
+        );
+      }
 
-Text to analyze:
----
-${text}
----
+      // Extract from first result as primary
+      const primary = searchResults[0];
+      result = await extractEntities(primary.content, {
+        sourceUrl: primary.url,
+        sourceName: primary.title || new URL(primary.url).hostname,
+        situationContext,
+      });
 
-If a category has no clear entities in the text, return an empty array for that category. Be precise and grounded in the text.`,
+      // Merge additional results
+      for (const sr of searchResults.slice(1)) {
+        if (!sr.content || sr.content.length < 100) continue;
+        try {
+          const additional = await extractEntities(sr.content, {
+            sourceUrl: sr.url,
+            sourceName: sr.title || new URL(sr.url).hostname,
+            situationContext,
+            existingNodeIds: result.nodes.map((n) => n.id),
+          });
+          const merged = mergeExtractions(
+            { nodes: result.nodes, edges: result.edges },
+            additional,
+          );
+          result.nodes = merged.nodes;
+          result.edges = merged.edges;
+          // Merge timelines
+          result.timeline = [
+            ...result.timeline,
+            ...additional.timeline,
+          ].sort((a, b) => a.date.localeCompare(b.date));
+        } catch {
+          // Continue with what we have
+        }
+      }
+    }
+
+    // ── Optional: Merge into situation graph ───────────────────────────────
+    if (mergeIntoGraph && situationId && user.uid) {
+      try {
+        const existingGraph = await getGraph(user.uid, situationId);
+        const firestoreData = toFirestoreGraph(result);
+        const now = new Date().toISOString();
+
+        // Convert extraction output to GraphNode format
+        const newNodes = firestoreData.nodes.map((n) => ({
+          id: n.id,
+          type: n.type,
+          label: n.label,
+          properties: {} as Record<string, string | number>,
+          createdAt: now,
+          source: 'web-research' as const,
+          metadata: n.metadata,
+        }));
+        const newEdges = firestoreData.edges.map((e, i) => ({
+          id: `${e.source}-${e.type}-${e.target}-${i}`,
+          source: e.source,
+          target: e.target,
+          type: e.type,
+          weight: e.weight,
+          metadata: e.metadata,
+        }));
+
+        const existingNodeIds = new Set((existingGraph?.nodes || []).map((n) => n.id));
+        const existingEdgeKeys = new Set((existingGraph?.edges || []).map((e) => `${e.source}|${e.type}|${e.target}`));
+
+        const mergedNodes = [
+          ...(existingGraph?.nodes || []),
+          ...newNodes.filter((n) => !existingNodeIds.has(n.id)),
+        ];
+        const mergedEdges = [
+          ...(existingGraph?.edges || []),
+          ...newEdges.filter((e) => !existingEdgeKeys.has(`${e.source}|${e.type}|${e.target}`)),
+        ];
+
+        await saveGraph(user.uid, situationId, {
+          nodes: mergedNodes,
+          edges: mergedEdges,
+        });
+
+        // Save extraction metadata
+        await saveToolData(user.uid, situationId, 'last-extraction', {
+          sourceUrl: result.sourceUrl,
+          sourceName: result.sourceName,
+          nodeCount: result.nodes.length,
+          edgeCount: result.edges.length,
+          extractedAt: result.extractedAt,
+          summary: result.summary,
+        });
+      } catch (err) {
+        console.error('[extract] Failed to merge into graph:', err);
+      }
+    }
+
+    // ── Compute entity type counts ─────────────────────────────────────────
+    const typeCounts: Record<string, number> = {};
+    for (const node of result.nodes) {
+      typeCounts[node.primitive_type] = (typeCounts[node.primitive_type] || 0) + 1;
+    }
+
+    return Response.json({
+      nodeCount: result.nodes.length,
+      edgeCount: result.edges.length,
+      typeCounts,
+      nodes: result.nodes,
+      edges: result.edges,
+      timeline: result.timeline,
+      summary: result.summary,
+      sourceUrl: result.sourceUrl,
+      extractedAt: result.extractedAt,
+      tokenUsage: result.tokenUsage,
     });
-
-    const entityCount = Object.values(object).reduce((sum, arr) => sum + (arr as unknown[]).length, 0);
-
-    return Response.json({ entityCount, entities: object });
   } catch (err) {
-    console.error('Extract route error:', err);
+    console.error('[extract] Error:', err);
     return Response.json({ error: 'Extraction failed' }, { status: 500 });
   }
 });

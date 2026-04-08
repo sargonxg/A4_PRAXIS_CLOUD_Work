@@ -3,6 +3,12 @@ import { persist } from 'zustand/middleware';
 
 export type DataSourceMode = 'all' | 'web-and-docs' | 'docs-only' | 'llm-only';
 
+export interface MediaPreferences {
+  preferredOutlets: string[];
+  avoidedOutlets: string[];
+  languagePreference: string; // e.g., 'en', 'ar', 'fr'
+}
+
 export interface SourcePreferences {
   /** Default data source mode for tools */
   defaultMode: DataSourceMode;
@@ -10,6 +16,14 @@ export interface SourcePreferences {
   favoriteSources: string[];
   /** Sources the user wants to exclude */
   excludedSources: string[];
+  /** Sources the user considers highly reliable — weighted higher in trustworthiness scoring */
+  trustedSources: string[];
+  /** Media outlet preferences */
+  mediaPreferences: MediaPreferences;
+  /** Custom term mappings for nomenclature (e.g., { "Myanmar": "Burma" }) */
+  nomenclature: Record<string, string>;
+  /** Preferred default analytical framework */
+  analyticalFramework: string;
   /** Whether AI should proactively suggest new data when opening tools */
   aiAutoPopulate: boolean;
   /** Whether AI can suggest adding team members found in documents */
@@ -24,6 +38,12 @@ interface PreferencesStore extends SourcePreferences {
   removeFavoriteSource: (source: string) => void;
   addExcludedSource: (source: string) => void;
   removeExcludedSource: (source: string) => void;
+  addTrustedSource: (source: string) => void;
+  removeTrustedSource: (source: string) => void;
+  setMediaPreferences: (prefs: Partial<MediaPreferences>) => void;
+  setNomenclature: (term: string, replacement: string) => void;
+  removeNomenclature: (term: string) => void;
+  setAnalyticalFramework: (framework: string) => void;
   setToolOverride: (tool: string, mode: DataSourceMode) => void;
   clearToolOverride: (tool: string) => void;
   setAiAutoPopulate: (enabled: boolean) => void;
@@ -37,6 +57,14 @@ export const usePreferencesStore = create<PreferencesStore>()(
       defaultMode: 'all',
       favoriteSources: ['wikipedia', 'reuters', 'crisisgroup', 'un'],
       excludedSources: [],
+      trustedSources: ['ACLED', 'UNHCR', 'ReliefWeb', 'World Bank'],
+      mediaPreferences: {
+        preferredOutlets: [],
+        avoidedOutlets: [],
+        languagePreference: 'en',
+      },
+      nomenclature: {},
+      analyticalFramework: 'INFORM Risk Index',
       aiAutoPopulate: true,
       aiSuggestContacts: true,
       toolOverrides: {},
@@ -66,6 +94,37 @@ export const usePreferencesStore = create<PreferencesStore>()(
         set((s) => ({
           excludedSources: s.excludedSources.filter((f) => f !== source),
         })),
+
+      addTrustedSource: (source) =>
+        set((s) => ({
+          trustedSources: s.trustedSources.includes(source)
+            ? s.trustedSources
+            : [...s.trustedSources, source],
+        })),
+
+      removeTrustedSource: (source) =>
+        set((s) => ({
+          trustedSources: s.trustedSources.filter((f) => f !== source),
+        })),
+
+      setMediaPreferences: (prefs) =>
+        set((s) => ({
+          mediaPreferences: { ...s.mediaPreferences, ...prefs },
+        })),
+
+      setNomenclature: (term, replacement) =>
+        set((s) => ({
+          nomenclature: { ...s.nomenclature, [term]: replacement },
+        })),
+
+      removeNomenclature: (term) =>
+        set((s) => {
+          const updated = { ...s.nomenclature };
+          delete updated[term];
+          return { nomenclature: updated };
+        }),
+
+      setAnalyticalFramework: (framework) => set({ analyticalFramework: framework }),
 
       setToolOverride: (tool, mode) =>
         set((s) => ({

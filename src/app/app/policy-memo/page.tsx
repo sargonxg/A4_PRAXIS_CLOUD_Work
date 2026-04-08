@@ -59,7 +59,7 @@ function Section({ title, children, defaultOpen = true }: { title: string; child
 }
 
 export default function PolicyMemoPage() {
-  const hasSituation = useSituationGuard();
+  const { showGuard } = useSituationGuard();
   const situation = useSituationStore((s) => s.activeSituation);
   const { data: savedMemo } = useToolData<PolicyMemoData>('policy_memo');
 
@@ -68,7 +68,7 @@ export default function PolicyMemoPage() {
   const [memo, setMemo] = useState<PolicyMemoData | null>(savedMemo || null);
   const [error, setError] = useState('');
 
-  if (!hasSituation) return <NoSituationState />;
+  if (showGuard) return <NoSituationState />;
 
   async function handleGenerate() {
     if (!situation) return;

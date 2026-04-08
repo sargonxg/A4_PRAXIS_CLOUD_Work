@@ -39,6 +39,8 @@ export interface IntelligenceItem {
   location?: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
   metadata: Record<string, unknown>;
+  /** Trustworthiness score computed from source reliability, recency, and triangulation */
+  trustScore?: import('@/lib/analytics/trustworthiness-engine').TrustworthinessScore;
 }
 
 export interface HumanitarianSnapshot {
@@ -344,6 +346,25 @@ export async function getSituationIntelligence(options: {
     if (dateCompare !== 0) return dateCompare;
     return severityOrder[a.severity] - severityOrder[b.severity];
   });
+
+  // Compute trustworthiness scores for each item
+  const { computeTrustworthiness } = await import('@/lib/analytics/trustworthiness-engine');
+  const now = Date.now();
+  for (const item of items) {
+    const daysSinceEvent = item.date
+      ? Math.max(0, Math.floor((now - new Date(item.date).getTime()) / 86400000))
+      : 30;
+
+    // Map source name for reliability lookup
+    const sourceMap: Record<string, string> = {
+      acled: 'ACLED', gdelt: 'GDELT', reliefweb: 'ReliefWeb', unnews: 'UN News',
+    };
+
+    item.trustScore = computeTrustworthiness({
+      sources: [sourceMap[item.source] || item.source],
+      recencyDays: daysSinceEvent,
+    });
+  }
 
   return {
     events: items,

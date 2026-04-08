@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { useSituationStore } from '@/stores/situation-store';
-import { Rss, RefreshCw, ExternalLink, Loader2, AlertTriangle } from 'lucide-react';
+import { Rss, RefreshCw, ExternalLink, Loader2, AlertTriangle, Shield, ShieldCheck, ShieldAlert } from 'lucide-react';
 
 interface FeedItem {
   title: string;
@@ -18,30 +18,58 @@ interface FeedStatus {
   name: string;
   description: string;
   endpoint: string;
+  tier: 1 | 2 | 3 | 4;
+  reliability: number;
   items: FeedItem[];
   loading: boolean;
   error: string;
   lastFetched: string | null;
 }
 
+/**
+ * Source feeds organized by trustworthiness tier.
+ * Reliability scores match the trustworthiness-engine.ts SOURCE_RELIABILITY values.
+ *
+ * Tier 1 (85-100): Official/institutional — UN agencies, verified datasets
+ * Tier 2 (70-84):  Expert/analytical — think tanks, HRW, specialized research
+ * Tier 3 (60-74):  Major media — wire services, established outlets
+ * Tier 4 (50-64):  Aggregated data — GDELT, encyclopedic
+ */
 const INITIAL_FEEDS: Omit<FeedStatus, 'items' | 'loading' | 'error' | 'lastFetched'>[] = [
-  { name: 'GDELT', description: 'Global events from 100+ languages in near-real-time', endpoint: 'gdelt' },
-  { name: 'ACLED', description: 'Armed conflict events, fatalities, actor movements', endpoint: 'acled' },
-  { name: 'ReliefWeb', description: 'Humanitarian situation reports and updates', endpoint: 'reliefweb' },
-  { name: 'UN News', description: 'UN Security Council and SG statements', endpoint: 'unnews' },
-  { name: 'ICG CrisisWatch', description: 'International Crisis Group monthly assessments', endpoint: 'crisiswatch' },
+  // Tier 1: Official / Institutional
+  { name: 'ACLED', description: 'Armed conflict events, fatalities, actor movements', endpoint: 'acled', tier: 1, reliability: 95 },
+  { name: 'UNHCR', description: 'Refugee and displacement statistics', endpoint: 'unhcr', tier: 1, reliability: 95 },
+  { name: 'ReliefWeb', description: 'Humanitarian situation reports and updates', endpoint: 'reliefweb', tier: 1, reliability: 85 },
+  { name: 'UN News', description: 'UN Security Council and SG statements', endpoint: 'unnews', tier: 1, reliability: 85 },
+  { name: 'UCDP', description: 'Uppsala conflict database — organized violence data', endpoint: 'ucdp', tier: 1, reliability: 90 },
+  { name: 'SIPRI', description: 'Arms transfers and military expenditure', endpoint: 'sipri', tier: 1, reliability: 88 },
+  // Tier 2: Expert / Analytical
+  { name: 'ICG CrisisWatch', description: 'International Crisis Group monthly assessments', endpoint: 'crisiswatch', tier: 2, reliability: 82 },
+  { name: 'World Bank', description: 'Economic indicators and governance data', endpoint: 'worldbank', tier: 2, reliability: 90 },
+  // Tier 3: Major Media
+  // (no direct feeds yet — available via GDELT articles)
+  // Tier 4: Aggregated
+  { name: 'GDELT', description: 'Global events from 100+ languages in near-real-time', endpoint: 'gdelt', tier: 4, reliability: 55 },
 ];
 
+const TIER_LABELS: Record<number, { label: string; color: string; icon: typeof ShieldCheck }> = {
+  1: { label: 'Tier 1 — Official', color: '#10B981', icon: ShieldCheck },
+  2: { label: 'Tier 2 — Expert', color: '#34D399', icon: Shield },
+  3: { label: 'Tier 3 — Media', color: '#FBBF24', icon: Shield },
+  4: { label: 'Tier 4 — Aggregated', color: '#F97316', icon: ShieldAlert },
+};
+
 export default function SourceMonitorPage() {
-  const hasSituation = useSituationGuard();
+  const { showGuard } = useSituationGuard();
   const situation = useSituationStore((s) => s.activeSituation);
 
   const [feeds, setFeeds] = useState<FeedStatus[]>(
     INITIAL_FEEDS.map((f) => ({ ...f, items: [], loading: false, error: '', lastFetched: null }))
   );
+  const [showTierInfo, setShowTierInfo] = useState(false);
   const [refreshingAll, setRefreshingAll] = useState(false);
 
-  if (!hasSituation) return <NoSituationState />;
+  if (showGuard) return <NoSituationState />;
 
   async function fetchFeed(endpoint: string) {
     setFeeds((prev) =>

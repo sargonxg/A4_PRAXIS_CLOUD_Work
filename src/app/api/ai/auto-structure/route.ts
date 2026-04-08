@@ -10,6 +10,8 @@ import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 import { countryNameToIso3 } from '@/lib/data-feeds/hdx-client';
 import { getEconomicSnapshot } from '@/lib/data-feeds/worldbank-client';
 import { initializeSituationTools } from '@/lib/services/situation-initializer';
+import { runCanonicalPreCheck, formatPreCheckContext } from '@/lib/services/canonical-precheck';
+import { saveToolData } from '@/lib/firebase/tool-data-service';
 
 // Source category search term definitions (mirrors UI in situations/new)
 const CATEGORY_SEARCH_TERMS: Record<string, string> = {
@@ -65,6 +67,42 @@ export const POST = withAuth(async (req, user) => {
     // --- Gather supplementary context ---
     const contextSections: string[] = [];
     const gatherPromises: Promise<void>[] = [];
+
+    // Phase 0: Canonical pre-check — validate current events via Google Search grounding
+    // This prevents the system from generating analysis based on outdated info
+    // (e.g., referring to leaders who have been deposed, ceasefires that collapsed)
+    gatherPromises.push(
+      runCanonicalPreCheck({
+        situationName,
+        region,
+        actors: actors || [],
+        description,
+      }).then((preCheck) => {
+        const preCheckContext = formatPreCheckContext(preCheck);
+        // Prepend so ground truth appears first in context
+        contextSections.unshift(preCheckContext);
+
+        // Save pre-check results to Firestore for tool pages to reference
+        if (situationId && user.uid) {
+          saveToolData(user.uid, situationId, 'canonical-precheck', preCheck).catch(() => {});
+        }
+
+        // Update situation metadata with verified current info
+        if (situationId && user.uid && (preCheck.currentLeadership || preCheck.currentStatus)) {
+          updateSituation(user.uid, situationId, {
+            canonicalPreCheck: {
+              currentLeadership: preCheck.currentLeadership,
+              currentStatus: preCheck.currentStatus,
+              lastMajorEvent: preCheck.lastMajorEvent,
+              correctionCount: preCheck.groundTruth.length,
+              checkedAt: preCheck.checkedAt,
+            },
+          }).catch(() => {});
+        }
+      }).catch((err) => {
+        console.warn('[auto-structure] Canonical pre-check failed, continuing without:', err);
+      })
+    );
 
     // Phase 1: Wikipedia always first — canonical background context
     gatherPromises.push(
@@ -202,9 +240,36 @@ SITUATION CONTEXT:
 - User role: ${userRole || 'analyst'}
 ${cappedContext}${notesSection}
 
-ACO v2.0 CORE ENTITIES (structure your analysis around these):
-Core 8: Actor · Claim · Interest · Constraint · Leverage · Commitment · Event · Narrative
-Extended 6: Institutions · Norms · Resources · Risks · Policies · Grievances
+ACO v2.0 ENTITIES — Structure your analysis around ALL 14 types:
+
+Core 8 Primitives:
+  Actor (state, armed_group, non_state, individual, international_org, civil_society)
+  Claim (territorial, legal, political, economic, identity, self_determination)
+  Interest (stated, unstated, security, economic, identity, survival)
+  Constraint (legal, political, resource, temporal, normative, geographic)
+  Leverage (military, economic, diplomatic, informational, moral, territorial)
+  Commitment (ceasefire, treaty, verbal, written, binding, conditional)
+  Event (military, diplomatic, humanitarian, political, protest, election)
+  Narrative (media, propaganda, historical, identity, victimhood, liberation)
+
+Extended 6 (first-class in v2.0):
+  Institution (government, judiciary, military, international_org, traditional, religious)
+  Norm (legal, customary, religious, ethical, IHL)
+  Resource (natural, financial, human, strategic, informational, territory)
+  Risk (security, humanitarian, political, economic, environmental)
+  Policy (sanctions, peace_plan, military, humanitarian, governance)
+  Grievance (identity, economic, political, historical, territorial, security)
+
+Theoretical Grounding:
+  Fisher-Ury: Position→Interest→Need hierarchy (Claim→Interest→Grievance)
+  Glasl: 9-stage escalation model (Event sequences + escalation dynamics)
+  Burton: Basic Human Needs theory (Grievance as unmet need driver)
+  Galtung: Structural violence (Resource/Institution/Norm triad)
+  Lederach: Multi-level peacebuilding (Actor→Institution mapping)
+  Zartman: Ripeness theory (Commitment/Constraint windows)
+  Stedman: Spoiler theory (Actor leverage/commitment dynamics)
+
+CRITICAL: The CANONICAL GROUND TRUTH section above (if present) contains VERIFIED current information from web search. You MUST use this information and NEVER contradict it. If the ground truth says a leader has been deposed, do NOT refer to them as current leader. If the ground truth says a ceasefire has collapsed, do NOT describe it as holding. The ground truth OVERRIDES your training data.
 
 IMPORTANT: Use the webSearch tool ONCE for current developments if needed. Do NOT fabricate details. Flag uncertainty. Do NOT repeat yourself.
 
@@ -238,6 +303,15 @@ For each major actor (aim for 5 to 8):
 
 ## RESOURCES & ECONOMIC DRIVERS
 [Key resources, economic interests, and financial flows driving the conflict — ACO Resources + Policies]
+
+## INSTITUTIONAL LANDSCAPE
+[Key institutions (formal and informal) that shape the conflict — governments, courts, international orgs, traditional structures. Map their legitimacy, capacity, and relationships — ACO Institutions]
+
+## NORMS & LEGAL FRAMEWORK
+[Applicable international law, UN resolutions, customary norms, and contested rules of engagement — ACO Norms]
+
+## GRIEVANCES & ROOT CAUSES
+[Underlying grievances driving conflict motivation — unmet needs, historical injustices, identity threats, economic deprivation. Use Burton's Basic Human Needs framework — ACO Grievances]
 
 ## RECOMMENDED ANALYST ACTIONS
 [5 specific next steps the ${userRole} should take]

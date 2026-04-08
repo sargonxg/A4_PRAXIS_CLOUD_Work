@@ -90,7 +90,7 @@ function downloadMarkdown(filename: string, toolName: string, data: Record<strin
 }
 
 export default function ExportCenterPage() {
-  const hasSituation = useSituationGuard();
+  const { showGuard } = useSituationGuard();
   const situation = useSituationStore((s) => s.activeSituation);
   const { user } = useAuth();
 
@@ -124,7 +124,7 @@ export default function ExportCenterPage() {
       .finally(() => setLoading(false));
   }, [user?.id, situation?.id]);
 
-  if (!hasSituation) return <NoSituationState />;
+  if (showGuard) return <NoSituationState />;
 
   async function exportAll() {
     setExportingAll(true);

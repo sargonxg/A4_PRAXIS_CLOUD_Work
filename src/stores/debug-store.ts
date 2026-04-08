@@ -31,7 +31,14 @@ export const useDebugStore = create<DebugStore>((set) => ({
 
   log: (entry) =>
     set((state) => ({
-      entries: [entry, ...state.entries].slice(0, MAX_ENTRIES),
+      entries: [
+        {
+          ...entry,
+          id: entry.id || `debug-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          ts: entry.ts || new Date().toISOString(),
+        },
+        ...state.entries,
+      ].slice(0, MAX_ENTRIES),
     })),
 
   clear: () => set({ entries: [] }),

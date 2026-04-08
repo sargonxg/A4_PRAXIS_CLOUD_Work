@@ -16,6 +16,7 @@ import { useNotificationStore } from '@/stores/notification-store';
 import { Loader2 } from 'lucide-react';
 import { FloatingPraxis } from '@/components/app/floating-praxis';
 import { DebugPanel } from '@/components/app/debug-panel';
+import { ActivityPanel } from '@/components/app/activity-panel';
 import { ErrorBoundary } from '@/components/shared/error-boundary';
 import { ToolErrorBoundary } from '@/components/praxis/tool-error-boundary';
 
@@ -141,6 +142,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <FloatingPraxis />
       {/* Debug panel — Ctrl+Shift+D to toggle, bottom-left corner */}
       <DebugPanel />
+      {/* Activity panel — real-time operation tracking, bottom-right corner */}
+      <ActivityPanel />
     </TooltipProvider>
   );
 }

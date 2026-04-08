@@ -55,7 +55,7 @@ const GraphSeedSchema = z.object({
   nodes: z.array(z.object({
     id: z.string(),
     name: z.string(),
-    type: z.enum(['actor', 'event', 'claim', 'interest', 'constraint', 'leverage', 'commitment', 'narrative']),
+    type: z.enum(['actor', 'event', 'claim', 'interest', 'constraint', 'leverage', 'commitment', 'narrative', 'institution', 'norm', 'resource', 'risk', 'policy', 'grievance']),
     description: z.string().optional(),
   })),
   edges: z.array(z.object({

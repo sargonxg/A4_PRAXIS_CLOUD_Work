@@ -31,20 +31,10 @@ import {
 import { ENTITY_COLORS, ENTITY_TYPES } from "@/lib/constants/entity-colors";
 import { PraxisLink } from "@/components/shared/praxis-link";
 
-// ── ForceGraph color mapping by entity type ─────────────────────
-const COLOR_BY_TYPE: Record<string, string> = {
-  actor:       '#EF4444',
-  event:       '#F59E0B',
-  claim:       '#3B82F6',
-  institution: '#8B5CF6',
-  resource:    '#10B981',
-  norm:        '#6B7280',
-  interest:    '#06B6D4',
-  constraint:  '#F97316',
-  leverage:    '#EC4899',
-  commitment:  '#84CC16',
-  narrative:   '#A78BFA',
-};
+// ── ForceGraph color mapping by entity type (ACO standard palette) ─────
+import { ACO_COLORS } from '@/lib/constants/aco-colors';
+
+const COLOR_BY_TYPE: Record<string, string> = { ...ACO_COLORS };
 
 // ── Entity type toggle config ───────────────────────────────────
 const ENTITY_TYPE_TOGGLES = ENTITY_TYPES.map((t) => ({
@@ -916,8 +906,9 @@ function TemporalMemoryPanel({ situationId }: { situationId: string }) {
 
 // ── Helpers ─────────────────────────────────────────────────────
 
-/** Layout centers for spreading nodes by entity type */
+/** Layout centers for spreading nodes by entity type (ACO v2.0 — all 14 types) */
 const LAYOUT_CENTERS: Record<string, { cx: number; cy: number }> = {
+  // Core 8 — inner ring
   actor: { cx: 400, cy: 220 },
   claim: { cx: 300, cy: 140 },
   interest: { cx: 550, cy: 170 },
@@ -926,6 +917,13 @@ const LAYOUT_CENTERS: Record<string, { cx: number; cy: number }> = {
   commitment: { cx: 450, cy: 380 },
   event: { cx: 400, cy: 460 },
   narrative: { cx: 200, cy: 350 },
+  // Extended 6 — outer ring
+  institution: { cx: 250, cy: 250 },
+  norm: { cx: 650, cy: 200 },
+  resource: { cx: 550, cy: 430 },
+  risk: { cx: 700, cy: 400 },
+  policy: { cx: 150, cy: 430 },
+  grievance: { cx: 100, cy: 300 },
 };
 
 interface PersistedGraphNode {
@@ -990,9 +988,17 @@ function convertPersistedGraph(data: PersistedGraphData): { nodes: GraphNode[]; 
 function mapEdgeType(type: string): GraphEdge['type'] {
   const validTypes: GraphEdge['type'][] = ['adversary', 'ally', 'mediator', 'coordination', 'leads', 'supports', 'threatens'];
   if (validTypes.includes(type as GraphEdge['type'])) return type as GraphEdge['type'];
+  // Map ACO v2.0 relationship types to visual edge categories
+  const antagonistic = ['opposes', 'contradicts', 'conflicts_with', 'undermines_claim', 'undermined_by', 'violated_by_event', 'violates_norm', 'competes_with', 'competes_with_institution', 'conflicts_with_norm', 'threatens_actor', 'threatens_commitment'];
+  const cooperative = ['allied_with', 'supports_claim', 'aligns_with', 'made_commitment', 'addresses_claim', 'brokered_by_institution', 'reinforces', 'addresses_grievance', 'addresses_risk', 'mitigates_risk', 'codified_in_norm'];
+  const causal = ['triggered_by', 'escalates', 'de_escalates', 'derived_from_event', 'imposed_by_event', 'generates_claim', 'motivates_actor', 'fuels_grievance', 'escalated_by_event', 'triggers_risk'];
+  if (antagonistic.includes(type)) return 'adversary';
+  if (cooperative.includes(type)) return 'ally';
+  if (causal.includes(type)) return 'supports';
   if (type === 'neutral') return 'coordination';
   if (type === 'patron' || type === 'proxy' || type === 'dependent') return 'ally';
   if (type === 'competitor') return 'adversary';
+  if (type === 'mediates_between') return 'mediator';
   return 'supports';
 }
 
@@ -1109,7 +1115,7 @@ function RealConflictGraphPage() {
     return () => { cancelled = true; };
   }, [user, activeSituation, persisted.isLoading, persisted.data]);
 
-  // ── Regenerate Graph via AI extract ────────────────────────────
+  // ── Regenerate Graph via ACO v2.0 extract ──────────────────────
   const handleRegenerateGraph = useCallback(async () => {
     if (!activeSituation || isRegenerating) return;
     setIsRegenerating(true);
@@ -1124,27 +1130,28 @@ function RealConflictGraphPage() {
             (activeSituation.actors ?? []).join(', '),
             activeSituation.contextNotes,
           ].filter(Boolean).join('\n\n'),
+          situationId: activeSituation.id,
+          situationContext: `Situation: ${activeSituation.name}. Region: ${activeSituation.region || 'unknown'}.`,
+          mergeIntoGraph: true,
         }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      const nodes: PersistedGraphNode[] = [];
-      const edges: PersistedGraphEdge[] = [];
-      const entities = data.entities as ExtractedResult;
-      if (entities) {
-        for (const [type, items] of Object.entries(entities)) {
-          if (!Array.isArray(items)) continue;
-          for (const item of items) {
-            nodes.push({
-              id: item.id,
-              name: (item as Record<string, unknown>).name as string ?? (item as Record<string, unknown>).title as string ?? item.id,
-              type,
-              description: (item as Record<string, unknown>).description as string | undefined,
-            });
-          }
-        }
-      }
+      // ACO v2.0 response: flat nodes[] and edges[] arrays
+      const nodes: PersistedGraphNode[] = (data.nodes ?? []).map((n: { id: string; label: string; primitive_type: string; description?: string }) => ({
+        id: n.id,
+        name: n.label,
+        type: (n.primitive_type || 'actor').toLowerCase(),
+        description: n.description,
+      }));
+      const edges: PersistedGraphEdge[] = (data.edges ?? []).map((e: { source: string; target: string; relation: string }) => ({
+        source: e.source,
+        target: e.target,
+        type: e.relation,
+        label: e.relation.replace(/_/g, ' '),
+      }));
+
       const graphPayload = { nodes, edges };
       await persisted.save(graphPayload);
       const converted = convertPersistedGraph(graphPayload);

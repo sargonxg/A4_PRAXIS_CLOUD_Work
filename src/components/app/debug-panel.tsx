@@ -1,11 +1,48 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Component, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, Bug, CheckCircle, AlertCircle, Loader2, Info, RefreshCw, Coins } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useDebugStore, type DebugEntry } from '@/stores/debug-store';
 import { cn } from '@/lib/utils/cn';
+
+/**
+ * Error boundary that catches crashes in the debug panel
+ * and shows a minimal recovery UI instead of crashing the whole app.
+ */
+class DebugErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; errorMsg: string }
+> {
+  state = { hasError: false, errorMsg: '' };
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, errorMsg: error.message || 'Unknown error' };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error('[DebugPanel] Crashed:', error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 rounded-lg bg-red-900/80 px-3 py-2 text-xs text-red-200 shadow-lg">
+          <Bug className="h-3.5 w-3.5" />
+          <span>Debug panel crashed</span>
+          <button
+            onClick={() => this.setState({ hasError: false, errorMsg: '' })}
+            className="rounded bg-red-800 px-2 py-0.5 text-[10px] hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface HealthStatus {
   status: string;
@@ -47,7 +84,7 @@ function EntryRow({ entry }: { entry: DebugEntry }) {
   );
 }
 
-export function DebugPanel() {
+function DebugPanelInner() {
   const { entries, isOpen, toggle, clear } = useDebugStore();
   const { credits } = useAuth();
   const [health, setHealth] = useState<HealthStatus | null>(null);
@@ -76,11 +113,16 @@ export function DebugPanel() {
   const fetchHealth = async () => {
     setHealthLoading(true);
     try {
-      const res = await fetch('/api/health');
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch('/api/health', { signal: controller.signal });
+      clearTimeout(timeout);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setHealth(data);
-    } catch {
-      setHealth(null);
+    } catch (err) {
+      setHealth({ status: 'error', services: {}, timestamp: new Date().toISOString() });
+      console.warn('[DebugPanel] Health check failed:', err instanceof Error ? err.message : err);
     } finally {
       setHealthLoading(false);
     }
@@ -236,5 +278,13 @@ export function DebugPanel() {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+export function DebugPanel() {
+  return (
+    <DebugErrorBoundary>
+      <DebugPanelInner />
+    </DebugErrorBoundary>
   );
 }
