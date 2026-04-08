@@ -33,6 +33,5 @@ firestore.rules
 firestore.indexes.json
 storage.rules
 eslint.config.mjs
-postcss.config.mjs
-tsconfig.json
 sentry.*.config.ts
+# NOTE: tsconfig.json and postcss.config.mjs MUST be included — required for build
