@@ -260,7 +260,7 @@ function ElectoralRiskContent({ data }: { data: ElectoralRiskData }) {
 export default function ElectoralRiskPage() {
   const { showGuard, situation } = useSituationGuard();
   const [data, setData] = useState<ElectoralRiskData | null>(null);
-  const { hasData, loading: firestoreLoading } = useToolData('electoral_risk' as never);
+  const { hasData, loading: firestoreLoading } = useToolData('electoral-risk');
   const [regenerating, setRegenerating] = useState(false);
 
   if (showGuard) return <NoSituationState />;

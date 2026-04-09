@@ -251,7 +251,7 @@ function EconomicImpactContent({ data }: { data: EconomicImpactData }) {
 export default function EconomicImpactPage() {
   const { showGuard, situation } = useSituationGuard();
   const [data, setData] = useState<EconomicImpactData | null>(null);
-  const { hasData, loading: firestoreLoading } = useToolData('economic_impact' as never);
+  const { hasData, loading: firestoreLoading } = useToolData('economic-impact');
   const [regenerating, setRegenerating] = useState(false);
 
   if (showGuard) return <NoSituationState />;

@@ -271,7 +271,7 @@ function HumanRightsContent({ data }: { data: HumanRightsData }) {
 export default function HumanRightsPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
   const [data, setData] = useState<HumanRightsData | null>(null);
-  const { hasData, loading: firestoreLoading } = useToolData('human_rights' as never);
+  const { hasData, loading: firestoreLoading } = useToolData('human-rights');
   const [regenerating, setRegenerating] = useState(false);
 
   if (showGuard) return <NoSituationState />;

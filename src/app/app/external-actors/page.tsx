@@ -269,7 +269,7 @@ function ExternalActorsContent({ data }: { data: ExternalActorsData }) {
 export default function ExternalActorsPage() {
   const { showGuard, situation } = useSituationGuard();
   const [data, setData] = useState<ExternalActorsData | null>(null);
-  const { hasData, loading: firestoreLoading } = useToolData('external_actors' as never);
+  const { hasData, loading: firestoreLoading } = useToolData('external-actors');
   const [regenerating, setRegenerating] = useState(false);
 
   if (showGuard) return <NoSituationState />;

@@ -63,6 +63,13 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   // Aliases used by some routes (non-standard keys)
   'media-roundup': 2,
   'research': 3,
+  // Group 8 — New tools (v6.0)
+  'ai_legal_tracker': 2,
+  'ai_external_actors': 2,
+  'ai_economic_impact': 2,
+  'ai_peacebuilding_index': 2,
+  'ai_human_rights': 3,
+  'ai_electoral_risk': 3,
 };
 
 /**

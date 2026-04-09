@@ -212,7 +212,7 @@ function PeacebuildingContent({ data }: { data: PeacebuildingData }) {
 export default function PeacebuildingIndexPage() {
   const { showGuard, situation } = useSituationGuard();
   const [data, setData] = useState<PeacebuildingData | null>(null);
-  const { hasData, loading: firestoreLoading } = useToolData('peacebuilding_index' as never);
+  const { hasData, loading: firestoreLoading } = useToolData('peacebuilding-index');
   const [regenerating, setRegenerating] = useState(false);
 
   if (showGuard) return <NoSituationState />;

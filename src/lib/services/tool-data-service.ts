@@ -41,7 +41,14 @@ export type ToolName =
   | 'poc_assessment'
   | 'power_map'
   | 'policy_memo'
-  | 'compare';
+  | 'compare'
+  // Group 8 — New tools (v6.0) — hyphenated to match route writeToolDataServer keys
+  | 'legal-tracker'
+  | 'external-actors'
+  | 'economic-impact'
+  | 'peacebuilding-index'
+  | 'human-rights'
+  | 'electoral-risk';
 
 function toolRef(uid: string, sitId: string, tool: ToolName) {
   return doc(db, 'users', uid, 'situations', sitId, 'tools', tool);

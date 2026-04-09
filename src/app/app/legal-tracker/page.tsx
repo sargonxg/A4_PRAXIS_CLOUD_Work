@@ -310,7 +310,7 @@ function LegalTrackerContent({ data }: { data: LegalTrackerData }) {
 export default function LegalTrackerPage() {
   const { showGuard, situation } = useSituationGuard();
   const [data, setData] = useState<LegalTrackerData | null>(null);
-  const { hasData, loading: firestoreLoading } = useToolData('legal_tracker' as never);
+  const { hasData, loading: firestoreLoading } = useToolData('legal-tracker');
   const [regenerating, setRegenerating] = useState(false);
 
   if (showGuard) return <NoSituationState />;
