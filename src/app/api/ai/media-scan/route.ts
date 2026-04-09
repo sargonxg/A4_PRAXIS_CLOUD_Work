@@ -4,223 +4,142 @@ import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { withAuth } from '@/lib/api/with-auth';
-import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
-import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
-import { searchArticles, getVolumeTimeline, getToneTimeline } from '@/lib/data-feeds/gdelt-client';
-import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
+import { handleRouteError } from '@/lib/api/standard-error';
+import { searchWeb } from '@/lib/ai/firecrawl';
+import type { WebSearchResult } from '@/lib/ai/firecrawl';
 import type { Situation } from '@/types/situation';
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
-const MediaScanSchema = z.object({
-  outlets: z.array(
-    z.object({
-      name: z.string().describe('Name of the media outlet'),
-      articles: z.array(
-        z.object({
-          url: z.string().describe('URL of the article'),
-          title: z.string().describe('Title of the article'),
-          sentiment: z.enum(['positive', 'negative', 'neutral', 'mixed']).describe('Overall sentiment of the article'),
-          framing: z.string().describe('How the outlet frames the topic — narrative angle, emphasis, omissions'),
-        })
-      ).describe('Articles found for this outlet'),
-      overallBias: z.string().describe('Overall editorial bias assessment for this outlet on the topic'),
-    })
-  ).describe('Per-outlet analysis results'),
-  comparativeAnalysis: z.string().describe('Cross-outlet comparative analysis highlighting divergent framing, shared narratives, and information gaps'),
-  situationSources: z.array(z.object({
-    name: z.string().describe('Name of the media source'),
-    x: z.number().min(-1).max(1).describe('Political orientation: -1 (far left) to 1 (far right)'),
-    y: z.number().min(0).max(1).describe('Reliability: 0 (unreliable) to 1 (highly reliable)'),
-    type: z.string().describe('Source type: wire, public, private, state, local, diaspora, think_tank'),
-    region: z.string().describe('Geographic region of this source'),
-    description: z.string().describe('Brief description of this source'),
-    relevance: z.string().describe('Why this source is specifically relevant to this situation'),
-    url: z.string().optional().describe('Homepage URL of the source'),
-  })).describe('5-10 media sources that are particularly relevant to this specific situation — local media, regional outlets, think tanks, diaspora media. Include sources that international analysts should monitor for this conflict. Assign x (orientation) and y (reliability) coordinates for plotting on a bias/reliability chart.'),
+// ---------------------------------------------------------------------------
+// Schema
+// ---------------------------------------------------------------------------
+
+const PublicationAlertSchema = z.object({
+  sourceUrl: z.string().describe('Domain or URL of the source'),
+  sourceName: z.string().describe('Human-readable name of the source'),
+  publicationTitle: z.string().describe('Title of the new publication'),
+  publicationUrl: z.string().describe('Direct URL to the publication'),
+  publishedDate: z.string().optional().describe('Publication date if extractable'),
+  summary: z.string().describe('2-sentence AI summary of the publication'),
+  relevanceScore: z.number().min(0).max(10).describe('Relevance to the active situation (0 to 10)'),
+  sourceReliability: z.number().min(0).max(10).describe('Source reliability rating (0 to 10)'),
+  craapRating: z.enum(['high', 'medium', 'low']).describe('CRAAP evaluation: high(>15/25), medium(10 to 15), low(<10)'),
+  alertPriority: z.enum(['critical', 'high', 'medium', 'low']).describe('Alert priority based on relevance × reliability'),
 });
 
-// Static demo response
-const DEMO_RESPONSE = {
-  outlets: [
-    {
-      name: 'Nordalian State Broadcasting',
-      articles: [
-        {
-          url: 'https://nsb.nd/news/ceasefire-progress-2026',
-          title: 'Government Forces Maintain Order in Eastern Provinces',
-          sentiment: 'positive' as const,
-          framing: 'Frames the conflict as a counter-terrorism operation. Emphasizes government legitimacy and territorial integrity. Omits civilian displacement figures and DRM political grievances.',
-        },
-        {
-          url: 'https://nsb.nd/analysis/peace-roadmap',
-          title: 'AU Roadmap Advances Under Presidential Leadership',
-          sentiment: 'positive' as const,
-          framing: 'Credits the GoN for all peace process progress. Attributes delays to DRM intransigence and foreign interference from Westmark.',
-        },
-      ],
-      overallBias: 'Strong pro-government bias. State-owned outlet functioning as GoN messaging platform. Systematically underreports civilian harm and frames the DRM exclusively as a terrorist organization rather than a political movement.',
-    },
-    {
-      name: 'Nordalian Independent Media Network',
-      articles: [
-        {
-          url: 'https://nimn.org/reports/ceasefire-violations-march2026',
-          title: 'Ceasefire Violations Accelerate in Kessara Corridor',
-          sentiment: 'negative' as const,
-          framing: 'Documents violations by both parties with specific dates and coordinates. Highlights civilian impact. Provides context on structural drivers of escalation.',
-        },
-        {
-          url: 'https://nimn.org/analysis/humanitarian-crisis-deepens',
-          title: 'Eastern Province Humanitarian Crisis Deepens as Access Restricted',
-          sentiment: 'negative' as const,
-          framing: 'Focuses on humanitarian consequences with OCHA data. Attributes access restrictions to both GoN checkpoints and DRM administrative barriers.',
-        },
-      ],
-      overallBias: 'Moderate pro-accountability bias. Independent network with strong investigative capacity. Tends to emphasize humanitarian dimensions and government accountability. Coverage is fact-based but editorial framing leans toward civilian protection advocacy.',
-    },
-  ],
-  comparativeAnalysis: 'The two outlets present fundamentally divergent narratives of the same conflict. NSB frames the situation as a government-led stabilization effort against terrorism, while NIMN frames it as a humanitarian crisis driven by both parties\' actions. Key information gaps: NSB omits displacement figures and ceasefire violations by AFN forces; NIMN provides limited coverage of DRM internal politics and command disputes. Neither outlet adequately covers the Karovia-Westmark proxy dimension. Cross-referencing both sources with UNMN reporting provides the most complete picture.',
-};
+const SourceMonitorSchema = z.object({
+  monitoredSources: z.number().describe('Number of sources scanned in this run'),
+  newPublications: z.array(PublicationAlertSchema).describe('New publications found since last scan'),
+  coverageGaps: z.array(z.object({
+    topic: z.string().describe('Topic with insufficient coverage'),
+    recommendedSources: z.array(z.string()).describe('Sources that should cover this but were not found'),
+  })).describe('Important topics with limited coverage from tracked sources'),
+  sourceHealthSummary: z.array(z.object({
+    sourceName: z.string(),
+    domain: z.string(),
+    lastActivity: z.string().describe('Most recent publication found'),
+    publicationCount: z.number().describe('Publications found in this scan'),
+    averageRelevance: z.number().min(0).max(10),
+  })).describe('Health summary per monitored source'),
+  recommendedNewSources: z.array(z.string()).describe('Sources not currently tracked but publishing relevant content'),
+  scanTimestamp: z.string().describe('ISO timestamp of this scan'),
+});
+
+// ---------------------------------------------------------------------------
+// Default source list (used when user has no custom sources configured)
+// ---------------------------------------------------------------------------
+
+const DEFAULT_MONITORED_SOURCES = [
+  { name: 'International Crisis Group', domain: 'crisisgroup.org', reliability: 9.5 },
+  { name: 'ReliefWeb', domain: 'reliefweb.int', reliability: 9.0 },
+  { name: 'Human Rights Watch', domain: 'hrw.org', reliability: 8.5 },
+  { name: 'Amnesty International', domain: 'amnesty.org', reliability: 8.0 },
+  { name: 'UN News', domain: 'news.un.org', reliability: 8.5 },
+  { name: 'ACLED', domain: 'acleddata.com', reliability: 9.5 },
+  { name: 'SIPRI', domain: 'sipri.org', reliability: 9.0 },
+  { name: 'Chatham House', domain: 'chathamhouse.org', reliability: 8.5 },
+  { name: 'Foreign Policy', domain: 'foreignpolicy.com', reliability: 7.5 },
+  { name: 'IISS', domain: 'iiss.org', reliability: 8.5 },
+];
+
+// ---------------------------------------------------------------------------
+// POST handler
+// ---------------------------------------------------------------------------
 
 export const POST = withAuth(async (request, _user) => {
   try {
-    const { outlets, topic, conflictContext, situation } = await request.json() as {
-      outlets: string[];
-      topic: string;
-      conflictContext?: string;
+    const body = await request.json() as {
       situation?: Situation;
+      customSources?: Array<{ name: string; domain: string; reliability?: number }>;
+      action?: 'scan' | 'health';
     };
-    const sitContext = situation ? buildToolContext(situation) : '';
+    const { situation, customSources, action = 'scan' } = body;
 
-    // --- Demo mode ---
-    if (isServerDemoMode()) {
-      return NextResponse.json(DEMO_RESPONSE);
-    }
-
-    // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_media_scan', 'Media scan analysis');
+    const creditCheck = await checkAndDeductCredits('ai_media_scan', 'Source monitor scan');
     if (!creditCheck.allowed) return creditCheck.response;
 
-    // --- GDELT real-time media data ---
-    let gdeltContext = '';
-    try {
-      const [gdeltArticles, volume, tone] = await Promise.all([
-        searchArticles({ query: topic, timespan: '7d', maxRecords: 15 }),
-        getVolumeTimeline(topic, '30d'),
-        getToneTimeline(topic, '30d'),
-      ]);
-      if (gdeltArticles.length > 0) {
-        const sourceCounts: Record<string, number> = {};
-        gdeltArticles.forEach((a) => { sourceCounts[a.domain] = (sourceCounts[a.domain] || 0) + 1; });
-        const topSources = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
-        const avgTone = gdeltArticles.reduce((s, a) => s + a.tone, 0) / gdeltArticles.length;
-        gdeltContext = `\nGDELT REAL-TIME DATA (last 7 days):
-${gdeltArticles.length} articles found across ${Object.keys(sourceCounts).length} domains
-Top sources: ${topSources.map(([d, c]) => `${d}(${c})`).join(', ')}
-Average tone: ${avgTone.toFixed(1)} (negative=critical, positive=favorable)
-Volume trend (30d): ${volume.length > 0 ? `${volume[0].value} → ${volume[volume.length - 1].value}` : 'N/A'}
-Tone trend (30d): ${tone.length > 0 ? `${tone[0].value.toFixed(1)} → ${tone[tone.length - 1].value.toFixed(1)}` : 'N/A'}
-Recent headlines: ${gdeltArticles.slice(0, 5).map((a) => `"${a.title}" (${a.domain})`).join('; ')}\n`;
-      }
-    } catch { /* continue without GDELT */ }
+    const sitCtx = situation ? buildToolContext(situation) : '';
+    const sitName = situation?.name || 'the situation';
+    const year = new Date().getFullYear();
 
-    // --- Live intelligence feed ---
-    let intelContext = '';
-    try {
-      if (situation) {
-        const intel = await getSituationIntelligence({
-          country: situation.region || situation.name,
-          query: situation.name,
-          limit: 15,
-        });
-        if (intel.events.length > 0) {
-          intelContext = '\n\nLIVE INTELLIGENCE FEED:\n' + intel.events.slice(0, 10).map(e =>
-            `- [${e.source.toUpperCase()}] ${e.date}: ${e.title} (${e.severity})`
-          ).join('\n');
-        }
-      }
-    } catch { /* data feeds optional */ }
+    const sources = customSources && customSources.length > 0
+      ? customSources
+      : DEFAULT_MONITORED_SOURCES;
 
-    // --- Gather web sources for each outlet ---
-    const searchResults = await Promise.all(
-      outlets.map((outlet) =>
-        searchWeb(`${outlet} ${topic}`, { numResults: 2 })
-      )
+    // --- Scan all sources in parallel ---
+    const scanResults = await Promise.allSettled(
+      sources.map(async (source) => {
+        const query = `site:${source.domain} ${sitName} ${year}`;
+        const results = await searchWeb(query, { numResults: 3 });
+        return { source, results };
+      })
     );
 
-    const allContext = outlets
-      .map((outlet, i) => {
-        const results = searchResults[i];
-        if (!results.length) return `### ${outlet}\nNo recent articles found.`;
-        return `### ${outlet}\n${formatResultsAsContext(results)}`;
-      })
-      .join('\n\n---\n\n');
+    const allFindings: Array<{ source: typeof sources[0]; results: WebSearchResult[] }> = scanResults
+      .filter((r): r is PromiseFulfilledResult<{ source: typeof sources[0]; results: WebSearchResult[] }> =>
+        r.status === 'fulfilled'
+      )
+      .map((r) => r.value);
 
-    // --- AI analysis ---
+    // Build context for AI synthesis
+    const findingsText = allFindings.map(({ source, results }) =>
+      `### ${source.name} (${source.domain}) — reliability: ${source.reliability ?? 7}/10\n` +
+      (results.length > 0
+        ? results.map((r) =>
+            `- **${r.title}** | ${r.publishedDate || 'date unknown'}\n  ${r.description?.slice(0, 200) || ''}\n  URL: ${r.url}`
+          ).join('\n')
+        : '- No new publications found')
+    ).join('\n\n');
+
+    // --- AI synthesis ---
     const result = await generateText({
       model: getProModel(),
-      output: Output.object({ schema: MediaScanSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}Conduct a rigorous media landscape analysis applying the CRAAP test methodology, narrative ecosystem mapping, and cross-outlet triangulation.
+      output: Output.object({ schema: SourceMonitorSchema }),
+      prompt: `${sitCtx ? `${sitCtx}\n\n` : ''}You are the PRAXIS Source Monitor. Analyze the following publications found across ${sources.length} monitored sources for the situation "${sitName}".
 
-TOPIC: ${topic}
-${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
-${gdeltContext}${intelContext}
-OUTLETS TO ANALYZE: ${outlets.join(', ')}
+SCAN RESULTS:
+${findingsText}
 
-WEB SEARCH RESULTS:
-${allContext}
+For each publication found:
+1. Assess relevance (0 to 10): How directly does this address "${sitName}"? 10 = exclusively about this situation, 1 = tangentially related
+2. Apply CRAAP evaluation: Currency (is it recent?), Relevance (to situation?), Authority (credible source?), Accuracy (fact-based?), Purpose (informational vs advocacy). Score 0 to 5 each. Total: high(>18/25), medium(12 to 18), low(<12)
+3. Alert priority = high relevance (≥7) + high reliability (≥8) → critical; relevance ≥6 + reliability ≥7 → high; etc.
+4. Summarize each publication in 2 sentences
 
-## ANALYSIS FRAMEWORK
+For coverage gaps: identify important topics related to "${sitName}" that none of the sources covered (e.g., specific actor dynamics, humanitarian dimensions, diplomatic developments).
 
-**Per-Outlet CRAAP Test Assessment**
-For each outlet, evaluate each article/coverage using:
-- **Currency**: Is the information timely? Publication date vs. event date lag.
-- **Relevance**: Does coverage address the core conflict dynamics or peripheral issues?
-- **Authority**: What is the outlet's track record, ownership, funding, editorial independence?
-- **Accuracy**: Are claims verifiable? Are sources cited? Are opposing views represented?
-- **Purpose**: What is the evident purpose — inform, persuade, advocate, entertain, destabilize?
+For source health: aggregate per-source statistics from the scan results.
 
-**Narrative Framing Analysis**
-For each outlet, identify:
-1. Primary narrative frame (security threat, humanitarian crisis, political dispute, development failure, etc.)
-2. Actor legitimization: who is portrayed as legitimate, who as spoiler?
-3. Omission patterns: what context, actors, or events are systematically absent?
-4. Language choices: use of loaded terms, passive/active voice, casualty asymmetry
-5. Source selection bias: which voices are amplified, which silenced?
+For recommended new sources: based on what's missing in coverage, name 2-3 sources that should be added.
 
-**Triangulation Matrix**
-Compare coverage across outlets to identify:
-- **Consensus facts**: claims appearing in 3+ independent outlets with divergent editorial lines (high reliability)
-- **Disputed claims**: contradictory factual assertions requiring further verification
-- **Exclusive narratives**: claims appearing only in single outlet or outlet cluster (requires scrutiny)
-- **Information operations indicators**: coordinated messaging, astroturfing, attribution without evidence
-
-**Reliability Scoring**
-Score each outlet on a 1-5 scale:
-5 = Highly reliable (multiple independent sources, editorial independence, corrections policy)
-4 = Generally reliable with known editorial bias clearly disclosed
-3 = Mixed reliability, requires cross-referencing
-2 = Significant accuracy problems or undisclosed conflicts of interest
-1 = Propaganda outlet or systematically unreliable
-
-Then synthesize comparative analysis with specific evidence for all claims. Do not offer generic assessments.
-
-Additionally, identify 5-10 media sources that are SPECIFICALLY relevant to this situation:
-- Local media outlets from the conflict region
-- Diaspora media covering this issue
-- Think tanks and research institutes with expertise
-- Regional outlets with special correspondents
-- Online platforms/channels that are influential in this conflict
-
-For each, provide a political orientation score (x: -1 to 1) and reliability score (y: 0 to 1).`,
-      system: 'You are a senior media analyst trained in CRAAP test methodology, narrative ecosystem mapping, and information operations analysis. You have experience as a UN DPPA media advisor and conflict journalism monitor. Provide evidence-anchored assessments that help diplomatic professionals distinguish reliable intelligence from noise and identify influence operations.',
+scanTimestamp: "${new Date().toISOString()}"`,
+      system: 'You are the PRAXIS Source Monitor, an automated intelligence tracking system. Evaluate publication relevance, source credibility, and coverage gaps for conflict analysts. Produce actionable alerts with precise relevance and reliability assessments.',
     });
 
     return NextResponse.json(result.output);
   } catch (err) {
-    console.error('Media scan route error:', err);
-    return NextResponse.json({ error: 'Media scan failed' }, { status: 500 });
+    return handleRouteError(err, 'media-scan');
   }
 });
