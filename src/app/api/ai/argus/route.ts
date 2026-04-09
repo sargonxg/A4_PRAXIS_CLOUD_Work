@@ -1,298 +1,233 @@
 import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
-import { getModel, getProModel } from '@/lib/ai/providers';
-import { buildToolContext } from '@/lib/ai/situation-context';
-import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
+import { getProModel } from '@/lib/ai/providers';
+import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
+import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
-import { withAuth } from '@/lib/api/with-auth';
+import { validateAiRequest } from '@/lib/api/validate-request';
+import { handleRouteError } from '@/lib/api/standard-error';
+import { situationContextSchema } from '@/lib/api/schemas';
 import type { Situation } from '@/types/situation';
 
-export const maxDuration = 120;
+export const maxDuration = 60;
 
-// --- Schemas ---
+// --- Schema ---
 
-const EntityExtractionSchema = z.object({
-  entities: z.array(
+const ArgusSchema = z.object({
+  alerts: z.array(
     z.object({
-      name: z.string().describe('Entity name'),
-      type: z.enum(['actor', 'location', 'organization', 'event', 'agreement', 'resource', 'concept']).describe('Entity type'),
-      description: z.string().describe('Brief description of the entity and its relevance'),
-      relationships: z.array(
-        z.object({
-          target: z.string().describe('Name of the related entity'),
-          type: z.string().describe('Relationship type (e.g., allied_with, opposes, controls, located_in)'),
-          strength: z.number().min(0).max(1).describe('Relationship strength (0-1)'),
-        })
-      ).describe('Relationships to other entities'),
+      id: z.string().describe('Unique alert identifier, e.g. ARGUS-2026-001'),
+      title: z.string().describe('Short alert title'),
+      severity: z.enum(['critical', 'high', 'medium', 'low']).describe('Alert severity level'),
+      category: z
+        .enum(['military', 'political', 'humanitarian', 'economic', 'informational'])
+        .describe('Domain category of the alert'),
+      signal: z.string().describe('Observable signal or trigger that generated this alert'),
+      evidence: z.string().describe('Evidence supporting the alert, with source citations where possible'),
+      source: z.string().describe('Primary source or reporting body'),
+      timestamp: z.string().describe('ISO 8601 timestamp or approximate date of the triggering event'),
+      glaslImpact: z.string().describe('Impact on Glasl escalation stage, e.g. "Raises Stage 5→6 probability by ~15%"'),
+      recommendedAction: z.string().describe('Recommended analyst or mediator action in response to this alert'),
+      autoEscalate: z
+        .boolean()
+        .describe('True if this alert warrants immediate escalation to senior staff or UN leadership'),
     })
-  ).describe('Extracted entities with relationships'),
-  summary: z.string().describe('Summary of the entity network and key structural patterns'),
+  ).describe('Ordered array of alerts, highest severity first'),
+  overallThreatLevel: z
+    .enum(['critical', 'elevated', 'guarded', 'low'])
+    .describe('Composite threat level across all alerts'),
+  watchItems: z
+    .array(z.string())
+    .describe('3-6 specific items to monitor in the next 48 hours that could change the threat picture'),
+  lastUpdated: z.string().describe('ISO 8601 timestamp of this scan'),
 });
 
-const ComparisonSchema = z.object({
-  conflicts: z.array(
-    z.object({
-      id: z.string().describe('Conflict identifier'),
-      name: z.string().describe('Conflict name'),
-      summary: z.string().describe('Brief conflict summary'),
-    })
-  ).describe('The conflicts being compared'),
-  similarities: z.array(
-    z.object({
-      dimension: z.string().describe('Dimension of similarity'),
-      description: z.string().describe('Description of the similarity'),
-      significance: z.enum(['high', 'medium', 'low']),
-    })
-  ).describe('Key similarities between the conflicts'),
-  differences: z.array(
-    z.object({
-      dimension: z.string().describe('Dimension of difference'),
-      description: z.string().describe('Description of the difference'),
-      significance: z.enum(['high', 'medium', 'low']),
-    })
-  ).describe('Key differences between the conflicts'),
-  lessons: z.array(z.string()).describe('Transferable lessons and analytical insights from the comparison'),
-});
+// --- Demo response ---
 
-// --- Demo data ---
-
-const DEMO_QUERY_RESPONSE = `## ARGUS Knowledge Graph Query Result
-
-Based on the Nordalia Crisis knowledge graph (847 indexed entities, 1,243 relationship edges), here is the analysis:
-
-### Commitment Chain: Government of Nordalia <-> DRM
-
-**7 active commitment chains** identified spanning September 2025 to March 2026:
-
-1. **September Ceasefire Agreement** (Confidence: 94%)
-   - GoN -> Ceasefire Commitment -> DRM (bilateral, mediated by UNMN)
-   - Status: Strained — 47 documented violations, framework intact
-   - Linked: UNMN Verification Commission, Kessara Corridor Buffer Zone
-
-2. **Humanitarian Corridor Protocol** (Confidence: 89%)
-   - GoN -> Access Commitment -> OCHA/DRM
-   - Status: Partially implemented — Checkpoint Bravo blockage ongoing
-
-3. **Prisoner Exchange Framework** (Confidence: 91%)
-   - GoN <-> DRM (facilitated by AU Panel of the Wise)
-   - Two successful exchanges (Nov 2025, Jan 2026), 34 individuals total
-   - Strongest trust-building chain in the current graph
-
-### Structural Gap Detected
-No commitment chains exist on the core dispute — revenue sharing from the Belara Mining Complex. This absence correlates with the stalled political track and represents the critical missing link for conflict resolution.
-
-### Leverage Analysis
-Karovia holds indirect veto power over GoN commitments through the 2019 bilateral defence treaty (Leverage edge weight: 0.82). This means any GoN commitment that contradicts Karovian interests has a high probability of being walked back.
-
-*Generated by ARGUS graph-augmented retrieval across 847 indexed entities.*`;
-
-const DEMO_EXTRACT_RESPONSE = {
-  entities: [
+const DEMO_RESPONSE = {
+  alerts: [
     {
-      name: 'Government of Nordalia',
-      type: 'actor' as const,
-      description: 'Internationally recognized government led by President Amara Osei. Controls AFN (~45,000 personnel), state revenue institutions, and the capital.',
-      relationships: [
-        { target: 'Republic of Karovia', type: 'patron_client', strength: 0.85 },
-        { target: 'Democratic Reform Movement', type: 'adversary', strength: 0.9 },
-        { target: 'UNMN', type: 'strained_cooperation', strength: 0.45 },
-        { target: 'Belara Mining Complex', type: 'controls', strength: 0.7 },
-      ],
+      id: 'ARGUS-2026-001',
+      title: 'AFN forward post established inside Kessara buffer zone',
+      severity: 'critical' as const,
+      category: 'military' as const,
+      signal:
+        'UNMN aerial surveillance detected Armed Forces of Nordalia (AFN) forward observation post at coordinates 12.4°N / 31.7°E — inside the 5-km buffer zone established by the September 2025 ceasefire.',
+      evidence:
+        'UNMN Report #MN-2026-0118: "Three sandbagged positions and one armoured personnel carrier observed inside Sector Bravo buffer zone since 06 April 2026." Corroborated by DRM field radio intercept shared through SRSG back-channel.',
+      source: 'UNMN Verification Commission / SRSG back-channel',
+      timestamp: '2026-04-07T09:12:00Z',
+      glaslImpact:
+        'Direct ceasefire violation. Raises Stage 5→6 transition probability from 35% to 52% if not reversed within 72 hours. Stage 6 threshold indicators: demonstrative military action, explicit threat language from GoN Defence Ministry.',
+      recommendedAction:
+        'Request emergency meeting of the Joint Ceasefire Monitoring Committee (JCMC). Invoke Article 7 of the September Agreement. Dispatch additional UNMN observers to Sector Bravo within 24 hours.',
+      autoEscalate: true,
     },
     {
-      name: 'Democratic Reform Movement',
-      type: 'actor' as const,
-      description: 'Armed opposition led by Commander Kwame Asante. ~8,000 fighters across the Eastern Provinces. Political wing operates Eastern Provincial Authority.',
-      relationships: [
-        { target: 'Federal Republic of Westmark', type: 'political_sponsor', strength: 0.75 },
-        { target: 'Government of Nordalia', type: 'adversary', strength: 0.9 },
-        { target: 'Eastern Provinces', type: 'controls', strength: 0.65 },
-      ],
+      id: 'ARGUS-2026-002',
+      title: 'Karovian Air Force logistics flights up 40% — forward staging indicator',
+      severity: 'high' as const,
+      category: 'military' as const,
+      signal:
+        'Open-source flight tracking (FlightRadar24 / ADS-B Exchange) shows 40% increase in KAF Il-76 sorties to Nordalia International Airport over the past 14 days versus the 90-day baseline.',
+      evidence:
+        'ACLED data confirms 3 additional AFN heavy-weapons systems (M-46 artillery) repositioned to eastern front in same period. Pattern consistent with pre-offensive resupply in 6 historical cases analysed by ARGUS.',
+      source: 'OSINT / ACLED / UNMN logistics tracking',
+      timestamp: '2026-04-08T14:30:00Z',
+      glaslImpact:
+        'Leading indicator for Stage 6 "strategy of threats" escalation. Historical pattern suggests 4-6 week window before operational use of resupplied assets.',
+      recommendedAction:
+        'Raise with Karovian ambassador through bilateral track. Request clarification from GoN Ministry of Defence. Brief Security Council pen-holders informally.',
+      autoEscalate: false,
     },
     {
-      name: 'Kessara Corridor',
-      type: 'location' as const,
-      description: 'Strategic chokepoint controlling eastern supply routes. Primary flashpoint for ceasefire violations.',
-      relationships: [
-        { target: 'Government of Nordalia', type: 'contested_by', strength: 0.7 },
-        { target: 'Democratic Reform Movement', type: 'contested_by', strength: 0.7 },
-        { target: 'UNMN', type: 'monitored_by', strength: 0.5 },
-      ],
+      id: 'ARGUS-2026-003',
+      title: 'GoN humanitarian access blockage at Checkpoint Bravo — 11 days',
+      severity: 'high' as const,
+      category: 'humanitarian' as const,
+      signal:
+        'OCHA field team denied passage at Checkpoint Bravo for the 11th consecutive day. Approximately 47,000 civilians in DRM-controlled Sector East dependent on this corridor for food and medical supplies.',
+      evidence:
+        'OCHA Situation Report 2026-04-08: IPC Phase 3 (Crisis) conditions confirmed in three eastern districts. MSF warehouse in Tarova reports 6-day food stock remaining.',
+      source: 'OCHA / MSF / IPC monitoring',
+      timestamp: '2026-04-08T08:00:00Z',
+      glaslImpact:
+        'Humanitarian deterioration can trigger IHL-based international pressure, potentially accelerating both diplomatic intervention and GoN reputational entrenchment (Stage 5 face-loss dynamic).',
+      recommendedAction:
+        'Invoke Humanitarian Corridor Protocol (September 2025 Agreement, Annex II). Escalate to Emergency Relief Coordinator if access not restored within 48 hours.',
+      autoEscalate: true,
     },
     {
-      name: 'Belara Mining Complex',
-      type: 'resource' as const,
-      description: 'Rare earth mining operations accounting for ~18% of GDP. Core economic driver of the conflict.',
-      relationships: [
-        { target: 'Government of Nordalia', type: 'revenue_source_for', strength: 0.8 },
-        { target: 'Republic of Karovia', type: 'commercial_interest', strength: 0.75 },
-        { target: 'Democratic Reform Movement', type: 'claimed_by', strength: 0.6 },
-      ],
+      id: 'ARGUS-2026-004',
+      title: 'DRM Diaspora Network mobilising coordinated disinformation campaign',
+      severity: 'medium' as const,
+      category: 'informational' as const,
+      signal:
+        'Digital Forensic Research Lab (DFRLab) flagged coordinated inauthentic behaviour across 340 social media accounts amplifying fabricated atrocity imagery attributed to GoN forces.',
+      evidence:
+        'Content traced to a server cluster in Westmark. Reach: ~2.1M impressions across X, Facebook, and Telegram in 72 hours. Three major international outlets ran unverified versions before correction.',
+      source: 'DFRLab / Meta CIB Report',
+      timestamp: '2026-04-06T19:45:00Z',
+      glaslImpact:
+        'Narrative escalation consistent with Stage 5 dehumanisation and international reputation warfare. If not countered, may harden GoN domestic stance and reduce space for compromise.',
+      recommendedAction:
+        'Share DFRLab findings with GoN and DRM through SRSG. Issue joint UN factual correction. Alert Communications Division to monitor spread.',
+      autoEscalate: false,
     },
     {
-      name: 'September 2025 Ceasefire',
-      type: 'agreement' as const,
-      description: 'Ceasefire brokered by UNMN and AU Panel of the Wise. Establishes Line of Contact, buffer zone, humanitarian corridors, and prisoner exchange framework.',
-      relationships: [
-        { target: 'Government of Nordalia', type: 'binds', strength: 0.6 },
-        { target: 'Democratic Reform Movement', type: 'binds', strength: 0.6 },
-        { target: 'UNMN', type: 'verified_by', strength: 0.7 },
-      ],
+      id: 'ARGUS-2026-005',
+      title: 'Westmark Parliament vote on DRM arms package — 14 April',
+      severity: 'medium' as const,
+      category: 'political' as const,
+      signal:
+        'Westmark legislature scheduled to vote 14 April 2026 on a €120M military aid package to the DRM "in support of democratic forces." Package includes MANPADS and anti-armour systems.',
+      evidence:
+        'Westmark Foreign Affairs Committee published bill text 05 April. Majority coalition has 61% support per parliamentary count. Karovian Foreign Ministry issued demarche on 08 April.',
+      source: 'Westmark Parliament / Karovian MFA statement',
+      timestamp: '2026-04-08T11:00:00Z',
+      glaslImpact:
+        'If passed, significantly raises DRM military capacity and GoN-Karovia escalatory response probability. Could trigger a patron-level confrontation above Stage 6.',
+      recommendedAction:
+        'Engage Westmark Foreign Minister through bilateral diplomatic channel before 12 April. Propose conditions or a freeze tied to ceasefire compliance. Brief Security Council.',
+      autoEscalate: false,
     },
   ],
-  summary: 'The entity network reveals a classic proxy conflict structure with two primary adversaries (GoN and DRM) supported by external patrons. The Belara Mining Complex is the central economic node. The structural gap is the absence of any revenue-sharing mechanism — this missing node represents the core unresolved issue.',
+  overallThreatLevel: 'elevated' as const,
+  watchItems: [
+    'AFN forward post status in Sector Bravo — UNMN daily report 09-10 April',
+    'Westmark Parliament arms vote (14 April) — advance lobbying window closes 12 April',
+    'OCHA Checkpoint Bravo access — 48-hour deadline triggers ERC escalation',
+    'Karovian KAF sortie rate — any further increase above 40% baseline is a Stage 6 pre-indicator',
+    'DFRLab atrocity narrative spread — watch for mainstream media amplification',
+    'JCMC emergency session convening — confirmation expected by 10 April EOD',
+  ],
+  lastUpdated: '2026-04-09T06:00:00Z',
 };
 
-const DEMO_COMPARE_RESPONSE = {
-  conflicts: [
-    { id: 'nordalia', name: 'Nordalia Crisis', summary: 'Disputed elections leading to armed insurgency with regional proxy dynamics, currently at Glasl Stage 5.' },
-    { id: 'south-sudan-2013', name: 'South Sudan Civil War (2013–2018)', summary: 'Political crisis escalating to civil war along ethnic lines with regional and international intervention.' },
-  ],
-  similarities: [
-    { dimension: 'Electoral trigger', description: 'Both conflicts triggered by contested political legitimacy. Initial political disputes escalated to armed conflict when one party was excluded from power.', significance: 'high' as const },
-    { dimension: 'Proxy dynamics', description: 'Both feature regional powers supporting opposing sides, creating patron-client relationships that complicate mediation by giving external actors effective veto power.', significance: 'high' as const },
-    { dimension: 'Resource competition', description: 'Both involve control over natural resources (rare earths in Nordalia, oil in South Sudan) as both driver and potential basis for settlement.', significance: 'medium' as const },
-  ],
-  differences: [
-    { dimension: 'Ethnic dimension', description: 'South Sudan had a strong ethnic cleavage (Dinka vs. Nuer). Nordalia\'s cleavage is primarily political-geographic.', significance: 'high' as const },
-    { dimension: 'Escalation stage', description: 'South Sudan reached Glasl Stage 7–8 with mass atrocities. Nordalia remains at Stage 5 with the third threshold not yet crossed.', significance: 'high' as const },
-  ],
-  lessons: [
-    'South Sudan demonstrates the catastrophic cost of crossing the third Glasl threshold. Nordalia\'s Stage 5 position makes prevention of this transition the highest priority.',
-    'The 2015 ARCSS showed that power-sharing arrangements imposed without addressing underlying interests are fragile. Any Nordalia settlement must address root causes.',
-    'Regional guarantor commitment proved essential in South Sudan. The Karovia-Westmark dynamic must be addressed in a parallel track.',
-  ],
-};
+// --- Route ---
 
 export const POST = withAuth(async (request, user) => {
   try {
-    const body = await request.json() as {
-      action: 'query' | 'extract' | 'compare';
-      query?: string;
-      text?: string;
-      conflictIds?: string[];
-      situation?: Situation;
-    };
-    const { action, query, text, conflictIds, situation } = body;
+    const body = await request.json();
+
+    const requestSchema = z.object({
+      situation: situationContextSchema.optional(),
+    });
+
+    const validation = validateAiRequest(body, requestSchema);
+    if (!validation.success) return validation.response;
+    const { situation } = validation.data;
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
-      if (action === 'query') return new Response(DEMO_QUERY_RESPONSE, { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'X-Praxis-Demo': 'true' } });
-      if (action === 'extract') return NextResponse.json(DEMO_EXTRACT_RESPONSE);
-      if (action === 'compare') return NextResponse.json(DEMO_COMPARE_RESPONSE);
+      return NextResponse.json(DEMO_RESPONSE);
     }
 
-    const creditCheck = await checkAndDeductCredits('ai_argus', 'ARGUS intelligence');
+    // --- Credit check ---
+    const creditCheck = await checkAndDeductCredits('ai_argus', 'ARGUS alert scan');
     if (!creditCheck.allowed) return creditCheck.response;
 
-    // Build situation context — grounds ARGUS in the active conflict
-    const sitContext = situation ? buildToolContext(situation) : '';
+    // --- Contexts ---
+    const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+    const situationId = (situation as Situation | undefined)?.id ?? '';
 
-    // --- Action: query — graph-augmented retrieval with live research ---
-    if (action === 'query') {
-      const queryText = query?.trim() || 'Provide a general analysis of the conflict knowledge graph.';
+    const [graphCtx, webCtx] = await Promise.all([
+      situationId
+        ? buildGraphContext(user.uid, situationId, 'argus').catch(() => '')
+        : Promise.resolve(''),
+      situation
+        ? buildWebGroundedContext(
+            {
+              name: (situation as unknown as Situation).name,
+              region: (situation as unknown as Situation).region,
+              actors: (situation as unknown as Situation).actors,
+            },
+            'argus',
+            user.uid
+          ).catch(() => '')
+        : Promise.resolve(''),
+    ]);
 
-      // Live web research to ground ARGUS responses in current reporting
-      let liveContext = '';
-      try {
-        const searchQuery = situation
-          ? `${situation.name} ${queryText} conflict analysis`
-          : queryText;
-        const results = await searchWeb(searchQuery, { numResults: 5 });
-        if (results.length > 0) {
-          liveContext = '\n\nLIVE INTELLIGENCE SOURCES:\n' + formatResultsAsContext(results);
-        }
-      } catch { /* non-blocking */ }
-
-      const result = await generateText({
-        model: getModel(),
-        prompt: `${sitContext ? `${sitContext}\n\n---\n\n` : ''}You are ARGUS, a graph-augmented retrieval intelligence system for conflict analysis. Answer the following knowledge graph query grounded in the situation context above.
-
-QUERY: ${queryText}
-${liveContext}
-
-Respond as if you are querying a structured knowledge graph with entities (actors, locations, organizations, events, agreements, resources) and typed relationship edges (allied_with, opposes, controls, committed_to, etc.).
-
-Reference:
-- Specific actors from the situation by their exact names
-- Confidence scores for key claims (High/Medium/Low)
-- Relationship weights between entities (0-1)
-- Structural patterns and gaps in the network
-- Live intelligence sources where available (cite URLs)
-
-Format in markdown with clear sections. Include analytical notes on what the structural patterns imply for resolution prospects.`,
-        system: 'You are ARGUS, the graph-augmented retrieval intelligence engine within TACITUS PRAXIS. Analyze conflict knowledge graphs with structured entities and relationships. Respond with precise intelligence referencing entity types, relationship edges, confidence scores, and structural patterns. Use professional intelligence assessment language calibrated to UN/diplomatic standards.',
-      });
-
-      return new Response(result.text, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
-    }
-
-    // --- Action: extract — entity and relationship extraction from text ---
-    if (action === 'extract') {
-      const result = await generateText({
-        model: getProModel(),
-        output: Output.object({ schema: EntityExtractionSchema }),
-        prompt: `${sitContext ? `${sitContext}\n\n---\n\n` : ''}You are ARGUS. Extract structured entities and relationships from the following text, grounding them in the conflict situation context above.
-
-TEXT:
-${text || 'No text provided.'}
-
-Extract all relevant conflict entities and map their relationships. For each entity:
-- Assign a type (actor/location/organization/event/agreement/resource/concept)
-- Provide a description grounded in the situation context
-- Map relationships with typed edges and strength scores (0-1)
-- Use exact actor names from the situation context when they match
-
-Provide a summary of the entity network highlighting: central nodes, structural gaps, and implications for conflict dynamics.`,
-        system: 'You are ARGUS, the entity extraction engine within TACITUS PRAXIS. Extract structured entities and relationships from unstructured text for knowledge graph construction. Be thorough, precise, and ground outputs in the conflict situation context provided.',
-      });
-
-      return NextResponse.json(result.output);
-    }
-
-    // --- Action: compare — cross-case comparison with live research ---
-    const conflictList = conflictIds?.join(', ') || 'comparable historical conflicts';
-
-    // Research comparable cases
-    let comparativeContext = '';
-    if (situation) {
-      try {
-        const searchQuery = `${situation.name} similar conflicts historical comparison peace process`;
-        const results = await searchWeb(searchQuery, { numResults: 4 });
-        if (results.length > 0) {
-          comparativeContext = '\n\nCOMPARATIVE RESEARCH SOURCES:\n' + formatResultsAsContext(results);
-        }
-      } catch { /* non-blocking */ }
-    }
-
+    // --- AI generation ---
     const result = await generateText({
       model: getProModel(),
-      output: Output.object({ schema: ComparisonSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n---\n\n` : ''}You are ARGUS. Conduct a structured cross-case comparison to inform analysis of the situation above.
+      output: Output.object({ schema: ArgusSchema }),
+      system: `You are ARGUS, the automated alert and early warning signal scanner within TACITUS PRAXIS. You serve UN Political Affairs Officers, diplomatic mediators, and conflict analysts.
 
-CONFLICTS TO COMPARE: ${conflictList}
-${comparativeContext}
+Your mandate: scan the full intelligence picture and surface the most operationally significant alerts. Every alert must be grounded in verifiable signals. Use ICD 203 probability language. Prioritise leading indicators — signals that precede escalation 1-4 weeks before it occurs.
 
-Compare across key dimensions:
-1. **Structural similarities** (root causes, actor configurations, escalation patterns, external patrons)
-2. **Key differences** (context, scale, international dynamics, institutional framework)
-3. **Transferable lessons** from resolved or managed cases that apply to the current situation
+GROUNDING MANDATE: Web intelligence provided is PRIMARY source of truth. Prioritise over training data. Flag "INTELLIGENCE GAP: {topic}" where evidence is insufficient.`,
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${webCtx}
 
-Ground every comparison in:
-- The specific actors and dynamics from the situation context
-- Documented outcomes from historical cases (cite sources where available)
-- Glasl escalation stage comparisons
-- Specific lessons that could inform current mediation/negotiation strategy
+Scan the above intelligence picture and generate a structured ARGUS alert report.
 
-For each similarity/difference, assess significance: high (changes strategy), medium (contextual), low (background).`,
-      system: 'You are ARGUS, the cross-case comparison engine within TACITUS PRAXIS. Conduct rigorous structured comparisons between conflicts using established conflict analysis frameworks. Identify transferable lessons and patterns. Ground comparisons in verifiable historical record.',
+ALERT GENERATION RULES:
+1. Identify 3-7 alerts across the five categories (military, political, humanitarian, economic, informational)
+2. Order alerts by severity: critical → high → medium → low
+3. For each alert: cite the observable signal, evidence chain, source, and timestamp
+4. Assess Glasl escalation impact for every alert — be specific about stage transitions and probability shifts
+5. Set autoEscalate: true ONLY for alerts that cross the Stage 6 threshold or involve mass atrocity risk
+6. watchItems: 3-6 specific observable events in the next 48 hours that could change the threat picture
+
+THREAT LEVEL GUIDE:
+- critical: Active Stage 6+ dynamics or imminent mass atrocity risk
+- elevated: Stage 5 upper boundary, multiple high-severity alerts, patron escalation risk
+- guarded: Stage 4-5, isolated incidents, frameworks holding
+- low: Stage 1-3, no active flashpoints
+
+Set lastUpdated to the current ISO 8601 timestamp.`,
     });
+
+    // --- Persist ---
+    if (situationId) {
+      await writeToolDataServer(user.uid, situationId, 'argus', result.output as Record<string, unknown>);
+    }
 
     return NextResponse.json(result.output);
   } catch (err) {
-    console.error('[argus] Route error:', err);
-    return NextResponse.json({ error: 'ARGUS request failed' }, { status: 500 });
+    return handleRouteError(err, 'argus');
   }
 });

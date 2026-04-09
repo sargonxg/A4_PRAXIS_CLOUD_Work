@@ -91,9 +91,9 @@ export const POST = withAuth(async (req, user) => {
         if (situationId && user.uid && (preCheck.currentLeadership || preCheck.currentStatus)) {
           updateSituation(user.uid, situationId, {
             canonicalPreCheck: {
-              currentLeadership: preCheck.currentLeadership,
-              currentStatus: preCheck.currentStatus,
-              lastMajorEvent: preCheck.lastMajorEvent,
+              currentLeadership: preCheck.currentLeadership ?? undefined,
+              currentStatus: preCheck.currentStatus ?? undefined,
+              lastMajorEvent: preCheck.lastMajorEvent ?? undefined,
               correctionCount: preCheck.groundTruth.length,
               checkedAt: preCheck.checkedAt,
             },

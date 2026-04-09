@@ -39,7 +39,7 @@ export function ToolFeedback({ toolId, situationId, className }: ToolFeedbackPro
 
   // Load existing feedback
   useEffect(() => {
-    if (!user?.uid || !situationId || loaded) return;
+    if (!user?.id || !situationId || loaded) return;
 
     fetch(`/api/tool-feedback?toolId=${toolId}&situationId=${situationId}`)
       .then((res) => (res.ok ? res.json() : null))
@@ -54,10 +54,10 @@ export function ToolFeedback({ toolId, situationId, className }: ToolFeedbackPro
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
-  }, [user?.uid, situationId, toolId, loaded]);
+  }, [user?.id, situationId, toolId, loaded]);
 
   const saveFeedback = useCallback(async (conf: ConfidenceRating, isApproved: boolean = false) => {
-    if (!user?.uid || saving) return;
+    if (!user?.id || saving) return;
     setSaving(true);
     try {
       await fetch('/api/tool-feedback', {
@@ -78,7 +78,7 @@ export function ToolFeedback({ toolId, situationId, className }: ToolFeedbackPro
     } finally {
       setSaving(false);
     }
-  }, [user?.uid, saving, toolId, situationId, selectedIssues, suggestion]);
+  }, [user?.id, saving, toolId, situationId, selectedIssues, suggestion]);
 
   const handleStarClick = (rating: ConfidenceRating) => {
     setConfidence(rating);
@@ -106,7 +106,7 @@ export function ToolFeedback({ toolId, situationId, className }: ToolFeedbackPro
     if (confidence) saveFeedback(confidence);
   };
 
-  if (!user?.uid) return null;
+  if (!user?.id) return null;
 
   return (
     <div className={cn('border-t border-navy-200 dark:border-navy-800 bg-navy-50/50 dark:bg-navy-900/30', className)}>

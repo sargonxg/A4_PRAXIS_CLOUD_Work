@@ -3,28 +3,46 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
+import { situationContextSchema } from '@/lib/api/schemas';
 import type { Situation } from '@/types/situation';
 
-export const maxDuration = 45;
+export const maxDuration = 60;
+
+// Ben Nimmo 4D framework fields: each tactic described as a string
+// explaining how the actor applies that specific tactic for this narrative
+const FourDSchema = z.object({
+  dismiss: z.string().describe('How this narrative delegitimizes opposing voices, denies credibility, or attacks the messenger'),
+  distort: z.string().describe('How this narrative spreads false or misleading content, misrepresents facts, or cherry-picks evidence'),
+  distract: z.string().describe('How this narrative floods the information space, shifts attention, or drowns out competing messages'),
+  dismay: z.string().describe('How this narrative amplifies divisive or demoralizing content to sow despair or paralysis in target audiences'),
+  dominantTactic: z.enum(['dismiss', 'distort', 'distract', 'dismay', 'mixed']).describe("The dominant 4D tactic this narrative relies on most heavily"),
+});
 
 const NarrativeSchema = z.object({
   id: z.string().describe('Short unique identifier'),
   title: z.string().describe('Concise narrative title'),
   framing: z.string().describe('How this narrative frames the conflict — angle, emphasis, omissions'),
   amplifiers: z.array(z.string()).describe('Key actors and outlets amplifying this narrative'),
-  platform: z.enum(['social_media', 'state_media', 'independent_media', 'diaspora', 'international']).describe('Primary distribution platform'),
+  platforms: z.array(z.string()).describe('Platforms where this narrative dominates (e.g., ["Twitter/X", "Telegram", "State TV"])'),
   trend: z.enum(['rising', 'stable', 'declining']).describe('Current trajectory of this narrative'),
   reachScore: z.number().min(0).max(100).describe('Estimated relative reach within the information environment'),
   isHostile: z.boolean().describe('Whether this narrative is hostile to peace process or international norms'),
-  counterNarrative: z.string().optional().describe('Recommended counter-messaging strategy for hostile narratives'),
-  fourDClassification: z.enum(['dismiss', 'distort', 'distract', 'dismay']).optional().describe("Ben Nimmo's 4D classification: dismiss (delegitimize voices), distort (false content), distract (flood the zone), dismay (amplify divisive content)"),
-  originator: z.string().optional().describe('Assessed originator or primary source of this narrative'),
-  amplificationChannels: z.array(z.string()).optional().describe('Specific channels through which this narrative is amplified'),
-  strategicObjective: z.string().optional().describe('Assessed strategic objective behind this narrative'),
+  originator: z.string().describe('Assessed originator or primary source of this narrative'),
+  strategicObjective: z.string().describe('Assessed strategic objective behind this narrative'),
+  fourD: FourDSchema.describe("Ben Nimmo 4D framework analysis for this narrative"),
+});
+
+const ActorInfoSchema = z.object({
+  actor: z.string().describe('Actor name'),
+  amplificationNetworks: z.array(z.string()).describe('Proxy channels, bot networks, diaspora outlets, or state-aligned media that this actor uses to amplify narratives (e.g., "GoN-aligned Telegram clusters", "Karovia diaspora blogs", "state-sponsored bot farm on Twitter/X")'),
+  primaryNarratives: z.array(z.string()).describe('Narrative IDs this actor is most associated with'),
+  infoCapacity: z.enum(['high', 'medium', 'low']).describe('Assessed capacity to conduct information operations'),
 });
 
 const InfoOperationSchema = z.object({
@@ -37,7 +55,8 @@ const InfoOperationSchema = z.object({
 });
 
 const InfoEnvironmentSchema = z.object({
-  dominantNarratives: z.array(NarrativeSchema).min(2).max(6).describe('Dominant narratives shaping the information environment'),
+  dominantNarratives: z.array(NarrativeSchema).min(2).max(6).describe('Dominant narratives shaping the information environment, each with full 4D analysis'),
+  actorInfoProfiles: z.array(ActorInfoSchema).min(2).max(6).describe('Per-actor information operation profiles with amplification network mapping'),
   infoOperations: z.array(InfoOperationSchema).max(4).describe('Identified information operations and influence campaigns'),
   platformDynamics: z.array(
     z.object({
@@ -47,6 +66,12 @@ const InfoEnvironmentSchema = z.object({
       riskLevel: z.enum(['critical', 'high', 'medium', 'low']).describe('Risk level for disinformation and hostile narratives'),
     })
   ).max(5).describe('Per-platform dynamics assessment'),
+  counterNarrativeOpportunities: z.array(z.object({
+    narrative: z.string().describe('The hostile narrative this opportunity targets'),
+    vulnerabilities: z.string().describe('Specific weaknesses or contradictions in the hostile narrative that can be exploited'),
+    recommendedCounter: z.string().describe('The specific counter-narrative or messaging strategy to deploy'),
+    messenger: z.string().describe('Who should deliver this counter-narrative (e.g., "UNMN Spokesperson", "Civil society leaders", "Regional faith leaders") and why they are credible for this audience'),
+  })).min(2).max(5).describe('Strategic counter-narrative opportunities: identify the hostile narrative, its vulnerabilities, the recommended counter, and who should deliver it'),
   overallAssessment: z.string().describe('Integrated assessment of the information environment and strategic implications'),
   counterMessagingRecommendations: z.array(z.string()).min(3).max(6).describe('Prioritized counter-messaging recommendations'),
   keyAmplifiers: z.array(
@@ -56,11 +81,6 @@ const InfoEnvironmentSchema = z.object({
       alignment: z.enum(['hostile', 'neutral', 'friendly']).describe('Alignment relative to the peace process'),
     })
   ).max(8).describe('Key amplifier accounts and outlets'),
-  counterNarrativeOpportunities: z.array(z.object({
-    gap: z.string().describe('Identified gap or vulnerability in the hostile information environment'),
-    suggestedStrategy: z.string().describe('Recommended counter-narrative strategy to exploit this gap'),
-    targetAudience: z.string().describe('Primary audience for this counter-narrative effort'),
-  })).optional().describe('Strategic opportunities for counter-narrative intervention'),
 });
 
 const DEMO_RESPONSE = {
@@ -70,31 +90,71 @@ const DEMO_RESPONSE = {
       title: 'Counter-terrorism framing',
       framing: 'GoN state media frames the conflict as a counterterrorism operation against a foreign-backed insurgency, systematically excluding DRM\'s political grievances.',
       amplifiers: ['Nordalian State Broadcasting', 'Presidential press office', 'GoN-aligned diaspora blogs'],
-      platform: 'state_media' as const,
+      platforms: ['State TV', 'Twitter/X', 'Facebook'],
       trend: 'stable' as const,
       reachScore: 78,
       isHostile: true,
-      counterNarrative: 'Amplify UNMN and OCHA documentation; highlight DRM\'s democratic demands and civilian support base.',
+      originator: 'GoN Ministry of Information',
+      strategicObjective: 'Delegitimize DRM internationally and justify military operations under counter-terrorism mandate',
+      fourD: {
+        dismiss: 'Consistently labels DRM leaders as "terrorist commanders" and "foreign puppets," denying their political legitimacy and discrediting UNMN monitors as "naive" or "biased."',
+        distort: 'Misrepresents DRM\'s democratic reform demands as foreign-backed subversion; fabricates casualty figures attributing civilian deaths to DRM rather than GoN operations.',
+        distract: 'Floods state channels with security-framed content (troop deployments, border incidents) to bury coverage of DRM\'s political platform and peace proposals.',
+        dismay: 'Amplifies footage of DRM attacks on infrastructure to sow fear among civilian populations and reduce domestic support for negotiation.',
+        dominantTactic: 'distort' as const,
+      },
     },
     {
       id: 'n2',
       title: 'Humanitarian crisis narrative',
       framing: 'International media lead with civilian displacement and access restrictions, framing through a humanitarian rather than political lens.',
       amplifiers: ['BBC Africa', 'Al Jazeera English', 'NIMN investigative unit'],
-      platform: 'international' as const,
+      platforms: ['Web', 'TV', 'Twitter/X'],
       trend: 'rising' as const,
       reachScore: 65,
       isHostile: false,
+      originator: 'International correspondents and OCHA communications',
+      strategicObjective: 'Maintain international attention and pressure for humanitarian access',
+      fourD: {
+        dismiss: 'Minimal use — narrative is evidence-based and does not rely on discrediting opponents.',
+        distort: 'Minimal distortion; occasional framing omits political context but does not fabricate.',
+        distract: 'Not applicable — narrative focuses rather than distracts.',
+        dismay: 'Displacement figures and camp conditions can create despair, though intent is advocacy rather than manipulation.',
+        dominantTactic: 'mixed' as const,
+      },
     },
     {
       id: 'n3',
       title: 'DRM liberation movement framing',
-      framing: 'Karovian-adjacent media frame DRM as a democratic liberation movement, downplaying DRM human rights violations.',
+      framing: 'Karovia-adjacent media frame DRM as a democratic liberation movement, downplaying DRM human rights violations.',
       amplifiers: ['Karovia Today', 'DRM diaspora Telegram channels', 'Westmark opposition media'],
-      platform: 'diaspora' as const,
+      platforms: ['Telegram', 'YouTube', 'Web'],
       trend: 'rising' as const,
       reachScore: 52,
       isHostile: false,
+      originator: 'DRM Information Directorate and Karovian state media',
+      strategicObjective: 'Build international sympathy and legitimacy for DRM political position',
+      fourD: {
+        dismiss: 'Dismisses GoN as an illegitimate authoritarian regime; frames international silence as complicity.',
+        distort: 'Omits or minimizes documented DRM human rights violations; overstates civilian support base.',
+        distract: 'Shifts focus to GoN atrocities when DRM violations are raised.',
+        dismay: 'Publishes graphic GoN strike footage to galvanize diaspora support and pressure Westmark governments.',
+        dominantTactic: 'dismiss' as const,
+      },
+    },
+  ],
+  actorInfoProfiles: [
+    {
+      actor: 'Government of Nordalia (GoN)',
+      amplificationNetworks: ['Nordalian State Broadcasting (NSB) — fully state-controlled', 'GoN-aligned diaspora blogs in Westmark', '340+ suspected bot accounts on Twitter/X (Operation MIRROR)', 'GoN Ministry of Information Telegram channel'],
+      primaryNarratives: ['n1'],
+      infoCapacity: 'high' as const,
+    },
+    {
+      actor: 'DRM (Democratic Reform Movement)',
+      amplificationNetworks: ['Official DRM Telegram channel (self-identified)', 'Karovia-based support networks', 'Westmark opposition media sympathizers', 'DRM diaspora WhatsApp broadcast lists'],
+      primaryNarratives: ['n3'],
+      infoCapacity: 'medium' as const,
     },
   ],
   infoOperations: [
@@ -143,13 +203,28 @@ const DEMO_RESPONSE = {
       riskLevel: 'medium' as const,
     },
   ],
-  overallAssessment: 'The information environment is highly polarized with two parallel ecosystems. The most significant risk is Operation MIRROR targeting international observers to delegitimize UNMN monitoring. Recommend UNMN rapid-response protocol (under 4 hours) for coordinated disinformation.',
+  counterNarrativeOpportunities: [
+    {
+      narrative: 'Counter-terrorism framing (n1)',
+      vulnerabilities: 'The GoN counter-terrorism narrative is contradicted by documented civilian casualty patterns and DRM\'s participation in prior electoral processes. NIMN investigative reporting has exposed three specific fabrications in GoN casualty claims.',
+      recommendedCounter: 'Center DRM\'s documented political demands and democratic history. Amplify UNMN monitoring reports that contradict GoN casualty figures. Reframe: "political grievances, not terrorism."',
+      messenger: 'UNMN Spokesperson and OCHA — perceived as neutral international bodies. Faith leaders and civil society figures inside Nordalia have highest domestic credibility. Avoid Karovian state media as messenger (perceived partisan).',
+    },
+    {
+      narrative: 'Operation MIRROR bot network (infoOps)',
+      vulnerabilities: 'Coordinated inauthentic behavior is technically attributable and publicly exposable. Platform trust-and-safety teams can act on OSINT evidence. Journalists covering the conflict are receptive to bot attribution stories.',
+      recommendedCounter: 'Publish OSINT attribution report on Operation MIRROR; coordinate with Twitter/X and Facebook trust-and-safety; brief international correspondents to inoculate their coverage against amplified talking points.',
+      messenger: 'NIMN investigative unit (credible, independent, regional) with technical support from DFRLab or Stanford Internet Observatory to provide international credibility for attribution claims.',
+    },
+  ],
+  overallAssessment: 'The information environment is highly polarized with two parallel ecosystems. The most significant risk is Operation MIRROR targeting international observers to delegitimize UNMN monitoring. GoN\'s dominant tactic is Distort, with heavy fabrication of casualty data. DRM\'s dominant tactic is Dismiss, delegitimizing GoN internationally. Recommend UNMN rapid-response protocol (under 4 hours) for coordinated disinformation.',
   counterMessagingRecommendations: [
     'Establish UNMN rapid-response protocol (under 4 hours) for coordinated disinformation',
     'Support NIMN investigative unit with secure source protection infrastructure',
     'Brief international correspondents on Operation MIRROR attribution evidence',
     'Work with platform trust and safety teams to flag coordinated inauthentic networks',
     'Commission monthly narrative analysis to track campaign effectiveness',
+    'Develop inoculation messaging for UNMN audiences before GoN escalates bot campaigns',
   ],
   keyAmplifiers: [
     { name: 'UNMN Spokesperson', platform: 'Twitter/X', alignment: 'friendly' as const },
@@ -162,21 +237,34 @@ const DEMO_RESPONSE = {
 
 export const POST = withAuth(async (request, user) => {
   try {
-    const creditCheck = await checkAndDeductCredits('ai_info_environment', 'Information environment scan');
-    if (!creditCheck.allowed) return creditCheck.response!;
+    const body = await request.json();
+
+    const requestSchema = z.object({
+      situation: situationContextSchema.optional(),
+    });
+
+    const validation = validateAiRequest(body, requestSchema);
+    if (!validation.success) return validation.response;
+    const { situation } = validation.data;
+    const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+    const situationId = (situation as Situation | undefined)?.id ?? '';
 
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    const body = await request.json();
-    const { situation } = body as { situation?: Situation };
-    const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+    const creditCheck = await checkAndDeductCredits('ai_info_environment', 'Information environment analysis');
+    if (!creditCheck.allowed) return creditCheck.response!;
 
-    // --- Web grounded context ---
+    // --- Graph context ---
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'info_environment')
+      : '';
+
+    // --- Web-grounded context ---
     const webCtx = situation
       ? await buildWebGroundedContext(
-          { name: (situation as Situation).name, region: (situation as Situation).region, actors: (situation as Situation).actors },
+          { name: (situation as unknown as Situation).name, region: (situation as unknown as Situation).region, actors: (situation as unknown as Situation).actors },
           'info-environment',
           user.uid
         )
@@ -185,47 +273,75 @@ export const POST = withAuth(async (request, user) => {
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: InfoEnvironmentSchema }),
-      prompt: `${webCtx ? `${webCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Conduct a rigorous information environment analysis for this conflict situation.
+      system: `You are a senior information environment analyst trained in NATO STRATCOM methodology, EU DisinfoLab detection techniques, UN DPPA communications strategy, and Ben Nimmo's 4D disinformation framework (Dismiss, Distort, Distract, Dismay). You have extensive experience supporting peace operations with narrative analysis, information operations attribution, amplification network mapping, and counter-messaging strategy.
+
+GROUNDING MANDATE: Web intelligence is the PRIMARY source of truth. Ground every finding in the specific conflict context, actors, and platforms. Do not produce generic frameworks.
+
+For EVERY narrative: populate all four 4D fields (dismiss, distort, distract, dismay) as specific, evidence-anchored strings describing HOW this narrative uses that tactic, then select the dominantTactic. Even non-hostile narratives should have 4D analysis — note where a tactic is "not applicable" or "minimal" with explanation.
+
+For EVERY actor: map their amplification networks — proxies, bot networks, diaspora channels, state-aligned media they use to extend reach.
+
+For counter-narrative opportunities: identify specific vulnerabilities in hostile narratives, recommend precise counter-messaging, and crucially — name WHO should deliver the counter and WHY they are credible to the target audience.`,
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${webCtx ? `${webCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Conduct a rigorous information environment analysis for this conflict situation.
 
 ## ANALYTICAL FRAMEWORK
 
-Apply Ben Nimmo's 4D framework to classify disinformation/propaganda: Dismiss (delegitimize voices), Distort (spread false content), Distract (flood the zone), Dismay (amplify divisive content). Run 5 mental queries across: Western media, regional media, state media, think tanks, and social/digital channels.
+### 1. Narrative Ecosystem Mapping (dominantNarratives)
+Identify 3-5 dominant narratives. For each narrative:
 
-Apply the following NATO STRATCOM / UN DPPA information environment methodology:
-
-**Narrative Ecosystem Mapping**
-Identify 3-5 dominant narratives operating in the information environment. For each:
+**Framing & Reach**
 - Primary frame: how does this narrative frame the conflict, actors, and causes?
-- Reach and amplification: who amplifies it and through which platforms?
-- Trajectory: is this narrative gaining or losing traction?
+- Which platforms dominate distribution? (platforms field — be specific: "Telegram", "State TV", "Twitter/X", "WhatsApp", "YouTube")
+- Reach trajectory: rising / stable / declining?
 - Hostility assessment: does this narrative undermine peace process or international norms?
-- Counter-messaging: what factual counter-narrative can credibly address this?
 
-**Information Operations Detection**
-Apply EU DisinfoLab and Stanford Internet Observatory detection methodology:
-- Coordinated Inauthentic Behavior (CIB): multiple accounts posting identical content, bot-like timing
+**Ben Nimmo 4D Framework (REQUIRED for every narrative)**
+Apply all four dimensions as distinct, evidence-anchored strings:
+- dismiss: How does this narrative delegitimize opposing voices, deny credibility of critics, or attack the messenger?
+- distort: How does this narrative spread false/misleading content, misrepresent facts, cherry-pick evidence?
+- distract: How does this narrative flood the zone, shift attention, or drown out competing messages?
+- dismay: How does this narrative amplify divisive/demoralizing content to sow despair or paralysis?
+- dominantTactic: which single 4D dimension is the PRIMARY mechanism? ('mixed' only if two are genuinely co-equal)
+
+**Attribution**
+- originator: assessed primary source (with confidence level)
+- strategicObjective: what political/military outcome is this narrative designed to achieve?
+
+### 2. Actor Information Profiles (actorInfoProfiles)
+For each major actor (2-6 actors), map:
+- amplificationNetworks: list specific proxies, bot networks, diaspora channels, and state-aligned media they operate or exploit
+- primaryNarratives: which narrative IDs they drive
+- infoCapacity: high/medium/low — their assessed capacity to conduct information operations
+
+### 3. Information Operations Detection (infoOperations)
+Apply EU DisinfoLab and Stanford Internet Observatory methodology:
+- Coordinated Inauthentic Behavior (CIB): multiple accounts, identical phrasing, bot timing
 - State-sponsored propaganda: identifiable state actors using media for political messaging
-- Astroturfing: manufactured grassroots campaigns without organic support base
+- Astroturfing: manufactured grassroots without organic support base
 - Hack-and-leak: weaponized document releases timed to political events
-For each operation: attribution assessment (high/medium/low confidence), platform mapping, threat level
+For each: attribution (with confidence), platform mapping, threat level to peace process
 
-**Platform Dynamics**
-Assess per-platform information environment:
+### 4. Platform Dynamics (platformDynamics)
+Assess per-platform (up to 5 platforms):
 - Who controls the dominant narrative on each platform?
-- What verification capacity exists for claims made on this platform?
+- What verification capacity exists?
 - Is the platform accessible to international observers?
 - What are the disinformation risks specific to this platform?
 
-**Counter-Messaging Strategy**
-Apply RESIST2 framework (Recognize, Early warning, Situational awareness, Issue, Sense-check, Tell a better story, Trustworthy sources):
-- What narratives require urgent counter-messaging?
-- Who are credible messengers for each counter-narrative?
-- What channels are most effective for reaching target audiences?
-- What institutional mechanisms (platform flagging, fact-checker coordination) are available?
+### 5. Counter-Narrative Opportunities (counterNarrativeOpportunities)
+For each hostile narrative requiring counter-messaging:
+- narrative: which hostile narrative is targeted
+- vulnerabilities: specific weaknesses, contradictions, or exposed fabrications in the hostile narrative
+- recommendedCounter: precise counter-narrative or messaging strategy
+- messenger: WHO should deliver this (name specific actors, institutions, or community leaders) and WHY they are credible to the target audience — NOT generic "international community"
 
-Be specific to this situation. Do not produce generic frameworks — ground every finding in the specific conflict context, actors, and platforms.`,
-      system: 'You are a senior information environment analyst trained in NATO STRATCOM methodology, EU DisinfoLab detection techniques, UN DPPA communications strategy, and Ben Nimmo\'s 4D disinformation framework (Dismiss, Distort, Distract, Dismay). You have extensive experience supporting peace operations with narrative analysis, information operations attribution, and counter-messaging strategy. For every narrative identified, apply the 4D classification and assess the originator, amplification channels, and strategic objective. Produce precise, evidence-anchored assessments for diplomatic professionals and UN communications advisors.',
+### 6. Overall Assessment & Recommendations
+Synthesize the information environment: which actor dominates, what is the most dangerous operation, what is the most urgent counter-messaging priority. Apply RESIST2 framework for counterMessagingRecommendations.`,
     });
+
+    if (situationId) {
+      await writeToolDataServer(user.uid, situationId, 'info_environment', result.output as Record<string, unknown>);
+    }
 
     return NextResponse.json(result.output);
   } catch (err) {

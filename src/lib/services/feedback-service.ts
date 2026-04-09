@@ -11,7 +11,7 @@
  * 3. Aggregate patterns for tool improvement
  */
 
-import { adminDb, ensureInitialized } from '@/lib/firebase/admin';
+import { adminDb } from '@/lib/firebase/admin';
 
 export type ConfidenceRating = 1 | 2 | 3 | 4 | 5;
 
@@ -47,7 +47,6 @@ export async function saveToolFeedback(
     approved?: boolean;
   },
 ): Promise<void> {
-  await ensureInitialized();
   const now = new Date().toISOString();
 
   const ref = adminDb
@@ -74,7 +73,6 @@ export async function getToolFeedback(
   situationId: string,
   toolId: string,
 ): Promise<ToolFeedback | null> {
-  await ensureInitialized();
   const doc = await adminDb
     .collection('users').doc(uid)
     .collection('situations').doc(situationId)
@@ -88,7 +86,6 @@ export async function getAllToolFeedback(
   uid: string,
   situationId: string,
 ): Promise<ToolFeedback[]> {
-  await ensureInitialized();
   const snap = await adminDb
     .collection('users').doc(uid)
     .collection('situations').doc(situationId)

@@ -1,139 +1,276 @@
-import { streamText } from 'ai';
+import { NextResponse } from 'next/server';
+import { generateText, Output } from 'ai';
+import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
-import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
+import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
-import { buildGraphContext } from '@/lib/ai/context-builder-server';
-import { searchWeb } from '@/lib/ai/firecrawl';
-import { GLOBAL_MEDIA_SOURCES, getSourcesForRegion } from '@/lib/constants/global-media-sources';
-import { isServerDemoMode, formatAsStreamResponse, getCachedResponse } from '@/lib/demo/demo-mode';
+import { validateAiRequest } from '@/lib/api/validate-request';
+import { handleRouteError } from '@/lib/api/standard-error';
+import { situationContextSchema } from '@/lib/api/schemas';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
+// --- Schema ---
+
+const MediaRoundupSchema = z.object({
+  date: z.string().describe('Date of this roundup in ISO 8601 format (YYYY-MM-DD)'),
+  headlines: z.array(
+    z.object({
+      title: z.string().describe('Headline title as reported or paraphrased'),
+      outlet: z.string().describe('Media outlet name'),
+      country: z.string().describe('Country of the outlet'),
+      significance: z
+        .string()
+        .describe(
+          'Why this headline matters for the conflict — operational, political, or humanitarian significance'
+        ),
+      link: z.string().optional().describe('URL to the source article if available'),
+    })
+  ).describe('5-10 key headlines from the past 24 hours, ordered by significance'),
+  narrativeShifts: z.array(
+    z.object({
+      shift: z.string().describe('Name of the narrative shift, e.g. "Reframing DRM from terrorists to insurgents"'),
+      from: z.string().describe('The prior dominant narrative frame'),
+      to: z.string().describe('The emerging or replacing narrative frame'),
+      evidence: z.string().describe('Specific outlets or events that signal this shift'),
+    })
+  ).describe('Notable shifts in how key actors or events are being framed compared to prior reporting'),
+  propagandaAlerts: z.array(
+    z.object({
+      outlet: z.string().describe('Outlet or account responsible'),
+      tactic: z.string().describe('Propaganda tactic, e.g. "False flag attribution", "Atrocity fabrication", "Dehumanisation"'),
+      content: z.string().describe('Description of the specific content and what makes it propagandistic'),
+      riskLevel: z
+        .enum(['high', 'medium', 'low'])
+        .describe('Risk level: high = immediate escalation or atrocity risk, medium = narrative harm, low = background noise'),
+    })
+  ).describe('Active propaganda or disinformation content identified in today\'s media cycle'),
+  keyMessages: z
+    .array(z.string())
+    .describe('3-5 main takeaways from today\'s media roundup — the essential intelligence for an analyst briefing'),
+  sourceDiversity: z
+    .number()
+    .min(0)
+    .max(10)
+    .describe(
+      'Source diversity score for today\'s coverage: 0 = single-source or fully captured narrative, 10 = broad spectrum of independent, regional, and international voices'
+    ),
+});
+
+// --- Demo response ---
+
+const DEMO_RESPONSE = {
+  date: '2026-04-09',
+  headlines: [
+    {
+      title: 'UNMN demands AFN withdrawal from Sector Bravo buffer zone within 72 hours',
+      outlet: 'Reuters',
+      country: 'International',
+      significance:
+        'First formal UNMN ultimatum since ceasefire signing. Triggers Article 7 review mechanism. Failure to comply activates Security Council notification protocol — the first such escalation of the UNMN mandate.',
+      link: 'https://reuters.com/world/africa/unmn-buffer-zone-nordalia-2026-04-09',
+    },
+    {
+      title: 'Westmark arms vote: coalition holds, €120M DRM package to proceed 14 April',
+      outlet: 'Westmark Free Press',
+      country: 'Federal Republic of Westmark',
+      significance:
+        'Confirms patron escalation track. GoN Defence Ministry immediately threatened to "respond proportionally." Karovia recalled its Westmark ambassador for consultations — most severe diplomatic signal since conflict onset.',
+      link: 'https://westmarkfreepress.wm/politics/arms-vote-confirmed-2026-04-09',
+    },
+    {
+      title: 'OCHA: 47,000 civilians at acute food risk as Checkpoint Bravo enters day 11',
+      outlet: 'UN News',
+      country: 'International',
+      significance:
+        'IPC Phase 3 threshold crossed in three eastern districts. MSF 6-day supply warning now public. International pressure on GoN will intensify — creates diplomatic leverage window for humanitarian access negotiation.',
+      link: 'https://news.un.org/en/story/2026/04/nordalia-checkpoint-bravo',
+    },
+    {
+      title: 'GoN: buffer zone activity is "defensive posture responding to DRM provocation"',
+      outlet: 'Nordalia Broadcasting Corporation',
+      country: 'Nordalia',
+      significance:
+        'GoN framing positions ceasefire violation as reactive, not offensive. Consistent with Stage 5 face-saving narrative. Likely precursor to GoN blocking JCMC emergency session request.',
+      link: 'https://nbc.gov.nd/news/defense-statement-040926',
+    },
+    {
+      title: 'DFRLab confirms coordinated DRM diaspora disinformation network — 340 accounts',
+      outlet: 'DFRLab / Atlantic Council',
+      country: 'International',
+      significance:
+        'Provides GoN with international legitimacy boost and weakens DRM\'s moral framing internationally. Westmark government under pressure to distance from DRM ahead of arms vote. Narrative blowback risk for DRM political wing.',
+      link: 'https://dfrlab.org/2026/04/09/nordalia-ib-network',
+    },
+    {
+      title: 'Commander Asante: "Ceasefire is over if AFN post not removed by Friday"',
+      outlet: 'Eastern Provinces Voice',
+      country: 'Nordalia',
+      significance:
+        'First explicit public ultimatum from DRM military command. Classic Stage 6 "strategy of threats" language. If GoN does not respond, DRM may stage a demonstrative military action to show credibility.',
+      link: 'https://epvoice.nd/asante-statement-2026-04-09',
+    },
+    {
+      title: 'AU Panel of the Wise offers emergency mediation for buffer zone standoff',
+      outlet: 'African Union News',
+      country: 'International',
+      significance:
+        'De-escalation opportunity. AU Panel has credibility with both parties from November 2025 prisoner exchange. Time-limited — window closes if Friday ultimatum passes without response.',
+      link: 'https://au.int/news/panel-wise-nordalia-2026-04-09',
+    },
+    {
+      title: 'Karovian KAF: additional logistics flights "routine resupply, not pre-positioning"',
+      outlet: 'Karovian News Agency',
+      country: 'Republic of Karovia',
+      significance:
+        'Karovia is denying pre-offensive resupply interpretation. Denial itself signals awareness of international observation. Pattern of denial followed by escalation documented in three prior KAF deployments.',
+      link: 'https://kna.gov.kv/en/defense-2026-04-09',
+    },
+  ],
+  narrativeShifts: [
+    {
+      shift: 'Ceasefire framing: from "fragile but holding" to "on the verge of collapse"',
+      from:
+        'International outlets characterised the ceasefire as "stressed but functional" through March 2026, noting back-channel maintenance and prisoner exchanges as stabilisers.',
+      to:
+        'As of 8-9 April, Reuters, AP, and UN News all shifted to "on the verge of collapse" language following the Sector Bravo incursion and Commander Asante\'s Friday ultimatum. UNMN\'s formal 72-hour demand accelerated this shift.',
+      evidence:
+        'Reuters headline change tracked via media monitoring: 2 April "ceasefire holding despite tensions" vs. 9 April "UNMN ultimatum as ceasefire teeters." AP followed within 4 hours.',
+    },
+    {
+      shift: 'DRM moral legitimacy: from sympathetic reform movement to tainted actor',
+      from:
+        'DRM political wing successfully maintained an international narrative of democratic reform and civilian protection through Q1 2026, amplified by Westmark media and diaspora networks.',
+      to:
+        'DFRLab coordinated inauthentic behaviour report is shifting international framing. Several Westmark opposition politicians now citing report to argue against arms package. DRM moral authority partially compromised.',
+      evidence:
+        'Westmark Free Press published DFRLab findings prominently; previously buried similar reports. Three EU member state foreign ministries issued statements of "concern" — shift from prior silence.',
+    },
+    {
+      shift: 'Humanitarian crisis: from background context to primary frame',
+      from:
+        'Eastern humanitarian conditions were a secondary frame in most international outlets, subordinate to political and military developments.',
+      to:
+        'OCHA IPC Phase 3 declaration and MSF supply warning have elevated humanitarian conditions to primary frame in UN, AP, and several European outlets. GoN blocking behaviour now explicitly named rather than passively described.',
+      evidence:
+        'UN News led with humanitarian angle for first time since October 2025. BBC, Le Monde, and Der Spiegel all ran humanitarian-led pieces on 8-9 April.',
+    },
+  ],
+  propagandaAlerts: [
+    {
+      outlet: '@NordaliaWatch coordinated network (X / Telegram)',
+      tactic: 'Atrocity fabrication and coordinated amplification',
+      content:
+        'Network of 340 accounts (DFRLab confirmed) amplifying fabricated atrocity imagery from unrelated conflicts, attributed to AFN. Three mainstream outlets ran unverified images before correction. Designed to accelerate Westmark arms vote and international condemnation of GoN.',
+      riskLevel: 'high' as const,
+    },
+    {
+      outlet: 'Nordalia Broadcasting Corporation (NBC)',
+      tactic: 'Dehumanisation and delegitimisation',
+      content:
+        'NBC morning broadcast 09 April described UNMN demand as "foreign interference in Nordalian sovereignty" and referred to SRSG Santos as an "agent of Westmark interests." Classic Stage 5 dehumanisation of mediating third party — undermines future mediation space.',
+      riskLevel: 'medium' as const,
+    },
+    {
+      outlet: 'Karovian News Agency (KNA)',
+      tactic: 'False balance and whataboutism',
+      content:
+        'KNA published side-by-side casualty figures presenting unverified GoN-provided data (0 civilian deaths) alongside UNMN-verified figures (47) without methodological context, implying equivalence. Designed to muddy accountability debate at Security Council.',
+      riskLevel: 'medium' as const,
+    },
+  ],
+  keyMessages: [
+    'The 72-hour UNMN buffer zone ultimatum is the most significant procedural escalation since the September Agreement — failure to comply triggers Security Council notification and may collapse the ceasefire framework.',
+    'Commander Asante\'s Friday ultimatum and the UNMN demand create converging deadlines: both expire around 11-12 April, creating a narrow de-escalation window that the AU Panel of the Wise offer could fill.',
+    'The Westmark arms vote (14 April) now has confirmed majority support — diplomatic engagement with Westmark Foreign Minister before 12 April is the last viable intervention point before patron escalation locks in.',
+    'The DFRLab disinformation finding partially undercuts DRM moral legitimacy internationally, creating a brief window to pressure DRM political wing toward compliance — leverage that expires if Asante\'s ultimatum passes.',
+    'Humanitarian framing has become primary in international media — GoN blocking behaviour at Checkpoint Bravo is now named, not passive. A unilateral GoN gesture on access could shift international narrative and reduce pressure ahead of Security Council.',
+  ],
+  sourceDiversity: 5.2,
+};
+
+// --- Route ---
+
 export const POST = withAuth(async (request, user) => {
   try {
-    const { situation, timeRange = '24h', maxSections = 8, customQueries } = await request.json();
+    const body = await request.json();
 
+    const requestSchema = z.object({
+      situation: situationContextSchema.optional(),
+    });
+
+    const validation = validateAiRequest(body, requestSchema);
+    if (!validation.success) return validation.response;
+    const { situation } = validation.data;
+
+    // --- Demo mode ---
     if (isServerDemoMode()) {
-      const cached = getCachedResponse('chat', 'greeting');
-      if (cached) return formatAsStreamResponse(cached);
-      return new Response(JSON.stringify({ error: 'AI not configured' }), { status: 503 });
+      return NextResponse.json(DEMO_RESPONSE);
     }
 
-    const creditCheck = await checkAndDeductCredits('media-roundup', 'Media Roundup');
+    // --- Credit check ---
+    const creditCheck = await checkAndDeductCredits('ai_media_roundup', 'Media roundup');
     if (!creditCheck.allowed) return creditCheck.response;
 
-    const sit = situation as unknown as Situation | undefined;
-    const sitContext = sit ? buildToolContext(sit) : '';
-    const region = sit?.region || '';
-    const situationId = sit?.id ?? '';
-    const graphCtx = situationId
-      ? await buildGraphContext(user.uid, situationId, 'media_roundup').catch(() => '')
-      : '';
+    // --- Contexts ---
+    const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+    const situationId = (situation as Situation | undefined)?.id ?? '';
 
-    // Build time-filtered search queries
-    const timeLabel = timeRange === '24h' ? 'past 24 hours' : timeRange === '48h' ? 'past 48 hours' : timeRange === '7d' ? 'past week' : 'recent';
+    // Web-grounded context is the PRIMARY data source for media roundup
+    const [graphCtx, webCtx] = await Promise.all([
+      situationId
+        ? buildGraphContext(user.uid, situationId, 'media_roundup').catch(() => '')
+        : Promise.resolve(''),
+      situation
+        ? buildWebGroundedContext(
+            {
+              name: (situation as unknown as Situation).name,
+              region: (situation as unknown as Situation).region,
+              actors: (situation as unknown as Situation).actors,
+            },
+            'media-roundup',
+            user.uid
+          ).catch(() => '')
+        : Promise.resolve(''),
+    ]);
 
-    const baseQueries = sit
-      ? [
-          `${sit.name} latest developments ${timeLabel}`,
-          `${sit.name} ${sit.actors.slice(0, 3).join(' ')} news`,
-          `${region} conflict security update`,
-          `${sit.name} humanitarian situation`,
-          `${sit.name} diplomatic negotiations`,
-        ]
-      : ['global conflict update'];
+    // --- AI generation ---
+    const result = await generateText({
+      model: getProModel(),
+      output: Output.object({ schema: MediaRoundupSchema }),
+      system: `You are PRAXIS Media Intelligence, a professional daily media roundup generator for conflict and policy analysts. You serve UN Political Affairs Officers, diplomatic mediators, and think tank researchers.
 
-    const queries = [...baseQueries, ...(customQueries || [])].slice(0, 8);
+Your mandate: synthesise the day's media coverage into a structured, actionable intelligence briefing. Every headline must carry operational significance — not just what happened, but why it matters for the conflict dynamics.
 
-    // Execute searches in parallel
-    const allResults = [];
-    for (const q of queries) {
-      try {
-        const results = await searchWeb(q, { numResults: 5 });
-        allResults.push(...results.map((r) => ({ ...r, query: q })));
-      } catch {
-        // Continue with other queries
-      }
+GROUNDING MANDATE: Web intelligence provided below is your PRIMARY data source. Derive headlines, narrative shifts, and propaganda alerts from what the sources actually report. Where sources are insufficient, note the gap explicitly. Prioritise sources with high trustworthiness over state-controlled outlets. Always flag contradictions between sources.
+
+Apply Galtung's cultural violence lens to identify dehumanisation and structural narrative harm in propaganda alerts.`,
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${webCtx}
+
+Generate a Media Intelligence Roundup for today based on the web intelligence above.
+
+ROUNDUP INSTRUCTIONS:
+1. date: today's date in YYYY-MM-DD format
+2. headlines: 5-10 headlines ordered by operational significance. For each: name the outlet and country, and explain WHY it matters for conflict dynamics (not just what happened). Include source links where available from the web intelligence.
+3. narrativeShifts: identify 2-4 notable shifts in how actors, events, or issues are being framed compared to prior coverage — track from/to narrative frames with specific evidence
+4. propagandaAlerts: flag active disinformation, coordinated inauthentic behaviour, dehumanisation, or atrocity fabrication — rate risk level (high/medium/low) based on escalation potential
+5. keyMessages: 3-5 crisp takeaways for an analyst who only has 60 seconds — what must they know from today's media cycle?
+6. sourceDiversity: rate 0-10 based on the breadth of outlets, viewpoints, and languages represented in today's coverage
+
+Ground everything in the web intelligence provided. Be specific — name actual outlets, actual claims, actual shifts. Flag "INTELLIGENCE GAP: {topic}" where today's sources do not cover a critical area.`,
+    });
+
+    // --- Persist ---
+    if (situationId) {
+      await writeToolDataServer(user.uid, situationId, 'media_roundup', result.output as Record<string, unknown>);
     }
 
-    // Deduplicate by URL
-    const seen = new Set<string>();
-    const unique = allResults.filter((r) => {
-      if (seen.has(r.url)) return false;
-      seen.add(r.url);
-      return true;
-    });
-
-    // Score each result using media source database
-    const regionSources = region ? getSourcesForRegion(region) : GLOBAL_MEDIA_SOURCES;
-    const scoredResults = unique.map((r) => {
-      let reliability = 0.5;
-      let sourceName = 'Unknown';
-      try {
-        const hostname = new URL(r.url).hostname.replace('www.', '');
-        const match = regionSources.find((s) => hostname.includes(s.url.replace('www.', '')));
-        if (match) {
-          reliability = match.reliability;
-          sourceName = match.name;
-        } else {
-          sourceName = hostname.split('.')[0].charAt(0).toUpperCase() + hostname.split('.')[0].slice(1);
-        }
-      } catch { /* keep defaults */ }
-
-      // Importance score: reliability * recency * relevance
-      const score = reliability * 10;
-
-      return {
-        title: r.title || 'Untitled',
-        url: r.url,
-        snippet: (r.description || r.content || '').slice(0, 500),
-        source: sourceName,
-        reliability,
-        score,
-        query: r.query,
-      };
-    });
-
-    // Sort by score, take top results up to page budget
-    scoredResults.sort((a, b) => b.score - a.score);
-    const topResults = scoredResults.slice(0, maxSections * 3);
-
-    // Build source summary for the AI
-    const sourceText = topResults.map((r, i) =>
-      `[${i + 1}] ${r.source} (reliability: ${(r.reliability * 100).toFixed(0)}%) — ${r.title}\n${r.snippet}\nURL: ${r.url}`
-    ).join('\n\n---\n\n');
-
-    // Stream the roundup
-    const systemCtx = graphCtx ? `${graphCtx}\n\n${sitContext}` : sitContext;
-    const result = streamText({
-      model: getProModel(),
-      system: `You are PRAXIS Media Intelligence, a professional media roundup generator for conflict/policy analysts.
-
-${systemCtx}
-
-Generate a structured media intelligence roundup. Format as a professional briefing document.`,
-      prompt: `Generate a Media Intelligence Roundup based on these ${topResults.length} sources gathered in the ${timeLabel}.
-
-SOURCES:
-${sourceText}
-
-INSTRUCTIONS:
-1. Organize into ${maxSections} thematic sections (e.g., "Military Developments", "Diplomatic Activity", "Humanitarian Situation", "Regional Dynamics")
-2. Each section: 2-3 key developments with source citations [Source Name]
-3. Rate each development: CRITICAL / IMPORTANT / NOTABLE
-4. Flag any contradictions between sources
-5. End with "Intelligence Gaps" — what we still don't know
-6. End with "Recommended Actions" — what the analyst should do next
-
-Use markdown formatting. Be concise but substantive. Every claim must cite its source.
-If fewer than 5 sources were found, note the limited coverage and suggest additional research queries.`,
-    });
-
-    return result.toTextStreamResponse();
+    return NextResponse.json(result.output);
   } catch (err) {
-    console.error('[media-roundup] Error:', err);
-    return new Response(JSON.stringify({ error: 'Media roundup generation failed' }), { status: 500 });
+    return handleRouteError(err, 'media-roundup');
   }
 });

@@ -245,7 +245,7 @@ Focus on quality over quantity. Every node and edge should be defensible from th
     sourceUrl,
     sourceName,
     extractedAt,
-    tokenUsage: result.usage ? { input: result.usage.inputTokens, output: result.usage.outputTokens } : undefined,
+    tokenUsage: result.usage ? { input: result.usage.inputTokens ?? 0, output: result.usage.outputTokens ?? 0 } : undefined,
   };
 }
 

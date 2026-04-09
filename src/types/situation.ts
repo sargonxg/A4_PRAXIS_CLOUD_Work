@@ -114,6 +114,13 @@ export interface Situation {
   lastAiRefresh?: string | null;
   dataCompleteness?: number;
   ontology?: CaseOntology;
+  canonicalPreCheck?: {
+    currentLeadership?: string;
+    currentStatus?: string;
+    lastMajorEvent?: string;
+    correctionCount?: number;
+    checkedAt?: string;
+  };
 }
 
 export interface CreateSituationInput {
