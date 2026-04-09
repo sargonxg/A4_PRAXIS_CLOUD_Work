@@ -58,8 +58,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Coins, X, ChevronRight, ChevronDown } from 'lucide-react';
+import { Coins, X, ChevronRight, ChevronDown, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useAllToolStatuses, type ToolHealth } from '@/hooks/use-tool-status';
 
 const CHANGELOG = [
   {
@@ -371,52 +372,8 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   '/export-center': 'export-center',
 };
 
-// Three-state semaphore: green (ready), yellow (stale/needs update), red (not ready)
-type ToolHealth = 'green' | 'yellow' | 'red';
-
-// 24 hours in ms — data older than this is considered stale
-const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
-
-const EMPTY_HEALTH: Record<string, ToolHealth> = {};
-
-function useToolStatuses(situationId: string | null): Record<string, ToolHealth> {
-  const [statuses, setStatuses] = useState<Record<string, ToolHealth>>(EMPTY_HEALTH);
-
-  useEffect(() => {
-    if (!situationId) { setStatuses(EMPTY_HEALTH); return; }
-
-    fetch(`/api/tool-data?toolId=dashboard-snapshot&situationId=${situationId}`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
-        const healthMap: Record<string, ToolHealth> = {};
-        const seededTools: string[] = data?.data?.seededTools ?? [];
-        const toolTimestamps: Record<string, string> = data?.data?.toolTimestamps ?? {};
-        const now = Date.now();
-
-        // All tool IDs in the mapping
-        const allToolIds = new Set(Object.values(HREF_TO_TOOL_ID));
-
-        for (const toolId of allToolIds) {
-          if (seededTools.includes(toolId)) {
-            // Check freshness
-            const ts = toolTimestamps[toolId];
-            if (ts && (now - new Date(ts).getTime()) > STALE_THRESHOLD_MS) {
-              healthMap[toolId] = 'yellow'; // stale — needs update
-            } else {
-              healthMap[toolId] = 'green'; // fresh — ready
-            }
-          } else {
-            healthMap[toolId] = 'red'; // not seeded — not ready
-          }
-        }
-
-        setStatuses(healthMap);
-      })
-      .catch(() => {});
-  }, [situationId]);
-
-  return statuses;
-}
+// Unified tool status — uses the shared hook that combines dashboard-snapshot
+// with research-status for consistent semaphores across sidebar and tool pages
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -425,7 +382,12 @@ export function AppSidebar() {
   const { user, credits, logout } = useAuth();
   const { sidebarOpen, toggleSidebar } = useAppStore();
   const { activeSituationId, setActiveSituation } = useSituationStore();
-  const toolHealthMap = useToolStatuses(activeSituationId);
+  const allToolStatuses = useAllToolStatuses(activeSituationId);
+  // Extract simple health map for backward compat with semaphore rendering
+  const toolHealthMap: Record<string, ToolHealth> = {};
+  for (const [id, info] of Object.entries(allToolStatuses)) {
+    toolHealthMap[id] = info.health;
+  }
 
   // Collapsible sections — all open by default
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(
@@ -571,24 +533,39 @@ export function AppSidebar() {
                       </motion.span>
                     )}
                   </AnimatePresence>
-                  {/* Tool health semaphore: green=ready, yellow=stale, red=not ready */}
-                  {sidebarOpen && HREF_TO_TOOL_ID[item.href] && activeSituationId && (
-                    <span
-                      className={cn(
-                        'ml-auto h-2 w-2 shrink-0 rounded-full',
-                        {
-                          'bg-emerald-500': toolHealthMap[HREF_TO_TOOL_ID[item.href]] === 'green',
-                          'bg-amber-400': toolHealthMap[HREF_TO_TOOL_ID[item.href]] === 'yellow',
-                          'bg-navy-300': toolHealthMap[HREF_TO_TOOL_ID[item.href]] === 'red',
+                  {/* Tool health semaphore: green=ready, yellow=stale, red=not ready, pulsing=researching */}
+                  {sidebarOpen && HREF_TO_TOOL_ID[item.href] && activeSituationId && (() => {
+                    const tid = HREF_TO_TOOL_ID[item.href];
+                    const info = allToolStatuses[tid];
+                    const health = toolHealthMap[tid];
+                    const isResearching = info?.isResearching;
+
+                    if (isResearching) {
+                      return (
+                        <span className="ml-auto flex h-4 w-4 shrink-0 items-center justify-center" title="Researching — gathering live intelligence...">
+                          <Loader2 className="h-3 w-3 animate-spin text-gold-500" />
+                        </span>
+                      );
+                    }
+
+                    return (
+                      <span
+                        className={cn(
+                          'ml-auto h-2 w-2 shrink-0 rounded-full',
+                          {
+                            'bg-emerald-500': health === 'green',
+                            'bg-amber-400': health === 'yellow',
+                            'bg-navy-300': health === 'red',
+                          }
+                        )}
+                        title={
+                          health === 'green' ? 'Ready — data is fresh' :
+                          health === 'yellow' ? 'Stale — data may need updating' :
+                          'Not ready — no data yet'
                         }
-                      )}
-                      title={
-                        toolHealthMap[HREF_TO_TOOL_ID[item.href]] === 'green' ? 'Ready — data is fresh' :
-                        toolHealthMap[HREF_TO_TOOL_ID[item.href]] === 'yellow' ? 'Stale — data may need updating' :
-                        'Not ready — no data yet'
-                      }
-                    />
-                  )}
+                      />
+                    );
+                  })()}
                   {/* Badge */}
                   {item.badge && sidebarOpen && !HREF_TO_TOOL_ID[item.href] && (
                     <span className={cn(

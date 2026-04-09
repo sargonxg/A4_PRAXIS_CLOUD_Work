@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Loader2, X, Settings2, RotateCcw, Clock } from 'lucide-react';
+import { Sparkles, Loader2, X, Settings2, RotateCcw, Clock, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { usePreferencesStore, type DataSourceMode } from '@/stores/preferences-store';
 import { useSituationStore } from '@/stores/situation-store';
@@ -15,6 +15,16 @@ import type { Situation } from '@/types/situation';
 const GENERATION_TIMEOUT_MS = 90_000;
 
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+
+// Research status labels for the progress indicator
+const RESEARCH_STATUS_LABELS: Record<string, { label: string; detail: string }> = {
+  pending:           { label: 'Queued',       detail: 'Research queued — starting shortly...' },
+  'fetching-sources': { label: 'Researching', detail: 'Gathering intelligence from live sources...' },
+  synthesizing:      { label: 'Analyzing',    detail: 'AI synthesizing findings into structured output...' },
+  saving:            { label: 'Saving',       detail: 'Persisting results to your situation...' },
+  complete:          { label: 'Complete',      detail: 'Background research complete' },
+  failed:            { label: 'Failed',        detail: 'Research encountered an error' },
+};
 
 interface AiPopulateProps {
   /** Unique tool identifier (e.g., 'risk-monitor', 'early-warning') */
@@ -72,6 +82,70 @@ export function AiPopulate({
   const { log: debugLog } = useDebugStore();
 
   const sourceMode = getEffectiveMode(toolId);
+
+  // Background research status polling
+  const [researchStatus, setResearchStatus] = useState<string>('idle');
+  const [researchError, setResearchError] = useState<string | null>(null);
+  const researchPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Poll research status when active
+  useEffect(() => {
+    if (!activeSituation?.id || !toolId) return;
+    if (researchStatus === 'idle' || researchStatus === 'complete' || researchStatus === 'failed') {
+      if (researchPollRef.current) clearInterval(researchPollRef.current);
+      return;
+    }
+
+    const poll = () => {
+      fetch(`/api/research?toolId=${encodeURIComponent(toolId)}&situationId=${encodeURIComponent(activeSituation.id)}`)
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => {
+          if (!data) return;
+          setResearchStatus(data.researchStatus ?? 'idle');
+          if (data.researchStatus === 'complete') {
+            // Re-fetch tool data
+            persisted.clear().then(() => {
+              restoredRef.current = false;
+              // Force a re-render to pick up new data
+              window.location.reload();
+            });
+          }
+          if (data.researchStatus === 'failed') {
+            setResearchError(data.error ?? 'Research failed');
+          }
+        })
+        .catch(() => {});
+    };
+
+    researchPollRef.current = setInterval(poll, 5000);
+    poll(); // immediate first check
+
+    return () => { if (researchPollRef.current) clearInterval(researchPollRef.current); };
+  }, [researchStatus, activeSituation?.id, toolId, persisted]);
+
+  const triggerBackgroundResearch = useCallback(async () => {
+    if (!activeSituation) return;
+    setResearchStatus('pending');
+    setResearchError(null);
+    try {
+      const res = await fetch('/api/research', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          toolId,
+          situationId: activeSituation.id,
+          situation: activeSituation,
+        }),
+      });
+      if (!res.ok) {
+        setResearchStatus('failed');
+        setResearchError('Failed to start research');
+      }
+    } catch {
+      setResearchStatus('failed');
+      setResearchError('Network error starting research');
+    }
+  }, [activeSituation, toolId]);
 
   // Check for persisted data before showing the AI generation prompt
   useEffect(() => {
@@ -187,19 +261,63 @@ export function AiPopulate({
     generate();
   }, [persisted, generate]);
 
-  // If data exists or user skipped, just show the tool with a Regenerate button
+  // If data exists or user skipped, just show the tool with action bar
   if (status === 'skipped' || status === 'done' || hasExistingData) {
+    const isResearching = ['pending', 'fetching-sources', 'synthesizing', 'saving'].includes(researchStatus);
+    const rsLabel = RESEARCH_STATUS_LABELS[researchStatus];
+
     return (
       <>
         {(status === 'done' || hasExistingData) && (
-          <div className="mb-4 flex items-center justify-end">
-            <button
-              onClick={handleRegenerate}
-              className="flex items-center gap-1.5 rounded-lg border border-navy-200 px-3 py-1.5 text-xs font-medium text-navy-500 transition-colors hover:border-navy-300 hover:text-navy-700"
-            >
-              <RotateCcw className="h-3 w-3" />
-              Regenerate
-            </button>
+          <div className="mb-4 flex items-center justify-between">
+            {/* Research status indicator */}
+            <div className="flex items-center gap-2">
+              {isResearching && (
+                <div className="flex items-center gap-2 rounded-full bg-gold-50 px-3 py-1 text-xs text-gold-700">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  {rsLabel?.detail ?? 'Researching...'}
+                </div>
+              )}
+              {researchStatus === 'complete' && (
+                <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Research complete — new data available
+                </div>
+              )}
+              {researchStatus === 'failed' && researchError && (
+                <div className="flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs text-red-600">
+                  <AlertCircle className="h-3 w-3" />
+                  {researchError}
+                </div>
+              )}
+              {/* Staleness indicator */}
+              {persisted.generatedAt && (
+                <span className="text-[10px] text-navy-400">
+                  Last updated: {formatAge(persisted.generatedAt)}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Deep Research button — triggers background research with live sources */}
+              {!isResearching && (
+                <button
+                  onClick={triggerBackgroundResearch}
+                  className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:border-emerald-300 hover:bg-emerald-100"
+                  title="Run background research using live data feeds (ACLED, GDELT, ReliefWeb, etc.)"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Update with Research
+                </button>
+              )}
+              <button
+                onClick={handleRegenerate}
+                className="flex items-center gap-1.5 rounded-lg border border-navy-200 px-3 py-1.5 text-xs font-medium text-navy-500 transition-colors hover:border-navy-300 hover:text-navy-700"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Regenerate
+              </button>
+            </div>
           </div>
         )}
         {children}
@@ -362,4 +480,16 @@ export function AiPopulate({
       {children}
     </div>
   );
+}
+
+/** Format an ISO timestamp as a relative age string (e.g., "2h ago", "3d ago") */
+function formatAge(isoDate: string): string {
+  const ms = Date.now() - new Date(isoDate).getTime();
+  const mins = Math.floor(ms / 60_000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }

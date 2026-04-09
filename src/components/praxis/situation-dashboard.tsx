@@ -25,6 +25,7 @@ import { recordActivity, getRecentActivity, type ActivityEntry } from '@/lib/uti
 import { db } from '@/lib/firebase/config';
 import { onSnapshot, doc } from 'firebase/firestore';
 import { useAuth } from '@/lib/auth/auth-context';
+import { useAllToolStatuses, type ToolStatusInfo } from '@/hooks/use-tool-status';
 
 function formatRelTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -241,31 +242,67 @@ const HEALTH_TOOLS_EXTENDED = [
 function ToolSemaphore({
   tool,
   isSeeded,
+  statusInfo,
   onNavigate,
 }: {
   tool: { id: string; label: string; href: string; icon: React.ElementType };
   isSeeded: boolean;
+  statusInfo?: ToolStatusInfo;
   onNavigate: () => void;
 }) {
   const Icon = tool.icon;
+  const isResearching = statusInfo?.isResearching ?? false;
+  const isStale = statusInfo?.isStale ?? false;
+
+  // Determine visual state: researching > seeded+stale > seeded > not-seeded
+  const borderClass = isResearching
+    ? 'border-gold-300 bg-gold-50/50 hover:border-gold-400'
+    : isSeeded && isStale
+      ? 'border-amber-200 bg-amber-50/30 hover:border-amber-300'
+      : isSeeded
+        ? 'border-emerald-200 bg-emerald-50/50 hover:border-emerald-300'
+        : 'border-navy-200 bg-navy-50/30 hover:border-diplomatic-blue/30 hover:bg-diplomatic-blue/5';
+
+  const iconClass = isResearching
+    ? 'text-gold-600'
+    : isSeeded && isStale
+      ? 'text-amber-500'
+      : isSeeded
+        ? 'text-emerald-600'
+        : 'text-navy-400';
+
   return (
     <button
       onClick={onNavigate}
       className={cn(
         'flex items-center gap-2 rounded-lg border px-3 py-2.5 transition-all text-left group',
-        isSeeded
-          ? 'border-emerald-200 bg-emerald-50/50 hover:border-emerald-300'
-          : 'border-navy-200 bg-navy-50/30 hover:border-diplomatic-blue/30 hover:bg-diplomatic-blue/5'
+        borderClass
       )}
     >
-      <Icon className={cn('h-3.5 w-3.5 shrink-0', isSeeded ? 'text-emerald-600' : 'text-navy-400')} />
+      <Icon className={cn('h-3.5 w-3.5 shrink-0', iconClass)} />
       <div className="min-w-0 flex-1">
-        <p className={cn('truncate text-xs font-medium', isSeeded ? 'text-emerald-700' : 'text-navy-600 group-hover:text-diplomatic-blue')}>
+        <p className={cn('truncate text-xs font-medium',
+          isResearching ? 'text-gold-700' :
+          isSeeded ? (isStale ? 'text-amber-700' : 'text-emerald-700') :
+          'text-navy-600 group-hover:text-diplomatic-blue'
+        )}>
           {tool.label}
         </p>
+        {isResearching && (
+          <p className="mt-0.5 truncate text-[10px] text-gold-500">
+            {statusInfo?.researchStatus === 'fetching-sources' ? 'Gathering sources...' :
+             statusInfo?.researchStatus === 'synthesizing' ? 'AI analyzing...' :
+             statusInfo?.researchStatus === 'saving' ? 'Saving...' : 'Queued...'}
+          </p>
+        )}
+        {isStale && !isResearching && (
+          <p className="mt-0.5 truncate text-[10px] text-amber-500">Stale — update recommended</p>
+        )}
       </div>
-      {isSeeded ? (
-        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+      {isResearching ? (
+        <Loader2 className="h-4 w-4 shrink-0 animate-spin text-gold-500" />
+      ) : isSeeded ? (
+        <CheckCircle2 className={cn('h-4 w-4 shrink-0', isStale ? 'text-amber-400' : 'text-emerald-500')} />
       ) : (
         <span className="shrink-0 rounded bg-diplomatic-blue/10 px-2 py-0.5 text-[10px] font-medium text-diplomatic-blue group-hover:bg-diplomatic-blue/20 transition-colors">
           Generate
@@ -341,11 +378,31 @@ function SituationHealthWidget({
   const coreSeeded = HEALTH_TOOLS_CORE.filter((t) => seededTools.includes(t.id)).length;
   const totalCore = HEALTH_TOOLS_CORE.length;
 
+  // Unified tool statuses — includes research progress
+  const allStatuses = useAllToolStatuses(situation.id);
+  const researchingCount = Object.values(allStatuses).filter((s) => s.isResearching).length;
+  const staleCount = Object.values(allStatuses).filter((s) => s.isStale).length;
+
   return (
     <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-navy-700">Intelligence Readiness</h2>
         <div className="flex items-center gap-2">
+          {researchingCount > 0 && (
+            <div className="flex items-center gap-1 rounded-full bg-gold-50 px-2 py-0.5">
+              <Loader2 className="h-3 w-3 animate-spin text-gold-500" />
+              <span className="text-[10px] font-medium text-gold-600">
+                {researchingCount} researching
+              </span>
+            </div>
+          )}
+          {staleCount > 0 && !researchingCount && (
+            <div className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5">
+              <span className="text-[10px] font-medium text-amber-600">
+                {staleCount} stale
+              </span>
+            </div>
+          )}
           <div className="flex items-center gap-1">
             <div className={cn(
               'h-2 w-2 rounded-full',
@@ -368,6 +425,7 @@ function SituationHealthWidget({
             key={tool.id}
             tool={tool}
             isSeeded={seededTools.includes(tool.id)}
+            statusInfo={allStatuses[tool.id]}
             onNavigate={() => router.push(route(tool.href))}
           />
         ))}
@@ -382,6 +440,7 @@ function SituationHealthWidget({
               key={tool.id}
               tool={tool}
               isSeeded={seededTools.includes(tool.id)}
+              statusInfo={allStatuses[tool.id]}
               onNavigate={() => router.push(route(tool.href))}
             />
           ))}

@@ -157,7 +157,141 @@ const TalkingPointsSeedSchema = z.object({
   framing: z.string(),
 });
 
-const TOOL_SEEDS: ToolSeed[] = [
+// ---------------------------------------------------------------------------
+// Additional schemas for expanded seeding (Tier 2 & 3)
+// ---------------------------------------------------------------------------
+
+const InfoEnvironmentSeedSchema = z.object({
+  narratives: z.array(z.object({
+    title: z.string(),
+    description: z.string(),
+    actors: z.array(z.string()),
+    reach: z.enum(['local', 'national', 'regional', 'international']),
+    credibility: z.enum(['verified', 'partially-verified', 'unverified', 'disinformation']),
+  })),
+  dominantFramings: z.array(z.string()),
+  disinformationRisks: z.array(z.string()),
+});
+
+const SanctionsSeedSchema = z.object({
+  sanctionedEntities: z.array(z.object({
+    name: z.string(),
+    type: z.enum(['individual', 'entity', 'vessel', 'aircraft']),
+    regimes: z.array(z.string()),
+    reason: z.string(),
+  })),
+  complianceRisks: z.array(z.string()),
+  activeMeasures: z.array(z.string()),
+});
+
+const CommitmentsSeedSchema = z.object({
+  commitments: z.array(z.object({
+    title: z.string(),
+    parties: z.array(z.string()),
+    type: z.enum(['ceasefire', 'peace_agreement', 'diplomatic', 'humanitarian', 'political']),
+    status: z.enum(['active', 'violated', 'expired', 'suspended']),
+    date: z.string(),
+    keyProvisions: z.array(z.string()),
+  })),
+});
+
+const ScenarioSeedSchema = z.object({
+  scenarios: z.array(z.object({
+    name: z.string(),
+    description: z.string(),
+    probability: z.number().min(0).max(1),
+    impact: z.enum(['catastrophic', 'severe', 'moderate', 'minor']),
+    drivers: z.array(z.string()),
+    indicators: z.array(z.string()),
+  })),
+  baselineAssumptions: z.array(z.string()),
+});
+
+const GameTheorySeedSchema = z.object({
+  players: z.array(z.object({
+    name: z.string(),
+    strategies: z.array(z.string()),
+    preferences: z.string(),
+  })),
+  dominantStrategy: z.string().nullable(),
+  nashEquilibrium: z.string().nullable(),
+  cooperativeOutcome: z.string(),
+  analysis: z.string(),
+});
+
+const MediationSeedSchema = z.object({
+  processDesign: z.object({
+    format: z.string(),
+    venue: z.string(),
+    timeline: z.string(),
+    mediatorRole: z.string(),
+  }),
+  confidenceBuildingMeasures: z.array(z.object({
+    measure: z.string(),
+    parties: z.array(z.string()),
+    timeline: z.string(),
+  })),
+  trackOnePriorities: z.array(z.string()),
+  trackTwoPriorities: z.array(z.string()),
+  spoilerManagement: z.string(),
+});
+
+const HumanitarianSeedSchema = z.object({
+  overview: z.string(),
+  displacement: z.object({ idps: z.number(), refugees: z.number(), source: z.string() }).nullable(),
+  foodSecurity: z.object({ phase: z.string(), affectedPopulation: z.number(), source: z.string() }).nullable(),
+  fundingGap: z.object({ required: z.number(), funded: z.number(), pctFunded: z.number() }).nullable(),
+  priorities: z.array(z.string()),
+});
+
+const CalendarSeedSchema = z.object({
+  events: z.array(z.object({
+    date: z.string(),
+    title: z.string(),
+    type: z.enum(['diplomatic', 'election', 'military', 'humanitarian', 'legal', 'anniversary']),
+    riskLevel: z.enum(['high', 'medium', 'low']),
+    description: z.string(),
+  })),
+});
+
+const DossierSeedSchema = z.object({
+  subject: z.string(),
+  type: z.enum(['actor', 'topic', 'region']),
+  summary: z.string(),
+  keyFacts: z.array(z.object({ fact: z.string(), source: z.string(), confidence: z.enum(['high', 'medium', 'low']) })),
+  timeline: z.array(z.object({ date: z.string(), event: z.string() })),
+  connections: z.array(z.string()),
+  assessment: z.string(),
+});
+
+const BriefingSeedSchema = z.object({
+  title: z.string(),
+  classification: z.string(),
+  keyDevelopments: z.array(z.object({ headline: z.string(), detail: z.string(), significance: z.string() })),
+  assessment: z.string(),
+  recommendations: z.array(z.string()),
+  speakerNotes: z.string(),
+});
+
+const PolicyMemoSeedSchema = z.object({
+  title: z.string(),
+  issueStatement: z.string(),
+  background: z.string(),
+  options: z.array(z.object({
+    option: z.string(),
+    pros: z.array(z.string()),
+    cons: z.array(z.string()),
+    feasibility: z.enum(['high', 'medium', 'low']),
+  })),
+  recommendation: z.string(),
+  riskAssessment: z.string(),
+});
+
+// ---------------------------------------------------------------------------
+// Tier 1: Immediate seeding (critical tools — from auto-structure markdown)
+// ---------------------------------------------------------------------------
+
+const TIER1_SEEDS: ToolSeed[] = [
   {
     toolId: 'actor-profiles',
     schema: ActorSeedSchema,
@@ -201,6 +335,79 @@ const TOOL_SEEDS: ToolSeed[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Tier 2: Secondary seeding (extracted from auto-structure, runs after Tier 1)
+// ---------------------------------------------------------------------------
+
+const TIER2_SEEDS: ToolSeed[] = [
+  {
+    toolId: 'info-environment',
+    schema: InfoEnvironmentSeedSchema,
+    extractionPrompt: 'Extract the information environment: active narratives (title, description, actors promoting them, reach, credibility), dominant framings used by media and actors, and disinformation risks.',
+  },
+  {
+    toolId: 'sanctions',
+    schema: SanctionsSeedSchema,
+    extractionPrompt: 'Extract any sanctioned entities mentioned (individuals, organizations, vessels). For each: name, type, which sanctions regimes apply (UN/EU/US/OFAC), reason. List compliance risks and active measures.',
+  },
+  {
+    toolId: 'commitments',
+    schema: CommitmentsSeedSchema,
+    extractionPrompt: 'Extract all commitments, agreements, and ceasefires mentioned. For each: title, parties involved, type (ceasefire/peace/diplomatic/humanitarian/political), current status, date, key provisions.',
+  },
+  {
+    toolId: 'scenarios',
+    schema: ScenarioSeedSchema,
+    extractionPrompt: 'Generate 3-5 plausible future scenarios. For each: name, description, probability (0-1), impact level, key drivers, and early warning indicators. List baseline assumptions.',
+  },
+  {
+    toolId: 'game-theory',
+    schema: GameTheorySeedSchema,
+    extractionPrompt: 'Model the conflict as a game. Identify 2-4 key players with their available strategies and preferences. Determine if a dominant strategy exists, identify Nash equilibrium, and describe the cooperative outcome. Provide strategic analysis.',
+  },
+  {
+    toolId: 'mediation-design',
+    schema: MediationSeedSchema,
+    extractionPrompt: 'Design a mediation process. Specify format, venue, timeline, and mediator role. List 3-5 confidence-building measures with parties and timelines. Identify Track 1 and Track 2 priorities. Describe spoiler management strategy.',
+  },
+  {
+    toolId: 'humanitarian',
+    schema: HumanitarianSeedSchema,
+    extractionPrompt: 'Extract humanitarian situation: overview, displacement numbers (IDPs, refugees), food security phase and affected population, funding requirements and gap, and top humanitarian priorities.',
+  },
+  {
+    toolId: 'calendar',
+    schema: CalendarSeedSchema,
+    extractionPrompt: 'Extract upcoming critical dates and events. For each: date, title, type (diplomatic/election/military/humanitarian/legal/anniversary), risk level, and description.',
+  },
+  {
+    toolId: 'dossier',
+    schema: DossierSeedSchema,
+    extractionPrompt: 'Generate an intelligence dossier on the primary subject of the situation. Include: subject name, type (actor/topic/region), executive summary, key verified facts with sources and confidence, timeline, connections to other entities, and overall assessment.',
+  },
+  {
+    toolId: 'briefing',
+    schema: BriefingSeedSchema,
+    extractionPrompt: 'Generate an intelligence briefing. Include: title, classification, 3-5 key developments (headline, detail, significance), overall assessment, 3-5 recommendations, and speaker notes.',
+  },
+  {
+    toolId: 'policy-memo',
+    schema: PolicyMemoSeedSchema,
+    extractionPrompt: 'Generate a policy memo. Include: title, issue statement, background context, 3-4 policy options (with pros, cons, feasibility), recommended option with justification, and risk assessment.',
+  },
+];
+
+// Combined seeds — Tier 1 runs first, then Tier 2
+const TOOL_SEEDS: ToolSeed[] = TIER1_SEEDS;
+
+// Tools that should trigger background research after seeding
+const BACKGROUND_RESEARCH_TOOLS = [
+  'risk-monitor', 'early-warning', 'actor-profiles', 'stakeholder-map',
+  'info-environment', 'sanctions', 'commitments', 'media-compass',
+  'media-roundup', 'geospatial-monitor', 'humanitarian', 'alert-center',
+  'source-monitor', 'argus', 'deep-research',
+];
+
+// ---------------------------------------------------------------------------
 // Main initialization function
 // ---------------------------------------------------------------------------
 
@@ -211,6 +418,51 @@ const TOOL_SEEDS: ToolSeed[] = [
  * Uses a lightweight model (flash) to parse the already-generated markdown
  * into structured JSON matching each tool's expected schema.
  */
+/**
+ * Seed a single tool from auto-structure markdown.
+ */
+async function seedTool(
+  uid: string,
+  situationId: string,
+  situationName: string,
+  autoStructureResult: string,
+  seed: ToolSeed
+): Promise<boolean> {
+  try {
+    const result = await generateText({
+      model: getModel(), // flash — fast and cheap for extraction
+      output: Output.object({ schema: seed.schema }),
+      prompt: `You are a data extraction engine. Given the following intelligence briefing about "${situationName}", extract structured data.
+
+INSTRUCTION: ${seed.extractionPrompt}
+
+INTELLIGENCE BRIEFING:
+${autoStructureResult.slice(0, 30000)}
+
+Extract the data precisely. Do not invent information not present in the briefing.`,
+    });
+
+    await saveToolData(uid, situationId, seed.toolId, result.output);
+    return true;
+  } catch (err) {
+    console.error(`[situation-init] Failed to seed ${seed.toolId}:`, err);
+    return false;
+  }
+}
+
+/**
+ * Parse auto-structure output and seed tool-data for every tool page.
+ * Called from the auto-structure onFinish callback.
+ *
+ * Three-tier initialization:
+ *   Tier 1 (immediate): 8 critical tools — actors, risk, graph, etc.
+ *   Tier 2 (secondary): 11 additional tools — scenarios, sanctions, briefing, etc.
+ *   Tier 3 (background): Live data research for 15 intelligence tools
+ *
+ * Tier 1 runs synchronously (user waits).
+ * Tier 2 runs after Tier 1 completes (still within the same request).
+ * Tier 3 triggers background research via the research service (returns immediately).
+ */
 export async function initializeSituationTools(
   uid: string,
   situationId: string,
@@ -220,34 +472,18 @@ export async function initializeSituationTools(
   const seeded: string[] = [];
   const failed: string[] = [];
 
-  // Process all tool seeds in parallel
-  const promises = TOOL_SEEDS.map(async ({ toolId, schema, extractionPrompt }) => {
-    try {
-      const result = await generateText({
-        model: getModel(), // flash — fast and cheap for extraction
-        output: Output.object({ schema }),
-        prompt: `You are a data extraction engine. Given the following intelligence briefing about "${situation.name}", extract structured data.
+  // ── Tier 1: Critical tools (parallel) ──────────────────────────────────
+  const tier1Results = await Promise.all(
+    TIER1_SEEDS.map(async (seed) => {
+      const ok = await seedTool(uid, situationId, situation.name, autoStructureResult, seed);
+      if (ok) seeded.push(seed.toolId); else failed.push(seed.toolId);
+      return ok;
+    })
+  );
 
-INSTRUCTION: ${extractionPrompt}
+  console.log(`[situation-init] Tier 1: ${tier1Results.filter(Boolean).length}/${TIER1_SEEDS.length} seeded`);
 
-INTELLIGENCE BRIEFING:
-${autoStructureResult.slice(0, 30000)}
-
-Extract the data precisely. Do not invent information not present in the briefing.`,
-      });
-
-      await saveToolData(uid, situationId, toolId, result.output);
-      seeded.push(toolId);
-    } catch (err) {
-      console.error(`[situation-init] Failed to seed ${toolId}:`, err);
-      failed.push(toolId);
-    }
-  });
-
-  await Promise.all(promises);
-
-  // Patch situation with AI-derived risk fields (if not already set by user)
-  // This ensures buildToolContext has real values immediately after initialization
+  // Patch situation with AI-derived risk fields immediately
   try {
     const riskToolData = seeded.includes('risk-monitor')
       ? await import('@/lib/firebase/tool-data-service').then((m) =>
@@ -281,7 +517,8 @@ Extract the data precisely. Do not invent information not present in the briefin
     // Non-fatal — situation fields remain at defaults
   }
 
-  // Save dashboard snapshot — drives the health semaphores in sidebar + dashboard
+  // Save interim dashboard snapshot so sidebar shows Tier 1 tools immediately
+  const now = new Date().toISOString();
   try {
     await saveToolData(uid, situationId, 'dashboard-snapshot', {
       situationName: situation.name,
@@ -289,16 +526,78 @@ Extract the data precisely. Do not invent information not present in the briefin
       glaslStage: situation.glaslStage,
       escalationTrend: situation.escalationTrend,
       actorCount: situation.actorCount,
-      seededTools: seeded,
-      toolTimestamps: Object.fromEntries(
-        seeded.map((toolId) => [toolId, new Date().toISOString()])
-      ),
-      initializedAt: new Date().toISOString(),
+      seededTools: [...seeded],
+      toolTimestamps: Object.fromEntries(seeded.map((id) => [id, now])),
+      initializedAt: now,
     });
   } catch {
     // Non-critical
   }
 
-  console.log(`[situation-init] Seeded ${seeded.length} tools, ${failed.length} failed for ${situationId}`);
+  // ── Tier 2: Secondary tools (parallel, non-blocking for dashboard) ─────
+  const tier2Results = await Promise.all(
+    TIER2_SEEDS.map(async (seed) => {
+      const ok = await seedTool(uid, situationId, situation.name, autoStructureResult, seed);
+      if (ok) seeded.push(seed.toolId); else failed.push(seed.toolId);
+      return ok;
+    })
+  );
+
+  console.log(`[situation-init] Tier 2: ${tier2Results.filter(Boolean).length}/${TIER2_SEEDS.length} seeded`);
+
+  // Update dashboard snapshot with all seeded tools
+  try {
+    await saveToolData(uid, situationId, 'dashboard-snapshot', {
+      situationName: situation.name,
+      riskScore: situation.riskScore,
+      glaslStage: situation.glaslStage,
+      escalationTrend: situation.escalationTrend,
+      actorCount: situation.actorCount,
+      seededTools: [...seeded],
+      toolTimestamps: Object.fromEntries(seeded.map((id) => [id, now])),
+      initializedAt: now,
+      tier2CompletedAt: new Date().toISOString(),
+    });
+  } catch {
+    // Non-critical
+  }
+
+  // ── Tier 3: Background research (fire-and-forget) ─────────────────────
+  // Trigger live data research for intelligence tools that benefit from
+  // real-time feeds (ACLED, GDELT, etc.). These run asynchronously and
+  // update Firestore + dashboard-snapshot when complete.
+  try {
+    const { executeBackgroundResearch, getToolResearchConfig } =
+      await import('@/lib/services/background-research');
+
+    const researchPromises = BACKGROUND_RESEARCH_TOOLS.map(async (toolId) => {
+      const config = getToolResearchConfig(toolId);
+      if (!config) return;
+      try {
+        // Fire-and-forget — don't await, let them run in parallel
+        executeBackgroundResearch({
+          uid,
+          situationId,
+          toolId,
+          situationName: situation.name,
+          country: situation.region ?? '',
+          actors: situation.actors ?? [],
+          researchConfig: config,
+        }).catch((err) => {
+          console.error(`[situation-init] Tier 3 research failed for ${toolId}:`, err);
+        });
+      } catch {
+        // Non-critical — tool can still be populated on-demand
+      }
+    });
+
+    // Start all research but don't block on it
+    await Promise.allSettled(researchPromises);
+    console.log(`[situation-init] Tier 3: triggered background research for ${BACKGROUND_RESEARCH_TOOLS.length} tools`);
+  } catch (err) {
+    console.error('[situation-init] Failed to trigger Tier 3 research:', err);
+  }
+
+  console.log(`[situation-init] Total: ${seeded.length} seeded, ${failed.length} failed for ${situationId}`);
   return { seeded, failed };
 }
