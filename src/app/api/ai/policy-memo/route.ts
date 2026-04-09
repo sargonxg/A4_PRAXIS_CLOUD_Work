@@ -102,7 +102,7 @@ export const POST = withAuth(async (request, user) => {
 
     const webCtx = situation
       ? await buildWebGroundedContext(
-          { name: (situation as Situation).name, region: (situation as Situation).region, actors: (situation as Situation).actors },
+          { name: (situation as unknown as Situation).name, region: (situation as unknown as Situation).region, actors: (situation as unknown as Situation).actors },
           'policy-memo',
           user.uid
         )
