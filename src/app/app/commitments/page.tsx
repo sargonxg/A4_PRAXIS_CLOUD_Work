@@ -4,6 +4,7 @@ import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { useToolData } from '@/hooks/useToolData';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { AiPopulate } from '@/components/praxis/ai-populate';
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 
 import { useState, useEffect } from 'react';
 import {
@@ -401,6 +402,7 @@ export default function CommitmentsPage() {
         )}
       </div>
 
+      <RegistryToolInfo toolId="commitments" />
       <AiPopulate
         toolId="commitments"
         toolName="Commitment Scan"

@@ -12,6 +12,7 @@ import {
 import { cn } from '@/lib/utils/cn';
 import { recordActivity } from '@/lib/utils/activity';
 
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 type RiskLevel = 'critical' | 'high' | 'medium' | 'low';
@@ -505,6 +506,7 @@ export default function AutoBriefingsPage() {
   if (isDemo) {
     return (
       <div className="space-y-6">
+      <RegistryToolInfo toolId="auto-briefings" />
         <div>
           <div className="flex items-center gap-2">
             <Newspaper className="h-5 w-5 text-navy-400" />

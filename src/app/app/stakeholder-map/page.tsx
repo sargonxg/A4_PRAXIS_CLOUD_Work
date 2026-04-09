@@ -30,6 +30,7 @@ import { db } from '@/lib/firebase/config';
 import { onSnapshot, doc } from 'firebase/firestore';
 import { useAuth } from '@/lib/auth/auth-context';
 
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
 interface StakeholderActor {
@@ -1018,6 +1019,7 @@ Be precise and operationally actionable.`;
 
   return (
     <div className="space-y-6">
+      <RegistryToolInfo toolId="stakeholder-map" />
       {/* ── Header ───────────────────────────────────────────────── */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">

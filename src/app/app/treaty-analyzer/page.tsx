@@ -4,6 +4,7 @@ import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { useToolData } from '@/hooks/useToolData';
 import { RealToolView } from '@/components/praxis/real-tool-view';
 import { AiPopulate } from '@/components/praxis/ai-populate';
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useMemo } from 'react';
@@ -1040,6 +1041,7 @@ export default function TreatyAnalyzerPage() {
           </button>
         )}
       </div>
+      <RegistryToolInfo toolId="treaty-analyzer" />
       <AiPopulate
         toolId="treaty-analyzer"
         toolName="Treaty Analysis"

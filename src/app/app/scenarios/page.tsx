@@ -43,6 +43,7 @@ import {
   type ScenarioPreset,
 } from '@/lib/constants/scenario-configs';
 
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const TIME_HORIZONS = ['30 days', '90 days', '6 months', '1 year'];
@@ -744,6 +745,7 @@ function DemoScenariosPage() {
   if (casesLoading) {
     return (
       <div className="space-y-6">
+      <RegistryToolInfo toolId="scenarios" />
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-steel/8">
             <GitCompare className="h-5 w-5 text-steel" />

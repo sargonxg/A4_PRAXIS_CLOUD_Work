@@ -2,6 +2,7 @@
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { AiPopulate } from '@/components/praxis/ai-populate';
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useCallback } from 'react';
@@ -820,6 +821,8 @@ export default function ArgusPage() {
 
   // Real mode — AI populate with entity extraction, then show real tool
   return (
+    <>
+    <RegistryToolInfo toolId="argus" />
     <AiPopulate
       toolId="argus"
       toolName="ARGUS Intelligence"
@@ -837,5 +840,6 @@ export default function ArgusPage() {
     >
       <RealArgusPage situation={situation} argusData={argusData} />
     </AiPopulate>
+    </>
   );
 }

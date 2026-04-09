@@ -12,6 +12,7 @@ import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 interface AudienceOption {
   id: string;
   label: string;
@@ -251,6 +252,7 @@ A: [answer]
 
   return (
     <div className="space-y-6">
+      <RegistryToolInfo toolId="talking-points" />
       {/* Firestore data button */}
       <div className="flex justify-end">
         {firestoreLoading ? (

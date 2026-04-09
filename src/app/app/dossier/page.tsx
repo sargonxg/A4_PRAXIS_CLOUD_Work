@@ -41,6 +41,7 @@ import {
 import type { DossierType, DossierSection } from '@/lib/constants/dossier-templates';
 import type { Situation } from '@/types/situation';
 
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Step = 'configure' | 'generating' | 'view';
@@ -772,6 +773,7 @@ function ViewStep({
 
   return (
     <div className="space-y-6">
+      <RegistryToolInfo toolId="dossier" />
       {/* Classification Ribbon */}
       <ClassificationRibbon value={config.classification} />
 

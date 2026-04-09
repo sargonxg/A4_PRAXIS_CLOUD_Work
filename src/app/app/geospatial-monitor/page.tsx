@@ -23,6 +23,7 @@ import {
 import type { GeospatialEvent, GeospatialResponse } from '@/app/api/data/geospatial/route';
 import type { HotspotCluster } from '@/lib/analytics/geospatial-engine';
 
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 // ─── Leaflet dynamic imports (SSR-safe) ───────────────────────────────────────
 
 const MapContainer = dynamic(
@@ -504,6 +505,7 @@ export default function GeospatialMonitorPage() {
 
   return (
     <div className="flex flex-col gap-5 pb-8">
+      <RegistryToolInfo toolId="geospatial-monitor" />
       {/* ── Header ─────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-3">

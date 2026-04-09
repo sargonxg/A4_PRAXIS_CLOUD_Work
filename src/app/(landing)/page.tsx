@@ -12,6 +12,7 @@ import { Marketplace } from "@/components/landing/marketplace";
 import { EcosystemSection } from "@/components/landing/ecosystem-section";
 import { Cta } from "@/components/landing/cta";
 import { WaitlistForm } from "@/components/landing/waitlist-form";
+import { MethodologySection } from "@/components/landing/methodology-section";
 import { Footer } from "@/components/landing/footer";
 
 const jsonLd = {
@@ -83,6 +84,7 @@ export default function LandingPage() {
       <Features />
       <LivePlatformPreview />
       <ConflictGrammarHighlight />
+      <MethodologySection />
       <UseCaseCards />
       <BuiltByPractitioners />
       <AdvisoryCouncil />

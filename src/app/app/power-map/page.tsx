@@ -4,6 +4,7 @@ import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 import { useToolData } from '@/hooks/useToolData';
 import { AiPopulate } from '@/components/praxis/ai-populate';
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { useState } from 'react';
 import {
@@ -604,6 +605,7 @@ function PowerMapUI({ initialOutput, isDemo }: { initialOutput: PowerMapOutput |
         </div>
       </div>
 
+      <RegistryToolInfo toolId="power-map" />
       <AiPopulate
         toolId="power-map"
         toolName="Power Map"

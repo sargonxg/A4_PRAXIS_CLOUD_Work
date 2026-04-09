@@ -20,6 +20,7 @@ import { parseDataStreamChunk } from '@/lib/utils/stream';
 import { HeatmapGrid } from '@/components/visualizations/heatmap-grid';
 import type { Situation } from '@/types/situation';
 
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 interface CaseData {
   id: string;
   name: string;
@@ -736,6 +737,7 @@ Focus on actionable insights. Reference specific dynamics of these cases.`;
 
   return (
     <div className="space-y-6">
+      <RegistryToolInfo toolId="compare" />
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple/8">

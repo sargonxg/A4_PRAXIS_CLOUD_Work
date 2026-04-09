@@ -4,6 +4,7 @@ import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { useToolData } from '@/hooks/useToolData';
 import { RealToolView } from '@/components/praxis/real-tool-view';
 import { AiPopulate } from '@/components/praxis/ai-populate';
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { NoDataState } from '@/components/praxis/no-data-state';
 import type { Situation } from '@/types/situation';
@@ -1901,6 +1902,7 @@ export default function NegotiationPrepPage() {
           </button>
         )}
       </div>
+      <RegistryToolInfo toolId="negotiation-prep" />
       <AiPopulate
         toolId="negotiation-prep"
         toolName="Negotiation Analysis"

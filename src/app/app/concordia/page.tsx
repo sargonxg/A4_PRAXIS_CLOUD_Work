@@ -28,6 +28,7 @@ import {
 } from '@/lib/constants/concordia-demo';
 import type { SessionPlan, MediationTurn } from '@/lib/constants/concordia-demo';
 
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 const CASE_OPTIONS = Object.entries(CASE_REGISTRY).map(([id, c]) => ({
   id,
   name: c.meta.name,
@@ -824,6 +825,9 @@ export default function ConcordiaPage() {
 
   // Real mode — pass situation so SessionPlannerSection calls the real API
   return (
-    <DemoConcordiaPage situation={situation} />
+    <>
+      <RegistryToolInfo toolId="concordia" />
+      <DemoConcordiaPage situation={situation} />
+    </>
   );
 }

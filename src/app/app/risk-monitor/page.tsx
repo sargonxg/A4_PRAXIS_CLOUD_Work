@@ -3,6 +3,7 @@
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { useToolData } from '@/hooks/useToolData';
 import { AiPopulate } from '@/components/praxis/ai-populate';
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { useSituationStore } from '@/stores/situation-store';
 
@@ -752,6 +753,7 @@ export default function RiskMonitorPage() {
           </button>
         )}
       </div>
+      <RegistryToolInfo toolId="risk-monitor" />
       <AiPopulate
       toolId="risk-monitor"
       toolName="Risk Monitor"

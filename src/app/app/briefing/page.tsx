@@ -3,6 +3,7 @@
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { useToolData } from '@/hooks/useToolData';
 import { AiPopulate } from '@/components/praxis/ai-populate';
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -447,6 +448,8 @@ function RealBriefingPage({ situation }: { situation: Situation }) {
   const preloadedSlides = briefingData ? toBriefingSlides(briefingData) : undefined;
 
   return (
+    <>
+    <RegistryToolInfo toolId="briefing" />
     <AiPopulate
       toolId="briefing"
       toolName="Briefing"
@@ -476,6 +479,7 @@ function RealBriefingPage({ situation }: { situation: Situation }) {
         preloadedSlides={preloadedSlides}
       />
     </AiPopulate>
+    </>
   );
 }
 

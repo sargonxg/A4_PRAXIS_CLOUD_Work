@@ -3,6 +3,7 @@
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { useToolData } from '@/hooks/useToolData';
 import { AiPopulate } from '@/components/praxis/ai-populate';
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useCallback } from 'react';
@@ -1025,6 +1026,7 @@ export default function EarlyWarningPage() {
           </button>
         )}
       </div>
+      <RegistryToolInfo toolId="early-warning" />
       <AiPopulate
         toolId="early-warning"
         toolName="Early Warning"

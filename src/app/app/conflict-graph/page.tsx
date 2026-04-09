@@ -34,6 +34,7 @@ import { PraxisLink } from "@/components/shared/praxis-link";
 // ── ForceGraph color mapping by entity type (ACO standard palette) ─────
 import { ACO_COLORS } from '@/lib/constants/aco-colors';
 
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 const COLOR_BY_TYPE: Record<string, string> = { ...ACO_COLORS };
 
 // ── Entity type toggle config ───────────────────────────────────
@@ -413,6 +414,7 @@ function DemoConflictGraphPage() {
 
   return (
     <div className="space-y-6">
+      <RegistryToolInfo toolId="conflict-graph" />
       <div className="mx-auto max-w-[1400px]">
         {/* ── Header ─────────────────────────────────────────── */}
         <motion.div

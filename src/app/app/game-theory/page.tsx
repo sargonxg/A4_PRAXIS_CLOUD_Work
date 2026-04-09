@@ -10,6 +10,7 @@ import { useState, useCallback } from 'react';
 import { Network, Target, Sparkles, Loader2, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -1075,6 +1076,7 @@ function GameTheoryUI({ actors, isDemo, initialOutput, onAnalyze, isLoading, out
 
   return (
     <div className="space-y-6">
+      <RegistryToolInfo toolId="game-theory" />
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-diplomatic-blue/8">

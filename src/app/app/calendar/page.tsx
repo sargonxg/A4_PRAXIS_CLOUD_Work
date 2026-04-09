@@ -13,6 +13,7 @@ import { PraxisLink } from '@/components/shared/praxis-link';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 interface CalendarEvent {
   id: string;
   date: string;
@@ -256,6 +257,7 @@ Keep it action-oriented and diplomatically precise.`;
 
   return (
     <div className="space-y-6">
+      <RegistryToolInfo toolId="calendar" />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

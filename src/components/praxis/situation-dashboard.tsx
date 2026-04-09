@@ -14,8 +14,12 @@ import {
   Globe, Users, AlertTriangle, BarChart3, GitBranch, Scale,
   Sparkles, Plus, ArrowRight, TrendingUp, TrendingDown, Minus,
   Loader2, Clock, RefreshCw, X, CheckCircle2, Link2, Play,
+  Shield, BookOpen, Target, Eye, Newspaper,
 } from 'lucide-react';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
+import { EscalationLadder } from '@/components/visualizations/escalation-ladder';
+import { RiskGauge } from '@/components/visualizations/risk-gauge';
 import type { Situation } from '@/types/situation';
 import { recordActivity, getRecentActivity, type ActivityEntry } from '@/lib/utils/activity';
 import { db } from '@/lib/firebase/config';
@@ -710,17 +714,25 @@ export function SituationDashboard({ situation }: { situation: Situation }) {
             )}
           </div>
 
-          {/* Risk Score */}
-          <div className="flex flex-col items-center gap-1">
-            <div className={cn(
-              'flex h-14 w-14 items-center justify-center rounded-xl text-lg font-bold',
-              situation.riskScore >= 7 ? 'bg-red-50 text-red-600' :
-              situation.riskScore >= 4 ? 'bg-amber-50 text-amber-600' :
-              'bg-emerald-50 text-emerald-600'
-            )}>
-              {situation.riskScore.toFixed(1)}
+          {/* Risk Score + Glasl */}
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col items-center gap-1">
+              <RiskGauge score={situation.riskScore * 10} size="sm" showValue />
+              <span className="text-[10px] text-navy-400">INFORM Risk</span>
             </div>
-            <span className="text-[10px] text-navy-400">Risk Score</span>
+            {situation.glaslStage && (
+              <div className="flex flex-col items-center gap-1">
+                <div className={cn(
+                  'flex h-14 w-14 items-center justify-center rounded-xl text-lg font-bold',
+                  situation.glaslStage <= 3 ? 'bg-emerald-50 text-emerald-600' :
+                  situation.glaslStage <= 6 ? 'bg-amber-50 text-amber-600' :
+                  'bg-red-50 text-red-600'
+                )}>
+                  {situation.glaslStage}<span className="text-xs font-normal">/9</span>
+                </div>
+                <span className="text-[10px] text-navy-400">Glasl Stage</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -764,6 +776,25 @@ export function SituationDashboard({ situation }: { situation: Situation }) {
           </div>
         )}
       </div>
+
+      {/* Glasl Escalation Stage — if available */}
+      {situation.glaslStage && (
+        <div className="rounded-xl border border-[var(--color-app-border)] bg-white">
+          <div className="flex items-center gap-2 border-b border-[var(--color-app-border)] px-5 py-4">
+            <TrendingUp className="h-4 w-4 text-gold-600" />
+            <h2 className="text-sm font-semibold text-navy-900">Escalation Stage (Glasl Model)</h2>
+            <span className="ml-auto text-[10px] text-navy-400">
+              {situation.glaslStage <= 3 ? 'Win-Win Zone' : situation.glaslStage <= 6 ? 'Win-Lose Zone' : 'Lose-Lose Zone'}
+            </span>
+          </div>
+          <div className="px-5 py-4">
+            <EscalationLadder currentStage={situation.glaslStage} orientation="horizontal" />
+          </div>
+        </div>
+      )}
+
+      {/* Dashboard Methodology Panel */}
+      <RegistryToolInfo toolId="dashboard" />
 
       {/* Onboarding — shows after first creation to help populate */}
       {!onboardingComplete && (

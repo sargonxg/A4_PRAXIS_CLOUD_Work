@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils/cn';
 import { Badge } from '@/components/ui/badge';
 import { TimeSeriesChart } from '@/components/visualizations/time-series-chart';
 
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type Significance = 'critical' | 'high' | 'medium' | 'low';
@@ -833,6 +834,8 @@ export default function TimelinePage() {
   const displayData = timelineData ?? { events: DEMO_EVENTS };
 
   return (
+    <>
+    <RegistryToolInfo toolId="timeline" />
     <AiPopulate
       toolId="timeline"
       toolName="Conflict Timeline"
@@ -848,5 +851,6 @@ export default function TimelinePage() {
     >
       <TimelineView data={displayData} />
     </AiPopulate>
+    </>
   );
 }

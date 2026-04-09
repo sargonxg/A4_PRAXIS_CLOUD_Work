@@ -3,6 +3,7 @@
 import { useSituationGuard } from "@/hooks/use-situation-guard";
 import { useToolData } from "@/hooks/useToolData";
 import { NoSituationState } from "@/components/praxis/no-situation-state";
+import { RegistryToolInfo } from "@/components/praxis/tool-info-from-registry";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { usePersistedToolData } from "@/hooks/use-persisted-tool-data";
@@ -478,6 +479,7 @@ export default function MediaCompassPage() {
 
   return (
     <div className="space-y-6">
+      <RegistryToolInfo toolId="media-compass" />
       <div className="mx-auto max-w-[1400px]">
         {/* ── Header ─────────────────────────────────────────── */}
         <motion.div

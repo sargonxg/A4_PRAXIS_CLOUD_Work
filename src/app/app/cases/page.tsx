@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/utils/cn';
 import type { Situation, SituationStatus, EscalationTrend } from '@/types/situation';
 
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 /* ------------------------------------------------------------------ */
 /*  Status config — shared between Demo and Real                      */
 /* ------------------------------------------------------------------ */
@@ -296,6 +297,7 @@ function DemoCasesPage() {
 
   return (
     <div className="space-y-6">
+      <RegistryToolInfo toolId="cases" />
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">

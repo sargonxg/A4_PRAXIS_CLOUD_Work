@@ -3,6 +3,7 @@
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { useToolData } from '@/hooks/useToolData';
 import { AiPopulate } from '@/components/praxis/ai-populate';
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
@@ -791,6 +792,7 @@ export default function ActorsPage() {
           </button>
         )}
       </div>
+      <RegistryToolInfo toolId="actor-profiles" />
       <AiPopulate
         toolId="actors"
         toolName="Actor Profiles"

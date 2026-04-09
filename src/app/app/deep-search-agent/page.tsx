@@ -24,6 +24,7 @@ import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { useSituationStore } from '@/stores/situation-store';
 import { useDebugStore } from '@/stores/debug-store';
 
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 interface AgentEvent {
   type: 'status' | 'session' | 'planning' | 'research' | 'synthesis' | 'text' | 'error' | 'done';
   phase?: 'planning' | 'research' | 'synthesis';
@@ -340,6 +341,7 @@ export default function DeepSearchAgentPage() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
+      <RegistryToolInfo toolId="deep-search-agent" />
       {/* Header */}
       <div className="flex-none border-b border-[var(--color-app-border)] bg-white px-6 py-4">
         <div className="flex items-start justify-between">

@@ -6,6 +6,7 @@ import { RealToolView } from '@/components/praxis/real-tool-view';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { NoDataState } from '@/components/praxis/no-data-state';
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import type { Situation } from '@/types/situation';
 
 import { useState, useCallback, useMemo } from 'react';
@@ -1432,6 +1433,7 @@ export default function SanctionsPage() {
           </button>
         )}
       </div>
+      <RegistryToolInfo toolId="sanctions" />
       <AiPopulate
         toolId="sanctions"
         toolName="Sanctions Scan"

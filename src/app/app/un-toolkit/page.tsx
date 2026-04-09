@@ -3,6 +3,7 @@
 import { useSituationGuard } from "@/hooks/use-situation-guard";
 import { useToolData } from "@/hooks/useToolData";
 import { NoSituationState } from "@/components/praxis/no-situation-state";
+import { RegistryToolInfo } from "@/components/praxis/tool-info-from-registry";
 
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -918,6 +919,7 @@ function TemplateLibrary({ onLoadTemplate }: TemplateLibraryProps) {
 
   return (
     <div className="space-y-6">
+      <RegistryToolInfo toolId="un-toolkit" />
       <div className="space-y-1">
         <p className="text-sm text-navy-400">
           Select a template to load it into the relevant drafting tool. Templates follow official UN document formats.

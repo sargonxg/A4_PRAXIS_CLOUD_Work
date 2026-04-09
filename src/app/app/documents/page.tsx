@@ -3,6 +3,7 @@
 import { useSituationGuard } from "@/hooks/use-situation-guard";
 import { useSituationStore } from "@/stores/situation-store";
 import { NoSituationState } from "@/components/praxis/no-situation-state";
+import { RegistryToolInfo } from "@/components/praxis/tool-info-from-registry";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -1958,5 +1959,10 @@ export default function DocumentVaultPage() {
   if (isDemo) return <DemoVaultPlaceholder />;
   if (showGuard || !situation) return <NoSituationState />;
 
-  return <DocumentVaultUI situationId={situation.id} />;
+  return (
+    <>
+      <RegistryToolInfo toolId="documents" />
+      <DocumentVaultUI situationId={situation.id} />
+    </>
+  );
 }
