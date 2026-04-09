@@ -5,6 +5,7 @@ import { DEMO_CONFLICT } from '@/lib/constants/demo-conflict';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
 import { findMediaOutlet } from '@/lib/constants/media-database';
 import { searchWeb } from '@/lib/ai/firecrawl';
+import { executeWebResearch, type WebResearchResult } from '@/lib/ai/web-research';
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_AI_API_KEY || '',
@@ -30,13 +31,15 @@ function timeoutSignal(): AbortSignal {
 
 // ============================================================================
 // Tool 1: webSearch
-// Firecrawl-powered web search returning real results with full page content.
-// Falls back to empty results with an error message if Firecrawl is unavailable.
+// Multi-provider web search: Google Search (default) + Tavily/Parallel.ai/Firecrawl
+// Google Search via Gemini grounding is always available.
+// Premium providers activated when user has API keys configured.
+// Falls back gracefully — never blocks on missing keys.
 // ============================================================================
 
 export const webSearch = tool({
   description:
-    'Search the web for current news and reports about a conflict topic. Returns real search results with titles, snippets, sources, and reliability scores powered by Firecrawl web intelligence.',
+    'Search the web for current news and reports about a conflict topic. Uses Google Search by default, with optional Tavily and Parallel.ai for richer results. Returns results with titles, snippets, sources, and reliability scores.',
   inputSchema: z.object({
     query: z.string().describe('The search query to execute'),
     region: z.string().optional().describe('Geographic region to focus the search on'),
@@ -44,64 +47,79 @@ export const webSearch = tool({
       .enum(['day', 'week', 'month', 'year', 'all'])
       .optional()
       .describe('Time range filter for search results'),
+    uid: z.string().optional().describe('User ID to load API keys for premium providers'),
+    favoriteSources: z.array(z.string()).optional().describe('User preferred sources to focus on'),
   }),
-  execute: async ({ query, region }) => {
+  execute: async ({ query, region, timeRange, uid, favoriteSources }) => {
     try {
-      const fullQuery = region ? `${query} ${region}` : query;
-      let webResults: Awaited<ReturnType<typeof searchWeb>> = [];
-      try {
-        webResults = await searchWeb(fullQuery, { numResults: 5 });
-      } catch (searchErr) {
-        console.error('[webSearch] searchWeb call failed', searchErr instanceof Error ? searchErr.message : searchErr);
-        webResults = [];
-      }
+      // Use the unified web research client (Google Search first, then premium in parallel)
+      const webResults: WebResearchResult[] = await executeWebResearch(
+        query,
+        region ?? '',
+        uid ?? 'system',
+        {
+          maxResults: 8,
+          region,
+          timeRange,
+          favoriteSources: favoriteSources ?? [],
+        }
+      );
 
       if (webResults.length === 0) {
+        // Fallback to legacy Firecrawl if unified client returned nothing
+        const fullQuery = region ? `${query} ${region}` : query;
+        let firecrawlResults: Awaited<ReturnType<typeof searchWeb>> = [];
+        try {
+          firecrawlResults = await searchWeb(fullQuery, { numResults: 5 });
+        } catch {
+          firecrawlResults = [];
+        }
+
+        if (firecrawlResults.length === 0) {
+          return {
+            results: [],
+            query,
+            providers: ['google-search'],
+            analysisNote: 'No web results returned. Google Search found no matches for this query.',
+            _generatedAt: new Date().toISOString(),
+          };
+        }
+
+        // Map legacy results
         return {
-          results: [],
+          results: firecrawlResults.map((r) => ({
+            title: r.title || 'Untitled',
+            snippet: r.description || r.content?.slice(0, 300) || '',
+            source: extractHostname(r.url),
+            publishedDate: r.publishedDate || new Date().toISOString().split('T')[0],
+            url: r.url,
+            reliabilityScore: scoreUrlReliability(r.url),
+            provider: 'firecrawl',
+          })),
           query,
-          analysisNote:
-            'No web results returned. Firecrawl may not be configured (set FIRECRAWL_API_KEY) or the query returned no matches.',
+          providers: ['firecrawl'],
+          analysisNote: `Found ${firecrawlResults.length} results via Firecrawl fallback.`,
           _generatedAt: new Date().toISOString(),
         };
       }
 
-      // Map Firecrawl results to the expected schema
-      const results = webResults.map((r) => {
-        // Extract source/outlet name from URL hostname
-        let source = 'Unknown Source';
-        try {
-          const hostname = new URL(r.url).hostname.replace('www.', '');
-          source = hostname.split('.')[0].charAt(0).toUpperCase() + hostname.split('.')[0].slice(1);
-        } catch { /* keep default */ }
-
-        // Build a snippet from description or content
-        const snippet = r.description
-          || (r.content ? r.content.slice(0, 300).replace(/\n+/g, ' ').trim() : 'No content available.');
-
-        // Assign reliability score based on known outlet patterns
-        let reliabilityScore = 0.70; // default
-        const lowerUrl = r.url.toLowerCase();
-        if (/reuters|apnews|afp/.test(lowerUrl)) reliabilityScore = 0.95;
-        else if (/bbc|guardian|nytimes|washingtonpost|ft\.com|aljazeera/.test(lowerUrl)) reliabilityScore = 0.85;
-        else if (/crisisgroup|icg|acled|sipri|iiss/.test(lowerUrl)) reliabilityScore = 0.88;
-        else if (/un\.org|osce|europa\.eu/.test(lowerUrl)) reliabilityScore = 0.90;
-        else if (/foreignpolicy|economist|foreignaffairs/.test(lowerUrl)) reliabilityScore = 0.82;
-
-        return {
-          title: r.title || 'Untitled',
-          snippet,
-          source,
-          publishedDate: r.publishedDate || new Date().toISOString().split('T')[0],
-          url: r.url,
-          reliabilityScore,
-        };
-      });
+      // Map unified results
+      const providers = [...new Set(webResults.map((r) => r.provider))];
+      const results = webResults.map((r) => ({
+        title: r.title,
+        snippet: r.snippet || r.content?.slice(0, 300) || '',
+        source: r.source,
+        publishedDate: r.publishedDate || new Date().toISOString().split('T')[0],
+        url: r.url,
+        reliabilityScore: r.reliabilityScore,
+        provider: r.provider,
+      }));
 
       return {
         results,
         query,
-        analysisNote: `Found ${results.length} web sources for "${query}". Results are from live Firecrawl search.`,
+        providers,
+        analysisNote: `Found ${results.length} web sources via ${providers.join(', ')}. Results sorted by reliability.`,
         _generatedAt: new Date().toISOString(),
       };
     } catch (err) {
@@ -111,13 +129,32 @@ export const webSearch = tool({
         message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)),
         results: [],
         query,
-        analysisNote:
-          'Web search failed due to an unexpected error. Check Firecrawl configuration and API key.',
+        providers: [],
+        analysisNote: 'Web search failed. Check API configuration.',
         _generatedAt: new Date().toISOString(),
       };
     }
   },
 });
+
+function extractHostname(url: string): string {
+  try {
+    const hostname = new URL(url).hostname.replace('www.', '');
+    return hostname.split('.')[0].charAt(0).toUpperCase() + hostname.split('.')[0].slice(1);
+  } catch {
+    return 'Unknown';
+  }
+}
+
+function scoreUrlReliability(url: string): number {
+  const lowerUrl = url.toLowerCase();
+  if (/reuters|apnews|afp/.test(lowerUrl)) return 0.95;
+  if (/bbc|guardian|nytimes|washingtonpost|ft\.com|aljazeera/.test(lowerUrl)) return 0.85;
+  if (/crisisgroup|icg|acled|sipri|iiss/.test(lowerUrl)) return 0.88;
+  if (/un\.org|osce|europa\.eu/.test(lowerUrl)) return 0.90;
+  if (/foreignpolicy|economist|foreignaffairs/.test(lowerUrl)) return 0.82;
+  return 0.70;
+}
 
 // ============================================================================
 // Tool 2: analyzeDocument

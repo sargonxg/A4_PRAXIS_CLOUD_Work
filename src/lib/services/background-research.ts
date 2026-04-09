@@ -20,6 +20,7 @@ import { generateText, Output } from 'ai';
 import { getModel, getProModel } from '@/lib/ai/providers';
 import { saveToolData, getToolData } from '@/lib/firebase/tool-data-service';
 import { adminDb } from '@/lib/firebase/admin';
+import { executeWebResearch, type WebResearchResult } from '@/lib/ai/web-research';
 
 // --- Data feed imports ---
 import { fetchEvents as acledFetchEvents } from '@/lib/data-feeds/acled-client';
@@ -289,11 +290,17 @@ export async function executeBackgroundResearch(request: ResearchRequest): Promi
   const { uid, situationId, toolId, situationName, country, actors, researchConfig } = request;
   const startedAt = new Date().toISOString();
 
+  // Total sources = web research (1) + configured data feeds
+  const dataFeedSources = researchConfig.sources.filter(
+    (s) => s !== 'google-search' && s !== 'firecrawl'
+  );
+  const totalSources = 1 + dataFeedSources.length; // 1 for web research (Google + premium)
+
   const progress: ResearchProgress = {
     status: 'pending',
     toolId,
     sourcesQueried: 0,
-    sourcesTotal: researchConfig.sources.length,
+    sourcesTotal: totalSources,
     startedAt,
   };
 
@@ -301,41 +308,108 @@ export async function executeBackgroundResearch(request: ResearchRequest): Promi
   await saveStatus(uid, situationId, progress);
 
   try {
-    // 2. Fetch data from configured sources
+    // ── Phase 1: Web Research (Google Search first, then Tavily/Parallel in parallel) ──
     progress.status = 'fetching-sources';
     await saveStatus(uid, situationId, progress);
 
     log('info', `Starting research for ${toolId}`, {
       situationId,
-      sources: researchConfig.sources,
+      dataFeeds: dataFeedSources,
       country,
     });
 
+    // Build a search query tailored to this tool
+    const toolSearchQuery = `${researchConfig.synthesisPrompt.split('.')[0]} ${situationName} ${country}`.slice(0, 200);
+
+    // Load user preferences for favorite sources (stored in Firestore)
+    let favoriteSources: string[] = [];
+    try {
+      if (adminDb) {
+        const prefsSnap = await adminDb
+          .collection('users').doc(uid)
+          .collection('settings').doc('preferences')
+          .get();
+        if (prefsSnap.exists) {
+          const prefs = prefsSnap.data();
+          favoriteSources = (prefs?.favoriteSources as string[]) ?? [];
+        }
+      }
+    } catch {
+      // Non-critical — proceed without favorites
+    }
+
+    // Execute unified web research: Google Search (default) + Tavily/Parallel/Firecrawl (if user has keys)
+    let webResults: WebResearchResult[] = [];
+    try {
+      webResults = await executeWebResearch(
+        toolSearchQuery,
+        situationName,
+        uid,
+        {
+          maxResults: 8,
+          favoriteSources,
+          region: country,
+          timeRange: 'month',
+        }
+      );
+      progress.sourcesQueried++;
+      log('info', `Web research returned ${webResults.length} results for ${toolId}`);
+    } catch (err) {
+      log('warn', `Web research failed for ${toolId}`, { error: String(err) });
+    }
+
+    await saveStatus(uid, situationId, progress);
+
+    // ── Phase 2: Data feed sources in parallel ──
     const sourceResults = await Promise.allSettled(
-      researchConfig.sources.map((source) => fetchSource(source, country, actors, situationName))
+      dataFeedSources.map((source) => fetchSource(source, country, actors, situationName))
     );
 
-    const results: SourceResult[] = sourceResults.map((r, i) =>
+    const feedResults: SourceResult[] = sourceResults.map((r, i) =>
       r.status === 'fulfilled'
         ? r.value
-        : { source: researchConfig.sources[i], data: null, ok: false, error: r.reason?.message ?? 'Unknown error' }
+        : { source: dataFeedSources[i], data: null, ok: false, error: r.reason?.message ?? 'Unknown error' }
     );
 
-    progress.sourcesQueried = results.filter((r) => r.ok).length;
+    progress.sourcesQueried += feedResults.filter((r) => r.ok).length;
     await saveStatus(uid, situationId, progress);
 
     log('info', `Fetched ${progress.sourcesQueried}/${progress.sourcesTotal} sources for ${toolId}`);
 
-    // 3. Build context and synthesize via AI
+    // ── Phase 3: Build context and synthesize via AI ──
     progress.status = 'synthesizing';
     await saveStatus(uid, situationId, progress);
 
-    const researchContext = buildResearchContext(results, situationName, country, actors);
+    // Build context from web research results
+    const webContext = webResults.length > 0
+      ? [
+          '## WEB RESEARCH (Google Search + Premium Providers)',
+          ...webResults.map((r) =>
+            `### ${r.title} (${r.source}, reliability: ${r.reliabilityScore.toFixed(2)})\n${r.content.slice(0, 3000)}`
+          ),
+          '',
+        ].join('\n')
+      : '';
+
+    // Build context from data feed results
+    const feedContext = buildResearchContext(feedResults, situationName, country, actors);
+
+    // Combine: web research first (most recent), then data feeds (structured)
+    const fullContext = `${webContext}\n${feedContext}`;
+
     const model = researchConfig.aiModel === 'pro' ? getProModel() : getModel();
+
+    const providerList = webResults.length > 0
+      ? [...new Set(webResults.map((r) => r.provider))].join(', ')
+      : 'none';
 
     const { output } = await generateText({
       model,
-      prompt: `${researchConfig.synthesisPrompt}\n\n${researchContext}`,
+      prompt: `${researchConfig.synthesisPrompt}
+
+IMPORTANT: The following research data combines live web search results (Google Search${providerList !== 'none' ? `, ${providerList}` : ''}) with structured data feeds. Web results are the most current. Cross-reference web findings with structured data for triangulated facts.
+
+${fullContext}`,
       output: Output.object({ schema: researchConfig.schema }),
     });
 
@@ -345,9 +419,12 @@ export async function executeBackgroundResearch(request: ResearchRequest): Promi
       throw new Error('AI synthesis returned no structured output');
     }
 
-    // 4. Save tool data
+    // ── Phase 4: Save results ──
     progress.status = 'saving';
     await saveStatus(uid, situationId, progress);
+
+    const webSourceNames = webResults.map((r) => r.source);
+    const feedSourceNames = feedResults.filter((r) => r.ok).map((r) => r.source);
 
     await saveToolData(uid, situationId, toolId, {
       ...synthesized,
@@ -356,6 +433,9 @@ export async function executeBackgroundResearch(request: ResearchRequest): Promi
         model: researchConfig.aiModel,
         sourcesQueried: progress.sourcesQueried,
         sourcesTotal: progress.sourcesTotal,
+        webSources: webSourceNames,
+        dataFeeds: feedSourceNames,
+        providers: [...new Set(webResults.map((r) => r.provider))],
         startedAt,
         completedAt: new Date().toISOString(),
       },
@@ -371,6 +451,7 @@ export async function executeBackgroundResearch(request: ResearchRequest): Promi
 
     log('info', `Research complete for ${toolId}`, {
       sourcesQueried: progress.sourcesQueried,
+      webResults: webResults.length,
       durationMs: Date.now() - new Date(startedAt).getTime(),
     });
 
