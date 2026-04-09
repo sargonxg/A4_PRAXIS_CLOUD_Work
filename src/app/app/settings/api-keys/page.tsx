@@ -19,11 +19,21 @@ function maskKey(key: string): string {
   return key.slice(0, 4) + '****';
 }
 
+// Map from ApiKeys field name to validate-key provider name
+const VALIDATABLE_KEYS: Partial<Record<keyof ApiKeys, 'tavily' | 'firecrawl' | 'anthropic' | 'openai'>> = {
+  tavily_key: 'tavily',
+  firecrawl_key: 'firecrawl',
+  anthropic_key: 'anthropic',
+  openai_key: 'openai',
+};
+
 export default function ApiKeysPage() {
   const { user } = useAuth();
   const [keys, setKeys] = useState<ApiKeys>({ google_ai_key: '', anthropic_key: '', openai_key: '', firecrawl_key: '', tavily_key: '', parallel_key: '' });
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [keyValidation, setKeyValidation] = useState<Record<string, 'idle' | 'validating' | 'valid' | 'invalid'>>({});
+  const [keyErrors, setKeyErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!user?.id) return;
@@ -40,6 +50,28 @@ export default function ApiKeysPage() {
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   }
+
+  const validateApiKey = async (provider: string, apiKey: string) => {
+    if (!apiKey.trim()) return;
+    setKeyValidation((prev) => ({ ...prev, [provider]: 'validating' }));
+    try {
+      const res = await fetch('/api/settings/validate-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider, apiKey }),
+      });
+      const data = await res.json() as { valid: boolean; error?: string };
+      setKeyValidation((prev) => ({ ...prev, [provider]: data.valid ? 'valid' : 'invalid' }));
+      if (!data.valid && data.error) {
+        setKeyErrors((prev) => ({ ...prev, [provider]: data.error! }));
+      } else {
+        setKeyErrors((prev) => { const n = { ...prev }; delete n[provider]; return n; });
+      }
+    } catch {
+      setKeyValidation((prev) => ({ ...prev, [provider]: 'invalid' }));
+      setKeyErrors((prev) => ({ ...prev, [provider]: 'Network error during validation' }));
+    }
+  };
 
   const fields: Array<{ key: keyof ApiKeys; label: string; placeholder: string; docs: string; section?: string; description?: string }> = [
     { key: 'google_ai_key', label: 'Google AI API Key (Gemini)', placeholder: 'AIza...', docs: 'aistudio.google.com', section: 'AI Models' },
@@ -89,10 +121,23 @@ export default function ApiKeysPage() {
                 placeholder={keys[key] ? maskKey(keys[key]) : placeholder}
                 value={keys[key]}
                 onChange={(e) => setKeys((prev) => ({ ...prev, [key]: e.target.value }))}
+                onBlur={(e) => {
+                  const provider = VALIDATABLE_KEYS[key];
+                  if (provider) validateApiKey(provider, e.target.value);
+                }}
               />
-              {keys[key] && (
+              {keys[key] && !VALIDATABLE_KEYS[key] && (
                 <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700">Active</span>
               )}
+              {VALIDATABLE_KEYS[key] && (() => {
+                const provider = VALIDATABLE_KEYS[key]!;
+                const status = keyValidation[provider];
+                if (status === 'validating') return <span className="shrink-0 text-xs text-white/40 animate-pulse">Validating…</span>;
+                if (status === 'valid') return <span className="shrink-0 text-xs text-emerald-400">✓ Valid</span>;
+                if (status === 'invalid') return <span className="shrink-0 text-xs text-red-400">✗ {keyErrors[provider] || 'Invalid key'}</span>;
+                if (keys[key]) return <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700">Active</span>;
+                return null;
+              })()}
             </div>
           </div>
         ))}
