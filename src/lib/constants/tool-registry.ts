@@ -895,6 +895,23 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     modelTier: 'pro',
     methodology: 'Legal tracking covers four international law tracks: (1) UN Security Council — resolution number, adoption date, Chapter VI (pacific settlement) or Chapter VII (enforcement) authority, key provisions (ceasefire demands, sanctions, peacekeeping mandates), compliance status by party; (2) ICC — situation, case status (preliminary examination/investigation/pre-trial/trial/appeals), charges, suspects, arrest warrant status; (3) ICJ — parties, legal issue, current phase (jurisdiction/merits/reparations), provisional measures ordered, compliance; (4) Legal obligations — treaty obligations in force for the parties, derogation status (ICCPR Article 4), IHL applicability, compliance trend. Upcoming legal milestones (hearings, report deadlines, mandate renewals) are flagged for calendar integration.',
   },
+  {
+    id: 'source-monitor',
+    name: 'Source Monitor',
+    category: 'intelligence',
+    description: 'Automated monitoring of user-tracked intelligence sources. Tracks think tanks, academic journals, and news organizations for new publications relevant to your situation. Applies CRAAP source evaluation and delivers new publication alerts.',
+    shortDescription: 'Track sources for new publications on your situation',
+    credits: 2,
+    icon: 'Radar',
+    aiRoute: '/api/ai/media-scan',
+    dataSchema: 'SourceMonitorSchema',
+    requiredSituationFields: ['name', 'region'],
+    outputType: 'structured',
+    frameworks: ['CRAAP Test (Currency, Relevance, Authority, Accuracy, Purpose)'],
+    dataSources: ['Firecrawl', 'User-defined sources'],
+    relatedTools: ['sources-library', 'media-roundup', 'argus'],
+    methodology: 'Source monitoring applies a weekly automated scan of user-tracked sources using Firecrawl web search. Each new publication is scored using the CRAAP test and relevance to the active situation. High-relevance publications from credible sources (reliability ≥ 7.0) generate alerts. The source health dashboard tracks scan timestamps, coverage density, and recommended additions.',
+  },
 ];
 
 // ── Lookup helpers ─────────────────────────────────────────────────────────
