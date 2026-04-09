@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
-import { buildToolContext } from '@/lib/ai/situation-context';
+import { getProModel, getThinkingModel } from '@/lib/ai/providers';
+import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
@@ -160,11 +160,20 @@ export const POST = withAuth(async (request, user) => {
       ? await buildGraphContext(user.uid, situationId, 'negotiation_prep')
       : '';
 
+    // --- Web grounded context ---
+    const webCtx = situation
+      ? await buildWebGroundedContext(
+          { name: (situation as unknown as Situation).name, region: (situation as unknown as Situation).region, actors: (situation as unknown as Situation).actors as string[] | undefined },
+          'negotiation-prep',
+          user.uid
+        )
+      : '';
+
     // --- AI analysis ---
     const result = await generateText({
-      model: getProModel(),
+      model: getThinkingModel(),
       output: Output.object({ schema: NegotiationSchema }),
-      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Conduct a rigorous negotiation space analysis applying the Harvard PON framework (Fisher/Ury), Lax/Sebenius deal design theory, and Zartman ripeness assessment.
+      prompt: `${webCtx ? `${webCtx}\n\n` : ''}${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Conduct a rigorous negotiation space analysis applying the Harvard PON framework (Fisher/Ury), Lax/Sebenius deal design theory, and Zartman ripeness assessment.
 
 PARTIES: ${parties.join(', ')}
 KEY ISSUES: ${issues.join(', ')}

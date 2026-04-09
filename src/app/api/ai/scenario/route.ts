@@ -1,7 +1,7 @@
 import { streamText } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
-import { buildToolContext } from '@/lib/ai/situation-context';
+import { getProModel, getThinkingModel } from '@/lib/ai/providers';
+import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -45,6 +45,15 @@ export const POST = withAuth(async (request, user) => {
       ? await buildGraphContext(user.uid, situationId, 'scenario_analysis')
       : '';
 
+    // --- Web grounded context ---
+    const webCtx = situation
+      ? await buildWebGroundedContext(
+          { name: (situation as Situation).name, region: (situation as Situation).region, actors: (situation as Situation).actors },
+          'scenarios',
+          user.uid
+        )
+      : '';
+
     const actorList =
       Array.isArray(actors) && actors.length > 0
         ? `Involved actors: ${actors.join(', ')}`
@@ -75,7 +84,7 @@ ${intel.humanitarian?.displacement ? `- Displacement: ${intel.humanitarian.displ
       /* continue without live data */
     }
 
-    const prompt = `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}You are a senior conflict analyst at a major international crisis organization. Conduct a rigorous, structured scenario analysis using the information below.
+    const prompt = `${webCtx ? `${webCtx}\n\n` : ''}${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}You are a senior conflict analyst at a major international crisis organization. Conduct a rigorous, structured scenario analysis using the information below.
 
 CONFLICT CONTEXT: ${conflictContext}
 SCENARIO TRIGGER: ${scenarioTrigger}
@@ -116,7 +125,7 @@ Provide exactly 3 specific policy recommendations. For each recommendation:
 Be analytically rigorous. Calibrate confidence language (high/moderate/low/uncertain). Avoid generic analysis. Reference specific actors, instruments, precedents, and frameworks.`;
 
     const result = streamText({
-      model: getProModel(),
+      model: getThinkingModel(),
       prompt,
       system:
         'You are a senior conflict analyst at the International Crisis Group. Provide rigorous, structured, evidence-based scenario analysis for diplomatic and security professionals. Always cite actors by name, apply Glasl escalation staging, and include calibrated probability estimates.',

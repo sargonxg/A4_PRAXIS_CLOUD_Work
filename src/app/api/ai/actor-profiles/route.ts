@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
-import { buildToolContext } from '@/lib/ai/situation-context';
-import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
+import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
@@ -55,13 +54,30 @@ const ActorProfileSchema = z.object({
   threatLevel: z.enum(['critical', 'high', 'medium', 'low']),
   leverageScore: z.number().min(0).max(100),
   lastActivity: z.string().describe('Date of most recent known activity'),
+  spoilerClassification: z.enum(['total', 'limited', 'greedy', 'non-spoiler']).optional(),
+  spoilerEvidence: z.string().optional(),
+  statedPositions: z.array(z.string()).optional(),
+  underlyingInterests: z.array(z.string()).optional(),
+  mawScores: z.object({
+    power: z.number().min(1).max(10),
+    legitimacy: z.number().min(1).max(10),
+    urgency: z.number().min(1).max(10),
+    stakeholderType: z.enum(['dormant', 'discretionary', 'demanding', 'dominant', 'dangerous', 'dependent', 'definitive']),
+  }).optional(),
 });
 
 const ActorProfilesSchema = z.object({
   actors: z.array(ActorProfileSchema).min(2).max(10).describe('Full intelligence profiles for key actors'),
+  relationshipMatrix: z.array(z.object({
+    actorA: z.string(),
+    actorB: z.string(),
+    relationship: z.enum(['ally', 'adversary', 'neutral', 'competitor', 'patron-client']),
+    strength: z.number().min(1).max(5),
+    basis: z.string(),
+  })).optional(),
 });
 
-export const POST = withAuth(async (request: Request) => {
+export const POST = withAuth(async (request: Request, user) => {
   try {
     if (isServerDemoMode()) {
       return NextResponse.json({ actors: [] });
@@ -74,27 +90,18 @@ export const POST = withAuth(async (request: Request) => {
     const { situation } = body as { situation?: Situation };
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
-    // Live research — fetch current reporting on each actor for grounded profiles
-    let liveResearch = '';
-    if (situation?.actors?.length) {
-      try {
-        const searchTargets = situation.actors.slice(0, 4); // top 4 actors
-        const searches = await Promise.allSettled(
-          searchTargets.map((actor) =>
-            searchWeb(`${actor} ${situation.region || ''} conflict 2025 2026`, { numResults: 2 })
-          )
-        );
-        const allResults = searches.flatMap((r) => r.status === 'fulfilled' ? r.value : []);
-        if (allResults.length > 0) {
-          liveResearch = '\n\nLIVE INTELLIGENCE ON KEY ACTORS:\n' + formatResultsAsContext(allResults.slice(0, 6));
-        }
-      } catch { /* non-blocking */ }
-    }
+    const webCtx = situation
+      ? await buildWebGroundedContext(
+          { name: (situation as Situation).name, region: (situation as Situation).region, actors: (situation as Situation).actors },
+          'actor-profiles',
+          user.uid
+        )
+      : '';
 
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: ActorProfilesSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}${liveResearch ? `${liveResearch}\n\n` : ''}Generate comprehensive intelligence profiles for the key actors in this conflict situation.
+      prompt: `${webCtx}${webCtx ? '\n\n' : ''}${sitContext ? `${sitContext}\n\n` : ''}Generate comprehensive intelligence profiles for the key actors in this conflict situation.
 
 For EACH actor listed in the situation (and any critical actors you identify as missing), produce a full intelligence profile covering:
 
@@ -102,7 +109,7 @@ For EACH actor listed in the situation (and any critical actors you identify as 
 2. **Mandate**: What they claim as their purpose/mission
 3. **Leadership**: Key decision-makers by name where known (use real names for real-world actors)
 4. **Interests Analysis** (Fisher/Ury framework):
-   - Distinguish between stated positions (explicit) and underlying interests (latent)
+   - Distinguish between stated positions (statedPositions) and underlying interests (underlyingInterests)
    - Prioritize: critical (existential), high (strategic), medium (operational), low (tactical)
 5. **Leverage Mapping**:
    - What leverage does this actor hold over others? (military, economic, diplomatic, informational)
@@ -113,11 +120,14 @@ For EACH actor listed in the situation (and any critical actors you identify as 
    - Spoiler potential (ability and motivation to derail peace/resolution)
    - Willingness to negotiate
    - Overall threat level to the process
+8. **Stedman Spoiler Classification**: Classify each actor as total/limited/greedy/non-spoiler with evidence
+9. **Mitchell-Agle-Wood Scores**: Rate power (1-10), legitimacy (1-10), urgency (1-10) and determine stakeholder type
+10. **Relationship Matrix**: Map bilateral relationships between all actors (ally/adversary/neutral/competitor/patron-client)
 
 Use real-world knowledge where available. Reference actual organizations, real leadership names, documented events. For each actor, the profile should be grounded in verifiable information — not invented scenarios.
 
 Generate profiles for 3-8 actors depending on the complexity of the situation.`,
-      system: 'You are a senior intelligence analyst producing classified actor profiles for diplomatic staff. Use real-world knowledge to create precise, evidence-based profiles. Reference actual events, real leadership names, and documented positions. Apply the Fisher/Ury interests framework and Mitchell/Agle/Wood stakeholder analysis. Profiles must be actionable for mediators and political affairs officers.',
+      system: 'You are a senior intelligence analyst producing classified actor profiles for diplomatic staff. Use real-world knowledge to create precise, evidence-based profiles. Reference actual events, real leadership names, and documented positions. For each actor, classify using Stedman\'s Spoiler Theory (total/limited/greedy/non-spoiler), map Fisher-Ury positions vs. interests, and score Mitchell-Agle-Wood power/legitimacy/urgency (1-10 each). Profiles must be actionable for mediators and political affairs officers.',
     });
 
     return NextResponse.json(result.output);

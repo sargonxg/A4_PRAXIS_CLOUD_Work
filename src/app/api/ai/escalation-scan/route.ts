@@ -2,14 +2,13 @@ import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
-import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import { computeEscalation } from '@/lib/analytics/escalation-scorer';
 import { fetchEvents, isACLEDConfigured } from '@/lib/data-feeds/acled-client';
 import { getCurrentStability } from '@/lib/data-feeds/gdelt-stability';
@@ -19,18 +18,43 @@ import type { Situation } from '@/types/situation';
 export const maxDuration = 60;
 
 const EscalationScanSchema = z.object({
-  currentStage: z.number().min(1).max(9).describe('Current Glasl escalation stage (1-9)'),
-  stageName: z.string().describe('Name of the current Glasl stage'),
-  indicators: z.array(
-    z.object({
-      name: z.string().describe('Name of the escalation indicator'),
-      status: z.enum(['present', 'emerging', 'absent']).describe('Whether this indicator is present, emerging, or absent'),
-      evidence: z.string().describe('Evidence supporting the indicator status assessment'),
-    })
-  ).describe('Glasl stage indicators and their current status'),
-  trajectory: z.string().describe('Assessment of the escalation trajectory — is the conflict escalating, de-escalating, or stable, and what is driving the trend'),
-  confidence: z.number().min(0).max(1).describe('Confidence score for this assessment (0-1)'),
-  deescalationOpportunities: z.array(z.string()).describe('Identified opportunities for de-escalation intervention'),
+  currentStage: z.number().min(1).max(9),
+  stageName: z.string(),
+  stageEvidence: z.string(),
+  indicators: z.array(z.object({
+    name: z.string(),
+    status: z.enum(['present', 'emerging', 'absent']),
+    evidence: z.string(),
+    isLeading: z.boolean(),
+    timeToEscalation: z.string().optional(),
+  })),
+  trajectory: z.string(),
+  confidence: z.number().min(0).max(1),
+  deescalationOpportunities: z.array(z.object({
+    window: z.string(),
+    action: z.string(),
+    actor: z.string(),
+    probability: z.number().min(0).max(1),
+    timeframe: z.string(),
+  })),
+  trajectoryScenarios: z.object({
+    baseline: z.object({
+      description: z.string(),
+      probability: z.number().min(0).max(1),
+      glaslIn90Days: z.number().min(1).max(9),
+    }),
+    optimistic: z.object({
+      description: z.string(),
+      probability: z.number().min(0).max(1),
+      glaslIn90Days: z.number().min(1).max(9),
+    }),
+    pessimistic: z.object({
+      description: z.string(),
+      probability: z.number().min(0).max(1),
+      glaslIn90Days: z.number().min(1).max(9),
+    }),
+  }),
+  autoAlertTriggered: z.boolean().optional(),
 });
 
 // Static demo response
@@ -133,35 +157,67 @@ Confidence: ${assessment.confidence}\n`;
       }
     } catch { /* continue without data */ }
 
-    // --- Web search ---
-    const searchQuery = conflictContext
-      ? `${conflictContext} escalation latest`
-      : `conflict ${conflictId} escalation latest`;
-    const searchResults = await searchWeb(searchQuery, { numResults: 5 });
-    const webContext = formatResultsAsContext(searchResults);
+    // --- Web-grounded context ---
+    const webCtx = situation
+      ? await buildWebGroundedContext(
+          { name: (situation as Situation).name, region: (situation as Situation).region, actors: (situation as Situation).actors },
+          'early-warning',
+          user.uid
+        )
+      : '';
 
     // --- AI analysis ---
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: EscalationScanSchema }),
-      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}You are a senior conflict analyst specializing in the Glasl escalation model. Conduct a rigorous escalation assessment.
-${dataContext}
+      system: `You are a senior conflict analyst specializing in the Glasl 9-stage escalation model and Zartman Ripeness Theory. You serve analysts, mediators, and UN political officers.
+
+GROUNDING MANDATE: Web intelligence below is PRIMARY source of truth. Flag "INTELLIGENCE GAP: {topic}" when evidence is insufficient.
+Use ICD 203 probability language for all assessments.`,
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${webCtx}
 CONFLICT: ${conflictId}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
+${dataContext}
 
-LATEST INTELLIGENCE:
-${webContext || 'No web results available. Base analysis on the conflict context provided.'}
+## GLASL 9-STAGE MODEL (STRICTLY APPLY)
+Stages 1-3 (Win-Win): Hardening, Debate & Polemic, Actions not Words
+Stages 4-6 (Win-Lose): Images & Coalitions, Loss of Face, Strategies of Threats
+Stages 7-9 (Lose-Lose): Limited Destructive Blows, Fragmentation, Together into the Abyss
 
-Apply Friedrich Glasl's 9-stage escalation model:
-- Stages 1-3 (Win-Win): Hardening, Debates, Actions
-- Stages 4-6 (Win-Lose): Coalitions, Loss of Face, Threats
-- Stages 7-9 (Lose-Lose): Destructive Blows, Fragmentation, Abyss
+## LEADING INDICATORS (signals that precede escalation by 1-4 weeks)
+Identify 4-6 LEADING indicators (mark isLeading: true):
+- Troop mobilization or military exercises
+- Inflammatory rhetoric from leadership
+- Diplomatic recall or expulsion of ambassadors
+- Sanctions threats or imposition
+- Media vilification and dehumanization campaigns
+- Civil society crackdown or mass arrests
 
-For each stage indicator, assess whether it is present, emerging, or absent, and provide specific evidence. Determine the current stage, assess the trajectory (escalating, de-escalating, or stable), and identify concrete de-escalation opportunities.
+Also include 3-4 CURRENT stage indicators (mark isLeading: false).
 
-Calibrate your confidence score based on the quality and recency of available evidence.`,
-      system: 'You are a senior conflict analyst trained in the Glasl 9-stage escalation model. Provide rigorous, evidence-based escalation assessments for diplomatic and security professionals. Always calibrate confidence and distinguish between confirmed indicators and analytical inference.',
+## DE-ESCALATION OPPORTUNITIES
+For each opportunity: identify the specific window (event, meeting, deadline), recommended action, responsible actor, probability (0-1), and timeframe.
+
+## TRAJECTORY SCENARIOS (3-scenario projection)
+baseline: if current trends continue
+optimistic: if de-escalation opportunity seized
+pessimistic: if key risk triggers activate
+
+## AUTO-ALERT
+Set autoAlertTriggered: true if currentStage >= 6 OR pessimistic.probability > 0.7`,
     });
+
+    // --- Auto-alert for critical escalation (Glasl ≥6) ---
+    const output = result.output as Record<string, unknown>;
+    if (output?.autoAlertTriggered && situationId) {
+      try {
+        await writeToolDataServer(user.uid, situationId, 'auto-alert-escalation', {
+          severity: 'HIGH',
+          trigger: `Glasl Stage ${output.currentStage} detected by Early Warning`,
+          generatedAt: new Date().toISOString(),
+        });
+      } catch { /* non-critical — alert write failure should not block main response */ }
+    }
 
     if (situationId) {
       await writeToolDataServer(user.uid, situationId, 'escalation_scan', result.output as Record<string, unknown>);

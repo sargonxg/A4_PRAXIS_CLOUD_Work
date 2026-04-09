@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
-import { buildToolContext } from '@/lib/ai/situation-context';
+import { getProModel, getThinkingModel } from '@/lib/ai/providers';
+import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
@@ -91,7 +91,7 @@ const GameTheoryOutputSchema = z.object({
 // Route handler
 // ---------------------------------------------------------------------------
 
-export const POST = withAuth(async (request: Request) => {
+export const POST = withAuth(async (request: Request, user) => {
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(JSON.stringify({ error: 'AI not configured' }), { status: 503 });
   }
@@ -108,6 +108,15 @@ export const POST = withAuth(async (request: Request) => {
     if (!creditCheck.allowed) return creditCheck.response!;
 
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+
+    // --- Web grounded context ---
+    const webCtx = situation
+      ? await buildWebGroundedContext(
+          { name: (situation as unknown as Situation).name, region: (situation as unknown as Situation).region, actors: (situation as unknown as Situation).actors as string[] | undefined },
+          'game-theory',
+          user.uid
+        )
+      : '';
 
     // Build actor strategy descriptions for the prompt
     const actorStrategyList = actors
@@ -130,7 +139,7 @@ export const POST = withAuth(async (request: Request) => {
         ? 'Focus especially on game archetype identification and its conflict implications.'
         : 'Focus especially on the payoff matrix and Nash equilibrium identification.';
 
-    const prompt = `${sitContext ? `${sitContext}\n\n` : ''}${conflictDesc ? `${conflictDesc}\n\n` : ''}You are a formal game theorist and conflict analyst applying rigorous strategic interaction analysis to this armed or political conflict. Your framework draws on:
+    const prompt = `${webCtx ? `${webCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${conflictDesc ? `${conflictDesc}\n\n` : ''}You are a formal game theorist and conflict analyst applying rigorous strategic interaction analysis to this armed or political conflict. Your framework draws on:
 
 - Nash (1950): Nash Equilibrium — no actor can unilaterally improve their payoff
 - von Neumann & Morgenstern (1944): Expected utility and zero-sum analysis
@@ -170,7 +179,7 @@ YOUR TASK:
 Reference the actors by their exact names. Ground payoff values in real strategic interests — economic, military, political, reputational. Be analytically precise, not generic.`;
 
     const result = await generateText({
-      model: getProModel(),
+      model: getThinkingModel(),
       output: Output.object({ schema: GameTheoryOutputSchema }),
       prompt,
       system: `You are a formal game theorist and conflict analyst at a major international peace research institute. You apply Nash equilibrium theory, Schelling focal points, Fearon rationalist war causes, and Putnam two-level games to armed conflicts and political crises. You produce rigorous, mathematically consistent payoff matrices with analytically defensible values. Your analysis is used by UN mediators, diplomatic negotiators, and national security advisors. Every payoff you assign must be explainable by reference to strategic interests. Never produce symmetric or arbitrary payoff values — they must reflect real incentive structures.`,

@@ -1,59 +1,148 @@
+import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
-import { withAuth } from '@/lib/api/with-auth';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
-import { NextResponse } from 'next/server';
+import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
+import { withAuth } from '@/lib/api/with-auth';
+import { isServerDemoMode } from '@/lib/demo/demo-mode';
+import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { validateAiRequest } from '@/lib/api/validate-request';
+import { handleRouteError } from '@/lib/api/standard-error';
+import { situationContextSchema } from '@/lib/api/schemas';
+import type { Situation } from '@/types/situation';
 
-export const maxDuration = 120;
+export const maxDuration = 60;
 
-const PolicyMemoSchema = z.object({
-  classification: z.string().describe('Classification level: FOR OFFICIAL USE ONLY or UNCLASSIFIED'),
-  to: z.string().describe('Addressee: Senior Leadership, DPPA, or relevant body'),
-  from: z.string().describe('Drafter: PRAXIS Conflict Intelligence'),
-  subject: z.string().describe('Concise subject line capturing the policy question'),
-  executiveSummary: z.string().describe('2-3 sentence summary of the problem, recommendation, and expected outcome'),
-  problemStatement: z.string().describe('Analytical framing of the policy problem — why action is required now'),
-  contextAndBackground: z.string().describe('Relevant history, actors, and dynamics in 3-4 paragraphs'),
-  policyOptions: z.array(z.object({
-    option: z.string(),
-    pros: z.array(z.string()),
-    cons: z.array(z.string()),
-    riskLevel: z.enum(['low', 'medium', 'high']),
-    resourceImplications: z.string(),
-  })).describe('2-4 realistic policy options with trade-off analysis'),
-  recommendation: z.string().describe('Recommended course of action with rationale'),
-  implementationSteps: z.array(z.string()).describe('Concrete near-term actions in priority order'),
-  monitoringIndicators: z.array(z.string()).describe('Early warning indicators to track implementation effectiveness'),
-  risks: z.string().describe('Key risks to the recommended approach and mitigation strategies'),
+const PolicyOptionSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  levelOneAnalysis: z.string(),
+  levelTwoAnalysis: z.string(),
+  winSet: z.string(),
+  swot: z.object({
+    strengths: z.array(z.string()),
+    weaknesses: z.array(z.string()),
+    opportunities: z.array(z.string()),
+    threats: z.array(z.string()),
+  }),
+  feasibility: z.number().min(1).max(5),
+  risk: z.number().min(1).max(5),
+  timeline: z.string(),
+  requiredResources: z.array(z.string()),
+  keyActors: z.array(z.string()),
+  historicalPrecedent: z.string().optional(),
 });
 
-export const POST = withAuth(async (request: Request, user) => {
-  const body = await request.json();
-  const { situationId, policyQuestion, audience = 'Senior Leadership' } = body;
+const PolicyMemoSchema = z.object({
+  title: z.string(),
+  executiveSummary: z.string(),
+  situationAssessment: z.string(),
+  options: z.array(PolicyOptionSchema).min(3).max(4),
+  recommendedOption: z.string(),
+  implementationRoadmap: z.string(),
+  risks: z.array(z.string()),
+  citations: z.array(z.string()),
+});
 
-  const creditCheck = await checkAndDeductCredits('ai_policy_memo', 'Policy memo');
-  if (!creditCheck.allowed) return creditCheck.response;
+const DEMO_RESPONSE = {
+  title: 'Policy Options for the Nordalia Crisis',
+  executiveSummary: 'Three policy options are available, ranging from immediate ceasefire facilitation to phased autonomy negotiations. Option 2 (Structured Autonomy Framework) is recommended as the most feasible given current domestic and international constraints.',
+  situationAssessment: 'The Nordalia conflict is at Glasl Stage 5, with both parties entrenched but back-channels functional. The mutually hurting stalemate creates a narrow ripeness window.',
+  options: [
+    {
+      title: 'Option 1: Emergency Ceasefire + Confidence-Building Measures',
+      description: 'Immediate ceasefire mediated by SRSG with a 90-day CBM implementation plan.',
+      levelOneAnalysis: 'Both parties have signaled openness to a ceasefire framework. Karovia and Westmark would likely support.',
+      levelTwoAnalysis: 'GoN faces domestic pressure to show security gains before elections. DRM hardliners may reject without autonomy commitments.',
+      winSet: 'Narrow but viable — a 90-day humanitarian corridor provision could satisfy both Level I and Level II constraints.',
+      swot: {
+        strengths: ['Fast to implement', 'Humanitarian relief immediate'],
+        weaknesses: ['Does not address root causes', 'High violation risk'],
+        opportunities: ['AU summit in 6 weeks creates momentum'],
+        threats: ['DRM hardliners may spoil', 'GoN elections in 4 months'],
+      },
+      feasibility: 4,
+      risk: 3,
+      timeline: '30-45 days',
+      requiredResources: ['UNMN observer expansion', 'AU mediation team'],
+      keyActors: ['SRSG Santos', 'AU Commission', 'GoN Defense Ministry'],
+    },
+  ],
+  recommendedOption: 'Option 2: Structured Autonomy Framework',
+  implementationRoadmap: 'Phase 1 (0-30 days): Ceasefire. Phase 2 (30-90 days): Technical working groups. Phase 3 (90-180 days): Framework agreement.',
+  risks: ['Spoiler action by DRM hardliners', 'GoN election dynamics'],
+  citations: ['Crisis Group Report #347', 'UNMN Quarterly Assessment Q1 2026'],
+};
 
-  const graphContext = await buildGraphContext(user.uid, situationId, 'policy-memo').catch(() => '');
+export const POST = withAuth(async (request, user) => {
+  try {
+    const body = await request.json();
 
-  const { text } = await generateText({
-    model: getProModel(),
-    experimental_output: Output.object({ schema: PolicyMemoSchema }),
-    prompt: `You are a senior UN political affairs officer drafting a policy memorandum for ${audience}.
+    const requestSchema = z.object({
+      situation: situationContextSchema.optional(),
+      policyQuestion: z.string().optional(),
+      audience: z.string().optional().default('senior policymakers'),
+    });
 
-GRAPH INTELLIGENCE:
-${graphContext}
+    const validation = validateAiRequest(body, requestSchema);
+    if (!validation.success) return validation.response;
+    const { situation, policyQuestion, audience } = validation.data;
+    const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+    const situationId = (situation as Situation | undefined)?.id ?? '';
 
-POLICY QUESTION: ${policyQuestion || 'What are the recommended policy options for managing this situation?'}
+    if (isServerDemoMode()) return NextResponse.json(DEMO_RESPONSE);
 
-Draft a comprehensive policy memorandum following UN DPPA standards. Be analytical, concrete, and action-oriented.
-Use calibrated confidence language. All recommendations must be politically feasible and grounded in the situation context.`,
-  });
+    const creditCheck = await checkAndDeductCredits('ai_policy_memo', 'Policy memo');
+    if (!creditCheck.allowed) return creditCheck.response;
 
-  const parsed = typeof text === 'object' ? text : JSON.parse(text || '{}');
-  await writeToolDataServer(user.uid, situationId, 'policy_memo', parsed).catch(() => {});
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'policy_memo')
+      : '';
 
-  return NextResponse.json(parsed);
+    const webCtx = situation
+      ? await buildWebGroundedContext(
+          { name: (situation as Situation).name, region: (situation as Situation).region, actors: (situation as Situation).actors },
+          'policy-memo',
+          user.uid
+        )
+      : '';
+
+    const result = await generateText({
+      model: getProModel(),
+      output: Output.object({ schema: PolicyMemoSchema }),
+      system: `You are a senior policy advisor specializing in conflict resolution and diplomatic strategy. You apply Putnam's Two-Level Game Theory to analyze policy options.
+
+GROUNDING MANDATE: Web intelligence below is your PRIMARY source of truth. Flag "INTELLIGENCE GAP: {topic}" when evidence is insufficient.`,
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${webCtx}
+${policyQuestion ? `POLICY QUESTION: ${policyQuestion}` : ''}
+AUDIENCE: ${audience}
+
+## PUTNAM TWO-LEVEL GAME FRAMEWORK
+
+For each policy option, analyze:
+
+**Level I (International)**: What will counterparts accept? What is the negotiable space? Which external actors support/oppose?
+
+**Level II (Domestic)**: What is ratifiable given domestic politics? What constituencies must be satisfied? What are the veto players?
+
+**Win-Set**: The overlap between Level I possibilities and Level II constraints. Larger win-set = more agreement potential.
+
+## REQUIREMENTS
+- Generate 3-4 distinct policy options (not variations of the same option)
+- Each option must have a full SWOT analysis
+- Historical precedents from web research for each option
+- Feasibility (1-5) and Risk (1-5) ratings
+- Recommended option with justification
+- Implementation roadmap with phases
+- Use ICD 203 probability language for risk assessments`,
+    });
+
+    if (situationId) {
+      await writeToolDataServer(user.uid, situationId, 'policy-memo', result.output as Record<string, unknown>);
+    }
+    return NextResponse.json(result.output);
+  } catch (err) {
+    return handleRouteError(err, 'policy-memo');
+  }
 });

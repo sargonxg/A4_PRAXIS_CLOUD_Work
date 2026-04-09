@@ -2,12 +2,11 @@ import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
-import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 45;
@@ -22,6 +21,10 @@ const NarrativeSchema = z.object({
   reachScore: z.number().min(0).max(100).describe('Estimated relative reach within the information environment'),
   isHostile: z.boolean().describe('Whether this narrative is hostile to peace process or international norms'),
   counterNarrative: z.string().optional().describe('Recommended counter-messaging strategy for hostile narratives'),
+  fourDClassification: z.enum(['dismiss', 'distort', 'distract', 'dismay']).optional().describe("Ben Nimmo's 4D classification: dismiss (delegitimize voices), distort (false content), distract (flood the zone), dismay (amplify divisive content)"),
+  originator: z.string().optional().describe('Assessed originator or primary source of this narrative'),
+  amplificationChannels: z.array(z.string()).optional().describe('Specific channels through which this narrative is amplified'),
+  strategicObjective: z.string().optional().describe('Assessed strategic objective behind this narrative'),
 });
 
 const InfoOperationSchema = z.object({
@@ -53,6 +56,11 @@ const InfoEnvironmentSchema = z.object({
       alignment: z.enum(['hostile', 'neutral', 'friendly']).describe('Alignment relative to the peace process'),
     })
   ).max(8).describe('Key amplifier accounts and outlets'),
+  counterNarrativeOpportunities: z.array(z.object({
+    gap: z.string().describe('Identified gap or vulnerability in the hostile information environment'),
+    suggestedStrategy: z.string().describe('Recommended counter-narrative strategy to exploit this gap'),
+    targetAudience: z.string().describe('Primary audience for this counter-narrative effort'),
+  })).optional().describe('Strategic opportunities for counter-narrative intervention'),
 });
 
 const DEMO_RESPONSE = {
@@ -152,7 +160,7 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   try {
     const creditCheck = await checkAndDeductCredits('ai_info_environment', 'Information environment scan');
     if (!creditCheck.allowed) return creditCheck.response!;
@@ -165,32 +173,23 @@ export const POST = withAuth(async (request, _user) => {
     const { situation } = body as { situation?: Situation };
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
-    // --- Live intelligence feed (GDELT stability + events data) ---
-    let intelContext = '';
-    try {
-      if (situation) {
-        const intel = await getSituationIntelligence({
-          country: situation.region || situation.name,
-          query: situation.name,
-          limit: 15,
-        });
-        if (intel.events.length > 0) {
-          intelContext = '\n\nLIVE INTELLIGENCE FEED:\n' + intel.events.slice(0, 10).map(e =>
-            `- [${e.source.toUpperCase()}] ${e.date}: ${e.title} (${e.severity})`
-          ).join('\n');
-        }
-        if (intel.stability) {
-          intelContext += `\n\nGDELT STABILITY INDEX:\nCurrent score: ${intel.stability.score} | Trend: ${intel.stability.trend}`;
-        }
-      }
-    } catch { /* data feeds optional */ }
+    // --- Web grounded context ---
+    const webCtx = situation
+      ? await buildWebGroundedContext(
+          { name: (situation as Situation).name, region: (situation as Situation).region, actors: (situation as Situation).actors },
+          'info-environment',
+          user.uid
+        )
+      : '';
 
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: InfoEnvironmentSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}${intelContext ? `${intelContext}\n\n` : ''}Conduct a rigorous information environment analysis for this conflict situation.
+      prompt: `${webCtx ? `${webCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Conduct a rigorous information environment analysis for this conflict situation.
 
 ## ANALYTICAL FRAMEWORK
+
+Apply Ben Nimmo's 4D framework to classify disinformation/propaganda: Dismiss (delegitimize voices), Distort (spread false content), Distract (flood the zone), Dismay (amplify divisive content). Run 5 mental queries across: Western media, regional media, state media, think tanks, and social/digital channels.
 
 Apply the following NATO STRATCOM / UN DPPA information environment methodology:
 
@@ -225,7 +224,7 @@ Apply RESIST2 framework (Recognize, Early warning, Situational awareness, Issue,
 - What institutional mechanisms (platform flagging, fact-checker coordination) are available?
 
 Be specific to this situation. Do not produce generic frameworks — ground every finding in the specific conflict context, actors, and platforms.`,
-      system: 'You are a senior information environment analyst trained in NATO STRATCOM methodology, EU DisinfoLab detection techniques, and UN DPPA communications strategy. You have extensive experience supporting peace operations with narrative analysis, information operations attribution, and counter-messaging strategy. Produce precise, evidence-anchored assessments for diplomatic professionals and UN communications advisors.',
+      system: 'You are a senior information environment analyst trained in NATO STRATCOM methodology, EU DisinfoLab detection techniques, UN DPPA communications strategy, and Ben Nimmo\'s 4D disinformation framework (Dismiss, Distort, Distract, Dismay). You have extensive experience supporting peace operations with narrative analysis, information operations attribution, and counter-messaging strategy. For every narrative identified, apply the 4D classification and assess the originator, amplification channels, and strategic objective. Produce precise, evidence-anchored assessments for diplomatic professionals and UN communications advisors.',
     });
 
     return NextResponse.json(result.output);

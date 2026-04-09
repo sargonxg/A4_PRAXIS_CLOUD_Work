@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
-import { buildToolContext } from '@/lib/ai/situation-context';
+import { getProModel, getThinkingModel } from '@/lib/ai/providers';
+import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
@@ -193,10 +193,19 @@ export const POST = withAuth(async (request, user) => {
       ? await buildGraphContext(user.uid, situationId, 'mediation_design')
       : '';
 
+    // --- Web grounded context ---
+    const webCtx = situation
+      ? await buildWebGroundedContext(
+          { name: (situation as Situation).name, region: (situation as Situation).region, actors: (situation as Situation).actors },
+          'mediation-design',
+          user.uid
+        )
+      : '';
+
     const result = await generateText({
-      model: getProModel(),
+      model: getThinkingModel(),
       output: Output.object({ schema: MediationDesignSchema }),
-      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Design a comprehensive mediation process architecture for this conflict situation.
+      prompt: `${webCtx ? `${webCtx}\n\n` : ''}${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Design a comprehensive mediation process architecture for this conflict situation.
 
 ## DESIGN METHODOLOGY
 

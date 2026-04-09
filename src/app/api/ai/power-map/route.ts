@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
-import { buildToolContext } from '@/lib/ai/situation-context';
-import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
+import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -25,6 +24,12 @@ const PowerMapSchema = z.object({
       color: z.string().describe('Hex color code for visualization'),
       keyLeverage: z.string().describe('Primary leverage point this actor holds'),
       engagementStrategy: z.string().describe('Recommended engagement strategy based on power/interest quadrant'),
+      powerFaces: z.object({
+        compulsory: z.object({ score: z.number().min(1).max(10), description: z.string() }),
+        institutional: z.object({ score: z.number().min(1).max(10), description: z.string() }),
+        structural: z.object({ score: z.number().min(1).max(10), description: z.string() }),
+        productive: z.object({ score: z.number().min(1).max(10), description: z.string() }),
+      }).optional(),
     })
   ).min(4).max(12).describe('Stakeholder actors with power/interest coordinates'),
   relationships: z.array(
@@ -45,6 +50,19 @@ const PowerMapSchema = z.object({
   coalitionDynamics: z.string().describe('Analysis of emerging coalitions, alliances, and bloc formation'),
   spoilerRisks: z.string().describe('Actors with spoiler potential and recommended neutralization strategies'),
   engagementPriorities: z.array(z.string()).describe('Prioritized list of engagement recommendations for the mediator/analyst'),
+  leverageMap: z.array(z.object({
+    from: z.string(),
+    to: z.string(),
+    type: z.enum(['economic', 'military', 'diplomatic', 'informational']),
+    description: z.string(),
+    strength: z.number().min(1).max(5),
+  })).optional(),
+  powerAsymmetry: z.array(z.object({
+    actorA: z.string(),
+    actorB: z.string(),
+    ratio: z.number(),
+    implication: z.string(),
+  })).optional(),
 });
 
 const DEMO_RESPONSE = {
@@ -81,7 +99,7 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   try {
     const creditCheck = await checkAndDeductCredits('ai_power_map', 'Stakeholder power map generation');
     if (!creditCheck.allowed) return creditCheck.response!;
@@ -98,28 +116,36 @@ export const POST = withAuth(async (request, _user) => {
 
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
-    // Live research — fetch current stakeholder positioning and recent developments
-    let liveResearch = '';
-    try {
-      if (situation) {
-        const query = `${situation.name} stakeholders actors power dynamics ${situation.region || ''} 2025 2026`;
-        const results = await searchWeb(query, { numResults: 5 });
-        if (results.length > 0) {
-          liveResearch = '\n\nLIVE STAKEHOLDER INTELLIGENCE:\n' + formatResultsAsContext(results);
-        }
-      }
-    } catch { /* non-blocking */ }
+    const webCtx = situation
+      ? await buildWebGroundedContext(
+          { name: (situation as Situation).name, region: (situation as Situation).region, actors: (situation as Situation).actors },
+          'power-map',
+          user.uid
+        )
+      : '';
 
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: PowerMapSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}Generate a rigorous stakeholder power map for this conflict situation.
+      prompt: `${webCtx}${webCtx ? '\n\n' : ''}${sitContext ? `${sitContext}\n\n` : ''}Generate a rigorous stakeholder power map for this conflict situation.
 
 ${additionalContext ? `ADDITIONAL CONTEXT: ${additionalContext}\n\n` : ''}
 
+## BARNETT-DUVALL FOUR FACES OF POWER
+
+For each actor, assess all four dimensions of power:
+
+**Compulsory Power** (direct coercive control — military, economic sanctions, physical force): Score 1-10 with description.
+
+**Institutional Power** (control through rules, procedures, organizations — UNSC votes, treaty obligations, formal authority): Score 1-10 with description.
+
+**Structural Power** (shaping the structures within which actors operate — financial systems, trade networks, security architecture): Score 1-10 with description.
+
+**Productive Power** (constituting social subjects and their capacities — narrative control, legitimacy, identity framing): Score 1-10 with description.
+
 ## POWER/INTEREST FRAMEWORK
 
-**Power Score (1-10)**: Actor's capacity to influence situation outcomes
+**Power Score (1-10)**: Actor's aggregate capacity across all four faces to influence situation outcomes
 - 9-10: Decisive veto/control (parties to the conflict, UNSC P5)
 - 7-8: Significant influence (regional patrons, UN missions, major donors)
 - 5-6: Meaningful leverage (regional organizations, diaspora groups)
@@ -139,6 +165,12 @@ ${additionalContext ? `ADDITIONAL CONTEXT: ${additionalContext}\n\n` : ''}
 - **Keep Informed** (Low Power + High Interest): Prevent grievances from motivating coalition-building
 - **Monitor** (Low Power + Low Interest): Watch for position changes
 
+## LEVERAGE MAP
+For the most significant inter-actor leverage relationships, specify: who holds leverage over whom, type (economic/military/diplomatic/informational), description, and strength (1-5).
+
+## POWER ASYMMETRY
+Identify the most significant power imbalances between actor pairs — compute a ratio and explain its strategic implication for mediation.
+
 ## COLOR CONVENTIONS
 States/governments: #1A2332 (dark) or #5B8C5A (allied) or #8395a7 (neutral)
 Non-state armed: #A63D40 (opposition) or #C75B39 (militia)
@@ -146,7 +178,7 @@ International orgs: #4B92DB (UN/multilateral) or #4B6584 (regional)
 Civil society: #C8961E (domestic) or #E8B931 (diaspora)
 
 Generate 5-10 actors. Be specific about leverage, stance, and engagement strategy.`,
-      system: 'You are a senior UN political affairs officer and stakeholder mapping specialist trained in the Mitchell/Agle/Wood stakeholder framework and conflict-sensitive engagement principles. Produce precise, evidence-anchored power maps for mediators and diplomatic professionals.',
+      system: 'You are a senior UN political affairs officer and stakeholder mapping specialist trained in the Barnett-Duvall four faces of power framework (compulsory, institutional, structural, productive) and the Mitchell/Agle/Wood stakeholder model. Produce precise, evidence-anchored power maps that capture all dimensions of power for mediators and diplomatic professionals.',
     });
 
     return NextResponse.json(result.output);

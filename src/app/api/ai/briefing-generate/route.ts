@@ -2,18 +2,24 @@ import { NextResponse } from 'next/server';
 import { generateText, streamText, Output } from 'ai';
 import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
-import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
 const BriefingSchema = z.object({
+  bluf: z.string().describe('Bottom Line Up Front: single paragraph stating the situation assessment, 2 key developments, and recommended action'),
+  speakerNotes: z.string().optional().describe('What to say verbally when presenting this briefing to senior leadership'),
+  keyJudgments: z.array(z.object({
+    judgment: z.string(),
+    confidence: z.enum(['almost no chance', 'very unlikely', 'unlikely', 'roughly even', 'likely', 'very likely', 'almost certain']),
+    evidence: z.string(),
+  })).optional().describe('Key analytical judgments with ICD 203 calibrated probability language'),
   slides: z.array(
     z.object({
       title: z.string().describe('Section heading using UN DPPA conventions: HEADLINE ASSESSMENT, KEY DEVELOPMENTS, POLITICAL DYNAMICS, RISK FACTORS, OPPORTUNITIES, INFORMATION GAPS, or UPCOMING DECISION POINTS'),
@@ -91,6 +97,13 @@ const MORNING_DIGEST_DEMO = `## OVERNIGHT DEVELOPMENTS
 
 // Static demo response
 const DEMO_RESPONSE = {
+  bluf: 'The Nordalia conflict remains at Glasl Stage 5 with ceasefire holding but under increasing strain from buffer zone incursions and the appointment of AFN hardliner General Mensah as Defence Minister; Karovian military logistics have increased 40% over the past 30 days. Immediate priorities are reinforcing UNMN ceasefire monitoring at Kessara corridor and launching an economic working group on rare earth revenue-sharing before the June AU mediation round.',
+  speakerNotes: 'Open with the Mensah appointment — it is the most significant political development and signals the hardline faction is ascendant. Emphasise the 60-90 day window before the June AU round. Close with the planting season humanitarian urgency.',
+  keyJudgments: [
+    { judgment: 'GoN will not return to formal negotiations prior to June AU round without external pressure from Karovia or the P3', confidence: 'likely' as const, evidence: 'Mensah appointment signals hardline dominance; no GoN outreach to SRSG in past 3 weeks' },
+    { judgment: 'DRM will exploit planting season disruption for domestic recruitment if humanitarian access is not restored', confidence: 'very likely' as const, evidence: 'DRM messaging increasingly frames GoN checkpoint policy as deliberate starvation tactic' },
+    { judgment: 'Karovia will intervene militarily in the near term', confidence: 'very unlikely' as const, evidence: 'Logistics increase is assessed as deterrence signalling, not preparation for offensive action' },
+  ],
   slides: [
     {
       title: 'Situation Overview: Nordalia Crisis',
@@ -167,7 +180,7 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   try {
     const { caseId, briefingType, conflictContext, situationContext, situation } = await request.json() as {
       caseId: string;
@@ -218,12 +231,20 @@ export const POST = withAuth(async (request, _user) => {
       const digestCreditCheck = await checkAndDeductCredits('ai_morning_digest', 'Morning digest generation');
       if (!digestCreditCheck.allowed) return digestCreditCheck.response;
 
-      // Web search for latest developments
-      const searchQuery = situationContext
-        ? `${situationContext.name} ${situationContext.region} latest developments today`
-        : `${conflictContext || caseId} latest news today`;
-      const searchResults = await searchWeb(searchQuery, { numResults: 5 });
-      const webContext = formatResultsAsContext(searchResults);
+      // Web-grounded context for latest developments
+      const webContext = situation
+        ? await buildWebGroundedContext(
+            { name: situation.name, region: situation.region, actors: situation.actors },
+            'briefing',
+            user.uid
+          )
+        : situationContext
+        ? await buildWebGroundedContext(
+            { name: situationContext.name, region: situationContext.region, actors: situationContext.actors },
+            'briefing',
+            user.uid
+          )
+        : '';
 
       // Build situation context block
       const sitBlock = situationContext
@@ -246,7 +267,11 @@ ${sitBlock}
 LATEST INTELLIGENCE FROM WEB SOURCES:
 ${webContext || 'No web results available. Base analysis on the situation context provided and your knowledge of the region/actors.'}
 
-Generate the digest now. Be specific with actor names, locations, and timeline references. Ground every claim in the context or web intelligence above.`,
+Generate the digest now. Be specific with actor names, locations, and timeline references. Ground every claim in the context or web intelligence above.
+
+BLUF REQUIREMENT: The first paragraph must be a Bottom Line Up Front (BLUF) — single paragraph stating the situation assessment, 2 key developments, and recommended action.
+
+PROBABILITY LANGUAGE REQUIREMENT: Use ICD 203 Analytic Standards probability language exclusively: 'almost no chance' (<5%), 'very unlikely' (5-20%), 'unlikely' (20-45%), 'roughly even' (45-55%), 'likely' (55-80%), 'very likely' (80-95%), 'almost certain' (>95%). Never use vague hedging.`,
       });
 
       return result.toTextStreamResponse();
@@ -265,25 +290,29 @@ Generate the digest now. Be specific with actor names, locations, and timeline r
     const creditCheck = await checkAndDeductCredits('ai_briefing_generate', 'Briefing generation');
     if (!creditCheck.allowed) return creditCheck.response;
 
-    // --- Web search for latest context ---
-    const searchResults = await searchWeb(
-      `${conflictContext || caseId} latest news developments`,
-      { numResults: 5 }
-    );
-    const webContext = formatResultsAsContext(searchResults);
+    // --- Web-grounded context ---
+    const webCtx = situation
+      ? await buildWebGroundedContext(
+          { name: situation.name, region: situation.region, actors: situation.actors },
+          'briefing',
+          user.uid
+        )
+      : '';
 
     // --- AI generation ---
     const result = await generateText({
       model: getModel(),
       output: Output.object({ schema: BriefingSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}${intelContext ? `${intelContext}\n\n` : ''}You are drafting a political affairs briefing for a UN Senior Leadership audience. This is a ${briefingType} briefing.
+      prompt: `${sitContext ? `${sitContext}\n\n` : ''}${intelContext ? `${intelContext}\n\n` : ''}${webCtx ? `${webCtx}\n\n` : ''}You are drafting a political affairs briefing for a UN Senior Leadership audience. This is a ${briefingType} briefing.
 
 CASE: ${caseId}
 BRIEFING TYPE: ${briefingType}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
 
-LATEST INTELLIGENCE:
-${webContext || 'No web results available. Base analysis on the conflict context provided and your knowledge of the region and actors.'}
+LATEST WEB INTELLIGENCE:
+${webCtx || 'No web results available. Base analysis on the conflict context provided and your knowledge of the region and actors.'}
+
+BLUF REQUIREMENT: The bluf field must be a single paragraph stating the situation assessment, 2 key developments, and recommended action. This is the first thing senior leadership reads.
 
 Generate a complete briefing with exactly 7 sections, each as a separate slide. Structure exactly as follows:
 
@@ -323,7 +352,9 @@ FORMAT RULES:
 - Every factual claim should have a bracketed source tag: [GDELT], [ACLED], [PRAXIS Graph], [Web], [AI Assessment].
 - Speaker notes for each slide should provide additional analytical depth, anticipated questions from senior leadership, and suggested responses.
 - Source attributions should use formal UN citation conventions where possible.`,
-      system: `You are a senior political affairs officer in the United Nations Department of Political and Peacebuilding Affairs (DPPA). You produce analytically rigorous briefing content for the Secretary-General, Under-Secretary-General, and Assistant Secretaries-General. Your analysis follows DPPA standards: calibrated confidence language, source attribution, formal register, and structured analytical judgments. Speaker notes should provide the depth, nuance, and anticipatory guidance that briefing slides cannot convey. Every assessment must distinguish between what is known, what is assessed, and what remains uncertain.`,
+      system: `You are a senior political affairs officer in the United Nations Department of Political and Peacebuilding Affairs (DPPA). You produce analytically rigorous briefing content for the Secretary-General, Under-Secretary-General, and Assistant Secretaries-General. Your analysis follows DPPA standards: calibrated confidence language, source attribution, formal register, and structured analytical judgments. Speaker notes should provide the depth, nuance, and anticipatory guidance that briefing slides cannot convey. Every assessment must distinguish between what is known, what is assessed, and what remains uncertain.
+
+Use ICD 203 Analytic Standards probability language: 'almost no chance' (<5%), 'very unlikely' (5-20%), 'unlikely' (20-45%), 'roughly even' (45-55%), 'likely' (55-80%), 'very likely' (80-95%), 'almost certain' (>95%). Never use vague hedging.`,
     });
 
     return NextResponse.json(result.output);
