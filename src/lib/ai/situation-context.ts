@@ -1,4 +1,6 @@
 import type { Situation } from '@/types/situation';
+import { executeWebResearch, SEARCH_FAILURE_WARNING } from '@/lib/ai/web-research';
+import { getToolData } from '@/lib/firebase/tool-data-service';
 
 /**
  * Builds a rich situation context string for AI system prompts (chat, assistant).
@@ -145,6 +147,74 @@ ANALYTICAL FRAMEWORK
 - Tailor outputs to the role of: ${formatRole(situation.userRole)}
 - Flag data gaps explicitly and recommend: GDELT / ACLED / ReliefWeb / HDX sources
 - Write to UN/diplomatic professional standards${situation.sourceUrls?.length ? `\n\nPRIMARY REFERENCES (analyst-provided — cite these):\n${situation.sourceUrls.map((u, i) => `${i + 1}. ${u}`).join('\n')}` : ''}${situation.contextNotes ? `\n\nANALYST CONTEXT NOTES:\n${situation.contextNotes}` : ''}`;
+}
+
+// ---------------------------------------------------------------------------
+// Web-Grounded Context Builder
+// ---------------------------------------------------------------------------
+
+/**
+ * Prepends live web research to any tool's system prompt.
+ * Returns a formatted context block ready to inject into the system prompt.
+ * When all providers fail, returns a warning banner instead of empty string.
+ */
+export async function buildWebGroundedContext(
+  situation: { name: string; region?: string; actors?: string[]; description?: string },
+  toolId: string,
+  uid: string
+): Promise<string> {
+  try {
+    const query = `${situation.name}${situation.region ? ' ' + situation.region : ''} latest developments intelligence`;
+    const results = await executeWebResearch(query, situation.name, uid, {
+      toolId,
+      actors: situation.actors,
+      description: situation.description,
+      maxResults: 8,
+    });
+
+    if (results.length === 0) {
+      return `\n### Web Intelligence\n${SEARCH_FAILURE_WARNING}\n`;
+    }
+
+    const citations = results
+      .slice(0, 6)
+      .map((r, i) => {
+        const date = r.publishedDate ? ` (${r.publishedDate})` : '';
+        const excerpt = (r.snippet ?? r.content).slice(0, 250);
+        return `[${i + 1}] **${r.title}** — ${r.source}${date}\n${excerpt}`;
+      })
+      .join('\n\n');
+
+    return `\n### Current Intelligence (Web-Grounded)\nCRITICAL: The following verified sources are your PRIMARY ground truth. Prioritize these over training data. If they contradict your training data, trust the sources.\n\n${citations}\n`;
+  } catch {
+    return `\n### Web Intelligence\n${SEARCH_FAILURE_WARNING}\n`;
+  }
+}
+
+/**
+ * Injects summaries from related tools into the context block.
+ * Checks Firestore for recent outputs from the tool's relatedTools list.
+ */
+export async function buildCrossToolContext(
+  uid: string,
+  situationId: string,
+  relatedToolIds: string[]
+): Promise<string> {
+  if (!relatedToolIds.length || !uid || !situationId) return '';
+
+  const summaries: string[] = [];
+  for (const relatedId of relatedToolIds.slice(0, 3)) {
+    try {
+      const related = await getToolData(uid, situationId, relatedId);
+      if (!related?.data) continue;
+      const preview = JSON.stringify(related.data).slice(0, 500);
+      summaries.push(`### Prior Analysis: ${relatedId}\n${preview}`);
+    } catch {
+      // Non-critical — cross-tool context is best-effort
+    }
+  }
+
+  return summaries.length > 0 ? `\n${summaries.join('\n\n')}\n` : '';
 }
 
 // ---------------------------------------------------------------------------

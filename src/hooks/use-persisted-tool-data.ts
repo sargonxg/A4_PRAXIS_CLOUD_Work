@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { getToolById } from '@/lib/constants/tool-registry';
 
 interface UsePersistedToolDataReturn {
   data: unknown | null;
   isLoading: boolean;
   generatedAt: string | null;
+  version: number;
+  isStale: boolean;
   save: (data: unknown) => Promise<void>;
   clear: () => Promise<void>;
 }
@@ -17,13 +20,24 @@ export function usePersistedToolData(
   const [data, setData] = useState<unknown | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
+  const [version, setVersion] = useState<number>(1);
   const fetchedRef = useRef<string | null>(null);
+
+  const staleAfterHours = useMemo(() => getToolById(toolId)?.staleAfterHours, [toolId]);
+
+  // Use primitive dep (number | undefined) instead of object ref — rerender-dependencies
+  const isStale = useMemo(() => {
+    if (!generatedAt || !staleAfterHours) return false;
+    const ageMs = Date.now() - new Date(generatedAt).getTime();
+    return ageMs > staleAfterHours * 60 * 60 * 1000;
+  }, [generatedAt, staleAfterHours]);
 
   // Fetch persisted data on mount / when situationId changes
   useEffect(() => {
     if (!situationId || !toolId) {
       setData(null);
       setGeneratedAt(null);
+      setVersion(1);
       return;
     }
 
@@ -45,15 +59,18 @@ export function usePersistedToolData(
         if (result.data != null) {
           setData(result.data);
           setGeneratedAt(result.generatedAt ?? null);
+          setVersion(result.version ?? 1);
         } else {
           setData(null);
           setGeneratedAt(null);
+          setVersion(1);
         }
       })
       .catch(() => {
         if (!cancelled) {
           setData(null);
           setGeneratedAt(null);
+          setVersion(1);
         }
       })
       .finally(() => {
@@ -72,13 +89,18 @@ export function usePersistedToolData(
       setData(newData);
       const now = new Date().toISOString();
       setGeneratedAt(now);
+      setVersion(v => v + 1);
 
       try {
-        await fetch('/api/tool-data', {
+        const res = await fetch('/api/tool-data', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ toolId, situationId, data: newData }),
         });
+        if (res.ok) {
+          const result = await res.json().catch(() => null);
+          if (result?.version) setVersion(result.version);
+        }
       } catch (err) {
         console.error('[use-persisted-tool-data] Save failed:', err);
       }
@@ -91,6 +113,7 @@ export function usePersistedToolData(
 
     setData(null);
     setGeneratedAt(null);
+    setVersion(1);
     // Reset the fetch ref so next mount will re-fetch
     fetchedRef.current = null;
 
@@ -104,5 +127,5 @@ export function usePersistedToolData(
     }
   }, [toolId, situationId]);
 
-  return { data, isLoading, generatedAt, save, clear };
+  return { data, isLoading, generatedAt, version, isStale, save, clear };
 }

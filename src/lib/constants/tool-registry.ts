@@ -1,8 +1,8 @@
 import type { ToolDefinition } from '@/types/situation';
 
 // ============================================================================
-// PRAXIS Tool Registry — v4.0
-// Single source of truth for all 40 platform tools.
+// PRAXIS Tool Registry — v5.0
+// Single source of truth for all 46 platform tools.
 // Used by: sidebar, tool cards, "About" panels, AI prompt context.
 // ============================================================================
 
@@ -24,6 +24,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['ACLED', 'GDELT', 'ReliefWeb', 'HDX HAPI'],
     relatedTools: ['early-warning', 'risk-monitor', 'conflict-graph'],
     methodology: 'The Dashboard integrates the INFORM Risk Index methodology (Hazard × Vulnerability × Coping Capacity) with Glasl\'s 9-stage escalation model to produce a unified risk snapshot. Conflict dynamics are assessed across three dimensions: current intensity (ACLED event frequency and fatality trends), structural vulnerability (HDX socio-economic indicators), and de-escalation potential (diplomatic calendar, ceasefire compliance). The dashboard synthesizes these signals into a composite risk score and Glasl stage estimate, updated with each AI refresh.',
+    staleAfterHours: 24,
+    modelTier: 'flash',
   },
   {
     id: 'documents',
@@ -58,6 +60,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['Firecrawl'],
     relatedTools: ['argus', 'media-compass', 'documents'],
     methodology: 'Source credibility is assessed using a modified CRAAP test (Currency, Relevance, Authority, Accuracy, Purpose) adapted for conflict intelligence. Each source receives a bias score (-10 to +10, left to right) and reliability score (0-10) based on editorial standards, fact-checking record, funding transparency, and coverage of the specific region. The Ad Fontes Media Reliability methodology is applied to media outlets; UN agency hierarchies (OCHA, OHCHR, UNHCR) receive automatic high reliability ratings.',
+    staleAfterHours: 168,
+    modelTier: 'flash',
   },
   {
     id: 'timeline',
@@ -75,6 +79,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['ACLED', 'GDELT'],
     relatedTools: ['early-warning', 'dashboard', 'conflict-graph'],
     methodology: 'Events are classified using ACLED\'s typology (Battles, Violence against civilians, Explosions/Remote violence, Protests, Riots, Strategic developments) and mapped onto Glasl\'s escalation stages. Trigger events — those that produced a measurable shift in Glasl stage within 30 days — are automatically flagged. The timeline uses GDELT instability index to identify early warning signals preceding documented escalations. De-escalation windows are identified when diplomatic events, ceasefires, or confidence-building measures appear in proximity to declining violence indices.',
+    staleAfterHours: 168,
+    modelTier: 'pro',
   },
   {
     id: 'humanitarian',
@@ -92,6 +98,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['HDX HAPI', 'ReliefWeb', 'World Bank'],
     relatedTools: ['risk-monitor', 'dashboard', 'sources-library'],
     methodology: 'Humanitarian indicators are drawn from the OCHA Humanitarian Data Exchange (HDX) HAPI endpoint, providing real-time access to the IPC (Integrated Food Security Phase Classification) for food security, UNHCR displacement data, and OCHA Financial Tracking Service for funding gaps. Protection concerns are assessed against SPHERE Protection Standards minimum thresholds. The snapshot follows OCHA\'s Country-Based Pooled Fund (CBPF) reporting format, presenting key figures in a Morning Brief-compatible layout.',
+    staleAfterHours: 168,
+    modelTier: 'pro',
   },
   {
     id: 'calendar',
@@ -109,6 +117,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['GDELT'],
     relatedTools: ['dashboard', 'timeline', 'briefing'],
     methodology: 'The Calendar Monitor applies Zartman\'s Ripeness Theory — identifying "mutually hurting stalemates" and "ways out" — to assess when diplomatic windows are most likely to be actionable. Institutional meetings (UNSC, AU PSC, EU FAC, IGAD, etc.) are flagged when the situation is on the agenda. Electoral calendars are sourced from ACE Electoral Knowledge Network. High-risk windows — periods where diplomatic inaction could allow escalation — are identified by cross-referencing the diplomatic calendar with the current Glasl stage.',
+    staleAfterHours: 24,
+    modelTier: 'flash',
   },
   {
     id: 'conflict-graph',
@@ -145,6 +155,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['ACLED', 'GDELT', 'HDX HAPI', 'World Bank', 'ReliefWeb'],
     relatedTools: ['early-warning', 'dashboard', 'humanitarian'],
     methodology: 'Risk is calculated as a composite of three equal-weight dimensions (INFORM methodology): (1) Hazard & Exposure — conflict event frequency (ACLED), instability index (GDELT), and natural disaster exposure; (2) Vulnerability — socio-economic indicators (World Bank GDP per capita, Gini coefficient), displacement burden (UNHCR), and political exclusion; (3) Lack of Coping Capacity — institutional capacity (governance indicators), infrastructure resilience, and crisis response resources. Each dimension is scored 0-10; composite = geometric mean. The Fund for Peace Fragile States Index provides a comparative benchmark.',
+    staleAfterHours: 168,
+    modelTier: 'pro',
   },
   {
     id: 'early-warning',
@@ -162,6 +174,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['ACLED', 'GDELT'],
     relatedTools: ['risk-monitor', 'dashboard', 'timeline', 'scenarios'],
     methodology: 'Escalation stage is estimated by mapping ACLED event types and fatality rates to Glasl indicators: Stages 1-3 (Win-Win zone) are indicated by political disputes without violence; Stages 4-6 (Win-Lose zone) by armed clashes, displacement, and coalition-building; Stages 7-9 (Lose-Lose zone) by mass atrocities and infrastructure destruction. GDELT tone scores provide a 30-day leading indicator. De-escalation windows are identified when: ceasefire events appear in ACLED, diplomatic tone improves in GDELT, or humanitarian access indicators improve (HDX). Confidence scores are derived from data recency and source triangulation.',
+    staleAfterHours: 168,
+    modelTier: 'pro',
   },
   {
     id: 'actor-profiles',
@@ -179,6 +193,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['Firecrawl', 'ACLED'],
     relatedTools: ['stakeholder-map', 'conflict-graph', 'negotiation-prep'],
     methodology: 'Actor profiles are structured around five analytical dimensions: (1) Identity & Legitimacy — formal status, internal cohesion, public support; (2) Interests & Positions — Fisher-Ury interest mapping distinguishing stated positions from underlying needs; (3) Capabilities — military (SIPRI typology), economic, political, and informational power; (4) Constraints — legal, institutional, alliance, and domestic political constraints on action; (5) External Leverage — what third parties can offer or withhold. The Mitchell-Agle-Wood typology classifies each actor\'s stakeholder salience (dormant, discretionary, demanding, dominant, dangerous, dependent, definitive) based on power, legitimacy, and urgency scores.',
+    staleAfterHours: 168,
+    modelTier: 'pro',
   },
   {
     id: 'stakeholder-map',
@@ -196,6 +212,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['ACLED'],
     relatedTools: ['actor-profiles', 'conflict-graph', 'negotiation-prep'],
     methodology: 'The stakeholder map visualizes three types of relationships: (1) Alliance structures — alliances, patronage relationships, and proxy arrangements; (2) Adversarial dyads — active conflicts, historical enmities, and competitive dynamics; (3) Third-party postures — mediators, guarantors, spoilers, and bystanders. Node size represents power (composite of military, economic, and institutional indicators); node color represents the Barnett-Duvall power type dominant for that actor (compulsory, institutional, structural, productive). Edge weight represents relationship intensity. The Lederach peacebuilding pyramid identifies which actors operate at Track I (government), Track II (mid-range), and Track III (grassroots) levels.',
+    staleAfterHours: 168,
+    modelTier: 'pro',
   },
   {
     id: 'compare',
@@ -213,6 +231,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['ACLED'],
     relatedTools: ['risk-monitor', 'scenarios', 'cases'],
     methodology: 'Comparative analysis uses a structured most-similar-cases (MSC) design: selecting reference cases with matching conflict type, geographic region, and approximate Glasl stage to maximize inferential leverage. Eight comparison dimensions are scored: (1) Conflict onset and duration; (2) Actor configuration (bilateral vs. multilateral, state vs. non-state); (3) INFORM Risk composite; (4) Glasl escalation stage and trajectory; (5) Intervention history (UN, regional organization, bilateral); (6) Peace process design (track, format, guarantors); (7) Humanitarian impact (IPC, displacement); (8) Resolution outcome and durability. Structural similarities flag both opportunities (what worked) and risk factors (what triggered relapse).',
+    staleAfterHours: 720,
+    modelTier: 'pro',
   },
   {
     id: 'info-environment',
@@ -230,6 +250,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['GDELT', 'Firecrawl'],
     relatedTools: ['media-compass', 'media-roundup', 'actor-profiles'],
     methodology: 'The information environment is assessed using Ben Nimmo\'s 4D framework for IO detection: Dismiss (delegitimizing voices), Distort (spreading false content), Distract (flooding the zone), and Dismay (amplifying divisive content). GDELT GCAM (Global Content Analysis Measures) provides tone and theme data across 65+ languages. NATO STRATCOM taxonomy classifies information activities as strategic communications, public diplomacy, psychological operations, or influence operations. Platform dynamics (social media amplification, bot activity indicators, cross-border information flows) are assessed via Firecrawl where available.',
+    staleAfterHours: 168,
+    modelTier: 'pro',
   },
   {
     id: 'power-map',
@@ -247,6 +269,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['World Bank', 'ACLED'],
     relatedTools: ['stakeholder-map', 'actor-profiles', 'negotiation-prep'],
     methodology: 'Power is disaggregated into four analytical dimensions (Barnett & Duvall 2005): Compulsory power — direct coercive capacity (military capability, sanctions leverage, economic aid conditionality); Institutional power — control over rules and procedures (UNSC veto, treaty rights, voting blocs); Structural power — positional advantages in global structures (trade dependency, debt ratios, energy supply chains); Productive power — discursive authority and norm-setting capacity (framing conflicts, defining legitimacy, setting agendas). Each actor is scored on each dimension; power asymmetries reveal the negotiation leverage map (Lax-Sebenius).',
+    staleAfterHours: 168,
+    modelTier: 'pro',
   },
 
   // ── DRAFTING ──────────────────────────────────────────────────────────────
@@ -283,6 +307,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['ACLED', 'GDELT', 'ReliefWeb', 'HDX HAPI'],
     relatedTools: ['assistant', 'briefing', 'talking-points'],
     methodology: 'Reports follow UN Secretariat documentation standards: A/xx/xx series numbering format for General Assembly documents, S/xxxx for Security Council documents, political cable format for SRSG communications. Section structure follows UN DPPA situation report templates: Executive Summary → Background → Latest Developments → Political Analysis → Security Situation → Humanitarian Overview → Human Rights → International Response → Recommendations. Each section integrates live data feeds (ACLED for security, HDX for humanitarian, GDELT for diplomatic activity). The report is generated section-by-section using gemini-2.5-pro with situation context, then assembled into a single DOCX/PDF document.',
+    staleAfterHours: 720,
+    modelTier: 'pro',
   },
   {
     id: 'dossier',
@@ -300,6 +326,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['Firecrawl', 'ACLED', 'GDELT'],
     relatedTools: ['actor-profiles', 'argus', 'documents'],
     methodology: 'Dossier generation follows a structured intelligence production process: (1) Subject Definition — scoping the entity type (actor, event, treaty, organization) and analytical questions; (2) Source Identification — Firecrawl web research for recent reporting, Wikipedia baseline, ACLED for event history; (3) Information Synthesis — claude-sonnet-4 deep analysis merging web research with Firestore situation context; (4) Quality Control — confidence scoring per paragraph, source attribution, bias flagging. Output follows ACO Actor Profile format with sections: Overview, Background, Objectives & Interests, Capabilities, Constraints, External Relationships, Recent Developments, Outlook.',
+    staleAfterHours: 720,
+    modelTier: 'pro',
   },
   {
     id: 'talking-points',
@@ -317,6 +345,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: [],
     relatedTools: ['report-studio', 'briefing', 'negotiation-prep'],
     methodology: 'Talking points are crafted using Fisher-Ury interest-based framing: leading with shared interests and objective criteria rather than positional demands. Each talking point includes a main message (25 words max), three supporting facts with source attribution, one concession acknowledgment, and a bridging phrase to the next point. Q&A preparation uses a "hostile interviewer" protocol — the AI generates the three most challenging questions likely from each stakeholder perspective, then drafts UN-standard responses. Tone calibration follows the audience template: technical-analytical (UNSC), humanitarian-urgent (donor conference), measured-diplomatic (bilateral).',
+    staleAfterHours: 168,
+    modelTier: 'pro',
   },
   {
     id: 'briefing',
@@ -334,6 +364,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['ACLED', 'GDELT', 'ReliefWeb'],
     relatedTools: ['auto-briefings', 'talking-points', 'report-studio'],
     methodology: 'Briefings follow the UN DPPA Daily Situation Report format: (1) Situation Overview (2-3 key developments, 24h); (2) Political Track (negotiations, diplomatic contacts, UNSC activity); (3) Security Situation (ACLED event summary, incident map); (4) Humanitarian (IPC phase, displacement trends, access); (5) Human Rights (OHCHR alerts, protection incidents); (6) International Response (UNSC, regional bodies, bilateral); (7) Outlook (3-5 day forecast, risk flags). Speaker notes are generated for each section. Confidence levels (HIGH/MODERATE/LOW) follow ICD 203 (Intelligence Community Directive 203) analytic standards.',
+    staleAfterHours: 168,
+    modelTier: 'pro',
   },
   {
     id: 'auto-briefings',
@@ -351,6 +383,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['ACLED', 'GDELT', 'ReliefWeb', 'HDX HAPI', 'Firecrawl'],
     relatedTools: ['briefing', 'alert-center', 'dashboard'],
     methodology: 'Standard mode aggregates the previous 24h from four live feeds: ACLED (conflict events + fatalities), GDELT (instability index + diplomatic activity), ReliefWeb (UN humanitarian reports), HDX HAPI (food security, displacement updates). Deep Research mode additionally runs a Firecrawl crawl of 5 pre-configured high-reliability sources plus a Google-grounded Gemini query for breaking developments. AI synthesis uses gemini-2.5-flash with the situation context block to produce a 400-600 word morning brief in OCHA SitRep format. Source provenance is tracked in the `sourcesSummary` field.',
+    staleAfterHours: 24,
+    modelTier: 'flash',
   },
   {
     id: 'un-toolkit',
@@ -387,6 +421,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['ACLED', 'GDELT'],
     relatedTools: ['early-warning', 'risk-monitor', 'negotiation-prep'],
     methodology: 'Scenarios are constructed using a structured uncertainty matrix: key drivers (variables most uncertain and most impactful) are identified from the situation context, then projected across three trajectories. Parameter sliders (ceasefire compliance 0-100%, external intervention probability 0-100%, economic pressure index, humanitarian access level, media environment tone) map to Glasl stage movement probabilities. Each scenario receives: a probability weight (derived from current trajectory and historical base rates), a 6-month outlook narrative, 3-5 triggering conditions, key indicators to monitor, and recommended interventions. Streaming output allows analysts to adjust parameters and see real-time scenario updates.',
+    staleAfterHours: 720,
+    modelTier: 'thinking',
   },
   {
     id: 'negotiation-prep',
@@ -404,6 +440,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: [],
     relatedTools: ['actor-profiles', 'stakeholder-map', 'mediation-design'],
     methodology: 'Negotiation analysis follows the three-dimensional framework (Lax-Sebenius): (1) Tactics — the interpersonal moves at the table (framing, anchoring, concession sequencing); (2) Deal Design — constructing an agreement that creates value (log-rolling, contingent agreements, issue linkage); (3) Setup — changing the parties, issues, and no-deal alternatives away from the table. ZOPA calculation identifies the Zone of Possible Agreement by estimating each party\'s reservation point (worst acceptable deal) and aspiration point (best achievable deal). BATNA assessment for each party determines negotiating leverage. Red lines (absolute constraints) are distinguished from negotiating positions using Fisher-Ury interest mapping.',
+    staleAfterHours: 720,
+    modelTier: 'thinking',
   },
   {
     id: 'concordia',
@@ -438,6 +476,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: [],
     relatedTools: ['concordia', 'negotiation-prep', 'scenarios'],
     methodology: 'Mediation design follows the Berghof Framework\'s six phases: (1) Pre-negotiation — ripeness assessment using Zartman\'s mutually hurting stalemate (MHS) and way out (WO) criteria; (2) Proximity talks — building minimal consensus on process; (3) Substantive negotiations — issue decomposition, sequencing (easier issues first to build momentum); (4) Agreement drafting — implementation sequencing, monitoring mechanisms, guarantor roles; (5) Implementation — DDR, SSR, transitional justice timelines; (6) Consolidation — spoiler management strategy using Stedman\'s typology. CBMs (confidence-building measures) are drawn from OSCE and UN DPPA toolkits and matched to the current Glasl escalation stage.',
+    staleAfterHours: 720,
+    modelTier: 'thinking',
   },
   {
     id: 'game-theory',
@@ -455,6 +495,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: [],
     relatedTools: ['negotiation-prep', 'scenarios', 'actor-profiles'],
     methodology: 'Game-theoretic analysis applies three core models to conflict situations: (1) Prisoners\' Dilemma variants — modeling cooperation failures and the conditions (shadow of the future, iteration, reputation) that enable cooperation; (2) Chicken/Brinkmanship — deterrence credibility and escalation dynamics in the nuclear/conventional context (Schelling); (3) Two-level games (Putnam) — how domestic political constraints interact with international bargaining, explaining why negotiations fail despite mutual gains. Nash equilibrium identification reveals whether current strategies are stable and what deviations could be beneficial. Fearon\'s rationalist explanations (information asymmetry, commitment problems, indivisibility) diagnose why armed conflict persists despite its costs.',
+    staleAfterHours: 720,
+    modelTier: 'thinking',
   },
 
   // ── INTELLIGENCE ──────────────────────────────────────────────────────────
@@ -474,6 +516,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['Vertex AI Agent Engine', 'Google Search'],
     relatedTools: ['argus', 'media-roundup', 'assistant'],
     methodology: 'The Deep Research Agent implements a three-phase intelligence production cycle using Google ADK Multi-Agent System: (1) Planning phase — a dedicated planner agent decomposes the research question into 3-7 sub-questions using structured analytic techniques (hypothesis generation, key assumptions check); (2) Research phase — parallel web research agents query different source types simultaneously (primary sources, analytical reports, data feeds, expert commentary), cross-referencing for consistency; (3) Synthesis phase — a report-composer agent applies the ACH (Analysis of Competing Hypotheses) method to weigh evidence for competing interpretations and produce a structured intelligence brief with confidence-rated conclusions. Sessions are preserved for multi-turn follow-up queries.',
+    staleAfterHours: 168,
+    modelTier: 'pro',
   },
   {
     id: 'argus',
@@ -491,6 +535,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['Firecrawl'],
     relatedTools: ['deep-search-agent', 'documents', 'assistant'],
     methodology: 'ARGUS uses Firecrawl to perform deep crawls of specified URLs, extracting structured intelligence from websites that generic search cannot parse (government portals, think tank reports, UN document repositories, NGO field reports). Each extracted piece of information is evaluated using the CRAAP framework and assigned a confidence level (High: multiple independent sources, documented methodology; Medium: single reliable source or corroborated inference; Low: single source or unverified). The tool produces an intelligence brief with source provenance, confidence-rated findings, and flags for further verification.',
+    staleAfterHours: 168,
+    modelTier: 'pro',
   },
   {
     id: 'media-compass',
@@ -508,6 +554,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['Firecrawl', 'GDELT'],
     relatedTools: ['media-roundup', 'info-environment', 'sources-library'],
     methodology: 'Media bias is assessed on two dimensions: political lean (Left-Center-Right on a -10 to +10 scale based on language analysis, ownership, editorial board positions, citation patterns) and reliability (0-10 based on factual accuracy track record, transparency, editorial standards, fact-checker ratings). The Ad Fontes methodology uses a content-based approach: articles are read, analyzed for political lean and factual content, and rated by trained analysts. GDELT tone data provides a quantitative corroboration. Regional context is applied: what constitutes "centrist" varies by region, and international outlets covering a region may carry systematic blind spots.',
+    staleAfterHours: 168,
+    modelTier: 'flash',
   },
   {
     id: 'media-roundup',
@@ -525,6 +573,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['GDELT', 'Firecrawl'],
     relatedTools: ['media-compass', 'info-environment', 'auto-briefings'],
     methodology: 'Media roundup applies Entman\'s framing analysis to identify how different outlets define the problem, diagnose causes, make moral judgments, and suggest remedies. GDELT GCAM (Global Content Analysis Measures) provides real-time tone measurement across 65+ languages. Key framing dimensions: (1) Problem definition — is it framed as a humanitarian crisis, security threat, political dispute, or historical grievance?; (2) Causal attribution — who is held responsible?; (3) Moral evaluation — who are the heroes, villains, victims?; (4) Recommended treatment — diplomacy, military action, sanctions, humanitarian intervention?. Agenda-setting gaps are identified when significant events (by ACLED fatality count) receive minimal media coverage.',
+    staleAfterHours: 24,
+    modelTier: 'flash',
   },
   {
     id: 'sanctions',
@@ -542,6 +592,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['Firecrawl'],
     relatedTools: ['treaty-analyzer', 'commitments', 'actor-profiles'],
     methodology: 'Sanctions analysis maps four major regimes: (1) UN Security Council sanctions (administered by 1267/1373/1988/1591 committees, etc.) — asset freezes, travel bans, arms embargoes; (2) US OFAC SDN (Specially Designated Nationals) list; (3) EU Common Foreign and Security Policy restrictive measures; (4) UK OFSI (Office of Financial Sanctions Implementation) consolidated list. For each actor in the situation, the tool checks for direct designation and indirect exposure (50%+ ownership rule, facilitating designated entities). Compliance exposure is flagged for aid organizations, private sector actors, and financial institutions operating in the conflict zone.',
+    staleAfterHours: 720,
+    modelTier: 'pro',
   },
   {
     id: 'commitments',
@@ -559,6 +611,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['ACLED', 'ReliefWeb'],
     relatedTools: ['treaty-analyzer', 'timeline', 'early-warning'],
     methodology: 'Commitment tracking follows the UCDP Peace Agreement Dataset methodology for categorizing agreements (comprehensive peace agreements, partial agreements, process agreements, ceasefire agreements). Each commitment is assessed across: (1) Specificity — how precisely defined are the obligations?; (2) Verification mechanism — UNMEM, OSCE, bilateral, self-reporting?; (3) Compliance status — full compliance, partial compliance, violation, suspension, withdrawal; (4) Violation type (Stedman) — intentional spoiling, capacity failure, or poor agreement design?. ACLED ceasefire violation events provide near-real-time compliance data. Trend analysis identifies whether compliance is improving or deteriorating.',
+    staleAfterHours: 168,
+    modelTier: 'pro',
   },
   {
     id: 'treaty-analyzer',
@@ -576,6 +630,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: [],
     relatedTools: ['commitments', 'un-toolkit', 'sanctions'],
     methodology: 'Treaty analysis applies the Vienna Convention on the Law of Treaties (VCLT) interpretive methodology: (1) Textual interpretation — ordinary meaning of treaty terms in context; (2) Contextual interpretation — preamble, annexes, subsequent agreements; (3) Teleological interpretation — object and purpose of the treaty. Ambiguity is flagged when terms admit multiple reasonable interpretations under VCLT Articles 31-33. Implementation gaps are identified by mapping treaty obligations against the current situation: which obligations are due, which are overdue, and what accountability mechanism is available. IHL obligations are assessed under the Geneva Conventions and Additional Protocols.',
+    staleAfterHours: 720,
+    modelTier: 'pro',
   },
   {
     id: 'alert-center',
@@ -593,6 +649,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['GDELT', 'ACLED'],
     relatedTools: ['early-warning', 'dashboard', 'auto-briefings'],
     methodology: 'Alert thresholds use a modified Z-score method: for each indicator (ACLED event count, fatality rate, GDELT instability index, ReliefWeb emergency report frequency), the 30-day rolling mean and standard deviation are computed. Events exceeding 2σ above the baseline trigger a HIGH alert; 1.5σ triggers MEDIUM; 1σ triggers LOW. Spatial clustering (ACLED geographic coordinates) detects escalation hotspots. Alert deduplication prevents notification fatigue by grouping related events within 48h windows. Alerts are generated by the `/api/cron/check-alerts` cron job at 06:00 UTC daily.',
+    staleAfterHours: 24,
+    modelTier: 'flash',
   },
   {
     id: 'deep-research',
@@ -610,6 +668,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['Google Search (grounded)'],
     relatedTools: ['deep-search-agent', 'argus', 'assistant'],
     methodology: 'Grounded research uses Gemini 2.5 Flash with Google Search grounding enabled, providing real-time web access with in-line citations to sources. Unlike standard LLM generation, each claim is linked to a retrieved source. The research query is enriched with the situation context block (region, actors, current risk level, Glasl stage) to focus search relevance. Results are structured into: Key Findings (highest-confidence, multi-source), Context (background and historical parallels), Emerging Developments (recent low-coverage events), and Further Research Questions. Source quality filtering applies CRAAP criteria to downweight unreliable domains.',
+    staleAfterHours: 168,
+    modelTier: 'pro',
   },
   {
     id: 'geospatial-monitor',
@@ -627,6 +687,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: ['ACLED', 'GDELT'],
     relatedTools: ['early-warning', 'risk-monitor', 'timeline'],
     methodology: 'Geospatial analysis uses ACLED geocoded event data (latitude/longitude, precision level 1-8) to map conflict incidents at sub-national resolution. Kernel density estimation identifies hotspot clusters. GDELT event coordinates provide supplementary coverage. Temporal filtering allows 7-day, 30-day, 90-day, and custom windows. Territorial control overlays are inferred from ACLED event patterns: areas where one actor consistently initiates events indicate territorial dominance; contested zones show interleaved actor presence. OCHA humanitarian GIS standards are applied for humanitarian impact mapping (conflict proximity to IDP populations, service infrastructure).',
+    staleAfterHours: 168,
+    modelTier: 'pro',
   },
 
   // ── WORKSPACE ────────────────────────────────────────────────────────────
@@ -697,6 +759,141 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     dataSources: [],
     relatedTools: [],
     methodology: 'Settings allow per-situation and global configuration of AI behavior: custom analytical instructions are prepended to all AI prompts for the situation, enabling analysts to specify their organization\'s analytical standards, preferred frameworks, or context-specific guidance. AI model tier selection (Flash for speed, Pro for depth, Claude for analysis) balances quality against credit consumption. Export settings configure default DOCX template, PDF page size, and citation format (APA, Chicago, UN style).',
+  },
+
+  // ── NEW TOOLS (v5.0) ──────────────────────────────────────────────────────
+  {
+    id: 'policy-memo',
+    name: 'Policy Memo',
+    category: 'drafting',
+    description: 'Structured policy options analysis using Putnam Two-Level Game Theory. Generates 3-4 policy options with SWOT analysis, Putnam Level I/II win-set computation, feasibility ratings, and web-grounded historical precedents. Designed for senior policy audiences requiring decision-ready options.',
+    shortDescription: 'Policy options with Putnam two-level analysis and SWOT',
+    credits: 3,
+    icon: 'FileCheck',
+    aiRoute: '/api/ai/policy-memo',
+    dataSchema: 'PolicyMemoSchema',
+    requiredSituationFields: ['name', 'region', 'actors', 'description'],
+    outputType: 'structured',
+    frameworks: ['Putnam Two-Level Game Theory', 'SWOT Analysis', 'Harvard Policy Analysis Framework'],
+    dataSources: ['Google Search Grounding', 'Tavily'],
+    relatedTools: ['negotiation-prep', 'talking-points', 'report-studio'],
+    staleAfterHours: 720,
+    modelTier: 'pro',
+    methodology: 'Policy options are analyzed through Putnam\'s Two-Level Game framework: Level I (international negotiation space — what counterparts will accept) and Level II (domestic politics — what is ratifiable and implementable). For each option, a "win-set" is computed representing the overlap between internationally achievable and domestically sustainable outcomes. Each option receives a SWOT analysis (Strengths, Weaknesses, Opportunities, Threats), feasibility rating (1-5), risk rating (1-5), required resources, and key actors needed. Historical precedents are retrieved via web research to ground options in empirical evidence.',
+  },
+  {
+    id: 'human-rights',
+    name: 'Human Rights Monitor',
+    category: 'analysis',
+    description: 'Human rights violation tracking and international humanitarian law (IHL) compliance assessment. Maps reported violations by type and perpetrator, tracks accountability mechanisms (ICC, ICJ, national courts), and assesses civilian protection conditions. Draws from HRW, Amnesty International, OHCHR, and ICRC sources.',
+    shortDescription: 'IHL violations tracking and accountability mapping',
+    credits: 3,
+    icon: 'Scale',
+    aiRoute: '/api/ai/human-rights',
+    dataSchema: 'HumanRightsSchema',
+    requiredSituationFields: ['name', 'region', 'actors', 'description'],
+    outputType: 'structured',
+    frameworks: ['Geneva Conventions (IHL)', 'ICCPR/ICESCR (IHRL)', 'Rome Statute (ICC)', 'UPR Methodology'],
+    dataSources: ['Google Search Grounding', 'Firecrawl'],
+    relatedTools: ['early-warning', 'humanitarian', 'legal-tracker'],
+    staleAfterHours: 168,
+    modelTier: 'pro',
+    methodology: 'Human rights analysis applies a dual framework: International Humanitarian Law (IHL) for armed conflict contexts (Geneva Conventions, Additional Protocols — distinction, proportionality, military necessity, precaution) and International Human Rights Law (IHRL) for broader rights violations. Violations are categorized using OHCHR typology: extrajudicial killings, enforced disappearance, torture, arbitrary detention, sexual and gender-based violence, displacement. Perpetrator attribution uses the OHCHR standard of proof hierarchy (reasonable grounds, established facts, conclusive evidence). Accountability mechanisms are assessed across four tracks: ICC proceedings, ICJ inter-state cases, national courts (complementarity principle), and non-judicial mechanisms (truth commissions, reparations).',
+  },
+  {
+    id: 'electoral-risk',
+    name: 'Electoral Violence Risk',
+    category: 'analysis',
+    description: 'Pre-election violence risk assessment and post-election crisis modeling using UNDP Electoral Risk Assessment methodology and IFES Electoral Violence indicators. Covers structural, institutional, and behavioral risk factors across pre-election, election-day, and post-election phases.',
+    shortDescription: 'Electoral violence risk across three election phases',
+    credits: 3,
+    icon: 'Vote',
+    aiRoute: '/api/ai/electoral-risk',
+    dataSchema: 'ElectoralRiskSchema',
+    requiredSituationFields: ['name', 'region', 'actors', 'description'],
+    outputType: 'structured',
+    frameworks: ['UNDP Electoral Risk Assessment', 'IFES Electoral Violence Indicators', 'ACE Electoral Knowledge Network'],
+    dataSources: ['Google Search Grounding', 'Firecrawl'],
+    relatedTools: ['risk-monitor', 'early-warning', 'scenarios'],
+    staleAfterHours: 168,
+    modelTier: 'pro',
+    methodology: 'Electoral risk is assessed using the UNDP Electoral Risk Assessment framework across three dimensions: (1) Structural factors — historical election violence, inter-group inequality, exclusion of minorities, poverty and unemployment; (2) Institutional factors — electoral commission independence and capacity, legal framework quality, security force politicization, judicial independence; (3) Behavioral factors — inflammatory rhetoric from candidates or parties, militia mobilization, voter intimidation, hate speech, media bias. Risk is mapped across three electoral phases: pre-election (6-8 weeks prior), election day, and post-election (results period and 30 days following). IFES indicators provide quantitative risk benchmarks against comparable country contexts.',
+  },
+  {
+    id: 'external-actors',
+    name: 'External Actor Monitor',
+    category: 'intelligence',
+    description: 'Diaspora mobilization tracking and external state/proxy involvement analysis. Maps foreign fighters, arms flows, financial transfers, diplomatic interventions, and regional power influence using Salehyan proxy war theory and Gleditsch transnational conflict dimensions.',
+    shortDescription: 'Diaspora, proxy dynamics, and external state involvement',
+    credits: 2,
+    icon: 'Globe2',
+    aiRoute: '/api/ai/external-actors',
+    dataSchema: 'ExternalActorsSchema',
+    requiredSituationFields: ['name', 'region', 'actors', 'description'],
+    outputType: 'structured',
+    frameworks: ['Salehyan Proxy War Theory', 'Gleditsch Transnational Dimensions', 'Diaspora Mobilization Theory'],
+    dataSources: ['Google Search Grounding', 'Tavily'],
+    relatedTools: ['actor-profiles', 'sanctions', 'power-map'],
+    staleAfterHours: 168,
+    modelTier: 'pro',
+    methodology: 'External actor analysis applies Salehyan\'s proxy war framework: identifying sponsor states, their strategic motivations, the capabilities they transfer (weapons, training, financing, intelligence), and the degree of control vs. autonomy the proxy enjoys. Gleditsch\'s transnational dimensions add: refugee flows, diaspora mobilization, ethnic kin networks, and cross-border economic interests. For each external actor, the analysis covers: type (state/diaspora/proxy/INGO/multilateral), involvement mode (military/financial/diplomatic/informational), stated vs. actual alignment, leverage held over domestic parties, and conditions under which support might be withdrawn. Remittance flows and arms transfer patterns are tracked via web research against SIPRI and UN Panel of Experts reports.',
+  },
+  {
+    id: 'peacebuilding-index',
+    name: 'Peacebuilding Index',
+    category: 'analysis',
+    description: 'Post-conflict peacebuilding progress measurement across six UN Peacebuilding Commission pillars: Security, Rule of Law, Governance, Economic Recovery, Social Cohesion, and Human Rights. Benchmarks against World Bank FCV framework and IEP Global Peace Index methodology.',
+    shortDescription: '6-pillar peacebuilding progress scorecard',
+    credits: 2,
+    icon: 'BarChart3',
+    aiRoute: '/api/ai/peacebuilding-index',
+    dataSchema: 'PeacebuildingIndexSchema',
+    requiredSituationFields: ['name', 'region', 'actors', 'description'],
+    outputType: 'structured',
+    frameworks: ['UN Peacebuilding Commission Methodology', 'World Bank FCV Framework', 'IEP Global Peace Index'],
+    dataSources: ['Google Search Grounding', 'World Bank'],
+    relatedTools: ['risk-monitor', 'humanitarian', 'compare'],
+    staleAfterHours: 720,
+    modelTier: 'pro',
+    methodology: 'Peacebuilding progress is assessed across six UN Peacebuilding Commission pillars, each scored 0-10: (1) Security — DDR completion, SSR progress, SALW control, civilian protection; (2) Rule of Law — judicial reform, transitional justice mechanisms, prison reform, anti-impunity; (3) Governance — election conduct, decentralization, anti-corruption, civil service reform; (4) Economic Recovery — GDP growth, employment, infrastructure reconstruction, private sector investment; (5) Social Cohesion — inter-community reconciliation, hate speech reduction, education, media freedom; (6) Human Rights — accountability, reparations, SGBV response, minority rights. The composite Peacebuilding Index (0-100) weights pillars equally. Benchmarking against World Bank FCV fragility thresholds and IEP Global Peace Index allows cross-country comparison.',
+  },
+  {
+    id: 'economic-impact',
+    name: 'Economic Impact',
+    category: 'analysis',
+    description: 'Conflict economic impact assessment covering GDP loss, trade disruption, sanctions effects, reconstruction costs, and war economy dynamics. Uses World Bank Conflict Assessment Framework and IMF Post-Conflict methodology to quantify economic costs and peace dividends.',
+    shortDescription: 'GDP loss, sanctions effects, and reconstruction cost modeling',
+    credits: 2,
+    icon: 'TrendingDown',
+    aiRoute: '/api/ai/economic-impact',
+    dataSchema: 'EconomicImpactSchema',
+    requiredSituationFields: ['name', 'region', 'actors', 'description'],
+    outputType: 'structured',
+    frameworks: ['World Bank Conflict Assessment Framework', 'IMF Post-Conflict Methodology', 'UNDP Human Development Impact'],
+    dataSources: ['Google Search Grounding', 'World Bank'],
+    relatedTools: ['risk-monitor', 'sanctions', 'power-map'],
+    staleAfterHours: 168,
+    modelTier: 'pro',
+    methodology: 'Economic impact is assessed using the World Bank Damage and Needs Assessment (DNA) framework: (1) Macro indicators — GDP growth deviation from pre-conflict trend, inflation, unemployment, debt/GDP ratio, trade balance; (2) Sanctions impact — targeted entities, sector exposure, circumvention mechanisms, humanitarian exemptions; (3) Reconstruction cost estimate — physical infrastructure, institutional capacity, human capital; (4) War economy actors — who benefits from conflict continuation (resource extraction, smuggling, arms trade) and what are their economic stakes in peace; (5) Peace economic dividend — estimated GDP gain and employment creation if conflict resolved within 12/24/36 months, based on comparable post-conflict recovery trajectories (IMF).',
+  },
+  {
+    id: 'legal-tracker',
+    name: 'Legal & Resolution Tracker',
+    category: 'intelligence',
+    description: 'International law and UNSC resolution tracker covering active ICC investigations, ICJ cases, regional court proceedings, and UN Security Council resolutions relevant to the situation. Tracks compliance status and upcoming legal proceedings.',
+    shortDescription: 'ICC, ICJ, UNSC resolution compliance tracker',
+    credits: 2,
+    icon: 'BookMarked',
+    aiRoute: '/api/ai/legal-tracker',
+    dataSchema: 'LegalTrackerSchema',
+    requiredSituationFields: ['name', 'region', 'actors', 'description'],
+    outputType: 'structured',
+    frameworks: ['UN Charter (Chapter VI/VII)', 'ICJ Statute', 'Rome Statute', 'Vienna Convention (VCLT)'],
+    dataSources: ['Google Search Grounding', 'Firecrawl'],
+    relatedTools: ['treaty-analyzer', 'commitments', 'human-rights'],
+    staleAfterHours: 168,
+    modelTier: 'pro',
+    methodology: 'Legal tracking covers four international law tracks: (1) UN Security Council — resolution number, adoption date, Chapter VI (pacific settlement) or Chapter VII (enforcement) authority, key provisions (ceasefire demands, sanctions, peacekeeping mandates), compliance status by party; (2) ICC — situation, case status (preliminary examination/investigation/pre-trial/trial/appeals), charges, suspects, arrest warrant status; (3) ICJ — parties, legal issue, current phase (jurisdiction/merits/reparations), provisional measures ordered, compliance; (4) Legal obligations — treaty obligations in force for the parties, derogation status (ICCPR Article 4), IHL applicability, compliance trend. Upcoming legal milestones (hearings, report deadlines, mandate renewals) are flagged for calendar integration.',
   },
 ];
 

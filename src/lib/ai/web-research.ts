@@ -137,6 +137,10 @@ function scoreUrl(url: string): number {
   }
 }
 
+/** Injected into AI context when all search providers fail. */
+export const SEARCH_FAILURE_WARNING =
+  '⚠️ Generated without live web data — results may reflect training data only. Verify all claims independently.';
+
 // ---------------------------------------------------------------------------
 // In-memory cache (15-min TTL)
 // ---------------------------------------------------------------------------

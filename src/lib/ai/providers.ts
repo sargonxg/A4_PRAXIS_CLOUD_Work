@@ -80,6 +80,26 @@ export function getModelForTool(_toolTag: string, _userId?: string, pro = false)
   return createModel(pro ? MODEL_PRO : MODEL_FLASH);
 }
 
+/**
+ * Thinking model — Gemini Pro with extended thinking budget.
+ * Use for: scenarios, game-theory, negotiation-prep, mediation-design.
+ * Enables deeper multi-step reasoning at the cost of higher latency.
+ */
+export function getThinkingModel(): LanguageModel {
+  if (process.env.GOOGLE_VERTEX_PROJECT && process.env.AI_PROVIDER === 'vertex') {
+    const { createVertex } = require('@ai-sdk/google-vertex') as typeof import('@ai-sdk/google-vertex');
+    return createVertex({
+      project:  process.env.GOOGLE_VERTEX_PROJECT,
+      location: process.env.GOOGLE_VERTEX_LOCATION || 'us-central1',
+    })(MODEL_PRO, { thinkingConfig: { thinkingBudget: 8192, includeThoughts: false } } as Record<string, unknown>);
+  }
+  const { createGoogleGenerativeAI } = require('@ai-sdk/google') as typeof import('@ai-sdk/google');
+  return createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY || '' })(
+    MODEL_PRO,
+    { thinkingConfig: { thinkingBudget: 8192, includeThoughts: false } } as Record<string, unknown>
+  );
+}
+
 /** Grounded search model — Google AI Studio with Search grounding. */
 export function getGroundedModel(modelId: string = MODEL_FLASH): LanguageModel {
   const { createGoogleGenerativeAI } = require('@ai-sdk/google') as typeof import('@ai-sdk/google');

@@ -30,6 +30,10 @@ export interface ToolDefinition {
   dataSources: string[];
   relatedTools: string[];
   methodology: string;
+  /** Hours after which tool output is considered stale. Undefined = never stale. */
+  staleAfterHours?: number;
+  /** Model tier preference for this tool. Defaults to provider routing logic. */
+  modelTier?: 'flash' | 'pro' | 'analysis' | 'thinking';
 }
 
 // ============================================================================
