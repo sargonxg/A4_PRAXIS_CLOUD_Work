@@ -47,6 +47,9 @@ import {
   Rss,
   Package,
   Settings as SettingsIcon,
+  Vote,
+  Globe2,
+  TrendingDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -241,6 +244,10 @@ const navSections: NavSection[] = [
       { label: 'Media & Narrative', icon: Newspaper, href: '/media-compass' },
       { label: 'Sanctions & Compliance', icon: Shield, href: '/sanctions' },
       { label: 'Treaty Analysis', icon: BookMarked, href: '/treaty-analyzer' },
+      { label: 'Human Rights Monitor', icon: Scale, href: '/human-rights' },
+      { label: 'Electoral Violence Risk', icon: Vote, href: '/electoral-risk' },
+      { label: 'Peacebuilding Index', icon: BarChart3, href: '/peacebuilding-index' },
+      { label: 'Economic Impact', icon: TrendingDown, href: '/economic-impact' },
       { label: 'Historical Parallels', icon: BookOpen, href: '/compare' },
       { label: 'Game Theory', icon: Sigma, href: '/game-theory' },
       { label: 'Power Map', icon: UsersRound, href: '/power-map' },
@@ -264,6 +271,8 @@ const navSections: NavSection[] = [
       { label: 'Deep Research Agent', icon: Telescope, href: '/deep-search-agent', badge: 'TACITUS' },
       { label: 'ARGUS', icon: Network, href: '/argus', badge: 'TACITUS' },
       { label: 'Actor Enrichment', icon: UserCircle, href: '/actors' },
+      { label: 'External Actor Monitor', icon: Globe2, href: '/external-actors' },
+      { label: 'Legal & Resolution Tracker', icon: BookMarked, href: '/legal-tracker' },
       { label: 'Source Monitor', icon: Rss, href: '/source-monitor' },
       { label: 'Situation Comparison', icon: GitCompare, href: '/compare' },
     ],
@@ -370,6 +379,13 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   '/alerts': 'alert-center',
   '/source-monitor': 'source-monitor',
   '/export-center': 'export-center',
+  // New tools (v5.0+)
+  '/human-rights': 'human-rights',
+  '/electoral-risk': 'electoral-risk',
+  '/external-actors': 'external-actors',
+  '/peacebuilding-index': 'peacebuilding-index',
+  '/economic-impact': 'economic-impact',
+  '/legal-tracker': 'legal-tracker',
 };
 
 // Unified tool status — uses the shared hook that combines dashboard-snapshot
