@@ -25,7 +25,7 @@ const PublicationAlertSchema = z.object({
   summary: z.string().describe('2-sentence AI summary of the publication'),
   relevanceScore: z.number().min(0).max(10).describe('Relevance to the active situation (0 to 10)'),
   sourceReliability: z.number().min(0).max(10).describe('Source reliability rating (0 to 10)'),
-  craapRating: z.enum(['high', 'medium', 'low']).describe('CRAAP evaluation: high(>15/25), medium(10 to 15), low(<10)'),
+  craapRating: z.enum(['high', 'medium', 'low']).describe('CRAAP evaluation: high(>18/25), medium(12-18), low(<12)'),
   alertPriority: z.enum(['critical', 'high', 'medium', 'low']).describe('Alert priority based on relevance × reliability'),
 });
 
