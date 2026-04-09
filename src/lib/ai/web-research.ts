@@ -17,6 +17,13 @@
 import { generateText } from 'ai';
 import { getGroundedModel } from '@/lib/ai/providers';
 import { adminDb } from '@/lib/firebase/admin';
+import {
+  craftQueriesFromTemplate,
+  getToolTimeWindow,
+  getToolSourceHints,
+  type QueryContext,
+  type CraftedQueries,
+} from '@/lib/ai/query-intelligence';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,6 +49,9 @@ export interface WebResearchOptions {
   timeRange?: 'day' | 'week' | 'month' | 'year' | 'all';
   region?: string;            // Geographic focus
   includeContent?: boolean;   // Fetch full page content (slower)
+  toolId?: string;            // Tool requesting research (for query intelligence)
+  actors?: string[];          // Key actors for actor-specific queries
+  description?: string;       // Situation description for AI query crafting
 }
 
 export interface UserApiKeys {
@@ -516,15 +526,44 @@ export async function executeWebResearch(
   uid: string,
   options: WebResearchOptions = {}
 ): Promise<WebResearchResult[]> {
-  const cacheKey = `${uid}:${query}:${situationName}:${options.maxResults}`;
+  const cacheKey = `${uid}:${query}:${situationName}:${options.maxResults}:${options.toolId}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
   // Load user's API keys from Firestore
   const userKeys = await getUserApiKeys(uid);
 
+  // ── Query Intelligence: craft precise queries per tool + methodology ──
+  let craftedQueries: CraftedQueries | null = null;
+  if (options.toolId) {
+    const qCtx: QueryContext = {
+      toolId: options.toolId,
+      situationName,
+      country: options.region ?? '',
+      actors: options.actors ?? [],
+      description: options.description,
+      favoriteSources: options.favoriteSources,
+    };
+    craftedQueries = craftQueriesFromTemplate(qCtx);
+    console.log(`[web-research] Query Intelligence for "${options.toolId}": ${craftedQueries.reasoning}`);
+
+    // Use tool-specific time window if not explicitly set
+    if (!options.timeRange) {
+      options.timeRange = getToolTimeWindow(options.toolId);
+    }
+
+    // Merge tool source hints with user favorites
+    const toolHints = getToolSourceHints(options.toolId);
+    if (toolHints.length > 0 && (!options.favoriteSources || options.favoriteSources.length === 0)) {
+      options.favoriteSources = toolHints;
+    }
+  }
+
+  // Use crafted primary query if available, otherwise use the raw query
+  const effectiveQuery = craftedQueries?.primary ?? query;
+
   const ctx: ResearchContext = {
-    query,
+    query: effectiveQuery,
     situationName,
     country: options.region,
     options,
@@ -532,8 +571,22 @@ export async function executeWebResearch(
   };
 
   // Phase 1: Google Search (always available, runs first)
-  console.log(`[web-research] Phase 1: Google Search for "${query}"`);
+  // Use multiple crafted queries for broader coverage
+  console.log(`[web-research] Phase 1: Google Search for "${effectiveQuery}"`);
   const googleResults = await searchGoogle(ctx);
+
+  // If we have crafted focused queries, run them too for richer results
+  if (craftedQueries && craftedQueries.focused.length > 0) {
+    for (const focusedQuery of craftedQueries.focused.slice(0, 2)) {
+      try {
+        const focusedCtx = { ...ctx, query: focusedQuery };
+        const focusedResults = await searchGoogle(focusedCtx);
+        googleResults.push(...focusedResults);
+      } catch {
+        // Non-critical — additional queries can fail
+      }
+    }
+  }
 
   // Phase 2: Premium providers in parallel (only those with API keys)
   const premiumProviders: Promise<WebResearchResult[]>[] = [];

@@ -338,7 +338,7 @@ export async function executeBackgroundResearch(request: ResearchRequest): Promi
       // Non-critical — proceed without favorites
     }
 
-    // Execute unified web research: Google Search (default) + Tavily/Parallel/Firecrawl (if user has keys)
+    // Execute unified web research with AI-crafted queries per tool + methodology
     let webResults: WebResearchResult[] = [];
     try {
       webResults = await executeWebResearch(
@@ -349,7 +349,9 @@ export async function executeBackgroundResearch(request: ResearchRequest): Promi
           maxResults: 8,
           favoriteSources,
           region: country,
-          timeRange: 'month',
+          toolId,             // Enables query intelligence per tool
+          actors,             // Actor-specific queries
+          description: `${researchConfig.synthesisPrompt.split('.')[0]}. Situation: ${situationName}, Country: ${country}`,
         }
       );
       progress.sourcesQueried++;
