@@ -6,6 +6,7 @@ import { buildToolContext } from '@/lib/ai/situation-context';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
+import { writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { searchWeb } from '@/lib/ai/firecrawl';
 import type { WebSearchResult } from '@/lib/ai/firecrawl';
 import type { Situation } from '@/types/situation';
@@ -68,7 +69,7 @@ const DEFAULT_MONITORED_SOURCES = [
 // POST handler
 // ---------------------------------------------------------------------------
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   try {
     const body = await request.json() as {
       situation?: Situation;
@@ -76,6 +77,7 @@ export const POST = withAuth(async (request, _user) => {
       action?: 'scan' | 'health';
     };
     const { situation, customSources, action = 'scan' } = body;
+    const situationId = situation?.id ?? '';
 
     const creditCheck = await checkAndDeductCredits('ai_media_scan', 'Source monitor scan');
     if (!creditCheck.allowed) return creditCheck.response;
@@ -138,6 +140,11 @@ scanTimestamp: "${new Date().toISOString()}"`,
       system: 'You are the PRAXIS Source Monitor, an automated intelligence tracking system. Evaluate publication relevance, source credibility, and coverage gaps for conflict analysts. Produce actionable alerts with precise relevance and reliability assessments.',
     });
 
+    if (situationId && user.uid) {
+      await writeToolDataServer(user.uid, situationId, 'media_scan', result.output as Record<string, unknown>).catch(
+        (err) => console.error('[media-scan] persist failed:', err),
+      );
+    }
     return NextResponse.json(result.output);
   } catch (err) {
     return handleRouteError(err, 'media-scan');

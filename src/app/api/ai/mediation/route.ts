@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getModel, getProModel } from '@/lib/ai/providers';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 
 export const maxDuration = 60;
@@ -155,13 +156,14 @@ const DEMO_ASSIST_TEXT = `Based on the current dynamics, I recommend focusing on
 
 **Risk to manage:** Ensure the exchange is not perceived as a transactional quid pro quo but rather as a parallel humanitarian gesture by both parties. This preserves each side's ability to present it as their own initiative.`;
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   try {
-    const { action, conflictContext, parties, issues } = await request.json() as {
+    const { action, conflictContext, parties, issues, situationId } = await request.json() as {
       action: 'plan' | 'assist' | 'settle';
       conflictContext?: string;
       parties?: string[];
       issues?: string[];
+      situationId?: string;
     };
 
     // --- Demo mode ---
@@ -205,6 +207,11 @@ For each phase, specify objectives, key questions, and risk factors. Recommend a
         system: 'You are a senior mediation strategist with extensive experience in conflict resolution. Design mediation plans that are practically implementable, grounded in established methodology, and sensitive to the political constraints of all parties.',
       });
 
+      if (situationId && user.uid) {
+        await writeToolDataServer(user.uid, situationId, 'mediation_design', result.output as Record<string, unknown>).catch(
+          (err) => console.error('[mediation/plan] persist failed:', err),
+        );
+      }
       return NextResponse.json(result.output);
     }
 
@@ -229,6 +236,11 @@ Use language consistent with international peace agreement conventions. Referenc
         system: 'You are a senior legal advisor specializing in peace agreement architecture. Draft settlement terms that are legally precise, politically feasible, and practically implementable. Use standard international peace agreement language and conventions.',
       });
 
+      if (situationId && user.uid) {
+        await writeToolDataServer(user.uid, situationId, 'mediation_settlement', result.output as Record<string, unknown>).catch(
+          (err) => console.error('[mediation/settle] persist failed:', err),
+        );
+      }
       return NextResponse.json(result.output);
     }
 

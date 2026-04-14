@@ -3,6 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel, getThinkingModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
+import { writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
@@ -103,6 +104,7 @@ export const POST = withAuth(async (request: Request, user) => {
     if (!validation.success) return validation.response;
 
     const { actors, strategies, analysisType, situation, conflictContext } = validation.data;
+    const situationId = (situation as unknown as { id?: string })?.id ?? '';
 
     const creditCheck = await checkAndDeductCredits('ai_game_theory', 'Game Theory Analysis');
     if (!creditCheck.allowed) return creditCheck.response!;
@@ -185,6 +187,11 @@ Reference the actors by their exact names. Ground payoff values in real strategi
       system: `You are a formal game theorist and conflict analyst at a major international peace research institute. You apply Nash equilibrium theory, Schelling focal points, Fearon rationalist war causes, and Putnam two-level games to armed conflicts and political crises. You produce rigorous, mathematically consistent payoff matrices with analytically defensible values. Your analysis is used by UN mediators, diplomatic negotiators, and national security advisors. Every payoff you assign must be explainable by reference to strategic interests. Never produce symmetric or arbitrary payoff values — they must reflect real incentive structures.`,
     });
 
+    if (situationId && user.uid) {
+      await writeToolDataServer(user.uid, situationId, 'game_theory', result.output as Record<string, unknown>).catch(
+        (err) => console.error('[game-theory] persist failed:', err),
+      );
+    }
     return NextResponse.json(result.output);
   } catch (err) {
     return handleRouteError(err, 'game-theory');

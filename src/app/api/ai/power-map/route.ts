@@ -7,6 +7,7 @@ import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
+import { writeToolDataServer } from '@/lib/ai/context-builder-server';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 45;
@@ -113,6 +114,7 @@ export const POST = withAuth(async (request, user) => {
       situation?: Situation;
       additionalContext?: string;
     };
+    const situationId = situation?.id ?? '';
 
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
@@ -181,6 +183,11 @@ Generate 5-10 actors. Be specific about leverage, stance, and engagement strateg
       system: 'You are a senior UN political affairs officer and stakeholder mapping specialist trained in the Barnett-Duvall four faces of power framework (compulsory, institutional, structural, productive) and the Mitchell/Agle/Wood stakeholder model. Produce precise, evidence-anchored power maps that capture all dimensions of power for mediators and diplomatic professionals.',
     });
 
+    if (situationId && user.uid) {
+      await writeToolDataServer(user.uid, situationId, 'power_map', result.output as Record<string, unknown>).catch(
+        (err) => console.error('[power-map] persist failed:', err),
+      );
+    }
     return NextResponse.json(result.output);
   } catch (err) {
     return handleRouteError(err, 'power-map');
