@@ -3,6 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel, getGroundedModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -62,7 +63,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
   ]);
 }
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   try {
     const creditCheck = await checkAndDeductCredits('ai_morning_digest', 'Daily intelligence brief');
     if (!creditCheck.allowed) return creditCheck.response!;
@@ -74,6 +75,12 @@ export const POST = withAuth(async (request, _user) => {
     const body = await request.json();
     const { situation, deepResearch } = body as { situation?: Situation; deepResearch?: boolean };
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+    const situationId = (situation as Situation | undefined)?.id ?? '';
+
+    // ── 0. Graph context ──
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'daily_brief').catch(() => '')
+      : '';
 
     // ── 1. Live intel feeds (8s timeout — never block the brief on slow feeds) ──
     let intelContext = '';
@@ -137,7 +144,7 @@ export const POST = withAuth(async (request, _user) => {
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: AutoBriefingSchema }),
-      prompt: `${sitContext ? `SITUATION CONTEXT:\n${sitContext}\n` : ''}${intelContext}${webResearchContext}${deepResearchNote}
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `SITUATION CONTEXT:\n${sitContext}\n` : ''}${intelContext}${webResearchContext}${deepResearchNote}
 
 Generate a daily intelligence brief for this conflict situation in UN DPPA Morning Note format.
 
@@ -165,6 +172,11 @@ Be specific and evidence-grounded. Write for a senior UN Special Representative'
       output.sourcesSummary = `Sources: ${sourcesUsed.join(', ')}${intelContext ? ', ACLED/GDELT/ReliefWeb feeds' : ''}`;
     }
 
+    if (situationId && user.uid) {
+      await writeToolDataServer(user.uid, situationId, 'daily_brief', output).catch(
+        (err) => console.error('[auto-briefing] persist failed:', err),
+      );
+    }
     return NextResponse.json(output);
   } catch (err) {
     return handleRouteError(err, 'auto-briefing');

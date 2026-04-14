@@ -1,6 +1,7 @@
 import { streamText } from 'ai';
 import { getModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildGraphContext } from '@/lib/ai/context-builder-server';
 import { UN_STYLE_PROMPT } from '@/lib/ai/prompts/un-style';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -9,7 +10,7 @@ import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(
       JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in environment variables.' }),
@@ -31,10 +32,14 @@ export const POST = withAuth(async (request, _user) => {
     if (!creditCheck.allowed) return creditCheck.response;
 
     const sitContext = situation ? buildToolContext(situation) : '';
+    const situationId = situation?.id ?? '';
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'report').catch(() => '')
+      : '';
 
     const result = streamText({
       model: getModel(),
-      system: `${UN_STYLE_PROMPT}\n\n${sitContext ? `${sitContext}\n\n` : ''}You are drafting a section of a ${template || 'diplomatic report'}.
+      system: `${UN_STYLE_PROMPT}\n\n${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}You are drafting a section of a ${template || 'diplomatic report'}.
 Section type: ${sectionType}. Tone: ${tone || 'formal'}.
 ${conflictContext ? `Conflict context:\n${conflictContext}` : ''}
 ${existingSections ? `Already drafted sections for coherence:\n${existingSections}` : ''}

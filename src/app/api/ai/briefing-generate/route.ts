@@ -3,6 +3,7 @@ import { generateText, streamText, Output } from 'ai';
 import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -198,6 +199,7 @@ export const POST = withAuth(async (request, user) => {
       situation?: Situation;
     };
     const sitContext = situation ? buildToolContext(situation) : '';
+    const situationId = situation?.id ?? '';
 
     // --- Live intelligence feed ---
     let intelContext = '';
@@ -290,6 +292,11 @@ PROBABILITY LANGUAGE REQUIREMENT: Use ICD 203 Analytic Standards probability lan
     const creditCheck = await checkAndDeductCredits('ai_briefing_generate', 'Briefing generation');
     if (!creditCheck.allowed) return creditCheck.response;
 
+    // --- Graph context ---
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'briefing').catch(() => '')
+      : '';
+
     // --- Web-grounded context ---
     const webCtx = situation
       ? await buildWebGroundedContext(
@@ -303,7 +310,7 @@ PROBABILITY LANGUAGE REQUIREMENT: Use ICD 203 Analytic Standards probability lan
     const result = await generateText({
       model: getModel(),
       output: Output.object({ schema: BriefingSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}${intelContext ? `${intelContext}\n\n` : ''}${webCtx ? `${webCtx}\n\n` : ''}You are drafting a political affairs briefing for a UN Senior Leadership audience. This is a ${briefingType} briefing.
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${intelContext ? `${intelContext}\n\n` : ''}${webCtx ? `${webCtx}\n\n` : ''}You are drafting a political affairs briefing for a UN Senior Leadership audience. This is a ${briefingType} briefing.
 
 CASE: ${caseId}
 BRIEFING TYPE: ${briefingType}
@@ -357,6 +364,11 @@ FORMAT RULES:
 Use ICD 203 Analytic Standards probability language: 'almost no chance' (<5%), 'very unlikely' (5-20%), 'unlikely' (20-45%), 'roughly even' (45-55%), 'likely' (55-80%), 'very likely' (80-95%), 'almost certain' (>95%). Never use vague hedging.`,
     });
 
+    if (situationId && user.uid) {
+      await writeToolDataServer(user.uid, situationId, 'briefing', result.output as Record<string, unknown>).catch(
+        (err) => console.error('[briefing-generate] persist failed:', err),
+      );
+    }
     return NextResponse.json(result.output);
   } catch (err) {
     return handleRouteError(err, 'briefing-generate');
