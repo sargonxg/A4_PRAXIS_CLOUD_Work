@@ -139,7 +139,7 @@ export const POST = withAuth(async (request, user) => {
     const situationId = (situation as Situation | undefined)?.id ?? '';
 
     if (isServerDemoMode()) return NextResponse.json(DEMO_RESPONSE);
-    const creditCheck = await checkAndDeductCredits('ai_sanctions', 'Sanctions analysis');
+    const creditCheck = await checkAndDeductCredits('ai_sanctions_scan', 'Sanctions analysis');
     if (!creditCheck.allowed) return creditCheck.response;
 
     const graphCtx = situationId ? await buildGraphContext(user.uid, situationId, 'sanctions') : '';

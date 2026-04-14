@@ -1,6 +1,6 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 6.3.0 — Pure GCP Cloud Run · Dual-service: Next.js + Python FastAPI
+> Version 6.3.1 — Pure GCP Cloud Run · Dual-service: Next.js + Python FastAPI
 > Project: `praxisbytacitus` (852128226674) · Region: `us-central1`
 > Domain: praxis.tacitus.me
 
@@ -170,12 +170,12 @@ Tool page → useSituationGuard() → usePersistedToolData(toolId, sitId)
 
 | Function | Model | Used For |
 |---|---|---|
-| `getModel()` | `gemini-3-flash` | Chat, terminology, lightweight tasks, grounded search |
+| `getModel()` | `gemini-3-flash-preview` | Chat, terminology, lightweight tasks, grounded search |
 | `getProModel()` | `gemini-3.1-pro-preview` | Structured tool generation, reports, dossiers (1M ctx, 65K output) |
 | `getAnalysisModel()` | `claude-sonnet-4-20250514` → Gemini 3.1 Pro | Deep conflict analysis, diplomatic language (falls back to Pro) |
 | `getDeepThinkModel()` | `gemini-3.1-pro-preview` + `thinkingLevel: 'high'` | Game Theory, Scenarios, treaty analysis (set via providerOptions) |
 | `getEmbeddingModel()` | `gemini-embedding-2-preview` → `text-embedding-005` → null | SKC Vector Layer, document embedding, 768-dim multimodal |
-| `getGroundedModel()` | `gemini-3-flash` + Google Search | Research tools, actor enrichment, source discovery |
+| `getGroundedModel()` | `gemini-3-flash-preview` + Google Search | Research tools, actor enrichment, source discovery |
 | Vertex ADK | Agent Engine | Deep Search Agent (falls back to Gemini 3 + Search) |
 
 ## Situation Knowledge Core (SKC)
@@ -255,7 +255,8 @@ See `.env.example` for complete list. Critical:
 - `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` — Graph database
 - `VERTEX_AGENT_ENGINE_ID` — Deep Research Agent engine
 - `CRON_SECRET` — Cron + admin auth
-- `COOKIE_SIGNING_SECRET` — Session cookie HMAC
+- `COOKIE_SIGNING_SECRET` — Session cookie HMAC (primary; read first by `cookie-signer.ts`)
+- `SESSION_SECRET` — Alias for `COOKIE_SIGNING_SECRET`; Cloud Build mounts both from the same Secret Manager secret (`praxis-cookie-secret`) for backward compatibility
 
 ## Conventions
 

@@ -72,6 +72,15 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   // Part 4 — SAT (Structured Analytical Techniques) + PIR
   'ai_sat': 3,
   'ai_pir': 2,
+  // Routes with route-specific keys (added v6.3.1 — these were missing and causing 402 on every call)
+  'ai_advisory': 3,           // Strategic advisory panel
+  'ai_commitments': 3,        // Commitments tracker
+  'ai_concordia': 3,          // CONCORDIA mediation design
+  'ai_media_compass': 3,      // Media landscape analysis
+  'ai_sanctions': 4,          // Sanctions analysis
+  'ai_stakeholder_map': 3,    // Stakeholder map
+  'ai_treaty_analyzer': 4,    // Treaty analysis (duplicate key for treaty-analyzer route)
+  'ai_un_toolkit': 4,         // UN Toolkit document generation
 };
 
 /**

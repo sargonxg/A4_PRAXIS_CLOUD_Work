@@ -7,6 +7,8 @@ import { z } from 'zod';
 import type { Situation } from '@/types/situation';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 
+export const maxDuration = 60;
+
 const DEMO_RESPONSE = { politicalOrientation: -0.1, reliability: 0.75, editorialIndependence: 0.8, ownershipType: 'public', country: 'United Kingdom', description: 'Demo: A leading international broadcaster known for balanced conflict coverage.', knownBiases: ['Western-centric framing', 'Emphasis on official state positions'], coverageStrengths: ['Breaking news', 'Field reporting', 'Expert analysis'], conflictCoverageNotes: 'Generally follows Geneva Conventions in conflict terminology. Cross-reference with local sources for ground-level dynamics.', recommendedCrossReferences: ['Al Jazeera English', 'Reuters', 'Local press'] };
 
 const MediaAnalysisSchema = z.object({

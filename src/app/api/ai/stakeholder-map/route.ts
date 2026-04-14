@@ -430,7 +430,7 @@ export const POST = withAuth(async (request, user) => {
     }
 
     // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_stakeholder_map', 'Stakeholder map');
+    const creditCheck = await checkAndDeductCredits('ai_stakeholder_influence', 'Stakeholder map');
     if (!creditCheck.allowed) return creditCheck.response;
 
     // --- Graph context ---

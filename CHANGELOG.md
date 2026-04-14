@@ -6,6 +6,32 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [6.3.1] — 2026-04-14
+
+### Fixed
+
+- **[CRITICAL] AI Routes 500 errors** (`src/lib/ai/providers.ts`) — Fixed Gemini model ID from `gemini-3-flash` to `gemini-3-flash-preview`. All 35+ AI tool routes were failing with invalid-model errors from the Google API, caught by `handleRouteError()` and returned as generic 500s.
+
+- **[CRITICAL] Authentication failures** (`src/lib/auth/cookie-signer.ts`, `cloudbuild.yaml`) — Fixed cookie signing secret environment variable mismatch. Cookie signer now reads `COOKIE_SIGNING_SECRET` first (matching the Cloud Run secret mount name), with fallback chain to `SESSION_SECRET` → `CRON_SECRET` → dev fallback. Cloud Build now also mounts `SESSION_SECRET` as an alias to the same secret for backward compatibility.
+
+- **[HIGH] Firebase Admin null safety** (`src/lib/firebase/admin.ts`) — Added explicit startup error logging when Firestore is unavailable (missing or malformed `FIREBASE_SERVICE_ACCOUNT_KEY`). `getAdminDbOrThrow()` now provides a specific actionable hint (missing env var vs bad JSON parse) instead of a generic error.
+
+- **[HIGH] Credit transaction logging crashes** (`src/lib/api/with-credits.ts`, `src/app/api/research/route.ts`) — Replaced `next/server after()` with fire-and-forget `void (async () => {})()` pattern for Cloud Run standalone compatibility. `after()` is unreliable in Next.js standalone mode outside Vercel infrastructure.
+
+- **[MEDIUM] SVG NaN errors in D3 visualizations** (`src/components/visualizations/force-graph.tsx`) — Added `safeNum()` utility (`src/lib/utils/safe-number.ts`) that guards against both `NaN` and `Infinity` (unlike `?? 0` which only guards `null`/`undefined`). Applied to all D3 tick handler attributes and circle radii in the force graph. Applied defensive guards to all remaining visualization components.
+
+- **[MEDIUM] React Error #300 on dashboard** (`src/app/app/dashboard/page.tsx`) — Extracted `AppDashboardContent` wrapper component to stabilize the parent `DashboardPage` hook count. Previously, rapid Firestore snapshot reconnections during Cloud Run cold starts could switch between `SituationDashboard` (many hooks) and `NoSituationState` (fewer hooks) within the same render cycle, causing React's hook count invariant violation.
+
+- **[LOW] Eager provider initialization** (`src/lib/ai/providers.ts`) — Legacy `google` and `models` exports are now lazy-initialized on first access instead of at module import time. Previously, importing `providers.ts` with no `GOOGLE_AI_API_KEY` set would create a provider instance with an empty API key.
+
+### Changed
+
+- `src/lib/firebase/firestore.ts` — `AISettings.preferredModel` type union updated to include `gemini-3-flash-preview` as primary; `gemini-3-flash` retained as legacy alias.
+- `src/app/api/health/route.ts` — Health endpoint now validates cookie signing secret configuration (`COOKIE_SIGNING_SECRET` / `SESSION_SECRET` / `CRON_SECRET`) and fails unhealthy if none is set.
+- `.env.example` — Documents `SESSION_SECRET` as alias for `COOKIE_SIGNING_SECRET`.
+
+---
+
 ## [5.2.0] — 2026-04-01
 
 ### Added

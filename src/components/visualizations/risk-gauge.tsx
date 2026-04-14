@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import { safeNum } from '@/lib/utils/safe-number';
 
 type Size = 'sm' | 'md' | 'lg';
 

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { safeNum } from '@/lib/utils/safe-number';
 
 interface RadarDimension {
   label: string;
@@ -55,7 +56,8 @@ export function RadarChart({
   // Data polygon (normalized)
   const dataPoints = dims.map((d, i) => {
     const max = d.maxValue ?? 100;
-    const ratio = Math.max(0, Math.min(1, d.value / max));
+    // safeNum guards against division by zero (max=0) producing NaN/Infinity
+    const ratio = Math.max(0, Math.min(1, safeNum(d.value / max)));
     return point(cx, cy, maxR * ratio, startAngle + i * angleStep);
   });
   const dataPolygon = polygonPoints(dataPoints);

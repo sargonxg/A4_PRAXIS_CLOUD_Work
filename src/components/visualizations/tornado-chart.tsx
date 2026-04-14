@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { safeNum } from '@/lib/utils/safe-number';
 
 interface TornadoItem {
   label: string;
@@ -30,8 +31,9 @@ export function TornadoChart({ items, title, unit = '' }: TornadoChartProps) {
   const baseline = sorted[0]?.baseline ?? 0;
 
   const allValues = sorted.flatMap((it) => [it.low, it.high]);
-  const minVal = Math.min(baseline, ...allValues);
-  const maxVal = Math.max(baseline, ...allValues);
+  // safeNum guards against Math.min/max on empty array returning ±Infinity when items=[]
+  const minVal = safeNum(Math.min(baseline, ...allValues));
+  const maxVal = safeNum(Math.max(baseline, ...allValues));
   const range = maxVal - minVal || 1;
 
   const chartH = sorted.length * (BAR_H + BAR_GAP) + PADDING.top + PADDING.bottom;

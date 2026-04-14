@@ -157,7 +157,7 @@ export const POST = withAuth(async (request, user) => {
     }
 
     // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_advisory', 'Strategic advisory');
+    const creditCheck = await checkAndDeductCredits('ai_analysis', 'Strategic advisory');
     if (!creditCheck.allowed) return creditCheck.response;
 
     // --- Graph context ---

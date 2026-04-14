@@ -231,7 +231,7 @@ export const POST = withAuth(async (request, user) => {
     }
 
     // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_media_compass', 'Media landscape analysis');
+    const creditCheck = await checkAndDeductCredits('ai_media_roundup', 'Media landscape analysis');
     if (!creditCheck.allowed) return creditCheck.response;
 
     // --- Contexts ---

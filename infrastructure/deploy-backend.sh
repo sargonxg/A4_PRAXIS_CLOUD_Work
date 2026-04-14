@@ -15,7 +15,8 @@ gcloud run deploy praxis-backend \
   --timeout 300 \
   --min-instances 0 \
   --max-instances 10 \
-  --set-env-vars "GCP_PROJECT_ID=${GCP_PROJECT_ID:-$PROJECT_ID},GCP_REGION=us-central1"
+  --set-env-vars "GCP_PROJECT_ID=${GCP_PROJECT_ID:-$PROJECT_ID},GCP_REGION=us-central1" \
+  --set-secrets="FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest"
 
 BACKEND_URL=$(gcloud run services describe praxis-backend --region=us-central1 --format='value(status.url)')
 echo "Backend deployed: $BACKEND_URL"

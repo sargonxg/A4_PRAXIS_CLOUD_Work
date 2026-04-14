@@ -233,7 +233,7 @@ export const POST = withAuth(async (request, user) => {
     const situationId = (situation as Situation | undefined)?.id ?? '';
 
     if (isServerDemoMode()) return NextResponse.json(DEMO_RESPONSE);
-    const creditCheck = await checkAndDeductCredits('ai_treaty_analyzer', 'Treaty analysis');
+    const creditCheck = await checkAndDeductCredits('ai_treaty_analyze', 'Treaty analysis');
     if (!creditCheck.allowed) return creditCheck.response;
 
     const graphCtx = situationId ? await buildGraphContext(user.uid, situationId, 'treaty_analyzer') : '';

@@ -353,7 +353,7 @@ const DEMO_RESPONSE = {
 
 export const POST = withAuth(async (request: Request, user) => {
   try {
-    const creditCheck = await checkAndDeductCredits('ai_concordia', 'CONCORDIA mediation design');
+    const creditCheck = await checkAndDeductCredits('ai_mediation_design', 'CONCORDIA mediation design');
     if (!creditCheck.allowed) return creditCheck.response!;
 
     if (isServerDemoMode()) {

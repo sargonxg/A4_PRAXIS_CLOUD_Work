@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { safeNum } from '@/lib/utils/safe-number';
 
 interface DataPoint {
   date: string | Date;
@@ -80,10 +81,11 @@ export function TimeSeriesChart({
   // Flatten all dates and values
   const allMs = series.flatMap((s) => s.data.map((d) => toMs(d.date)));
   const allVals = series.flatMap((s) => s.data.map((d) => d.value));
-  const minMs = Math.min(...allMs);
-  const maxMs = Math.max(...allMs);
-  const minVal = Math.min(...allVals);
-  const maxVal = Math.max(...allVals);
+  // safeNum guards against Math.min/max on empty arrays returning ±Infinity
+  const minMs = safeNum(Math.min(...allMs));
+  const maxMs = safeNum(Math.max(...allMs));
+  const minVal = safeNum(Math.min(...allVals));
+  const maxVal = safeNum(Math.max(...allVals));
   const msRange = maxMs - minMs || 1;
   const valRange = maxVal - minVal || 1;
 
@@ -99,10 +101,10 @@ export function TimeSeriesChart({
     minVal + (i / TICK_COUNT) * valRange
   );
 
-  // X-axis ticks (up to 6)
+  // X-axis ticks (up to 6); divisor guard prevents NaN when xTickCount=1
   const xTickCount = Math.min(6, allMs.length);
   const xTicks = Array.from({ length: xTickCount }, (_, i) =>
-    minMs + (i / (xTickCount - 1)) * msRange
+    minMs + safeNum(i / Math.max(xTickCount - 1, 1)) * msRange
   );
 
   const handleMouseMove = useCallback(

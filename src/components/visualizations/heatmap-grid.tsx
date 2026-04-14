@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { safeNum } from '@/lib/utils/safe-number';
 
 type ColorScale = 'risk' | 'blue' | 'diverging';
 
@@ -57,8 +58,9 @@ export function HeatmapGrid({
   const [hovered, setHovered] = useState<[number, number] | null>(null);
 
   const allValues = data.flat();
-  const minVal = Math.min(...allValues);
-  const maxVal = Math.max(...allValues);
+  // safeNum guards against Math.min/max on empty array returning ±Infinity
+  const minVal = safeNum(Math.min(...allValues));
+  const maxVal = safeNum(Math.max(...allValues));
 
   const LABEL_W = 90;
   const CELL = Math.max(28, Math.min(56, Math.floor((480 - LABEL_W) / Math.max(cols.length, 1))));

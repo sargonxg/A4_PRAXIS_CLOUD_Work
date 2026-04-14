@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { safeNum } from '@/lib/utils/safe-number';
 
 interface SankeyNode {
   id: string;

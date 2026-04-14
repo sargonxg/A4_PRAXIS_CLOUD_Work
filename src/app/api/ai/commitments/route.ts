@@ -206,7 +206,7 @@ export const POST = withAuth(async (request, user) => {
     const situationId = (situation as Situation | undefined)?.id ?? '';
 
     if (isServerDemoMode()) return NextResponse.json(DEMO_RESPONSE);
-    const creditCheck = await checkAndDeductCredits('ai_commitments', 'Commitments tracker');
+    const creditCheck = await checkAndDeductCredits('ai_commitment_scan', 'Commitments tracker');
     if (!creditCheck.allowed) return creditCheck.response;
 
     const graphCtx = situationId ? await buildGraphContext(user.uid, situationId, 'commitments') : '';

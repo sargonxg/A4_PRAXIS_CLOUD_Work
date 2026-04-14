@@ -1,9 +1,12 @@
-import { generateObject } from 'ai';
+import { generateText, Output } from 'ai';
 import { getModel } from '@/lib/ai/providers';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { withAuth } from '@/lib/api/with-auth';
+import { handleRouteError } from '@/lib/api/standard-error';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { z } from 'zod';
+
+export const maxDuration = 45;
 
 const TermIssueSchema = z.object({
   term: z.string(),
@@ -81,10 +84,10 @@ export const POST = withAuth(async (request: Request) => {
     // Run fast programmatic checks first
     const programmaticIssues = runProgrammaticChecks(text);
 
-    // Use Gemini for nuanced analysis
-    const { object } = await generateObject({
+    // Use Gemini for nuanced analysis (generateText + Output.object — AI SDK v6 pattern)
+    const result = await generateText({
       model: getModel(),
-      schema: TerminologyResponseSchema,
+      output: Output.object({ schema: TerminologyResponseSchema }),
       prompt: `You are a UN Editorial Manual expert. Analyze the following text for UN terminology compliance.
 Document context: ${context || 'general'}
 
@@ -107,6 +110,7 @@ ${text}
 
 Include BOTH the programmatic issues AND any additional issues you identify. Calculate an overall compliance score (0-100).`,
     });
+    const object = result.output;
 
     // Merge programmatic issues that weren't captured by AI
     const aiTerms = new Set(object.issues.map((i: { term: string }) => i.term.toLowerCase()));
@@ -128,7 +132,6 @@ Include BOTH the programmatic issues AND any additional issues you identify. Cal
       recommendation: object.recommendation,
     });
   } catch (err) {
-    console.error('Terminology route error:', err);
-    return Response.json({ error: 'Terminology check failed' }, { status: 500 });
+    return handleRouteError(err, 'terminology');
   }
 });
