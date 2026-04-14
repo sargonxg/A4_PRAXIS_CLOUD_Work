@@ -50,6 +50,7 @@ import {
   Vote,
   Globe2,
   TrendingDown,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -713,6 +714,51 @@ export function AppSidebar() {
                   <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
                   <TooltipContent side="right" className="font-medium">
                     Settings
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+            return linkContent;
+          })()}
+        </div>
+
+        {/* System Health */}
+        <div className="mt-1">
+          {(() => {
+            const isActive = barePath.startsWith('/settings/system-health');
+            const linkContent = (
+              <PraxisLink
+                href="/settings/system-health"
+                className={cn(
+                  'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
+                  isActive
+                    ? 'bg-[var(--color-app-surface-alt)] text-navy-900'
+                    : 'text-navy-400 hover:bg-[var(--color-app-surface-alt)] hover:text-navy-600'
+                )}
+              >
+                <Activity className="h-[18px] w-[18px] shrink-0 text-navy-400 group-hover:text-navy-500" />
+                <AnimatePresence mode="wait">
+                  {sidebarOpen && (
+                    <motion.span
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: 'auto' }}
+                      exit={{ opacity: 0, width: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="truncate whitespace-nowrap"
+                    >
+                      System Health
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </PraxisLink>
+            );
+
+            if (!sidebarOpen) {
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                  <TooltipContent side="right" className="font-medium">
+                    System Health
                   </TooltipContent>
                 </Tooltip>
               );

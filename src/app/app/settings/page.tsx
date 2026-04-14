@@ -23,6 +23,7 @@ import {
   ArrowRight,
   CreditCard,
   Sparkles,
+  Activity,
 } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -759,6 +760,28 @@ export default function SettingsPage() {
               Model Preferences
             </PraxisLink>
           </div>
+        </div>
+      </SettingsSection>
+
+      {/* ── System Health ─────────────────────────────────────────── */}
+      <SettingsSection
+        icon={Activity}
+        title="System Health"
+        description="Monitor AI providers, data feeds, and circuit breakers"
+      >
+        <div className="space-y-3">
+          <p className="text-xs text-navy-500">
+            Real-time status of all platform services including AI model availability,
+            data feed health, and the Situation Knowledge Core (SKC) layers.
+          </p>
+          <PraxisLink
+            href="/settings/system-health"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-diplomatic-blue hover:bg-diplomatic-blue/90 text-white rounded-md text-sm font-medium transition-colors"
+          >
+            <Activity className="h-3.5 w-3.5" />
+            View System Health
+            <ArrowRight className="h-3.5 w-3.5" />
+          </PraxisLink>
         </div>
       </SettingsSection>
 
