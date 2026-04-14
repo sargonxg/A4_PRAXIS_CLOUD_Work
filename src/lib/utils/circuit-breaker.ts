@@ -21,6 +21,14 @@ class CircuitBreaker {
 
   getState() { return this.state; }
   getName() { return this.config.name; }
+  getDetails() {
+    return {
+      name: this.config.name,
+      state: this.state,
+      failures: this.failures,
+      lastFailure: this.lastFailure || null,
+    };
+  }
 
   async execute<T>(fn: () => Promise<T>, fallback: () => Promise<T>): Promise<T> {
     if (this.state === 'open') {
@@ -61,15 +69,30 @@ export const worldbankBreaker= new CircuitBreaker({ name: 'WorldBank',failureThr
 export const geminiBreaker   = new CircuitBreaker({ name: 'Gemini',   failureThreshold: 5, resetTimeoutMs: 60_000 });
 export const firecrawlBreaker= new CircuitBreaker({ name: 'Firecrawl',failureThreshold: 3, resetTimeoutMs: 300_000 });
 
+/** Returns simple state map — name → 'closed'|'open'|'half-open' */
 export function getAllBreakerStates(): Record<string, string> {
   return {
-    ACLED: acledBreaker.getState(),
-    GDELT: gdeltBreaker.getState(),
-    HDX: hdxBreaker.getState(),
+    ACLED:     acledBreaker.getState(),
+    GDELT:     gdeltBreaker.getState(),
+    HDX:       hdxBreaker.getState(),
     ReliefWeb: reliefwebBreaker.getState(),
-    UNHCR: unhcrBreaker.getState(),
+    UNHCR:     unhcrBreaker.getState(),
     WorldBank: worldbankBreaker.getState(),
-    Gemini: geminiBreaker.getState(),
+    Gemini:    geminiBreaker.getState(),
     Firecrawl: firecrawlBreaker.getState(),
   };
+}
+
+/** Returns rich breaker details for health dashboard */
+export function getAllBreakerDetails() {
+  return [
+    acledBreaker,
+    gdeltBreaker,
+    hdxBreaker,
+    reliefwebBreaker,
+    unhcrBreaker,
+    worldbankBreaker,
+    geminiBreaker,
+    firecrawlBreaker,
+  ].map((b) => b.getDetails());
 }

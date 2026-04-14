@@ -5,6 +5,10 @@
  * Reads graph analysis + prior tool outputs from Firestore and returns
  * a structured context string to prepend to every AI prompt.
  *
+ * v3.0: Also integrates the Situation Knowledge Core (SKC) 4-layer GraphRAG
+ * system — graph analytics, vector search, TTL-cached feeds, cross-tool data.
+ * SKC enrichment is additive and degrades gracefully if unavailable.
+ *
  * Client-side equivalent: src/lib/ai/context-builder.ts (uses client SDK)
  */
 import { adminDb } from '@/lib/firebase/admin';
@@ -52,6 +56,9 @@ interface GraphAnalysis {
  * Build graph-enriched context for a specific tool.
  * Falls back gracefully if no graph data exists yet.
  *
+ * v3.0: Appends SKC (vector search results + feed cache + cross-tool data)
+ * as an additional context layer. All SKC enrichment is best-effort.
+ *
  * @param uid - Firebase user ID (from withAuth)
  * @param situationId - Active situation ID
  * @param toolKey - Tool name key (from TOOL_CONTEXT_DEPS map)
@@ -62,6 +69,24 @@ export async function buildGraphContext(
   situationId: string,
   toolKey: string,
   loadAll = false,
+): Promise<string> {
+  if (!adminDb) return '';
+
+  // Run graph context (existing) + SKC enrichment in parallel
+  const [graphCtx, skcCtx] = await Promise.all([
+    buildLegacyGraphContext(uid, situationId, toolKey, loadAll),
+    buildSKCContext(uid, situationId, toolKey).catch(() => ''),
+  ]);
+
+  return graphCtx + skcCtx;
+}
+
+/** Original graph context logic — unchanged. */
+async function buildLegacyGraphContext(
+  uid: string,
+  situationId: string,
+  toolKey: string,
+  loadAll: boolean,
 ): Promise<string> {
   if (!adminDb) return '';
 
@@ -92,6 +117,74 @@ export async function buildGraphContext(
 
     return graphContextToPrompt(analysis, toolOutputs);
   } catch {
+    return '';
+  }
+}
+
+/**
+ * Builds SKC (Situation Knowledge Core) enrichment context.
+ * Exported for routes that want direct control over when SKC context is fetched.
+ *
+ * Returns a formatted string ready to append to any system prompt.
+ * Returns '' gracefully if SKC is unavailable or the module failed to import.
+ */
+export async function buildSKCContext(
+  uid: string,
+  situationId: string,
+  toolId: string,
+): Promise<string> {
+  if (!uid || !situationId) return '';
+
+  try {
+    // Dynamic import so that SKC module errors never break existing routes
+    const { SituationKnowledgeCore } = await import('@/lib/knowledge');
+    const skc = new SituationKnowledgeCore(uid, situationId);
+    const ctx = await skc.getToolContext(toolId);
+
+    const lines: string[] = [];
+
+    // Graph nodes — most semantically relevant entities
+    if (ctx.graph?.nodes && ctx.graph.nodes.length > 0) {
+      lines.push('\n## KNOWLEDGE GRAPH — Relevant Entities (SKC):');
+      ctx.graph.nodes.slice(0, 12).forEach((n) => {
+        const conf = n.confidence ? ` [${n.confidence}]` : '';
+        lines.push(`- [${n.type}] ${n.name}${conf}${n.description ? ': ' + n.description.slice(0, 120) : ''}`);
+      });
+    }
+
+    // Graph metrics — structural intelligence
+    if (ctx.graph?.metrics) {
+      const m = ctx.graph.metrics;
+      if (m.density !== undefined || m.mostCentralNode) {
+        lines.push('\n## GRAPH METRICS:');
+        if (m.mostCentralNode) lines.push(`- Most central actor: ${m.mostCentralNode}`);
+        if (m.density !== undefined) lines.push(`- Network density: ${m.density.toFixed(3)} (${m.density > 0.4 ? 'dense — many cross-linkages' : 'sparse — fragmented actors'})`);
+        if (m.communities !== undefined) lines.push(`- Detected factions/communities: ${m.communities}`);
+      }
+    }
+
+    // Feed data — live intelligence
+    if (ctx.feedData && Object.keys(ctx.feedData).length > 0) {
+      lines.push('\n## LIVE DATA FEEDS (cached):');
+      for (const [feedName, feedData] of Object.entries(ctx.feedData)) {
+        const preview = JSON.stringify(feedData).slice(0, 400);
+        lines.push(`- [${feedName}] ${preview}`);
+      }
+    }
+
+    // Cross-tool outputs (related tool data)
+    if (ctx.relatedToolData && Object.keys(ctx.relatedToolData).length > 0) {
+      lines.push('\n## CROSS-TOOL INTELLIGENCE (related outputs):');
+      for (const [relToolId, relData] of Object.entries(ctx.relatedToolData)) {
+        if (!relData) continue;
+        const preview = JSON.stringify(relData).slice(0, 500);
+        lines.push(`- [${relToolId}] ${preview}`);
+      }
+    }
+
+    return lines.length > 0 ? lines.join('\n') : '';
+  } catch {
+    // SKC unavailable — non-critical, don't break the route
     return '';
   }
 }
