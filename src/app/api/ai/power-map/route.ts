@@ -7,7 +7,7 @@ import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { writeToolDataServer } from '@/lib/ai/context-builder-server';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 45;
@@ -117,6 +117,9 @@ export const POST = withAuth(async (request, user) => {
     const situationId = situation?.id ?? '';
 
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'power_map').catch(() => '')
+      : '';
 
     const webCtx = situation
       ? await buildWebGroundedContext(
@@ -129,7 +132,7 @@ export const POST = withAuth(async (request, user) => {
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: PowerMapSchema }),
-      prompt: `${webCtx}${webCtx ? '\n\n' : ''}${sitContext ? `${sitContext}\n\n` : ''}Generate a rigorous stakeholder power map for this conflict situation.
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${webCtx}${webCtx ? '\n\n' : ''}${sitContext ? `${sitContext}\n\n` : ''}Generate a rigorous stakeholder power map for this conflict situation.
 
 ${additionalContext ? `ADDITIONAL CONTEXT: ${additionalContext}\n\n` : ''}
 

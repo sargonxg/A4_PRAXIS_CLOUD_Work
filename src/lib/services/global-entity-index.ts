@@ -13,7 +13,7 @@
  * Server-only — uses Firebase Admin SDK.
  */
 import { adminDb } from '@/lib/firebase/admin';
-import type { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -84,6 +84,7 @@ export async function indexEntities(
       seenAt: now,
     };
 
+    // Set base document (merge:true — won't overwrite existing firstSeenAt)
     batch.set(
       ref,
       {
@@ -91,23 +92,20 @@ export async function indexEntities(
         normalizedName: normalize(entity.name),
         type: entity.type || 'unknown',
         lastSeenAt: now,
-        mentionCount: (adminDb as unknown as { FieldValue: typeof FieldValue }).FieldValue
-          ? 0 // placeholder — real increment via update below
-          : 0,
+        mentionCount: 0,
         situations: [],
         mentions: [],
         firstSeenAt: now,
-      } satisfies Omit<GlobalEntity, 'id' | 'mentionCount'> & { mentionCount: number },
+      },
       { merge: true },
     );
 
-    // Increment counters and append mention via update (Admin SDK supports FieldValue)
-    const { FieldValue: FV } = await import('firebase-admin/firestore');
+    // Increment counters and append mention
     batch.update(ref, {
-      mentionCount: FV.increment(1),
+      mentionCount: FieldValue.increment(1),
       lastSeenAt: now,
-      situations: FV.arrayUnion(situationId),
-      mentions: FV.arrayUnion(mention),
+      situations: FieldValue.arrayUnion(situationId),
+      mentions: FieldValue.arrayUnion(mention),
     });
   }
 

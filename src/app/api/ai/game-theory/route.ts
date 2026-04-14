@@ -3,7 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel, getThinkingModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
-import { writeToolDataServer } from '@/lib/ai/context-builder-server';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
@@ -111,6 +111,10 @@ export const POST = withAuth(async (request: Request, user) => {
 
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'game_theory').catch(() => '')
+      : '';
+
     // --- Web grounded context ---
     const webCtx = situation
       ? await buildWebGroundedContext(
@@ -141,7 +145,7 @@ export const POST = withAuth(async (request: Request, user) => {
         ? 'Focus especially on game archetype identification and its conflict implications.'
         : 'Focus especially on the payoff matrix and Nash equilibrium identification.';
 
-    const prompt = `${webCtx ? `${webCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${conflictDesc ? `${conflictDesc}\n\n` : ''}You are a formal game theorist and conflict analyst applying rigorous strategic interaction analysis to this armed or political conflict. Your framework draws on:
+    const prompt = `${graphCtx ? `${graphCtx}\n\n` : ''}${webCtx ? `${webCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${conflictDesc ? `${conflictDesc}\n\n` : ''}You are a formal game theorist and conflict analyst applying rigorous strategic interaction analysis to this armed or political conflict. Your framework draws on:
 
 - Nash (1950): Nash Equilibrium — no actor can unilaterally improve their payoff
 - von Neumann & Morgenstern (1944): Expected utility and zero-sum analysis

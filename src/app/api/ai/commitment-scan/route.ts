@@ -3,6 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
@@ -118,7 +119,7 @@ const DEMO_RESPONSE = {
   analysis: 'The compliance landscape reflects a pattern of selective implementation: economic commitments with third-party oversight show high compliance, while commitments requiring unilateral political restraint are systematically violated. Priority: invoke UNMN monitoring mandate for ceasefire violations; activate OCHA escalation mechanism for access blockages; refer journalist detentions to HRC.',
 };
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withAuth(async (request, user) => {
   try {
     const creditCheck = await checkAndDeductCredits('ai_commitment_scan', 'Commitment compliance scan');
     if (!creditCheck.allowed) return creditCheck.response!;
@@ -129,12 +130,16 @@ export const POST = withAuth(async (request, _user) => {
 
     const body = await request.json();
     const { situation } = body as { situation?: Situation };
+    const situationId = (situation as Situation | undefined)?.id ?? '';
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'commitment_scan').catch(() => '')
+      : '';
 
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: CommitmentScanSchema }),
-      prompt: `${sitContext ? `${sitContext}\n\n` : ''}Analyze the commitment compliance landscape for this conflict situation.
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Analyze the commitment compliance landscape for this conflict situation.
 
 ## ANALYTICAL FRAMEWORK
 
@@ -172,6 +177,11 @@ Generate 3-6 commitments relevant to this specific situation. Be specific about 
       system: 'You are a senior UN DPPA compliance officer and political affairs analyst specializing in agreement monitoring and implementation oversight. You have extensive experience tracking commitment compliance in UN-mediated peace processes, applying OCHA humanitarian access monitoring protocols, and drafting reports for the Security Council. Produce precise, evidence-grounded assessments.',
     });
 
+    if (situationId) {
+      await writeToolDataServer(user.uid, situationId, 'commitment_scan', result.output as Record<string, unknown>).catch(
+        (err) => console.error('[commitment-scan] persist failed:', err),
+      );
+    }
     return NextResponse.json(result.output);
   } catch (err) {
     return handleRouteError(err, 'commitment-scan');

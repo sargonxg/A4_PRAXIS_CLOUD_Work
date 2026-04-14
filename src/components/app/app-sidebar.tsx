@@ -42,6 +42,7 @@ import {
   Heart,
   Globe,
   Telescope,
+  Target,
   Sigma,
   Map,
   Rss,
@@ -231,6 +232,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Stakeholder Map', icon: Users, href: '/stakeholder-map' },
       { label: 'Escalation Monitor', icon: AlertTriangle, href: '/early-warning' },
+      { label: 'Intelligence Requirements', icon: Target, href: '/requirements' },
       { label: 'Commitment Tracker', icon: FileCheck, href: '/commitments' },
       { label: 'Info Environment', icon: Radio, href: '/info-environment' },
       { label: 'Geospatial Monitor', icon: Map, href: '/geospatial-monitor' },
@@ -301,7 +303,7 @@ function ChangelogButton() {
         onClick={() => setOpen(true)}
         className="mt-1 w-full text-center text-[9px] text-navy-300 hover:text-navy-500 transition-colors"
       >
-        PRAXIS v5.3 · Build 2026.04.05
+        PRAXIS v6.3 · Build 2026.04.14
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setOpen(false)}>
