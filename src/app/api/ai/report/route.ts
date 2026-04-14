@@ -7,10 +7,15 @@ import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
 import type { Situation } from '@/types/situation';
+import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 
 export const maxDuration = 60;
 
 export const POST = withAuth(async (request, user) => {
+  if (isServerDemoMode()) {
+    return formatAsStreamResponse('**Demo Mode** — This analysis requires a live AI connection. Set GOOGLE_AI_API_KEY in your environment to enable it.');
+  }
+
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(
       JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in environment variables.' }),

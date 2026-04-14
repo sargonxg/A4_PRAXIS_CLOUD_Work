@@ -8,6 +8,7 @@ import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { withAuth } from '@/lib/api/with-auth';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
+import { writeToolDataServer } from '@/lib/ai/context-builder-server';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -67,7 +68,7 @@ const DEMO_RESPONSE = {
   assessment: 'The Government of Nordalia is at a critical inflection point. The cabinet reshuffle, increased Karovian military cooperation, and restrictions on UNMN access collectively suggest preparation for a potential military escalation if the political track does not produce results within 60-90 days. However, the GoN faces significant constraints: fiscal pressure from the currency depreciation (36.4% since March 2024), international legitimacy concerns, and uncertain military capacity for sustained operations in eastern terrain. The most likely trajectory is continued brinkmanship — using the threat of military action to extract concessions in the AU-mediated process — rather than an actual offensive. Confidence: Medium. Key uncertainty: internal GoN decision-making dynamics between Osei and the AFN command.',
 };
 
-export const POST = withAuth(async (request: Request) => {
+export const POST = withAuth(async (request: Request, user) => {
   try {
     const { actorName, actorType, conflictContext, situation } = await request.json() as {
       actorName: string;
@@ -115,6 +116,11 @@ Provide:
 Use calibrated confidence language. Distinguish between confirmed reporting and analytical inference.`,
       system: 'You are a senior conflict intelligence analyst at a major international crisis monitoring organization. Provide rigorous actor profiling for diplomatic and security professionals. Always attribute claims to sources and calibrate confidence.',
     });
+
+    const situationId = situation?.id ?? '';
+    if (situationId && user.uid) {
+      await writeToolDataServer(user.uid, situationId, 'actor_enrichment', result.output as Record<string, unknown>).catch(console.error);
+    }
 
     return NextResponse.json(result.output);
   } catch (err) {

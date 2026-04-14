@@ -10,6 +10,9 @@ import { writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { searchWeb } from '@/lib/ai/firecrawl';
 import type { WebSearchResult } from '@/lib/ai/firecrawl';
 import type { Situation } from '@/types/situation';
+import { isServerDemoMode } from '@/lib/demo/demo-mode';
+
+const DEMO_RESPONSE = { monitoredSources: 5, newPublications: [{ sourceUrl: 'crisisgroup.org', sourceName: 'Crisis Group', publicationTitle: 'Nordalia: The Path to Dialogue', publicationUrl: 'https://crisisgroup.org/example', publishedDate: '2026-04-14', summary: 'New analysis examines prospects for renewed talks between GoN and DRM. Experts cautiously optimistic.', relevanceScore: 9, sourceReliability: 9, craapRating: 'high', alertPriority: 'high' }], coverageGaps: [{ topic: 'Eastern Provinces governance', recommendedSources: ['Local Nordalia Independent Media', 'DRM communiques'] }], sourceHealthSummary: [{ sourceName: 'Crisis Group', domain: 'crisisgroup.org', lastActivity: '2026-04-14', publicationCount: 1, averageRelevance: 9 }], recommendedNewSources: ['Nordalian Independent Press', 'UNMN Official Briefings'], scanTimestamp: new Date().toISOString() };
 
 export const maxDuration = 120;
 
@@ -81,6 +84,10 @@ export const POST = withAuth(async (request, user) => {
 
     const creditCheck = await checkAndDeductCredits('ai_media_scan', 'Source monitor scan');
     if (!creditCheck.allowed) return creditCheck.response;
+
+    if (isServerDemoMode()) {
+      return NextResponse.json(DEMO_RESPONSE);
+    }
 
     const sitCtx = situation ? buildToolContext(situation) : '';
     const sitName = situation?.name || 'the situation';

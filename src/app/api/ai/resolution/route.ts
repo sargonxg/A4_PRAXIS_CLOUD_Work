@@ -5,10 +5,15 @@ import { buildToolContext } from '@/lib/ai/situation-context';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { withAuth } from '@/lib/api/with-auth';
 import type { Situation } from '@/types/situation';
+import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 
 export const maxDuration = 120;
 
 export const POST = withAuth(async (request, _user) => {
+  if (isServerDemoMode()) {
+    return formatAsStreamResponse('**Demo Mode** — This analysis requires a live AI connection. Set GOOGLE_AI_API_KEY in your environment to enable it.');
+  }
+
   if (!process.env.GOOGLE_AI_API_KEY && !process.env.GOOGLE_VERTEX_PROJECT) {
     return new Response(
       JSON.stringify({ error: 'AI service not configured.' }),

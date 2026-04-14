@@ -8,6 +8,7 @@ import { withAuth } from '@/lib/api/with-auth';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import type { WebSearchResult } from '@/lib/ai/firecrawl';
 import type { Situation } from '@/types/situation';
+import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 
 export const maxDuration = 90;
 
@@ -51,6 +52,10 @@ const DEEP_ANALYSIS_SUFFIX = `
 You are operating in DEEP ANALYSIS mode. Provide an in-depth, multi-paragraph analysis (6-10 paragraphs). Draw on specific analytical frameworks, cite relevant data sources and databases by name, and include specific policy recommendations with implementation timelines. Structure your response with clear sections. Where relevant, note areas of uncertainty and competing interpretations. This is a premium analysis — be thorough, precise, and actionable.`;
 
 export const POST = withAuth(async (request: Request, _user) => {
+  if (isServerDemoMode()) {
+    return formatAsStreamResponse('**Demo Mode** — This analysis requires a live AI connection. Set GOOGLE_AI_API_KEY in your environment to enable it.');
+  }
+
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(
       JSON.stringify({ error: 'AI service not configured.' }),

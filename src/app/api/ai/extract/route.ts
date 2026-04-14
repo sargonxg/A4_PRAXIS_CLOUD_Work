@@ -2,6 +2,7 @@ import { generateText, Output } from 'ai';
 import { getProModel } from '@/lib/ai/providers';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { withAuth } from '@/lib/api/with-auth';
+import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { z } from 'zod';
 import {
   extractEntities,
@@ -29,6 +30,10 @@ export const maxDuration = 120;
  * Optionally merges results into the situation's existing graph.
  */
 export const POST = withAuth(async (request, user) => {
+  if (isServerDemoMode()) {
+    return Response.json({ error: 'Entity extraction requires a live AI connection.' }, { status: 503 });
+  }
+
   try {
     const {
       text,

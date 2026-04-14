@@ -9,12 +9,17 @@ import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 import type { Situation } from '@/types/situation';
+import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 
 export const maxDuration = 60;
 
 export const POST = withAuth(async (request, user) => {
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(JSON.stringify({ error: 'AI not configured' }), { status: 503 });
+  }
+
+  if (isServerDemoMode()) {
+    return formatAsStreamResponse('**Demo Mode** — This analysis requires a live AI connection. Set GOOGLE_AI_API_KEY in your environment to enable it.');
   }
 
   try {

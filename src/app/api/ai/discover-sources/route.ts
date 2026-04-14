@@ -6,6 +6,10 @@ import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import type { Situation } from '@/types/situation';
+import { isServerDemoMode } from '@/lib/demo/demo-mode';
+import { writeToolDataServer } from '@/lib/ai/context-builder-server';
+
+const DEMO_RESPONSE = { sources: [{ name: 'Al-Nordalian Tribune', url: 'https://tribune.nordalia.example', type: 'newspaper', platform: 'website', language: 'Arabic/English', region: 'Nordalia', reliability: 0.72, orientation: 0.1, description: 'Leading Nordalia newspaper with close ties to GoN establishment.', relevanceToSituation: 'Primary government narrative channel — covers AFN operations, GoN foreign policy, aid negotiations', coverageStrengths: ['Official government positions', 'Economic policy coverage'], knownBiases: ['Pro-government framing', 'Limited DRM coverage'], updateFrequency: 'daily', audienceProfile: 'Urban educated Nordalians, diaspora, regional diplomats' }, { name: 'Eastern Voice', type: 'local_media', platform: 'website/Telegram', language: 'Local dialect/Arabic', region: 'Eastern Provinces', reliability: 0.6, orientation: -0.3, description: 'Community-run media outlet serving DRM-controlled Eastern Provinces.', relevanceToSituation: 'Key source for ground-level DRM messaging and civilian perspectives', coverageStrengths: ['Eastern Provinces events', 'Civilian impact stories'], knownBiases: ['Pro-DRM framing', 'Limited GoN coverage'], updateFrequency: 'irregular', audienceProfile: 'Eastern Provinces residents, DRM diaspora' }] };
 
 export const maxDuration = 60;
 
@@ -33,9 +37,13 @@ const DiscoveredSourceSchema = z.object({
   })),
 });
 
-export const POST = withAuth(async (req, _user) => {
+export const POST = withAuth(async (req, user) => {
   const creditCheck = await checkAndDeductCredits('research', 'AI source discovery');
   if (!creditCheck.allowed) return creditCheck.response;
+
+  if (isServerDemoMode()) {
+    return NextResponse.json(DEMO_RESPONSE);
+  }
 
   try {
     const { situation, existingSources } = await req.json() as {
@@ -74,6 +82,11 @@ For each source:
 IMPORTANT: Recommend REAL sources that actually exist. Do not fabricate outlets.`,
       system: 'You are a senior conflict intelligence source analyst with experience at UN DPPA, ICG, and major think tanks. You specialize in mapping the information ecosystems of conflict zones — identifying which outlets, channels, and platforms provide actionable intelligence and understanding their editorial perspectives through nomenclature analysis.',
     });
+
+    const situationId = situation?.id ?? '';
+    if (situationId && user.uid) {
+      await writeToolDataServer(user.uid, situationId, 'discover_sources', result.output as Record<string, unknown>).catch(console.error);
+    }
 
     return NextResponse.json(result.output);
   } catch (err) {

@@ -2,6 +2,7 @@ import { generateObject } from 'ai';
 import { getModel } from '@/lib/ai/providers';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { withAuth } from '@/lib/api/with-auth';
+import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { z } from 'zod';
 
 const TermIssueSchema = z.object({
@@ -56,6 +57,10 @@ function runProgrammaticChecks(text: string) {
 }
 
 export const POST = withAuth(async (request: Request) => {
+  if (isServerDemoMode()) {
+    return Response.json({ issues: [], overallCompliance: 'compliant', complianceScore: 100, styleRecommendations: ['Demo mode — configure GOOGLE_AI_API_KEY for AI-powered terminology checking'], recommendation: 'Demo mode active. AI analysis unavailable.' });
+  }
+
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(
       JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in environment variables.' }),

@@ -3,11 +3,14 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getThinkingModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
-import { buildGraphContext } from '@/lib/ai/context-builder-server';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
 import type { Situation } from '@/types/situation';
+import { isServerDemoMode } from '@/lib/demo/demo-mode';
+
+const DEMO_RESPONSE = { satType: 'challenge', title: 'Challenge Assessment: Ceasefire Prospects', findings: [{ point: 'Assumption of GoN good faith may be overstated', confidence: 'medium', evidence: 'Historical pattern of ceasefire violations in previous agreements', implication: 'Monitoring mechanisms with enforcement teeth are critical' }, { point: 'DRM internal cohesion may be weaker than assessed', confidence: 'low', evidence: 'Reports of factional tensions in Eastern command', implication: 'A deal with DRM leadership may not bind field commanders' }, { point: 'Karovian withdrawal of support may be conditional', confidence: 'medium', evidence: 'Karovia has economic interests in Eastern mining concessions', implication: 'Economic incentives needed to secure Karovian neutrality' }], overallAssessment: 'The baseline assessment is partially confirmed but should be stress-tested against spoiler dynamics and implementation capacity gaps.', revisedConfidence: 'partially_confirmed', keyUncertainties: ['DRM factional command control', 'Karovian strategic intentions post-ceasefire'], recommendedActions: ['Commission rapid assessment of DRM internal cohesion', 'Engage Karovia on economic incentive package', 'Design monitoring protocol with automatic triggers'] };
 
 export const maxDuration = 60;
 
@@ -97,6 +100,10 @@ export const POST = withAuth(async (request, user) => {
     const creditCheck = await checkAndDeductCredits('ai_sat', 'SAT analysis');
     if (!creditCheck.allowed) return creditCheck.response!;
 
+    if (isServerDemoMode()) {
+      return NextResponse.json(DEMO_RESPONSE);
+    }
+
     const sitContext = situation ? buildToolContext(situation) : '';
     const situationId = situation?.id ?? '';
     const graphCtx = situationId
@@ -124,6 +131,10 @@ Apply this SAT rigorously. The goal is NOT to confirm the original assessment bu
 satType in your output: "${satType}"`,
       system: 'You are a senior intelligence analyst specializing in Structured Analytical Techniques (SATs) and cognitive bias mitigation. You apply rigorous analytical frameworks to challenge, test, and improve intelligence assessments. Your work is used by UN Political Affairs Officers and diplomatic professionals. Never simply validate the original assessment — your value lies in finding what it misses, assumes, or gets wrong.',
     });
+
+    if (situationId && user.uid) {
+      await writeToolDataServer(user.uid, situationId, `sat_${satType}`, result.output as Record<string, unknown>).catch(console.error);
+    }
 
     return NextResponse.json(result.output);
   } catch (err) {

@@ -9,6 +9,9 @@ import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
 import type { Situation } from '@/types/situation';
+import { isServerDemoMode } from '@/lib/demo/demo-mode';
+
+const DEMO_RESPONSE = { answers: [{ pirId: 'pir-1', question: 'What is the current military posture of the GoN AFN in the Eastern Provinces?', answer: 'Demo: AFN maintains defensive posture along Line 7 with approximately 3 brigade-equivalent forces. No major offensive operations observed.', confidence: 'medium', evidenceBasis: ['UNMN CIVPOL field reports', 'ACLED Q1 2026 data'], keyGaps: ['Real-time troop positioning', 'Reserve force deployment'], collectionPriorities: ['Source cultivation in AFN logistics', 'Aerial/satellite imagery of Kessara base'], updatedAt: new Date().toISOString() }], overallIntelligenceGap: 'Significant gaps remain in real-time military disposition and intent signaling from both parties.', recommendedCollectionPlan: '1) Task UNMN field observers to document AFN unit deployments weekly; 2) Establish contact with local informants in contested areas; 3) Cross-reference official communiques with field reporting.' };
 
 export const maxDuration = 60;
 
@@ -127,6 +130,10 @@ export const POST = withAuth(async (request, user) => {
     if (action === 'answer') {
       const creditCheck = await checkAndDeductCredits('ai_pir', 'PIR answer generation');
       if (!creditCheck.allowed) return creditCheck.response!;
+
+      if (isServerDemoMode()) {
+        return NextResponse.json(DEMO_RESPONSE);
+      }
 
       // Fetch the PIRs to answer
       const pirIds = body.pirIds ?? [];

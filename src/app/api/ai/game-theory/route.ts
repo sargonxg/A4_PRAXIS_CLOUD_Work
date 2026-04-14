@@ -10,6 +10,17 @@ import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { situationContextSchema } from '@/lib/api/schemas';
 import type { Situation } from '@/types/situation';
+import { isServerDemoMode } from '@/lib/demo/demo-mode';
+
+const DEMO_RESPONSE = {
+  actors: [{ id: 'a1', name: 'Government', strategies: ['Negotiate', 'Escalate'], dominantStrategy: 'Negotiate' }, { id: 'a2', name: 'Armed Group', strategies: ['Cooperate', 'Defect'], dominantStrategy: null }],
+  payoffMatrix: [{ actor1Strategy: 'Negotiate', actor2Strategy: 'Cooperate', payoffs: { a1: 7, a2: 7 }, isNashEquilibrium: true, isParetoOptimal: true }, { actor1Strategy: 'Escalate', actor2Strategy: 'Defect', payoffs: { a1: 2, a2: 2 }, isNashEquilibrium: true, isParetoOptimal: false }],
+  equilibria: { nashEquilibria: [{ strategies: { a1: 'Negotiate', a2: 'Cooperate' }, description: 'Mutual cooperation achieves stable peace equilibrium' }], paretoOptimalOutcomes: [{ strategies: { a1: 'Negotiate', a2: 'Cooperate' }, description: 'Best outcome for all parties' }], dominantStrategyEquilibrium: null },
+  archetypes: [{ name: 'Coordination Game', description: 'Both parties benefit from aligning on a shared solution', stateValue: 7, implication: 'Focus on confidence-building measures' }],
+  strategicInsights: 'Demo: In this scenario, mutual negotiation produces the optimal Pareto equilibrium. Both parties have dominant incentives to cooperate when security guarantees are in place.',
+  recommendations: ['Establish confidence-building measures as preconditions', 'Propose phased implementation to reduce defection risk', 'Engage third-party guarantors to enforce agreements'],
+  matrixDimensions: { actors: ['Government', 'Armed Group'], rows: ['Negotiate', 'Escalate'], columns: ['Cooperate', 'Defect'] },
+};
 
 export const maxDuration = 60;
 
@@ -105,6 +116,10 @@ export const POST = withAuth(async (request: Request, user) => {
 
     const { actors, strategies, analysisType, situation, conflictContext } = validation.data;
     const situationId = (situation as unknown as { id?: string })?.id ?? '';
+
+    if (isServerDemoMode()) {
+      return NextResponse.json(DEMO_RESPONSE);
+    }
 
     const creditCheck = await checkAndDeductCredits('ai_game_theory', 'Game Theory Analysis');
     if (!creditCheck.allowed) return creditCheck.response!;

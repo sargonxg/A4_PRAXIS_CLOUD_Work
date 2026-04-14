@@ -5,6 +5,9 @@ import { withAuth } from '@/lib/api/with-auth';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { z } from 'zod';
 import type { Situation } from '@/types/situation';
+import { isServerDemoMode } from '@/lib/demo/demo-mode';
+
+const DEMO_RESPONSE = { politicalOrientation: -0.1, reliability: 0.75, editorialIndependence: 0.8, ownershipType: 'public', country: 'United Kingdom', description: 'Demo: A leading international broadcaster known for balanced conflict coverage.', knownBiases: ['Western-centric framing', 'Emphasis on official state positions'], coverageStrengths: ['Breaking news', 'Field reporting', 'Expert analysis'], conflictCoverageNotes: 'Generally follows Geneva Conventions in conflict terminology. Cross-reference with local sources for ground-level dynamics.', recommendedCrossReferences: ['Al Jazeera English', 'Reuters', 'Local press'] };
 
 const MediaAnalysisSchema = z.object({
   politicalOrientation: z.number().min(-1).max(1).describe('Political orientation from -1 (left) to +1 (right)'),
@@ -37,6 +40,10 @@ export const POST = withAuth(async (request: Request, user) => {
 
     const creditCheck = await checkAndDeductCredits('ai_media', 'Media analysis');
     if (!creditCheck.allowed) return creditCheck.response;
+
+    if (isServerDemoMode()) {
+      return Response.json({ source, topic, assessment: DEMO_RESPONSE });
+    }
 
     const graphCtx = situationId
       ? await buildGraphContext(user.uid, situationId, 'media_analysis').catch(() => '')

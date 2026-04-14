@@ -2,6 +2,7 @@ import { streamText } from 'ai';
 import { getAnalysisModel, getAvailableProviders } from '@/lib/ai/providers';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { withAuth } from '@/lib/api/with-auth';
+import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 
 export const maxDuration = 120;
 
@@ -12,6 +13,10 @@ export const maxDuration = 120;
  * and complex geopolitical reasoning.
  */
 export const POST = withAuth(async (request: Request) => {
+  if (isServerDemoMode()) {
+    return formatAsStreamResponse('**Demo Mode** — This analysis requires a live AI connection. Set GOOGLE_AI_API_KEY in your environment to enable it.');
+  }
+
   const providers = getAvailableProviders();
   const hasAnthropic = providers.anthropic.configured;
   const hasGoogle = providers.google.configured;

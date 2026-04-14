@@ -6,10 +6,15 @@ import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
 import type { Situation } from '@/types/situation';
+import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 
 export const maxDuration = 60;
 
 export const POST = withAuth(async (request, _user) => {
+  if (isServerDemoMode()) {
+    return formatAsStreamResponse('**Demo Mode** — This analysis requires a live AI connection. Set GOOGLE_AI_API_KEY in your environment to enable it.');
+  }
+
   try {
     const creditCheck = await checkAndDeductCredits('ai_brief', 'Intelligence brief generation');
     if (!creditCheck.allowed) return creditCheck.response!;
