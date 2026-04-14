@@ -3,6 +3,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
+import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
@@ -89,6 +90,11 @@ export const POST = withAuth(async (request: Request, user) => {
     const body = await request.json();
     const { situation } = body as { situation?: Situation };
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+    const situationId = (situation as Situation | undefined)?.id ?? '';
+
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'actor_profiles').catch(() => '')
+      : '';
 
     const webCtx = situation
       ? await buildWebGroundedContext(
@@ -101,7 +107,7 @@ export const POST = withAuth(async (request: Request, user) => {
     const result = await generateText({
       model: getProModel(),
       output: Output.object({ schema: ActorProfilesSchema }),
-      prompt: `${webCtx}${webCtx ? '\n\n' : ''}${sitContext ? `${sitContext}\n\n` : ''}Generate comprehensive intelligence profiles for the key actors in this conflict situation.
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${webCtx}${webCtx ? '\n\n' : ''}${sitContext ? `${sitContext}\n\n` : ''}Generate comprehensive intelligence profiles for the key actors in this conflict situation.
 
 For EACH actor listed in the situation (and any critical actors you identify as missing), produce a full intelligence profile covering:
 
@@ -130,6 +136,11 @@ Generate profiles for 3-8 actors depending on the complexity of the situation.`,
       system: 'You are a senior intelligence analyst producing classified actor profiles for diplomatic staff. Use real-world knowledge to create precise, evidence-based profiles. Reference actual events, real leadership names, and documented positions. For each actor, classify using Stedman\'s Spoiler Theory (total/limited/greedy/non-spoiler), map Fisher-Ury positions vs. interests, and score Mitchell-Agle-Wood power/legitimacy/urgency (1-10 each). Profiles must be actionable for mediators and political affairs officers.',
     });
 
+    if (situationId && user.uid) {
+      await writeToolDataServer(user.uid, situationId, 'actor_profiles', result.output as Record<string, unknown>).catch(
+        (err) => console.error('[actor-profiles] persist failed:', err),
+      );
+    }
     return NextResponse.json(result.output);
   } catch (err) {
     return handleRouteError(err, 'actor-profiles');

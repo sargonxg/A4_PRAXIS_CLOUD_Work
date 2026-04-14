@@ -5,6 +5,7 @@ import { getModel, getProModel } from '@/lib/ai/providers';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { writeToolDataServer } from '@/lib/ai/context-builder-server';
+import { buildGraphContext } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
 
 export const maxDuration = 60;
@@ -186,13 +187,16 @@ export const POST = withAuth(async (request, user) => {
 
     const partiesStr = parties?.join(', ') || 'the conflict parties';
     const issuesStr = issues?.join(', ') || 'core conflict issues';
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'mediation_design').catch(() => '')
+      : '';
 
     // --- Action: plan ---
     if (action === 'plan') {
       const result = await generateText({
         model: getProModel(),
         output: Output.object({ schema: MediationPlanSchema }),
-        prompt: `You are a senior mediation strategist. Design a comprehensive mediation plan.
+        prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}You are a senior mediation strategist. Design a comprehensive mediation plan.
 
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
 PARTIES: ${partiesStr}
@@ -220,7 +224,7 @@ For each phase, specify objectives, key questions, and risk factors. Recommend a
       const result = await generateText({
         model: getProModel(),
         output: Output.object({ schema: SettlementSchema }),
-        prompt: `You are a senior legal advisor specializing in peace agreement drafting. Generate settlement terms.
+        prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}You are a senior legal advisor specializing in peace agreement drafting. Generate settlement terms.
 
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
 PARTIES: ${partiesStr}
