@@ -1,5 +1,4 @@
 import { cookies } from 'next/headers';
-import { after } from 'next/server';
 import { verifyIdToken, getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { verifyCookie } from '@/lib/auth/cookie-signer';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -156,11 +155,13 @@ async function deductCreditsAdmin(
     return { success: true, remainingCredits: credits - cost };
   });
 
-  // Record transaction log post-response (non-blocking)
+  // Record transaction log — fire-and-forget (does not block the response)
+  // Using void IIFE instead of next/server after() for Cloud Run standalone compatibility
   if (result.success) {
-    after(async () => {
+    void (async () => {
       try {
-        const txRef = adminDb.collection('credit_transactions').doc();
+        const db = getAdminDbOrThrow();
+        const txRef = db.collection('credit_transactions').doc();
         await txRef.set({
           userId: uid,
           amount: -cost,
@@ -171,7 +172,7 @@ async function deductCreditsAdmin(
       } catch (err) {
         console.error('[credits] Failed to record transaction:', err);
       }
-    });
+    })();
   }
 
   return result;

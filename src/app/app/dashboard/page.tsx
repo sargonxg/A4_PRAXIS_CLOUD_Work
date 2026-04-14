@@ -4,6 +4,7 @@ import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { SituationDashboard, WelcomeState } from '@/components/praxis/situation-dashboard';
 import { useSituationStore } from '@/stores/situation-store';
+import type { Situation } from '@/types/situation';
 
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { useRouter } from 'next/navigation';
@@ -1016,6 +1017,27 @@ function AiInsightsPanel({ situationName }: { situationName: string }) {
 }
 
 // ---------------------------------------------------------------------------
+// App Dashboard Router — stable hook count wrapper
+// Prevents React Error #300 by keeping parent hook count constant regardless
+// of which child view renders. The parent (DashboardPage) always renders
+// exactly the same hooks; the conditional logic lives in this child.
+// ---------------------------------------------------------------------------
+
+function AppDashboardContent({
+  situations,
+  showGuard,
+  situation,
+}: {
+  situations: Situation[];
+  showGuard: boolean;
+  situation: Situation | null;
+}) {
+  if (situations.length === 0 && !showGuard) return <WelcomeState />;
+  if (showGuard || !situation) return <NoSituationState />;
+  return <SituationDashboard situation={situation} />;
+}
+
+// ---------------------------------------------------------------------------
 // Main Dashboard Page
 // ---------------------------------------------------------------------------
 
@@ -1030,11 +1052,15 @@ export default function DashboardPage() {
     }
   }, [isDemo, fetchSituations]);
 
-  // Real app — show situation-specific dashboard (no demo data)
+  // Real app — delegate to stable child to avoid React #300 hook count mismatch
   if (!isDemo) {
-    if (situations.length === 0 && !showGuard) return <WelcomeState />;
-    if (showGuard || !situation) return <NoSituationState />;
-    return <SituationDashboard situation={situation} />;
+    return (
+      <AppDashboardContent
+        situations={situations}
+        showGuard={showGuard}
+        situation={situation}
+      />
+    );
   }
 
   // Demo mode — render the full demo dashboard with Nordalia data

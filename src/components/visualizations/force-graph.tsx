@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useCallback } from 'react';
 import * as d3 from 'd3';
+import { safeNum } from '@/lib/utils/safe-number';
 
 interface GraphNode {
   id: string;
@@ -158,7 +159,7 @@ export function ForceGraph({
     nodeEl
       .append('circle')
       .attr('class', 'select-ring')
-      .attr('r', (d) => (d.size ?? 8) + 6)
+      .attr('r', (d) => safeNum(d.size, 8) + 6)
       .attr('fill', 'none')
       .attr('stroke', SELECTED_RING)
       .attr('stroke-width', 2)
@@ -167,7 +168,7 @@ export function ForceGraph({
     // Node circles
     nodeEl
       .append('circle')
-      .attr('r', (d) => d.size ?? 8)
+      .attr('r', (d) => safeNum(d.size, 8))
       .attr('fill', (d) => getNodeColor(d))
       .attr('stroke', '#0F172A')
       .attr('stroke-width', 1.5);
@@ -175,7 +176,7 @@ export function ForceGraph({
     // Node labels
     nodeEl
       .append('text')
-      .attr('dy', (d) => (d.size ?? 8) + 11)
+      .attr('dy', (d) => safeNum(d.size, 8) + 11)
       .attr('text-anchor', 'middle')
       .attr('fill', '#94A3B8')
       .attr('font-size', '9')
@@ -235,16 +236,16 @@ export function ForceGraph({
     // Tick
     sim.on('tick', () => {
       linkEl
-        .attr('x1', (d) => (d.source as SimNode).x ?? 0)
-        .attr('y1', (d) => (d.source as SimNode).y ?? 0)
-        .attr('x2', (d) => (d.target as SimNode).x ?? 0)
-        .attr('y2', (d) => (d.target as SimNode).y ?? 0);
+        .attr('x1', (d) => safeNum((d.source as SimNode).x))
+        .attr('y1', (d) => safeNum((d.source as SimNode).y))
+        .attr('x2', (d) => safeNum((d.target as SimNode).x))
+        .attr('y2', (d) => safeNum((d.target as SimNode).y));
 
       edgeLabelEl
-        .attr('x', (d) => (((d.source as SimNode).x ?? 0) + ((d.target as SimNode).x ?? 0)) / 2)
-        .attr('y', (d) => (((d.source as SimNode).y ?? 0) + ((d.target as SimNode).y ?? 0)) / 2);
+        .attr('x', (d) => (safeNum((d.source as SimNode).x) + safeNum((d.target as SimNode).x)) / 2)
+        .attr('y', (d) => (safeNum((d.source as SimNode).y) + safeNum((d.target as SimNode).y)) / 2);
 
-      nodeEl.attr('transform', (d) => `translate(${d.x ?? 0}, ${d.y ?? 0})`);
+      nodeEl.attr('transform', (d) => `translate(${safeNum(d.x)}, ${safeNum(d.y)})`);
     });
 
     return () => {

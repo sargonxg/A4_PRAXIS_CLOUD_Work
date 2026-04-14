@@ -9,7 +9,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { after } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
 import { getToolData, saveToolData } from '@/lib/firebase/tool-data-service';
 import { adminDb } from '@/lib/firebase/admin';
@@ -169,9 +168,9 @@ export const POST = withAuth(async (req, user) => {
   };
   await saveResearchStatus(user.uid, situationId, progress);
 
-  // Kick off background research using next/server after()
-  // This runs after the response is sent, within the same Cloud Run instance
-  after(async () => {
+  // Kick off background research — fire-and-forget (Cloud Run standalone compatible)
+  // Using void IIFE instead of next/server after() for Cloud Run compatibility
+  void (async () => {
     try {
       // Dynamic import to avoid circular deps and keep the route handler lean
       const { executeBackgroundResearch, getToolResearchConfig } =

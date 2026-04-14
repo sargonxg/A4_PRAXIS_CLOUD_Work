@@ -33,6 +33,15 @@ export async function GET() {
     healthy = false;
   }
 
+  // --- Cookie signing secret ---
+  const hasCookieSecret = !!(
+    process.env.COOKIE_SIGNING_SECRET ||
+    process.env.SESSION_SECRET ||
+    process.env.CRON_SECRET
+  );
+  checks.cookie_secret = hasCookieSecret ? 'ok' : 'error';
+  if (!hasCookieSecret) healthy = false;
+
   // --- Optional integrations (warn but don't fail) ---
   checks.anthropic = hasAnthropic ? 'ok' : 'unconfigured';
   checks.firecrawl = process.env.FIRECRAWL_API_KEY ? 'ok' : 'unconfigured';

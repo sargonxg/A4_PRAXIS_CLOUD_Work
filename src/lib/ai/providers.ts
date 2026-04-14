@@ -7,7 +7,7 @@
  *   3. Anthropic via ANTHROPIC_API_KEY — deep analysis
  *
  * Models (Gemini 3 / v3.0):
- *   - gemini-3-flash           : Standard tasks — chat, lightweight analysis, terminology
+ *   - gemini-3-flash-preview   : Standard tasks — chat, lightweight analysis, terminology
  *   - gemini-3.1-pro-preview   : Pro + Deep Think — structured generation, analysis, 65K output
  *   - gemini-embedding-2-preview: Multimodal embeddings — 768-dim text/image/PDF
  *   - claude-sonnet-4-20250514 : Deep analysis — nuanced conflict analysis, diplomatic language
@@ -37,7 +37,7 @@ export interface ProviderInfo {
 // Model IDs — Gemini 3 (v3.0)
 // ---------------------------------------------------------------------------
 
-const MODEL_FLASH        = 'gemini-3-flash';
+const MODEL_FLASH        = 'gemini-3-flash-preview';
 const MODEL_PRO          = 'gemini-3.1-pro-preview';
 const MODEL_EMBED        = 'gemini-embedding-2-preview';
 const MODEL_EMBED_LEGACY = 'text-embedding-005'; // fallback if embedding-2 unavailable
@@ -88,7 +88,7 @@ function createAnthropicModel(): LanguageModel | null {
 // ---------------------------------------------------------------------------
 
 /**
- * Standard model (gemini-3-flash) — chat, lightweight analysis, terminology.
+ * Standard model (gemini-3-flash-preview) — chat, lightweight analysis, terminology.
  */
 export function getModel(modelId?: string): LanguageModel {
   return createModel(modelId ?? MODEL_FLASH);
@@ -191,6 +191,7 @@ export function getModelForUser(settings?: { preferredModel?: string; model?: st
     case 'gemini-2.5-pro':           return getProModel();
     case 'claude-sonnet-4':
     case 'claude-sonnet-4-20250514': return getAnalysisModel();
+    case 'gemini-3-flash-preview':
     case 'gemini-3-flash':
     case 'gemini-2.5-flash':
     default:                         return getModel();
@@ -271,14 +272,28 @@ export const MODEL_NAMES = {
 
 // ---------------------------------------------------------------------------
 // Legacy exports — back-compat for files that import raw provider instances
+// Lazy initialization: provider is only created on first access, not at import
+// time (prevents failures when GOOGLE_AI_API_KEY is not set at startup).
 // ---------------------------------------------------------------------------
 
-export const google = (() => {
-  const { createGoogleGenerativeAI } = require('@ai-sdk/google') as typeof import('@ai-sdk/google');
-  return createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY || '' });
-})();
+let _googleProvider: ReturnType<typeof import('@ai-sdk/google')['createGoogleGenerativeAI']> | null = null;
 
+function getGoogleProvider(): ReturnType<typeof import('@ai-sdk/google')['createGoogleGenerativeAI']> {
+  if (!_googleProvider) {
+    const { createGoogleGenerativeAI } = require('@ai-sdk/google') as typeof import('@ai-sdk/google');
+    _googleProvider = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY || '' });
+  }
+  return _googleProvider;
+}
+
+/** @deprecated Use getModel() or getProModel() instead */
+export const google = new Proxy({} as ReturnType<typeof import('@ai-sdk/google')['createGoogleGenerativeAI']>, {
+  apply: (_target, _thisArg, args) => (getGoogleProvider() as (...a: unknown[]) => unknown)(...args),
+  get: (_target, prop) => (getGoogleProvider() as unknown as Record<string | symbol, unknown>)[prop],
+});
+
+/** @deprecated Use getModel() or getProModel() instead */
 export const models = {
-  flash: google(MODEL_FLASH),
-  pro:   google(MODEL_PRO),
+  get flash() { return getGoogleProvider()(MODEL_FLASH); },
+  get pro()   { return getGoogleProvider()(MODEL_PRO); },
 } as const;

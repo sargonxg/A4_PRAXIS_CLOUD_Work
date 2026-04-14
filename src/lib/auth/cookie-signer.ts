@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-const SECRET = process.env.SESSION_SECRET || process.env.CRON_SECRET || 'dev-fallback-change-me';
+const SECRET = process.env.COOKIE_SIGNING_SECRET || process.env.SESSION_SECRET || process.env.CRON_SECRET || 'dev-fallback-change-me';
 
 /**
  * Signs a cookie value with HMAC-SHA256.

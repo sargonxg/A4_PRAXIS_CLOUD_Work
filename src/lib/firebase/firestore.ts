@@ -20,10 +20,11 @@ import { db } from './config';
 
 export interface AISettings {
   preferredModel:
-    | 'gemini-3-flash'
+    | 'gemini-3-flash-preview'
     | 'gemini-3.1-pro-preview'
     | 'claude-sonnet-4-20250514'
     // Legacy values — kept for backwards-compatibility, mapped to new models at runtime
+    | 'gemini-3-flash'
     | 'gemini-2.5-flash'
     | 'gemini-2.5-pro'
     | 'claude-sonnet-4';
@@ -34,7 +35,7 @@ export interface AISettings {
 }
 
 export const DEFAULT_AI_SETTINGS: AISettings = {
-  preferredModel: 'gemini-3-flash',
+  preferredModel: 'gemini-3-flash-preview',
   temperature: 0.4,
   researchDepth: 'standard',
   customInstructions: '',

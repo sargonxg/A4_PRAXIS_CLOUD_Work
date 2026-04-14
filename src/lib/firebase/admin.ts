@@ -57,6 +57,14 @@ function ensureInitialized() {
 // Initialize on module load
 ensureInitialized();
 
+if (!_db) {
+  console.error(
+    '[firebase-admin] ⚠️  Firestore is NOT available.',
+    'All routes requiring Firestore (credits, tool data, auth rate limiting) will fail.',
+    'Init error:', _initError || 'FIREBASE_SERVICE_ACCOUNT_KEY not set or invalid JSON'
+  );
+}
+
 export const adminAuth: Auth = _auth!;
 
 // adminDb can be null if no service account key is set
@@ -64,9 +72,10 @@ export const adminDb: Firestore = _db!;
 
 export function getAdminDbOrThrow(): Firestore {
   if (!_db) {
-    throw new Error(
-      _initError || 'Firebase Admin Firestore not available. Set FIREBASE_SERVICE_ACCOUNT_KEY.'
-    );
+    const hint = !process.env.FIREBASE_SERVICE_ACCOUNT_KEY
+      ? 'FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set. Check Secret Manager and Cloud Run configuration.'
+      : `Firebase Admin SDK failed to initialize: ${_initError}`;
+    throw new Error(`[firebase-admin] Firestore unavailable. ${hint}`);
   }
   return _db;
 }
