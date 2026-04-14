@@ -66,7 +66,9 @@ gsutil uniformbucketlevelaccess set on "gs://${PROJECT_ID}-praxis-uploads"
 # ── Cloud Scheduler ──────────────────────────────────────────────────────────
 echo "Creating Cloud Scheduler jobs..."
 BACKEND_SA="${PROJECT_ID}@appspot.gserviceaccount.com"
-BACKEND_URL="https://praxis-backend-${PROJECT_ID}-uc.a.run.app"
+# Resolve the real backend URL dynamically (Cloud Run URL includes a hash suffix)
+BACKEND_URL=$(gcloud run services describe praxis-backend --region="${REGION}" --format="value(status.url)" 2>/dev/null || echo "")
+FRONTEND_URL=$(gcloud run services describe praxis-frontend --region="${REGION}" --format="value(status.url)" 2>/dev/null || echo "")
 
 GDELT_FUNCTION_URL=$(gcloud functions describe gdelt-poller --region="${REGION}" --format="value(url)" 2>/dev/null || echo "")
 if [ -n "$GDELT_FUNCTION_URL" ]; then
@@ -82,24 +84,29 @@ else
   echo "⚠️  gdelt-poller Cloud Function not deployed yet — deploy it first, then re-run to create scheduler"
 fi
 
+# Resolve CRON_SECRET for scheduler jobs
+CRON_SECRET=$(gcloud secrets versions access latest --secret=praxis-cron-secret --project="${PROJECT_ID}" 2>/dev/null || echo "changeme")
+COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
 # ── Cloud Scheduler: Daily Alert Check (06:00 UTC) ──────────────────────
 echo "Creating Cloud Scheduler job: praxis-check-alerts..."
 gcloud scheduler jobs create http praxis-check-alerts \
   --location="${REGION}" \
   --schedule="0 6 * * *" \
-  --uri="https://praxis-frontend-${PROJECT_NUMBER}.${REGION}.run.app/api/cron/check-alerts" \
+  --uri="${FRONTEND_URL}/api/cron/check-alerts" \
   --http-method=GET \
-  --headers="Authorization=Bearer ${CRON_SECRET:-changeme}" \
-  --oidc-service-account-email="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
-  --oidc-token-audience="https://praxis-frontend-${PROJECT_NUMBER}.${REGION}.run.app" \
-  --description="Daily conflict alert check" \
+  --headers="Authorization=Bearer ${CRON_SECRET}" \
+  --oidc-service-account-email="${COMPUTE_SA}" \
+  --oidc-token-audience="${FRONTEND_URL}" \
+  --description="Daily conflict alert check at 06:00 UTC" \
   --quiet 2>/dev/null || \
 gcloud scheduler jobs update http praxis-check-alerts \
   --location="${REGION}" \
   --schedule="0 6 * * *" \
-  --uri="https://praxis-frontend-${PROJECT_NUMBER}.${REGION}.run.app/api/cron/check-alerts" \
+  --uri="${FRONTEND_URL}/api/cron/check-alerts" \
   --http-method=GET \
-  --oidc-service-account-email="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --headers="Authorization=Bearer ${CRON_SECRET}" \
+  --oidc-service-account-email="${COMPUTE_SA}" \
   --quiet
 
 # ── Cloud Scheduler: Daily Briefing Generation (05:00 UTC) ───────────────
@@ -107,19 +114,20 @@ echo "Creating Cloud Scheduler job: praxis-generate-briefing..."
 gcloud scheduler jobs create http praxis-generate-briefing \
   --location="${REGION}" \
   --schedule="0 5 * * *" \
-  --uri="https://praxis-frontend-${PROJECT_NUMBER}.${REGION}.run.app/api/cron/generate-briefing" \
+  --uri="${FRONTEND_URL}/api/cron/generate-briefing" \
   --http-method=GET \
-  --headers="Authorization=Bearer ${CRON_SECRET:-changeme}" \
-  --oidc-service-account-email="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
-  --oidc-token-audience="https://praxis-frontend-${PROJECT_NUMBER}.${REGION}.run.app" \
-  --description="Daily intelligence briefing generation" \
+  --headers="Authorization=Bearer ${CRON_SECRET}" \
+  --oidc-service-account-email="${COMPUTE_SA}" \
+  --oidc-token-audience="${FRONTEND_URL}" \
+  --description="Daily intelligence briefing generation at 05:00 UTC" \
   --quiet 2>/dev/null || \
 gcloud scheduler jobs update http praxis-generate-briefing \
   --location="${REGION}" \
   --schedule="0 5 * * *" \
-  --uri="https://praxis-frontend-${PROJECT_NUMBER}.${REGION}.run.app/api/cron/generate-briefing" \
+  --uri="${FRONTEND_URL}/api/cron/generate-briefing" \
   --http-method=GET \
-  --oidc-service-account-email="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --headers="Authorization=Bearer ${CRON_SECRET}" \
+  --oidc-service-account-email="${COMPUTE_SA}" \
   --quiet
 
 # ── Secret Manager — create placeholder secrets ───────────────────────────────
@@ -186,56 +194,74 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" \
 
 # ── Deploy Cloud Functions ───────────────────────────────────────────────────
 echo "Deploying Cloud Functions..."
-BACKEND_URL="https://praxis-backend-$(gcloud run services describe praxis-backend --region=$REGION --format='value(status.url)' 2>/dev/null | sed 's|https://||' || echo 'NOT_DEPLOYED_YET')"
+# Resolve the actual backend URL (Cloud Run uses a hash suffix, not project name)
+CF_BACKEND_URL=$(gcloud run services describe praxis-backend --region="${REGION}" --format="value(status.url)" 2>/dev/null || echo "")
+if [ -z "${CF_BACKEND_URL}" ]; then
+  echo "⚠️  praxis-backend not deployed — deploy backend first, then re-run"
+else
+  echo "  Backend URL: ${CF_BACKEND_URL}"
 
-# on_situation_created — Firestore trigger
-if [ -d "cloud_functions/on_situation_created" ]; then
-  gcloud functions deploy on-situation-created \
-    --gen2 \
-    --runtime=python311 \
-    --region="${REGION}" \
-    --source=cloud_functions/on_situation_created \
-    --entry-point=on_situation_created \
-    --trigger-event-filters="type=google.cloud.firestore.document.v1.created" \
-    --trigger-event-filters="database=(default)" \
-    --trigger-event-filters-path-pattern="document=users/{uid}/situations/{sitId}" \
-    --set-env-vars="PRAXIS_BACKEND_URL=${BACKEND_URL}" \
-    --memory=256Mi \
-    --timeout=300s \
-    --quiet 2>/dev/null || echo "⚠️  on-situation-created deploy skipped (deploy backend first)"
-fi
+  # Grant Firestore service account Eventarc permissions (required for nam5 triggers)
+  FIRESTORE_SA="service-${PROJECT_NUMBER}@gcp-sa-firestore.iam.gserviceaccount.com"
+  gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+    --member="serviceAccount:${FIRESTORE_SA}" \
+    --role="roles/eventarc.eventReceiver" \
+    --quiet 2>/dev/null || true
 
-# on_document_uploaded — Firestore trigger
-if [ -d "cloud_functions/on_document_uploaded" ]; then
-  gcloud functions deploy on-document-uploaded \
-    --gen2 \
-    --runtime=python311 \
-    --region="${REGION}" \
-    --source=cloud_functions/on_document_uploaded \
-    --entry-point=on_document_uploaded \
-    --trigger-event-filters="type=google.cloud.firestore.document.v1.created" \
-    --trigger-event-filters="database=(default)" \
-    --trigger-event-filters-path-pattern="document=users/{uid}/situations/{sitId}/documents/{docId}" \
-    --set-env-vars="PRAXIS_BACKEND_URL=${BACKEND_URL}" \
-    --memory=256Mi \
-    --timeout=300s \
-    --quiet 2>/dev/null || echo "⚠️  on-document-uploaded deploy skipped (deploy backend first)"
-fi
+  # on_situation_created — Firestore trigger (nam5 multi-region)
+  if [ -d "cloud_functions/on_situation_created" ]; then
+    gcloud functions deploy on-situation-created \
+      --gen2 \
+      --runtime=python311 \
+      --region="${REGION}" \
+      --source=cloud_functions/on_situation_created \
+      --entry-point=on_situation_created \
+      --trigger-event-filters="type=google.cloud.firestore.document.v1.created" \
+      --trigger-event-filters="database=(default)" \
+      --trigger-event-filters-path-pattern="document=users/{uid}/situations/{sitId}" \
+      --trigger-location=nam5 \
+      --set-env-vars="PRAXIS_BACKEND_URL=${CF_BACKEND_URL}" \
+      --service-account="${SA}" \
+      --memory=256Mi \
+      --timeout=300s \
+      --quiet 2>/dev/null && echo "  ✓ on-situation-created deployed" || echo "  ⚠️  on-situation-created deploy failed"
+  fi
 
-# gdelt_poller — HTTP trigger (called by Cloud Scheduler)
-if [ -d "cloud_functions/gdelt_poller" ]; then
-  gcloud functions deploy gdelt-poller \
-    --gen2 \
-    --runtime=python311 \
-    --region="${REGION}" \
-    --source=cloud_functions/gdelt_poller \
-    --entry-point=gdelt_poller \
-    --trigger-http \
-    --no-allow-unauthenticated \
-    --set-env-vars="PRAXIS_BACKEND_URL=${BACKEND_URL}" \
-    --memory=512Mi \
-    --timeout=540s \
-    --quiet 2>/dev/null || echo "⚠️  gdelt-poller deploy skipped (deploy backend first)"
+  # on_document_uploaded — Firestore trigger (nam5 multi-region)
+  if [ -d "cloud_functions/on_document_uploaded" ]; then
+    gcloud functions deploy on-document-uploaded \
+      --gen2 \
+      --runtime=python311 \
+      --region="${REGION}" \
+      --source=cloud_functions/on_document_uploaded \
+      --entry-point=on_document_uploaded \
+      --trigger-event-filters="type=google.cloud.firestore.document.v1.created" \
+      --trigger-event-filters="database=(default)" \
+      --trigger-event-filters-path-pattern="document=users/{uid}/situations/{sitId}/documents/{docId}" \
+      --trigger-location=nam5 \
+      --set-env-vars="PRAXIS_BACKEND_URL=${CF_BACKEND_URL}" \
+      --service-account="${SA}" \
+      --memory=256Mi \
+      --timeout=300s \
+      --quiet 2>/dev/null && echo "  ✓ on-document-uploaded deployed" || echo "  ⚠️  on-document-uploaded deploy failed"
+  fi
+
+  # gdelt_poller — HTTP trigger (called by Cloud Scheduler every 15min)
+  if [ -d "cloud_functions/gdelt_poller" ]; then
+    gcloud functions deploy gdelt-poller \
+      --gen2 \
+      --runtime=python311 \
+      --region="${REGION}" \
+      --source=cloud_functions/gdelt_poller \
+      --entry-point=gdelt_poller \
+      --trigger-http \
+      --no-allow-unauthenticated \
+      --set-env-vars="PRAXIS_BACKEND_URL=${CF_BACKEND_URL}" \
+      --service-account="${SA}" \
+      --memory=512Mi \
+      --timeout=540s \
+      --quiet 2>/dev/null && echo "  ✓ gdelt-poller deployed" || echo "  ⚠️  gdelt-poller deploy failed"
+  fi
 fi
 
 echo ""
