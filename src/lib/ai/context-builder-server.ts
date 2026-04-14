@@ -78,7 +78,11 @@ export async function buildGraphContext(
     buildSKCContext(uid, situationId, toolKey).catch(() => ''),
   ]);
 
-  return graphCtx + skcCtx;
+  const [annotationCtx, memoryCtx] = await Promise.all([
+    buildAnnotationContext(uid, situationId, toolKey).catch(() => ''),
+    buildMemoryContext(uid).catch(() => ''),
+  ]);
+  return graphCtx + skcCtx + annotationCtx + memoryCtx;
 }
 
 /** Original graph context logic — unchanged. */
@@ -234,6 +238,60 @@ function graphContextToPrompt(
   }
 
   return lines.join('\n');
+}
+
+/**
+ * Loads analyst memory patterns (preferences learned over time) as context.
+ */
+async function buildMemoryContext(uid: string): Promise<string> {
+  const { buildAnalystMemoryContext } = await import('@/lib/services/analyst-memory');
+  return buildAnalystMemoryContext(uid, 2);
+}
+
+/**
+ * Loads analyst annotations for a given tool output and formats them
+ * as additional context. Only disagree/correct/enhance/question types
+ * with substantive notes are included — agree/classify are skipped as
+ * they don't provide corrective information for regeneration.
+ */
+async function buildAnnotationContext(
+  uid: string,
+  situationId: string,
+  toolId: string,
+): Promise<string> {
+  if (!adminDb || !uid || !situationId || !toolId) return '';
+
+  try {
+    const snap = await adminDb
+      .collection('users').doc(uid)
+      .collection('situations').doc(situationId)
+      .collection('tools').doc(toolId)
+      .collection('annotations')
+      .orderBy('createdAt', 'desc')
+      .limit(20)
+      .get();
+
+    if (snap.empty) return '';
+
+    const actionable = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() } as { id: string; type: string; note: string; correction?: string; targetText?: string }))
+      .filter((a) => ['disagree', 'correct', 'enhance', 'question'].includes(a.type));
+
+    if (actionable.length === 0) return '';
+
+    const lines: string[] = ['\n## ANALYST ANNOTATIONS (from prior regeneration — incorporate these):'];
+    for (const ann of actionable) {
+      const target = ann.targetText ? ` (re: "${ann.targetText.slice(0, 60)}…")` : '';
+      lines.push(`- [${ann.type.toUpperCase()}]${target} ${ann.note}`);
+      if (ann.correction) {
+        lines.push(`  → Suggested correction: ${ann.correction}`);
+      }
+    }
+    lines.push('(Address all DISAGREE/CORRECT annotations; integrate ENHANCE suggestions; answer QUESTION items.)');
+    return lines.join('\n');
+  } catch {
+    return '';
+  }
 }
 
 /**

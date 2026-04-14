@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Download, FileText, Table, Loader2 } from 'lucide-react';
+import { Download, FileText, Table, Loader2, Package } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 
@@ -21,6 +21,8 @@ const DEFAULT_OPTIONS: ExportOption[] = [
   { label: 'Situation Report (DOCX)', type: 'situation-report', icon: FileText, format: 'docx' },
   { label: 'Timeline (CSV)', type: 'timeline-csv', icon: Table, format: 'csv' },
   { label: 'Knowledge Graph (JSON)', type: 'conflict-grammar-json', icon: FileText, format: 'json' },
+  { label: 'Intel Digest (Markdown)', type: 'intel-digest-md', icon: Package, format: 'md' },
+  { label: 'Full Package (JSON)', type: 'intel-package-json', icon: Package, format: 'json' },
 ];
 
 export function ExportDropdown({ options = DEFAULT_OPTIONS, getContent }: ExportDropdownProps) {
@@ -34,6 +36,29 @@ export function ExportDropdown({ options = DEFAULT_OPTIONS, getContent }: Export
 
     try {
       const content = getContent();
+
+      // Dissemination engine routes
+      if (option.type === 'intel-digest-md' || option.type === 'intel-package-json') {
+        const format = option.type === 'intel-digest-md' ? 'digest' : 'json';
+        const res = await fetch('/api/intelligence/disseminate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ situationId: activeSituation.id, format }),
+        });
+        if (!res.ok) { console.error('Disseminate failed:', await res.text()); return; }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const ext = format === 'digest' ? 'md' : 'json';
+        a.download = `${(activeSituation.name || 'intel').replace(/[^a-z0-9]/gi, '_')}_digest.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        return;
+      }
+
       const res = await fetch('/api/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

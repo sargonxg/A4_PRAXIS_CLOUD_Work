@@ -8,6 +8,7 @@ const bareRoutes = [
   'scenarios', 'negotiation-prep', 'cases', 'compare', 'argus',
   'concordia', 'dossier', 'treaty-analyzer', 'risk-monitor', 'actors',
   'briefing', 'team', 'situations', 'media-roundup', 'alerts',
+  'global-search', 'requirements',
 ];
 
 const nextConfig: NextConfig = {

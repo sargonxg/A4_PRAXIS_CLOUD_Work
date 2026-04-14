@@ -722,6 +722,48 @@ export function AppSidebar() {
           })()}
         </div>
 
+        {/* Cross-Situation Intelligence */}
+        <div className="mt-1">
+          {(() => {
+            const isActive = barePath.startsWith('/global-search');
+            const linkContent = (
+              <PraxisLink
+                href="/global-search"
+                className={cn(
+                  'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
+                  isActive
+                    ? 'bg-[var(--color-app-surface-alt)] text-navy-900'
+                    : 'text-navy-400 hover:bg-[var(--color-app-surface-alt)] hover:text-navy-600'
+                )}
+              >
+                <Globe className="h-[18px] w-[18px] shrink-0 text-navy-400 group-hover:text-navy-500" />
+                <AnimatePresence mode="wait">
+                  {sidebarOpen && (
+                    <motion.span
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: 'auto' }}
+                      exit={{ opacity: 0, width: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="truncate whitespace-nowrap"
+                    >
+                      Global Search
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </PraxisLink>
+            );
+            if (!sidebarOpen) {
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                  <TooltipContent side="right" className="font-medium">Global Search</TooltipContent>
+                </Tooltip>
+              );
+            }
+            return linkContent;
+          })()}
+        </div>
+
         {/* System Health */}
         <div className="mt-1">
           {(() => {
