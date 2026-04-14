@@ -443,6 +443,17 @@ Extract the data precisely. Do not invent information not present in the briefin
     });
 
     await saveToolData(uid, situationId, seed.toolId, result.output);
+
+    // Ingest tool output into SKC vector layer (best-effort, non-blocking)
+    try {
+      const { SituationKnowledgeCore } = await import('@/lib/knowledge');
+      const skc = new SituationKnowledgeCore(uid, situationId);
+      const summary = JSON.stringify(result.output).slice(0, 2000);
+      await skc.ingestToolOutput(seed.toolId, summary);
+    } catch {
+      // Non-critical — SKC ingestion failure doesn't break tool seeding
+    }
+
     return true;
   } catch (err) {
     console.error(`[situation-init] Failed to seed ${seed.toolId}:`, err);

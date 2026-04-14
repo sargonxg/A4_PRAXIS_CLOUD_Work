@@ -239,6 +239,117 @@ if [ -d "cloud_functions/gdelt_poller" ]; then
 fi
 
 echo ""
+
+# ═══════════════════════════════════════════════════════════════
+# v3.0 ADDITIONS — Run this section after initial setup
+# ═══════════════════════════════════════════════════════════════
+
+# ── Firestore Vector Indexes ─────────────────────────────────
+echo "Creating Firestore vector indexes (768-dim, gemini-embedding-2)..."
+
+gcloud firestore indexes composite create \
+  --collection-group=embeddings \
+  --query-scope=COLLECTION \
+  --field-config=field-path=embedding,vector-config='{"dimension":"768","flat":"{}"}' \
+  --field-config=field-path=situationId,order=ASCENDING \
+  --database="(default)" 2>/dev/null || echo "  embeddings index already exists"
+
+gcloud firestore indexes composite create \
+  --collection-group=tool-embeddings \
+  --query-scope=COLLECTION \
+  --field-config=field-path=embedding,vector-config='{"dimension":"768","flat":"{}"}' \
+  --field-config=field-path=situationId,order=ASCENDING \
+  --database="(default)" 2>/dev/null || echo "  tool-embeddings index already exists"
+
+gcloud firestore indexes composite create \
+  --collection-group=feed-embeddings \
+  --query-scope=COLLECTION \
+  --field-config=field-path=embedding,vector-config='{"dimension":"768","flat":"{}"}' \
+  --field-config=field-path=situationId,order=ASCENDING \
+  --database="(default)" 2>/dev/null || echo "  feed-embeddings index already exists"
+
+# ── Firestore Graph Indexes ──────────────────────────────────
+echo "Creating Firestore graph query indexes..."
+
+gcloud firestore indexes composite create \
+  --collection-group=edges \
+  --query-scope=COLLECTION \
+  --field-config=field-path=source,order=ASCENDING \
+  --field-config=field-path=type,order=ASCENDING \
+  --database="(default)" 2>/dev/null || echo "  edges(source,type) index already exists"
+
+gcloud firestore indexes composite create \
+  --collection-group=edges \
+  --query-scope=COLLECTION \
+  --field-config=field-path=target,order=ASCENDING \
+  --field-config=field-path=type,order=ASCENDING \
+  --database="(default)" 2>/dev/null || echo "  edges(target,type) index already exists"
+
+gcloud firestore indexes composite create \
+  --collection-group=nodes \
+  --query-scope=COLLECTION \
+  --field-config=field-path=type,order=ASCENDING \
+  --field-config=field-path=confidence,order=ASCENDING \
+  --database="(default)" 2>/dev/null || echo "  nodes(type,confidence) index already exists"
+
+# ── Cloud Tasks Queues ───────────────────────────────────────
+echo "Creating Cloud Tasks queues..."
+
+gcloud tasks queues create praxis-research \
+  --location=us-central1 \
+  --max-concurrent-dispatches=10 \
+  --max-dispatches-per-second=5 \
+  --max-attempts=5 \
+  --min-backoff=30s \
+  --max-backoff=300s \
+  2>/dev/null || echo "  praxis-research queue already exists"
+
+gcloud tasks queues create praxis-agents \
+  --location=us-central1 \
+  --max-concurrent-dispatches=5 \
+  --max-dispatches-per-second=2 \
+  --max-attempts=3 \
+  2>/dev/null || echo "  praxis-agents queue already exists"
+
+gcloud tasks queues create praxis-embeddings \
+  --location=us-central1 \
+  --max-concurrent-dispatches=20 \
+  --max-dispatches-per-second=10 \
+  2>/dev/null || echo "  praxis-embeddings queue already exists"
+
+# ── BigQuery Extended Tables ─────────────────────────────────
+echo "Creating extended BigQuery analytics tables..."
+
+bq mk --table "${PROJECT_ID}:praxis_analytics.tool_usage" \
+  "user_id:STRING,situation_id:STRING,tool_id:STRING,action:STRING,credits_used:INTEGER,response_time_ms:INTEGER,model:STRING,tokens_in:INTEGER,tokens_out:INTEGER,timestamp:TIMESTAMP" \
+  2>/dev/null || echo "  tool_usage table already exists"
+
+bq mk --table "${PROJECT_ID}:praxis_analytics.feed_queries" \
+  "feed:STRING,country:STRING,query_hash:STRING,result_count:INTEGER,latency_ms:INTEGER,cached:BOOLEAN,error:STRING,timestamp:TIMESTAMP" \
+  2>/dev/null || echo "  feed_queries table already exists"
+
+bq mk --table "${PROJECT_ID}:praxis_analytics.agent_runs" \
+  "agent_type:STRING,user_id:STRING,situation_id:STRING,status:STRING,sources_queried:INTEGER,findings:INTEGER,tokens_used:INTEGER,duration_ms:INTEGER,tools_updated:STRING,timestamp:TIMESTAMP" \
+  2>/dev/null || echo "  agent_runs table already exists"
+
+bq mk --table "${PROJECT_ID}:praxis_analytics.skc_queries" \
+  "user_id:STRING,situation_id:STRING,tool_id:STRING,graph_nodes:INTEGER,vector_results:INTEGER,feed_sources:INTEGER,related_tools:INTEGER,total_context_tokens:INTEGER,latency_ms:INTEGER,timestamp:TIMESTAMP" \
+  2>/dev/null || echo "  skc_queries table already exists"
+
+bq mk --table "${PROJECT_ID}:praxis_analytics.embedding_operations" \
+  "user_id:STRING,situation_id:STRING,operation:STRING,chunk_count:INTEGER,model:STRING,latency_ms:INTEGER,timestamp:TIMESTAMP" \
+  2>/dev/null || echo "  embedding_operations table already exists"
+
+# ── Enable Cloud Tasks API ───────────────────────────────────
+gcloud services enable cloudtasks.googleapis.com 2>/dev/null || true
+
+echo ""
+echo "✓ v3.0 extensions complete:"
+echo "  - 3 Firestore vector indexes (768-dim embeddings)"
+echo "  - 3 Firestore graph query indexes"
+echo "  - 3 Cloud Tasks queues (research, agents, embeddings)"
+echo "  - 5 BigQuery analytics tables"
+
 echo "✓ GCP setup complete for project: $PROJECT_ID"
 echo ""
 echo "  NEXT STEPS:"

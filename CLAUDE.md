@@ -166,15 +166,29 @@ Tool page → useSituationGuard() → usePersistedToolData(toolId, sitId)
   → AI generates structured output → Firestore write → onSnapshot → UI updates
 ```
 
-## AI Model Tiers
+## AI Model Tiers (v3.0 — Gemini 3)
 
 | Function | Model | Used For |
 |---|---|---|
-| `getModel()` | gemini-2.5-flash | Chat, terminology, quick tasks |
-| `getProModel()` | gemini-2.5-pro | Structured tool generation |
-| `getAnalysisModel()` | claude-sonnet-4 | Deep analysis (falls back to Pro) |
-| `getGroundedModel()` | gemini-2.5-flash + Search | Grounded research |
-| Vertex ADK | Reasoning Engine | Deep Research Agent |
+| `getModel()` | `gemini-3-flash` | Chat, terminology, lightweight tasks, grounded search |
+| `getProModel()` | `gemini-3.1-pro-preview` | Structured tool generation, reports, dossiers (1M ctx, 65K output) |
+| `getAnalysisModel()` | `claude-sonnet-4-20250514` → Gemini 3.1 Pro | Deep conflict analysis, diplomatic language (falls back to Pro) |
+| `getDeepThinkModel()` | `gemini-3.1-pro-preview` + `thinkingLevel: 'high'` | Game Theory, Scenarios, treaty analysis (set via providerOptions) |
+| `getEmbeddingModel()` | `gemini-embedding-2-preview` → `text-embedding-005` → null | SKC Vector Layer, document embedding, 768-dim multimodal |
+| `getGroundedModel()` | `gemini-3-flash` + Google Search | Research tools, actor enrichment, source discovery |
+| Vertex ADK | Agent Engine | Deep Search Agent (falls back to Gemini 3 + Search) |
+
+## Situation Knowledge Core (SKC)
+
+4-layer hybrid GraphRAG system powering all 48 tools:
+- **Graph Layer**: `src/lib/knowledge/graph-layer.ts` — Neo4j (if configured) or Firestore subcollections + JS analytics
+- **Vector Layer**: `src/lib/knowledge/vector-layer.ts` — Firestore native KNN (768-dim, COSINE distance)
+- **Feed Layer**: `src/lib/knowledge/feed-layer.ts` — TTL-cached data feeds (ACLED, GDELT, HDX, etc.)
+- **Tool Output Layer**: `src/lib/knowledge/tool-output-layer.ts` — cross-referenced versioned tool outputs
+
+Entry point: `new SituationKnowledgeCore(uid, situationId)` from `@/lib/knowledge`
+
+Zero-config fallback: Everything works with just GOOGLE_AI_API_KEY. Neo4j → Firestore graph. ACLED → GDELT → Gemini grounded. See Part 3 blueprint for full fallback matrix.
 
 ## TACITUS Credits
 

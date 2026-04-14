@@ -34,7 +34,7 @@ gcloud run deploy "${SERVICE}" \
   --cpu=1 \
   --min-instances=1 \
   --max-instances=10 \
-  --set-secrets="FIREBASE_SERVICE_ACCOUNT_KEY=firebase-sa-key:latest,GOOGLE_AI_API_KEY=google-ai-api-key:latest,CRON_SECRET=cron-secret:latest,COOKIE_SIGNING_SECRET=cookie-signing-secret:latest"
+  --set-secrets="FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest"
 
 FRONTEND_URL=$(gcloud run services describe "${SERVICE}" --region="${REGION}" --format='value(status.url)')
 echo ""
