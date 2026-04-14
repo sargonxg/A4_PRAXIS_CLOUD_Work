@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
@@ -166,9 +166,8 @@ Confidence: ${assessment.confidence}\n`;
         )
       : '';
 
-    // --- AI analysis ---
-    const result = await generateText({
-      model: getProModel(),
+    // --- AI analysis (Pro model with Flash fallback) ---
+    const result = await callProModel({
       output: Output.object({ schema: EscalationScanSchema }),
       system: `You are a senior conflict analyst specializing in the Glasl 9-stage escalation model and Zartman Ripeness Theory. You serve analysts, mediators, and UN political officers.
 

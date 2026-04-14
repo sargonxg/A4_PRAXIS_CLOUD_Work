@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
@@ -270,8 +270,7 @@ export const POST = withAuth(async (request, user) => {
         )
       : '';
 
-    const result = await generateText({
-      model: getProModel(),
+    const result = await callProModel({
       output: Output.object({ schema: InfoEnvironmentSchema }),
       system: `You are a senior information environment analyst trained in NATO STRATCOM methodology, EU DisinfoLab detection techniques, UN DPPA communications strategy, and Ben Nimmo's 4D disinformation framework (Dismiss, Distort, Distract, Dismay). You have extensive experience supporting peace operations with narrative analysis, information operations attribution, amplification network mapping, and counter-messaging strategy.
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { withAuth } from '@/lib/api/with-auth';
@@ -129,8 +129,7 @@ export const POST = withAuth(async (request, user) => {
         ).catch(() => '')
       : '';
 
-    const result = await generateText({
-      model: getProModel(),
+    const result = await callProModel({
       output: Output.object({ schema: PowerMapSchema }),
       prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${webCtx}${webCtx ? '\n\n' : ''}${sitContext ? `${sitContext}\n\n` : ''}Generate a rigorous stakeholder power map for this conflict situation.
 

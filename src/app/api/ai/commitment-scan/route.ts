@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
@@ -136,8 +136,7 @@ export const POST = withAuth(async (request, user) => {
       ? await buildGraphContext(user.uid, situationId, 'commitment_scan').catch(() => '')
       : '';
 
-    const result = await generateText({
-      model: getProModel(),
+    const result = await callProModel({
       output: Output.object({ schema: CommitmentScanSchema }),
       prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Analyze the commitment compliance landscape for this conflict situation.
 

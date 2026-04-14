@@ -343,6 +343,9 @@ function SituationHealthWidget({
     return () => clearTimeout(timer);
   }, [isRecentlyCreated, persisted, pollCount]);
 
+  // MUST be called unconditionally before any conditional returns (Rules of Hooks)
+  const allStatuses = useAllToolStatuses(situation.id);
+
   // If persisted data is loading on first mount, show skeleton
   if (persisted.isLoading && !persisted.data) return null;
 
@@ -378,8 +381,7 @@ function SituationHealthWidget({
   const coreSeeded = HEALTH_TOOLS_CORE.filter((t) => seededTools.includes(t.id)).length;
   const totalCore = HEALTH_TOOLS_CORE.length;
 
-  // Unified tool statuses — includes research progress
-  const allStatuses = useAllToolStatuses(situation.id);
+  // allStatuses is already declared above (before conditional returns)
   const researchingCount = Object.values(allStatuses).filter((s) => s.isResearching).length;
   const staleCount = Object.values(allStatuses).filter((s) => s.isStale).length;
 

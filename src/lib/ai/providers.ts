@@ -20,6 +20,7 @@
  * All routes import from here — never hardcode model strings in route files.
  */
 
+import { generateText as aiGenerateText, type GenerateTextResult } from 'ai';
 import type { LanguageModel } from 'ai';
 
 export type ProviderName = 'google' | 'vertex';
@@ -127,6 +128,34 @@ export function getAnalysisModel(): LanguageModel {
  */
 export function getDeepThinkModel(): LanguageModel {
   return getProModel();
+}
+
+/**
+ * Calls generateText with the Pro model; if the Pro model is unavailable or
+ * returns an error (model not found, quota exceeded, permission denied, etc.),
+ * retries automatically with the Flash model.
+ *
+ * Use this instead of `generateText({ model: getProModel(), ... })` in routes
+ * that use structured output — the Pro model may not be accessible on all API
+ * key tiers in production.
+ */
+export async function callProModel(
+  options: Omit<Parameters<typeof aiGenerateText>[0], 'model'>
+): Promise<GenerateTextResult<Record<string, never>, never>> {
+  const fullOptions = options as Parameters<typeof aiGenerateText>[0];
+  try {
+    return await aiGenerateText({ ...fullOptions, model: getProModel() }) as unknown as GenerateTextResult<Record<string, never>, never>;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // Fall back to Flash for model-level errors; rethrow for request/schema errors
+    const isModelError =
+      /model|quota|permission|not found|unavailable|access|tier|API/i.test(msg);
+    if (isModelError) {
+      console.warn(`[providers] Pro model failed (${msg.slice(0, 120)}), retrying with Flash`);
+      return await aiGenerateText({ ...fullOptions, model: getModel() }) as unknown as GenerateTextResult<Record<string, never>, never>;
+    }
+    throw err;
+  }
 }
 
 /**
