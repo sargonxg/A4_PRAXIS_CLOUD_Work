@@ -25,7 +25,9 @@ function getColor(score: number): string {
 }
 
 export function RiskGauge({ score, label, size = 'md', showValue = true }: RiskGaugeProps) {
-  const clampedScore = Math.max(0, Math.min(100, score));
+  // Guard against NaN/null/undefined — treat as 0
+  const safeScore = typeof score === 'number' && isFinite(score) ? score : 0;
+  const clampedScore = Math.max(0, Math.min(100, safeScore));
   const { px, strokeWidth, fontSize, labelSize } = SIZE_MAP[size];
   const pathRef = useRef<SVGPathElement>(null);
 

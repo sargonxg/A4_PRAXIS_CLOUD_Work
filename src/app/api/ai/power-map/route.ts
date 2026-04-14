@@ -126,7 +126,7 @@ export const POST = withAuth(async (request, user) => {
           { name: (situation as Situation).name, region: (situation as Situation).region, actors: (situation as Situation).actors },
           'power-map',
           user.uid
-        )
+        ).catch(() => '')
       : '';
 
     const result = await generateText({

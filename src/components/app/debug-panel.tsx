@@ -46,7 +46,9 @@ class DebugErrorBoundary extends Component<
 
 interface HealthStatus {
   status: string;
-  services: Record<string, boolean>;
+  // API returns 'checks' with string values; 'services' is a normalised boolean map built client-side
+  checks?: Record<string, string>;
+  services?: Record<string, boolean>;
   timestamp: string;
 }
 
@@ -119,6 +121,12 @@ function DebugPanelInner() {
       clearTimeout(timeout);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      // Normalise: API may return 'checks' (string) or 'services' (boolean) map
+      if (data.checks && !data.services) {
+        data.services = Object.fromEntries(
+          Object.entries(data.checks as Record<string, string>).map(([k, v]) => [k, v === 'ok'])
+        );
+      }
       setHealth(data);
     } catch (err) {
       setHealth({ status: 'error', services: {}, timestamp: new Date().toISOString() });
@@ -241,7 +249,7 @@ function DebugPanelInner() {
               {healthLoading && <Loader2 className="h-3 w-3 animate-spin text-navy-500" />}
               {health ? (
                 <>
-                  {Object.entries(health.services).map(([svc, ok]) => (
+                  {Object.entries(health.services ?? {}).map(([svc, ok]) => (
                     <span key={svc} className={cn('flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px]',
                       ok ? 'bg-emerald-900/40 text-emerald-400' : 'bg-red-900/40 text-red-400')}>
                       <span className={cn('h-1.5 w-1.5 rounded-full', ok ? 'bg-emerald-400' : 'bg-red-400')} />

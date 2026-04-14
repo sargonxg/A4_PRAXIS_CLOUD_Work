@@ -145,7 +145,9 @@ function riskTextColor(score: number): string {
 // ---------------------------------------------------------------------------
 
 function GlaslStageMeter({ stage }: { stage: number }) {
-  const current = GLASL_STAGES[stage - 1];
+  // Guard: ensure stage is a finite number to avoid NaN/object rendering (React error #300)
+  const safeStage = typeof stage === 'number' && isFinite(stage) ? Math.max(1, Math.min(9, stage)) : 0;
+  const current = GLASL_STAGES[safeStage - 1];
   return (
     <div className="flex items-center gap-2">
       <div className="flex gap-0.5">
@@ -154,14 +156,14 @@ function GlaslStageMeter({ stage }: { stage: number }) {
             key={i}
             className="h-2 w-3 rounded-sm transition-all"
             style={{
-              backgroundColor: i < stage ? s.color : '#E2E8F0',
-              opacity: i === stage - 1 ? 1 : i < stage ? 0.6 : 0.3,
+              backgroundColor: i < safeStage ? s.color : '#E2E8F0',
+              opacity: i === safeStage - 1 ? 1 : i < safeStage ? 0.6 : 0.3,
             }}
           />
         ))}
       </div>
       <span className="text-[10px] font-semibold" style={{ color: current?.color }}>
-        Stage {stage}/9 — {current?.label}
+        Stage {safeStage}/9 — {current?.label ?? ''}
       </span>
     </div>
   );
