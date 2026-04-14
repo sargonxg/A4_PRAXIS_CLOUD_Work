@@ -26,7 +26,7 @@ import {
   Loader2,
   Globe,
 } from "lucide-react";
-import { buildToolContext } from "@/lib/ai/situation-context";
+import { buildToolContext } from "@/lib/ai/build-context-pure";
 
 type MediaTab = "source-map" | "coverage" | "sentiment";
 

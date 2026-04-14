@@ -13,6 +13,18 @@ const bareRoutes = [
 const nextConfig: NextConfig = {
   // Cloud Run: standalone output bundles only what's needed for Docker
   output: 'standalone',
+  // Server-only packages: do not bundle, load at runtime from node_modules
+  // Prevents Node.js built-ins (child_process, fs) from leaking into bundles
+  serverExternalPackages: [
+    'neo4j-driver',
+    'firebase-admin',
+    '@google-cloud/firestore',
+    'google-auth-library',
+    'google-gax',
+    '@google-cloud/common',
+    'grpc',
+    '@grpc/grpc-js',
+  ],
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',

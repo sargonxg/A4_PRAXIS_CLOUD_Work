@@ -1,0 +1,132 @@
+import { NextResponse } from 'next/server';
+import { generateText, Output } from 'ai';
+import { z } from 'zod';
+import { getThinkingModel } from '@/lib/ai/providers';
+import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildGraphContext } from '@/lib/ai/context-builder-server';
+import { withAuth } from '@/lib/api/with-auth';
+import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { handleRouteError } from '@/lib/api/standard-error';
+import type { Situation } from '@/types/situation';
+
+export const maxDuration = 60;
+
+// ---------------------------------------------------------------------------
+// Schemas
+// ---------------------------------------------------------------------------
+
+const SATResultSchema = z.object({
+  satType: z.enum(['challenge', 'assumptions', 'red_team', 'competing_hypotheses']),
+  title: z.string().describe('Short title for this SAT result'),
+  findings: z.array(z.object({
+    point: z.string().describe('Key finding or alternative view'),
+    confidence: z.enum(['high', 'medium', 'low']).describe('Confidence in this finding'),
+    evidence: z.string().describe('Supporting evidence or reasoning'),
+    implication: z.string().describe('What this means for the analysis'),
+  })).min(3).max(8),
+  overallAssessment: z.string().describe('Summary of what this SAT analysis reveals about the original assessment'),
+  revisedConfidence: z.enum(['confirmed', 'partially_confirmed', 'uncertain', 'challenged', 'refuted']).describe('Impact on original assessment confidence'),
+  keyUncertainties: z.array(z.string()).min(2).max(5).describe('Main uncertainties this analysis cannot resolve'),
+  recommendedActions: z.array(z.string()).min(2).max(4).describe('Concrete next steps based on this analysis'),
+});
+
+// ---------------------------------------------------------------------------
+// SAT type definitions
+// ---------------------------------------------------------------------------
+
+const SAT_CONFIGS = {
+  challenge: {
+    name: 'Challenge This Assessment',
+    instruction: `Apply the "Challenge This Assessment" Structured Analytical Technique (SAT). Your goal is to rigorously challenge the original assessment by:
+1. Identify 3-5 specific claims in the assessment that are most vulnerable to challenge
+2. For each claim: What evidence would be needed to disprove it? What evidence is missing?
+3. What alternative explanations exist for the same evidence base?
+4. Are there cognitive biases (mirror imaging, confirmation bias, anchoring) that might have shaped this assessment?
+5. What would a fully adversarial analyst argue against each key conclusion?`,
+  },
+  assumptions: {
+    name: 'Check Key Assumptions',
+    instruction: `Apply the "Key Assumptions Check" SAT (Heuer & Pherson). Systematically surface and scrutinize all assumptions:
+1. List all explicit assumptions stated or implied in the assessment
+2. For each assumption: How confident is this assumption? What is it based on?
+3. What would happen to the conclusion if each assumption proved false?
+4. Rank assumptions by: (a) confidence level and (b) impact on conclusion if wrong
+5. Identify the "linchpin" assumptions — those most critical to the conclusion and least well-supported`,
+  },
+  red_team: {
+    name: 'Red Team Analysis',
+    instruction: `Apply Red Team analysis methodology. Adopt the perspective of an informed adversary or critic:
+1. Argue the strongest possible counter-case to the original assessment
+2. Identify what the adversary/opposite party might know that the analyst does not
+3. What deceptive or denial operations might explain the observed evidence differently?
+4. What course of action would an adversary take if they wanted to make this assessment wrong?
+5. What "weak signals" or low-probability but high-impact scenarios has the original assessment underweighted?
+6. Explicitly identify the assessment's most exploitable analytical vulnerabilities`,
+  },
+  competing_hypotheses: {
+    name: 'Analysis of Competing Hypotheses',
+    instruction: `Apply Analysis of Competing Hypotheses (ACH) methodology (Heuer 1999):
+1. Generate 3-5 competing hypotheses that could explain the situation
+2. For each hypothesis: List key evidence that is consistent with it and inconsistent with it
+3. Score each hypothesis against each piece of evidence (+/0/-)
+4. Identify which evidence is most diagnostic (best distinguishes between hypotheses)
+5. Assess which hypothesis is least inconsistent with the overall evidence base
+6. Flag critical evidence gaps that would allow hypothesis elimination`,
+  },
+};
+
+// ---------------------------------------------------------------------------
+// POST handler
+// ---------------------------------------------------------------------------
+
+export const POST = withAuth(async (request, user) => {
+  try {
+    const body = await request.json() as {
+      satType: 'challenge' | 'assumptions' | 'red_team' | 'competing_hypotheses';
+      assessmentContent: string;
+      toolName?: string;
+      situation?: Situation;
+    };
+
+    const { satType, assessmentContent, toolName, situation } = body;
+
+    if (!satType || !assessmentContent) {
+      return NextResponse.json({ error: 'satType and assessmentContent are required' }, { status: 400 });
+    }
+
+    const creditCheck = await checkAndDeductCredits('ai_sat', 'SAT analysis');
+    if (!creditCheck.allowed) return creditCheck.response!;
+
+    const sitContext = situation ? buildToolContext(situation) : '';
+    const situationId = situation?.id ?? '';
+    const graphCtx = situationId
+      ? await buildGraphContext(user.uid, situationId, 'sat').catch(() => '')
+      : '';
+
+    const satConfig = SAT_CONFIGS[satType];
+
+    const result = await generateText({
+      model: getThinkingModel(),
+      output: Output.object({ schema: SATResultSchema }),
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}You are applying a Structured Analytical Technique (SAT) to challenge and improve an analytical assessment.
+
+TOOL/ASSESSMENT SOURCE: ${toolName || 'AI Analysis Tool'}
+
+ORIGINAL ASSESSMENT TO ANALYZE:
+${assessmentContent}
+
+SAT TYPE: ${satConfig.name}
+
+${satConfig.instruction}
+
+Apply this SAT rigorously. The goal is NOT to confirm the original assessment but to stress-test it and surface analytical vulnerabilities. Be intellectually honest: if the assessment holds up well under scrutiny, say so, but still identify its weakest points. If it has serious problems, be explicit.
+
+satType in your output: "${satType}"`,
+      system: 'You are a senior intelligence analyst specializing in Structured Analytical Techniques (SATs) and cognitive bias mitigation. You apply rigorous analytical frameworks to challenge, test, and improve intelligence assessments. Your work is used by UN Political Affairs Officers and diplomatic professionals. Never simply validate the original assessment — your value lies in finding what it misses, assumes, or gets wrong.',
+    });
+
+    return NextResponse.json(result.output);
+  } catch (err) {
+    return handleRouteError(err, 'sat');
+  }
+});

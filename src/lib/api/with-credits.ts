@@ -70,6 +70,9 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   'ai_peacebuilding_index': 2,
   'ai_human_rights': 3,
   'ai_electoral_risk': 3,
+  // Part 4 — SAT (Structured Analytical Techniques) + PIR
+  'ai_sat': 3,
+  'ai_pir': 2,
 };
 
 /**

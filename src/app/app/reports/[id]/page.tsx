@@ -25,7 +25,7 @@ import {
 import { useConflictStore } from '@/stores/conflict-store';
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
-import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildToolContext } from '@/lib/ai/build-context-pure';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 

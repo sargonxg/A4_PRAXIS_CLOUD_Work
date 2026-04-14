@@ -7,7 +7,7 @@ import { NoSituationState } from '@/components/praxis/no-situation-state';
 
 import { useState, useCallback } from 'react';
 import { Search, Upload, Network, FileText, GitCompare, ExternalLink, Loader2, Sparkles, Database, Globe } from 'lucide-react';
-import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildToolContext } from '@/lib/ai/build-context-pure';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { cn } from '@/lib/utils/cn';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
