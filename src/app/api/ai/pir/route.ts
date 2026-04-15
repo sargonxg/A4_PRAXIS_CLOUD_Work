@@ -128,12 +128,12 @@ export const POST = withAuth(async (request, user) => {
 
     // ── Answer ──────────────────────────────────────────────────────────────
     if (action === 'answer') {
-      const creditCheck = await checkAndDeductCredits('ai_pir', 'PIR answer generation');
-      if (!creditCheck.allowed) return creditCheck.response!;
-
       if (isServerDemoMode()) {
         return NextResponse.json(DEMO_RESPONSE);
       }
+
+      const creditCheck = await checkAndDeductCredits('ai_pir', 'PIR answer generation');
+      if (!creditCheck.allowed) return creditCheck.response!;
 
       // Fetch the PIRs to answer
       const pirIds = body.pirIds ?? [];

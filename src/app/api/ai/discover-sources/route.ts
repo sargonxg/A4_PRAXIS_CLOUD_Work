@@ -38,12 +38,12 @@ const DiscoveredSourceSchema = z.object({
 });
 
 export const POST = withAuth(async (req, user) => {
-  const creditCheck = await checkAndDeductCredits('research', 'AI source discovery');
-  if (!creditCheck.allowed) return creditCheck.response;
-
   if (isServerDemoMode()) {
     return NextResponse.json(DEMO_RESPONSE);
   }
+
+  const creditCheck = await checkAndDeductCredits('research', 'AI source discovery');
+  if (!creditCheck.allowed) return creditCheck.response;
 
   try {
     const { situation, existingSources } = await req.json() as {

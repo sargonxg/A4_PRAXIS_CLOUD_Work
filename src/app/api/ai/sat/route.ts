@@ -97,12 +97,12 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json({ error: 'satType and assessmentContent are required' }, { status: 400 });
     }
 
-    const creditCheck = await checkAndDeductCredits('ai_sat', 'SAT analysis');
-    if (!creditCheck.allowed) return creditCheck.response!;
-
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }
+
+    const creditCheck = await checkAndDeductCredits('ai_sat', 'SAT analysis');
+    if (!creditCheck.allowed) return creditCheck.response!;
 
     const sitContext = situation ? buildToolContext(situation) : '';
     const situationId = situation?.id ?? '';

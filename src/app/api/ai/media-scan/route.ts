@@ -82,12 +82,12 @@ export const POST = withAuth(async (request, user) => {
     const { situation, customSources, action = 'scan' } = body;
     const situationId = situation?.id ?? '';
 
-    const creditCheck = await checkAndDeductCredits('ai_media_scan', 'Source monitor scan');
-    if (!creditCheck.allowed) return creditCheck.response;
-
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }
+
+    const creditCheck = await checkAndDeductCredits('ai_media_scan', 'Source monitor scan');
+    if (!creditCheck.allowed) return creditCheck.response;
 
     const sitCtx = situation ? buildToolContext(situation) : '';
     const sitName = situation?.name || 'the situation';

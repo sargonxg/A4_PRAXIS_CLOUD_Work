@@ -1,5 +1,6 @@
 import { streamText, stepCountIs } from 'ai';
 import { getProModel } from '@/lib/ai/providers';
+import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { tacitusTools } from '@/lib/ai/tools';
@@ -42,7 +43,7 @@ export const maxDuration = 120;
  * 5. Recommended next steps for the analyst
  */
 export const POST = withAuth(async (req, user) => {
-  if (user.isDemo) {
+  if (user.isDemo || isServerDemoMode()) {
     return new Response(JSON.stringify({ error: 'Not available in demo mode' }), { status: 403 });
   }
 

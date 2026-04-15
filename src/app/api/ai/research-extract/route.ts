@@ -10,6 +10,7 @@ import {
 import { getGraph, saveGraph, saveSnapshot } from '@/lib/firebase/graph-service';
 import { saveToolData } from '@/lib/firebase/tool-data-service';
 import { runCanonicalPreCheck, formatPreCheckContext } from '@/lib/services/canonical-precheck';
+import { isServerDemoMode } from '@/lib/demo/demo-mode';
 
 export const maxDuration = 180;
 
@@ -38,7 +39,7 @@ export const maxDuration = 180;
  *   - maxSourcesPerCategory: number (default 2)
  */
 export const POST = withAuth(async (req, user) => {
-  if (user.isDemo) {
+  if (user.isDemo || isServerDemoMode()) {
     return Response.json({ error: 'Not available in demo mode' }, { status: 403 });
   }
 

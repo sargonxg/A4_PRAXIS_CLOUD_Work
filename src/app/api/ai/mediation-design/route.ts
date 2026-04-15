@@ -176,12 +176,12 @@ const DEMO_RESPONSE = {
 
 export const POST = withAuth(async (request, user) => {
   try {
-    const creditCheck = await checkAndDeductCredits('ai_mediation_design', 'Mediation process design');
-    if (!creditCheck.allowed) return creditCheck.response!;
-
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }
+
+    const creditCheck = await checkAndDeductCredits('ai_mediation_design', 'Mediation process design');
+    if (!creditCheck.allowed) return creditCheck.response!;
 
     const body = await request.json();
     const { situation } = body as { situation?: Situation };

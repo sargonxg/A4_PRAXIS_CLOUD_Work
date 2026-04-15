@@ -25,13 +25,6 @@ const MediaAnalysisSchema = z.object({
 });
 
 export const POST = withAuth(async (request: Request, user) => {
-  if (!process.env.GOOGLE_AI_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in environment variables.' }),
-      { status: 503, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
   try {
     const { source, topic, situation } = await request.json() as {
       source: string;
@@ -40,12 +33,12 @@ export const POST = withAuth(async (request: Request, user) => {
     };
     const situationId = situation?.id ?? '';
 
-    const creditCheck = await checkAndDeductCredits('ai_media', 'Media analysis');
-    if (!creditCheck.allowed) return creditCheck.response;
-
     if (isServerDemoMode()) {
       return Response.json({ source, topic, assessment: DEMO_RESPONSE });
     }
+
+    const creditCheck = await checkAndDeductCredits('ai_media', 'Media analysis');
+    if (!creditCheck.allowed) return creditCheck.response;
 
     const graphCtx = situationId
       ? await buildGraphContext(user.uid, situationId, 'media_analysis').catch(() => '')

@@ -1,5 +1,6 @@
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import {
   getVertexAgentConfig,
   createSession,
@@ -19,6 +20,13 @@ export const maxDuration = 120;
  * Returns: SSE stream of AgentEvents with PRAXIS envelope
  */
 export const POST = withAuth(async (req, user) => {
+  if (isServerDemoMode()) {
+    return new Response(
+      JSON.stringify({ error: 'Deep Research Agent requires a live AI configuration.' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
   const credits = await checkAndDeductCredits('ai_deep_search_agent', 'ADK Deep Research Agent');
   if (!credits.allowed) return credits.response;
 
