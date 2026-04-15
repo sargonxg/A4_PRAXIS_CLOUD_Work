@@ -1075,7 +1075,8 @@ function DemoDashboard() {
   const { user } = useAuth();
   const router = useRouter();
   const route = usePraxisRoute();
-  const today = new Date();
+  const todayRef = useRef(new Date());
+  const today = todayRef.current;
 
   // Fetch Nordalia demo-conflict data via API (replaces static import)
   const { data: nordaliaDetail, loading: nordaliaLoading } = useConflictDetail('nordalia-crisis');

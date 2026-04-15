@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
-import { getProModel, getGroundedModel } from '@/lib/ai/providers';
+import { callProModel, getGroundedModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
@@ -65,12 +65,12 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
 
 export const POST = withAuth(async (request, user) => {
   try {
-    const creditCheck = await checkAndDeductCredits('ai_morning_digest', 'Daily intelligence brief');
-    if (!creditCheck.allowed) return creditCheck.response!;
-
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }
+
+    const creditCheck = await checkAndDeductCredits('ai_morning_digest', 'Daily intelligence brief');
+    if (!creditCheck.allowed) return creditCheck.response!;
 
     const body = await request.json();
     const { situation, deepResearch } = body as { situation?: Situation; deepResearch?: boolean };
@@ -141,8 +141,7 @@ export const POST = withAuth(async (request, user) => {
       ? '\n\n⚡ DEEP RESEARCH MODE: You have live web search results and Google-grounded research above. Prioritize this fresh real-time information. Be specific about what the sources say.'
       : '';
 
-    const result = await generateText({
-      model: getProModel(),
+    const result = await callProModel({
       output: Output.object({ schema: AutoBriefingSchema }),
       prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `SITUATION CONTEXT:\n${sitContext}\n` : ''}${intelContext}${webResearchContext}${deepResearchNote}
 

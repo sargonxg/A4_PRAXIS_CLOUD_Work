@@ -329,19 +329,21 @@ function SituationHealthWidget({
   // Auto-poll for seeded tools when situation is recently created
   // Re-fetch every 8 seconds until all core tools are seeded or 3 minutes pass
   const [pollCount, setPollCount] = useState(0);
+  const persistedData = persisted.data;
+  const persistedClear = persisted.clear;
   useEffect(() => {
     if (!isRecentlyCreated) return;
-    const snapshotData = persisted.data as { seededTools?: string[] } | null;
+    const snapshotData = persistedData as { seededTools?: string[] } | null;
     const seeded = snapshotData?.seededTools ?? [];
     const allCoreSeeded = HEALTH_TOOLS_CORE.every((t) => seeded.includes(t.id));
     if (allCoreSeeded || pollCount > 22) return; // Stop after ~3 min
 
     const timer = setTimeout(() => {
-      persisted.clear(); // Triggers re-fetch
+      persistedClear(); // Triggers re-fetch
       setPollCount((c) => c + 1);
     }, 8000);
     return () => clearTimeout(timer);
-  }, [isRecentlyCreated, persisted, pollCount]);
+  }, [isRecentlyCreated, persistedData, persistedClear, pollCount]);
 
   // MUST be called unconditionally before any conditional returns (Rules of Hooks)
   const allStatuses = useAllToolStatuses(situation.id);

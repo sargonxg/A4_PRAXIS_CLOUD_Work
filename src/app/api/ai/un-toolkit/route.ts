@@ -223,7 +223,7 @@ export const POST = withAuth(async (request, user) => {
     }
 
     // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_report', 'UN Toolkit document generation');
+    const creditCheck = await checkAndDeductCredits('ai_un_toolkit', 'UN Toolkit document generation');
     if (!creditCheck.allowed) return creditCheck.response;
 
     // --- Graph context ---
