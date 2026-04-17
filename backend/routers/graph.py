@@ -5,14 +5,20 @@ Neo4j for complex graph queries).
 """
 from __future__ import annotations
 
+import io
 import json
+import json as json_lib
+from datetime import datetime, timezone
 
+import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response, StreamingResponse
+from networkx.readwrite import json_graph
 from pydantic import BaseModel
 
 from auth import verify_firebase_token
 from graphify_tacitus.build import build_from_json
+from graphify_tacitus.cypher_export import to_cypher as _to_cypher
 from graphify_tacitus.export import to_html
 from services.firestore_sync import FirestoreSync
 from services.graph_adapter import create_graph_adapter
@@ -230,6 +236,79 @@ async def get_visualization(
 
     html = to_html(G, communities, community_labels, analysis)
     return HTMLResponse(html)
+
+
+# ── Graph export ──────────────────────────────────────────────────────────────
+
+@router.get("/{situation_id}/export")
+async def export_graph(
+    situation_id: str,
+    format: str = Query(default="graphml", regex="^(graphml|gexf|cypher|json)$"),
+    token: dict = Depends(verify_firebase_token),
+):
+    """Export the situation graph in the requested format. Reads from Firestore.
+
+    Supported formats:
+    - graphml  — NetworkX GraphML (importable into Gephi, yEd, etc.)
+    - gexf     — Graph Exchange XML Format (Gephi native)
+    - json     — node-link JSON (D3 / NetworkX compatible)
+    - cypher   — idempotent MERGE script for Neo4j import
+    """
+    uid = token["uid"]
+    fs = FirestoreSync()
+    snapshot = await fs.read_graph_snapshot(uid, situation_id)
+
+    G: nx.DiGraph = nx.DiGraph()
+    for node in snapshot.get("nodes", []):
+        nid = node.get("id", "")
+        if not nid:
+            continue
+        G.add_node(nid, **{k: v for k, v in node.items() if k != "id"})
+    for edge in snapshot.get("edges", []):
+        src = edge.get("source", "")
+        tgt = edge.get("target", "")
+        if not src or not tgt:
+            continue
+        G.add_edge(src, tgt, **{k: v for k, v in edge.items() if k not in ("source", "target")})
+
+    if not G.nodes:
+        raise HTTPException(status_code=404, detail="No graph data for this situation")
+
+    if format == "graphml":
+        buf = io.BytesIO()
+        nx.write_graphml(G, buf)
+        buf.seek(0)
+        return StreamingResponse(
+            buf,
+            media_type="application/xml",
+            headers={"Content-Disposition": f'attachment; filename="{situation_id}.graphml"'},
+        )
+
+    if format == "gexf":
+        buf = io.BytesIO()
+        nx.write_gexf(G, buf)
+        buf.seek(0)
+        return StreamingResponse(
+            buf,
+            media_type="application/xml",
+            headers={"Content-Disposition": f'attachment; filename="{situation_id}.gexf"'},
+        )
+
+    if format == "json":
+        data = json_graph.node_link_data(G)
+        return Response(
+            content=json_lib.dumps(data, indent=2),
+            media_type="application/json",
+            headers={"Content-Disposition": f'attachment; filename="{situation_id}.json"'},
+        )
+
+    # format == "cypher"
+    cypher = _to_cypher(G, tenant_id=uid, situation_id=situation_id)
+    return Response(
+        content=cypher,
+        media_type="text/plain",
+        headers={"Content-Disposition": f'attachment; filename="{situation_id}.cypher"'},
+    )
 
 
 # ── Temporal / Graphiti endpoints ─────────────────────────────────────────────

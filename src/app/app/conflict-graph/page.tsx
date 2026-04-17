@@ -27,6 +27,7 @@ import {
   Loader2,
   Info,
   Search,
+  Download,
 } from "lucide-react";
 import { ENTITY_COLORS, ENTITY_TYPES } from "@/lib/constants/entity-colors";
 import { PraxisLink } from "@/components/shared/praxis-link";
@@ -1007,7 +1008,7 @@ function mapEdgeType(type: string): GraphEdge['type'] {
 // ── Real Conflict Graph Page (situation-driven) ──────────────────
 function RealConflictGraphPage() {
   const { activeSituation } = useSituationStore();
-  const { user } = useAuth();
+  const { user, firebaseUser } = useAuth();
 
   const persisted = usePersistedToolData('conflict-graph', activeSituation?.id);
 
@@ -1025,6 +1026,10 @@ function RealConflictGraphPage() {
   const [extractedResult, setExtractedResult] = useState<ExtractedResult | null>(null);
   const [extractError, setExtractError] = useState<string | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
+
+  // ── Export state ─────────────────────────────────────────────
+  const [exportOpen, setExportOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // ── Search state ─────────────────────────────────────────────
   const [graphSearch, setGraphSearch] = useState('');
@@ -1213,6 +1218,38 @@ function RealConflictGraphPage() {
       setIsExtracting(false);
     }
   }, [extractText, isExtracting]);
+
+  // ── Export graph ──────────────────────────────────────────────
+  const handleExport = useCallback(async (format: 'graphml' | 'gexf' | 'cypher' | 'json') => {
+    if (!activeSituation || isExporting) return;
+    setIsExporting(true);
+    setExportOpen(false);
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_PRAXIS_BACKEND_URL;
+      const idToken = await firebaseUser?.getIdToken();
+      const res = await fetch(
+        `${backendUrl}/api/v1/graph/${activeSituation.id}/export?format=${format}`,
+        { headers: { Authorization: `Bearer ${idToken}` } },
+      );
+      if (!res.ok) {
+        console.error('Export failed:', await res.text());
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${activeSituation.name ?? activeSituation.id}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export error:', err);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [activeSituation, isExporting, firebaseUser]);
 
   const toggleType = useCallback((type: string) => {
     setActiveTypes((prev) => {
@@ -1416,6 +1453,32 @@ function RealConflictGraphPage() {
               <Sparkles className="h-3.5 w-3.5" />
               Extract from Text
             </button>
+
+            {/* Export dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setExportOpen((o) => !o)}
+                disabled={isExporting || allNodes.length === 0}
+                className="flex items-center gap-1.5 rounded-lg border border-navy-200 bg-white px-3 py-1.5 text-xs font-medium text-navy-600 transition-colors hover:bg-navy-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isExporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                Export
+                <ChevronDown className={`h-3 w-3 transition-transform ${exportOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {exportOpen && (
+                <div className="absolute right-0 top-full z-20 mt-1 w-36 rounded-lg border border-[var(--color-app-border)] bg-white py-1 shadow-lg">
+                  {(['graphml', 'gexf', 'json', 'cypher'] as const).map((fmt) => (
+                    <button
+                      key={fmt}
+                      onClick={() => handleExport(fmt)}
+                      className="w-full px-3 py-1.5 text-left text-xs text-navy-700 hover:bg-navy-50 transition-colors font-mono"
+                    >
+                      .{fmt}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </motion.div>
 
