@@ -5,7 +5,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/lib/auth/auth-context';
 
-type GraphProvider = 'neo4j' | 'neo4j_self' | 'falkordb_cloud' | 'falkordb_self';
+type GraphProvider = 'spanner' | 'neo4j' | 'neo4j_self' | 'falkordb_cloud' | 'falkordb_self';
 
 interface GraphBackendConfig {
   provider: GraphProvider;
@@ -14,6 +14,10 @@ interface GraphBackendConfig {
   port: string;
   user: string;
   password: string;
+  // Spanner-specific
+  project_id: string;
+  instance_id: string;
+  database_id: string;
 }
 
 const DEFAULT_CONFIG: GraphBackendConfig = {
@@ -23,17 +27,29 @@ const DEFAULT_CONFIG: GraphBackendConfig = {
   port: '6379',
   user: 'neo4j',
   password: '',
+  project_id: '',
+  instance_id: 'praxis-graph',
+  database_id: 'praxis-graph-db',
 };
 
 const PROVIDERS: Array<{ value: GraphProvider; label: string; description: string }> = [
-  { value: 'neo4j', label: 'Neo4j AuraDB (Cloud)', description: 'Managed Neo4j cloud database. Recommended for production.' },
+  {
+    value: 'spanner',
+    label: 'Cloud Spanner Graph',
+    description: 'Production multi-region — managed, ZeroETL with BigQuery, ISO GQL. Recommended for production deployments.',
+  },
+  { value: 'neo4j', label: 'Neo4j AuraDB (Cloud)', description: 'Managed Neo4j cloud database.' },
   { value: 'neo4j_self', label: 'Self-hosted Neo4j', description: 'Your own Neo4j instance.' },
   { value: 'falkordb_cloud', label: 'FalkorDB Cloud', description: 'Managed FalkorDB — Redis-compatible, sub-millisecond graph queries.' },
-  { value: 'falkordb_self', label: 'Self-hosted FalkorDB', description: 'Your own FalkorDB / Redis instance.' },
+  { value: 'falkordb_self', label: 'Self-hosted FalkorDB (ephemeral)', description: 'Your own FalkorDB / Redis instance. Not recommended for production.' },
 ];
 
 function isNeo4j(provider: GraphProvider) {
   return provider === 'neo4j' || provider === 'neo4j_self';
+}
+
+function isSpanner(provider: GraphProvider) {
+  return provider === 'spanner';
 }
 
 export default function GraphBackendPage() {
@@ -83,13 +99,15 @@ export default function GraphBackendPage() {
   if (loading) return <div className="p-8 text-muted-foreground">Loading...</div>;
 
   const neo4j = isNeo4j(config.provider);
+  const spanner = isSpanner(config.provider);
 
   return (
     <div className="p-8 max-w-2xl">
       <h1 className="text-2xl font-semibold text-foreground mb-2">Graph Backend</h1>
       <p className="text-muted-foreground mb-6 text-sm">
         Choose where PRAXIS stores the conflict knowledge graph.
-        Neo4j AuraDB is recommended for most deployments; FalkorDB offers Redis-compatible sub-millisecond performance.
+        Cloud Spanner Graph is recommended for production (managed, multi-region, ISO GQL, ZeroETL with BigQuery).
+        Neo4j AuraDB is a solid managed alternative; FalkorDB offers Redis-compatible sub-millisecond performance.
       </p>
 
       {/* Provider selection */}
@@ -123,7 +141,46 @@ export default function GraphBackendPage() {
       <div className="space-y-4 border border-border rounded-md p-4 mb-6">
         <h2 className="text-sm font-medium text-foreground">Connection Settings</h2>
 
-        {neo4j ? (
+        {spanner ? (
+          <>
+            <p className="text-xs text-muted-foreground">
+              Cloud Spanner Graph uses Workload Identity on Cloud Run — no password required.
+              Run <code className="font-mono bg-muted px-1 rounded">infrastructure/setup-spanner.sh</code> once to provision the instance.
+            </p>
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1">GCP Project ID</label>
+              <input
+                type="text"
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm font-mono"
+                placeholder="praxisbytacitus"
+                value={config.project_id}
+                onChange={(e) => set('project_id', e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Instance ID</label>
+                <input
+                  type="text"
+                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm font-mono"
+                  placeholder="praxis-graph"
+                  value={config.instance_id}
+                  onChange={(e) => set('instance_id', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Database ID</label>
+                <input
+                  type="text"
+                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm font-mono"
+                  placeholder="praxis-graph-db"
+                  value={config.database_id}
+                  onChange={(e) => set('database_id', e.target.value)}
+                />
+              </div>
+            </div>
+          </>
+        ) : neo4j ? (
           <>
             <div>
               <label className="block text-xs text-muted-foreground mb-1">

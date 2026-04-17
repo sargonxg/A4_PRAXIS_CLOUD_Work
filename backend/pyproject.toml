@@ -23,6 +23,7 @@ dependencies = [
     # Graph backends
     "falkordb>=1.1,<2.0",
     "graphiti-core>=0.5,<1.0",
+    "google-cloud-spanner>=3.50.0",
     # Auth (for OIDC token verification in service-to-service)
     "google-auth>=2.0,<3.0",
 ]

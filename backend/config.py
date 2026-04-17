@@ -17,6 +17,12 @@ class Settings(BaseSettings):
     falkordb_host: str = "localhost"
     falkordb_port: int = 6379
 
+    # Cloud Spanner Graph (production multi-region backend)
+    graph_backend: str = "firestore"  # options: firestore, neo4j, falkordb, spanner
+    spanner_project_id: str = ""
+    spanner_instance_id: str = "praxis-graph"
+    spanner_database_id: str = "praxis-graph-db"
+
     # BigQuery
     bigquery_dataset: str = "praxis_analytics"
 
