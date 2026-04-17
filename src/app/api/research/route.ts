@@ -168,44 +168,13 @@ export const POST = withAuth(async (req, user) => {
   };
   await saveResearchStatus(user.uid, situationId, progress);
 
-  // Kick off background research — fire-and-forget (Cloud Run standalone compatible)
-  // Using void IIFE instead of next/server after() for Cloud Run compatibility
-  void (async () => {
-    try {
-      // Dynamic import to avoid circular deps and keep the route handler lean
-      const { executeBackgroundResearch, getToolResearchConfig } =
-        await import('@/lib/services/background-research');
-
-      const config = getToolResearchConfig(toolId);
-      if (!config) {
-        await saveResearchStatus(user.uid, situationId, {
-          ...progress,
-          status: 'failed',
-          error: `No research config for tool: ${toolId}`,
-          completedAt: new Date().toISOString(),
-        });
-        return;
-      }
-
-      await executeBackgroundResearch({
-        uid: user.uid,
-        situationId,
-        toolId,
-        situationName: situation?.name ?? 'Unknown Situation',
-        country: situation?.region ?? situation?.country ?? '',
-        actors: situation?.actors ?? [],
-        researchConfig: config,
-      });
-    } catch (err) {
-      console.error(`[research] Background research failed for ${toolId}:`, err);
-      await saveResearchStatus(user.uid, situationId, {
-        ...progress,
-        status: 'failed',
-        error: err instanceof Error ? err.message : 'Unknown error',
-        completedAt: new Date().toISOString(),
-      }).catch(() => {});
-    }
-  });
+  // Background research engine removed — tools populate on-demand via their own AI routes
+  void saveResearchStatus(user.uid, situationId, {
+    ...progress,
+    status: 'failed',
+    error: 'Background research not available — use tool-specific regenerate',
+    completedAt: new Date().toISOString(),
+  }).catch(() => {});
 
   return NextResponse.json({
     status: 'pending',

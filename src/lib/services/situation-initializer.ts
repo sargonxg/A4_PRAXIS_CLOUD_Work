@@ -399,13 +399,6 @@ const TIER2_SEEDS: ToolSeed[] = [
 // Combined seeds — Tier 1 runs first, then Tier 2
 const TOOL_SEEDS: ToolSeed[] = TIER1_SEEDS;
 
-// Tools that should trigger background research after seeding
-const BACKGROUND_RESEARCH_TOOLS = [
-  'risk-monitor', 'early-warning', 'actor-profiles', 'stakeholder-map',
-  'info-environment', 'sanctions', 'commitments', 'media-compass',
-  'media-roundup', 'geospatial-monitor', 'humanitarian', 'alert-center',
-  'source-monitor', 'argus', 'deep-research',
-];
 
 // ---------------------------------------------------------------------------
 // Main initialization function
@@ -571,42 +564,6 @@ export async function initializeSituationTools(
     });
   } catch {
     // Non-critical
-  }
-
-  // ── Tier 3: Background research (fire-and-forget) ─────────────────────
-  // Trigger live data research for intelligence tools that benefit from
-  // real-time feeds (ACLED, GDELT, etc.). These run asynchronously and
-  // update Firestore + dashboard-snapshot when complete.
-  try {
-    const { executeBackgroundResearch, getToolResearchConfig } =
-      await import('@/lib/services/background-research');
-
-    const researchPromises = BACKGROUND_RESEARCH_TOOLS.map(async (toolId) => {
-      const config = getToolResearchConfig(toolId);
-      if (!config) return;
-      try {
-        // Fire-and-forget — don't await, let them run in parallel
-        executeBackgroundResearch({
-          uid,
-          situationId,
-          toolId,
-          situationName: situation.name,
-          country: situation.region ?? '',
-          actors: situation.actors ?? [],
-          researchConfig: config,
-        }).catch((err) => {
-          console.error(`[situation-init] Tier 3 research failed for ${toolId}:`, err);
-        });
-      } catch {
-        // Non-critical — tool can still be populated on-demand
-      }
-    });
-
-    // Start all research but don't block on it
-    await Promise.allSettled(researchPromises);
-    console.log(`[situation-init] Tier 3: triggered background research for ${BACKGROUND_RESEARCH_TOOLS.length} tools`);
-  } catch (err) {
-    console.error('[situation-init] Failed to trigger Tier 3 research:', err);
   }
 
   console.log(`[situation-init] Total: ${seeded.length} seeded, ${failed.length} failed for ${situationId}`);
