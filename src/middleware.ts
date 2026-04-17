@@ -43,6 +43,21 @@ export function middleware(request: NextRequest) {
       loginUrl.searchParams.set('mode', 'demo');
       return addSecurityHeaders(NextResponse.redirect(loginUrl));
     }
+
+    // Rewrite demo URLs to the canonical /app/$ROUTE page when one exists.
+    // Demo-specific pages (e.g. /demo, /demo/deep-search-agent) are kept under
+    // src/app/demo/ and are NOT rewritten.
+    const demoSpecificRoutes = new Set([
+      '/demo',
+      '/demo/deep-search-agent',
+    ]);
+    if (!demoSpecificRoutes.has(pathname)) {
+      const appPath = pathname.replace(/^\/demo/, '/app');
+      const url = request.nextUrl.clone();
+      url.pathname = appPath;
+      return addSecurityHeaders(NextResponse.rewrite(url));
+    }
+
     return addSecurityHeaders(NextResponse.next());
   }
 
