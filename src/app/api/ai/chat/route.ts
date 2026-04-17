@@ -195,6 +195,19 @@ You have access to the user's active situation data. When answering questions:
       if (!_user.isDemo && _user.uid && sit.id) {
         try {
           graphSnapshot = (await getConflictGraphAdmin(_user.uid, sit.id)) as ConflictGraphSnapshot | null;
+          // Derive extended context from graph nodes where available
+          if (graphSnapshot?.nodes) {
+            const byType = (t: string) => graphSnapshot!.nodes
+              .filter((n) => n.type === t)
+              .map((n) => n.label)
+              .slice(0, 8)
+              .join('; ');
+            situationCtx.interestsSummary = byType('interest');
+            situationCtx.claimsSummary = byType('claim');
+            situationCtx.constraintsSummary = byType('constraint');
+            situationCtx.commitmentsSummary = byType('commitment');
+            situationCtx.narrativesSummary = byType('narrative');
+          }
         } catch {
           // Non-fatal — tools will degrade gracefully without graph data
         }
@@ -203,7 +216,7 @@ You have access to the user's active situation data. When answering questions:
     const tools = createSituationBoundTools(situationCtx, graphSnapshot);
 
     // Select model based on user preferences.
-    // Default: gemini-2.5-flash for fast conversational chat. Users can override
+    // Default: gemini-3-flash for fast conversational chat. Users can override
     // to Pro or Claude via aiSettings. Analytical tools use getProModel() instead.
     const model = aiSettings ? getModelForUser(aiSettings) : getModel();
 

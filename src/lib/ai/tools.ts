@@ -2766,6 +2766,13 @@ export interface SituationToolContext {
   region: string;
   glaslStage?: number;
   riskScore?: number;
+  // Extended context for newly-bound tools (all optional for backwards compat)
+  claimsSummary?: string;
+  interestsSummary?: string;
+  constraintsSummary?: string;
+  commitmentsSummary?: string;
+  narrativesSummary?: string;
+  humanitarianSummary?: string;
 }
 
 export interface ConflictGraphSnapshot {
@@ -2988,6 +2995,330 @@ Requirements:
     },
   });
 
+  const ctxInterests = situationCtx?.interestsSummary ?? '';
+  const ctxConstraints = situationCtx?.constraintsSummary ?? '';
+  const ctxCommitments = situationCtx?.commitmentsSummary ?? '';
+  const ctxNarratives = situationCtx?.narrativesSummary ?? '';
+
+  // --- Bound: negotiationSpaceAnalysis ---
+  const boundNegotiationSpaceAnalysis = tool({
+    description: negotiationSpaceAnalysis.description,
+    inputSchema: negotiationSpaceAnalysis.inputSchema,
+    execute: async ({ conflictId: _conflictId, issuesOfFocus, mediationContext }) => {
+      if (!isRealSituation) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (negotiationSpaceAnalysis.execute as any)({ conflictId: _conflictId, issuesOfFocus, mediationContext });
+      }
+      try {
+        const { output } = await generateText({
+          model: gemini(),
+          abortSignal: timeoutSignal(),
+          output: Output.object({ schema: z.object({
+            conflictName: z.string(),
+            parties: z.array(z.object({ name: z.string(), statedPosition: z.string(), underlyingInterests: z.array(z.string()), batna: z.string(), redLines: z.array(z.string()), flexibilityAreas: z.array(z.string()), negotiatingStrength: z.enum(['strong', 'moderate', 'weak']) })),
+            issueAnalysis: z.array(z.object({ issue: z.string(), zopaExists: z.boolean(), zopaDescription: z.string().optional(), mainObstacles: z.array(z.string()), potentialFormulations: z.array(z.string()) })),
+            potentialTradeoffs: z.array(z.object({ party1: z.string(), concession1: z.string(), party2: z.string(), concession2: z.string(), feasibility: z.enum(['low', 'medium', 'high']) })),
+            dealProbability: z.number().min(0).max(1),
+            dealProbabilityRationale: z.string(),
+            criticalPathToAgreement: z.array(z.string()),
+            spoilerRisks: z.array(z.string()),
+            mediatorRecommendations: z.array(z.string()),
+          }) }),
+          prompt: `Conduct a negotiation space analysis.
+
+SITUATION: ${ctxName} (${ctxRegion})
+DESCRIPTION: ${truncate(ctxDescription)}
+KEY ACTORS: ${ctxActors}
+${ctxInterests ? `MAPPED INTERESTS:\n${ctxInterests}` : ''}
+${ctxConstraints ? `CONSTRAINTS:\n${ctxConstraints}` : ''}
+${ctxCommitments ? `EXISTING COMMITMENTS:\n${ctxCommitments}` : ''}
+${issuesOfFocus ? `FOCUS ISSUES: ${issuesOfFocus.join(', ')}` : ''}
+${mediationContext ? `MEDIATION CONTEXT: ${mediationContext}` : ''}
+
+Map stated positions vs. underlying interests, BATNA, red lines, flexibility areas, deal probability (0-1), critical path to agreement, spoiler risks, and mediator strategy recommendations.`,
+        });
+        return { ...output, _generatedAt: new Date().toISOString() };
+      } catch (err) {
+        if (err instanceof Error && err.name === 'TimeoutError') return { error: true, message: 'Tool timed out after 30s', toolName: 'negotiationSpaceAnalysis', _generatedAt: new Date().toISOString() };
+        return { error: true, message: String(err), _generatedAt: new Date().toISOString() };
+      }
+    },
+  });
+
+  // --- Bound: narrativeEcosystemMap ---
+  const boundNarrativeEcosystemMap = tool({
+    description: narrativeEcosystemMap.description,
+    inputSchema: narrativeEcosystemMap.inputSchema,
+    execute: async ({ conflictId: _conflictId, focus, audienceFocus }) => {
+      if (!isRealSituation) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (narrativeEcosystemMap.execute as any)({ conflictId: _conflictId, focus, audienceFocus });
+      }
+      try {
+        const { output } = await generateText({
+          model: gemini(),
+          abortSignal: timeoutSignal(),
+          output: Output.object({ schema: z.object({
+            conflictName: z.string(),
+            dominantNarratives: z.array(z.object({ narrativeName: z.string(), coreFraming: z.string(), promotedBy: z.array(z.string()), targetAudiences: z.array(z.string()), mediaChannels: z.array(z.string()), strength: z.enum(['weak', 'moderate', 'strong', 'hegemonic']), vulnerabilities: z.string() })),
+            counterNarratives: z.array(z.object({ narrativeName: z.string(), contestedClaim: z.string(), alternativeFraming: z.string(), promotedBy: z.array(z.string()), effectiveness: z.enum(['ineffective', 'limited', 'moderate', 'effective']) })),
+            emergingNarratives: z.array(z.object({ narrativeName: z.string(), description: z.string(), potentialImpact: z.string(), earlyIndicators: z.array(z.string()) })),
+            narrativeClashes: z.array(z.object({ clash: z.string(), partiesInvolved: z.array(z.string()), stakes: z.string() })),
+            misinformationRisks: z.array(z.object({ claim: z.string(), likelihood: z.enum(['low', 'medium', 'high']), potentialImpact: z.string(), countermeasures: z.array(z.string()) })),
+            informationEnvironmentAssessment: z.string(),
+            strategicCommunicationRecommendations: z.array(z.string()),
+          }) }),
+          prompt: `Map the narrative ecosystem of this conflict.
+
+SITUATION: ${ctxName} (${ctxRegion})
+DESCRIPTION: ${truncate(ctxDescription)}
+KEY ACTORS: ${ctxActors}
+${ctxNarratives ? `EXISTING NARRATIVE DATA:\n${ctxNarratives}` : ''}
+${focus ? `ANALYTICAL FOCUS: ${focus}` : ''}
+${audienceFocus ? `AUDIENCE FOCUS: ${audienceFocus}` : ''}
+
+Map dominant narratives, counter-narratives, emerging narratives, narrative clashes, misinformation risks, and provide strategic communication recommendations.`,
+        });
+        return { ...output, _generatedAt: new Date().toISOString() };
+      } catch (err) {
+        if (err instanceof Error && err.name === 'TimeoutError') return { error: true, message: 'Tool timed out after 30s', toolName: 'narrativeEcosystemMap', _generatedAt: new Date().toISOString() };
+        return { error: true, message: String(err), _generatedAt: new Date().toISOString() };
+      }
+    },
+  });
+
+  // --- Bound: historicalParallelAnalysis ---
+  const boundHistoricalParallelAnalysis = tool({
+    description: historicalParallelAnalysis.description,
+    inputSchema: historicalParallelAnalysis.inputSchema,
+    execute: async ({ conflictId, dimension, timeframe }) => {
+      if (!isRealSituation) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (historicalParallelAnalysis.execute as any)({ conflictId, dimension, timeframe });
+      }
+      try {
+        const { output } = await generateText({
+          model: gemini(),
+          abortSignal: timeoutSignal(),
+          output: Output.object({ schema: z.object({
+            conflictName: z.string(),
+            analysisScope: z.string(),
+            parallels: z.array(z.object({ historicalCase: z.string(), period: z.string(), region: z.string(), similarityScore: z.number().min(0).max(1), keyParallels: z.array(z.string()), keyDifferences: z.array(z.string()), outcome: z.string(), lessonsLearned: z.array(z.string()), cautionaryNotes: z.array(z.string()), relevantSources: z.array(z.string()) })),
+            crossCuttingInsights: z.array(z.string()),
+            keyDivergenceFromHistory: z.string(),
+            analystNotes: z.string(),
+          }) }),
+          prompt: `Identify historical conflict parallels.
+
+SITUATION: ${ctxName} (${ctxRegion})
+DESCRIPTION: ${truncate(ctxDescription)}
+KEY ACTORS: ${ctxActors}
+${ctxEvents ? `RECENT DYNAMICS:\n${ctxEvents}` : ''}
+
+ANALYSIS DIMENSION: ${dimension || 'all dimensions'}
+TIMEFRAME: ${timeframe === 'cold_war' ? '1947-1991' : timeframe === 'post_cold_war' ? '1991-2000' : timeframe === 'post_2000' ? '2000-present' : 'any period in modern history'}
+
+Identify 3-5 historical cases with meaningful structural parallels. For each: similarity score (0-1), key parallels and differences, outcome, actionable lessons, cautionary notes on the analogy, and real sources.`,
+        });
+        return { ...output, conflictId, _generatedAt: new Date().toISOString() };
+      } catch (err) {
+        if (err instanceof Error && err.name === 'TimeoutError') return { error: true, message: 'Tool timed out after 30s', toolName: 'historicalParallelAnalysis', conflictId, _generatedAt: new Date().toISOString() };
+        return { error: true, message: String(err), conflictId, _generatedAt: new Date().toISOString() };
+      }
+    },
+  });
+
+  // --- Bound: generateTimeline ---
+  const boundGenerateTimeline = tool({
+    description: generateTimeline.description,
+    inputSchema: generateTimeline.inputSchema,
+    execute: async ({ conflictId, startDate, endDate, eventTypes, includeProjected }) => {
+      if (!isRealSituation) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (generateTimeline.execute as any)({ conflictId, startDate, endDate, eventTypes, includeProjected });
+      }
+      try {
+        const { output } = await generateText({
+          model: gemini(),
+          abortSignal: timeoutSignal(),
+          output: Output.object({ schema: z.object({
+            conflictName: z.string(),
+            timelineRange: z.object({ start: z.string(), end: z.string() }),
+            events: z.array(z.object({ id: z.string(), date: z.string(), title: z.string(), description: z.string(), type: z.enum(['political', 'military', 'diplomatic', 'humanitarian', 'economic']), glaslStage: z.number().min(1).max(9), escalatoryDirection: z.enum(['escalatory', 'de-escalatory', 'neutral']), significance: z.enum(['critical', 'major', 'moderate', 'minor']), involvedActors: z.array(z.string()), sources: z.array(z.string()), tags: z.array(z.string()).optional() })),
+            projectedEvents: z.array(z.object({ estimatedDate: z.string(), title: z.string(), description: z.string(), type: z.enum(['political', 'military', 'diplomatic', 'humanitarian', 'economic']), probability: z.enum(['low', 'medium', 'high']), triggerConditions: z.array(z.string()) })).optional(),
+            escalationTrajectory: z.object({ trend: z.enum(['escalating', 'stable', 'de-escalating', 'volatile']), summary: z.string(), peakStage: z.number().min(1).max(9), currentStage: z.number().min(1).max(9) }),
+            timelineNote: z.string(),
+          }) }),
+          prompt: `Generate a structured conflict timeline.
+
+SITUATION: ${ctxName} (${ctxRegion})
+DESCRIPTION: ${truncate(ctxDescription)}
+${ctxEvents ? `KNOWN EVENTS:\n${ctxEvents}` : ''}
+
+DATE FILTER: ${startDate || 'no start filter'} to ${endDate || 'no end filter'}
+EVENT TYPES: ${eventTypes?.join(', ') || 'all types'}
+INCLUDE PROJECTED: ${includeProjected ? 'YES — include 3-5 plausible near-future events' : 'NO'}
+
+GLASL STAGES: 1 Hardening | 2 Debates | 3 Actions | 4 Coalitions | 5 Loss of face | 6 Threats | 7 Limited blows | 8 Fragmentation | 9 Abyss
+
+For each event: clear title, Glasl stage, escalatory direction, significance, key actors, real source citations.`,
+        });
+        return { ...output, conflictId, _generatedAt: new Date().toISOString() };
+      } catch (err) {
+        if (err instanceof Error && err.name === 'TimeoutError') return { error: true, message: 'Tool timed out after 30s', toolName: 'generateTimeline', conflictId, _generatedAt: new Date().toISOString() };
+        return { error: true, message: String(err), conflictId, _generatedAt: new Date().toISOString() };
+      }
+    },
+  });
+
+  // --- Bound: sanctionsCheck ---
+  const boundSanctionsCheck = tool({
+    description: sanctionsCheck.description,
+    inputSchema: sanctionsCheck.inputSchema,
+    execute: async ({ entityName, conflictId, sanctionsBody, includeGuidance }) => {
+      if (!isRealSituation) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (sanctionsCheck.execute as any)({ entityName, conflictId, sanctionsBody, includeGuidance });
+      }
+      try {
+        const { output } = await generateText({
+          model: gemini(),
+          abortSignal: timeoutSignal(),
+          output: Output.object({ schema: z.object({
+            queryType: z.enum(['entity', 'conflict', 'combined']),
+            disclaimer: z.string(),
+            entityResults: z.array(z.object({ entityName: z.string(), entityType: z.enum(['individual', 'organization', 'vessel', 'aircraft', 'unknown']), sanctionsStatus: z.enum(['designated', 'not_designated', 'unclear', 'delisted']), designatingBodies: z.array(z.object({ body: z.string(), listName: z.string(), designationDate: z.string().optional(), designationBasis: z.string(), measures: z.array(z.enum(['asset_freeze', 'travel_ban', 'arms_embargo', 'trade_restriction'])) })), aliases: z.array(z.string()), associatedEntities: z.array(z.string()), noteworthy: z.string().optional() })).optional(),
+            conflictRegimes: z.array(z.object({ regimeName: z.string(), legalBasis: z.string(), establishedDate: z.string(), designatingBody: z.string(), scopeDescription: z.string(), keyMeasures: z.array(z.string()), currentlyActive: z.boolean(), recentDevelopments: z.string(), keyDesignatedEntities: z.array(z.string()) })).optional(),
+            complianceGuidance: z.object({ dueDiligenceSteps: z.array(z.string()), redFlags: z.array(z.string()), reportingObligations: z.string(), keyContacts: z.array(z.object({ body: z.string(), resource: z.string() })), commonPitfalls: z.array(z.string()) }).optional(),
+            analyticalNote: z.string(),
+          }) }),
+          prompt: `Generate sanctions regime information.
+
+SITUATION: ${ctxName} (${ctxRegion})
+KEY ACTORS: ${ctxActors}
+
+SANCTIONS BODIES: ${sanctionsBody === 'all' || !sanctionsBody ? 'UN Security Council, US OFAC, EU, UK OFSI' : sanctionsBody.replace(/_/g, ' ').toUpperCase()}
+INCLUDE COMPLIANCE GUIDANCE: ${includeGuidance !== false ? 'YES' : 'NO'}
+
+${entityName ? `ENTITY LOOKUP: "${entityName}" in the context of ${ctxName}` : ''}
+${conflictId ? 'Map all relevant sanctions regimes applicable to this conflict.' : ''}
+
+DISCLAIMER: Analytical tool only. Real compliance requires official databases (UN Consolidated List, OFAC SDN, EU Sanctions Map, OFSI). Not legal advice.`,
+        });
+        return {
+          ...output,
+          disclaimer: 'ANALYTICAL PURPOSE ONLY. For actual sanctions compliance, consult official government databases: UN Consolidated List, US OFAC SDN List, EU Sanctions Map, UK OFSI Consolidated List. This AI-generated output does not constitute legal advice.',
+          conflictId: conflictId || null,
+          _generatedAt: new Date().toISOString(),
+        };
+      } catch (err) {
+        if (err instanceof Error && err.name === 'TimeoutError') return { error: true, message: 'Tool timed out after 30s', toolName: 'sanctionsCheck', conflictId: conflictId || null, _generatedAt: new Date().toISOString() };
+        return { error: true, message: String(err), conflictId: conflictId || null, _generatedAt: new Date().toISOString() };
+      }
+    },
+  });
+
+  // --- Bound: humanitarianSnapshot ---
+  const boundHumanitarianSnapshot = tool({
+    description: humanitarianSnapshot.description,
+    inputSchema: humanitarianSnapshot.inputSchema,
+    execute: async ({ conflictId, focusSectors, asOfDate }) => {
+      if (!isRealSituation) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (humanitarianSnapshot.execute as any)({ conflictId, focusSectors, asOfDate });
+      }
+      try {
+        const humanCtx = situationCtx?.humanitarianSummary ?? '';
+        const { output } = await generateText({
+          model: gemini(),
+          abortSignal: timeoutSignal(),
+          output: Output.object({ schema: z.object({
+            conflictName: z.string(),
+            snapshotDate: z.string(),
+            classification: z.enum(['L1', 'L2', 'L3']),
+            overallSeverity: z.enum(['moderate', 'serious', 'critical', 'catastrophic']),
+            executiveSummary: z.string(),
+            populationData: z.object({ totalAffected: z.string(), displaced: z.object({ idps: z.string(), refugees: z.string(), returnees: z.string() }), atRisk: z.string(), keyVulnerableGroups: z.array(z.string()) }),
+            sectorIndicators: z.array(z.object({ sector: z.string(), severityLevel: z.enum(['moderate', 'serious', 'critical', 'catastrophic']), keyIndicators: z.array(z.string()), priority: z.enum(['low', 'medium', 'high', 'acute']), gaps: z.array(z.string()) })),
+            accessConstraints: z.array(z.object({ area: z.string(), constraintType: z.enum(['security', 'bureaucratic', 'physical', 'combined']), description: z.string(), percentageUnreached: z.string().optional(), humanitarianConsequence: z.string() })),
+            fundingStatus: z.object({ appealName: z.string(), totalRequested: z.string(), totalReceived: z.string(), fundingGapPercent: z.number().min(0).max(100), topDonors: z.array(z.string()), criticallyUnderfundedSectors: z.array(z.string()) }),
+            keyProtectionConcerns: z.array(z.string()),
+            immediatePriorities: z.array(z.object({ priority: z.string(), requiredAction: z.string(), responsibleActors: z.array(z.string()), timeline: z.string() })),
+            contactInfo: z.object({ ochaCoverage: z.string(), interclusterCoordinator: z.string(), mediaContact: z.string() }),
+            dataQualityNote: z.string(),
+          }) }),
+          prompt: `Generate an OCHA-style humanitarian snapshot.
+
+SITUATION: ${ctxName} (${ctxRegion})
+DESCRIPTION: ${truncate(ctxDescription)}
+KEY ACTORS: ${ctxActors}
+${humanCtx ? `HUMANITARIAN CONTEXT:\n${humanCtx}` : ''}
+${ctxEvents ? `RECENT EVENTS:\n${ctxEvents}` : ''}
+
+SNAPSHOT DATE: ${asOfDate || new Date().toISOString().split('T')[0]}
+SECTORS: ${focusSectors?.join(', ') || 'all sectors (food security, health, shelter, WASH, protection, education, livelihoods)'}
+
+Follow OCHA SitRep format: IPC phases for food security, IASC classification levels, cluster system for coordination. Lead with most urgent life-threatening concerns. Be frank about access constraints.`,
+        });
+        return { ...output, conflictId, _generatedAt: new Date().toISOString() };
+      } catch (err) {
+        if (err instanceof Error && err.name === 'TimeoutError') return { error: true, message: 'Tool timed out after 30s', toolName: 'humanitarianSnapshot', conflictId, _generatedAt: new Date().toISOString() };
+        return { error: true, message: String(err), conflictId, _generatedAt: new Date().toISOString() };
+      }
+    },
+  });
+
+  // --- Bound: compareConflicts ---
+  // conflict1 is the user's real situation; conflict2 is specified by conflictId2 (user-provided)
+  const boundCompareConflicts = tool({
+    description: compareConflicts.description,
+    inputSchema: compareConflicts.inputSchema,
+    execute: async ({ conflictId1, conflictId2, dimensions, purpose }) => {
+      if (!isRealSituation) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (compareConflicts.execute as any)({ conflictId1, conflictId2, dimensions, purpose });
+      }
+      try {
+        const activeDimensions = dimensions || ['actors', 'grievances', 'escalation', 'international_response', 'humanitarian', 'economics', 'narrative', 'peace_prospects'];
+        const { output } = await generateText({
+          model: gemini(),
+          abortSignal: timeoutSignal(),
+          output: Output.object({ schema: z.object({
+            conflict1Name: z.string(),
+            conflict2Name: z.string(),
+            comparisonDate: z.string(),
+            purpose: z.string(),
+            dimensionalComparisons: z.array(z.object({ dimension: z.string(), conflict1Assessment: z.string(), conflict2Assessment: z.string(), keyDivergences: z.array(z.string()), keyConvergences: z.array(z.string()), analyticalSignificance: z.string() })),
+            overallSimilarityRating: z.number().min(0).max(1),
+            structuralComparison: z.object({ sharedFeatures: z.array(z.string()), distinctiveFeatures1: z.array(z.string()), distinctiveFeatures2: z.array(z.string()) }),
+            lessonsForConflict1: z.array(z.object({ lesson: z.string(), sourceFromConflict2: z.string(), applicability: z.enum(['directly_applicable', 'partially_applicable', 'cautionary']) })),
+            synthesisInsights: z.array(z.string()),
+            comparisonCaveats: z.array(z.string()),
+            recommendedNextSteps: z.array(z.string()),
+          }) }),
+          prompt: `Compare two conflicts across analytical dimensions.
+
+CONFLICT 1 (user's situation): ${ctxName} (${ctxRegion})
+Description: ${truncate(ctxDescription)}
+Key actors: ${ctxActors}
+${ctxEvents ? `Recent dynamics:\n${ctxEvents}` : ''}
+
+CONFLICT 2: "${conflictId2}"
+(If a real conflict, use real data. If fictional or a case name, generate consistent analytical data.)
+
+DIMENSIONS: ${activeDimensions.join(', ')}
+PURPOSE: ${purpose || 'policy'} analysis
+
+For each dimension: assess both conflicts, identify key divergences and convergences, explain analytical significance. Synthesize cross-cutting insights. Note where analogies break down.`,
+        });
+        return { ...output, _generatedAt: new Date().toISOString() };
+      } catch (err) {
+        if (err instanceof Error && err.name === 'TimeoutError') return { error: true, message: 'Tool timed out after 30s', toolName: 'compareConflicts', _generatedAt: new Date().toISOString() };
+        return { error: true, message: String(err), _generatedAt: new Date().toISOString() };
+      }
+    },
+  });
+
   // Return merged tool set — bound tools override the static defaults
   return {
     ...tacitusTools,
@@ -2995,5 +3326,12 @@ Requirements:
     escalationAssessment: boundEscalationAssessment,
     generateTalkingPoints: boundGenerateTalkingPoints,
     draftSection: boundDraftSection,
+    negotiationSpaceAnalysis: boundNegotiationSpaceAnalysis,
+    narrativeEcosystemMap: boundNarrativeEcosystemMap,
+    historicalParallelAnalysis: boundHistoricalParallelAnalysis,
+    generateTimeline: boundGenerateTimeline,
+    sanctionsCheck: boundSanctionsCheck,
+    humanitarianSnapshot: boundHumanitarianSnapshot,
+    compareConflicts: boundCompareConflicts,
   };
 }
