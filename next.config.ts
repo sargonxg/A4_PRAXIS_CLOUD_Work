@@ -25,6 +25,12 @@ const nextConfig: NextConfig = {
     '@google-cloud/common',
     'grpc',
     '@grpc/grpc-js',
+    // Observability — OTel + Winston GCP transport (native bindings, must not be bundled)
+    '@google-cloud/opentelemetry-cloud-trace-exporter',
+    '@google-cloud/logging-winston',
+    '@opentelemetry/sdk-node',
+    '@opentelemetry/auto-instrumentations-node',
+    'winston',
   ],
   experimental: {
     serverActions: {

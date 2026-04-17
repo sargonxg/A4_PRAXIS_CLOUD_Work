@@ -376,6 +376,34 @@ echo "  - 3 Firestore graph query indexes"
 echo "  - 3 Cloud Tasks queues (research, agents, embeddings)"
 echo "  - 5 BigQuery analytics tables"
 
+# ── Observability: BigQuery sink for API call logs ────────────────────────
+echo "Setting up API call log sink to BigQuery..."
+
+# Create api_calls table (praxis_analytics dataset is already created above)
+bq mk --table "${PROJECT_ID}:praxis_analytics.api_calls" \
+  "timestamp:TIMESTAMP,route:STRING,uid:STRING,situation_id:STRING,tool_name:STRING,latency_ms:INTEGER,credits_deducted:INTEGER,status:INTEGER,error:STRING,provider_fallback:BOOLEAN,trace_id:STRING" \
+  2>/dev/null || echo "  Table api_calls already exists"
+
+# Create Cloud Logging sink → BigQuery
+gcloud logging sinks create praxis-api-calls-sink \
+  "bigquery.googleapis.com/projects/${PROJECT_ID}/datasets/praxis_analytics" \
+  --log-filter='resource.type="cloud_run_revision"
+    AND resource.labels.service_name=("praxis-frontend" OR "praxis-backend")
+    AND jsonPayload.message="api_call"' \
+  --project="${PROJECT_ID}" \
+  2>/dev/null || echo "  Sink praxis-api-calls-sink already exists"
+
+# Grant the sink's writer service account BigQuery dataEditor on the dataset
+SINK_SA=$(gcloud logging sinks describe praxis-api-calls-sink --project="${PROJECT_ID}" --format="value(writerIdentity)" 2>/dev/null || echo "")
+if [ -n "$SINK_SA" ]; then
+  bq add-iam-policy-binding \
+    --member="${SINK_SA}" \
+    --role="roles/bigquery.dataEditor" \
+    "${PROJECT_ID}:praxis_analytics" \
+    2>/dev/null || true
+  echo "  Granted ${SINK_SA} bigquery.dataEditor on praxis_analytics"
+fi
+
 echo "✓ GCP setup complete for project: $PROJECT_ID"
 echo ""
 echo "  NEXT STEPS:"
