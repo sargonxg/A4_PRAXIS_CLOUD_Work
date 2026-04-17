@@ -101,7 +101,7 @@ steps:
       - >-
         gcloud run services update praxis-frontend
         --region=us-central1
-        --update-env-vars=NEXT_PUBLIC_PRAXIS_BACKEND_URL=$(cat /workspace/backend_url.txt)
+        --update-env-vars=NEXT_PUBLIC_PRAXIS_BACKEND_URL=$(cat /workspace/backend_url.txt),NEXT_PUBLIC_SITE_URL=https://praxis.tacitus.me
     id: 'set-frontend-env'
     waitFor: ['deploy-frontend']
 

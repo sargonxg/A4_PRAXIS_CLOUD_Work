@@ -4,4 +4,4 @@ Disallow: /app/
 Disallow: /demo/
 Disallow: /api/
 
-Sitemap: https://praxis-nextjs-tacitus.vercel.app/sitemap.xml
+Sitemap: https://praxis.tacitus.me/sitemap.xml
