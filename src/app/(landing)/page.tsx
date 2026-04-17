@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import { Hero } from "@/components/landing/hero";
 import { ProblemSection } from "@/components/landing/problem-section";
 import { Features } from "@/components/landing/features";
@@ -72,11 +73,13 @@ const jsonLd = {
   ],
 };
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
   return (
     <>
       <script
         type="application/ld+json"
+        nonce={nonce}
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <Hero />
