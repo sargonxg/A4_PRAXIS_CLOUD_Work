@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
@@ -278,8 +278,7 @@ export const POST = withAuth(async (request: Request, user) => {
     ]);
 
     // --- AI generation ---
-    const result = await generateText({
-      model: getProModel(),
+    const result = await callProModel({
       output: Output.object({ schema: CompareSchema }),
       system: `You are a senior UN conflict analyst and comparative peace studies expert trained in Most Similar Systems Design (MSSD) methodology. Your role is to identify the most instructive historical conflict cases that illuminate pathways to resolution for the current situation.
 

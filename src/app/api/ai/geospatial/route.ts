@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
@@ -273,8 +273,7 @@ export const POST = withAuth(async (request, user) => {
       : '';
 
     // --- AI analysis ---
-    const result = await generateText({
-      model: getProModel(),
+    const result = await callProModel({
       output: Output.object({ schema: GeospatialSchema }),
       system: `You are a senior conflict geospatial analyst with expertise in UN OCHA mapping standards, ACLED event geolocation, population movement tracking (UNHCR DTM), and infrastructure damage assessment (REACH/IMPACT).
 

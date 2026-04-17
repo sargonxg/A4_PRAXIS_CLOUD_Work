@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
@@ -89,8 +89,7 @@ export const POST = withAuth(async (request, _user) => {
     const webContext = formatResultsAsContext(searchResults);
 
     // --- AI analysis ---
-    const result = await generateText({
-      model: getProModel(),
+    const result = await callProModel({
       output: Output.object({ schema: SanctionsScanSchema }),
       prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior sanctions compliance analyst. Monitor and analyze the latest sanctions developments for the following entities.
 

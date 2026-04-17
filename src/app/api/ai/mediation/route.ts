@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output, streamText } from 'ai';
+import { Output, streamText } from 'ai';
 import { z } from 'zod';
-import { getModel, getProModel } from '@/lib/ai/providers';
+import { getModel, callProModel } from '@/lib/ai/providers';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { writeToolDataServer } from '@/lib/ai/context-builder-server';
@@ -193,8 +193,7 @@ export const POST = withAuth(async (request, user) => {
 
     // --- Action: plan ---
     if (action === 'plan') {
-      const result = await generateText({
-        model: getProModel(),
+      const result = await callProModel({
         output: Output.object({ schema: MediationPlanSchema }),
         prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}You are a senior mediation strategist. Design a comprehensive mediation plan.
 
@@ -221,8 +220,7 @@ For each phase, specify objectives, key questions, and risk factors. Recommend a
 
     // --- Action: settle ---
     if (action === 'settle') {
-      const result = await generateText({
-        model: getProModel(),
+      const result = await callProModel({
         output: Output.object({ schema: SettlementSchema }),
         prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}You are a senior legal advisor specializing in peace agreement drafting. Generate settlement terms.
 

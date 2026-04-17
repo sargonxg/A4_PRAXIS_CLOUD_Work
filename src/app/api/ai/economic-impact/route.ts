@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
@@ -119,8 +119,7 @@ export const POST = withAuth(async (request, user) => {
         )
       : '';
 
-    const result = await generateText({
-      model: getProModel(),
+    const result = await callProModel({
       output: Output.object({ schema: EconomicImpactSchema }),
       system: 'You are an economist specializing in conflict economics and post-conflict reconstruction. Apply World Bank Damage and Needs Assessment framework and IMF post-conflict methodology. Assess war economy dynamics, sanctions regimes, and reconstruction costs with quantitative rigour.',
       prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${webCtx}

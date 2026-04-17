@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -123,8 +123,7 @@ export const POST = withAuth(async (request, user) => {
     ).join('\n\n');
 
     // --- AI synthesis ---
-    const result = await generateText({
-      model: getProModel(),
+    const result = await callProModel({
       output: Output.object({ schema: SourceMonitorSchema }),
       prompt: `${sitCtx ? `${sitCtx}\n\n` : ''}You are the PRAXIS Source Monitor. Analyze the following publications found across ${sources.length} monitored sources for the situation "${sitName}".
 

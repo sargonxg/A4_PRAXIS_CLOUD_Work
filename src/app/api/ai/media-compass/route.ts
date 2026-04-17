@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
@@ -256,8 +256,7 @@ export const POST = withAuth(async (request, user) => {
     ]);
 
     // --- AI generation ---
-    const result = await generateText({
-      model: getProModel(),
+    const result = await callProModel({
       output: Output.object({ schema: MediaCompassSchema }),
       system: `You are PRAXIS Media Compass, a specialist in conflict information environments, media bias analysis, and narrative mapping. You serve UN Political Affairs Officers, diplomatic mediators, and conflict analysts.
 

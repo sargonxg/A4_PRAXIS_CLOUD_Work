@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { buildToolContext } from '@/lib/ai/situation-context';
@@ -54,8 +54,7 @@ export const POST = withAuth(async (req, user) => {
 
     const existingNames = (existingSources || []).map((s) => s.name).join(', ');
 
-    const result = await generateText({
-      model: getProModel(),
+    const result = await callProModel({
       output: Output.object({ schema: DiscoveredSourceSchema }),
       prompt: `You are a conflict intelligence source analyst. For the situation below, discover 8-12 high-value intelligence sources that an analyst should monitor.
 

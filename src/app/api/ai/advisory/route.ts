@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext, buildCrossToolContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
@@ -184,8 +184,7 @@ export const POST = withAuth(async (request, user) => {
       : '';
 
     // --- AI generation ---
-    const result = await generateText({
-      model: getProModel(),
+    const result = await callProModel({
       output: Output.object({ schema: AdvisorySchema }),
       system: `You are a senior strategic advisor to the UN Secretary-General's office. You apply the full PRAXIS analytical framework — Glasl escalation model, Fisher-Ury interests, Zartman ripeness, Stedman spoiler theory — to generate prioritized, actionable strategic recommendations. Tailor every recommendation to the analyst's specific role.
 

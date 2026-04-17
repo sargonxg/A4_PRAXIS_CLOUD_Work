@@ -91,6 +91,8 @@ export const POST = withAuth(async (request: Request, _user) => {
         .map((r) => `### ${r.advisorName}\n${r.response}`)
         .join('\n\n---\n\n');
 
+      // Intentionally uses getProModel() directly: streamText routes are not wrapped by
+      // callProModel (which only wraps generateText). Pro gives better synthesis quality.
       const result = streamText({
         model: getProModel(),
         system: `You are a senior synthesis analyst for PRAXIS. Synthesize multiple expert advisor inputs into a coherent policy brief. Identify consensus, contested areas, and minority views. Be concise and actionable. ${sitCtx}`,
@@ -130,6 +132,7 @@ Be specific. Reference advisors by name when attributing views.`,
         ? (messages[messages.length - 1] as { content: string }).content
         : 'the current situation';
 
+      // Intentionally uses getProModel() directly: streamText route, callProModel wraps generateText only.
       const result = streamText({
         model: getProModel(),
         system: `${persona}\n\nYou are operating in DEVIL'S ADVOCATE mode. Your job is to vigorously challenge the conventional wisdom and surface uncomfortable counterarguments. You believe the dominant analysis is missing something important. Challenge assumptions, highlight evidence that cuts against the consensus, and propose alternative interpretations — even if they make people uncomfortable. Be specific, evidence-based, and constructive in your contrarianism. ${sitCtx}`,
@@ -178,6 +181,7 @@ You are operating within PRAXIS, TACITUS's conflict intelligence platform. You a
 
 You have access to a web search tool. Use it only when the user asks about current events, recent data, or specific statistics that you cannot answer from your knowledge. Do not search for general conceptual questions. Cite sources when you use search results. Keep responses focused and non-repetitive — do not repeat information already provided in the conversation.${deepAnalysis ? DEEP_ANALYSIS_SUFFIX : ''}${situation ? `\n\n## Active Situation Context\n${buildToolContext(situation as unknown as Situation)}` : ''}`;
 
+    // Intentionally uses getProModel() directly: streamText route, callProModel wraps generateText only.
     const model = deepAnalysis ? getProModel() : getModel();
 
     const result = streamText({

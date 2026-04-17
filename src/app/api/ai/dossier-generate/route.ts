@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext, buildCrossToolContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
@@ -300,8 +300,7 @@ export const POST = withAuth(async (request, user) => {
     const sitName = (sitObj as unknown as Situation | undefined)?.name ?? caseId ?? 'the situation';
     const sitRegion = (sitObj as unknown as Situation | undefined)?.region ?? '';
 
-    const result = await generateText({
-      model: getProModel(),
+    const result = await callProModel({
       output: Output.object({ schema: DossierSchema }),
       system: `You are a senior intelligence analyst at a major international crisis monitoring organization — equivalent to UN DPPA, International Crisis Group, or a G7 diplomatic service analytical unit.
 

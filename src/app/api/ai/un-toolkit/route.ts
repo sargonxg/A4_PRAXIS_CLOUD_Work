@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { UN_STYLE_PROMPT } from '@/lib/ai/prompts/un-style';
@@ -252,8 +252,7 @@ export const POST = withAuth(async (request, user) => {
       ? keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')
       : '';
 
-    const result = await generateText({
-      model: getProModel(),
+    const result = await callProModel({
       output: Output.object({ schema: UnToolkitSchema }),
       system: `${UN_STYLE_PROMPT}
 

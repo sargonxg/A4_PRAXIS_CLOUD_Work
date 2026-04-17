@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -117,8 +117,7 @@ export const POST = withAuth(async (request, user) => {
 
     // --- AI analysis ---
     const contextPrefix = [graphCtx, sitContext].filter(Boolean).join('\n\n');
-    const result = await generateText({
-      model: getProModel(),
+    const result = await callProModel({
       output: Output.object({ schema: TreatyAnalysisSchema }),
       prompt: `${contextPrefix ? `${contextPrefix}\n\n` : ''}You are a senior legal analyst specializing in peace agreement analysis and international humanitarian law. Analyze the following treaty or agreement text.
 

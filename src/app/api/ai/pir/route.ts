@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { buildGraphContext } from '@/lib/ai/context-builder-server';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
@@ -156,8 +156,7 @@ export const POST = withAuth(async (request, user) => {
         `PIR ${i + 1} [ID: ${p.id}] [${p.priority.toUpperCase()}] [${p.category}]\nQuestion: ${p.question}`
       ).join('\n\n');
 
-      const result = await generateText({
-        model: getProModel(),
+      const result = await callProModel({
         output: Output.object({ schema: PIRBatchAnswerSchema }),
         prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}You are an intelligence officer answering Priority Intelligence Requirements (PIRs) for a conflict situation.
 
@@ -177,8 +176,9 @@ The answer should be actionable and directly address what the analyst needs to k
 
       // Persist answers back to Firestore
       const now = new Date().toISOString();
+      const pirOutput = result.output as { answers: Array<{ pirId: string; answer: string; confidence: string }> };
       await Promise.all(
-        result.output.answers.map((ans) =>
+        pirOutput.answers.map((ans) =>
           pirsRef.doc(ans.pirId).update({
             answer: ans.answer,
             confidence: ans.confidence,

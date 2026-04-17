@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { generateText, Output } from 'ai';
+import { Output } from 'ai';
 import { z } from 'zod';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
@@ -106,8 +106,7 @@ export const POST = withAuth(async (request, user) => {
 
     const systemPrompt = [graphCtx, sitContext, DIPLOMATIC_SYSTEM_PROMPT].filter(Boolean).join('\n\n');
 
-    const result = await generateText({
-      model: getProModel(),
+    const result = await callProModel({
       output: Output.object({ schema: TalkingPointsSchema }),
       system: systemPrompt,
       prompt: `Generate structured diplomatic talking points using Fisher-Ury interest-based framing.

@@ -132,6 +132,8 @@ export const POST = withAuth(async (request: Request) => {
     if (!creditCheck.allowed) return creditCheck.response;
 
     // --- Stream the brief ---
+    // Intentionally uses getProModel() directly: this is a streamText route (not generateText)
+    // and callProModel only wraps generateText. Pro is preferred for long-form streaming output.
     const result = streamText({
       model: getProModel(),
       system: sitContext ? `${sitContext}\n\n${ACTOR_BRIEF_SYSTEM_PROMPT}` : ACTOR_BRIEF_SYSTEM_PROMPT,
