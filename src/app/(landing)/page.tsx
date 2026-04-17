@@ -1,18 +1,13 @@
 import { Hero } from "@/components/landing/hero";
 import { ProblemSection } from "@/components/landing/problem-section";
-import { Features } from "@/components/landing/features";
-import { LivePlatformPreview } from "@/components/landing/live-platform-preview";
 import { ConflictGrammarHighlight } from "@/components/landing/conflict-grammar-highlight";
-import { AdvisoryCouncil } from "@/components/landing/advisory-council";
-import { SecuritySection } from "@/components/landing/security-section";
+import { LivePlatformPreview } from "@/components/landing/live-platform-preview";
 import { UseCaseCards } from "@/components/landing/use-case-cards";
-import { BuiltByPractitioners } from "@/components/landing/built-by-practitioners";
-import { Testimonials } from "@/components/landing/testimonials";
-import { Marketplace } from "@/components/landing/marketplace";
-import { EcosystemSection } from "@/components/landing/ecosystem-section";
-import { Cta } from "@/components/landing/cta";
-import { WaitlistForm } from "@/components/landing/waitlist-form";
+import { SecuritySection } from "@/components/landing/security-section";
+import { AdvisoryCouncil } from "@/components/landing/advisory-council";
 import { MethodologySection } from "@/components/landing/methodology-section";
+import { WaitlistForm } from "@/components/landing/waitlist-form";
+import { Cta } from "@/components/landing/cta";
 import { Footer } from "@/components/landing/footer";
 
 const jsonLd = {
@@ -81,17 +76,12 @@ export default function LandingPage() {
       />
       <Hero />
       <ProblemSection />
-      <Features />
-      <LivePlatformPreview />
       <ConflictGrammarHighlight />
-      <MethodologySection />
+      <LivePlatformPreview />
       <UseCaseCards />
-      <BuiltByPractitioners />
-      <AdvisoryCouncil />
       <SecuritySection />
-      <Testimonials />
-      <EcosystemSection />
-      <Marketplace />
+      <AdvisoryCouncil />
+      <MethodologySection />
       <WaitlistForm />
       <Cta />
       <Footer />
