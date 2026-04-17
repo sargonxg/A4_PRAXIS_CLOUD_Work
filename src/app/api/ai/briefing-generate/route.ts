@@ -5,13 +5,16 @@ import { getModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
-import { isServerDemoMode } from '@/lib/demo/demo-mode';
+import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
+import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
+
+// ── Full briefing schema (mode: 'full', default) ──────────────────────────────
 
 const BriefingSchema = z.object({
   bluf: z.string().describe('Bottom Line Up Front: single paragraph stating the situation assessment, 2 key developments, and recommended action'),
@@ -31,9 +34,7 @@ const BriefingSchema = z.object({
   ).describe('Structured political affairs briefing sections for UN Senior Leadership, following DPPA analytical standards'),
 });
 
-// ---------------------------------------------------------------------------
-// Morning Digest System Prompt
-// ---------------------------------------------------------------------------
+// ── Morning Digest System Prompt ─────────────────────────────────────────────
 
 const MORNING_DIGEST_SYSTEM_PROMPT = `You are drafting a morning political affairs digest for a UN Senior Leadership audience, following DPPA analytical standards. Structure exactly as follows:
 
@@ -66,6 +67,8 @@ FORMAT RULES:
 - Use standard UN date format: DD Month YYYY.
 - Flag items by urgency where appropriate: CRITICAL / IMPORTANT / ROUTINE.`;
 
+// ── Demo responses ────────────────────────────────────────────────────────────
+
 const MORNING_DIGEST_DEMO = `## OVERNIGHT DEVELOPMENTS
 - 🔴 CRITICAL: Buffer zone incursion reported near Kessara corridor — third incident this week. UNMN observers confirmed vehicle movement from GoN side at 0300 UTC.
 - 🟡 IMPORTANT: Karovian military transport flight KV-4112 landed at Nordalia City International at 0145 UTC. Sixth flight in 10 days — logistics pattern suggests materiel buildup.
@@ -95,9 +98,7 @@ const MORNING_DIGEST_DEMO = `## OVERNIGHT DEVELOPMENTS
 - 🟢 **Next Monday:** AU PSC consultative meeting on Sahel/Nordalia regional dynamics
 - 🟢 **April 1:** Eastern Province planting season begins — humanitarian access critical`;
 
-
-// Static demo response
-const DEMO_RESPONSE = {
+const DEMO_RESPONSE_FULL = {
   bluf: 'The Nordalia conflict remains at Glasl Stage 5 with ceasefire holding but under increasing strain from buffer zone incursions and the appointment of AFN hardliner General Mensah as Defence Minister; Karovian military logistics have increased 40% over the past 30 days. Immediate priorities are reinforcing UNMN ceasefire monitoring at Kessara corridor and launching an economic working group on rare earth revenue-sharing before the June AU mediation round.',
   speakerNotes: 'Open with the Mensah appointment — it is the most significant political development and signals the hardline faction is ascendant. Emphasise the 60-90 day window before the June AU round. Close with the planting season humanitarian urgency.',
   keyJudgments: [
@@ -138,54 +139,25 @@ const DEMO_RESPONSE = {
       sources: ['PRAXIS Glasl assessment, March 2026'],
     },
     {
-      title: 'Humanitarian Situation',
-      content: `- **Food insecurity:** 2.8M people affected; planting season (April-May) at risk
-- **Humanitarian access:** Three corridors operating below capacity
-  - GoN administrative obstacles at Checkpoint Alpha
-  - DRM taxation of aid convoys in Sector 3
-- **Protection concerns:** Five NIMN journalists detained; CSCN leaders under pressure from both parties
-- **Refugee burden:** Westmark hosting 340K refugees, straining host communities`,
-      speakerNotes: 'The approaching planting season is a critical window. If agricultural activity is disrupted for a second consecutive year, we face a protracted food crisis. This creates urgency for humanitarian access improvements regardless of political progress.',
-      sources: ['OCHA Situation Report, 28 Feb 2026', 'WFP food security assessment', 'UNHCR data'],
-    },
-    {
-      title: 'Regional Dynamics',
-      content: `- **Karovia:** Deepening military partnership with GoN; arms embargo violations documented
-- **Westmark:** Maintaining targeted sanctions on 23 GoN officials; hosting refugee population
-- **P5 dynamics:** Split mirrors local conflict polarization; complicating UNSC action
-- **RECONA:** Limited capacity for independent intervention; Karovian influence constrains action
-- **Risk:** Low but non-trivial (10-15%) probability of direct Karovian military intervention if GoN faces existential threat`,
-      speakerNotes: 'The proxy dimension is critical. The conflict cannot be resolved without addressing the Karovia-Westmark security competition. A parallel regional track is needed alongside the domestic political process.',
-      sources: ['Panel of Experts interim report S/2025/892', 'Security Council Report forecast, Feb 2026'],
-    },
-    {
       title: 'Policy Options and Recommendations',
       content: `1. **Reinforce ceasefire monitoring** — Additional UNMN observers at three highest-risk contact points
 2. **Economic working group** — Joint GoN-DRM group on rare earth revenue-sharing
 3. **Military-to-military channel** — Expand SRSG back-channel to include senior military representatives
 4. **Arms embargo enforcement** — Implement Panel of Experts monitoring recommendations
 5. **Regional security dialogue** — Dedicated envoy or contact group for Karovia-Westmark dimension`,
-      speakerNotes: 'Frame these as a sequenced package. Items 1-3 are immediately actionable. Items 4-5 require UNSC consensus-building. The economic working group is the most promising entry point because both parties have material interests in rare earth revenue stability.',
+      speakerNotes: 'Frame these as a sequenced package. Items 1-3 are immediately actionable. Items 4-5 require UNSC consensus-building.',
       sources: ['PRAXIS policy analysis', 'UN Peacebuilding Fund cost-benefit methodology'],
-    },
-    {
-      title: 'Key Dates and Decision Points',
-      content: `- **April-May 2026:** Eastern Province planting season — critical humanitarian window
-- **June 2026:** Proposed third AU mediation round
-- **September 2026:** UNMN mandate renewal review
-- **Q2 2027:** AU Roadmap target for transitional elections (increasingly unrealistic)
-
-**Watchlist:** AFN troop movements near Kessara corridor; Karovian military flights; DRM procurement patterns; UNSC informal consultations on mandate`,
-      speakerNotes: 'The September 2026 mandate renewal is the next major institutional decision point. If the political track remains stalled, there is a real risk of mandate contraction or non-renewal. This creates a window of opportunity but also a deadline pressure that could be destabilizing.',
     },
   ],
 };
 
+// ── Route handler ─────────────────────────────────────────────────────────────
+
 export const POST = withAuth(async (request, user) => {
   try {
-    const { caseId, briefingType, conflictContext, situationContext, situation } = await request.json() as {
-      caseId: string;
-      briefingType: string;
+    const body = await request.json() as {
+      caseId?: string;
+      briefingType?: string;
       conflictContext?: string;
       situationContext?: {
         name: string;
@@ -197,9 +169,82 @@ export const POST = withAuth(async (request, user) => {
         description: string;
       };
       situation?: Situation;
+      // mode discriminator: 'full' (default) | 'quick' (absorbed from /api/ai/brief)
+      mode?: 'full' | 'quick';
+      // quick mode fields (used by dashboard AiInsightsPanel)
+      situationName?: string;
     };
+
+    const { caseId, briefingType, conflictContext, situationContext, situation, mode = 'full' } = body;
     const sitContext = situation ? buildToolContext(situation) : '';
     const situationId = situation?.id ?? '';
+
+    // ── mode: 'quick' — streaming-only intelligence brief (absorbed from /api/ai/brief) ──
+    if (mode === 'quick') {
+      if (isServerDemoMode()) {
+        return formatAsStreamResponse('**Demo Mode** — This analysis requires a live AI connection. Set GOOGLE_AI_API_KEY in your environment to enable it.');
+      }
+
+      const creditCheck = await checkAndDeductCredits('ai_brief', 'Intelligence brief generation');
+      if (!creditCheck.allowed) return creditCheck.response!;
+
+      const { situationName } = body;
+
+      // Build rich context — prefer full situation object; fallback to name
+      let liveContext = '';
+      try {
+        const searchTerm = situation?.name ?? situationName ?? '';
+        if (searchTerm) {
+          const results = await searchWeb(
+            `${searchTerm} latest developments conflict update 2025 2026`,
+            { numResults: 4 },
+          );
+          if (results.length > 0) {
+            liveContext = '\n\nLIVE INTELLIGENCE SOURCES:\n' + formatResultsAsContext(results);
+          }
+        }
+      } catch { /* non-blocking */ }
+
+      const name = situation?.name ?? situationName ?? 'the active situation';
+      const region = situation?.region ?? '';
+      const glaslStage = situation?.glaslStage ?? null;
+      const riskScore = situation?.riskScore ?? null;
+      const actors = situation?.actors?.slice(0, 4).join(', ') ?? '';
+
+      const result = streamText({
+        model: getModel(),
+        system: `You are a senior UN Political Affairs Officer preparing a concise morning intelligence brief.
+Write in professional UN diplomatic register. Use **bold headers** for each section.
+Be precise, evidence-grounded, and actionable. Avoid speculation — note uncertainty where relevant.`,
+        messages: [
+          {
+            role: 'user',
+            content: `${sitContext ? `${sitContext}\n\n---\n\n` : ''}${liveContext ? `${liveContext}\n\n---\n\n` : ''}Generate a morning intelligence brief for: **${name}**${region ? ` (${region})` : ''}.
+
+${glaslStage ? `Glasl Escalation Stage: ${glaslStage}/9` : ''}
+${riskScore ? `Risk Score: ${riskScore}/10` : ''}
+${actors ? `Key Actors: ${actors}` : ''}
+
+Structure the brief with these three sections:
+
+**Situation Overview**
+2–3 sentences on the current state of the conflict — key dynamics, recent developments, trajectory.
+
+**Key Risks & Flashpoints**
+2–3 bullet points on the most significant near-term risks or escalation triggers. Be specific.
+
+**Priority Action**
+1 clear recommended action for a mediator or political affairs officer right now.
+
+Keep the entire brief under 250 words. Cite live sources where available.`,
+          },
+        ],
+      });
+
+      return result.toUIMessageStreamResponse();
+    }
+
+    // ── mode: 'full' — structured briefing with slides (original behaviour) ────
 
     // --- Live intelligence feed ---
     let intelContext = '';
@@ -218,22 +263,17 @@ export const POST = withAuth(async (request, user) => {
       }
     } catch { /* data feeds optional */ }
 
-    // ---------------------------------------------------------------------------
-    // Morning Digest — streamed markdown (not structured slides)
-    // ---------------------------------------------------------------------------
+    // ── Morning digest sub-type — streamed markdown ──────────────────────────
     if (briefingType === 'morning-digest') {
-      // Demo mode returns static markdown
       if (isServerDemoMode()) {
         return new Response(MORNING_DIGEST_DEMO, {
           headers: { 'Content-Type': 'text/plain; charset=utf-8' },
         });
       }
 
-      // Credit check — 2 credits (cheaper than full briefing; runs daily)
       const digestCreditCheck = await checkAndDeductCredits('ai_morning_digest', 'Morning digest generation');
       if (!digestCreditCheck.allowed) return digestCreditCheck.response;
 
-      // Web-grounded context for latest developments
       const webContext = situation
         ? await buildWebGroundedContext(
             { name: situation.name, region: situation.region, actors: situation.actors },
@@ -248,7 +288,6 @@ export const POST = withAuth(async (request, user) => {
           )
         : '';
 
-      // Build situation context block
       const sitBlock = situationContext
         ? `SITUATION: ${situationContext.name}
 REGION: ${situationContext.region}
@@ -279,25 +318,19 @@ PROBABILITY LANGUAGE REQUIREMENT: Use ICD 203 Analytic Standards probability lan
       return result.toTextStreamResponse();
     }
 
-    // ---------------------------------------------------------------------------
-    // Standard briefing (slide-based)
-    // ---------------------------------------------------------------------------
+    // ── Standard full briefing (slide-based) ─────────────────────────────────
 
-    // --- Demo mode ---
     if (isServerDemoMode()) {
-      return NextResponse.json(DEMO_RESPONSE);
+      return NextResponse.json(DEMO_RESPONSE_FULL);
     }
 
-    // --- Credit check ---
     const creditCheck = await checkAndDeductCredits('ai_briefing_generate', 'Briefing generation');
     if (!creditCheck.allowed) return creditCheck.response;
 
-    // --- Graph context ---
     const graphCtx = situationId
       ? await buildGraphContext(user.uid, situationId, 'briefing').catch(() => '')
       : '';
 
-    // --- Web-grounded context ---
     const webCtx = situation
       ? await buildWebGroundedContext(
           { name: situation.name, region: situation.region, actors: situation.actors },
@@ -306,14 +339,13 @@ PROBABILITY LANGUAGE REQUIREMENT: Use ICD 203 Analytic Standards probability lan
         )
       : '';
 
-    // --- AI generation ---
     const result = await generateText({
       model: getModel(),
       output: Output.object({ schema: BriefingSchema }),
-      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${intelContext ? `${intelContext}\n\n` : ''}${webCtx ? `${webCtx}\n\n` : ''}You are drafting a political affairs briefing for a UN Senior Leadership audience. This is a ${briefingType} briefing.
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${intelContext ? `${intelContext}\n\n` : ''}${webCtx ? `${webCtx}\n\n` : ''}You are drafting a political affairs briefing for a UN Senior Leadership audience. This is a ${briefingType ?? 'standard'} briefing.
 
-CASE: ${caseId}
-BRIEFING TYPE: ${briefingType}
+CASE: ${caseId ?? ''}
+BRIEFING TYPE: ${briefingType ?? 'standard'}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
 
 LATEST WEB INTELLIGENCE:

@@ -921,7 +921,7 @@ function EscalationStageSection({ stage }: { stage: number }) {
 }
 
 // ---------------------------------------------------------------------------
-// AI Insights Panel — collapsible, calls /api/ai/brief or shows placeholder
+// AI Insights Panel — collapsible, calls /api/ai/briefing-generate?mode=quick or shows placeholder
 // ---------------------------------------------------------------------------
 
 function AiInsightsPanel({ situationName }: { situationName: string }) {
@@ -937,10 +937,10 @@ function AiInsightsPanel({ situationName }: { situationName: string }) {
     setGenerated(true);
     setBrief('');
     try {
-      const res = await fetch('/api/ai/brief', {
+      const res = await fetch('/api/ai/briefing-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ situationName }),
+        body: JSON.stringify({ situationName, mode: 'quick' }),
       });
       if (!res.ok) throw new Error('brief-failed');
       const reader = res.body!.getReader();
@@ -956,7 +956,7 @@ function AiInsightsPanel({ situationName }: { situationName: string }) {
         }
       }
     } catch {
-      setBrief('_AI briefing unavailable. The /api/ai/brief endpoint may not be configured for this situation._');
+      setBrief('_AI briefing unavailable. The /api/ai/briefing-generate endpoint may not be configured for this situation._');
     } finally {
       setLoading(false);
     }
