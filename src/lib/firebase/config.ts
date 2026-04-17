@@ -3,14 +3,26 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 
+function getEnvOrThrow(key: string): string {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(
+      `Missing required env var: ${key}. ` +
+      `See .env.local.example for the Firebase configuration block. ` +
+      `In production, these are set by Cloud Build via --set-env-vars.`
+    );
+  }
+  return value;
+}
+
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyAHNn4zJdMaxJXziRNa9SmHRFKUvO1q9uA",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "praxisbytacitus.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "praxisbytacitus",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "praxisbytacitus.firebasestorage.app",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "852128226674",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:852128226674:web:535f771c7a3568462c11eb",
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-7R44KT7CDY",
+  apiKey: getEnvOrThrow('NEXT_PUBLIC_FIREBASE_API_KEY'),
+  authDomain: getEnvOrThrow('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'),
+  projectId: getEnvOrThrow('NEXT_PUBLIC_FIREBASE_PROJECT_ID'),
+  storageBucket: getEnvOrThrow('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'),
+  messagingSenderId: getEnvOrThrow('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
+  appId: getEnvOrThrow('NEXT_PUBLIC_FIREBASE_APP_ID'),
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID, // optional
 };
 
 // Initialize Firebase (singleton pattern)
