@@ -243,7 +243,7 @@ function SessionPlannerSection({ situation }: { situation?: import('@/types/situ
       // Real mode: call /api/ai/mediation with action 'plan'
       try {
         const frameworkObj = MEDIATION_FRAMEWORKS.find((f) => f.id === selectedFramework);
-        const res = await fetch('/api/ai/mediation', {
+        const res = await fetch('/api/ai/mediation-design', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
