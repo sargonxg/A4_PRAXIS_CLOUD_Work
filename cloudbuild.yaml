@@ -1,8 +1,22 @@
 steps:
+  # ── Model string guard — must run before any build ──────────────────────────
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if grep -rE "gemini-2\.0|gemini-2\.5|gemini-3-pro-preview" src/ backend/ --include="*.ts" --include="*.tsx" --include="*.py" 2>/dev/null; then
+          echo "ERROR: Forbidden model strings found. Use src/lib/ai/providers.ts (frontend) or backend/config.py (backend)."
+          exit 1
+        fi
+        echo "OK: no forbidden model strings"
+    id: 'check-model-strings'
+
   # ── Backend ─────────────────────────────────────────────────────────────────
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-backend', './backend']
     id: 'build-backend'
+    waitFor: ['check-model-strings']
 
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-backend']

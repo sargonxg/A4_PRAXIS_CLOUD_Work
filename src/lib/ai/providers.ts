@@ -122,11 +122,14 @@ export function getAnalysisModel(): LanguageModel {
 }
 
 /**
- * Deep Think model — Gemini 3.1 Pro with high thinking level.
- * Set per-request: providerOptions: { google: { thinkingLevel: 'high' } }
+ * Deep Think model — Gemini 3.1 Pro with configurable thinking level.
  * Use for: Game Theory, scenario probability, treaty legal analysis.
+ *
+ * The thinking_level parameter (Gemini 3+) replaces the deprecated thinking_budget.
+ * MEDIUM is the default for Gemini 3.1 — meaningful improvement over old binary on/off.
+ * Callers pass it per-request: { providerOptions: { google: { thinking_level: 'high' } } }
  */
-export function getDeepThinkModel(): LanguageModel {
+export function getDeepThinkModel(_level: 'low' | 'medium' | 'high' = 'medium'): LanguageModel {
   return getProModel();
 }
 
@@ -216,13 +219,11 @@ export function getGroundedModel(_modelId?: string): LanguageModel {
 /** User-preference model — routes to the model the user selected in settings. */
 export function getModelForUser(settings?: { preferredModel?: string; model?: string }): LanguageModel {
   switch (settings?.preferredModel ?? settings?.model) {
-    case 'gemini-3.1-pro-preview':
-    case 'gemini-2.5-pro':           return getProModel();
+    case 'gemini-3.1-pro-preview':   return getProModel();
     case 'claude-sonnet-4':
     case 'claude-sonnet-4-20250514': return getAnalysisModel();
     case 'gemini-3-flash-preview':
     case 'gemini-3-flash':
-    case 'gemini-2.5-flash':
     default:                         return getModel();
   }
 }

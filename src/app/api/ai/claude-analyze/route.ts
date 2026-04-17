@@ -100,7 +100,7 @@ ${context ? `## Context Provided\n${context}` : ''}
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
         'X-AI-Provider': hasAnthropic ? 'anthropic' : 'google',
-        'X-AI-Model': hasAnthropic ? 'claude-sonnet-4-20250514' : 'gemini-2.5-flash',
+        'X-AI-Model': hasAnthropic ? 'claude-sonnet-4-20250514' : 'gemini-3-flash-preview',
       },
     });
   } catch (err) {

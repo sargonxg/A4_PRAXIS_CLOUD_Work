@@ -25,8 +25,7 @@ export interface AISettings {
     | 'claude-sonnet-4-20250514'
     // Legacy values — kept for backwards-compatibility, mapped to new models at runtime
     | 'gemini-3-flash'
-    | 'gemini-2.5-flash'
-    | 'gemini-2.5-pro'
+    | 'gemini-3-flash-preview'
     | 'claude-sonnet-4';
   temperature: number;              // 0.0-1.0, default 0.4
   researchDepth: 'quick' | 'standard' | 'comprehensive';

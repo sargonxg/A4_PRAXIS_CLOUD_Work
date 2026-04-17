@@ -66,7 +66,7 @@ export async function PUT(request: Request) {
 
     // Validate and sanitize
     const settings: Partial<AISettings> = {};
-    if (body.preferredModel && ['gemini-2.5-flash', 'gemini-2.5-pro', 'claude-sonnet-4'].includes(body.preferredModel)) {
+    if (body.preferredModel && ['gemini-3-flash-preview', 'gemini-3.1-pro-preview', 'claude-sonnet-4-20250514', 'gemini-3-flash', 'claude-sonnet-4'].includes(body.preferredModel)) {
       settings.preferredModel = body.preferredModel;
     }
     if (typeof body.temperature === 'number') {

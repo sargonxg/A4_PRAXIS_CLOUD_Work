@@ -46,11 +46,14 @@ class ConflictMemory:
             llm_client = GeminiClient(
                 config=LLMConfig(
                     api_key=settings.google_ai_api_key,
-                    model="gemini-2.0-flash",
+                    model=settings.graphiti_llm_model,
                 )
             )
             embedder = GeminiEmbedder(
-                config=GeminiEmbedderConfig(api_key=settings.google_ai_api_key)
+                config=GeminiEmbedderConfig(
+                    api_key=settings.google_ai_api_key,
+                    embedding_model=settings.graphiti_embedder_model,
+                )
             )
             self._client = Graphiti(
                 uri=settings.neo4j_uri,

@@ -21,8 +21,10 @@ class Settings(BaseSettings):
     bigquery_dataset: str = "praxis_analytics"
 
     # AI Models
-    gemini_model: str = "gemini-2.5-flash"
-    gemini_deep_model: str = "gemini-2.5-pro"
+    gemini_model: str = "gemini-3-flash"
+    gemini_deep_model: str = "gemini-3.1-pro-preview"
+    graphiti_llm_model: str = "gemini-3-flash"
+    graphiti_embedder_model: str = "gemini-embedding-2-preview"
 
     # CORS — comma-separated origins. Cloud Run URLs auto-allowed via regex in main.py.
     cors_origins_str: str = "http://localhost:3000,http://localhost:3001,https://praxis.tacitus.me"

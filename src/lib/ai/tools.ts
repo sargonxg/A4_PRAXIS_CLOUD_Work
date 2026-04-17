@@ -1,18 +1,11 @@
 import { tool, generateText, Output } from 'ai';
 import { z } from 'zod';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { DEMO_CONFLICT } from '@/lib/constants/demo-conflict';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
 import { findMediaOutlet } from '@/lib/constants/media-database';
 import { searchWeb } from '@/lib/ai/firecrawl';
 import { executeWebResearch, type WebResearchResult } from '@/lib/ai/web-research';
-
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY || '',
-});
-
-// Convenience helper — single place to swap model version
-const gemini = (model = 'gemini-2.5-flash') => google(model);
+import { getModel, getProModel } from '@/lib/ai/providers';
 
 // ---------------------------------------------------------------------------
 // Shared helpers — truncation and timeout
@@ -185,7 +178,7 @@ export const analyzeDocument = tool({
   execute: async ({ text, extractionTargets, conflictContext }) => {
     try {
       const { output } = await generateText({
-        model: gemini(),
+        model: getModel(),
         abortSignal: timeoutSignal(),
         output: Output.object({ schema: z.object({
           entities: z.array(
@@ -403,7 +396,7 @@ export const draftSection = tool({
         .join('\n');
 
       const { text } = await generateText({
-        model: gemini(),
+        model: getModel(),
         abortSignal: timeoutSignal(),
         system: DIPLOMATIC_SYSTEM_PROMPT,
         prompt: `Draft the "${sectionTitle}" section for a ${templateType.replace(/_/g, ' ')} report.
@@ -500,7 +493,7 @@ export const editForDiplomaticTone = tool({
 
       // Pass 2: Gemini for nuanced diplomatic revision
       const { text: finalText } = await generateText({
-        model: gemini(),
+        model: getModel(),
         abortSignal: timeoutSignal(),
         prompt: `You are a UN editorial specialist with expertise in diplomatic language and the UN Editorial Manual. Review and revise this text for a ${targetAudience.replace(/_/g, ' ')} audience at sensitivity level: ${sensitivityLevel || 'medium'}.
 
@@ -601,7 +594,7 @@ export const analyzeMediaSource = tool({
         : `No entry found in PRAXIS database for "${sourceName}". Generate analysis based on general knowledge.`;
 
       const { output } = await generateText({
-        model: gemini(),
+        model: getModel(),
         abortSignal: timeoutSignal(),
         output: Output.object({ schema: z.object({
           sourceName: z.string(),
@@ -667,7 +660,7 @@ export const compareMediaCoverage = tool({
       });
 
       const { output } = await generateText({
-        model: gemini(),
+        model: getModel(),
         abortSignal: timeoutSignal(),
         output: Output.object({ schema: z.object({
           topic: z.string(),
@@ -851,7 +844,7 @@ export const draftResolutionLanguage = tool({
   execute: async ({ topic: _topic, type, keyPoints, strength, previousResolutions, chapterVII }) => {
     try {
     const { output } = await generateText({
-      model: gemini(),
+      model: getModel(),
       abortSignal: timeoutSignal(),
       output: Output.object({ schema: z.object({
         topic: z.string(),
@@ -937,7 +930,7 @@ export const generateTalkingPoints = tool({
       .join('\n');
 
     const { output } = await generateText({
-      model: gemini(),
+      model: getModel(),
       abortSignal: timeoutSignal(),
       output: Output.object({ schema: z.object({
         topic: z.string(),
@@ -1027,7 +1020,7 @@ export const escalationAssessment = tool({
     const actorList = conflict.actors.map((a) => `${a.name} (${a.type})`).join(', ');
 
     const { output } = await generateText({
-      model: gemini(),
+      model: getModel(),
       abortSignal: timeoutSignal(),
       output: Output.object({ schema: z.object({
         conflictName: z.string(),
@@ -1145,7 +1138,7 @@ export const negotiationSpaceAnalysis = tool({
       .join('\n');
 
     const { output } = await generateText({
-      model: gemini(),
+      model: getModel(),
       abortSignal: timeoutSignal(),
       output: Output.object({ schema: z.object({
         conflictName: z.string(),
@@ -1259,7 +1252,7 @@ export const narrativeEcosystemMap = tool({
       .join('\n');
 
     const { output } = await generateText({
-      model: gemini(),
+      model: getModel(),
       abortSignal: timeoutSignal(),
       output: Output.object({ schema: z.object({
         conflictName: z.string(),
@@ -1373,7 +1366,7 @@ export const historicalParallelAnalysis = tool({
       .join('\n');
 
     const { output } = await generateText({
-      model: gemini(),
+      model: getModel(),
       abortSignal: timeoutSignal(),
       output: Output.object({ schema: z.object({
         conflictName: z.string(),
@@ -1474,7 +1467,7 @@ export const generateTimeline = tool({
       .join('\n');
 
     const { output } = await generateText({
-      model: gemini(),
+      model: getModel(),
       abortSignal: timeoutSignal(),
       output: Output.object({ schema: z.object({
         conflictName: z.string(),
@@ -1587,7 +1580,7 @@ export const sanctionsCheck = tool({
     const conflictActors = conflict.actors.map((a) => `${a.name} (${a.type}): ${a.description.slice(0, 80)}`).join('\n');
 
     const { output } = await generateText({
-      model: gemini(),
+      model: getModel(),
       abortSignal: timeoutSignal(),
       output: Output.object({ schema: z.object({
         queryType: z.enum(['entity', 'conflict', 'combined']),
@@ -1714,7 +1707,7 @@ export const humanitarianSnapshot = tool({
       .join('\n');
 
     const { output } = await generateText({
-      model: gemini(),
+      model: getModel(),
       abortSignal: timeoutSignal(),
       output: Output.object({ schema: z.object({
         conflictName: z.string(),
@@ -1855,7 +1848,7 @@ export const compareConflicts = tool({
     ];
 
     const { output } = await generateText({
-      model: gemini(),
+      model: getModel(),
       abortSignal: timeoutSignal(),
       output: Output.object({ schema: z.object({
         conflict1Name: z.string(),
@@ -1965,7 +1958,7 @@ export const canonicalNameLookup = tool({
     if (allResults.length === 0) {
       // Fallback to AI knowledge
       const { text } = await generateText({
-        model: gemini(),
+        model: getModel(),
         abortSignal: timeoutSignal(),
         prompt: `What is the canonical/official name for "${entity}" (${entityType})?
 ${context ? `Context: ${context}` : ''}
@@ -1994,7 +1987,7 @@ Be precise and cite the authoritative source for each name variant.`,
     ).join('\n\n');
 
     const { output } = await generateText({
-      model: gemini(),
+      model: getModel(),
       abortSignal: timeoutSignal(),
       output: Output.object({ schema: z.object({
         canonicalName: z.string().describe('The most authoritative/official name'),
@@ -2100,7 +2093,7 @@ export const deepSourceResearch = tool({
     ).join('\n\n---\n\n');
 
     const { output } = await generateText({
-      model: gemini(),
+      model: getModel(),
       abortSignal: timeoutSignal(),
       output: Output.object({ schema: z.object({
         summary: z.string().describe('Executive summary of findings (2-3 paragraphs)'),
@@ -2184,7 +2177,7 @@ export const verifyAndStandardize = tool({
     ).join('\n');
 
     const { output } = await generateText({
-      model: gemini(),
+      model: getModel(),
       abortSignal: timeoutSignal(),
       output: Output.object({ schema: z.object({
         verified: z.boolean().describe('Whether the claim is verified as accurate'),
@@ -2238,7 +2231,7 @@ export const stakeholderInfluenceMap = tool({
   execute: async ({ actors, situationContext, analysisScope }) => {
     try {
       const { output } = await generateText({
-        model: gemini('gemini-2.5-flash'),
+        model: getModel(),
         abortSignal: timeoutSignal(),
         output: Output.object({ schema: z.object({
           quadrants: z.object({
@@ -2329,7 +2322,7 @@ export const ceasefireMonitor = tool({
   execute: async ({ conflictContext, parties, ceasefireDate, terms, recentEvents }) => {
     try {
       const { output } = await generateText({
-        model: gemini('gemini-2.5-flash'),
+        model: getModel(),
         abortSignal: timeoutSignal(),
         output: Output.object({ schema: z.object({
           complianceScores: z.array(z.object({
@@ -2396,7 +2389,7 @@ export const peaceAgreementAnalyzer = tool({
   execute: async ({ agreementText, parties, signedDate, situationContext }) => {
     try {
       const { output } = await generateText({
-        model: gemini('gemini-2.5-flash'),
+        model: getModel(),
         abortSignal: timeoutSignal(),
         output: Output.object({ schema: z.object({
           provisions: z.array(z.object({
@@ -2472,7 +2465,7 @@ export const earlyWarningBrief = tool({
   execute: async ({ conflictContext, recentEvents, region, timeHorizon }) => {
     try {
       const { output } = await generateText({
-        model: gemini('gemini-2.5-flash'),
+        model: getModel(),
         abortSignal: timeoutSignal(),
         output: Output.object({ schema: z.object({
           alertLevel: z.enum(['green', 'yellow', 'orange', 'red']),
@@ -2560,7 +2553,7 @@ export const gameTheoryAnalysis = tool({
         : null;
 
       const { output } = await generateText({
-        model: gemini('gemini-2.5-pro'),
+        model: getProModel(),
         abortSignal: timeoutSignal(),
         output: Output.object({ schema: z.object({
           gameType: z.string(),
@@ -2638,7 +2631,7 @@ export const protectionOfCiviliansAssessment = tool({
   execute: async ({ conflictContext, actors, recentEvents, affectedAreas }) => {
     try {
       const { output } = await generateText({
-        model: gemini('gemini-2.5-flash'),
+        model: getModel(),
         abortSignal: timeoutSignal(),
         output: Output.object({ schema: z.object({
           pocThreats: z.array(z.object({
@@ -2880,7 +2873,7 @@ export function createSituationBoundTools(
     execute: async ({ conflictId: _conflictId, specificConcern, timeHorizon }) => {
       try {
         const { output } = await generateText({
-          model: gemini(),
+          model: getModel(),
           abortSignal: timeoutSignal(),
           output: Output.object({
             schema: z.object({
@@ -2927,7 +2920,7 @@ Provide: current stage, key drivers, de-escalation opportunities, trigger risks,
     execute: async ({ topic, audience, position, conflictId, maxPoints }) => {
       try {
         const { output } = await generateText({
-          model: gemini(),
+          model: getModel(),
           abortSignal: timeoutSignal(),
           output: Output.object({
             schema: z.object({
@@ -2967,7 +2960,7 @@ Also provide: 3 anticipated questions with suggested responses, 3 key messages t
     execute: async ({ sectionTitle, templateType, conflictId: _conflictId, instructions, wordLimit, tone }) => {
       try {
         const { text } = await generateText({
-          model: gemini(),
+          model: getModel(),
           abortSignal: timeoutSignal(),
           system: DIPLOMATIC_SYSTEM_PROMPT,
           prompt: `Draft the "${sectionTitle}" section for a ${templateType.replace(/_/g, ' ')} report.
@@ -3011,7 +3004,7 @@ Requirements:
       }
       try {
         const { output } = await generateText({
-          model: gemini(),
+          model: getModel(),
           abortSignal: timeoutSignal(),
           output: Output.object({ schema: z.object({
             conflictName: z.string(),
@@ -3056,7 +3049,7 @@ Map stated positions vs. underlying interests, BATNA, red lines, flexibility are
       }
       try {
         const { output } = await generateText({
-          model: gemini(),
+          model: getModel(),
           abortSignal: timeoutSignal(),
           output: Output.object({ schema: z.object({
             conflictName: z.string(),
@@ -3098,7 +3091,7 @@ Map dominant narratives, counter-narratives, emerging narratives, narrative clas
       }
       try {
         const { output } = await generateText({
-          model: gemini(),
+          model: getModel(),
           abortSignal: timeoutSignal(),
           output: Output.object({ schema: z.object({
             conflictName: z.string(),
@@ -3139,7 +3132,7 @@ Identify 3-5 historical cases with meaningful structural parallels. For each: si
       }
       try {
         const { output } = await generateText({
-          model: gemini(),
+          model: getModel(),
           abortSignal: timeoutSignal(),
           output: Output.object({ schema: z.object({
             conflictName: z.string(),
@@ -3182,7 +3175,7 @@ For each event: clear title, Glasl stage, escalatory direction, significance, ke
       }
       try {
         const { output } = await generateText({
-          model: gemini(),
+          model: getModel(),
           abortSignal: timeoutSignal(),
           output: Output.object({ schema: z.object({
             queryType: z.enum(['entity', 'conflict', 'combined']),
@@ -3230,7 +3223,7 @@ DISCLAIMER: Analytical tool only. Real compliance requires official databases (U
       try {
         const humanCtx = situationCtx?.humanitarianSummary ?? '';
         const { output } = await generateText({
-          model: gemini(),
+          model: getModel(),
           abortSignal: timeoutSignal(),
           output: Output.object({ schema: z.object({
             conflictName: z.string(),
@@ -3281,7 +3274,7 @@ Follow OCHA SitRep format: IPC phases for food security, IASC classification lev
       try {
         const activeDimensions = dimensions || ['actors', 'grievances', 'escalation', 'international_response', 'humanitarian', 'economics', 'narrative', 'peace_prospects'];
         const { output } = await generateText({
-          model: gemini(),
+          model: getModel(),
           abortSignal: timeoutSignal(),
           output: Output.object({ schema: z.object({
             conflict1Name: z.string(),

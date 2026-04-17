@@ -135,7 +135,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     frameworks: ['ACO Conflict Grammar v2.0', 'Social Network Analysis'],
     dataSources: [],
     relatedTools: ['actor-profiles', 'stakeholder-map', 'dashboard'],
-    methodology: 'The conflict graph represents the situation as a directed property graph where nodes are ACO entities (14 types) and edges are typed relationships (ally/adversary, claims/contests, leverages/constrains, commits/violates). Graph metrics (degree centrality, betweenness centrality, clustering coefficient) identify structural properties: high-betweenness actors are likely brokers; isolated clusters indicate sub-conflict dynamics. The graph is built via NLP extraction from source documents and structured AI generation using gemini-2.5-pro with the ConflictGraphSchema.',
+    methodology: 'The conflict graph represents the situation as a directed property graph where nodes are ACO entities (14 types) and edges are typed relationships (ally/adversary, claims/contests, leverages/constrains, commits/violates). Graph metrics (degree centrality, betweenness centrality, clustering coefficient) identify structural properties: high-betweenness actors are likely brokers; isolated clusters indicate sub-conflict dynamics. The graph is built via NLP extraction from source documents and structured AI generation using gemini-3.1-pro-preview with the ConflictGraphSchema.',
   },
 
   // ── ANALYSIS ──────────────────────────────────────────────────────────────
@@ -306,7 +306,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     frameworks: ['UN DPPA Report Standards', 'UN Editorial Manual', 'OCHA Situation Report Format'],
     dataSources: ['ACLED', 'GDELT', 'ReliefWeb', 'HDX HAPI'],
     relatedTools: ['assistant', 'briefing', 'talking-points'],
-    methodology: 'Reports follow UN Secretariat documentation standards: A/xx/xx series numbering format for General Assembly documents, S/xxxx for Security Council documents, political cable format for SRSG communications. Section structure follows UN DPPA situation report templates: Executive Summary → Background → Latest Developments → Political Analysis → Security Situation → Humanitarian Overview → Human Rights → International Response → Recommendations. Each section integrates live data feeds (ACLED for security, HDX for humanitarian, GDELT for diplomatic activity). The report is generated section-by-section using gemini-2.5-pro with situation context, then assembled into a single DOCX/PDF document.',
+    methodology: 'Reports follow UN Secretariat documentation standards: A/xx/xx series numbering format for General Assembly documents, S/xxxx for Security Council documents, political cable format for SRSG communications. Section structure follows UN DPPA situation report templates: Executive Summary → Background → Latest Developments → Political Analysis → Security Situation → Humanitarian Overview → Human Rights → International Response → Recommendations. Each section integrates live data feeds (ACLED for security, HDX for humanitarian, GDELT for diplomatic activity). The report is generated section-by-section using gemini-3.1-pro-preview with situation context, then assembled into a single DOCX/PDF document.',
     staleAfterHours: 720,
     modelTier: 'pro',
   },
@@ -382,7 +382,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     frameworks: ['UN DPPA Morning Brief Format', 'OCHA SitRep Standards'],
     dataSources: ['ACLED', 'GDELT', 'ReliefWeb', 'HDX HAPI', 'Firecrawl'],
     relatedTools: ['briefing', 'alert-center', 'dashboard'],
-    methodology: 'Standard mode aggregates the previous 24h from four live feeds: ACLED (conflict events + fatalities), GDELT (instability index + diplomatic activity), ReliefWeb (UN humanitarian reports), HDX HAPI (food security, displacement updates). Deep Research mode additionally runs a Firecrawl crawl of 5 pre-configured high-reliability sources plus a Google-grounded Gemini query for breaking developments. AI synthesis uses gemini-2.5-flash with the situation context block to produce a 400-600 word morning brief in OCHA SitRep format. Source provenance is tracked in the `sourcesSummary` field.',
+    methodology: 'Standard mode aggregates the previous 24h from four live feeds: ACLED (conflict events + fatalities), GDELT (instability index + diplomatic activity), ReliefWeb (UN humanitarian reports), HDX HAPI (food security, displacement updates). Deep Research mode additionally runs a Firecrawl crawl of 5 pre-configured high-reliability sources plus a Google-grounded Gemini query for breaking developments. AI synthesis uses gemini-3-flash-preview with the situation context block to produce a 400-600 word morning brief in OCHA SitRep format. Source provenance is tracked in the `sourcesSummary` field.',
     staleAfterHours: 24,
     modelTier: 'flash',
   },
