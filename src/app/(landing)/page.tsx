@@ -11,6 +11,8 @@ import { WaitlistForm } from "@/components/landing/waitlist-form";
 import { Cta } from "@/components/landing/cta";
 import { Footer } from "@/components/landing/footer";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://praxis.tacitus.me';
+
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
@@ -19,7 +21,7 @@ const jsonLd = {
   operatingSystem: "Web",
   description:
     "The AI-native workspace for peace and security professionals. Turn raw conflict data into decisive intelligence in minutes, not weeks.",
-  url: "https://praxis.tacitus.me",
+  url: siteUrl,
   offers: [
     {
       "@type": "Offer",

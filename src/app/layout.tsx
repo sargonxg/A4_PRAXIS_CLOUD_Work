@@ -27,8 +27,10 @@ export const viewport: Viewport = {
   themeColor: '#0F172A',
 };
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://praxis.tacitus.me';
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://praxis.tacitus.me"),
+  metadataBase: new URL(siteUrl),
   title: "PRAXIS by TACITUS — Conflict Intelligence Platform",
   description:
     "The AI-native workspace for peace and security professionals. Turn raw conflict data into decisive intelligence in minutes, not weeks.",
