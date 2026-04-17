@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { Output } from 'ai';
 import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
-import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
+import { buildToolContext, buildWebGroundedContext, buildCrossToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
@@ -11,6 +11,8 @@ import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 45;
+
+// ── Power-map schema (view: 'power' | 'both', default) ───────────────────────
 
 const PowerMapSchema = z.object({
   actors: z.array(
@@ -66,7 +68,100 @@ const PowerMapSchema = z.object({
   })).optional(),
 });
 
-const DEMO_RESPONSE = {
+// ── Stakeholder-salience schema (view: 'stakeholder') — Mitchell-Agle-Wood ───
+
+const StakeholderActorSchema = z.object({
+  name: z.string().describe('Full actor name'),
+  lederachTrack: z
+    .enum(['track-1', 'track-2', 'track-3'])
+    .describe(
+      'Lederach multi-level peace-building pyramid: track-1=top political/military leadership, track-2=middle-range (religious leaders, academics, NGOs), track-3=grassroots communities'
+    ),
+  trackLabel: z
+    .string()
+    .describe('Human-readable label, e.g. "Top Leadership", "Middle-Range Leaders", "Grassroots"'),
+  powerLevel: z
+    .number()
+    .min(0)
+    .max(10)
+    .describe('Aggregate capacity to influence outcomes (0=none, 10=decisive)'),
+  interestLevel: z
+    .number()
+    .min(0)
+    .max(10)
+    .describe('Stake in the situation outcome (0=peripheral, 10=existential)'),
+  quadrant: z
+    .enum(['manage-closely', 'keep-satisfied', 'keep-informed', 'monitor'])
+    .describe(
+      'Power-interest matrix quadrant: manage-closely=high power+high interest, keep-satisfied=high power+low interest, keep-informed=low power+high interest, monitor=low power+low interest'
+    ),
+  stance: z
+    .enum(['spoiler', 'supporter', 'neutral', 'uncertain'])
+    .describe('Actor disposition toward a negotiated resolution'),
+  engagementStrategy: z
+    .string()
+    .describe("Tailored engagement recommendation for a mediator based on this actor's quadrant and track"),
+  keyInterests: z
+    .array(z.string())
+    .describe('Underlying interests driving this actor (Fisher-Ury interest analysis)'),
+  redLines: z
+    .array(z.string())
+    .describe(
+      'Non-negotiable thresholds — conditions that would cause this actor to walk away or spoil the process'
+    ),
+});
+
+const CoalitionSchema = z.object({
+  name: z.string().describe('Coalition or bloc name'),
+  members: z.array(z.string()).describe('Names of actors in this coalition'),
+  cohesion: z
+    .enum(['high', 'medium', 'low'])
+    .describe('Internal unity: high=aligned interests, medium=shared goals with tensions, low=fragile alignment'),
+  sharedInterest: z
+    .string()
+    .describe('The primary shared interest holding this coalition together'),
+  vulnerabilities: z
+    .string()
+    .describe('What could fracture or split this coalition — internal contradictions, competing interests, or external pressure'),
+});
+
+const EngagementStepSchema = z.object({
+  step: z.number().describe('Sequence number (1 = first priority)'),
+  actor: z.string().describe('Actor name to engage at this step'),
+  rationale: z
+    .string()
+    .describe('Why this actor must be engaged at this point in the sequence'),
+});
+
+const StakeholderMapSchema = z.object({
+  actors: z
+    .array(StakeholderActorSchema)
+    .min(4)
+    .max(14)
+    .describe('All significant stakeholders across all three Lederach tracks'),
+  coalitions: z
+    .array(CoalitionSchema)
+    .describe('Identified actor groupings and blocs'),
+  keyDividers: z
+    .array(z.string())
+    .min(3)
+    .max(5)
+    .describe('Top 3-5 substantive issues currently dividing stakeholders from resolution'),
+  bridgeBuilders: z
+    .array(z.string())
+    .describe(
+      'Actors with the credibility, relationships, and motivation to bridge key divides — include their bridging capacity'
+    ),
+  engagementSequence: z
+    .array(EngagementStepSchema)
+    .describe(
+      'Prioritized engagement sequence for a mediator — ordered by strategic necessity, not preference'
+    ),
+});
+
+// ── Demo responses ────────────────────────────────────────────────────────────
+
+const DEMO_RESPONSE_POWER = {
   actors: [
     { id: 'gov', name: 'Government of Nordalia (GoN)', shortName: 'GoN', type: 'state' as const, power: 8, interest: 9, stance: 'opponent' as const, color: '#1A2332', keyLeverage: 'Territorial control, international legitimacy, AFN military capacity', engagementStrategy: 'Manage closely — decision-maker with high stakes. Engage at ministerial level. Frame any concessions as sovereignty-preserving.' },
     { id: 'drm', name: 'Democratic Reform Movement', shortName: 'DRM', type: 'non_state_armed' as const, power: 6, interest: 10, stance: 'opponent' as const, color: '#A63D40', keyLeverage: 'Territorial control of Eastern Provinces, armed capacity, civilian support base', engagementStrategy: 'Manage closely — existential stakes. Engage through backchannel and international interlocutors. Address security guarantees first.' },
@@ -100,23 +195,274 @@ const DEMO_RESPONSE = {
   ],
 };
 
+const DEMO_RESPONSE_STAKEHOLDER = {
+  actors: [
+    {
+      name: 'Government of Nordalia (GoN) — Cabinet',
+      lederachTrack: 'track-1' as const,
+      trackLabel: 'Top Leadership',
+      powerLevel: 8.5,
+      interestLevel: 9,
+      quadrant: 'manage-closely' as const,
+      stance: 'neutral' as const,
+      engagementStrategy: 'Primary engagement target. Ministerial-level shuttle diplomacy through UNMN Special Envoy. Frame any political accommodation as sovereignty-preserving and as a GoN-controlled transition.',
+      keyInterests: [
+        'Preserve territorial integrity and central government sovereignty over eastern provinces',
+        'Secure international legitimacy and avoid UNSC sanctions or ICC referral',
+        'Prevent precedent of armed group receiving political concessions',
+      ],
+      redLines: [
+        'Any form of federalism or formal autonomy that implies precedent for secession',
+        'Prosecution of senior AFN commanders for alleged war crimes',
+        'DRM retaining armed capacity after any political agreement',
+      ],
+    },
+    {
+      name: 'Democratic Reform Movement (DRM) — Political Bureau',
+      lederachTrack: 'track-1' as const,
+      trackLabel: 'Top Leadership',
+      powerLevel: 7,
+      interestLevel: 10,
+      quadrant: 'manage-closely' as const,
+      stance: 'neutral' as const,
+      engagementStrategy: 'Engage through backchannel with Karovian facilitation. Security guarantees for leadership must precede any disarmament discussion.',
+      keyInterests: [
+        'Guaranteed political participation pathway through recognized party registration',
+        'Personal security guarantees and amnesty for senior leadership',
+        'Equitable revenue sharing from Belara Mining Complex',
+      ],
+      redLines: [
+        'Disarmament prior to political agreement and credible security guarantees',
+        'Any process that does not result in early elections or transitional power-sharing',
+      ],
+    },
+    {
+      name: 'UN Mission Nordalia (UNMN) — Special Envoy',
+      lederachTrack: 'track-1' as const,
+      trackLabel: 'Top Leadership',
+      powerLevel: 7,
+      interestLevel: 8,
+      quadrant: 'manage-closely' as const,
+      stance: 'supporter' as const,
+      engagementStrategy: 'Central coordinating actor for all mediation tracks. Brief regularly on intelligence from cross-track engagement.',
+      keyInterests: [
+        'Successful mediation mandate to preserve institutional credibility',
+        'Durable ceasefire to protect civilian population and enable humanitarian access',
+      ],
+      redLines: [
+        'Being excluded from formal talks in favor of purely bilateral GoN-DRM process',
+      ],
+    },
+    {
+      name: 'Republic of Karovia — Ministry of Foreign Affairs',
+      lederachTrack: 'track-1' as const,
+      trackLabel: 'Top Leadership',
+      powerLevel: 8,
+      interestLevel: 7,
+      quadrant: 'keep-satisfied' as const,
+      stance: 'supporter' as const,
+      engagementStrategy: "Keep satisfied — Karovia's patron relationship with DRM makes it a veto player. Engage bilaterally at Deputy FM level on security guarantee framework.",
+      keyInterests: [
+        'Buffer zone in eastern Nordalia limiting GoN military pressure on Karovian border',
+        'Protect Karovian ethnic minority concentrated in DRM-held territory',
+      ],
+      redLines: [
+        'GoN military operation reaching Karovian border regardless of outcome',
+        'Any agreement that does not protect Karovian minority rights in the east',
+      ],
+    },
+    {
+      name: 'Nordalia Civil Society Coalition (CSC)',
+      lederachTrack: 'track-2' as const,
+      trackLabel: 'Middle-Range Leaders',
+      powerLevel: 3.5,
+      interestLevel: 9,
+      quadrant: 'keep-informed' as const,
+      stance: 'supporter' as const,
+      engagementStrategy: 'Keep informed through structured consultation process. Include CSC representatives in civil society advisory panel to the UNMN process.',
+      keyInterests: [
+        'Human rights accountability and transitional justice mechanism',
+        'Inclusion of civil society in any transitional governance arrangements',
+      ],
+      redLines: [
+        'Any blanket amnesty that includes perpetrators of documented war crimes',
+        'A peace deal concluded without civil society consultation',
+      ],
+    },
+  ],
+  coalitions: [
+    {
+      name: 'GoN Establishment Bloc',
+      members: ['Government of Nordalia (GoN) — Cabinet', 'Nordalia Armed Forces (AFN) — General Staff'],
+      cohesion: 'medium' as const,
+      sharedInterest: 'Maintaining the political and economic status quo.',
+      vulnerabilities: 'AFN hardliners and GoN civilian cabinet have diverging timelines: cabinet faces electoral pressure, military does not.',
+    },
+    {
+      name: 'DRM-Karovia Alignment',
+      members: ['Democratic Reform Movement (DRM) — Political Bureau', 'Republic of Karovia — Ministry of Foreign Affairs'],
+      cohesion: 'high' as const,
+      sharedInterest: 'A negotiated outcome that gives DRM recognized political status and protects Karovian minority rights.',
+      vulnerabilities: "If DRM political bureau and field commanders diverge, Karovia may choose to negotiate directly with GoN over DRM's head.",
+    },
+  ],
+  keyDividers: [
+    'DDR sequencing deadlock: GoN demands disarmament before political concessions; DRM demands political guarantees before any disarmament',
+    'Revenue sharing from Belara Mining Complex',
+    'Accountability and impunity: CSC demands transitional justice; GoN and AFN treat this as a red line',
+    'Political representation pathway: DRM demands recognized party registration and early elections',
+    'Karovian role in any settlement framework',
+  ],
+  bridgeBuilders: [
+    'Nordalia Council of Religious Leaders — crosses conflict lines, trusted by both communities',
+    'Republic of Karovia — Foreign Ministry moderates have direct leverage over DRM political bureau',
+    'UN Mission Nordalia (UNMN) — Special Envoy has mandate and relationships with both parties',
+  ],
+  engagementSequence: [
+    {
+      step: 1,
+      actor: 'Republic of Karovia — Ministry of Foreign Affairs',
+      rationale: 'Karovian commitment to halt material support to DRM is the single most achievable confidence-building measure and unlocks GoN willingness to enter formal talks.',
+    },
+    {
+      step: 2,
+      actor: 'Government of Nordalia (GoN) — Cabinet',
+      rationale: 'With Karovian CBM secured, engage GoN civilian cabinet on the revenue-sharing issue where ZOPA exists.',
+    },
+    {
+      step: 3,
+      actor: 'Democratic Reform Movement (DRM) — Political Bureau',
+      rationale: 'Engage DRM through Karovian backchannel on security guarantee framework after Karovian signaling.',
+    },
+  ],
+};
+
+// ── Route handler ─────────────────────────────────────────────────────────────
+
 export const POST = withAuth(async (request, user) => {
   try {
+    const body = await request.json() as {
+      situation?: Situation;
+      additionalContext?: string;
+      situationId?: string;
+      view?: 'power' | 'stakeholder' | 'both';
+    };
+
+    const { situation, additionalContext, view = 'power' } = body;
+    // Accept situationId from body (used by stakeholder view refresh buttons)
+    const situationId = situation?.id ?? body.situationId ?? '';
+
+    // ── Demo mode ──────────────────────────────────────────────────────────────
     if (isServerDemoMode()) {
-      return NextResponse.json(DEMO_RESPONSE);
+      return NextResponse.json(view === 'stakeholder' ? DEMO_RESPONSE_STAKEHOLDER : DEMO_RESPONSE_POWER);
     }
 
+    // ── Stakeholder view — Mitchell-Agle-Wood salience model (absorbed from /api/ai/stakeholder-map) ──
+    if (view === 'stakeholder') {
+      const creditCheck = await checkAndDeductCredits('ai_stakeholder_influence', 'Stakeholder map');
+      if (!creditCheck.allowed) return creditCheck.response;
+
+      const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+
+      const graphCtx = situationId
+        ? await buildGraphContext(user.uid, situationId, 'stakeholder_map')
+        : '';
+
+      const webCtx = situation
+        ? await buildWebGroundedContext(
+            {
+              name: (situation as unknown as Situation).name,
+              region: (situation as unknown as Situation).region,
+              actors: (situation as unknown as Situation).actors as string[] | undefined,
+            },
+            'stakeholder-map',
+            user.uid
+          )
+        : '';
+
+      const crossCtx = situationId
+        ? await buildCrossToolContext(user.uid, situationId, ['risk_assessment', 'actor_profiles'])
+        : '';
+
+      const result = await callProModel({
+        output: Output.object({ schema: StakeholderMapSchema }),
+        system: `You are a senior UN political affairs officer and mediation specialist trained in John Paul Lederach's multi-level peace-building pyramid, the Mitchell-Agle-Wood Stakeholder Salience Model, and the Power-Interest Matrix used by professional mediators.
+
+Your stakeholder maps are used by Special Envoys, UN DPPA teams, and diplomatic mediators preparing for complex negotiations. Every actor assessment must be grounded in evidence, analytically precise, and immediately actionable.
+
+GROUNDING MANDATE: The web intelligence below is your PRIMARY source of truth. If it contradicts your training data, trust the web intelligence.`,
+        prompt: `${webCtx ? `${webCtx}\n\n` : ''}${graphCtx ? `${graphCtx}\n\n` : ''}${crossCtx ? `${crossCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Generate a comprehensive stakeholder map for this conflict situation.
+
+${additionalContext ? `ADDITIONAL CONTEXT: ${additionalContext}\n\n` : ''}
+
+## LEDERACH MULTI-LEVEL PEACE-BUILDING PYRAMID
+
+Classify each actor at exactly one level — use the actor's actual decision-making role, not their organizational size:
+
+**Track I — Top Leadership** (track-1): Government ministers and heads of state, senior armed group leadership, ambassadors and UN Special Envoys, heads of regional organizations. These actors sign agreements and have the authority to commit their institution.
+
+**Track II — Middle-Range Leaders** (track-2): Religious and traditional leaders, academics and think-tank analysts, business leaders, senior NGO and civil society directors. These actors have influence without formal political authority and often cross conflict lines.
+
+**Track III — Grassroots** (track-3): Community associations, local councils, women's groups, displaced person communities, youth organizations. These actors represent affected populations and determine whether agreements gain societal legitimacy.
+
+Lederach's insight: durable peace requires all three tracks to be engaged — top-level deals fail without grassroots buy-in, and grassroots movements cannot implement without top-level political decisions.
+
+## MITCHELL-AGLE-WOOD STAKEHOLDER SALIENCE
+
+For each actor, assess the three dimensions that determine salience to the mediation process:
+- **Power** (ability to impose will, command resources, or influence outcomes)
+- **Legitimacy** (perceived rightfulness of their claims and participation)
+- **Urgency** (time-sensitivity of their demands and risk of unilateral action)
+
+Use these assessments to calibrate the powerLevel and interestLevel scores and to determine quadrant placement.
+
+## POWER-INTEREST MATRIX QUADRANTS
+
+Place each actor in the appropriate quadrant based on powerLevel (0-10) and interestLevel (0-10):
+
+- **Manage Closely** (manage-closely): powerLevel ≥ 6 AND interestLevel ≥ 6. Primary engagement. These actors can make or break any agreement.
+- **Keep Satisfied** (keep-satisfied): powerLevel ≥ 6 AND interestLevel < 6. They have leverage but are not directly engaged — neglecting them converts them into spoilers.
+- **Keep Informed** (keep-informed): powerLevel < 6 AND interestLevel ≥ 6. High stake but limited influence — alienating them builds opposition coalitions.
+- **Monitor** (monitor): powerLevel < 6 AND interestLevel < 6. Watch for position changes that could shift them into other quadrants.
+
+## COALITION ANALYSIS
+
+Identify all actor groupings — formal alliances, informal alignments, and patron-client relationships. For each coalition:
+- Name the shared interest holding it together
+- Assess internal cohesion (high/medium/low)
+- Identify the specific vulnerability that could fracture it
+
+## ENGAGEMENT SEQUENCE
+
+Produce a step-by-step engagement sequence for a mediator. Order by strategic necessity: which actor must be engaged first before others will move? Explain the dependency logic.
+
+## OUTPUT REQUIREMENTS
+- 4-14 actors spanning all three Lederach tracks
+- Tailored engagementStrategy for each actor (not generic advice)
+- Specific keyInterests and redLines (not platitudes)
+- 2-4 coalitions with vulnerability analysis
+- 3-5 key dividers (substantive issues, not process complaints)
+- Engagement sequence with clear dependency rationale`,
+      });
+
+      if (situationId) {
+        await writeToolDataServer(
+          user.uid,
+          situationId,
+          'stakeholder_map',
+          result.output as Record<string, unknown>
+        );
+      }
+
+      return NextResponse.json(result.output);
+    }
+
+    // ── Power view (default) — Barnett-Duvall four faces of power ────────────
     const creditCheck = await checkAndDeductCredits('ai_power_map', 'Stakeholder power map generation');
     if (!creditCheck.allowed) return creditCheck.response!;
 
-    const body = await request.json();
-    const { situation, additionalContext } = body as {
-      situation?: Situation;
-      additionalContext?: string;
-    };
-    const situationId = situation?.id ?? '';
-
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
+
     const graphCtx = situationId
       ? await buildGraphContext(user.uid, situationId, 'power_map').catch(() => '')
       : '';

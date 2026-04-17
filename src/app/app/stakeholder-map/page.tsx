@@ -1053,10 +1053,10 @@ Be precise and operationally actionable.`;
                   if (regenerating || !situation) return;
                   setRegenerating(true);
                   try {
-                    await fetch('/api/ai/stakeholder-map', {
+                    await fetch('/api/ai/power-map', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ situationId: situation.id }),
+                      body: JSON.stringify({ situationId: situation.id, view: 'stakeholder' }),
                     });
                   } finally { setRegenerating(false); }
                 }}
@@ -1072,10 +1072,10 @@ Be precise and operationally actionable.`;
                   if (regenerating || !situation) return;
                   setRegenerating(true);
                   try {
-                    await fetch('/api/ai/stakeholder-map', {
+                    await fetch('/api/ai/power-map', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ situationId: situation.id }),
+                      body: JSON.stringify({ situationId: situation.id, view: 'stakeholder' }),
                     });
                   } finally { setRegenerating(false); }
                 }}
