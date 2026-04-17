@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { verifyIdToken, adminDb } from '@/lib/firebase/admin';
 import { verifyCookie } from '@/lib/auth/cookie-signer';
+import { logApiCall } from '@/lib/observability/logger';
 
 export interface AuthenticatedUser {
   uid: string;
@@ -40,11 +41,19 @@ export function withAuth(
   handler: (req: Request, user: AuthenticatedUser) => Promise<Response>
 ) {
   return async (req: Request) => {
+    const start = Date.now();
+    const url = new URL(req.url);
+    const route = url.pathname;
+    let userUid = 'anonymous';
+    let status = 500;
+    let errorMsg: string | undefined;
+
     try {
       const cookieStore = await cookies();
       const sessionCookie = cookieStore.get('tacitus-auth-session');
 
       if (!sessionCookie?.value) {
+        status = 401;
         return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
       }
 
@@ -52,10 +61,12 @@ export function withAuth(
       try {
         const verified = verifyCookie(sessionCookie.value);
         if (!verified) {
+          status = 401;
           return NextResponse.json({ error: 'Invalid session signature' }, { status: 401 });
         }
         sessionData = JSON.parse(verified);
       } catch {
+        status = 401;
         return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
       }
 
@@ -67,10 +78,14 @@ export function withAuth(
           name: 'Demo Analyst',
           isDemo: true,
         };
+        userUid = demoUser.uid;
         if (!(await checkRateLimit(demoUser.uid))) {
+          status = 429;
           return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
         }
-        return handler(req, demoUser);
+        const response = await handler(req, demoUser);
+        status = response.status;
+        return response;
       }
 
       // Firebase authenticated user
@@ -78,20 +93,36 @@ export function withAuth(
         try {
           const verified = await verifyIdToken(sessionData.token);
           const user: AuthenticatedUser = { ...verified, isDemo: false };
+          userUid = user.uid;
 
           if (!(await checkRateLimit(user.uid))) {
+            status = 429;
             return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
           }
 
-          return handler(req, user);
+          const response = await handler(req, user);
+          status = response.status;
+          return response;
         } catch {
+          status = 401;
           return NextResponse.json({ error: 'Invalid authentication token' }, { status: 401 });
         }
       }
 
+      status = 401;
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    } catch {
+    } catch (err) {
+      errorMsg = err instanceof Error ? err.message : String(err);
+      status = 500;
       return NextResponse.json({ error: 'Authentication error' }, { status: 500 });
+    } finally {
+      logApiCall({
+        route,
+        uid: userUid,
+        latencyMs: Date.now() - start,
+        status,
+        error: errorMsg,
+      });
     }
   };
 }
