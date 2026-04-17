@@ -111,15 +111,28 @@ export async function createSession(config: VertexAgentConfig): Promise<string> 
  *   data: {"output":{"text":"..."},"done":false}
  * or:
  *   data: [DONE]
+ *
+ * @param firebaseUid - Firebase UID used to scope Memory Bank per user
+ * @param sessionId   - Session ID scoped within the user (for session continuity)
  */
 export async function streamAgentTurn(
   config: VertexAgentConfig,
   sessionId: string,
   userMessage: string,
+  firebaseUid?: string,
 ): Promise<Response> {
   const { projectId, location, engineId } = config;
   const token = await getAccessToken();
   const url = `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/${location}/reasoningEngines/${engineId}/sessions/${sessionId}/turns:run`;
+
+  const requestBody: Record<string, unknown> = {
+    class_method: 'stream_query',
+    input: {
+      message: userMessage,
+      ...(firebaseUid ? { user_id: firebaseUid } : {}),
+      session_id: sessionId,
+    },
+  };
 
   return fetch(url, {
     method: 'POST',
@@ -128,9 +141,7 @@ export async function streamAgentTurn(
       'Content-Type': 'application/json',
       Accept: 'text/event-stream',
     },
-    body: JSON.stringify({
-      input: { text: userMessage },
-    }),
+    body: JSON.stringify(requestBody),
   });
 }
 

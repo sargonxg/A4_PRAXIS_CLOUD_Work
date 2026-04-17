@@ -89,7 +89,7 @@ steps:
       - '--max-instances'
       - '10'
       - '--set-secrets'
-      - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest,SESSION_SECRET=praxis-cookie-secret:latest'
+      - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest,SESSION_SECRET=praxis-cookie-secret:latest,VERTEX_AGENT_ENGINE_ID=praxis-agent-engine-id:latest'
     id: 'deploy-frontend'
     waitFor: ['push-frontend']
 

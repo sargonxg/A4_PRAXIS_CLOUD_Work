@@ -8,6 +8,7 @@ import {
   parseAgentEvent,
 } from '@/lib/ai/vertex-agent';
 import { getSituation } from '@/lib/firebase/situations-service';
+import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 
 export const maxDuration = 120;
 
@@ -78,16 +79,44 @@ Provide a thorough, evidence-based analysis using your web research capabilities
       let sessionId = incomingSessionId;
 
       try {
-        // Create session if we don't have one
+        // Resolve session ID: prefer incoming → Firestore persisted → create new
+        if (!sessionId && !user.isDemo) {
+          const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+          try {
+            const db = getAdminDbOrThrow();
+            const sessionRef = db.collection('users').doc(user.uid)
+              .collection('agentSessions').doc('active');
+            const sessionSnap = await sessionRef.get();
+            const sessionData = sessionSnap.data() as { sessionId?: string; createdAt?: number } | undefined;
+            if (sessionData?.sessionId && sessionData.createdAt && (Date.now() - sessionData.createdAt) < SESSION_TTL_MS) {
+              sessionId = sessionData.sessionId;
+            }
+          } catch {
+            // Non-blocking — fall through to create a new session
+          }
+        }
+
+        // Create session if we still don't have one
         if (!sessionId) {
           controller.enqueue(emit({ type: 'status', text: 'Initializing research session…' }));
           sessionId = await createSession(config);
+          // Persist the new session ID to Firestore for memory continuity
+          if (!user.isDemo) {
+            try {
+              const db = getAdminDbOrThrow();
+              const sessionRef = db.collection('users').doc(user.uid)
+                .collection('agentSessions').doc('active');
+              await sessionRef.set({ sessionId, createdAt: Date.now() });
+            } catch {
+              // Non-blocking — session still works without persistence
+            }
+          }
           controller.enqueue(emit({ type: 'session', sessionId }));
         }
 
         controller.enqueue(emit({ type: 'status', text: 'Connecting to Deep Research Agent…' }));
 
-        const agentRes = await streamAgentTurn(config, sessionId, enrichedQuery);
+        const agentRes = await streamAgentTurn(config, sessionId, enrichedQuery, user.isDemo ? undefined : user.uid);
 
         if (!agentRes.ok) {
           const errText = await agentRes.text();
