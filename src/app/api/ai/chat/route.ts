@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { getModel, getModelForUser } from '@/lib/ai/providers';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
 import { createSituationBoundTools, type SituationToolContext, type ConflictGraphSnapshot } from '@/lib/ai/tools';
-import { getConflictGraphAdmin } from '@/lib/firebase/situations-service';
+import { getConflictGraphAdmin } from '@/lib/firebase/situations';
 import { buildSituationContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 import { checkAndDeductCreditsForUid } from '@/lib/api/with-credits';

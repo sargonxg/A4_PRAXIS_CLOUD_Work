@@ -7,7 +7,7 @@ import {
   streamAgentTurn,
   parseAgentEvent,
 } from '@/lib/ai/vertex-agent';
-import { getSituation } from '@/lib/firebase/situations-service';
+import { getSituationAdmin } from '@/lib/firebase/situations';
 
 export const maxDuration = 120;
 
@@ -52,7 +52,7 @@ export const POST = withAuth(async (req, user) => {
   let enrichedQuery = query.trim();
   if (situationId && !user.isDemo) {
     try {
-      const situation = await getSituation(user.uid, situationId);
+      const situation = await getSituationAdmin(user.uid, situationId);
       if (situation) {
         const actorList = situation.actors.slice(0, 8).join(', ') || 'not specified';
         const riskLabel = situation.riskScore >= 7 ? 'HIGH' : situation.riskScore >= 4 ? 'MODERATE' : 'LOW';

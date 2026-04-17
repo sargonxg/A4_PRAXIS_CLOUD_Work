@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
 import {
-  createSituation,
+  createSituationAdmin,
   listSituations,
-} from '@/lib/firebase/situations-service';
+} from '@/lib/firebase/situations';
 
 export const GET = withAuth(async (_req, user) => {
   if (user.isDemo) {
@@ -37,7 +37,7 @@ export const POST = withAuth(async (req, user) => {
     // Filter out empty URL strings
     const filteredUrls = (sourceUrls as string[] | undefined)?.filter((u: string) => u.trim()) || [];
 
-    const situation = await createSituation(user.uid, {
+    const situation = await createSituationAdmin(user.uid, {
       name: name.trim(),
       type: type || 'custom',
       description: description?.trim() || '',

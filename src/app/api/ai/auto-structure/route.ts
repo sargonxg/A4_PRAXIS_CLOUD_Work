@@ -5,7 +5,7 @@ import { withAuth } from '@/lib/api/with-auth';
 import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { tacitusTools } from '@/lib/ai/tools';
 import { scrapeUrl, scrapeMultiple, searchWeb, isFirecrawlConfigured } from '@/lib/ai/firecrawl';
-import { updateSituation, getSituation } from '@/lib/firebase/situations-service';
+import { updateSituationAdmin, getSituationAdmin } from '@/lib/firebase/situations';
 import { getAllDocumentText } from '@/lib/firebase/documents-service';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 import { countryNameToIso3 } from '@/lib/data-feeds/hdx-client';
@@ -90,7 +90,7 @@ export const POST = withAuth(async (req, user) => {
 
         // Update situation metadata with verified current info
         if (situationId && user.uid && (preCheck.currentLeadership || preCheck.currentStatus)) {
-          updateSituation(user.uid, situationId, {
+          updateSituationAdmin(user.uid, situationId, {
             canonicalPreCheck: {
               currentLeadership: preCheck.currentLeadership ?? undefined,
               currentStatus: preCheck.currentStatus ?? undefined,
@@ -322,6 +322,8 @@ For each major actor (aim for 5 to 8):
 
 Ground every claim in the pre-scraped context above first, then use web search only for missing current details. Use UN diplomatic language standards.`;
 
+    // Intentionally uses getProModel() directly: this is a streamText route (not generateText)
+    // and callProModel only wraps generateText. Long-form streaming output benefits from Pro.
     const result = streamText({
       model: getProModel(),
       system: systemPrompt,
@@ -365,12 +367,12 @@ Ground every claim in the pre-scraped context above first, then use web search o
           }
 
           if (Object.keys(updates).length > 0) {
-            await updateSituation(user.uid, situationId, updates as Partial<import('@/types/situation').Situation>);
+            await updateSituationAdmin(user.uid, situationId, updates as Partial<import('@/types/situation').Situation>);
             console.log('[auto-structure] Updated situation metadata:', Object.keys(updates));
           }
 
           // Seed all tool-data subcollections from the auto-structure output
-          const updatedSituation = await getSituation(user.uid, situationId);
+          const updatedSituation = await getSituationAdmin(user.uid, situationId);
           if (updatedSituation) {
             initializeSituationTools(user.uid, situationId, updatedSituation, text)
               .then(({ seeded, failed }) => {

@@ -12,7 +12,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
 import { saveToolData } from '@/lib/firebase/tool-data-service';
-import { updateSituation } from '@/lib/firebase/situations-service';
+import { updateSituationAdmin } from '@/lib/firebase/situations';
 import type { Situation } from '@/types/situation';
 
 // ---------------------------------------------------------------------------
@@ -513,7 +513,7 @@ export async function initializeSituationTools(
         patchFields.escalationTrend = riskData.escalationTrend;
       }
       if (Object.keys(patchFields).length > 0) {
-        await updateSituation(uid, situationId, patchFields).catch(() => {});
+        await updateSituationAdmin(uid, situationId, patchFields).catch(() => {});
         console.log(`[situation-init] Patched situation risk fields:`, patchFields);
       }
     }

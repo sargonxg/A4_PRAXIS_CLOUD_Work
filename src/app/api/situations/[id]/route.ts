@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { withAuth, type AuthenticatedUser } from '@/lib/api/with-auth';
 import {
-  getSituation,
-  updateSituation,
-  deleteSituation,
-} from '@/lib/firebase/situations-service';
+  getSituationAdmin,
+  updateSituationAdmin,
+  deleteSituationAdmin,
+} from '@/lib/firebase/situations';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -24,7 +24,7 @@ export function GET(_req: NextRequest, ctx: RouteContext) {
     if (demoErr) return demoErr;
 
     const { id } = await ctx.params;
-    const situation = await getSituation(user.uid, id);
+    const situation = await getSituationAdmin(user.uid, id);
     if (!situation) {
       return NextResponse.json({ error: 'Situation not found' }, { status: 404 });
     }
@@ -39,7 +39,7 @@ export function PATCH(req: NextRequest, ctx: RouteContext) {
 
     const { id } = await ctx.params;
     const body = await r.json();
-    await updateSituation(user.uid, id, body);
+    await updateSituationAdmin(user.uid, id, body);
     return NextResponse.json({ success: true });
   })(req);
 }
@@ -50,7 +50,7 @@ export function DELETE(_req: NextRequest, ctx: RouteContext) {
     if (demoErr) return demoErr;
 
     const { id } = await ctx.params;
-    await deleteSituation(user.uid, id);
+    await deleteSituationAdmin(user.uid, id);
     return NextResponse.json({ success: true });
   })(_req);
 }

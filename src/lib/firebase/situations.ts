@@ -5,7 +5,31 @@
  * Stored in Firestore: users/{uid}/situations/{situationId}
  * Each situation contains Conflict Grammar entities that are built up
  * over time through research, AI analysis, and manual input.
+ *
+ * ─────────────────────────────────────────────────────────────────
+ *  Client / Admin distinction
+ * ─────────────────────────────────────────────────────────────────
+ *  SECTION A — Client-side functions (firebase/firestore SDK)
+ *    Use in React components and client-only code.
+ *    Functions: createSituation, getSituation, getUserSituations,
+ *               updateSituation, deleteSituation, addActor, addEvent,
+ *               mergeEntities, saveSituationReport, saveSituationScenario,
+ *               saveSituationResearch, getSituationResearch
+ *
+ *  SECTION B — Admin/server-side functions (firebase-admin SDK)
+ *    Use in API routes and server-side code only. Require the
+ *    FIREBASE_SERVICE_ACCOUNT_KEY env var to be set. Named with
+ *    an "Admin" suffix where a client-side equivalent exists.
+ *    Functions: createSituationAdmin, getSituationAdmin,
+ *               listSituations, updateSituationAdmin,
+ *               archiveSituation, deleteSituationAdmin,
+ *               getConflictGraphAdmin
+ * ─────────────────────────────────────────────────────────────────
  */
+
+// ============================================================================
+// SECTION A — Client-side (firebase/firestore SDK)
+// ============================================================================
 
 import {
   doc,
@@ -21,9 +45,11 @@ import {
   type Timestamp,
 } from 'firebase/firestore';
 import { db } from './config';
+import { adminDb } from './admin';
+import type { Situation as AdminSituation, CreateSituationInput } from '@/types/situation';
 
 // ---------------------------------------------------------------------------
-// Types
+// Types (client-side domain model)
 // ---------------------------------------------------------------------------
 
 export interface SituationActor {
@@ -112,7 +138,7 @@ export interface SituationRelationship {
   label: string;
 }
 
-export interface Situation {
+export interface ClientSituation {
   id: string;
   name: string;
   description: string;
@@ -157,7 +183,7 @@ export interface SituationSummary {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Client-side helpers
 // ---------------------------------------------------------------------------
 
 function situationsCollection(uid: string) {
@@ -173,23 +199,23 @@ function generateId(): string {
 }
 
 // ---------------------------------------------------------------------------
-// CRUD Operations
+// Client-side CRUD Operations
 // ---------------------------------------------------------------------------
 
 /**
- * Create a new empty situation.
+ * Create a new empty situation (client SDK).
  */
 export async function createSituation(
   uid: string,
   data: { name: string; description: string; region: string; status?: string }
-): Promise<Situation> {
+): Promise<ClientSituation> {
   const id = generateId();
-  const situation: Situation = {
+  const situation: ClientSituation = {
     id,
     name: data.name,
     description: data.description,
     region: data.region,
-    status: (data.status as Situation['status']) || 'active',
+    status: (data.status as ClientSituation['status']) || 'active',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     actors: [],
@@ -214,14 +240,14 @@ export async function createSituation(
 }
 
 /**
- * Get all situations for a user (summaries only).
+ * Get all situations for a user (summaries only) — client SDK.
  */
 export async function getUserSituations(uid: string): Promise<SituationSummary[]> {
   try {
     const q = query(situationsCollection(uid), orderBy('updatedAt', 'desc'));
     const snap = await getDocs(q);
     return snap.docs.map((d) => {
-      const data = d.data() as Situation;
+      const data = d.data() as ClientSituation;
       return {
         id: data.id,
         name: data.name,
@@ -242,13 +268,13 @@ export async function getUserSituations(uid: string): Promise<SituationSummary[]
 }
 
 /**
- * Get a single situation with full data.
+ * Get a single situation with full data — client SDK.
  */
-export async function getSituation(uid: string, situationId: string): Promise<Situation | null> {
+export async function getSituation(uid: string, situationId: string): Promise<ClientSituation | null> {
   try {
     const snap = await getDoc(situationDoc(uid, situationId));
     if (!snap.exists()) return null;
-    return snap.data() as Situation;
+    return snap.data() as ClientSituation;
   } catch (err) {
     console.error('[situations] Failed to load situation:', err);
     return null;
@@ -256,12 +282,12 @@ export async function getSituation(uid: string, situationId: string): Promise<Si
 }
 
 /**
- * Update a situation (partial update).
+ * Update a situation (partial update) — client SDK.
  */
 export async function updateSituation(
   uid: string,
   situationId: string,
-  data: Partial<Omit<Situation, 'id' | 'createdAt'>>
+  data: Partial<Omit<ClientSituation, 'id' | 'createdAt'>>
 ): Promise<void> {
   await updateDoc(situationDoc(uid, situationId), {
     ...data,
@@ -270,7 +296,7 @@ export async function updateSituation(
 }
 
 /**
- * Delete a situation.
+ * Delete a situation — client SDK (simple, no subcollection cascade).
  */
 export async function deleteSituation(uid: string, situationId: string): Promise<void> {
   await deleteDoc(situationDoc(uid, situationId));
@@ -328,7 +354,7 @@ export async function mergeEntities(
   const situation = await getSituation(uid, situationId);
   if (!situation) throw new Error('Situation not found');
 
-  const updates: Partial<Situation> = {};
+  const updates: Partial<ClientSituation> = {};
   const ts = Date.now().toString(36);
 
   if (entities.actors?.length) {
@@ -426,4 +452,165 @@ export async function getSituationResearch(uid: string, situationId: string) {
   const q = query(colRef, orderBy('createdAt', 'desc'));
   const snap = await getDocs(q);
   return snap.docs.map((d) => d.data());
+}
+
+// ============================================================================
+// SECTION B — Admin/server-side (firebase-admin SDK)
+// ============================================================================
+//
+// All functions below require adminDb to be initialized (set
+// FIREBASE_SERVICE_ACCOUNT_KEY in your environment). They are intended
+// exclusively for use in API routes and other server-side code.
+//
+// Where a client-side equivalent exists the admin version carries an
+// "Admin" suffix (e.g. createSituationAdmin, getSituationAdmin, etc.).
+// Pure admin-only helpers (listSituations, archiveSituation,
+// getConflictGraphAdmin) keep their original names.
+// ============================================================================
+
+function adminSituationsCol(uid: string) {
+  if (!adminDb) {
+    throw new Error('Firebase Admin SDK not initialized. Set FIREBASE_SERVICE_ACCOUNT_KEY environment variable.');
+  }
+  return adminDb.collection('users').doc(uid).collection('situations');
+}
+
+/**
+ * Create a new situation using the Admin SDK.
+ * Accepts the full CreateSituationInput schema (type, actors as string[], etc.)
+ */
+export async function createSituationAdmin(
+  uid: string,
+  data: CreateSituationInput
+): Promise<AdminSituation> {
+  const col = adminSituationsCol(uid);
+  const ref = col.doc();
+  const now = new Date().toISOString();
+  const situation: AdminSituation = {
+    id: ref.id,
+    name: data.name,
+    type: data.type,
+    description: data.description,
+    region: data.region,
+    actors: data.actors,
+    userRole: data.userRole,
+    status: data.status ?? 'active',
+    riskScore: 0,
+    glaslStage: null,
+    escalationTrend: 'stable',
+    actorCount: data.actors.length,
+    graphEntities: 0,
+    documentCount: data.initialDocumentIds?.length ?? 0,
+    ...(data.sourceUrls?.length ? { sourceUrls: data.sourceUrls } : {}),
+    ...(data.contextNotes ? { contextNotes: data.contextNotes } : {}),
+    ...(data.initialDocumentIds?.length ? { initialDocumentIds: data.initialDocumentIds } : {}),
+    ...(data.ontology ? { ontology: data.ontology } : {}),
+    createdAt: now,
+    updatedAt: now,
+  };
+  await ref.set(situation);
+  return situation;
+}
+
+/**
+ * Get a single situation using the Admin SDK.
+ */
+export async function getSituationAdmin(
+  uid: string,
+  situationId: string
+): Promise<AdminSituation | null> {
+  const snap = await adminSituationsCol(uid).doc(situationId).get();
+  return snap.exists ? (snap.data() as AdminSituation) : null;
+}
+
+/**
+ * List all situations for a user — Admin SDK, server-side only.
+ */
+export async function listSituations(uid: string): Promise<AdminSituation[]> {
+  try {
+    const snap = await adminSituationsCol(uid).orderBy('updatedAt', 'desc').get();
+    return snap.docs.map((d) => d.data() as AdminSituation);
+  } catch {
+    // If index doesn't exist yet, try without ordering
+    try {
+      const snap = await adminSituationsCol(uid).get();
+      return snap.docs.map((d) => d.data() as AdminSituation);
+    } catch {
+      return [];
+    }
+  }
+}
+
+/**
+ * Partial update of a situation using the Admin SDK.
+ */
+export async function updateSituationAdmin(
+  uid: string,
+  situationId: string,
+  updates: Partial<AdminSituation>
+): Promise<void> {
+  await adminSituationsCol(uid).doc(situationId).update({
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+/**
+ * Archive a situation (sets status to "archived") — Admin SDK.
+ */
+export async function archiveSituation(
+  uid: string,
+  situationId: string
+): Promise<void> {
+  await updateSituationAdmin(uid, situationId, { status: 'archived' });
+}
+
+/**
+ * Delete a situation and all its subcollections — Admin SDK.
+ * Cascades through graph, documents, reports, scenarios, chats,
+ * tool-data, briefings, dossiers, talking-points, risk-assessments,
+ * and conflict-grammar subcollections.
+ */
+export async function deleteSituationAdmin(
+  uid: string,
+  situationId: string
+): Promise<void> {
+  if (!adminDb) throw new Error('Firebase Admin SDK not initialized.');
+  const db = adminDb;
+  const sitRef = adminSituationsCol(uid).doc(situationId);
+  const subcollections = [
+    'graph', 'documents', 'reports', 'scenarios', 'chats',
+    'tool-data', 'briefings', 'dossiers', 'talking-points',
+    'risk-assessments', 'conflict-grammar',
+  ];
+  for (const name of subcollections) {
+    let snap = await sitRef.collection(name).limit(200).get();
+    while (!snap.empty) {
+      const batch = db.batch();
+      snap.docs.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+      if (snap.size < 200) break;
+      snap = await sitRef.collection(name).limit(200).get();
+    }
+  }
+  await sitRef.delete();
+}
+
+/**
+ * Reads the conflict knowledge graph for a situation using the Admin SDK.
+ * Used server-side to pre-load graph data into AI tool context.
+ */
+export async function getConflictGraphAdmin(
+  uid: string,
+  situationId: string
+): Promise<{ nodes: unknown[]; edges: unknown[] } | null> {
+  if (!adminDb) return null;
+  const snap = await adminSituationsCol(uid)
+    .doc(situationId)
+    .collection('graph')
+    .doc('main')
+    .get();
+  if (!snap.exists) return null;
+  const data = snap.data() as { nodes?: unknown[]; edges?: unknown[] };
+  return { nodes: data.nodes ?? [], edges: data.edges ?? [] };
 }
