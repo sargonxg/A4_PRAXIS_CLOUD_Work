@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { generateText, Output, streamText } from 'ai';
 import { z } from 'zod';
-import { getModel, getProModel, callProModel, getThinkingModel } from '@/lib/ai/providers';
+import { getModel, callProModel, getThinkingModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withAuth } from '@/lib/api/with-auth';
