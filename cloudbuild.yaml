@@ -119,9 +119,34 @@ steps:
     id: 'set-frontend-env'
     waitFor: ['deploy-frontend']
 
+  # ── GDELT Worker Pool ──────────────────────────────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/gdelt-poller', './cloud_functions/gdelt_poller']
+    id: 'build-gdelt-worker'
+    waitFor: ['check-model-strings']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/gdelt-poller']
+    id: 'push-gdelt-worker'
+    waitFor: ['build-gdelt-worker']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - beta
+      - run
+      - worker-pools
+      - update
+      - gdelt-poller
+      - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/praxis/gdelt-poller'
+      - '--region=us-central1'
+    id: 'deploy-gdelt-worker'
+    waitFor: ['push-gdelt-worker']
+
 images:
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-backend'
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/gdelt-poller'
 
 options:
   logging: CLOUD_LOGGING_ONLY

@@ -3,6 +3,11 @@
 HTTP-triggered function (called by Cloud Scheduler every 15 minutes).
 Queries Firestore for all active situations and ingests new GDELT articles
 for each situation via the backend pipeline.
+
+# DEPRECATED: This HTTP-triggered Cloud Function is superseded by worker.py
+# (Cloud Run Worker Pool). Remove the Cloud Scheduler job and this function
+# once the worker pool is confirmed stable.
+# See: cloud_functions/gdelt_poller/worker.py
 """
 from __future__ import annotations
 

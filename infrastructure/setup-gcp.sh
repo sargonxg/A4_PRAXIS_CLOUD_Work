@@ -70,19 +70,9 @@ BACKEND_SA="${PROJECT_ID}@appspot.gserviceaccount.com"
 BACKEND_URL=$(gcloud run services describe praxis-backend --region="${REGION}" --format="value(status.url)" 2>/dev/null || echo "")
 FRONTEND_URL=$(gcloud run services describe praxis-frontend --region="${REGION}" --format="value(status.url)" 2>/dev/null || echo "")
 
-GDELT_FUNCTION_URL=$(gcloud functions describe gdelt-poller --region="${REGION}" --format="value(url)" 2>/dev/null || echo "")
-if [ -n "$GDELT_FUNCTION_URL" ]; then
-  gcloud scheduler jobs create http gdelt-poller \
-    --schedule="*/15 * * * *" \
-    --uri="${GDELT_FUNCTION_URL}" \
-    --http-method=POST \
-    --oidc-service-account-email="${BACKEND_SA}" \
-    --oidc-token-audience="${GDELT_FUNCTION_URL}" \
-    --location=us-central1 \
-    2>/dev/null || echo "Scheduler job gdelt-poller already exists"
-else
-  echo "⚠️  gdelt-poller Cloud Function not deployed yet — deploy it first, then re-run to create scheduler"
-fi
+# NOTE: gdelt-poller is now a Cloud Run Worker Pool (continuous, no Scheduler job needed).
+# If a legacy Cloud Scheduler job named gdelt-poller exists, delete it:
+#   gcloud scheduler jobs delete gdelt-poller --location=us-central1
 
 # Resolve CRON_SECRET for scheduler jobs
 CRON_SECRET=$(gcloud secrets versions access latest --secret=praxis-cron-secret --project="${PROJECT_ID}" 2>/dev/null || echo "changeme")
@@ -246,23 +236,22 @@ else
       --quiet 2>/dev/null && echo "  ✓ on-document-uploaded deployed" || echo "  ⚠️  on-document-uploaded deploy failed"
   fi
 
-  # gdelt_poller — HTTP trigger (called by Cloud Scheduler every 15min)
-  if [ -d "cloud_functions/gdelt_poller" ]; then
-    gcloud functions deploy gdelt-poller \
-      --gen2 \
-      --runtime=python311 \
-      --region="${REGION}" \
-      --source=cloud_functions/gdelt_poller \
-      --entry-point=gdelt_poller \
-      --trigger-http \
-      --no-allow-unauthenticated \
-      --set-env-vars="PRAXIS_BACKEND_URL=${CF_BACKEND_URL}" \
-      --service-account="${SA}" \
-      --memory=512Mi \
-      --timeout=540s \
-      --quiet 2>/dev/null && echo "  ✓ gdelt-poller deployed" || echo "  ⚠️  gdelt-poller deploy failed"
-  fi
 fi
+
+# ── Cloud Run Worker Pool: GDELT poller ──────────────────────────────────
+echo "Deploying gdelt-poller worker pool..."
+BACKEND_URL=$(gcloud run services describe praxis-backend --region="${REGION}" --format="value(status.url)" 2>/dev/null || echo "")
+gcloud beta run worker-pools deploy gdelt-poller \
+  --image="us-central1-docker.pkg.dev/${PROJECT_ID}/praxis/gdelt-poller" \
+  --region="${REGION}" \
+  --min-instances=1 \
+  --max-instances=1 \
+  --cpu=1 \
+  --memory=512Mi \
+  --no-cpu-throttling \
+  --set-env-vars="PRAXIS_BACKEND_URL=${BACKEND_URL},POLL_INTERVAL_SECONDS=900" \
+  --service-account="${COMPUTE_SA}" \
+  2>/dev/null || echo "Worker pool create failed — you may need: gcloud config set run/launch-stage BETA"
 
 echo ""
 
