@@ -4,9 +4,13 @@ Every protected endpoint uses Depends(verify_firebase_token) to authenticate
 the caller. The decoded token dict (which includes 'uid') is injected into
 the route handler.
 
+Token header separation (P6A — service-to-service OIDC):
+  Authorization: Bearer <OIDC token>   — Cloud Run network-layer auth (frontend SA)
+  X-Firebase-Token: <Firebase ID token> — per-user identity (read by this module)
+
 Cloud Functions use OIDC tokens (not Firebase ID tokens) for service-to-service
-auth. When an OIDC token is detected, we verify it via Google's tokeninfo
-endpoint and extract the uid from the X-PRAXIS-UID header.
+auth. When an OIDC token is detected in Authorization, we verify it via
+google.oauth2.id_token and extract the uid from the X-PRAXIS-UID header.
 """
 import json
 import logging
@@ -21,7 +25,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from config import get_settings
 
 logger = logging.getLogger("praxis.auth")
-_bearer = HTTPBearer(auto_error=True)
+_bearer = HTTPBearer(auto_error=False)
 
 
 @lru_cache(maxsize=1)
@@ -53,48 +57,60 @@ def _init_firebase() -> None:
 
 async def verify_firebase_token(
     request: Request,
-    credentials: HTTPAuthorizationCredentials = Depends(_bearer),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
 ) -> dict:
     """FastAPI dependency: verify Firebase ID token OR Google OIDC token.
 
-    For user requests: verifies Firebase ID token, returns decoded claims with 'uid'.
-    For service-to-service (Cloud Functions): verifies OIDC token, reads uid from
-    the X-PRAXIS-UID header.
+    Token reading order (P6A separation):
+    1. X-Firebase-Token header — per-user Firebase ID token (frontend clients).
+    2. Authorization: Bearer — Cloud Run OIDC token from the frontend service
+       account (service-to-service). UID is taken from X-PRAXIS-UID header.
 
     Raises HTTPException(401) on invalid or missing tokens.
     """
     _init_firebase()
 
-    token = credentials.credentials
-
-    # Try Firebase ID token first (user requests)
-    try:
-        decoded = firebase_auth.verify_id_token(token)
-        return decoded
-    except (firebase_auth.ExpiredIdTokenError, firebase_auth.InvalidIdTokenError):
-        pass
-    except Exception:
-        pass
-
-    # Fallback: Google OIDC token (service-to-service from Cloud Functions)
-    praxis_uid = request.headers.get("X-PRAXIS-UID")
-    if praxis_uid:
+    # ── Path 1: Firebase ID token from X-Firebase-Token ─────────────────────
+    firebase_token = request.headers.get("X-Firebase-Token")
+    if firebase_token:
         try:
-            import google.oauth2.id_token
-            import google.auth.transport.requests
-            auth_req = google.auth.transport.requests.Request()
-            claims = google.oauth2.id_token.verify_oauth2_token(token, auth_req)
-            # Verify the OIDC token is from a Google service account
-            if claims.get("iss") in (
-                "accounts.google.com",
-                "https://accounts.google.com",
-            ):
-                logger.info("Service-to-service auth accepted for uid=%s", praxis_uid)
-                return {"uid": praxis_uid, "service_account": claims.get("email", "")}
+            decoded = firebase_auth.verify_id_token(firebase_token)
+            return decoded
+        except (firebase_auth.ExpiredIdTokenError, firebase_auth.InvalidIdTokenError) as exc:
+            logger.warning("Firebase token invalid: %s", exc)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication failed: invalid Firebase ID token",
+            )
         except Exception as exc:
-            logger.warning("OIDC token verification failed: %s", exc)
+            logger.warning("Firebase token verification error: %s", exc)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication failed: Firebase token error",
+            )
+
+    # ── Path 2: Cloud Run OIDC token from Authorization header ──────────────
+    # Used by Cloud Functions / server-side API routes acting as service accounts.
+    if credentials and credentials.credentials:
+        oidc_token = credentials.credentials
+        praxis_uid = request.headers.get("X-PRAXIS-UID")
+        if praxis_uid:
+            try:
+                import google.oauth2.id_token
+                import google.auth.transport.requests
+                auth_req = google.auth.transport.requests.Request()
+                claims = google.oauth2.id_token.verify_oauth2_token(oidc_token, auth_req)
+                # Verify the OIDC token is from a Google service account
+                if claims.get("iss") in (
+                    "accounts.google.com",
+                    "https://accounts.google.com",
+                ):
+                    logger.info("Service-to-service auth accepted for uid=%s", praxis_uid)
+                    return {"uid": praxis_uid, "service_account": claims.get("email", "")}
+            except Exception as exc:
+                logger.warning("OIDC token verification failed: %s", exc)
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Authentication failed: invalid Firebase or OIDC token",
+        detail="Authentication failed: provide Firebase ID token in X-Firebase-Token header",
     )

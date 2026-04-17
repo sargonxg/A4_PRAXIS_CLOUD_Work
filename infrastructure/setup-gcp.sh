@@ -255,6 +255,17 @@ gcloud beta run worker-pools deploy gdelt-poller \
 
 echo ""
 
+# ── Grant frontend SA invoke permission on the backend ───────────────────────
+# The backend is --no-allow-unauthenticated; only the frontend service account
+# (Compute default SA) is allowed to call it via OIDC token.
+FRONTEND_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+gcloud run services add-iam-policy-binding praxis-backend \
+  --region="${REGION}" \
+  --member="serviceAccount:${FRONTEND_SA}" \
+  --role="roles/run.invoker" \
+  --project="${PROJECT_ID}" \
+  2>/dev/null || true
+
 # ═══════════════════════════════════════════════════════════════
 # v3.0 ADDITIONS — Run this section after initial setup
 # ═══════════════════════════════════════════════════════════════

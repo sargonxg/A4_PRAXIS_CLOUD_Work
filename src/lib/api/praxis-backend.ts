@@ -1,8 +1,12 @@
 /**
- * PRAXIS Python Backend client.
+ * PRAXIS Python Backend client — CLIENT-SIDE.
  *
- * All calls attach the current user's Firebase ID token as a Bearer header.
- * The backend URL is configured via NEXT_PUBLIC_PRAXIS_BACKEND_URL.
+ * Used by React components to call the backend directly.
+ * Sends the Firebase ID token in X-Firebase-Token so it does not collide
+ * with the Cloud Run OIDC Authorization header at the network layer.
+ *
+ * For server-side API routes → backend calls, use callBackend() from
+ * src/lib/api/praxis-backend-server.ts instead (OIDC-authenticated).
  */
 import { getAuth } from 'firebase/auth';
 
@@ -20,7 +24,9 @@ async function backendFetch(path: string, options: RequestInit = {}): Promise<un
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      // Firebase ID token goes in X-Firebase-Token so it does not collide with
+      // the Cloud Run OIDC Authorization header at the network layer.
+      'X-Firebase-Token': token,
       ...(options.headers ?? {}),
     },
   });
