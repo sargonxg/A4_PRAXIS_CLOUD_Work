@@ -1,10 +1,12 @@
-"""Graph database adapter — supports Neo4j and FalkorDB.
+"""Graph database adapter — supports Neo4j, FalkorDB, and Cloud Spanner Graph.
 
 Users choose their graph backend in Settings → Graph Backend.
 The backend reads their preference from Firestore and creates the right adapter.
 """
 from __future__ import annotations
 
+import json
+import os
 from abc import ABC, abstractmethod
 
 import networkx as nx
@@ -184,8 +186,161 @@ class FalkorDBAdapter(GraphAdapter):
         pass  # FalkorDB client doesn't need explicit close
 
 
+class SpannerGraphAdapter(GraphAdapter):
+    """Cloud Spanner Graph backend — managed, multi-region, ISO GQL.
+
+    Schema must be applied via backend/migrations/001_spanner_graph_schema.sql
+    before use. The google-cloud-spanner import is deferred so the package is
+    optional when running Neo4j or FalkorDB.
+    """
+
+    def __init__(self, project_id: str, instance_id: str, database_id: str) -> None:
+        from google.cloud import spanner  # deferred — optional dependency
+        self._spanner = spanner
+        self.client = spanner.Client(project=project_id)
+        self.instance = self.client.instance(instance_id)
+        self.database = self.instance.database(database_id)
+
+    async def ensure_constraints(self) -> None:
+        # Schema is managed via migrations, not runtime.
+        # Verify the property graph exists by running a no-op GQL query.
+        with self.database.snapshot() as snap:
+            snap.execute_sql(
+                "SELECT 1 FROM INFORMATION_SCHEMA.PROPERTY_GRAPHS"
+                " WHERE PROPERTY_GRAPH_NAME = 'praxis_graph'"
+            ).one()
+
+    async def push_graph(self, G: nx.Graph, tenant_id: str, situation_id: str) -> dict:
+        node_count = 0
+        edge_count = 0
+        with self.database.batch() as batch:
+            for node_id, data in G.nodes(data=True):
+                ptype = data.get("primitive_type", "Actor")
+                table = f"{ptype}s"  # Pluralize: Actor → Actors
+                batch.insert_or_update(
+                    table=table,
+                    columns=("id", "tenant_id", "situation_id", "label", "properties"),
+                    values=[(
+                        node_id,
+                        tenant_id,
+                        situation_id,
+                        data.get("label", node_id),
+                        json.dumps({
+                            k: v for k, v in data.items()
+                            if k not in ("primitive_type", "label")
+                        }),
+                    )],
+                )
+                node_count += 1
+            for u, v, data in G.edges(data=True):
+                relation = data.get("relation", "RELATED_TO").upper().split(",")[0].strip()
+                batch.insert_or_update(
+                    table="Edges",
+                    columns=(
+                        "tenant_id", "situation_id",
+                        "source_id", "target_id",
+                        "source_type", "target_type",
+                        "relation_type", "weight", "properties",
+                    ),
+                    values=[(
+                        tenant_id,
+                        situation_id,
+                        u,
+                        v,
+                        G.nodes[u].get("primitive_type", "Actor"),
+                        G.nodes[v].get("primitive_type", "Actor"),
+                        relation,
+                        float(data.get("weight", 1.0)),
+                        json.dumps(data),
+                    )],
+                )
+                edge_count += 1
+        return {"nodes_pushed": node_count, "edges_pushed": edge_count}
+
+    async def query_situation(self, tenant_id: str, situation_id: str) -> dict:
+        spanner = self._spanner
+        sql = """
+          GRAPH praxis_graph
+          MATCH (n) WHERE n.tenant_id = @tid AND n.situation_id = @sid
+          OPTIONAL MATCH (n)-[r]->(m) WHERE m.tenant_id = @tid AND m.situation_id = @sid
+          RETURN n.id AS source_id, n.label AS source_label,
+                 r.relation_type AS rel,
+                 m.id AS target_id, m.label AS target_label
+        """
+        with self.database.snapshot() as snap:
+            results = snap.execute_sql(
+                sql,
+                params={"tid": tenant_id, "sid": situation_id},
+                param_types={
+                    "tid": spanner.param_types.STRING,
+                    "sid": spanner.param_types.STRING,
+                },
+            )
+            nodes: dict = {}
+            edges: list = []
+            for row in results:
+                nodes[row[0]] = {"id": row[0], "label": row[1]}
+                if row[2]:
+                    edges.append({"source": row[0], "target": row[3], "relation": row[2]})
+                    nodes[row[3]] = {"id": row[3], "label": row[4]}
+        return {"nodes": list(nodes.values()), "edges": edges}
+
+    async def actor_profile(self, tenant_id: str, actor_id: str) -> dict:
+        spanner = self._spanner
+        sql = """
+          GRAPH praxis_graph
+          MATCH (a:Actor)-[r]-(c) WHERE a.tenant_id = @tid AND a.id = @aid
+          RETURN a, r.relation_type AS rel, c
+        """
+        with self.database.snapshot() as snap:
+            results = list(snap.execute_sql(
+                sql,
+                params={"tid": tenant_id, "aid": actor_id},
+                param_types={
+                    "tid": spanner.param_types.STRING,
+                    "aid": spanner.param_types.STRING,
+                },
+            ))
+        if not results:
+            return {}
+        actor_data = dict(results[0][0])
+        connections = [{"rel": r[1], "node": dict(r[2])} for r in results]
+        return {"actor": actor_data, "connections": connections}
+
+    async def shortest_path(self, tenant_id: str, source_id: str, target_id: str) -> list:
+        spanner = self._spanner
+        sql = """
+          GRAPH praxis_graph
+          MATCH path = ANY SHORTEST (s)-[*]->(t)
+          WHERE s.tenant_id = @tid AND s.id = @src AND t.id = @tgt
+          RETURN nodes(path) AS path_nodes
+        """
+        with self.database.snapshot() as snap:
+            results = list(snap.execute_sql(
+                sql,
+                params={"tid": tenant_id, "src": source_id, "tgt": target_id},
+                param_types={
+                    "tid": spanner.param_types.STRING,
+                    "src": spanner.param_types.STRING,
+                    "tgt": spanner.param_types.STRING,
+                },
+            ))
+        if not results:
+            return []
+        return [dict(n) for n in results[0][0]]
+
+    async def close(self) -> None:
+        pass  # Spanner client manages its own connection pool
+
+
 def create_graph_adapter(provider: str, **kwargs) -> GraphAdapter:
     """Factory: create the right adapter based on user preference."""
+    if provider == "spanner":
+        return SpannerGraphAdapter(
+            project_id=kwargs.get("project_id") or os.environ.get("GCP_PROJECT_ID", "praxisbytacitus"),
+            instance_id=kwargs.get("instance_id", "praxis-graph"),
+            database_id=kwargs.get("database_id", "praxis-graph-db"),
+        )
     if provider == "falkordb":
         return FalkorDBAdapter(
             host=kwargs.get("host", "localhost"),
