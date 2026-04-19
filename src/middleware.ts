@@ -14,7 +14,6 @@ const SESSION_COOKIE = 'tacitus-auth-session';
  */
 function parseSessionForRouting(cookieValue: string): { demo?: boolean; token?: string; onboarded?: boolean } | null {
   try {
-    // Signed format: JSON.SIGNATURE — extract JSON before last dot
     const idx = cookieValue.lastIndexOf('.');
     const jsonPart = idx !== -1 ? cookieValue.slice(0, idx) : cookieValue;
     const parsed = JSON.parse(jsonPart);
@@ -37,6 +36,31 @@ function generateNonce(): string {
   return btoa(String.fromCharCode(...arr));
 }
 
+/**
+ * Build a NextResponse with:
+ *   - x-nonce set on the REQUEST headers so Next.js auto-propagates the nonce
+ *     to every inline bootstrap script it emits (required for strict-dynamic CSP)
+ *   - x-nonce also set on the response headers so layouts/pages can read it via
+ *     `headers().get('x-nonce')`
+ *   - the full security-header suite applied
+ *
+ * This is the replacement for `NextResponse.next()` on every path that should
+ * carry CSP — use it everywhere instead of calling NextResponse.next() directly.
+ */
+function nextWithNonce(request: NextRequest, nonce: string): NextResponse {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  return addSecurityHeaders(response, nonce);
+}
+
+function rewriteWithNonce(request: NextRequest, url: URL, nonce: string): NextResponse {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  const response = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+  return addSecurityHeaders(response, nonce);
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const session = request.cookies.get(SESSION_COOKIE);
@@ -55,42 +79,35 @@ export function middleware(request: NextRequest) {
       return addSecurityHeaders(NextResponse.redirect(loginUrl), nonce);
     }
 
-    // Rewrite demo URLs to the canonical /app/$ROUTE page when one exists.
-    // Demo-specific pages (e.g. /demo, /demo/deep-search-agent) are kept under
-    // src/app/demo/ and are NOT rewritten.
-    const demoSpecificRoutes = new Set([
-      '/demo',
-      '/demo/deep-search-agent',
-    ]);
+    const demoSpecificRoutes = new Set(['/demo', '/demo/deep-search-agent']);
     if (!demoSpecificRoutes.has(pathname)) {
       const appPath = pathname.replace(/^\/demo/, '/app');
       const url = request.nextUrl.clone();
       url.pathname = appPath;
-      return addSecurityHeaders(NextResponse.rewrite(url), nonce);
+      return rewriteWithNonce(request, url, nonce);
     }
 
-    return addSecurityHeaders(NextResponse.next(), nonce);
+    return nextWithNonce(request, nonce);
   }
 
-  // --- /onboarding routes: requires Firebase auth, not available to demo users ---
+  // --- /onboarding routes ---
   if (pathname.startsWith('/onboarding')) {
     if (isDemo) return addSecurityHeaders(NextResponse.redirect(new URL('/demo/dashboard', request.url)), nonce);
     if (!hasFirebaseToken) return addSecurityHeaders(NextResponse.redirect(new URL('/login', request.url)), nonce);
-    return addSecurityHeaders(NextResponse.next(), nonce);
+    return nextWithNonce(request, nonce);
   }
 
-  // --- First-login redirect: send un-onboarded Firebase users to /onboarding before any /app/* page ---
+  // --- First-login redirect for un-onboarded Firebase users ---
   if (pathname.startsWith('/app') && hasFirebaseToken && sessionData?.onboarded === false && pathname !== '/onboarding') {
     return addSecurityHeaders(NextResponse.redirect(new URL('/onboarding', request.url)), nonce);
   }
 
-  // --- /app/* routes: require Firebase JWT, reject demo users ---
+  // --- /app/* routes ---
   if (pathname.startsWith('/app')) {
     if (isDemo) {
-      // Demo users cannot access the real app
       return addSecurityHeaders(
         NextResponse.redirect(new URL('/demo/dashboard', request.url)),
-        nonce
+        nonce,
       );
     }
     if (!hasFirebaseToken) {
@@ -98,10 +115,10 @@ export function middleware(request: NextRequest) {
       loginUrl.searchParams.set('redirect', pathname);
       return addSecurityHeaders(NextResponse.redirect(loginUrl), nonce);
     }
-    return addSecurityHeaders(NextResponse.next(), nonce);
+    return nextWithNonce(request, nonce);
   }
 
-  return addSecurityHeaders(NextResponse.next(), nonce);
+  return nextWithNonce(request, nonce);
 }
 
 function addSecurityHeaders(response: NextResponse, nonce?: string): NextResponse {
@@ -115,32 +132,36 @@ function addSecurityHeaders(response: NextResponse, nonce?: string): NextRespons
   // COOP: same-origin-allow-popups is required for Google Sign-In redirect flow
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
 
-  // Expose nonce to Next.js App Router so its inline bootstrap scripts can use it.
-  // Next.js reads the x-nonce response header and applies the nonce to its own
-  // inline <script> tags automatically.
-  // NOTE: If Firebase Auth popup fails with CSP errors, fall back to:
-  // script-src 'self' 'unsafe-inline' ... (remove nonce + strict-dynamic)
-  // and document the Firebase Auth script hashes needed for hash-based CSP.
   if (nonce) {
+    // Expose nonce to server components via response header so layouts/pages
+    // can read it with `headers().get('x-nonce')` for manual <Script nonce=...>
+    // tags (e.g. JSON-LD in the landing page).
     response.headers.set('x-nonce', nonce);
   }
 
-  // CSP: Google Identity Services needs *.google.com and *.gstatic.com.
-  // script-src uses a per-request nonce + 'strict-dynamic' instead of 'unsafe-inline'.
-  // 'strict-dynamic' propagates trust to scripts loaded by trusted (nonced) scripts,
-  // which is required for Firebase Auth and Google Identity Services to work correctly.
+  // CSP: nonce + strict-dynamic is the supported secure pattern for Next.js.
+  // Next.js automatically applies the nonce to its inline bootstrap scripts
+  // when it reads `x-nonce` off the REQUEST headers (set in nextWithNonce /
+  // rewriteWithNonce). Host-based allowlists (apis.google.com, *.gstatic.com,
+  // etc.) remain valid fallbacks for browsers that do not support
+  // strict-dynamic; modern browsers rely on the nonce chain.
+  //
+  // ADDED: www.google.com (reCAPTCHA Enterprise for App Check) and
+  // www.recaptcha.net (reCAPTCHA v3 fallback).
   const scriptSrc = nonce
-    ? `'self' 'nonce-${nonce}' 'strict-dynamic' apis.google.com *.firebaseapp.com *.googleapis.com *.google.com *.gstatic.com www.googletagmanager.com`
-    : `'self' 'unsafe-inline' apis.google.com *.firebaseapp.com *.googleapis.com *.google.com *.gstatic.com www.googletagmanager.com`;
+    ? `'self' 'nonce-${nonce}' 'strict-dynamic' apis.google.com *.firebaseapp.com *.googleapis.com *.google.com *.gstatic.com www.googletagmanager.com www.google.com www.recaptcha.net`
+    : `'self' 'unsafe-inline' apis.google.com *.firebaseapp.com *.googleapis.com *.google.com *.gstatic.com www.googletagmanager.com www.google.com www.recaptcha.net`;
 
-  response.headers.set('Content-Security-Policy',
+  response.headers.set(
+    'Content-Security-Policy',
     "default-src 'self'; " +
-    `script-src ${scriptSrc}; ` +
-    "style-src 'self' 'unsafe-inline' fonts.googleapis.com; " +
-    "img-src 'self' data: blob: *.googleapis.com *.googleusercontent.com *.gstatic.com; " +
-    "font-src 'self' fonts.gstatic.com; " +
-    "connect-src 'self' *.firebaseio.com *.googleapis.com *.firebaseapp.com identitytoolkit.googleapis.com securetoken.googleapis.com api.acleddata.com api.gdeltproject.org api.reliefweb.int hapi.humdata.org api.worldbank.org *.firecrawl.dev api.parallel.ai js.stripe.com wss://*.firebaseio.com www.google-analytics.com *.google-analytics.com www.googletagmanager.com; " +
-    "frame-src 'self' *.firebaseapp.com accounts.google.com *.google.com js.stripe.com;"
+      `script-src ${scriptSrc}; ` +
+      `script-src-elem ${scriptSrc}; ` +
+      "style-src 'self' 'unsafe-inline' fonts.googleapis.com; " +
+      "img-src 'self' data: blob: *.googleapis.com *.googleusercontent.com *.gstatic.com; " +
+      "font-src 'self' fonts.gstatic.com; " +
+      "connect-src 'self' *.firebaseio.com *.googleapis.com *.firebaseapp.com identitytoolkit.googleapis.com securetoken.googleapis.com firebaseappcheck.googleapis.com api.acleddata.com api.gdeltproject.org api.reliefweb.int hapi.humdata.org api.worldbank.org *.firecrawl.dev api.parallel.ai js.stripe.com wss://*.firebaseio.com www.google-analytics.com *.google-analytics.com www.googletagmanager.com; " +
+      "frame-src 'self' *.firebaseapp.com accounts.google.com *.google.com js.stripe.com;",
   );
 
   return response;

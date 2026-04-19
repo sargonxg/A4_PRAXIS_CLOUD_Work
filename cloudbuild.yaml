@@ -85,6 +85,7 @@ steps:
         --build-arg NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=852128226674
         --build-arg NEXT_PUBLIC_FIREBASE_APP_ID=1:852128226674:web:535f771c7a3568462c11eb
         --build-arg NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-7R44KT7CDY
+        --build-arg NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_ENTERPRISE_KEY=AQ.Ab8RN6IXTdhsDEQPADTuABwbGTCSfvNt16sMuy0Xc95Anrh6Pw
         .
     id: 'build-frontend'
     waitFor: ['get-backend-url']
@@ -118,6 +119,11 @@ steps:
       # `praxis-agent-engine-id` and add it back to this list. Until then, the
       # Deep Research Agent falls back to Gemini 3 + Grounded Search (handled
       # in src/lib/ai/vertex-agent.ts:31-32).
+      # Vertex AI via Application Default Credentials (ADC) on Cloud Run. No
+      # API key needed — the default service account has aiplatform.user role.
+      # AI_PROVIDER=vertex tells providers.ts to prefer Vertex over Google AI.
+      - '--set-env-vars'
+      - 'AI_PROVIDER=vertex,GOOGLE_VERTEX_PROJECT=praxisbytacitus,GOOGLE_VERTEX_LOCATION=us-central1,GOOGLE_CLOUD_PROJECT=praxisbytacitus'
       - '--set-secrets'
       - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest,SESSION_SECRET=praxis-cookie-secret:latest'
     id: 'deploy-frontend'
@@ -131,7 +137,7 @@ steps:
       - >-
         gcloud run services update praxis-frontend
         --region=us-central1
-        --update-env-vars=NEXT_PUBLIC_PRAXIS_BACKEND_URL=$(cat /workspace/backend_url.txt),NEXT_PUBLIC_SITE_URL=https://praxis.tacitus.me,NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyAHNn4zJdMaxJXziRNa9SmHRFKUvO1q9uA,NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=praxisbytacitus.firebaseapp.com,NEXT_PUBLIC_FIREBASE_PROJECT_ID=praxisbytacitus,NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=praxisbytacitus.firebasestorage.app,NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=852128226674,NEXT_PUBLIC_FIREBASE_APP_ID=1:852128226674:web:535f771c7a3568462c11eb,NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-7R44KT7CDY
+        --update-env-vars=NEXT_PUBLIC_PRAXIS_BACKEND_URL=$(cat /workspace/backend_url.txt),NEXT_PUBLIC_SITE_URL=https://praxis.tacitus.me,NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyAHNn4zJdMaxJXziRNa9SmHRFKUvO1q9uA,NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=praxisbytacitus.firebaseapp.com,NEXT_PUBLIC_FIREBASE_PROJECT_ID=praxisbytacitus,NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=praxisbytacitus.firebasestorage.app,NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=852128226674,NEXT_PUBLIC_FIREBASE_APP_ID=1:852128226674:web:535f771c7a3568462c11eb,NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-7R44KT7CDY,NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_ENTERPRISE_KEY=AQ.Ab8RN6IXTdhsDEQPADTuABwbGTCSfvNt16sMuy0Xc95Anrh6Pw
     id: 'set-frontend-env'
     waitFor: ['deploy-frontend']
 

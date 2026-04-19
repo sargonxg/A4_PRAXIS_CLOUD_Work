@@ -2,6 +2,11 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getAnalytics, isSupported } from 'firebase/analytics';
+import {
+  initializeAppCheck,
+  ReCaptchaEnterpriseProvider,
+  ReCaptchaV3Provider,
+} from 'firebase/app-check';
 
 // -----------------------------------------------------------------------------
 // IMPORTANT: These must be LITERAL `process.env.NEXT_PUBLIC_*` accesses. Any
@@ -17,6 +22,10 @@ const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
 const messagingSenderId = process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID;
 const appId = process.env.NEXT_PUBLIC_FIREBASE_APP_ID;
 const measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
+// App Check site keys — reCAPTCHA Enterprise preferred; reCAPTCHA v3 as fallback.
+const appCheckEnterpriseKey = process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_ENTERPRISE_KEY;
+const appCheckV3Key = process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_V3_KEY;
+const appCheckDebugToken = process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_DEBUG_TOKEN;
 
 function assertPresent(name: string, value: string | undefined): asserts value is string {
   if (!value) {
@@ -45,6 +54,36 @@ const firebaseConfig = {
 };
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+
+// ----------------------------------------------------------------------------
+// Firebase App Check — prevents abuse of the public API key by asserting that
+// requests originate from your registered app (via reCAPTCHA attestation).
+// Runs only in the browser. Silently no-ops when no site key is configured.
+// ----------------------------------------------------------------------------
+if (typeof window !== 'undefined') {
+  try {
+    if (appCheckDebugToken) {
+      // Firebase reads this global to bypass attestation in dev.
+      (window as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: string | boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN =
+        appCheckDebugToken === 'true' ? true : appCheckDebugToken;
+    }
+    if (appCheckEnterpriseKey) {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaEnterpriseProvider(appCheckEnterpriseKey),
+        isTokenAutoRefreshEnabled: true,
+      });
+    } else if (appCheckV3Key) {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider(appCheckV3Key),
+        isTokenAutoRefreshEnabled: true,
+      });
+    }
+    // No site key → App Check disabled. Auth / Firestore still work; this only
+    // means the public API key is not hardened against origin abuse yet.
+  } catch (err) {
+    console.warn('[firebase/app-check] initialization failed (non-fatal):', err);
+  }
+}
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
