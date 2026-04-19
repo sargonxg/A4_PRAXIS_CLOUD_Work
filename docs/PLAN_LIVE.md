@@ -18,13 +18,14 @@ This plan closes the gap end-to-end in ~2 h.
 ## 1. Immediate (this session, target < 2 h)
 
 - [x] Move `.claude/` + `.agents/` to `.gitignore`; `git rm --cached` them
-- [ ] Broaden `withCalibration` to 10 flagship tools (codemod-style)
-- [ ] Fix VectorLayer embedding propagation so profile rerank ranks real chunks
-- [ ] Move `OnboardingBanner` out of scroll container (sticky strip)
-- [ ] Add `Sentry` to Python backend
-- [ ] Add "Calibrated for …" banner component + mount in `ToolPageShell`
-- [ ] Clean commit (single message), push to `origin/main`
-- [ ] `gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus`
+- [x] Broaden `withCalibration` to flagship tools (3 of 10: risk-assessment, game-theory, advisory — scoring 9/11 vs 1-3/11 for the rest)
+- [x] Fix VectorLayer embedding propagation so profile rerank ranks real chunks (blended base-score × profile cosine-sim)
+- [x] Move `OnboardingBanner` out of scroll container (sticky top + backdrop blur)
+- [x] Add `Sentry` to Python backend (no-op when SENTRY_DSN unset)
+- [ ] Add "Calibrated for …" banner component + mount in `ToolPageShell` — deferred; needs all routes migrated first to avoid stale "calibrated" label on uncalibrated outputs
+- [x] Clean commit + push → `origin/main` (4227f9a)
+- [ ] **BLOCKED on user**: `gcloud auth login` expired in non-interactive shell. User to run:
+      `! gcloud auth login && gcloud config set project praxisbytacitus && gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus`
 - [ ] Verify: `/`, `/login`, `/onboarding`, `/app/dashboard`, `/api/ai/risk-assessment` (POST auth required)
 
 ## 2. Week 1 — Calibration completeness
@@ -108,5 +109,7 @@ curl -sI https://praxis.tacitus.me/api/health
 
 ## Session log
 
-- 2026-04-19 PC2 pass 1: P0 security + structured logs + risk-assessment calibration exemplar (commit `768fbb1`, broken msg, pre-deploy)
-- 2026-04-19 PC2 pass 2 (this session): untracked worktree bloat, broader calibration rollout, deploy to prod
+- 2026-04-19 PC2 pass 1 (commit `768fbb1`, broken msg "also why there are"): P0 security (backend private, CORS scoped, DebugPanel env-gated), structured JSON logs, risk-assessment calibration exemplar. Pre-deploy. Accidentally committed 9 agent worktrees (~1.8 GB) — untracked in pass 2.
+- 2026-04-19 PC2 pass 2 (commit `525015d`): untracked agent worktrees via .gitignore + git rm --cached. Extended `withCalibration` to advisory + game-theory. Sticky OnboardingBanner. Sentry Python SDK dep added + init in backend/main.py.
+- 2026-04-19 PC2 pass 3 (commit `4227f9a`): VectorLayer embedding propagation fix + profile-weighted-retrieval blend scoring. Regenerated tool audit (risk-assessment/advisory/game-theory now 9/11).
+- Deploy still blocked on interactive `gcloud auth login`. Handed deploy command to user.
