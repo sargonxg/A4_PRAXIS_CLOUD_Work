@@ -50,7 +50,7 @@ export function bustDomainCache(id?: DomainId): void {
 
 async function readDomainDoc(id: DomainId): Promise<DomainConfig | null> {
   try {
-    const snap = await adminDb.doc(`config/domains/${id}`).get();
+    const snap = await adminDb.doc(`domains/${id}`).get();
     if (!snap.exists) return null;
     const raw = snap.data();
     if (!raw) return null;

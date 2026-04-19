@@ -115,11 +115,16 @@ export interface MergedDomainConfig {
 // Firestore paths
 // ---------------------------------------------------------------------------
 
-export const DOMAIN_COLLECTION = 'config' as const;
-export const DOMAIN_DOC_PATH = (id: DomainId): string => `config/domains/${id}`;
-export const DOMAIN_META_PATH = 'config/domains_meta/current' as const;
+// Top-level collections for domain taxonomy. `domains/{id}` is a valid
+// 2-segment document path (Firestore requires an even number of segments
+// for document references). Previously `config/domains/{id}` was used, but
+// that's a 3-segment *collection* path, not a doc path, and caused
+// `doc()` calls to fail.
+export const DOMAIN_COLLECTION = 'domains' as const;
+export const DOMAIN_DOC_PATH = (id: DomainId): string => `domains/${id}`;
+export const DOMAIN_META_PATH = 'domains_meta/current' as const;
 export const DOMAIN_HISTORY_PATH = (id: DomainId, version: number): string =>
-  `config/domains_history/${id}_${version}`;
+  `domains_history/${id}_${version}`;
 
 // ---------------------------------------------------------------------------
 // Meta doc

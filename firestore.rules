@@ -52,16 +52,18 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Domain taxonomy: authenticated read, write denied (admin-only via /api/admin/domains)
-    match /config/domains/{domainId} {
+    // Domain taxonomy: authenticated read, write denied (admin-only via /api/admin/domains).
+    // Top-level collections (2-segment doc paths). Admin-only writes go through
+    // the API route using Firebase Admin SDK which bypasses these rules.
+    match /domains/{domainId} {
       allow read: if request.auth != null;
       allow write: if false;
     }
-    match /config/domains_meta/current {
+    match /domains_meta/{docId} {
       allow read: if request.auth != null;
       allow write: if false;
     }
-    match /config/domains_history/{historyId} {
+    match /domains_history/{historyId} {
       allow read: if request.auth != null;
       allow write: if false;
     }

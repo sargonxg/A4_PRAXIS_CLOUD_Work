@@ -39,7 +39,7 @@ async function main(): Promise<void> {
 
   for (const id of DOMAIN_IDS) {
     const seed = DOMAIN_SEEDS[id as DomainId];
-    const ref = db.doc(`config/domains/${id}`);
+    const ref = db.doc(`domains/${id}`);
     const snap = await ref.get();
 
     if (snap.exists) {
@@ -76,7 +76,7 @@ async function main(): Promise<void> {
   }
 
   // Write meta doc
-  await db.doc('config/domains_meta/current').set(
+  await db.doc('domains_meta/current').set(
     {
       schemaVersion: SEED_SCHEMA_VERSION,
       seededVersion: SEED_VERSION,

@@ -40,7 +40,7 @@ export const GET = withAuth(async (req, user) => {
   const id = parseId(url.pathname.split('/').filter(Boolean).pop() ?? '');
   if (!id) return NextResponse.json({ error: 'Invalid domain id' }, { status: 400 });
 
-  const snap = await adminDb.doc(`config/domains/${id}`).get();
+  const snap = await adminDb.doc(`domains/${id}`).get();
   if (!snap.exists) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json({ domain: snap.data() });
 });
@@ -62,7 +62,7 @@ export const PATCH = withAuth(async (req, user) => {
     );
   }
 
-  const ref = adminDb.doc(`config/domains/${id}`);
+  const ref = adminDb.doc(`domains/${id}`);
   const current = await ref.get();
   if (!current.exists) {
     return NextResponse.json({ error: 'Domain not found — seed it first' }, { status: 404 });
@@ -75,7 +75,7 @@ export const PATCH = withAuth(async (req, user) => {
   // Write history snapshot (append-only audit trail)
   try {
     await adminDb
-      .doc(`config/domains_history/${id}_${prevVersion}`)
+      .doc(`domains_history/${id}_${prevVersion}`)
       .set({ ...currentData, archivedAt: FieldValue.serverTimestamp() });
   } catch (err) {
     console.warn('[admin/domains] history snapshot failed:', err);
