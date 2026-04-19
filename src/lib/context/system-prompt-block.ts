@@ -1,5 +1,6 @@
 import type { AnalystProfile, Audience, Language, AnalyticalStyle } from '@/types/analyst-profile';
 import type { Situation } from '@/types/situation';
+import type { MergedDomainConfig } from '@/types/domain';
 
 export interface RetrievedChunk {
   id: string;
@@ -32,11 +33,16 @@ export function renderSystemPromptBlock(opts: {
   profile: AnalystProfile | null;
   situation: Situation | null;
   retrievedChunks: RetrievedChunk[];
+  domain?: MergedDomainConfig | null;
+  toolId?: string;
 }): string {
   const parts: string[] = [];
 
   parts.push(renderProfileBlock(opts.profile));
   parts.push(renderSituationBlock(opts.situation));
+  if (opts.domain && opts.domain.id !== 'generic') {
+    parts.push(renderDomainBlock(opts.domain, opts.toolId));
+  }
   if (opts.retrievedChunks.length > 0) {
     parts.push(renderKnowledgeBlock(opts.retrievedChunks));
   }
@@ -85,6 +91,23 @@ function renderSituationBlock(s: Situation | null): string {
     `  Risk: ${s.riskScore ?? '—'}/10 · Glasl ${s.glaslStage ?? '—'} · ${escapeTag(s.escalationTrend ?? '—')}`,
     '</situation-frame>',
   ].join('\n');
+}
+
+function renderDomainBlock(domain: MergedDomainConfig, toolId?: string): string {
+  const topFrameworks = domain.frameworks.slice(0, 3);
+  const overridePrompt = toolId ? domain.promptOverrides?.[toolId] : undefined;
+  return [
+    `<domain-frame id="${escapeTag(domain.id)}" version="${domain.version}">`,
+    `  Domain: ${escapeTag(domain.name)}`,
+    `  ${escapeTag(domain.description)}`,
+    topFrameworks.length > 0
+      ? `  Preferred frameworks for this domain: ${topFrameworks.map(escapeTag).join(', ')}`
+      : '  Preferred frameworks: analyst choice.',
+    overridePrompt ? `  Domain-specific guidance:\n    ${escapeTag(overridePrompt)}` : '',
+    '</domain-frame>',
+  ]
+    .filter((l) => l.length > 0)
+    .join('\n');
 }
 
 function renderKnowledgeBlock(chunks: RetrievedChunk[]): string {

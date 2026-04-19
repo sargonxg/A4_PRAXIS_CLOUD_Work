@@ -16,7 +16,7 @@ describe('renderSystemPromptBlock', () => {
     const profile = {
       ...DEFAULT_ANALYST_PROFILE,
       identity: { role: 'un_official' as const, seniority: 'senior' as const, org: 'UN DPPA', team: 'Africa II' },
-      perspective: { mandate: 'I brief the USG on prevention.', lenses: ['humanitarian' as const, 'legal_ihl' as const], regions: ['Sahel'], audience: 'senior_leadership' as const },
+      perspective: { mandate: 'I brief the USG on prevention.', lenses: ['humanitarian' as const, 'legal_ihl' as const], regions: ['Sahel'], audience: 'senior_leadership' as const, primaryDomain: 'humanitarian' as const, secondaryDomains: [] },
       workingStyle: { ...DEFAULT_ANALYST_PROFILE.workingStyle, language: 'en' as const, redLines: ['Avoid regime-change framing.'] },
       meta: { ...DEFAULT_ANALYST_PROFILE.meta, version: 3 },
     };

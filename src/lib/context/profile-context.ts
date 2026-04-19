@@ -7,8 +7,14 @@ import {
   type OutputConstraints,
   type RetrievedChunk,
 } from './system-prompt-block';
+import {
+  resolveUserDomain,
+  resolveDomain,
+  mergeUserAndSituationDomains,
+} from '@/lib/domain/resolve';
 import type { AnalystProfile } from '@/types/analyst-profile';
 import type { Situation } from '@/types/situation';
+import type { MergedDomainConfig } from '@/types/domain';
 
 export interface ContextBlock {
   systemPromptBlock: string;
@@ -18,9 +24,18 @@ export interface ContextBlock {
     situation: Situation | null;
     retrievedChunks: RetrievedChunk[];
   };
+  /**
+   * Effective merged domain: user.primary + user.secondaries + situation.domain.
+   * Always populated — never null. Falls back to the `generic` seed if every
+   * read failed. Tools can read `domain.frameworks`, `domain.preferredFeeds`,
+   * and `domain.promptOverrides[toolId]` directly.
+   */
+  domain: MergedDomainConfig;
   provenance: {
     profileVersion: number;
     situationVersion: number | null;
+    domainId: string;
+    domainVersion: number;
     generatedAt: string;
   };
 }
@@ -83,16 +98,42 @@ export async function buildCalibratedContext(opts: {
     }
   }
 
-  const systemPromptBlock = renderSystemPromptBlock({ profile, situation, retrievedChunks });
+  // Resolve effective domain: user primary+secondaries, then merge situation.
+  let domain: MergedDomainConfig;
+  try {
+    const userDomain = profile
+      ? await resolveUserDomain(profile)
+      : await resolveDomain('generic');
+    if (situation?.domain && situation.domain !== userDomain.id) {
+      const situationDomain = await resolveDomain(situation.domain);
+      domain = mergeUserAndSituationDomains(userDomain, situationDomain);
+    } else {
+      domain = userDomain;
+    }
+  } catch (err) {
+    console.warn('[profile-context] domain resolution failed, using generic:', err);
+    domain = await resolveDomain('generic');
+  }
+
+  const systemPromptBlock = renderSystemPromptBlock({
+    profile,
+    situation,
+    retrievedChunks,
+    domain,
+    toolId: opts.toolId,
+  });
   const outputConstraints = profile ? renderOutputConstraints(profile) : NEUTRAL_CONSTRAINTS;
 
   return {
     systemPromptBlock,
     outputConstraints,
     toolContext: { profile, situation, retrievedChunks },
+    domain,
     provenance: {
       profileVersion: profile?.meta?.version ?? 0,
-      situationVersion: null, // situations don't have explicit versions yet; hook reserved
+      situationVersion: null,
+      domainId: domain.id,
+      domainVersion: domain.version,
       generatedAt: new Date().toISOString(),
     },
   };

@@ -32,6 +32,26 @@ export type Language = typeof LANGUAGES[number];
 export const ANALYTICAL_STYLES = ['rapid_brief', 'deep_dive'] as const;
 export type AnalyticalStyle = typeof ANALYTICAL_STYLES[number];
 
+/**
+ * Domain ids are declared in './domain.ts' but re-stated here as a literal
+ * union to avoid a circular import. The canonical source is `DOMAIN_IDS`.
+ * If you add a domain, update both places — the CI lint guard will enforce.
+ */
+export const ANALYST_DOMAIN_IDS = [
+  'generic',
+  'armed-conflict-security',
+  'diplomacy-negotiation',
+  'humanitarian',
+  'human-rights',
+  'governance-rule-of-law',
+  'economic-sanctions',
+  'development-stabilization',
+  'climate-environmental-security',
+  'information-cyber',
+  'transnational-threats',
+] as const;
+export type AnalystDomainId = typeof ANALYST_DOMAIN_IDS[number];
+
 export const AnalystProfileSchema = z.object({
   identity: z.object({
     role: z.enum(ROLES),
@@ -44,6 +64,17 @@ export const AnalystProfileSchema = z.object({
     lenses: z.array(z.enum(LENSES)).min(1).max(5),
     regions: z.array(z.string().max(80)).max(8),
     audience: z.enum(AUDIENCES),
+    /**
+     * Primary domain — always a valid DomainId. Defaults to 'generic',
+     * which preserves today's baseline behaviour for any profile written
+     * before this field existed.
+     */
+    primaryDomain: z.enum(ANALYST_DOMAIN_IDS).default('generic'),
+    /**
+     * Optional secondary domains (0-3). Used as weight boosts on the user's
+     * primary domain lens configuration. Must not contain `primaryDomain`.
+     */
+    secondaryDomains: z.array(z.enum(ANALYST_DOMAIN_IDS)).max(3).default([]),
   }),
   workingStyle: z.object({
     sourceCategories: z.array(z.string()).max(16),
@@ -69,7 +100,14 @@ export type AnalystProfile = z.infer<typeof AnalystProfileSchema>;
 
 export const DEFAULT_ANALYST_PROFILE: AnalystProfile = {
   identity: { role: 'other', seniority: 'mid', org: '', team: '' },
-  perspective: { mandate: '', lenses: ['diplomatic'], regions: [], audience: 'myself' },
+  perspective: {
+    mandate: '',
+    lenses: ['diplomatic'],
+    regions: [],
+    audience: 'myself',
+    primaryDomain: 'generic',
+    secondaryDomains: [],
+  },
   workingStyle: {
     sourceCategories: ['foundational', 'conflict-security', 'humanitarian', 'diplomatic-official', 'news-media'],
     language: 'en',

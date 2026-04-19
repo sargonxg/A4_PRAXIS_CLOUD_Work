@@ -121,6 +121,14 @@ export interface Situation {
     correctionCount?: number;
     checkedAt?: string;
   };
+  // Domain classification — single domain per situation, set at creation by
+  // the classifier and user-editable. Defaults to 'generic' if not yet set.
+  // See: src/lib/domain/classifier.ts and spec §4.3.
+  domain?: string;
+  domainConfidence?: number;
+  domainOverriddenByUser?: boolean;
+  domainVersion?: number;
+  domainClassifiedAt?: string | null;
 }
 
 export interface CreateSituationInput {
