@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { verifyIdToken } from '@/lib/firebase/admin';
+import { verifyIdToken, getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { signCookie, verifyCookie } from '@/lib/auth/cookie-signer';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
@@ -52,22 +52,36 @@ export async function POST(request: Request) {
 
     if (body.token && typeof body.token === 'string') {
       // Verify the Firebase ID token before storing it
+      let verifiedUid: string;
       try {
         const verified = await verifyIdToken(body.token);
         if (!verified.uid) {
           console.error('[auth/session] verifyIdToken returned no uid');
           return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
         }
-        console.log('[auth/session] Token verified for uid:', verified.uid);
+        verifiedUid = verified.uid;
+        console.log('[auth/session] Token verified for uid:', verifiedUid);
       } catch (err) {
         console.error('[auth/session] Token verification failed:', err instanceof Error ? err.message : String(err));
         return NextResponse.json({ error: 'Token verification failed' }, { status: 401 });
       }
 
-      // Token is valid — store in cookie for subsequent requests
+      // Look up onboardingCompletedAt to embed the onboarded flag edge-safely in the cookie.
+      // Middleware cannot call Firestore (Edge runtime), so we embed it here at login time.
+      let onboarded = false;
+      try {
+        const db = getAdminDbOrThrow();
+        const userSnap = await db.collection('users').doc(verifiedUid).get();
+        onboarded = Boolean(userSnap.data()?.onboardingCompletedAt);
+      } catch (err) {
+        // Non-fatal: if Firestore is unavailable, default to false (user will be redirected to onboarding).
+        console.warn('[auth/session] Could not read onboardingCompletedAt for uid:', verifiedUid, err instanceof Error ? err.message : String(err));
+      }
+
+      // Token is valid — store in cookie for subsequent requests (includes onboarded flag for middleware)
       cookieStore.set(
         SESSION_COOKIE,
-        signCookie(JSON.stringify({ token: body.token })),
+        signCookie(JSON.stringify({ token: body.token, onboarded })),
         COOKIE_OPTIONS,
       );
       return NextResponse.json({ success: true });

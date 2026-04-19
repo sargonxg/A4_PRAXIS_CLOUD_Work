@@ -12,7 +12,7 @@ const SESSION_COOKIE = 'tacitus-auth-session';
  * We extract the JSON payload before the last dot for routing decisions.
  * A forged cookie that gets past this check will still fail in with-auth.ts.
  */
-function parseSessionForRouting(cookieValue: string): { demo?: boolean; token?: string } | null {
+function parseSessionForRouting(cookieValue: string): { demo?: boolean; token?: string; onboarded?: boolean } | null {
   try {
     // Signed format: JSON.SIGNATURE — extract JSON before last dot
     const idx = cookieValue.lastIndexOf('.');
@@ -70,6 +70,18 @@ export function middleware(request: NextRequest) {
     }
 
     return addSecurityHeaders(NextResponse.next(), nonce);
+  }
+
+  // --- /onboarding routes: requires Firebase auth, not available to demo users ---
+  if (pathname.startsWith('/onboarding')) {
+    if (isDemo) return addSecurityHeaders(NextResponse.redirect(new URL('/demo/dashboard', request.url)), nonce);
+    if (!hasFirebaseToken) return addSecurityHeaders(NextResponse.redirect(new URL('/login', request.url)), nonce);
+    return addSecurityHeaders(NextResponse.next(), nonce);
+  }
+
+  // --- First-login redirect: send un-onboarded Firebase users to /onboarding before any /app/* page ---
+  if (pathname.startsWith('/app') && hasFirebaseToken && sessionData?.onboarded === false && pathname !== '/onboarding') {
+    return addSecurityHeaders(NextResponse.redirect(new URL('/onboarding', request.url)), nonce);
   }
 
   // --- /app/* routes: require Firebase JWT, reject demo users ---
@@ -135,5 +147,5 @@ function addSecurityHeaders(response: NextResponse, nonce?: string): NextRespons
 }
 
 export const config = {
-  matcher: ['/demo/:path*', '/app/:path*', '/login', '/pricing'],
+  matcher: ['/demo/:path*', '/app/:path*', '/onboarding/:path*', '/onboarding', '/login', '/pricing'],
 };
