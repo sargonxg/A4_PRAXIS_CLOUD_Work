@@ -1,6 +1,8 @@
+import { NextResponse } from 'next/server';
 import { withAuth, type AuthenticatedUser } from './with-auth';
 import { checkAndDeductCreditsForUid } from './with-credits';
 import { buildCalibratedContext, type ContextBlock } from '@/lib/context/profile-context';
+import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
 
 export interface CalibrationCtx extends AuthenticatedUser {
   calibration: ContextBlock;
@@ -33,6 +35,18 @@ export function withCalibration(
         if (raw) body = JSON.parse(raw) as Record<string, unknown>;
         if (typeof body.situationId === 'string') situationId = body.situationId;
       } catch { /* non-JSON body OK — proceed with empty body */ }
+
+      // Gate: non-demo tool calls require completed onboarding
+      if (!user.isDemo) {
+        const profile = await getAnalystProfile(user.uid).catch(() => null);
+        if (!profile?.meta?.completedAt) {
+          return NextResponse.json({
+            error: 'Onboarding required',
+            message: 'Complete your analyst profile before using PRAXIS tools.',
+            redirectTo: '/onboarding',
+          }, { status: 403 });
+        }
+      }
 
       // Demo users bypass credit deduction but still receive calibration context
       if (!user.isDemo) {
