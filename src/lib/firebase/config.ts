@@ -60,10 +60,16 @@ const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 // requests originate from your registered app (via reCAPTCHA attestation).
 // Runs only in the browser. Silently no-ops when no site key is configured.
 // ----------------------------------------------------------------------------
-if (typeof window !== 'undefined') {
+// App Check only initializes when NEXT_PUBLIC_FIREBASE_APPCHECK_ENABLED=true.
+// This lets us hold the reCAPTCHA Enterprise key in the build but keep App
+// Check opt-in until the site key is fully registered in Firebase Console.
+// Otherwise every Firebase call logs a reCAPTCHA 400 warning and may fail
+// if enforcement is accidentally on server-side.
+const appCheckEnabled = process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_ENABLED === 'true';
+
+if (typeof window !== 'undefined' && appCheckEnabled) {
   try {
     if (appCheckDebugToken) {
-      // Firebase reads this global to bypass attestation in dev.
       (window as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: string | boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN =
         appCheckDebugToken === 'true' ? true : appCheckDebugToken;
     }
@@ -78,8 +84,6 @@ if (typeof window !== 'undefined') {
         isTokenAutoRefreshEnabled: true,
       });
     }
-    // No site key → App Check disabled. Auth / Firestore still work; this only
-    // means the public API key is not hardened against origin abuse yet.
   } catch (err) {
     console.warn('[firebase/app-check] initialization failed (non-fatal):', err);
   }

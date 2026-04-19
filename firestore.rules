@@ -52,6 +52,20 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Domain taxonomy: authenticated read, write denied (admin-only via /api/admin/domains)
+    match /config/domains/{domainId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    match /config/domains_meta/current {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    match /config/domains_history/{historyId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
     // Deny everything else
     match /{document=**} {
       allow read, write: if false;

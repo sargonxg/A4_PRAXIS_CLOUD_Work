@@ -1055,37 +1055,32 @@ export default function NewSituationPage() {
     setIsCreating(true);
     setError('');
     try {
-      // Refresh token cookie before API call
+      // Refresh token cookie before API call — with a hard timeout so a slow
+      // network never blocks the create flow indefinitely.
       if (firebaseUser) {
-        const token = await firebaseUser.getIdToken(true);
-        await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
-        });
-      }
-
-      // Upload files first (if any) — we need a temporary situationId placeholder
-      // We'll upload without situationId first, then re-associate after creation
-      const uploadedDocIds: string[] = [];
-      const filteredUrls = context.urls.filter((u) => u.trim());
-
-      if (context.files.length > 0) {
-        for (const file of context.files) {
-          try {
-            const formData = new FormData();
-            formData.append('file', file);
-            const uploadRes = await fetch('/api/documents/upload', { method: 'POST', body: formData });
-            if (uploadRes.ok) {
-              const uploadData = await uploadRes.json();
-              if (uploadData.document?.id) uploadedDocIds.push(uploadData.document.id);
-            }
-          } catch {
-            // Continue with remaining files
-          }
+        try {
+          const token = await Promise.race([
+            firebaseUser.getIdToken(true),
+            new Promise<string>((_, reject) =>
+              setTimeout(() => reject(new Error('token refresh timed out')), 6000),
+            ),
+          ]);
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token }),
+          });
+        } catch {
+          // Continue — worst case the create request will 401 and we'll show the error
         }
       }
 
+      const filteredUrls = context.urls.filter((u) => u.trim());
+
+      // Create the situation FIRST — no pre-create upload dance (that was the
+      // "stuck" source: if a file upload hung with no timeout, the wizard
+      // waited forever on the "Creating…" spinner). Files upload post-create
+      // with the real situationId, fire-and-forget. User never blocks on them.
       const res = await fetch('/api/situations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1096,8 +1091,6 @@ export default function NewSituationPage() {
           escalationTrend: form.escalationTrend,
           sourceUrls: filteredUrls.length ? filteredUrls : undefined,
           contextNotes: context.notes.trim() || undefined,
-          initialDocumentIds: uploadedDocIds.length ? uploadedDocIds : undefined,
-          // Domain classification — user may have overridden the preview
           domain: domainPreview.domainId,
           domainOverriddenByUser: domainPreview.overridden,
         }),
@@ -1109,13 +1102,17 @@ export default function NewSituationPage() {
         } else {
           setError(data.error || 'Failed to create situation. Please try again.');
         }
-        setIsCreating(false);
         return;
       }
       const { situation } = await res.json();
+      if (!situation?.id) {
+        setError('Situation was created but no id was returned — please refresh.');
+        return;
+      }
       addSituation(situation);
 
-      // Re-upload files with the actual situationId so they get stored in Firestore
+      // Fire-and-forget: uploads + auto-structure + pipeline. Every one is
+      // wrapped in an isolated catch; none can block the redirect.
       if (context.files.length > 0) {
         for (const file of context.files) {
           try {
@@ -1127,7 +1124,6 @@ export default function NewSituationPage() {
         }
       }
 
-      // Kick off auto-structure in background (fire-and-forget)
       try {
         fetch('/api/ai/auto-structure', {
           method: 'POST',
@@ -1142,13 +1138,11 @@ export default function NewSituationPage() {
             situationId: situation.id,
             urls: filteredUrls.length ? filteredUrls : undefined,
             notes: context.notes.trim() || undefined,
-            documentIds: uploadedDocIds.length ? uploadedDocIds : undefined,
             selectedSources: context.selectedSources.length > 0 ? context.selectedSources : undefined,
           }),
-        }).catch(() => { /* background — ignore errors */ });
+        }).catch(() => {});
       } catch { /* fire and forget */ }
 
-      // Kick off Python backend pipeline if sources were provided
       if (filteredUrls.length > 0 || context.notes.trim()) {
         try {
           const { praxisBackend } = await import('@/lib/api/praxis-backend');
@@ -1158,18 +1152,20 @@ export default function NewSituationPage() {
               ? [{ type: 'text' as const, content: context.notes.trim(), filename: 'onboarding-notes' }]
               : []),
           ];
-          praxisBackend.runPipeline(situation.id, pipelineSources).catch(() => {
-            /* background — non-critical */
-          });
+          praxisBackend.runPipeline(situation.id, pipelineSources).catch(() => {});
         } catch { /* non-critical */ }
       }
 
       router.push(route('/dashboard'));
-    } catch {
+    } catch (err) {
+      console.error('[situations/new] create failed:', err);
       setError('Network error. Please check your connection and try again.');
+    } finally {
+      // ALWAYS clear the spinner — previously only cleared on error paths so any
+      // malformed-success state would hang the button forever.
       setIsCreating(false);
     }
-  }, [form, context, router, route, addSituation, firebaseUser]);
+  }, [form, context, router, route, addSituation, firebaseUser, domainPreview]);
 
   if (user?.isDemo) {
     return (
