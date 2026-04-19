@@ -21,6 +21,7 @@ import {
 } from './worldbank-client';
 import { getCrisisWatch, type CrisisWatchEntry } from './crisisgroup-client';
 import { getArmsTransfers, type SIPRIArmsSnapshot } from './sipri-client';
+import { getGroundedSearchEvents, type FeedEvent as GroundedFeedEvent } from './grounded-search-client';
 
 // ─── Re-export client types used by consumers ────────────────────────────────
 export type { UNHCRPopulation, UCDPConflict, WBEconomicSnapshot, WBGovernanceIndicators, CrisisWatchEntry, SIPRIArmsSnapshot };
@@ -29,7 +30,7 @@ export type { UNHCRPopulation, UCDPConflict, WBEconomicSnapshot, WBGovernanceInd
 
 export interface IntelligenceItem {
   id: string;
-  source: 'acled' | 'gdelt' | 'reliefweb' | 'unnews';
+  source: 'acled' | 'gdelt' | 'reliefweb' | 'unnews' | 'grounded_search';
   type: 'event' | 'article' | 'report' | 'statement';
   title: string;
   description: string;
@@ -57,9 +58,11 @@ export interface StabilitySnapshot {
 export interface SituationIntelligence {
   events: IntelligenceItem[];
   totalCount: number;
-  sources: { acled: number; gdelt: number; reliefweb: number; unnews: number };
+  sources: { acled: number; gdelt: number; reliefweb: number; unnews: number; grounded_search?: number };
   humanitarian?: HumanitarianSnapshot;
   stability?: StabilitySnapshot;
+  /** True when the grounded-search fallback was used because every structured feed returned zero. */
+  fallbackUsed?: boolean;
   fetchedAt: string;
 }
 
@@ -237,6 +240,22 @@ export function rwToIntel(r: RWReport): IntelligenceItem {
   };
 }
 
+export function groundedToIntel(ev: GroundedFeedEvent): IntelligenceItem {
+  return {
+    id: ev.id,
+    source: 'grounded_search',
+    type: ev.type,
+    title: ev.title,
+    description: ev.description,
+    date: ev.date,
+    url: ev.url,
+    actors: ev.actors,
+    location: ev.location,
+    severity: ev.severity,
+    metadata: { via: 'gemini-grounded-google-search' },
+  };
+}
+
 export function unToIntel(item: UNNewsItem): IntelligenceItem {
   return {
     id: `un-${Buffer.from(item.url).toString('base64').slice(0, 20)}`,
@@ -340,6 +359,25 @@ export async function getSituationIntelligence(options: {
     ...unNews.map(unToIntel),
   ];
 
+  // ── Fallback: grounded Gemini + Google Search ────────────────────────────────
+  // If every structured feed returned empty (e.g., missing ACLED creds, GDELT
+  // rate-limited, ReliefWeb filter didn't match), reach for AI Search so the
+  // user still gets *something* instead of the dreaded "0 items from 0 sources".
+  let groundedCount = 0;
+  let fallbackUsed = false;
+  if (items.length === 0) {
+    const grounded = await getGroundedSearchEvents({
+      query: options.query ?? options.country,
+      country: options.country,
+      limit: options.limit ?? 10,
+    });
+    groundedCount = grounded.length;
+    if (grounded.length > 0) {
+      fallbackUsed = true;
+      items.push(...grounded.map(groundedToIntel));
+    }
+  }
+
   const severityOrder: Record<IntelligenceItem['severity'], number> = { critical: 0, high: 1, medium: 2, low: 3 };
   items.sort((a, b) => {
     const dateCompare = new Date(b.date).getTime() - new Date(a.date).getTime();
@@ -358,6 +396,7 @@ export async function getSituationIntelligence(options: {
     // Map source name for reliability lookup
     const sourceMap: Record<string, string> = {
       acled: 'ACLED', gdelt: 'GDELT', reliefweb: 'ReliefWeb', unnews: 'UN News',
+      grounded_search: 'Google Search (Gemini Grounded)',
     };
 
     item.trustScore = computeTrustworthiness({
@@ -369,7 +408,14 @@ export async function getSituationIntelligence(options: {
   return {
     events: items,
     totalCount: items.length,
-    sources: { acled: acledEvents.length, gdelt: gdeltArticles.length, reliefweb: rwReports.length, unnews: unNews.length },
+    sources: {
+      acled: acledEvents.length,
+      gdelt: gdeltArticles.length,
+      reliefweb: rwReports.length,
+      unnews: unNews.length,
+      grounded_search: groundedCount,
+    },
+    fallbackUsed,
     humanitarian: (displacement || foodSecurity?.length || funding) ? {
       displacement: displacement?.idps || displacement?.refugees ? displacement : undefined,
       foodSecurity: foodSecurity?.length ? foodSecurity : undefined,
@@ -506,6 +552,24 @@ export async function getConflictProfile(options: {
     funding: hdxFund ?? undefined,
   };
 
+  // Same grounded-search fallback as v1 path — keep ConflictProfile useful
+  // when every structured feed returns empty.
+  let v2GroundedCount = 0;
+  let v2FallbackUsed = false;
+  if (items.length === 0) {
+    const grounded = await getGroundedSearchEvents({
+      query: options.query ?? options.country,
+      country: options.country,
+      limit: options.limit ?? 10,
+    });
+    v2GroundedCount = grounded.length;
+    if (grounded.length > 0) {
+      v2FallbackUsed = true;
+      items.push(...grounded.map(groundedToIntel));
+      items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }
+  }
+
   const intelligence: SituationIntelligence = {
     events: items,
     totalCount: items.length,
@@ -514,7 +578,9 @@ export async function getConflictProfile(options: {
       gdelt: gdeltArticles.length,
       reliefweb: rwReports.length,
       unnews: unNews.length,
+      grounded_search: v2GroundedCount,
     },
+    fallbackUsed: v2FallbackUsed,
     humanitarian,
     stability: stability ? { score: stability.score, trend: stability.trend } : undefined,
     fetchedAt: new Date().toISOString(),

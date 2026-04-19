@@ -21,7 +21,7 @@ export const POST = withAuth(async (req, user) => {
     return NextResponse.json({
       events: [],
       totalCount: 0,
-      sources: { acled: 0, gdelt: 0, reliefweb: 0, unnews: 0 },
+      sources: { acled: 0, gdelt: 0, reliefweb: 0, unnews: 0, grounded_search: 0 },
       fetchedAt: new Date().toISOString(),
     });
   }
@@ -35,11 +35,32 @@ export const POST = withAuth(async (req, user) => {
       profile?: boolean;
       actors?: string[];
       region?: string;
+      forceGrounded?: boolean;
     };
-    const { country, query, dateStart, limit, profile, actors, region } = body;
+    const { country, query, dateStart, limit, profile, actors, region, forceGrounded } = body;
 
     if (!country) {
       return NextResponse.json({ error: 'Country required' }, { status: 400 });
+    }
+
+    // Manual "Use AI Search" trigger — skip structured feeds and go straight to
+    // Gemini + Google Search. Bypasses the 15-min cache so user gets fresh hits.
+    if (forceGrounded) {
+      const { getGroundedSearchEvents } = await import('@/lib/data-feeds/grounded-search-client');
+      const { groundedToIntel } = await import('@/lib/data-feeds/feed-aggregator');
+      const grounded = await getGroundedSearchEvents({
+        query: query ?? country,
+        country,
+        limit: limit ?? 10,
+      });
+      const events = grounded.map(groundedToIntel);
+      return NextResponse.json({
+        events,
+        totalCount: events.length,
+        sources: { acled: 0, gdelt: 0, reliefweb: 0, unnews: 0, grounded_search: grounded.length },
+        fallbackUsed: grounded.length > 0,
+        fetchedAt: new Date().toISOString(),
+      });
     }
 
     const cacheKey = `${user.uid}:${country}:${query ?? ''}:${profile ? 'profile' : 'intel'}`;

@@ -6,6 +6,7 @@ import {
   Sparkles, Search, Check, Loader2,
   ArrowRight, ChevronDown, ChevronUp,
 } from 'lucide-react';
+// Sparkles is used in two places: header icon and fallback badge below
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -35,6 +36,12 @@ export function SituationOnboarding({ situation, onComplete }: SituationOnboardi
   const [preferredSources, setPreferredSources] = useState<string[]>([]);
   const [customSource, setCustomSource] = useState('');
   const [expanded, setExpanded] = useState(true);
+  const [feedStatus, setFeedStatus] = useState<
+    | { state: 'idle' }
+    | { state: 'loading' }
+    | { state: 'done'; total: number; sourceCount: number; fallbackUsed: boolean }
+    | { state: 'error' }
+  >({ state: 'idle' });
 
   const SUGGESTED_SOURCES = [
     { id: 'wikipedia', label: 'Wikipedia', desc: 'Canonical names, background, history' },
@@ -65,6 +72,44 @@ export function SituationOnboarding({ situation, onComplete }: SituationOnboardi
   const runResearch = useCallback(async () => {
     setIsResearching(true);
     setResearchResult('');
+    setFeedStatus({ state: 'loading' });
+
+    // Kick off the structured-feed call in parallel. Backend will auto-fallback
+    // to Gemini + Google Search if ACLED/GDELT/ReliefWeb all return empty.
+    (async () => {
+      try {
+        const intelRes = await fetch('/api/data/intelligence', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            country: situation.region || situation.name,
+            query: situation.name,
+            actors: situation.actors,
+            region: situation.region,
+            limit: 20,
+          }),
+        });
+        if (intelRes.ok) {
+          const data: {
+            totalCount?: number;
+            sources?: Record<string, number>;
+            fallbackUsed?: boolean;
+          } = await intelRes.json();
+          const total = data.totalCount ?? 0;
+          const sourceCount = Object.values(data.sources ?? {}).filter((n) => (n ?? 0) > 0).length;
+          setFeedStatus({
+            state: 'done',
+            total,
+            sourceCount,
+            fallbackUsed: Boolean(data.fallbackUsed),
+          });
+        } else {
+          setFeedStatus({ state: 'error' });
+        }
+      } catch {
+        setFeedStatus({ state: 'error' });
+      }
+    })();
 
     try {
       const res = await fetch('/api/ai/auto-structure', {
@@ -294,6 +339,37 @@ export function SituationOnboarding({ situation, onComplete }: SituationOnboardi
                 <span className="text-sm font-medium text-navy-900">
                   {isResearching ? 'Researching...' : 'Research Complete'}
                 </span>
+              </div>
+
+              {/* Live feed status — real /api/data/intelligence call, not just a spinner */}
+              <div className="rounded-lg border border-navy-100 bg-navy-50/40 px-3 py-2 text-[11px]">
+                {feedStatus.state === 'loading' && (
+                  <div className="flex items-center gap-2 text-navy-600">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Querying live feeds (ACLED, GDELT, ReliefWeb, UN News)...
+                  </div>
+                )}
+                {feedStatus.state === 'done' && feedStatus.total > 0 && (
+                  <div className="flex items-center gap-2 text-navy-700">
+                    <Check className="h-3 w-3 text-emerald-600" />
+                    Fetched <strong>{feedStatus.total}</strong> items from{' '}
+                    <strong>{feedStatus.sourceCount}</strong> live source
+                    {feedStatus.sourceCount === 1 ? '' : 's'}
+                    {feedStatus.fallbackUsed && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-gold-500/10 px-1.5 py-0.5 text-[10px] font-medium text-gold-700">
+                        <Sparkles className="h-2.5 w-2.5" /> AI Search fallback
+                      </span>
+                    )}
+                  </div>
+                )}
+                {feedStatus.state === 'done' && feedStatus.total === 0 && (
+                  <div className="text-navy-500">
+                    No live feed items matched &mdash; AI Search fallback returned nothing either. Proceed with the research summary below.
+                  </div>
+                )}
+                {feedStatus.state === 'error' && (
+                  <div className="text-navy-500">Live feeds unavailable right now &mdash; relying on AI research below.</div>
+                )}
               </div>
 
               <div className="max-h-80 overflow-y-auto rounded-lg border border-navy-200 bg-white p-4 text-sm text-navy-800 leading-relaxed">

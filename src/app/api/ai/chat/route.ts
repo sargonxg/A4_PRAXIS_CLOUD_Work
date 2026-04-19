@@ -6,17 +6,24 @@ import { createSituationBoundTools, type SituationToolContext, type ConflictGrap
 import { getConflictGraphAdmin } from '@/lib/firebase/situations';
 import { buildSituationContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
-import { checkAndDeductCreditsForUid } from '@/lib/api/with-credits';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { retrieveRelevantChunks } from '@/lib/firebase/documents-service';
 import { messageContentSchema, situationContextSchema, aiSettingsSchema } from '@/lib/api/schemas';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
-export const POST = withAuth(async (request: Request, _user) => {
+export const POST = withCalibration('chat', 'ai_chat', {
+  retrievalQuery: (_req, body) => {
+    const messages = Array.isArray(body.messages) ? body.messages as Array<{ role?: string; content?: unknown }> : [];
+    const last = messages[messages.length - 1];
+    if (last && typeof last.content === 'string') return last.content.slice(0, 500);
+    return undefined;
+  },
+})(async (request: Request, _user) => {
   try {
     const body = await request.json();
 
@@ -55,11 +62,18 @@ export const POST = withAuth(async (request: Request, _user) => {
     }
 
     // --- Live mode ---
-    const creditCheck = await checkAndDeductCreditsForUid(_user.uid, 'ai_chat', 'Chat message');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
-    // Build situation-aware system prompt with super-agent capabilities
-    let systemPrompt = DIPLOMATIC_SYSTEM_PROMPT;
+    // Build situation-aware system prompt with super-agent capabilities.
+    // Prepend the calibrated analyst-profile/situation-frame/output-constraints block.
+    const { systemPromptBlock, outputConstraints } = _user.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()} (analyst's working language).`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
+    let systemPrompt = `${systemPromptBlock}\n\n${DIPLOMATIC_SYSTEM_PROMPT}${langDirective}${redLineDirective}`;
 
     // Add super-agent instructions with deep platform knowledge and guardrails
     systemPrompt += `\n\n## PRAXIS Super-Agent Mode
@@ -220,12 +234,25 @@ You have access to the user's active situation data. When answering questions:
     // to Pro or Claude via aiSettings. Analytical tools use getProModel() instead.
     const model = aiSettings ? getModelForUser(aiSettings) : getModel();
 
+    const sitId = (situation as Situation | undefined)?.id;
+    const { provenance } = _user.calibration;
     const result = streamText({
       model,
       system: systemPrompt,
       messages: messages as unknown as ModelMessage[],
       tools,
       stopWhen: stepCountIs(15),
+      onFinish: async ({ text }) => {
+        if (sitId && _user.uid && text) {
+          await saveToolOutput({
+            uid: _user.uid,
+            situationId: sitId,
+            toolId: 'chat',
+            profileVersion: provenance.profileVersion,
+            output: { lastMessage: text.slice(0, 4000), at: new Date().toISOString() },
+          }).catch((err) => console.warn('[chat] saveToolOutput failed:', err));
+        }
+      },
     });
 
     return result.toUIMessageStreamResponse();

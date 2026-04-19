@@ -19,23 +19,16 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   BookOpen,
-  Brain,
-  Building2,
   Calendar,
   CheckCircle2,
-  DollarSign,
   FileText,
   Globe,
-  Heart,
   Info,
   Languages as LanguagesIcon,
   Loader2,
-  Newspaper,
   Plus,
   Settings as SettingsIcon,
-  Shield,
   ShieldAlert,
-  Sword,
   Trash2,
   Upload,
   Users,
@@ -55,6 +48,12 @@ import type {
   UserRole,
 } from '@/types/situation';
 import { cn } from '@/lib/utils/cn';
+import { SourcePicker } from '@/components/sources/source-picker';
+import {
+  SOURCE_CATEGORIES,
+  defaultEnabledMap,
+  type CustomSource,
+} from '@/lib/constants/source-categories';
 
 /* ---------- Constants (kept in sync with /app/situations/new Step 1) ---------- */
 
@@ -84,25 +83,8 @@ const STATUS_OPTIONS: { value: SituationStatus; label: string }[] = [
   { value: 'archived', label: 'Archived' },
 ];
 
-interface SourceCategory {
-  id: string;
-  label: string;
-  description: string;
-  icon: React.ElementType;
-  defaultOn?: boolean;
-  alwaysOn?: boolean;
-}
-
-const SOURCE_CATEGORIES: SourceCategory[] = [
-  { id: 'foundational', label: 'Foundational', description: 'Wikipedia, encyclopedic context', icon: BookOpen, alwaysOn: true },
-  { id: 'conflict-security', label: 'Conflict & Security', description: 'ACLED, ICG, SIPRI, IISS', icon: Shield, defaultOn: true },
-  { id: 'humanitarian', label: 'Humanitarian', description: 'UNHCR, ReliefWeb, HRW, MSF', icon: Heart, defaultOn: true },
-  { id: 'diplomatic-official', label: 'Diplomatic & Official', description: 'UN, State Dept, EU EEAS', icon: Building2, defaultOn: true },
-  { id: 'news-media', label: 'News & Media', description: 'Reuters, AP, BBC, Al Jazeera', icon: Newspaper, defaultOn: true },
-  { id: 'think-tanks', label: 'Think Tanks', description: 'Carnegie, Chatham House, RAND', icon: Brain },
-  { id: 'military-intelligence', label: 'Military & Intel', description: "Jane's, Bellingcat, ISW", icon: Sword },
-  { id: 'economic-development', label: 'Economic', description: 'World Bank, IMF, Oxford Analytica', icon: DollarSign },
-];
+// Source category metadata lives in `src/lib/constants/source-categories.ts`
+// and is consumed via <SourcePicker>.
 
 const LANGUAGE_LABELS: Record<Language, string> = {
   en: 'English',
@@ -524,18 +506,30 @@ function SourcesTab({
   situation: Situation;
   onPatch: (patch: Partial<Situation>) => Promise<boolean>;
 }) {
-  const initialEnabled = useMemo(() => {
+  const initialEnabled = useMemo<Record<string, boolean>>(() => {
     const out: Record<string, boolean> = {};
+    const defaults = defaultEnabledMap();
     for (const cat of SOURCE_CATEGORIES) {
       out[cat.id] = cat.alwaysOn
         ? true
-        : situation.sourceCategoriesEnabled?.[cat.id] ?? cat.defaultOn ?? false;
+        : situation.sourceCategoriesEnabled?.[cat.id] ?? defaults[cat.id] ?? false;
     }
     return out;
   }, [situation.sourceCategoriesEnabled, situation.id]);
 
+  const initialOrder = useMemo<string[]>(
+    () => situation.sourceCategoryOrder ?? SOURCE_CATEGORIES.map((c) => c.id),
+    [situation.sourceCategoryOrder, situation.id],
+  );
+  const initialCustom = useMemo<CustomSource[]>(
+    () => (situation.customSources ?? []).map((c) => ({ ...c })),
+    [situation.customSources, situation.id],
+  );
+
   const [urlsText, setUrlsText] = useState(() => (situation.sourceUrls ?? []).join('\n'));
   const [enabled, setEnabled] = useState<Record<string, boolean>>(initialEnabled);
+  const [order, setOrder] = useState<string[]>(initialOrder);
+  const [customSources, setCustomSources] = useState<CustomSource[]>(initialCustom);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -549,13 +543,9 @@ function SourcesTab({
   useEffect(() => {
     setUrlsText((situation.sourceUrls ?? []).join('\n'));
     setEnabled(initialEnabled);
-  }, [situation.id, situation.sourceUrls, initialEnabled]);
-
-  const toggleCat = (id: string) => {
-    const cat = SOURCE_CATEGORIES.find((c) => c.id === id);
-    if (cat?.alwaysOn) return;
-    setEnabled((e) => ({ ...e, [id]: !e[id] }));
-  };
+    setOrder(initialOrder);
+    setCustomSources(initialCustom);
+  }, [situation.id, situation.sourceUrls, initialEnabled, initialOrder, initialCustom]);
 
   const parseUrls = (raw: string): string[] => {
     return raw
@@ -602,6 +592,13 @@ function SourcesTab({
     const ok = await onPatch({
       sourceUrls: urls,
       sourceCategoriesEnabled: enabled,
+      sourceCategoryOrder: order,
+      customSources: customSources.map((c) => ({
+        id: c.id,
+        url: c.url,
+        name: c.name,
+        categoryId: c.categoryId,
+      })),
     });
     setSaving(false);
     if (ok) setSavedAt(Date.now());
@@ -718,53 +715,22 @@ function SourcesTab({
         )}
       </div>
 
-      {/* Category toggles */}
+      {/* Category picker */}
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-navy-700">Source categories</label>
         <p className="text-[11px] text-navy-500">
-          Control which research categories PRAXIS pulls from when refreshing this situation.
+          Control which research categories PRAXIS pulls from when refreshing this situation. Drag
+          to reorder — the top of the list biases research first.
         </p>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {SOURCE_CATEGORIES.map((cat) => {
-            const on = cat.alwaysOn ? true : enabled[cat.id] === true;
-            const Icon = cat.icon;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => toggleCat(cat.id)}
-                disabled={cat.alwaysOn}
-                className={cn(
-                  'flex items-start gap-3 rounded-xl border p-3 text-left transition',
-                  on
-                    ? 'border-diplomatic-blue/40 bg-diplomatic-blue/5 ring-1 ring-diplomatic-blue/20'
-                    : 'border-navy-200 bg-white hover:border-navy-300',
-                  cat.alwaysOn && 'cursor-default',
-                )}
-              >
-                <div
-                  className={cn(
-                    'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',
-                    on ? 'bg-diplomatic-blue/10' : 'bg-navy-100',
-                  )}
-                >
-                  <Icon className={cn('h-3.5 w-3.5', on ? 'text-diplomatic-blue' : 'text-navy-400')} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className={cn('text-xs font-semibold', on ? 'text-diplomatic-blue' : 'text-navy-700')}>
-                    {cat.label}
-                    {cat.alwaysOn && (
-                      <span className="ml-2 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
-                        Always
-                      </span>
-                    )}
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-navy-500">{cat.description}</p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        <SourcePicker
+          enabled={enabled}
+          onChange={setEnabled}
+          order={order}
+          onOrderChange={setOrder}
+          customSources={customSources}
+          onCustomChange={setCustomSources}
+          situationRegion={situation.region}
+        />
       </div>
 
       <SaveBar onSave={save} saving={saving} savedAt={savedAt} error={error} />

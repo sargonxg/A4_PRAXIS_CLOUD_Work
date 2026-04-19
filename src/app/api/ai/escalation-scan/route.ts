@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { computeEscalation } from '@/lib/analytics/escalation-scorer';
@@ -104,7 +104,13 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('escalation_scan', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const ctx = typeof body.conflictContext === 'string' ? body.conflictContext : '';
+    const id = typeof body.conflictId === 'string' ? body.conflictId : '';
+    return [id, ctx].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, user) => {
   try {
     const body = await request.json();
 
@@ -125,9 +131,7 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_escalation_scan', 'Escalation scan');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     // --- Graph context ---
     const graphCtx = situationId
@@ -166,13 +170,24 @@ Confidence: ${assessment.confidence}\n`;
         )
       : '';
 
+    // --- Calibrated analyst-profile + situation-frame + output-constraints ---
+    const { systemPromptBlock, outputConstraints, provenance } = user.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
+
     // --- AI analysis (Pro model with Flash fallback) ---
     const result = await callProModel({
       output: Output.object({ schema: EscalationScanSchema }),
       system: `You are a senior conflict analyst specializing in the Glasl 9-stage escalation model and Zartman Ripeness Theory. You serve analysts, mediators, and UN political officers.
 
+${systemPromptBlock}
+
 GROUNDING MANDATE: Web intelligence below is PRIMARY source of truth. Flag "INTELLIGENCE GAP: {topic}" when evidence is insufficient.
-Use ICD 203 probability language for all assessments.`,
+Use ICD 203 probability language for all assessments. Calibrate framing and recommendations to the analyst profile above.${langDirective}${redLineDirective}`,
       prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${webCtx}
 CONFLICT: ${conflictId}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
@@ -220,6 +235,13 @@ Set autoAlertTriggered: true if currentStage >= 6 OR pessimistic.probability > 0
 
     if (situationId) {
       await writeToolDataServer(user.uid, situationId, 'escalation_scan', result.output as Record<string, unknown>);
+      await saveToolOutput({
+        uid: user.uid,
+        situationId,
+        toolId: 'escalation_scan',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[escalation-scan] saveToolOutput failed:', err));
     }
     return NextResponse.json(result.output);
   } catch (err) {

@@ -135,6 +135,23 @@ export interface Situation {
   dateRangeFrom?: string;
   dateRangeTo?: string;
   sourceCategoriesEnabled?: Record<string, boolean>;
+  /**
+   * Ordered list of source category ids reflecting the user's priority
+   * ordering (first = highest priority). When absent, the canonical order
+   * from `SOURCE_CATEGORIES` is used.
+   */
+  sourceCategoryOrder?: string[];
+  /**
+   * Custom per-situation source URLs the user attached via the SourcePicker
+   * "Add custom source" dialog. These are scraped alongside the built-in
+   * feeds for this situation.
+   */
+  customSources?: Array<{
+    id: string;
+    url: string;
+    name?: string;
+    categoryId: string;
+  }>;
 }
 
 export interface CreateSituationInput {

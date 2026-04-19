@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { callProModel, getGroundedModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 import { searchWeb, isFirecrawlConfigured } from '@/lib/ai/firecrawl';
@@ -63,14 +63,18 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
   ]);
 }
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('daily_brief', 'ai_report', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, user) => {
   try {
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    const creditCheck = await checkAndDeductCredits('ai_morning_digest', 'Daily intelligence brief');
-    if (!creditCheck.allowed) return creditCheck.response!;
+    // Credits + profile gate already handled by withCalibration above.
 
     const body = await request.json();
     const { situation, deepResearch } = body as { situation?: Situation; deepResearch?: boolean };
@@ -141,6 +145,15 @@ export const POST = withAuth(async (request, user) => {
       ? '\n\n⚡ DEEP RESEARCH MODE: You have live web search results and Google-grounded research above. Prioritize this fresh real-time information. Be specific about what the sources say.'
       : '';
 
+    // Calibrated analyst-profile + situation-frame + output-constraints
+    const { systemPromptBlock, outputConstraints, provenance } = user.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
+
     const result = await callProModel({
       output: Output.object({ schema: AutoBriefingSchema }),
       prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `SITUATION CONTEXT:\n${sitContext}\n` : ''}${intelContext}${webResearchContext}${deepResearchNote}
@@ -162,7 +175,11 @@ STRUCTURE:
 ${deepResearch ? '9. sourcesSummary: which sources (Firecrawl/grounded search/GDELT/ACLED) informed this brief' : ''}
 
 Be specific and evidence-grounded. Write for a senior UN Special Representative's morning briefing.`,
-      system: 'You are a senior UN DPPA political affairs officer writing the daily morning intelligence brief for the Special Representative. Be precise, specific, and actionable. Apply the UN Morning Note standard.',
+      system: `You are a senior UN DPPA political affairs officer writing the daily morning intelligence brief for the Special Representative. Be precise, specific, and actionable. Apply the UN Morning Note standard.
+
+${systemPromptBlock}
+
+Calibrate the brief to the analyst profile above (role, lens, audience). Honour the output-constraints block.${langDirective}${redLineDirective}`,
     });
 
     // Attach source metadata for deep research
@@ -175,6 +192,13 @@ Be specific and evidence-grounded. Write for a senior UN Special Representative'
       await writeToolDataServer(user.uid, situationId, 'daily_brief', output).catch(
         (err) => console.error('[auto-briefing] persist failed:', err),
       );
+      await saveToolOutput({
+        uid: user.uid,
+        situationId,
+        toolId: 'daily_brief',
+        profileVersion: provenance.profileVersion,
+        output,
+      }).catch((err) => console.warn('[auto-briefing] saveToolOutput failed:', err));
     }
     return NextResponse.json(output);
   } catch (err) {

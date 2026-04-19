@@ -5,9 +5,9 @@ import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 120;
@@ -78,14 +78,19 @@ const ActorProfilesSchema = z.object({
   })).optional(),
 });
 
-export const POST = withAuth(async (request: Request, user) => {
+export const POST = withCalibration('actor_profiles', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string; actors?: string[] } | undefined;
+    const actors = Array.isArray(s?.actors) ? s.actors.slice(0, 5).join(', ') : '';
+    return [s?.name, s?.region, actors].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request: Request, user) => {
   try {
     if (isServerDemoMode()) {
       return NextResponse.json({ actors: [] });
     }
 
-    const creditCheck = await checkAndDeductCredits('ai_actor_profiles', 'Actor profile generation');
-    if (!creditCheck.allowed) return creditCheck.response!;
+    // Credits + profile gate already handled by withCalibration above.
 
     const body = await request.json();
     const { situation } = body as { situation?: Situation };
@@ -102,6 +107,15 @@ export const POST = withAuth(async (request: Request, user) => {
           'actor-profiles',
           user.uid
         )
+      : '';
+
+    // Calibrated analyst-profile + situation-frame + output-constraints
+    const { systemPromptBlock, outputConstraints, provenance } = user.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
       : '';
 
     const result = await callProModel({
@@ -132,13 +146,24 @@ For EACH actor listed in the situation (and any critical actors you identify as 
 Use real-world knowledge where available. Reference actual organizations, real leadership names, documented events. For each actor, the profile should be grounded in verifiable information — not invented scenarios.
 
 Generate profiles for 3-8 actors depending on the complexity of the situation.`,
-      system: 'You are a senior intelligence analyst producing classified actor profiles for diplomatic staff. Use real-world knowledge to create precise, evidence-based profiles. Reference actual events, real leadership names, and documented positions. For each actor, classify using Stedman\'s Spoiler Theory (total/limited/greedy/non-spoiler), map Fisher-Ury positions vs. interests, and score Mitchell-Agle-Wood power/legitimacy/urgency (1-10 each). Profiles must be actionable for mediators and political affairs officers.',
+      system: `You are a senior intelligence analyst producing classified actor profiles for diplomatic staff. Use real-world knowledge to create precise, evidence-based profiles. Reference actual events, real leadership names, and documented positions. For each actor, classify using Stedman's Spoiler Theory (total/limited/greedy/non-spoiler), map Fisher-Ury positions vs. interests, and score Mitchell-Agle-Wood power/legitimacy/urgency (1-10 each). Profiles must be actionable for mediators and political affairs officers.
+
+${systemPromptBlock}
+
+Calibrate framing (terminology, tone, level of detail) to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
     });
 
     if (situationId && user.uid) {
       await writeToolDataServer(user.uid, situationId, 'actor_profiles', result.output as Record<string, unknown>).catch(
         (err) => console.error('[actor-profiles] persist failed:', err),
       );
+      await saveToolOutput({
+        uid: user.uid,
+        situationId,
+        toolId: 'actor_profiles',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[actor-profiles] saveToolOutput failed:', err));
     }
     return NextResponse.json(result.output);
   } catch (err) {

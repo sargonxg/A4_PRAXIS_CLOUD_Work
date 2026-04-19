@@ -18,13 +18,6 @@ import {
   Upload,
   X,
   BookOpen,
-  Shield,
-  Heart,
-  Building2,
-  Newspaper,
-  Brain,
-  DollarSign,
-  Sword,
   Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -33,6 +26,14 @@ import type { SituationType, UserRole } from '@/types/situation';
 import { DomainPicker } from '@/components/domain/domain-picker';
 import { DOMAIN_SEEDS } from '@/lib/domain/seeds';
 import { type DomainId, isDomainId } from '@/types/domain';
+import { SourcePicker } from '@/components/sources/source-picker';
+import {
+  SOURCE_CATEGORIES,
+  defaultEnabledMap,
+  enabledMapToIdArray,
+  idArrayToEnabledMap,
+  type CustomSource,
+} from '@/lib/constants/source-categories';
 
 /* ---------- Types ---------- */
 
@@ -90,93 +91,8 @@ const STEPS: { step: Step; label: string; icon: React.ElementType }[] = [
   { step: 4, label: 'Create', icon: Check },
 ];
 
-// ── Source category definitions ──────────────────────────────────────────────
-
-interface SourceCategory {
-  id: string;
-  label: string;
-  description: string;
-  icon: React.ElementType;
-  sources: string[];
-  searchTerms: string[];
-  alwaysOn?: boolean;
-  useFirecrawl?: boolean;
-}
-
-const SOURCE_CATEGORIES: SourceCategory[] = [
-  {
-    id: 'foundational',
-    label: 'Foundational',
-    description: 'Wikipedia, encyclopedic context, geo & demographic data',
-    icon: BookOpen,
-    sources: ['Wikipedia', 'CIA World Factbook', 'CFR Country Profiles'],
-    searchTerms: ['history background', 'geography demographics', 'overview'],
-    alwaysOn: true,
-  },
-  {
-    id: 'conflict-security',
-    label: 'Conflict & Security',
-    description: 'Armed groups, violence data, conflict dynamics',
-    icon: Shield,
-    sources: ['ICG CrisisWatch', 'ACLED', 'SIPRI', 'IISS', 'Geneva Academy'],
-    searchTerms: ['armed conflict violence escalation', 'security forces ceasefire'],
-    useFirecrawl: true,
-  },
-  {
-    id: 'humanitarian',
-    label: 'Humanitarian',
-    description: 'Displacement, protection, aid operations, civilian impact',
-    icon: Heart,
-    sources: ['ReliefWeb', 'UNHCR', 'Human Rights Watch', 'Amnesty International', 'ICRC', 'MSF'],
-    searchTerms: ['humanitarian crisis displacement refugees civilians'],
-    useFirecrawl: true,
-  },
-  {
-    id: 'diplomatic-official',
-    label: 'Diplomatic & Official',
-    description: 'UN bodies, foreign ministry statements, official positions',
-    icon: Building2,
-    sources: ['UN News', 'UNSC Resolutions', "What's In Blue", 'State Dept', 'EU EEAS', 'African Union'],
-    searchTerms: ['diplomatic negotiations peace talks UN Security Council resolution'],
-    useFirecrawl: true,
-  },
-  {
-    id: 'news-media',
-    label: 'News & Media',
-    description: 'Breaking news, frontline reporting, regional press',
-    icon: Newspaper,
-    sources: ['Reuters', 'AP', 'BBC', 'Al Jazeera', 'AFP', 'Financial Times'],
-    searchTerms: ['latest news developments today situation update'],
-    useFirecrawl: true,
-  },
-  {
-    id: 'think-tanks',
-    label: 'Think Tanks & Policy',
-    description: 'Expert analysis, policy briefs, scenario reports',
-    icon: Brain,
-    sources: ['RAND', 'Carnegie Endowment', 'Chatham House', 'Brookings', 'Wilson Center'],
-    searchTerms: ['analysis policy brief expert assessment scenario'],
-    useFirecrawl: true,
-  },
-  {
-    id: 'military-intelligence',
-    label: 'Military & Intelligence',
-    description: 'Armed forces, weapons, open-source intelligence',
-    icon: Sword,
-    sources: ["Jane's Defence", 'IISS Military Balance', 'Bellingcat', 'ISW'],
-    searchTerms: ['military forces weapons capabilities troop movements'],
-    useFirecrawl: true,
-  },
-  {
-    id: 'economic-development',
-    label: 'Economic & Development',
-    description: 'Economic drivers, sanctions, development indicators',
-    icon: DollarSign,
-    sources: ['World Bank', 'IMF', 'UNDP', 'Oxford Analytica', 'Fitch/Moody\'s'],
-    searchTerms: ['economic sanctions poverty development GDP trade'],
-    useFirecrawl: true,
-  },
-];
+// Source category metadata now lives in a single shared module at
+// `src/lib/constants/source-categories.ts` and is consumed via <SourcePicker>.
 
 function StepIndicator({ current }: { current: Step }) {
   return (
@@ -582,24 +498,27 @@ interface ContextData {
   notes: string;
   files: File[];
   selectedSources: string[];
+  sourceOrder: string[];
+  customSources: CustomSource[];
+  sourceRegion?: string;
 }
 
-function StepSources({ context, setContext, onNext, onBack, situationName }: { context: ContextData; setContext: React.Dispatch<React.SetStateAction<ContextData>>; onNext: () => void; onBack: () => void; situationName: string }) {
-  const { urls, notes, files, selectedSources } = context;
+function StepSources({ context, setContext, onNext, onBack, situationName, situationRegion }: { context: ContextData; setContext: React.Dispatch<React.SetStateAction<ContextData>>; onNext: () => void; onBack: () => void; situationName: string; situationRegion?: string }) {
+  const { urls, notes, files, selectedSources, sourceOrder, customSources } = context;
   const setUrls = (u: string[] | ((prev: string[]) => string[])) => setContext((c) => ({ ...c, urls: typeof u === 'function' ? u(c.urls) : u }));
   const setNotes = (n: string) => setContext((c) => ({ ...c, notes: n }));
   const setFiles = (f: File[] | ((prev: File[]) => File[])) => setContext((c) => ({ ...c, files: typeof f === 'function' ? f(c.files) : f }));
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const toggleSource = (id: string) => {
-    const cat = SOURCE_CATEGORIES.find((c) => c.id === id);
-    if (cat?.alwaysOn) return;
-    setContext((c) => ({
-      ...c,
-      selectedSources: c.selectedSources.includes(id)
-        ? c.selectedSources.filter((s) => s !== id)
-        : [...c.selectedSources, id],
-    }));
+  const enabledMap = idArrayToEnabledMap(selectedSources);
+  const handleEnabledChange = (next: Record<string, boolean>) => {
+    setContext((c) => ({ ...c, selectedSources: enabledMapToIdArray(next) }));
+  };
+  const handleOrderChange = (next: string[]) => {
+    setContext((c) => ({ ...c, sourceOrder: next }));
+  };
+  const handleCustomChange = (next: CustomSource[]) => {
+    setContext((c) => ({ ...c, customSources: next }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -618,88 +537,25 @@ function StepSources({ context, setContext, onNext, onBack, situationName }: { c
       <div>
         <h2 className="text-lg font-semibold text-navy-900">Research Sources</h2>
         <p className="mt-1 text-sm text-navy-500">
-          Select which source categories to include. PRAXIS will scrape Wikipedia first, then run targeted research across your selected categories to build the conflict knowledge graph for <span className="font-medium text-navy-700">&ldquo;{situationName}&rdquo;</span>.
+          Pick which source categories to include. PRAXIS always scrapes Wikipedia first, then runs targeted research across your selected categories to seed the conflict knowledge graph for <span className="font-medium text-navy-700">&ldquo;{situationName}&rdquo;</span>.
         </p>
       </div>
 
-      {/* Wikipedia always-first notice */}
-      <div className="flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3">
-        <BookOpen className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
-        <div>
-          <p className="text-xs font-semibold text-emerald-700">Wikipedia is always scraped first</p>
-          <p className="text-[11px] text-emerald-600 mt-0.5">Provides canonical background, geography, actors, and historical context for all conflict tools.</p>
-        </div>
-      </div>
-
-      {/* Source category grid */}
-      <div className="grid gap-2.5 sm:grid-cols-2">
-        {SOURCE_CATEGORIES.map((cat) => {
-          const isSelected = cat.alwaysOn || selectedSources.includes(cat.id);
-          const Icon = cat.icon;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => toggleSource(cat.id)}
-              disabled={cat.alwaysOn}
-              className={cn(
-                'relative rounded-xl border p-3.5 text-left transition-all text-sm',
-                isSelected
-                  ? 'border-diplomatic-blue/40 bg-diplomatic-blue/5 ring-1 ring-diplomatic-blue/20'
-                  : 'border-navy-200 bg-white hover:border-navy-300',
-                cat.alwaysOn && 'cursor-default'
-              )}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-start gap-2.5">
-                  <div className={cn(
-                    'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',
-                    isSelected ? 'bg-diplomatic-blue/10' : 'bg-navy-100'
-                  )}>
-                    <Icon className={cn('h-3.5 w-3.5', isSelected ? 'text-diplomatic-blue' : 'text-navy-400')} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className={cn('text-xs font-semibold leading-tight', isSelected ? 'text-diplomatic-blue' : 'text-navy-700')}>
-                      {cat.label}
-                    </p>
-                    <p className="mt-0.5 text-[10px] text-navy-400 leading-tight">{cat.description}</p>
-                  </div>
-                </div>
-                <div className="shrink-0">
-                  {cat.alwaysOn ? (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-600">Always</span>
-                  ) : (
-                    <div className={cn(
-                      'h-4 w-4 rounded border flex items-center justify-center transition-all',
-                      isSelected ? 'border-diplomatic-blue bg-diplomatic-blue' : 'border-navy-300 bg-white'
-                    )}>
-                      {isSelected && <Check className="h-2.5 w-2.5 text-white" />}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="mt-2.5 flex flex-wrap gap-1">
-                {cat.sources.slice(0, 4).map((s) => (
-                  <span key={s} className="rounded-full bg-navy-100/80 px-1.5 py-0.5 text-[9px] font-medium text-navy-500">{s}</span>
-                ))}
-                {cat.sources.length > 4 && (
-                  <span className="rounded-full bg-navy-100/80 px-1.5 py-0.5 text-[9px] font-medium text-navy-400">+{cat.sources.length - 4} more</span>
-                )}
-              </div>
-              {cat.useFirecrawl && isSelected && (
-                <div className="absolute top-2 right-2">
-                  <span className="rounded bg-gold-500/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-gold-600">Firecrawl</span>
-                </div>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      <SourcePicker
+        enabled={enabledMap}
+        onChange={handleEnabledChange}
+        order={sourceOrder}
+        onOrderChange={handleOrderChange}
+        customSources={customSources}
+        onCustomChange={handleCustomChange}
+        situationRegion={situationRegion}
+      />
 
       {/* Research summary */}
       <div className="rounded-lg border border-navy-200 bg-navy-50/40 px-4 py-3 text-[11px] text-navy-500 flex items-start gap-2">
         <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-navy-400" />
         <span>
-          <span className="font-semibold text-navy-700">{selectedSources.length + 1} source categories selected</span>
+          <span className="font-semibold text-navy-700">{selectedSources.length} source categories selected</span>
           {firecrawlCount > 0 && <> — {firecrawlCount} will use Firecrawl web search</>}. Research is capped at ~20,000 characters for preliminary ACO ontology construction. Full deep research is available via the <span className="font-semibold text-navy-700">Deep Research Agent</span> after setup.
         </span>
       </div>
@@ -973,11 +829,16 @@ export default function NewSituationPage() {
     escalationTrend: 'stable',
   });
 
-  const [context, setContext] = useState<ContextData>({
-    urls: [''],
-    notes: '',
-    files: [],
-    selectedSources: ['conflict-security', 'humanitarian', 'diplomatic-official', 'news-media'],
+  const [context, setContext] = useState<ContextData>(() => {
+    const defaults = defaultEnabledMap();
+    return {
+      urls: [''],
+      notes: '',
+      files: [],
+      selectedSources: enabledMapToIdArray(defaults),
+      sourceOrder: SOURCE_CATEGORIES.map((c) => c.id),
+      customSources: [],
+    };
   });
 
   const [domainPreview, setDomainPreview] = useState<DomainPreview>({
@@ -1075,7 +936,10 @@ export default function NewSituationPage() {
         }
       }
 
-      const filteredUrls = context.urls.filter((u) => u.trim());
+      const filteredUrls = [
+        ...context.urls.filter((u) => u.trim()),
+        ...context.customSources.map((c) => c.url).filter(Boolean),
+      ];
 
       // Create the situation FIRST — no pre-create upload dance (that was the
       // "stuck" source: if a file upload hung with no timeout, the wizard
@@ -1199,7 +1063,7 @@ export default function NewSituationPage() {
           <motion.div key={step} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25, ease: 'easeInOut' }}>
             {step === 1 && <StepDescribe form={form} setForm={setForm} onNext={goNext} />}
             {step === 2 && <StepActors form={form} setForm={setForm} onNext={goNext} onBack={goBack} />}
-            {step === 3 && <StepSources context={context} setContext={setContext} onNext={goNext} onBack={goBack} situationName={form.name} />}
+            {step === 3 && <StepSources context={context} setContext={setContext} onNext={goNext} onBack={goBack} situationName={form.name} situationRegion={form.region} />}
             {step === 4 && (
               <StepReview
                 form={form}

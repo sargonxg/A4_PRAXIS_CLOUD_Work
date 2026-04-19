@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { getProModel, getThinkingModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
@@ -13,7 +13,13 @@ import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 
 export const maxDuration = 60;
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('scenario', 'ai_deep_think', {
+  retrievalQuery: (_req, body) => {
+    const ctx = typeof body.conflictContext === 'string' ? body.conflictContext : '';
+    const trigger = typeof body.scenarioTrigger === 'string' ? body.scenarioTrigger : '';
+    return [ctx, trigger].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, user) => {
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(JSON.stringify({ error: 'AI not configured' }), { status: 503 });
   }
@@ -42,8 +48,7 @@ export const POST = withAuth(async (request, user) => {
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
     const situationId = (situation as Situation | undefined)?.id ?? '';
 
-    const creditCheck = await checkAndDeductCredits('ai_scenario', 'Scenario analysis');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     // --- Graph context ---
     const graphCtx = situationId
@@ -129,11 +134,34 @@ Provide exactly 3 specific policy recommendations. For each recommendation:
 
 Be analytically rigorous. Calibrate confidence language (high/moderate/low/uncertain). Avoid generic analysis. Reference specific actors, instruments, precedents, and frameworks.`;
 
+    // Calibrated analyst-profile + situation-frame + output-constraints
+    const { systemPromptBlock, outputConstraints, provenance } = user.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
+
     const result = streamText({
       model: getThinkingModel(),
       prompt,
-      system:
-        'You are a senior conflict analyst at the International Crisis Group. Provide rigorous, structured, evidence-based scenario analysis for diplomatic and security professionals. Always cite actors by name, apply Glasl escalation staging, and include calibrated probability estimates.',
+      system: `You are a senior conflict analyst at the International Crisis Group. Provide rigorous, structured, evidence-based scenario analysis for diplomatic and security professionals. Always cite actors by name, apply Glasl escalation staging, and include calibrated probability estimates.
+
+${systemPromptBlock}
+
+Calibrate scenario framing and recommendations to the analyst profile above (role, mandate, audience). Honour the output-constraints block.${langDirective}${redLineDirective}`,
+      onFinish: async ({ text }) => {
+        if (situationId && user.uid) {
+          await saveToolOutput({
+            uid: user.uid,
+            situationId,
+            toolId: 'scenario',
+            profileVersion: provenance.profileVersion,
+            output: { scenarioTrigger, timeHorizon, actors, analysis: text },
+          }).catch((err) => console.warn('[scenario] saveToolOutput failed:', err));
+        }
+      },
     });
 
     return result.toTextStreamResponse();

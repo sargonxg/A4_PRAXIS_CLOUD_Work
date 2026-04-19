@@ -4,8 +4,8 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext, buildCrossToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { withAuth } from '@/lib/api/with-auth';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import type { Situation } from '@/types/situation';
@@ -339,7 +339,13 @@ const DEMO_RESPONSE_STAKEHOLDER = {
 
 // ── Route handler ─────────────────────────────────────────────────────────────
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('power_map', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string; actors?: string[] } | undefined;
+    const actors = Array.isArray(s?.actors) ? s.actors.slice(0, 5).join(', ') : '';
+    return [s?.name, s?.region, actors].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, user) => {
   try {
     const body = await request.json() as {
       situation?: Situation;
@@ -357,11 +363,19 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json(view === 'stakeholder' ? DEMO_RESPONSE_STAKEHOLDER : DEMO_RESPONSE_POWER);
     }
 
+    // Credits + profile gate already handled by withCalibration above.
+
+    // Calibrated analyst-profile + output-constraints (shared across views)
+    const { systemPromptBlock, outputConstraints, provenance } = user.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
+
     // ── Stakeholder view — Mitchell-Agle-Wood salience model (absorbed from /api/ai/stakeholder-map) ──
     if (view === 'stakeholder') {
-      const creditCheck = await checkAndDeductCredits('ai_stakeholder_influence', 'Stakeholder map');
-      if (!creditCheck.allowed) return creditCheck.response;
-
       const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
       const graphCtx = situationId
@@ -390,7 +404,11 @@ export const POST = withAuth(async (request, user) => {
 
 Your stakeholder maps are used by Special Envoys, UN DPPA teams, and diplomatic mediators preparing for complex negotiations. Every actor assessment must be grounded in evidence, analytically precise, and immediately actionable.
 
-GROUNDING MANDATE: The web intelligence below is your PRIMARY source of truth. If it contradicts your training data, trust the web intelligence.`,
+GROUNDING MANDATE: The web intelligence below is your PRIMARY source of truth. If it contradicts your training data, trust the web intelligence.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
         prompt: `${webCtx ? `${webCtx}\n\n` : ''}${graphCtx ? `${graphCtx}\n\n` : ''}${crossCtx ? `${crossCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Generate a comprehensive stakeholder map for this conflict situation.
 
 ${additionalContext ? `ADDITIONAL CONTEXT: ${additionalContext}\n\n` : ''}
@@ -452,14 +470,19 @@ Produce a step-by-step engagement sequence for a mediator. Order by strategic ne
           'stakeholder_map',
           result.output as Record<string, unknown>
         );
+        await saveToolOutput({
+          uid: user.uid,
+          situationId,
+          toolId: 'stakeholder_map',
+          profileVersion: provenance.profileVersion,
+          output: result.output as Record<string, unknown>,
+        }).catch((err) => console.warn('[stakeholder_map] saveToolOutput failed:', err));
       }
 
       return NextResponse.json(result.output);
     }
 
     // ── Power view (default) — Barnett-Duvall four faces of power ────────────
-    const creditCheck = await checkAndDeductCredits('ai_power_map', 'Stakeholder power map generation');
-    if (!creditCheck.allowed) return creditCheck.response!;
 
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
@@ -528,13 +551,24 @@ International orgs: #4B92DB (UN/multilateral) or #4B6584 (regional)
 Civil society: #C8961E (domestic) or #E8B931 (diaspora)
 
 Generate 5-10 actors. Be specific about leverage, stance, and engagement strategy.`,
-      system: 'You are a senior UN political affairs officer and stakeholder mapping specialist trained in the Barnett-Duvall four faces of power framework (compulsory, institutional, structural, productive) and the Mitchell/Agle/Wood stakeholder model. Produce precise, evidence-anchored power maps that capture all dimensions of power for mediators and diplomatic professionals.',
+      system: `You are a senior UN political affairs officer and stakeholder mapping specialist trained in the Barnett-Duvall four faces of power framework (compulsory, institutional, structural, productive) and the Mitchell/Agle/Wood stakeholder model. Produce precise, evidence-anchored power maps that capture all dimensions of power for mediators and diplomatic professionals.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
     });
 
     if (situationId && user.uid) {
       await writeToolDataServer(user.uid, situationId, 'power_map', result.output as Record<string, unknown>).catch(
         (err) => console.error('[power-map] persist failed:', err),
       );
+      await saveToolOutput({
+        uid: user.uid,
+        situationId,
+        toolId: 'power_map',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[power-map] saveToolOutput failed:', err));
     }
     return NextResponse.json(result.output);
   } catch (err) {

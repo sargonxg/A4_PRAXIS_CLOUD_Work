@@ -1,8 +1,8 @@
 import { streamText, stepCountIs } from 'ai';
 import { getProModel } from '@/lib/ai/providers';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { withAuth } from '@/lib/api/with-auth';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { tacitusTools } from '@/lib/ai/tools';
 import { scrapeUrl, scrapeMultiple, searchWeb, isFirecrawlConfigured } from '@/lib/ai/firecrawl';
 import { updateSituationAdmin, getSituationAdmin } from '@/lib/firebase/situations';
@@ -42,7 +42,13 @@ export const maxDuration = 120;
  * 4. Initial conflict graph entities (ACO primitives)
  * 5. Recommended next steps for the analyst
  */
-export const POST = withAuth(async (req, user) => {
+export const POST = withCalibration('auto_structure', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const name = typeof body.situationName === 'string' ? body.situationName : '';
+    const region = typeof body.region === 'string' ? body.region : '';
+    return [name, region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (req, user) => {
   if (user.isDemo || isServerDemoMode()) {
     return new Response(JSON.stringify({ error: 'Not available in demo mode' }), { status: 403 });
   }
@@ -57,9 +63,7 @@ export const POST = withAuth(async (req, user) => {
       return new Response(JSON.stringify({ error: 'Situation name required' }), { status: 400 });
     }
 
-    // Deduct credits for this resource-intensive operation
-    const creditCheck = await checkAndDeductCredits('ai_research', 'Auto-structure analysis');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     const actorList = (actors || []).join(', ') || 'not yet identified';
     const searchQuery = `${situationName}${region ? ` ${region}` : ''}`;
@@ -230,7 +234,18 @@ export const POST = withAuth(async (req, user) => {
     // Analyst notes appended last
     const notesSection = notes?.trim() ? `\n\nANALYST NOTES:\n${notes}` : '';
 
-    const systemPrompt = `You are TACITUS, an elite conflict intelligence system built on the ACO (Actor-Claim-Ontology) v2.0 framework. A user has just created a situation and you must produce a comprehensive initial intelligence briefing that will seed all conflict analysis tools.
+    // Calibrated analyst-profile + situation-frame + output-constraints
+    const { systemPromptBlock, outputConstraints, provenance } = user.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
+
+    const systemPrompt = `${systemPromptBlock}${langDirective}${redLineDirective}
+
+You are TACITUS, an elite conflict intelligence system built on the ACO (Actor-Claim-Ontology) v2.0 framework. A user has just created a situation and you must produce a comprehensive initial intelligence briefing that will seed all conflict analysis tools.
 
 SITUATION CONTEXT:
 - Name: ${situationName}
@@ -370,6 +385,15 @@ Ground every claim in the pre-scraped context above first, then use web search o
             await updateSituationAdmin(user.uid, situationId, updates as Partial<import('@/types/situation').Situation>);
             console.log('[auto-structure] Updated situation metadata:', Object.keys(updates));
           }
+
+          // Persist the raw briefing text with profile-version provenance
+          await saveToolOutput({
+            uid: user.uid,
+            situationId,
+            toolId: 'auto_structure',
+            profileVersion: provenance.profileVersion,
+            output: { briefing: text, updates },
+          }).catch((err) => console.warn('[auto-structure] saveToolOutput failed:', err));
 
           // Seed all tool-data subcollections from the auto-structure output
           const updatedSituation = await getSituationAdmin(user.uid, situationId);

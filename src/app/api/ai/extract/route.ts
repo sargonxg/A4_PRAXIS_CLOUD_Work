@@ -1,7 +1,7 @@
 import { generateText, Output } from 'ai';
 import { getProModel } from '@/lib/ai/providers';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { z } from 'zod';
 import {
@@ -29,7 +29,13 @@ export const maxDuration = 120;
  *
  * Optionally merges results into the situation's existing graph.
  */
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('conflict_graph', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const q = typeof body.searchQuery === 'string' ? body.searchQuery : '';
+    const ctx = typeof body.situationContext === 'string' ? body.situationContext : '';
+    return [q, ctx].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, user) => {
   if (isServerDemoMode()) {
     return Response.json({ error: 'Entity extraction requires a live AI connection.' }, { status: 503 });
   }
@@ -52,8 +58,16 @@ export const POST = withAuth(async (request, user) => {
       );
     }
 
-    const creditCheck = await checkAndDeductCredits('ai_extract', 'ACO entity extraction');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
+
+    // Calibration context — used to tag provenance and persist output
+    const { outputConstraints, provenance } = user.calibration;
+    const langHint = outputConstraints.language !== 'en'
+      ? ` Output in ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const effectiveContext = situationContext
+      ? `${situationContext}${langHint}`
+      : langHint || undefined;
 
     let result: ExtractionResult;
 
@@ -61,7 +75,7 @@ export const POST = withAuth(async (request, user) => {
     if (text) {
       result = await extractEntities(text, {
         sourceName: 'user-provided',
-        situationContext,
+        situationContext: effectiveContext,
       });
     }
     // ── Mode 2: URL scrape + extraction ────────────────────────────────────
@@ -76,7 +90,7 @@ export const POST = withAuth(async (request, user) => {
       result = await extractEntities(scraped.content, {
         sourceUrl: url,
         sourceName: scraped.title || new URL(url).hostname,
-        situationContext,
+        situationContext: effectiveContext,
       });
     }
     // ── Mode 3: Web search + multi-source extraction ───────────────────────
@@ -101,7 +115,7 @@ export const POST = withAuth(async (request, user) => {
       result = await extractEntities(primary.content, {
         sourceUrl: primary.url,
         sourceName: primary.title || new URL(primary.url).hostname,
-        situationContext,
+        situationContext: effectiveContext,
       });
 
       // Merge additional results
@@ -111,7 +125,7 @@ export const POST = withAuth(async (request, user) => {
           const additional = await extractEntities(sr.content, {
             sourceUrl: sr.url,
             sourceName: sr.title || new URL(sr.url).hostname,
-            situationContext,
+            situationContext: effectiveContext,
             existingNodeIds: result.nodes.map((n) => n.id),
           });
           const merged = mergeExtractions(
@@ -194,7 +208,7 @@ export const POST = withAuth(async (request, user) => {
       typeCounts[node.primitive_type] = (typeCounts[node.primitive_type] || 0) + 1;
     }
 
-    return Response.json({
+    const responseBody = {
       nodeCount: result.nodes.length,
       edgeCount: result.edges.length,
       typeCounts,
@@ -205,7 +219,20 @@ export const POST = withAuth(async (request, user) => {
       sourceUrl: result.sourceUrl,
       extractedAt: result.extractedAt,
       tokenUsage: result.tokenUsage,
-    });
+    };
+
+    // Persist with profile-version provenance
+    if (situationId && user.uid) {
+      await saveToolOutput({
+        uid: user.uid,
+        situationId,
+        toolId: 'conflict_graph',
+        profileVersion: provenance.profileVersion,
+        output: responseBody as unknown as Record<string, unknown>,
+      }).catch((err) => console.warn('[extract] saveToolOutput failed:', err));
+    }
+
+    return Response.json(responseBody);
   } catch (err) {
     console.error('[extract] Error:', err);
     return Response.json({ error: 'Extraction failed' }, { status: 500 });
