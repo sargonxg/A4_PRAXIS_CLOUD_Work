@@ -1,0 +1,30 @@
+#!/usr/bin/env tsx
+/**
+ * CI guard: fails if no audit report exists for today and the AI routes directory
+ * has had changes in the last 24h. Encourages devs to re-run audit after tool edits.
+ * Run: npx tsx scripts/verify-audit-fresh.ts
+ */
+import { readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import { execSync } from 'node:child_process';
+
+const audits = readdirSync(join(process.cwd(), 'docs', 'audits'));
+const latestAudit = audits.filter(f => /^tools-\d{4}-\d{2}-\d{2}\.md$/.test(f)).sort().pop();
+if (!latestAudit) {
+  console.error('No audit report found in docs/audits/. Run: npx tsx scripts/audit-tools.ts');
+  process.exit(1);
+}
+
+const auditDate = latestAudit.match(/^tools-(\d{4}-\d{2}-\d{2})/)?.[1];
+if (!auditDate) { console.error('Bad audit filename:', latestAudit); process.exit(1); }
+
+const changedSince = execSync(`git log --since="${auditDate} 00:00:00" --name-only --pretty=format: -- src/app/api/ai/`, { encoding: 'utf8' })
+  .split('\n').map(l => l.trim()).filter(Boolean);
+
+if (changedSince.length > 0) {
+  console.error(`AI routes changed since last audit (${auditDate}):`);
+  changedSince.forEach(f => console.error('  -', f));
+  console.error('Re-run: npm run audit:tools && commit the new report.');
+  process.exit(1);
+}
+console.log(`✓ Audit ${latestAudit} is current with routes.`);

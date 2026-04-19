@@ -9,7 +9,8 @@
     "lint": "eslint",
     "verify-tools": "npx tsx scripts/verify-tools.ts",
     "seed:onboarding": "tsx scripts/seed-onboarding-config.ts",
-    "audit:tools": "tsx scripts/audit-tools.ts"
+    "audit:tools": "tsx scripts/audit-tools.ts",
+    "audit:verify": "tsx scripts/verify-audit-fresh.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.50",
