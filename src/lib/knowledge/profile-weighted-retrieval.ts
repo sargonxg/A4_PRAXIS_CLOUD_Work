@@ -22,12 +22,17 @@ export async function retrieveForProfile(opts: {
       return base.slice(0, opts.topK).map(mapChunk);
     }
 
-    // Rerank by cosine-sim between chunk vector (if present) and profile vector
+    // Rerank by a blend of (original retrieval score) + (profile cosine-sim).
+    // 0.5/0.5 keeps relevance anchored while nudging toward analyst-fit.
+    // Chunks with no vector fall back to their base score only — they no
+    // longer collapse to 0 as in the previous inert implementation.
     const reranked = base
       .map(c => {
-        const vec = (c as unknown as { vector?: number[] }).vector;
-        const score = vec ? cosine(vec, profileVec) : 0;
-        return { ...c, _profileScore: score };
+        const obj = c as { vector?: number[]; score?: number };
+        const profileScore = obj.vector ? cosine(obj.vector, profileVec) : 0;
+        const baseScore = obj.score ?? 0;
+        const blended = obj.vector ? 0.5 * baseScore + 0.5 * profileScore : baseScore;
+        return { ...c, _profileScore: blended };
       })
       .sort((a, b) => (b._profileScore ?? 0) - (a._profileScore ?? 0))
       .slice(0, opts.topK);

@@ -85,14 +85,28 @@ export class VectorLayer {
         })
         .get();
 
-      return results.docs.map(d => ({
-        chunkId: d.id,
-        text: d.data().text ?? '',
-        score: 1 - (d.data().distance ?? 0), // COSINE distance to similarity
-        sourceDocId: d.data().sourceDocId,
-        entityReferences: d.data().entityReferences ?? [],
-        timestamp: d.data().createdAt ?? '',
-      }));
+      return results.docs.map(d => {
+        const data = d.data();
+        // Firestore returns vectors as VectorValue — normalise to plain number[]
+        // so consumers (e.g. profile-weighted rerank) can dot-product without
+        // needing a Firestore-specific cast.
+        let vector: number[] | undefined;
+        const raw = data.embedding;
+        if (raw && typeof raw.toArray === 'function') {
+          vector = raw.toArray();
+        } else if (Array.isArray(raw)) {
+          vector = raw as number[];
+        }
+        return {
+          chunkId: d.id,
+          text: data.text ?? '',
+          score: 1 - (data.distance ?? 0), // COSINE distance → similarity
+          sourceDocId: data.sourceDocId,
+          entityReferences: data.entityReferences ?? [],
+          timestamp: data.createdAt ?? '',
+          vector,
+        };
+      });
     } catch (err) {
       console.error('[SKC:vector] findNearest failed (vector index may need creation):', err);
       return [];

@@ -78,6 +78,12 @@ export interface VectorResult {
   pageNumber?: number;
   entityReferences: string[];
   timestamp: string;
+  /**
+   * Raw embedding for this chunk (768-dim). Populated when available so downstream
+   * consumers (e.g. profile-weighted rerank) can score chunks against a profile
+   * embedding without a second Firestore round-trip.
+   */
+  vector?: number[];
 }
 
 export interface FeedCacheEntry {

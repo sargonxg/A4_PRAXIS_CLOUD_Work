@@ -48,6 +48,7 @@ export class SituationKnowledgeCore {
       text: r.text,
       source: r.sourceDocId ?? r.sourceFeed ?? r.sourceToolId ?? 'unknown',
       score: r.score,
+      vector: r.vector, // propagate so profile-weighted rerank can cosine-score
     }));
   }
 
