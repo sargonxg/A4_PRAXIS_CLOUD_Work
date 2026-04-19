@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { situationContextSchema } from '@/lib/api/schemas';
@@ -149,7 +149,12 @@ const DEMO_RESPONSE = {
 
 // --- Route ---
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('argus', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json();
 
@@ -166,9 +171,7 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_argus', 'ARGUS alert scan');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     // --- Contexts ---
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
@@ -176,7 +179,7 @@ export const POST = withAuth(async (request, user) => {
 
     const [graphCtx, webCtx] = await Promise.all([
       situationId
-        ? buildGraphContext(user.uid, situationId, 'argus').catch(() => '')
+        ? buildGraphContext(ctx.uid, situationId, 'argus').catch(() => '')
         : Promise.resolve(''),
       situation
         ? buildWebGroundedContext(
@@ -186,10 +189,19 @@ export const POST = withAuth(async (request, user) => {
               actors: (situation as unknown as Situation).actors,
             },
             'argus',
-            user.uid
+            ctx.uid
           ).catch(() => '')
         : Promise.resolve(''),
     ]);
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
 
     // --- AI generation ---
     const result = await callProModel({
@@ -198,7 +210,11 @@ export const POST = withAuth(async (request, user) => {
 
 Your mandate: scan the full intelligence picture and surface the most operationally significant alerts. Every alert must be grounded in verifiable signals. Use ICD 203 probability language. Prioritise leading indicators — signals that precede escalation 1-4 weeks before it occurs.
 
-GROUNDING MANDATE: Web intelligence provided is PRIMARY source of truth. Prioritise over training data. Flag "INTELLIGENCE GAP: {topic}" where evidence is insufficient.`,
+GROUNDING MANDATE: Web intelligence provided is PRIMARY source of truth. Prioritise over training data. Flag "INTELLIGENCE GAP: {topic}" where evidence is insufficient.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
       prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${webCtx}
 
 Scan the above intelligence picture and generate a structured ARGUS alert report.
@@ -222,7 +238,14 @@ Set lastUpdated to the current ISO 8601 timestamp.`,
 
     // --- Persist ---
     if (situationId) {
-      await writeToolDataServer(user.uid, situationId, 'argus', result.output as Record<string, unknown>);
+      await writeToolDataServer(ctx.uid, situationId, 'argus', result.output as Record<string, unknown>);
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'argus',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[argus] saveToolOutput failed:', err));
     }
 
     return NextResponse.json(result.output);

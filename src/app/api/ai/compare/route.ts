@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { situationContextSchema } from '@/lib/api/schemas';
@@ -233,7 +233,12 @@ const DEMO_RESPONSE = {
 // Request handler
 // ---------------------------------------------------------------------------
 
-export const POST = withAuth(async (request: Request, user) => {
+export const POST = withCalibration('compare', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json();
 
@@ -253,16 +258,14 @@ export const POST = withAuth(async (request: Request, user) => {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_compare', 'Comparative analysis');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     // --- Build context ---
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
     const [graphCtx, webCtx] = await Promise.all([
       situationId
-        ? buildGraphContext(user.uid, situationId, 'compare').catch(() => '')
+        ? buildGraphContext(ctx.uid, situationId, 'compare').catch(() => '')
         : Promise.resolve(''),
       situation
         ? buildWebGroundedContext(
@@ -272,15 +275,28 @@ export const POST = withAuth(async (request: Request, user) => {
               actors: (situation as unknown as Situation).actors,
             },
             'compare',
-            user.uid
+            ctx.uid
           ).catch(() => '')
         : Promise.resolve(''),
     ]);
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
 
     // --- AI generation ---
     const result = await callProModel({
       output: Output.object({ schema: CompareSchema }),
       system: `You are a senior UN conflict analyst and comparative peace studies expert trained in Most Similar Systems Design (MSSD) methodology. Your role is to identify the most instructive historical conflict cases that illuminate pathways to resolution for the current situation.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}
 
 METHODOLOGY — MSSD:
 Select comparison cases that MAXIMISE similarity on control variables (conflict type, actor configuration, external dynamics, intensity) while ISOLATING the variable of interest (resolution mechanism, intervention type, mediator role). This allows causal inference rather than mere analogy.
@@ -329,7 +345,14 @@ Synthesise across all cases: common success factors, failure patterns, optimal e
 
     // --- Persist ---
     if (situationId) {
-      await writeToolDataServer(user.uid, situationId, 'compare', result.output as Record<string, unknown>);
+      await writeToolDataServer(ctx.uid, situationId, 'compare', result.output as Record<string, unknown>);
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'compare',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[compare] saveToolOutput failed:', err));
     }
 
     return NextResponse.json(result.output);

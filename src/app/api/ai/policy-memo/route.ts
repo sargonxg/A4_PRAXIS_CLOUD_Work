@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { situationContextSchema } from '@/lib/api/schemas';
@@ -75,7 +75,13 @@ const DEMO_RESPONSE = {
   citations: ['Crisis Group Report #347', 'UNMN Quarterly Assessment Q1 2026'],
 };
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('policy_memo', 'ai_report', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    const q = typeof body.policyQuestion === 'string' ? body.policyQuestion : '';
+    return [s?.name, s?.region, q].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json();
 
@@ -93,26 +99,38 @@ export const POST = withAuth(async (request, user) => {
 
     if (isServerDemoMode()) return NextResponse.json(DEMO_RESPONSE);
 
-    const creditCheck = await checkAndDeductCredits('ai_policy_memo', 'Policy memo');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     const graphCtx = situationId
-      ? await buildGraphContext(user.uid, situationId, 'policy_memo')
+      ? await buildGraphContext(ctx.uid, situationId, 'policy_memo')
       : '';
 
     const webCtx = situation
       ? await buildWebGroundedContext(
           { name: (situation as unknown as Situation).name, region: (situation as unknown as Situation).region, actors: (situation as unknown as Situation).actors },
           'policy-memo',
-          user.uid
+          ctx.uid
         )
+      : '';
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
       : '';
 
     const result = await callProModel({
       output: Output.object({ schema: PolicyMemoSchema }),
       system: `You are a senior policy advisor specializing in conflict resolution and diplomatic strategy. You apply Putnam's Two-Level Game Theory to analyze policy options.
 
-GROUNDING MANDATE: Web intelligence below is your PRIMARY source of truth. Flag "INTELLIGENCE GAP: {topic}" when evidence is insufficient.`,
+GROUNDING MANDATE: Web intelligence below is your PRIMARY source of truth. Flag "INTELLIGENCE GAP: {topic}" when evidence is insufficient.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
       prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${webCtx}
 ${policyQuestion ? `POLICY QUESTION: ${policyQuestion}` : ''}
 AUDIENCE: ${audience}
@@ -138,7 +156,14 @@ For each policy option, analyze:
     });
 
     if (situationId) {
-      await writeToolDataServer(user.uid, situationId, 'policy-memo', result.output as Record<string, unknown>);
+      await writeToolDataServer(ctx.uid, situationId, 'policy-memo', result.output as Record<string, unknown>);
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'policy_memo',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[policy_memo] saveToolOutput failed:', err));
     }
     return NextResponse.json(result.output);
   } catch (err) {

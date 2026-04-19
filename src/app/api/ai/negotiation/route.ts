@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { getProModel, getThinkingModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { situationContextSchema } from '@/lib/api/schemas';
@@ -129,7 +129,13 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('negotiation_prep', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    const issues = Array.isArray(body.issues) ? (body.issues as string[]).slice(0, 3).join(', ') : '';
+    return [s?.name, s?.region, issues].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json();
 
@@ -151,13 +157,11 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_negotiation', 'Negotiation analysis');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     // --- Graph context ---
     const graphCtx = situationId
-      ? await buildGraphContext(user.uid, situationId, 'negotiation_prep')
+      ? await buildGraphContext(ctx.uid, situationId, 'negotiation_prep')
       : '';
 
     // --- Web grounded context ---
@@ -165,8 +169,17 @@ export const POST = withAuth(async (request, user) => {
       ? await buildWebGroundedContext(
           { name: (situation as unknown as Situation).name, region: (situation as unknown as Situation).region, actors: (situation as unknown as Situation).actors as string[] | undefined },
           'negotiation-prep',
-          user.uid
+          ctx.uid
         )
+      : '';
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
       : '';
 
     // --- AI analysis ---
@@ -220,11 +233,22 @@ Apply Lax/Sebenius deal design principles:
 - Confidence building measures to shift negotiating climate?
 
 Be specific to the actual parties and issues. Do not give generic advice.`,
-      system: 'You are a senior negotiation analyst trained at Harvard PON in Fisher/Ury principled negotiation, Lax/Sebenius deal design, and Zartman ripeness theory. You have extensive experience as a UN mediator and peace negotiation advisor. Produce analysis-grade assessments for senior mediators and diplomatic professionals. Be precise about reservation points, quantify BATNA strength, and generate actionable deal-design recommendations.',
+      system: `You are a senior negotiation analyst trained at Harvard PON in Fisher/Ury principled negotiation, Lax/Sebenius deal design, and Zartman ripeness theory. You have extensive experience as a UN mediator and peace negotiation advisor. Produce analysis-grade assessments for senior mediators and diplomatic professionals. Be precise about reservation points, quantify BATNA strength, and generate actionable deal-design recommendations.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
     });
 
     if (situationId) {
-      await writeToolDataServer(user.uid, situationId, 'negotiation_prep', result.output as Record<string, unknown>);
+      await writeToolDataServer(ctx.uid, situationId, 'negotiation_prep', result.output as Record<string, unknown>);
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'negotiation_prep',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[negotiation_prep] saveToolOutput failed:', err));
     }
     return NextResponse.json(result.output);
   } catch (err) {

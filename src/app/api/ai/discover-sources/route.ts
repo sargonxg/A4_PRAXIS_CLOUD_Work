@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { Output } from 'ai';
 import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
-import { withAuth } from '@/lib/api/with-auth';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import type { Situation } from '@/types/situation';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
@@ -37,13 +37,17 @@ const DiscoveredSourceSchema = z.object({
   })),
 });
 
-export const POST = withAuth(async (req, user) => {
+export const POST = withCalibration('source_monitor', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (req, ctx) => {
   if (isServerDemoMode()) {
     return NextResponse.json(DEMO_RESPONSE);
   }
 
-  const creditCheck = await checkAndDeductCredits('research', 'AI source discovery');
-  if (!creditCheck.allowed) return creditCheck.response;
+  // Credits + profile gate already handled by withCalibration above.
 
   try {
     const { situation, existingSources } = await req.json() as {
@@ -53,6 +57,14 @@ export const POST = withAuth(async (req, user) => {
     const sitContext = situation ? buildToolContext(situation) : '';
 
     const existingNames = (existingSources || []).map((s) => s.name).join(', ');
+
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
 
     const result = await callProModel({
       output: Output.object({ schema: DiscoveredSourceSchema }),
@@ -79,12 +91,24 @@ For each source:
 4. Describe who their audience is
 
 IMPORTANT: Recommend REAL sources that actually exist. Do not fabricate outlets.`,
-      system: 'You are a senior conflict intelligence source analyst with experience at UN DPPA, ICG, and major think tanks. You specialize in mapping the information ecosystems of conflict zones — identifying which outlets, channels, and platforms provide actionable intelligence and understanding their editorial perspectives through nomenclature analysis.',
+      system: `You are a senior conflict intelligence source analyst with experience at UN DPPA, ICG, and major think tanks. You specialize in mapping the information ecosystems of conflict zones — identifying which outlets, channels, and platforms provide actionable intelligence and understanding their editorial perspectives through nomenclature analysis.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
     });
 
     const situationId = situation?.id ?? '';
-    if (situationId && user.uid) {
-      await writeToolDataServer(user.uid, situationId, 'discover_sources', result.output as Record<string, unknown>).catch(console.error);
+    if (situationId && ctx.uid) {
+      await writeToolDataServer(ctx.uid, situationId, 'discover_sources', result.output as Record<string, unknown>).catch(console.error);
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'source_monitor',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+        metadata: { variant: 'discover-sources' },
+      }).catch((err) => console.warn('[discover_sources] saveToolOutput failed:', err));
     }
 
     return NextResponse.json(result.output);

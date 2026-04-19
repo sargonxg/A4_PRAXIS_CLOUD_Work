@@ -5,9 +5,9 @@ import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { UN_STYLE_PROMPT } from '@/lib/ai/prompts/un-style';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { situationContextSchema } from '@/lib/api/schemas';
@@ -195,7 +195,13 @@ TONE: ${toneGuide[toneLevel]} — but always softer than the tone implies, since
 // Route handler
 // ---------------------------------------------------------------------------
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('un_toolkit', 'ai_report', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    const topic = typeof body.topic === 'string' ? body.topic : '';
+    return [s?.name, s?.region, topic].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json();
 
@@ -222,13 +228,11 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_un_toolkit', 'UN Toolkit document generation');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     // --- Graph context ---
     const graphCtx = situationId
-      ? await buildGraphContext(user.uid, situationId, 'un_toolkit')
+      ? await buildGraphContext(ctx.uid, situationId, 'un_toolkit')
       : '';
 
     // --- Web-grounded context ---
@@ -240,8 +244,17 @@ export const POST = withAuth(async (request, user) => {
             actors: (sitObj as unknown as Situation).actors as string[] | undefined,
           },
           'un-toolkit',
-          user.uid
+          ctx.uid
         )
+      : '';
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
       : '';
 
     const sitName = (sitObj as unknown as Situation | undefined)?.name ?? 'the situation under review';
@@ -272,7 +285,11 @@ You know:
 
 GROUNDING MANDATE: The web intelligence below is PRIMARY ground truth. Reference current actors, recent events, and active mandates from this intelligence. Do not rely solely on training data.
 
-KEY INSTRUCTION: In diplomaticNotes, always explain WHY specific language choices were made — the political, legal, and precedent rationale. This is what makes these advisor notes useful.`,
+KEY INSTRUCTION: In diplomaticNotes, always explain WHY specific language choices were made — the political, legal, and precedent rationale. This is what makes these advisor notes useful.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
       prompt: `${webCtx ? `${webCtx}\n\n` : ''}${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Draft a UN diplomatic document with the following parameters:
 
 DOCUMENT MODE: ${mode}
@@ -305,7 +322,14 @@ ${modeInstructions}
     });
 
     if (situationId) {
-      await writeToolDataServer(user.uid, situationId, 'un_toolkit', result.output as Record<string, unknown>);
+      await writeToolDataServer(ctx.uid, situationId, 'un_toolkit', result.output as Record<string, unknown>);
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'un_toolkit',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[un_toolkit] saveToolOutput failed:', err));
     }
     return NextResponse.json(result.output);
   } catch (err) {

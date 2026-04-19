@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { situationContextSchema } from '@/lib/api/schemas';
@@ -97,7 +97,12 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('economic_impact', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json();
     const requestSchema = z.object({ situation: situationContextSchema.optional() });
@@ -108,20 +113,32 @@ export const POST = withAuth(async (request, user) => {
     const situationId = (situation as Situation | undefined)?.id ?? '';
 
     if (isServerDemoMode()) return NextResponse.json(DEMO_RESPONSE);
-    const creditCheck = await checkAndDeductCredits('ai_economic_impact', 'Economic impact assessment');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
-    const graphCtx = situationId ? await buildGraphContext(user.uid, situationId, 'economic_impact') : '';
+    const graphCtx = situationId ? await buildGraphContext(ctx.uid, situationId, 'economic_impact') : '';
     const webCtx = situation
       ? await buildWebGroundedContext(
           { name: (situation as unknown as Situation).name, region: (situation as unknown as Situation).region, actors: (situation as unknown as Situation).actors },
-          'economic-impact', user.uid
+          'economic-impact', ctx.uid
         )
+      : '';
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
       : '';
 
     const result = await callProModel({
       output: Output.object({ schema: EconomicImpactSchema }),
-      system: 'You are an economist specializing in conflict economics and post-conflict reconstruction. Apply World Bank Damage and Needs Assessment framework and IMF post-conflict methodology. Assess war economy dynamics, sanctions regimes, and reconstruction costs with quantitative rigour.',
+      system: `You are an economist specializing in conflict economics and post-conflict reconstruction. Apply World Bank Damage and Needs Assessment framework and IMF post-conflict methodology. Assess war economy dynamics, sanctions regimes, and reconstruction costs with quantitative rigour.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
       prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${webCtx}
 Conduct a comprehensive conflict economic impact assessment.
 
@@ -130,7 +147,16 @@ Assess: (1) macroeconomic indicators (GDP deviation from trend, inflation, unemp
 Cite sources from web intelligence for all quantitative claims. Flag intelligence gaps for data that cannot be verified.`,
     });
 
-    if (situationId) await writeToolDataServer(user.uid, situationId, 'economic-impact', result.output as Record<string, unknown>);
+    if (situationId) {
+      await writeToolDataServer(ctx.uid, situationId, 'economic-impact', result.output as Record<string, unknown>);
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'economic_impact',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[economic_impact] saveToolOutput failed:', err));
+    }
     return NextResponse.json(result.output);
   } catch (err) {
     return handleRouteError(err, 'economic-impact');

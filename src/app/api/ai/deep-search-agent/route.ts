@@ -1,5 +1,5 @@
-import { withAuth } from '@/lib/api/with-auth';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import {
   getVertexAgentConfig,
@@ -20,7 +20,12 @@ export const maxDuration = 120;
  * Body: { query: string, situationId: string, sessionId?: string }
  * Returns: SSE stream of AgentEvents with PRAXIS envelope
  */
-export const POST = withAuth(async (req, user) => {
+export const POST = withCalibration('deep_research', 'ai_deep_think', {
+  retrievalQuery: (_req, body) => {
+    const q = typeof body.query === 'string' ? body.query : '';
+    return q || undefined;
+  },
+})(async (req, ctx) => {
   if (isServerDemoMode()) {
     return new Response(
       JSON.stringify({ error: 'Deep Research Agent requires a live AI configuration.' }),
@@ -28,11 +33,11 @@ export const POST = withAuth(async (req, user) => {
     );
   }
 
-  const credits = await checkAndDeductCredits('ai_deep_search_agent', 'ADK Deep Research Agent');
-  if (!credits.allowed) return credits.response;
+  // Credits + profile gate already handled by withCalibration above.
 
   const body = await req.json() as { query?: string; situationId?: string; sessionId?: string };
   const { query, situationId, sessionId: incomingSessionId } = body;
+  const user = ctx; // alias for existing code below that references `user.uid` / `user.isDemo`
 
   if (!query?.trim()) {
     return new Response(
@@ -159,6 +164,16 @@ Provide a thorough, evidence-based analysis using your web research capabilities
             if (!event) continue;
 
             if (event.type === 'done') {
+              if (situationId && ctx.uid && !ctx.isDemo) {
+                await saveToolOutput({
+                  uid: ctx.uid,
+                  situationId,
+                  toolId: 'deep_research',
+                  profileVersion: ctx.calibration.provenance.profileVersion,
+                  output: { query, sessionId, streamed: true },
+                  metadata: { variant: 'adk-agent', sessionId },
+                }).catch((err) => console.warn('[deep_search_agent] saveToolOutput failed:', err));
+              }
               controller.enqueue(emit({ type: 'done' }));
               controller.close();
               return;

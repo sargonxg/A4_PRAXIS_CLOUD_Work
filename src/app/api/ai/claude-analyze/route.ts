@@ -1,7 +1,7 @@
 import { streamText } from 'ai';
 import { getAnalysisModel, getAvailableProviders } from '@/lib/ai/providers';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 
 export const maxDuration = 120;
@@ -12,7 +12,13 @@ export const maxDuration = 120;
  * Claude is used for nuanced diplomatic analysis, bias detection,
  * and complex geopolitical reasoning.
  */
-export const POST = withAuth(async (request: Request) => {
+export const POST = withCalibration('advisory', 'ai_deep_think', {
+  retrievalQuery: (_req, body) => {
+    const q = typeof body.query === 'string' ? body.query : '';
+    const t = typeof body.analysisType === 'string' ? body.analysisType : '';
+    return [q, t].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   if (isServerDemoMode()) {
     return formatAsStreamResponse('**Demo Mode** — This analysis requires a live AI connection. Set GOOGLE_AI_API_KEY in your environment to enable it.');
   }
@@ -32,10 +38,9 @@ export const POST = withAuth(async (request: Request) => {
   }
 
   try {
-    const { query, analysisType = 'diplomatic', context } = await request.json();
+    const { query, analysisType = 'diplomatic', context, situationId } = await request.json();
 
-    const creditCheck = await checkAndDeductCredits('ai_claude_analyze', 'Claude deep analysis');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     const analysisPrompts: Record<string, string> = {
       diplomatic: `You are a senior diplomatic analyst providing nuanced assessment. Consider:
@@ -74,6 +79,14 @@ Structure with: Strategic Assessment, Key Variables, Scenarios, and Policy Impli
 Structure with: Legal Framework, Analysis, Precedents, and Implications.`,
     };
 
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
+
     const systemPrompt = `${analysisPrompts[analysisType] || analysisPrompts.diplomatic}
 
 ${context ? `## Context Provided\n${context}` : ''}
@@ -84,7 +97,11 @@ ${context ? `## Context Provided\n${context}` : ''}
 - Distinguish clearly between facts, assessments, and speculation
 - Use diplomatic language appropriate for senior stakeholders
 - Flag areas of uncertainty or incomplete information
-- Provide actionable insights where possible`;
+- Provide actionable insights where possible
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`;
 
     // Use Claude if available, otherwise Gemini Pro (via centralized provider)
     const model = getAnalysisModel();
@@ -93,6 +110,18 @@ ${context ? `## Context Provided\n${context}` : ''}
       model,
       system: systemPrompt,
       prompt: query,
+      onFinish: async ({ text }) => {
+        if (situationId && ctx.uid) {
+          await saveToolOutput({
+            uid: ctx.uid,
+            situationId,
+            toolId: 'advisory',
+            profileVersion: provenance.profileVersion,
+            output: { query, analysisType, analysis: text },
+            metadata: { variant: 'claude-analyze', analysisType },
+          }).catch((err) => console.warn('[claude_analyze] saveToolOutput failed:', err));
+        }
+      },
     });
 
     // Include provider info in response headers

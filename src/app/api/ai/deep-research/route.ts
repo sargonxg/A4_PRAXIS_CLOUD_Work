@@ -1,14 +1,20 @@
 import { conductResearch, type ResearchMode, type ResearchDepth } from '@/lib/ai/research-engine';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 
 export const maxDuration = 120;
 
 type RequestResearchMode = ResearchMode;
 type RequestResearchDepth = ResearchDepth;
 
-export const POST = withAuth(async (request: Request) => {
+export const POST = withCalibration('deep_research', 'ai_deep_think', {
+  retrievalQuery: (_req, body) => {
+    const q = typeof body.query === 'string' ? body.query : '';
+    const ctxStr = typeof body.conflictContext === 'string' ? body.conflictContext : '';
+    return [q, ctxStr].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json();
     const {
@@ -16,11 +22,13 @@ export const POST = withAuth(async (request: Request) => {
       mode = 'briefing',
       depth = 'standard',
       conflictContext,
+      situationId,
     }: {
       query: string;
       mode?: RequestResearchMode;
       depth?: RequestResearchDepth;
       conflictContext?: string;
+      situationId?: string;
     } = body;
 
     // --- Demo mode: return pre-computed responses when no API key is set ---
@@ -36,9 +44,11 @@ export const POST = withAuth(async (request: Request) => {
       );
     }
 
-    // --- Live mode: check credits before making AI call ---
-    const creditCheck = await checkAndDeductCredits('ai_deep_research', 'Deep research');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
+
+    // Note: conductResearch wraps its own system prompt; calibration provenance is captured
+    // by saveToolOutput below. Situation-specific calibration is still applied via profile gate.
+    void ctx.calibration.systemPromptBlock;
 
     const result = await conductResearch({
       query,
@@ -46,6 +56,20 @@ export const POST = withAuth(async (request: Request) => {
       depth,
       conflictContext,
     });
+
+    // Best-effort persistence — only if situationId provided
+    if (situationId && ctx.uid) {
+      // conductResearch returns a stream; we can't easily capture full text without consuming it.
+      // Emit a metadata-only saveToolOutput so profile-version provenance is recorded.
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'deep_research',
+        profileVersion: ctx.calibration.provenance.profileVersion,
+        output: { query, mode, depth, conflictContext, streamed: true },
+        metadata: { streamed: true },
+      }).catch((err) => console.warn('[deep_research] saveToolOutput failed:', err));
+    }
 
     return result.toTextStreamResponse();
   } catch (err) {

@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { getModel, callProModel, getThinkingModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
 import type { Situation } from '@/types/situation';
 
@@ -310,7 +310,13 @@ const DEMO_ASSIST_TEXT = `Based on the current dynamics, I recommend focusing on
 
 // ── Route handler ─────────────────────────────────────────────────────────────
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('mediation_design', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    const ctxStr = typeof body.conflictContext === 'string' ? body.conflictContext : '';
+    return [s?.name, s?.region, ctxStr].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json() as {
       situation?: Situation;
@@ -338,17 +344,25 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json(DEMO_RESPONSE_DESIGN);
     }
 
+    // Credits + profile gate already handled by withCalibration above.
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
+
     // ── action: 'plan' | 'settle' | 'assist' (absorbed from /api/ai/mediation) ─
     if (action === 'plan' || action === 'settle' || action === 'assist') {
       const { conflictContext, parties, issues, situationId } = body;
 
-      const creditCheck = await checkAndDeductCredits('ai_mediation', 'Mediation intelligence');
-      if (!creditCheck.allowed) return creditCheck.response;
-
       const partiesStr = parties?.join(', ') || 'the conflict parties';
       const issuesStr = issues?.join(', ') || 'core conflict issues';
       const graphCtx = situationId
-        ? await buildGraphContext(user.uid, situationId, 'mediation_design').catch(() => '')
+        ? await buildGraphContext(ctx.uid, situationId, 'mediation_design').catch(() => '')
         : '';
 
       if (action === 'plan') {
@@ -366,13 +380,24 @@ Design a phased mediation plan that:
 3. Structures framework agreement negotiation
 
 For each phase, specify objectives, key questions, and risk factors. Recommend a mediation methodology and provide a realistic timeline. Draw on Fisher/Ury, Glasl, and comparative mediation precedents.`,
-          system: 'You are a senior mediation strategist with extensive experience in conflict resolution. Design mediation plans that are practically implementable, grounded in established methodology, and sensitive to the political constraints of all parties.',
+          system: `You are a senior mediation strategist with extensive experience in conflict resolution. Design mediation plans that are practically implementable, grounded in established methodology, and sensitive to the political constraints of all parties.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
         });
 
-        if (situationId && user.uid) {
-          await writeToolDataServer(user.uid, situationId, 'mediation_design', result.output as Record<string, unknown>).catch(
+        if (situationId && ctx.uid) {
+          await writeToolDataServer(ctx.uid, situationId, 'mediation_design', result.output as Record<string, unknown>).catch(
             (err) => console.error('[mediation-design/plan] persist failed:', err),
           );
+          await saveToolOutput({
+            uid: ctx.uid,
+            situationId,
+            toolId: 'mediation_design',
+            profileVersion: provenance.profileVersion,
+            output: result.output as Record<string, unknown>,
+          }).catch((err) => console.warn('[mediation_design/plan] saveToolOutput failed:', err));
         }
         return NextResponse.json(result.output);
       }
@@ -393,13 +418,25 @@ Draft settlement terms that:
 4. Specify conditions precedent for implementation
 
 Use language consistent with international peace agreement conventions. Reference comparable agreements where useful (Dayton, CPA, Colombian peace accord).`,
-          system: 'You are a senior legal advisor specializing in peace agreement architecture. Draft settlement terms that are legally precise, politically feasible, and practically implementable. Use standard international peace agreement language and conventions.',
+          system: `You are a senior legal advisor specializing in peace agreement architecture. Draft settlement terms that are legally precise, politically feasible, and practically implementable. Use standard international peace agreement language and conventions.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
         });
 
-        if (situationId && user.uid) {
-          await writeToolDataServer(user.uid, situationId, 'mediation_settlement', result.output as Record<string, unknown>).catch(
+        if (situationId && ctx.uid) {
+          await writeToolDataServer(ctx.uid, situationId, 'mediation_settlement', result.output as Record<string, unknown>).catch(
             (err) => console.error('[mediation-design/settle] persist failed:', err),
           );
+          await saveToolOutput({
+            uid: ctx.uid,
+            situationId,
+            toolId: 'mediation_design',
+            profileVersion: provenance.profileVersion,
+            output: result.output as Record<string, unknown>,
+            metadata: { action: 'settle' },
+          }).catch((err) => console.warn('[mediation_design/settle] saveToolOutput failed:', err));
         }
         return NextResponse.json(result.output);
       }
@@ -420,28 +457,41 @@ Provide tactical mediation advice for the current moment:
 4. Recommend concrete next steps
 
 Be practical, specific, and sensitive to each party's political constraints. Avoid generic mediation advice — tailor to the specific conflict dynamics.`,
-        system: 'You are a real-time mediation intelligence assistant embedded in a conflict mediation session. Provide concise, actionable tactical advice that the mediator can use immediately. Be specific to the parties and issues at hand.',
+        system: `You are a real-time mediation intelligence assistant embedded in a conflict mediation session. Provide concise, actionable tactical advice that the mediator can use immediately. Be specific to the parties and issues at hand.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
+        onFinish: async ({ text }) => {
+          if (situationId && ctx.uid) {
+            await saveToolOutput({
+              uid: ctx.uid,
+              situationId,
+              toolId: 'mediation_design',
+              profileVersion: provenance.profileVersion,
+              output: { action: 'assist', parties: partiesStr, issues: issuesStr, analysis: text },
+              metadata: { action: 'assist' },
+            }).catch((err) => console.warn('[mediation_design/assist] saveToolOutput failed:', err));
+          }
+        },
       });
 
       return streamResult.toTextStreamResponse();
     }
 
     // ── action: 'design' (default) — original mediation-design behaviour ────────
-    const creditCheck = await checkAndDeductCredits('ai_mediation_design', 'Mediation process design');
-    if (!creditCheck.allowed) return creditCheck.response!;
-
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
     const situationId = situation?.id ?? '';
 
     const graphCtx = situationId
-      ? await buildGraphContext(user.uid, situationId, 'mediation_design')
+      ? await buildGraphContext(ctx.uid, situationId, 'mediation_design')
       : '';
 
     const webCtx = situation
       ? await buildWebGroundedContext(
           { name: (situation as Situation).name, region: (situation as Situation).region, actors: (situation as Situation).actors },
           'mediation-design',
-          user.uid
+          ctx.uid
         )
       : '';
 
@@ -490,11 +540,22 @@ Design CBMs that:
 - Host country has diplomatic relationship with all parties
 
 Be specific to the actual parties, issues, and context. Design a process that has a realistic chance of succeeding given the specific constraints of this situation.`,
-      system: 'You are a senior UN mediation advisor with extensive experience designing peace processes across multiple conflict contexts. You are trained in the UN Guidance for Effective Mediation, Berghof Foundation process design methodology, and Lax/Sebenius deal architecture. You have designed processes for intrastate conflicts involving non-state armed groups, international peace operations, and regional guarantor frameworks. Produce precise, operationally grounded process designs that a working mediator can actually use.',
+      system: `You are a senior UN mediation advisor with extensive experience designing peace processes across multiple conflict contexts. You are trained in the UN Guidance for Effective Mediation, Berghof Foundation process design methodology, and Lax/Sebenius deal architecture. You have designed processes for intrastate conflicts involving non-state armed groups, international peace operations, and regional guarantor frameworks. Produce precise, operationally grounded process designs that a working mediator can actually use.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
     });
 
     if (situationId) {
-      await writeToolDataServer(user.uid, situationId, 'mediation_design', result.output as Record<string, unknown>);
+      await writeToolDataServer(ctx.uid, situationId, 'mediation_design', result.output as Record<string, unknown>);
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'mediation_design',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[mediation_design] saveToolOutput failed:', err));
     }
     return NextResponse.json(result.output);
   } catch (err) {

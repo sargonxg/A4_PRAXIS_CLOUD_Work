@@ -5,9 +5,9 @@ import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { situationContextSchema } from '@/lib/api/schemas';
@@ -68,7 +68,13 @@ const DEMO_RESPONSE = {
   closingGuidance: 'Close by reaffirming AU commitment to the June mediation round and requesting PSC political support for SRSG access to both capitals.',
 };
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('talking_points', 'ai_report', {
+  retrievalQuery: (_req, body) => {
+    const s = (body.situation ?? body.situationData) as { name?: string; region?: string } | undefined;
+    const aud = typeof body.audience === 'string' ? body.audience : '';
+    return [s?.name, s?.region, aud].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json();
     const requestSchema = z.object({
@@ -89,22 +95,30 @@ export const POST = withAuth(async (request, user) => {
 
     if (isServerDemoMode()) return NextResponse.json(DEMO_RESPONSE);
 
-    const creditCheck = await checkAndDeductCredits('ai_talking_points', 'Talking points');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     const graphCtx = situationId
-      ? await buildGraphContext(user.uid, situationId, 'talking_points')
+      ? await buildGraphContext(ctx.uid, situationId, 'talking_points')
       : '';
 
     const webCtx = sitObj
       ? await buildWebGroundedContext(
           { name: sitObj.name, region: sitObj.region, actors: sitObj.actors },
           'talking-points',
-          user.uid
+          ctx.uid
         )
       : '';
 
-    const systemPrompt = [graphCtx, sitContext, DIPLOMATIC_SYSTEM_PROMPT].filter(Boolean).join('\n\n');
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
+
+    const systemPrompt = [graphCtx, sitContext, DIPLOMATIC_SYSTEM_PROMPT, systemPromptBlock, `Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`].filter(Boolean).join('\n\n');
 
     const result = await callProModel({
       output: Output.object({ schema: TalkingPointsSchema }),
@@ -126,7 +140,16 @@ ANTICIPATE: For each likely stakeholder question, provide a recommended response
 TONE GUIDANCE: Provide explicit guidance on register, emphasis, and what to avoid, calibrated to the stated audience.`,
     });
 
-    if (situationId) await writeToolDataServer(user.uid, situationId, 'talking-points', result.output as Record<string, unknown>);
+    if (situationId) {
+      await writeToolDataServer(ctx.uid, situationId, 'talking-points', result.output as Record<string, unknown>);
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'talking_points',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[talking_points] saveToolOutput failed:', err));
+    }
     return NextResponse.json(result.output);
   } catch (err) {
     return handleRouteError(err, 'talking-points');

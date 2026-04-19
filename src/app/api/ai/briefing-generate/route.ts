@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
@@ -153,7 +153,13 @@ const DEMO_RESPONSE_FULL = {
 
 // ── Route handler ─────────────────────────────────────────────────────────────
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('briefing_room', 'ai_report', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    const bt = typeof body.briefingType === 'string' ? body.briefingType : '';
+    return [s?.name, s?.region, bt].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json() as {
       caseId?: string;
@@ -179,14 +185,23 @@ export const POST = withAuth(async (request, user) => {
     const sitContext = situation ? buildToolContext(situation) : '';
     const situationId = situation?.id ?? '';
 
+    // --- Calibrated system prompt (shared) ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
+    const calibrationSuffix = `\n\n${systemPromptBlock}\n\nCalibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`;
+
     // ── mode: 'quick' — streaming-only intelligence brief (absorbed from /api/ai/brief) ──
     if (mode === 'quick') {
       if (isServerDemoMode()) {
         return formatAsStreamResponse('**Demo Mode** — This analysis requires a live AI connection. Set GOOGLE_AI_API_KEY in your environment to enable it.');
       }
 
-      const creditCheck = await checkAndDeductCredits('ai_brief', 'Intelligence brief generation');
-      if (!creditCheck.allowed) return creditCheck.response!;
+      // Credits + profile gate already handled by withCalibration above.
 
       const { situationName } = body;
 
@@ -215,7 +230,19 @@ export const POST = withAuth(async (request, user) => {
         model: getModel(),
         system: `You are a senior UN Political Affairs Officer preparing a concise morning intelligence brief.
 Write in professional UN diplomatic register. Use **bold headers** for each section.
-Be precise, evidence-grounded, and actionable. Avoid speculation — note uncertainty where relevant.`,
+Be precise, evidence-grounded, and actionable. Avoid speculation — note uncertainty where relevant.${calibrationSuffix}`,
+        onFinish: async ({ text }) => {
+          if (situationId && ctx.uid) {
+            await saveToolOutput({
+              uid: ctx.uid,
+              situationId,
+              toolId: 'briefing_room',
+              profileVersion: provenance.profileVersion,
+              output: { mode: 'quick', briefingType, brief: text },
+              metadata: { mode: 'quick' },
+            }).catch((err) => console.warn('[briefing_room/quick] saveToolOutput failed:', err));
+          }
+        },
         messages: [
           {
             role: 'user',
@@ -271,20 +298,19 @@ Keep the entire brief under 250 words. Cite live sources where available.`,
         });
       }
 
-      const digestCreditCheck = await checkAndDeductCredits('ai_morning_digest', 'Morning digest generation');
-      if (!digestCreditCheck.allowed) return digestCreditCheck.response;
+      // Credits + profile gate already handled by withCalibration above.
 
       const webContext = situation
         ? await buildWebGroundedContext(
             { name: situation.name, region: situation.region, actors: situation.actors },
             'briefing',
-            user.uid
+            ctx.uid
           )
         : situationContext
         ? await buildWebGroundedContext(
             { name: situationContext.name, region: situationContext.region, actors: situationContext.actors },
             'briefing',
-            user.uid
+            ctx.uid
           )
         : '';
 
@@ -300,7 +326,19 @@ DESCRIPTION: ${situationContext.description}`
 
       const result = streamText({
         model: getModel(),
-        system: sitContext ? `${sitContext}${intelContext}\n\n${MORNING_DIGEST_SYSTEM_PROMPT}` : MORNING_DIGEST_SYSTEM_PROMPT,
+        system: (sitContext ? `${sitContext}${intelContext}\n\n${MORNING_DIGEST_SYSTEM_PROMPT}` : MORNING_DIGEST_SYSTEM_PROMPT) + calibrationSuffix,
+        onFinish: async ({ text }) => {
+          if (situationId && ctx.uid) {
+            await saveToolOutput({
+              uid: ctx.uid,
+              situationId,
+              toolId: 'briefing_room',
+              profileVersion: provenance.profileVersion,
+              output: { mode: 'morning-digest', digest: text },
+              metadata: { briefingType: 'morning-digest' },
+            }).catch((err) => console.warn('[briefing_room/digest] saveToolOutput failed:', err));
+          }
+        },
         prompt: `Generate today's morning intelligence digest for the following situation.
 
 ${sitBlock}
@@ -324,18 +362,17 @@ PROBABILITY LANGUAGE REQUIREMENT: Use ICD 203 Analytic Standards probability lan
       return NextResponse.json(DEMO_RESPONSE_FULL);
     }
 
-    const creditCheck = await checkAndDeductCredits('ai_briefing_generate', 'Briefing generation');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     const graphCtx = situationId
-      ? await buildGraphContext(user.uid, situationId, 'briefing').catch(() => '')
+      ? await buildGraphContext(ctx.uid, situationId, 'briefing').catch(() => '')
       : '';
 
     const webCtx = situation
       ? await buildWebGroundedContext(
           { name: situation.name, region: situation.region, actors: situation.actors },
           'briefing',
-          user.uid
+          ctx.uid
         )
       : '';
 
@@ -393,13 +430,21 @@ FORMAT RULES:
 - Source attributions should use formal UN citation conventions where possible.`,
       system: `You are a senior political affairs officer in the United Nations Department of Political and Peacebuilding Affairs (DPPA). You produce analytically rigorous briefing content for the Secretary-General, Under-Secretary-General, and Assistant Secretaries-General. Your analysis follows DPPA standards: calibrated confidence language, source attribution, formal register, and structured analytical judgments. Speaker notes should provide the depth, nuance, and anticipatory guidance that briefing slides cannot convey. Every assessment must distinguish between what is known, what is assessed, and what remains uncertain.
 
-Use ICD 203 Analytic Standards probability language: 'almost no chance' (<5%), 'very unlikely' (5-20%), 'unlikely' (20-45%), 'roughly even' (45-55%), 'likely' (55-80%), 'very likely' (80-95%), 'almost certain' (>95%). Never use vague hedging.`,
+Use ICD 203 Analytic Standards probability language: 'almost no chance' (<5%), 'very unlikely' (5-20%), 'unlikely' (20-45%), 'roughly even' (45-55%), 'likely' (55-80%), 'very likely' (80-95%), 'almost certain' (>95%). Never use vague hedging.${calibrationSuffix}`,
     });
 
-    if (situationId && user.uid) {
-      await writeToolDataServer(user.uid, situationId, 'briefing', result.output as Record<string, unknown>).catch(
+    if (situationId && ctx.uid) {
+      await writeToolDataServer(ctx.uid, situationId, 'briefing', result.output as Record<string, unknown>).catch(
         (err) => console.error('[briefing-generate] persist failed:', err),
       );
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'briefing_room',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+        metadata: { mode: 'full', briefingType },
+      }).catch((err) => console.warn('[briefing_room] saveToolOutput failed:', err));
     }
     return NextResponse.json(result.output);
   } catch (err) {

@@ -16,8 +16,8 @@ import { z } from 'zod';
 import { getThinkingModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
@@ -351,14 +351,18 @@ const DEMO_RESPONSE = {
 // Route handler
 // ---------------------------------------------------------------------------
 
-export const POST = withAuth(async (request: Request, user) => {
+export const POST = withCalibration('concordia', 'ai_deep_think', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    const creditCheck = await checkAndDeductCredits('ai_mediation_design', 'CONCORDIA mediation design');
-    if (!creditCheck.allowed) return creditCheck.response!;
+    // Credits + profile gate already handled by withCalibration above.
 
     const body = await request.json();
 
@@ -375,7 +379,7 @@ export const POST = withAuth(async (request: Request, user) => {
 
     // Graph context — loads negotiation_prep, stakeholder_map, commitment_scan
     const graphCtx = situationId
-      ? await buildGraphContext(user.uid, situationId, 'mediation_design')
+      ? await buildGraphContext(ctx.uid, situationId, 'mediation_design')
       : '';
 
     // Web-grounded context — live intelligence to ground the analysis
@@ -388,8 +392,17 @@ export const POST = withAuth(async (request: Request, user) => {
             description: (situation as unknown as Situation).description,
           },
           'concordia',
-          user.uid,
+          ctx.uid,
         )
+      : '';
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
       : '';
 
     const result = await generateText({
@@ -430,7 +443,11 @@ For each agenda item: identify the outer bounds of each party's acceptable range
 - Implementation architecture must be designed from day one
 - Gender: apply UNSCR 1325 in mediator composition and agenda item design
 
-Write to UN diplomatic professional standards. Be specific to the actual parties and conflict context provided. Produce analysis that a working mediation team can use operationally.`,
+Write to UN diplomatic professional standards. Be specific to the actual parties and conflict context provided. Produce analysis that a working mediation team can use operationally.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
       prompt: `${webCtx ? `${webCtx}\n\n` : ''}${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Design a comprehensive CONCORDIA mediation architecture for this conflict situation.
 
 ## YOUR TASK
@@ -463,11 +480,18 @@ Be specific, operationally grounded, and analytically rigorous. Reference actors
 
     if (situationId) {
       await writeToolDataServer(
-        user.uid,
+        ctx.uid,
         situationId,
         'concordia',
         result.output as Record<string, unknown>,
       );
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'concordia',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[concordia] saveToolOutput failed:', err));
     }
 
     return NextResponse.json(result.output);

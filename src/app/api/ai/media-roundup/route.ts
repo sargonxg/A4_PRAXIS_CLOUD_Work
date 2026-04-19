@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { situationContextSchema } from '@/lib/api/schemas';
@@ -195,7 +195,12 @@ const DEMO_RESPONSE = {
 
 // --- Route ---
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('media_roundup', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json();
 
@@ -212,9 +217,7 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_media_roundup', 'Media roundup');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     // --- Contexts ---
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
@@ -223,7 +226,7 @@ export const POST = withAuth(async (request, user) => {
     // Web-grounded context is the PRIMARY data source for media roundup
     const [graphCtx, webCtx] = await Promise.all([
       situationId
-        ? buildGraphContext(user.uid, situationId, 'media_roundup').catch(() => '')
+        ? buildGraphContext(ctx.uid, situationId, 'media_roundup').catch(() => '')
         : Promise.resolve(''),
       situation
         ? buildWebGroundedContext(
@@ -233,10 +236,19 @@ export const POST = withAuth(async (request, user) => {
               actors: (situation as unknown as Situation).actors,
             },
             'media-roundup',
-            user.uid
+            ctx.uid
           ).catch(() => '')
         : Promise.resolve(''),
     ]);
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
 
     // --- AI generation ---
     const result = await callProModel({
@@ -247,7 +259,11 @@ Your mandate: synthesise the day's media coverage into a structured, actionable 
 
 GROUNDING MANDATE: Web intelligence provided below is your PRIMARY data source. Derive headlines, narrative shifts, and propaganda alerts from what the sources actually report. Where sources are insufficient, note the gap explicitly. Prioritise sources with high trustworthiness over state-controlled outlets. Always flag contradictions between sources.
 
-Apply Galtung's cultural violence lens to identify dehumanisation and structural narrative harm in propaganda alerts.`,
+Apply Galtung's cultural violence lens to identify dehumanisation and structural narrative harm in propaganda alerts.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
       prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${webCtx}
 
 Generate a Media Intelligence Roundup for today based on the web intelligence above.
@@ -265,7 +281,14 @@ Ground everything in the web intelligence provided. Be specific — name actual 
 
     // --- Persist ---
     if (situationId) {
-      await writeToolDataServer(user.uid, situationId, 'media_roundup', result.output as Record<string, unknown>);
+      await writeToolDataServer(ctx.uid, situationId, 'media_roundup', result.output as Record<string, unknown>);
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'media_roundup',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[media_roundup] saveToolOutput failed:', err));
     }
 
     return NextResponse.json(result.output);

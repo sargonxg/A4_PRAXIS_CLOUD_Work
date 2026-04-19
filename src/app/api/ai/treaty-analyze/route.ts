@@ -4,8 +4,8 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import type { Situation } from '@/types/situation';
 
@@ -93,7 +93,12 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('treaty_analyzer', 'ai_deep_think', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const { treatyText, conflictContext, situation } = await request.json() as {
       treatyText: string;
@@ -103,7 +108,7 @@ export const POST = withAuth(async (request, user) => {
     const sitContext = situation ? buildToolContext(situation) : '';
     const situationId = situation?.id ?? '';
     const graphCtx = situationId
-      ? await buildGraphContext(user.uid, situationId, 'treaty_analysis').catch(() => '')
+      ? await buildGraphContext(ctx.uid, situationId, 'treaty_analysis').catch(() => '')
       : '';
 
     // --- Demo mode ---
@@ -111,9 +116,16 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_treaty_analyze', 'Treaty analysis');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
 
     // --- AI analysis ---
     const contextPrefix = [graphCtx, sitContext].filter(Boolean).join('\n\n');
@@ -137,11 +149,22 @@ Then provide:
 - Prioritized recommendations for improving compliance and resolving ambiguities
 
 Reference comparable peace agreements and international legal standards where relevant.`,
-      system: 'You are a senior legal analyst specializing in peace agreement analysis, international humanitarian law, and compliance monitoring. Provide rigorous clause-by-clause analysis suitable for legal advisors, mediators, and senior diplomatic officials. Identify ambiguities that could be exploited and recommend specific remedial actions.',
+      system: `You are a senior legal analyst specializing in peace agreement analysis, international humanitarian law, and compliance monitoring. Provide rigorous clause-by-clause analysis suitable for legal advisors, mediators, and senior diplomatic officials. Identify ambiguities that could be exploited and recommend specific remedial actions.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
     });
 
     if (situationId) {
-      await writeToolDataServer(user.uid, situationId, 'treaty_analysis', result.output as Record<string, unknown>).catch(() => {});
+      await writeToolDataServer(ctx.uid, situationId, 'treaty_analysis', result.output as Record<string, unknown>).catch(() => {});
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'treaty_analyzer',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[treaty_analyzer] saveToolOutput failed:', err));
     }
 
     return NextResponse.json(result.output);

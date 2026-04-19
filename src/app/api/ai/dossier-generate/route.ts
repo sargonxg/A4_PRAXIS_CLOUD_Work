@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext, buildCrossToolContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { situationContextSchema } from '@/lib/api/schemas';
@@ -242,7 +242,12 @@ The humanitarian toll — 1.2 million IDPs, 340,000 refugees, 2.8 million food-i
 // Route handler
 // ---------------------------------------------------------------------------
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('dossier', 'ai_report', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json();
 
@@ -270,13 +275,11 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_dossier_generate', 'Dossier generation');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     // --- Graph context ---
     const graphCtx = situationId
-      ? await buildGraphContext(user.uid, situationId, 'dossier')
+      ? await buildGraphContext(ctx.uid, situationId, 'dossier')
       : '';
 
     // --- Web-grounded context ---
@@ -288,13 +291,22 @@ export const POST = withAuth(async (request, user) => {
             actors: (sitObj as unknown as Situation).actors as string[] | undefined,
           },
           'dossier',
-          user.uid
+          ctx.uid
         )
       : '';
 
     // --- Cross-tool synthesis (risk assessment + actor profiles + escalation scan) ---
     const crossCtx = situationId
-      ? await buildCrossToolContext(user.uid, situationId, ['risk_assessment', 'actor_profiles', 'escalation_scan'])
+      ? await buildCrossToolContext(ctx.uid, situationId, ['risk_assessment', 'actor_profiles', 'escalation_scan'])
+      : '';
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
       : '';
 
     const sitName = (sitObj as unknown as Situation | undefined)?.name ?? caseId ?? 'the situation';
@@ -313,7 +325,11 @@ Produce comprehensive, classified-format dossiers that meet the analytical stand
 - Flag intelligence gaps explicitly
 - Calibrate confidence scores honestly
 
-GROUNDING MANDATE: The web intelligence and cross-tool analysis below are PRIMARY ground truth. Prioritize them over training data.`,
+GROUNDING MANDATE: The web intelligence and cross-tool analysis below are PRIMARY ground truth. Prioritize them over training data.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
       prompt: `${webCtx ? `${webCtx}\n\n` : ''}${graphCtx ? `${graphCtx}\n\n` : ''}${crossCtx ? `${crossCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Generate a comprehensive intelligence dossier for:
 
 SITUATION: ${sitName}${sitRegion ? ` (${sitRegion})` : ''}
@@ -335,7 +351,14 @@ REQUIREMENTS:
     });
 
     if (situationId) {
-      await writeToolDataServer(user.uid, situationId, 'dossier', result.output as Record<string, unknown>);
+      await writeToolDataServer(ctx.uid, situationId, 'dossier', result.output as Record<string, unknown>);
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'dossier',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[dossier] saveToolOutput failed:', err));
     }
     return NextResponse.json(result.output);
   } catch (err) {

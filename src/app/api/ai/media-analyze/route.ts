@@ -1,7 +1,7 @@
 import { generateText, Output } from 'ai';
 import { getModel } from '@/lib/ai/providers';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { z } from 'zod';
 import type { Situation } from '@/types/situation';
@@ -24,7 +24,13 @@ const MediaAnalysisSchema = z.object({
   recommendedCrossReferences: z.array(z.string()).describe('Sources to cross-reference with this outlet'),
 });
 
-export const POST = withAuth(async (request: Request, user) => {
+export const POST = withCalibration('media_compass', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const src = typeof body.source === 'string' ? body.source : '';
+    const topic = typeof body.topic === 'string' ? body.topic : '';
+    return [src, topic].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const { source, topic, situation } = await request.json() as {
       source: string;
@@ -37,11 +43,18 @@ export const POST = withAuth(async (request: Request, user) => {
       return Response.json({ source, topic, assessment: DEMO_RESPONSE });
     }
 
-    const creditCheck = await checkAndDeductCredits('ai_media', 'Media analysis');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     const graphCtx = situationId
-      ? await buildGraphContext(user.uid, situationId, 'media_analysis').catch(() => '')
+      ? await buildGraphContext(ctx.uid, situationId, 'media_analysis').catch(() => '')
+      : '';
+
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
       : '';
 
     const basePrompt = `Analyze the media source "${source}" for a conflict/peace professional.
@@ -53,11 +66,24 @@ Provide a professional assessment of political orientation (-1 left to +1 right)
     const result = await generateText({
       model: getModel(),
       output: Output.object({ schema: MediaAnalysisSchema }),
+      system: `You are a senior media analyst evaluating source credibility for conflict/peace professionals.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
       prompt: fullPrompt,
     });
 
     if (situationId) {
-      await writeToolDataServer(user.uid, situationId, 'media_analysis', result.output as Record<string, unknown>).catch(() => {});
+      await writeToolDataServer(ctx.uid, situationId, 'media_analysis', result.output as Record<string, unknown>).catch(() => {});
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'media_compass',
+        profileVersion: provenance.profileVersion,
+        output: { source, topic, assessment: result.output },
+        metadata: { mode: 'single-source' },
+      }).catch((err) => console.warn('[media_analyze] saveToolOutput failed:', err));
     }
 
     return Response.json({ source, topic, assessment: result.output });

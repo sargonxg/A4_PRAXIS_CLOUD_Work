@@ -2,8 +2,8 @@ import { streamText } from 'ai';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 120;
@@ -104,7 +104,13 @@ The GoN's external patron is **Karovia**, which provides military equipment, log
 **60-SECOND ELEVATOR BRIEF:**
 The Government of Nordalia under President Osei is at an inflection point between negotiation and escalation, with the recent appointment of hardliner General Mensah as Defence Minister signalling that the military faction is ascendant. The GoN's stated position — disarmament before dialogue — is a maximalist opening; their actual interest is regime survival and control of eastern resource revenues. Your strongest levers are the fiscal crisis (36.4% currency depreciation) and indirect pressure through Karovia, whose military support the GoN cannot survive without. The GoN's commitment record is poor — 47 ceasefire violations and deteriorating UNMN cooperation — but the successful prisoner exchange shows back-channel functionality remains intact. Approach with sovereignty acknowledgement, pivot to economic pragmatism, and avoid the election legitimacy trap. The window is 60-90 days before military dynamics could overtake the political track.`;
 
-export const POST = withAuth(async (request: Request) => {
+export const POST = withCalibration('actor_profiles', 'ai_report', {
+  retrievalQuery: (_req, body) => {
+    const a = typeof body.actorName === 'string' ? body.actorName : '';
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [a, s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const { actorName, situationId, situationContext, meetingContext, situation } = await request.json() as {
       actorName: string;
@@ -127,16 +133,35 @@ export const POST = withAuth(async (request: Request) => {
       return formatAsStreamResponse(DEMO_BRIEF);
     }
 
-    // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_actor_brief', 'Actor brief generation');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
+
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
+    const calibrationSuffix = `\n\n${systemPromptBlock}\n\nCalibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`;
 
     // --- Stream the brief ---
     // Intentionally uses getProModel() directly: this is a streamText route (not generateText)
     // and callProModel only wraps generateText. Pro is preferred for long-form streaming output.
     const result = streamText({
       model: getProModel(),
-      system: sitContext ? `${sitContext}\n\n${ACTOR_BRIEF_SYSTEM_PROMPT}` : ACTOR_BRIEF_SYSTEM_PROMPT,
+      system: (sitContext ? `${sitContext}\n\n${ACTOR_BRIEF_SYSTEM_PROMPT}` : ACTOR_BRIEF_SYSTEM_PROMPT) + calibrationSuffix,
+      onFinish: async ({ text }) => {
+        if (situationId && ctx.uid) {
+          await saveToolOutput({
+            uid: ctx.uid,
+            situationId,
+            toolId: 'actor_profiles',
+            profileVersion: provenance.profileVersion,
+            output: { actorName, brief: text, meetingContext },
+            metadata: { variant: 'actor-brief' },
+          }).catch((err) => console.warn('[actor_brief] saveToolOutput failed:', err));
+        }
+      },
       messages: [
         {
           role: 'user',

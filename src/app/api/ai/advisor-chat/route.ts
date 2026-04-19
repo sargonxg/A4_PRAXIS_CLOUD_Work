@@ -3,8 +3,8 @@ import type { ModelMessage } from 'ai';
 import { getModel, getProModel } from '@/lib/ai/providers';
 import { webSearch } from '@/lib/ai/tools';
 import { buildToolContext } from '@/lib/ai/situation-context';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import type { WebSearchResult } from '@/lib/ai/firecrawl';
 import type { Situation } from '@/types/situation';
@@ -51,7 +51,13 @@ const DEEP_ANALYSIS_SUFFIX = `
 
 You are operating in DEEP ANALYSIS mode. Provide an in-depth, multi-paragraph analysis (6-10 paragraphs). Draw on specific analytical frameworks, cite relevant data sources and databases by name, and include specific policy recommendations with implementation timelines. Structure your response with clear sections. Where relevant, note areas of uncertainty and competing interpretations. This is a premium analysis — be thorough, precise, and actionable.`;
 
-export const POST = withAuth(async (request: Request, _user) => {
+export const POST = withCalibration('advisory', 'ai_chat', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    const advisorId = typeof body.advisorId === 'string' ? body.advisorId : '';
+    return [s?.name, s?.region, advisorId].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   if (isServerDemoMode()) {
     return formatAsStreamResponse('**Demo Mode** — This analysis requires a live AI connection. Set GOOGLE_AI_API_KEY in your environment to enable it.');
   }
@@ -81,11 +87,22 @@ export const POST = withAuth(async (request: Request, _user) => {
       advisorResponses?: Array<{ advisorName: string; response: string }>;
     };
 
+    const situationId = (situation as Situation | undefined)?.id ?? '';
+
+    // --- Calibrated system prompt additions ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
+    const calibrationSuffix = `\n\n${systemPromptBlock}\n\nCalibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`;
+
+    // Credits + profile gate already handled by withCalibration above.
+
     // --- Panel Summary handler ---
     if (action === 'panelSummary' && advisorResponses) {
-      const creditCheck = await checkAndDeductCredits('ai_advisor_chat', 'Advisory panel summary');
-      if (!creditCheck.allowed) return creditCheck.response;
-
       const sitCtx = situation ? buildToolContext(situation as unknown as Situation) : '';
       const responsesText = advisorResponses
         .map((r) => `### ${r.advisorName}\n${r.response}`)
@@ -95,7 +112,19 @@ export const POST = withAuth(async (request: Request, _user) => {
       // callProModel (which only wraps generateText). Pro gives better synthesis quality.
       const result = streamText({
         model: getProModel(),
-        system: `You are a senior synthesis analyst for PRAXIS. Synthesize multiple expert advisor inputs into a coherent policy brief. Identify consensus, contested areas, and minority views. Be concise and actionable. ${sitCtx}`,
+        system: `You are a senior synthesis analyst for PRAXIS. Synthesize multiple expert advisor inputs into a coherent policy brief. Identify consensus, contested areas, and minority views. Be concise and actionable. ${sitCtx}${calibrationSuffix}`,
+        onFinish: async ({ text }) => {
+          if (situationId && ctx.uid) {
+            await saveToolOutput({
+              uid: ctx.uid,
+              situationId,
+              toolId: 'advisory',
+              profileVersion: provenance.profileVersion,
+              output: { action: 'panelSummary', synthesis: text, advisorResponses },
+              metadata: { action: 'panelSummary' },
+            }).catch((err) => console.warn('[advisory/panel] saveToolOutput failed:', err));
+          }
+        },
         prompt: `Synthesize the following expert advisor inputs into a structured advisory panel brief:
 
 ${responsesText}
@@ -124,9 +153,6 @@ Be specific. Reference advisors by name when attributing views.`,
       const persona = ADVISOR_PERSONAS[advisorId];
       if (!persona) return new Response(JSON.stringify({ error: 'Unknown advisor' }), { status: 400 });
 
-      const creditCheck = await checkAndDeductCredits('ai_advisor_chat', "Devil's advocacy analysis");
-      if (!creditCheck.allowed) return creditCheck.response;
-
       const sitCtx = situation ? buildToolContext(situation as Situation) : '';
       const userQuestion = Array.isArray(messages) && messages.length > 0
         ? (messages[messages.length - 1] as { content: string }).content
@@ -135,10 +161,22 @@ Be specific. Reference advisors by name when attributing views.`,
       // Intentionally uses getProModel() directly: streamText route, callProModel wraps generateText only.
       const result = streamText({
         model: getProModel(),
-        system: `${persona}\n\nYou are operating in DEVIL'S ADVOCATE mode. Your job is to vigorously challenge the conventional wisdom and surface uncomfortable counterarguments. You believe the dominant analysis is missing something important. Challenge assumptions, highlight evidence that cuts against the consensus, and propose alternative interpretations — even if they make people uncomfortable. Be specific, evidence-based, and constructive in your contrarianism. ${sitCtx}`,
+        system: `${persona}\n\nYou are operating in DEVIL'S ADVOCATE mode. Your job is to vigorously challenge the conventional wisdom and surface uncomfortable counterarguments. You believe the dominant analysis is missing something important. Challenge assumptions, highlight evidence that cuts against the consensus, and propose alternative interpretations — even if they make people uncomfortable. Be specific, evidence-based, and constructive in your contrarianism. ${sitCtx}${calibrationSuffix}`,
         messages: (messages ?? []) as ModelMessage[],
         tools: { webSearch },
         stopWhen: stepCountIs(1),
+        onFinish: async ({ text }) => {
+          if (situationId && ctx.uid) {
+            await saveToolOutput({
+              uid: ctx.uid,
+              situationId,
+              toolId: 'advisory',
+              profileVersion: provenance.profileVersion,
+              output: { action: 'devilsAdvocacy', advisorId, response: text },
+              metadata: { action: 'devilsAdvocacy', advisorId },
+            }).catch((err) => console.warn('[advisory/devils] saveToolOutput failed:', err));
+          }
+        },
       });
 
       // suppress unused warning — userQuestion is available for future prompt use
@@ -148,11 +186,6 @@ Be specific. Reference advisors by name when attributing views.`,
     }
 
     // --- Standard chat / deep analysis flow ---
-    const creditType = deepAnalysis ? 'ai_advisor_deep' : 'ai_advisor_chat';
-    const creditDesc = deepAnalysis ? 'Advisory deep analysis' : 'Advisory chat';
-    const creditCheck = await checkAndDeductCredits(creditType, creditDesc);
-    if (!creditCheck.allowed) return creditCheck.response;
-
     const persona = ADVISOR_PERSONAS[advisorId ?? ''];
     if (!persona) {
       return new Response(JSON.stringify({ error: 'Unknown advisor' }), { status: 400 });
@@ -179,7 +212,7 @@ Be specific. Reference advisors by name when attributing views.`,
 
 You are operating within PRAXIS, TACITUS's conflict intelligence platform. You are being consulted by a diplomatic professional, political affairs officer, or conflict analyst. Give substantive, expert guidance grounded in your specific expertise. Do not be vague or generic. Reference specific frameworks, data sources, and professional best practices from your field. Maintain your distinct voice and perspective throughout.
 
-You have access to a web search tool. Use it only when the user asks about current events, recent data, or specific statistics that you cannot answer from your knowledge. Do not search for general conceptual questions. Cite sources when you use search results. Keep responses focused and non-repetitive — do not repeat information already provided in the conversation.${deepAnalysis ? DEEP_ANALYSIS_SUFFIX : ''}${situation ? `\n\n## Active Situation Context\n${buildToolContext(situation as unknown as Situation)}` : ''}`;
+You have access to a web search tool. Use it only when the user asks about current events, recent data, or specific statistics that you cannot answer from your knowledge. Do not search for general conceptual questions. Cite sources when you use search results. Keep responses focused and non-repetitive — do not repeat information already provided in the conversation.${deepAnalysis ? DEEP_ANALYSIS_SUFFIX : ''}${situation ? `\n\n## Active Situation Context\n${buildToolContext(situation as unknown as Situation)}` : ''}${calibrationSuffix}`;
 
     // Intentionally uses getProModel() directly: streamText route, callProModel wraps generateText only.
     const model = deepAnalysis ? getProModel() : getModel();
@@ -190,6 +223,18 @@ You have access to a web search tool. Use it only when the user asks about curre
       messages: (messages ?? []) as ModelMessage[],
       tools: { webSearch },
       stopWhen: stepCountIs(1),
+      onFinish: async ({ text }) => {
+        if (situationId && ctx.uid) {
+          await saveToolOutput({
+            uid: ctx.uid,
+            situationId,
+            toolId: 'advisory',
+            profileVersion: provenance.profileVersion,
+            output: { action: 'chat', advisorId, deepAnalysis: Boolean(deepAnalysis), response: text },
+            metadata: { action: 'chat', advisorId, deepAnalysis: Boolean(deepAnalysis) },
+          }).catch((err) => console.warn('[advisory/chat] saveToolOutput failed:', err));
+        }
+      },
     });
 
     return result.toTextStreamResponse();

@@ -3,8 +3,8 @@ import { Output } from 'ai';
 import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
-import { withAuth } from '@/lib/api/with-auth';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { searchWeb } from '@/lib/ai/firecrawl';
@@ -72,7 +72,12 @@ const DEFAULT_MONITORED_SOURCES = [
 // POST handler
 // ---------------------------------------------------------------------------
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('source_monitor', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json() as {
       situation?: Situation;
@@ -86,11 +91,19 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    const creditCheck = await checkAndDeductCredits('ai_media_scan', 'Source monitor scan');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     const sitCtx = situation ? buildToolContext(situation) : '';
     const sitName = situation?.name || 'the situation';
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
     const year = new Date().getFullYear();
 
     const sources = customSources && customSources.length > 0
@@ -143,13 +156,24 @@ For source health: aggregate per-source statistics from the scan results.
 For recommended new sources: based on what's missing in coverage, name 2-3 sources that should be added.
 
 scanTimestamp: "${new Date().toISOString()}"`,
-      system: 'You are the PRAXIS Source Monitor, an automated intelligence tracking system. Evaluate publication relevance, source credibility, and coverage gaps for conflict analysts. Produce actionable alerts with precise relevance and reliability assessments.',
+      system: `You are the PRAXIS Source Monitor, an automated intelligence tracking system. Evaluate publication relevance, source credibility, and coverage gaps for conflict analysts. Produce actionable alerts with precise relevance and reliability assessments.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
     });
 
-    if (situationId && user.uid) {
-      await writeToolDataServer(user.uid, situationId, 'media_scan', result.output as Record<string, unknown>).catch(
+    if (situationId && ctx.uid) {
+      await writeToolDataServer(ctx.uid, situationId, 'media_scan', result.output as Record<string, unknown>).catch(
         (err) => console.error('[media-scan] persist failed:', err),
       );
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'source_monitor',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[source_monitor] saveToolOutput failed:', err));
     }
     return NextResponse.json(result.output);
   } catch (err) {

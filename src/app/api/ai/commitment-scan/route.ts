@@ -5,9 +5,9 @@ import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 45;
@@ -119,21 +119,34 @@ const DEMO_RESPONSE = {
   analysis: 'The compliance landscape reflects a pattern of selective implementation: economic commitments with third-party oversight show high compliance, while commitments requiring unilateral political restraint are systematically violated. Priority: invoke UNMN monitoring mandate for ceasefire violations; activate OCHA escalation mechanism for access blockages; refer journalist detentions to HRC.',
 };
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('commitments', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    const creditCheck = await checkAndDeductCredits('ai_commitment_scan', 'Commitment compliance scan');
-    if (!creditCheck.allowed) return creditCheck.response!;
+    // Credits + profile gate already handled by withCalibration above.
 
     const body = await request.json();
     const { situation } = body as { situation?: Situation };
     const situationId = (situation as Situation | undefined)?.id ?? '';
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
     const graphCtx = situationId
-      ? await buildGraphContext(user.uid, situationId, 'commitment_scan').catch(() => '')
+      ? await buildGraphContext(ctx.uid, situationId, 'commitment_scan').catch(() => '')
+      : '';
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
       : '';
 
     const result = await callProModel({
@@ -173,13 +186,24 @@ Flag as critical violations if they:
 - Are subject to UNSC Council authority or reporting obligations
 
 Generate 3-6 commitments relevant to this specific situation. Be specific about monitoring bodies, violation evidence, and compliance scores. Do not generate generic or placeholder commitments.`,
-      system: 'You are a senior UN DPPA compliance officer and political affairs analyst specializing in agreement monitoring and implementation oversight. You have extensive experience tracking commitment compliance in UN-mediated peace processes, applying OCHA humanitarian access monitoring protocols, and drafting reports for the Security Council. Produce precise, evidence-grounded assessments.',
+      system: `You are a senior UN DPPA compliance officer and political affairs analyst specializing in agreement monitoring and implementation oversight. You have extensive experience tracking commitment compliance in UN-mediated peace processes, applying OCHA humanitarian access monitoring protocols, and drafting reports for the Security Council. Produce precise, evidence-grounded assessments.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
     });
 
     if (situationId) {
-      await writeToolDataServer(user.uid, situationId, 'commitment_scan', result.output as Record<string, unknown>).catch(
+      await writeToolDataServer(ctx.uid, situationId, 'commitment_scan', result.output as Record<string, unknown>).catch(
         (err) => console.error('[commitment-scan] persist failed:', err),
       );
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'commitments',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[commitments] saveToolOutput failed:', err));
     }
     return NextResponse.json(result.output);
   } catch (err) {

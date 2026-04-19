@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import type { Situation } from '@/types/situation';
@@ -228,7 +228,12 @@ const DEMO_RESPONSE = {
 // Route handler
 // ---------------------------------------------------------------------------
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('geospatial', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json();
 
@@ -250,13 +255,11 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_risk_assessment', 'Geospatial analysis');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     // --- Graph context ---
     const graphCtx = situationId
-      ? await buildGraphContext(user.uid, situationId, 'risk_assessment')
+      ? await buildGraphContext(ctx.uid, situationId, 'risk_assessment')
       : '';
 
     // --- Web-grounded context ---
@@ -268,8 +271,17 @@ export const POST = withAuth(async (request, user) => {
             actors: (situation as Situation).actors,
           },
           'geospatial',
-          user.uid
+          ctx.uid
         )
+      : '';
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
       : '';
 
     // --- AI analysis ---
@@ -279,7 +291,11 @@ export const POST = withAuth(async (request, user) => {
 
 GROUNDING MANDATE: Use the web intelligence below as your PRIMARY source of truth for locations, population figures, infrastructure status, and movement data. Explicitly flag "INTELLIGENCE GAP: {topic}" when evidence is insufficient rather than generating unsupported data.
 
-Apply OCHA access classification standards for zone typing. Use UNHCR/IOM figures for population movements. Cross-reference infrastructure damage with WHO Health Cluster, WASH Cluster, and UNDP recovery reports when cited in the web context.`,
+Apply OCHA access classification standards for zone typing. Use UNHCR/IOM figures for population movements. Cross-reference infrastructure damage with WHO Health Cluster, WASH Cluster, and UNDP recovery reports when cited in the web context.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
       prompt: `${webCtx ? `${webCtx}\n\n` : ''}${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Conduct a comprehensive geospatial conflict analysis for this situation.
 
 ${conflictContext ? `ADDITIONAL CONTEXT: ${conflictContext}` : ''}
@@ -328,11 +344,18 @@ Use OCHA/UNHCR/ACLED/WHO as authoritative sources. Cite specific figures from th
 
     if (situationId) {
       await writeToolDataServer(
-        user.uid,
+        ctx.uid,
         situationId,
         'geospatial',
         result.output as Record<string, unknown>
       );
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'geospatial',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[geospatial] saveToolOutput failed:', err));
     }
 
     return NextResponse.json(result.output);

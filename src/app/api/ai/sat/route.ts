@@ -4,8 +4,8 @@ import { z } from 'zod';
 import { getThinkingModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { handleRouteError } from '@/lib/api/standard-error';
 import type { Situation } from '@/types/situation';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
@@ -82,7 +82,13 @@ const SAT_CONFIGS = {
 // POST handler
 // ---------------------------------------------------------------------------
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('advisory', 'ai_deep_think', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    const t = typeof body.toolName === 'string' ? body.toolName : '';
+    return [s?.name, s?.region, t].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json() as {
       satType: 'challenge' | 'assumptions' | 'red_team' | 'competing_hypotheses';
@@ -101,13 +107,20 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    const creditCheck = await checkAndDeductCredits('ai_sat', 'SAT analysis');
-    if (!creditCheck.allowed) return creditCheck.response!;
+    // Credits + profile gate already handled by withCalibration above.
 
     const sitContext = situation ? buildToolContext(situation) : '';
     const situationId = situation?.id ?? '';
     const graphCtx = situationId
-      ? await buildGraphContext(user.uid, situationId, 'sat').catch(() => '')
+      ? await buildGraphContext(ctx.uid, situationId, 'sat').catch(() => '')
+      : '';
+
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
       : '';
 
     const satConfig = SAT_CONFIGS[satType];
@@ -129,11 +142,23 @@ ${satConfig.instruction}
 Apply this SAT rigorously. The goal is NOT to confirm the original assessment but to stress-test it and surface analytical vulnerabilities. Be intellectually honest: if the assessment holds up well under scrutiny, say so, but still identify its weakest points. If it has serious problems, be explicit.
 
 satType in your output: "${satType}"`,
-      system: 'You are a senior intelligence analyst specializing in Structured Analytical Techniques (SATs) and cognitive bias mitigation. You apply rigorous analytical frameworks to challenge, test, and improve intelligence assessments. Your work is used by UN Political Affairs Officers and diplomatic professionals. Never simply validate the original assessment — your value lies in finding what it misses, assumes, or gets wrong.',
+      system: `You are a senior intelligence analyst specializing in Structured Analytical Techniques (SATs) and cognitive bias mitigation. You apply rigorous analytical frameworks to challenge, test, and improve intelligence assessments. Your work is used by UN Political Affairs Officers and diplomatic professionals. Never simply validate the original assessment — your value lies in finding what it misses, assumes, or gets wrong.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
     });
 
-    if (situationId && user.uid) {
-      await writeToolDataServer(user.uid, situationId, `sat_${satType}`, result.output as Record<string, unknown>).catch(console.error);
+    if (situationId && ctx.uid) {
+      await writeToolDataServer(ctx.uid, situationId, `sat_${satType}`, result.output as Record<string, unknown>).catch(console.error);
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'advisory',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+        metadata: { sat: satType, sourceToolName: toolName },
+      }).catch((err) => console.warn('[sat] saveToolOutput failed:', err));
     }
 
     return NextResponse.json(result.output);

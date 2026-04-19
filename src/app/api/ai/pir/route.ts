@@ -6,7 +6,8 @@ import { buildToolContext } from '@/lib/ai/situation-context';
 import { buildGraphContext } from '@/lib/ai/context-builder-server';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { withAuth } from '@/lib/api/with-auth';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { handleRouteError } from '@/lib/api/standard-error';
 import type { Situation } from '@/types/situation';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
@@ -80,7 +81,13 @@ export const GET = withAuth(async (request, user) => {
 // POST — create a new PIR, or answer existing PIRs
 // ---------------------------------------------------------------------------
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('pir', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    const q = typeof body.question === 'string' ? body.question : '';
+    return [s?.name, s?.region, q].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json() as {
       action: 'create' | 'answer' | 'delete';
@@ -101,7 +108,7 @@ export const POST = withAuth(async (request, user) => {
 
     const db = getAdminDbOrThrow();
     const pirsRef = db
-      .collection('users').doc(user.uid)
+      .collection('users').doc(ctx.uid)
       .collection('situations').doc(situationId)
       .collection('pirs');
 
@@ -132,8 +139,7 @@ export const POST = withAuth(async (request, user) => {
         return NextResponse.json(DEMO_RESPONSE);
       }
 
-      const creditCheck = await checkAndDeductCredits('ai_pir', 'PIR answer generation');
-      if (!creditCheck.allowed) return creditCheck.response!;
+      // Credits + profile gate already handled by withCalibration above.
 
       // Fetch the PIRs to answer
       const pirIds = body.pirIds ?? [];
@@ -150,7 +156,15 @@ export const POST = withAuth(async (request, user) => {
       // Build context
       const { situation } = body;
       const sitContext = situation ? buildToolContext(situation) : '';
-      const graphCtx = await buildGraphContext(user.uid, situationId, 'pir').catch(() => '');
+      const graphCtx = await buildGraphContext(ctx.uid, situationId, 'pir').catch(() => '');
+
+      const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+      const langDirective = outputConstraints.language !== 'en'
+        ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+        : '';
+      const redLineDirective = outputConstraints.redLineClauses.length
+        ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+        : '';
 
       const pirList = pirs.map((p, i) =>
         `PIR ${i + 1} [ID: ${p.id}] [${p.priority.toUpperCase()}] [${p.category}]\nQuestion: ${p.question}`
@@ -171,7 +185,11 @@ For each PIR:
 5. Specify concrete collection tasks to fill gaps
 
 The answer should be actionable and directly address what the analyst needs to know. Do not hedge excessively — give the best assessment the evidence supports.`,
-        system: 'You are a senior intelligence officer answering Priority Intelligence Requirements for conflict analysts and diplomatic staff. Provide direct, evidence-grounded answers with calibrated confidence and specific collection guidance.',
+        system: `You are a senior intelligence officer answering Priority Intelligence Requirements for conflict analysts and diplomatic staff. Provide direct, evidence-grounded answers with calibrated confidence and specific collection guidance.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
       });
 
       // Persist answers back to Firestore
@@ -186,6 +204,14 @@ The answer should be actionable and directly address what the analyst needs to k
           }).catch(() => { /* non-critical */ })
         )
       );
+
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'pir',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[pir] saveToolOutput failed:', err));
 
       return NextResponse.json(result.output);
     }

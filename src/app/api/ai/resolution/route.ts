@@ -2,14 +2,20 @@ import { streamText } from 'ai';
 import { getModel } from '@/lib/ai/providers';
 import { UN_STYLE_PROMPT } from '@/lib/ai/prompts/un-style';
 import { buildToolContext } from '@/lib/ai/situation-context';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import type { Situation } from '@/types/situation';
 import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 
 export const maxDuration = 120;
 
-export const POST = withAuth(async (request, _user) => {
+export const POST = withCalibration('un_toolkit', 'ai_report', {
+  retrievalQuery: (_req, body) => {
+    const t = typeof body.topic === 'string' ? body.topic : '';
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [t, s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   if (isServerDemoMode()) {
     return formatAsStreamResponse('**Demo Mode** — This analysis requires a live AI connection. Set GOOGLE_AI_API_KEY in your environment to enable it.');
   }
@@ -31,8 +37,16 @@ export const POST = withAuth(async (request, _user) => {
       situation?: Situation;
     };
 
-    const creditCheck = await checkAndDeductCredits('ai_resolution', 'Resolution drafting');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
+
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
+    const situationId = situation?.id ?? '';
 
     // Build situation context block — grounds the resolution in the active conflict
     const sitContext = situation ? buildToolContext(situation) : '';
@@ -65,7 +79,23 @@ export const POST = withAuth(async (request, _user) => {
 
     const result = streamText({
       model: getModel(),
-      system: UN_STYLE_PROMPT,
+      system: `${UN_STYLE_PROMPT}
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
+      onFinish: async ({ text }) => {
+        if (situationId && ctx.uid) {
+          await saveToolOutput({
+            uid: ctx.uid,
+            situationId,
+            toolId: 'un_toolkit',
+            profileVersion: provenance.profileVersion,
+            output: { topic, type, strength, keyPoints, resolution: text },
+            metadata: { variant: 'resolution' },
+          }).catch((err) => console.warn('[resolution] saveToolOutput failed:', err));
+        }
+      },
       messages: [
         {
           role: 'user',

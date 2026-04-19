@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import type { Situation } from '@/types/situation';
@@ -149,7 +149,13 @@ const DEMO_RESPONSE_GROUNDED = {
 
 // ── Route handler ─────────────────────────────────────────────────────────────
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('sanctions', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    const ents = Array.isArray(body.entities) ? (body.entities as string[]).slice(0, 5).join(', ') : '';
+    return [s?.name, s?.region, ents].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json() as {
       entities?: string[];
@@ -166,23 +172,34 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json(grounded ? DEMO_RESPONSE_GROUNDED : DEMO_RESPONSE_SCAN);
     }
 
-    // ── Credit check ───────────────────────────────────────────────────────────
-    const creditCheck = await checkAndDeductCredits('ai_sanctions_scan', grounded ? 'Sanctions analysis' : 'Sanctions scan');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
 
     if (grounded) {
       // ── Grounded comprehensive regime analysis (absorbed from sanctions route) ──
-      const graphCtx = situationId ? await buildGraphContext(user.uid, situationId, 'sanctions') : '';
+      const graphCtx = situationId ? await buildGraphContext(ctx.uid, situationId, 'sanctions') : '';
       const webCtx = situation
         ? await buildWebGroundedContext(
             { name: situation.name, region: situation.region, actors: situation.actors },
-            'sanctions', user.uid
+            'sanctions', ctx.uid
           )
         : '';
 
       const result = await callProModel({
         output: Output.object({ schema: SanctionsGroundedSchema }),
-        system: 'You are a senior sanctions analyst specializing in conflict-related sanctions regimes, international humanitarian law compliance, and coercive diplomacy. You have deep expertise in UNSC sanctions architecture, OFAC, EU restrictive measures, and AU frameworks. Provide rigorous, evidence-grounded analysis for senior diplomatic and legal professionals. Always cite specific sanctions instruments, committee decisions, and Panel of Experts findings.',
+        system: `You are a senior sanctions analyst specializing in conflict-related sanctions regimes, international humanitarian law compliance, and coercive diplomacy. You have deep expertise in UNSC sanctions architecture, OFAC, EU restrictive measures, and AU frameworks. Provide rigorous, evidence-grounded analysis for senior diplomatic and legal professionals. Always cite specific sanctions instruments, committee decisions, and Panel of Experts findings.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
         prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${webCtx}
 Conduct a comprehensive sanctions landscape analysis for this conflict situation.
 
@@ -197,7 +214,16 @@ Assess:
 Quantify effectiveness (0–10) based on observed target behaviour change. Cite web intelligence for current sanctions status and evasion documentation. Flag where intelligence gaps constrain assessment.`,
       });
 
-      if (situationId) await writeToolDataServer(user.uid, situationId, 'sanctions', result.output as Record<string, unknown>);
+      if (situationId) {
+        await writeToolDataServer(ctx.uid, situationId, 'sanctions', result.output as Record<string, unknown>);
+        await saveToolOutput({
+          uid: ctx.uid,
+          situationId,
+          toolId: 'sanctions',
+          profileVersion: provenance.profileVersion,
+          output: result.output as Record<string, unknown>,
+        }).catch((err) => console.warn('[sanctions] saveToolOutput failed:', err));
+      }
       return NextResponse.json(result.output);
     }
 
@@ -228,8 +254,22 @@ Then provide:
 - A risk assessment covering evasion risks, compliance gaps, and monitoring recommendations
 
 Cover UNSC, US (OFAC), EU, and any relevant regional sanctions regimes.`,
-      system: 'You are a senior sanctions compliance analyst specializing in conflict-related sanctions regimes. Provide rigorous analysis for diplomatic and legal professionals. Always cite specific sanctions instruments, committee decisions, and enforcement actions.',
+      system: `You are a senior sanctions compliance analyst specializing in conflict-related sanctions regimes. Provide rigorous analysis for diplomatic and legal professionals. Always cite specific sanctions instruments, committee decisions, and enforcement actions.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
     });
+
+    if (situationId) {
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'sanctions',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[sanctions] saveToolOutput failed:', err));
+    }
 
     return NextResponse.json(result.output);
   } catch (err) {

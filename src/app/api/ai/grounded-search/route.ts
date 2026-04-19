@@ -1,11 +1,15 @@
 import { conductResearch } from '@/lib/ai/research-engine';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
 
 export const maxDuration = 60;
 
-export const POST = withAuth(async (request: Request) => {
+export const POST = withCalibration('deep_research', 'ai_chat', {
+  retrievalQuery: (_req, body) => {
+    const ctxStr = typeof body.conflictContext === 'string' ? body.conflictContext : '';
+    return ctxStr || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const { messages, conflictContext } = await request.json();
 
@@ -24,9 +28,10 @@ export const POST = withAuth(async (request: Request) => {
       );
     }
 
-    // --- Live mode: check credits before making AI call ---
-    const creditCheck = await checkAndDeductCredits('ai_grounded_search', 'Grounded search');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
+
+    // Calibration context is injected via profile-version provenance on downstream persistence.
+    void ctx.calibration.systemPromptBlock;
 
     // Extract user query from last message
     const lastMessage = messages?.[messages.length - 1];

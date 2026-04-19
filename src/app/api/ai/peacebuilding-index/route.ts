@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { situationContextSchema } from '@/lib/api/schemas';
@@ -108,7 +108,12 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('peacebuilding_index', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json();
     const requestSchema = z.object({ situation: situationContextSchema.optional() });
@@ -119,20 +124,32 @@ export const POST = withAuth(async (request, user) => {
     const situationId = (situation as Situation | undefined)?.id ?? '';
 
     if (isServerDemoMode()) return NextResponse.json(DEMO_RESPONSE);
-    const creditCheck = await checkAndDeductCredits('ai_peacebuilding_index', 'Peacebuilding index');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
-    const graphCtx = situationId ? await buildGraphContext(user.uid, situationId, 'peacebuilding_index') : '';
+    const graphCtx = situationId ? await buildGraphContext(ctx.uid, situationId, 'peacebuilding_index') : '';
     const webCtx = situation
       ? await buildWebGroundedContext(
           { name: (situation as unknown as Situation).name, region: (situation as unknown as Situation).region, actors: (situation as unknown as Situation).actors },
-          'peacebuilding-index', user.uid
+          'peacebuilding-index', ctx.uid
         )
+      : '';
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
       : '';
 
     const result = await callProModel({
       output: Output.object({ schema: PeacebuildingIndexSchema }),
-      system: 'You are a peacebuilding expert applying UN Peacebuilding Commission methodology and World Bank FCV framework. Score each pillar rigorously using observable indicators, not aspirational assessments.',
+      system: `You are a peacebuilding expert applying UN Peacebuilding Commission methodology and World Bank FCV framework. Score each pillar rigorously using observable indicators, not aspirational assessments.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
       prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${webCtx}
 Score all 6 peacebuilding pillars (0-10 each) and compute a composite score (0-100, equally weighted).
 
@@ -143,7 +160,16 @@ For each pillar: list 3+ observable indicators with source citations, score 0-10
 Compare composite score to similar post-conflict countries at equivalent conflict stage. Identify the 3 highest-priority pillars to address first. Cite sources from web intelligence for all indicators.`,
     });
 
-    if (situationId) await writeToolDataServer(user.uid, situationId, 'peacebuilding-index', result.output as Record<string, unknown>);
+    if (situationId) {
+      await writeToolDataServer(ctx.uid, situationId, 'peacebuilding-index', result.output as Record<string, unknown>);
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'peacebuilding_index',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[peacebuilding_index] saveToolOutput failed:', err));
+    }
     return NextResponse.json(result.output);
   } catch (err) {
     return handleRouteError(err, 'peacebuilding-index');

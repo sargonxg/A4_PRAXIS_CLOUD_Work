@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import { writeToolDataServer } from '@/lib/ai/context-builder-server';
 import type { Situation } from '@/types/situation';
@@ -68,7 +68,13 @@ const DEMO_RESPONSE = {
   assessment: 'The Government of Nordalia is at a critical inflection point. The cabinet reshuffle, increased Karovian military cooperation, and restrictions on UNMN access collectively suggest preparation for a potential military escalation if the political track does not produce results within 60-90 days. However, the GoN faces significant constraints: fiscal pressure from the currency depreciation (36.4% since March 2024), international legitimacy concerns, and uncertain military capacity for sustained operations in eastern terrain. The most likely trajectory is continued brinkmanship — using the threat of military action to extract concessions in the AU-mediated process — rather than an actual offensive. Confidence: Medium. Key uncertainty: internal GoN decision-making dynamics between Osei and the AFN command.',
 };
 
-export const POST = withAuth(async (request: Request, user) => {
+export const POST = withCalibration('actor_profiles', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const a = typeof body.actorName === 'string' ? body.actorName : '';
+    const s = body.situation as { name?: string } | undefined;
+    return [a, s?.name].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const { actorName, actorType, conflictContext, situation } = await request.json() as {
       actorName: string;
@@ -83,9 +89,7 @@ export const POST = withAuth(async (request: Request, user) => {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_actor_enrichment', 'Actor enrichment');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     // --- Web search ---
     const searchResults = await searchWeb(
@@ -93,6 +97,14 @@ export const POST = withAuth(async (request: Request, user) => {
       { numResults: 5 }
     );
     const webContext = formatResultsAsContext(searchResults);
+
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
 
     // --- AI analysis ---
     const result = await generateText({
@@ -114,12 +126,24 @@ Provide:
 4. An overall intelligence assessment of their trajectory, intentions, and likely next moves
 
 Use calibrated confidence language. Distinguish between confirmed reporting and analytical inference.`,
-      system: 'You are a senior conflict intelligence analyst at a major international crisis monitoring organization. Provide rigorous actor profiling for diplomatic and security professionals. Always attribute claims to sources and calibrate confidence.',
+      system: `You are a senior conflict intelligence analyst at a major international crisis monitoring organization. Provide rigorous actor profiling for diplomatic and security professionals. Always attribute claims to sources and calibrate confidence.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
     });
 
     const situationId = situation?.id ?? '';
-    if (situationId && user.uid) {
-      await writeToolDataServer(user.uid, situationId, 'actor_enrichment', result.output as Record<string, unknown>).catch(console.error);
+    if (situationId && ctx.uid) {
+      await writeToolDataServer(ctx.uid, situationId, 'actor_enrichment', result.output as Record<string, unknown>).catch(console.error);
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'actor_profiles',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+        metadata: { variant: 'actor-enrichment', actorName, actorType },
+      }).catch((err) => console.warn('[actor_enrichment] saveToolOutput failed:', err));
     }
 
     return NextResponse.json(result.output);

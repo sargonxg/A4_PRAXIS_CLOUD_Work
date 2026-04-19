@@ -1,7 +1,6 @@
 import { generateText, Output } from 'ai';
 import { getModel } from '@/lib/ai/providers';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { z } from 'zod';
@@ -59,7 +58,12 @@ function runProgrammaticChecks(text: string) {
   return issues;
 }
 
-export const POST = withAuth(async (request: Request) => {
+export const POST = withCalibration('un_toolkit', 'ai_chat', {
+  retrievalQuery: (_req, body) => {
+    const c = typeof body.context === 'string' ? body.context : '';
+    return c || undefined;
+  },
+})(async (request, ctx) => {
   if (isServerDemoMode()) {
     return Response.json({ issues: [], overallCompliance: 'compliant', complianceScore: 100, styleRecommendations: ['Demo mode — configure GOOGLE_AI_API_KEY for AI-powered terminology checking'], recommendation: 'Demo mode active. AI analysis unavailable.' });
   }
@@ -74,12 +78,19 @@ export const POST = withAuth(async (request: Request) => {
   try {
     const { text, context } = await request.json();
 
-    const creditCheck = await checkAndDeductCredits('ai_terminology', 'Terminology check');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     if (!text) {
       return Response.json({ error: 'No text provided' }, { status: 400 });
     }
+
+    const { systemPromptBlock, outputConstraints } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
 
     // Run fast programmatic checks first
     const programmaticIssues = runProgrammaticChecks(text);
@@ -88,6 +99,11 @@ export const POST = withAuth(async (request: Request) => {
     const result = await generateText({
       model: getModel(),
       output: Output.object({ schema: TerminologyResponseSchema }),
+      system: `You are a UN Editorial Manual expert specializing in diplomatic terminology.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
       prompt: `You are a UN Editorial Manual expert. Analyze the following text for UN terminology compliance.
 Document context: ${context || 'general'}
 

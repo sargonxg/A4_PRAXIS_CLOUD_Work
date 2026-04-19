@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { situationContextSchema } from '@/lib/api/schemas';
@@ -213,7 +213,12 @@ const DEMO_RESPONSE = {
 
 // --- Route ---
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('media_compass', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json();
 
@@ -230,9 +235,7 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_media_roundup', 'Media landscape analysis');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     // --- Contexts ---
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
@@ -240,7 +243,7 @@ export const POST = withAuth(async (request, user) => {
 
     const [graphCtx, webCtx] = await Promise.all([
       situationId
-        ? buildGraphContext(user.uid, situationId, 'media_compass').catch(() => '')
+        ? buildGraphContext(ctx.uid, situationId, 'media_compass').catch(() => '')
         : Promise.resolve(''),
       situation
         ? buildWebGroundedContext(
@@ -250,15 +253,28 @@ export const POST = withAuth(async (request, user) => {
               actors: (situation as unknown as Situation).actors,
             },
             'media-compass',
-            user.uid
+            ctx.uid
           ).catch(() => '')
         : Promise.resolve(''),
     ]);
+
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
 
     // --- AI generation ---
     const result = await callProModel({
       output: Output.object({ schema: MediaCompassSchema }),
       system: `You are PRAXIS Media Compass, a specialist in conflict information environments, media bias analysis, and narrative mapping. You serve UN Political Affairs Officers, diplomatic mediators, and conflict analysts.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}
 
 Your mandate: map the full media landscape of a conflict — outlets, ownership, bias, narratives, and social media influencers — to give analysts a clear picture of what populations are hearing and what is being suppressed.
 
@@ -284,7 +300,14 @@ Ground every assessment in the web intelligence and situation context provided. 
 
     // --- Persist ---
     if (situationId) {
-      await writeToolDataServer(user.uid, situationId, 'media_compass', result.output as Record<string, unknown>);
+      await writeToolDataServer(ctx.uid, situationId, 'media_compass', result.output as Record<string, unknown>);
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'media_compass',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[media_compass] saveToolOutput failed:', err));
     }
 
     return NextResponse.json(result.output);

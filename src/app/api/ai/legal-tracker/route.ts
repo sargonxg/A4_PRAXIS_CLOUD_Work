@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { situationContextSchema } from '@/lib/api/schemas';
@@ -113,7 +113,12 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('commitments', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, ctx) => {
   try {
     const body = await request.json();
     const requestSchema = z.object({ situation: situationContextSchema.optional() });
@@ -124,20 +129,31 @@ export const POST = withAuth(async (request, user) => {
     const situationId = (situation as Situation | undefined)?.id ?? '';
 
     if (isServerDemoMode()) return NextResponse.json(DEMO_RESPONSE);
-    const creditCheck = await checkAndDeductCredits('ai_legal_tracker', 'Legal tracker');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
-    const graphCtx = situationId ? await buildGraphContext(user.uid, situationId, 'legal_tracker') : '';
+    const graphCtx = situationId ? await buildGraphContext(ctx.uid, situationId, 'legal_tracker') : '';
     const webCtx = situation
       ? await buildWebGroundedContext(
           { name: (situation as unknown as Situation).name, region: (situation as unknown as Situation).region, actors: (situation as unknown as Situation).actors },
-          'legal-tracker', user.uid
+          'legal-tracker', ctx.uid
         )
+      : '';
+
+    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
       : '';
 
     const result = await callProModel({
       output: Output.object({ schema: LegalTrackerSchema }),
-      system: 'You are a senior international lawyer specializing in UN law, ICC proceedings, and international humanitarian law. Track UNSC resolutions and their compliance status, ICC and ICJ proceedings, and all applicable legal obligations with precision.',
+      system: `You are a senior international lawyer specializing in UN law, ICC proceedings, and international humanitarian law. Track UNSC resolutions and their compliance status, ICC and ICJ proceedings, and all applicable legal obligations with precision.
+
+${systemPromptBlock}
+
+Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
       prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${webCtx}
 Conduct a comprehensive international legal tracker assessment.
 
@@ -146,7 +162,17 @@ Track: (1) all applicable UNSC resolutions with chapter designation, key provisi
 Cite web intelligence sources for all compliance assessments. Flag intelligence gaps for legal proceedings where information is unavailable.`,
     });
 
-    if (situationId) await writeToolDataServer(user.uid, situationId, 'legal-tracker', result.output as Record<string, unknown>);
+    if (situationId) {
+      await writeToolDataServer(ctx.uid, situationId, 'legal-tracker', result.output as Record<string, unknown>);
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'commitments',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+        metadata: { variant: 'legal-tracker' },
+      }).catch((err) => console.warn('[legal_tracker] saveToolOutput failed:', err));
+    }
     return NextResponse.json(result.output);
   } catch (err) {
     return handleRouteError(err, 'legal-tracker');
