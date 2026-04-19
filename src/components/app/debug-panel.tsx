@@ -290,6 +290,13 @@ function DebugPanelInner() {
 }
 
 export function DebugPanel() {
+  // Ship-safe default: hide in production unless explicitly enabled
+  // (NEXT_PUBLIC_DEBUG_PANEL=1). Keeps the "/api/admin/add-credits" button,
+  // keyboard shortcut, and internal error log out of end-user builds.
+  const enabled =
+    process.env.NODE_ENV !== 'production' ||
+    process.env.NEXT_PUBLIC_DEBUG_PANEL === '1';
+  if (!enabled) return null;
   return (
     <DebugErrorBoundary>
       <DebugPanelInner />

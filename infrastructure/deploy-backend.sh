@@ -6,10 +6,12 @@ PROJECT_ID=$(gcloud config get-value project)
 echo "Deploying PRAXIS backend to GCP project: $PROJECT_ID"
 
 cd "$(dirname "$0")/../backend"
+# Backend is private: only the Cloud Run frontend service account can invoke it.
+# Frontend → backend is authenticated via OIDC (see backend/auth.py::verify_oidc).
 gcloud run deploy praxis-backend \
   --source . \
   --region us-central1 \
-  --allow-unauthenticated \
+  --no-allow-unauthenticated \
   --memory 2Gi \
   --cpu 2 \
   --timeout 300 \

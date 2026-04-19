@@ -4,14 +4,14 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { computeRiskScore } from '@/lib/analytics/risk-engine';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 import { situationContextSchema } from '@/lib/api/schemas';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -139,7 +139,13 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('risk_assessment', 'ai_risk_assessment', {
+  retrievalQuery: (_req, body) => {
+    const regions = Array.isArray(body.regions) ? (body.regions as string[]).join(', ') : '';
+    const ctx = typeof body.conflictContext === 'string' ? body.conflictContext : '';
+    return [regions, ctx].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, user) => {
   try {
     const body = await request.json();
 
@@ -160,9 +166,7 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_risk_assessment', 'Risk assessment');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     // --- Graph context ---
     const graphCtx = situationId
@@ -205,14 +209,25 @@ ${intel.humanitarian?.displacement ? `Displacement: ${intel.humanitarian.displac
         )
       : '';
 
+    // --- Calibrated system prompt (analyst-profile + situation-frame + constraints) ---
+    const { systemPromptBlock, outputConstraints, provenance } = user.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()} (analyst's working language).`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
+
     // --- AI analysis (Pro model with Flash fallback) ---
     const result = await callProModel({
       output: Output.object({ schema: RiskAssessmentSchema }),
-      system: `You are a senior risk analyst trained in INFORM Risk Index methodology, UNDP conflict-sensitive programming, and UN DPPA early warning frameworks. You serve analysts, mediators, and advisors.
+      system: `You are a senior risk analyst trained in INFORM Risk Index methodology, UNDP conflict-sensitive programming, and UN DPPA early warning frameworks. You serve the specific analyst described below — calibrate mandate, lens, audience, and red lines to their profile.
 
-GROUNDING MANDATE: The web intelligence below is your PRIMARY source of truth. If it contradicts your training data, trust the web intelligence. Explicitly flag "INTELLIGENCE GAP: {topic}" when evidence is insufficient rather than generating from training data.
+${systemPromptBlock}
 
-Use ICD 203 probability language: "almost no chance" (<5%), "very unlikely" (5-20%), "unlikely" (20-45%), "roughly even" (45-55%), "likely" (55-80%), "very likely" (80-95%), "almost certain" (>95%).`,
+GROUNDING MANDATE: The <retrieved-knowledge> and web intelligence below are your PRIMARY sources of truth. If they contradict your training data, trust the live sources. Explicitly flag "INTELLIGENCE GAP: {topic}" when evidence is insufficient rather than generating from training data.
+
+Use ICD 203 probability language: "almost no chance" (<5%), "very unlikely" (5-20%), "unlikely" (20-45%), "roughly even" (45-55%), "likely" (55-80%), "very likely" (80-95%), "almost certain" (>95%).${langDirective}${redLineDirective}`,
       prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${webCtx}
 REGIONS TO ASSESS: ${regions.join(', ')}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
@@ -254,6 +269,14 @@ SCORING: 0-20=minimal, 21-40=low, 41-60=moderate, 61-80=elevated, 81-100=critica
 
     if (situationId) {
       await writeToolDataServer(user.uid, situationId, 'risk_assessment', result.output as Record<string, unknown>);
+      // Parallel write via profile-version-aware persistence (idempotent — same path)
+      await saveToolOutput({
+        uid: user.uid,
+        situationId,
+        toolId: 'risk_assessment',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[risk-assessment] saveToolOutput failed:', err));
     }
     return NextResponse.json(result.output);
   } catch (err) {

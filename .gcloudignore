@@ -1,0 +1,70 @@
+# .gcloudignore — files excluded from the Cloud Build source tarball.
+# Keep this in sync with .dockerignore where it matters.
+# Cloud Build needs: src/, backend/, cloud_functions/, Dockerfile, cloudbuild.yaml,
+# package.json, package-lock.json, tsconfig.json, next.config.*, postcss.config.*
+
+# ── Node / Next.js ──────────────────────────────────────────────────────────
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+out/
+build/
+coverage/
+.vercel/
+.firebase/
+*.tsbuildinfo
+next-env.d.ts
+
+# ── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+**/*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+backend/.venv/
+backend/venv/
+
+# ── Git / VCS ───────────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── IDE / OS ────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+.claude/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ── Logs / tmp ──────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+tmp/
+.tmp/
+
+# ── Secrets (defence-in-depth — should already be gitignored) ───────────────
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+*-service-account*.json
+*-credentials*.json
+firebase-adminsdk*.json
+*.pem
+*.p12
+
+# ── Docs (not needed for builds; model-string guard scans src/ and backend/) ─
+docs/
+
+# ── Test artefacts not needed at build time ─────────────────────────────────
+playwright-report/
+test-results/
