@@ -8,6 +8,10 @@ export interface RetrievedChunk {
   score?: number;
 }
 
+function escapeTag(str: string): string {
+  return String(str ?? '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 export interface OutputConstraints {
   language: Language;
   audienceTone: Audience;
@@ -55,16 +59,16 @@ function renderProfileBlock(p: AnalystProfile | null): string {
     : `Primary lens: ${p.perspective.lenses[0] ?? 'diplomatic'}.`;
   return [
     `<analyst-profile version="${v}">`,
-    `  Role: ${p.identity.seniority} ${p.identity.role} at ${p.identity.org || '—'} · ${p.identity.team || '—'}`,
-    `  Mandate: ${p.perspective.mandate || '—'}`,
+    `  Role: ${p.identity.seniority} ${p.identity.role} at ${escapeTag(p.identity.org || '—')} · ${escapeTag(p.identity.team || '—')}`,
+    `  Mandate: ${escapeTag(p.perspective.mandate || '—')}`,
     `  ${lensLine}`,
-    `  Regions of focus: ${p.perspective.regions.join(', ') || '—'}`,
+    `  Regions of focus: ${p.perspective.regions.map(escapeTag).join(', ') || '—'}`,
     `  Audience: ${p.perspective.audience}`,
     `  Output language: ${p.workingStyle.language}`,
     `  Preferred style: ${p.workingStyle.analyticalStyle}`,
     `  Red lines:`,
     ...(p.workingStyle.redLines.length
-      ? p.workingStyle.redLines.map(r => `    - ${r}`)
+      ? p.workingStyle.redLines.map(r => `    - ${escapeTag(r)}`)
       : ['    (none specified)']),
     `</analyst-profile>`,
   ].join('\n');
@@ -74,11 +78,11 @@ function renderSituationBlock(s: Situation | null): string {
   if (!s) return ['<situation-frame>', '  No active situation.', '</situation-frame>'].join('\n');
   return [
     '<situation-frame>',
-    `  Name: ${s.name}`,
+    `  Name: ${escapeTag(s.name)}`,
     `  Type: ${s.type}`,
-    `  Region: ${s.region || '—'}`,
-    `  Key actors: ${(s.actors ?? []).join(', ') || '—'}`,
-    `  Risk: ${s.riskScore ?? '—'}/10 · Glasl ${s.glaslStage ?? '—'} · ${s.escalationTrend ?? '—'}`,
+    `  Region: ${escapeTag(s.region || '—')}`,
+    `  Key actors: ${(s.actors ?? []).map(escapeTag).join(', ') || '—'}`,
+    `  Risk: ${s.riskScore ?? '—'}/10 · Glasl ${s.glaslStage ?? '—'} · ${escapeTag(s.escalationTrend ?? '—')}`,
     '</situation-frame>',
   ].join('\n');
 }
@@ -86,7 +90,7 @@ function renderSituationBlock(s: Situation | null): string {
 function renderKnowledgeBlock(chunks: RetrievedChunk[]): string {
   return [
     '<retrieved-knowledge>',
-    ...chunks.map(c => `  [${c.id}] ${c.text.slice(0, 500)} — ${c.source}`),
+    ...chunks.map(c => `  [${escapeTag(c.id)}] ${escapeTag(c.text.slice(0, 500))} — ${escapeTag(c.source)}`),
     '</retrieved-knowledge>',
   ].join('\n');
 }
@@ -100,7 +104,7 @@ function renderConstraintsBlock(p: AnalystProfile | null): string {
     '<output-constraints>',
     `  - Respond in ${lang}.`,
     `  - Tone: ${tone} register.`,
-    ...redLines.map(r => `  - Constraint: ${r}`),
+    ...redLines.map(r => `  - Constraint: ${escapeTag(r)}`),
     `  - ${style === 'deep_dive' ? 'Favor depth, caveats, and citations.' : 'Favor brevity and actionable bullets.'}`,
     '</output-constraints>',
   ].join('\n');
