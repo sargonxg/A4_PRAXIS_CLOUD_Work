@@ -18,7 +18,10 @@ export function SituationSelector({ collapsed, activeSituationId, onSelect }: Si
   const { user } = useAuth();
   const router = useRouter();
   const route = usePraxisRoute();
-  const { situations, setSituations, removeSituation, setLoading: setStoreLoading } = useSituationStore();
+  const situations = useSituationStore((s) => s.situations);
+  const setSituations = useSituationStore((s) => s.setSituations);
+  const removeSituation = useSituationStore((s) => s.removeSituation);
+  const setStoreLoading = useSituationStore((s) => s.setLoading);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 

@@ -19,8 +19,12 @@ const ECOSYSTEM_LINKS = [
 ];
 
 export function DemoModeBanner() {
-  const { demoMode, demoBannerExpanded, toggleDemoBanner } = useAppStore();
-  const { conflicts, activeConflictId, setActiveConflict } = useConflictStore();
+  const demoMode = useAppStore((s) => s.demoMode);
+  const demoBannerExpanded = useAppStore((s) => s.demoBannerExpanded);
+  const toggleDemoBanner = useAppStore((s) => s.toggleDemoBanner);
+  const conflicts = useConflictStore((s) => s.conflicts);
+  const activeConflictId = useConflictStore((s) => s.activeConflictId);
+  const setActiveConflict = useConflictStore((s) => s.setActiveConflict);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   if (!demoMode) return null;

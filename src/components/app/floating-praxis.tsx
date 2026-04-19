@@ -132,8 +132,8 @@ function getQuickActions(pathname: string, situationName?: string): QuickAction[
  */
 export function FloatingPraxis() {
   const pathname = usePathname();
-  const { activeSituation } = useSituationStore();
-  const { demoMode } = useAppStore();
+  const activeSituation = useSituationStore((s) => s.activeSituation);
+  const demoMode = useAppStore((s) => s.demoMode);
 
   // Per-situation storage key
   const storageKey = activeSituation

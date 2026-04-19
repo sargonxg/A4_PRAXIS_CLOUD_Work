@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 export type ToolHealth = 'green' | 'yellow' | 'red';
 export type ResearchStatus =
@@ -225,10 +225,13 @@ export function useAllToolStatuses(
     };
   }, [statuses, situationId]);
 
-  // Attach refreshTrigger to each entry
-  const result: Record<string, ToolStatusInfo> = {};
-  for (const [toolId, s] of Object.entries(statuses)) {
-    result[toolId] = { ...s, refreshTrigger: refreshAll };
-  }
-  return result;
+  // Memoised — a fresh object every render here would fan out to every
+  // consumer destructuring this map (e.g. ToolSemaphore), multiplying work.
+  return useMemo(() => {
+    const result: Record<string, ToolStatusInfo> = {};
+    for (const [toolId, s] of Object.entries(statuses)) {
+      result[toolId] = { ...s, refreshTrigger: refreshAll };
+    }
+    return result;
+  }, [statuses, refreshAll]);
 }

@@ -87,7 +87,10 @@ function EntryRow({ entry }: { entry: DebugEntry }) {
 }
 
 function DebugPanelInner() {
-  const { entries, isOpen, toggle, clear } = useDebugStore();
+  const entries = useDebugStore((s) => s.entries);
+  const isOpen = useDebugStore((s) => s.isOpen);
+  const toggle = useDebugStore((s) => s.toggle);
+  const clear = useDebugStore((s) => s.clear);
   const { credits } = useAuth();
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);

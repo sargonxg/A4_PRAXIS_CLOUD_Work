@@ -102,7 +102,10 @@ function OperationRow({ op }: { op: ActiveOperation }) {
 }
 
 export function ActivityPanel() {
-  const { operations, isOpen, toggle, clearCompleted } = useActivityStore();
+  const operations = useActivityStore((s) => s.operations);
+  const isOpen = useActivityStore((s) => s.isOpen);
+  const toggle = useActivityStore((s) => s.toggle);
+  const clearCompleted = useActivityStore((s) => s.clearCompleted);
   const [filter, setFilter] = useState<FilterMode>('all');
 
   const activeCount = operations.filter((op) => op.status === 'running' || op.status === 'pending').length;

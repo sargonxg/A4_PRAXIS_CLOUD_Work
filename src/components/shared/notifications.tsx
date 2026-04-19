@@ -25,7 +25,11 @@ const typeConfig: Record<NotificationType, { icon: React.ElementType; color: str
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
-  const { notifications, unreadCount, markRead, markAllRead, dismiss } = useNotificationStore();
+  const notifications = useNotificationStore((s) => s.notifications);
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const markRead = useNotificationStore((s) => s.markRead);
+  const markAllRead = useNotificationStore((s) => s.markAllRead);
+  const dismiss = useNotificationStore((s) => s.dismiss);
 
   const handleClick = (id: string, href?: string) => {
     markRead(id);
