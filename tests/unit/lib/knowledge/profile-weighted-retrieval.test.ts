@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('@/lib/firebase/analyst-profile-admin', () => ({ getAnalystProfile: vi.fn() }));
 vi.mock('@/lib/knowledge/embedding-service', () => ({ generateEmbedding: vi.fn() }));
 vi.mock('@/lib/knowledge/situation-knowledge-core', () => ({
-  SituationKnowledgeCore: vi.fn().mockImplementation(function () {
+  SituationKnowledgeCore: vi.fn().mockImplementation(function (this: { retrieve: ReturnType<typeof vi.fn> }) {
     this.retrieve = vi.fn().mockResolvedValue([
       { id: 'a', text: 'aid displacement', source: 'reliefweb', vector: [1, 0, 0] },
       { id: 'b', text: 'military posture', source: 'sipri', vector: [0, 1, 0] },

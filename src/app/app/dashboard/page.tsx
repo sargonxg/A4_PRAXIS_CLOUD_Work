@@ -1050,7 +1050,8 @@ function AppDashboardContent({
 export default function DashboardPage() {
 
   const { isDemo, showGuard, needsOnboarding, situation } = useSituationGuard();
-  const { situations, fetchSituations } = useSituationStore();
+  const situations = useSituationStore((s) => s.situations);
+  const fetchSituations = useSituationStore((s) => s.fetchSituations);
 
   useEffect(() => {
     if (!isDemo) {

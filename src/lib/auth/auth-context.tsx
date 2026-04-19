@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef, ReactNode } from 'react';
 import {
   onAuthStateChanged,
   onIdTokenChanged,
@@ -526,27 +526,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const onboardingComplete = Boolean(analystProfile?.meta?.completedAt);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        firebaseUser,
-        loading,
-        credits,
-        analystProfile,
-        onboardingComplete,
-        signInWithEmail,
-        signUpWithEmail,
-        signInWithGoogle,
-        signInAsDemo,
-        logout,
-        refreshCredits,
-        resetPassword,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = useMemo<AuthContextValue>(() => ({
+    user,
+    firebaseUser,
+    loading,
+    credits,
+    analystProfile,
+    onboardingComplete,
+    signInWithEmail,
+    signUpWithEmail,
+    signInWithGoogle,
+    signInAsDemo,
+    logout,
+    refreshCredits,
+    resetPassword,
+  }), [
+    user,
+    firebaseUser,
+    loading,
+    credits,
+    analystProfile,
+    onboardingComplete,
+    signInWithEmail,
+    signUpWithEmail,
+    signInWithGoogle,
+    signInAsDemo,
+    logout,
+    refreshCredits,
+    resetPassword,
+  ]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

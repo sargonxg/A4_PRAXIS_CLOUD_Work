@@ -27,10 +27,16 @@ describe('AnalystProfile', () => {
 
   it('isProfileComplete returns true only when required fields set', () => {
     expect(isProfileComplete(DEFAULT_ANALYST_PROFILE)).toBe(false);
-    const filled = {
+    const filled: typeof DEFAULT_ANALYST_PROFILE = {
       ...DEFAULT_ANALYST_PROFILE,
       identity: { role: 'un_official', seniority: 'senior', org: 'UN DPPA', team: 'Africa II' },
-      perspective: { ...DEFAULT_ANALYST_PROFILE.perspective, mandate: 'x'.repeat(60), lenses: ['diplomatic'], regions: ['Sahel'], audience: 'senior_leadership' },
+      perspective: {
+        ...DEFAULT_ANALYST_PROFILE.perspective,
+        mandate: 'x'.repeat(60),
+        lenses: ['diplomatic'],
+        regions: ['Sahel'],
+        audience: 'senior_leadership',
+      },
     };
     expect(isProfileComplete(filled)).toBe(true);
   });
