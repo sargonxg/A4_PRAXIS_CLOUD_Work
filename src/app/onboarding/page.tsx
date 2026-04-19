@@ -20,6 +20,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState<Step>(1);
   const [profile, setProfile] = useState<AnalystProfile>(DEFAULT_ANALYST_PROFILE);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -33,13 +34,20 @@ export default function OnboardingPage() {
   const savePatch = useCallback(async (patch: Partial<AnalystProfile>) => {
     if (!user?.id) return;
     setSaving(true);
+    setSaveError(null);
     try {
-      await fetch('/api/onboarding/profile', {
+      const res = await fetch('/api/onboarding/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
       });
+      if (!res.ok) {
+        setSaveError('Could not save — please try again.');
+        return;
+      }
       setProfile(prev => ({ ...prev, ...patch } as AnalystProfile));
+    } catch {
+      setSaveError('Network error — please check your connection.');
     } finally {
       setSaving(false);
     }
@@ -70,6 +78,11 @@ export default function OnboardingPage() {
       <div>
         <Header step={step} onSkip={skipForLater} />
         <div className="mt-6 rounded-xl border border-navy-200 bg-white p-6 shadow-sm sm:p-8">
+          {saveError && (
+            <div role="alert" className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
+              {saveError}
+            </div>
+          )}
           {step === 1 && (
             <StepIdentity
               profile={profile}
@@ -127,7 +140,10 @@ function Header({ step, onSkip }: { step: Step; onSkip: () => void }) {
         </div>
       </div>
       {step < 4 && (
-        <button onClick={onSkip} className="text-xs text-navy-500 hover:text-navy-800">
+        <button
+          onClick={onSkip}
+          className="rounded-md text-xs text-navy-500 hover:text-navy-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40 focus-visible:ring-offset-2"
+        >
           Finish later
         </button>
       )}
