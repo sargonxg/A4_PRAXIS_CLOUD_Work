@@ -113,8 +113,13 @@ steps:
       - '0'
       - '--max-instances'
       - '10'
+      # VERTEX_AGENT_ENGINE_ID secret intentionally not mounted yet — when the
+      # Vertex AI Agent Engine is provisioned, create the secret
+      # `praxis-agent-engine-id` and add it back to this list. Until then, the
+      # Deep Research Agent falls back to Gemini 3 + Grounded Search (handled
+      # in src/lib/ai/vertex-agent.ts:31-32).
       - '--set-secrets'
-      - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest,SESSION_SECRET=praxis-cookie-secret:latest,VERTEX_AGENT_ENGINE_ID=praxis-agent-engine-id:latest'
+      - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest,SESSION_SECRET=praxis-cookie-secret:latest'
     id: 'deploy-frontend'
     waitFor: ['push-frontend']
 
