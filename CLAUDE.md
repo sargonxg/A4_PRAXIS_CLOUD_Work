@@ -139,6 +139,31 @@ Every authenticated user has an `AnalystProfile` stored at `users/{uid}/profile/
 
 Spec: `docs/superpowers/specs/2026-04-18-user-onboarding-tool-calibration-design.md`
 
+## Domain Taxonomy — 11 domains, live Firestore config
+
+Every user and every situation carries a single `DomainId`. Domains live as documents at `config/domains/{id}` in Firestore — **not** hard-coded — so the taxonomy evolves without a deploy. `generic` is the baseline every specific domain inherits from (prototypal merge).
+
+**The 11 domains** (`src/lib/domain/seeds.ts`):
+1. `generic` — universal baseline, every lens 1.0, all frameworks on
+2. `armed-conflict-security` · 3. `diplomacy-negotiation` · 4. `humanitarian`
+5. `human-rights` · 6. `governance-rule-of-law` · 7. `economic-sanctions`
+8. `development-stabilization` · 9. `climate-environmental-security`
+10. `information-cyber` · 11. `transnational-threats`
+
+**User side** — `AnalystProfile.perspective.primaryDomain` (defaults to `generic`) and `secondaryDomains[]` (up to 3). Picked during onboarding Step 2. Editable from Settings; triggers profile version bump + snapshot.
+
+**Situation side** — `Situation.domain` plus `domainConfidence`, `domainOverriddenByUser`, `domainClassifiedAt`. Auto-classified by `classifyDomain()` (`src/lib/domain/classifier.ts`) during wizard Step 4 (Review). User confirms or one-click overrides before Create.
+
+**Resolution** — `resolveDomain(id)` / `resolveUserDomain(profile)` / `mergeUserAndSituationDomains(u, s)` in `src/lib/domain/resolve.ts`. 5-minute in-process cache, bust on admin edits. Never throws — unknown id falls back to `generic`.
+
+**Wiring** — `buildCalibratedContext` merges user × situation domains and emits a `<domain-frame>` inside `systemPromptBlock`. Every calibrated AI route picks up the domain automatically; no per-route edits. `ContextBlock.domain: MergedDomainConfig` exposes `frameworks`, `preferredFeeds`, and per-tool `promptOverrides` for tool handlers that want to branch explicitly.
+
+**Admin evolution** — `/app/admin/domains` (gated by `ADMIN_ALLOWLIST` env var) lets authorised uids edit any domain's lens weights, preferred feeds, frameworks, and prompt overrides live. Each save bumps the doc's `version`, writes a snapshot to `config/domains_history/{id}_{prevVersion}`, and busts the resolver cache.
+
+**Seed** — `npx tsx scripts/seed-domains.ts` (idempotent) writes the initial 11 docs. Re-run safely after a schema bump.
+
+Spec: `docs/superpowers/specs/2026-04-19-domain-taxonomy-stabilization-design.md`
+
 ## ACO v2.0 — Agentic Conflict Ontology
 
 **14 Entity Types** (8 core primitives + 6 extended, all first-class):
@@ -244,7 +269,7 @@ Deducted atomically via Firestore transactions. Real-time sync via onSnapshot.
 | Pub/Sub | Async event messaging | 5 topics (pipeline, extract, ingest, alert, profile.events) |
 | Cloud Functions | Event triggers | 3 functions (situation, document, GDELT) |
 | Cloud Scheduler | Cron jobs | GDELT (15min), alerts (6am), briefing (5am) |
-| Secret Manager | Sensitive config | 4 secrets (firebase-sa, ai-key, cron, cookie) |
+| Secret Manager | Sensitive config | 4 secrets (firebase-sa, ai-key, cron, cookie) + `ADMIN_ALLOWLIST` env for `/app/admin/*` gate |
 
 ## Tool Categories (40 tools)
 
