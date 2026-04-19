@@ -43,21 +43,24 @@ The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Pol
 /                            Next.js frontend (root)
 ├── src/app/app/             Tool pages (38+ authenticated)
 ├── src/app/demo/            Demo mirror pages
+├── src/app/onboarding/      3-screen wizard + layout (identity, perspective, working style)
 ├── src/app/api/             API routes (73 total)
 │   ├── ai/                  35 AI tool routes
 │   ├── auth/                Session, login, logout
 │   ├── data/                Intelligence, geospatial, conflicts
 │   ├── cron/                Scheduled jobs (alerts, briefings)
+│   ├── onboarding/          profile GET/PATCH, complete, chips, chips/suggest, skip
 │   └── admin/               Credit management
 ├── src/lib/
 │   ├── ai/                  providers.ts, tools.ts, vertex-agent.ts, prompts/
 │   ├── auth/                auth-context.tsx (AuthProvider)
-│   ├── firebase/            config.ts, admin.ts, firestore.ts, situations-service.ts
-│   ├── api/                 with-auth.ts, with-credits.ts
+│   ├── firebase/            config.ts, admin.ts, firestore.ts, situations-service.ts, analyst-profile-service.ts, analyst-profile-admin.ts
+│   ├── api/                 with-auth.ts, with-credits.ts, with-calibration.ts, save-tool-output.ts
+│   ├── context/             profile-context.ts (buildCalibratedContext), system-prompt-block.ts
 │   ├── data-feeds/          11 source clients + feed-aggregator.ts
 │   ├── analytics/           risk-engine.ts, escalation-scorer.ts, geospatial-engine.ts, trustworthiness-engine.ts
 │   ├── services/            entity-extraction.ts, canonical-precheck.ts, feedback-service.ts, graphify-client.ts
-│   └── constants/           tool-registry.ts, frameworks.ts, scenario-configs.ts, entity-colors.ts, aco-colors.ts
+│   └── constants/           tool-registry.ts, frameworks.ts, scenario-configs.ts, entity-colors.ts, aco-colors.ts, lens-catalog.ts, onboarding-chips.ts
 ├── src/components/
 │   ├── app/                 app-shell, sidebar, debug-panel, floating-praxis
 │   ├── praxis/              no-situation-state, ai-populate, tool-info-panel
@@ -100,11 +103,41 @@ users/{uid}/
     graph/
       main             { nodes[], edges[] }
       analysis         { pivotActors, factionMap, hiddenLinkages, escalation }
-    tools/{toolName}   { generatedAt, ...tool-specific fields }
+    tools/{toolName}   { generatedAt, profileVersion, ...tool-specific fields }
     documents/{docId}  { name, extractedText, uploadedAt }
     reports/{rptId}    { title, content, createdAt }
+  profile/
+    analyst              { identity, perspective, workingStyle, meta, embedding }
+  profile_versions/
+    {vN}                 immutable snapshot per completion
+  (root doc extended:)   onboardingCompletedAt, onboardingSkipCount
 credit_transactions/{txId}  { userId, type, amount, description, createdAt }
+config/
+  onboarding_suggestions { mandateChipsByRole, redLineChips, orgAutocomplete }
 ```
+
+## AnalystProfile — Calibration Contract
+
+Every authenticated user has an `AnalystProfile` stored at `users/{uid}/profile/analyst` in Firestore. It is the single source of truth for personalising every AI tool output.
+
+**Shape** (defined in `src/types/analyst-profile.ts`):
+- `identity` — role, seniority, organisation, displayName
+- `perspective` — mandate chips, analytical lenses (ordered), regions of focus, audience
+- `workingStyle` — preferred sources, output language, red-line phrases to avoid, writing tone
+- `meta` — version counter, completedAt timestamp, skipCount, embedding refreshedAt
+
+**Capture** — A 3-screen wizard at `src/app/onboarding/` (Step 1: Identity → Step 2: Perspective → Step 3: Working Style) with a live `<analyst-profile>` preview panel and drag-to-reorder lenses via `@dnd-kit/sortable`. First-login users are redirected from `/app/*` via `middleware.ts`.
+
+**Persistence** — Each completion bumps `meta.version`, writes an immutable snapshot to `users/{uid}/profile_versions/{vN}`, and publishes a `profile.events` Pub/Sub message that triggers embedding refresh on Vertex AI.
+
+**Consumption** — `withCalibration(toolId, creditOpType)(handler)` is the middleware factory that every AI route wraps. It chains `withAuth → credits check → buildCalibratedContext → handler`. The resulting `CalibrationCtx` carries a `calibration.systemPromptBlock` string (rendered `<analyst-profile>` + `<situation-frame>` + `<output-constraints>` XML block) ready to prepend to any AI system prompt.
+
+**Gate** — `withCalibration` returns HTTP 403 when a non-demo user has no `profile.meta.completedAt`. Client-side, `useSituationGuard()` returns `needsOnboarding: true` and `ToolPageShell` renders `<OnboardingRequiredState />` in place of the tool UI.
+
+**11 calibration dimensions** the audit script scores each AI route on:
+1. Reads AnalystProfile via `withCalibration`  2. Reads current situation  3. Uses `buildCalibratedContext`  4. Applies output language  5. Applies red-line constraints  6. Applies audience tone  7. Uses SKC retrieval (lens-weighted)  8. Persists output via `saveToolOutput`  9. Writes Memory Bank trace  10. Validates output schema (Zod)  11. Deducts credits correctly
+
+Spec: `docs/superpowers/specs/2026-04-18-user-onboarding-tool-calibration-design.md`
 
 ## ACO v2.0 — Agentic Conflict Ontology
 
@@ -208,7 +241,7 @@ Deducted atomically via Firestore transactions. Real-time sync via onSnapshot.
 | Vertex AI | ADK Deep Research Agent | us-central1, Reasoning Engine |
 | BigQuery | Pipeline analytics | praxis_analytics dataset |
 | Cloud Storage | Document uploads | gs://praxisbytacitus-praxis-uploads |
-| Pub/Sub | Async event messaging | 4 topics (pipeline, extract, ingest, alert) |
+| Pub/Sub | Async event messaging | 5 topics (pipeline, extract, ingest, alert, profile.events) |
 | Cloud Functions | Event triggers | 3 functions (situation, document, GDELT) |
 | Cloud Scheduler | Cron jobs | GDELT (15min), alerts (6am), briefing (5am) |
 | Secret Manager | Sensitive config | 4 secrets (firebase-sa, ai-key, cron, cookie) |
@@ -271,6 +304,12 @@ See `.env.example` for complete list. Critical:
 - Graph operations: `getGraph/saveGraph/saveSnapshot` from `@/lib/firebase/graph-service`
 - Trustworthiness: `computeTrustworthiness()` from `@/lib/analytics/trustworthiness-engine`
 - Canonical pre-check: `runCanonicalPreCheck()` from `@/lib/services/canonical-precheck`
+- `withCalibration(toolId, creditOpType)` wraps every AI route that should use calibrated context — factory returning `(handler) => withAuth(...)` with credit deduction and profile gate
+- `buildCalibratedContext({uid, situationId, toolId, retrievalQuery})` is the single module that composes profile + situation + SKC retrieval into a `ContextBlock`
+- `saveToolOutput({uid, situationId, toolId, profileVersion, output})` persists tool outputs to `users/{uid}/situations/{sitId}/tools/{toolId}` with profile-version provenance
+- `ToolPageShell` consumes `useSituationGuard()` which now also returns `needsOnboarding`; tools render `<OnboardingRequiredState />` when the gate triggers
+- Server-side: `withCalibration` returns 403 when a non-demo user has no `profile.meta.completedAt`
+- `renderSystemPromptBlock()` from `@/lib/context/system-prompt-block` renders the `<analyst-profile>` + `<situation-frame>` + `<output-constraints>` XML block injected into AI system prompts
 
 ## Design System
 
