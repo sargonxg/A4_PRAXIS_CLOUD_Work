@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 const footerSections = [
   {
@@ -49,7 +50,10 @@ export function Footer() {
         <div className="grid gap-12 md:grid-cols-6">
           {/* Brand */}
           <div className="md:col-span-2">
-            <Link href="/" className="inline-block">
+            <Link
+              href="/"
+              className="inline-block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40 rounded"
+            >
               <span className="font-serif text-xl font-semibold tracking-wide text-diplomatic-blue">
                 TACITUS
               </span>
@@ -58,7 +62,7 @@ export function Footer() {
               PRAXIS by TACITUS — Diplomacy. Evolved.
             </p>
             <p className="mt-1 text-xs text-navy-400">
-              The missing tool for peace and diplomacy professionals.
+              The intelligence workspace for peace and security professionals.
             </p>
             <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-gold-600/30 bg-gold-600/5 px-3 py-1">
               <span className="h-1.5 w-1.5 rounded-full bg-gold-500 animate-pulse" />
@@ -70,7 +74,7 @@ export function Footer() {
               Feedback?{" "}
               <a
                 href="mailto:hello@tacitus.me"
-                className="text-diplomatic-blue hover:underline"
+                className="text-diplomatic-blue hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40 rounded"
               >
                 hello@tacitus.me
               </a>
@@ -81,7 +85,7 @@ export function Footer() {
                 href="https://linkedin.com/company/tacitus-me"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-navy-400 transition-colors duration-200 hover:text-diplomatic-blue"
+                className="text-navy-400 transition-colors duration-200 hover:text-diplomatic-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40 rounded"
                 aria-label="TACITUS on LinkedIn"
               >
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -92,7 +96,7 @@ export function Footer() {
                 href="https://twitter.com/tacitus_me"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-navy-400 transition-colors duration-200 hover:text-diplomatic-blue"
+                className="text-navy-400 transition-colors duration-200 hover:text-diplomatic-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40 rounded"
                 aria-label="TACITUS on X (Twitter)"
               >
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -111,7 +115,7 @@ export function Footer() {
                   <li key={link.label}>
                     <a
                       href={link.href}
-                      className="text-sm text-navy-500 transition-colors duration-200 hover:text-navy-700"
+                      className="text-sm text-navy-500 transition-colors duration-200 hover:text-navy-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40 rounded"
                     >
                       {link.label}
                     </a>
@@ -122,13 +126,32 @@ export function Footer() {
           ))}
         </div>
 
+        {/* CTA strip */}
+        <div className="mt-12 flex flex-col items-center gap-4 rounded-xl border border-gold-600/15 bg-gold-600/4 px-8 py-6 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div>
+            <p className="font-serif text-base font-medium text-navy-900">
+              Ready to upgrade your analytical workflow?
+            </p>
+            <p className="mt-1 text-sm text-navy-500">
+              Full access · 5,000 credits on signup · Demo available instantly
+            </p>
+          </div>
+          <a
+            href="/login"
+            className="inline-flex shrink-0 items-center gap-2 rounded-md bg-gold-600 px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-lg hover:shadow-gold-600/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500/60"
+          >
+            Access PRAXIS
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </a>
+        </div>
+
         {/* Built on */}
-        <div className="mt-12 flex flex-col items-center gap-3 border-t border-cream-300/60 pt-8">
+        <div className="mt-10 flex flex-col items-center gap-3 border-t border-cream-300/60 pt-8">
           <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-navy-400">
             Built on
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-            {["Gemini AI", "Cloud Run", "Neo4j"].map((name) => (
+            {["Gemini AI", "Google Cloud Run", "Vertex AI", "ACLED", "GDELT"].map((name) => (
               <span
                 key={name}
                 className="text-xs font-semibold uppercase tracking-wider text-navy-300/60"
@@ -153,7 +176,7 @@ export function Footer() {
           {/* Security badges + version */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-diplomatic-blue/30 bg-diplomatic-blue/5 px-3 py-1 text-[10px] font-semibold text-diplomatic-blue">
-              PRAXIS v6.2.0
+              PRAXIS v6.3.1
             </span>
             <span className="rounded-full border border-cream-300 bg-white px-3 py-1 text-[10px] font-medium text-navy-500">
               SOC 2 (Planned)

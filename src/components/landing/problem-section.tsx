@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 function AnimatedStat({ end, suffix = "" }: { end: number; suffix?: string }) {
   const [count, setCount] = useState(0);

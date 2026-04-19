@@ -1,120 +1,124 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
-  Globe,
-  Handshake,
-  HeartHandshake,
-  BookOpen,
-  Users,
+  GitBranch,
+  AlertTriangle,
+  Search,
+  Dice6,
+  BellRing,
+  FileText,
 } from "lucide-react";
 
-const useCases = [
+const capabilities = [
   {
-    icon: Globe,
-    role: "UN Political Affairs Officer",
-    tagline: "Monitor a peace process in real time",
-    description:
-      "Track ceasefire compliance, commitment implementation, and actor positions across a live peace process. PRAXIS synthesizes open-source events, UN reporting, and media intelligence into a single dashboard — with SG report drafts ready for review in minutes.",
+    icon: GitBranch,
+    title: "Conflict Graph",
     color: "text-diplomatic-blue",
-    bgColor: "bg-diplomatic-blue/5",
-    borderHover: "hover:border-diplomatic-blue/30",
+    bgColor: "bg-diplomatic-blue/8",
+    borderHover: "hover:border-diplomatic-blue/25",
+    description:
+      "ACO v2.0 — 14-type ontology covering actors, claims, interests, constraints, leverage, and commitments. 72 typed relationships model every dimension of a dispute.",
   },
   {
-    icon: BookOpen,
-    role: "Think Tank Analyst",
-    tagline: "Produce a conflict assessment backed by data",
+    icon: AlertTriangle,
+    title: "Risk & Early Warning",
+    color: "text-crimson",
+    bgColor: "bg-crimson/8",
+    borderHover: "hover:border-crimson/20",
     description:
-      "Run structured escalation scoring, actor network analysis, and scenario simulations grounded in open-source conflict and humanitarian data. Export publication-ready assessments with full source citations and analytical methodology.",
-    color: "text-gold-600",
-    bgColor: "bg-gold-600/5",
-    borderHover: "hover:border-gold-600/30",
+      "Glasl 9-stage escalation scoring fused with the INFORM Risk Index across five dimensions. Continuous de-escalation window detection and threshold alerts.",
   },
   {
-    icon: HeartHandshake,
-    role: "NGO Field Coordinator",
-    tagline: "Track humanitarian access conditions on the ground",
+    icon: Search,
+    title: "Deep Research Agent",
+    color: "text-gold-700",
+    bgColor: "bg-gold-600/8",
+    borderHover: "hover:border-gold-600/20",
     description:
-      "Monitor access constraints, displacement trends, and protection incidents across operational areas. PRAXIS cross-references HDX, UNHCR, and ReliefWeb feeds — giving field teams the intelligence to negotiate access and prioritize response.",
-    color: "text-teal",
-    bgColor: "bg-teal/5",
-    borderHover: "hover:border-teal/30",
+      "Vertex AI reasoning engine with grounded search. Synthesizes news, think tank reports, and government documents into source-cited assessments.",
   },
   {
-    icon: Users,
-    role: "Academic Researcher",
-    tagline: "Study conflict dynamics with structured data tools",
-    description:
-      "Build longitudinal conflict timelines, extract entity relationships from primary documents, and run comparative analysis across cases. PRAXIS applies Glasl, Galtung, and Zartman frameworks to structure your research systematically.",
+    icon: Dice6,
+    title: "Scenarios & Game Theory",
     color: "text-sage",
-    bgColor: "bg-sage/5",
-    borderHover: "hover:border-sage/30",
+    bgColor: "bg-sage/8",
+    borderHover: "hover:border-sage/20",
+    description:
+      "Structured simulations built on Fearon rationalist war models. Map actor payoff matrices, spoiler dynamics, and intervention pathways under uncertainty.",
   },
   {
-    icon: Handshake,
-    role: "Diplomat",
-    tagline: "Prepare for Security Council consultations",
+    icon: BellRing,
+    title: "Daily Brief & Alerts",
+    color: "text-teal",
+    bgColor: "bg-teal/8",
+    borderHover: "hover:border-teal/20",
     description:
-      "Build comprehensive briefing packages in minutes: political context, actor positions, key resolutions, talking points, and anticipated objections — structured for closed Security Council consultations or bilateral preparation.",
+      "Automated intelligence delivery in DPPA morning brief format. Region-filtered, situation-specific, with speaker notes and Q&A preparation.",
+  },
+  {
+    icon: FileText,
+    title: "Reports & Dossiers",
     color: "text-navy-600",
-    bgColor: "bg-navy-600/5",
-    borderHover: "hover:border-navy-600/20",
+    bgColor: "bg-navy-600/8",
+    borderHover: "hover:border-navy-200",
+    description:
+      "Publication-ready outputs calibrated to your audience and language. UN SG report structure, Security Council briefs, policy memos — exportable to DOCX/PDF.",
   },
 ];
 
 export function UseCaseCards() {
+  const shouldReduceMotion = useReducedMotion() ?? false;
+
   return (
-    <section id="use-cases" className="relative px-6 py-24 lg:py-32">
+    <section id="capabilities" className="relative px-6 py-24 lg:py-32">
       {/* Subtle gradient */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-cream-100/40 to-transparent" />
 
       <div className="relative mx-auto max-w-6xl">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.7 }}
           className="mb-4 text-center"
         >
-          <span className="text-overline text-gold-700">Who It&apos;s For</span>
+          <span className="text-overline text-gold-700">Core Capabilities</span>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+        <motion.h2
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.7, delay: 0.1 }}
-          className="mb-4 text-center"
+          className="mb-4 text-center font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl"
         >
-          <h2 className="font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl">
-            Built for the Practitioners Who Shape Peace
-          </h2>
-        </motion.div>
+          Six Intelligence Pillars. One Platform.
+        </motion.h2>
 
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mx-auto mb-16 max-w-2xl text-center text-lg text-navy-500"
         >
-          From Security Council briefings to field mediation, PRAXIS adapts to
-          the workflows that matter most.
+          Every capability is situation-aware — powered by your graph, calibrated
+          to your mandate.
         </motion.p>
 
-        {/* Cards Grid */}
+        {/* Cards grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {useCases.map((item, i) => {
+          {capabilities.map((item, i) => {
             const Icon = item.icon;
             return (
               <motion.div
-                key={item.role}
-                initial={{ opacity: 0, y: 40 }}
+                key={item.title}
+                initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.5, delay: i * 0.08 }}
-                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.5, delay: shouldReduceMotion ? 0 : i * 0.08 }}
                 className="group"
               >
                 <div
@@ -124,17 +128,14 @@ export function UseCaseCards() {
                   <div
                     className={`mb-5 inline-flex rounded-xl p-3 ${item.bgColor} ${item.color}`}
                   >
-                    <Icon className="h-5 w-5" strokeWidth={1.5} />
+                    <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
                   </div>
 
-                  {/* Role */}
-                  <p className={`mb-1.5 text-xs font-semibold uppercase tracking-wider ${item.color}`}>
-                    {item.role}
-                  </p>
-
-                  {/* Tagline */}
-                  <h3 className="mb-3 text-base font-semibold leading-snug tracking-tight text-navy-900">
-                    &ldquo;{item.tagline}&rdquo;
+                  {/* Title */}
+                  <h3
+                    className={`mb-3 text-base font-semibold leading-snug tracking-tight ${item.color}`}
+                  >
+                    {item.title}
                   </h3>
 
                   {/* Description */}

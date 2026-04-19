@@ -1,14 +1,12 @@
 import { headers } from 'next/headers';
 import { Hero } from "@/components/landing/hero";
+import { HowItWorks } from "@/components/landing/how-it-works";
 import { ProblemSection } from "@/components/landing/problem-section";
 import { ConflictGrammarHighlight } from "@/components/landing/conflict-grammar-highlight";
 import { LivePlatformPreview } from "@/components/landing/live-platform-preview";
 import { UseCaseCards } from "@/components/landing/use-case-cards";
-import { SecuritySection } from "@/components/landing/security-section";
 import { AdvisoryCouncil } from "@/components/landing/advisory-council";
-import { MethodologySection } from "@/components/landing/methodology-section";
 import { WaitlistForm } from "@/components/landing/waitlist-form";
-import { Cta } from "@/components/landing/cta";
 import { Footer } from "@/components/landing/footer";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://praxis.tacitus.me';
@@ -61,7 +59,7 @@ const jsonLd = {
   featureList: [
     "AI-powered conflict analysis",
     "Glasl escalation model",
-    "Conflict Grammar knowledge graph",
+    "ACO v2.0 Conflict Grammar knowledge graph",
     "40+ analytical tools",
     "Real-time data feeds (ACLED, GDELT, ReliefWeb, UCDP)",
     "Advisory council simulation",
@@ -80,15 +78,13 @@ export default async function LandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <Hero />
+      <HowItWorks />
       <ProblemSection />
       <ConflictGrammarHighlight />
       <LivePlatformPreview />
       <UseCaseCards />
-      <SecuritySection />
       <AdvisoryCouncil />
-      <MethodologySection />
       <WaitlistForm />
-      <Cta />
       <Footer />
     </>
   );
