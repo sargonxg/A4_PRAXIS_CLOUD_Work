@@ -184,9 +184,9 @@ export function Header({ isMobile }: { isMobile?: boolean }) {
                 </div>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push(route('/settings'))}>
+              <DropdownMenuItem onClick={() => router.push(route('/settings/profile'))}>
                 <User className="mr-2 h-4 w-4" />
-                Profile
+                Analyst profile
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => router.push(route('/settings'))}>
                 <Settings className="mr-2 h-4 w-4" />
