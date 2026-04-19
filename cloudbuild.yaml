@@ -66,6 +66,9 @@ steps:
     waitFor: ['deploy-backend']
 
   # ── Frontend ─────────────────────────────────────────────────────────────────
+  # All NEXT_PUBLIC_* args are forwarded at build time because Firebase client
+  # config validates presence at module-import time (Next.js 16 Turbopack
+  # page-data collection evaluates them during `next build`).
   - name: 'gcr.io/cloud-builders/docker'
     entrypoint: bash
     args:
@@ -74,6 +77,14 @@ steps:
         docker build
         -t us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend
         --build-arg NEXT_PUBLIC_PRAXIS_BACKEND_URL=$(cat /workspace/backend_url.txt)
+        --build-arg NEXT_PUBLIC_SITE_URL=https://praxis.tacitus.me
+        --build-arg NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyAHNn4zJdMaxJXziRNa9SmHRFKUvO1q9uA
+        --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=praxisbytacitus.firebaseapp.com
+        --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID=praxisbytacitus
+        --build-arg NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=praxisbytacitus.firebasestorage.app
+        --build-arg NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=852128226674
+        --build-arg NEXT_PUBLIC_FIREBASE_APP_ID=1:852128226674:web:535f771c7a3568462c11eb
+        --build-arg NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-7R44KT7CDY
         .
     id: 'build-frontend'
     waitFor: ['get-backend-url']
