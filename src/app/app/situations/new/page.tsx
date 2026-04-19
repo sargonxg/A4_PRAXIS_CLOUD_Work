@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePraxisRoute } from '@/lib/utils/routes';
 import { useSituationStore } from '@/stores/situation-store';
@@ -30,6 +30,9 @@ import {
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
 import type { SituationType, UserRole } from '@/types/situation';
+import { DomainPicker } from '@/components/domain/domain-picker';
+import { DOMAIN_SEEDS } from '@/lib/domain/seeds';
+import { type DomainId, isDomainId } from '@/types/domain';
 
 /* ---------- Types ---------- */
 
@@ -769,7 +772,99 @@ function StepSources({ context, setContext, onNext, onBack, situationName }: { c
 
 /* ---------- Step 4: Review & Create ---------- */
 
-function StepReview({ form, onBack, onCreate, isCreating }: { form: SituationForm; onBack: () => void; onCreate: () => void; isCreating: boolean }) {
+interface DomainPreview {
+  domainId: DomainId;
+  confidence: number;
+  rationale: string;
+  overridden: boolean;
+  loading: boolean;
+}
+
+function DomainReviewCard({
+  form,
+  preview,
+  onPick,
+  sourceUrls,
+}: {
+  form: SituationForm;
+  preview: DomainPreview;
+  onPick: (id: DomainId, overridden: boolean) => void;
+  sourceUrls: string[];
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const picked = DOMAIN_SEEDS[preview.domainId];
+  const confPct = Math.round(preview.confidence * 100);
+
+  return (
+    <div className="rounded-lg border border-navy-200 bg-white p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-400">
+            Domain classification
+          </p>
+          {preview.loading ? (
+            <p className="mt-1 flex items-center gap-1.5 text-xs text-navy-500">
+              <Loader2 className="h-3 w-3 animate-spin" /> Classifying…
+            </p>
+          ) : (
+            <>
+              <p className="mt-1 text-sm font-semibold text-navy-900">{picked.name}</p>
+              <p className="mt-1 text-[11px] text-navy-500">
+                {preview.overridden
+                  ? 'You selected this domain.'
+                  : `PRAXIS classified this at ${confPct}% confidence. ${preview.rationale}`}
+              </p>
+            </>
+          )}
+        </div>
+        {!preview.loading && (
+          <button
+            type="button"
+            onClick={() => setExpanded((e) => !e)}
+            className="shrink-0 rounded-md border border-navy-200 px-2.5 py-1 text-xs text-navy-700 hover:bg-navy-50"
+          >
+            {expanded ? 'Done' : 'Change'}
+          </button>
+        )}
+      </div>
+      {expanded && (
+        <div className="mt-3">
+          <DomainPicker
+            value={preview.domainId}
+            onChange={(id) => {
+              onPick(id, true);
+              setExpanded(false);
+            }}
+            hideGeneric={false}
+          />
+        </div>
+      )}
+      {!preview.loading && !expanded && (
+        <p className="mt-2 text-[10px] text-navy-400">
+          Used to tune every tool&apos;s prompts, frameworks and feed priorities for this situation.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function StepReview({
+  form,
+  sourceUrls,
+  onBack,
+  onCreate,
+  isCreating,
+  domainPreview,
+  onDomainPick,
+}: {
+  form: SituationForm;
+  sourceUrls: string[];
+  onBack: () => void;
+  onCreate: () => void;
+  isCreating: boolean;
+  domainPreview: DomainPreview;
+  onDomainPick: (id: DomainId, overridden: boolean) => void;
+}) {
   const typeLabel = SITUATION_TYPES.find((t) => t.value === form.type)?.label ?? form.type;
   const roleLabel = USER_ROLES.find((r) => r.value === form.userRole)?.label ?? form.userRole;
 
@@ -808,6 +903,13 @@ function StepReview({ form, onBack, onCreate, isCreating }: { form: SituationFor
             <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-400 mb-1">Your Role</p>
             <p className="text-sm text-navy-700">{roleLabel}</p>
           </div>
+
+          <DomainReviewCard
+            form={form}
+            preview={domainPreview}
+            onPick={onDomainPick}
+            sourceUrls={sourceUrls}
+          />
 
           <div className="rounded-lg border border-emerald-200/60 bg-emerald-50/50 px-4 py-3">
             <p className="text-xs text-emerald-700">Creating this situation costs <strong>0 credits</strong>. AI analysis of uploaded documents costs 3 credits each.</p>
@@ -878,8 +980,76 @@ export default function NewSituationPage() {
     selectedSources: ['conflict-security', 'humanitarian', 'diplomatic-official', 'news-media'],
   });
 
+  const [domainPreview, setDomainPreview] = useState<DomainPreview>({
+    domainId: 'generic',
+    confidence: 0,
+    rationale: '',
+    overridden: false,
+    loading: false,
+  });
+  const classifiedSignatureRef = useRef<string>('');
+
   const goNext = useCallback(() => { setDirection(1); setStep((s) => Math.min(s + 1, 4) as Step); }, []);
   const goBack = useCallback(() => { setDirection(-1); setStep((s) => Math.max(s - 1, 1) as Step); }, []);
+
+  // Fetch domain classification when the user reaches the Review step and
+  // the name / description / sources have changed since the last classification.
+  useEffect(() => {
+    if (step !== 4) return;
+    if (domainPreview.overridden) return;
+
+    const filteredUrls = context.urls.filter((u) => u.trim());
+    const signature = `${form.name}|${form.description}|${filteredUrls.join(',')}`;
+    if (classifiedSignatureRef.current === signature) return;
+    classifiedSignatureRef.current = signature;
+
+    let cancelled = false;
+    setDomainPreview((p) => ({ ...p, loading: true }));
+    fetch('/api/situations/classify-domain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: form.name,
+        description: form.description,
+        sourceUrls: filteredUrls,
+      }),
+    })
+      .then((r) => r.json())
+      .then((data: { domainId?: string; confidence?: number; rationale?: string }) => {
+        if (cancelled) return;
+        const id = isDomainId(data.domainId ?? '') ? (data.domainId as DomainId) : 'generic';
+        setDomainPreview({
+          domainId: id,
+          confidence: typeof data.confidence === 'number' ? data.confidence : 0,
+          rationale: data.rationale ?? '',
+          overridden: false,
+          loading: false,
+        });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setDomainPreview({
+          domainId: 'generic',
+          confidence: 0,
+          rationale: 'Classifier unavailable — defaulting to generic.',
+          overridden: false,
+          loading: false,
+        });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [step, form.name, form.description, context.urls, domainPreview.overridden]);
+
+  const handleDomainPick = useCallback((id: DomainId, overridden: boolean) => {
+    setDomainPreview({
+      domainId: id,
+      confidence: 1,
+      rationale: '',
+      overridden,
+      loading: false,
+    });
+  }, []);
 
   const handleCreate = useCallback(async () => {
     setIsCreating(true);
@@ -927,6 +1097,9 @@ export default function NewSituationPage() {
           sourceUrls: filteredUrls.length ? filteredUrls : undefined,
           contextNotes: context.notes.trim() || undefined,
           initialDocumentIds: uploadedDocIds.length ? uploadedDocIds : undefined,
+          // Domain classification — user may have overridden the preview
+          domain: domainPreview.domainId,
+          domainOverriddenByUser: domainPreview.overridden,
         }),
       });
       if (!res.ok) {
@@ -1031,7 +1204,17 @@ export default function NewSituationPage() {
             {step === 1 && <StepDescribe form={form} setForm={setForm} onNext={goNext} />}
             {step === 2 && <StepActors form={form} setForm={setForm} onNext={goNext} onBack={goBack} />}
             {step === 3 && <StepSources context={context} setContext={setContext} onNext={goNext} onBack={goBack} situationName={form.name} />}
-            {step === 4 && <StepReview form={form} onBack={goBack} onCreate={handleCreate} isCreating={isCreating} />}
+            {step === 4 && (
+              <StepReview
+                form={form}
+                sourceUrls={context.urls.filter((u) => u.trim())}
+                onBack={goBack}
+                onCreate={handleCreate}
+                isCreating={isCreating}
+                domainPreview={domainPreview}
+                onDomainPick={handleDomainPick}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>

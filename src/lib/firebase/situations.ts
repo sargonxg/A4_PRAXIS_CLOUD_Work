@@ -505,6 +505,14 @@ export async function createSituationAdmin(
     ...(data.contextNotes ? { contextNotes: data.contextNotes } : {}),
     ...(data.initialDocumentIds?.length ? { initialDocumentIds: data.initialDocumentIds } : {}),
     ...(data.ontology ? { ontology: data.ontology } : {}),
+    ...(data.domain ? { domain: data.domain } : {}),
+    ...(typeof data.domainConfidence === 'number'
+      ? { domainConfidence: data.domainConfidence }
+      : {}),
+    ...(typeof data.domainOverriddenByUser === 'boolean'
+      ? { domainOverriddenByUser: data.domainOverriddenByUser }
+      : {}),
+    ...(data.domain ? { domainClassifiedAt: now } : {}),
     createdAt: now,
     updatedAt: now,
   };

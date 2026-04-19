@@ -4,6 +4,9 @@ import {
   createSituationAdmin,
   listSituations,
 } from '@/lib/firebase/situations';
+import { classifyDomain } from '@/lib/domain/classifier';
+import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
+import { isDomainId } from '@/types/domain';
 
 export const GET = withAuth(async (_req, user) => {
   if (user.isDemo) {
@@ -28,7 +31,7 @@ export const POST = withAuth(async (req, user) => {
 
   try {
     const body = await req.json();
-    const { name, type, description, region, actors, userRole, status, sourceUrls, contextNotes, initialDocumentIds, ontology } = body;
+    const { name, type, description, region, actors, userRole, status, sourceUrls, contextNotes, initialDocumentIds, ontology, domain: clientDomain, domainOverriddenByUser } = body;
 
     if (!name?.trim()) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -36,6 +39,37 @@ export const POST = withAuth(async (req, user) => {
 
     // Filter out empty URL strings
     const filteredUrls = (sourceUrls as string[] | undefined)?.filter((u: string) => u.trim()) || [];
+
+    // Resolve domain:
+    //   1. If the wizard already ran a preview and the user confirmed a domain,
+    //      trust the client pick (marked as `domainOverriddenByUser`).
+    //   2. Otherwise, classify server-side using profile hint + description.
+    //   3. On any failure, fall back to 'generic'.
+    let domain = 'generic';
+    let domainConfidence = 0;
+    let overridden = false;
+
+    if (typeof clientDomain === 'string' && isDomainId(clientDomain)) {
+      domain = clientDomain;
+      domainConfidence = 1;
+      overridden = domainOverriddenByUser === true;
+    } else {
+      let userPrimaryDomain: string | undefined;
+      try {
+        const profile = await getAnalystProfile(user.uid);
+        userPrimaryDomain = profile?.perspective?.primaryDomain;
+      } catch {
+        /* ignore */
+      }
+      const classification = await classifyDomain({
+        name,
+        description: description ?? '',
+        sourceUrls: filteredUrls,
+        hints: userPrimaryDomain ? { userPrimaryDomain } : undefined,
+      });
+      domain = classification.domainId;
+      domainConfidence = classification.confidence;
+    }
 
     const situation = await createSituationAdmin(user.uid, {
       name: name.trim(),
@@ -49,6 +83,9 @@ export const POST = withAuth(async (req, user) => {
       ...(contextNotes?.trim() ? { contextNotes: contextNotes.trim() } : {}),
       ...(initialDocumentIds?.length ? { initialDocumentIds } : {}),
       ...(ontology ? { ontology } : {}),
+      domain,
+      domainConfidence,
+      domainOverriddenByUser: overridden,
     });
 
     return NextResponse.json({ situation });

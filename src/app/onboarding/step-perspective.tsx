@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
-import { AUDIENCES, type AnalystProfile, type Audience } from '@/types/analyst-profile';
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { AUDIENCES, type AnalystProfile, type Audience, type AnalystDomainId } from '@/types/analyst-profile';
 import { LensReorder } from './lens-reorder';
 import { ChipStack } from './chip-stack';
+import { DomainPicker } from '@/components/domain/domain-picker';
 import { cn } from '@/lib/utils/cn';
 
 const REGIONS = [
@@ -33,6 +34,10 @@ export function StepPerspective({
 }) {
   const [mandateChips, setMandateChips] = useState<string[]>([]);
   const [mandateText, setMandateText] = useState(profile.perspective.mandate);
+  const [secondaryOpen, setSecondaryOpen] = useState(false);
+
+  const primaryDomain = (profile.perspective.primaryDomain ?? 'generic') as AnalystDomainId;
+  const secondaryDomains = (profile.perspective.secondaryDomains ?? []) as AnalystDomainId[];
 
   useEffect(() => {
     fetch(`/api/onboarding/chips?field=mandate&role=${profile.identity.role}`)
@@ -124,6 +129,55 @@ export function StepPerspective({
           </button>
         </div>
         <div className="text-[10px] text-navy-400">{mandateText.length}/600</div>
+      </div>
+
+      {/* Primary domain — top-level taxonomy */}
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-navy-700">Primary domain</label>
+        <p className="text-[11px] text-navy-500">
+          The broad category of work you do most. Shapes which feeds, frameworks and
+          prompt framings PRAXIS reaches for by default. You can always change it later.
+        </p>
+        <DomainPicker
+          value={primaryDomain}
+          onChange={(next) => setPerspective({ primaryDomain: next })}
+        />
+      </div>
+
+      {/* Secondary domains — optional */}
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={() => setSecondaryOpen((o) => !o)}
+          className="flex items-center gap-1 text-xs font-medium text-navy-700 hover:text-navy-900"
+          aria-expanded={secondaryOpen}
+        >
+          {secondaryOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          Secondary domains (optional, up to 3)
+          {secondaryDomains.length > 0 && (
+            <span className="ml-1 rounded-full bg-diplomatic-blue/10 px-1.5 py-0.5 text-[10px] text-diplomatic-blue">
+              {secondaryDomains.length}
+            </span>
+          )}
+        </button>
+        {secondaryOpen && (
+          <>
+            <p className="text-[11px] text-navy-500">
+              Mixed-mandate work benefits from a second lens. Each secondary softly
+              boosts its lens weights on top of your primary.
+            </p>
+            <DomainPicker
+              mode="multi"
+              value={primaryDomain}
+              onChange={() => {}}
+              multiValue={secondaryDomains}
+              onMultiChange={(next) => setPerspective({ secondaryDomains: next })}
+              disabledIds={[primaryDomain]}
+              hideGeneric
+              maxMulti={3}
+            />
+          </>
+        )}
       </div>
 
       {/* Lenses */}

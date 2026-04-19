@@ -143,4 +143,8 @@ export interface CreateSituationInput {
   contextNotes?: string;
   initialDocumentIds?: string[];
   ontology?: CaseOntology;
+  /** Optional pre-classified domain from the wizard review step. */
+  domain?: string;
+  domainConfidence?: number;
+  domainOverriddenByUser?: boolean;
 }
