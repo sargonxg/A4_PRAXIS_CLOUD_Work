@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "verify-tools": "npx tsx scripts/verify-tools.ts"
+    "verify-tools": "npx tsx scripts/verify-tools.ts",
+    "seed:onboarding": "tsx scripts/seed-onboarding-config.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.50",
