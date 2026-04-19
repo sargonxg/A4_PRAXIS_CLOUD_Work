@@ -82,7 +82,7 @@ export async function refreshProfileEmbedding(uid: string): Promise<boolean> {
     await upsertAnalystProfile(uid, {
       embedding: {
         vector,
-        generatedAt: new Date() as unknown as undefined,
+        generatedAt: new Date().toISOString(),
         model: 'gemini-embedding-2-preview',
       },
     });

@@ -54,13 +54,9 @@ export default function OnboardingPage() {
   }, [user?.id]);
 
   const skipForLater = useCallback(async () => {
-    await fetch('/api/onboarding/profile', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ meta: { skipCount: (profile.meta?.skipCount ?? 0) + 1 } }),
-    });
+    await fetch('/api/onboarding/skip', { method: 'POST' });
     router.push('/app/dashboard');
-  }, [profile.meta?.skipCount, router]);
+  }, [router]);
 
   const complete = useCallback(async (createFirstSituation: boolean) => {
     const res = await fetch('/api/onboarding/complete', {
