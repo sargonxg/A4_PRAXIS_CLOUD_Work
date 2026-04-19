@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { usePraxisRoute } from '@/lib/utils/routes';
 import { useSituationStore } from '@/stores/situation-store';
 import { cn } from '@/lib/utils/cn';
-import { ChevronDown, Plus, Globe, Loader2, Trash2 } from 'lucide-react';
+import { ChevronDown, Plus, Globe, Loader2, Trash2, Settings as SettingsIcon } from 'lucide-react';
 
 interface SituationSelectorProps {
   collapsed?: boolean;
@@ -131,6 +131,17 @@ export function SituationSelector({ collapsed, activeSituationId, onSelect }: Si
                     <p className="truncate text-xs font-medium">{sit.name}</p>
                     <p className="truncate text-[10px] text-navy-500">{sit.region} · {sit.actorCount} actors</p>
                   </div>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(route(`/situations/${sit.id}/settings`));
+                    setOpen(false);
+                  }}
+                  className="shrink-0 p-2 text-navy-300 hover:text-diplomatic-blue transition-colors"
+                  title="Edit situation settings"
+                >
+                  <SettingsIcon className="h-3 w-3" />
                 </button>
                 <button
                   onClick={async (e) => {

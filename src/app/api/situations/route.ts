@@ -88,6 +88,27 @@ export const POST = withAuth(async (req, user) => {
       domainOverriddenByUser: overridden,
     });
 
+    // Fire-and-forget: auto-extract Episodes (chronology) so Timeline tab is
+    // populated within ~60s of situation creation. Never block the response.
+    // Spec §6: auto-extraction pipeline.
+    try {
+      const origin = new URL(req.url).origin;
+      const cookie = req.headers.get('cookie') ?? '';
+      const extractUrl = `${origin}/api/ai/extract-episodes`;
+      void fetch(extractUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(cookie ? { cookie } : {}),
+        },
+        body: JSON.stringify({ situationId: situation.id }),
+      }).catch((err) => {
+        console.warn('[situations] extract-episodes fire-and-forget failed:', err);
+      });
+    } catch (err) {
+      console.warn('[situations] extract-episodes dispatch failed:', err);
+    }
+
     return NextResponse.json({ situation });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

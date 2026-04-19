@@ -5,6 +5,7 @@ import {
   updateSituationAdmin,
   deleteSituationAdmin,
 } from '@/lib/firebase/situations';
+import type { Situation } from '@/types/situation';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -32,14 +33,54 @@ export function GET(_req: NextRequest, ctx: RouteContext) {
   })(_req);
 }
 
+// Fields the client is allowed to PATCH directly. New preference fields
+// (languageOverride, dateRangeFrom, dateRangeTo, sourceCategoriesEnabled)
+// are accepted without strict schema validation — they default gracefully
+// server- and client-side, so open pass-through is safe.
+const PATCHABLE_FIELDS: ReadonlyArray<keyof Situation> = [
+  'name',
+  'type',
+  'region',
+  'description',
+  'userRole',
+  'status',
+  'actors',
+  'sourceUrls',
+  'contextNotes',
+  'tags',
+  'domain',
+  'domainConfidence',
+  'domainOverriddenByUser',
+  'domainVersion',
+  'domainClassifiedAt',
+  'languageOverride',
+  'dateRangeFrom',
+  'dateRangeTo',
+  'sourceCategoriesEnabled',
+  'riskScore',
+  'glaslStage',
+  'escalationTrend',
+] as const;
+
+function sanitizePatch(body: unknown): Partial<Situation> {
+  if (!body || typeof body !== 'object') return {};
+  const src = body as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const key of PATCHABLE_FIELDS) {
+    if (key in src) out[key as string] = src[key as string];
+  }
+  return out as Partial<Situation>;
+}
+
 export function PATCH(req: NextRequest, ctx: RouteContext) {
   return withAuth(async (r, user) => {
     const demoErr = rejectDemo(user);
     if (demoErr) return demoErr;
 
     const { id } = await ctx.params;
-    const body = await r.json();
-    await updateSituationAdmin(user.uid, id, body);
+    const body = await r.json().catch(() => ({}));
+    const patch = sanitizePatch(body);
+    await updateSituationAdmin(user.uid, id, patch);
     return NextResponse.json({ success: true });
   })(req);
 }

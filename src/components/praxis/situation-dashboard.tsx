@@ -97,21 +97,26 @@ Keep it under 120 words, professional, UN-standard diplomatic language.`;
     }
   }, [loading, situation]);
 
-  // Auto-generate on first mount (skip if AI service not configured)
+  // Auto-generate on first mount. Health route reports `checks.ai_provider = 'ok'`
+  // when either GOOGLE_AI_API_KEY or GOOGLE_VERTEX_PROJECT is configured. We
+  // default to generating on mount — if the call fails the catch below shows
+  // a friendly message.
   useEffect(() => {
     if (!generated.current) {
       generated.current = true;
       fetch('/api/health')
         .then((r) => r.json())
         .then((data) => {
-          if (data?.services?.googleAI) {
+          const aiOk = data?.checks?.ai_provider === 'ok' || data?.services?.googleAI;
+          if (aiOk) {
             generate();
           } else {
-            setBrief('_AI service is being configured. Set GOOGLE_AI_API_KEY in environment variables to enable intelligence briefs._');
+            setBrief('_AI service is not yet configured. Ask your admin to enable either Google AI Studio or Vertex AI in the Cloud Run environment._');
           }
         })
         .catch(() => {
-          setBrief('_Unable to check AI service status._');
+          // Don't show a scary message on network failure — just try to generate.
+          generate();
         });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -778,24 +783,32 @@ export function SituationDashboard({ situation }: { situation: Situation }) {
           </div>
 
           {/* Risk Score + Glasl */}
-          <div className="flex items-center gap-4">
-            <div className="flex flex-col items-center gap-1">
-              <RiskGauge score={situation.riskScore * 10} size="sm" showValue />
-              <span className="text-[10px] text-navy-400">INFORM Risk</span>
-            </div>
-            {situation.glaslStage && (
+          <div className="flex flex-col items-end gap-2">
+            <PraxisLink
+              href={`/situations/${situation.id}/inspect`}
+              className="text-[10px] text-navy-400 hover:text-navy-700 hover:underline"
+            >
+              Inspect situation data
+            </PraxisLink>
+            <div className="flex items-center gap-4">
               <div className="flex flex-col items-center gap-1">
-                <div className={cn(
-                  'flex h-14 w-14 items-center justify-center rounded-xl text-lg font-bold',
-                  situation.glaslStage <= 3 ? 'bg-emerald-50 text-emerald-600' :
-                  situation.glaslStage <= 6 ? 'bg-amber-50 text-amber-600' :
-                  'bg-red-50 text-red-600'
-                )}>
-                  {situation.glaslStage}<span className="text-xs font-normal">/9</span>
-                </div>
-                <span className="text-[10px] text-navy-400">Glasl Stage</span>
+                <RiskGauge score={situation.riskScore * 10} size="sm" showValue />
+                <span className="text-[10px] text-navy-400">INFORM Risk</span>
               </div>
-            )}
+              {situation.glaslStage && (
+                <div className="flex flex-col items-center gap-1">
+                  <div className={cn(
+                    'flex h-14 w-14 items-center justify-center rounded-xl text-lg font-bold',
+                    situation.glaslStage <= 3 ? 'bg-emerald-50 text-emerald-600' :
+                    situation.glaslStage <= 6 ? 'bg-amber-50 text-amber-600' :
+                    'bg-red-50 text-red-600'
+                  )}>
+                    {situation.glaslStage}<span className="text-xs font-normal">/9</span>
+                  </div>
+                  <span className="text-[10px] text-navy-400">Glasl Stage</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

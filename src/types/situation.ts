@@ -129,6 +129,12 @@ export interface Situation {
   domainOverriddenByUser?: boolean;
   domainVersion?: number;
   domainClassifiedAt?: string | null;
+  // Per-situation preferences — all optional, default gracefully when absent.
+  // See: src/app/app/situations/[id]/settings/page.tsx (Preferences tab).
+  languageOverride?: string;
+  dateRangeFrom?: string;
+  dateRangeTo?: string;
+  sourceCategoriesEnabled?: Record<string, boolean>;
 }
 
 export interface CreateSituationInput {

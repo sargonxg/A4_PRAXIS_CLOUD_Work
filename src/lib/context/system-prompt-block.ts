@@ -1,6 +1,7 @@
 import type { AnalystProfile, Audience, Language, AnalyticalStyle } from '@/types/analyst-profile';
 import type { Situation } from '@/types/situation';
 import type { MergedDomainConfig } from '@/types/domain';
+import type { Episode } from '@/types/episode';
 
 export interface RetrievedChunk {
   id: string;
@@ -35,6 +36,7 @@ export function renderSystemPromptBlock(opts: {
   retrievedChunks: RetrievedChunk[];
   domain?: MergedDomainConfig | null;
   toolId?: string;
+  episodes?: Episode[];
 }): string {
   const parts: string[] = [];
 
@@ -43,6 +45,8 @@ export function renderSystemPromptBlock(opts: {
   if (opts.domain && opts.domain.id !== 'generic') {
     parts.push(renderDomainBlock(opts.domain, opts.toolId));
   }
+  const episodesBlock = renderEpisodesBlock(opts.episodes);
+  if (episodesBlock) parts.push(episodesBlock);
   if (opts.retrievedChunks.length > 0) {
     parts.push(renderKnowledgeBlock(opts.retrievedChunks));
   }
@@ -108,6 +112,46 @@ function renderDomainBlock(domain: MergedDomainConfig, toolId?: string): string 
   ]
     .filter((l) => l.length > 0)
     .join('\n');
+}
+
+/**
+ * Renders the <situation-episodes> section for injection into the system
+ * prompt. Returns an empty string if there are no non-deleted episodes.
+ *
+ * Rules (spec §6):
+ *  - Only consider episodes with deletedAt === null.
+ *  - Cap to the top 8 by importance (desc), tie-break by date (asc).
+ *  - Each episode rendered on a single line: `[N] YYYY-MM "title" — actors: a,b. Importance X/5. Description (≤160 chars).`
+ */
+function renderEpisodesBlock(episodes: Episode[] | undefined): string {
+  if (!episodes || episodes.length === 0) return '';
+  const live = episodes.filter((e) => !e.deletedAt);
+  if (live.length === 0) return '';
+
+  const top = [...live]
+    .sort((a, b) => {
+      if (b.importance !== a.importance) return b.importance - a.importance;
+      if (a.date < b.date) return -1;
+      if (a.date > b.date) return 1;
+      return 0;
+    })
+    .slice(0, 8);
+
+  const lines = top.map((e, idx) => {
+    const n = idx + 1;
+    const dateShort = e.date ? e.date.slice(0, 7) : '—';
+    const actorList = e.actors.length > 0 ? e.actors.map(escapeTag).join(',') : '—';
+    const desc = e.description.length > 160
+      ? `${e.description.slice(0, 157)}...`
+      : e.description;
+    return `  [${n}] ${escapeTag(dateShort)} "${escapeTag(e.title)}" — actors: ${actorList}. Importance ${e.importance}/5. ${escapeTag(desc)}`;
+  });
+
+  return [
+    `<situation-episodes count="${live.length}">`,
+    ...lines,
+    '</situation-episodes>',
+  ].join('\n');
 }
 
 function renderKnowledgeBlock(chunks: RetrievedChunk[]): string {

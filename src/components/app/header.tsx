@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePraxisRoute } from '@/lib/utils/routes';
-import { Search, ChevronRight, User, Settings, LogOut, Sparkles, Coins, Menu } from 'lucide-react';
+import { Search, ChevronRight, User, Settings, LogOut, Sparkles, Coins, Menu, Eye } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { NotificationBell } from '@/components/shared/notifications';
 import { GlobalSearch } from '@/components/shared/global-search';
@@ -184,6 +184,10 @@ export function Header({ isMobile }: { isMobile?: boolean }) {
                 </div>
               </div>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push(route('/profile'))}>
+                <Eye className="mr-2 h-4 w-4" />
+                Working profile
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => router.push(route('/settings/profile'))}>
                 <User className="mr-2 h-4 w-4" />
                 Analyst profile

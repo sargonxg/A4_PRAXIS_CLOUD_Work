@@ -1,5 +1,6 @@
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
 import { getSituationById } from '@/lib/firebase/situations';
+import { listEpisodes } from '@/lib/firebase/episodes';
 import { retrieveForProfile } from '@/lib/knowledge/profile-weighted-retrieval';
 import {
   renderSystemPromptBlock,
@@ -15,6 +16,7 @@ import {
 import type { AnalystProfile } from '@/types/analyst-profile';
 import type { Situation } from '@/types/situation';
 import type { MergedDomainConfig } from '@/types/domain';
+import type { Episode } from '@/types/episode';
 
 export interface ContextBlock {
   systemPromptBlock: string;
@@ -23,6 +25,7 @@ export interface ContextBlock {
     profile: AnalystProfile | null;
     situation: Situation | null;
     retrievedChunks: RetrievedChunk[];
+    episodes: Episode[];
   };
   /**
    * Effective merged domain: user.primary + user.secondaries + situation.domain.
@@ -69,6 +72,7 @@ export async function buildCalibratedContext(opts: {
   let profile: AnalystProfile | null = null;
   let situation: Situation | null = null;
   let retrievedChunks: RetrievedChunk[] = [];
+  let episodes: Episode[] = [];
 
   // Each read wrapped individually — no single failure should abort the build
   try {
@@ -82,6 +86,11 @@ export async function buildCalibratedContext(opts: {
       situation = await getSituationById(opts.uid, opts.situationId);
     } catch (err) {
       console.warn('[profile-context] getSituationById failed:', err);
+    }
+    try {
+      episodes = await listEpisodes(opts.uid, opts.situationId);
+    } catch (err) {
+      console.warn('[profile-context] listEpisodes failed:', err);
     }
   }
 
@@ -121,13 +130,14 @@ export async function buildCalibratedContext(opts: {
     retrievedChunks,
     domain,
     toolId: opts.toolId,
+    episodes,
   });
   const outputConstraints = profile ? renderOutputConstraints(profile) : NEUTRAL_CONSTRAINTS;
 
   return {
     systemPromptBlock,
     outputConstraints,
-    toolContext: { profile, situation, retrievedChunks },
+    toolContext: { profile, situation, retrievedChunks, episodes },
     domain,
     provenance: {
       profileVersion: profile?.meta?.version ?? 0,
