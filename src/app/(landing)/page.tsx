@@ -3,6 +3,7 @@ import { Hero } from "@/components/landing/hero";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { ProblemSection } from "@/components/landing/problem-section";
 import { ConflictGrammarHighlight } from "@/components/landing/conflict-grammar-highlight";
+import { DomainCatalogue } from "@/components/landing/domain-catalogue";
 import { LivePlatformPreview } from "@/components/landing/live-platform-preview";
 import { UseCaseCards } from "@/components/landing/use-case-cards";
 import { AdvisoryCouncil } from "@/components/landing/advisory-council";
@@ -81,6 +82,7 @@ export default async function LandingPage() {
       <HowItWorks />
       <ProblemSection />
       <ConflictGrammarHighlight />
+      <DomainCatalogue />
       <LivePlatformPreview />
       <UseCaseCards />
       <AdvisoryCouncil />
