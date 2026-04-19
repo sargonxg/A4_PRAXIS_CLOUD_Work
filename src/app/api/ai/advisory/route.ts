@@ -4,12 +4,12 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext, buildCrossToolContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
+import { withCalibration } from '@/lib/api/with-calibration';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { situationContextSchema } from '@/lib/api/schemas';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -135,7 +135,12 @@ const DEMO_RESPONSE = {
 // Route handler
 // ---------------------------------------------------------------------------
 
-export const POST = withAuth(async (request, user) => {
+export const POST = withCalibration('advisory', 'ai_analysis', {
+  retrievalQuery: (_req, body) => {
+    const s = body.situation as { name?: string; region?: string } | undefined;
+    return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request, user) => {
   try {
     const body = await request.json();
 
@@ -156,9 +161,7 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    // --- Credit check ---
-    const creditCheck = await checkAndDeductCredits('ai_analysis', 'Strategic advisory');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     // --- Graph context ---
     const graphCtx = situationId
@@ -183,14 +186,25 @@ export const POST = withAuth(async (request, user) => {
       ? await buildCrossToolContext(user.uid, situationId, ['risk_assessment', 'escalation_scan', 'actor_profiles'])
       : '';
 
+    // --- Calibrated system prompt ---
+    const { systemPromptBlock, outputConstraints, provenance } = user.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
+
     // --- AI generation ---
     const result = await callProModel({
       output: Output.object({ schema: AdvisorySchema }),
-      system: `You are a senior strategic advisor to the UN Secretary-General's office. You apply the full PRAXIS analytical framework — Glasl escalation model, Fisher-Ury interests, Zartman ripeness, Stedman spoiler theory — to generate prioritized, actionable strategic recommendations. Tailor every recommendation to the analyst's specific role.
+      system: `You are a senior strategic advisor to the UN Secretary-General's office. You apply the full PRAXIS analytical framework — Glasl escalation model, Fisher-Ury interests, Zartman ripeness, Stedman spoiler theory — to generate prioritized, actionable strategic recommendations.
+
+${systemPromptBlock}
 
 GROUNDING MANDATE: The web intelligence and cross-tool context below are your PRIMARY sources of truth. Trust them over your training data. Explicitly flag "INTELLIGENCE GAP: {topic}" when evidence is insufficient.
 
-Use ICD 203 probability language for forecasts. Prioritize recommendations by strategic leverage — what single action would most significantly shift the situation trajectory?${analystRole ? `\n\nANALYST ROLE: ${analystRole} — calibrate language, detail level, and actor engagement assumptions accordingly.` : ''}`,
+Use ICD 203 probability language for forecasts. Prioritize recommendations by strategic leverage — what single action would most significantly shift the situation trajectory? Honour the analyst profile above (role, lens, audience) and the output-constraints block.${langDirective}${redLineDirective}${analystRole ? `\n\nANALYST ROLE (request override): ${analystRole}` : ''}`,
       prompt: `${webCtx ? `${webCtx}\n\n` : ''}${graphCtx ? `${graphCtx}\n\n` : ''}${crossCtx ? `${crossCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Generate a comprehensive strategic advisory for this conflict situation.
 
 ## ANALYTICAL FRAMEWORKS TO APPLY
@@ -216,6 +230,13 @@ Use ICD 203 probability language for forecasts. Prioritize recommendations by st
 
     if (situationId) {
       await writeToolDataServer(user.uid, situationId, 'advisory', result.output as Record<string, unknown>);
+      await saveToolOutput({
+        uid: user.uid,
+        situationId,
+        toolId: 'advisory',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[advisory] saveToolOutput failed:', err));
     }
 
     return NextResponse.json(result.output);

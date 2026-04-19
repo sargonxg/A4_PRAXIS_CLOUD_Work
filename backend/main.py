@@ -16,6 +16,26 @@ from logging_config import configure_logging
 # Install structured JSON logging before anything else imports a logger.
 configure_logging()
 
+# Observability — Sentry. No-op when SENTRY_DSN is not set in env.
+import os as _os
+_sentry_dsn = _os.environ.get("SENTRY_DSN", "").strip()
+if _sentry_dsn:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        from sentry_sdk.integrations.starlette import StarletteIntegration
+
+        sentry_sdk.init(
+            dsn=_sentry_dsn,
+            integrations=[FastApiIntegration(), StarletteIntegration()],
+            traces_sample_rate=float(_os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
+            environment=_os.environ.get("SENTRY_ENVIRONMENT", "production"),
+            release=_os.environ.get("SENTRY_RELEASE", "praxis-backend@6.2.0"),
+            send_default_pii=False,
+        )
+    except Exception as exc:  # Sentry init must never break the app
+        logging.getLogger("praxis").warning("Sentry init failed: %s", exc)
+
 logger = logging.getLogger("praxis")
 settings = get_settings()
 

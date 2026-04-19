@@ -66,3 +66,7 @@ backend/**/__pycache__/
 
 # Docker
 docker-compose.override.yml
+
+# Claude Code local tooling — never commit (agent worktrees can reach GB scale)
+.claude/
+.agents/

@@ -4,11 +4,11 @@ import { z } from 'zod';
 import { getProModel, getThinkingModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { withAuth } from '@/lib/api/with-auth';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withCalibration } from '@/lib/api/with-calibration';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { situationContextSchema } from '@/lib/api/schemas';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import type { Situation } from '@/types/situation';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 
@@ -103,7 +103,13 @@ const GameTheoryOutputSchema = z.object({
 // Route handler
 // ---------------------------------------------------------------------------
 
-export const POST = withAuth(async (request: Request, user) => {
+export const POST = withCalibration('game_theory', 'ai_game_theory', {
+  retrievalQuery: (_req, body) => {
+    const actors = Array.isArray(body.actors) ? (body.actors as string[]).join(', ') : '';
+    const ctx = typeof body.conflictContext === 'string' ? body.conflictContext : '';
+    return [actors, ctx].filter(Boolean).join(' — ') || undefined;
+  },
+})(async (request: Request, user) => {
   if (!process.env.GOOGLE_AI_API_KEY) {
     return new Response(JSON.stringify({ error: 'AI not configured' }), { status: 503 });
   }
@@ -121,8 +127,7 @@ export const POST = withAuth(async (request: Request, user) => {
       return NextResponse.json(DEMO_RESPONSE);
     }
 
-    const creditCheck = await checkAndDeductCredits('ai_game_theory', 'Game Theory Analysis');
-    if (!creditCheck.allowed) return creditCheck.response!;
+    // Credits + profile gate already handled by withCalibration above.
 
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
 
@@ -199,17 +204,37 @@ YOUR TASK:
 
 Reference the actors by their exact names. Ground payoff values in real strategic interests — economic, military, political, reputational. Be analytically precise, not generic.`;
 
+    // Calibrated system prompt (analyst profile + situation + red lines)
+    const { systemPromptBlock, outputConstraints, provenance } = user.calibration;
+    const langDirective = outputConstraints.language !== 'en'
+      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
+      : '';
+    const redLineDirective = outputConstraints.redLineClauses.length
+      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
+      : '';
+
     const result = await generateText({
       model: getThinkingModel(),
       output: Output.object({ schema: GameTheoryOutputSchema }),
       prompt,
-      system: `You are a formal game theorist and conflict analyst at a major international peace research institute. You apply Nash equilibrium theory, Schelling focal points, Fearon rationalist war causes, and Putnam two-level games to armed conflicts and political crises. You produce rigorous, mathematically consistent payoff matrices with analytically defensible values. Your analysis is used by UN mediators, diplomatic negotiators, and national security advisors. Every payoff you assign must be explainable by reference to strategic interests. Never produce symmetric or arbitrary payoff values — they must reflect real incentive structures.`,
+      system: `You are a formal game theorist and conflict analyst at a major international peace research institute. You apply Nash equilibrium theory, Schelling focal points, Fearon rationalist war causes, and Putnam two-level games to armed conflicts and political crises. You produce rigorous, mathematically consistent payoff matrices with analytically defensible values. Every payoff you assign must be explainable by reference to strategic interests. Never produce symmetric or arbitrary payoff values — they must reflect real incentive structures.
+
+${systemPromptBlock}
+
+Calibrate the framing and recommendations to the analyst profile above (mandate, lens, audience). Honour the output-constraints block.${langDirective}${redLineDirective}`,
     });
 
     if (situationId && user.uid) {
       await writeToolDataServer(user.uid, situationId, 'game_theory', result.output as Record<string, unknown>).catch(
         (err) => console.error('[game-theory] persist failed:', err),
       );
+      await saveToolOutput({
+        uid: user.uid,
+        situationId,
+        toolId: 'game_theory',
+        profileVersion: provenance.profileVersion,
+        output: result.output as Record<string, unknown>,
+      }).catch((err) => console.warn('[game-theory] saveToolOutput failed:', err));
     }
     return NextResponse.json(result.output);
   } catch (err) {
