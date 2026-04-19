@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { AppShell } from '@/components/app/app-shell';
+import { OnboardingBanner } from '@/components/shared/onboarding-banner';
 
 export const metadata: Metadata = {
   title: {
@@ -12,5 +13,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Auth is now handled client-side by Firebase.
   // The middleware checks for the session cookie to gate access.
   // The AuthProvider in the root layout manages user state.
-  return <AppShell>{children}</AppShell>;
+  return (
+    <AppShell>
+      <OnboardingBanner />
+      {children}
+    </AppShell>
+  );
 }

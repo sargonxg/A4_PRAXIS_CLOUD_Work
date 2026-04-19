@@ -597,6 +597,19 @@ export async function deleteSituationAdmin(
 }
 
 /**
+ * Get a single situation by uid + situationId — Admin SDK, server-side only.
+ * Thin alias for getSituationAdmin with a stable name for buildCalibratedContext.
+ * Returns null (never throws) when the document does not exist.
+ */
+export async function getSituationById(
+  uid: string,
+  situationId: string
+): Promise<AdminSituation | null> {
+  const snap = await adminSituationsCol(uid).doc(situationId).get();
+  return snap.exists ? (snap.data() as AdminSituation) : null;
+}
+
+/**
  * Reads the conflict knowledge graph for a situation using the Admin SDK.
  * Used server-side to pre-load graph data into AI tool context.
  */

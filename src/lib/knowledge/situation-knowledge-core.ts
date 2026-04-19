@@ -30,6 +30,27 @@ export class SituationKnowledgeCore {
     return this.orchestrator.retrieve(this.uid, this.situationId, toolId, query);
   }
 
+  /**
+   * Retrieve top-K chunks by semantic similarity to `query`.
+   * Returns a lightweight shape compatible with profile-weighted-retrieval:
+   * { id, text, source, score?, vector? }
+   */
+  async retrieve(query: string, topK = 10): Promise<Array<{
+    id: string;
+    text: string;
+    source: string;
+    score?: number;
+    vector?: number[];
+  }>> {
+    const results = await this.vectorLayer.search(query, topK);
+    return results.map(r => ({
+      id: r.chunkId,
+      text: r.text,
+      source: r.sourceDocId ?? r.sourceFeed ?? r.sourceToolId ?? 'unknown',
+      score: r.score,
+    }));
+  }
+
   async ingestDocument(docId: string, text: string, entityRefs: string[] = []): Promise<void> {
     await this.vectorLayer.ingestDocument(docId, text, entityRefs);
   }

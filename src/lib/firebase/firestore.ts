@@ -68,6 +68,9 @@ export interface UserProfile {
   gdprConsentDate?: string;       // ISO timestamp of GDPR consent
   cookieConsentVersion?: string;  // Cookie policy version accepted
   marketingConsent?: boolean;     // Explicit opt-in for marketing emails
+  // Onboarding state — set once per user after analyst-profile wizard
+  onboardingCompletedAt?: Timestamp | null;
+  onboardingSkipCount?: number;
 }
 
 export interface CreditTransaction {
@@ -131,6 +134,8 @@ export async function ensureUserProfile(user: {
     totalCreditsUsed: 0,
     isDemo: false,
     subscription: 'free',
+    onboardingCompletedAt: null,
+    onboardingSkipCount: 0,
     createdAt: serverTimestamp(),
     lastLoginAt: serverTimestamp(),
     aiProvider: 'google',

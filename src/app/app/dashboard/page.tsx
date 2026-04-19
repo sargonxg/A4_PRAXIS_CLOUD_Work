@@ -2,6 +2,7 @@
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
+import { OnboardingRequiredState } from '@/components/praxis/onboarding-required-state';
 import { SituationDashboard, WelcomeState } from '@/components/praxis/situation-dashboard';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
@@ -1026,12 +1027,17 @@ function AiInsightsPanel({ situationName }: { situationName: string }) {
 function AppDashboardContent({
   situations,
   showGuard,
+  needsOnboarding,
   situation,
 }: {
   situations: Situation[];
   showGuard: boolean;
+  needsOnboarding: boolean;
   situation: Situation | null;
 }) {
+  // When onboarding is incomplete, show the onboarding-required state instead of
+  // NoSituationState (which is about missing situations, not missing profile).
+  if (needsOnboarding) return <OnboardingRequiredState />;
   if (situations.length === 0 && !showGuard) return <WelcomeState />;
   if (showGuard || !situation) return <NoSituationState />;
   return <SituationDashboard situation={situation} />;
@@ -1043,7 +1049,7 @@ function AppDashboardContent({
 
 export default function DashboardPage() {
 
-  const { isDemo, showGuard, situation } = useSituationGuard();
+  const { isDemo, showGuard, needsOnboarding, situation } = useSituationGuard();
   const { situations, fetchSituations } = useSituationStore();
 
   useEffect(() => {
@@ -1058,6 +1064,7 @@ export default function DashboardPage() {
       <AppDashboardContent
         situations={situations}
         showGuard={showGuard}
+        needsOnboarding={needsOnboarding}
         situation={situation}
       />
     );

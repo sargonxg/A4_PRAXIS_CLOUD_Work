@@ -27,11 +27,28 @@ service cloud.firestore {
       match /settings/{settingDoc} {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }
+
+      // Analyst profile: owner-only access
+      match /profile/{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // Profile versions: owner read only, write denied (Admin SDK only)
+      match /profile_versions/{versionId} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow write: if false;
+      }
     }
 
     // Credit transactions: read own only, write denied (server-only via Admin SDK)
     match /credit_transactions/{transactionId} {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    // Onboarding suggestions: authenticated read only, write denied (server-only)
+    match /config/onboarding_suggestions {
+      allow read: if request.auth != null;
       allow write: if false;
     }
 

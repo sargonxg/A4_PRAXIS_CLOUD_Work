@@ -16,6 +16,7 @@ import {
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { doc, onSnapshot } from 'firebase/firestore';
+import type { AnalystProfile } from '@/types/analyst-profile';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -38,6 +39,8 @@ interface AuthContextValue {
   firebaseUser: FirebaseUser | null;
   loading: boolean;
   credits: number;
+  analystProfile: AnalystProfile | null;
+  onboardingComplete: boolean;
   signInWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUpWithEmail: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
@@ -71,6 +74,8 @@ const AuthContext = createContext<AuthContextValue>({
   firebaseUser: null,
   loading: true,
   credits: 0,
+  analystProfile: null,
+  onboardingComplete: false,
   signInWithEmail: async () => ({ success: false }),
   signUpWithEmail: async () => ({ success: false }),
   signInWithGoogle: async () => ({ success: false }),
@@ -108,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [credits, setCredits] = useState(0);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [analystProfile, setAnalystProfile] = useState<AnalystProfile | null>(null);
 
   // ---------------------------------------------------------------------------
   // Restore demo session on mount / page refresh.
@@ -337,6 +343,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, [firebaseUser, isDemoMode]);
 
+  // ---------------------------------------------------------------------------
+  // Analyst profile: load once when the Firebase user changes.
+  // Stays null on logout / demo mode — banner and card check this field.
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (!firebaseUser?.uid) { setAnalystProfile(null); return; }
+    import('@/lib/firebase/analyst-profile-service')
+      .then(({ loadAnalystProfile }) => loadAnalystProfile(firebaseUser.uid))
+      .then(setAnalystProfile)
+      .catch(() => setAnalystProfile(null));
+  }, [firebaseUser?.uid]);
+
   // Email/password sign in
   const signInWithEmail = useCallback(async (email: string, password: string) => {
     // Set loading=true immediately so AppShell doesn't redirect to /login while
@@ -506,6 +524,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const onboardingComplete = Boolean(analystProfile?.meta?.completedAt);
+
   return (
     <AuthContext.Provider
       value={{
@@ -513,6 +533,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         firebaseUser,
         loading,
         credits,
+        analystProfile,
+        onboardingComplete,
         signInWithEmail,
         signUpWithEmail,
         signInWithGoogle,

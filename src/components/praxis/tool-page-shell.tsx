@@ -27,6 +27,7 @@ import { useToolData } from '@/hooks/useToolData';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
+import { OnboardingRequiredState } from '@/components/praxis/onboarding-required-state';
 import type { Situation } from '@/types/situation';
 import type { ToolName } from '@/lib/services/tool-data-service';
 
@@ -78,13 +79,18 @@ export function ToolPageShell({
   renderEmpty,
   showRegistryInfo = true,
 }: ToolPageShellProps) {
-  const { isDemo, showGuard, situation } = useSituationGuard();
+  const { isDemo, showGuard, needsOnboarding, situation } = useSituationGuard();
   const { hasData, loading: firestoreLoading } = useToolData(toolDataKey);
   const [extra, setExtra] = useState<unknown>(null);
 
   // ── Demo mode: pass null situation and any extra state ──────────────────────
   if (isDemo) {
     return <>{renderDemo(null, extra)}</>;
+  }
+
+  // ── Onboarding gate ─────────────────────────────────────────────────────────
+  if (needsOnboarding) {
+    return <OnboardingRequiredState />;
   }
 
   // ── No situation guard ──────────────────────────────────────────────────────
