@@ -10,7 +10,8 @@
     "verify-tools": "npx tsx scripts/verify-tools.ts",
     "seed:onboarding": "tsx scripts/seed-onboarding-config.ts",
     "audit:tools": "tsx scripts/audit-tools.ts",
-    "audit:verify": "tsx scripts/verify-audit-fresh.ts"
+    "audit:verify": "tsx scripts/verify-audit-fresh.ts",
+    "seed:preferences": "tsx scripts/seed-preferences-defaults.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.50",
