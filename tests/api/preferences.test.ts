@@ -44,4 +44,15 @@ describe('/api/preferences', () => {
     const json = await res.json();
     expect(json.citationStyle).toBe('inline-links');
   });
+
+  it('PATCH returns 400 on malformed JSON body', async () => {
+    const res = await PATCH(new Request('http://localhost/api/preferences', {
+      method: 'PATCH',
+      body: '{ this is not json',
+      headers: { 'Content-Type': 'application/json' },
+    }));
+    expect(res.status).toBe(400);
+    const j = await res.json();
+    expect(j.error).toBe('invalid_json');
+  });
 });

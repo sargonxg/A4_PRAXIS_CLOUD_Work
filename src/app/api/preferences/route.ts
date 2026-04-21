@@ -11,7 +11,10 @@ export const GET = withAuth(async (_req, user) => {
 });
 
 export const PATCH = withAuth(async (req, user) => {
-  const body = await req.json().catch(() => ({}));
+  let body: unknown;
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
+  }
   const parsed = PatchSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_payload', details: parsed.error.flatten() }, { status: 400 });

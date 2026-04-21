@@ -7,6 +7,10 @@ vi.mock('@/lib/firebase/admin', () => ({
     doc: (path: string) => ({
       get: async () => ({ exists: store.has(path), data: () => store.get(path) }),
       set: async (d: unknown) => { store.set(path, d); },
+      update: async (d: unknown) => {
+        const existing = (store.get(path) ?? {}) as Record<string, unknown>;
+        store.set(path, { ...existing, ...(d as Record<string, unknown>) });
+      },
     }),
   },
 }));
@@ -40,5 +44,11 @@ describe('preferences-service', () => {
     await expect(savePreferences('user-c', { citationStyle: 'mla' })).rejects.toThrow();
     const prefs = await getPreferences('user-c');
     expect(prefs.citationStyle).toBe('apa'); // unchanged
+  });
+
+  it('returns an ISO-string updatedAt, not a FieldValue sentinel', async () => {
+    const prefs = await savePreferences('user-d', { citationStyle: 'apa' });
+    expect(typeof prefs.updatedAt).toBe('string');
+    expect((prefs.updatedAt as string).length).toBeGreaterThan(10);
   });
 });

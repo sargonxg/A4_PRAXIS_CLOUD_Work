@@ -16,23 +16,35 @@ export default function PreferencesPage() {
   const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_USER_PREFERENCES);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/preferences')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then(d => { if (d && !d.error) setPrefs(d); })
-      .catch(() => {});
+      .catch(err => { setError(String(err)); });
   }, []);
 
   async function save(patch: Partial<UserPreferences>) {
     setSaving(true);
     try {
-      const next = await fetch('/api/preferences', {
+      const r = await fetch('/api/preferences', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
-      }).then(r => r.json());
+      });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        setError(j?.error ?? `HTTP ${r.status}`);
+        return;
+      }
+      const next = await r.json();
       if (!next?.error) { setPrefs(next); setSavedAt(new Date().toISOString()); }
+    } catch (err) {
+      setError(String(err));
     } finally { setSaving(false); }
   }
 
@@ -54,6 +66,7 @@ export default function PreferencesPage() {
         {saving && <span>Saving…</span>}
         {!saving && savedAt && <span className="text-emerald-600">Saved at {new Date(savedAt).toLocaleTimeString()}</span>}
       </div>
+      {error && <p className="text-xs text-red-600">Save failed: {error}</p>}
     </div>
   );
 }
