@@ -48,7 +48,7 @@ export interface User {
   orgName: string;
   role: UserRole;
   avatar?: string;
-  preferences?: UserPreferences;
+  preferences?: LegacyUIPreferences;
 }
 
 export type UserRole =
@@ -58,13 +58,15 @@ export type UserRole =
   | 'reviewer'
   | 'viewer';
 
-export interface UserPreferences {
+export interface LegacyUIPreferences {
   theme: 'light' | 'dark' | 'system';
   defaultTemplate: string;
   language: string;
   timezone: string;
   sidebarCollapsed: boolean;
 }
+
+export type { UserPreferences } from './preferences';
 
 export interface Organization {
   id: string;

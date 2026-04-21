@@ -24,4 +24,22 @@ describe('AdvisorConfig', () => {
   it('lists exactly 4 advisor ids', () => {
     expect(ADVISOR_IDS).toEqual(['adeyemi', 'reyes', 'vanderberg', 'takeda']);
   });
+
+  it('rejects persona shorter than 100 chars', () => {
+    expect(() => AdvisorConfigSchema.parse({
+      id: 'reyes', name: 'Gen. Reyes', title: 'Security', bio: 'Security and operations advisor background.', headshotUrl: null,
+      persona: 'too short', modelTier: 'gemini-3-pro',
+      sourceCategories: ['x'], allowedTools: ['webSearch'], greeting: 'hi',
+      memoryPolicy: { lastTurns: 8, rollingSummary: true }, version: 1, updatedAt: null,
+    })).toThrow();
+  });
+
+  it('rejects memoryPolicy.lastTurns above 32', () => {
+    expect(() => AdvisorConfigSchema.parse({
+      id: 'vanderberg', name: 'Dr. Vanderberg', title: 'PE', bio: 'Political economy advisor background.', headshotUrl: null,
+      persona: 'a'.repeat(120), modelTier: 'claude-sonnet-4',
+      sourceCategories: ['x'], allowedTools: ['webSearch'], greeting: 'hi',
+      memoryPolicy: { lastTurns: 99, rollingSummary: true }, version: 1, updatedAt: null,
+    })).toThrow();
+  });
 });

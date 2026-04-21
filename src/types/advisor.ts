@@ -17,12 +17,12 @@ export const AdvisorConfigSchema = z.object({
   id: z.enum(ADVISOR_IDS),
   name: z.string().min(1),
   title: z.string().min(1),
-  bio: z.string().max(500),
+  bio: z.string().min(10).max(500),
   headshotUrl: z.string().url().nullable(),
   persona: z.string().min(100),
   modelTier: z.enum(ADVISOR_MODEL_TIERS),
   sourceCategories: z.array(z.string()).min(1).max(12),
-  allowedTools: z.array(z.enum(ADVISOR_TOOLS)),
+  allowedTools: z.array(z.enum(ADVISOR_TOOLS)).min(1),
   greeting: z.string().min(1).max(400),
   memoryPolicy: z.object({
     lastTurns: z.number().int().min(0).max(32),
@@ -36,5 +36,6 @@ export type AdvisorConfig = z.infer<typeof AdvisorConfigSchema>;
 export interface AdvisorFrame {
   advisorId: AdvisorId;
   rollingSummary: string;
+  /** ISO 8601 timestamp, set at serialisation. */
   lastTurnAt: string;
 }
