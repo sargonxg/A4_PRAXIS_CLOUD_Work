@@ -48,6 +48,9 @@ backend/.env
 
 # typescript
 *.tsbuildinfo
+
+# git worktrees — isolated development branches
+/.worktrees/
 next-env.d.ts
 
 # GCP / Firebase credentials — NEVER commit
