@@ -117,6 +117,7 @@ steps:
         --build-arg NEXT_PUBLIC_FIREBASE_APP_ID=1:852128226674:web:535f771c7a3568462c11eb
         --build-arg NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-7R44KT7CDY
         --build-arg NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_ENTERPRISE_KEY=AQ.Ab8RN6IXTdhsDEQPADTuABwbGTCSfvNt16sMuy0Xc95Anrh6Pw
+        --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${_GOOGLE_MAPS_KEY}
         .
     id: 'build-frontend'
     waitFor: ['get-backend-url']
@@ -205,6 +206,10 @@ substitutions:
   # Flip to '0' after running infrastructure/grant-cloudbuild-audit-iam.sh so the
   # GCP audit enforces rather than silently passes.
   _AUDIT_GCP_SKIP: '1'
+  # Google Maps JavaScript API key (public, embedded at build-time). Leave
+  # empty to render IntelligenceMap's SVG scatter fallback. Restrict the key
+  # to your domain(s) before flipping it live.
+  _GOOGLE_MAPS_KEY: ''
 
 options:
   logging: CLOUD_LOGGING_ONLY
