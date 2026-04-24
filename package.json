@@ -12,7 +12,8 @@
     "audit:tools": "tsx scripts/audit-tools.ts",
     "audit:routes": "tsx scripts/audit-ai-routes.ts",
     "audit:verify": "tsx scripts/verify-audit-fresh.ts",
-    "seed:preferences": "tsx scripts/seed-preferences-defaults.ts"
+    "seed:preferences": "tsx scripts/seed-preferences-defaults.ts",
+    "seed:advisors": "tsx scripts/seed-advisors.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.50",
