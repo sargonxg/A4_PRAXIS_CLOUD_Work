@@ -27,6 +27,17 @@ export default function OnboardingPage() {
     (async () => {
       let p = await loadAnalystProfile(user.id);
       if (!p) p = await initAnalystProfileIfMissing(user.id);
+      try {
+        const draftRes = await fetch('/api/onboarding/draft');
+        if (draftRes.ok) {
+          const draft = await draftRes.json();
+          if (draft && typeof draft === 'object' && 'identity' in draft) {
+            p = { ...p, ...(draft as Partial<AnalystProfile>) };
+          }
+        }
+      } catch {
+        // draft fetch is best-effort; fall through to profile
+      }
       setProfile(p);
     })();
   }, [user?.id]);
@@ -46,6 +57,12 @@ export default function OnboardingPage() {
         return;
       }
       setProfile(prev => ({ ...prev, ...patch } as AnalystProfile));
+      // Mirror to draft for resume-on-refresh recovery. Best-effort, fire-and-forget.
+      void fetch('/api/onboarding/draft', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      }).catch(() => { /* draft is non-critical */ });
     } catch {
       setSaveError('Network error — please check your connection.');
     } finally {
@@ -65,6 +82,8 @@ export default function OnboardingPage() {
       body: JSON.stringify({ createFirstSituation }),
     });
     if (!res.ok) return;
+    // Drop the draft — canonical profile now has everything.
+    void fetch('/api/onboarding/draft', { method: 'DELETE' }).catch(() => { /* non-critical */ });
     const { redirectTo } = await res.json();
     router.push(redirectTo);
   }, [router]);
