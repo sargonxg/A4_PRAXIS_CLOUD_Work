@@ -3,6 +3,7 @@ import { getSituationById } from '@/lib/firebase/situations';
 import { listEpisodes } from '@/lib/firebase/episodes';
 import { retrieveForProfile } from '@/lib/knowledge/profile-weighted-retrieval';
 import { getPreferences } from '@/lib/firebase/preferences-service';
+import { deriveInteractionFrame } from './interaction-frame';
 import {
   renderSystemPromptBlock,
   renderOutputConstraints,
@@ -37,8 +38,9 @@ export interface ContextBlock {
    */
   preferences: UserPreferences;
   /**
-   * Interaction frame — recent tool usage and active-draft counters. Populated by Task 2.3;
-   * currently always `null`.
+   * Interaction frame — recent tool usage and active-draft counters.
+   * Populated when `situationId` is provided via `deriveInteractionFrame`;
+   * `null` for situation-less builds.
    */
   interaction: InteractionFrame | null;
   /**
@@ -93,6 +95,7 @@ export async function buildCalibratedContext(opts: {
   let retrievedChunks: RetrievedChunk[] = [];
   let episodes: Episode[] = [];
   let preferences: UserPreferences = DEFAULT_USER_PREFERENCES;
+  let interaction: InteractionFrame | null = null;
 
   // Each read wrapped individually — no single failure should abort the build
   try {
@@ -117,6 +120,11 @@ export async function buildCalibratedContext(opts: {
       episodes = await listEpisodes(opts.uid, opts.situationId);
     } catch (err) {
       console.warn('[profile-context] listEpisodes failed:', err);
+    }
+    try {
+      interaction = await deriveInteractionFrame(opts.uid, opts.situationId);
+    } catch (err) {
+      console.warn('[profile-context] deriveInteractionFrame failed:', err);
     }
   }
 
@@ -166,7 +174,7 @@ export async function buildCalibratedContext(opts: {
     outputConstraints,
     toolContext: { profile, situation, retrievedChunks, episodes },
     preferences,
-    interaction: null,
+    interaction,
     advisor: null,
     domain,
     provenance: {
