@@ -15,7 +15,10 @@
     "audit:verify": "tsx scripts/verify-audit-fresh.ts",
     "seed:preferences": "tsx scripts/seed-preferences-defaults.ts",
     "seed:advisors": "tsx scripts/seed-advisors.ts",
-    "audit:gcp": "node scripts/audit-gcp.mjs"
+    "audit:gcp": "node scripts/audit-gcp.mjs",
+    "smoke:public": "playwright test tests/e2e/capabilities-api.spec.ts",
+    "smoke:golden-path": "playwright test tests/e2e/golden-path.spec.ts",
+    "migrate:user-api-keys": "node scripts/migrate-user-api-keys.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.50",
