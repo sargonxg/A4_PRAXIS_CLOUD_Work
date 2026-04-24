@@ -26,6 +26,7 @@ import { RecentToolsWidget } from '@/components/dashboard/recent-tools-widget';
 import { FeedAlertsWidget } from '@/components/dashboard/feed-alerts-widget';
 import { CreditsWidget } from '@/components/dashboard/credits-widget';
 import { SourceCoverageBanner } from '@/components/dashboard/source-coverage-banner';
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import type { Situation } from '@/types/situation';
 
 interface DailyRead {
@@ -148,13 +149,38 @@ function RealDashboard({ situation }: { situation: Situation }) {
       {/* Empty-state onboarding nudge */}
       {(!situation.graphEntities || situation.graphEntities === 0) &&
       (!situation.documentCount || situation.documentCount === 0) ? (
-        <EmptySituationHint />
+        <EmptySituationHint situationId={situation.id} />
       ) : null}
+
+      {/* Tool methodology — frameworks, data sources, related tools */}
+      <RegistryToolInfo toolId="dashboard" />
     </div>
   );
 }
 
-function EmptySituationHint() {
+function EmptySituationHint({ situationId }: { situationId: string }) {
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  async function runPopulate() {
+    setBusy(true);
+    setResult(null);
+    try {
+      const res = await fetch('/api/graph/populate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situationId }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as { nodesAfter?: number; edgesAfter?: number; actorsEnriched?: number };
+      setResult(`Seeded ${data.nodesAfter ?? 0} nodes, ${data.edgesAfter ?? 0} edges. ${data.actorsEnriched ?? 0} actors enriched.`);
+    } catch (e) {
+      setResult(e instanceof Error ? e.message : 'Graph seeding failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <section className="rounded-md border border-slate-800 bg-slate-900/50 p-4">
       <h3 className="text-sm font-semibold text-slate-200">Get this situation running</h3>
@@ -163,6 +189,17 @@ function EmptySituationHint() {
         <li>2. Build the graph — extract entities and relationships.</li>
         <li>3. Run a risk scan — classify Glasl stage and INFORM composite.</li>
       </ol>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={runPopulate}
+          disabled={busy}
+          className="rounded-md bg-gold-500/10 px-3 py-1.5 text-xs font-medium text-gold-400 border border-gold-500/30 hover:bg-gold-500/20 disabled:opacity-60"
+        >
+          {busy ? 'Seeding graph…' : 'Seed graph from grounded search + docs'}
+        </button>
+        {result && <span className="text-xs text-slate-400">{result}</span>}
+      </div>
     </section>
   );
 }

@@ -11,6 +11,9 @@ import { ConflictGrammarHighlight } from "@/components/landing/conflict-grammar-
 const DomainCatalogue = dynamic(() =>
   import("@/components/landing/domain-catalogue").then((m) => m.DomainCatalogue),
 );
+const DataSubstrate = dynamic(() =>
+  import("@/components/landing/data-substrate").then((m) => m.DataSubstrate),
+);
 const LivePlatformPreview = dynamic(() =>
   import("@/components/landing/live-platform-preview").then((m) => m.LivePlatformPreview),
 );
@@ -109,6 +112,7 @@ export default async function LandingPage() {
       <ProblemSection />
       <ConflictGrammarHighlight />
       <DomainCatalogue />
+      <DataSubstrate />
       <LivePlatformPreview />
       <UseCaseCards />
       <AdvisoryCouncil />
