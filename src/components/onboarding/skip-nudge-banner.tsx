@@ -18,7 +18,8 @@ export function SkipNudgeBanner() {
       try {
         const res = await fetch('/api/onboarding/profile');
         if (!res.ok || cancelled) return;
-        const profile = await res.json();
+        const body = await res.json();
+        const profile = body?.profile ?? body;
         const skipCount = Number(profile?.meta?.skipCount ?? 0);
         const completedAt = profile?.meta?.completedAt;
         if (skipCount >= SKIP_THRESHOLD && !completedAt && !cancelled) {
