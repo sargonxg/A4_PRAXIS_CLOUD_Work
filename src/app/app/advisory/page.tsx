@@ -4,6 +4,9 @@ import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
+import { AdvisorPicker } from '@/components/advisory/advisor-picker';
+import { AdvisorChatPane } from '@/components/advisory/advisor-chat-pane';
+import type { AdvisorConfig } from '@/types/advisor';
 
 import { useState, useCallback, useEffect } from 'react';
 import {
@@ -225,6 +228,7 @@ export default function AdvisoryPage() {
   const [advisoryData, setAdvisoryData] = useState<AdvisoryData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [analystRole, setAnalystRole] = useState('');
+  const [activeAdvisor, setActiveAdvisor] = useState<AdvisorConfig | null>(null);
 
   // Restore from persisted data
   useEffect(() => {
@@ -303,6 +307,29 @@ export default function AdvisoryPage() {
         </div>
         <RegistryToolInfo toolId="advisory" />
       </div>
+
+      {/* Advisor Council v2 — 4 flagship advisors, Firestore-backed */}
+      <section className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-navy-900">Advisor Council</h2>
+            <p className="text-[11px] text-navy-500">Pick a specialist to chat with. Each one brings a distinct method, source diet, and model tier.</p>
+          </div>
+          {activeAdvisor && (
+            <button
+              type="button"
+              onClick={() => setActiveAdvisor(null)}
+              className="text-[11px] text-navy-500 underline"
+            >
+              Back to picker
+            </button>
+          )}
+        </div>
+        {activeAdvisor
+          ? <AdvisorChatPane advisor={activeAdvisor} situation={situation ?? null} />
+          : <AdvisorPicker onPick={setActiveAdvisor} selectedId={activeAdvisor ? (activeAdvisor as AdvisorConfig).id : undefined} />
+        }
+      </section>
 
       {/* Generate panel */}
       <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
