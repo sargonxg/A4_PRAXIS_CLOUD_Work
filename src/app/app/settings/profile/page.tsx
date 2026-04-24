@@ -37,6 +37,7 @@ import { StepPerspective } from '@/app/onboarding/step-perspective';
 import { StepWorkingStyle } from '@/app/onboarding/step-working-style';
 import { LivePreview } from '@/app/onboarding/live-preview';
 import { PraxisLink } from '@/components/shared/praxis-link';
+import { DangerZone } from '@/components/settings/danger-zone';
 import { cn } from '@/lib/utils/cn';
 
 type Tab = 'identity' | 'perspective' | 'working-style';
@@ -269,6 +270,8 @@ export default function ProfileSettingsPage() {
           </div>
         </aside>
       </div>
+
+      <DangerZone />
     </div>
   );
 }
