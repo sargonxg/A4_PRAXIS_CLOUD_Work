@@ -1,16 +1,40 @@
 import { headers } from 'next/headers';
+import dynamic from 'next/dynamic';
 import { Hero } from "@/components/landing/hero";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { ProblemSection } from "@/components/landing/problem-section";
 import { ConflictGrammarHighlight } from "@/components/landing/conflict-grammar-highlight";
-import { DomainCatalogue } from "@/components/landing/domain-catalogue";
-import { LivePlatformPreview } from "@/components/landing/live-platform-preview";
-import { UseCaseCards } from "@/components/landing/use-case-cards";
-import { AdvisoryCouncil } from "@/components/landing/advisory-council";
-import { SecuritySection } from "@/components/landing/security-section";
-import { PricingTeaser } from "@/components/landing/pricing-teaser";
-import { WaitlistForm } from "@/components/landing/waitlist-form";
-import { Footer } from "@/components/landing/footer";
+
+// Below-fold sections: server-render on demand but keep them out of the
+// initial synchronous bundle so Hero + HowItWorks + ProblemSection dominate
+// the LCP path. `ssr: true` (default) so crawlers still see the content.
+const DomainCatalogue = dynamic(() =>
+  import("@/components/landing/domain-catalogue").then((m) => m.DomainCatalogue),
+);
+const LivePlatformPreview = dynamic(() =>
+  import("@/components/landing/live-platform-preview").then((m) => m.LivePlatformPreview),
+);
+const UseCaseCards = dynamic(() =>
+  import("@/components/landing/use-case-cards").then((m) => m.UseCaseCards),
+);
+const AdvisoryCouncil = dynamic(() =>
+  import("@/components/landing/advisory-council").then((m) => m.AdvisoryCouncil),
+);
+const SecuritySection = dynamic(() =>
+  import("@/components/landing/security-section").then((m) => m.SecuritySection),
+);
+const PricingTeaser = dynamic(() =>
+  import("@/components/landing/pricing-teaser").then((m) => m.PricingTeaser),
+);
+const Testimonials = dynamic(() =>
+  import("@/components/landing/testimonials").then((m) => m.Testimonials),
+);
+const WaitlistForm = dynamic(() =>
+  import("@/components/landing/waitlist-form").then((m) => m.WaitlistForm),
+);
+const Footer = dynamic(() =>
+  import("@/components/landing/footer").then((m) => m.Footer),
+);
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://praxis.tacitus.me';
 
@@ -89,6 +113,7 @@ export default async function LandingPage() {
       <UseCaseCards />
       <AdvisoryCouncil />
       <SecuritySection />
+      <Testimonials />
       <PricingTeaser />
       <WaitlistForm />
       <Footer />

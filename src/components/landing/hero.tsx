@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, Shield, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { HeroVisual } from "./hero-visual";
 
 // --- Word-by-word reveal ---
 
@@ -198,14 +199,15 @@ function AnimatedTicker({ shouldReduceMotion }: { shouldReduceMotion: boolean })
   );
 }
 
-function ProductGlimpse() {
+export function ProductGlimpse() {
   const shouldReduceMotion = useReducedMotion() ?? false;
 
   return (
     <motion.div
       initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 1.3, duration: 0.8 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-10%" }}
+      transition={{ duration: 0.8 }}
       className="relative w-full max-w-md lg:max-w-none"
       aria-hidden="true"
     >
@@ -257,8 +259,9 @@ function ProductGlimpse() {
                 <div className="relative h-3 flex-1 overflow-hidden rounded-full bg-cream-200">
                   <motion.div
                     initial={{ width: "0%" }}
-                    animate={{ width: "78%" }}
-                    transition={{ delay: 1.6, duration: 1.2, ease: "easeOut" }}
+                    whileInView={{ width: "78%" }}
+                    viewport={{ once: true, margin: "-10%" }}
+                    transition={{ duration: 1.2, ease: "easeOut" }}
                     className="h-full rounded-full bg-gradient-to-r from-gold-500 to-crimson"
                   />
                 </div>
@@ -428,9 +431,9 @@ export function Hero() {
           </motion.div>
         </div>
 
-        {/* RIGHT: animated product glimpse */}
+        {/* RIGHT: hero visual (video loop with ProductGlimpse fallback) */}
         <div className="w-full max-w-md lg:flex-1 lg:max-w-none">
-          <ProductGlimpse />
+          <HeroVisual />
         </div>
       </div>
 
