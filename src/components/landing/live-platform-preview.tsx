@@ -53,16 +53,16 @@ export function LivePlatformPreview() {
   const category = TOOL_CATEGORIES.find((c) => c.id === activeCategory)!;
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-white via-navy-50/30 to-white py-24">
+    <section id="tools" className="relative overflow-hidden bg-gradient-to-b from-white via-navy-50/30 to-white py-24">
       <div className="mx-auto max-w-7xl px-6">
         {/* Header */}
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-600">The Platform</p>
           <h2 className="mt-3 font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
-            42 Tools. One Situation.
+            40+ Tools. One Situation.
           </h2>
           <p className="mt-4 text-base text-navy-500 leading-relaxed">
-            Every tool in PRAXIS is powered by your situation context. Create a situation once — AI auto-populates actor profiles, risk assessments, conflict graphs, and 30+ specialized analyses.
+            Every tool in PRAXIS is powered by your situation context. Create a situation once — AI auto-populates actor profiles, risk assessments, conflict graphs, and dozens of specialized analyses.
           </p>
         </div>
 
@@ -121,7 +121,7 @@ export function LivePlatformPreview() {
         {/* Stats bar */}
         <div className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
-            { value: '42', label: 'Tool Pages', suffix: '+' },
+            { value: '40', label: 'Tool Pages', suffix: '+' },
             { value: '27', label: 'AI Chat Tools', suffix: '' },
             { value: '73', label: 'API Routes', suffix: '' },
             { value: '11', label: 'Live Data Feeds', suffix: '' },

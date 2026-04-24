@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils/cn";
 import { Menu, X } from "lucide-react";
 
 const navLinks = [
-  { label: "Platform", href: "#features" },
+  { label: "How it Works", href: "#how-it-works" },
+  { label: "Platform", href: "#capabilities" },
   { label: "Tools", href: "#tools" },
   { label: "Advisory Council", href: "#advisory" },
   { label: "Security", href: "#security" },

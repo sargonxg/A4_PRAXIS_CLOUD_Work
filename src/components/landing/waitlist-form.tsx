@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useRef, useEffect, FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, CheckCircle, Loader2 } from "lucide-react";
 
@@ -8,8 +8,14 @@ type FormState = "idle" | "loading" | "success" | "error";
 
 export function WaitlistForm() {
   const [email, setEmail] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot — hidden, bots fill
   const [formState, setFormState] = useState<FormState>("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const mountedAt = useRef<number>(Date.now());
+
+  useEffect(() => {
+    mountedAt.current = Date.now();
+  }, []);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -27,7 +33,11 @@ export function WaitlistForm() {
       const res = await fetch('/api/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({
+          email,
+          website,
+          elapsedMs: Date.now() - mountedAt.current,
+        }),
       });
 
       if (!res.ok) {
@@ -120,6 +130,21 @@ export function WaitlistForm() {
                   className="flex w-full max-w-md flex-col gap-3 sm:flex-row"
                   noValidate
                 >
+                  {/* Honeypot — hidden from real users, bots will fill it */}
+                  <div
+                    aria-hidden="true"
+                    className="absolute left-[-9999px] top-auto h-0 w-0 overflow-hidden"
+                  >
+                    <label htmlFor="waitlist-website">Website (leave blank)</label>
+                    <input
+                      id="waitlist-website"
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={website}
+                      onChange={(e) => setWebsite(e.target.value)}
+                    />
+                  </div>
                   <label htmlFor="waitlist-email" className="sr-only">
                     Email address
                   </label>

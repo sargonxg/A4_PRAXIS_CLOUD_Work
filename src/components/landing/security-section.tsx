@@ -10,41 +10,64 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-const securityFeatures = [
-  {
-    icon: ShieldCheck,
-    title: "SOC 2 Type II Compliant",
-    description: "Enterprise audit standards for data handling and access control.",
-    badge: "Planned",
-  },
+type BadgeKind = "live" | "planned" | "roadmap";
+
+const securityFeatures: Array<{
+  icon: typeof Shield;
+  title: string;
+  description: string;
+  badge: BadgeKind;
+  badgeLabel: string;
+}> = [
   {
     icon: Lock,
-    title: "End-to-End Encryption",
-    description: "AES-256 encryption at rest and TLS 1.3 in transit for all data.",
+    title: "Encryption at Rest & in Transit",
+    description: "AES-256 at rest (Firestore + Cloud Storage) and TLS 1.3 in transit, managed by Google Cloud.",
+    badge: "live",
+    badgeLabel: "Live",
+  },
+  {
+    icon: Shield,
+    title: "Owner-Scoped Data Access",
+    description: "Firestore security rules enforce owner-only reads on every user document. No cross-tenant access paths.",
+    badge: "live",
+    badgeLabel: "Live",
   },
   {
     icon: Eye,
-    title: "Role-Based Access Control",
-    description: "Granular permissions with comprehensive audit logging of all actions.",
+    title: "Role-Based Access & Admin Allowlist",
+    description: "Admin surfaces gated by `ADMIN_ALLOWLIST`. Full audit trail for profile versions and domain edits.",
+    badge: "live",
+    badgeLabel: "Live",
+  },
+  {
+    icon: ShieldCheck,
+    title: "SOC 2 Type II",
+    description: "Enterprise audit standards for data handling and access control.",
+    badge: "planned",
+    badgeLabel: "Planned",
+  },
+  {
+    icon: Cloud,
+    title: "GDPR & Data Residency",
+    description: "EU-region deployment option and data-residency controls aligned with GDPR.",
+    badge: "planned",
+    badgeLabel: "Planned",
   },
   {
     icon: Server,
     title: "Air-Gapped On-Premises",
     description: "Sovereign deployment option for classified environments.",
-    badge: "Coming 2027",
-  },
-  {
-    icon: Cloud,
-    title: "GDPR Compliance",
-    description: "Data residency and privacy controls aligned with EU regulatory requirements.",
-    badge: "Planned",
-  },
-  {
-    icon: Shield,
-    title: "Zero Data Retention",
-    description: "Sensitive analysis data is never stored beyond your session by default.",
+    badge: "roadmap",
+    badgeLabel: "2027 Roadmap",
   },
 ];
+
+function badgeClasses(kind: BadgeKind): string {
+  if (kind === "live") return "border-sage/30 bg-sage/10 text-sage";
+  if (kind === "planned") return "border-gold-600/20 bg-gold-600/5 text-gold-700";
+  return "border-navy-200 bg-navy-50 text-navy-600";
+}
 
 const demoDisclaimer = "Security certifications (SOC 2, GDPR compliance) are planned features. PRAXIS is currently in demo mode and should not be used to process classified or highly sensitive information.";
 
@@ -73,11 +96,12 @@ export function SecuritySection() {
           className="mb-6 text-center"
         >
           <h2 className="mb-4 font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl">
-            Enterprise-Grade Security for Sensitive Analysis
+            Security You Can Audit. A Roadmap You Can Verify.
           </h2>
           <p className="mx-auto max-w-2xl text-lg text-navy-500">
-            Designed for environments where information security isn&apos;t
-            optional — it&apos;s existential.
+            PRAXIS is built for environments where information security is
+            existential. Here&apos;s what ships today, and what&apos;s on the
+            enterprise roadmap.
           </p>
         </motion.div>
 
@@ -97,11 +121,14 @@ export function SecuritySection() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-diplomatic-blue/5 text-diplomatic-blue">
                     <Icon className="h-5 w-5" strokeWidth={1.5} />
                   </div>
-                  {feature.badge && (
-                    <span className="rounded-full border border-gold-600/20 bg-gold-600/5 px-2.5 py-0.5 text-[10px] font-semibold text-gold-700">
-                      {feature.badge}
-                    </span>
-                  )}
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${badgeClasses(feature.badge)}`}
+                  >
+                    {feature.badge === "live" && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-sage" />
+                    )}
+                    {feature.badgeLabel}
+                  </span>
                 </div>
                 <h3 className="mb-2 text-base font-semibold text-navy-900">
                   {feature.title}

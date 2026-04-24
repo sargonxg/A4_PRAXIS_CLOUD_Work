@@ -9,15 +9,16 @@ import { cn } from "@/lib/utils/cn";
 // --- Word-by-word reveal ---
 
 const headlineWords = [
-  "Your",
-  "Analysts",
-  "Write",
-  "Reports.",
-  "Your",
-  "AI",
-  "Should",
-  "Write",
+  "From",
+  "Raw",
+  "Sources",
+  "to",
+  "Credible",
   "Intelligence.",
+  "In",
+  "Minutes,",
+  "Not",
+  "Weeks.",
 ];
 
 const containerVariants = {
@@ -40,14 +41,14 @@ const wordVariants = {
   },
 };
 
-// --- Social proof logos ---
-const institutions = [
-  "United Nations",
-  "OSCE",
-  "African Union",
-  "ICG",
-  "Chatham House",
-  "EU External Action",
+// --- Practitioner backgrounds (aspirational fit, not endorsements) ---
+const practitionerBackgrounds = [
+  "Multilateral Missions",
+  "Foreign Ministries",
+  "Conflict Research Institutes",
+  "Mediation Teams",
+  "Humanitarian Leadership",
+  "Policy Think Tanks",
 ];
 
 // ---- Animated Conflict Graph SVG ----
@@ -355,6 +356,7 @@ export function Hero() {
                 variants={shouldReduceMotion ? {} : wordVariants}
                 className={cn(
                   "mr-[0.25em] inline-block",
+                  word === "Credible" && "text-gold-600",
                   word === "Intelligence." && "text-gold-600"
                 )}
               >
@@ -440,10 +442,10 @@ export function Hero() {
         className="relative z-10 mt-16 w-full max-w-6xl"
       >
         <p className="mb-4 text-center text-xs font-medium uppercase tracking-[0.12em] text-navy-400">
-          Initial feedback from professionals at
+          Built for practitioners across
         </p>
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-          {institutions.map((name) => (
+          {practitionerBackgrounds.map((name) => (
             <span
               key={name}
               className="text-xs font-semibold uppercase tracking-wider text-navy-300/60"

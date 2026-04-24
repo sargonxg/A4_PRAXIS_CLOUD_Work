@@ -7,6 +7,8 @@ import { DomainCatalogue } from "@/components/landing/domain-catalogue";
 import { LivePlatformPreview } from "@/components/landing/live-platform-preview";
 import { UseCaseCards } from "@/components/landing/use-case-cards";
 import { AdvisoryCouncil } from "@/components/landing/advisory-council";
+import { SecuritySection } from "@/components/landing/security-section";
+import { PricingTeaser } from "@/components/landing/pricing-teaser";
 import { WaitlistForm } from "@/components/landing/waitlist-form";
 import { Footer } from "@/components/landing/footer";
 
@@ -86,6 +88,8 @@ export default async function LandingPage() {
       <LivePlatformPreview />
       <UseCaseCards />
       <AdvisoryCouncil />
+      <SecuritySection />
+      <PricingTeaser />
       <WaitlistForm />
       <Footer />
     </>

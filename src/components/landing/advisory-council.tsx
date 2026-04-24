@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
@@ -111,12 +112,21 @@ function AdvisorModal({ advisor, onClose }: { advisor: Advisor; onClose: () => v
           Always Online
         </div>
 
-        <button
-          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-diplomatic-blue px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-diplomatic-blue/90"
-        >
-          Summon in Your Workspace
-          <ArrowRight className="h-4 w-4" />
-        </button>
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+          <Link
+            href="/login"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-diplomatic-blue px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-diplomatic-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40"
+          >
+            Summon in Your Workspace
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link
+            href="/demo/advisory"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-diplomatic-blue/20 px-5 py-3 text-sm font-semibold text-diplomatic-blue transition-all hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
+          >
+            Try in Demo
+          </Link>
+        </div>
       </motion.div>
     </motion.div>
   );
