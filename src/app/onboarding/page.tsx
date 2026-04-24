@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
 import { DEFAULT_ANALYST_PROFILE, type AnalystProfile } from '@/types/analyst-profile';
 import { loadAnalystProfile, initAnalystProfileIfMissing } from '@/lib/firebase/analyst-profile-service';
@@ -16,6 +16,8 @@ type Step = 1 | 2 | 3 | 4;
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const resumeMode = searchParams.get('resume') === '1';
   const { user } = useAuth();
   const [step, setStep] = useState<Step>(1);
   const [profile, setProfile] = useState<AnalystProfile>(DEFAULT_ANALYST_PROFILE);
@@ -27,20 +29,24 @@ export default function OnboardingPage() {
     (async () => {
       let p = await loadAnalystProfile(user.id);
       if (!p) p = await initAnalystProfileIfMissing(user.id);
-      try {
-        const draftRes = await fetch('/api/onboarding/draft');
-        if (draftRes.ok) {
-          const draft = await draftRes.json();
-          if (draft && typeof draft === 'object' && 'identity' in draft) {
-            p = { ...p, ...(draft as Partial<AnalystProfile>) };
+      // resume=1 (from Settings → Review onboarding) always seeds from the
+      // canonical profile, skipping any stale draft.
+      if (!resumeMode) {
+        try {
+          const draftRes = await fetch('/api/onboarding/draft');
+          if (draftRes.ok) {
+            const draft = await draftRes.json();
+            if (draft && typeof draft === 'object' && 'identity' in draft) {
+              p = { ...p, ...(draft as Partial<AnalystProfile>) };
+            }
           }
+        } catch {
+          // draft fetch is best-effort; fall through to profile
         }
-      } catch {
-        // draft fetch is best-effort; fall through to profile
       }
       setProfile(p);
     })();
-  }, [user?.id]);
+  }, [user?.id, resumeMode]);
 
   const savePatch = useCallback(async (patch: Partial<AnalystProfile>) => {
     if (!user?.id) return;

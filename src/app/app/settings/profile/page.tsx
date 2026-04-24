@@ -166,6 +166,12 @@ export default function ProfileSettingsPage() {
                 Incomplete
               </span>
             )}
+            <a
+              href="/onboarding?resume=1"
+              className="text-[11px] text-diplomatic-blue underline underline-offset-2 hover:text-diplomatic-blue/80"
+            >
+              Review onboarding
+            </a>
           </div>
         </div>
       </div>
