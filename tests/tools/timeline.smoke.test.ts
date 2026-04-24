@@ -4,14 +4,18 @@ import type { Episode } from '@/types/episode';
 
 const make = (id: string, date: string, deleted = false): Episode => ({
   id,
-  situationId: 's',
   title: `e${id}`,
   description: `desc ${id}`,
   date,
+  dateConfidence: 'exact',
   actors: [],
   importance: 3,
-  createdAt: null,
-  updatedAt: null,
+  tags: [],
+  sources: [],
+  extractedBy: 'ai',
+  extractedAt: null,
+  profileVersion: 0,
+  domainVersion: 0,
   deletedAt: deleted ? new Date().toISOString() : null,
 });
 

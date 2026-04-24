@@ -37,10 +37,11 @@ async function checkRateLimit(uid: string): Promise<boolean> {
   }
 }
 
-export function withAuth(
-  handler: (req: Request, user: AuthenticatedUser) => Promise<Response>
+export function withAuth<TContext = unknown>(
+  handler: (req: Request, user: AuthenticatedUser, context: TContext) => Promise<Response>
 ) {
-  return async (req: Request) => {
+  return async (req: Request, context?: TContext) => {
+    const ctx = context as TContext;
     const start = Date.now();
     const url = new URL(req.url);
     const route = url.pathname;
@@ -83,7 +84,7 @@ export function withAuth(
           status = 429;
           return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
         }
-        const response = await handler(req, demoUser);
+        const response = await handler(req, demoUser, ctx);
         status = response.status;
         return response;
       }
@@ -100,7 +101,7 @@ export function withAuth(
             return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
           }
 
-          const response = await handler(req, user);
+          const response = await handler(req, user, ctx);
           status = response.status;
           return response;
         } catch {
