@@ -1,6 +1,6 @@
 import { streamText, stepCountIs } from 'ai';
-import type { ModelMessage } from 'ai';
-import { getModel, getProModel } from '@/lib/ai/providers';
+import type { LanguageModel, ModelMessage } from 'ai';
+import { getModel, getProModel, getAnalysisModel, getDeepThinkModel } from '@/lib/ai/providers';
 import { webSearch } from '@/lib/ai/tools';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { withCalibration } from '@/lib/api/with-calibration';
@@ -9,6 +9,15 @@ import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
 import type { WebSearchResult } from '@/lib/ai/firecrawl';
 import type { Situation } from '@/types/situation';
 import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
+import { getAdvisor } from '@/lib/firebase/advisor-service';
+import { appendTurn, readRecentTurns } from '@/lib/firebase/advisor-history-service';
+import { buildAdvisorBriefing } from './briefing';
+import {
+  ADVISOR_IDS,
+  type AdvisorConfig,
+  type AdvisorId,
+  type AdvisorModelTier,
+} from '@/types/advisor';
 
 export const maxDuration = 90;
 
@@ -50,6 +59,30 @@ const PERSONA_WEB_QUERIES: Record<string, (sitName: string, region: string, year
 const DEEP_ANALYSIS_SUFFIX = `
 
 You are operating in DEEP ANALYSIS mode. Provide an in-depth, multi-paragraph analysis (6-10 paragraphs). Draw on specific analytical frameworks, cite relevant data sources and databases by name, and include specific policy recommendations with implementation timelines. Structure your response with clear sections. Where relevant, note areas of uncertainty and competing interpretations. This is a premium analysis — be thorough, precise, and actionable.`;
+
+function pickModelForTier(tier: AdvisorModelTier): LanguageModel {
+  switch (tier) {
+    case 'claude-sonnet-4':
+      return getAnalysisModel();
+    case 'gemini-3-pro-deepthink':
+      return getDeepThinkModel('high');
+    case 'gemini-3-pro':
+      return getProModel();
+    case 'gemini-3-flash':
+    default:
+      return getModel();
+  }
+}
+
+function isAdvisorConfigId(id: string): id is AdvisorId {
+  return (ADVISOR_IDS as readonly string[]).includes(id);
+}
+
+function renderHistoryBlock(turns: Array<{ role: 'user' | 'assistant'; content: string; at: string }>): string {
+  if (turns.length === 0) return '';
+  const body = turns.map((t, i) => `  [${i + 1}] ${t.role}: ${t.content.slice(0, 500)}`).join('\n');
+  return `\n<prior-thread turns="${turns.length}">\n${body}\n</prior-thread>`;
+}
 
 export const POST = withCalibration('advisory', 'ai_chat', {
   retrievalQuery: (_req, body) => {
@@ -185,7 +218,24 @@ Be specific. Reference advisors by name when attributing views.`,
       return result.toTextStreamResponse();
     }
 
-    // --- Standard chat / deep analysis flow ---
+    // --- Firestore-driven advisor (v2: 4 flagships) ---
+    if (advisorId && isAdvisorConfigId(advisorId)) {
+      const cfg = await getAdvisor(advisorId);
+      if (cfg) {
+        return runFirestoreAdvisor({
+          cfg,
+          messages: (messages ?? []) as ModelMessage[],
+          situation: (situation as Situation | undefined) ?? null,
+          situationId,
+          uid: ctx.uid,
+          profileVersion: provenance.profileVersion,
+          deepAnalysis: Boolean(deepAnalysis),
+          calibrationSuffix,
+        });
+      }
+    }
+
+    // --- Legacy 10-advisor hard-coded flow (fallback) ---
     const persona = ADVISOR_PERSONAS[advisorId ?? ''];
     if (!persona) {
       return new Response(JSON.stringify({ error: 'Unknown advisor' }), { status: 400 });
@@ -246,3 +296,78 @@ You have access to a web search tool. Use it only when the user asks about curre
     });
   }
 });
+
+/**
+ * Firestore-driven advisor path. Wraps `streamText` with:
+ * - config-backed persona from `config/advisors/{id}`
+ * - live briefing prefetch per advisor source categories
+ * - last-N-turn memory (per-situation × per-advisor subcollection)
+ * - model selection routed from `cfg.modelTier`
+ * - per-turn history append (user + assistant) via `appendTurn`
+ */
+async function runFirestoreAdvisor(opts: {
+  cfg: AdvisorConfig;
+  messages: ModelMessage[];
+  situation: Situation | null;
+  situationId: string;
+  uid: string;
+  profileVersion: number;
+  deepAnalysis: boolean;
+  calibrationSuffix: string;
+}): Promise<Response> {
+  const { cfg, messages, situation, situationId, uid, profileVersion, deepAnalysis, calibrationSuffix } = opts;
+
+  const briefing = await buildAdvisorBriefing(cfg, situation).catch(() => '');
+  const pastTurns = situationId && uid
+    ? await readRecentTurns(uid, situationId, cfg.id, cfg.memoryPolicy.lastTurns).catch(() => [])
+    : [];
+  const historyBlock = renderHistoryBlock(pastTurns);
+
+  const sitCtx = situation ? `\n\n## Active Situation Context\n${buildToolContext(situation as Situation)}` : '';
+  const systemPrompt = `${cfg.persona}${briefing}${historyBlock}
+
+You are operating within PRAXIS, TACITUS's conflict intelligence platform. You are being consulted by a diplomatic professional, political affairs officer, or conflict analyst. Keep your distinct voice. Use tools only when the user asks about current events or data you cannot answer from knowledge. Cite sources when using tool output.${deepAnalysis ? DEEP_ANALYSIS_SUFFIX : ''}${sitCtx}${calibrationSuffix}`;
+
+  const model = pickModelForTier(cfg.modelTier);
+
+  // Record the user's new turn before streaming so memory is durable even if
+  // the assistant turn fails mid-stream.
+  const lastUserTurn = [...messages].reverse().find((m) => m.role === 'user');
+  if (situationId && uid && lastUserTurn) {
+    const content = typeof lastUserTurn.content === 'string'
+      ? lastUserTurn.content
+      : JSON.stringify(lastUserTurn.content);
+    void appendTurn(uid, situationId, cfg.id, {
+      role: 'user',
+      content,
+      at: new Date().toISOString(),
+    });
+  }
+
+  const result = streamText({
+    model,
+    system: systemPrompt,
+    messages,
+    tools: cfg.allowedTools.includes('webSearch') ? { webSearch } : undefined,
+    stopWhen: stepCountIs(1),
+    onFinish: async ({ text }) => {
+      if (situationId && uid) {
+        void appendTurn(uid, situationId, cfg.id, {
+          role: 'assistant',
+          content: text,
+          at: new Date().toISOString(),
+        });
+        await saveToolOutput({
+          uid,
+          situationId,
+          toolId: 'advisory',
+          profileVersion,
+          output: { action: 'chat', advisorId: cfg.id, deepAnalysis, response: text },
+          metadata: { action: 'chat', advisorId: cfg.id, deepAnalysis, modelTier: cfg.modelTier },
+        }).catch((err) => console.warn('[advisory/v2] saveToolOutput failed:', err));
+      }
+    },
+  });
+
+  return result.toTextStreamResponse();
+}
