@@ -10,7 +10,7 @@ export default function EarlyWarningPage() {
       toolId="early-warning"
       toolName="Early Warning"
       toolDataKey="early_warning"
-      apiEndpoint="/api/ai/risk-assessment"
+      apiEndpoint="/api/ai/escalation-scan"
       creditCost={3}
       buildExtraBody={(situation) => ({
         regions: [situation.region],

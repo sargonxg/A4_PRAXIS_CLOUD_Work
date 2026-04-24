@@ -135,7 +135,7 @@ function RealDashboard({ situation }: { situation: Situation }) {
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <RiskGaugeWidget situation={situation} />
         <EscalationWidget situation={situation} />
-        <AdvisorsWidget />
+        <AdvisorsWidget situationId={situation.id} />
         <RecentToolsWidget situationId={situation.id} />
         <FeedAlertsWidget situationId={situation.id} region={situation.region} />
         <CreditsWidget />

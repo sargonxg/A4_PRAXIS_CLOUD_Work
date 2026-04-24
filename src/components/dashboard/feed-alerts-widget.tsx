@@ -16,10 +16,11 @@ interface FeedAlertItem {
 
 interface FeedAlertsWidgetProps {
   situationId: string;
+  /** Accepted for API compatibility with earlier dashboard wiring; no longer read here. */
   region?: string;
 }
 
-export function FeedAlertsWidget({ situationId, region }: FeedAlertsWidgetProps) {
+export function FeedAlertsWidget({ situationId }: FeedAlertsWidgetProps) {
   const [items, setItems] = useState<FeedAlertItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
@@ -30,14 +31,11 @@ export function FeedAlertsWidget({ situationId, region }: FeedAlertsWidgetProps)
     setItems(null);
 
     const params = new URLSearchParams({
-      situationId,
-      ...(region ? { region } : {}),
       window: '24h',
       limit: '3',
     });
 
-    // Endpoint is optional: if it returns 404 the widget shows an empty state.
-    fetch(`/api/data/intelligence?${params.toString()}`)
+    fetch(`/api/situations/${encodeURIComponent(situationId)}/feed-alerts?${params.toString()}`)
       .then((res) => {
         if (res.status === 404) {
           if (!cancelled) setItems([]);
@@ -58,7 +56,7 @@ export function FeedAlertsWidget({ situationId, region }: FeedAlertsWidgetProps)
     return () => {
       cancelled = true;
     };
-  }, [situationId, region, reloadToken]);
+  }, [situationId, reloadToken]);
 
   return (
     <WidgetShell
