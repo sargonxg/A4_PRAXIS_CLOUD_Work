@@ -1,10 +1,19 @@
 #!/usr/bin/env node
+/**
+ * GCP readiness audit — exits non-zero when a required resource is missing.
+ *
+ * Run locally with gcloud configured, or from Cloud Build (the build-step SA
+ * needs reader roles on the target resources; see
+ * infrastructure/grant-cloudbuild-audit-iam.sh).
+ *
+ * Set AUDIT_GCP_SKIP=1 to no-op (useful until IAM is granted in CI).
+ */
 import { execSync } from 'node:child_process';
 
 const PROJECT = process.env.GCP_PROJECT_ID ?? 'praxisbytacitus';
 const SKIP_GCLOUD = process.env.AUDIT_GCP_SKIP === '1';
 
-function gcloud(cmd) {
+function gcloudValue(cmd) {
   try {
     return execSync(`gcloud ${cmd} --project ${PROJECT} --format="value(name)"`, {
       encoding: 'utf8',
@@ -27,17 +36,50 @@ function gcloudDescribe(cmd) {
   }
 }
 
+function gcloudList(cmd) {
+  try {
+    return execSync(`gcloud ${cmd} --project ${PROJECT} --format="value(name)"`, {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim().split('\n').filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 const checks = [
-  { name: 'Vertex AI API enabled',                         run: () => gcloud('services list --filter=name:aiplatform.googleapis.com').length > 0 },
-  { name: 'Firestore API enabled',                         run: () => gcloud('services list --filter=name:firestore.googleapis.com').length > 0 },
-  { name: 'Cloud Run API enabled',                         run: () => gcloud('services list --filter=name:run.googleapis.com').length > 0 },
-  { name: 'BigQuery dataset praxis_analytics',             run: () => gcloudDescribe('alpha bq datasets describe praxis_analytics') },
-  { name: 'Storage bucket praxisbytacitus-praxis-uploads', run: () => gcloudDescribe('storage buckets describe gs://praxisbytacitus-praxis-uploads') },
-  { name: 'Pub/Sub topic profile.events',                  run: () => gcloudDescribe('pubsub topics describe profile.events') },
-  { name: 'Secret Manager: praxis-firebase-sa',            run: () => gcloudDescribe('secrets describe praxis-firebase-sa') },
-  { name: 'Secret Manager: praxis-ai-key',                 run: () => gcloudDescribe('secrets describe praxis-ai-key') },
-  { name: 'Secret Manager: praxis-cron-secret',            run: () => gcloudDescribe('secrets describe praxis-cron-secret') },
-  { name: 'Secret Manager: praxis-cookie-secret',          run: () => gcloudDescribe('secrets describe praxis-cookie-secret') },
+  // APIs
+  { name: 'Vertex AI API enabled',                         category: 'api',     run: () => gcloudValue('services list --filter=name:aiplatform.googleapis.com').length > 0 },
+  { name: 'Firestore API enabled',                         category: 'api',     run: () => gcloudValue('services list --filter=name:firestore.googleapis.com').length > 0 },
+  { name: 'Cloud Run API enabled',                         category: 'api',     run: () => gcloudValue('services list --filter=name:run.googleapis.com').length > 0 },
+  { name: 'Cloud Build API enabled',                       category: 'api',     run: () => gcloudValue('services list --filter=name:cloudbuild.googleapis.com').length > 0 },
+  { name: 'Pub/Sub API enabled',                           category: 'api',     run: () => gcloudValue('services list --filter=name:pubsub.googleapis.com').length > 0 },
+  { name: 'Cloud Functions API enabled',                   category: 'api',     run: () => gcloudValue('services list --filter=name:cloudfunctions.googleapis.com').length > 0 },
+  { name: 'Cloud Scheduler API enabled',                   category: 'api',     run: () => gcloudValue('services list --filter=name:cloudscheduler.googleapis.com').length > 0 },
+  { name: 'Secret Manager API enabled',                    category: 'api',     run: () => gcloudValue('services list --filter=name:secretmanager.googleapis.com').length > 0 },
+  { name: 'BigQuery API enabled',                          category: 'api',     run: () => gcloudValue('services list --filter=name:bigquery.googleapis.com').length > 0 },
+  { name: 'Artifact Registry API enabled',                 category: 'api',     run: () => gcloudValue('services list --filter=name:artifactregistry.googleapis.com').length > 0 },
+
+  // Storage
+  { name: 'BigQuery dataset praxis_analytics',             category: 'data',    run: () => gcloudDescribe('alpha bq datasets describe praxis_analytics') },
+  { name: 'Storage bucket praxis-uploads',                 category: 'data',    run: () => gcloudDescribe('storage buckets describe gs://praxisbytacitus-praxis-uploads') },
+
+  // Secrets (every required secret the app mounts)
+  { name: 'Secret: praxis-firebase-sa',                    category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-firebase-sa') },
+  { name: 'Secret: praxis-google-ai-key',                  category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-google-ai-key') },
+  { name: 'Secret: praxis-cron-secret',                    category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-cron-secret') },
+  { name: 'Secret: praxis-cookie-secret',                  category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-cookie-secret') },
+  { name: 'Secret: praxis-user-key-master',                category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-user-key-master') },
+
+  // Pub/Sub topics (5 referenced in CLAUDE.md)
+  { name: 'Pub/Sub topic: profile.events',                 category: 'pubsub',  run: () => gcloudDescribe('pubsub topics describe profile.events') },
+
+  // Cloud Run services
+  { name: 'Cloud Run: praxis-frontend',                    category: 'runtime', run: () => gcloudDescribe('run services describe praxis-frontend --region=us-central1') },
+  { name: 'Cloud Run: praxis-backend',                     category: 'runtime', run: () => gcloudDescribe('run services describe praxis-backend --region=us-central1') },
+
+  // Cloud Scheduler jobs (GDELT poll, alerts, briefing — declared in plan)
+  { name: 'Scheduler job exists',                          category: 'schedule', soft: true, run: () => gcloudList('scheduler jobs list --location=us-central1').length > 0 },
 ];
 
 async function main() {
@@ -45,7 +87,9 @@ async function main() {
     console.log('AUDIT_GCP_SKIP=1 — skipping gcloud calls, reporting PASS.');
     process.exit(0);
   }
-  let fail = 0;
+  let hardFail = 0;
+  let softFail = 0;
+  const byCategory = {};
   for (const c of checks) {
     let ok = false;
     try {
@@ -53,14 +97,16 @@ async function main() {
     } catch (e) {
       console.error(`FAIL ${c.name}: ${e.message}`);
     }
-    console.log(`${ok ? 'OK  ' : 'FAIL'} ${c.name}`);
-    if (!ok) fail++;
+    console.log(`${ok ? 'OK  ' : c.soft ? 'WARN' : 'FAIL'} [${c.category}] ${c.name}`);
+    byCategory[c.category] = (byCategory[c.category] ?? 0) + 1;
+    if (!ok) {
+      if (c.soft) softFail++;
+      else hardFail++;
+    }
   }
-  if (fail > 0) {
-    console.error(`\n${fail} of ${checks.length} checks failed.`);
-    process.exit(1);
-  }
-  console.log(`\nAll ${checks.length} checks passed.`);
+  console.log(`\nSummary: ${Object.entries(byCategory).map(([k, v]) => `${k}=${v}`).join(', ')}`);
+  console.log(`Hard failures: ${hardFail} · Soft warnings: ${softFail}`);
+  if (hardFail > 0) process.exit(1);
 }
 
 void main();
