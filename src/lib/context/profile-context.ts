@@ -2,6 +2,7 @@ import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
 import { getSituationById } from '@/lib/firebase/situations';
 import { listEpisodes } from '@/lib/firebase/episodes';
 import { retrieveForProfile } from '@/lib/knowledge/profile-weighted-retrieval';
+import { getPreferences } from '@/lib/firebase/preferences-service';
 import {
   renderSystemPromptBlock,
   renderOutputConstraints,
@@ -17,6 +18,9 @@ import type { AnalystProfile } from '@/types/analyst-profile';
 import type { Situation } from '@/types/situation';
 import type { MergedDomainConfig } from '@/types/domain';
 import type { Episode } from '@/types/episode';
+import { DEFAULT_USER_PREFERENCES, type UserPreferences } from '@/types/preferences';
+import type { InteractionFrame } from '@/types/interaction';
+import type { AdvisorFrame } from '@/types/advisor';
 
 export interface ContextBlock {
   systemPromptBlock: string;
@@ -27,6 +31,21 @@ export interface ContextBlock {
     retrievedChunks: RetrievedChunk[];
     episodes: Episode[];
   };
+  /**
+   * User-level preferences (citation style, default language, preferred advisor, etc.).
+   * Always populated — falls back to `DEFAULT_USER_PREFERENCES` when the read fails.
+   */
+  preferences: UserPreferences;
+  /**
+   * Interaction frame — recent tool usage and active-draft counters. Populated by Task 2.3;
+   * currently always `null`.
+   */
+  interaction: InteractionFrame | null;
+  /**
+   * Advisor frame — selected advisor persona with rolling summary. Populated by Task 6.5;
+   * currently always `null`.
+   */
+  advisor: AdvisorFrame | null;
   /**
    * Effective merged domain: user.primary + user.secondaries + situation.domain.
    * Always populated — never null. Falls back to the `generic` seed if every
@@ -73,12 +92,19 @@ export async function buildCalibratedContext(opts: {
   let situation: Situation | null = null;
   let retrievedChunks: RetrievedChunk[] = [];
   let episodes: Episode[] = [];
+  let preferences: UserPreferences = DEFAULT_USER_PREFERENCES;
 
   // Each read wrapped individually — no single failure should abort the build
   try {
     profile = await getAnalystProfile(opts.uid);
   } catch (err) {
     console.warn('[profile-context] getAnalystProfile failed:', err);
+  }
+
+  try {
+    preferences = await getPreferences(opts.uid);
+  } catch (err) {
+    console.warn('[profile-context] getPreferences failed:', err);
   }
 
   if (opts.situationId) {
@@ -138,6 +164,9 @@ export async function buildCalibratedContext(opts: {
     systemPromptBlock,
     outputConstraints,
     toolContext: { profile, situation, retrievedChunks, episodes },
+    preferences,
+    interaction: null,
+    advisor: null,
     domain,
     provenance: {
       profileVersion: profile?.meta?.version ?? 0,
