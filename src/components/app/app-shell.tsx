@@ -10,6 +10,7 @@ import { Header } from '@/components/app/header';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { DemoModeBanner } from '@/components/onboarding/demo-mode-banner';
 import { OnboardingWrapper } from '@/components/onboarding/onboarding-wrapper';
+import { SkipNudgeBanner } from '@/components/onboarding/skip-nudge-banner';
 import { GlobalSearch } from '@/components/shared/global-search';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useNotificationStore } from '@/stores/notification-store';
@@ -122,6 +123,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="flex flex-1 flex-col overflow-hidden">
           <DemoModeBanner />
+          {!user.isDemo && <SkipNudgeBanner />}
           <Header isMobile={isMobile} />
           <main className="flex-1 overflow-y-auto">
             <div className="mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-6">
