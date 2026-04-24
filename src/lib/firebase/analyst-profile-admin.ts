@@ -1,5 +1,5 @@
 import { FieldValue } from 'firebase-admin/firestore';
-import { getAdminDbOrThrow } from './admin';
+import { adminDb, getAdminDbOrThrow } from './admin';
 import { DEFAULT_ANALYST_PROFILE, type AnalystProfile } from '@/types/analyst-profile';
 
 const USERS = 'users';
@@ -46,38 +46,47 @@ export async function upsertAnalystProfile(
 }
 
 /**
- * Bumps meta.version, writes immutable snapshot to profile_versions/{versionId},
- * sets users/{uid}.onboardingCompletedAt. Returns versionId.
+ * Atomically bumps meta.version, writes immutable snapshot to
+ * profile_versions/{versionId}, and sets users/{uid}.onboardingCompletedAt.
+ *
+ * All three writes happen inside a single Firestore transaction — if any one
+ * fails, none persist, preventing inconsistent state where a snapshot exists
+ * without a corresponding live-profile bump (or vice-versa).
  */
 export async function completeAnalystProfile(uid: string): Promise<{ versionId: string }> {
-  const db = getAdminDbOrThrow();
-  const userRef = db.collection(USERS).doc(uid);
+  const userRef = adminDb.collection(USERS).doc(uid);
   const profileRef = userRef.collection(PROFILE).doc(PROFILE_DOC);
 
-  const snap = await profileRef.get();
-  const current = (snap.exists ? snap.data() : DEFAULT_ANALYST_PROFILE) as AnalystProfile;
-  const nextVersion = (current.meta?.version ?? 0) + 1;
-  const versionId = `v${nextVersion}`;
+  const versionId = await adminDb.runTransaction(async (tx) => {
+    const snap = await tx.get(profileRef);
+    const current = (snap.exists ? snap.data() : DEFAULT_ANALYST_PROFILE) as AnalystProfile;
+    const nextVersion = (current.meta?.version ?? 0) + 1;
+    const vId = `v${nextVersion}`;
+    const versionRef = userRef.collection(VERSIONS).doc(vId);
 
-  // write snapshot
-  await userRef.collection(VERSIONS).doc(versionId).set({
-    ...current,
-    meta: { ...current.meta, version: nextVersion, completedAt: FieldValue.serverTimestamp() },
-    _snapshotAt: FieldValue.serverTimestamp(),
-  });
+    tx.set(versionRef, {
+      ...current,
+      meta: { ...current.meta, version: nextVersion, completedAt: FieldValue.serverTimestamp() },
+      _snapshotAt: FieldValue.serverTimestamp(),
+    });
 
-  // bump live profile
-  await profileRef.set({
-    meta: {
-      version: nextVersion,
-      completedAt: FieldValue.serverTimestamp(),
-      lastEditedAt: FieldValue.serverTimestamp(),
-    },
-  }, { merge: true });
+    tx.set(
+      profileRef,
+      {
+        meta: {
+          version: nextVersion,
+          completedAt: FieldValue.serverTimestamp(),
+          lastEditedAt: FieldValue.serverTimestamp(),
+        },
+      },
+      { merge: true },
+    );
 
-  // set root flag
-  await userRef.update({
-    onboardingCompletedAt: FieldValue.serverTimestamp(),
+    tx.update(userRef, {
+      onboardingCompletedAt: FieldValue.serverTimestamp(),
+    });
+
+    return vId;
   });
 
   return { versionId };
