@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight, X, MessageSquareQuote } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { advisors, type Advisor } from "@/lib/constants/advisors";
 
@@ -13,6 +13,7 @@ function AdvisorAvatar({ advisor, size = "md" }: { advisor: Advisor; size?: "sm"
     md: "h-16 w-16 text-lg",
     lg: "h-20 w-20 text-xl",
   };
+  const initials = advisor.name.replace(/^(Dr\.|Gen\.|Amb\.|Col\.)\s*/, "").split(" ").map(n => n[0]).join("").slice(0, 2);
 
   return (
     <div
@@ -26,7 +27,7 @@ function AdvisorAvatar({ advisor, size = "md" }: { advisor: Advisor; size?: "sm"
         border: `2px solid ${advisor.color}40`,
       }}
     >
-      {advisor.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
+      {initials}
     </div>
   );
 }
@@ -35,23 +36,34 @@ function AdvisorCard({ advisor, onClick }: { advisor: Advisor; onClick: () => vo
   return (
     <button
       onClick={onClick}
-      className="group flex w-64 shrink-0 flex-col items-center rounded-xl border border-cream-300/60 bg-white/70 p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-navy-950/5 hover:border-gold-600/20"
+      className="group relative flex h-full flex-col items-start rounded-2xl border border-cream-300/60 bg-white/80 p-6 text-left transition-all duration-300 hover:-translate-y-1 hover:border-gold-600/30 hover:shadow-lg hover:shadow-navy-950/5"
     >
-      <AdvisorAvatar advisor={advisor} size="lg" />
-      <h3 className="mt-4 text-base font-semibold text-navy-900">{advisor.name}</h3>
-      <p className="mt-1 text-xs font-medium text-gold-700">{advisor.title}</p>
-      <p className="mt-3 text-sm italic text-navy-500 leading-relaxed">
+      <div className="flex items-center gap-4">
+        <AdvisorAvatar advisor={advisor} size="md" />
+        <div className="min-w-0">
+          <h3 className="truncate text-base font-semibold text-navy-900">{advisor.name}</h3>
+          <p className="truncate text-xs font-medium text-gold-700">{advisor.title}</p>
+        </div>
+      </div>
+
+      <p className="mt-4 text-sm italic leading-relaxed text-navy-500">
         &ldquo;{advisor.tagline}&rdquo;
       </p>
-      <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-        {advisor.expertise.slice(0, 2).map((tag) => (
-          <span
+
+      <ul className="mt-4 flex flex-wrap gap-1.5">
+        {advisor.expertise.slice(0, 3).map((tag) => (
+          <li
             key={tag}
             className="rounded-full bg-cream-200 px-2.5 py-0.5 text-[10px] font-medium text-navy-600"
           >
             {tag}
-          </span>
+          </li>
         ))}
+      </ul>
+
+      <div className="mt-5 flex items-center gap-2 text-xs text-navy-500 group-hover:text-diplomatic-blue">
+        <MessageSquareQuote className="h-3.5 w-3.5" />
+        <span className="line-clamp-1">{advisor.signature}</span>
       </div>
     </button>
   );
@@ -63,7 +75,7 @@ function AdvisorModal({ advisor, onClose }: { advisor: Advisor; onClose: () => v
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/30 px-6 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/40 px-6 backdrop-blur-sm"
       onClick={onClose}
     >
       <motion.div
@@ -76,7 +88,8 @@ function AdvisorModal({ advisor, onClose }: { advisor: Advisor; onClose: () => v
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-navy-400 hover:text-navy-700"
+          className="absolute right-4 top-4 text-navy-400 hover:text-navy-700"
+          aria-label="Close"
         >
           <X className="h-5 w-5" />
         </button>
@@ -86,15 +99,11 @@ function AdvisorModal({ advisor, onClose }: { advisor: Advisor; onClose: () => v
           <div>
             <h3 className="text-xl font-semibold text-navy-900">{advisor.name}</h3>
             <p className="text-sm font-medium text-gold-700">{advisor.title}</p>
-            <p className="mt-1 text-sm italic text-navy-500">
-              &ldquo;{advisor.tagline}&rdquo;
-            </p>
+            <p className="mt-1 text-sm italic text-navy-500">&ldquo;{advisor.tagline}&rdquo;</p>
           </div>
         </div>
 
-        <p className="mt-6 text-sm leading-relaxed text-navy-600">
-          {advisor.bio}
-        </p>
+        <p className="mt-6 text-sm leading-relaxed text-navy-600">{advisor.bio}</p>
 
         <div className="mt-5 flex flex-wrap gap-2">
           {advisor.expertise.map((tag) => (
@@ -107,9 +116,13 @@ function AdvisorModal({ advisor, onClose }: { advisor: Advisor; onClose: () => v
           ))}
         </div>
 
-        <div className="mt-6 flex items-center gap-2 text-xs text-sage font-medium">
-          <div className="h-2 w-2 rounded-full bg-sage animate-pulse" />
-          Always Online
+        <div className="mt-6 rounded-lg border border-diplomatic-blue/15 bg-diplomatic-blue/5 p-3 text-xs text-navy-700">
+          <p className="font-semibold text-diplomatic-blue">How {advisor.name.split(" ").slice(-1)[0]} reasons</p>
+          <p className="mt-1 leading-relaxed">
+            Anchored in your situation&rsquo;s knowledge graph. Reads your analyst profile. Pulls
+            from a curated source whitelist — never invents citations. Keeps a rolling summary of
+            your conversation so context survives across sessions.
+          </p>
         </div>
 
         <div className="mt-6 flex flex-col gap-2 sm:flex-row">
@@ -117,18 +130,62 @@ function AdvisorModal({ advisor, onClose }: { advisor: Advisor; onClose: () => v
             href="/login"
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-diplomatic-blue px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-diplomatic-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40"
           >
-            Summon in Your Workspace
+            Open in your workspace
             <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
             href="/demo/advisory"
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-diplomatic-blue/20 px-5 py-3 text-sm font-semibold text-diplomatic-blue transition-all hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
           >
-            Try in Demo
+            Try in the demo
           </Link>
         </div>
       </motion.div>
     </motion.div>
+  );
+}
+
+function GraphMemoryCallout() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 0.7 }}
+      className="mx-auto mt-16 max-w-4xl rounded-2xl border border-diplomatic-blue/15 bg-diplomatic-blue/5 p-8"
+    >
+      <p className="text-overline text-diplomatic-blue">Graph memory, not token soup</p>
+      <h3 className="mt-2 font-serif text-2xl text-navy-900 sm:text-3xl">
+        Every advisor reasons inside your situation&rsquo;s knowledge graph — not in a vacuum.
+      </h3>
+      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-navy-600">
+        Off-the-shelf LLMs forget what they said yesterday. PRAXIS wires each advisor into the
+        Situation Knowledge Core: actors, claims, interests, commitments, events — extracted
+        from your documents and data feeds into a living ACO graph with 14 entity types and 72
+        typed relationships. Queries resolve through the graph first, so answers are grounded,
+        citable, and consistent across turns.
+      </p>
+      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-navy-600">
+        Your analyst profile — mandate, lenses, red lines, preferred sources — calibrates every
+        response. Your rolling advisor summary keeps conversations coherent across weeks.
+        That is the shift: from stateless chat to persistent analytical context that compounds
+        over time.
+      </p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <Callout title="Per-user profile" body="11-dimension calibration, typed into every prompt." />
+        <Callout title="Per-situation graph" body="ACO v2: 14 entity types, 72 relationships." />
+        <Callout title="Per-session memory" body="Rolling summaries + last-turns recall per advisor." />
+      </div>
+    </motion.div>
+  );
+}
+
+function Callout({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="rounded-lg border border-cream-300 bg-white/60 p-3">
+      <p className="text-xs font-semibold text-diplomatic-blue">{title}</p>
+      <p className="mt-1 text-[11px] leading-relaxed text-navy-600">{body}</p>
+    </div>
   );
 }
 
@@ -156,36 +213,33 @@ export function AdvisoryCouncil() {
           className="mb-6 text-center"
         >
           <h2 className="mb-4 font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl">
-            Your Advisory Council — AI Experts, Always On Call
+            Four specialists. One persistent brief.
           </h2>
           <p className="mx-auto max-w-2xl text-lg text-navy-500">
-            Each advisor brings decades of specialized experience to your
-            analysis. Ask them anything.
+            Four AI advisors, each tuned to a discipline — political affairs, security,
+            political economy, diplomatic craft. They remember your situation and your style.
           </p>
         </motion.div>
 
-        {/* Scrollable advisor cards */}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="mt-12"
+          className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
         >
-          <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
-            {advisors.map((advisor) => (
-              <div key={advisor.id} className="snap-start">
-                <AdvisorCard
-                  advisor={advisor}
-                  onClick={() => setSelectedAdvisor(advisor)}
-                />
-              </div>
-            ))}
-          </div>
+          {advisors.map((advisor) => (
+            <AdvisorCard
+              key={advisor.id}
+              advisor={advisor}
+              onClick={() => setSelectedAdvisor(advisor)}
+            />
+          ))}
         </motion.div>
+
+        <GraphMemoryCallout />
       </div>
 
-      {/* Modal */}
       <AnimatePresence>
         {selectedAdvisor && (
           <AdvisorModal
