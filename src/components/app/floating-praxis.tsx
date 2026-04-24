@@ -10,11 +10,21 @@ import { parseDataStreamChunk } from '@/lib/utils/stream';
 import { usePathname } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import {
+  MutationConfirmCard,
+  type MutationPatch,
+} from '@/components/assistant/mutation-confirm-card';
+
+interface ChatProposal {
+  summary: string;
+  patch: MutationPatch;
+}
 
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  proposal?: ChatProposal | null;
 }
 
 interface QuickAction {
@@ -227,6 +237,17 @@ export function FloatingPraxis() {
         { id: assistantId, role: 'assistant', content: '' },
       ]);
 
+      // Fire the intent classifier in parallel — non-blocking. If it resolves
+      // as a profile.mutation we attach a MutationConfirmCard to the assistant
+      // turn; otherwise we ignore the result.
+      const intentPromise = fetch('/api/assistant/intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text.trim() }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null);
+
       try {
         const res = await fetch('/api/ai/chat', {
           method: 'POST',
@@ -295,6 +316,31 @@ export function FloatingPraxis() {
         );
       } finally {
         setIsStreaming(false);
+      }
+
+      // Attach any intent-classifier proposal to the completed assistant turn.
+      const intent = await intentPromise;
+      if (
+        intent &&
+        typeof intent === 'object' &&
+        intent.intent === 'profile.mutation' &&
+        intent.patch &&
+        typeof intent.patch === 'object' &&
+        typeof intent.humanSummary === 'string'
+      ) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId
+              ? {
+                  ...m,
+                  proposal: {
+                    summary: intent.humanSummary,
+                    patch: intent.patch as MutationPatch,
+                  },
+                }
+              : m
+          )
+        );
       }
     },
     [isStreaming, messages, activeSituation, demoMode]
@@ -452,6 +498,12 @@ export function FloatingPraxis() {
                           msg.id === messages[messages.length - 1]?.id && (
                             <span className="inline-block h-3 w-0.5 animate-pulse bg-gold-500 ml-0.5" />
                           )}
+                        {msg.proposal && (
+                          <MutationConfirmCard
+                            summary={msg.proposal.summary}
+                            patch={msg.proposal.patch}
+                          />
+                        )}
                       </div>
                     ) : (
                       <p className="text-xs leading-relaxed">{msg.content}</p>

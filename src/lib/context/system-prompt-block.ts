@@ -2,6 +2,7 @@ import type { AnalystProfile, Audience, Language, AnalyticalStyle } from '@/type
 import type { Situation } from '@/types/situation';
 import type { MergedDomainConfig } from '@/types/domain';
 import type { Episode } from '@/types/episode';
+import type { UserPreferences } from '@/types/preferences';
 
 export interface RetrievedChunk {
   id: string;
@@ -37,6 +38,7 @@ export function renderSystemPromptBlock(opts: {
   domain?: MergedDomainConfig | null;
   toolId?: string;
   episodes?: Episode[];
+  preferences?: UserPreferences;
 }): string {
   const parts: string[] = [];
 
@@ -51,6 +53,9 @@ export function renderSystemPromptBlock(opts: {
     parts.push(renderKnowledgeBlock(opts.retrievedChunks));
   }
   parts.push(renderConstraintsBlock(opts.profile));
+  if (opts.preferences) {
+    parts.push(renderPreferencesBlock(opts.preferences));
+  }
 
   return parts.join('\n\n');
 }
@@ -174,5 +179,17 @@ function renderConstraintsBlock(p: AnalystProfile | null): string {
     ...redLines.map(r => `  - Constraint: ${escapeTag(r)}`),
     `  - ${style === 'deep_dive' ? 'Favor depth, caveats, and citations.' : 'Favor brevity and actionable bullets.'}`,
     '</output-constraints>',
+  ].join('\n');
+}
+
+function renderPreferencesBlock(p: UserPreferences): string {
+  return [
+    '<preferences>',
+    `  <citations>${escapeTag(p.citationStyle)}</citations>`,
+    `  <length>${escapeTag(p.defaultReportLength)}</length>`,
+    `  <language>${escapeTag(p.defaultLanguage)}</language>`,
+    `  <confidence>${escapeTag(p.confidenceLabelling)}</confidence>`,
+    `  <time-horizon>${escapeTag(p.defaultTimeHorizon)}</time-horizon>`,
+    '</preferences>',
   ].join('\n');
 }

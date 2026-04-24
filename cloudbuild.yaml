@@ -12,6 +12,22 @@ steps:
         echo "OK: no forbidden model strings"
     id: 'check-model-strings'
 
+  # ── Preflight audits: AI-route calibration + GCP infra ──────────────────────
+  - name: 'node:22-slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -e
+        # install tsx at runtime (keeps image small; dev-only dep)
+        npm i --no-save tsx >/dev/null
+        echo "→ audit:routes"
+        npx tsx scripts/audit-ai-routes.ts
+        echo "→ audit:gcp (skipped in Cloud Build; gcloud unauthenticated at this step)"
+        AUDIT_GCP_SKIP=1 npx tsx scripts/audit-gcp.ts
+    id: 'preflight-audit'
+    waitFor: ['check-model-strings']
+
   # ── Firestore rules deploy — NOT automated via Cloud Build right now because
   # the Cloud Build service account lacks serviceusage.services.get permission.
   # Deploy rules manually after changes:

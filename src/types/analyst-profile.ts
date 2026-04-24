@@ -88,6 +88,7 @@ export const AnalystProfileSchema = z.object({
     lastEditedAt: z.any(),
     skipCount: z.number().int().nonnegative(),
     createdAt: z.any(),
+    deletedAt: z.any().nullable().default(null),
   }),
   embedding: z.object({
     vector: z.array(z.number()).length(768).optional(),
@@ -114,7 +115,7 @@ export const DEFAULT_ANALYST_PROFILE: AnalystProfile = {
     redLines: [],
     analyticalStyle: 'rapid_brief',
   },
-  meta: { version: 0, completedAt: null, lastEditedAt: null, skipCount: 0, createdAt: null },
+  meta: { version: 0, completedAt: null, lastEditedAt: null, skipCount: 0, createdAt: null, deletedAt: null },
 };
 
 /** A profile is "complete" only when the required perspective fields and identity are filled. */

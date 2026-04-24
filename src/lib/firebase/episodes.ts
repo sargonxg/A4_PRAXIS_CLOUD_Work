@@ -211,3 +211,31 @@ export async function deleteEpisode(
   const ref = episodesCol(uid, sid).doc(episodeId);
   await ref.update({ deletedAt: FieldValue.serverTimestamp() });
 }
+
+export interface EpisodeDayBucket {
+  /** ISO date (YYYY-MM-DD) used as the group key. */
+  date: string;
+  episodes: Episode[];
+}
+
+/**
+ * Groups live (non-deleted) episodes by calendar day (YYYY-MM-DD), preserving
+ * within-day order by Episode.date, and returns the buckets newest-first so the
+ * timeline renders without further sorting.
+ */
+export function aggregateEpisodesByDay(episodes: Episode[]): EpisodeDayBucket[] {
+  const byDay = new Map<string, Episode[]>();
+  for (const e of episodes) {
+    if (e.deletedAt) continue;
+    const key = (e.date ?? '').slice(0, 10) || 'undated';
+    const bucket = byDay.get(key) ?? [];
+    bucket.push(e);
+    byDay.set(key, bucket);
+  }
+  return [...byDay.entries()]
+    .sort(([a], [b]) => (a > b ? -1 : a < b ? 1 : 0))
+    .map(([date, list]) => ({
+      date,
+      episodes: list.sort((a, b) => (a.date > b.date ? 1 : a.date < b.date ? -1 : 0)),
+    }));
+}

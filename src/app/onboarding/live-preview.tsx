@@ -1,10 +1,18 @@
 'use client';
 
 import { renderSystemPromptBlock } from '@/lib/context/system-prompt-block';
+import { DEFAULT_USER_PREFERENCES } from '@/types/preferences';
 import type { AnalystProfile } from '@/types/analyst-profile';
 
 export function LivePreview({ profile }: { profile: AnalystProfile }) {
-  const block = renderSystemPromptBlock({ profile, situation: null, retrievedChunks: [] });
+  // Match the exact block every calibrated AI route sees at runtime, including
+  // the <preferences> tail that buildCalibratedContext always appends.
+  const block = renderSystemPromptBlock({
+    profile,
+    situation: null,
+    retrievedChunks: [],
+    preferences: DEFAULT_USER_PREFERENCES,
+  });
   return (
     <div className="sticky top-6 space-y-3">
       <div>
