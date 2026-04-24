@@ -22,10 +22,33 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }
 
-      // User settings (API keys, model preferences, graph backend): owner-only
-      // Note: API keys should ideally be stored in Secret Manager in production.
+      // User settings (model preferences, graph backend): owner-only.
+      // API keys are NOT stored here anymore — they live encrypted in the
+      // `api_keys_encrypted/providers/{providerId}` subcollection below and
+      // are only reachable via the server-side API routes.
       match /settings/{settingDoc} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
+        allow read, write: if request.auth != null
+                           && request.auth.uid == uid
+                           && settingDoc != 'api_keys'
+                           && settingDoc != 'api_keys_encrypted';
+      }
+
+      // Encrypted user-supplied API keys: SERVER-ONLY via Admin SDK.
+      // Clients must never read the ciphertext, AAD, or even existence
+      // metadata directly — they go through `/api/settings/api-keys/*` which
+      // returns masked previews only.
+      match /settings/api_keys_encrypted/providers/{providerId} {
+        allow read, write: if false;
+      }
+      match /settings/api_keys_encrypted {
+        allow read, write: if false;
+      }
+
+      // Legacy plaintext api_keys doc — kept in rules as deny-all so the
+      // migration script can delete it via Admin SDK while clients have no
+      // ability to read whatever is left.
+      match /settings/api_keys {
+        allow read, write: if false;
       }
 
       // Analyst profile: owner-only access

@@ -138,6 +138,23 @@ export function StepWorkingStyle({
         onRequestMore={requestMoreRedLines}
       />
 
+      {/* Free-tier / premium feeds note */}
+      <div className="rounded-lg border border-diplomatic-blue/20 bg-diplomatic-blue/5 px-3 py-2.5">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-diplomatic-blue">
+          Data tier
+        </p>
+        <p className="mt-1 text-xs text-navy-700">
+          PRAXIS runs out of the box on the free tier — Google Search grounded research, GDELT
+          media volume, ReliefWeb situation reports, HDX displacement data, UNHCR, UCDP, World
+          Bank, SIPRI, and Crisis Group outlooks are all enabled by default with no key needed.
+        </p>
+        <p className="mt-1.5 text-xs text-navy-600">
+          Premium structured feeds (ACLED event data, Tavily / Parallel web research, Firecrawl
+          page rendering) are optional — bring your own keys any time in
+          <span className="font-medium"> Settings → API Keys</span>.
+        </p>
+      </div>
+
       {/* Analytical style */}
       <div className="space-y-2">
         <label className="text-xs font-medium text-navy-700">Analytical style</label>

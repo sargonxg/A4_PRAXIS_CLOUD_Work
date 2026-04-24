@@ -25,6 +25,7 @@ import { AdvisorsWidget } from '@/components/dashboard/advisors-widget';
 import { RecentToolsWidget } from '@/components/dashboard/recent-tools-widget';
 import { FeedAlertsWidget } from '@/components/dashboard/feed-alerts-widget';
 import { CreditsWidget } from '@/components/dashboard/credits-widget';
+import { SourceCoverageBanner } from '@/components/dashboard/source-coverage-banner';
 import type { Situation } from '@/types/situation';
 
 interface DailyRead {
@@ -130,6 +131,9 @@ function RealDashboard({ situation }: { situation: Situation }) {
           <p className="text-xs text-amber-500">Daily read failed: {readError}</p>
         ) : null}
       </header>
+
+      {/* Source coverage banner — honest surface of tier state */}
+      <SourceCoverageBanner />
 
       {/* 6-widget grid */}
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

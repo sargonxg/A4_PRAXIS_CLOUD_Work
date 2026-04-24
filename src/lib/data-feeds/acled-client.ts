@@ -71,15 +71,18 @@ async function rateLimit() {
   lastRequestTime = Date.now();
 }
 
-function getCredentials() {
+export interface ACLEDCredentials { key: string; email: string }
+
+function getCredentials(override?: ACLEDCredentials | null): ACLEDCredentials | null {
+  if (override && override.key && override.email) return override;
   const key = process.env.ACLED_API_KEY;
   const email = process.env.ACLED_EMAIL;
   if (!key || !email) return null;
   return { key, email };
 }
 
-export function isACLEDConfigured(): boolean {
-  return !!getCredentials();
+export function isACLEDConfigured(override?: ACLEDCredentials | null): boolean {
+  return !!getCredentials(override);
 }
 
 /** Normalize actor names (strip trailing numbers, standardize common variants) */
@@ -125,8 +128,10 @@ export async function fetchEvents(options: {
   admin2?: string;
   limit?: number;
   paginate?: boolean; // auto page-through up to 15000 events
+  /** Per-call credential override — takes precedence over ENV fallback. Used to inject user-configured keys. */
+  credentials?: ACLEDCredentials | null;
 }): Promise<ACLEDEvent[]> {
-  const creds = getCredentials();
+  const creds = getCredentials(options.credentials ?? null);
   if (!creds) return [];
 
   const cacheKey = JSON.stringify(options);
