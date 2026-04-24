@@ -1,5 +1,4 @@
-import { withAuth } from '@/lib/api/with-auth';
-import { checkAndDeductCredits } from '@/lib/api/with-credits';
+import { withCalibration } from '@/lib/api/with-calibration';
 import { scrapeUrl, searchWeb, isFirecrawlConfigured } from '@/lib/ai/firecrawl';
 import {
   extractEntities,
@@ -38,7 +37,13 @@ export const maxDuration = 180;
  *   - urls: string[] — additional URLs to scrape and extract from
  *   - maxSourcesPerCategory: number (default 2)
  */
-export const POST = withAuth(async (req, user) => {
+export const POST = withCalibration('research-extract', 'ai_research', {
+  retrievalQuery: (_req, body) => {
+    const name = typeof body.situationName === 'string' ? body.situationName : '';
+    const region = typeof body.region === 'string' ? body.region : '';
+    return [name, region].filter(Boolean).join(' ') || undefined;
+  },
+})(async (req, user) => {
   if (user.isDemo || isServerDemoMode()) {
     return Response.json({ error: 'Not available in demo mode' }, { status: 403 });
   }
@@ -58,8 +63,7 @@ export const POST = withAuth(async (req, user) => {
       return Response.json({ error: 'situationId and situationName required' }, { status: 400 });
     }
 
-    const creditCheck = await checkAndDeductCredits('ai_research', 'Research & extract pipeline');
-    if (!creditCheck.allowed) return creditCheck.response;
+    // Credits + profile gate already handled by withCalibration above.
 
     const searchQuery = `${situationName}${region ? ` ${region}` : ''}`;
     const firecrawlAvailable = isFirecrawlConfigured();
