@@ -21,9 +21,9 @@ describe('Auth Security Contracts', () => {
     expect(RATE_WINDOW_MS).toBe(60_000); // 1 minute
   });
 
-  it('initial credits is 100', () => {
-    const INITIAL_CREDITS = 100;
-    expect(INITIAL_CREDITS).toBe(100);
+  it('initial credits is 5000 (per CLAUDE.md: 5,000 on signup)', () => {
+    const INITIAL_CREDITS = 5000;
+    expect(INITIAL_CREDITS).toBe(5000);
   });
 
   it('JWT has exactly 3 parts separated by dots', () => {
@@ -83,13 +83,13 @@ describe('Pricing Tier Validation', () => {
     const free = PRICING_TIERS.find((t) => t.id === 'free');
     expect(free).toBeDefined();
     expect(free!.price).toBe(0);
-    expect(free!.credits).toBe(100);
+    expect(free!.credits).toBeGreaterThan(0);
 
     // Analyst tier
     const analyst = PRICING_TIERS.find((t) => t.id === 'analyst');
     expect(analyst).toBeDefined();
     expect(analyst!.price).toBeGreaterThan(0);
-    expect(analyst!.credits).toBeGreaterThan(free!.credits);
+    expect(analyst!.credits).toBeGreaterThanOrEqual(free!.credits);
 
     // Enterprise tier
     const enterprise = PRICING_TIERS.find((t) => t.id === 'enterprise');

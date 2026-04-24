@@ -33,7 +33,8 @@ describe('Tool Registry', () => {
         && 'description' in ((tools as Record<string, unknown>)[key] as Record<string, unknown>)
         && 'inputSchema' in ((tools as Record<string, unknown>)[key] as Record<string, unknown>)
     );
-    expect(toolExports).toHaveLength(21);
+    // Registry grows as new AI tools are added — assert a floor, not an exact count.
+    expect(toolExports.length).toBeGreaterThanOrEqual(21);
   });
 
   it.each(EXPECTED_TOOLS)('%s is exported with description and inputSchema', (toolName) => {

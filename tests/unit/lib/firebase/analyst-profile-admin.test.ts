@@ -2,11 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock admin db before importing the module
 vi.mock('@/lib/firebase/admin', () => ({
+  adminDb: {},
   getAdminDbOrThrow: vi.fn(),
 }));
 
 import { getAnalystProfile, upsertAnalystProfile, completeAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
-import { getAdminDbOrThrow } from '@/lib/firebase/admin';
+import { adminDb, getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { DEFAULT_ANALYST_PROFILE } from '@/types/analyst-profile';
 
 function makeDocStub(initial: Record<string, unknown> | null) {
@@ -65,28 +66,41 @@ describe('analyst-profile-admin', () => {
     }), { merge: true });
   });
 
-  it('completeAnalystProfile bumps version, writes snapshot, sets root flag', async () => {
-    const profileDoc = makeDocStub({ ...DEFAULT_ANALYST_PROFILE, meta: { version: 2, skipCount: 1 } });
-    const rootDoc = makeDocStub({});
-    const versionDoc = makeDocStub(null);
-    const db = {
-      collection: vi.fn(() => ({
-        doc: vi.fn(() => ({
-          collection: vi.fn((sub) => ({
-            doc: vi.fn((id) => sub === 'profile' ? profileDoc.ref : versionDoc.ref),
-          })),
-          get: rootDoc.ref.get,
-          update: rootDoc.ref.update,
-          set: rootDoc.ref.set,
-        })),
+  it('completeAnalystProfile bumps version, writes snapshot, sets root flag atomically', async () => {
+    const writes: Array<{ kind: 'set' | 'update'; data: Record<string, unknown> }> = [];
+    const profileRef = { __kind: 'profile' } as const;
+    const versionRef = { __kind: 'version' } as const;
+    const userRef = {
+      __kind: 'user',
+      collection: vi.fn((sub: string) => ({
+        doc: vi.fn(() => (sub === 'profile' ? profileRef : versionRef)),
       })),
     };
-    (getAdminDbOrThrow as unknown as ReturnType<typeof vi.fn>).mockReturnValue(db);
+    const mockDb = adminDb as unknown as {
+      collection: ReturnType<typeof vi.fn>;
+      runTransaction: ReturnType<typeof vi.fn>;
+    };
+    mockDb.collection = vi.fn(() => ({ doc: vi.fn(() => userRef) }));
+    mockDb.runTransaction = vi.fn(async (fn: (tx: {
+      get: (ref: unknown) => Promise<{ exists: boolean; data: () => Record<string, unknown> }>;
+      set: (ref: unknown, data: Record<string, unknown>) => void;
+      update: (ref: unknown, data: Record<string, unknown>) => void;
+    }) => Promise<unknown>) => {
+      return fn({
+        get: async () => ({
+          exists: true,
+          data: () => ({ ...DEFAULT_ANALYST_PROFILE, meta: { version: 2, skipCount: 1 } }),
+        }),
+        set: (_ref, data) => { writes.push({ kind: 'set', data }); },
+        update: (_ref, data) => { writes.push({ kind: 'update', data }); },
+      });
+    });
+
     const res = await completeAnalystProfile('u1');
     expect(res.versionId).toBe('v3');
-    expect(versionDoc.ref.set).toHaveBeenCalled();
-    expect(rootDoc.ref.update).toHaveBeenCalledWith(expect.objectContaining({
-      onboardingCompletedAt: expect.anything(),
-    }));
+    // All three writes happened inside the one runTransaction call
+    expect(mockDb.runTransaction).toHaveBeenCalledTimes(1);
+    expect(writes.length).toBeGreaterThanOrEqual(3);
+    expect(writes.some((w) => w.kind === 'update' && 'onboardingCompletedAt' in w.data)).toBe(true);
   });
 });
