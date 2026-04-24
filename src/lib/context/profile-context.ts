@@ -3,7 +3,9 @@ import { getSituationById } from '@/lib/firebase/situations';
 import { listEpisodes } from '@/lib/firebase/episodes';
 import { retrieveForProfile } from '@/lib/knowledge/profile-weighted-retrieval';
 import { getPreferences } from '@/lib/firebase/preferences-service';
+import { readRecentTurns } from '@/lib/firebase/advisor-history-service';
 import { deriveInteractionFrame } from './interaction-frame';
+import { ADVISOR_IDS, type AdvisorId } from '@/types/advisor';
 import {
   renderSystemPromptBlock,
   renderOutputConstraints,
@@ -89,6 +91,12 @@ export async function buildCalibratedContext(opts: {
   toolId: string;
   retrievalQuery?: string;
   retrievalTopK?: number;
+  /**
+   * If provided and valid, populates `advisor` on the returned ContextBlock
+   * with a rolling summary of the most recent turns for that (uid, situation,
+   * advisor) thread. Unknown advisor ids are ignored silently.
+   */
+  advisorId?: string;
 }): Promise<ContextBlock> {
   let profile: AnalystProfile | null = null;
   let situation: Situation | null = null;
@@ -96,6 +104,7 @@ export async function buildCalibratedContext(opts: {
   let episodes: Episode[] = [];
   let preferences: UserPreferences = DEFAULT_USER_PREFERENCES;
   let interaction: InteractionFrame | null = null;
+  let advisor: AdvisorFrame | null = null;
 
   // Each read wrapped individually — no single failure should abort the build
   try {
@@ -125,6 +134,27 @@ export async function buildCalibratedContext(opts: {
       interaction = await deriveInteractionFrame(opts.uid, opts.situationId);
     } catch (err) {
       console.warn('[profile-context] deriveInteractionFrame failed:', err);
+    }
+    if (opts.advisorId && (ADVISOR_IDS as readonly string[]).includes(opts.advisorId)) {
+      try {
+        const aid = opts.advisorId as AdvisorId;
+        const turns = await readRecentTurns(opts.uid, opts.situationId, aid, 8);
+        if (turns.length > 0) {
+          const summaryLines = turns
+            .slice(-6)
+            .map((t) => `${t.role}: ${t.content.slice(0, 140)}`)
+            .join(' · ');
+          advisor = {
+            advisorId: aid,
+            rollingSummary: summaryLines,
+            lastTurnAt: turns[turns.length - 1].at,
+          };
+        } else {
+          advisor = { advisorId: aid, rollingSummary: '', lastTurnAt: new Date().toISOString() };
+        }
+      } catch (err) {
+        console.warn('[profile-context] advisor frame failed:', err);
+      }
     }
   }
 
@@ -175,7 +205,7 @@ export async function buildCalibratedContext(opts: {
     toolContext: { profile, situation, retrievedChunks, episodes },
     preferences,
     interaction,
-    advisor: null,
+    advisor,
     domain,
     provenance: {
       profileVersion: profile?.meta?.version ?? 0,
