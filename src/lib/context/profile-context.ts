@@ -157,6 +157,7 @@ export async function buildCalibratedContext(opts: {
     domain,
     toolId: opts.toolId,
     episodes,
+    preferences,
   });
   const outputConstraints = profile ? renderOutputConstraints(profile) : NEUTRAL_CONSTRAINTS;
 
