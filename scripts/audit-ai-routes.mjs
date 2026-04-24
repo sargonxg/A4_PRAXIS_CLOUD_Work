@@ -1,10 +1,11 @@
+#!/usr/bin/env node
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const AI_ROUTES_DIR = 'src/app/api/ai';
-const EXEMPT = new Set<string>(['chat', 'terminology', 'grounded-search', 'advisor-chat']); // chat-streams handled separately
+const EXEMPT = new Set(['chat', 'terminology', 'grounded-search', 'advisor-chat']);
 
-function walk(dir: string, acc: string[] = []): string[] {
+function walk(dir, acc = []) {
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
     const st = statSync(full);
@@ -15,7 +16,7 @@ function walk(dir: string, acc: string[] = []): string[] {
 }
 
 const files = walk(AI_ROUTES_DIR);
-const fails: string[] = [];
+const fails = [];
 for (const f of files) {
   const src = readFileSync(f, 'utf8');
   const toolId = f.split(/[\\/]/).slice(-2, -1)[0];
@@ -26,7 +27,7 @@ for (const f of files) {
 }
 if (fails.length) {
   console.error('Routes missing withCalibration wrapper:');
-  fails.forEach(f => console.error('  ' + f));
+  fails.forEach((f) => console.error('  ' + f));
   process.exit(1);
 }
 console.log(`OK — ${files.length} AI route files, ${files.length - fails.length} calibrated, ${EXEMPT.size} exempt.`);

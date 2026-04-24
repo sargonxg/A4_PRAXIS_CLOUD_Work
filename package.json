@@ -10,11 +10,12 @@
     "verify-tools": "npx tsx scripts/verify-tools.ts",
     "seed:onboarding": "tsx scripts/seed-onboarding-config.ts",
     "audit:tools": "tsx scripts/audit-tools.ts",
-    "audit:routes": "tsx scripts/audit-ai-routes.ts",
+    "audit:routes": "node scripts/audit-ai-routes.mjs",
+    "audit:calibration": "node scripts/audit-ai-routes.mjs",
     "audit:verify": "tsx scripts/verify-audit-fresh.ts",
     "seed:preferences": "tsx scripts/seed-preferences-defaults.ts",
     "seed:advisors": "tsx scripts/seed-advisors.ts",
-    "audit:gcp": "tsx scripts/audit-gcp.ts"
+    "audit:gcp": "node scripts/audit-gcp.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.50",

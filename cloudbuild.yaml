@@ -12,20 +12,27 @@ steps:
         echo "OK: no forbidden model strings"
     id: 'check-model-strings'
 
-  # ── Preflight audits: AI-route calibration + GCP infra ──────────────────────
+  # ── Preflight: AI-route calibration audit (zero-dep .mjs, no npm install) ──
   - name: 'node:22-slim'
-    entrypoint: 'bash'
+    entrypoint: 'node'
+    args: ['scripts/audit-ai-routes.mjs']
+    id: 'preflight-audit-routes'
+    waitFor: ['check-model-strings']
+
+  # ── Preflight: GCP resource audit via gcloud (uses build-step default SA) ──
+  # Requires Cloud Build SA to have reader roles on the target resources; see
+  # infrastructure/grant-cloudbuild-audit-iam.sh for the exact bindings.
+  # Set substitution _AUDIT_GCP_SKIP=0 once IAM is granted to enforce gating.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
     args:
       - '-c'
       - |
         set -e
-        # install tsx at runtime (keeps image small; dev-only dep)
-        npm i --no-save tsx >/dev/null
-        echo "→ audit:routes"
-        npx tsx scripts/audit-ai-routes.ts
-        echo "→ audit:gcp (skipped in Cloud Build; gcloud unauthenticated at this step)"
-        AUDIT_GCP_SKIP=1 npx tsx scripts/audit-gcp.ts
-    id: 'preflight-audit'
+        # Install node (slim) just for this step; gcloud image has no node runtime.
+        apt-get update -qq && apt-get install -y -qq nodejs >/dev/null
+        AUDIT_GCP_SKIP=${_AUDIT_GCP_SKIP} GCP_PROJECT_ID=$PROJECT_ID node scripts/audit-gcp.mjs
+    id: 'preflight-audit-gcp'
     waitFor: ['check-model-strings']
 
   # ── Firestore rules deploy — NOT automated via Cloud Build right now because
@@ -193,6 +200,11 @@ images:
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-backend'
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend'
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/gdelt-poller'
+
+substitutions:
+  # Flip to '0' after running infrastructure/grant-cloudbuild-audit-iam.sh so the
+  # GCP audit enforces rather than silently passes.
+  _AUDIT_GCP_SKIP: '1'
 
 options:
   logging: CLOUD_LOGGING_ONLY
