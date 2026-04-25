@@ -2,6 +2,43 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-25 — Open-source pivot deploy (session 5)
+
+Source commit deployed: head `97...` (pivot commit + redeploy)
+
+Cloud Build:
+
+- Build ID: `2d60880f-340b-457e-9a39-1a0f32123cfd`
+- Status: `SUCCESS`
+- Duration: `9M05S`
+- Project: `praxisbytacitus`
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00052-974` (ready)
+- Backend revision:  inherited from prior deploy (no backend changes)
+
+Production verification:
+
+- `https://praxis.tacitus.me/` returns `200 OK`
+- `/api/health` returns `status: ok` (firestore + ai_provider +
+  cookie_secret all `ok`; anthropic + firecrawl + vertex_adk + stripe
+  all `unconfigured` — this is now the **intended** steady state for
+  the open-source-only stack)
+
+Pivot recap (full notes in CHANGELOG.md):
+
+- ACLED removed from data substrate (EULA incompatible with SaaS)
+- Firecrawl removed (replaced by Vertex AI Deep Research)
+- Anthropic removed (single Gemini line on Vertex AI)
+- Landing page, pricing, system-health activation guide all updated
+- Sub-processor list reduced to Google Cloud + Stripe + Cloudflare +
+  GitHub
+- Stream G ACLED + Firecrawl + Anthropic backlog items withdrawn
+- B-10 GDELT BigQuery hot slice promoted to P0 as the new event-data
+  backbone
+- All open-license attribution copy preserved on derived surfaces
+
 ## 2026-04-25 — Playbook + Vision + Cleanup deploy (session 4)
 
 Source commits deployed (head = `22dd8c9`):
