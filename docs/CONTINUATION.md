@@ -75,6 +75,65 @@ curl -sI https://praxis.tacitus.me/onboarding
 
 Also verify Firebase Auth authorized domains include `praxis.tacitus.me` before testing login.
 
+## Immediate Next Work (updated 2026-04-25, third session — research integrated)
+
+### Critical risk to action this week
+
+🚨 **ACLED licensing.** Compass research revealed ACLED's 2026 EULA
+prohibits SaaS dashboards from redistributing event data without a
+Corporate License. **Email `access@acleddata.com` to negotiate** —
+estimated $5–25k/yr. Until signed, raw ACLED events stay gated to
+Enterprise pilots only; aggregated stats are the safe path. Engineering
+work tracked as `B-9` in `docs/SPRINT_BACKLOG.md` (P0). Compliance
+posture lives in `docs/COMPLIANCE.md`.
+
+### Top 3 highest-leverage tasks (as of 2026-04-25 third session)
+
+1. **Stream B-1 — PRAXIS Assistant chat persistence (Codex, P0).**
+   The deep tool spec is now at `docs/tools/assistant.md`; the backlog
+   item lists files-to-touch + DoD. ~4h. Highest single user-visible
+   improvement available.
+2. **Stream B-9 — ACLED safe-harbour (any agent, P0).** Add
+   `ACLED_LICENSE_TIER` env var; gate raw event return; keep
+   aggregated stats as the default. 1–2h. Compliance-critical.
+3. **Stream C-2 — Vertex AI Agent Engine (any agent + user, P1).**
+   Recipe verified in compass research §R1; concrete deploy.py in the
+   artifact; updated steps in `docs/GCP_OPERATIONS.md` §1b. Unblocks
+   Deep Research Agent.
+
+### Note for whichever assistant picks this up next
+
+Read `docs/TEAM_OPS.md` first if you've never operated in this repo
+before — it explains how Codex and Claude Code share `main` without
+collisions. Then read the compass artifact at
+`docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`
+before doing any Stream C / Stream G work — every research-blocked
+item is now unblocked, but the answers contain hard constraints (most
+notably the ACLED EULA finding).
+
+### Commits and deploys this session
+
+Local clone (`main` head): `34d3dc2 docs(research): integrate compass artifact + COMPLIANCE tracker`
+
+This session shipped (in order):
+
+- `7b28314` feat(pricing) · `ce810b0` feat(dashboard) · `0b6a3c1` docs(sprint)
+- `9f05783` feat(ux) · `fc7b9f1` feat(geospatial) · `5fb542b` docs(context)
+- `dae0b48` docs(deploy log) · `fa8cd33` feat(workspace)
+- `7589334` user upload — compass research artifact
+- `34d3dc2` docs(research) integration
+
+Deployed twice via Cloud Build:
+
+- `204af7bf-730a-4c33-90c2-77d5e3976bfc` (8m36s) — frontend 00046-475 / backend 00027-nlk
+- `55e3963f-2c16-497f-9ad6-807f3ce9c418` (10m54s) — frontend 00048-p4t / backend 00029-6vc
+
+Production endpoints all green. Configuration gaps remain (ACLED,
+Vertex ADK, Firecrawl, Stripe, Anthropic — all degrade gracefully;
+turn-on steps in `docs/GCP_OPERATIONS.md` §1).
+
+---
+
 ## Immediate Next Work (updated 2026-04-25, second session)
 
 > The active week-long sprint is in `docs/SPRINT_2026-04-25.md`. The
