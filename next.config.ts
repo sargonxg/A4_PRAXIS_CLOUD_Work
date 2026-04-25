@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const repoRoot = dirname(fileURLToPath(import.meta.url));
 
 // Old bare paths redirect to /app/* for backward compatibility
 const bareRoutes = [
@@ -14,6 +18,9 @@ const bareRoutes = [
 const nextConfig: NextConfig = {
   // Cloud Run: standalone output bundles only what's needed for Docker
   output: 'standalone',
+  turbopack: {
+    root: repoRoot,
+  },
   // Server-only packages: do not bundle, load at runtime from node_modules
   // Prevents Node.js built-ins (child_process, fs) from leaking into bundles
   serverExternalPackages: [

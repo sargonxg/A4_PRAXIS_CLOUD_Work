@@ -52,6 +52,8 @@ CRON_SECRET=your_secret
 
 See `.env.local.example` for the complete grouped list including Neo4j, FalkorDB, Stripe, and GCP variables.
 
+The Firebase Client SDK block is public and has built-in defaults for the `praxisbytacitus` project, so `npm run build` works from a clean clone. Use `.env.local` to override those public values for another Firebase project. Server-side Firebase Admin, AI, Stripe, cron, and encryption secrets are still required for live authenticated workflows.
+
 ---
 
 ## Two Experiences in One Codebase
@@ -557,6 +559,8 @@ npm start      # Production server
 npm run lint   # ESLint
 npm test       # Vitest unit tests
 ```
+
+Current deployability checkpoint (2026-04-25): `npm run build`, `npm run lint`, `npm run audit:gcp`, `node scripts/audit-ai-routes.mjs`, and `npx vitest run` pass locally. Lint still reports warnings for the React Compiler migration backlog and unused code cleanup.
 
 ---
 

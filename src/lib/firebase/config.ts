@@ -15,13 +15,26 @@ import {
 // values and every page throws at runtime.
 // -----------------------------------------------------------------------------
 
-const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
-const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-const messagingSenderId = process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID;
-const appId = process.env.NEXT_PUBLIC_FIREBASE_APP_ID;
-const measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
+const DEFAULT_FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyAHNn4zJdMaxJXziRNa9SmHRFKUvO1q9uA',
+  authDomain: 'praxisbytacitus.firebaseapp.com',
+  projectId: 'praxisbytacitus',
+  storageBucket: 'praxisbytacitus.firebasestorage.app',
+  messagingSenderId: '852128226674',
+  appId: '1:852128226674:web:535f771c7a3568462c11eb',
+  measurementId: 'G-7R44KT7CDY',
+} as const;
+
+// The fallback values are public Firebase client identifiers for the PRAXIS
+// project. They keep `next build` working from a clean clone; production still
+// injects the same values explicitly through Cloud Build.
+const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || DEFAULT_FIREBASE_CONFIG.apiKey;
+const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || DEFAULT_FIREBASE_CONFIG.authDomain;
+const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || DEFAULT_FIREBASE_CONFIG.projectId;
+const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || DEFAULT_FIREBASE_CONFIG.storageBucket;
+const messagingSenderId = process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || DEFAULT_FIREBASE_CONFIG.messagingSenderId;
+const appId = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || DEFAULT_FIREBASE_CONFIG.appId;
+const measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || DEFAULT_FIREBASE_CONFIG.measurementId;
 // App Check site keys — reCAPTCHA Enterprise preferred; reCAPTCHA v3 as fallback.
 const appCheckEnterpriseKey = process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_ENTERPRISE_KEY;
 const appCheckV3Key = process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_V3_KEY;

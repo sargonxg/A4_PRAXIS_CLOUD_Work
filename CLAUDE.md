@@ -316,6 +316,8 @@ See `.env.example` for complete list. Critical:
 - `COOKIE_SIGNING_SECRET` — Session cookie HMAC (primary; read first by `cookie-signer.ts`)
 - `SESSION_SECRET` — Alias for `COOKIE_SIGNING_SECRET`; Cloud Build mounts both from the same Secret Manager secret (`praxis-cookie-secret`) for backward compatibility
 
+The `NEXT_PUBLIC_FIREBASE_*` client config values are public and have defaults in `src/lib/firebase/config.ts` for the `praxisbytacitus` project. This is intentional so clean-clone builds pass without `.env.local`; still use `.env.local` when pointing a local build at a different Firebase project.
+
 ## Conventions
 
 - `PraxisLink` / `usePraxisRoute()` for all navigation (auto-prefixes /app or /demo)
@@ -350,6 +352,20 @@ cd backend && pip install -e ".[dev]" && python -m pytest tests/ -v
 # Frontend type check
 npx tsc --noEmit
 ```
+
+## Latest Validation Checkpoint
+
+2026-04-25 local validation:
+- `npm run build` passed.
+- `npm run lint` passed with warnings only. React Compiler migration findings are warnings in `eslint.config.mjs` until the UI is cleaned up route-by-route.
+- `npm run audit:gcp` passed after creating Pub/Sub topic `profile.events`.
+- `node scripts/audit-ai-routes.mjs` passed: 53 AI routes calibrated, 4 exempt.
+- `npx vitest run` passed: 40 files, 140 tests.
+
+Known warnings to keep visible:
+- Windows local `next build` can warn while copying standalone traced files with `node:*` chunk names. Linux Cloud Build is the authoritative container build.
+- Next.js 16 deprecates `middleware.ts` in favor of `proxy.ts`; current middleware still builds and is listed as Proxy output.
+- Lint warning backlog includes React Compiler rules, unused variables, hook dependencies, explicit `any`, and legacy `require()` imports.
 
 ## Local Development
 
