@@ -516,7 +516,7 @@ function LoginForm() {
             className="mt-5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3"
           >
             <p className="text-center text-xs text-emerald-400">
-              <span className="font-semibold">5,000 TACITUS Credits</span> awarded on sign-up — power your AI analysis
+              <span className="font-semibold">Analyst workspace capacity</span> included on sign-up — power your AI analysis
             </p>
           </motion.div>
         </div>

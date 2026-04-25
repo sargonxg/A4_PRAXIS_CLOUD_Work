@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, BookOpen, Database, Link2, CreditCard } from 'lucide-react';
+import { ChevronDown, BookOpen, Database, Link2, ShieldCheck } from 'lucide-react';
 import { getToolById } from '@/lib/constants/tool-registry';
 import { cn } from '@/lib/utils/cn';
 
@@ -87,11 +87,11 @@ export function MethodologyPanel({ toolId, className }: MethodologyPanelProps) {
             </div>
           )}
 
-          {/* Credit cost */}
+          {/* Access model */}
           <div className="flex items-center gap-1.5 text-[10px] text-navy-400">
-            <CreditCard className="h-3 w-3" />
+            <ShieldCheck className="h-3 w-3" />
             <span>
-              Cost: {tool.credits} credit{tool.credits !== 1 ? 's' : ''} per generation
+              Included in eligible PRAXIS monthly workspaces; usage is metered internally for reliability.
             </span>
           </div>
         </div>

@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Check, Sparkles } from 'lucide-react';
+import { Check, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import { PRICING_TIERS, CREDIT_COSTS } from '@/lib/constants/pricing';
+import { INTERNAL_COST_DISCLOSURE_NOTICE, PLAN_USAGE_BUCKETS, PRICING_TIERS } from '@/lib/constants/pricing';
 
 export default function PricingPage() {
   return (
@@ -24,9 +24,10 @@ export default function PricingPage() {
       <div className="mx-auto max-w-6xl px-6 py-16">
         {/* Hero */}
         <div className="text-center">
-          <h1 className="font-serif text-4xl font-semibold text-navy-900">TACITUS Credits</h1>
+          <h1 className="font-serif text-4xl font-semibold text-navy-900">PRAXIS Plans</h1>
           <p className="mt-3 text-lg text-navy-500 max-w-2xl mx-auto">
-            Every AI operation in PRAXIS uses TACITUS Credits. Choose the plan that fits your analytical workflow.
+            Monthly workspaces for policy, diplomacy, and political analysis. Choose by situation volume,
+            collaboration needs, and premium integration requirements.
           </p>
         </div>
 
@@ -49,6 +50,7 @@ export default function PricingPage() {
               )}
 
               <h3 className="text-lg font-semibold text-navy-900">{tier.name}</h3>
+              <p className="mt-1 text-xs leading-relaxed text-navy-500">{tier.audience}</p>
               <div className="mt-2">
                 {tier.price === 0 ? (
                   <span className="text-3xl font-bold text-navy-900">Free</span>
@@ -62,7 +64,7 @@ export default function PricingPage() {
                 )}
               </div>
               <p className="mt-1 text-sm text-navy-500">
-                {tier.credits === -1 ? 'Unlimited credits' : `${tier.credits.toLocaleString()} credits/month`}
+                {tier.usage}
               </p>
               <p className="text-xs text-navy-400">
                 {tier.maxSituations === -1 ? 'Unlimited situations' : `${tier.maxSituations} active situation${tier.maxSituations > 1 ? 's' : ''}`}
@@ -94,29 +96,23 @@ export default function PricingPage() {
           ))}
         </div>
 
-        {/* Credit Costs */}
-        <div className="mt-20">
-          <h2 className="text-center font-serif text-2xl font-semibold text-navy-900">Credit Cost Reference</h2>
-          <p className="mt-2 text-center text-sm text-navy-500">How many credits each AI operation uses</p>
+        {/* Usage model */}
+        <div className="mt-20 rounded-2xl border border-navy-200 bg-navy-50/60 p-6">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <h2 className="font-serif text-2xl font-semibold text-navy-900">Monthly Access, Not Tool-by-Tool Pricing</h2>
+            <p className="mt-2 text-sm text-navy-500">
+              {INTERNAL_COST_DISCLOSURE_NOTICE}
+            </p>
+          </div>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Object.entries(
-              Object.entries(CREDIT_COSTS).reduce((acc, [, v]) => {
-                if (!acc[v.category]) acc[v.category] = [];
-                acc[v.category].push(v);
-                return acc;
-              }, {} as Record<string, typeof CREDIT_COSTS[string][]>)
-            ).map(([category, items]) => (
-              <div key={category} className="rounded-xl border border-navy-200 p-4">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-navy-400 mb-3">{category}</h3>
-                <div className="space-y-1.5">
-                  {items.map((item) => (
-                    <div key={item.label} className="flex items-center justify-between">
-                      <span className="text-xs text-navy-600">{item.label}</span>
-                      <span className="text-xs font-bold text-navy-900">{item.cost} cr</span>
-                    </div>
-                  ))}
-                </div>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {PLAN_USAGE_BUCKETS.map((bucket) => (
+              <div key={bucket.name} className="rounded-xl border border-white/80 bg-white p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-diplomatic-blue">{bucket.name}</h3>
+                <p className="mt-2 text-xs leading-relaxed text-navy-500">{bucket.description}</p>
               </div>
             ))}
           </div>

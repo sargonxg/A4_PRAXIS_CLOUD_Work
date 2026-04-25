@@ -10,16 +10,14 @@ import { HeroVisual } from "./hero-visual";
 // --- Word-by-word reveal ---
 
 const headlineWords = [
-  "From",
-  "Raw",
-  "Sources",
-  "to",
-  "Credible",
+  "Policy,",
+  "Diplomacy,",
+  "and",
+  "Politics",
   "Intelligence.",
-  "In",
-  "Minutes,",
-  "Not",
-  "Weeks.",
+  "Grounded",
+  "in",
+  "Sources.",
 ];
 
 const containerVariants = {
@@ -375,9 +373,9 @@ export function Hero() {
             transition={{ delay: 1.2, duration: 0.7 }}
             className="mb-6 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
           >
-            The intelligence workspace for peace and security professionals.
-            Bring your sources and context — PRAXIS structures them into credible
-            assessments for diplomats, analysts, and multilateral organizations.
+            PRAXIS by TACITUS is the intelligence workspace for policy,
+            diplomacy, and political analysis. Bring your sources and context —
+            PRAXIS structures them into cited assessments, graphs, and briefings.
           </motion.p>
 
           {/* Data sources tagline */}
@@ -406,7 +404,7 @@ export function Hero() {
                 <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
               </Link>
               <Link
-                href="/demo/dashboard"
+                href="/login?mode=demo"
                 className="inline-flex items-center justify-center rounded-md border border-diplomatic-blue/20 px-8 py-4 text-base font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40"
               >
                 Explore Demo

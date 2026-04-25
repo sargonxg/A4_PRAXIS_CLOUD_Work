@@ -48,37 +48,37 @@ const jsonLd = {
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   description:
-    "The AI-native workspace for peace and security professionals. Turn raw conflict data into decisive intelligence in minutes, not weeks.",
+    "PRAXIS by TACITUS is an AI-native workspace for policy, diplomacy, and political analysis. Structure sources into cited assessments, graphs, and briefings.",
   url: siteUrl,
   offers: [
     {
       "@type": "Offer",
       name: "Analyst",
+      price: "49.00",
+      priceCurrency: "USD",
+      description: "Individual workspace for live situations, grounded research, canonical actor checks, reports, and exports",
+    },
+    {
+      "@type": "Offer",
+      name: "Team",
+      price: "199.00",
+      priceCurrency: "USD",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        billingDuration: "P1M",
+      },
+      description: "Shared workspace for teams handling multiple live situations, source monitoring, Advisor Council workflows, and graph configuration",
+    },
+    {
+      "@type": "Offer",
+      name: "Institution",
       price: "0",
       priceCurrency: "USD",
-      description: "Free tier with 25 TACITUS Credits per month",
-    },
-    {
-      "@type": "Offer",
-      name: "Diplomat",
-      price: "29.00",
-      priceCurrency: "USD",
       priceSpecification: {
         "@type": "UnitPriceSpecification",
         billingDuration: "P1M",
       },
-      description: "500 TACITUS Credits per month with priority AI",
-    },
-    {
-      "@type": "Offer",
-      name: "Ambassador",
-      price: "99.00",
-      priceCurrency: "USD",
-      priceSpecification: {
-        "@type": "UnitPriceSpecification",
-        billingDuration: "P1M",
-      },
-      description: "Unlimited TACITUS Credits with all premium features",
+      description: "Custom institutional deployment and pricing for governance, SSO, audit controls, and private GCP architecture",
     },
   ],
   creator: {
@@ -87,6 +87,7 @@ const jsonLd = {
     url: "https://tacitus.me",
   },
   featureList: [
+    "Policy, diplomacy, and political analysis",
     "AI-powered conflict analysis",
     "Glasl escalation model",
     "ACO v2.0 Conflict Grammar knowledge graph",

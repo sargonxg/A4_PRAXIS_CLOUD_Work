@@ -11,7 +11,7 @@ export function NoCreditsError() {
       </div>
       <h3 className="mt-4 text-base font-semibold text-navy-900">No Credits Remaining</h3>
       <p className="mt-2 max-w-sm text-center text-sm text-navy-500">
-        You&apos;ve used all your TACITUS Credits. Credits reset monthly or you can purchase more.
+        Your workspace has reached its current usage limit. Upgrade your plan or contact TACITUS to increase capacity.
       </p>
     </div>
   );

@@ -1,90 +1,219 @@
-# PRAXIS — Continuation prompt for the next Claude session
+# PRAXIS by TACITUS — Next Codex Session Handoff
 
-**Use this file to resume work in a fresh Claude Code session.** Copy the prompt block below into the new session.
+Use this file to resume in a fresh `codex --full-auto` session.
 
----
+## Project
 
-## Current state (2026-04-19)
+- Product: **PRAXIS by TACITUS**
+- Positioning: AI-native workspace for **policy, diplomacy, and political analysis**
+- Domain: `https://praxis.tacitus.me`
+- Repository: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work`
+- Local path used this session: `C:\Users\giuli\A4_PRAXIS_CLOUD_Work`
+- GCP project ID: `praxisbytacitus`
+- GCP project number: `852128226674`
+- Default region: `us-central1`
+- Firebase project: `praxisbytacitus`
+- Active local GCP/Firebase account verified this session: `giulio@tacitus.me`
 
-- Branch `feat/plan-a-onboarding` merged to `main` as commit `7468b04`.
-- 29 task commits + 3 follow-up commits (T27 tool gate, final-review fixes, CLAUDE.md, handoff doc, landing upgrade) pushed to `origin/main`.
-- Working tree clean. Only untracked item is `.claude/` local tooling (not for repo).
-- **Deploy to `praxis.tacitus.me`:** NOT yet rolled out. Source is pushed to `main` but Cloud Build was not confirmed green this session.
+## Firebase Web Config
 
-## Start-here prompt (paste into new Claude session)
+The public Firebase client config is already known and safe to keep in build env:
 
-> I'm continuing work on PRAXIS (C:\Users\giuli\ANTIGRAVITY\A4_PRAXIS_CLOUD_TACITUS\A4_PRAXIS_CLOUD_Work, project `praxisbytacitus`, domain `praxis.tacitus.me`).
->
-> Plan A (user onboarding + tool calibration foundation) is merged to `main`. Read these three files before anything else:
-> 1. `docs/CONTINUATION.md` — this file
-> 2. `docs/superpowers/plans/2026-04-19-plan-b-handoff.md` — what's next
-> 3. `docs/audits/tools-2026-04-19.md` — baseline audit (50 AI routes, max 4/11, all need `withCalibration`)
->
-> Priority order for this session:
-> 1. **Deploy to production first.** Run `gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus` (or `./infrastructure/deploy.sh`). Verify `https://praxis.tacitus.me/onboarding` returns 200. If Cloud Build fails, debug — do NOT skip the deploy.
-> 2. **Start Plan B** — migrate Tier 1 tools (Dashboard, Assistant, Conflict Graph, Actor Profiles, Risk Monitor, Early Warning, Report Studio, Daily Brief, Deep Research, Scenarios) to `withCalibration`. Each tool must score 11/11 on the audit after migration.
-> 3. Use `superpowers:writing-plans` skill to author Plan B as a task-by-task plan, then `superpowers:subagent-driven-development` to execute.
->
-> Known gaps to fix during Plan B (from final review):
-> - `VectorLayer.search` doesn't propagate chunk embeddings → profile-weighted rerank is inert. Fix first so calibration actually ranks sources.
-> - `OnboardingBanner` sits inside the scrollable main container → move to sticky full-width strip between Header and `<main>`.
-> - 2 pre-existing TS test errors (`tests/unit/types/analyst-profile.test.ts` string narrowing; `tests/unit/lib/knowledge/profile-weighted-retrieval.test.ts` implicit-`this`).
-> - Dead-code verification on `/api/ai/research-extract` and `/api/ai/claude-analyze` (drop if orphaned).
->
-> After every Plan B phase: run `npm run audit:tools` and commit the fresh `docs/audits/tools-YYYY-MM-DD.md` so progress is auditable.
->
-> Start with step 1 (deploy), then pause and show me the verification output before moving to step 2.
-
-## Deploy commands (quick reference)
-
-```bash
-# from repo root
-gcloud config set project praxisbytacitus
-gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus
-
-# OR the wrapper
-./infrastructure/deploy.sh
-
-# verify after deploy
-curl -sI https://praxis.tacitus.me/                # 200
-curl -sI https://praxis.tacitus.me/onboarding      # 200 (404 today — confirms Plan A not yet live)
-curl -sI https://praxis.tacitus.me/login           # 200
-
-# run audit + verify freshness
-npm run audit:tools
-npm run audit:verify
+```ts
+const firebaseConfig = {
+  apiKey: "AIzaSyAHNn4zJdMaxJXziRNa9SmHRFKUvO1q9uA",
+  authDomain: "praxisbytacitus.firebaseapp.com",
+  projectId: "praxisbytacitus",
+  storageBucket: "praxisbytacitus.firebasestorage.app",
+  messagingSenderId: "852128226674",
+  appId: "1:852128226674:web:535f771c7a3568462c11eb",
+  measurementId: "G-7R44KT7CDY"
+};
 ```
 
-## Where key Plan A artifacts live
+Do not paste private service-account JSON or Secret Manager values into chat.
 
-| Artifact | Path |
-|---|---|
-| Spec (source of truth for both plans) | `docs/superpowers/specs/2026-04-18-user-onboarding-tool-calibration-design.md` |
-| Plan A (implementation plan, fully executed) | `docs/superpowers/plans/2026-04-18-plan-a-onboarding-foundation.md` |
-| Plan B handoff (what's next) | `docs/superpowers/plans/2026-04-19-plan-b-handoff.md` |
-| Latest audit | `docs/audits/tools-2026-04-19.md` |
-| Manual verification checklist | `docs/verification/2026-04-18-onboarding-manual-checklist.md` |
-| Calibration middleware | `src/lib/api/with-calibration.ts` |
-| Context builder | `src/lib/context/profile-context.ts` |
-| System prompt block renderer | `src/lib/context/system-prompt-block.ts` |
-| Save tool output helper | `src/lib/api/save-tool-output.ts` |
-| AnalystProfile type + Zod schema | `src/types/analyst-profile.ts` |
-| Onboarding UI | `src/app/onboarding/` |
-| Onboarding API routes | `src/app/api/onboarding/` |
-| Audit script | `scripts/audit-tools.ts` |
+## Auth Status Verified
 
-## Non-obvious things to remember
+- `gcloud config list --format=json` showed account `giulio@tacitus.me`, project `praxisbytacitus`, region `us-central1`.
+- `gcloud projects describe praxisbytacitus --format=json` succeeded.
+- `firebase login:list --json` succeeded for `giulio@tacitus.me`.
+- Future sessions should avoid printing token-bearing Firebase JSON.
 
-- Session cookie embeds `onboarded: boolean` signed by HMAC. `POST /api/onboarding/complete` re-issues the cookie with `onboarded: true` atomically with the version bump. If you change `/api/auth/session` cookie options, also update the re-issue block in `/api/onboarding/complete/route.ts`.
-- Server-side gate (`withCalibration` returns 403) fires ONLY for routes that adopt the middleware. No pre-existing route has `withCalibration` yet, so current production tools still work for users with incomplete onboarding — the gate activates tool-by-tool as Plan B migrates them.
-- Demo users bypass both the redirect and the server gate.
-- `FALLBACK_CHIPS` in `src/lib/constants/onboarding-chips.ts` is the hardcoded fallback if Firestore `config/onboarding_suggestions` is missing. Seed via `npm run seed:onboarding` (requires `FIREBASE_SERVICE_ACCOUNT_KEY` env).
+## What Was Done In The Last Session
 
-## Rough Plan B task count
+- Cloned the repo into `C:\Users\giuli\A4_PRAXIS_CLOUD_Work`.
+- Installed npm dependencies with `npm install`.
+- Repositioned PRAXIS branding toward policy, diplomacy, and political analysis while keeping `by TACITUS`.
+- Reworked public pricing language away from per-tool credits toward monthly workspaces and plan usage buckets.
+- Removed public per-tool cost UI from the pricing page, landing teaser, methodology panel, and several tool pages.
+- Deleted unused `src/components/shared/credit-cost-badge.tsx`; no imports were found before deletion.
+- Fixed missing server credit key `ai_deep_think`, which affected deep-think routes such as scenarios, SAT, Concordia, Treaty Analyzer, Deep Research, and Deep Search Agent.
+- Improved `withCalibration` to infer `situationId` from either `body.situationId` or nested `body.situation.id`, and added an optional extractor hook for route-specific body shapes.
+- Persisted more situation onboarding choices:
+  - initial risk score
+  - Glasl stage
+  - escalation trend
+  - selected source categories
+  - source category order
+  - custom sources
+- Fixed Stripe checkout request mismatch by accepting either `tierId` or `planId`.
+- Updated tests to match new pricing shape.
 
-Expect 25-40 tasks for full Plan B. Rough tier estimates from audit:
-- T1 (10 tools) — ~2-3 days of subagent-driven execution
-- T2 (12 tools) — ~3-4 days
-- T3 (10 tools) — ~2-3 days
-- T4 (8 tools) — ~2 days
-- GCP additions + dead code sweep + prompts registry — ~2-3 days
+## Validation State
+
+Passed:
+
+```bash
+npx tsc --noEmit
+npx vitest run src/__tests__/auth-security.test.ts
+```
+
+Known validation issues not caused by this session:
+
+- `npm run lint` fails with many existing React Compiler / lint errors across the app.
+- Examples include `react-hooks/set-state-in-effect`, `react-hooks/static-components`, `no-require-imports`, `no-explicit-any`, and unescaped entities.
+- Do not treat lint as a clean deploy gate until those pre-existing errors are addressed.
+
+Security / dependency note:
+
+- `npm install` reported 31 vulnerabilities, including 1 critical.
+- Do not run `npm audit fix --force` blindly. Do a targeted audit and upgrade plan.
+
+## Do Not Deploy Yet Until
+
+Before deploying to `praxis.tacitus.me`, the next session should run:
+
+```bash
+npx tsc --noEmit
+npm run build
+node scripts/audit-ai-routes.mjs
+npm run audit:gcp
+```
+
+If those pass, deploy with:
+
+```bash
+gcloud config set project praxisbytacitus
+gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus
+```
+
+Then verify:
+
+```bash
+curl -sI https://praxis.tacitus.me/
+curl -sI https://praxis.tacitus.me/login
+curl -sI https://praxis.tacitus.me/onboarding
+curl -s https://praxis.tacitus.me/api/health
+```
+
+## Immediate Next Tasks
+
+1. Run `npm run build` and fix any build-only failures.
+2. Run `npm audit --omit=dev` and identify the critical production vulnerability.
+3. Update `README.md` and `CLAUDE.md` so version, tool count, route count, pricing model, and Cloud Run deployment language agree.
+4. Finish removing user-facing “credits” language from remaining app surfaces where appropriate, while keeping internal metering for abuse/cost control.
+5. Validate all route credit keys used by `withCalibration` exist in `AI_CREDIT_COSTS`.
+6. Add an automated script that checks tool-registry IDs, route `withCalibration()` IDs, and credit keys for consistency.
+7. Fix demo CTAs to route through `/login?mode=demo` or a dedicated demo-start endpoint, never directly to `/demo/dashboard` without a cookie.
+8. Improve user onboarding state refresh so client guards update immediately after onboarding completion.
+9. Version profile edits after onboarding: bump profile version, write immutable snapshot, and publish profile event.
+10. Persist situation version/provenance so saved tool outputs know which situation snapshot produced them.
+
+## Weekly Ship Plan
+
+### Day 1 — Deployability And Safety
+
+- Run build and Cloud Run local/container checks.
+- Fix build failures.
+- Run GCP audit and reconcile missing services/env vars.
+- Audit npm vulnerabilities and apply targeted safe upgrades.
+- Confirm Firebase Auth, Firestore, Storage, Vertex, BigQuery, Pub/Sub, Secret Manager, Cloud Run services.
+
+### Day 2 — Docs And Agent Compatibility
+
+- Rewrite `README.md`, `CLAUDE.md`, `docs/AUTH.md`, and deployment docs.
+- Preserve Claude Code / Codex compatibility with clear setup, scripts, env vars, route conventions, and known blockers.
+- Archive or delete stale root docs only after reference checks:
+  - `praxis agent pack`
+  - `Skill.md`
+  - `AUDIT_REPORT.md`
+  - obsolete docs under `docs/superpowers` if no longer needed operationally.
+
+### Day 3 — Pricing, Plans, Entitlements
+
+- Introduce an explicit entitlement model separate from internal credits.
+- Keep internal credits as invisible metering.
+- Add plan gating for premium connectors and heavy workflows.
+- Fix Stripe webhook/checkout plan naming and monthly subscription semantics.
+
+### Day 4 — Onboarding And Situation Creation
+
+- Make user onboarding fully reactive and versioned.
+- Improve situation onboarding with canonical entity pre-check and source coverage.
+- Add “create from database/template” for repeatable tests.
+- Store selected data backend preferences per user/situation.
+
+### Day 5 — Tool Contract Hardening
+
+- Ensure every tool has:
+  - specific route
+  - schema
+  - provenance
+  - stale window
+  - source/data health states
+  - missing evidence behavior
+  - saved output with profile and situation version
+- Replace remaining generic chat calls for specialized tools.
+
+### Day 6 — Graph Architecture
+
+- Unify the graph storage contract. Current fragmentation:
+  - backend snapshot: `graph/snapshot`
+  - frontend array doc: `graph/main`
+  - SKC subcollections: `graph/main/nodes` and `graph/main/edges`
+- Choose one canonical Firestore graph shape and migrate readers/writers.
+- Integrate backend graph adapters consistently:
+  - Firestore baseline
+  - FalkorDB optional
+  - Neo4j optional
+  - Spanner Graph recommended GCP-native production path
+  - TrustGraph optional sidecar, not core dependency yet
+
+### Day 7 — MCP And Agentic Operations
+
+- Add PRAXIS MCP server skeleton with auth and situation-level permission checks.
+- Candidate MCP tools:
+  - `list_situations`
+  - `get_situation_context`
+  - `query_conflict_graph`
+  - `canonicalize_entity`
+  - `run_praxis_tool`
+  - `trace_claim`
+  - `generate_brief`
+- Add operational runbooks for agentic maintenance.
+
+## Key Architecture Risks Found
+
+- Graph storage is fragmented across incompatible Firestore shapes.
+- Spanner adapter exists in backend but is not fully integrated into the main pipeline.
+- FalkorDB adapter is partial.
+- TypeScript SKC graph layer only supports Firestore/Neo4j, while settings UI exposes Spanner/Falkor.
+- Cloud Tasks queues are provisioned but no app code enqueues tasks.
+- `profile.events` Pub/Sub publisher exists, but subscriber/worker path needs verification.
+- GDELT worker appears to call a stale endpoint.
+- BigQuery setup schema and Python insert schema appear mismatched.
+- MCP and TrustGraph are not implemented yet.
+
+## Recommended First Prompt For The New Session
+
+```text
+Continue PRAXIS by TACITUS from C:\Users\giuli\A4_PRAXIS_CLOUD_Work.
+Read docs/CONTINUATION.md, CHANGELOG.md, README.md, CLAUDE.md.
+Use gcloud project praxisbytacitus and Firebase project praxisbytacitus.
+First, inspect git status and latest commit. Then run npx tsc --noEmit and npm run build.
+Do not deploy until build passes. After build passes, run npm run audit:gcp and node scripts/audit-ai-routes.mjs.
+Then prepare a safe Cloud Run deploy to praxis.tacitus.me via gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus.
+After deploy, verify /, /login, /onboarding, and /api/health.
+Priority after deploy: docs consistency, entitlement model, onboarding state/versioning, tool-contract consistency, graph storage unification, then MCP.
+```

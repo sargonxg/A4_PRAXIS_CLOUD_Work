@@ -2,11 +2,12 @@ export interface PricingTier {
   id: 'free' | 'analyst' | 'team' | 'enterprise';
   name: string;
   price: number; // monthly USD, 0 = free
-  credits: number; // monthly credits
+  usage: string;
   maxSituations: number;
   features: string[];
   highlighted?: boolean;
   cta: string;
+  audience: string;
 }
 
 export const PRICING_TIERS: PricingTier[] = [
@@ -14,107 +15,107 @@ export const PRICING_TIERS: PricingTier[] = [
     id: 'free',
     name: 'Demo',
     price: 0,
-    credits: 5000,
+    usage: 'Pre-loaded workspace',
     maxSituations: 1,
     cta: 'Explore Demo',
+    audience: 'Prospects, reviewers, and first-time practitioners',
     features: [
       'Pre-loaded Nordalia crisis scenario',
-      '5,000 TACITUS Credits (one-time)',
-      'All 40+ PRAXIS tools unlocked',
-      '1 active situation (Nordalia)',
-      'AI Assistant (Gemini Flash)',
-      'Full conflict graph & visualizations',
-      'No account required',
+      'Guided access to core PRAXIS workflows',
+      'Conflict graph, dashboard, reports, and assistant',
+      'No account required for demo exploration',
+      'Safe synthetic data only',
+      'Designed for product evaluation',
+      'Upgrade when you need live situations',
     ],
   },
   {
     id: 'analyst',
     name: 'Analyst',
     price: 49,
-    credits: 5000,
+    usage: 'Monthly live analysis bundle',
     maxSituations: 5,
     highlighted: true,
     cta: 'Start Analyst Plan',
+    audience: 'Individual analysts, policy officers, and researchers',
     features: [
-      '5,000 TACITUS Credits/month',
-      '5 active situations',
-      'All 40+ PRAXIS tools',
-      'AI Assistant (Gemini Pro + Claude)',
-      'Advanced reports & dossiers',
-      'Unlimited document upload',
-      'Deep research with web sources',
-      'Media landscape analysis',
-      'Scenario simulation & game theory',
-      'Export (PDF, DOCX)',
-      'Priority support',
+      '5 active live situations',
+      'Situation-aware AI tools and reports',
+      'Grounded Google Search research',
+      'Canonical actor and entity checks',
+      'Document upload and graph extraction',
+      'Policy memos, briefings, and dossiers',
+      'PDF and DOCX export',
+      'Email support',
     ],
   },
   {
     id: 'team',
     name: 'Team',
     price: 199,
-    credits: 25000,
+    usage: 'Shared monthly team workspace',
     maxSituations: 25,
     cta: 'Start Team Plan',
+    audience: 'Mediation teams, policy units, and research desks',
     features: [
-      '25,000 TACITUS Credits/month',
-      '25 active situations',
-      'Everything in Analyst',
-      'Team collaboration (up to 10 seats)',
+      '25 active live situations',
+      'Up to 10 seats',
       'Shared situation workspaces',
-      'Custom AI instructions',
-      'ARGUS knowledge graph queries',
-      'CONCORDIA mediation tools',
-      'API access',
-      'Dedicated support',
+      'Advisor Council and premium workflows',
+      'Source monitoring and alerting',
+      'Graph backend configuration',
+      'Team-ready export workflows',
+      'Priority support',
     ],
   },
   {
     id: 'enterprise',
-    name: 'Enterprise',
+    name: 'Institution',
     price: -1, // custom
-    credits: -1, // unlimited
+    usage: 'Custom institutional deployment',
     maxSituations: -1,
-    cta: 'Contact Sales',
+    cta: 'Contact TACITUS',
+    audience: 'Institutions requiring governance, scale, and custom controls',
     features: [
-      'Unlimited credits & situations',
+      'Custom situation, seat, and usage limits',
       'Everything in Team',
-      'Unlimited seats',
-      'Custom model deployment',
-      'On-premise option',
-      'SSO / SAML',
-      'Audit logs',
-      'SLA guarantee',
-      'Dedicated account manager',
+      'SSO / SAML and audit controls',
+      'Custom model and data residency options',
+      'Dedicated graph/database architecture',
+      'Private GCP deployment support',
+      'Security review and procurement support',
+      'Dedicated account team',
     ],
   },
 ];
 
-export const CREDIT_COSTS: Record<string, { cost: number; label: string; category: string }> = {
-  chat: { cost: 1, label: 'AI Chat Message', category: 'Chat' },
-  terminology: { cost: 1, label: 'Terminology Check', category: 'Analysis' },
-  extract: { cost: 3, label: 'Document Extraction', category: 'Documents' },
-  scenario: { cost: 3, label: 'Scenario Analysis', category: 'Analysis' },
-  research: { cost: 5, label: 'Deep Research', category: 'Research' },
-  'deep-research': { cost: 5, label: 'Comprehensive Research', category: 'Research' },
-  'grounded-search': { cost: 2, label: 'Web Search', category: 'Research' },
-  'media-analyze': { cost: 2, label: 'Media Analysis', category: 'Analysis' },
-  'media-scan': { cost: 2, label: 'Media Scan', category: 'Analysis' },
-  'talking-points': { cost: 2, label: 'Talking Points', category: 'Drafting' },
-  'advisor-chat': { cost: 2, label: 'Advisory Chat', category: 'Chat' },
-  report: { cost: 5, label: 'Report Generation', category: 'Drafting' },
-  dossier: { cost: 4, label: 'Actor Dossier', category: 'Drafting' },
-  briefing: { cost: 3, label: 'Briefing Generation', category: 'Drafting' },
-  'risk-assessment': { cost: 3, label: 'Risk Assessment', category: 'Analysis' },
-  'escalation-scan': { cost: 2, label: 'Escalation Scan', category: 'Analysis' },
-  'sanctions-scan': { cost: 2, label: 'Sanctions Scan', category: 'Analysis' },
-  'treaty-analyze': { cost: 3, label: 'Treaty Analysis', category: 'Analysis' },
-  mediation: { cost: 3, label: 'Mediation Planning', category: 'Analysis' },
-  negotiation: { cost: 3, label: 'Negotiation Analysis', category: 'Analysis' },
-  'actor-enrichment': { cost: 2, label: 'Actor Enrichment', category: 'Research' },
-  'claude-analyze': { cost: 3, label: 'Claude Deep Analysis', category: 'Analysis' },
-  'graph-ingest': { cost: 1, label: 'Graph Build', category: 'Data' },
-  'graph-query': { cost: 1, label: 'Graph Query', category: 'Data' },
-  'canonical-lookup': { cost: 1, label: 'Name Lookup', category: 'Research' },
-  verify: { cost: 1, label: 'Fact Verification', category: 'Research' },
-};
+export const PLAN_USAGE_BUCKETS = [
+  {
+    name: 'Core Intelligence',
+    description: 'Dashboards, actor profiles, risk assessments, timelines, and situation-aware assistant work.',
+  },
+  {
+    name: 'Grounded Research',
+    description: 'Google Search grounding, source discovery, canonical entity checks, media review, and deep research.',
+  },
+  {
+    name: 'Graph Intelligence',
+    description: 'ACO extraction, graph rebuilds, graph queries, entity resolution, and graph-backed context retrieval.',
+  },
+  {
+    name: 'Drafting & Export',
+    description: 'Briefs, policy memos, reports, talking points, dossiers, and DOCX/PDF export workflows.',
+  },
+  {
+    name: 'Premium Connectors',
+    description: 'Optional ACLED, Firecrawl, Anthropic, graph database, and institutional integrations when configured.',
+  },
+];
+
+/**
+ * Server-side credit metering still exists for abuse control and internal cost
+ * tracking, but public pricing should not expose a per-tool tariff table.
+ * Keep operation-level costs in `src/lib/api/with-credits.ts`.
+ */
+export const INTERNAL_COST_DISCLOSURE_NOTICE =
+  'PRAXIS plans are sold as monthly workspaces. Internal metering is used for reliability, abuse prevention, and fair-use controls.';

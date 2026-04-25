@@ -6,6 +6,34 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-04-25
+
+### Changed
+
+- Repositioned public PRAXIS copy around **policy, diplomacy, and political analysis** while preserving the **by TACITUS** brand.
+- Reworked public pricing from per-tool credit pricing to monthly workspace plans with usage categories.
+- Updated landing buyer-path messaging for policy officers, political affairs desks, research analysts, mediator/envoy teams, humanitarian coordinators, and legal/sanctions analysts.
+- Replaced several user-facing per-tool credit labels with workspace-capacity language.
+
+### Fixed
+
+- Added missing `ai_deep_think` internal metering key so deep-thinking AI routes do not fail credit gating for live users.
+- Improved calibration middleware to infer `situationId` from nested request bodies (`body.situation.id`) in addition to top-level `body.situationId`.
+- Persisted more situation creation context: source category selection/order, custom sources, initial risk score, Glasl stage, and escalation trend.
+- Made Stripe checkout accept both `tierId` and `planId` to match current Settings upgrade requests.
+
+### Removed
+
+- Removed the unused `CreditCostBadge` component and the public pricing page's per-operation cost table.
+
+### Validation
+
+- `npx tsc --noEmit` passes.
+- `npx vitest run src/__tests__/auth-security.test.ts` passes.
+- `npm run lint` still fails on pre-existing React Compiler/lint issues outside this change set; see `docs/CONTINUATION.md`.
+
+---
+
 ## [6.3.1] — 2026-04-14
 
 ### Fixed

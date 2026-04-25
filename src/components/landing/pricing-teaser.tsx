@@ -31,7 +31,7 @@ export function PricingTeaser() {
           transition={{ duration: 0.7, delay: 0.1 }}
           className="mb-4 text-center font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl"
         >
-          Pay Only for the Intelligence You Use
+          Monthly Plans for Serious Policy Work
         </motion.h2>
 
         <motion.p
@@ -41,8 +41,8 @@ export function PricingTeaser() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mx-auto mb-14 max-w-2xl text-center text-lg text-navy-500"
         >
-          Every AI operation consumes TACITUS Credits. Start free with the Nordalia
-          demo, upgrade when you create live situations.
+          PRAXIS is packaged around live situations, grounded research, graph intelligence,
+          and team workflows — not a confusing tool-by-tool tariff.
         </motion.p>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -80,9 +80,7 @@ export function PricingTeaser() {
                   </div>
                 )}
                 <p className="mt-1 text-xs text-navy-500">
-                  {tier.credits === -1
-                    ? "Unlimited credits"
-                    : `${tier.credits.toLocaleString()} credits/month`}
+                  {tier.usage}
                 </p>
               </div>
 
@@ -100,7 +98,7 @@ export function PricingTeaser() {
                   tier.id === "enterprise"
                     ? "mailto:hello@tacitus.me"
                     : tier.id === "free"
-                    ? "/demo/dashboard"
+                    ? "/login?mode=demo"
                     : `/login?plan=${tier.id}`
                 }
                 className={cn(
@@ -129,7 +127,7 @@ export function PricingTeaser() {
             href="/pricing"
             className="group inline-flex items-center gap-2 text-sm font-semibold text-diplomatic-blue transition-colors hover:text-navy-900"
           >
-            See full pricing + credit cost per tool
+            See monthly plans and access model
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </motion.div>

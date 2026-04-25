@@ -83,13 +83,13 @@ describe('Pricing Tier Validation', () => {
     const free = PRICING_TIERS.find((t) => t.id === 'free');
     expect(free).toBeDefined();
     expect(free!.price).toBe(0);
-    expect(free!.credits).toBeGreaterThan(0);
+    expect(free!.usage).toBeTruthy();
 
     // Analyst tier
     const analyst = PRICING_TIERS.find((t) => t.id === 'analyst');
     expect(analyst).toBeDefined();
     expect(analyst!.price).toBeGreaterThan(0);
-    expect(analyst!.credits).toBeGreaterThanOrEqual(free!.credits);
+    expect(analyst!.usage).toBeTruthy();
 
     // Enterprise tier
     const enterprise = PRICING_TIERS.find((t) => t.id === 'enterprise');

@@ -87,7 +87,7 @@ const CHANGELOG = [
       'Auth hardening: syncTokenCookie retry logic (3 attempts, exponential backoff), removed double-render on token refresh',
       'Landing: updated headline, use-case personas (UN PAO, Think Tank, NGO, Academic, Diplomat), social links',
       'Pricing tiers corrected: Analyst $49/5,000 credits/5 situations, Team $199/25,000 credits/25 situations',
-      'Login page: credits copy corrected to 5,000 TACITUS Credits',
+      'Login page: workspace capacity copy aligned with monthly plans',
     ],
   },
   {
@@ -824,13 +824,13 @@ export function AppSidebar() {
 
       {/* Bottom section */}
       <div className="border-t border-[var(--color-app-border)] p-2">
-        {/* Credits display */}
+        {/* Workspace capacity display */}
         {sidebarOpen ? (
           <div className="mb-2 mx-2 rounded-lg border border-emerald-200/60 bg-emerald-50/50 px-3 py-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <Coins className="h-3.5 w-3.5 text-emerald-600" />
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">TACITUS Credits</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">Workspace Capacity</span>
               </div>
               <span className="text-sm font-bold text-emerald-700">{user?.isDemo ? '∞' : credits}</span>
             </div>
@@ -843,7 +843,7 @@ export function AppSidebar() {
               </div>
             </TooltipTrigger>
             <TooltipContent side="right">
-              TACITUS Credits: {user?.isDemo ? 'Unlimited (Demo)' : credits}
+              Workspace capacity: {user?.isDemo ? 'Unlimited (Demo)' : credits}
             </TooltipContent>
           </Tooltip>
         )}
