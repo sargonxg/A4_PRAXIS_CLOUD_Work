@@ -63,7 +63,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Coins, X, ChevronRight, ChevronDown, Loader2 } from 'lucide-react';
+import { X, ChevronRight, ChevronDown, Loader2, Crown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAllToolStatuses, type ToolHealth } from '@/hooks/use-tool-status';
 
@@ -394,11 +394,18 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
 // Unified tool status — uses the shared hook that combines dashboard-snapshot
 // with research-status for consistent semaphores across sidebar and tool pages
 
+const PLAN_LABELS: Record<string, string> = {
+  free: 'Free Plan',
+  analyst: 'Analyst',
+  team: 'Team',
+  enterprise: 'Enterprise',
+};
+
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const route = usePraxisRoute();
-  const { user, credits, logout } = useAuth();
+  const { user, logout } = useAuth();
   const { sidebarOpen, toggleSidebar } = useAppStore();
   const { activeSituationId, setActiveSituation } = useSituationStore();
   const allToolStatuses = useAllToolStatuses(activeSituationId);
@@ -824,26 +831,38 @@ export function AppSidebar() {
 
       {/* Bottom section */}
       <div className="border-t border-[var(--color-app-border)] p-2">
-        {/* Credits display */}
+        {/* Plan badge — public surface shows monthly plan only; internal credit metering is private */}
         {sidebarOpen ? (
-          <div className="mb-2 mx-2 rounded-lg border border-emerald-200/60 bg-emerald-50/50 px-3 py-2">
+          <PraxisLink
+            href="/settings"
+            className="mb-2 mx-2 block rounded-lg border border-emerald-200/60 bg-emerald-50/50 px-3 py-2 transition-colors hover:border-emerald-300 hover:bg-emerald-50"
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <Coins className="h-3.5 w-3.5 text-emerald-600" />
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">TACITUS Credits</span>
+                <Crown className="h-3.5 w-3.5 text-emerald-600" />
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
+                  {user?.isDemo ? 'Demo Mode' : (PLAN_LABELS[user?.subscription || 'free'] || 'Free Plan')}
+                </span>
               </div>
-              <span className="text-sm font-bold text-emerald-700">{user?.isDemo ? '∞' : credits}</span>
+              {!user?.isDemo && user?.subscription === 'free' && (
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                  Upgrade
+                </span>
+              )}
             </div>
-          </div>
+          </PraxisLink>
         ) : (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="mb-2 flex items-center justify-center rounded-lg border border-emerald-200/60 bg-emerald-50/50 px-2 py-2">
-                <span className="text-xs font-bold text-emerald-700">{user?.isDemo ? '∞' : credits}</span>
-              </div>
+              <PraxisLink
+                href="/settings"
+                className="mb-2 flex items-center justify-center rounded-lg border border-emerald-200/60 bg-emerald-50/50 px-2 py-2 transition-colors hover:border-emerald-300"
+              >
+                <Crown className="h-3.5 w-3.5 text-emerald-600" />
+              </PraxisLink>
             </TooltipTrigger>
             <TooltipContent side="right">
-              TACITUS Credits: {user?.isDemo ? 'Unlimited (Demo)' : credits}
+              {user?.isDemo ? 'Demo Mode' : (PLAN_LABELS[user?.subscription || 'free'] || 'Free Plan')}
             </TooltipContent>
           </Tooltip>
         )}

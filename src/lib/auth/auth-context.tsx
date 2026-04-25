@@ -17,6 +17,7 @@ import {
 import { auth, db } from '@/lib/firebase/config';
 import { doc, onSnapshot } from 'firebase/firestore';
 import type { AnalystProfile } from '@/types/analyst-profile';
+import type { SubscriptionTier } from '@/lib/firebase/firestore';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -32,6 +33,8 @@ export interface AuthUser {
   isDemo: boolean;
   photoURL?: string;
   credits: number;
+  /** Public-facing plan tier (free | analyst | team | enterprise). Drives sidebar plan badge. */
+  subscription: SubscriptionTier;
 }
 
 interface AuthContextValue {
@@ -63,6 +66,7 @@ const DEMO_USER: AuthUser = {
   orgName: 'TACITUS Demo Organization',
   isDemo: true,
   credits: 999,
+  subscription: 'free',
 };
 
 // ---------------------------------------------------------------------------
@@ -100,6 +104,7 @@ function fbUserToAuthUser(fbUser: FirebaseUser, credits = 0): AuthUser {
     isDemo: false,
     photoURL: fbUser.photoURL || undefined,
     credits,
+    subscription: 'free',
   };
 }
 
@@ -219,13 +224,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             displayName: fbUser.displayName,
             photoURL: fbUser.photoURL,
           });
-          // Update with Firestore data (credits, role, org)
+          // Update with Firestore data (credits, role, org, plan tier)
           setUser({
             ...authUser,
             role: profile.role,
             orgId: profile.orgId,
             orgName: profile.orgName,
             credits: profile.credits,
+            subscription: profile.subscription || 'free',
           });
           setCredits(profile.credits);
 
@@ -328,9 +334,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (snapshot.exists()) {
           const data = snapshot.data();
           const newCredits = typeof data.credits === 'number' ? data.credits : 0;
+          const newSubscription: SubscriptionTier =
+            (data.subscription as SubscriptionTier) || 'free';
           setCredits(newCredits);
           setUser((prev) =>
-            prev ? { ...prev, credits: newCredits, role: data.role || prev.role } : null,
+            prev
+              ? {
+                  ...prev,
+                  credits: newCredits,
+                  role: data.role || prev.role,
+                  subscription: newSubscription,
+                }
+              : null,
           );
         }
       },

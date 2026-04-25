@@ -19,7 +19,6 @@ export const PRICING_TIERS: PricingTier[] = [
     cta: 'Explore Demo',
     features: [
       'Pre-loaded Nordalia crisis scenario',
-      '5,000 TACITUS Credits (one-time)',
       'All 40+ PRAXIS tools unlocked',
       '1 active situation (Nordalia)',
       'AI Assistant (Gemini Flash)',
@@ -36,7 +35,6 @@ export const PRICING_TIERS: PricingTier[] = [
     highlighted: true,
     cta: 'Start Analyst Plan',
     features: [
-      '5,000 TACITUS Credits/month',
       '5 active situations',
       'All 40+ PRAXIS tools',
       'AI Assistant (Gemini Pro + Claude)',
@@ -57,7 +55,6 @@ export const PRICING_TIERS: PricingTier[] = [
     maxSituations: 25,
     cta: 'Start Team Plan',
     features: [
-      '25,000 TACITUS Credits/month',
       '25 active situations',
       'Everything in Analyst',
       'Team collaboration (up to 10 seats)',
@@ -77,9 +74,8 @@ export const PRICING_TIERS: PricingTier[] = [
     maxSituations: -1,
     cta: 'Contact Sales',
     features: [
-      'Unlimited credits & situations',
+      'Unlimited situations & seats',
       'Everything in Team',
-      'Unlimited seats',
       'Custom model deployment',
       'On-premise option',
       'SSO / SAML',

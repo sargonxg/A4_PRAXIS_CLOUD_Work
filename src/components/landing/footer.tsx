@@ -133,7 +133,7 @@ export function Footer() {
               Ready to upgrade your analytical workflow?
             </p>
             <p className="mt-1 text-sm text-navy-500">
-              Full access · 5,000 credits on signup · Demo available instantly
+              Free Plan · Full PRAXIS workspace · Demo available instantly
             </p>
           </div>
           <a

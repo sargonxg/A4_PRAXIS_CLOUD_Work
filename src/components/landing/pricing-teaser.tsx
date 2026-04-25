@@ -31,7 +31,7 @@ export function PricingTeaser() {
           transition={{ duration: 0.7, delay: 0.1 }}
           className="mb-4 text-center font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl"
         >
-          Pay Only for the Intelligence You Use
+          Plans Built Around Your Mandate
         </motion.h2>
 
         <motion.p
@@ -41,8 +41,9 @@ export function PricingTeaser() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mx-auto mb-14 max-w-2xl text-center text-lg text-navy-500"
         >
-          Every AI operation consumes TACITUS Credits. Start free with the Nordalia
-          demo, upgrade when you create live situations.
+          Monthly subscriptions tuned to the way analysts, mediators, and policy
+          teams actually work. Start free with the Nordalia demo, upgrade when you
+          create live situations.
         </motion.p>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -80,9 +81,9 @@ export function PricingTeaser() {
                   </div>
                 )}
                 <p className="mt-1 text-xs text-navy-500">
-                  {tier.credits === -1
-                    ? "Unlimited credits"
-                    : `${tier.credits.toLocaleString()} credits/month`}
+                  {tier.maxSituations === -1
+                    ? "Unlimited active situations"
+                    : `${tier.maxSituations} active situation${tier.maxSituations > 1 ? 's' : ''}`}
                 </p>
               </div>
 
@@ -129,7 +130,7 @@ export function PricingTeaser() {
             href="/pricing"
             className="group inline-flex items-center gap-2 text-sm font-semibold text-diplomatic-blue transition-colors hover:text-navy-900"
           >
-            See full pricing + credit cost per tool
+            Compare plans in detail
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </motion.div>

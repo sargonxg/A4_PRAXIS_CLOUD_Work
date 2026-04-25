@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Check, Sparkles } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import { PRICING_TIERS, CREDIT_COSTS } from '@/lib/constants/pricing';
+import { PRICING_TIERS } from '@/lib/constants/pricing';
 
 export default function PricingPage() {
   return (
@@ -24,9 +24,9 @@ export default function PricingPage() {
       <div className="mx-auto max-w-6xl px-6 py-16">
         {/* Hero */}
         <div className="text-center">
-          <h1 className="font-serif text-4xl font-semibold text-navy-900">TACITUS Credits</h1>
+          <h1 className="font-serif text-4xl font-semibold text-navy-900">PRAXIS Plans</h1>
           <p className="mt-3 text-lg text-navy-500 max-w-2xl mx-auto">
-            Every AI operation in PRAXIS uses TACITUS Credits. Choose the plan that fits your analytical workflow.
+            Monthly subscriptions tuned to your analytical workflow. Start free with the Nordalia demo, upgrade when you create live situations.
           </p>
         </div>
 
@@ -62,10 +62,10 @@ export default function PricingPage() {
                 )}
               </div>
               <p className="mt-1 text-sm text-navy-500">
-                {tier.credits === -1 ? 'Unlimited credits' : `${tier.credits.toLocaleString()} credits/month`}
+                {tier.maxSituations === -1 ? 'Unlimited active situations' : `${tier.maxSituations} active situation${tier.maxSituations > 1 ? 's' : ''}`}
               </p>
               <p className="text-xs text-navy-400">
-                {tier.maxSituations === -1 ? 'Unlimited situations' : `${tier.maxSituations} active situation${tier.maxSituations > 1 ? 's' : ''}`}
+                {tier.price === 0 ? 'No credit card required' : 'Cancel anytime · Monthly billing'}
               </p>
 
               <ul className="mt-5 flex-1 space-y-2">
@@ -92,34 +92,6 @@ export default function PricingPage() {
               </Link>
             </div>
           ))}
-        </div>
-
-        {/* Credit Costs */}
-        <div className="mt-20">
-          <h2 className="text-center font-serif text-2xl font-semibold text-navy-900">Credit Cost Reference</h2>
-          <p className="mt-2 text-center text-sm text-navy-500">How many credits each AI operation uses</p>
-
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Object.entries(
-              Object.entries(CREDIT_COSTS).reduce((acc, [, v]) => {
-                if (!acc[v.category]) acc[v.category] = [];
-                acc[v.category].push(v);
-                return acc;
-              }, {} as Record<string, typeof CREDIT_COSTS[string][]>)
-            ).map(([category, items]) => (
-              <div key={category} className="rounded-xl border border-navy-200 p-4">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-navy-400 mb-3">{category}</h3>
-                <div className="space-y-1.5">
-                  {items.map((item) => (
-                    <div key={item.label} className="flex items-center justify-between">
-                      <span className="text-xs text-navy-600">{item.label}</span>
-                      <span className="text-xs font-bold text-navy-900">{item.cost} cr</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* FAQ */}

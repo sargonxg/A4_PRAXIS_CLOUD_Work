@@ -8,6 +8,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased] — 2026-04-25
 
+### Changed (public pricing surface — credit metering hidden)
+
+- **Sidebar plan badge replaces raw credit counter** (`src/components/app/app-sidebar.tsx`) — Removed the always-visible "TACITUS Credits: N" pill from the bottom of the workspace sidebar. Replaced it with a plan-tier badge ("Demo Mode" / "Free Plan" / "Analyst" / "Team" / "Enterprise") that links into Settings. Honors the AGENTS.md hard rule: keep public pricing plan-based and monthly, keep internal credit metering private.
+- **AnalystUser carries `subscription` tier** (`src/lib/auth/auth-context.tsx`) — Added `subscription: SubscriptionTier` to `AuthUser` (defaults to `free`). Hydrated from Firestore profile on sign-in and re-synced through the existing `onSnapshot` listener so plan upgrades reflect in the sidebar in real time. Demo user resolves to `Demo Mode`.
+- **Pricing page no longer exposes per-tool credit costs** (`src/app/pricing/page.tsx`) — Dropped the public "Credit Cost Reference" table and the `CREDIT_COSTS` import. Hero re-titled from "TACITUS Credits" to "PRAXIS Plans"; tier subline now reads "Cancel anytime · Monthly billing".
+- **Pricing teaser reframed around plans, not credits** (`src/components/landing/pricing-teaser.tsx`) — Headline changed from "Pay Only for the Intelligence You Use" → "Plans Built Around Your Mandate". Sub-bullet changed from "5,000 credits/month" → "5 active situations" (etc.). CTA changed from "See full pricing + credit cost per tool" → "Compare plans in detail".
+- **Plan feature bullets cleaned up** (`src/lib/constants/pricing.ts`) — Removed "5,000 TACITUS Credits/month" / "25,000 TACITUS Credits/month" / "Unlimited credits & situations" bullets from public plan features. Plans are now framed entirely by capability and seat/situation counts.
+- **Landing JSON-LD structured data corrected** (`src/app/(landing)/page.tsx`) — Replaced obsolete "Analyst free / Diplomat $29 / Ambassador $99" offers (which referenced TACITUS Credits in descriptions and didn't match the real `PRICING_TIERS`) with Demo $0 / Analyst $49 / Team $199. Descriptions now describe capabilities, not credit pools.
+- **Insufficient-credits empty state reworded** (`src/components/praxis/error-states.tsx`) — "No Credits Remaining" → "Monthly Plan Limit Reached"; copy now references billing-cycle reset and plan upgrade rather than credit purchase.
+- **Login page sub-copy** (`src/app/(auth)/login/page.tsx`) — Replaced "5,000 TACITUS Credits awarded on sign-up" with "Free Plan includes the full PRAXIS workspace, demo data, and AI analysis to evaluate the platform."
+- **Landing footer CTA strip** (`src/components/landing/footer.tsx`) — "5,000 credits on signup" → "Free Plan · Full PRAXIS workspace".
+
 ### Fixed
 
 - **Clean-clone build reliability** (`src/lib/firebase/config.ts`) — Added public Firebase client config fallbacks so `npm run build` works without a local `.env.local`. Production still injects the same public values through Cloud Build.

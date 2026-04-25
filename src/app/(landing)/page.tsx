@@ -53,32 +53,32 @@ const jsonLd = {
   offers: [
     {
       "@type": "Offer",
-      name: "Analyst",
+      name: "Demo",
       price: "0",
       priceCurrency: "USD",
-      description: "Free tier with 25 TACITUS Credits per month",
+      description: "Free Nordalia demo with all 40+ PRAXIS tools unlocked",
     },
     {
       "@type": "Offer",
-      name: "Diplomat",
-      price: "29.00",
+      name: "Analyst",
+      price: "49.00",
       priceCurrency: "USD",
       priceSpecification: {
         "@type": "UnitPriceSpecification",
         billingDuration: "P1M",
       },
-      description: "500 TACITUS Credits per month with priority AI",
+      description: "Monthly plan for individual analysts — 5 active situations, full AI analysis suite",
     },
     {
       "@type": "Offer",
-      name: "Ambassador",
-      price: "99.00",
+      name: "Team",
+      price: "199.00",
       priceCurrency: "USD",
       priceSpecification: {
         "@type": "UnitPriceSpecification",
         billingDuration: "P1M",
       },
-      description: "Unlimited TACITUS Credits with all premium features",
+      description: "Monthly plan for teams — 25 active situations, collaboration, ARGUS, CONCORDIA",
     },
   ],
   creator: {
