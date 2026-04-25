@@ -1,7 +1,11 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts --legacy-peer-deps
+# `npm install` instead of `npm ci` so Linux regenerates platform-specific
+# optional binaries (e.g. @esbuild/linux-x64) when the lock was authored on
+# a different host (Windows dev machines). `--no-audit --no-fund` keeps the
+# Cloud Build log clean.
+RUN npm install --ignore-scripts --legacy-peer-deps --no-audit --no-fund
 
 FROM node:20-alpine AS builder
 WORKDIR /app
