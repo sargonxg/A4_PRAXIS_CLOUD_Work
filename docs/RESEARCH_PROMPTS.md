@@ -11,6 +11,18 @@ code.
 
 ---
 
+## Status
+
+> **All 10 prompts (R1–R10) below were answered on 2026-04-25.** The
+> deep-research artifact is at
+> `docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`
+> (789 lines). The implementation tasks each one unblocked are tracked in
+> `docs/SPRINT_BACKLOG.md` Stream G. The prompts below are kept as
+> reference for future deltas (e.g., when ACLED's licensing terms change,
+> re-run R2; when GDELT 3.0 lands, re-run R3).
+
+---
+
 ## R1 · Vertex AI Agent Engine — concrete deployment recipe
 
 **Why:** PRAXIS's Deep Research Agent currently falls back to plain Gemini

@@ -33,6 +33,15 @@ the architectural contract.
 14. `docs/DEPLOYMENT_LOG.md` — last successful production deploy
 15. `docs/DAILY_WORKPLAN.md` — earlier day-by-day plan (kept for
     context; superseded by `SPRINT_2026-04-25.md` + `SPRINT_BACKLOG.md`)
+16. **`docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`**
+    — deep-research artifact (789 lines, 2026-04-25) answering all 10
+    research prompts: Vertex ADK deployment recipe (with working
+    `deploy.py`), ACLED licensing risk (CRITICAL — see G-2), GDELT
+    BigQuery migration, Firecrawl pricing, BigQuery public datasets,
+    Stripe v2 Meters API recipe, vector index recommendations, Vertex
+    AI vs. AI Studio decision, GraphRAG architecture extension, UN
+    procurement / SOC 2 / DPA path. **Read this before doing any
+    Stream C / Stream G work.**
 
 Fresh-clone start command:
 

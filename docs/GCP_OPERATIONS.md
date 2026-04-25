@@ -15,11 +15,28 @@ can. Every command is scoped to project `praxisbytacitus` and region
 The order below is the same as `docs/SPRINT_2026-04-25.md` Stream C — fastest
 user value first.
 
-### 1a. ACLED (free academic, ~15 min)
+### 1a. ACLED — **CRITICAL: Corporate License required for paid tiers** 🚨
 
-1. Sign up at https://developer.acleddata.com/ — create an account, then
-   request an API key. You'll get an email with a numeric `key` and the
-   email used as `email`.
+> The 2026 ACLED EULA prohibits SaaS dashboards from redistributing event
+> data without a Corporate License. See
+> `docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`
+> §R2 for verbatim EULA quotes and the legal analysis.
+>
+> **Before turning on raw ACLED events for any paid customer**, email
+> `access@acleddata.com` to negotiate a Corporate License (estimated
+> $5–25k/yr based on industry comparables). The free academic key is
+> usable only for non-commercial use; the moment you bill a customer for
+> a tool that surfaces ACLED rows, you breach the EULA.
+>
+> **Interim safe path:** keep ACLED key set, but gate raw event display
+> behind `ACLED_LICENSE_TIER=corporate-licensed`. Surface only
+> server-computed aggregated statistics (event counts, fatality totals)
+> until license is signed. Track in `docs/COMPLIANCE.md`.
+
+1. Sign up at https://developer.acleddata.com/ — create an academic /
+   non-profit account if you don't have one, then request an API key.
+   You'll receive a numeric `key` and use the registered email as
+   `email`.
 2. Store both in Secret Manager:
    ```bash
    echo -n "<your-acled-key>" | gcloud secrets create praxis-acled-api-key \
@@ -48,35 +65,56 @@ user value first.
 
 ### 1b. Vertex AI Agent Engine (Deep Research Agent, ~1–2 h)
 
-> See research prompt R1 in `docs/RESEARCH_PROMPTS.md` for a current,
-> verified deployment recipe — the GA product moves fast and the steps below
-> may need amendment.
+> Recipe verified against the 2026-04-25 deep-research artifact at
+> `docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`
+> §R1. Read that section before running these commands — it has the
+> current package versions and IAM model.
 
-1. Enable the API:
+1. Enable APIs:
    ```bash
-   gcloud services enable aiplatform.googleapis.com --project=praxisbytacitus
+   gcloud services enable aiplatform.googleapis.com storage.googleapis.com --project=praxisbytacitus
    ```
-2. Deploy a Reasoning Engine via the Python ADK (see
-   `backend/agents/deep_research_agent.py` if present, or follow the recipe
-   from research prompt R1).
-3. Capture the engine ID returned:
+2. Create a staging bucket for the agent code archive:
    ```bash
-   echo -n "<engine-id>" | gcloud secrets create praxis-vertex-adk-engine-id \
+   gsutil mb -p praxisbytacitus -l us-central1 gs://praxisbytacitus-agent-staging
+   ```
+3. Pin Python deps (one-time, in `backend/agents/requirements.txt`):
+   ```
+   google-cloud-aiplatform[adk,agent_engines]>=1.148.1
+   google-adk==1.31.1
+   google-genai>=1.0.0
+   ```
+4. Deploy a 3-phase Reasoning Engine using `deploy.py` from the compass
+   artifact §1.3 (planner → researcher → synthesizer pattern). Resource
+   path will look like
+   `projects/852128226674/locations/us-central1/reasoningEngines/<NUMERIC_ID>`.
+   Capture the numeric ID after creation:
+   ```python
+   import vertexai
+   vertexai.init(project="praxisbytacitus", location="us-central1")
+   for e in vertexai.Client().agent_engines.list():
+       print(e.api_resource.name)
+   ```
+5. Store the **numeric ID only** (not the full path) as a secret:
+   ```bash
+   echo -n "<numeric-id>" | gcloud secrets create praxis-vertex-adk-engine-id \
      --data-file=- --project=praxisbytacitus
    gcloud secrets add-iam-policy-binding praxis-vertex-adk-engine-id \
      --member="serviceAccount:852128226674-compute@developer.gserviceaccount.com" \
      --role="roles/secretmanager.secretAccessor" \
      --project=praxisbytacitus
    ```
-4. Grant the runtime service account `roles/aiplatform.user`:
+6. Grant the Cloud Run runtime SA permission to invoke the engine:
    ```bash
    gcloud projects add-iam-policy-binding praxisbytacitus \
      --member="serviceAccount:852128226674-compute@developer.gserviceaccount.com" \
      --role="roles/aiplatform.user"
    ```
-5. Add `VERTEX_AGENT_ENGINE_ID=praxis-vertex-adk-engine-id:latest` to the
-   frontend `--update-secrets` flag in `cloudbuild.yaml`.
-6. Verify: `curl -s https://praxis.tacitus.me/api/health | jq '.vertex_adk'`.
+   (There is **no separate `roles/aiplatform.reasoningEngineUser`**;
+   `roles/aiplatform.user` is the canonical invoker role as of April 2026.)
+7. Add `VERTEX_AGENT_ENGINE_ID=praxis-vertex-adk-engine-id:latest` to
+   `cloudbuild.yaml` `--update-secrets` for the frontend.
+8. Verify: `curl -s https://praxis.tacitus.me/api/health | jq '.vertex_adk'`.
 
 ### 1c. Firecrawl ($20–50 / mo, ~30 min)
 

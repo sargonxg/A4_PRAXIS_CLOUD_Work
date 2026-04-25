@@ -499,24 +499,210 @@ fully READY.
 
 ---
 
-## STREAM G — Research-blocked tasks
+## STREAM G — Research-blocked tasks (NOW UNBLOCKED, 2026-04-25)
 
-Each item below requires the user to run a deep-research prompt first.
-Once the result lands in `docs/research/<topic>.md`, the corresponding
-implementation task moves into the active stream.
+> **All 10 research prompts answered.** The deep-research artifact is at
+> `docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`
+> (789 lines, decision-oriented). Below: the unblocked implementation
+> task per research item, with the key finding inlined so you don't have
+> to re-read the artifact for every action.
 
-| ID | Research prompt | Implementation task |
-|---|---|---|
-| G-1 | R1 (Vertex ADK) | C-2 |
-| G-2 | R2 (ACLED license) | Confirm SaaS redistribution legality before paid tiers |
-| G-3 | R3 (GDELT 3.0) | Possibly migrate poller to BigQuery public dataset |
-| G-4 | R4 (Firecrawl alternatives) | Pick scraping vendor before scaling C-3 |
-| G-5 | R5 (BigQuery public datasets) | Migrate select feeds to BigQuery for cost |
-| G-6 | R6 (Stripe hybrid billing) | C-4 |
-| G-7 | R7 (Vector DB scale test) | Decide whether to migrate from Firestore KNN |
-| G-8 | R8 (Vertex vs. Gemini API costs) | Possible provider switch at scale |
-| G-9 | R9 (GraphRAG patterns) | Validate / extend the SKC architecture |
-| G-10 | R10 (UN procurement) | Inform certification roadmap (SOC 2 timeline) |
+### G-1. Vertex AI Agent Engine deployment ✓ unblocked → C-2
+
+**Findings (R1):** API resource is still `ReasoningEngine`. Resource ID
+is numeric in path
+`projects/{PROJECT_NUMBER}/locations/us-central1/reasoningEngines/{NUMERIC_ID}`.
+Pin `google-cloud-aiplatform[adk,agent_engines]>=1.148.1` and
+`google-adk==1.31.1`. Cloud Run invoker SA needs `roles/aiplatform.user`
+(no separate `reasoningEngineUser` role exists). Cost ≈ $0.0864/vCPU-hr +
+$0.0090/GB-hr + token cost. **Working `deploy.py` already in the artifact;
+copy it.** Update `docs/GCP_OPERATIONS.md` §1b to point at it.
+
+### G-2. ACLED licensing — **CRITICAL RISK** 🚨
+
+**Findings (R2):** ACLED's 2026 EULA explicitly forbids SaaS redistribution
+of event data without a Corporate License. Verbatim: "It is not sufficient
+for Licensed Content to simply be supplemented, appended, excerpted,
+reorganized, or made available through Licensee's own dashboard."
+Commercial entities cannot use the API at all without a Corporate License.
+
+**This is a launch blocker for paid tiers.** Tracked as **§B-9 (P0)** below.
+
+**Action:**
+1. Email `access@acleddata.com` immediately to negotiate a Corporate
+   License (cost estimated $5–25k/yr).
+2. Until licensed, gate ACLED behind a feature flag on Enterprise pilots
+   only and surface only **derived statistics** (event counts, fatality
+   aggregates) computed server-side — these may qualify as transformative
+   under the EULA, but get it in writing.
+3. Bump cache TTL from 1h → 24h (ACLED itself updates weekly).
+4. Add prominent attribution: "Source: ACLED — acleddata.com — accessed
+   YYYY-MM-DD" per their Attribution Policy.
+5. Implement EULA §7.2: prevent end-users downloading raw rows from the
+   dashboard.
+
+### G-3. GDELT BigQuery migration ✓ unblocked
+
+**Findings (R3):** GDELT 2.0 (still 15-min cadence, no 3.0 in 2026) is
+mirrored free to BigQuery at `gdelt-bq.gdeltv2.gkg_partitioned`,
+`events_partitioned`, `eventmentions_partitioned`. **First 1 TB/mo free.**
+Build a derived 90-day situation-scoped table in `praxis_analytics`,
+partition by `DATE(event_ts)`, cluster by `(situation_id, country_code)`.
+CDC via `_PARTITIONTIME` watermark. Don't re-download raw CSV.
+
+**New task: §B-10 (P1)** below — migrate the GDELT poller from raw HTTP
+to a Cloud Scheduler-triggered BigQuery upsert.
+
+### G-4. Firecrawl chosen ✓
+
+**Findings (R4):** Firecrawl Standard tier ($83/mo, 100k pages,
+~$0.00083/page) is the cleanest fit for ~3k policy-PDF/Markdown URLs/mo
+with citations preserved. Bright Data is the fallback for hard-blocked
+targets. **Decision:** stick with Firecrawl. Activation steps in
+`docs/GCP_OPERATIONS.md` §1c are correct.
+
+### G-5. BigQuery public datasets — additional sources ✓
+
+**Findings (R5):** Beyond GDELT, free first-1-TB datasets include
+`bigquery-public-data.world_bank_*`, `ghcn_d` (NOAA daily summaries),
+`noaa_*`, `census_bureau_*`, `who`, plus HDX via Analytics Hub. Treat
+as cold-store for analytics, not for live in-app queries.
+
+**New task: §E-3 (P2)** — write a `docs/data/BIGQUERY_PUBLIC.md` listing
+the relevant datasets with sample queries, so future agents can wire them
+without re-research.
+
+### G-6. Stripe hybrid billing ✓ unblocked → C-4
+
+**Findings (R6):** **Use Stripe Billing + hosted Pricing Tables +
+Entitlements API**. Mirror subs into Firestore via the Invertase
+`firestore-stripe-payments` extension. Model overages with the **v2
+Meters API** (not legacy usage records). Webhook on
+`customer.subscription.*`, `invoice.paid`, `invoice.payment_failed`,
+`entitlements.active_entitlement_summary.updated`.
+
+**Action:** Update `docs/GCP_OPERATIONS.md` §1d to reference v2 Meters +
+Invertase extension. Codex can pick up Stream C-4 with this in hand.
+
+### G-7. Stay on Firestore native KNN ✓ confirmed
+
+**Findings (R7):** Stay on Firestore native KNN at current scale. **Two
+quick wins:** (a) switch from COSINE to DOT_PRODUCT with normalized
+vectors (faster); (b) migrate to **Vertex AI Vector Search 2.0**
+(GA 2026, GCP-native, hybrid+filter) only at ≥10M vectors per situation
+or >5 QPS sustained with heavy metadata filtering. Avoid Pinecone unless
+you must leave GCP.
+
+**New task: §B-11 (P2)** — switch the existing vector index from COSINE
+to DOT_PRODUCT and re-embed with L2-normalised vectors.
+
+### G-8. Use Vertex AI (not AI Studio) ✓
+
+**Findings (R8):** **Use Vertex AI (`aiplatform.googleapis.com`) with
+ADC**. Same per-token price as AI Studio, but adds IAM, data residency,
+SLA, VPC-SC — required by UN/EU buyers. At our shape: ~$28/mo for Gemini
+3 Flash + ~$80–120/mo for Gemini 3.1 Pro structured calls.
+
+**New task: §D-5 (P1)** — migrate `src/lib/ai/providers.ts` to prefer
+the Vertex AI SDK over the AI Studio key when both are present. Already
+controlled by `AI_PROVIDER` env var; confirm Vertex path is the
+default in Cloud Run.
+
+### G-9. SKC + explicit GraphRAG ✓ validated, extended
+
+**Findings (R9):** Per-situation Firestore subcollection is correct.
+**Add an explicit GraphRAG layer** (entities = the 8 ACO primitives)
+using Microsoft's local→global pattern. Use Spanner-backed RAG Engine
+for managed corpus storage. Hybrid graph+vector beats vector-only on
+multi-hop ACO questions.
+
+**New task: §F-5 (P2)** — wire GraphRAG explicitly into the SKC graph
+layer per the artifact's reference diagram.
+
+### G-10. UN procurement / SOC 2 path ✓
+
+**Findings (R10):** Register on **UNGM at Level 2** (>$500k contracts),
+get **SOC 2 Type II** (4–9 months, $25–50k all-in for a startup).
+Publish a DPA covering GDPR + ISO 27018 cloud-PII. Offer **EU data
+residency** (`europe-west1` or `europe-west4`). Comparable contracts:
+Dataminr ~$100k+/yr, Recorded Future six-figure, Palantir Gotham
+millions. **Target $50–150k/yr Enterprise tier for PRAXIS.**
+
+**New task: §F-6 (P2)** — start a `docs/COMPLIANCE.md` tracking SOC 2
+prep, draft DPA, DPIA template. Not blocker for current paid-tier launch
+unless selling to UN before SOC 2 is in.
+
+---
+
+## NEW tasks unblocked by 2026-04-25 research
+
+### B-9. ACLED Corporate License + safe-harbour fallback · **P0** · `Pending`
+
+**Why:** Compliance-critical. See G-2 above.
+
+**Files to touch (interim):**
+
+- `src/lib/data-feeds/acled-client.ts` — gate raw event return behind a
+  new env var `ACLED_LICENSE_TIER` (one of `none`, `enterprise-pilot`,
+  `corporate-licensed`). When `none`, return only aggregated counts.
+- `src/components/dashboard/feed-alerts-widget.tsx` and Geospatial
+  Monitor — only render raw events when the feature flag is on.
+- `docs/COMPLIANCE.md` (new) — track the license negotiation thread,
+  effective date, scope.
+
+**DoD:**
+- Aggregated stats path works without a corporate license; raw events
+  hidden by default.
+- Attribution string appears wherever ACLED data is rendered.
+- Email thread to `access@acleddata.com` filed in
+  `docs/COMPLIANCE.md`.
+
+### B-10. GDELT poller → BigQuery migration · **P1** · `Pending`
+
+**Why:** Compass R3 — free up to 1 TB/mo, 15-min cadence preserved,
+zero ingestion code on our side. Cuts the `cloud_functions/gdelt_poller`
+maintenance to a Cloud Scheduler-triggered BigQuery upsert.
+
+**Files to read:** `cloud_functions/gdelt_poller/main.py`,
+`scripts/audit-gcp.mjs` (so we know which Pub/Sub topics to keep).
+
+**Files to touch:**
+- New SQL in `infrastructure/bigquery/gkg_situation_events.sql` (DDL +
+  scheduled query).
+- Replace the cloud function with a thin Cloud Scheduler job calling a
+  BigQuery scheduled query.
+
+**DoD:** New table populates every 15 min. App reads from it via the
+existing GDELT client (small refactor — same interface).
+
+### B-11. Vector index COSINE → DOT_PRODUCT · **P2** · `Pending`
+
+Re-create the Firestore vector index with `DOT_PRODUCT` distance.
+Re-embed all existing chunks normalised to unit L2. Faster queries; no
+behaviour change.
+
+### D-5. Default to Vertex AI (not AI Studio) for prod · **P1** · `Pending`
+
+Compass R8. Already supported via `AI_PROVIDER=vertex`. Verify Cloud
+Run sets it; if not, set it. Add a unit test in
+`tests/unit/lib/ai/providers.test.ts` that asserts the chosen path
+matches the env var.
+
+### E-3. `docs/data/BIGQUERY_PUBLIC.md` · **P2** · `Pending`
+
+Compass R5. List relevant public BigQuery datasets with one example
+query each. So future agents wire data sources without re-research.
+
+### F-5. Explicit GraphRAG layer in SKC · **P2** · `Backlog`
+
+Compass R9. Microsoft local→global pattern; wire into existing graph
+layer; benchmark vs. vector-only on multi-hop ACO questions.
+
+### F-6. `docs/COMPLIANCE.md` and SOC 2 prep tracker · **P2** · `Pending`
+
+Compass R10. Start the document; track SOC 2 timeline (4–9 months);
+draft DPA covering GDPR + ISO 27018; line up EU data-residency option
+(`europe-west1` vs. `europe-west4`).
 
 ---
 

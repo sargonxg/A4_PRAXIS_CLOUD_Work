@@ -2,6 +2,53 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-25 — Workspace personalisation + audience-tuned briefings deploy
+
+Source commits deployed (head = `fa8cd33`):
+
+- `fa8cd33` feat(workspace): role-aware sidebar + audience-tuned briefings + master backlog
+- `dae0b48` docs(deploy): record 2026-04-25 deploy + final Codex handover
+- `5fb542b` docs(context): Context Injection Contract + GCP runbook
+- `fc7b9f1` feat(geospatial): situation-aware map centroid + tool docs scaffolding
+- `9f05783` feat(ux): contrast pass + onboarding feedback + activation guide
+- `0b6a3c1` docs(sprint): add 2026-04-25 sprint plan + tandem handoff
+- `ce810b0` feat(dashboard): role-aware "Recommended for you" widget
+- `7b28314` feat(pricing): hide internal credit metering; sidebar shows plan tier
+
+Cloud Build:
+
+- Build ID: `55e3963f-2c16-497f-9ad6-807f3ce9c418`
+- Status: `SUCCESS`
+- Duration: `10M54S`
+- Project: `praxisbytacitus`
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00048-p4t` (ready)
+- Backend revision: `praxis-backend-00029-6vc` (ready)
+
+Production verification:
+
+- `https://praxis.tacitus.me/` → `200 OK`
+- `https://praxis.tacitus.me/api/health` → `{"status":"ok",...}` (firestore + ai_provider + cookie_secret all `ok`)
+
+Local validation before deploy:
+
+- `npm run build`: passed
+- `tsc --noEmit`: passed
+- `npx vitest run`: 150/150 passed (+10 new audience-preset tests)
+- `node scripts/audit-ai-routes.mjs`: 53/53 calibrated
+
+What is now live in production (incremental over the previous 00046/00027):
+
+- "For you" anchor at top of sidebar surfaces top-3 role-tuned tools.
+- Audience tone presets ready to use behind feature flag
+  `PRAXIS_AUDIENCE_TUNED_BRIEFING=1`. To activate, append the env var to
+  the frontend service in `cloudbuild.yaml` and redeploy. No code change
+  required to enable.
+- `docs/SPRINT_BACKLOG.md`, `docs/tools/assistant.md`,
+  `docs/tools/risk-monitor.md` are in the source.
+
 ## 2026-04-25 — UX + Pricing + Context-Contract Deployment
 
 Source commits deployed (head = `5fb542b`):

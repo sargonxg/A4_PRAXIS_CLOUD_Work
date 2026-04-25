@@ -45,6 +45,12 @@ Required, in this order:
 14. `docs/DEPLOYMENT_LOG.md` — last successful deploy state.
 15. `docs/DAILY_WORKPLAN.md` — earlier day-by-day plan (kept for context;
     superseded by `SPRINT_2026-04-25.md` + `SPRINT_BACKLOG.md`).
+16. **`docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`**
+    — deep-research artifact (789 lines, 2026-04-25) answering all 10
+    research prompts. **Required reading before any Stream C / Stream G
+    work.** Critical finding: ACLED's 2026 EULA forbids SaaS
+    redistribution without a Corporate License (see G-2 in
+    `docs/SPRINT_BACKLOG.md`).
 
 ## Current Production Target
 

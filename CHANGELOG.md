@@ -6,6 +6,46 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-04-25 (third session, post-research integration)
+
+### Added (compass research integration)
+
+- **Deep-research artifact incorporated** —
+  `docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`
+  (789 lines, 2026-04-25) is the canonical answer to all 10 R-prompts.
+  Cross-referenced from CLAUDE.md, AGENTS.md, GCP_OPERATIONS.md,
+  RESEARCH_PROMPTS.md, and SPRINT_BACKLOG.md.
+- **`docs/COMPLIANCE.md`** — single source of truth for licensing,
+  certifications, and regulatory posture. Tracks the ACLED licensing
+  risk, SOC 2 Type II path, GDPR DPA status, sub-processor inventory,
+  and UNGM registration plan. Open actions section lists the immediate
+  this-week to-dos.
+- **`docs/tools/assistant.md` and `docs/tools/risk-monitor.md`** —
+  deep tool specs (per the catalogue template) for the two
+  highest-traffic tools, ready for Codex to consume when picking up
+  Stream B-1.
+- **`docs/SPRINT_BACKLOG.md` Stream G rewritten** — every research
+  prompt's finding inlined, every research-blocked item now `unblocked`
+  with a clear next implementation step. New tasks added: B-9 (ACLED
+  safe-harbour, P0), B-10 (GDELT BigQuery migration, P1), B-11 (vector
+  index COSINE → DOT_PRODUCT, P2), D-5 (default to Vertex AI, P1), E-3
+  (BigQuery public datasets doc, P2), F-5 (explicit GraphRAG layer),
+  F-6 (compliance tracker, now lives in `docs/COMPLIANCE.md`).
+- **`docs/GCP_OPERATIONS.md` §1a + §1b updated** with verified 2026
+  recipe for ACLED (with the Corporate License warning) and Vertex AI
+  Agent Engine (with pinned `google-adk==1.31.1` and the canonical
+  IAM model — `roles/aiplatform.user`, no separate
+  `reasoningEngineUser` role).
+
+### Critical finding to action this week
+
+🚨 **ACLED licensing.** ACLED's 2026 EULA prohibits SaaS dashboards
+from redistributing event data without a Corporate License. Email
+`access@acleddata.com` to negotiate (estimated $5–25k/yr). Until
+licensed, the engineering safe-harbour is to expose only aggregated
+statistics, not raw rows, to paying customers. Tracked as Stream B-9
+(P0) in `docs/SPRINT_BACKLOG.md`.
+
 ## [Unreleased] — 2026-04-25 (third session)
 
 ### Added
