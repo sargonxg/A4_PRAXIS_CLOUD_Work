@@ -1,6 +1,6 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
-> **Last updated**: 2026-04-25 (sixth session — operational spine)
+> **Last updated**: 2026-04-25 (seventh session — deploy hardening)
 > **Next agent**: Codex 5.5 (or Claude Code)
 > **Read first**: `CLAUDE.md`, `AGENTS.md`, `docs/OPERATIONAL_SPINE.md`, `CHANGELOG.md` Unreleased.
 
@@ -9,9 +9,9 @@
 ## Current state
 
 - **Project**: `praxisbytacitus` (`852128226674`), region `us-central1`, domain `praxis.tacitus.me`.
-- **Repo**: `C:\Users\giuli\A4_PRAXIS_CLOUD_Work_fresh` (the previous `A4_PRAXIS_CLOUD_Work` is the prior fresh clone — both contain divergent edits; `_fresh` is canonical for the spine work).
+- **Repo**: fresh clone at `C:\Users\giuli\praxiscodexworking\A4_PRAXIS_CLOUD_Work`.
 - **Version**: bumped from 6.3.1 → 6.4.0 (operational spine).
-- **What just shipped (in code, not yet deployed)**:
+- **What just shipped in code**:
   - 14 new Firestore indexes (incl. the `situations.status` collection-group index that was crashing gdelt-poller).
   - 5 new Firestore collections + rules: `tool_runs`, `background_jobs`, `system_events`, `users/{uid}/notifications`, `alerts`, `data_ingestions`, `audit_logs` (+ `graph_updates` subcollection).
   - TS spine: `src/lib/jobs/job-service.ts`, `src/lib/events/event-service.ts`.
@@ -22,14 +22,25 @@
   - TTL retention configured (`infrastructure/setup-ttl.sh`): events 365d, tool_runs 365d, jobs 90d, notifications 180d.
   - Dedicated SAs declared in `infrastructure/setup-gcp.sh`: `praxis-frontend-sa`, `praxis-backend-sa`, `praxis-functions-sa`, `praxis-worker-sa`.
 
-- **What is NOT yet done (deploy-side)**:
-  - `firebase deploy --only firestore:indexes` and `--only firestore:rules` have not been run with the new config.
-  - `bash infrastructure/setup-ttl.sh` has not been run.
-  - Cloud Build has not been re-submitted with the spine code.
-  - Dedicated SAs have not been created or bound.
-  - The `praxis.deadletter` Pub/Sub topic command was authored but not run.
-
-The user is **running these commands themselves** (the gcloud commands from the previous turn) — confirm with them before duplicating.
+- **Deploy verification status on 2026-04-25**:
+  - Firestore composite indexes, including `situations.status`
+    collection-group, are READY.
+  - TTL is ACTIVE for `system_events`, `tool_runs`, `background_jobs`,
+    `users/{uid}/notifications`, `audit_logs`, and `rate_limits`.
+  - Firebase CLI auth is expired on the Windows host; rules deployment
+    still needs a `firebase login --reauth` or a Cloud Shell deploy.
+  - Cloud Build `2bcd558a-bff5-4aec-ba42-fb42b29e2e42` failed during
+    frontend TypeScript validation on `/api/notifications/[id]`.
+    This session fixed that route-handler signature and the follow-on
+    operator-console typing errors.
+  - `gdelt-poller` had no recent `Index probe OK` logs when checked;
+    this session fixed two worker issues before redeploy: missing
+    `_shared` in the Docker image and a call to nonexistent
+    `/api/v1/pipeline/ingest-gdelt`.
+  - Dedicated service-account migration is still incomplete in production;
+    use the Cloud Shell block in the session handoff to redeploy
+    `on-situation-created`, `on-document-uploaded`, and `gdelt-poller`
+    with the dedicated SAs.
 
 ---
 
@@ -55,7 +66,8 @@ The user is **running these commands themselves** (the gcloud commands from the 
    
    # TTL policies active?
    gcloud firestore fields ttls list --database='(default)' --project=praxisbytacitus
-   # Expect: 5 rows (system_events, tool_runs, background_jobs, notifications via field, audit_logs)
+   # Expect: 6 rows: system_events, tool_runs, background_jobs,
+   # notifications, audit_logs, rate_limits
    
    # Worker pool happy?
    gcloud logging read \

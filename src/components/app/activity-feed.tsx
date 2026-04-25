@@ -34,8 +34,8 @@ function formatRelative(ms: number): string {
 
 export function ActivityFeed({ uid, situationId, className, emptyHint }: ActivityFeedProps) {
   const toolRuns = useToolRuns(uid, situationId, 30);
-  const jobs = useBackgroundJobs(situationId ? null : uid, 30);
-  const notifications = useNotifications(situationId ? null : uid, 30);
+  const jobs = useBackgroundJobs(uid, situationId, 30);
+  const notifications = useNotifications(uid, situationId, 30);
 
   const items = useMemo<FeedItem[]>(() => {
     const merged: FeedItem[] = [];
@@ -87,7 +87,6 @@ function ToolRunRowView({ row }: { row: ToolRunRow }) {
         <div className="mt-0.5 flex items-center gap-2 text-xs text-zinc-500">
           <span>{formatRelative(row.startedAt?.toMillis?.() ?? 0)}</span>
           {row.durationMs ? <span>· {Math.round(row.durationMs / 100) / 10}s</span> : null}
-          {row.creditsDeducted ? <span>· {row.creditsDeducted}c</span> : null}
           {row.error ? <span className="text-rose-400">· {row.error.code}</span> : null}
         </div>
       </div>

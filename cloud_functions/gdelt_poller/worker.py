@@ -52,7 +52,7 @@ def _load_required_env() -> dict[str, str]:
             "--update-env-vars=PRAXIS_BACKEND_URL=https://praxis-backend-...run.app\n"
         )
         sys.exit(1)
-    return {name: os.environ[name] for name in REQUIRED_ENV}
+    return {name: os.getenv(name, "") for name in REQUIRED_ENV}
 
 
 _env = _load_required_env()
@@ -127,8 +127,12 @@ def poll_once(db: firestore.Client) -> dict:
                 if not region:
                     continue
                 resp = client.post(
-                    f"{BACKEND_URL}/api/v1/pipeline/ingest-gdelt",
-                    json={"uid": uid, "situation_id": sit_id, "region": region},
+                    f"{BACKEND_URL}/api/v1/pipeline/ingest-feeds",
+                    json={"situation_id": sit_id},
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "X-PRAXIS-UID": uid,
+                    },
                 )
                 resp.raise_for_status()
                 processed += 1

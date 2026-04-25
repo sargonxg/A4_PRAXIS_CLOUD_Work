@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { SemaphoreChip, type Semaphore } from '@/components/app/semaphore-chip';
 import { cn } from '@/lib/utils/cn';
@@ -218,12 +219,12 @@ function formatRel(ts: FirestoreTimestamp | undefined): string {
   return new Date(ms).toLocaleString();
 }
 
-function Table<T extends { [k: string]: unknown }>({
+function Table<T extends object>({
   rows,
   columns,
 }: {
   rows: T[];
-  columns: { key: keyof T; label: string; render?: (r: T) => React.ReactNode }[];
+  columns: { key: keyof T; label: string; render?: (r: T) => ReactNode }[];
 }) {
   if (rows.length === 0) {
     return <div className="rounded-lg border border-zinc-800 bg-zinc-950/30 p-4 text-sm text-zinc-500">No rows.</div>;

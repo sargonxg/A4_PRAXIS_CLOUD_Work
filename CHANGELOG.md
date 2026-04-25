@@ -6,6 +6,56 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-04-25 (seventh session — deploy hardening)
+
+### Fixed
+
+- Fixed the Next.js 16 dynamic route handler signature for
+  `/api/notifications/[id]`, unblocking the Cloud Build frontend image
+  after build `2bcd558a-bff5-4aec-ba42-fb42b29e2e42` failed in
+  TypeScript route validation.
+- Tightened the operator console table generic so admin job, tool-run,
+  and system-event rows type-check without erasing row fields to
+  `unknown`.
+- Fixed the GDELT worker container to include the vendored `_shared`
+  spine helpers, so worker-pool images can emit `system_events` and
+  background-job state.
+- Fixed GDELT worker ingestion to call the backend route that exists
+  (`/api/v1/pipeline/ingest-feeds`) and pass `X-PRAXIS-UID` for the
+  service-to-service OIDC auth path.
+- Fixed the document-upload trigger path guard before reading `parts[10]`.
+
+### Improved
+
+- Backend `/api/v1/pipeline/run` now reads `X-PRAXIS-JOB-ID` and updates
+  `background_jobs.progress` through extraction, graph build, clustering,
+  analysis, brief rendering, and Firestore sync.
+- Dashboard now mounts `<ActivityFeed />` for the active situation so
+  tool runs, background jobs, and notifications are visible in the main
+  workspace.
+- Activity feed situation filtering now keeps the owner `uid` constraint
+  and filters jobs/notifications client-side, matching Firestore rules.
+- Activity feed no longer renders internal credit deductions in user
+  activity rows.
+- `infrastructure/setup-ttl.sh` now includes the `notifications`
+  collection group and accurately documents that spine helpers already
+  write `expiresAt`.
+
+### Verified
+
+- `npx tsc --noEmit`
+- `npm run build` (passes locally; Windows standalone trace-copy warnings
+  for `node:*` chunk names remain expected)
+- `node scripts/audit-ai-routes.mjs`
+- `npm run audit:gcp`
+- `npm run lint` (warnings only; existing React Compiler/lint backlog)
+- `npx vitest run`
+- Firestore composite indexes are READY; TTL is ACTIVE for
+  `system_events`, `tool_runs`, `background_jobs`, `notifications`,
+  `audit_logs`, and `rate_limits`.
+
+---
+
 ## [Unreleased] — 2026-04-25 (sixth session — operational spine)
 
 ### Operational spine — durable jobs, events, notifications, semaphore status

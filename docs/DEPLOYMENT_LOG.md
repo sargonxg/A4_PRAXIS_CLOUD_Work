@@ -2,6 +2,40 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-25 — Deploy hardening in progress (session 7)
+
+Source commit: pending at time of edit.
+
+Cloud Build:
+
+- Build ID `2bcd558a-bff5-4aec-ba42-fb42b29e2e42` failed in step
+  `build-frontend`.
+- Failure: Next.js 16 route-handler type validation rejected
+  `/api/notifications/[id]` because `params` was typed synchronously
+  instead of as `Promise<{ id: string }>`.
+- Local fix verified with `npx tsc --noEmit` and `npm run build`.
+
+Deploy verification:
+
+- Firestore composite indexes are READY, including
+  `situations.status` collection-group.
+- Firestore TTL is ACTIVE for `system_events`, `tool_runs`,
+  `background_jobs`, `notifications`, `audit_logs`, and `rate_limits`.
+- `npm run audit:gcp` passes with no hard failures or soft warnings.
+- Firebase CLI auth on the Windows host is expired, so Firestore rules
+  deployment should be run from Cloud Shell or after `firebase login --reauth`.
+
+Code fixes queued for next Cloud Build:
+
+- Notification route handler signature fixed for Next.js 16.
+- Operator console table typing fixed.
+- GDELT worker Docker image now includes vendored `_shared` spine helpers.
+- GDELT worker now calls `/api/v1/pipeline/ingest-feeds` with
+  `X-PRAXIS-UID`.
+- Backend pipeline reports `X-PRAXIS-JOB-ID` progress to `background_jobs`.
+- Dashboard mounts situation-scoped `<ActivityFeed />`; activity feed hides
+  internal credit deductions.
+
 ## 2026-04-25 — Open-source pivot deploy (session 5)
 
 Source commit deployed: head `97...` (pivot commit + redeploy)

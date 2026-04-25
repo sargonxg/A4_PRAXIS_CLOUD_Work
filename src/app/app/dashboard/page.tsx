@@ -15,7 +15,6 @@
 import { useState } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
-import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { OnboardingRequiredState } from '@/components/praxis/onboarding-required-state';
 import { SituationDashboard, WelcomeState } from '@/components/praxis/situation-dashboard';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
@@ -27,6 +26,8 @@ import { FeedAlertsWidget } from '@/components/dashboard/feed-alerts-widget';
 import { RecommendedToolsWidget } from '@/components/dashboard/recommended-tools-widget';
 import { SourceCoverageBanner } from '@/components/dashboard/source-coverage-banner';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
+import { ActivityFeed } from '@/components/app/activity-feed';
+import { useAuth } from '@/lib/auth/auth-context';
 import type { Situation } from '@/types/situation';
 
 interface DailyRead {
@@ -72,6 +73,7 @@ export default function DashboardPage() {
 }
 
 function RealDashboard({ situation }: { situation: Situation }) {
+  const { user } = useAuth();
   const [dailyRead, setDailyRead] = useState<DailyRead | null>(null);
   const [reading, setReading] = useState(false);
   const [readError, setReadError] = useState<string | null>(null);
@@ -145,6 +147,23 @@ function RealDashboard({ situation }: { situation: Situation }) {
         <AdvisorsWidget situationId={situation.id} />
         <RecentToolsWidget situationId={situation.id} />
         <FeedAlertsWidget situationId={situation.id} region={situation.region} />
+      </section>
+
+      <section className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="rounded-md border border-slate-800 bg-slate-900/40 p-4">
+          <h2 className="text-sm font-semibold text-slate-100">Operational status</h2>
+          <p className="mt-1 text-xs text-slate-400">
+            Tool runs, ingestion jobs, and PRAXIS notifications for this situation.
+          </p>
+        </div>
+        <div>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-slate-400">Latest activity</h2>
+          <ActivityFeed
+            uid={user?.id ?? null}
+            situationId={situation.id}
+            emptyHint="No activity for this situation yet. Tool runs and background jobs will appear here."
+          />
+        </div>
       </section>
 
       {/* Empty-state onboarding nudge */}

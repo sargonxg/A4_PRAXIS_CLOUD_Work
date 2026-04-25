@@ -35,6 +35,7 @@ export interface BackgroundJobRow {
   jobId: string;
   uid: string | null;
   kind: string;
+  payload?: { situationId?: string } & Record<string, unknown>;
   status: 'queued' | 'running' | 'completed' | 'failed' | 'dead_letter';
   semaphore: Semaphore;
   progress: { percent: number; message: string } | null;
@@ -68,23 +69,21 @@ export function useToolRuns(uid: string | null, situationId?: string, max = 50):
   const [rows, setRows] = useState<ToolRunRow[]>([]);
   useEffect(() => {
     if (!uid) return;
-    const constraints = situationId
-      ? [where('situationId', '==', situationId)]
-      : [where('uid', '==', uid)];
     const q = query(
       collection(db, 'tool_runs'),
-      ...constraints,
+      where('uid', '==', uid),
       orderBy('startedAt', 'desc'),
       limit(max),
     );
     return onSnapshot(q, (snap) => {
-      setRows(snap.docs.map((d) => d.data() as ToolRunRow));
+      const next = snap.docs.map((d) => d.data() as ToolRunRow);
+      setRows(situationId ? next.filter((row) => row.situationId === situationId) : next);
     });
   }, [uid, situationId, max]);
   return rows;
 }
 
-export function useBackgroundJobs(uid: string | null, max = 50): BackgroundJobRow[] {
+export function useBackgroundJobs(uid: string | null, situationId?: string, max = 50): BackgroundJobRow[] {
   const [rows, setRows] = useState<BackgroundJobRow[]>([]);
   useEffect(() => {
     if (!uid) return;
@@ -95,13 +94,14 @@ export function useBackgroundJobs(uid: string | null, max = 50): BackgroundJobRo
       limit(max),
     );
     return onSnapshot(q, (snap) => {
-      setRows(snap.docs.map((d) => d.data() as BackgroundJobRow));
+      const next = snap.docs.map((d) => d.data() as BackgroundJobRow);
+      setRows(situationId ? next.filter((row) => row.payload?.situationId === situationId) : next);
     });
-  }, [uid, max]);
+  }, [uid, situationId, max]);
   return rows;
 }
 
-export function useNotifications(uid: string | null, max = 50): NotificationRow[] {
+export function useNotifications(uid: string | null, situationId?: string, max = 50): NotificationRow[] {
   const [rows, setRows] = useState<NotificationRow[]>([]);
   useEffect(() => {
     if (!uid) return;
@@ -111,8 +111,9 @@ export function useNotifications(uid: string | null, max = 50): NotificationRow[
       limit(max),
     );
     return onSnapshot(q, (snap) => {
-      setRows(snap.docs.map((d) => d.data() as NotificationRow));
+      const next = snap.docs.map((d) => d.data() as NotificationRow);
+      setRows(situationId ? next.filter((row) => row.situationId === situationId) : next);
     });
-  }, [uid, max]);
+  }, [uid, situationId, max]);
   return rows;
 }

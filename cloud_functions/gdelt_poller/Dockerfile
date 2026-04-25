@@ -3,4 +3,5 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY worker.py .
+COPY _shared ./_shared
 CMD ["python", "-u", "worker.py"]

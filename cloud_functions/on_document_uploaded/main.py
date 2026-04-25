@@ -48,7 +48,7 @@ def on_document_uploaded(cloud_event):
 
     doc_path = data["value"]["name"]
     parts = doc_path.split("/")
-    if len(parts) < 10:
+    if len(parts) < 11:
         print(f"Unexpected path format: {doc_path}")
         return
 

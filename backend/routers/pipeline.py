@@ -8,7 +8,9 @@ from __future__ import annotations
 import time
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from google.cloud import firestore
+from google.cloud.firestore_v1 import SERVER_TIMESTAMP
 from pydantic import BaseModel
 
 from auth import verify_firebase_token
@@ -55,6 +57,22 @@ class IngestFeedsRequest(BaseModel):
     situation_id: str
 
 
+async def _update_job_progress(job_id: str | None, percent: int, message: str) -> None:
+    if not job_id:
+        return
+    try:
+        db = firestore.AsyncClient()
+        await db.collection("background_jobs").document(job_id).update({
+            "status": "running",
+            "semaphore": "purple" if "extract" in message.lower() or "analy" in message.lower() else "yellow",
+            "progress": {"percent": percent, "message": message},
+            "updatedAt": SERVER_TIMESTAMP,
+        })
+    except Exception:
+        # Progress reporting must never fail the pipeline itself.
+        pass
+
+
 def _run_analysis(G, communities: dict) -> dict:
     """Run full analysis suite on a clustered graph."""
     community_labels = {
@@ -74,10 +92,12 @@ def _run_analysis(G, communities: dict) -> dict:
 @router.post("/run")
 async def run_pipeline(
     req: PipelineRunRequest,
+    request: Request,
     token: dict = Depends(verify_firebase_token),
 ):
     """Run the full pipeline: extract → build → cluster → analyze → sync."""
     uid = token["uid"]
+    job_id = request.headers.get("X-PRAXIS-JOB-ID") or None
     start_ms = int(time.time() * 1000)
 
     gemini = GeminiClient()
@@ -87,6 +107,7 @@ async def run_pipeline(
     await fs.update_situation_metadata(uid, req.situation_id, {
         "pipelineStatus": "running",
     })
+    await _update_job_progress(job_id, 5, "Pipeline started")
 
     try:
         # 1. Extract from all sources
@@ -122,24 +143,30 @@ async def run_pipeline(
 
         if not extractions:
             raise HTTPException(status_code=400, detail="No sources provided or extraction failed")
+        await _update_job_progress(job_id, 25, "Extraction complete")
 
         # 2. Build graph
         G = build(extractions)
+        await _update_job_progress(job_id, 40, "Graph built")
 
         # 3. Cluster
         communities = cluster(G)
+        await _update_job_progress(job_id, 55, "Communities clustered")
 
         # 4. Analyze
         analysis = _run_analysis(G, communities)
+        await _update_job_progress(job_id, 70, "Analysis complete")
 
         # 5. Generate brief
         situation = await fs.read_situation(uid, req.situation_id)
         brief = render_situation_brief_json(G, analysis, situation)
+        await _update_job_progress(job_id, 80, "Brief rendered")
 
         # 6. Sync to Firestore
         snapshot = to_json(G, communities)
         await fs.write_graph_snapshot(uid, req.situation_id, snapshot)
         await fs.write_analysis(uid, req.situation_id, analysis)
+        await _update_job_progress(job_id, 90, "Firestore synced")
 
         # 7. Push to Neo4j (if configured)
         neo4j_result = {}
@@ -165,6 +192,7 @@ async def run_pipeline(
         # 9. Log to BigQuery
         duration_ms = int(time.time() * 1000) - start_ms
         log_pipeline_run(uid, req.situation_id, G.number_of_nodes(), G.number_of_edges(), duration_ms, "complete")
+        await _update_job_progress(job_id, 95, "Pipeline complete")
 
         return {
             "analysis": analysis,
@@ -181,6 +209,7 @@ async def run_pipeline(
         raise
     except Exception as exc:
         await fs.update_situation_metadata(uid, req.situation_id, {"pipelineStatus": "error"})
+        await _update_job_progress(job_id, 95, "Pipeline failed")
         duration_ms = int(time.time() * 1000) - start_ms
         log_pipeline_run(uid, req.situation_id, 0, 0, duration_ms, "error")
         raise HTTPException(status_code=500, detail=f"Pipeline failed: {exc}") from exc
@@ -238,7 +267,7 @@ async def ingest_feeds(
     req: IngestFeedsRequest,
     token: dict = Depends(verify_firebase_token),
 ):
-    """Query GDELT and ACLED for the situation region and merge into graph."""
+    """Query open-source GDELT articles for the situation and merge into graph."""
     uid = token["uid"]
     fs = FirestoreSync()
     situation = await fs.read_situation(uid, req.situation_id)
@@ -251,10 +280,8 @@ async def ingest_feeds(
         raise HTTPException(status_code=400, detail="Situation has no name or region")
 
     from services.feed_clients.gdelt import query_gdelt
-    from services.feed_clients.acled import query_acled
 
     gdelt_articles = await query_gdelt(keywords)
-    acled_events = await query_acled(region) if region else []
 
     # Convert GDELT articles to extraction format via Gemini
     gemini = GeminiClient()
@@ -274,12 +301,8 @@ async def ingest_feeds(
                     "edges": [e.model_dump() for e in result.edges],
                 })
 
-    # Add ACLED events directly as ACO Event nodes
-    if acled_events:
-        extractions.append({"nodes": acled_events, "edges": []})
-
     if not extractions:
-        return {"message": "No new data from feeds", "articles": len(gdelt_articles), "events": len(acled_events)}
+        return {"message": "No new data from feeds", "articles": len(gdelt_articles), "events": 0}
 
     # Merge with existing
     existing_snapshot = await fs.read_graph_snapshot(uid, req.situation_id)
@@ -296,7 +319,7 @@ async def ingest_feeds(
 
     return {
         "gdelt_articles": len(gdelt_articles),
-        "acled_events": len(acled_events),
+        "acled_events": 0,
         "new_extractions": len(extractions),
         "total_nodes": G.number_of_nodes(),
     }

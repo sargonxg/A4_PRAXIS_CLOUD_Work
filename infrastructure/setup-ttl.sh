@@ -1,11 +1,9 @@
 #!/bin/bash
 # Configure Firestore TTL policies for the operational spine collections.
 # Each doc must include a Timestamp field named `expiresAt` for TTL to fire;
-# the spine helpers do NOT set this yet — see CONTINUATION.md for the next
-# task to add expiresAt at write time.
+# the TypeScript and Python spine helpers set this on creation.
 #
-# Once expiresAt is being written, deploying these TTL field configs will
-# automatically delete expired docs over the next 24-72h.
+# Firestore deletes expired docs asynchronously, usually within 24-72h.
 set -e
 
 PROJECT_ID="${PROJECT_ID:-praxisbytacitus}"
@@ -34,6 +32,13 @@ gcloud firestore fields ttls update expiresAt \
   --database="$DB" \
   --project="$PROJECT_ID" || echo "  tool_runs ttl update returned non-zero"
 
+# users/{uid}/notifications/{id}: 180d retention — user-facing activity
+gcloud firestore fields ttls update expiresAt \
+  --collection-group=notifications \
+  --enable-ttl \
+  --database="$DB" \
+  --project="$PROJECT_ID" || echo "  notifications ttl update returned non-zero"
+
 # audit_logs: 365d minimum (compliance — see docs/COMPLIANCE.md)
 gcloud firestore fields ttls update expiresAt \
   --collection-group=audit_logs \
@@ -49,6 +54,3 @@ gcloud firestore fields ttls update expiresAt \
   --project="$PROJECT_ID" || echo "  rate_limits ttl update returned non-zero"
 
 echo "✓ TTL policies configured. Existing docs without expiresAt are unaffected."
-echo ""
-echo "  Next step: ensure spine helpers write expiresAt on doc creation."
-echo "  See src/lib/jobs/job-service.ts — TODO blocks marked 'TTL'."
