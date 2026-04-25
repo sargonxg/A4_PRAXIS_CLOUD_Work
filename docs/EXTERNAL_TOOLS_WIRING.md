@@ -48,8 +48,12 @@ analyst's lens preferences as filters. None of the feeds are queried
 derived from situation age + UI scrubber.
 
 **Auth:** none (public). Hosted BigQuery is the preferred path —
-`gdelt-bq.gdeltv2.gkg_partitioned`. Migration tracked as Stream B-10
-in `docs/SPRINT_BACKLOG.md`.
+`gdelt-bq.gdeltv2.gkg_partitioned`. Full implementation playbook at
+**`docs/implementation/gdelt-ingestion-2026-04-25.md`** (1,036 lines —
+service accounts, two-tier pull pattern, BigQuery table DDL, Cloud Run
+Job source layout, Cloud Scheduler config, Firestore cache, T1 vs T2
+trade-offs). Migration tracked as Stream B-10 in
+`docs/SPRINT_BACKLOG.md`.
 
 ### ACLED (freemium, **CRITICAL: Corporate License required for paid tiers**)
 
@@ -66,7 +70,11 @@ in `docs/SPRINT_BACKLOG.md`.
 **Auth:** `ACLED_API_KEY` + `ACLED_EMAIL`. Behind
 `ACLED_LICENSE_TIER=corporate-licensed` for raw event display (per
 `docs/COMPLIANCE.md` §1.1). When unset → returns `[]` → tools fall
-back to GDELT/grounded-search aggregates.
+back to GDELT/grounded-search aggregates. Full implementation
+playbook at **`docs/tacitus-acled-integration-brief.md`** (228 lines
+— OAuth password-grant flow, ACO mapping for ACLED's 30 columns,
+BigQuery `acled_raw.events` landing zone, four-phase Cloud Run Job
+build sequence).
 
 ### UCDP GED (free, CC-BY 4.0)
 

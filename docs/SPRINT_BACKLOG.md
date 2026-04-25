@@ -640,17 +640,33 @@ unless selling to UN before SOC 2 is in.
 
 **Why:** Compliance-critical. See G-2 above.
 
-**Files to touch (interim):**
+> **Authoritative implementation playbook:**
+> `docs/tacitus-acled-integration-brief.md` (228 lines, 2026-04-25). Read
+> that brief first — it lays out the OAuth password-grant flow, the
+> ACLED client API surface (`client.read(endpoint, filters, fields)`
+> with auto-pagination), the BigQuery `acled_raw.events` landing zone
+> with partition+cluster spec, the **full ACO mapping** for ACLED's 30
+> columns to the 8 ACO primitives (this is the part the brief calls
+> out as not-delegable), and the four-phase Cloud Run Job build
+> sequence.
+
+**Files to touch (interim safe-harbour, before Corporate License):**
 
 - `src/lib/data-feeds/acled-client.ts` — gate raw event return behind a
   new env var `ACLED_LICENSE_TIER` (one of `none`, `enterprise-pilot`,
   `corporate-licensed`). When `none`, return only aggregated counts.
 - `src/components/dashboard/feed-alerts-widget.tsx` and Geospatial
   Monitor — only render raw events when the feature flag is on.
-- `docs/COMPLIANCE.md` (new) — track the license negotiation thread,
+- `docs/COMPLIANCE.md` §1.1 — track the license negotiation thread,
   effective date, scope.
 
-**DoD:**
+**Files to build (full ingestion, after Corporate License):**
+
+- `backend/services/acled/` — Cloud Run Job per the brief Phase 1–4.
+- `acled_raw.events` BigQuery table per the brief §2.
+- ACO mapping module per the brief §4 (the analyst-judgement piece).
+
+**DoD (interim):**
 - Aggregated stats path works without a corporate license; raw events
   hidden by default.
 - Attribution string appears wherever ACLED data is rendered.
@@ -663,17 +679,30 @@ unless selling to UN before SOC 2 is in.
 zero ingestion code on our side. Cuts the `cloud_functions/gdelt_poller`
 maintenance to a Cloud Scheduler-triggered BigQuery upsert.
 
-**Files to read:** `cloud_functions/gdelt_poller/main.py`,
-`scripts/audit-gcp.mjs` (so we know which Pub/Sub topics to keep).
+> **Authoritative implementation playbook:**
+> `docs/implementation/gdelt-ingestion-2026-04-25.md` (1036 lines,
+> 2026-04-25). Detailed step-by-step covering: prerequisites + API
+> enablement, two dedicated service accounts (`praxis-gdelt-poller`,
+> `praxis-gdelt-reader`) with minimal IAM grants, the **two-tier pull
+> pattern** (T1 direct query + T2 hot materialized slice), table DDL
+> for `praxis_analytics.gdelt_situation_events` with partition + cluster
+> spec, the Cloud Run Job source layout, Cloud Scheduler config,
+> Firestore cache schema, error handling, and observability hooks.
+> Ship T1 first, add T2 when ≥10 active situations.
+
+**Files to read:** the playbook above, plus
+`cloud_functions/gdelt_poller/main.py`, `scripts/audit-gcp.mjs`.
 
 **Files to touch:**
-- New SQL in `infrastructure/bigquery/gkg_situation_events.sql` (DDL +
-  scheduled query).
-- Replace the cloud function with a thin Cloud Scheduler job calling a
-  BigQuery scheduled query.
+- New `infrastructure/bigquery/gdelt_situation_events.sql` (DDL +
+  scheduled query) per playbook §3.
+- New `backend/services/gdelt/` Cloud Run Job per playbook §4.
+- Cloud Scheduler trigger per playbook §5.
+- Replace the legacy cloud function source per playbook §6.
 
 **DoD:** New table populates every 15 min. App reads from it via the
-existing GDELT client (small refactor — same interface).
+existing GDELT client (small refactor — same interface). Per-situation
+T1 query returns sub-200ms cached, sub-4s cold.
 
 ### B-11. Vector index COSINE → DOT_PRODUCT · **P2** · `Pending`
 

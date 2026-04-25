@@ -39,7 +39,11 @@ redistributing event data without a Corporate License. The verbatim
 clause is in `docs/COMPLIANCE.md` §1.1; the deeper analysis is in the
 compass research artifact at
 `docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`
-§R2. You currently cannot show raw ACLED events to a paying customer.
+§R2. The full integration playbook (OAuth flow, ACO mapping, BigQuery
+landing zone, Cloud Run Job) is at
+**`docs/tacitus-acled-integration-brief.md`** — read that brief
+alongside this section. You currently cannot show raw ACLED events
+to a paying customer.
 
 **Expected outcome:** A signed Corporate License agreement covering the
 Analyst $49 / Team $199 / Enterprise tiers. Until then, agents will

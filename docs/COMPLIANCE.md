@@ -16,10 +16,11 @@ obligation changes.
 
 | Status | Action | Owner | Target date |
 |---|---|---|---|
-| 🚨 Not licensed for SaaS redistribution | Email `access@acleddata.com`, request Corporate License quote | Giulio | Immediate |
+| 🚨 Not licensed for SaaS redistribution | Email `access@acleddata.com`, request Corporate License quote (draft in `docs/USER_ACTION_LIST.md` §1) | Giulio | Immediate |
 | Pending negotiation | Negotiate scope (Analyst $49 / Team $199 / Enterprise tiers) | Giulio | ASAP |
-| Interim safe-harbour | Gate raw event display behind feature flag; surface only aggregated stats | Engineering (Stream B-9) | This sprint |
+| Interim safe-harbour | Gate raw event display behind feature flag; surface only aggregated stats | Engineering (Stream B-9 — playbook at `docs/tacitus-acled-integration-brief.md`) | This sprint |
 | Attribution copy added everywhere ACLED data renders | Source: ACLED — acleddata.com — accessed YYYY-MM-DD | Engineering | This sprint |
+| ACO mapping for ACLED's 30 columns | Pre-drafted in the integration brief §4 — needs Giulio sign-off before code lands | Giulio (judgement) | Before Phase 1 |
 
 **Verbatim EULA quote (from `compass_artifact` §R2):**
 > "It is not sufficient for Licensed Content to simply be supplemented,

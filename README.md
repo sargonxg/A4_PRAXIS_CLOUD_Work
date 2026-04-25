@@ -543,6 +543,9 @@ cd backend && python -m pytest tests/ -v  # Python tests
 | [docs/TEAM_OPS.md](./docs/TEAM_OPS.md) | Multi-agent operations playbook |
 | [docs/GCP_OPERATIONS.md](./docs/GCP_OPERATIONS.md) | Every gcloud / Secret Manager command |
 | [docs/RESEARCH_PROMPTS.md](./docs/RESEARCH_PROMPTS.md) | Deep-research prompt catalogue (all 10 answered 2026-04-25) |
+| [docs/EXTERNAL_TOOLS_WIRING.md](./docs/EXTERNAL_TOOLS_WIRING.md) | Per-feed × per-tool wiring map and degradation chain |
+| [docs/tacitus-acled-integration-brief.md](./docs/tacitus-acled-integration-brief.md) | ACLED integration playbook (OAuth, ACO mapping, Cloud Run Job) |
+| [docs/implementation/gdelt-ingestion-2026-04-25.md](./docs/implementation/gdelt-ingestion-2026-04-25.md) | GDELT BigQuery ingestion playbook (1,036 lines, T1+T2 pattern) |
 | [docs/tools/INDEX.md](./docs/tools/INDEX.md) | Per-tool micro-app spec catalogue |
 | [docs/DEPLOYMENT_LOG.md](./docs/DEPLOYMENT_LOG.md) | Daily deployment status, Cloud Run revisions, and production verification |
 | [docs/HANDOFF_PROMPTS.md](./docs/HANDOFF_PROMPTS.md) | Long-form prompts for Claude Code and Codex continuation |
