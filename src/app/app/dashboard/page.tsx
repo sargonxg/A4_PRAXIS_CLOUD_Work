@@ -24,7 +24,7 @@ import { EscalationWidget } from '@/components/dashboard/escalation-widget';
 import { AdvisorsWidget } from '@/components/dashboard/advisors-widget';
 import { RecentToolsWidget } from '@/components/dashboard/recent-tools-widget';
 import { FeedAlertsWidget } from '@/components/dashboard/feed-alerts-widget';
-import { CreditsWidget } from '@/components/dashboard/credits-widget';
+import { RecommendedToolsWidget } from '@/components/dashboard/recommended-tools-widget';
 import { SourceCoverageBanner } from '@/components/dashboard/source-coverage-banner';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import type { Situation } from '@/types/situation';
@@ -136,14 +136,15 @@ function RealDashboard({ situation }: { situation: Situation }) {
       {/* Source coverage banner — honest surface of tier state */}
       <SourceCoverageBanner />
 
-      {/* 6-widget grid */}
+      {/* 6-widget grid — Recommended-for-you replaces the credits widget so the
+          dashboard surfaces a role-tuned next-action instead of internal metering. */}
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <RiskGaugeWidget situation={situation} />
         <EscalationWidget situation={situation} />
+        <RecommendedToolsWidget situation={situation} />
         <AdvisorsWidget situationId={situation.id} />
         <RecentToolsWidget situationId={situation.id} />
         <FeedAlertsWidget situationId={situation.id} region={situation.region} />
-        <CreditsWidget />
       </section>
 
       {/* Empty-state onboarding nudge */}
