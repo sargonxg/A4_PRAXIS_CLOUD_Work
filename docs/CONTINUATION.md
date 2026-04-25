@@ -75,6 +75,60 @@ curl -sI https://praxis.tacitus.me/onboarding
 
 Also verify Firebase Auth authorized domains include `praxis.tacitus.me` before testing login.
 
+## Immediate Next Work (updated 2026-04-25, end of session 4 — full handover ready)
+
+### Restart prompt
+
+**To continue in a new session (Codex 5.5 or Claude Code):** paste the
+"Session Restart Prompt" block at the top of `docs/HANDOFF_PROMPTS.md`.
+That prompt is self-contained — explains where you are, what's
+deployed, doc set to read, hard rules, validation gate, and the
+recommended next slice.
+
+### Where to start (CEO/CTO actions)
+
+Open **`docs/USER_ACTION_LIST.md`** — every step only you can do. Top
+priority: §1 ACLED Corporate License email (15 min, BLOCKER).
+Highest-leverage second step: §3 Vertex AI Agent Engine deploy
+(deploy.py is already in `backend/agents/`, takes 1–2h).
+
+### Where to start (next agent)
+
+Open **`docs/SPRINT_BACKLOG.md`** and pick the highest-priority Pending
+task. Recommended: B-1 (Assistant chat persistence, ~4h) for Codex,
+or B-9 (ACLED safe-harbour, ~1–2h) for either. Both have authoritative
+implementation playbooks pinned: `docs/tools/assistant.md` for B-1
+and `docs/tacitus-acled-integration-brief.md` for B-9.
+
+### What this fourth session shipped
+
+Three sub-batches deployed via Cloud Build `995dfad5` (9m03s) →
+revisions `praxis-frontend-00050-d4v` + `praxis-backend-00030-2vl`.
+
+- Strategic + operational: `VISION_2026.md`, `USER_ACTION_LIST.md`,
+  `EXTERNAL_TOOLS_WIRING.md`, `TEAM_OPS.md`.
+- Vertex ADK runnable: `backend/agents/deploy.py`,
+  `backend/agents/requirements.txt`, `backend/agents/README.md`.
+- Cleanup: removed `docs/DAILY_WORKPLAN.md`, dead
+  `credits-widget.tsx`, dead `credit-cost-badge.tsx`.
+- Doc graph hardened: README + AGENTS.md + CLAUDE.md required-reading
+  lists rewritten to surface the 21-item active doc set.
+- Compass research integrated everywhere (CRITICAL ACLED finding
+  flagged in COMPLIANCE.md, GCP_OPERATIONS.md, USER_ACTION_LIST.md,
+  SPRINT_BACKLOG.md).
+- ACLED + GDELT integration briefs (uploaded by user as commits
+  `7589334`, `bd46423`) now first-class entries in the doc graph,
+  cross-referenced from SPRINT_BACKLOG.md, EXTERNAL_TOOLS_WIRING.md,
+  COMPLIANCE.md, USER_ACTION_LIST.md, README.md.
+
+### Critical risk to action this week
+
+🚨 **ACLED licensing.** Same as previous session. Email
+`access@acleddata.com` (draft text in `docs/USER_ACTION_LIST.md` §1).
+Engineering safe-harbour (B-9) ships in parallel.
+
+---
+
 ## Immediate Next Work (updated 2026-04-25, fourth session — playbook + vision + cleanup)
 
 ### Where to start

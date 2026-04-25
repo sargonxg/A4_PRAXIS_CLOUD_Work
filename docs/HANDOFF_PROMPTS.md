@@ -40,6 +40,262 @@ Continue the day-by-day plan in docs/DAILY_WORKPLAN.md. Keep README.md, CLAUDE.m
 Continue PRAXIS from the repository root. First read README.md, CLAUDE.md, AGENTS.md, CHANGELOG.md, docs/CONTINUATION.md, docs/STRATEGY.md, docs/DAILY_WORKPLAN.md, docs/DEPLOYMENT_LOG.md, docs/SPRINT_2026-04-25.md, and docs/HANDOFF_PROMPTS.md. Verify git status and recent commits. Run npm install and the validation suite: npm run build, npm run lint, npm run audit:gcp, node scripts/audit-ai-routes.mjs, npx vitest run. Work through docs/SPRINT_2026-04-25.md, keep all strategy and deployment docs current, commit small checkpoints, push to GitHub when validation passes, and deploy to Cloud Run only after validation is green. Preserve GCP/Firebase/Secret Manager/Cloud Run details and never hardcode secrets.
 ```
 
+## Session Restart Prompt (2026-04-25, end of four Claude Code sessions)
+
+This is the prompt to paste into either Codex 5.5 or a new Claude Code
+session to resume work. It recaps where you are, what's deployed,
+where the docs live, and what to do next.
+
+```text
+You are resuming PRAXIS by TACITUS — a conflict-intelligence
+operating system for policy professionals. Same GitHub repo
+(github.com/sargonxg/A4_PRAXIS_CLOUD_Work), same main branch. Always
+reclone:
+
+  git clone https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git
+  cd A4_PRAXIS_CLOUD_Work
+  git log --oneline -10
+  npm install
+
+────────────────────────────────────────────────────────────────────
+WHERE YOU ARE WORKING
+────────────────────────────────────────────────────────────────────
+
+Production: https://praxis.tacitus.me  (Cloud Run, us-central1)
+Repo:       github.com/sargonxg/A4_PRAXIS_CLOUD_Work, branch=main
+Local:      C:\Users\giuli\A4_PRAXIS_CLOUD_Work_fresh (Windows)
+GCP project: praxisbytacitus (project number 852128226674)
+Region:     us-central1
+Domain:     praxis.tacitus.me  (Firebase Auth authorized)
+Runtime SA: 852128226674-compute@developer.gserviceaccount.com
+
+Latest deploy at handoff time:
+  Cloud Build:      995dfad5-b80e-4cb7-a232-59fdddec49a9 (SUCCESS, 9m03s)
+  Frontend rev:     praxis-frontend-00050-d4v  (ready)
+  Backend  rev:     praxis-backend-00030-2vl   (ready)
+  Source commit:    22dd8c9 (head at deploy)
+  Subsequent:       bd46423, 6e0ac8e (doc-only, ship next deploy)
+
+────────────────────────────────────────────────────────────────────
+TECH STACK
+────────────────────────────────────────────────────────────────────
+
+Frontend  Next.js 16.1.6 (App Router, Turbopack), TS 5.9 strict,
+          Tailwind v4, Radix UI, Zustand 5, Vercel AI SDK v6,
+          Firebase JS SDK, Framer Motion 12, D3 v7, leaflet
+Backend   Python 3.11 FastAPI, Genkit, NetworkX, graspologic
+AI        Gemini 3 Flash + 3.1 Pro (default), Anthropic Claude
+          (optional fallback), Vertex AI ADK Reasoning Engine
+          (Deep Research Agent — deploy.py at backend/agents/)
+Auth      Firebase Auth (Google OAuth + email/password + demo)
+Data      Firestore (single source of truth for situations + tools),
+          BigQuery praxis_analytics (GDELT slice when wired),
+          Cloud Storage, Pub/Sub (profile.events topic), Secret
+          Manager, Cloud Build, Artifact Registry
+Deploy    cloudbuild.yaml, gcloud builds submit
+Tests     vitest (150/150 passing), tsc --noEmit (clean)
+Audits    npm run audit:gcp (0/0), node scripts/audit-ai-routes.mjs
+          (53/53 calibrated, 4 exempt)
+
+────────────────────────────────────────────────────────────────────
+DEPENDENCIES YOU CAN ASSUME WORK
+────────────────────────────────────────────────────────────────────
+
+✓ GOOGLE_AI_API_KEY (Gemini)              live in Secret Manager
+✓ FIREBASE_SERVICE_ACCOUNT_KEY            live
+✓ COOKIE_SIGNING_SECRET / SESSION_SECRET  live (same secret, two names)
+✓ CRON_SECRET                             live
+✓ Firebase Auth authorized domain         praxis.tacitus.me ✓
+✓ Pub/Sub topic profile.events            ✓
+✓ BigQuery dataset praxis_analytics       ✓
+✓ Cloud Storage bucket praxisbytacitus-praxis-uploads ✓
+
+Configuration gaps (graceful degrade — turn-on steps in
+docs/USER_ACTION_LIST.md):
+  ~ ACLED      (Corporate License negotiation pending — see brief)
+  ~ Vertex ADK (engine ID — deploy.py ready in backend/agents/)
+  ~ Firecrawl  ($83/mo signup pending)
+  ~ Stripe     (products + webhook pending)
+  ~ Anthropic  (optional, marginal ROI)
+
+────────────────────────────────────────────────────────────────────
+DOCS YOU MUST READ ON SESSION START
+────────────────────────────────────────────────────────────────────
+
+In order:
+
+ 1. README.md                    product overview
+ 2. CLAUDE.md                    detailed codebase guide
+ 3. AGENTS.md                    hard rules + validation gate
+ 4. CHANGELOG.md                 what shipped recently
+ 5. docs/CONTINUATION.md         last "do this next" pointer
+ 6. docs/SPRINT_BACKLOG.md       canonical actionable list — pick from here
+ 7. docs/SPRINT_2026-04-25.md    week-long sprint plan with 4 streams
+ 8. docs/CONTEXT_INJECTION.md    THE architectural contract
+ 9. docs/VISION_2026.md          strategic north star
+10. docs/USER_ACTION_LIST.md     things only the human user can do
+11. docs/COMPLIANCE.md           licensing, certs, sub-processors
+12. docs/EXTERNAL_TOOLS_WIRING.md per-feed × per-tool wiring map
+13. docs/TEAM_OPS.md             multi-agent operations playbook
+14. docs/GCP_OPERATIONS.md       every gcloud command you'll need
+15. docs/RESEARCH_PROMPTS.md     deep-research prompt catalogue
+16. docs/HANDOFF_PROMPTS.md      this file
+17. docs/DEPLOYMENT_LOG.md       last successful deploy state
+18. docs/tools/INDEX.md          per-tool micro-app spec catalogue
+19. docs/compass_artifact_*.md   789-line research artifact
+20. docs/tacitus-acled-integration-brief.md  ACLED ingestion playbook
+21. docs/implementation/gdelt-ingestion-2026-04-25.md  GDELT playbook
+
+────────────────────────────────────────────────────────────────────
+ARCHITECTURE — KEY THINGS TO INTERNALISE
+────────────────────────────────────────────────────────────────────
+
+CONTEXT INJECTION CONTRACT (the heart of PRAXIS):
+  Every AI route is wrapped with withCalibration(toolId, creditOpType)
+  which assembles a CalibrationContext from four data sources:
+
+    AnalystProfile  ──▶┐
+    Situation       ──▶│           ┌──────────────────┐
+    Domain config   ──▶├──▶ build ─▶│ systemPromptBlock │── injected into ──▶ AI
+    SKC retrieval   ──▶┘           └──────────────────┘
+
+  Every tool then calls saveToolOutput() at the end. 53/53 routes are
+  calibrated; 49/49 routes persist outputs to
+  users/{uid}/situations/{sitId}/tools/{toolId}.
+
+  NEVER write a system prompt that doesn't begin with systemPromptBlock.
+
+  Full spec: docs/CONTEXT_INJECTION.md.
+
+ONBOARDING (3-screen wizard at /onboarding):
+  Step 1 Identity     role + seniority + org + team
+  Step 2 Perspective  mandate (≥30 chars) + lenses + regions + audience + domain
+  Step 3 Working style sources + language + red lines + analytical style
+  Step 4 Review
+
+  Stored at users/{uid}/profile/analyst. Bumps meta.version on each
+  edit; immutable snapshot at users/{uid}/profile_versions/{vN}.
+  Publishes profile.events Pub/Sub for downstream embedding refresh.
+
+DATABASE MODEL (Firestore):
+  users/{uid}/
+    profile (credits, subscription, role, orgId, etc.)
+    profile/analyst (AnalystProfile)
+    profile_versions/{vN} (immutable history)
+    settings/api_keys, settings/model_preferences, settings/graph_backend
+    situations/{sitId}/
+      (metadata) name, type, region, actors, domain, riskScore, glaslStage
+      graph/main (nodes, edges)
+      tools/{toolId} (saveToolOutput target)
+      documents/{id}, reports/{id}, scenarios/{id}, chats/{id},
+      briefings/{id}, dossiers/{id}, talking-points/{id}, etc.
+  config/domains/{id} (live-editable 11-domain taxonomy)
+  config/onboarding_suggestions
+  credit_transactions/{txId}
+
+EXTERNAL FEEDS (full mapping in docs/EXTERNAL_TOOLS_WIRING.md):
+  Free zero-config:  GDELT, UCDP, UNHCR, HDX, ReliefWeb, UN News, World Bank, Grounded Search
+  Paid/freemium:     ACLED, Firecrawl, Anthropic, Vertex ADK, Stripe
+  All gracefully degrade when env vars missing.
+
+TOOL CATALOGUE (47 tools across 6 categories):
+  Status as of 2026-04-25 audit:
+    34 READY · 8 PARTIAL · 6 PLACEHOLDER
+  Per-tool specs at docs/tools/<id>.md (template at _TEMPLATE.md).
+  Highest-traffic deep specs already written:
+    docs/tools/dashboard.md
+    docs/tools/assistant.md
+    docs/tools/risk-monitor.md
+    docs/tools/geospatial-monitor.md
+
+MAPS (Geospatial Monitor):
+  Reads situation.region; falls back through src/lib/geo/region-centers.ts
+  for centroid (50+ countries mapped). Renders ACLED events when licensed,
+  else GDELT events. Hotspot clustering via DBSCAN
+  (src/lib/analytics/geospatial-engine.ts).
+
+────────────────────────────────────────────────────────────────────
+WHAT TO DO FIRST
+────────────────────────────────────────────────────────────────────
+
+Run the validation gate to confirm the local clone is healthy:
+
+  npm run build           # 0 errors
+  npm run lint            # warnings allowed; 0 errors
+  npm run audit:gcp       # 0 hard, 0 soft
+  node scripts/audit-ai-routes.mjs  # 53/53 calibrated
+  npx vitest run          # 150/150
+
+Then open docs/SPRINT_BACKLOG.md and pick the highest-priority Pending
+task that's not in conflict with what the other assistant is touching.
+
+Recommended next slice:
+
+  Stream B-1 (P0)  PRAXIS Assistant chat persistence (~4h, Codex)
+                   Spec at docs/tools/assistant.md
+  Stream B-9 (P0)  ACLED safe-harbour (~1-2h, either)
+                   Playbook at docs/tacitus-acled-integration-brief.md
+  Stream A-2 (P0)  Audience-tuned briefings already shipped behind
+                   PRAXIS_AUDIENCE_TUNED_BRIEFING=1 — flip the env
+                   var and verify in prod (5 min, user)
+
+────────────────────────────────────────────────────────────────────
+HARD RULES (from AGENTS.md, restated)
+────────────────────────────────────────────────────────────────────
+
+ 1. Never expose internal tool-by-tool credit costs publicly.
+ 2. Public pricing stays plan-based and monthly.
+ 3. Never hardcode secrets — Secret Manager / Cloud Run env vars only.
+ 4. Don't deploy before npm run build + npx vitest run + audits pass.
+ 5. Every AI route must be wrapped in withCalibration. Read
+    docs/CONTEXT_INJECTION.md before touching /api/ai/*.
+ 6. No new graph backend (Neo4j/Falkor/TrustGraph), no MCP server,
+    no new AI provider this sprint without backlog ticket + user OK.
+ 7. Commits must use giuliocatanzariti@gmail.com only — no
+    Co-Authored-By lines, no --amend of pushed commits.
+ 8. ACLED raw event display stays gated (ACLED_LICENSE_TIER) until
+    Corporate License is signed. See docs/COMPLIANCE.md §1.1.
+
+────────────────────────────────────────────────────────────────────
+DEPLOY GATE
+────────────────────────────────────────────────────────────────────
+
+Only after validation passes AND user authorises:
+
+  gcloud config set project praxisbytacitus
+  gcloud config set run/region us-central1
+  gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus
+
+  curl -sI https://praxis.tacitus.me/                            # 200
+  curl -sI https://praxis.tacitus.me/login                       # 200
+  curl -sI https://praxis.tacitus.me/onboarding                  # 307 → /login
+  curl -s  https://praxis.tacitus.me/api/health | jq             # status:ok
+  curl -s  https://praxis.tacitus.me/api/auth/test-firebase | jq # adminSdkStatus INITIALIZED_OK
+
+  Record build ID + Cloud Run revisions in docs/DEPLOYMENT_LOG.md.
+
+────────────────────────────────────────────────────────────────────
+END-OF-SESSION RITUAL
+────────────────────────────────────────────────────────────────────
+
+When you finish your slice:
+
+ 1. Update CHANGELOG.md (Unreleased section, your own subheading).
+ 2. Update docs/SPRINT_BACKLOG.md task status to Done <commit-hash>.
+ 3. Update docs/CONTINUATION.md with the new "do this next" line and
+    a one-paragraph note for the other assistant.
+ 4. Commit small coherent checkpoints.
+ 5. Push to main.
+ 6. Deploy only with user authorisation.
+ 7. Update docs/DEPLOYMENT_LOG.md if you deployed.
+
+If you need information you don't have, copy the relevant prompt
+from docs/RESEARCH_PROMPTS.md and ask the user to run it. They have
+deep-research access you don't.
+```
+
+---
+
 ## Final Codex Handover (2026-04-25, end of two Claude Code sessions)
 
 This is the prompt to paste into Codex 5.5 when picking up the next slice.

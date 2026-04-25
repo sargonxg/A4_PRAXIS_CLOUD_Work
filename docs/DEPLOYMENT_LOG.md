@@ -2,6 +2,59 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-25 — Playbook + Vision + Cleanup deploy (session 4)
+
+Source commits deployed (head = `22dd8c9`):
+
+- `22dd8c9` docs(playbook): user action list + 2026 vision + wiring map + cleanup
+- `9312c25` docs(team): TEAM_OPS playbook + updated CONTINUATION
+- `34d3dc2` docs(research): integrate compass artifact + COMPLIANCE tracker
+- `7589334` Add files via upload (compass research artifact)
+- `fa8cd33` feat(workspace): role-aware sidebar + audience-tuned briefings + master backlog
+
+Cloud Build:
+
+- Build ID: `995dfad5-b80e-4cb7-a232-59fdddec49a9`
+- Status: `SUCCESS`
+- Duration: `9M03S`
+- Project: `praxisbytacitus`
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00050-d4v` (ready)
+- Backend revision: `praxis-backend-00030-2vl` (ready)
+
+Production verification:
+
+- `https://praxis.tacitus.me/` → `200 OK`
+- `https://praxis.tacitus.me/api/health` → `status: ok`
+
+Configuration gaps remaining (degrade gracefully — see
+`docs/USER_ACTION_LIST.md` for the activation steps):
+
+- ACLED: licensing pending (engineering safe-harbour ready in B-9)
+- Vertex ADK: deploy.py ready in `backend/agents/`; user runs once
+- Firecrawl: $83/mo signup pending
+- Stripe: products + webhook setup pending
+- Anthropic: optional, marginal ROI
+
+What's now live:
+
+- Plan-tier badge + role-aware "For you" sidebar anchor
+- Role-aware "Recommended for you" dashboard widget
+- Audience-tuned briefing presets (behind feature flag)
+- System Health page with Copy-Diagnostic + Activation guide
+- Onboarding mandate live-validation
+- Geospatial Monitor situation-aware centroid (no more "always Sudan")
+- Hero, pricing teaser, footer reframed for monthly plans
+- Contrast pass across the workspace
+- 19 strategic / operational docs cross-linked
+
+> **Subsequent commits not in this build (will deploy next):**
+> `bd46423` (user upload of GDELT + ACLED briefs) and `6e0ac8e`
+> (cross-referencing those briefs from the doc graph). Doc-only —
+> safe to redeploy whenever the next code change ships.
+
 ## 2026-04-25 — Workspace personalisation + audience-tuned briefings deploy
 
 Source commits deployed (head = `fa8cd33`):
