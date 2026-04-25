@@ -392,10 +392,10 @@ Known warnings to keep visible:
 - Lint warning backlog includes React Compiler rules, unused variables, hook dependencies, explicit `any`, and legacy `require()` imports.
 
 2026-04-25 production checkpoint:
-- Cloud Build `ca612828-c779-46cd-bfde-8e1a8d3efe85` succeeded.
-- Deployed commit `a808b6f`.
-- Frontend revision `praxis-frontend-00042-nhk` ready.
-- Backend revision `praxis-backend-00026-h82` ready.
+- Cloud Build `06b20a50-c0ef-4159-906f-5c97efad8159` succeeded.
+- Deployed commit `5cdfebf`.
+- Frontend revision `praxis-frontend-00044-tcl` ready.
+- Backend revision `praxis-backend-00027-nlk` ready.
 - `https://praxis.tacitus.me/` and `/login` return `200 OK`.
 - `/onboarding` redirects unauthenticated users to `/login`, expected behavior.
 - `/api/health` reports Firestore, AI provider, and cookie secret `ok`.

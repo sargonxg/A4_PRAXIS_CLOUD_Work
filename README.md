@@ -568,7 +568,7 @@ npm test       # Vitest unit tests
 
 Current deployability checkpoint (2026-04-25): `npm run build`, `npm run lint`, `npm run audit:gcp`, `node scripts/audit-ai-routes.mjs`, and `npx vitest run` pass locally. Lint still reports warnings for the React Compiler migration backlog and unused code cleanup.
 
-Production deployment checkpoint (2026-04-25): Cloud Build `ca612828-c779-46cd-bfde-8e1a8d3efe85` deployed commit `a808b6f` to Cloud Run. `praxis.tacitus.me` and `/login` return 200, `/onboarding` redirects unauthenticated users to `/login` as expected, `/api/health` is `ok`, and Firebase Auth diagnostics pass. See [docs/DEPLOYMENT_LOG.md](./docs/DEPLOYMENT_LOG.md).
+Production deployment checkpoint (2026-04-25): Cloud Build `06b20a50-c0ef-4159-906f-5c97efad8159` deployed commit `5cdfebf` to Cloud Run. `praxis.tacitus.me` and `/login` return 200, `/onboarding` redirects unauthenticated users to `/login` as expected, `/api/health` is `ok`, and Firebase Auth diagnostics pass. See [docs/DEPLOYMENT_LOG.md](./docs/DEPLOYMENT_LOG.md).
 
 ---
 

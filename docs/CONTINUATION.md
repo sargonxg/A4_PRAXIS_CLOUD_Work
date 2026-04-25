@@ -11,9 +11,9 @@ Use this file to resume work safely in Codex or Claude Code.
 - GCP project: `praxisbytacitus` (`852128226674`)
 - Region: `us-central1`
 - Public domain: `praxis.tacitus.me`
-- Latest deployed source: `a808b6f fix(build): stabilize Cloud Run deploy validation`.
-- Cloud Build: `ca612828-c779-46cd-bfde-8e1a8d3efe85` succeeded.
-- Cloud Run revisions: frontend `praxis-frontend-00042-nhk`, backend `praxis-backend-00026-h82`.
+- Latest deployed source: `5cdfebf docs: add agent handoff and deployment strategy`.
+- Latest Cloud Build: `06b20a50-c0ef-4159-906f-5c97efad8159` succeeded.
+- Latest Cloud Run revisions: frontend `praxis-frontend-00044-tcl`, backend `praxis-backend-00027-nlk`.
 - Commit `1916281` was requested as a continuation point but is not present in the cloned repository history. Current `origin/main` was used as the base.
 
 ## What Changed In The 2026-04-25 Pass
@@ -44,7 +44,7 @@ Observed results on 2026-04-25:
 - `npm run audit:gcp` passed: zero hard failures, zero soft warnings.
 - `node scripts/audit-ai-routes.mjs` passed: 53 AI route files, 53 calibrated, 4 exempt.
 - `npx vitest run` passed: 40 test files, 140 tests.
-- Cloud Build deploy passed and production endpoints were verified. See `docs/DEPLOYMENT_LOG.md`.
+- Cloud Build deploy passed for `5cdfebf` and production endpoints were verified. See `docs/DEPLOYMENT_LOG.md`.
 
 Known validation notes:
 

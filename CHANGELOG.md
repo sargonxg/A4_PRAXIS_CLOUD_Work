@@ -28,6 +28,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `node scripts/audit-ai-routes.mjs` passed: 53 AI route files, 53 calibrated, 4 exempt.
 - `npx vitest run` passed: 40 test files, 140 tests.
 - Cloud Build `ca612828-c779-46cd-bfde-8e1a8d3efe85` deployed commit `a808b6f` successfully to Cloud Run.
+- Cloud Build `06b20a50-c0ef-4159-906f-5c97efad8159` deployed commit `5cdfebf` successfully to Cloud Run.
 - `praxis.tacitus.me`, `/login`, `/api/health`, and `/api/auth/test-firebase` were verified after deploy.
 
 ### Known Remaining Work
