@@ -21,6 +21,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   domain, and org/team in the user block.
 - Settings → Preferences now includes a workspace tools section with show/hide
   and move-up/move-down controls backed by Firestore preferences.
+- Integrated the parallel workspace-pricing/reference-doc update from the
+  older clone while preserving the newer spine/context code: public pricing
+  now describes monthly workspaces instead of internal tool tariffs, and
+  landing/schema copy is aligned with grounded open-data workflows.
 
 ### Tests
 

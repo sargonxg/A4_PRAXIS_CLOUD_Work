@@ -1,13 +1,15 @@
-# PRAXIS — Conflict Intelligence Platform by TACITUS
+# PRAXIS — Policy, Diplomacy, and Political Intelligence Platform by TACITUS
 
 > Version 6.4.0 — Operational spine: jobs · events · notifications · semaphore
 > Pure GCP Cloud Run · Dual-service: Next.js + Python FastAPI
 > Project: `praxisbytacitus` (852128226674) · Region: `us-central1`
 > Domain: praxis.tacitus.me
 
+> **Current handoff:** Before continuing work, read `docs/CONTINUATION.md` and the `[Unreleased] — 2026-04-25` section in `CHANGELOG.md`. The latest session changed public pricing/branding language, improved situation onboarding persistence, fixed `ai_deep_think` metering, and did not deploy. Validate with `npx tsc --noEmit`, `npm run build`, `node scripts/audit-ai-routes.mjs`, and `npm run audit:gcp` before deploying via Cloud Build.
+
 ## What This Is
 
-The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, and diplomatic mediators. Two experiences: a demo for prospects (`/demo/*`) and a real situation-driven workspace for authenticated users (`/app/*`). Deployed on GCP Cloud Run.
+The AI-native workspace for policy, diplomacy, and political analysis. PRAXIS helps practitioners turn sources, documents, live feeds, and graph context into cited assessments, briefings, reports, and decision support. Two experiences: a demo for prospects (`/demo/*`) and a real situation-driven workspace for authenticated users (`/app/*`). Deployed on GCP Cloud Run.
 
 ## Agent Handoff
 

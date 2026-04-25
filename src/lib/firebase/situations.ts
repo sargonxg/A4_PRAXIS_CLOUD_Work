@@ -495,9 +495,9 @@ export async function createSituationAdmin(
     actors: data.actors,
     userRole: data.userRole,
     status: data.status ?? 'active',
-    riskScore: 0,
-    glaslStage: null,
-    escalationTrend: 'stable',
+    riskScore: typeof data.riskScore === 'number' ? data.riskScore : 0,
+    glaslStage: typeof data.glaslStage === 'number' || data.glaslStage === null ? data.glaslStage : null,
+    escalationTrend: data.escalationTrend ?? 'stable',
     actorCount: data.actors.length,
     graphEntities: 0,
     documentCount: data.initialDocumentIds?.length ?? 0,
@@ -505,6 +505,9 @@ export async function createSituationAdmin(
     ...(data.contextNotes ? { contextNotes: data.contextNotes } : {}),
     ...(data.initialDocumentIds?.length ? { initialDocumentIds: data.initialDocumentIds } : {}),
     ...(data.ontology ? { ontology: data.ontology } : {}),
+    ...(data.sourceCategoriesEnabled ? { sourceCategoriesEnabled: data.sourceCategoriesEnabled } : {}),
+    ...(data.sourceCategoryOrder?.length ? { sourceCategoryOrder: data.sourceCategoryOrder } : {}),
+    ...(data.customSources?.length ? { customSources: data.customSources } : {}),
     ...(data.domain ? { domain: data.domain } : {}),
     ...(typeof data.domainConfidence === 'number'
       ? { domainConfidence: data.domainConfidence }

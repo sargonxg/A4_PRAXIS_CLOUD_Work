@@ -244,7 +244,7 @@ function RealMediaPanel({ situation, onSituationSources }: {
           <Sparkles className="h-3.5 w-3.5" />
           Generate Media Analysis
         </button>
-        <p className="mt-2 text-[11px] text-navy-400">Uses 2 credits</p>
+        <p className="mt-2 text-[11px] text-navy-400">Included in your workspace usage</p>
       </div>
     );
   }

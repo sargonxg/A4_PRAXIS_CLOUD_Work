@@ -486,7 +486,7 @@ export default function SystemHealthPage() {
       <Card title="Account" icon={Activity}>
         <HealthRow
           icon={Zap}
-          label="TACITUS Credits"
+          label="Workspace Capacity"
           status={{ status: credits > 100 ? 'ok' : credits > 20 ? 'degraded' : 'error' }}
           detail={`${credits?.toLocaleString() ?? '—'} credits remaining`}
         />

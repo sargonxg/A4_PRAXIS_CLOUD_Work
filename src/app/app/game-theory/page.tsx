@@ -1209,7 +1209,7 @@ function GameTheoryUI({ actors, isDemo, initialOutput, onAnalyze, isLoading, out
           <div className="rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-3 py-2.5 flex items-center gap-2">
             <Target className="h-3.5 w-3.5 text-navy-400 shrink-0" />
             <p className="text-[10px] text-navy-500">
-              3 TACITUS credits per analysis · Nash (1950) · Schelling (1960) · Fearon (1995)
+              Workspace usage applies · Nash (1950) · Schelling (1960) · Fearon (1995)
             </p>
           </div>
         </div>

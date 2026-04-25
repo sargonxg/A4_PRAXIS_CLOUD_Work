@@ -7,6 +7,13 @@ import {
 import { classifyDomain } from '@/lib/domain/classifier';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
 import { isDomainId } from '@/types/domain';
+import type { EscalationTrend } from '@/types/situation';
+
+const ESCALATION_TRENDS: EscalationTrend[] = ['stable', 'escalating', 'de-escalating', 'volatile'];
+
+function isEscalationTrend(value: unknown): value is EscalationTrend {
+  return typeof value === 'string' && ESCALATION_TRENDS.includes(value as EscalationTrend);
+}
 
 export const GET = withAuth(async (_req, user) => {
   if (user.isDemo) {
@@ -31,7 +38,27 @@ export const POST = withAuth(async (req, user) => {
 
   try {
     const body = await req.json();
-    const { name, type, description, region, actors, userRole, status, sourceUrls, contextNotes, initialDocumentIds, ontology, domain: clientDomain, domainOverriddenByUser } = body;
+    const {
+      name,
+      type,
+      description,
+      region,
+      actors,
+      userRole,
+      status,
+      sourceUrls,
+      contextNotes,
+      initialDocumentIds,
+      ontology,
+      domain: clientDomain,
+      domainOverriddenByUser,
+      riskScore,
+      glaslStage,
+      escalationTrend,
+      sourceCategoriesEnabled,
+      sourceCategoryOrder,
+      customSources,
+    } = body;
 
     if (!name?.trim()) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -83,6 +110,14 @@ export const POST = withAuth(async (req, user) => {
       ...(contextNotes?.trim() ? { contextNotes: contextNotes.trim() } : {}),
       ...(initialDocumentIds?.length ? { initialDocumentIds } : {}),
       ...(ontology ? { ontology } : {}),
+      ...(typeof riskScore === 'number' ? { riskScore } : {}),
+      ...(typeof glaslStage === 'number' || glaslStage === null ? { glaslStage } : {}),
+      ...(isEscalationTrend(escalationTrend) ? { escalationTrend } : {}),
+      ...(sourceCategoriesEnabled && typeof sourceCategoriesEnabled === 'object'
+        ? { sourceCategoriesEnabled: sourceCategoriesEnabled as Record<string, boolean> }
+        : {}),
+      ...(Array.isArray(sourceCategoryOrder) ? { sourceCategoryOrder } : {}),
+      ...(Array.isArray(customSources) ? { customSources } : {}),
       domain,
       domainConfidence,
       domainOverriddenByUser: overridden,

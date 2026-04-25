@@ -170,4 +170,15 @@ export interface CreateSituationInput {
   domain?: string;
   domainConfidence?: number;
   domainOverriddenByUser?: boolean;
+  riskScore?: number;
+  glaslStage?: number | null;
+  escalationTrend?: EscalationTrend;
+  sourceCategoriesEnabled?: Record<string, boolean>;
+  sourceCategoryOrder?: string[];
+  customSources?: Array<{
+    id: string;
+    url: string;
+    name?: string;
+    categoryId: string;
+  }>;
 }

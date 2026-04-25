@@ -10,16 +10,14 @@ import { HeroVisual } from "./hero-visual";
 // --- Word-by-word reveal ---
 
 const headlineWords = [
-  "From",
-  "Raw",
-  "Sources",
-  "to",
-  "Credible",
+  "Policy,",
+  "Diplomacy,",
+  "and",
+  "Politics",
   "Intelligence.",
-  "In",
-  "Minutes,",
-  "Not",
-  "Weeks.",
+  "Grounded",
+  "in",
+  "Sources.",
 ];
 
 const containerVariants = {
@@ -165,7 +163,7 @@ function ConflictGraphSVG({ shouldReduceMotion }: { shouldReduceMotion: boolean 
 function AnimatedTicker({ shouldReduceMotion }: { shouldReduceMotion: boolean }) {
   const events = [
     { time: "08:14", text: "Ceasefire violation reported — Northern Mali", color: "#E15759" },
-    { time: "09:02", text: "ACLED: 3 new incidents flagged in Sahel", color: "#EDC948" },
+    { time: "09:02", text: "GDELT: 3 new media signals flagged in Sahel", color: "#EDC948" },
     { time: "09:47", text: "GDELT: Escalatory rhetoric detected — media", color: "#F28E2B" },
     { time: "10:30", text: "PRAXIS: Risk score updated — Glasl Stage 7", color: "#E15759" },
   ];
@@ -291,7 +289,7 @@ export function ProductGlimpse() {
         {/* Bottom data bar */}
         <div className="border-t border-cream-200/60 bg-cream-50/60 px-4 py-2 flex items-center gap-3">
           <span className="text-[9px] text-navy-400">Grounded in</span>
-          {["ACLED", "GDELT", "ReliefWeb", "UCDP"].map((s) => (
+          {["GDELT", "UCDP", "ReliefWeb", "HDX"].map((s) => (
             <span
               key={s}
               className="rounded px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-diplomatic-blue bg-diplomatic-blue/6 border border-diplomatic-blue/15"
@@ -373,11 +371,11 @@ export function Hero() {
             initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.2, duration: 0.7 }}
-            className="mb-6 max-w-2xl text-lg leading-relaxed text-navy-700 sm:text-xl"
+            className="mb-6 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
           >
-            The intelligence workspace for peace and security professionals.
-            You turn raw sources into credible assessments — PRAXIS does the
-            heavy lifting for diplomats, analysts, and multilateral organizations.
+            PRAXIS by TACITUS is the intelligence workspace for policy,
+            diplomacy, and political analysis. Bring your sources and context —
+            PRAXIS structures them into cited assessments, graphs, and briefings.
           </motion.p>
 
           {/* Data sources tagline */}
@@ -385,9 +383,9 @@ export function Hero() {
             initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.4, duration: 0.6 }}
-            className="mb-10 text-sm font-medium text-navy-600"
+            className="mb-10 text-sm text-navy-400 italic"
           >
-            Powered by GDELT, UCDP, ReliefWeb, HDX, World Bank — open data, grounded AI you can cite.
+            Powered by GDELT, UCDP, ReliefWeb, HDX — grounded AI you can cite.
           </motion.p>
 
           {/* Single CTA — all paths go through /login */}
@@ -406,7 +404,7 @@ export function Hero() {
                 <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
               </Link>
               <Link
-                href="/demo/dashboard"
+                href="/login?mode=demo"
                 className="inline-flex items-center justify-center rounded-md border border-diplomatic-blue/20 px-8 py-4 text-base font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40"
               >
                 Explore Demo

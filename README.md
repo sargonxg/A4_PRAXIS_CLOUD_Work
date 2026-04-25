@@ -1,10 +1,12 @@
 # PRAXIS by TACITUS
 
-**The conflict operating system for peace and security professionals.**
+**The AI-native workspace for policy, diplomacy, and political analysis.**
 
-AI-native workspace for UN Political Affairs Officers, diplomatic mediators, and conflict analysts. 42+ specialised tool pages, 73 API routes, Python FastAPI backend with ACO conflict intelligence pipeline, and real-time intelligence feeds from 11 sources (ACLED, GDELT, UCDP, UNHCR, HDX, ReliefWeb, UN News, World Bank, Crisis Group, SIPRI).
+PRAXIS structures sources, documents, graph context, and live feeds into cited assessments, briefings, reports, and decision support for policy officers, political affairs desks, mediators, humanitarian coordinators, legal analysts, and conflict researchers. It includes 40+ specialised tool pages, a Python FastAPI graph backend with ACO conflict intelligence pipeline, and real-time intelligence feeds from sources such as ACLED, GDELT, UCDP, UNHCR, HDX, ReliefWeb, UN News, World Bank, Crisis Group, and SIPRI.
 
 > **v6.2.0** — Build 2026.04.07 | Dual-service GCP Cloud Run (Next.js 16 + Python FastAPI) · Project: praxisbytacitus
+
+> **Next agent:** Read `docs/CONTINUATION.md` before deploying or continuing feature work. The latest session updated branding/pricing language and onboarding persistence, but did not deploy to `praxis.tacitus.me`.
 
 ---
 

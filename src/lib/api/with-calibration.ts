@@ -30,12 +30,16 @@ export type CalibratedHandler = (req: Request, ctx: CalibrationCtx) => Promise<R
  * Idempotency: each call gets a per-request key (uid + toolId + timestamp).
  * AI tool calls are not retried automatically (the user re-clicks Generate),
  * so we do not collapse on idempotency the way Eventarc-driven jobs do.
+ *
+ * Routes with unusual body shapes can provide `opts.situationId`; otherwise
+ * the wrapper reads `body.situationId` or `body.situation.id`.
  */
 export function withCalibration(
   toolId: string,
   creditOpType: string,
   opts: {
     retrievalQuery?: (req: Request, body: Record<string, unknown>) => string | undefined;
+    situationId?: (req: Request, body: Record<string, unknown>) => string | undefined;
     variant?: 'oneshot' | 'streaming' | 'agent';
   } = {},
 ) {
@@ -54,6 +58,7 @@ export function withCalibration(
           if (typeof situation.id === 'string') situationId = situation.id;
         }
       } catch { /* non-JSON body OK */ }
+      situationId = opts.situationId?.(req, body) ?? situationId;
 
       // Onboarding gate (non-demo)
       if (!user.isDemo) {

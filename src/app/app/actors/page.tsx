@@ -248,7 +248,7 @@ function ActorBriefPanel({
                 Generate Actor Brief
               </button>
               <p className="mt-3 text-[10px] text-navy-400">
-                Uses 3 TACITUS credits
+                Included in your workspace usage
               </p>
             </div>
           )}

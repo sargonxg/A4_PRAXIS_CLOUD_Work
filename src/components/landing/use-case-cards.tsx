@@ -2,68 +2,68 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import {
-  GitBranch,
+  Building2,
   AlertTriangle,
   Search,
-  Dice6,
-  BellRing,
+  Scale,
+  HeartPulse,
   FileText,
 } from "lucide-react";
 
 const capabilities = [
   {
-    icon: GitBranch,
-    title: "Conflict Graph",
+    icon: Building2,
+    title: "Policy Officer",
     color: "text-diplomatic-blue",
     bgColor: "bg-diplomatic-blue/8",
     borderHover: "hover:border-diplomatic-blue/25",
     description:
-      "ACO v2.0 — 14-type ontology covering actors, claims, interests, constraints, leverage, and commitments. 72 typed relationships model every dimension of a dispute.",
+      "Dashboard, Daily Brief, Policy Memo, Actor Profiles, and Source Monitor convert live sources into decision-ready policy options.",
   },
   {
     icon: AlertTriangle,
-    title: "Risk & Early Warning",
+    title: "Political Affairs Desk",
     color: "text-crimson",
     bgColor: "bg-crimson/8",
     borderHover: "hover:border-crimson/20",
     description:
-      "Glasl 9-stage escalation scoring fused with the INFORM Risk Index across five dimensions. Continuous de-escalation window detection and threshold alerts.",
+      "Early Warning, Risk Monitor, Timeline, Conflict Graph, and Commitment Tracker expose escalation shifts and diplomatic windows.",
   },
   {
     icon: Search,
-    title: "Deep Research Agent",
+    title: "Research Analyst",
     color: "text-gold-700",
     bgColor: "bg-gold-600/8",
     borderHover: "hover:border-gold-600/20",
     description:
-      "Vertex AI reasoning engine with grounded search. Synthesizes news, think tank reports, and government documents into source-cited assessments.",
+      "Deep Research, ARGUS, Compare, Case Library, and canonical entity checks support cited, reproducible conflict research.",
   },
   {
-    icon: Dice6,
-    title: "Scenarios & Game Theory",
+    icon: Scale,
+    title: "Mediator or Envoy Team",
     color: "text-sage",
     bgColor: "bg-sage/8",
     borderHover: "hover:border-sage/20",
     description:
-      "Structured simulations built on Fearon rationalist war models. Map actor payoff matrices, spoiler dynamics, and intervention pathways under uncertainty.",
+      "Negotiation Prep, Mediation Designer, CONCORDIA, Scenario Planner, and Power Map help design credible process options.",
   },
   {
-    icon: BellRing,
-    title: "Daily Brief & Alerts",
+    icon: HeartPulse,
+    title: "Humanitarian Coordinator",
     color: "text-teal",
     bgColor: "bg-teal/8",
     borderHover: "hover:border-teal/20",
     description:
-      "Automated intelligence delivery in DPPA morning brief format. Region-filtered, situation-specific, with speaker notes and Q&A preparation.",
+      "Humanitarian Snapshot, Geospatial Monitor, Risk Monitor, ReliefWeb/HDX feeds, and alerts connect protection concerns to operations.",
   },
   {
     icon: FileText,
-    title: "Reports & Dossiers",
+    title: "Legal and Sanctions Analyst",
     color: "text-navy-600",
     bgColor: "bg-navy-600/8",
     borderHover: "hover:border-navy-200",
     description:
-      "Publication-ready outputs calibrated to your audience and language. UN SG report structure, Security Council briefs, policy memos — exportable to DOCX/PDF.",
+      "Treaty Analyzer, Legal Tracker, Human Rights Monitor, Sanctions Tracker, and UN Toolkit support evidence-aware drafting.",
   },
 ];
 
@@ -84,7 +84,7 @@ export function UseCaseCards() {
           transition={{ duration: 0.7 }}
           className="mb-4 text-center"
         >
-          <span className="text-overline text-gold-700">Core Capabilities</span>
+          <span className="text-overline text-gold-700">Buyer Paths</span>
         </motion.div>
 
         <motion.h2
@@ -94,7 +94,7 @@ export function UseCaseCards() {
           transition={{ duration: 0.7, delay: 0.1 }}
           className="mb-4 text-center font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl"
         >
-          Six Intelligence Pillars. One Platform.
+          Specific Workflows for Specific Practitioners.
         </motion.h2>
 
         <motion.p
@@ -104,8 +104,8 @@ export function UseCaseCards() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mx-auto mb-16 max-w-2xl text-center text-lg text-navy-500"
         >
-          Every capability is situation-aware — powered by your graph, calibrated
-          to your mandate.
+          PRAXIS is organized around the work policy, diplomacy, and political
+          professionals actually need to complete.
         </motion.p>
 
         {/* Cards grid */}

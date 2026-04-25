@@ -13,6 +13,9 @@
 > block. Claude should avoid `src/components/app/app-sidebar.tsx`,
 > `src/types/preferences.ts`, `src/hooks/use-user-preferences.ts`, and
 > `src/lib/navigation/tool-preferences.ts` unless explicitly handed off.
+> The old-clone pricing/reference-doc commits were integrated into current
+> `main` after this update, with newer spine/context/sidebar behavior kept as
+> authoritative.
 
 ---
 

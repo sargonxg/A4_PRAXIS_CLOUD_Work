@@ -768,7 +768,7 @@ function StepReview({
           />
 
           <div className="rounded-lg border border-emerald-200/60 bg-emerald-50/50 px-4 py-3">
-            <p className="text-xs text-emerald-700">Creating this situation costs <strong>0 credits</strong>. AI analysis of uploaded documents costs 3 credits each.</p>
+            <p className="text-xs text-emerald-700">Creating this situation is included. Document analysis uses your workspace capacity.</p>
           </div>
 
           <div className="rounded-lg border border-navy-200 bg-white p-4">
@@ -955,6 +955,11 @@ export default function NewSituationPage() {
           escalationTrend: form.escalationTrend,
           sourceUrls: filteredUrls.length ? filteredUrls : undefined,
           contextNotes: context.notes.trim() || undefined,
+          sourceCategoriesEnabled: Object.fromEntries(
+            context.selectedSources.map((id) => [id, true]),
+          ),
+          sourceCategoryOrder: context.sourceOrder,
+          customSources: context.customSources,
           domain: domainPreview.domainId,
           domainOverriddenByUser: domainPreview.overridden,
         }),

@@ -421,9 +421,9 @@ function MediaRoundupTool({ situation }: { situation: Situation }) {
               {isGenerating ? (
                 <><Loader2 className="h-4 w-4 animate-spin" /> Compiling...</>
               ) : roundupContent ? (
-                <><RefreshCw className="h-4 w-4" /> Regenerate (5 credits)</>
+                <><RefreshCw className="h-4 w-4" /> Regenerate</>
               ) : (
-                <><Sparkles className="h-4 w-4" /> Generate Roundup (5 credits)</>
+                <><Sparkles className="h-4 w-4" /> Generate Roundup</>
               )}
             </button>
           </div>

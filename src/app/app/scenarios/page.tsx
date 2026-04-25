@@ -1381,7 +1381,7 @@ function RealScenariosPage({
               {isRunning ? 'Running Scenario...' : 'Run Scenario Analysis'}
             </button>
 
-            <p className="text-center text-[10px] text-navy-400">Uses 2 credits per analysis</p>
+            <p className="text-center text-[10px] text-navy-400">Included in eligible monthly workspaces</p>
           </div>
 
           {/* 8-slider parameter panel */}

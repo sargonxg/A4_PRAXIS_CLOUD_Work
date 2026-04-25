@@ -9,9 +9,9 @@ export function NoCreditsError() {
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100">
         <CreditCard className="h-7 w-7 text-amber-600" />
       </div>
-      <h3 className="mt-4 text-base font-semibold text-navy-900">Monthly Plan Limit Reached</h3>
+      <h3 className="mt-4 text-base font-semibold text-navy-900">No Credits Remaining</h3>
       <p className="mt-2 max-w-sm text-center text-sm text-navy-500">
-        You&apos;ve hit this month&apos;s usage limit on your current plan. Limits reset at the start of each billing cycle, or upgrade for higher allowances.
+        Your workspace has reached its current usage limit. Upgrade your plan or contact TACITUS to increase capacity.
       </p>
     </div>
   );

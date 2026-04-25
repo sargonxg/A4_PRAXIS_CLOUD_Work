@@ -19,7 +19,8 @@ export const POST = withAuth(async (req, user) => {
   }
 
   try {
-    const { tierId } = await req.json();
+    const body = await req.json();
+    const tierId = body.tierId ?? body.planId;
     const priceId = STRIPE_PRICE_IDS[tierId];
 
     if (!priceId) {

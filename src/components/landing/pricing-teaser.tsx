@@ -31,7 +31,7 @@ export function PricingTeaser() {
           transition={{ duration: 0.7, delay: 0.1 }}
           className="mb-4 text-center font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl"
         >
-          Plans Built Around Your Mandate
+          Monthly Plans for Serious Policy Work
         </motion.h2>
 
         <motion.p
@@ -39,23 +39,10 @@ export function PricingTeaser() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="mx-auto mb-3 max-w-2xl text-center text-lg text-navy-600"
+          className="mx-auto mb-14 max-w-2xl text-center text-lg text-navy-500"
         >
-          Monthly subscriptions tuned to the way analysts, mediators, and policy
-          teams actually work. Start free with the Nordalia demo, upgrade when you
-          create live situations.
-        </motion.p>
-        <motion.p
-          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="mx-auto mb-14 max-w-2xl text-center text-sm text-navy-500"
-        >
-          <span className="font-medium text-navy-700">An active situation</span> is a
-          conflict case you are actively monitoring — its own knowledge graph,
-          documents, scenarios, and reports. Demo: 1 (Nordalia) · Analyst: 5 ·
-          Team: 25 · Enterprise: unlimited.
+          PRAXIS is packaged around live situations, grounded research, graph intelligence,
+          and team workflows — not a confusing tool-by-tool tariff.
         </motion.p>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -93,9 +80,7 @@ export function PricingTeaser() {
                   </div>
                 )}
                 <p className="mt-1 text-xs text-navy-500">
-                  {tier.maxSituations === -1
-                    ? "Unlimited active situations"
-                    : `${tier.maxSituations} active situation${tier.maxSituations > 1 ? 's' : ''}`}
+                  {tier.usage}
                 </p>
               </div>
 
@@ -113,7 +98,7 @@ export function PricingTeaser() {
                   tier.id === "enterprise"
                     ? "mailto:hello@tacitus.me"
                     : tier.id === "free"
-                    ? "/demo/dashboard"
+                    ? "/login?mode=demo"
                     : `/login?plan=${tier.id}`
                 }
                 className={cn(
@@ -142,7 +127,7 @@ export function PricingTeaser() {
             href="/pricing"
             className="group inline-flex items-center gap-2 text-sm font-semibold text-diplomatic-blue transition-colors hover:text-navy-900"
           >
-            Compare plans in detail
+            See monthly plans and access model
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </motion.div>
