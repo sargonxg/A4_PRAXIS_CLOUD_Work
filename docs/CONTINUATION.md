@@ -3,6 +3,8 @@
 > **Last updated**: 2026-04-25 (seventh session — deploy hardening)
 > **Next agent**: Codex 5.5 (or Claude Code)
 > **Read first**: `CLAUDE.md`, `AGENTS.md`, `docs/OPERATIONAL_SPINE.md`, `CHANGELOG.md` Unreleased.
+> **Sprint execution plan**: `docs/SPRINT_EXECUTION_PLAN_2026-04-25.md`
+> **Claude tandem prompts**: `docs/CLAUDE_TANDEM_PROMPTS_2026-04-25.md`
 
 ---
 
@@ -33,6 +35,10 @@
     frontend TypeScript validation on `/api/notifications/[id]`.
     This session fixed that route-handler signature and the follow-on
     operator-console typing errors.
+  - Cloud Build `c4cc3b65-7478-4c2d-9d40-114e2cf36f25` deployed commit
+    `b4c88cd` successfully. Production smoke checks passed:
+    `/` 200, `/login` 200, `/onboarding` 307 to `/login`, `/api/health`
+    `status: ok`.
   - `gdelt-poller` had no recent `Index probe OK` logs when checked;
     this session fixed two worker issues before redeploy: missing
     `_shared` in the Docker image and a call to nonexistent

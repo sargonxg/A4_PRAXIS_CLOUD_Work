@@ -4,7 +4,7 @@ Use this file to keep daily deployment status visible to Codex, Claude Code, and
 
 ## 2026-04-25 — Deploy hardening in progress (session 7)
 
-Source commit: pending at time of edit.
+Source commit deployed: `b4c88cd`
 
 Cloud Build:
 
@@ -14,6 +14,14 @@ Cloud Build:
   `/api/notifications/[id]` because `params` was typed synchronously
   instead of as `Promise<{ id: string }>`.
 - Local fix verified with `npx tsc --noEmit` and `npm run build`.
+- Build ID `c4cc3b65-7478-4c2d-9d40-114e2cf36f25` succeeded in
+  `8M48S`.
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00055-dcj` (ready)
+- Backend revision: `praxis-backend-00036-lt9` (ready)
+- GDELT worker pool: `gdelt-poller-00005-xg2` (ready)
 
 Deploy verification:
 
@@ -24,8 +32,12 @@ Deploy verification:
 - `npm run audit:gcp` passes with no hard failures or soft warnings.
 - Firebase CLI auth on the Windows host is expired, so Firestore rules
   deployment should be run from Cloud Shell or after `firebase login --reauth`.
+- `https://praxis.tacitus.me/` returns `200 OK`.
+- `https://praxis.tacitus.me/login` returns `200 OK`.
+- `https://praxis.tacitus.me/onboarding` returns `307` to `/login`.
+- `https://praxis.tacitus.me/api/health` returns `status: ok`.
 
-Code fixes queued for next Cloud Build:
+Code fixes shipped:
 
 - Notification route handler signature fixed for Next.js 16.
 - Operator console table typing fixed.

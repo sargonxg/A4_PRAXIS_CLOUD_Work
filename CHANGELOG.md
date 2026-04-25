@@ -27,6 +27,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Improved
 
+- Added `docs/SPRINT_EXECUTION_PLAN_2026-04-25.md` with a page-by-page,
+  tool-by-tool implementation sequence and file ownership lanes for
+  Codex/Claude parallel work.
+- Added `docs/CLAUDE_TANDEM_PROMPTS_2026-04-25.md` with copy-paste prompts
+  for non-conflicting Claude Code tasks.
 - Backend `/api/v1/pipeline/run` now reads `X-PRAXIS-JOB-ID` and updates
   `background_jobs.progress` through extraction, graph build, clustering,
   analysis, brief rendering, and Firestore sync.
