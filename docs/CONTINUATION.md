@@ -77,10 +77,27 @@ Also verify Firebase Auth authorized domains include `praxis.tacitus.me` before 
 
 ## Immediate Next Work
 
-1. Commit and push the documentation handoff update so future fresh clones include `AGENTS.md` and the strategy/deployment docs.
-2. Continue Day 2 in `docs/DAILY_WORKPLAN.md`: shared hook and React Compiler cleanup.
-3. Confirm actual interactive Google/email login with a browser and real test account when credentials are available.
-4. Keep `docs/DEPLOYMENT_LOG.md` updated after every deploy.
+> The active week-long sprint is in `docs/SPRINT_2026-04-25.md`. Three concurrent audits (tool reality, data feed connectivity, onboarding propagation) ran against commit `6056aea` and the findings are folded into the sprint doc — do **not** re-run them.
+
+This session shipped two production-bound commits and one local cleanup:
+
+- `7b28314` feat(pricing): hide internal credit metering; sidebar shows plan tier
+- `ce810b0` feat(dashboard): role-aware "Recommended for you" widget
+- _local_ sidebar(cleanup): hide Source Monitor placeholder
+
+**Next agent (Codex or Claude Code) should pick a stream from `docs/SPRINT_2026-04-25.md`:**
+
+1. **Stream A — Workspace personalisation** (Day 2 of the stream): audience-aware briefings. Make `dashboard-summary`, `auto-briefing`, and `briefing-generate` honour `analystProfile.perspective.audience` and `workingStyle.language` in their tone presets and language directives. Ship behind `PRAXIS_AUDIENCE_TUNED_BRIEFING=1` in staging first.
+2. **Stream B — Tool quality** (P0 list): persist PRAXIS Assistant chat history, Dossier, Negotiation Prep. Pattern is well-established (`usePersistedToolData` + `ToolPageShell`). ~9h total for the three.
+3. **Stream C — Data activation**: turn on ACLED (15 min, free academic key) for an immediate jump in event-timeline quality. Vertex AI Agent Engine deployment unlocks the Deep Research Agent (1–2h).
+
+After any stream slice ships:
+
+- Run the full validation suite (build, lint, audit:gcp, audit-ai-routes, vitest).
+- Cloud Build deploy via `gcloud builds submit --config=cloudbuild.yaml`.
+- Record the build ID and Cloud Run revisions in `docs/DEPLOYMENT_LOG.md`.
+- Update `CHANGELOG.md` Unreleased section.
+- Append a one-paragraph "what's next for the other assistant" note here for tandem coordination.
 
 ## Weekly Implementation Plan
 

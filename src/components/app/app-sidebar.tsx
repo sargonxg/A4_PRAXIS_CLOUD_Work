@@ -45,7 +45,6 @@ import {
   Target,
   Sigma,
   Map,
-  Rss,
   Package,
   Settings as SettingsIcon,
   Vote,
@@ -276,7 +275,9 @@ const navSections: NavSection[] = [
       { label: 'Actor Enrichment', icon: UserCircle, href: '/actors' },
       { label: 'External Actor Monitor', icon: Globe2, href: '/external-actors' },
       { label: 'Legal & Resolution Tracker', icon: BookMarked, href: '/legal-tracker' },
-      { label: 'Source Monitor', icon: Rss, href: '/source-monitor' },
+      // Source Monitor hidden until backed by an API — placeholder per
+      // 2026-04-25 tool audit. Re-add when /api/ai/source-monitor lands
+      // and the page persists output via usePersistedToolData.
       { label: 'Situation Comparison', icon: GitCompare, href: '/compare' },
     ],
   },
