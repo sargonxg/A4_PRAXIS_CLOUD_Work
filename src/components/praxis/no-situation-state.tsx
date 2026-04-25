@@ -2,11 +2,23 @@
 
 import { useRouter } from 'next/navigation';
 import { usePraxisRoute } from '@/lib/utils/routes';
+import { useAuth } from '@/lib/auth/auth-context';
 import { Globe, Plus, ArrowRight, FileText, Shield, Users } from 'lucide-react';
+import { OnboardingRequiredState } from './onboarding-required-state';
 
 export function NoSituationState() {
   const router = useRouter();
   const route = usePraxisRoute();
+  const { onboardingComplete, user } = useAuth();
+
+  // Defence-in-depth: middleware already redirects un-onboarded users away
+  // from /app/*, but tool pages that don't use ToolPageShell rely on this
+  // component as their only guard. Showing "no situation" to a user who
+  // actually needs to finish onboarding is misleading — show the onboarding
+  // CTA instead. (Demo users have no `user`; let them see the regular state.)
+  if (user && !onboardingComplete) {
+    return <OnboardingRequiredState />;
+  }
 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
