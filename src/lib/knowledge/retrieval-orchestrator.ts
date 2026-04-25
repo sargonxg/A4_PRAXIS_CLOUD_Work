@@ -6,7 +6,7 @@
 
 import type {
   SKCContext, ACONode, ACOEdge, VectorResult, FeedCacheEntry,
-  RelatedToolData, SKCUserProfile, GraphLayer,
+  RelatedToolData, GraphLayer,
 } from './types';
 import type { VectorLayer } from './vector-layer';
 import type { FeedLayer } from './feed-layer';
@@ -160,12 +160,30 @@ export class RetrievalOrchestrator {
     const result: Record<string, RelatedToolData> = {};
     let tokens = 0;
     for (const [key, entry] of Object.entries(tools)) {
-      const preview = JSON.stringify(entry.data).slice(0, 2000);
+      const clipped = this.clipStructuredData(entry.data);
+      const preview = JSON.stringify(clipped);
       const t = estimateTokens(preview);
       if (tokens + t > tokenBudget) break;
-      result[key] = { ...entry, data: JSON.parse(preview + (preview.length === 2000 ? '"}' : '')) };
+      result[key] = { ...entry, data: clipped };
       tokens += t;
     }
     return result;
+  }
+
+  private clipStructuredData(value: unknown, maxString = 2000): unknown {
+    if (typeof value === 'string') {
+      return value.length > maxString ? `${value.slice(0, maxString - 3)}...` : value;
+    }
+    if (Array.isArray(value)) {
+      return value.slice(0, 12).map((item) => this.clipStructuredData(item, Math.floor(maxString / 2)));
+    }
+    if (value && typeof value === 'object') {
+      const out: Record<string, unknown> = {};
+      for (const [key, nested] of Object.entries(value as Record<string, unknown>).slice(0, 30)) {
+        out[key] = this.clipStructuredData(nested, Math.floor(maxString / 2));
+      }
+      return out;
+    }
+    return value;
   }
 }

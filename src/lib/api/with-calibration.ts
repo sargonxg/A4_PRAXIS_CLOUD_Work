@@ -49,6 +49,10 @@ export function withCalibration(
         const raw = await req.clone().text();
         if (raw) body = JSON.parse(raw) as Record<string, unknown>;
         if (typeof body.situationId === 'string') situationId = body.situationId;
+        if (!situationId && body.situation && typeof body.situation === 'object') {
+          const situation = body.situation as { id?: unknown };
+          if (typeof situation.id === 'string') situationId = situation.id;
+        }
       } catch { /* non-JSON body OK */ }
 
       // Onboarding gate (non-demo)

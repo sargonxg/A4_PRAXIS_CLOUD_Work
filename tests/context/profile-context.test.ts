@@ -49,6 +49,12 @@ vi.mock('@/lib/knowledge/profile-weighted-retrieval', () => ({
 vi.mock('@/lib/firebase/preferences-service', () => ({
   getPreferences: vi.fn(async () => DEFAULT_USER_PREFERENCES),
 }));
+vi.mock('@/lib/context/interaction-frame', () => ({
+  deriveInteractionFrame: vi.fn(async () => null),
+}));
+vi.mock('@/lib/firebase/advisor-history-service', () => ({
+  readRecentTurns: vi.fn(async () => []),
+}));
 
 import { buildCalibratedContext } from '@/lib/context/profile-context';
 
@@ -71,5 +77,51 @@ describe('buildCalibratedContext — preferences field', () => {
     (mod.getPreferences as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('firestore down'));
     const ctx = await buildCalibratedContext({ uid: 'user-test', toolId: 'advisory' });
     expect(ctx.preferences).toEqual(DEFAULT_USER_PREFERENCES);
+  });
+
+  it('renders interaction and advisor frames into the prompt when available', async () => {
+    const interactions = await import('@/lib/context/interaction-frame');
+    const advisorHistory = await import('@/lib/firebase/advisor-history-service');
+    const situations = await import('@/lib/firebase/situations');
+
+    (situations.getSituationById as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      id: 's1',
+      name: 'Yemen Ceasefire',
+      type: 'civil',
+      region: 'Yemen',
+      actors: ['UNMHA'],
+      userRole: 'analyst',
+      status: 'active',
+      description: '',
+      riskScore: 4,
+      glaslStage: 3,
+      escalationTrend: 'stable',
+      actorCount: 1,
+      graphEntities: 0,
+      documentCount: 0,
+      createdAt: '2026-04-25T00:00:00Z',
+      updatedAt: '2026-04-25T12:34:00Z',
+    });
+    (interactions.deriveInteractionFrame as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      activeSituationDrafts: 2,
+      recentTools: [{ toolId: 'risk-monitor', ranAt: '2026-04-25T12:00:00Z', summary: 'Risk increased near port corridor.' }],
+    });
+    (advisorHistory.readRecentTurns as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      { role: 'user', content: 'Review ceasefire enforcement.', at: '2026-04-25T12:01:00Z' },
+      { role: 'assistant', content: 'Focus on monitoring provisions and verification gaps.', at: '2026-04-25T12:02:00Z' },
+    ]);
+
+    const ctx = await buildCalibratedContext({
+      uid: 'user-test',
+      situationId: 's1',
+      toolId: 'advisory',
+      advisorId: 'adeyemi',
+    });
+
+    expect(ctx.systemPromptBlock).toContain('<interaction-frame>');
+    expect(ctx.systemPromptBlock).toContain('risk-monitor');
+    expect(ctx.systemPromptBlock).toContain('<advisor-frame id="adeyemi">');
+    expect(ctx.systemPromptBlock).toContain('verification gaps');
+    expect(ctx.provenance.situationVersion).toBe(Date.parse('2026-04-25T12:34:00Z'));
   });
 });

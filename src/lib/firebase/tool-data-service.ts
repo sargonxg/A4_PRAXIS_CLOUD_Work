@@ -30,7 +30,7 @@ export async function saveToolData(
   situationId: string,
   toolId: string,
   data: unknown
-): Promise<void> {
+): Promise<{ generatedAt: string; version: number }> {
   const ref = toolDataRef(uid, situationId, toolId);
   const snap = await ref.get();
   const prevVersion = snap.exists ? ((snap.data()?.version as number) ?? 1) : 0;
@@ -50,6 +50,8 @@ export async function saveToolData(
     const oldSnap = await versionsRef.doc(oldestKey).get();
     if (oldSnap.exists) await versionsRef.doc(oldestKey).delete();
   }
+
+  return { generatedAt, version: newVersion };
 }
 
 export async function getToolData(

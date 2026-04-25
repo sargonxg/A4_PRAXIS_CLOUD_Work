@@ -8,6 +8,26 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased] — 2026-04-25 (seventh session — deploy hardening)
 
+### Context and persistence hardening
+
+- `withCalibration` now derives `situationId` from either
+  `body.situationId` or `body.situation.id`, so chat-style requests that
+  send a full situation object still get situation-scoped calibration and
+  SKC retrieval.
+- `systemPromptBlock` now includes the already-built interaction frame and
+  advisor frame, giving AI tools bounded context about recent tool runs,
+  draft situation count, and selected advisor memory.
+- `provenance.situationVersion` now carries a timestamp-derived version
+  from `situation.updatedAt` when available instead of always being `null`.
+- SKC related-tool output trimming now clips structured data recursively
+  instead of slicing JSON strings and reparsing potentially invalid JSON.
+- `/api/tool-data` save responses now return authoritative `generatedAt`
+  and `version`, and `usePersistedToolData` reconciles optimistic state
+  with the server response.
+- Added focused tests for nested situation calibration, prompt rendering
+  of interaction/advisor frames, safe related-output clipping, and tool-data
+  save metadata.
+
 ### Fixed
 
 - Fixed the Next.js 16 dynamic route handler signature for

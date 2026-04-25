@@ -57,8 +57,8 @@ export const POST = withAuth(async (req, user) => {
       );
     }
 
-    await saveToolData(user.uid, situationId, toolId, data);
-    return NextResponse.json({ success: true });
+    const saved = await saveToolData(user.uid, situationId, toolId, data);
+    return NextResponse.json({ success: true, ...saved });
   } catch (err) {
     console.error('[tool-data] POST failed:', err);
     return NextResponse.json(

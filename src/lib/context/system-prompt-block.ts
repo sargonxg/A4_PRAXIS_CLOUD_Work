@@ -3,6 +3,8 @@ import type { Situation } from '@/types/situation';
 import type { MergedDomainConfig } from '@/types/domain';
 import type { Episode } from '@/types/episode';
 import type { UserPreferences } from '@/types/preferences';
+import type { InteractionFrame } from '@/types/interaction';
+import type { AdvisorFrame } from '@/types/advisor';
 
 export interface RetrievedChunk {
   id: string;
@@ -39,6 +41,8 @@ export function renderSystemPromptBlock(opts: {
   toolId?: string;
   episodes?: Episode[];
   preferences?: UserPreferences;
+  interaction?: InteractionFrame | null;
+  advisor?: AdvisorFrame | null;
 }): string {
   const parts: string[] = [];
 
@@ -49,6 +53,10 @@ export function renderSystemPromptBlock(opts: {
   }
   const episodesBlock = renderEpisodesBlock(opts.episodes);
   if (episodesBlock) parts.push(episodesBlock);
+  const interactionBlock = renderInteractionBlock(opts.interaction);
+  if (interactionBlock) parts.push(interactionBlock);
+  const advisorBlock = renderAdvisorBlock(opts.advisor);
+  if (advisorBlock) parts.push(advisorBlock);
   if (opts.retrievedChunks.length > 0) {
     parts.push(renderKnowledgeBlock(opts.retrievedChunks));
   }
@@ -164,6 +172,33 @@ function renderKnowledgeBlock(chunks: RetrievedChunk[]): string {
     '<retrieved-knowledge>',
     ...chunks.map(c => `  [${escapeTag(c.id)}] ${escapeTag(c.text.slice(0, 500))} — ${escapeTag(c.source)}`),
     '</retrieved-knowledge>',
+  ].join('\n');
+}
+
+function renderInteractionBlock(frame: InteractionFrame | null | undefined): string {
+  if (!frame) return '';
+  const recent = frame.recentTools.slice(0, 6);
+  const lines = recent.length
+    ? recent.map((tool) => (
+        `  - ${escapeTag(tool.toolId)} at ${escapeTag(tool.ranAt)}: ${escapeTag(tool.summary.slice(0, 180))}`
+      ))
+    : ['  - No recent tool runs in this situation.'];
+  return [
+    '<interaction-frame>',
+    `  Active draft situations: ${frame.activeSituationDrafts}`,
+    '  Recent tools:',
+    ...lines,
+    '</interaction-frame>',
+  ].join('\n');
+}
+
+function renderAdvisorBlock(frame: AdvisorFrame | null | undefined): string {
+  if (!frame) return '';
+  return [
+    `<advisor-frame id="${escapeTag(frame.advisorId)}">`,
+    `  Last turn: ${escapeTag(frame.lastTurnAt)}`,
+    `  Rolling summary: ${escapeTag(frame.rollingSummary.slice(0, 1000) || 'No prior turns.')}`,
+    '</advisor-frame>',
   ].join('\n');
 }
 

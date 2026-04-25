@@ -100,6 +100,7 @@ export function usePersistedToolData(
         if (res.ok) {
           const result = await res.json().catch(() => null);
           if (result?.version) setVersion(result.version);
+          if (result?.generatedAt) setGeneratedAt(result.generatedAt);
         }
       } catch (err) {
         console.error('[use-persisted-tool-data] Save failed:', err);

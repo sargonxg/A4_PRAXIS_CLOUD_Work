@@ -128,6 +128,29 @@ Definition of ready for a tool:
 Goal: every generated answer receives the right analyst, situation, domain,
 and SKC context, and users can trust why it answered that way.
 
+Immediate audit findings to resolve before broad tool-page rewrites:
+
+1. Canonical tool-output contract.
+   - Problem: `tools/{toolId}` and `tool-data/{toolId}` both exist with
+     different IDs and envelopes.
+   - Decision needed: keep `tool-data/{registry-hyphen-id}` as the UI/SKC
+     canonical store, then have server route helpers write through one shared
+     adapter while preserving `tools/*` reads for compatibility.
+2. Tool ID normalization.
+   - Problem: routes save underscore IDs (`risk_assessment`), registry uses
+     hyphen IDs (`risk-monitor`), and pages vary.
+   - Build: a central mapping helper consumed by route saves, `AiPopulate`,
+     `ToolPageShell`, sidebar status, recent tools, and SKC dependencies.
+3. Streaming lifecycle.
+   - Problem: streaming responses can mark `tool_runs` completed when the HTTP
+     stream is created, before model generation finishes.
+   - Build: route-level `onFinish` / error callbacks that complete/fail
+     `tool_runs` for streaming variants.
+4. Prompt transparency.
+   - Done in first hardening slice: interaction/advisor frames now render
+     into `systemPromptBlock`, and chat-style requests can bind calibration
+     from `body.situation.id`.
+
 1. Add "Why this output?" inspector.
    - Files: shared tool shell/components and persisted tool output schema.
    - Surface profile version, domain, model, prompt version, sources used,
@@ -184,4 +207,3 @@ honestly when a feed is unavailable.
 Use `docs/CLAUDE_TANDEM_PROMPTS_2026-04-25.md`. The first non-conflicting
 Claude lane should be landing/onboarding stale-source cleanup while Codex
 continues tool persistence and spine work.
-

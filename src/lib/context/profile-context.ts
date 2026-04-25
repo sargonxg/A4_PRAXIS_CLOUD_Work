@@ -196,6 +196,8 @@ export async function buildCalibratedContext(opts: {
     toolId: opts.toolId,
     episodes,
     preferences,
+    interaction,
+    advisor,
   });
   const outputConstraints = profile ? renderOutputConstraints(profile) : NEUTRAL_CONSTRAINTS;
 
@@ -209,7 +211,7 @@ export async function buildCalibratedContext(opts: {
     domain,
     provenance: {
       profileVersion: profile?.meta?.version ?? 0,
-      situationVersion: null,
+      situationVersion: situation ? Date.parse(situation.updatedAt ?? '') || null : null,
       domainId: domain.id,
       domainVersion: domain.version,
       generatedAt: new Date().toISOString(),
