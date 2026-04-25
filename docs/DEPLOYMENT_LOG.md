@@ -2,6 +2,61 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-25 — UX + Pricing + Context-Contract Deployment
+
+Source commits deployed (head = `5fb542b`):
+
+- `5fb542b` docs(context): Context Injection Contract + GCP runbook
+- `fc7b9f1` feat(geospatial): situation-aware map centroid + tool docs scaffolding
+- `9f05783` feat(ux): contrast pass + onboarding feedback + activation guide
+- `0b6a3c1` docs(sprint): add 2026-04-25 sprint plan + tandem handoff
+- `ce810b0` feat(dashboard): role-aware "Recommended for you" widget
+- `7b28314` feat(pricing): hide internal credit metering; sidebar shows plan tier
+
+Cloud Build:
+
+- Build ID: `204af7bf-730a-4c33-90c2-77d5e3976bfc`
+- Status: `SUCCESS`
+- Duration: `8M36S`
+- Project: `praxisbytacitus`
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00046-475` (ready)
+- Backend revision:  `praxis-backend-00028-z26`  (ready)
+
+Production verification:
+
+- `https://praxis.tacitus.me/` → `200 OK`
+- `https://praxis.tacitus.me/login` → `200 OK`
+- `https://praxis.tacitus.me/onboarding` → `307` redirect to `/login` (expected for unauthenticated)
+- `https://praxis.tacitus.me/api/health` → `{"status":"ok","checks":{"firestore":"ok","ai_provider":"ok","cookie_secret":"ok","anthropic":"unconfigured","firecrawl":"unconfigured","vertex_adk":"unconfigured","stripe":"unconfigured"}}`
+
+Local validation before deploy:
+
+- `npm run build` passed.
+- `npx vitest run` passed (140/140).
+- `tsc --noEmit` passed.
+
+What is now live in production:
+
+- Plan-tier badge in the sidebar (replaces the old raw "TACITUS Credits: N" pill).
+- Role-aware "Recommended for you" dashboard widget driven by `analystProfile.identity.role` + `situation.domain`.
+- Onboarding Step 2 mandate field shows live "X more characters needed" / "✓ Mandate ready" feedback.
+- Landing hero rewritten to active voice; data-sources tagline weight bumped.
+- Pricing teaser explains "active situations" inline.
+- Geospatial Monitor centres the map on the actual situation region (DRC, Yemen, Ukraine, etc.) instead of always defaulting to Sudan when no bounding box is set.
+- System Health page (`/app/settings/system-health`) has a **Copy diagnostic** button (redacted JSON snapshot for paste-into-Codex / Claude Code) and an **Activate paid / freemium data sources** card with signup links and effort estimates for ACLED, Vertex ADK, Firecrawl, Stripe, Anthropic.
+- All public surfaces no longer show internal credit costs.
+
+Configuration gaps that remain (degrade gracefully — see `docs/GCP_OPERATIONS.md` §1):
+
+- ACLED unconfigured (15 min activation; biggest immediate win)
+- Vertex ADK Reasoning Engine unconfigured (1–2h)
+- Firecrawl unconfigured ($20–50/mo; unlocks CrisisWatch + SIPRI)
+- Stripe unconfigured (2h, gates monetisation)
+- Anthropic unconfigured (15 min, marginal)
+
 ## 2026-04-25 - Handoff Documentation Deployment
 
 Source commit deployed:
