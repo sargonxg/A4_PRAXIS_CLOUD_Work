@@ -75,6 +75,50 @@ curl -sI https://praxis.tacitus.me/onboarding
 
 Also verify Firebase Auth authorized domains include `praxis.tacitus.me` before testing login.
 
+## Immediate Next Work (updated 2026-04-25, session 5 — open-source pivot)
+
+### What just happened
+
+PRAXIS pivoted to **open-source data only**. ACLED, Firecrawl,
+Anthropic Claude, Tavily, Parallel.ai are all out. The intelligence
+pipeline is now Google Cloud end-to-end: Gemini 3 Flash + 3.1 Pro on
+Vertex AI, Vertex AI Deep Research (Reasoning Engine), Google Search
+Grounding, plus open-license data (GDELT BigQuery, UCDP GED,
+ReliefWeb, HDX, UNHCR, World Bank, UN News, Wikipedia).
+
+This dramatically simplifies our compliance posture (sub-processor
+list → Google Cloud + Stripe + Cloudflare + GitHub, no per-customer
+data licenses) and unblocks paid-tier launch with no
+license-negotiation dependency.
+
+### Top 3 next actions
+
+1. **You** — `docs/USER_ACTION_LIST.md` §1: deploy Vertex AI Agent
+   Engine. This is now THE flagship intelligence story (~1–2h).
+2. **Next agent** — `docs/SPRINT_BACKLOG.md` §B-10 (now P0): build the
+   GDELT BigQuery hot slice per
+   `docs/implementation/gdelt-ingestion-2026-04-25.md`. Free under
+   1 TB/mo, sub-200ms cached reads.
+3. **Next agent** — `docs/SPRINT_BACKLOG.md` §B-1 (P0): persist the
+   Assistant chat per `docs/tools/assistant.md`. Highest single
+   user-visible improvement.
+
+### What still works the same
+
+- All 53 AI routes calibrated through `withCalibration` (unchanged)
+- All 49 routes persist outputs per situation (unchanged)
+- Onboarding wizard, role-aware dashboard widget, sidebar "For you"
+  anchor, audience-tuned briefing presets — all live
+- Production endpoints all green (Cloud Run revisions
+  praxis-frontend-00050-d4v + praxis-backend-00030-2vl)
+
+The pivot is **doc-only and copy-only** — internal feed clients
+(acled-client.ts, firecrawl.ts) remain in the codebase but stay
+unwired in production via env vars unset. Removing them surgically
+is a future cleanup ticket; right now they degrade gracefully.
+
+---
+
 ## Immediate Next Work (updated 2026-04-25, end of session 4 — full handover ready)
 
 ### Restart prompt

@@ -91,7 +91,7 @@ const jsonLd = {
     "Glasl escalation model",
     "ACO v2.0 Conflict Grammar knowledge graph",
     "40+ analytical tools",
-    "Real-time data feeds (ACLED, GDELT, ReliefWeb, UCDP)",
+    "Real-time open data feeds (GDELT BigQuery, UCDP, ReliefWeb, HDX, UNHCR, World Bank, UN News)",
     "Advisory council simulation",
     "Game theory analysis",
     "Geospatial monitoring",

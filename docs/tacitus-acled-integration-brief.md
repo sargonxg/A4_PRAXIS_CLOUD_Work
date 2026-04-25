@@ -1,4 +1,18 @@
-# TACITUS × ACLED API — Integration Brief
+# TACITUS × ACLED API — Integration Brief  *(OBSOLETE)*
+
+> **⚠ HISTORICAL DOCUMENT — DO NOT IMPLEMENT.**
+>
+> PRAXIS dropped ACLED entirely on 2026-04-25 as part of the open-source
+> data pivot. The 2026 ACLED EULA's prohibition on SaaS redistribution
+> made it incompatible with our self-serve product. Event-level
+> intelligence now flows from **GDELT BigQuery + UCDP GED** — see
+> `docs/implementation/gdelt-ingestion-2026-04-25.md` for the
+> live ingestion playbook and `docs/COMPLIANCE.md` §1 for the
+> open-license posture.
+>
+> This file is preserved for historical / audit-trail reasons only.
+> Any agent reading this should redirect to `docs/SPRINT_BACKLOG.md`
+> §B-10 (the active GDELT work) and `docs/USER_ACTION_LIST.md` §3.
 
 **Audience:** Claude Code (autonomous build) + GC (manual decisions)
 **Context:** Wiring ACLED's event dataset into TACITUS as a structured input feed for the Agentic Conflict Ontology (ACO), DIALECTICA backend, and the TCGC corpus.

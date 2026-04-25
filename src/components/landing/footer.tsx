@@ -151,7 +151,7 @@ export function Footer() {
             Built on
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-            {["Gemini AI", "Google Cloud Run", "Vertex AI", "ACLED", "GDELT"].map((name) => (
+            {["Gemini AI", "Vertex AI Deep Research", "Google Cloud Run", "BigQuery", "GDELT", "UCDP", "ReliefWeb"].map((name)=> (
               <span
                 key={name}
                 className="text-xs font-semibold uppercase tracking-wider text-navy-300/60"

@@ -6,6 +6,77 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-04-25 (fifth session — open-source pivot)
+
+### Strategic pivot — ACLED + Firecrawl + Anthropic dropped
+
+PRAXIS now ships exclusively on open-license data feeds plus
+Google Cloud AI services. Removed entirely:
+
+- **ACLED** — 2026 EULA prohibition on SaaS redistribution made it
+  incompatible with self-serve. Replaced with GDELT BigQuery + UCDP
+  GED for event-level intelligence (both open license, both
+  commercially redistributable).
+- **Firecrawl** — third-party scraper. Replaced with Vertex AI
+  Deep Research + grounded Google Search.
+- **Anthropic Claude** — operational simplicity. Single AI line is
+  Gemini 3.1 Pro on Vertex AI.
+- **Tavily / Parallel.ai** — already optional, now formally retired.
+
+Result: the entire intelligence pipeline stays inside Google Cloud,
+no per-customer commercial-data licenses to negotiate, sub-processor
+list reduced to (Google Cloud, Stripe, Cloudflare, GitHub).
+
+### Surfaces updated
+
+- **Landing page Data Substrate section** rewritten — single panel of
+  open-data + Google AI sources, removed the "Premium — BYO keys"
+  panel that previously listed ACLED / Firecrawl / Tavily / Anthropic.
+- **Hero "Powered by" line** now reads "GDELT, UCDP, ReliefWeb, HDX,
+  World Bank — open data, grounded AI you can cite."
+- **Footer infrastructure pills** rewritten to "Gemini AI · Vertex AI
+  Deep Research · Google Cloud Run · BigQuery · GDELT · UCDP ·
+  ReliefWeb."
+- **Landing JSON-LD** feature list updated.
+- **Pricing tier feature copy** "Gemini Pro + Claude" → "Gemini 3.1
+  Pro + grounded Google Search."
+- **System Health activation card** rewritten — only Vertex ADK +
+  GDELT BigQuery + Stripe remain as optional turn-ons.
+- **Role-recommendations rationales** for `argus` and
+  `geospatial-monitor` updated to reflect the new data path.
+
+### Docs rewritten
+
+- `docs/USER_ACTION_LIST.md` — top action shifted from "ACLED email"
+  to Vertex AI Agent Engine deploy. ACLED / Firecrawl / Anthropic
+  removed from the action set.
+- `docs/COMPLIANCE.md` — §1.1 ACLED critical-risk row replaced with a
+  positive open-license matrix (one row per active source). §1.2 lists
+  what we deliberately don't use. Sub-processor inventory in §3
+  reduced to Google Cloud + Stripe + Cloudflare + GitHub.
+- `docs/SPRINT_BACKLOG.md` — Stream G ACLED + Firecrawl items marked
+  RESOLVED via pivot. B-9 ACLED safe-harbour withdrawn. B-10 GDELT
+  hot slice promoted from P1 → P0. Stream C-1 / C-3 / C-5 (ACLED /
+  Firecrawl / Anthropic activation) withdrawn.
+- `docs/EXTERNAL_TOOLS_WIRING.md` — ACLED, Firecrawl, Anthropic, SIPRI
+  scrape, Crisis Group scrape sections marked withdrawn with redirect
+  to replacement paths.
+- `docs/VISION_2026.md` — Priority 2 shifted from "ACLED Corporate
+  License signed" to "GDELT BigQuery hot slice in production". Moat
+  story rewritten around "open data + Google AI vertical
+  integration."
+- `docs/GCP_OPERATIONS.md` §1a + §1c + §1e marked withdrawn;
+  §1c repurposed to point at the GDELT ingestion playbook.
+- `docs/tacitus-acled-integration-brief.md` — top-of-file banner
+  marks the document OBSOLETE and redirects readers to the GDELT
+  playbook.
+
+### Validation
+
+- `tsc --noEmit`: 0 errors
+- `npx vitest run`: 150/150 passed
+- `npm run build` to be confirmed before deploy
+
 ## [Unreleased] — 2026-04-25 (fourth session — playbook + vision + cleanup)
 
 ### Added

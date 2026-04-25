@@ -55,26 +55,14 @@ Job source layout, Cloud Scheduler config, Firestore cache, T1 vs T2
 trade-offs). Migration tracked as Stream B-10 in
 `docs/SPRINT_BACKLOG.md`.
 
-### ACLED (freemium, **CRITICAL: Corporate License required for paid tiers**)
+### ~~ACLED~~ — withdrawn 2026-04-25
 
-| Tools that call it | Through |
-|---|---|
-| Geospatial Monitor | event-level rendering |
-| Risk Monitor | fatality counts, event frequency |
-| Early Warning | spike detection |
-| Timeline | event-by-event chronology |
-
-**Context flowed in:** `situation.region` (country filter),
-`activeSituation.geoBoundingBox` if set, fatality threshold per tool.
-
-**Auth:** `ACLED_API_KEY` + `ACLED_EMAIL`. Behind
-`ACLED_LICENSE_TIER=corporate-licensed` for raw event display (per
-`docs/COMPLIANCE.md` §1.1). When unset → returns `[]` → tools fall
-back to GDELT/grounded-search aggregates. Full implementation
-playbook at **`docs/tacitus-acled-integration-brief.md`** (228 lines
-— OAuth password-grant flow, ACO mapping for ACLED's 30 columns,
-BigQuery `acled_raw.events` landing zone, four-phase Cloud Run Job
-build sequence).
+PRAXIS no longer ingests ACLED. The 2026 EULA's prohibition on SaaS
+redistribution made it incompatible with our open-source-only stance.
+**Replacement:** event-level intelligence now flows from
+**GDELT BigQuery + UCDP GED** (both open license, both already wired
+above). The brief at `docs/tacitus-acled-integration-brief.md` is
+kept as historical context only.
 
 ### UCDP GED (free, CC-BY 4.0)
 
@@ -144,26 +132,12 @@ build sequence).
 **Context:** country code derived from `situation.region`.
 **Auth:** none.
 
-### SIPRI Arms Transfer Database (Firecrawl-mediated, license to verify)
+### ~~SIPRI / Crisis Group scraped sources~~ — withdrawn 2026-04-25
 
-| Tools | Through |
-|---|---|
-| Conflict Profile | top suppliers / recipients |
-| Actor Profiles | arms-flow context per actor |
-
-**Context:** `situation.region`, named actors.
-**Auth:** Firecrawl key. License terms tracked in `docs/COMPLIANCE.md` §1.8.
-
-### Crisis Group CrisisWatch (Firecrawl-mediated, license to verify)
-
-| Tools | Through |
-|---|---|
-| Conflict Profile | monthly outlook text |
-| Auto-Briefing | ICG framing |
-
-**Context:** `situation.region`, current month.
-**Auth:** Firecrawl key. License terms tracked in
-`docs/COMPLIANCE.md` §1.9.
+Both required Firecrawl-mediated scraping. Replaced by **grounded
+Google Search** for Crisis Group framing in briefings, and by
+**World Bank + UCDP** for arms-flow / structural conflict context in
+profiles.
 
 ### Google Search Grounding (free fallback)
 
@@ -178,17 +152,12 @@ build sequence).
 the system prompt; query is the user's input plus situation name.
 **Auth:** Google AI key (or Vertex AI ADC).
 
-### Firecrawl (paid, $83/mo Standard)
+### ~~Firecrawl~~ — withdrawn 2026-04-25
 
-| Tools | Through |
-|---|---|
-| ARGUS | `searchWeb()` |
-| Sources Library | `discoverSources()` for new authoritative URLs |
-| Conflict Profile | scrapes Crisis Group, SIPRI |
-
-**Context:** `situation.region`, named actors, optional URLs from the user.
-**Auth:** `FIRECRAWL_API_KEY`. When unset → `searchWeb()` returns null
-→ tools fall back to Gemini grounded search.
+Open-source pivot. Web research now flows through **Vertex AI Deep
+Research + grounded Google Search**. ARGUS and Sources Library use
+the same path; Conflict Profile gets its enrichment from Wikipedia +
+World Bank + UCDP rather than scraped Crisis Group / SIPRI.
 
 ### Vertex AI Reasoning Engine (Deep Research Agent)
 
@@ -201,16 +170,10 @@ the system prompt; query is the user's input plus situation name.
 **Auth:** `VERTEX_AGENT_ENGINE_ID`. When unset → falls back to
 `getProModel()` (Gemini 3.1 Pro) without multi-phase pipeline.
 
-### Anthropic Claude (optional)
+### ~~Anthropic Claude~~ — withdrawn 2026-04-25
 
-| Tools | Through |
-|---|---|
-| Claude Analyze | `/api/ai/claude-analyze` |
-| Various deep-analysis routes (when `getAnalysisModel()` resolves to Claude) |
-
-**Context:** full systemPromptBlock + tool-specific instructions.
-**Auth:** `ANTHROPIC_API_KEY`. When unset → `getAnalysisModel()` falls
-back to Gemini 3.1 Pro.
+Open-source / single-AI-line pivot. `getAnalysisModel()` now always
+returns Gemini 3.1 Pro on Vertex AI.
 
 ---
 

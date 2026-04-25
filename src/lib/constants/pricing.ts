@@ -37,7 +37,7 @@ export const PRICING_TIERS: PricingTier[] = [
     features: [
       '5 active situations',
       'All 40+ PRAXIS tools',
-      'AI Assistant (Gemini Pro + Claude)',
+      'AI Assistant (Gemini 3.1 Pro + grounded Google Search)',
       'Advanced reports & dossiers',
       'Unlimited document upload',
       'Deep research with web sources',

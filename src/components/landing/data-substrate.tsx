@@ -2,50 +2,38 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Database, Globe, Layers, Radar, ShieldCheck, Zap } from "lucide-react";
+import { Database, Globe, Radar, ShieldCheck, Zap } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface Source {
   name: string;
   role: string;
-  tier: "free" | "freemium" | "premium" | "platform";
+  tier: "free" | "platform";
 }
 
 const FREE_SOURCES: Source[] = [
   { name: "Google Search (grounded)", role: "Live web intelligence via Gemini grounding", tier: "platform" },
-  { name: "GDELT", role: "Global media event stream + tone", tier: "free" },
-  { name: "GDELT Knowledge Graph", role: "Entity mention volume + tone", tier: "free" },
+  { name: "Vertex AI Deep Research", role: "Multi-agent planner → researcher → synthesizer pipeline", tier: "platform" },
+  { name: "GDELT BigQuery", role: "Global media events + tone, 15-min cadence", tier: "free" },
+  { name: "GDELT Knowledge Graph", role: "Entity mention volume + sentiment", tier: "free" },
   { name: "Wikipedia", role: "Actor and institution enrichment", tier: "free" },
   { name: "ReliefWeb", role: "OCHA humanitarian situation reports", tier: "free" },
-  { name: "HDX", role: "Displacement / food-security / funding", tier: "free" },
+  { name: "HDX HAPI", role: "Displacement / food-security / funding (CC-BY)", tier: "free" },
   { name: "UNHCR", role: "Refugee population statistics", tier: "free" },
-  { name: "UCDP", role: "Uppsala conflict dataset", tier: "free" },
+  { name: "UCDP GED", role: "Uppsala georeferenced conflict dataset (CC-BY)", tier: "free" },
   { name: "World Bank WDI + WGI", role: "Economic + governance indicators", tier: "free" },
-  { name: "SIPRI", role: "Arms transfer register", tier: "free" },
-  { name: "Crisis Group", role: "Monthly CrisisWatch outlook", tier: "free" },
-  { name: "UN News", role: "Secretary-General + agency statements", tier: "free" },
-];
-
-const PREMIUM_SOURCES: Source[] = [
-  { name: "ACLED", role: "Event-by-event conflict dataset", tier: "freemium" },
-  { name: "Tavily", role: "Parallel AI-optimised web search", tier: "freemium" },
-  { name: "Parallel.ai", role: "Agentic web research & monitoring", tier: "premium" },
-  { name: "Firecrawl", role: "JS-rendered page scraping", tier: "freemium" },
-  { name: "Anthropic Claude", role: "Second AI voice for deep reasoning", tier: "premium" },
+  { name: "UN News RSS", role: "Secretary-General + agency statements", tier: "free" },
+  { name: "BigQuery public datasets", role: "GHCN climate, NOAA, WHO, Census, IMF", tier: "free" },
 ];
 
 const TIER_CHIP: Record<Source["tier"], string> = {
   platform: "bg-emerald-500/15 text-emerald-700 ring-emerald-500/30",
   free: "bg-sky-500/15 text-sky-700 ring-sky-500/30",
-  freemium: "bg-amber-500/15 text-amber-700 ring-amber-500/30",
-  premium: "bg-indigo-500/15 text-indigo-700 ring-indigo-500/30",
 };
 
 const TIER_LABEL: Record<Source["tier"], string> = {
-  platform: "Platform default",
-  free: "Free",
-  freemium: "Freemium",
-  premium: "Premium",
+  platform: "Google Cloud",
+  free: "Open data",
 };
 
 function SourceRow({ source }: { source: Source }) {
@@ -80,16 +68,17 @@ export function DataSubstrate() {
         >
           <span className="text-overline text-gold-700">Data Substrate</span>
           <h2 className="mt-2 font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl">
-            Real sources. Real context. Free to start.
+            Open sources. Open licenses. No paywalls.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-navy-500">
-            PRAXIS ships with a dozen authoritative feeds wired in out of the box.
-            Bring your own keys to unlock ACLED event-level data, Tavily parallel search,
-            Parallel.ai agents, and Firecrawl ingestion.
+            Every PRAXIS feed is open data, mirrored on Google Cloud
+            BigQuery public datasets, and usable in commercial workflows
+            with attribution. We pair these with live Google grounded
+            search and Vertex AI Deep Research for everything else.
           </p>
         </motion.div>
 
-        <div className="grid gap-8 lg:grid-cols-2">
+        <div className="mx-auto max-w-3xl">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -100,35 +89,15 @@ export function DataSubstrate() {
             <div className="mb-4 flex items-center gap-2">
               <Zap className="h-4 w-4 text-emerald-600" />
               <h3 className="text-sm font-semibold uppercase tracking-wider text-emerald-700">
-                Free tier — always on
+                Always on — open data + Google AI
               </h3>
             </div>
-            <div className="space-y-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               {FREE_SOURCES.map((s) => <SourceRow key={s.name} source={s} />)}
             </div>
             <p className="mt-4 text-xs italic text-navy-500">
-              No credit card required. Works from the moment you sign in.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="rounded-2xl border border-cream-300 bg-white/70 p-6"
-          >
-            <div className="mb-4 flex items-center gap-2">
-              <Layers className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-indigo-700">
-                Premium — BYO keys
-              </h3>
-            </div>
-            <div className="space-y-2">
-              {PREMIUM_SOURCES.map((s) => <SourceRow key={s.name} source={s} />)}
-            </div>
-            <p className="mt-4 text-xs italic text-navy-500">
-              Your keys are encrypted at rest with AES-256-GCM. Server-side only — never shared.
+              No credit card required. No vendor licensing fees. Every
+              feed&rsquo;s license is logged in the Compliance page.
             </p>
           </motion.div>
         </div>

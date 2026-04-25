@@ -15,53 +15,12 @@ can. Every command is scoped to project `praxisbytacitus` and region
 The order below is the same as `docs/SPRINT_2026-04-25.md` Stream C — fastest
 user value first.
 
-### 1a. ACLED — **CRITICAL: Corporate License required for paid tiers** 🚨
+### 1a. ~~ACLED~~ — **withdrawn 2026-04-25**
 
-> The 2026 ACLED EULA prohibits SaaS dashboards from redistributing event
-> data without a Corporate License. See
-> `docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`
-> §R2 for verbatim EULA quotes and the legal analysis.
->
-> **Before turning on raw ACLED events for any paid customer**, email
-> `access@acleddata.com` to negotiate a Corporate License (estimated
-> $5–25k/yr based on industry comparables). The free academic key is
-> usable only for non-commercial use; the moment you bill a customer for
-> a tool that surfaces ACLED rows, you breach the EULA.
->
-> **Interim safe path:** keep ACLED key set, but gate raw event display
-> behind `ACLED_LICENSE_TIER=corporate-licensed`. Surface only
-> server-computed aggregated statistics (event counts, fatality totals)
-> until license is signed. Track in `docs/COMPLIANCE.md`.
-
-1. Sign up at https://developer.acleddata.com/ — create an academic /
-   non-profit account if you don't have one, then request an API key.
-   You'll receive a numeric `key` and use the registered email as
-   `email`.
-2. Store both in Secret Manager:
-   ```bash
-   echo -n "<your-acled-key>" | gcloud secrets create praxis-acled-api-key \
-     --data-file=- --project=praxisbytacitus
-   echo -n "<your-acled-email>" | gcloud secrets create praxis-acled-email \
-     --data-file=- --project=praxisbytacitus
-   ```
-3. Grant the Cloud Run service account access to the secrets:
-   ```bash
-   gcloud secrets add-iam-policy-binding praxis-acled-api-key \
-     --member="serviceAccount:852128226674-compute@developer.gserviceaccount.com" \
-     --role="roles/secretmanager.secretAccessor" \
-     --project=praxisbytacitus
-   gcloud secrets add-iam-policy-binding praxis-acled-email \
-     --member="serviceAccount:852128226674-compute@developer.gserviceaccount.com" \
-     --role="roles/secretmanager.secretAccessor" \
-     --project=praxisbytacitus
-   ```
-4. Edit `cloudbuild.yaml` and add the secret-mounted env vars to the
-   frontend deploy step:
-   ```yaml
-   --update-secrets=ACLED_API_KEY=praxis-acled-api-key:latest,ACLED_EMAIL=praxis-acled-email:latest
-   ```
-5. Trigger a build: `gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus`.
-6. Verify: `curl -s https://praxis.tacitus.me/api/health/feeds | jq '.acled'`.
+PRAXIS no longer ingests ACLED. The 2026 EULA's prohibition on SaaS
+redistribution made it incompatible with our open-source-only stance.
+Event-level intelligence is now served from **GDELT BigQuery**
+(see §1c below) and **UCDP GED** (zero config).
 
 ### 1b. Vertex AI Agent Engine (Deep Research Agent, ~1–2 h)
 
@@ -116,19 +75,25 @@ user value first.
    `cloudbuild.yaml` `--update-secrets` for the frontend.
 8. Verify: `curl -s https://praxis.tacitus.me/api/health | jq '.vertex_adk'`.
 
-### 1c. Firecrawl ($20–50 / mo, ~30 min)
+### 1c. GDELT BigQuery hot slice (free <1 TB/mo, ~2 h)
 
-1. Sign up at https://www.firecrawl.dev/ — create an account, get an API key.
-2. ```bash
-   echo -n "<key>" | gcloud secrets create praxis-firecrawl-api-key \
-     --data-file=- --project=praxisbytacitus
-   gcloud secrets add-iam-policy-binding praxis-firecrawl-api-key \
-     --member="serviceAccount:852128226674-compute@developer.gserviceaccount.com" \
-     --role="roles/secretmanager.secretAccessor" \
-     --project=praxisbytacitus
-   ```
-3. Add `FIRECRAWL_API_KEY=praxis-firecrawl-api-key:latest` to
-   `cloudbuild.yaml`.
+Authoritative playbook:
+**`docs/implementation/gdelt-ingestion-2026-04-25.md`** (1,036 lines).
+TL;DR:
+
+```bash
+gcloud services enable bigquery.googleapis.com bigquerydatatransfer.googleapis.com cloudscheduler.googleapis.com --project=praxisbytacitus
+
+bq query --use_legacy_sql=false --max_rows=1 \
+'SELECT GKGRECORDID FROM `gdelt-bq.gdeltv2.gkg_partitioned`
+ WHERE _PARTITIONTIME >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 HOUR) LIMIT 1'
+```
+
+Then create the two service accounts (`praxis-gdelt-poller`,
+`praxis-gdelt-reader`) with minimal IAM grants per playbook §2,
+apply the `praxis_analytics.gdelt_situation_events` DDL per §3, build
+the Cloud Run Job per §4, schedule per §5. Cap at $2–5/month at MVP
+scale.
 
 ### 1d. Stripe (~2 h, when ready to monetize)
 
@@ -155,19 +120,10 @@ user value first.
 4. Add as plain env vars (price IDs are non-secret):
    `STRIPE_PRICE_ANALYST=price_xxx,STRIPE_PRICE_TEAM=price_yyy`.
 
-### 1e. Anthropic Claude (~15 min, optional)
+### 1e. ~~Anthropic Claude~~ — withdrawn 2026-04-25
 
-1. https://console.anthropic.com/ → create API key.
-2. ```bash
-   echo -n "sk-ant-..." | gcloud secrets create praxis-anthropic-api-key \
-     --data-file=- --project=praxisbytacitus
-   gcloud secrets add-iam-policy-binding praxis-anthropic-api-key \
-     --member="serviceAccount:852128226674-compute@developer.gserviceaccount.com" \
-     --role="roles/secretmanager.secretAccessor" \
-     --project=praxisbytacitus
-   ```
-3. Add `ANTHROPIC_API_KEY=praxis-anthropic-api-key:latest` to
-   `cloudbuild.yaml`.
+Open-source / single-AI-line pivot. Gemini 3.1 Pro on Vertex AI is
+the entire AI surface.
 
 ---
 

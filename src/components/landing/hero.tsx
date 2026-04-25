@@ -387,7 +387,7 @@ export function Hero() {
             transition={{ delay: 1.4, duration: 0.6 }}
             className="mb-10 text-sm font-medium text-navy-600"
           >
-            Powered by ACLED, GDELT, ReliefWeb, UCDP — grounded in AI you can cite.
+            Powered by GDELT, UCDP, ReliefWeb, HDX, World Bank — open data, grounded AI you can cite.
           </motion.p>
 
           {/* Single CTA — all paths go through /login */}

@@ -57,7 +57,7 @@ outcome: **decision velocity for the policy professional.**
 | Flagship UN-agency pilots | 2 (UN DPPA Africa or MENA desk + 1 OCHA / OHCHR / UNHCR) |
 | Tools at READY status | 47 / 47 (all visible tools production-quality) |
 | Languages supported in output | 6 (en, fr, es, ar, ru, zh) — already in profile schema |
-| Data sources licensed for SaaS | ACLED Corporate, GDELT (free), UCDP, ReliefWeb, HDX, World Bank, UN News, SIPRI (verified), Crisis Group (verified), Firecrawl, Vertex |
+| Data sources licensed for SaaS | GDELT (BigQuery, free), UCDP GED (CC-BY), ReliefWeb, HDX, UNHCR, World Bank, UN News, Wikipedia (CC-BY-SA), Vertex AI Deep Research, Google Search Grounding — all open / Google-native, no third-party licenses |
 | SOC 2 Type II | In observation window (Type I signed) |
 | EU data residency | Available (`europe-west1` mirror) |
 | Conversation memory | Live across all situations |
@@ -94,20 +94,24 @@ This contract is the heart of PRAXIS. **Read
 `docs/CONTEXT_INJECTION.md` before any agent changes anything.**
 Strategy holds it inviolate.
 
-### 2. The data-source licensing portfolio
+### 2. The open-data + Google AI vertical-integration
 
-Anyone can call OpenAI. What's hard is:
+Anyone can call Gemini. What's hard is:
 
-- ACLED Corporate License covering SaaS redistribution
-- GDELT BigQuery pipeline with 90-day partition-pruned tables
-- HDX HAPI integration with per-dataset license tracking
-- UN News + ReliefWeb + UCDP + World Bank attribution discipline
+- A **single-vendor data + AI surface** (Google Cloud only) that lets
+  us tell UN/EU buyers "your data never touches a third-party
+  sub-processor" — a clean DPA story.
+- A GDELT BigQuery hot-slice with 90-day partition-pruned tables,
+  costing pennies per situation per day.
+- HDX HAPI integration with per-dataset license tracking surfaced in
+  the UI.
+- UN News + ReliefWeb + UCDP + World Bank attribution discipline,
+  done right the first time.
 - An audit trail (`docs/COMPLIANCE.md`) that survives a SOC 2 Type II
-  review
+  review without a single commercial-data-license redaction.
 
-This is unsexy paperwork that nobody else wants to do. We do it
-because the buyer (UN, EU, NGO procurement) requires it, and once
-done we have a 12-month head start.
+This is unsexy paperwork that nobody else wants to do. We do it once,
+on open data, and we never have to re-sign per customer.
 
 ### 3. The tool catalogue at READY status
 
@@ -133,13 +137,16 @@ shift to "how soon can we onboard?".
 **Who agents work on next:** Stream B (Tool quality) — until every
 visible tool is READY, no flagship customer will commit.
 
-### Priority 2 — ACLED Corporate License signed
+### Priority 2 — GDELT BigQuery hot slice in production
 
-Without this, paid Tier 1 launch is non-compliant. See
-`docs/USER_ACTION_LIST.md` §1.
+Now that ACLED is out (open-source pivot 2026-04-25), GDELT is the
+event-data backbone. The hot-slice pipeline materialises 7 days of
+GDELT GKG into `praxis_analytics.gdelt_situation_events`,
+partition+cluster-tuned for sub-200ms per-situation reads. Free
+under 1 TB/month on BigQuery public-dataset queries.
 
-**Who agents work on next:** Stream B-9 (ACLED safe-harbour) —
-ships now so the engineering side is ready when the license lands.
+**Who agents work on next:** Stream B-10 (P0). Authoritative
+playbook at `docs/implementation/gdelt-ingestion-2026-04-25.md`.
 
 ### Priority 3 — UN-agency pilot
 

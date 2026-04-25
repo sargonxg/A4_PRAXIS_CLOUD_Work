@@ -301,29 +301,22 @@ Currently a shell — wire to `/api/ai/grounded-search` and persist.
 > dashboards. **Code agents cannot complete these alone** — they can only
 > wire the env-var references in `cloudbuild.yaml`. Pair with the user.
 
-### C-1. ACLED activation · **P0** · `Pending`
+### C-1. ~~ACLED activation~~ — **WITHDRAWN** ✅
 
-**Why:** 15 minutes from signup to live. Immediate jump in event-timeline
-quality across Risk Monitor, Geospatial Monitor, Early Warning.
-
-**Action:** User runs `docs/GCP_OPERATIONS.md` §1a. Then Claude Code or
-Codex updates `cloudbuild.yaml` `--update-secrets` and pushes a commit.
-
-**DoD:**
-- `curl -s https://praxis.tacitus.me/api/health/feeds | jq '.acled'` is
-  `ok`.
-- `docs/DEPLOYMENT_LOG.md` updated.
+Open-source pivot. Replaced by **B-10 GDELT BigQuery hot slice** as
+the canonical event-data path.
 
 ---
 
-### C-2. Vertex AI Agent Engine activation · **P1** · `Pending`
+### C-2. Vertex AI Agent Engine activation · **P0** (promoted) · `Pending`
 
-**Blocker:** Need current 2026 deployment recipe. **Run research prompt
-R1 in `docs/RESEARCH_PROMPTS.md` first.**
+**Now THE flagship intelligence story** — once ACLED is out, our
+"AI does the analyst's work" demo lives or dies on the 3-phase
+Reasoning Engine pipeline (planner → researcher → synthesizer).
 
-**Action:** User runs prompt R1 → drops result into
-`docs/research/vertex-adk-2026-04-25.md` → Codex/Claude Code follows the
-recipe to deploy the engine and wire the env var.
+**Action:** User runs `docs/USER_ACTION_LIST.md` §1 (deploy.py is
+already in `backend/agents/`). Codex/Claude Code wires the env var
+in `cloudbuild.yaml` and confirms via `/api/health/provider`.
 
 **DoD:**
 - Deep Research Agent (`/app/deep-search-agent`) returns multi-phase
@@ -332,35 +325,33 @@ recipe to deploy the engine and wire the env var.
 
 ---
 
-### C-3. Firecrawl activation · **P1** · `Pending`
+### C-3. ~~Firecrawl activation~~ — **WITHDRAWN** ✅
 
-User signup at firecrawl.dev → secret in Secret Manager (steps in
-`docs/GCP_OPERATIONS.md` §1c) → cloudbuild.yaml updated.
-
-Unlocks CrisisWatch (ICG monthly outlook) + SIPRI arms transfer details
-in conflict profiles.
+Open-source pivot. Replaced by **Vertex AI Deep Research +
+grounded Google Search** for all web research. No third-party
+scraper dependency.
 
 ---
 
 ### C-4. Stripe billing activation · **P1** · `Pending`
 
-**Blocker:** Need current 2026 best-practice for hybrid (subscription +
-usage) billing. **Run research prompt R6 first.**
+Compass §R6: Use **Stripe Billing + hosted Pricing Tables +
+Entitlements API + Invertase `firestore-stripe-payments` extension +
+v2 Meters API**.
 
-**Files to touch (after research):**
+**Files to touch:**
 
-- Stripe Dashboard (user) — products, prices, webhook.
-- `docs/GCP_OPERATIONS.md` §1d — six secrets / env vars to wire.
-- Likely `src/app/api/stripe/checkout/route.ts` and
-  `src/app/api/stripe/webhook/route.ts` need updates to match the agreed
-  pattern (metered vs. recurring + manual overage).
+- Stripe Dashboard (user) — products, prices, webhook (per
+  `docs/USER_ACTION_LIST.md` §4).
+- `docs/GCP_OPERATIONS.md` §1d — secrets / env vars to wire.
+- `src/app/api/stripe/checkout/route.ts` and
+  `webhook/route.ts` — align with v2 Meters API.
 
 ---
 
-### C-5. Anthropic Claude activation · **P2** · `Pending`
+### C-5. ~~Anthropic Claude activation~~ — **WITHDRAWN** ✅
 
-Marginal ROI — Gemini 3.1 Pro fallback is already strong. Easy to turn on
-when ready.
+Open-source pivot. Single AI line is Gemini 3.1 Pro on Vertex AI.
 
 ---
 
@@ -518,28 +509,18 @@ Pin `google-cloud-aiplatform[adk,agent_engines]>=1.148.1` and
 $0.0090/GB-hr + token cost. **Working `deploy.py` already in the artifact;
 copy it.** Update `docs/GCP_OPERATIONS.md` §1b to point at it.
 
-### G-2. ACLED licensing — **CRITICAL RISK** 🚨
+### G-2. ACLED licensing — **RESOLVED via pivot** ✅
 
-**Findings (R2):** ACLED's 2026 EULA explicitly forbids SaaS redistribution
-of event data without a Corporate License. Verbatim: "It is not sufficient
-for Licensed Content to simply be supplemented, appended, excerpted,
-reorganized, or made available through Licensee's own dashboard."
-Commercial entities cannot use the API at all without a Corporate License.
+**Decision (2026-04-25):** Drop ACLED entirely. The compliance burden
+($5–25k/yr Corporate License + per-customer attribution + EULA §7.2
+controls preventing raw row download) was the wrong trade for a
+self-serve SaaS launching on open data. Replaced with
+**GDELT BigQuery + UCDP GED** for event-level intelligence — both
+open license, both commercially redistributable, both already wired.
 
-**This is a launch blocker for paid tiers.** Tracked as **§B-9 (P0)** below.
-
-**Action:**
-1. Email `access@acleddata.com` immediately to negotiate a Corporate
-   License (cost estimated $5–25k/yr).
-2. Until licensed, gate ACLED behind a feature flag on Enterprise pilots
-   only and surface only **derived statistics** (event counts, fatality
-   aggregates) computed server-side — these may qualify as transformative
-   under the EULA, but get it in writing.
-3. Bump cache TTL from 1h → 24h (ACLED itself updates weekly).
-4. Add prominent attribution: "Source: ACLED — acleddata.com — accessed
-   YYYY-MM-DD" per their Attribution Policy.
-5. Implement EULA §7.2: prevent end-users downloading raw rows from the
-   dashboard.
+The old §B-9 task (ACLED safe-harbour engineering) is **withdrawn**.
+The brief at `docs/tacitus-acled-integration-brief.md` is kept as
+historical context but is **not** an active workstream.
 
 ### G-3. GDELT BigQuery migration ✓ unblocked
 
@@ -553,13 +534,14 @@ CDC via `_PARTITIONTIME` watermark. Don't re-download raw CSV.
 **New task: §B-10 (P1)** below — migrate the GDELT poller from raw HTTP
 to a Cloud Scheduler-triggered BigQuery upsert.
 
-### G-4. Firecrawl chosen ✓
+### G-4. Web scraping — **dropped via pivot** ✅
 
-**Findings (R4):** Firecrawl Standard tier ($83/mo, 100k pages,
-~$0.00083/page) is the cleanest fit for ~3k policy-PDF/Markdown URLs/mo
-with citations preserved. Bright Data is the fallback for hard-blocked
-targets. **Decision:** stick with Firecrawl. Activation steps in
-`docs/GCP_OPERATIONS.md` §1c are correct.
+**Decision (2026-04-25):** Replace third-party scraping (Firecrawl,
+Bright Data, Apify, etc.) with **Vertex AI Deep Research +
+grounded Google Search**. Removes a $83/mo SaaS dependency, removes
+a sub-processor from the DPA, and keeps the entire intelligence
+pipeline inside Google Cloud where our IAM and data residency story
+already works.
 
 ### G-5. BigQuery public datasets — additional sources ✓
 
@@ -636,44 +618,17 @@ unless selling to UN before SOC 2 is in.
 
 ## NEW tasks unblocked by 2026-04-25 research
 
-### B-9. ACLED Corporate License + safe-harbour fallback · **P0** · `Pending`
+### B-9. ACLED safe-harbour — **WITHDRAWN** ✅
 
-**Why:** Compliance-critical. See G-2 above.
+**Status:** Withdrawn 2026-04-25. We dropped ACLED entirely as part of
+the open-source pivot — see G-2 above. The integration brief at
+`docs/tacitus-acled-integration-brief.md` is historical context only.
 
-> **Authoritative implementation playbook:**
-> `docs/tacitus-acled-integration-brief.md` (228 lines, 2026-04-25). Read
-> that brief first — it lays out the OAuth password-grant flow, the
-> ACLED client API surface (`client.read(endpoint, filters, fields)`
-> with auto-pagination), the BigQuery `acled_raw.events` landing zone
-> with partition+cluster spec, the **full ACO mapping** for ACLED's 30
-> columns to the 8 ACO primitives (this is the part the brief calls
-> out as not-delegable), and the four-phase Cloud Run Job build
-> sequence.
+The capacity that was going to flow into this task is redirected to
+**B-10 (GDELT BigQuery hot slice)**, which becomes the canonical event
+data path now that ACLED is out.
 
-**Files to touch (interim safe-harbour, before Corporate License):**
-
-- `src/lib/data-feeds/acled-client.ts` — gate raw event return behind a
-  new env var `ACLED_LICENSE_TIER` (one of `none`, `enterprise-pilot`,
-  `corporate-licensed`). When `none`, return only aggregated counts.
-- `src/components/dashboard/feed-alerts-widget.tsx` and Geospatial
-  Monitor — only render raw events when the feature flag is on.
-- `docs/COMPLIANCE.md` §1.1 — track the license negotiation thread,
-  effective date, scope.
-
-**Files to build (full ingestion, after Corporate License):**
-
-- `backend/services/acled/` — Cloud Run Job per the brief Phase 1–4.
-- `acled_raw.events` BigQuery table per the brief §2.
-- ACO mapping module per the brief §4 (the analyst-judgement piece).
-
-**DoD (interim):**
-- Aggregated stats path works without a corporate license; raw events
-  hidden by default.
-- Attribution string appears wherever ACLED data is rendered.
-- Email thread to `access@acleddata.com` filed in
-  `docs/COMPLIANCE.md`.
-
-### B-10. GDELT poller → BigQuery migration · **P1** · `Pending`
+### B-10. GDELT poller → BigQuery migration · **P0** (promoted from P1) · `Pending`
 
 **Why:** Compass R3 — free up to 1 TB/mo, 15-min cadence preserved,
 zero ingestion code on our side. Cuts the `cloud_functions/gdelt_poller`
