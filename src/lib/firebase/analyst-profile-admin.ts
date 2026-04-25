@@ -47,11 +47,11 @@ export async function upsertAnalystProfile(
 
 /**
  * Atomically bumps meta.version, writes immutable snapshot to
- * profile_versions/{versionId}, and sets users/{uid}.onboardingCompletedAt.
+ * profile_versions/{versionId}, and marks the analyst profile as completed.
  *
- * All three writes happen inside a single Firestore transaction — if any one
- * fails, none persist, preventing inconsistent state where a snapshot exists
- * without a corresponding live-profile bump (or vice-versa).
+ * Single source of truth: users/{uid}/profile/analyst.meta.completedAt.
+ * The legacy users/{uid}.onboardingCompletedAt mirror has been removed —
+ * session/middleware/skip flows all read from profile.meta.completedAt now.
  */
 export async function completeAnalystProfile(uid: string): Promise<{ versionId: string }> {
   const userRef = adminDb.collection(USERS).doc(uid);
@@ -82,19 +82,61 @@ export async function completeAnalystProfile(uid: string): Promise<{ versionId: 
       { merge: true },
     );
 
-    tx.update(userRef, {
-      onboardingCompletedAt: FieldValue.serverTimestamp(),
-    });
-
     return vId;
   });
 
   return { versionId };
 }
 
+/**
+ * Increments analyst-profile skip counter (single source of truth).
+ * Replaces the previous dual-write to users/{uid}.onboardingSkipCount.
+ */
 export async function incrementOnboardingSkip(uid: string): Promise<void> {
   const db = getAdminDbOrThrow();
-  await db.collection(USERS).doc(uid).update({
-    onboardingSkipCount: FieldValue.increment(1),
-  });
+  const ref = db.collection(USERS).doc(uid).collection(PROFILE).doc(PROFILE_DOC);
+  await ref.set(
+    {
+      meta: {
+        skipCount: FieldValue.increment(1),
+        lastEditedAt: FieldValue.serverTimestamp(),
+      },
+    },
+    { merge: true },
+  );
+}
+
+/**
+ * Returns true if the user has completed onboarding.
+ * Reads profile/analyst.meta.completedAt as canonical source.
+ * Falls back to legacy users/{uid}.onboardingCompletedAt for migration —
+ * if found, lazily mirrors it onto the analyst profile and returns true.
+ */
+export async function isUserOnboarded(uid: string): Promise<boolean> {
+  const db = getAdminDbOrThrow();
+  const profileRef = db.collection(USERS).doc(uid).collection(PROFILE).doc(PROFILE_DOC);
+  const profileSnap = await profileRef.get();
+  if (profileSnap.exists && profileSnap.data()?.meta?.completedAt) return true;
+
+  // Legacy fallback: pre-merge users have completion only on root doc.
+  // Lazily mirror onto profile/analyst then drop the legacy field.
+  try {
+    const userRef = db.collection(USERS).doc(uid);
+    const userSnap = await userRef.get();
+    const legacyCompleted = userSnap.data()?.onboardingCompletedAt;
+    if (legacyCompleted) {
+      await profileRef.set(
+        { meta: { completedAt: legacyCompleted, lastEditedAt: FieldValue.serverTimestamp() } },
+        { merge: true },
+      );
+      await userRef.update({
+        onboardingCompletedAt: FieldValue.delete(),
+        onboardingSkipCount: FieldValue.delete(),
+      }).catch(() => { /* non-fatal */ });
+      return true;
+    }
+  } catch (err) {
+    console.warn('[analyst-profile-admin] legacy onboarding fallback failed:', err);
+  }
+  return false;
 }

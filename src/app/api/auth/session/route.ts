@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { verifyIdToken, getAdminDbOrThrow } from '@/lib/firebase/admin';
+import { verifyIdToken } from '@/lib/firebase/admin';
+import { isUserOnboarded } from '@/lib/firebase/analyst-profile-admin';
 import { signCookie, verifyCookie } from '@/lib/auth/cookie-signer';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
@@ -66,16 +67,15 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Token verification failed' }, { status: 401 });
       }
 
-      // Look up onboardingCompletedAt to embed the onboarded flag edge-safely in the cookie.
-      // Middleware cannot call Firestore (Edge runtime), so we embed it here at login time.
+      // Embed onboarded flag edge-safely in the cookie. Middleware cannot call
+      // Firestore (Edge runtime), so we resolve it at login time. Source of truth:
+      // users/{uid}/profile/analyst.meta.completedAt (with one-time legacy
+      // mirroring from users/{uid}.onboardingCompletedAt for pre-merge users).
       let onboarded = false;
       try {
-        const db = getAdminDbOrThrow();
-        const userSnap = await db.collection('users').doc(verifiedUid).get();
-        onboarded = Boolean(userSnap.data()?.onboardingCompletedAt);
+        onboarded = await isUserOnboarded(verifiedUid);
       } catch (err) {
-        // Non-fatal: if Firestore is unavailable, default to false (user will be redirected to onboarding).
-        console.warn('[auth/session] Could not read onboardingCompletedAt for uid:', verifiedUid, err instanceof Error ? err.message : String(err));
+        console.warn('[auth/session] Could not resolve onboarded flag for uid:', verifiedUid, err instanceof Error ? err.message : String(err));
       }
 
       // Token is valid — store in cookie for subsequent requests (includes onboarded flag for middleware)

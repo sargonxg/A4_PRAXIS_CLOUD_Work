@@ -2,8 +2,8 @@ import { adminDb } from '@/lib/firebase/admin';
 import { AdvisorConfigSchema, type AdvisorConfig, type AdvisorId } from '@/types/advisor';
 import { FieldValue } from 'firebase-admin/firestore';
 
-const PATH = (id: AdvisorId) => `config/advisors/${id}`;
-const HISTORY = (id: AdvisorId, v: number) => `config/advisors_history/${id}_${v}`;
+const PATH = (id: AdvisorId) => `config/advisors/items/${id}`;
+const HISTORY = (id: AdvisorId, v: number) => `config/advisors_history/items/${id}_${v}`;
 
 const cache = new Map<AdvisorId, { value: AdvisorConfig; at: number }>();
 const TTL_MS = 5 * 60 * 1000;
@@ -26,7 +26,7 @@ export async function getAdvisor(id: AdvisorId): Promise<AdvisorConfig | null> {
 
 export async function listAdvisors(): Promise<AdvisorConfig[]> {
   try {
-    const snap = await adminDb.collection('config/advisors').get();
+    const snap = await adminDb.collection('config/advisors/items').get();
     return snap.docs
       .map((d) => AdvisorConfigSchema.safeParse(d.data()))
       .filter((r): r is { success: true; data: AdvisorConfig } => r.success)

@@ -35,6 +35,7 @@ export function StepPerspective({
   const [mandateChips, setMandateChips] = useState<string[]>([]);
   const [mandateText, setMandateText] = useState(profile.perspective.mandate);
   const [secondaryOpen, setSecondaryOpen] = useState(false);
+  const [suggestingMore, setSuggestingMore] = useState(false);
 
   const primaryDomain = (profile.perspective.primaryDomain ?? 'generic') as AnalystDomainId;
   const secondaryDomains = (profile.perspective.secondaryDomains ?? []) as AnalystDomainId[];
@@ -116,16 +117,25 @@ export function StepPerspective({
           ))}
           <button
             aria-label="Suggest more mandate ideas"
+            disabled={suggestingMore}
+            aria-busy={suggestingMore}
             onClick={async () => {
-              const more = await requestMoreMandate();
-              setMandateChips(prev => [...prev, ...more]);
+              if (suggestingMore) return;
+              setSuggestingMore(true);
+              try {
+                const more = await requestMoreMandate();
+                setMandateChips(prev => [...prev, ...more]);
+              } finally {
+                setSuggestingMore(false);
+              }
             }}
             className={cn(
-              'rounded-full border border-dashed border-gold-500/40 bg-gold-500/5 px-2.5 py-1 text-[11px] text-gold-700 hover:bg-gold-500/10',
+              'flex items-center gap-1 rounded-full border border-dashed border-gold-500/40 bg-gold-500/5 px-2.5 py-1 text-[11px] text-gold-700 hover:bg-gold-500/10',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40 focus-visible:ring-offset-1',
+              suggestingMore && 'cursor-not-allowed opacity-60',
             )}
           >
-            Suggest more
+            {suggestingMore ? <><Loader2 className="h-3 w-3 animate-spin" /> Thinking…</> : 'Suggest more'}
           </button>
         </div>
         <div className="text-[10px] text-navy-400">{mandateText.length}/600</div>

@@ -68,9 +68,10 @@ export interface UserProfile {
   gdprConsentDate?: string;       // ISO timestamp of GDPR consent
   cookieConsentVersion?: string;  // Cookie policy version accepted
   marketingConsent?: boolean;     // Explicit opt-in for marketing emails
-  // Onboarding state — set once per user after analyst-profile wizard
-  onboardingCompletedAt?: Timestamp | null;
-  onboardingSkipCount?: number;
+  // NOTE: onboarding state lives at users/{uid}/profile/analyst.meta.* — see
+  // src/lib/firebase/analyst-profile-admin.ts (isUserOnboarded). The legacy
+  // root-doc fields (onboardingCompletedAt / onboardingSkipCount) are migrated
+  // lazily on first read and removed; do not write to them from new code.
 }
 
 export interface CreditTransaction {
@@ -134,8 +135,6 @@ export async function ensureUserProfile(user: {
     totalCreditsUsed: 0,
     isDemo: false,
     subscription: 'free',
-    onboardingCompletedAt: null,
-    onboardingSkipCount: 0,
     createdAt: serverTimestamp(),
     lastLoginAt: serverTimestamp(),
     aiProvider: 'google',

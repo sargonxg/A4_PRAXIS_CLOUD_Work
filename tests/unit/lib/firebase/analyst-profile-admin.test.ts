@@ -66,7 +66,7 @@ describe('analyst-profile-admin', () => {
     }), { merge: true });
   });
 
-  it('completeAnalystProfile bumps version, writes snapshot, sets root flag atomically', async () => {
+  it('completeAnalystProfile bumps version, writes snapshot, marks profile completed atomically', async () => {
     const writes: Array<{ kind: 'set' | 'update'; data: Record<string, unknown> }> = [];
     const profileRef = { __kind: 'profile' } as const;
     const versionRef = { __kind: 'version' } as const;
@@ -98,9 +98,16 @@ describe('analyst-profile-admin', () => {
 
     const res = await completeAnalystProfile('u1');
     expect(res.versionId).toBe('v3');
-    // All three writes happened inside the one runTransaction call
+    // Two writes inside the one runTransaction call: snapshot + live profile merge.
+    // Root-doc onboardingCompletedAt mirror was removed in the profile-merge cleanup;
+    // single source of truth is users/{uid}/profile/analyst.meta.completedAt.
     expect(mockDb.runTransaction).toHaveBeenCalledTimes(1);
-    expect(writes.length).toBeGreaterThanOrEqual(3);
-    expect(writes.some((w) => w.kind === 'update' && 'onboardingCompletedAt' in w.data)).toBe(true);
+    expect(writes.length).toBeGreaterThanOrEqual(2);
+    const completionWrite = writes.find((w) => {
+      const meta = (w.data as { meta?: Record<string, unknown> }).meta;
+      return meta && 'completedAt' in meta;
+    });
+    expect(completionWrite).toBeDefined();
+    expect(writes.every((w) => !('onboardingCompletedAt' in w.data))).toBe(true);
   });
 });

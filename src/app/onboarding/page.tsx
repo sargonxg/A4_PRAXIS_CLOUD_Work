@@ -82,16 +82,30 @@ export default function OnboardingPage() {
   }, [router]);
 
   const complete = useCallback(async (createFirstSituation: boolean) => {
-    const res = await fetch('/api/onboarding/complete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ createFirstSituation }),
-    });
-    if (!res.ok) return;
-    // Drop the draft — canonical profile now has everything.
-    void fetch('/api/onboarding/draft', { method: 'DELETE' }).catch(() => { /* non-critical */ });
-    const { redirectTo } = await res.json();
-    router.push(redirectTo);
+    setSaveError(null);
+    try {
+      const res = await fetch('/api/onboarding/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ createFirstSituation }),
+      });
+      if (!res.ok) {
+        if (res.status === 400) {
+          setSaveError('Profile incomplete — please review steps 1-3 (mandate ≥30 chars, ≥1 region, audience set).');
+          setStep(2);
+        } else if (res.status === 401 || res.status === 403) {
+          setSaveError('Session expired — please sign in again.');
+        } else {
+          setSaveError('Could not finish onboarding — please retry.');
+        }
+        return;
+      }
+      void fetch('/api/onboarding/draft', { method: 'DELETE' }).catch(() => { /* non-critical */ });
+      const { redirectTo } = await res.json();
+      router.push(redirectTo);
+    } catch {
+      setSaveError('Network error finishing onboarding — please retry.');
+    }
   }, [router]);
 
   return (
