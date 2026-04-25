@@ -6,6 +6,59 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-04-25 (fourth session — playbook + vision + cleanup)
+
+### Added
+
+- **`docs/USER_ACTION_LIST.md`** — single doc telling the CEO/CTO
+  exactly what to do, in priority order, with copy-paste commands and
+  expected outcomes. Includes the ACLED Corporate License email draft,
+  the full Vertex AI Agent Engine deploy walk-through (3.1 pre-flight
+  through 3.9 cost expectations), Firecrawl signup, Stripe products
+  + webhook, optional Anthropic, SOC 2 auditor engagement, UNGM Level
+  2 registration, DPA + sub-processor publication, and the
+  `PRAXIS_AUDIENCE_TUNED_BRIEFING=1` flip. Bookmarked from
+  `docs/CONTINUATION.md`.
+- **`docs/VISION_2026.md`** — strategic north-star objective. The
+  customer's day with PRAXIS. Six strategic priorities in order. 2026
+  ARR / pilot / readiness targets. Three layers of moat. What we're
+  deliberately not building. Every backlog item must ladder up.
+- **`docs/EXTERNAL_TOOLS_WIRING.md`** — per-feed → tools map and
+  per-tool → feeds inverse view. Wire-state matrix per environment.
+  Adding-a-new-feed checklist. Quick diagnostic for "why is my map
+  empty?"
+- **`backend/agents/deploy.py`** + **`backend/agents/requirements.txt`**
+  + **`backend/agents/README.md`** — runnable Vertex AI Agent Engine
+  deploy script for the 3-phase planner → researcher → synthesizer
+  pipeline. Versions pinned per compass §R1 (`google-adk==1.31.1`,
+  `google-cloud-aiplatform[adk,agent_engines]>=1.148.1`). README has
+  the TL;DR command sequence; full walk-through is in
+  `docs/USER_ACTION_LIST.md` §3.
+
+### Removed
+
+- **`docs/DAILY_WORKPLAN.md`** — superseded by
+  `docs/SPRINT_2026-04-25.md` + `docs/SPRINT_BACKLOG.md`. Live
+  references swept from `AGENTS.md`, `docs/TEAM_OPS.md`,
+  `docs/HANDOFF_PROMPTS.md`, and the README documentation table.
+- **`src/components/dashboard/credits-widget.tsx`** — unused since the
+  pricing migration replaced it with `RecommendedToolsWidget`.
+- **`src/components/shared/credit-cost-badge.tsx`** — unused; only ever
+  imported by itself. Belonged to the public-credit-cost surface that
+  the pricing migration removed.
+
+### Changed
+
+- **README documentation table** rewritten to point at the active doc
+  set: `SPRINT_BACKLOG.md`, `VISION_2026.md`, `USER_ACTION_LIST.md`,
+  `CONTEXT_INJECTION.md`, `COMPLIANCE.md`, `TEAM_OPS.md`,
+  `GCP_OPERATIONS.md`, `RESEARCH_PROMPTS.md`, `tools/INDEX.md`. Two of
+  these are highlighted as "open me first" (SPRINT_BACKLOG and
+  USER_ACTION_LIST).
+- **`AGENTS.md` + `CLAUDE.md`** required-reading lists now finish at
+  item 19, naming all the new docs explicitly. The legacy
+  DAILY_WORKPLAN entry is gone.
+
 ## [Unreleased] — 2026-04-25 (third session, post-research integration)
 
 ### Added (compass research integration)

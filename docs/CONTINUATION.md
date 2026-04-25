@@ -75,6 +75,48 @@ curl -sI https://praxis.tacitus.me/onboarding
 
 Also verify Firebase Auth authorized domains include `praxis.tacitus.me` before testing login.
 
+## Immediate Next Work (updated 2026-04-25, fourth session — playbook + vision + cleanup)
+
+### Where to start
+
+1. **You (Giulio) — open `docs/USER_ACTION_LIST.md`.** This is the new
+   canonical playbook for everything only you can do. Each item has
+   the why, the exact steps, the expected outcome, the copy-paste
+   commands, and where to paste results. Top priority: §1 (ACLED
+   email — 15 min, BLOCKER for paid launch).
+
+2. **The next agent (Codex or Claude Code) — open
+   `docs/SPRINT_BACKLOG.md` and pick the highest-priority Pending
+   task.** Recommended next: Stream B-1 (Assistant chat persistence,
+   ~4h, P0) for Codex, or Stream B-9 (ACLED safe-harbour, ~1–2h, P0)
+   for either. Specs in `docs/tools/assistant.md` and the backlog
+   item respectively.
+
+3. **Read `docs/VISION_2026.md` first** if you've never operated in
+   this repo before — it's the strategic north star and explains why
+   each backlog item exists.
+
+### What this session shipped
+
+- `docs/USER_ACTION_LIST.md` (new, definitive)
+- `docs/VISION_2026.md` (new strategic doc)
+- `docs/EXTERNAL_TOOLS_WIRING.md` (new — per-feed × per-tool wiring map)
+- `backend/agents/deploy.py`, `backend/agents/requirements.txt`,
+  `backend/agents/README.md` (Vertex ADK ready to deploy)
+- Removed superseded `docs/DAILY_WORKPLAN.md` and unused
+  `src/components/dashboard/credits-widget.tsx` +
+  `src/components/shared/credit-cost-badge.tsx`
+- README + AGENTS.md + CLAUDE.md required-reading lists rewritten to
+  reference the full active doc set; legacy DAILY_WORKPLAN sweep done
+
+### Critical risks still open
+
+🚨 **ACLED licensing.** Same as previous session — see
+`docs/COMPLIANCE.md` §1.1 and `docs/USER_ACTION_LIST.md` §1. This is
+the single biggest unblock for paid-tier launch.
+
+---
+
 ## Immediate Next Work (updated 2026-04-25, third session — research integrated)
 
 ### Critical risk to action this week

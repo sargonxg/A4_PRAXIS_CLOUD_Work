@@ -43,14 +43,19 @@ Required, in this order:
 12. `docs/RESEARCH_PROMPTS.md` — prompts to ask deep-research tools.
 13. `docs/HANDOFF_PROMPTS.md` — drop-in prompts when a session ends.
 14. `docs/DEPLOYMENT_LOG.md` — last successful deploy state.
-15. `docs/DAILY_WORKPLAN.md` — earlier day-by-day plan (kept for context;
-    superseded by `SPRINT_2026-04-25.md` + `SPRINT_BACKLOG.md`).
-16. **`docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`**
+15. **`docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`**
     — deep-research artifact (789 lines, 2026-04-25) answering all 10
     research prompts. **Required reading before any Stream C / Stream G
     work.** Critical finding: ACLED's 2026 EULA forbids SaaS
     redistribution without a Corporate License (see G-2 in
     `docs/SPRINT_BACKLOG.md`).
+16. `docs/USER_ACTION_LIST.md` — exact playbook for things only Giulio
+    (CEO/CTO) can do. ACLED email draft, Vertex ADK deploy
+    walk-through, Firecrawl + Stripe + SOC 2 + UNGM step-by-step.
+17. `docs/VISION_2026.md` — strategic north star. Every backlog item
+    should ladder up to one of the priorities here.
+18. `docs/COMPLIANCE.md` — licensing, certs, sub-processors, audit log.
+19. `docs/TEAM_OPS.md` — multi-agent operations playbook.
 
 ## Current Production Target
 
@@ -105,7 +110,7 @@ After every major change, update:
 - `CHANGELOG.md`
 - `docs/CONTINUATION.md`
 - `docs/DEPLOYMENT_LOG.md` if validation or deploy status changed
-- `docs/DAILY_WORKPLAN.md` if priorities changed
+- `docs/SPRINT_BACKLOG.md` whenever a task changes status (Pending → In progress → Done)
 - `README.md` and `CLAUDE.md` when setup, architecture, deployment, or agent workflow changes
 
 ## Commit Discipline

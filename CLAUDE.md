@@ -31,9 +31,7 @@ the architectural contract.
     info you don't have access to (vendor docs, current API limits, etc.)
 13. `docs/HANDOFF_PROMPTS.md` — drop-in prompts to start a fresh session
 14. `docs/DEPLOYMENT_LOG.md` — last successful production deploy
-15. `docs/DAILY_WORKPLAN.md` — earlier day-by-day plan (kept for
-    context; superseded by `SPRINT_2026-04-25.md` + `SPRINT_BACKLOG.md`)
-16. **`docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`**
+15. **`docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`**
     — deep-research artifact (789 lines, 2026-04-25) answering all 10
     research prompts: Vertex ADK deployment recipe (with working
     `deploy.py`), ACLED licensing risk (CRITICAL — see G-2), GDELT
@@ -42,6 +40,12 @@ the architectural contract.
     AI vs. AI Studio decision, GraphRAG architecture extension, UN
     procurement / SOC 2 / DPA path. **Read this before doing any
     Stream C / Stream G work.**
+16. `docs/USER_ACTION_LIST.md` — exact playbook for things only Giulio
+    (CEO/CTO) can do.
+17. `docs/VISION_2026.md` — strategic north-star objective. Every
+    backlog item ladders up to one of the priorities here.
+18. `docs/COMPLIANCE.md` — licensing, certs, sub-processors, audit log.
+19. `docs/TEAM_OPS.md` — multi-agent operations playbook.
 
 Fresh-clone start command:
 

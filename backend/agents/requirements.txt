@@ -1,0 +1,11 @@
+# Vertex AI Agent Engine deployment requirements.
+#
+# Versions pinned per the deep-research artifact at
+# docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md §R1.
+# Verified working with Vertex AI Agent Engine as of 2026-04-25.
+#
+# Python: 3.10–3.12 only. Agent Engine does not support 3.13+ as of April 2026.
+
+google-cloud-aiplatform[adk,agent_engines]>=1.148.1
+google-adk==1.31.1
+google-genai>=1.0.0

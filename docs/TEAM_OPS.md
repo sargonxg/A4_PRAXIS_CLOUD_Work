@@ -48,10 +48,11 @@ Read in order (item numbers match `AGENTS.md`):
 12. docs/RESEARCH_PROMPTS.md
 13. docs/HANDOFF_PROMPTS.md
 14. docs/DEPLOYMENT_LOG.md
-15. docs/DAILY_WORKPLAN.md (legacy)
-16. docs/compass_artifact_…_text_markdown.md ← deep-research findings
-17. docs/COMPLIANCE.md ← licensing + cert posture
-18. docs/TEAM_OPS.md ← this file
+15. docs/compass_artifact_…_text_markdown.md ← deep-research findings
+16. docs/USER_ACTION_LIST.md ← things only the user can do
+17. docs/VISION_2026.md ← strategic north star
+18. docs/COMPLIANCE.md ← licensing + cert posture
+19. docs/TEAM_OPS.md ← this file
 
 Then run the validation gate to confirm the local clone is healthy:
 

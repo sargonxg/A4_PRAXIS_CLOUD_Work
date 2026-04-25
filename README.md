@@ -533,8 +533,17 @@ cd backend && python -m pytest tests/ -v  # Python tests
 |------|---------|
 | [AGENTS.md](./AGENTS.md) | Codex/Claude Code operating guide, validation, deploy rules, and one-line continuation prompt |
 | [docs/CONTINUATION.md](./docs/CONTINUATION.md) | Latest handoff state and next actions |
-| [docs/STRATEGY.md](./docs/STRATEGY.md) | Product, infra, graph, MCP, and agent strategy |
-| [docs/DAILY_WORKPLAN.md](./docs/DAILY_WORKPLAN.md) | Day-by-day execution plan for future sessions |
+| [docs/SPRINT_BACKLOG.md](./docs/SPRINT_BACKLOG.md) | **Canonical actionable list — pick the next task here** |
+| [docs/SPRINT_2026-04-25.md](./docs/SPRINT_2026-04-25.md) | Current week-long sprint plan (4 streams) |
+| [docs/VISION_2026.md](./docs/VISION_2026.md) | Strategic north-star objective for 2026 |
+| [docs/STRATEGY.md](./docs/STRATEGY.md) | Six-week product/infra roadmap |
+| [docs/USER_ACTION_LIST.md](./docs/USER_ACTION_LIST.md) | **Things only Giulio can do** — ACLED, Vertex ADK, Stripe, SOC 2, etc. |
+| [docs/CONTEXT_INJECTION.md](./docs/CONTEXT_INJECTION.md) | The architectural contract every AI route must honour |
+| [docs/COMPLIANCE.md](./docs/COMPLIANCE.md) | Licensing, certifications, sub-processors, audit log |
+| [docs/TEAM_OPS.md](./docs/TEAM_OPS.md) | Multi-agent operations playbook |
+| [docs/GCP_OPERATIONS.md](./docs/GCP_OPERATIONS.md) | Every gcloud / Secret Manager command |
+| [docs/RESEARCH_PROMPTS.md](./docs/RESEARCH_PROMPTS.md) | Deep-research prompt catalogue (all 10 answered 2026-04-25) |
+| [docs/tools/INDEX.md](./docs/tools/INDEX.md) | Per-tool micro-app spec catalogue |
 | [docs/DEPLOYMENT_LOG.md](./docs/DEPLOYMENT_LOG.md) | Daily deployment status, Cloud Run revisions, and production verification |
 | [docs/HANDOFF_PROMPTS.md](./docs/HANDOFF_PROMPTS.md) | Long-form prompts for Claude Code and Codex continuation |
 | [docs/AUTH.md](./docs/AUTH.md) | Auth architecture — token lifecycle, CSRF, session design |

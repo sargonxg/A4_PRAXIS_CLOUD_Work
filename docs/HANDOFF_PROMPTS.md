@@ -15,7 +15,7 @@ git status
 git log --oneline -5
 npm install
 
-Before changing code, read README.md, CLAUDE.md, AGENTS.md, CHANGELOG.md, docs/CONTINUATION.md, docs/STRATEGY.md, docs/DAILY_WORKPLAN.md, docs/DEPLOYMENT_LOG.md, and docs/HANDOFF_PROMPTS.md.
+Before changing code, read README.md, CLAUDE.md, AGENTS.md, CHANGELOG.md, docs/CONTINUATION.md, docs/SPRINT_BACKLOG.md, docs/SPRINT_2026-04-25.md, docs/CONTEXT_INJECTION.md, docs/USER_ACTION_LIST.md, docs/VISION_2026.md, docs/COMPLIANCE.md, docs/TEAM_OPS.md, docs/STRATEGY.md, docs/DEPLOYMENT_LOG.md, docs/GCP_OPERATIONS.md, docs/RESEARCH_PROMPTS.md, docs/tools/INDEX.md, and the deep-research artifact at docs/compass_artifact_*_text_markdown.md.
 
 Confirm GCP/Firebase context:
 gcloud auth list
