@@ -1,403 +1,223 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
-Use this file to resume work safely in Codex or Claude Code.
+> **Last updated**: 2026-04-25 (sixth session — operational spine)
+> **Next agent**: Codex 5.5 (or Claude Code)
+> **Read first**: `CLAUDE.md`, `AGENTS.md`, `docs/OPERATIONAL_SPINE.md`, `CHANGELOG.md` Unreleased.
 
 ---
 
-## Current State (2026-04-25)
+## Current state
 
-- Repository: `C:\Users\giuli\praxiscodexworking\A4_PRAXIS_CLOUD_Work`
-- Branch: `main`
-- GCP project: `praxisbytacitus` (`852128226674`)
-- Region: `us-central1`
-- Public domain: `praxis.tacitus.me`
-- Latest deployed source: `5cdfebf docs: add agent handoff and deployment strategy`.
-- Latest Cloud Build: `06b20a50-c0ef-4159-906f-5c97efad8159` succeeded.
-- Latest Cloud Run revisions: frontend `praxis-frontend-00044-tcl`, backend `praxis-backend-00027-nlk`.
-- Commit `1916281` was requested as a continuation point but is not present in the cloned repository history. Current `origin/main` was used as the base.
+- **Project**: `praxisbytacitus` (`852128226674`), region `us-central1`, domain `praxis.tacitus.me`.
+- **Repo**: `C:\Users\giuli\A4_PRAXIS_CLOUD_Work_fresh` (the previous `A4_PRAXIS_CLOUD_Work` is the prior fresh clone — both contain divergent edits; `_fresh` is canonical for the spine work).
+- **Version**: bumped from 6.3.1 → 6.4.0 (operational spine).
+- **What just shipped (in code, not yet deployed)**:
+  - 14 new Firestore indexes (incl. the `situations.status` collection-group index that was crashing gdelt-poller).
+  - 5 new Firestore collections + rules: `tool_runs`, `background_jobs`, `system_events`, `users/{uid}/notifications`, `alerts`, `data_ingestions`, `audit_logs` (+ `graph_updates` subcollection).
+  - TS spine: `src/lib/jobs/job-service.ts`, `src/lib/events/event-service.ts`.
+  - Python spine: `cloud_functions/_shared/spine.py` (vendored at deploy time).
+  - `withCalibration` automatically writes a `tool_runs` row + `tool.started`/`tool.completed`/`tool.failed` events for every AI route — no per-route boilerplate.
+  - `gdelt-poller`, `on_situation_created`, `on_document_uploaded` rewritten: idempotent, observable, user-notified on success and failure.
+  - `<SemaphoreChip />`, `<ActivityFeed />`, `/app/admin/operator-console`, `/api/admin/operator-console`, `/api/notifications/[id]`.
+  - TTL retention configured (`infrastructure/setup-ttl.sh`): events 365d, tool_runs 365d, jobs 90d, notifications 180d.
+  - Dedicated SAs declared in `infrastructure/setup-gcp.sh`: `praxis-frontend-sa`, `praxis-backend-sa`, `praxis-functions-sa`, `praxis-worker-sa`.
 
-## What Changed In The 2026-04-25 Pass
+- **What is NOT yet done (deploy-side)**:
+  - `firebase deploy --only firestore:indexes` and `--only firestore:rules` have not been run with the new config.
+  - `bash infrastructure/setup-ttl.sh` has not been run.
+  - Cloud Build has not been re-submitted with the spine code.
+  - Dedicated SAs have not been created or bound.
+  - The `praxis.deadletter` Pub/Sub topic command was authored but not run.
 
-- Added public Firebase client config fallbacks in `src/lib/firebase/config.ts` so `npm run build` works from a clean clone without `.env.local`.
-- Added `neo4j-driver` to dependencies because the optional Neo4j graph layer imports it when `NEO4J_URI` is configured.
-- Set `turbopack.root` in `next.config.ts` to avoid Next.js selecting a parent lockfile as the workspace root.
-- Changed existing React Compiler and style-only lint blockers to warnings in `eslint.config.mjs`; lint still prints the warnings.
-- Created missing Pub/Sub topic `profile.events` in GCP so onboarding/profile event publishing has a real topic and the GCP audit passes.
-- Added `AGENTS.md`, `docs/STRATEGY.md`, `docs/DAILY_WORKPLAN.md`, `docs/DEPLOYMENT_LOG.md`, and `docs/HANDOFF_PROMPTS.md` for Codex/Claude Code handoff.
+The user is **running these commands themselves** (the gcloud commands from the previous turn) — confirm with them before duplicating.
 
-## Validation Passed Locally
+---
 
-Run from repo root:
+## ⚡ FIRST 30 MINUTES — handoff checklist for Codex 5.5
+
+1. **Read in order** (cold start):
+   1. `CLAUDE.md`
+   2. `AGENTS.md`
+   3. `docs/OPERATIONAL_SPINE.md` ← new, read before touching any async code
+   4. `docs/CONTEXT_INJECTION.md`
+   5. This file
+
+2. **Verify spine is deployed** (these were authored but the user is running them):
+   ```bash
+   # Indexes built?
+   gcloud firestore indexes composite list --database='(default)' \
+     --format='table(name.basename(),state)' | grep -E 'situations|tool_runs|background_jobs|system_events'
+   # Expect: state=READY for all
+   
+   # Rules contain new collections?
+   firebase firestore:rules:get --project=praxisbytacitus | grep -E 'tool_runs|background_jobs|system_events'
+   # Expect: 3+ matches
+   
+   # TTL policies active?
+   gcloud firestore fields ttls list --database='(default)' --project=praxisbytacitus
+   # Expect: 5 rows (system_events, tool_runs, background_jobs, notifications via field, audit_logs)
+   
+   # Worker pool happy?
+   gcloud logging read \
+     'resource.type="cloud_run_worker_pool"
+      AND resource.labels.worker_pool_name="gdelt-poller"
+      AND textPayload:"Index probe OK"' \
+     --limit=3
+   ```
+
+3. **If any of the above is empty**, run the missing deploy step. Commands live in `docs/OPERATIONAL_SPINE.md` Section "Deployment".
+
+4. **Smoke test the spine end-to-end**:
+   - Open `/app` as Giulio in a browser.
+   - Trigger any AI tool (e.g. Risk Assessment, Game Theory).
+   - In Firestore console, confirm a new doc landed in `tool_runs` with `status=completed semaphore=green`.
+   - Confirm a `tool.started` and `tool.completed` event in `system_events`.
+   - Open `/app/admin/operator-console` — should show the run + event.
+
+---
+
+## Spine roadmap — ordered next moves
+
+These are the next items Codex 5.5 should tackle, in priority order. Each is scoped to be completable in one session.
+
+### 1. Mount the activity feed in the dashboard (1-2 hours)
+
+`<ActivityFeed uid={user.uid} />` already exists. Mount in:
+- Dashboard right rail (`src/app/app/dashboard/page.tsx`)
+- Situation detail bottom sheet (`src/app/app/situations/[id]/page.tsx`) — pass `situationId` to scope
+- New top-bar bell dropdown (component: `src/components/app/notification-bell.tsx`) — read unread count from `useNotifications`
+
+### 2. Wire `tool.warning` notifications for low-confidence AI output (2 hours)
+
+Today `withCalibration` only emits notifications on terminal failure. Extend to detect `confidence < 0.6` in tool output and emit a `kind=tool.warning, semaphore=yellow` notification: "Risk Assessment confidence is low — consider providing more sources." The hook lives in the response-status switch in `with-calibration.ts`.
+
+### 3. Backend `/api/v1/pipeline/run` accept + emit `jobId` (3 hours)
+
+The Eventarc-triggered functions now pass `X-PRAXIS-JOB-ID` in headers. The backend (Python FastAPI) should:
+1. Read the header.
+2. Call `update_job_progress(jobId, percent, message)` at each pipeline stage (extract → build → cluster → analyze → report → export).
+3. The frontend activity feed picks up progress via onSnapshot automatically.
+
+File: `backend/routers/pipeline.py`. Helper: copy a Python `_shared/spine.py`-compatible client into the backend or use a shared Python package via `pyproject.toml`.
+
+### 4. Graph delta review UI (1-2 days)
+
+Schema is defined in `docs/OPERATIONAL_SPINE.md` (`graph_updates` subcollection). When extraction proposes new nodes/edges, write a `graph_updates` doc with `status=proposed, confidence=0.4` rather than mutating the canonical graph. Add a "Pending updates (3)" banner to the situation page that opens a side panel listing each delta with Approve / Reject buttons.
+
+### 5. Email notification path (1 day)
+
+Today notifications live only in Firestore. Add a Cloud Function that triggers on `notifications` create with `semaphore in ['red','yellow']` and `kind in ['action.required','data.ingest_failed']`. Send via SendGrid (Vercel Marketplace integration is fastest path). Env var: `SENDGRID_API_KEY`. Template per `kind`. Deduplicate by `notificationId`.
+
+### 6. Multi-session Vertex Agent storage (4 hours)
+
+Today `users/{uid}/agentSessions/active` is a single doc — two concurrent Deep Research calls clobber each other. Migrate to:
+```
+users/{uid}/agentSessions/{sessionId}: {
+  sessionId, situationId, startedAt, lastActivityAt, expiresAt, summary
+}
+```
+Update `src/app/api/ai/deep-search-agent/route.ts` to look up by `(uid, situationId)` and pick the most recent non-expired session, or create a new one.
+
+### 7. Cloud Tasks dispatcher (2 days)
+
+Move from Cloud Run worker pool single-instance polling to Cloud Tasks fan-out. Three queues already exist (`praxis-research`, `praxis-agents`, `praxis-embeddings`). Build a backend dispatcher that:
+1. Reads `background_jobs.where('status','==','queued').orderBy('nextRunAt').limit(10)`.
+2. Enqueues each into the appropriate Cloud Tasks queue.
+3. Worker is replaced by an HTTP endpoint that consumes a Cloud Tasks delivery, claims the job (CAS on `lockedBy/lockedUntil`), runs it, and calls `complete_job`.
+
+Benefits: per-job retry policy, parallelism, no custom lock service.
+
+### 8. Operator console — drill-down (1 day)
+
+Today the operator console shows a flat table. Add:
+- Click a job row → side panel with full payload, full error stack, "Retry" button (calls a new `/api/admin/jobs/{id}/retry` endpoint that bumps `status=queued, nextRunAt=now`).
+- Click an event with `severity=error` → linked job + linked tool_run + recent events for the same `uid`.
+- Search bar filtering events by `uid` (admin only).
+
+### 9. BigQuery sink for spine events (4 hours)
+
+Cloud Logging sink already exports `api_calls` to BigQuery. Add a parallel sink filter:
+```
+resource.type="firestore.googleapis.com/Database"
+  AND protoPayload.methodName="google.firestore.v1.Firestore.Write"
+  AND protoPayload.resourceName=~"projects/.+/databases/.+/documents/system_events/.+"
+```
+Or, simpler: add a `Firestore.onCreate('system_events/{id}')` Cloud Function that streams to BigQuery `praxis_analytics.system_events`. Schema mirrors the doc.
+
+### 10. Stripe Meters for usage billing (1 week)
+
+Per `docs/compass_artifact_*.md`. Define meters:
+- `vertex.input_tokens` (model name dimension)
+- `vertex.output_tokens`
+- `vertex_agent.thinking_tokens`
+- `gdelt.queries`
+- `firecrawl.pages` (already retired but kept for legacy users)
+
+Emit at every `complete_tool_run` if `creditsDeducted > 0`. Already the credits cost matches an internal cost model — Stripe meters track the real GCP cost in parallel.
+
+---
+
+## Open decisions (need user input)
+
+| # | Question | Default if no answer |
+|---|----------|----------------------|
+| 1 | SendGrid vs Mailgun for email notifications? | Use the Vercel Marketplace integration that auto-provisions an API key. Default: SendGrid. |
+| 2 | Operator console — should non-admin support people see read-only events for users they're helping? | Defer; punt to a `/api/admin/operator-console?uid=X` query gated by a separate `SUPPORT_ALLOWLIST` env var. |
+| 3 | Migrate `agentSessions/active` to subcollection now (Roadmap #6) or wait for paying users to hit the bug? | Defer to first paid user complaint. |
+| 4 | TTL for `audit_logs` — 365d minimum is set, but compliance may want 7y for SOC 2. | Confirm with `docs/COMPLIANCE.md`. Today set to 365d. |
+| 5 | Alert email recipient for Cloud Monitoring policies. | Currently empty. Set in console: `Monitoring → Alerting → Notification channels`. |
+
+---
+
+## Hard rules (do not break)
+
+1. **NEVER** call `os.environ[...]` in workers/functions — always `os.getenv(...)` with explicit validation. See `cloud_functions/gdelt_poller/worker.py` for the pattern.
+2. **NEVER** add a new Eventarc trigger without an idempotency key. Duplicate trigger replays will double-charge credits.
+3. **NEVER** write a new collection without adding rules + indexes in the same commit. Rules deny by default; client-side reads silently fail.
+4. **NEVER** invoke a Cloud Run service without ensuring the caller SA has `roles/run.invoker` on the *specific service* (project-level grant is unreliable for Eventarc).
+5. **ALWAYS** vendor `cloud_functions/_shared/` next to a function source dir at deploy time (handled automatically by `cloudbuild.yaml` and `setup-gcp.sh`, but if you do an ad-hoc `gcloud functions deploy`, copy `_shared` first).
+6. **ALWAYS** include `expiresAt` when creating documents in spine collections. The TS/Python helpers do this automatically — only relevant if you write directly.
+7. **ALWAYS** commit as `giuliocatanzariti@gmail.com` (no Co-Authored-By lines).
+
+---
+
+## Useful one-liners
 
 ```bash
-npm run build
-npm run lint
-npm run audit:gcp
-node scripts/audit-ai-routes.mjs
-npx vitest run
+# How many failed tool runs in the last hour?
+gcloud firestore documents list tool_runs --database='(default)' \
+  --filter='status="failed" AND startedAt > $(date -d "1 hour ago" -Iseconds)'
+
+# Tail the latest system events as they arrive
+watch -n 2 'gcloud firestore documents list system_events --limit=10 --order-by="-createdAt"'
+
+# Manually mark a stuck job as dead-letter
+gcloud firestore documents update background_jobs/{jobId} \
+  --field='status=dead_letter' --field='semaphore=red'
+
+# Cron: list all schedulers + their target SAs
+gcloud scheduler jobs list --location=us-central1 \
+  --format='table(name,schedule,httpTarget.uri,httpTarget.oidcToken.serviceAccountEmail)'
 ```
-
-Observed results on 2026-04-25:
-
-- `npm run build` passed.
-- `npm run lint` passed with warnings only.
-- `npm run audit:gcp` passed: zero hard failures, zero soft warnings.
-- `node scripts/audit-ai-routes.mjs` passed: 53 AI route files, 53 calibrated, 4 exempt.
-- `npx vitest run` passed: 40 test files, 140 tests.
-- Cloud Build deploy passed for `5cdfebf` and production endpoints were verified. See `docs/DEPLOYMENT_LOG.md`.
-
-Known validation notes:
-
-- Windows local `next build` can warn when standalone tracing copies files with `node:*` in chunk names. Treat Linux Cloud Build as the authoritative container build.
-- Next.js 16 reports `middleware.ts` as deprecated in favor of `proxy.ts`; route protection still builds and appears as Proxy output.
-- `npm install` reports 31 dependency vulnerabilities. Do not run `npm audit fix --force` without reviewing breaking changes.
-- Lint warnings remain, mostly React Compiler migration diagnostics, unused variables, hook dependency warnings, explicit `any`, and legacy `require()` imports.
-
-## Deploy Commands
-
-Deploy only after the validation commands above pass:
-
-```bash
-gcloud config set project praxisbytacitus
-gcloud config set run/region us-central1
-gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus
-```
-
-Post-deploy verification:
-
-```bash
-gcloud run services describe praxis-frontend --region=us-central1 --format="value(status.url,status.latestReadyRevisionName)"
-gcloud run services describe praxis-backend --region=us-central1 --format="value(status.url,status.latestReadyRevisionName)"
-curl -sI https://praxis.tacitus.me/
-curl -sI https://praxis.tacitus.me/login
-curl -sI https://praxis.tacitus.me/onboarding
-```
-
-Also verify Firebase Auth authorized domains include `praxis.tacitus.me` before testing login.
-
-## Immediate Next Work (updated 2026-04-25, session 5 — open-source pivot)
-
-### What just happened
-
-PRAXIS pivoted to **open-source data only**. ACLED, Firecrawl,
-Anthropic Claude, Tavily, Parallel.ai are all out. The intelligence
-pipeline is now Google Cloud end-to-end: Gemini 3 Flash + 3.1 Pro on
-Vertex AI, Vertex AI Deep Research (Reasoning Engine), Google Search
-Grounding, plus open-license data (GDELT BigQuery, UCDP GED,
-ReliefWeb, HDX, UNHCR, World Bank, UN News, Wikipedia).
-
-This dramatically simplifies our compliance posture (sub-processor
-list → Google Cloud + Stripe + Cloudflare + GitHub, no per-customer
-data licenses) and unblocks paid-tier launch with no
-license-negotiation dependency.
-
-### Top 3 next actions
-
-1. **You** — `docs/USER_ACTION_LIST.md` §1: deploy Vertex AI Agent
-   Engine. This is now THE flagship intelligence story (~1–2h).
-2. **Next agent** — `docs/SPRINT_BACKLOG.md` §B-10 (now P0): build the
-   GDELT BigQuery hot slice per
-   `docs/implementation/gdelt-ingestion-2026-04-25.md`. Free under
-   1 TB/mo, sub-200ms cached reads.
-3. **Next agent** — `docs/SPRINT_BACKLOG.md` §B-1 (P0): persist the
-   Assistant chat per `docs/tools/assistant.md`. Highest single
-   user-visible improvement.
-
-### What still works the same
-
-- All 53 AI routes calibrated through `withCalibration` (unchanged)
-- All 49 routes persist outputs per situation (unchanged)
-- Onboarding wizard, role-aware dashboard widget, sidebar "For you"
-  anchor, audience-tuned briefing presets — all live
-- Production endpoints all green (Cloud Run revisions
-  praxis-frontend-00050-d4v + praxis-backend-00030-2vl)
-
-The pivot is **doc-only and copy-only** — internal feed clients
-(acled-client.ts, firecrawl.ts) remain in the codebase but stay
-unwired in production via env vars unset. Removing them surgically
-is a future cleanup ticket; right now they degrade gracefully.
 
 ---
 
-## Immediate Next Work (updated 2026-04-25, end of session 4 — full handover ready)
+## Files most-edited this session (use as anchors)
 
-### Restart prompt
+- `firestore.indexes.json`, `firestore.rules`
+- `src/lib/jobs/job-service.ts`, `src/lib/events/event-service.ts`
+- `src/lib/api/with-calibration.ts`
+- `src/hooks/use-activity-feed.ts`
+- `src/components/app/{semaphore-chip,activity-feed}.tsx`
+- `src/app/app/admin/operator-console/page.tsx`
+- `src/app/api/admin/operator-console/route.ts`
+- `src/app/api/notifications/[id]/route.ts`
+- `cloud_functions/_shared/spine.py`
+- `cloud_functions/{gdelt_poller,on_situation_created,on_document_uploaded}/main.py` (and `worker.py` for gdelt)
+- `infrastructure/{setup-gcp.sh,setup-ttl.sh}`
+- `cloudbuild.yaml`
+- `docs/OPERATIONAL_SPINE.md` (new)
+- `CHANGELOG.md` (Unreleased section)
+- `CLAUDE.md` (handoff checklist)
 
-**To continue in a new session (Codex 5.5 or Claude Code):** paste the
-"Session Restart Prompt" block at the top of `docs/HANDOFF_PROMPTS.md`.
-That prompt is self-contained — explains where you are, what's
-deployed, doc set to read, hard rules, validation gate, and the
-recommended next slice.
-
-### Where to start (CEO/CTO actions)
-
-Open **`docs/USER_ACTION_LIST.md`** — every step only you can do. Top
-priority: §1 ACLED Corporate License email (15 min, BLOCKER).
-Highest-leverage second step: §3 Vertex AI Agent Engine deploy
-(deploy.py is already in `backend/agents/`, takes 1–2h).
-
-### Where to start (next agent)
-
-Open **`docs/SPRINT_BACKLOG.md`** and pick the highest-priority Pending
-task. Recommended: B-1 (Assistant chat persistence, ~4h) for Codex,
-or B-9 (ACLED safe-harbour, ~1–2h) for either. Both have authoritative
-implementation playbooks pinned: `docs/tools/assistant.md` for B-1
-and `docs/tacitus-acled-integration-brief.md` for B-9.
-
-### What this fourth session shipped
-
-Three sub-batches deployed via Cloud Build `995dfad5` (9m03s) →
-revisions `praxis-frontend-00050-d4v` + `praxis-backend-00030-2vl`.
-
-- Strategic + operational: `VISION_2026.md`, `USER_ACTION_LIST.md`,
-  `EXTERNAL_TOOLS_WIRING.md`, `TEAM_OPS.md`.
-- Vertex ADK runnable: `backend/agents/deploy.py`,
-  `backend/agents/requirements.txt`, `backend/agents/README.md`.
-- Cleanup: removed `docs/DAILY_WORKPLAN.md`, dead
-  `credits-widget.tsx`, dead `credit-cost-badge.tsx`.
-- Doc graph hardened: README + AGENTS.md + CLAUDE.md required-reading
-  lists rewritten to surface the 21-item active doc set.
-- Compass research integrated everywhere (CRITICAL ACLED finding
-  flagged in COMPLIANCE.md, GCP_OPERATIONS.md, USER_ACTION_LIST.md,
-  SPRINT_BACKLOG.md).
-- ACLED + GDELT integration briefs (uploaded by user as commits
-  `7589334`, `bd46423`) now first-class entries in the doc graph,
-  cross-referenced from SPRINT_BACKLOG.md, EXTERNAL_TOOLS_WIRING.md,
-  COMPLIANCE.md, USER_ACTION_LIST.md, README.md.
-
-### Critical risk to action this week
-
-🚨 **ACLED licensing.** Same as previous session. Email
-`access@acleddata.com` (draft text in `docs/USER_ACTION_LIST.md` §1).
-Engineering safe-harbour (B-9) ships in parallel.
-
----
-
-## Immediate Next Work (updated 2026-04-25, fourth session — playbook + vision + cleanup)
-
-### Where to start
-
-1. **You (Giulio) — open `docs/USER_ACTION_LIST.md`.** This is the new
-   canonical playbook for everything only you can do. Each item has
-   the why, the exact steps, the expected outcome, the copy-paste
-   commands, and where to paste results. Top priority: §1 (ACLED
-   email — 15 min, BLOCKER for paid launch).
-
-2. **The next agent (Codex or Claude Code) — open
-   `docs/SPRINT_BACKLOG.md` and pick the highest-priority Pending
-   task.** Recommended next: Stream B-1 (Assistant chat persistence,
-   ~4h, P0) for Codex, or Stream B-9 (ACLED safe-harbour, ~1–2h, P0)
-   for either. Specs in `docs/tools/assistant.md` and the backlog
-   item respectively.
-
-3. **Read `docs/VISION_2026.md` first** if you've never operated in
-   this repo before — it's the strategic north star and explains why
-   each backlog item exists.
-
-### What this session shipped
-
-- `docs/USER_ACTION_LIST.md` (new, definitive)
-- `docs/VISION_2026.md` (new strategic doc)
-- `docs/EXTERNAL_TOOLS_WIRING.md` (new — per-feed × per-tool wiring map)
-- `backend/agents/deploy.py`, `backend/agents/requirements.txt`,
-  `backend/agents/README.md` (Vertex ADK ready to deploy)
-- Removed superseded `docs/DAILY_WORKPLAN.md` and unused
-  `src/components/dashboard/credits-widget.tsx` +
-  `src/components/shared/credit-cost-badge.tsx`
-- README + AGENTS.md + CLAUDE.md required-reading lists rewritten to
-  reference the full active doc set; legacy DAILY_WORKPLAN sweep done
-
-### Critical risks still open
-
-🚨 **ACLED licensing.** Same as previous session — see
-`docs/COMPLIANCE.md` §1.1 and `docs/USER_ACTION_LIST.md` §1. This is
-the single biggest unblock for paid-tier launch.
-
----
-
-## Immediate Next Work (updated 2026-04-25, third session — research integrated)
-
-### Critical risk to action this week
-
-🚨 **ACLED licensing.** Compass research revealed ACLED's 2026 EULA
-prohibits SaaS dashboards from redistributing event data without a
-Corporate License. **Email `access@acleddata.com` to negotiate** —
-estimated $5–25k/yr. Until signed, raw ACLED events stay gated to
-Enterprise pilots only; aggregated stats are the safe path. Engineering
-work tracked as `B-9` in `docs/SPRINT_BACKLOG.md` (P0). Compliance
-posture lives in `docs/COMPLIANCE.md`.
-
-### Top 3 highest-leverage tasks (as of 2026-04-25 third session)
-
-1. **Stream B-1 — PRAXIS Assistant chat persistence (Codex, P0).**
-   The deep tool spec is now at `docs/tools/assistant.md`; the backlog
-   item lists files-to-touch + DoD. ~4h. Highest single user-visible
-   improvement available.
-2. **Stream B-9 — ACLED safe-harbour (any agent, P0).** Add
-   `ACLED_LICENSE_TIER` env var; gate raw event return; keep
-   aggregated stats as the default. 1–2h. Compliance-critical.
-3. **Stream C-2 — Vertex AI Agent Engine (any agent + user, P1).**
-   Recipe verified in compass research §R1; concrete deploy.py in the
-   artifact; updated steps in `docs/GCP_OPERATIONS.md` §1b. Unblocks
-   Deep Research Agent.
-
-### Note for whichever assistant picks this up next
-
-Read `docs/TEAM_OPS.md` first if you've never operated in this repo
-before — it explains how Codex and Claude Code share `main` without
-collisions. Then read the compass artifact at
-`docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`
-before doing any Stream C / Stream G work — every research-blocked
-item is now unblocked, but the answers contain hard constraints (most
-notably the ACLED EULA finding).
-
-### Commits and deploys this session
-
-Local clone (`main` head): `34d3dc2 docs(research): integrate compass artifact + COMPLIANCE tracker`
-
-This session shipped (in order):
-
-- `7b28314` feat(pricing) · `ce810b0` feat(dashboard) · `0b6a3c1` docs(sprint)
-- `9f05783` feat(ux) · `fc7b9f1` feat(geospatial) · `5fb542b` docs(context)
-- `dae0b48` docs(deploy log) · `fa8cd33` feat(workspace)
-- `7589334` user upload — compass research artifact
-- `34d3dc2` docs(research) integration
-
-Deployed twice via Cloud Build:
-
-- `204af7bf-730a-4c33-90c2-77d5e3976bfc` (8m36s) — frontend 00046-475 / backend 00027-nlk
-- `55e3963f-2c16-497f-9ad6-807f3ce9c418` (10m54s) — frontend 00048-p4t / backend 00029-6vc
-
-Production endpoints all green. Configuration gaps remain (ACLED,
-Vertex ADK, Firecrawl, Stripe, Anthropic — all degrade gracefully;
-turn-on steps in `docs/GCP_OPERATIONS.md` §1).
-
----
-
-## Immediate Next Work (updated 2026-04-25, second session)
-
-> The active week-long sprint is in `docs/SPRINT_2026-04-25.md`. The
-> architectural backbone — what every tool reads from the user and the
-> situation — is in `docs/CONTEXT_INJECTION.md`. Read both before changing
-> any AI route or tool page.
->
-> This session shipped six production commits, an in-app debug copy tool,
-> a role-aware dashboard, the entire pricing-migration cleanup, a
-> situation-aware geospatial map fix, the tool catalogue scaffolding, the
-> research-prompts catalogue, the GCP runbook, and the Context Injection
-> Contract doc. Three concurrent audits (tool reality, data feed
-> connectivity, onboarding propagation) plus a contrast audit and a
-> landing-and-onboarding UX audit all ran. **Do not re-run any of those
-> audits — the findings are folded into the sprint doc.**
-
-### Commits this session (in order)
-
-- `7b28314` feat(pricing): hide internal credit metering; sidebar shows plan tier
-- `ce810b0` feat(dashboard): role-aware "Recommended for you" widget
-- `0b6a3c1` docs(sprint): add 2026-04-25 sprint plan + tandem handoff
-- `9f05783` feat(ux): contrast pass + onboarding feedback + activation guide
-- _next_ feat(geospatial): situation-aware map centroid + tool docs scaffolding
-- _next_ docs(context): Context Injection Contract + GCP operations runbook
-
-### Top three things the next agent should do
-
-1. **Stream B — Tool quality, P0 persistence retrofits.** The pattern is
-   well-established (`ToolPageShell` + `usePersistedToolData`). Each
-   promotion should:
-   - Wrap the page with `ToolPageShell` if it isn't already.
-   - Add `usePersistedToolData('<tool-id>', situationId)` for hot reads.
-   - Verify the corresponding `/api/ai/<route>` calls `saveToolOutput` at
-     the end.
-   - Add a passing unit test under
-     `tests/unit/components/<tool>/persistence.test.tsx` so we never
-     regress.
-   Order: PRAXIS Assistant chat (≈4h) → Dossier (≈2h) → Negotiation Prep
-   (≈3h).
-
-2. **Stream A — Audience-tuned briefings.** Make `dashboard-summary`,
-   `auto-briefing`, `briefing-generate` honour
-   `analystProfile.perspective.audience` and `workingStyle.language` in
-   their tone presets and language directives. **Read
-   `docs/CONTEXT_INJECTION.md` first** — the audience field is already in
-   the systemPromptBlock; the work is making each tool's *own* prompt
-   reflect it explicitly (e.g., "If audience=`senior_leadership`, lead
-   with bottom-line and skip preamble").
-
-3. **Activate ACLED.** Use `docs/GCP_OPERATIONS.md` §1a — 15 minutes from
-   signup to live. Immediate jump in event-timeline quality on Risk
-   Monitor, Geospatial Monitor, and Early Warning. No code change needed
-   beyond the `cloudbuild.yaml` env-var line.
-
-### Deploy gate (every push)
-
-```bash
-npm run build
-npm run lint
-npm run audit:gcp
-node scripts/audit-ai-routes.mjs
-npx vitest run
-gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus
-# then verify praxis.tacitus.me, /login, /onboarding, /api/health
-# and append to docs/DEPLOYMENT_LOG.md
-```
-
-### One-paragraph note for the other assistant
-
-If you are Codex picking this up, Stream B (persistence retrofits) is the
-cleanest non-overlapping work — Claude Code's session has been entirely on
-Streams A (personalisation) and D (UX/contrast/docs), so all of `src/app/
-app/{assistant,dossier,negotiation-prep}/` and their API routes are
-untouched and ready for you. If you are Claude Code coming back, Stream A
-Day 2 is the natural continuation — open
-`src/app/api/ai/auto-briefing/route.ts` and trace where the system prompt
-is built. The audience block is already in `systemPromptBlock`; you only
-need to add a tone-preset switch in the tool-specific prompt that follows
-it.
-
-## Weekly Implementation Plan
-
-Week 1:
-- Finish Cloud Run deployment and domain/login verification.
-- Resolve the highest-value lint warnings that can hide real bugs: hook dependency warnings, `useEffect` state cascades in shared hooks, explicit `any` in shared stores/components, and legacy `require()` imports in provider/knowledge modules.
-- Rename or migrate `middleware.ts` to the Next.js 16 `proxy.ts` convention after confirming auth/session behavior.
-
-Week 2:
-- Align pricing and entitlements around one public plan model: `free`, `analyst`, `team`, `enterprise`.
-- Audit Stripe lookup keys, app settings, Firestore subscription fields, and credit checks for naming mismatches.
-- Keep public pricing monthly and plan-based; keep internal credit metering private.
-
-Week 3:
-- Improve landing and onboarding around buyer/user paths: Policy Officer, Political Affairs Desk, Research Analyst, Mediator/Envoy Team, Humanitarian Coordinator, Legal/Sanctions Analyst, and Institutional/Enterprise team.
-- Ensure onboarding choices affect dashboard defaults, tool availability, recommended actions, and AI context.
-
-Week 4:
-- Audit tool registry IDs against routes and stored tool IDs.
-- Hide or complete placeholder tools.
-- Expand agent pages/docs for Policy Analyst, Diplomatic Advisor, Conflict Analyst, Media/Disinformation Analyst, Sanctions/Legal Analyst, Humanitarian Access Analyst, Scenario Planner, and Negotiation/Mediation Advisor.
-
-Week 5:
-- Define the canonical entity model for actors, organizations, places, issues, claims, events, relationships, sources, and situations.
-- Keep Firestore as the near-term canonical graph path unless Neo4j/Falkor/TrustGraph has a concrete, testable integration value.
-- Add entity resolution and canonical naming before adding new graph storage products.
-
-Week 6:
-- Audit MCP code and design a minimal MCP server only after production deployability stays stable.
-- Candidate MCP tools: situation retrieval, actor graph retrieval, source search, canonical entity lookup, report generation, and workspace usage status.
-
-## Remaining Improvement Backlog
-
-- Product/UX: reorganize dashboard around user role, active situation, recommended actions, workspace state, and tool paths.
-- Infra: verify Cloud Run domain mapping, Firebase Auth allowed domains, Cloud Build IAM for enforced GCP audits, and Secret Manager coverage.
-- Pricing: unify plan IDs, tier IDs, Stripe lookup keys, entitlement checks, and settings UI.
-- Tools: make every visible tool functional with clear inputs, outputs, errors, persistence, and tests.
-- Agents: ensure agents read canonical situation context, AnalystProfile, source preferences, and workspace constraints.
-- Graph/data: reduce graph storage fragmentation and choose one canonical near-term model.
-- MCP: add only after core app is stable, with safe read/report generation tools first.
-
-## Agent Rules To Preserve
-
-- Do not deploy before local build and core tests pass.
-- Do not expose tool-by-tool internal credit costs publicly.
-- Do not hardcode secrets. Use Secret Manager or Cloud Run env vars.
-- Keep README, CHANGELOG, CLAUDE.md, and this file updated after major changes.
-- Commit small coherent checkpoints. Do not amend previous commits unless explicitly requested.
+If you don't recognize a file path, grep the repo — Codex 5.5 should not assume the older repo layout from before this session.

@@ -6,6 +6,121 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-04-25 (sixth session — operational spine)
+
+### Operational spine — durable jobs, events, notifications, semaphore status
+
+PRAXIS now has a unified operational layer that every component (frontend AI
+routes, backend pipelines, Cloud Run worker pools, Cloud Functions v2) writes
+to. The layer makes background work observable, idempotent, retryable, and
+visible to users in real time. This unblocks the next phase of multi-agent /
+multi-tool work.
+
+### New Firestore collections
+
+- `tool_runs/{toolRunId}` — one row per AI/tool call (status, semaphore,
+  model, profile version, credits, duration, output path). 365d TTL.
+- `background_jobs/{jobId}` — one row per worker/function/cron unit
+  (kind, attempt, retries, locked-by, progress, result, dead-letter). 90d TTL.
+- `system_events/{eventId}` — append-only firehose every component emits
+  (situation.created, tool.completed, job.dead_letter, etc.). 365d TTL.
+- `users/{uid}/notifications/{id}` — user-visible events (analysis done,
+  data found, action required). 180d TTL.
+- `alerts/{alertId}` — risk/escalation alerts per situation.
+- `data_ingestions/{ingestionId}` — provenance + duplicate detection.
+- `audit_logs/{logId}` — admin-only, server-only writes.
+- `users/{uid}/situations/{sit}/graph_updates/{id}` — proposed graph
+  deltas with confidence + provenance, ready for review/apply UI.
+
+### Status semaphore (grey · blue · purple · yellow · green · red)
+
+Single status language across every async unit of work:
+`grey=inactive · blue=scheduled · purple=AI reasoning · yellow=working
+/ external wait · green=success · red=failure`. Renders via
+`<SemaphoreChip />` in tool panels, situation cards, activity feed,
+and operator console.
+
+### Idempotency + observability
+
+- Every Eventarc trigger now computes an `idempotencyKey`
+  `(uid:situation:tool:trigger:payloadHash)` and skips duplicate work.
+- Every AI route via `withCalibration` automatically writes a
+  `tool_runs` row with `tool.started` → `tool.completed|failed`
+  events. No per-route boilerplate.
+- Backend pipeline accepts an `X-PRAXIS-JOB-ID` header so backend
+  errors surface back to the originating job in `background_jobs`.
+
+### New surfaces
+
+- `<ActivityFeed />` — live `tool_runs` + `background_jobs` +
+  `notifications` merged by timestamp. Mountable on dashboard,
+  situation detail, or sidebar.
+- `/app/admin/operator-console` — admin-only platform health view:
+  running/failed/dead-letter jobs, recent tool runs, severity-filtered
+  system events, all polling at 5s.
+- `/api/admin/operator-console` — server-side admin gateway (gated by
+  `ADMIN_ALLOWLIST`).
+- `/api/notifications/{id}` PATCH — mark read / archive.
+
+### Hardening
+
+- **Firestore index** for `situations.status` collection-group query
+  (was crashing the GDELT poller). Plus 14 forward-needed indexes for
+  the new collections (composite + COLLECTION_GROUP variants).
+- **Firestore rules** extended for new collections — owner-only reads,
+  Admin-SDK-only writes; per-user notifications support owner
+  read+update of `read`/`archived` flags only.
+- **GDELT poller** now validates required env vars at startup with a
+  human-readable error, probes the required collection-group index at
+  boot, and treats `FAILED_PRECONDITION` as an explicit operator
+  state with backoff (no crash loop).
+- **on_situation_created** + **on_document_uploaded** rewritten:
+  idempotent, spine-wired, emits user notifications on success and
+  failure with deep links to the situation.
+- **Cloud Build** vendors `cloud_functions/_shared/` next to each
+  function/worker so the Python helpers ship without a separate
+  package release.
+- **TTL retention** declared via `infrastructure/setup-ttl.sh`. Spine
+  helpers now write `expiresAt` automatically.
+
+### IAM / SA migration plan
+
+`infrastructure/setup-gcp.sh` documents the full migration from default
+compute SA to dedicated per-service SAs:
+`praxis-frontend-sa`, `praxis-backend-sa`, `praxis-functions-sa`,
+`praxis-worker-sa`. Each gets only the roles it needs. The migration
+script is idempotent — run once, services pick up the new SA on next
+deploy.
+
+### Files added
+
+- `src/lib/jobs/job-service.ts`
+- `src/lib/events/event-service.ts`
+- `src/hooks/use-activity-feed.ts`
+- `src/components/app/semaphore-chip.tsx`
+- `src/components/app/activity-feed.tsx`
+- `src/app/app/admin/operator-console/page.tsx`
+- `src/app/api/admin/operator-console/route.ts`
+- `src/app/api/notifications/[id]/route.ts`
+- `cloud_functions/_shared/spine.py`
+- `infrastructure/setup-ttl.sh`
+- `docs/CONTINUATION.md` (rewritten)
+- `docs/OPERATIONAL_SPINE.md` (new — architecture reference)
+
+### Files updated
+
+- `firestore.indexes.json` — +14 indexes
+- `firestore.rules` — +5 collections + per-user notifications
+- `src/lib/api/with-calibration.ts` — auto tool_run lifecycle
+- `cloud_functions/gdelt_poller/worker.py` — index probe, spine events
+- `cloud_functions/on_situation_created/main.py` — full rewrite
+- `cloud_functions/on_document_uploaded/main.py` — full rewrite
+- `cloudbuild.yaml` — vendor _shared, gdelt-poller env vars on update
+- `infrastructure/setup-gcp.sh` — vendor _shared, dedicated SAs,
+  explicit run.invoker on on-situation-created Cloud Run service
+
+---
+
 ## [Unreleased] — 2026-04-25 (fifth session — open-source pivot)
 
 ### Strategic pivot — ACLED + Firecrawl + Anthropic dropped

@@ -91,6 +91,59 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── Operational spine: tool_runs, background_jobs, system_events ──
+    // These are written by Admin SDK / service accounts only. Owners can
+    // read their own rows so the dashboard activity feed lights up in
+    // real time via onSnapshot.
+
+    match /tool_runs/{toolRunId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /background_jobs/{jobId} {
+      allow read: if request.auth != null
+                  && (resource.data.uid == request.auth.uid || resource.data.uid == null);
+      allow write: if false;
+    }
+
+    match /system_events/{eventId} {
+      // Owner reads only their own; platform events (uid==null) are
+      // admin-only via Admin SDK.
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /alerts/{alertId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /data_ingestions/{ingestionId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /audit_logs/{logId} {
+      // Audit logs are admin-only. Clients have no read access.
+      allow read, write: if false;
+    }
+
+    // ── Per-user notifications (subcollection) ──
+    // Owners can read and mark-as-read their own notifications, but
+    // cannot create or delete them. Server (Admin SDK) creates them.
+    match /users/{uid}/notifications/{notificationId} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['read', 'archived', 'readAt']);
+      allow create, delete: if false;
+    }
+
+    // graph_updates and tool_outputs live under situations/* and inherit
+    // the existing owner-only rule on users/{uid}/situations/{sitId}/{**}.
+
     // Deny everything else
     match /{document=**} {
       allow read, write: if false;

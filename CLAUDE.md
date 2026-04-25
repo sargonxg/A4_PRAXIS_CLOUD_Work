@@ -1,6 +1,7 @@
 # PRAXIS — Conflict Intelligence Platform by TACITUS
 
-> Version 6.3.1 — Pure GCP Cloud Run · Dual-service: Next.js + Python FastAPI
+> Version 6.4.0 — Operational spine: jobs · events · notifications · semaphore
+> Pure GCP Cloud Run · Dual-service: Next.js + Python FastAPI
 > Project: `praxisbytacitus` (852128226674) · Region: `us-central1`
 > Domain: praxis.tacitus.me
 
@@ -25,8 +26,13 @@ the architectural contract.
    task from here; mark `In progress` before starting.
 9. **`docs/CONTEXT_INJECTION.md`** — the architectural contract every AI
    route must honour. This is the most important doc in the repo.
-10. `docs/tools/INDEX.md` — per-tool micro-app specs catalogue
-11. `docs/GCP_OPERATIONS.md` — every gcloud / Secret Manager command
+10. **`docs/OPERATIONAL_SPINE.md`** — the second-most important doc.
+    Defines tool_runs, background_jobs, system_events, notifications,
+    semaphore states, idempotency, retention. Every async unit of work
+    in PRAXIS lives in this layer. Read this BEFORE adding new
+    triggers, agents, or tools.
+11. `docs/tools/INDEX.md` — per-tool micro-app specs catalogue
+12. `docs/GCP_OPERATIONS.md` — every gcloud / Secret Manager command
 12. `docs/RESEARCH_PROMPTS.md` — prompts to give the user when you need
     info you don't have access to (vendor docs, current API limits, etc.)
 13. `docs/HANDOFF_PROMPTS.md` — drop-in prompts to start a fresh session

@@ -173,29 +173,52 @@ steps:
     id: 'set-frontend-env'
     waitFor: ['deploy-frontend']
 
+  # ── Vendor _shared spine helper into each function/worker source dir ─────
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        set -e
+        for target in cloud_functions/gdelt_poller cloud_functions/on_situation_created cloud_functions/on_document_uploaded; do
+          rm -rf "$target/_shared"
+          cp -r cloud_functions/_shared "$target/_shared"
+          echo "Vendored _shared into $target"
+        done
+    id: 'vendor-shared'
+    waitFor: ['check-model-strings']
+
   # ── GDELT Worker Pool ──────────────────────────────────────────────────────
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/gdelt-poller', './cloud_functions/gdelt_poller']
     id: 'build-gdelt-worker'
-    waitFor: ['check-model-strings']
+    waitFor: ['vendor-shared']
 
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/gdelt-poller']
     id: 'push-gdelt-worker'
     waitFor: ['build-gdelt-worker']
 
+  # gdelt-poller MUST have PRAXIS_BACKEND_URL or worker.py crashes on boot.
+  # Re-apply env vars on every deploy so a previous --clear-env-vars or fresh
+  # recreate cannot leave the worker without its required config.
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
+    entrypoint: bash
     args:
-      - beta
-      - run
-      - worker-pools
-      - update
-      - gdelt-poller
-      - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/praxis/gdelt-poller'
-      - '--region=us-central1'
+      - '-c'
+      - |
+        set -e
+        BACKEND_URL=$(cat /workspace/backend_url.txt)
+        if [ -z "$$BACKEND_URL" ]; then
+          echo "ERROR: backend_url.txt is empty — backend deploy did not write a URL"
+          exit 1
+        fi
+        gcloud beta run worker-pools update gdelt-poller \
+          --image=us-central1-docker.pkg.dev/$PROJECT_ID/praxis/gdelt-poller \
+          --region=us-central1 \
+          --update-env-vars="PRAXIS_BACKEND_URL=$$BACKEND_URL,POLL_INTERVAL_SECONDS=900"
     id: 'deploy-gdelt-worker'
-    waitFor: ['push-gdelt-worker']
+    waitFor: ['push-gdelt-worker', 'get-backend-url']
 
 images:
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-backend'

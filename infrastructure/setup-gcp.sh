@@ -182,6 +182,17 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" \
   --role="roles/secretmanager.secretAccessor" \
   --quiet 2>/dev/null || true
 
+# ── Vendor shared spine helper into each function source dir ────────────────
+# The _shared package gives functions/workers a uniform job/event API. Cloud
+# Functions deploys only the source dir, so we copy it in before each deploy.
+if [ -d "cloud_functions/_shared" ]; then
+  for target in cloud_functions/gdelt_poller cloud_functions/on_situation_created cloud_functions/on_document_uploaded; do
+    rm -rf "${target}/_shared"
+    cp -r cloud_functions/_shared "${target}/_shared"
+    echo "  Vendored _shared into ${target}"
+  done
+fi
+
 # ── Deploy Cloud Functions ───────────────────────────────────────────────────
 echo "Deploying Cloud Functions..."
 # Resolve the actual backend URL (Cloud Run uses a hash suffix, not project name)
@@ -210,11 +221,24 @@ else
       --trigger-event-filters="database=(default)" \
       --trigger-event-filters-path-pattern="document=users/{uid}/situations/{sitId}" \
       --trigger-location=nam5 \
+      --trigger-service-account="${SA}" \
       --set-env-vars="PRAXIS_BACKEND_URL=${CF_BACKEND_URL}" \
       --service-account="${SA}" \
       --memory=256Mi \
       --timeout=300s \
       --quiet 2>/dev/null && echo "  ✓ on-situation-created deployed" || echo "  ⚠️  on-situation-created deploy failed"
+
+    # Cloud Functions v2 = Cloud Run service of the same name. The Eventarc
+    # trigger calls the underlying Cloud Run service via OIDC. The trigger SA
+    # MUST have roles/run.invoker on that specific Cloud Run service or the
+    # request returns 403 ("not authenticated"). Project-level run.invoker is
+    # not always sufficient for Eventarc-triggered Gen2 functions.
+    gcloud run services add-iam-policy-binding on-situation-created \
+      --region="${REGION}" \
+      --member="serviceAccount:${SA}" \
+      --role="roles/run.invoker" \
+      --project="${PROJECT_ID}" \
+      --quiet 2>/dev/null || echo "  ⚠️  could not grant run.invoker on on-situation-created"
   fi
 
   # on_document_uploaded — Firestore trigger (nam5 multi-region)
