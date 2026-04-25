@@ -57,6 +57,8 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { SituationSelector } from '@/components/app/situation-selector';
 import { useAppStore } from '@/stores/app-store';
 import { useSituationStore } from '@/stores/situation-store';
+import { recommendToolsForRole } from '@/lib/dashboard/role-recommendations';
+import type { AnalystDomainId } from '@/types/analyst-profile';
 import {
   Tooltip,
   TooltipContent,
@@ -406,10 +408,22 @@ export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const route = usePraxisRoute();
-  const { user, logout } = useAuth();
+  const { user, logout, analystProfile } = useAuth();
   const { sidebarOpen, toggleSidebar } = useAppStore();
-  const { activeSituationId, setActiveSituation } = useSituationStore();
+  const { activeSituationId, setActiveSituation, activeSituation } = useSituationStore();
   const allToolStatuses = useAllToolStatuses(activeSituationId);
+
+  // Role-aware "For you" anchor — same module the dashboard widget uses, so
+  // the sidebar and the dashboard agree on what the user should look at first.
+  // Only renders when an AnalystProfile is loaded; falls back gracefully on
+  // demo / unauthenticated / pre-onboarding states.
+  const forYou = (() => {
+    const role = analystProfile?.identity.role;
+    if (!role) return [];
+    const profileDomain = analystProfile?.perspective.primaryDomain;
+    const domain = (activeSituation?.domain as AnalystDomainId | undefined) || profileDomain;
+    return recommendToolsForRole(role, domain, 3);
+  })();
   // Extract simple health map for backward compat with semaphore rendering
   const toolHealthMap: Record<string, ToolHealth> = {};
   for (const [id, info] of Object.entries(allToolStatuses)) {
@@ -485,6 +499,83 @@ export function AppSidebar() {
 
       {/* Navigation sections */}
       <nav className="flex-1 space-y-1 px-2 py-3 overflow-y-auto">
+        {/* "For you" anchor — surfaces top-3 role-tuned tools above the
+            section list. Mirrors the dashboard's RecommendedToolsWidget so
+            sidebar and dashboard agree on first-look priority. */}
+        {forYou.length > 0 && (
+          <div className="mb-3">
+            <AnimatePresence mode="wait">
+              {sidebarOpen && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.1 }}
+                  className="mb-1 flex items-center gap-1.5 px-3 py-0.5"
+                >
+                  <Sparkles className="h-3 w-3 text-gold-600" />
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-gold-700">
+                    For you
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {forYou.map((rec) => {
+              const isActive = barePath === rec.href;
+              const inner = (
+                <PraxisLink
+                  href={rec.href}
+                  className={cn(
+                    'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
+                    isActive
+                      ? 'bg-gold-500/10 text-gold-700'
+                      : 'text-navy-600 hover:bg-gold-500/5 hover:text-gold-700',
+                  )}
+                >
+                  <Sparkles
+                    className={cn(
+                      'h-[18px] w-[18px] shrink-0',
+                      isActive ? 'text-gold-600' : 'text-gold-500/70 group-hover:text-gold-600',
+                    )}
+                  />
+                  <AnimatePresence mode="wait">
+                    {sidebarOpen && (
+                      <motion.span
+                        initial={{ opacity: 0, width: 0 }}
+                        animate={{ opacity: 1, width: 'auto' }}
+                        exit={{ opacity: 0, width: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="flex-1 truncate whitespace-nowrap"
+                      >
+                        {rec.toolId
+                          .split('-')
+                          .map((w) => (w[0]?.toUpperCase() ?? '') + w.slice(1))
+                          .join(' ')}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </PraxisLink>
+              );
+              if (!sidebarOpen) {
+                return (
+                  <Tooltip key={rec.toolId}>
+                    <TooltipTrigger asChild>{inner}</TooltipTrigger>
+                    <TooltipContent side="right" className="font-medium">
+                      <span className="font-semibold">For you:</span>{' '}
+                      {rec.toolId
+                        .split('-')
+                        .map((w) => (w[0]?.toUpperCase() ?? '') + w.slice(1))
+                        .join(' ')}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+              return <div key={rec.toolId}>{inner}</div>;
+            })}
+            <div className="mx-3 mt-2 mb-1 h-px bg-[var(--color-app-border)]" />
+          </div>
+        )}
+
         {navSections.map((section) => {
           const isSectionOpen = openSections[section.label] ?? true;
           return (

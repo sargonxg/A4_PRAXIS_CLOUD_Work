@@ -5,6 +5,7 @@ import { withCalibration } from '@/lib/api/with-calibration';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
+import { audienceTonePreset, audienceTuningEnabled } from '@/lib/ai/audience-presets';
 import type { Situation } from '@/types/situation';
 
 const DailyReadSchema = z.object({
@@ -22,13 +23,16 @@ export const POST = withCalibration('dashboard', 'ai_analysis', {
   const body = (await req.json().catch(() => ({}))) as { situation?: Situation };
   const situation = body.situation ?? null;
 
-  const { systemPromptBlock, provenance } = ctx.calibration;
+  const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
   const sitCtx = situation ? buildToolContext(situation) : 'No active situation.';
+  const audienceDirective = audienceTuningEnabled()
+    ? `\n\n${audienceTonePreset(outputConstraints.audienceTone)}`
+    : '';
 
   const result = await generateText({
     model: getProModel(),
     experimental_output: Output.object({ schema: DailyReadSchema }),
-    system: `${systemPromptBlock}\n\nYou produce the "Daily read" — a 2-4 sentence situational summary written for the analyst whose profile appears above. Suggest up to 4 PRAXIS tool ids to open next (from this set: risk-monitor, early-warning, stakeholder-map, timeline, info-environment, geospatial, actor-profiles, dossier, talking-points).`,
+    system: `${systemPromptBlock}\n\nYou produce the "Daily read" — a 2-4 sentence situational summary written for the analyst whose profile appears above. Suggest up to 4 PRAXIS tool ids to open next (from this set: risk-monitor, early-warning, stakeholder-map, timeline, info-environment, geospatial, actor-profiles, dossier, talking-points).${audienceDirective}`,
     prompt: `Situation context:\n${sitCtx}\n\nWrite the Daily read now.`,
   });
 

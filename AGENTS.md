@@ -27,14 +27,24 @@ Do not overwrite uncommitted user work. If the tree is dirty, inspect it and wor
 
 ## Read These Files Before Changing Code
 
-1. `README.md` - product, architecture, setup, deployment overview.
-2. `CLAUDE.md` - detailed codebase guide and conventions.
-3. `AGENTS.md` - this operating guide.
-4. `docs/CONTINUATION.md` - latest handoff state and next actions.
-5. `docs/STRATEGY.md` - long-term product, infra, graph, MCP, and agent plan.
-6. `docs/DAILY_WORKPLAN.md` - day-by-day execution plan.
-7. `docs/DEPLOYMENT_LOG.md` - latest validation and production deployment status.
-8. `CHANGELOG.md` - what changed and what validation passed.
+Required, in this order:
+
+1. `README.md` — product, architecture, setup, deployment overview.
+2. `CLAUDE.md` — detailed codebase guide and conventions.
+3. `AGENTS.md` — this operating guide (hard rules).
+4. `CHANGELOG.md` — what changed recently and what validation passed.
+5. `docs/CONTINUATION.md` — last handoff note, "do this next" pointer.
+6. `docs/STRATEGY.md` — long-term six-week roadmap.
+7. `docs/SPRINT_2026-04-25.md` — current sprint plan with 4 streams.
+8. **`docs/SPRINT_BACKLOG.md` — canonical actionable list. Pick your task from here.**
+9. **`docs/CONTEXT_INJECTION.md` — the architectural contract every AI route must honour.**
+10. `docs/tools/INDEX.md` — per-tool micro-app specs.
+11. `docs/GCP_OPERATIONS.md` — every gcloud / Secret Manager command needed.
+12. `docs/RESEARCH_PROMPTS.md` — prompts to ask deep-research tools.
+13. `docs/HANDOFF_PROMPTS.md` — drop-in prompts when a session ends.
+14. `docs/DEPLOYMENT_LOG.md` — last successful deploy state.
+15. `docs/DAILY_WORKPLAN.md` — earlier day-by-day plan (kept for context;
+    superseded by `SPRINT_2026-04-25.md` + `SPRINT_BACKLOG.md`).
 
 ## Current Production Target
 
@@ -111,5 +121,5 @@ After every major change, update:
 
 ## One-Line Prompt For Claude Code
 
-Continue PRAXIS from a fresh clone: read `README.md`, `CLAUDE.md`, `AGENTS.md`, `docs/CONTINUATION.md`, `docs/STRATEGY.md`, `docs/DAILY_WORKPLAN.md`, `docs/DEPLOYMENT_LOG.md`, and `CHANGELOG.md`; verify `git status` and `git log --oneline -5`; run `npm install`, `npm run build`, `npm run lint`, `npm run audit:gcp`, `node scripts/audit-ai-routes.mjs`, and `npx vitest run`; then continue the day-by-day plan, keep docs updated, commit small checkpoints, push to GitHub, and deploy to Cloud Run only after validation passes.
+Continue PRAXIS from a fresh clone: read `README.md`, `CLAUDE.md`, `AGENTS.md`, `CHANGELOG.md`, `docs/CONTINUATION.md`, `docs/SPRINT_BACKLOG.md`, `docs/SPRINT_2026-04-25.md`, `docs/CONTEXT_INJECTION.md`, `docs/tools/INDEX.md`, `docs/GCP_OPERATIONS.md`, `docs/RESEARCH_PROMPTS.md`, `docs/HANDOFF_PROMPTS.md`, and `docs/DEPLOYMENT_LOG.md`; verify `git status` and `git log --oneline -10`; run `npm install`, `npm run build`, `npm run lint`, `npm run audit:gcp`, `node scripts/audit-ai-routes.mjs`, and `npx vitest run`; pick the next available task from `docs/SPRINT_BACKLOG.md`; keep all docs updated; commit small checkpoints with `giuliocatanzariti@gmail.com` (no Co-Authored-By); push to GitHub; deploy to Cloud Run only after validation passes; record the deploy in `docs/DEPLOYMENT_LOG.md`.
 

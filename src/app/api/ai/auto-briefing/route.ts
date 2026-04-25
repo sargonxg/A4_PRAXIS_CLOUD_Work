@@ -8,6 +8,7 @@ import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { handleRouteError } from '@/lib/api/standard-error';
+import { audienceTonePreset, audienceTuningEnabled } from '@/lib/ai/audience-presets';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 import { searchWeb, isFirecrawlConfigured } from '@/lib/ai/firecrawl';
 import type { Situation } from '@/types/situation';
@@ -153,6 +154,12 @@ export const POST = withCalibration('daily_brief', 'ai_report', {
     const redLineDirective = outputConstraints.redLineClauses.length
       ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
       : '';
+    // Audience tone preset — explicit, tool-side reinforcement of the audience
+    // already in the systemPromptBlock. Behind a feature flag so we can stage
+    // before flipping it on for everyone. See src/lib/ai/audience-presets.ts.
+    const audienceDirective = audienceTuningEnabled()
+      ? `\n\n${audienceTonePreset(outputConstraints.audienceTone)}`
+      : '';
 
     const result = await callProModel({
       output: Output.object({ schema: AutoBriefingSchema }),
@@ -179,7 +186,7 @@ Be specific and evidence-grounded. Write for a senior UN Special Representative'
 
 ${systemPromptBlock}
 
-Calibrate the brief to the analyst profile above (role, lens, audience). Honour the output-constraints block.${langDirective}${redLineDirective}`,
+Calibrate the brief to the analyst profile above (role, lens, audience). Honour the output-constraints block.${langDirective}${redLineDirective}${audienceDirective}`,
     });
 
     // Attach source metadata for deep research

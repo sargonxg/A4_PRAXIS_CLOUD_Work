@@ -10,17 +10,29 @@ The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Pol
 
 ## Agent Handoff
 
-Before changing code, future Claude Code/Codex sessions must read:
+Before changing code, future Claude Code / Codex sessions must read these
+in order. Skipping any of items 5–11 will produce duplicate work or break
+the architectural contract.
 
 1. `README.md`
-2. `CLAUDE.md`
-3. `AGENTS.md`
+2. `CLAUDE.md` (this file)
+3. `AGENTS.md` — hard rules, validation gate, deploy procedure
 4. `CHANGELOG.md`
-5. `docs/CONTINUATION.md`
-6. `docs/STRATEGY.md`
-7. `docs/DAILY_WORKPLAN.md`
-8. `docs/DEPLOYMENT_LOG.md`
-9. `docs/HANDOFF_PROMPTS.md`
+5. `docs/CONTINUATION.md` — last "do this next" note from previous agent
+6. `docs/STRATEGY.md` — six-week roadmap
+7. `docs/SPRINT_2026-04-25.md` — current week-long sprint plan
+8. **`docs/SPRINT_BACKLOG.md`** — canonical actionable list. Pick your
+   task from here; mark `In progress` before starting.
+9. **`docs/CONTEXT_INJECTION.md`** — the architectural contract every AI
+   route must honour. This is the most important doc in the repo.
+10. `docs/tools/INDEX.md` — per-tool micro-app specs catalogue
+11. `docs/GCP_OPERATIONS.md` — every gcloud / Secret Manager command
+12. `docs/RESEARCH_PROMPTS.md` — prompts to give the user when you need
+    info you don't have access to (vendor docs, current API limits, etc.)
+13. `docs/HANDOFF_PROMPTS.md` — drop-in prompts to start a fresh session
+14. `docs/DEPLOYMENT_LOG.md` — last successful production deploy
+15. `docs/DAILY_WORKPLAN.md` — earlier day-by-day plan (kept for
+    context; superseded by `SPRINT_2026-04-25.md` + `SPRINT_BACKLOG.md`)
 
 Fresh-clone start command:
 

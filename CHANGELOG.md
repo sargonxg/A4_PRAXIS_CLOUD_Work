@@ -6,6 +6,37 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-04-25 (third session)
+
+### Added
+
+- **`docs/SPRINT_BACKLOG.md`** — single canonical actionable list. Every
+  task in the active sprint, plus the architecture-extension backlog and
+  the research-blocked queue, with explicit DoD, files-to-read,
+  files-to-touch, and tandem coordination notes per item. This is the
+  document Codex and Claude Code consult first before picking a slice.
+- **`src/lib/ai/audience-presets.ts`** — explicit tone-preset directives
+  for the five AnalystProfile audiences (`myself`, `team`,
+  `senior_leadership`, `external_partners`, `public`). Behind feature
+  flag `PRAXIS_AUDIENCE_TUNED_BRIEFING=1` so we can stage and verify
+  before flipping it on for everyone. Wired into `auto-briefing`,
+  `dashboard-summary`, and `briefing-generate`. Unit-tested (10 tests).
+- **Role-aware "For you" sidebar anchor** (`src/components/app/app-sidebar.tsx`) —
+  Pins the top-3 role-tuned tools above the main nav sections when the
+  user has a profile loaded. Mirrors the dashboard's
+  `RecommendedToolsWidget` so the sidebar and dashboard agree on
+  first-look priority. Domain-boost active when the situation has a
+  non-generic domain. Collapsed sidebar shows a single tooltip-wrapped
+  Sparkles icon per recommendation.
+
+### Changed
+
+- **`AGENTS.md` + `CLAUDE.md` required-reading lists** rewritten so
+  every required document is named, in order, with `SPRINT_BACKLOG.md`
+  and `CONTEXT_INJECTION.md` highlighted as the two non-negotiable
+  reads. The one-line Claude Code restart prompt in AGENTS.md now
+  references the full doc set.
+
 ## [Unreleased] — 2026-04-25 (second session)
 
 ### Added

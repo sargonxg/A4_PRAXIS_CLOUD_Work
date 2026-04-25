@@ -10,6 +10,7 @@ import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
+import { audienceTonePreset, audienceTuningEnabled } from '@/lib/ai/audience-presets';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -193,7 +194,10 @@ export const POST = withCalibration('briefing_room', 'ai_report', {
     const redLineDirective = outputConstraints.redLineClauses.length
       ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
       : '';
-    const calibrationSuffix = `\n\n${systemPromptBlock}\n\nCalibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`;
+    const audienceDirective = audienceTuningEnabled()
+      ? `\n\n${audienceTonePreset(outputConstraints.audienceTone)}`
+      : '';
+    const calibrationSuffix = `\n\n${systemPromptBlock}\n\nCalibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}${audienceDirective}`;
 
     // ── mode: 'quick' — streaming-only intelligence brief (absorbed from /api/ai/brief) ──
     if (mode === 'quick') {
