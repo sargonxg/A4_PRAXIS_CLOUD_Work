@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import type { GeospatialEvent, GeospatialResponse } from '@/app/api/data/geospatial/route';
 import type { HotspotCluster } from '@/lib/analytics/geospatial-engine';
+import { regionCenter, DEFAULT_WORLD_CENTER } from '@/lib/geo/region-centers';
 
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 // ─── Leaflet dynamic imports (SSR-safe) ───────────────────────────────────────
@@ -386,13 +387,21 @@ export default function GeospatialMonitorPage() {
 
   const abortRef = useRef<AbortController | null>(null);
 
-  // Derive map center from situation or default to Sudan
+  // Derive map center from the active situation. Priority:
+  //   1. Explicit geoBoundingBox if the situation has one
+  //   2. Best-effort centroid lookup from situation.region (Yemen, Ukraine,
+  //      DRC, ... — see src/lib/geo/region-centers.ts)
+  //   3. Wide Africa/Middle East default if nothing else fits
+  // Previously this defaulted to Sudan for every situation without a bbox,
+  // which silently misled users with non-Sudan situations.
   const mapCenter = useMemo<[number, number]>(() => {
     if (activeSituation?.geoBoundingBox) {
       const { north, south, east, west } = activeSituation.geoBoundingBox;
       return [(north + south) / 2, (east + west) / 2];
     }
-    return [15.6, 32.5];
+    const fromRegion = regionCenter(activeSituation?.region ?? null);
+    if (fromRegion) return [fromRegion[0], fromRegion[1]];
+    return [DEFAULT_WORLD_CENTER[0], DEFAULT_WORLD_CENTER[1]];
   }, [activeSituation]);
 
   // Compute date start from range
