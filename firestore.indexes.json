@@ -10,13 +10,6 @@
     },
     {
       "collectionGroup": "situations",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "situations",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },
@@ -39,13 +32,6 @@
         { "fieldPath": "situationId", "order": "ASCENDING" },
         { "fieldPath": "toolId", "order": "ASCENDING" },
         { "fieldPath": "startedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "tool_runs",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "idempotencyKey", "order": "ASCENDING" }
       ]
     },
     {
@@ -72,13 +58,6 @@
         { "fieldPath": "kind", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "background_jobs",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "idempotencyKey", "order": "ASCENDING" }
       ]
     },
     {
@@ -147,13 +126,6 @@
       ]
     },
     {
-      "collectionGroup": "data_ingestions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "contentHash", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "graph_updates",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
@@ -170,5 +142,13 @@
       ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "situations",
+      "fieldPath": "status",
+      "indexes": [
+        { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" }
+      ]
+    }
+  ]
 }
