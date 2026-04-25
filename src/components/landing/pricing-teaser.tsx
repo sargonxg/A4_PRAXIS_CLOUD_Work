@@ -39,11 +39,23 @@ export function PricingTeaser() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="mx-auto mb-14 max-w-2xl text-center text-lg text-navy-500"
+          className="mx-auto mb-3 max-w-2xl text-center text-lg text-navy-600"
         >
           Monthly subscriptions tuned to the way analysts, mediators, and policy
           teams actually work. Start free with the Nordalia demo, upgrade when you
           create live situations.
+        </motion.p>
+        <motion.p
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="mx-auto mb-14 max-w-2xl text-center text-sm text-navy-500"
+        >
+          <span className="font-medium text-navy-700">An active situation</span> is a
+          conflict case you are actively monitoring — its own knowledge graph,
+          documents, scenarios, and reports. Demo: 1 (Nordalia) · Analyst: 5 ·
+          Team: 25 · Enterprise: unlimited.
         </motion.p>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

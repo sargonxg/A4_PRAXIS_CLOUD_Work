@@ -51,8 +51,12 @@
   --color-app-border: #E2E8F0;
   --color-app-border-light: #F1F5F9;
   --color-app-text: #0F172A;
-  --color-app-text-secondary: #475569;
-  --color-app-text-muted: #94A3B8;
+  /* Bumped from #475569 (slate-600) → #334155 (slate-700) for body copy
+     legibility on light surfaces. Most of the app's "secondary" text was
+     actually primary content (instructions, descriptions, KPIs); the old
+     contrast borderline-failed WCAG AA at small sizes. */
+  --color-app-text-secondary: #334155;
+  --color-app-text-muted: #64748B;
 
   --color-background: var(--color-navy-950);
   --color-foreground: var(--color-navy-100);

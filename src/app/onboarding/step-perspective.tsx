@@ -138,7 +138,19 @@ export function StepPerspective({
             {suggestingMore ? <><Loader2 className="h-3 w-3 animate-spin" /> Thinking…</> : 'Suggest more'}
           </button>
         </div>
-        <div className="text-[10px] text-navy-400">{mandateText.length}/600</div>
+        <div className="flex items-center justify-between text-[10px]">
+          <span
+            className={cn(
+              'font-medium',
+              mandateText.length < 30 ? 'text-crimson' : 'text-emerald-600',
+            )}
+          >
+            {mandateText.length < 30
+              ? `${30 - mandateText.length} more characters needed`
+              : '✓ Mandate ready'}
+          </span>
+          <span className="text-navy-500">{mandateText.length}/600</span>
+        </div>
       </div>
 
       {/* Primary domain — top-level taxonomy */}

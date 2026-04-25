@@ -103,7 +103,7 @@ function RealDashboard({ situation }: { situation: Situation }) {
           <div className="min-w-0">
             <p className="text-xs uppercase tracking-wider text-slate-500">{greeting()}</p>
             <h1 className="truncate text-xl font-semibold text-slate-100">{situation.name}</h1>
-            <p className="truncate text-xs text-slate-500">
+            <p className="truncate text-xs text-slate-300">
               {situation.region}
               {situation.domain && situation.domain !== 'generic' ? ` · ${situation.domain}` : ''}
             </p>

@@ -15,6 +15,9 @@ import {
   Layers,
   Brain,
   BarChart3,
+  Copy,
+  ExternalLink,
+  Plug,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -148,12 +151,79 @@ function Card({
 // Main page
 // ────────────────────────────────────────────────────────────────────────────
 
+// Data-source activation guide. Anchored in docs/SPRINT_2026-04-25.md so the
+// user can self-serve turning on the paid/freemium feeds without leaving the
+// app. Each step links the vendor signup page, names the exact env var, and
+// states the cost up front.
+const ACTIVATION_STEPS: Array<{
+  id: string;
+  name: string;
+  status: 'free-live' | 'unconfigured-paid' | 'unconfigured-free' | 'paid-live';
+  why: string;
+  envVars: string[];
+  signupUrl?: string;
+  costNote: string;
+  effort: string;
+}> = [
+  {
+    id: 'acled',
+    name: 'ACLED',
+    status: 'unconfigured-free',
+    why: 'Event-by-event armed-conflict data with fatality counts and geocoding. Powers Risk Monitor, Geospatial Monitor, and Timeline.',
+    envVars: ['ACLED_API_KEY', 'ACLED_EMAIL'],
+    signupUrl: 'https://developer.acleddata.com/',
+    costNote: 'Free academic / non-profit tier (5,000 events/request, ~1 req per 12s)',
+    effort: '~15 min',
+  },
+  {
+    id: 'vertex-adk',
+    name: 'Vertex AI Agent Engine (Deep Research Agent)',
+    status: 'unconfigured-paid',
+    why: 'Multi-agent reasoning pipeline (planner → researcher → synthesizer). Without it, Deep Research Agent falls back to Gemini grounded search.',
+    envVars: ['VERTEX_AGENT_ENGINE_ID'],
+    signupUrl: 'https://console.cloud.google.com/vertex-ai/reasoning-engines',
+    costNote: 'Pay-per-token (~$0.25 / 1M tokens, charged via the praxisbytacitus GCP project)',
+    effort: '~1–2 h',
+  },
+  {
+    id: 'firecrawl',
+    name: 'Firecrawl',
+    status: 'unconfigured-paid',
+    why: 'Powers CrisisWatch (ICG monthly outlook) scraping and SIPRI arms-transfer extraction inside conflict profiles.',
+    envVars: ['FIRECRAWL_API_KEY'],
+    signupUrl: 'https://www.firecrawl.dev/',
+    costNote: 'Free tier 300 req/mo · Paid from $20/mo',
+    effort: '~30 min',
+  },
+  {
+    id: 'stripe',
+    name: 'Stripe Billing',
+    status: 'unconfigured-paid',
+    why: 'Required for live monthly subscriptions. Until configured, /api/stripe/checkout returns 503 and users stay on the free plan.',
+    envVars: ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_PRICE_ANALYST', 'STRIPE_PRICE_TEAM'],
+    signupUrl: 'https://dashboard.stripe.com/',
+    costNote: '2.9% + $0.30 per successful charge',
+    effort: '~2 h',
+  },
+  {
+    id: 'anthropic',
+    name: 'Anthropic Claude (optional)',
+    status: 'unconfigured-paid',
+    why: 'Marginal quality bump for deep diplomatic-language tasks. Gemini 3.1 Pro fallback already handles most cases well.',
+    envVars: ['ANTHROPIC_API_KEY'],
+    signupUrl: 'https://console.anthropic.com/',
+    costNote: '$0.003 / 1k input · $0.015 / 1k output (Claude Sonnet 4)',
+    effort: '~15 min',
+  },
+];
+
 export default function SystemHealthPage() {
   const { user, credits } = useAuth();
   const { activeSituation } = useSituationStore();
   const [health, setHealth] = useState<FullHealth | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const fetchHealth = useCallback(async () => {
     setLoading(true);
@@ -197,6 +267,51 @@ export default function SystemHealthPage() {
   const providerHealth = health?.provider;
   const breakers = health?.breakers ?? [];
 
+  // ── Diagnostic snapshot — copy-to-clipboard so the user can paste a
+  //    structured report into Slack / Codex / Claude Code without
+  //    screenshotting half the page. The snapshot omits credentials.
+  const copyDiagnosticSnapshot = useCallback(async () => {
+    const snapshot = {
+      generatedAt: new Date().toISOString(),
+      domain: typeof window !== 'undefined' ? window.location.host : 'unknown',
+      user: user
+        ? {
+            id: user.id,
+            email: user.email,
+            isDemo: user.isDemo,
+            subscription: user.subscription,
+            role: user.role,
+            orgName: user.orgName,
+          }
+        : null,
+      activeSituation: activeSituation
+        ? {
+            id: activeSituation.id,
+            name: activeSituation.name,
+            region: activeSituation.region,
+            type: activeSituation.type,
+            riskScore: activeSituation.riskScore,
+            glaslStage: activeSituation.glaslStage,
+            domain: activeSituation.domain,
+          }
+        : null,
+      provider: providerHealth,
+      skc: skcHealth,
+      breakers,
+      timestamp: health?.timestamp ?? null,
+    };
+    const text = '```json\n' + JSON.stringify(snapshot, null, 2) + '\n```';
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // Fallback: log so the user can copy from the console.
+      // eslint-disable-next-line no-console
+      console.log('[system-health snapshot]', text);
+    }
+  }, [user, activeSituation, providerHealth, skcHealth, breakers, health?.timestamp]);
+
   const openBreakers = breakers.filter((b) => b.state === 'open').length;
   const halfOpenBreakers = breakers.filter((b) => b.state === 'half-open').length;
 
@@ -223,6 +338,24 @@ export default function SystemHealthPage() {
               Last checked {lastChecked.toLocaleTimeString()}
             </span>
           )}
+          <button
+            onClick={copyDiagnosticSnapshot}
+            disabled={loading}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border hover:bg-accent transition-colors disabled:opacity-50"
+            title="Copy a JSON snapshot of system status, your account, and the active situation. Paste into Slack / Codex / Claude Code to share context."
+          >
+            {copied ? (
+              <>
+                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                Copied
+              </>
+            ) : (
+              <>
+                <Copy className="h-3 w-3" />
+                Copy diagnostic
+              </>
+            )}
+          </button>
           <button
             onClick={fetchHealth}
             disabled={loading}
@@ -383,6 +516,61 @@ export default function SystemHealthPage() {
           status={{ status: user ? 'ok' : 'error' }}
           detail={user ? `Signed in as ${user.email}` : 'Not authenticated'}
         />
+      </Card>
+
+      {/* ── Data source activation guide ─────────────────────────────────── */}
+      <Card title="Activate paid / freemium data sources" icon={Plug}>
+        <p className="mb-3 text-xs text-muted-foreground">
+          PRAXIS works out-of-the-box on 9 free feeds (GDELT, UCDP, UNHCR, HDX,
+          ReliefWeb, UN News, World Bank, SIPRI-via-Firecrawl, Grounded Search) plus
+          Gemini AI. The sources below are <em>optional</em> — each one degrades
+          gracefully if its env var is missing. Turn them on in priority order.
+        </p>
+        <ol className="space-y-3">
+          {ACTIVATION_STEPS.map((step, i) => (
+            <li
+              key={step.id}
+              className="rounded-md border border-border/60 bg-muted/30 p-3"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    {i + 1}. {step.name}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{step.why}</p>
+                </div>
+                <span className="shrink-0 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-600">
+                  {step.effort}
+                </span>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                <span className="font-mono text-muted-foreground">
+                  env:&nbsp;{step.envVars.join(', ')}
+                </span>
+                <span className="text-muted-foreground">·</span>
+                <span className="text-muted-foreground">{step.costNote}</span>
+                {step.signupUrl ? (
+                  <a
+                    href={step.signupUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-auto inline-flex items-center gap-1 rounded border border-border px-2 py-0.5 font-medium text-foreground hover:bg-accent"
+                  >
+                    Sign up
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          After signup, store every value in Google Secret Manager
+          (project <span className="font-mono">praxisbytacitus</span>) and reference
+          it in <span className="font-mono">cloudbuild.yaml</span>. Never commit a key
+          to the repo. See <span className="font-mono">docs/SPRINT_2026-04-25.md</span>{' '}
+          for the full activation checklist.
+        </p>
       </Card>
 
       {/* ── Pre-flight checklist ─────────────────────────────────────────── */}

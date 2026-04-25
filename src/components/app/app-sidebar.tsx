@@ -820,11 +820,11 @@ export function AppSidebar() {
         </div>
       </nav>
 
-      {/* Keyboard shortcut hint */}
+      {/* Keyboard shortcut hint — navy-200 keeps it readable at 10px small caps */}
       {sidebarOpen && (
         <div className="px-4 py-2">
-          <p className="text-[10px] text-navy-400 text-center tracking-wide">
-            <kbd className="rounded border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-1.5 py-0.5 text-[10px] font-medium text-navy-400">&#8984;K</kbd>
+          <p className="text-[10px] text-navy-500 text-center tracking-wide">
+            <kbd className="rounded border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-1.5 py-0.5 text-[10px] font-medium text-navy-700">&#8984;K</kbd>
             <span className="ml-1.5">to search</span>
           </p>
         </div>

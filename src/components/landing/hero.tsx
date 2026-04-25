@@ -373,11 +373,11 @@ export function Hero() {
             initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.2, duration: 0.7 }}
-            className="mb-6 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
+            className="mb-6 max-w-2xl text-lg leading-relaxed text-navy-700 sm:text-xl"
           >
             The intelligence workspace for peace and security professionals.
-            Bring your sources and context — PRAXIS structures them into credible
-            assessments for diplomats, analysts, and multilateral organizations.
+            You turn raw sources into credible assessments — PRAXIS does the
+            heavy lifting for diplomats, analysts, and multilateral organizations.
           </motion.p>
 
           {/* Data sources tagline */}
@@ -385,7 +385,7 @@ export function Hero() {
             initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.4, duration: 0.6 }}
-            className="mb-10 text-sm text-navy-400 italic"
+            className="mb-10 text-sm font-medium text-navy-600"
           >
             Powered by ACLED, GDELT, ReliefWeb, UCDP — grounded in AI you can cite.
           </motion.p>
