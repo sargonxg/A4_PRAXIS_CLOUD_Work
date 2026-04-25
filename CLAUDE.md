@@ -8,6 +8,30 @@
 
 The "Bloomberg Terminal for conflict resolution." AI-native workspace for UN Political Affairs Officers, think tank analysts, and diplomatic mediators. Two experiences: a demo for prospects (`/demo/*`) and a real situation-driven workspace for authenticated users (`/app/*`). Deployed on GCP Cloud Run.
 
+## Agent Handoff
+
+Before changing code, future Claude Code/Codex sessions must read:
+
+1. `README.md`
+2. `CLAUDE.md`
+3. `AGENTS.md`
+4. `CHANGELOG.md`
+5. `docs/CONTINUATION.md`
+6. `docs/STRATEGY.md`
+7. `docs/DAILY_WORKPLAN.md`
+8. `docs/DEPLOYMENT_LOG.md`
+9. `docs/HANDOFF_PROMPTS.md`
+
+Fresh-clone start command:
+
+```bash
+git clone https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git
+cd A4_PRAXIS_CLOUD_Work
+git status
+git log --oneline -5
+npm install
+```
+
 ## Architecture
 
 ```
@@ -366,6 +390,19 @@ Known warnings to keep visible:
 - Windows local `next build` can warn while copying standalone traced files with `node:*` chunk names. Linux Cloud Build is the authoritative container build.
 - Next.js 16 deprecates `middleware.ts` in favor of `proxy.ts`; current middleware still builds and is listed as Proxy output.
 - Lint warning backlog includes React Compiler rules, unused variables, hook dependencies, explicit `any`, and legacy `require()` imports.
+
+2026-04-25 production checkpoint:
+- Cloud Build `ca612828-c779-46cd-bfde-8e1a8d3efe85` succeeded.
+- Deployed commit `a808b6f`.
+- Frontend revision `praxis-frontend-00042-nhk` ready.
+- Backend revision `praxis-backend-00026-h82` ready.
+- `https://praxis.tacitus.me/` and `/login` return `200 OK`.
+- `/onboarding` redirects unauthenticated users to `/login`, expected behavior.
+- `/api/health` reports Firestore, AI provider, and cookie secret `ok`.
+- `/api/auth/test-firebase` reports Firebase reachable, Email/Password enabled, and Admin SDK `INITIALIZED_OK`.
+- Firebase Auth authorized domains include `praxis.tacitus.me`.
+
+See `docs/DEPLOYMENT_LOG.md` for daily deployment status and remaining production configuration gaps.
 
 ## Local Development
 

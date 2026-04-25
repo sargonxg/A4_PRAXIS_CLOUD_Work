@@ -531,6 +531,12 @@ cd backend && python -m pytest tests/ -v  # Python tests
 
 | File | Purpose |
 |------|---------|
+| [AGENTS.md](./AGENTS.md) | Codex/Claude Code operating guide, validation, deploy rules, and one-line continuation prompt |
+| [docs/CONTINUATION.md](./docs/CONTINUATION.md) | Latest handoff state and next actions |
+| [docs/STRATEGY.md](./docs/STRATEGY.md) | Product, infra, graph, MCP, and agent strategy |
+| [docs/DAILY_WORKPLAN.md](./docs/DAILY_WORKPLAN.md) | Day-by-day execution plan for future sessions |
+| [docs/DEPLOYMENT_LOG.md](./docs/DEPLOYMENT_LOG.md) | Daily deployment status, Cloud Run revisions, and production verification |
+| [docs/HANDOFF_PROMPTS.md](./docs/HANDOFF_PROMPTS.md) | Long-form prompts for Claude Code and Codex continuation |
 | [docs/AUTH.md](./docs/AUTH.md) | Auth architecture — token lifecycle, CSRF, session design |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Dual-app architecture, route structure, data flow |
 | [CHANGELOG.md](./CHANGELOG.md) | Full version history (v3.7.0 → present) |
@@ -561,6 +567,8 @@ npm test       # Vitest unit tests
 ```
 
 Current deployability checkpoint (2026-04-25): `npm run build`, `npm run lint`, `npm run audit:gcp`, `node scripts/audit-ai-routes.mjs`, and `npx vitest run` pass locally. Lint still reports warnings for the React Compiler migration backlog and unused code cleanup.
+
+Production deployment checkpoint (2026-04-25): Cloud Build `ca612828-c779-46cd-bfde-8e1a8d3efe85` deployed commit `a808b6f` to Cloud Run. `praxis.tacitus.me` and `/login` return 200, `/onboarding` redirects unauthenticated users to `/login` as expected, `/api/health` is `ok`, and Firebase Auth diagnostics pass. See [docs/DEPLOYMENT_LOG.md](./docs/DEPLOYMENT_LOG.md).
 
 ---
 

@@ -11,7 +11,9 @@ Use this file to resume work safely in Codex or Claude Code.
 - GCP project: `praxisbytacitus` (`852128226674`)
 - Region: `us-central1`
 - Public domain: `praxis.tacitus.me`
-- Latest local source before deploy checkpoint: pending commit from the 2026-04-25 deployability pass.
+- Latest deployed source: `a808b6f fix(build): stabilize Cloud Run deploy validation`.
+- Cloud Build: `ca612828-c779-46cd-bfde-8e1a8d3efe85` succeeded.
+- Cloud Run revisions: frontend `praxis-frontend-00042-nhk`, backend `praxis-backend-00026-h82`.
 - Commit `1916281` was requested as a continuation point but is not present in the cloned repository history. Current `origin/main` was used as the base.
 
 ## What Changed In The 2026-04-25 Pass
@@ -21,6 +23,7 @@ Use this file to resume work safely in Codex or Claude Code.
 - Set `turbopack.root` in `next.config.ts` to avoid Next.js selecting a parent lockfile as the workspace root.
 - Changed existing React Compiler and style-only lint blockers to warnings in `eslint.config.mjs`; lint still prints the warnings.
 - Created missing Pub/Sub topic `profile.events` in GCP so onboarding/profile event publishing has a real topic and the GCP audit passes.
+- Added `AGENTS.md`, `docs/STRATEGY.md`, `docs/DAILY_WORKPLAN.md`, `docs/DEPLOYMENT_LOG.md`, and `docs/HANDOFF_PROMPTS.md` for Codex/Claude Code handoff.
 
 ## Validation Passed Locally
 
@@ -41,6 +44,7 @@ Observed results on 2026-04-25:
 - `npm run audit:gcp` passed: zero hard failures, zero soft warnings.
 - `node scripts/audit-ai-routes.mjs` passed: 53 AI route files, 53 calibrated, 4 exempt.
 - `npx vitest run` passed: 40 test files, 140 tests.
+- Cloud Build deploy passed and production endpoints were verified. See `docs/DEPLOYMENT_LOG.md`.
 
 Known validation notes:
 
@@ -73,10 +77,10 @@ Also verify Firebase Auth authorized domains include `praxis.tacitus.me` before 
 
 ## Immediate Next Work
 
-1. Deploy the current validated source to Cloud Run.
-2. Verify `praxis.tacitus.me`, `/login`, and `/onboarding` return healthy responses.
-3. Confirm Firebase Auth login works against the production domain.
-4. Commit a post-deploy documentation update with the deployed commit hash, Cloud Run revision, and verification results.
+1. Commit and push the documentation handoff update so future fresh clones include `AGENTS.md` and the strategy/deployment docs.
+2. Continue Day 2 in `docs/DAILY_WORKPLAN.md`: shared hook and React Compiler cleanup.
+3. Confirm actual interactive Google/email login with a browser and real test account when credentials are available.
+4. Keep `docs/DEPLOYMENT_LOG.md` updated after every deploy.
 
 ## Weekly Implementation Plan
 

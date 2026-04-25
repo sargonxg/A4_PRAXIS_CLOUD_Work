@@ -18,6 +18,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - **Lint deployment gate** (`eslint.config.mjs`) — Existing React Compiler migration findings and related style-only rules now report as warnings instead of failing `npm run lint`. This keeps deployment validation actionable while preserving the full warning output for future cleanup.
+- **Agent handoff documentation** (`AGENTS.md`, `docs/STRATEGY.md`, `docs/DAILY_WORKPLAN.md`, `docs/DEPLOYMENT_LOG.md`, `docs/HANDOFF_PROMPTS.md`) — Added durable Claude Code/Codex operating docs with fresh-clone startup, GCP/Firebase context, daily work plan, weekly strategy, deployment log, and reusable continuation prompts.
 
 ### Validation
 
@@ -26,6 +27,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `npm run audit:gcp` passed with zero hard failures and zero soft warnings.
 - `node scripts/audit-ai-routes.mjs` passed: 53 AI route files, 53 calibrated, 4 exempt.
 - `npx vitest run` passed: 40 test files, 140 tests.
+- Cloud Build `ca612828-c779-46cd-bfde-8e1a8d3efe85` deployed commit `a808b6f` successfully to Cloud Run.
+- `praxis.tacitus.me`, `/login`, `/api/health`, and `/api/auth/test-firebase` were verified after deploy.
 
 ### Known Remaining Work
 
