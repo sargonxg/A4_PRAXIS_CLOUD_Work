@@ -75,29 +75,85 @@ curl -sI https://praxis.tacitus.me/onboarding
 
 Also verify Firebase Auth authorized domains include `praxis.tacitus.me` before testing login.
 
-## Immediate Next Work
+## Immediate Next Work (updated 2026-04-25, second session)
 
-> The active week-long sprint is in `docs/SPRINT_2026-04-25.md`. Three concurrent audits (tool reality, data feed connectivity, onboarding propagation) ran against commit `6056aea` and the findings are folded into the sprint doc — do **not** re-run them.
+> The active week-long sprint is in `docs/SPRINT_2026-04-25.md`. The
+> architectural backbone — what every tool reads from the user and the
+> situation — is in `docs/CONTEXT_INJECTION.md`. Read both before changing
+> any AI route or tool page.
+>
+> This session shipped six production commits, an in-app debug copy tool,
+> a role-aware dashboard, the entire pricing-migration cleanup, a
+> situation-aware geospatial map fix, the tool catalogue scaffolding, the
+> research-prompts catalogue, the GCP runbook, and the Context Injection
+> Contract doc. Three concurrent audits (tool reality, data feed
+> connectivity, onboarding propagation) plus a contrast audit and a
+> landing-and-onboarding UX audit all ran. **Do not re-run any of those
+> audits — the findings are folded into the sprint doc.**
 
-This session shipped two production-bound commits and one local cleanup:
+### Commits this session (in order)
 
 - `7b28314` feat(pricing): hide internal credit metering; sidebar shows plan tier
 - `ce810b0` feat(dashboard): role-aware "Recommended for you" widget
-- _local_ sidebar(cleanup): hide Source Monitor placeholder
+- `0b6a3c1` docs(sprint): add 2026-04-25 sprint plan + tandem handoff
+- `9f05783` feat(ux): contrast pass + onboarding feedback + activation guide
+- _next_ feat(geospatial): situation-aware map centroid + tool docs scaffolding
+- _next_ docs(context): Context Injection Contract + GCP operations runbook
 
-**Next agent (Codex or Claude Code) should pick a stream from `docs/SPRINT_2026-04-25.md`:**
+### Top three things the next agent should do
 
-1. **Stream A — Workspace personalisation** (Day 2 of the stream): audience-aware briefings. Make `dashboard-summary`, `auto-briefing`, and `briefing-generate` honour `analystProfile.perspective.audience` and `workingStyle.language` in their tone presets and language directives. Ship behind `PRAXIS_AUDIENCE_TUNED_BRIEFING=1` in staging first.
-2. **Stream B — Tool quality** (P0 list): persist PRAXIS Assistant chat history, Dossier, Negotiation Prep. Pattern is well-established (`usePersistedToolData` + `ToolPageShell`). ~9h total for the three.
-3. **Stream C — Data activation**: turn on ACLED (15 min, free academic key) for an immediate jump in event-timeline quality. Vertex AI Agent Engine deployment unlocks the Deep Research Agent (1–2h).
+1. **Stream B — Tool quality, P0 persistence retrofits.** The pattern is
+   well-established (`ToolPageShell` + `usePersistedToolData`). Each
+   promotion should:
+   - Wrap the page with `ToolPageShell` if it isn't already.
+   - Add `usePersistedToolData('<tool-id>', situationId)` for hot reads.
+   - Verify the corresponding `/api/ai/<route>` calls `saveToolOutput` at
+     the end.
+   - Add a passing unit test under
+     `tests/unit/components/<tool>/persistence.test.tsx` so we never
+     regress.
+   Order: PRAXIS Assistant chat (≈4h) → Dossier (≈2h) → Negotiation Prep
+   (≈3h).
 
-After any stream slice ships:
+2. **Stream A — Audience-tuned briefings.** Make `dashboard-summary`,
+   `auto-briefing`, `briefing-generate` honour
+   `analystProfile.perspective.audience` and `workingStyle.language` in
+   their tone presets and language directives. **Read
+   `docs/CONTEXT_INJECTION.md` first** — the audience field is already in
+   the systemPromptBlock; the work is making each tool's *own* prompt
+   reflect it explicitly (e.g., "If audience=`senior_leadership`, lead
+   with bottom-line and skip preamble").
 
-- Run the full validation suite (build, lint, audit:gcp, audit-ai-routes, vitest).
-- Cloud Build deploy via `gcloud builds submit --config=cloudbuild.yaml`.
-- Record the build ID and Cloud Run revisions in `docs/DEPLOYMENT_LOG.md`.
-- Update `CHANGELOG.md` Unreleased section.
-- Append a one-paragraph "what's next for the other assistant" note here for tandem coordination.
+3. **Activate ACLED.** Use `docs/GCP_OPERATIONS.md` §1a — 15 minutes from
+   signup to live. Immediate jump in event-timeline quality on Risk
+   Monitor, Geospatial Monitor, and Early Warning. No code change needed
+   beyond the `cloudbuild.yaml` env-var line.
+
+### Deploy gate (every push)
+
+```bash
+npm run build
+npm run lint
+npm run audit:gcp
+node scripts/audit-ai-routes.mjs
+npx vitest run
+gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus
+# then verify praxis.tacitus.me, /login, /onboarding, /api/health
+# and append to docs/DEPLOYMENT_LOG.md
+```
+
+### One-paragraph note for the other assistant
+
+If you are Codex picking this up, Stream B (persistence retrofits) is the
+cleanest non-overlapping work — Claude Code's session has been entirely on
+Streams A (personalisation) and D (UX/contrast/docs), so all of `src/app/
+app/{assistant,dossier,negotiation-prep}/` and their API routes are
+untouched and ready for you. If you are Claude Code coming back, Stream A
+Day 2 is the natural continuation — open
+`src/app/api/ai/auto-briefing/route.ts` and trace where the system prompt
+is built. The audience block is already in `systemPromptBlock`; you only
+need to add a tone-preset switch in the tool-specific prompt that follows
+it.
 
 ## Weekly Implementation Plan
 

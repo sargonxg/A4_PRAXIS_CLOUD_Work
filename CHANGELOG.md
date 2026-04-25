@@ -6,7 +6,79 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Unreleased] — 2026-04-25
+## [Unreleased] — 2026-04-25 (second session)
+
+### Added
+
+- **Context Injection Contract documentation** (`docs/CONTEXT_INJECTION.md`) —
+  Full spec of the four context layers (`<analyst-profile>`,
+  `<situation-frame>`, `<domain-frame>`, retrieval-context) plus the
+  `<output-constraints>` cross-cutting block. Worked example for the
+  Briefing tool; how-to-extend; anti-patterns; health-check via the
+  audit-ai-routes script.
+- **GCP Operations Runbook** (`docs/GCP_OPERATIONS.md`) — Concrete
+  copy-paste-ready commands for every GCP-side operation (data-source
+  activation, deploy, rollback, log queries, Cloud Build status,
+  Firestore rules, Pub/Sub topic creation, secret bumps, custom domains,
+  Reasoning Engine deploy stub).
+- **Research Prompts catalogue** (`docs/RESEARCH_PROMPTS.md`) — 10
+  copy-paste research prompts the user can run against deep-research
+  tools (Vertex ADK current deployment recipe; ACLED 2026 limits; GDELT
+  3.0 ingestion; Firecrawl alternatives; BigQuery public datasets;
+  Stripe hybrid billing; Firestore vs. dedicated vector DBs at scale;
+  Vertex AI vs. Gemini API costs; production GraphRAG patterns; UN
+  procurement requirements). Each prompt is scoped tightly so answers
+  come back actionable.
+- **Tool catalogue scaffolding** (`docs/tools/`) — `INDEX.md` explains
+  the catalogue, `_TEMPLATE.md` is the structured spec template, and
+  `dashboard.md` + `geospatial-monitor.md` are the first two deep
+  per-tool specs. Future tool docs follow the same template.
+- **Region centroid lookup** (`src/lib/geo/region-centers.ts`) — ~50
+  country / region strings → approximate centroids, with normalisation
+  + alias support ("Congo (DRC)" → "drc", "Horn of Africa" → "somalia")
+  and token fallback so multi-word regions still resolve.
+
+### Changed
+
+- **Geospatial Monitor map centroid** (`src/app/app/geospatial-monitor/page.tsx`) —
+  Now derives the initial map centre from
+  `geoBoundingBox` → `regionCenter(situation.region)` → `[10, 30]`
+  default. Previously every situation without an explicit bounding box
+  defaulted to Sudan even when the situation was Yemen, Ukraine, DRC, etc.
+- **System Health page** (`src/app/app/settings/system-health/page.tsx`)
+  - Added "Copy diagnostic" button that assembles a redacted JSON
+    snapshot (account tier, active situation, AI provider state, SKC
+    layer health, breaker states) and copies to clipboard so the user
+    can paste a complete report into Codex / Claude Code / Slack
+    without screenshotting half the page.
+  - Added "Activate paid / freemium data sources" card with inline
+    activation steps for ACLED, Vertex ADK, Firecrawl, Stripe,
+    Anthropic, each with effort estimate, env-var names, cost note,
+    and signup link.
+- **Onboarding Step 2 — mandate field** (`src/app/onboarding/step-perspective.tsx`) —
+  Inline real-time validation. Shows "X more characters needed" in
+  crimson while below the 30-char minimum and "✓ Mandate ready" in
+  emerald once met. Removes the worst friction point in the wizard
+  (previously the threshold was invisible and only failed at Step 4).
+- **Landing hero subheadline** (`src/components/landing/hero.tsx`) —
+  Rewritten from passive ("PRAXIS structures them") to active ("You
+  turn raw sources into credible assessments — PRAXIS does the heavy
+  lifting"). Empowerment framing tests higher with senior diplomatic
+  audiences. Contrast bumped from `text-navy-500` to `text-navy-700`.
+  Data-sources tagline drops italic and gains weight.
+- **Pricing teaser** (`src/components/landing/pricing-teaser.tsx`) —
+  Added a one-line explainer for "active situations" (the most common
+  point-of-confusion in the pricing audit). Demo: 1 · Analyst: 5 ·
+  Team: 25 · Enterprise: unlimited.
+- **Workspace contrast** —
+  Dashboard breadcrumb bumped from `text-slate-500` → `text-slate-300`.
+  Sidebar Cmd-K hint bumped from `text-navy-400` → `text-navy-500` body
+  + `text-navy-700` inside the kbd chip so 10px text passes WCAG AA.
+  `globals.css --color-app-text-secondary` tightened from `#475569`
+  (slate-600) to `#334155` (slate-700) so every component reading the
+  CSS var picks up better body-copy contrast on light surfaces.
+
+## [Unreleased] — 2026-04-25 (first session)
 
 ### Changed (public pricing surface — credit metering hidden)
 
