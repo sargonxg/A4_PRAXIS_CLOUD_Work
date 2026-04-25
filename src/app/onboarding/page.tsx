@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
 import { DEFAULT_ANALYST_PROFILE, type AnalystProfile } from '@/types/analyst-profile';
@@ -15,6 +15,16 @@ import { cn } from '@/lib/utils/cn';
 type Step = 1 | 2 | 3 | 4;
 
 export default function OnboardingPage() {
+  // Next.js 16 requires useSearchParams() callers to live inside a <Suspense>
+  // boundary so static page generation can stream search-param-dependent UI.
+  return (
+    <Suspense fallback={null}>
+      <OnboardingWizard />
+    </Suspense>
+  );
+}
+
+function OnboardingWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const resumeMode = searchParams.get('resume') === '1';
