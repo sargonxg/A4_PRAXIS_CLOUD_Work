@@ -26,7 +26,7 @@ const REAL_FEATURES = [
 
 const DEMO_FEATURES = [
   { icon: Map, label: 'Conflict Knowledge Graph', description: 'Live actor & event networks' },
-  { icon: Zap, label: 'AI Intelligence Briefings', description: 'Powered by Gemini 2.5' },
+  { icon: Zap, label: 'AI Intelligence Briefings', description: 'Powered by Vertex AI / Gemini' },
   { icon: FileText, label: 'Report Studio', description: '10 diplomatic templates' },
   { icon: Shield, label: 'Early Warning System', description: 'Glasl 9-stage escalation model' },
 ];

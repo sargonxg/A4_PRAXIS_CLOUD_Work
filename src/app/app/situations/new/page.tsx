@@ -170,12 +170,17 @@ function StepDescribe({ form, setForm, onNext }: { form: SituationForm; setForm:
       <div>
         <h2 className="text-lg font-semibold text-navy-900">Describe Your Situation</h2>
         <p className="mt-1 text-sm text-navy-500">What conflict or situation are you tracking?</p>
+        <p className="mt-2 text-[11px] leading-relaxed text-navy-500">
+          A situation is the canonical case file. Every tool, document, graph, and tool
+          output you generate is anchored to it — citations and confidence travel with it.
+        </p>
       </div>
 
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-navy-700">Situation Name <span className="text-red-500">*</span></label>
         <input type="text" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="e.g., Syria Ceasefire Monitoring" autoFocus
           className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20" />
+        <p className="text-[10px] text-navy-400">Used as the workspace title and seeds the initial research query.</p>
       </div>
 
       <div className="space-y-1.5">
@@ -184,6 +189,7 @@ function StepDescribe({ form, setForm, onNext }: { form: SituationForm; setForm:
           className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20">
           {SITUATION_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
         </select>
+        <p className="text-[10px] text-navy-400">Helps PRAXIS pick the right ontology subset and framework defaults.</p>
       </div>
 
       <div className="space-y-1.5">
@@ -191,6 +197,7 @@ function StepDescribe({ form, setForm, onNext }: { form: SituationForm; setForm:
         <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
           placeholder="2-3 sentences describing the conflict dynamics, key issues, and current state..." rows={4}
           className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20 resize-none" />
+        <p className="text-[10px] text-navy-400">Used to classify the domain and to ground every AI tool&apos;s first pass — the more specific, the better the calibration.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -199,6 +206,7 @@ function StepDescribe({ form, setForm, onNext }: { form: SituationForm; setForm:
           <input type="text" value={form.region} onChange={(e) => setForm((f) => ({ ...f, region: e.target.value }))}
             onFocus={() => setShowRegions(true)} onBlur={() => setTimeout(() => setShowRegions(false), 150)}
             placeholder="e.g., Eastern Mediterranean"
+            title="Used by GDELT, ReliefWeb and HDX queries to scope live evidence to your area of interest."
             className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20" />
           {showRegions && (
             <div className="absolute top-full left-0 right-0 z-10 mt-1 max-h-36 overflow-y-auto rounded-lg border border-navy-200 bg-white shadow-lg">
@@ -530,14 +538,17 @@ function StepSources({ context, setContext, onNext, onBack, situationName, situa
     }
   };
 
-  const firecrawlCount = SOURCE_CATEGORIES.filter((c) => selectedSources.includes(c.id) && c.useFirecrawl).length;
+  const liveSearchCount = SOURCE_CATEGORIES.filter((c) => selectedSources.includes(c.id) && c.useFirecrawl).length;
 
   return (
     <div className="space-y-5">
       <div>
         <h2 className="text-lg font-semibold text-navy-900">Research Sources</h2>
         <p className="mt-1 text-sm text-navy-500">
-          Pick which source categories to include. PRAXIS always scrapes Wikipedia first, then runs targeted research across your selected categories to seed the conflict knowledge graph for <span className="font-medium text-navy-700">&ldquo;{situationName}&rdquo;</span>.
+          Pick which source categories to include. PRAXIS pulls canonical background first, then runs grounded research across your selected categories to seed the conflict knowledge graph for <span className="font-medium text-navy-700">&ldquo;{situationName}&rdquo;</span>.
+        </p>
+        <p className="mt-2 text-[11px] leading-relaxed text-navy-500">
+          Sources here become the evidence pool every tool cites from. More categories means broader coverage; fewer means tighter, faster research.
         </p>
       </div>
 
@@ -556,7 +567,7 @@ function StepSources({ context, setContext, onNext, onBack, situationName, situa
         <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-navy-400" />
         <span>
           <span className="font-semibold text-navy-700">{selectedSources.length} source categories selected</span>
-          {firecrawlCount > 0 && <> — {firecrawlCount} will use Firecrawl web search</>}. Research is capped at ~20,000 characters for preliminary ACO ontology construction. Full deep research is available via the <span className="font-semibold text-navy-700">Deep Research Agent</span> after setup.
+          {liveSearchCount > 0 && <> — {liveSearchCount} will use grounded Google Search</>}. Research is capped at ~20,000 characters for preliminary ACO ontology construction. Full deep research is available via the <span className="font-semibold text-navy-700">Deep Research Agent</span> after setup.
         </span>
       </div>
 
@@ -571,6 +582,7 @@ function StepSources({ context, setContext, onNext, onBack, situationName, situa
           <div className="mt-3 space-y-4 rounded-xl border border-navy-200 bg-white p-4">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-navy-700">Custom URLs (up to 5)</label>
+              <p className="text-[10px] text-navy-400">PRAXIS fetches and parses these to seed the situation graph and ground the first AI brief.</p>
               {urls.map((url, i) => (
                 <div key={i} className="flex gap-2">
                   <input type="url" value={url} onChange={(e) => { const u = [...urls]; u[i] = e.target.value; setUrls(u); }} placeholder="https://..."
@@ -585,6 +597,7 @@ function StepSources({ context, setContext, onNext, onBack, situationName, situa
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-navy-700">Documents (PDF, DOCX, TXT)</label>
+              <p className="text-[10px] text-navy-400">Uploaded files are extracted, embedded into the situation knowledge core, and cited in tool outputs.</p>
               <div className="rounded-lg border-2 border-dashed border-navy-200 bg-navy-50/50 p-4 text-center hover:border-diplomatic-blue/30 transition-colors">
                 <Upload className="mx-auto h-6 w-6 text-navy-400" />
                 <p className="mt-1.5 text-xs text-navy-600">Drag & drop or <label className="cursor-pointer text-diplomatic-blue hover:underline">browse<input type="file" multiple accept=".pdf,.docx,.txt" onChange={handleFileChange} className="hidden" /></label></p>
@@ -603,6 +616,7 @@ function StepSources({ context, setContext, onNext, onBack, situationName, situa
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-navy-700">Notes / Raw Intelligence</label>
+              <p className="text-[10px] text-navy-400">Treated as analyst context — included in the prompt for the first brief and graph build, never published verbatim.</p>
               <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Paste any relevant notes, meeting summaries, or raw intelligence..." rows={3}
                 className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20 resize-none" />
             </div>

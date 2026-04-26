@@ -82,6 +82,12 @@ export function StepPerspective({
         <p className="mt-1 text-sm text-navy-500">
           This is the payload. Every tool reads these to calibrate its output to you.
         </p>
+        <p className="mt-2 text-xs leading-relaxed text-navy-600">
+          <span className="font-medium text-navy-700">Why this matters: </span>
+          Mandate, lenses, regions, and audience are injected directly into every tool&apos;s
+          system prompt — they decide which frameworks PRAXIS reaches for, which feeds it
+          weights first, and which audience tone the draft is written for.
+        </p>
       </div>
 
       {/* Mandate */}

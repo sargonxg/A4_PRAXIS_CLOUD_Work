@@ -46,7 +46,7 @@ export function SituationOnboarding({ situation, onComplete }: SituationOnboardi
   const SUGGESTED_SOURCES = [
     { id: 'wikipedia', label: 'Wikipedia', desc: 'Canonical names, background, history' },
     { id: 'crisisgroup', label: 'International Crisis Group', desc: 'Conflict analysis, briefings' },
-    { id: 'acled', label: 'ACLED', desc: 'Armed conflict data, event tracking' },
+    { id: 'ucdp', label: 'UCDP', desc: 'Armed conflict data, event tracking' },
     { id: 'reliefweb', label: 'ReliefWeb / OCHA', desc: 'Humanitarian reports, situation updates' },
     { id: 'reuters', label: 'Reuters / AP', desc: 'Wire service news, verified reporting' },
     { id: 'un', label: 'UN News / UNSC', desc: 'Official UN reports, resolutions, briefings' },
@@ -75,7 +75,7 @@ export function SituationOnboarding({ situation, onComplete }: SituationOnboardi
     setFeedStatus({ state: 'loading' });
 
     // Kick off the structured-feed call in parallel. Backend will auto-fallback
-    // to Gemini + Google Search if ACLED/GDELT/ReliefWeb all return empty.
+    // to Gemini + grounded Google Search if structured feeds return empty.
     (async () => {
       try {
         const intelRes = await fetch('/api/data/intelligence', {
@@ -346,7 +346,7 @@ export function SituationOnboarding({ situation, onComplete }: SituationOnboardi
                 {feedStatus.state === 'loading' && (
                   <div className="flex items-center gap-2 text-navy-600">
                     <Loader2 className="h-3 w-3 animate-spin" />
-                    Querying live feeds (ACLED, GDELT, ReliefWeb, UN News)...
+                    Querying live feeds (GDELT, UCDP, ReliefWeb, UN News)...
                   </div>
                 )}
                 {feedStatus.state === 'done' && feedStatus.total > 0 && (

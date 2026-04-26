@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils/cn';
 
 const SOURCE_CATEGORIES = [
   { id: 'foundational', label: 'Foundational', desc: 'Wikipedia, CIA Factbook' },
-  { id: 'conflict-security', label: 'Conflict & Security', desc: 'ICG, ACLED, SIPRI' },
+  { id: 'conflict-security', label: 'Conflict & Security', desc: 'UCDP, SIPRI, Crisis Group' },
   { id: 'humanitarian', label: 'Humanitarian', desc: 'ReliefWeb, UNHCR, HRW' },
   { id: 'diplomatic-official', label: 'Diplomatic & Official', desc: 'UN News, State, EEAS' },
   { id: 'news-media', label: 'News & Media', desc: 'Reuters, AP, BBC' },
@@ -68,6 +68,12 @@ export function StepWorkingStyle({
       <div>
         <h3 className="text-lg font-semibold text-navy-900">Working style</h3>
         <p className="mt-1 text-sm text-navy-500">How you want PRAXIS to produce output.</p>
+        <p className="mt-2 text-xs leading-relaxed text-navy-600">
+          <span className="font-medium text-navy-700">Why this matters: </span>
+          Output language, source preferences, red lines, and analytical style become hard
+          constraints on every drafting tool — what PRAXIS will never say, what sources it
+          weights highest, and how long-form vs. bullet the brief should be.
+        </p>
       </div>
 
       {/* Source categories */}
@@ -144,14 +150,15 @@ export function StepWorkingStyle({
           Data tier
         </p>
         <p className="mt-1 text-xs text-navy-700">
-          PRAXIS runs out of the box on the free tier — Google Search grounded research, GDELT
-          media volume, ReliefWeb situation reports, HDX displacement data, UNHCR, UCDP, World
-          Bank, SIPRI, and Crisis Group outlooks are all enabled by default with no key needed.
+          PRAXIS runs out of the box on the included stack — Vertex AI / Gemini for
+          reasoning, Google Search grounding for live evidence, plus open-data feeds:
+          GDELT, UCDP, ReliefWeb, HDX, UNHCR, UN News, World Bank, SIPRI, and Crisis Group.
+          No additional keys required.
         </p>
         <p className="mt-1.5 text-xs text-navy-600">
-          Premium structured feeds (ACLED event data, Tavily / Parallel web research, Firecrawl
-          page rendering) are optional — bring your own keys any time in
-          <span className="font-medium"> Settings → API Keys</span>.
+          Optional licensed feeds can be added later from
+          <span className="font-medium"> Settings → API Keys</span> if your organisation
+          subscribes to them.
         </p>
       </div>
 

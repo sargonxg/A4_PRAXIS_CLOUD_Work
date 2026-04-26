@@ -89,7 +89,7 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     id: 'step-8',
     title: 'Tour Complete!',
     description:
-      "You've seen the core features. PRAXIS has 15+ tools to explore. Every AI feature uses live Gemini 2.5 — nothing is pre-recorded.",
+      "You've seen the core features. PRAXIS has 15+ tools to explore. Every AI feature is live — grounded in Vertex AI / Gemini and your situation context.",
     page: '/scenarios',
     position: 'center',
     isLast: true,
