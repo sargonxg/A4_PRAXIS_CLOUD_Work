@@ -8,26 +8,91 @@
 > **Tool audit**: `docs/tools/UX_AUDIT_2026-04-26.md`
 > **Claude tandem prompts**: `docs/CLAUDE_TANDEM_PROMPTS_2026-04-25.md`
 
-> **2026-04-26 tenth-session update (Claude Code, multi-lane sprint)**:
-> Lane A shipped — situation corpus retrieval API. `POST /api/intelligence/corpus-search`
+> **2026-04-26 tenth-session update (Claude Code, multi-lane sprint — Lanes A–E shipped)**:
+>
+> All five lanes landed as separate commits on `main`. Cloud Build deploy
+> triggered at end of session — see `docs/DEPLOYMENT_LOG.md` for the build
+> ID and Cloud Run revision once the deploy completes.
+>
+> **Lane A — Situation Corpus Retrieval API.** `POST /api/intelligence/corpus-search`
 > (auth-gated, Zod-validated, demo bypass, 50-item cap) ranks evidence
 > across `argus | sources | documents | graph | tool-output` layers via
 > `searchSituationCorpus({uid, situationId, query, layers, limit})` in
 > `src/lib/intelligence/corpus-search.ts`. Document-chunk layer leverages the
 > existing Gemini text-embedding-004 hybrid ranking. Each layer fails
-> closed (returns []) so a partial Firestore failure still yields a usable
-> response. `src/types/corpus.ts` defines the canonical retrieval contract;
-> `tests/services/corpus-search.test.ts` covers tokenization, scoring,
-> layer priority, confidence mapping, summarisation, slug fallback.
-> `src/lib/argus/corpus-context.ts` is intentionally left untouched in this
-> commit — Ask PRAXIS still composes its own context string. Step 4 of
-> `docs/CORPUS_ARCHITECTURE.md` (chat route delegates to the shared helper)
-> is queued for the next session. Validation: `npx tsc --noEmit` clean,
-> `node scripts/audit-ai-routes.mjs` 53/4, `npx vitest run` 188/188.
-> Lanes B–E (Humanitarian calibrated route, Brainstorming Table MVP,
-> shared Citation/ConfidenceBadge primitives, big-improvement roadmap)
-> are queued in `TaskList` for this session and will land as separate
-> commits to `main`.
+> closed (returns []). `src/types/corpus.ts` is the canonical retrieval
+> contract. Tests at `tests/services/corpus-search.test.ts`. Step 4 of
+> `docs/CORPUS_ARCHITECTURE.md` (Ask PRAXIS chat delegating to the shared
+> helper) is queued as Lane F for the next session.
+>
+> **Lane B — Humanitarian Calibrated Route.** `/api/ai/humanitarian/route.ts`
+> with full `withCalibration('humanitarian', 'ai_humanitarian')`,
+> `HumanitarianSnapshotSchema` (BLUF, IPC phases, displacement, funding,
+> protection, access constraints, intelligence gaps, recommended actions,
+> confidence, primarySources), live grounding via `getSituationIntelligence`
+> (HDX HAPI, ReliefWeb, UNHCR, OCHA FTS, UN News, GDELT) with degraded path
+> when feeds fail, `saveToolOutput` persistence to `tool-data/humanitarian`
+> with primarySources/dataContextLength/focus metadata. Demo-mode returns
+> a labelled fixture, no live-mode fictional fallback. `ai_humanitarian`
+> credit op (2 credits) added. Tool registry `aiRoute` flipped from
+> `/api/ai/chat` → `/api/ai/humanitarian`. Tests at
+> `tests/services/humanitarian-schema.test.ts`. Page wiring is queued as
+> Lane G for the next session.
+>
+> **Lane C — Brainstorming Table MVP.** Synchronous prototype of
+> `docs/AGENTIC_SYSTEM.md`. `/api/ai/brainstorming-table/route.ts`
+> wrapped with `withCalibration('brainstorming-table', 'ai_brainstorming_table')`
+> (5 credits). Six expert personas (mediator, humanitarian, legal, media,
+> security, red-team) deliberate over a single question. Pulls evidence
+> from `searchSituationCorpus` so every claim cites a corpus item or
+> marks `sourceType="reasoning"`. `BrainstormingTableSchema` (Zod),
+> `Output.object` Pro-model generation, demo fixture, persistence to
+> `tools/brainstorming-table` with personas/retrievalTrace/question
+> metadata. Page at `src/app/app/brainstorming-table/page.tsx` with
+> question textarea, "Convene the table" CTA, persona-coloured table,
+> synthesis card. Registered under simulation category, 48h staleness,
+> Pro tier. Tests at `tests/services/brainstorming-table-schema.test.ts`.
+> `'brainstorming-table'` added to `ToolName` union. Cloud Tasks fan-out
+> and `/demo/brainstorming-table` mirror page intentionally deferred.
+>
+> **Lane D — Shared confidence/citation primitives + provenance panel.**
+> Closes the cross-tool finding in `docs/tools/UX_AUDIT_2026-04-26.md` and
+> brick #4 of `docs/NEXT_BRICKS_2026-04-26.md`. Three new primitives:
+> `src/components/praxis/confidence-badge.tsx` (high/medium/low/unknown
+> ICD 203/Heuer pill + `normalizeConfidence()` helper),
+> `src/components/praxis/citation.tsx` (inline + chip variants with URL,
+> publish date, sourceType badge), and
+> `src/components/praxis/output-provenance-panel.tsx` (default-collapsed
+> "Why this output?" disclosure showing tool id, generated-at, profile
+> version, domain version, model, source count, retrieval query, layers
+> searched, and primary-source chips). Wired into the Brainstorming
+> Table page as the first consumer. Tests at
+> `tests/services/confidence-badge.test.ts`. Existing tools (Risk
+> Monitor, Briefing Room, Legal Tracker, Humanitarian) intentionally NOT
+> migrated in this commit — those overlap with Codex-owned files.
+>
+> **Lane E — Strategic roadmap + persona walkthroughs.**
+> `docs/PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md` is the new flagship-grade
+> 90-day roadmap with 30 named bricks across Calibration & Corpus, Tools
+> & Workflows, Agents & Long-Running Jobs, Operational Excellence &
+> Trust. `docs/personas/PERSONA_WALKTHROUGHS_2026-04-26.md` is the new
+> home for persona testing — five scenario-driven walkthroughs (UN
+> diplomat, humanitarian lead, legal analyst, mediator, researcher) plus
+> a cross-persona heatmap showing citation/provenance gap and persistence
+> vocabulary drift hit every persona.
+>
+> **Codex handoff prompt:** `docs/CODEX_HANDOFF_2026-04-26.md` has the
+> drop-in prompt for the next Codex session. Lanes F–K queued (Ask
+> PRAXIS corpus wiring, Humanitarian page wiring, Situation Health
+> Card, real notification bell, tool id canonicalization, document-graph
+> cross-link). File-ownership rules included.
+>
+> **Validation gate at end of session:**
+> - `npx tsc --noEmit` clean.
+> - `npm run build` clean (Next.js 16.1.6, build standalone, all routes prerender or are dynamic as expected).
+> - `npm run audit:gcp` 0 hard / 0 soft.
+> - `node scripts/audit-ai-routes.mjs` 55 calibrated / 4 exempt (was 53/4 entering the session — +2 from Lanes B and C).
+> - `npx vitest run` 207/207 (was 168 entering the session — +39 across the four lane test files).
 
 > **2026-04-26 ninth-session update**: Claude Code shipped the public-UX
 > source-truth lane and the first-run-UX lane, plus a tool-by-tool audit
