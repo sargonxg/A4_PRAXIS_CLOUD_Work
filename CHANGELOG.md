@@ -31,6 +31,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Upgraded Next/React patch dependencies and added narrow transitive overrides
   for critical/high production advisories; production `npm audit --omit=dev`
   now reports 0 critical and 0 high findings.
+- Added an ARGUS corpus context bridge so Ask PRAXIS can inject active
+  situation ARGUS alerts, watch items, saved sources, and relevant document
+  excerpts before answering.
 
 ### Public UX source-truth cleanup
 

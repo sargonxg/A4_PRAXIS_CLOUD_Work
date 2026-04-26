@@ -66,6 +66,16 @@
 > return 200/ok. `npm audit --omit=dev` is improved to 0 critical / 0 high /
 > 16 moderate / 2 low; remaining findings are mostly Google SDK / uuid chains
 > that need separate dependency-risk review.
+> Post-deploy continuation: GCP audit is fully green after enabling Cloud
+> Tasks and creating `praxis-research`, `praxis-agents`, and
+> `praxis-embeddings`. Cloud Build
+> `8d9f5c8d-c96e-4fb9-be67-b6abc604af73` deployed the commit to production
+> (`praxis-frontend-00063-h5k`, `praxis-backend-00040-rft`). Ask PRAXIS now
+> has an ARGUS corpus bridge via `src/lib/argus/corpus-context.ts`, injecting
+> ARGUS alerts/watch items, Sources Library entries, and relevant document
+> chunks for the active situation. Firebase CLI still requires an interactive
+> `firebase login --reauth`; `firebase projects:list` fails because the stored
+> Firebase refresh token is invalid, but GCP deploy/audit are healthy.
 
 > **2026-04-26 update**: Codex started the workspace-personalization lane.
 > User preferences now include `hiddenToolIds` and `toolOrder`, Settings →

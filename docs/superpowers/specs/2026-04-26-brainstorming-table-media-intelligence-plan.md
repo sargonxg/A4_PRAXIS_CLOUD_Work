@@ -100,6 +100,23 @@ type BrainstormingTableOutput = {
 
 The media tools need to become a real daily intelligence lane, not disconnected research cards.
 
+### ARGUS User Corpus
+
+ARGUS must become the user's searchable intelligence corpus, not a one-off alert panel. Ask PRAXIS should always be able to retrieve from the user's active situation corpus before falling back to general model knowledge.
+
+Corpus layers:
+
+- ARGUS alerts and watch items.
+- Sources Library entries and monitored source health.
+- Uploaded document chunks.
+- Media Roundup query plans and clusters.
+- Saved tool outputs from risk, legal, humanitarian, actor, and info-environment tools.
+
+Implementation status:
+
+- Ask PRAXIS now injects ARGUS alerts, Sources Library entries, and relevant document chunks through `buildAskPraxisCorpusContext`.
+- Next step: add a first-class corpus search API returning ranked snippets with source type, confidence, and Firestore path.
+
 ### Media Scanner
 
 Tool id: `media-scanner` or upgrade existing `media-compass` / `media-roundup` without adding a new route if registry consolidation is preferred.
@@ -135,6 +152,8 @@ Upgrade `media-roundup`:
 - [ ] `tests:` add schema unit tests, route audit coverage, and a component smoke test.
 - [ ] `media:` add keyword bundle settings per situation.
 - [x] `media:` add Google advanced search query builder helper with tests.
+- [x] `argus:` make ARGUS alerts, saved sources, and document snippets available to Ask PRAXIS as active situation corpus context.
+- [ ] `argus:` add `/api/intelligence/corpus-search` for ranked, source-typed corpus retrieval across ARGUS, sources, documents, media clusters, and tool outputs.
 - [ ] `media:` upgrade `media-roundup` prompt and schema around query plans, clusters, and citations.
 - [ ] `docs:` add tool docs under `docs/tools/brainstorming-table.md` and refresh `docs/tools/media-roundup.md`.
 

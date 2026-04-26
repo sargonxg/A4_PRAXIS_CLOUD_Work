@@ -9,7 +9,7 @@ import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse 
 import { withCalibration } from '@/lib/api/with-calibration';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { retrieveRelevantChunks } from '@/lib/firebase/documents-service';
+import { buildAskPraxisCorpusContext } from '@/lib/argus/corpus-context';
 import { messageContentSchema, situationContextSchema, aiSettingsSchema } from '@/lib/api/schemas';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import type { Situation } from '@/types/situation';
@@ -162,7 +162,7 @@ You have access to the user's active situation data. When answering questions:
       systemPrompt += `\n\n## Active Conflict Context\nThe user is analyzing: **${conflictContext}**\nUse queryConflictGraph to retrieve structured data before answering.`;
     }
 
-    // --- RAG: retrieve relevant document chunks for context ---
+    // --- RAG: retrieve the user's situation corpus for Ask PRAXIS ---
     if (situation && !situation.isDemo) {
       try {
         const lastMessage = messages?.[messages.length - 1];
@@ -174,12 +174,13 @@ You have access to the user's active situation data. When answering questions:
           if (sessionMatch) {
             const sessionData = JSON.parse(decodeURIComponent(sessionMatch[1]));
             if (sessionData?.uid) {
-              const chunks = await retrieveRelevantChunks(sessionData.uid, situation.id, query, { maxChunks: 5 });
-              if (chunks.length > 0) {
-                const ragContext = chunks.map((c) =>
-                  `[Source: ${c.documentTitle}]\n${c.text}`
-                ).join('\n\n---\n\n');
-                systemPrompt += `\n\n## Relevant Document Excerpts\nThe following excerpts from the user's uploaded documents are relevant to the current query. Use these to ground your response:\n\n${ragContext}`;
+              const corpusContext = await buildAskPraxisCorpusContext({
+                uid: sessionData.uid,
+                situationId: situation.id,
+                query,
+              });
+              if (corpusContext) {
+                systemPrompt += `\n\n## User Situation Corpus\nThe following ARGUS alerts, saved sources, and document excerpts are from this user's active situation. Use them before general knowledge and cite them by source label when relevant:\n\n${corpusContext}`;
               }
             }
           }
