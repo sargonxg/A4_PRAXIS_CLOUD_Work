@@ -73,3 +73,8 @@ docker-compose.override.yml
 # Claude Code local tooling — never commit (agent worktrees can reach GB scale)
 .claude/
 .agents/
+
+# Personal screenshots dropped into the repo for agent review — never commit
+Screenshot*.png
+Screenshot*.jpg
+Screenshot*.jpeg

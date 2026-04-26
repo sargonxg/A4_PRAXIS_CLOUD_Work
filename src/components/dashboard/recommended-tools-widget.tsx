@@ -62,12 +62,12 @@ export function RecommendedToolsWidget({ situation }: RecommendedToolsWidgetProp
           <li key={rec.toolId}>
             <PraxisLink
               href={rec.href}
-              className="group/item flex flex-col gap-0.5 rounded px-1.5 py-1 hover:bg-slate-800/60"
+              className="group/item flex flex-col gap-0.5 rounded px-1.5 py-1 hover:bg-slate-100"
             >
-              <span className="truncate text-xs font-medium text-slate-200 group-hover/item:text-slate-50">
+              <span className="truncate text-xs font-semibold text-navy-900 group-hover/item:text-diplomatic-blue">
                 {prettyToolName(rec.toolId)}
               </span>
-              <span className="line-clamp-2 text-[11px] text-slate-500">
+              <span className="line-clamp-2 text-[11px] text-navy-600">
                 {rec.rationale}
               </span>
             </PraxisLink>
