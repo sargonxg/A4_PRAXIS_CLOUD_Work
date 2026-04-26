@@ -2,6 +2,78 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-26 — Tenth-session round 4 deploy (Claude Code) — Lanes AA, BB, CC, DD, EE, FF
+
+Source commit deployed: head of `main` at `gcloud builds submit` time (round-4 lanes AA → FF + the round-4 CHANGELOG commit).
+
+Cloud Build:
+
+- Build ID: `7761707d-455e-4187-80d2-d014e3b6615b`
+- Status: `SUCCESS`
+- Duration: `~10M36S` (createTime 2026-04-26T23:26:16Z → finishTime 23:36:52Z)
+- Project: `praxisbytacitus`
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00077-lqg` (ready, active)
+- Backend revision: `praxis-backend-00047-vbg` (ready, active)
+- Function services still ready: `on-document-uploaded-00001-taz`, `on-situation-created-00001-zay`
+- GDELT worker still ready: `gdelt-poller-00001-wag`
+
+Validation before submit:
+
+- `npx tsc --noEmit` clean.
+- `npm run build` clean.
+- `node scripts/audit-ai-routes.mjs` reports `57 AI route files, 57 calibrated, 4 exempt` (no new AI routes vs round 3 — round 4 ships intelligence + helper modules).
+- `npx vitest run` 317/317 (was 270 entering round 4 — +47 from CC dev-backlog (18) + DD clarifying-questions (15) + EE wikipedia-enrichment (5) + FF analyst-notes (8) + 1 from a registry tweak).
+
+Production smoke (post-deploy):
+
+- `https://praxis.tacitus.me/` returned `200`.
+- `https://praxis.tacitus.me/login` returned `200`.
+- `https://praxis.tacitus.me/api/health` returned `status: ok` with Firestore, AI provider, and cookie-secret checks healthy. `anthropic`, `firecrawl`, `vertex_adk`, `stripe` continue to report `unconfigured` (expected operating posture).
+
+What shipped (round 4 lanes):
+
+- **Lane AA — bottom-right collision + Screenshot* gitignore.** Activity-panel pill moved from `fixed bottom-4 right-4` to `bottom-24 right-6` so it no longer overlaps the FloatingPraxis dome. Screenshot files dropped into the repo are now ignored from git.
+- **Lane BB — dashboard widget-shell light-mode token swap (WCAG AA).** Root cause: `slate-800/900/300/500/600` dark-theme tokens inside the `app-light` shell. New tokens: `navy-700/600/500/400` + `slate-200` borders + `bg-white` + soft shadow. Same WidgetShell powers RiskGaugeWidget + EscalationWidget + RecommendedToolsWidget so all three dashboard cards now render legibly.
+- **Lane CC — Developer Backlog system.** `dev_backlog/` Firestore root collection with 8 kinds, 5 severities, 7 statuses, dedupe key (SHA-1 of normalised signature), TTL by severity (30/90/365 days). `withCalibration` failure path auto-publishes on every 4xx/5xx. `GET / POST /api/intelligence/dev-backlog` admin-gated.
+- **Lane DD — Clarifying Questions framework.** Schema, route helper `clarificationResponse(req)`, type guard, prompt-block helper, modal component with 5 input types and 6 topics. Threading into specific routes queued.
+- **Lane EE — Wikipedia enrichment client.** REST API + opensearch + 6s timeout + AbortController + PRAXIS user-agent. `formatWikipediaPromptBlock` renders the `## WIKIPEDIA BACKGROUND (CC-BY-SA, cite by URL on use)` block. Threading into Conflict Graph + Timeline routes queued.
+- **Lane FF — Analyst Notes** (natural-language knowledge retention). CRUD on `users/{uid}/situations/{sitId}/analyst_notes/{id}` + `formatAnalystNotesBlock` prompt-injection helper with explicit "do NOT contradict an analyst note silently" instruction.
+
+Cumulative tenth-session totals (rounds 1 → 4):
+
+- Code lanes shipped: A, B, C, D, M, N, T, U, V, W, X, Z, AA, BB, CC, DD, EE, FF (18).
+- Doc lanes shipped: E, O, P, Q, R, S, Y, LP1, LP2 + persona walkthroughs + Codex handoff + agent registry doc + agentic-system refresh + this DEPLOYMENT_LOG (14).
+- Cloud Build SUCCESS deploys: 4 (`05a1e8dd`, `8bda8f5d`, `0bbb5830`, `7761707d`).
+- AI routes calibrated: 57 (was 53 at session start).
+- Vitest count: 317/317 (was 168 at session start; +149 across the session).
+- Open bricks tracked on `docs/TODO_BOARD_2026-04-26.md`: 38 BIG bricks + 6 NEW bricks 39-44 from rounds 3-4 + 7 P-Test items + queued lanes.
+
+---
+
+## 2026-04-26 — Tenth-session round 3 deploy (Claude Code) — Lanes M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z + LP1 + LP2
+
+Source commit deployed: head of `main` at submit time (round-3 lanes shipped + the docs bundle).
+
+Cloud Build:
+
+- Build ID: `0bbb5830-ceda-4850-868f-9acfaf779a9c`
+- Status: `SUCCESS`
+- Project: `praxisbytacitus`
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00075-lzv` (was active before round 4)
+- Backend revision: `praxis-backend-00046-xdp` (was active before round 4)
+
+Production smoke (post-deploy): `/`, `/login`, `/api/health` → 200/200/200.
+
+What shipped: Lane Z (agent runner), Lane T (Source Scout agentic workflow #1), Lane U (Red-Team auto-review agentic workflow #2), Lane V (AiErrorToast + DegradedDataChip), Lane W (citation chips), Lane X (Brainstorming Table Markdown export), Lane LP1 (landing page hero overhaul + AiCompanionSection), Lane LP2 (audit verified clean), Lane M (agent registry codified), Lane N (Ask PRAXIS chat → searchSituationCorpus), Lanes O-S (test plan, GCP expansion, TODO board, tool reliability audit, INDEX), Lane Y (seven specs).
+
+---
+
 ## 2026-04-26 — Tenth-session round 2 deploy (Claude Code) — Lanes M, N, O, P, Q, R, S
 
 Source commit deployed: `df15c12` (working-tree snapshot at submit time — head of `main` after the Lane M+N code commit and the Lane O–S docs bundle).
