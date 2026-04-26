@@ -2,6 +2,57 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-26 — Tenth-session round 2 deploy (Claude Code) — Lanes M, N, O, P, Q, R, S
+
+Source commit deployed: `df15c12` (working-tree snapshot at submit time — head of `main` after the Lane M+N code commit and the Lane O–S docs bundle).
+
+Cloud Build:
+
+- Build ID: `8bda8f5d-6ed3-4f1a-860b-96ab086630fd`
+- Status: `SUCCESS`
+- Duration: `~9M23S` (createTime 2026-04-26T22:12:52Z → finishTime 22:22:15Z)
+- Project: `praxisbytacitus`
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00073-vrc` (ready, active)
+- Backend revision: `praxis-backend-00045-jdk` (ready, active)
+- Function services still ready: `on-document-uploaded-00001-taz`, `on-situation-created-00001-zay`
+- GDELT worker still ready: `gdelt-poller-00001-wag`
+
+Validation before submit:
+
+- `npx tsc --noEmit` clean (0 errors)
+- `npm run build` clean
+- `npm run audit:gcp` 0 hard / 0 soft
+- `node scripts/audit-ai-routes.mjs` reports `55 AI route files, 55 calibrated, 4 exempt`
+- `npx vitest run` 215/215 (was 207 entering round 2 — +8 from `tests/services/agent-registry.test.ts`)
+
+Production smoke (post-deploy):
+
+- `https://praxis.tacitus.me/` returned `200`
+- `https://praxis.tacitus.me/login` returned `200`
+- `https://praxis.tacitus.me/api/health` returned `status: ok` with Firestore, AI provider, and cookie secret checks healthy. `anthropic`, `firecrawl`, `vertex_adk`, and `stripe` continue to report `unconfigured` (expected operating posture).
+
+What shipped (round 2 lanes):
+
+- **Lane N** — Ask PRAXIS chat now reasons over the same evidence layers as Brainstorming Table, Humanitarian, and any future agent via `searchSituationCorpus`. Inline citation refs (`[#1]`, `[argus]`, `[documents]`, etc.) are anchored to specific corpus items. Empty-retrieval explicitly marks intelligence gaps and recommends a relevant tool run. Heavy strategic questions are routed to the Brainstorming Table. Closes step 4 of `docs/CORPUS_ARCHITECTURE.md`.
+- **Lane M** — `src/lib/agents/registry.ts` is the single source of truth for every persona PRAXIS can invoke (10 personas: 6 active, 1 orchestrator, 3 stubs). Brainstorming Table route reads its panel from the registry now. Tests at `tests/services/agent-registry.test.ts` (8 tests). Spec at `docs/AGENT_REGISTRY.md`.
+- **Lanes O–S** — Strategy bundle, no code: `docs/TEST_PLAN_2026-04-26.md` (multi-persona test matrix + 7-item automation backlog), `docs/GCP_EXPANSION_PLAN_2026-04-26.md` (12 new GCP services with brick ids 31–38), `docs/TODO_BOARD_2026-04-26.md` (single-pane status for every brick), `docs/TOOL_RELIABILITY_AUDIT_2026-04-26.md` (top-10 tools × 5 failure modes), `docs/INDEX.md` (navigation across every doc).
+
+Cumulative tenth-session tally (round 1 + round 2):
+
+- Code lanes shipped: A, B, C, D, M, N (6).
+- Doc lanes shipped: E, O, P, Q, R, S, plus persona walkthroughs and Codex handoff (8).
+- Commits to `main`: 18+ (from `de0ddf6` Lane A through round 2 docs bundle).
+- AI routes calibrated: 55 (was 53 at session start).
+- Vitest count: 215 (was 168 at session start; +47).
+- Cloud Build deploys: 2 SUCCESS (round 1 = `05a1e8dd`, round 2 = `8bda8f5d`).
+- New GCP brick proposals codified: 8 (bricks 31–38).
+- Open bricks tracked on `docs/TODO_BOARD_2026-04-26.md`: 38 BIG bricks + 7 P-Test items + 5 Codex-queued lanes.
+
+---
+
 ## 2026-04-26 — Tenth-session multi-lane sprint deploy (Claude Code)
 
 Source commit deployed: `6f10860` (working-tree snapshot at `gcloud builds submit` time; the three subsequent docs-only commits `b70d4c3`, `d736182`, `2937013` landed on `main` after the build started and will deploy on the next build).
