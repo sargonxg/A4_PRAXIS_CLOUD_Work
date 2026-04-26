@@ -86,6 +86,10 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   'ai_humanitarian': 2,
   // Multi-persona Brainstorming Table (v6.4 MVP — synchronous prototype)
   'ai_brainstorming_table': 5,
+  // Source Scout agentic workflow (v6.4 — finds 5 fresh defensible sources)
+  'ai_source_scout': 3,
+  // Red-Team auto-review agent (v6.4 — adversarial pass on any tool output)
+  'ai_red_team_review': 3,
 };
 
 /**

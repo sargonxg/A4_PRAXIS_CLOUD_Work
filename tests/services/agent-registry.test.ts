@@ -51,8 +51,16 @@ describe('agent registry', () => {
   });
 
   it('getPersona returns null for inactive personas (stubs)', () => {
-    // source-scout is registered but not yet wired — must read as inactive.
-    expect(getPersona('source-scout')).toBeNull();
+    // graph-cartographer is registered but not yet wired — must read as inactive.
+    expect(getPersona('graph-cartographer')).toBeNull();
+    // timeline-editor likewise.
+    expect(getPersona('timeline-editor')).toBeNull();
+  });
+
+  it('getPersona resolves source-scout (activated 2026-04-26 round 3)', () => {
+    const p = getPersona('source-scout');
+    expect(p).not.toBeNull();
+    expect(p!.active).toBe(true);
   });
 
   it('every active persona either has handoffTools or is the synthesis chair', () => {

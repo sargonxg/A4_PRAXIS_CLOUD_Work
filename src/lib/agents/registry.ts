@@ -112,10 +112,10 @@ export const AGENT_REGISTRY: Record<AgentPersonaId, AgentPersona> = {
     id: 'source-scout',
     label: 'Source Scout',
     rolePrompt:
-      'Find five fresh, defensible sources on a question that the analyst has not seen yet. Rank by recency × diversity × reliability. Output a search plan with grounded-search citations.',
-    frameworks: ['Source Triangulation', 'Reliability Tiers'],
+      'Find five fresh, defensible sources on a question that the analyst has not seen yet. Rank by recency × diversity × reliability. Output a search plan with grounded-search citations. Avoid sources already in the analyst\'s Sources Library — propose only NEW ones with named publisher, URL, and a one-sentence reason.',
+    frameworks: ['Source Triangulation', 'Reliability Tiers', 'OSINT Source Hierarchy'],
     handoffTools: ['sources-library', 'argus'],
-    active: false,
+    active: true,
   },
   'graph-cartographer': {
     id: 'graph-cartographer',

@@ -50,7 +50,11 @@ export type ToolName =
   | 'human-rights'
   | 'electoral-risk'
   // v6.4 — multi-agent brainstorming table (synchronous MVP)
-  | 'brainstorming-table';
+  | 'brainstorming-table'
+  // v6.4 — Source Scout agentic workflow
+  | 'source-scout'
+  // v6.4 — Red-Team auto-review agent
+  | 'red-team-review';
 
 function toolRef(uid: string, sitId: string, tool: ToolName) {
   return doc(db, 'users', uid, 'situations', sitId, 'tools', tool);
