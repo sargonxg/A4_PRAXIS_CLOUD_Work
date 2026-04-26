@@ -62,8 +62,12 @@ open-data / Google Cloud source-of-truth in `README.md`, `CLAUDE.md`, and
 - [ ] `[media-P1]` Add per-situation keyword bundles and source
   whitelist/blocklist settings consumed by Media Compass, Media Roundup, and
   ARGUS.
-- [ ] `[ops-P0]` Finish GCP/Firebase auth refresh, rerun `npm run audit:gcp`,
+- [x] `[ops-P0]` Finish GCP/Firebase auth refresh, rerun `npm run audit:gcp`,
   verify Cloud Run services, and only then deploy to `praxis.tacitus.me`.
+  Completed 2026-04-26: Firebase rules/indexes deployed, GCP audit green
+  with 0 hard / 0 soft findings, Cloud Tasks queues running, Cloud Build
+  `36ff5d41-7f8d-4091-a675-8ec8a7646a59` successful, Cloud Run ready on
+  `praxis-frontend-00065-nhs` and `praxis-backend-00041-g29`.
 
 ---
 

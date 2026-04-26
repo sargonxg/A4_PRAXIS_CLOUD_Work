@@ -76,6 +76,14 @@
 > chunks for the active situation. Firebase CLI still requires an interactive
 > `firebase login --reauth`; `firebase projects:list` fails because the stored
 > Firebase refresh token is invalid, but GCP deploy/audit are healthy.
+> Follow-up ops verification completed after interactive reauth: Firebase CLI
+> now lists project `praxisbytacitus`, Firestore rules/indexes deployed
+> successfully, `npm run audit:gcp` is green with 0 hard / 0 soft findings,
+> Cloud Tasks queues are running, and Cloud Run latest-ready revisions are
+> `praxis-frontend-00065-nhs` / `praxis-backend-00041-g29`. Production smoke:
+> `/`, `/login`, and `/api/health` return 200/ok. Infra `.sh` syntax checks
+> pass under Git Bash; the default Windows WSL `bash.exe` is unavailable
+> because no WSL distro is installed.
 
 > **2026-04-26 update**: Codex started the workspace-personalization lane.
 > User preferences now include `hiddenToolIds` and `toolOrder`, Settings →

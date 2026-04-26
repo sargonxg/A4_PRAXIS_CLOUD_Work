@@ -34,6 +34,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Added an ARGUS corpus context bridge so Ask PRAXIS can inject active
   situation ARGUS alerts, watch items, saved sources, and relevant document
   excerpts before answering.
+- Completed the live Firebase/GCP ops verification: Firestore rules/indexes
+  deployed, Cloud Tasks queues running, `npm run audit:gcp` green with 0 hard
+  / 0 soft findings, Cloud Build successful, Cloud Run ready on
+  `praxis-frontend-00065-nhs` and `praxis-backend-00041-g29`, and production
+  `/`, `/login`, `/api/health` smoke checks passing.
 
 ### Public UX source-truth cleanup
 

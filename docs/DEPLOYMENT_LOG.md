@@ -2,6 +2,71 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-26 — Codex strategic uplift + ARGUS corpus deploy
+
+Source commits deployed:
+
+- `932ad3e` — strategic uplift docs, landing/source-truth copy, media query
+  planning, geospatial degraded-state fix, Cloud Tasks audit coverage.
+- `31aeb9c` — Ask PRAXIS ARGUS corpus bridge for active situation context.
+
+Cloud Build:
+
+- Build ID: `8d9f5c8d-c96e-4fb9-be67-b6abc604af73`
+  - Status: `SUCCESS`
+  - Deployed `932ad3e`
+- Build ID: `36ff5d41-7f8d-4091-a675-8ec8a7646a59`
+  - Status: `SUCCESS`
+  - Deployed `31aeb9c`
+- Latest five Cloud Build records checked on 2026-04-26 were all `SUCCESS`.
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00065-nhs` (ready)
+- Backend revision: `praxis-backend-00041-g29` (ready)
+- Function services ready: `on-document-uploaded-00001-taz`,
+  `on-situation-created-00001-zay`
+- GDELT service ready: `gdelt-poller-00001-wag`
+
+Firebase / Firestore:
+
+- Firebase CLI authenticated as `giulio@tacitus.me`; project
+  `praxisbytacitus` visible and active.
+- `firebase deploy --only firestore:rules,firestore:indexes
+  --project praxisbytacitus --non-interactive` succeeded.
+- Firebase reported 6 existing field overrides in the project that are not in
+  `firestore.indexes.json`; they were intentionally left untouched.
+
+GCP verification:
+
+- `npm run audit:gcp`: 0 hard failures, 0 soft warnings.
+- Cloud Tasks API enabled; queues running:
+  `praxis-research`, `praxis-agents`, `praxis-embeddings`.
+- Scheduler jobs enabled: `praxis-check-alerts`,
+  `praxis-generate-briefing`, `gdelt-poller`.
+- Pub/Sub includes `profile.events`, `praxis.alert`,
+  `praxis.deadletter`, `praxis.ingest`, `praxis.extract`,
+  `praxis.pipeline`.
+- Infra shell scripts passed syntax checks with Git Bash
+  (`C:\Program Files\Git\bin\bash.exe -n`). The default Windows `bash.exe`
+  invokes WSL on this host; WSL has no installed distro, so use Git Bash for
+  local script validation.
+
+Production smoke:
+
+- `https://praxis.tacitus.me/` returned `200`.
+- `https://praxis.tacitus.me/login` returned `200`.
+- `https://praxis.tacitus.me/api/health` returned `status: ok` with
+  Firestore, AI provider, and cookie secret checks healthy.
+
+Validation before deploy:
+
+- `npx tsc --noEmit --pretty false`
+- `npm run build`
+- `node scripts/audit-ai-routes.mjs`
+- `npx vitest run tests/unit/lib/argus/corpus-context.test.ts tests/unit/lib/media/search-query.test.ts`
+- `npm audit --omit=dev` improved to 0 critical / 0 high.
+
 ## 2026-04-26 — Dashboard operational-status deploy
 
 Source commit deployed: `6b519b3`
