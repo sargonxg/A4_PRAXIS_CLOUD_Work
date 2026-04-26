@@ -2,6 +2,42 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-26 — Dashboard operational-status deploy
+
+Source commit deployed: `6b519b3`
+
+Cloud Build:
+
+- Build ID: `646e18d5-1a7c-4ca8-b4ea-4d8449ccb8d7`
+- Status: `SUCCESS`
+- Duration: `9M30S`
+- Project: `praxisbytacitus`
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00061-6h8` (ready)
+- Backend revision: `praxis-backend-00039-mds` (ready)
+
+Validation before deploy:
+
+- `npx tsc --noEmit --pretty false`
+- `npx vitest run tests/unit/lib/dashboard/tool-status-summary.test.ts tests/unit/lib/dashboard/role-recommendations.test.ts tests/unit/lib/navigation/tool-preferences.test.ts`
+- `npx eslint` on touched dashboard/status files
+- `npm run build`
+
+Production smoke:
+
+- `https://praxis.tacitus.me/` returned `200`.
+- `https://praxis.tacitus.me/api/health` returned `status: ok` with Firestore,
+  AI provider, and cookie secret checks healthy.
+
+What shipped:
+
+- Dashboard v2 foundation: the old static operational-status placeholder is
+  now a real panel summarizing fresh, running, stale, warning, and failed tool
+  outputs for the active situation.
+- Status aggregation logic is covered by focused unit tests.
+
 ## 2026-04-26 — Workspace personalization deploy
 
 Source commit deployed: `69424ad`
