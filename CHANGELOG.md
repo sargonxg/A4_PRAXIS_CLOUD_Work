@@ -159,6 +159,171 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Codex-owned Workspace Personalization files (sidebar, dashboard,
   recommendations). Future Codex/Claude lanes can opt tools in.
 
+### Round 3 — 15-improvement sprint (Lanes M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z + LP1 + LP2)
+
+> Plan doc: `docs/IMPROVEMENT_15_2026-04-26.md`. Round 3 ships 8 code
+> lanes, the agentic runner, two new agentic workflows (Source Scout +
+> Red-Team Review), shared error/citation/markdown primitives,
+> landing-page hero overhaul + product/marketing section, and seven
+> drop-in specs for the remaining improvements.
+
+#### Lane Z — Generalized agent runner (`src/lib/agents/run-agent.ts`)
+- New `runAgent({ personaId, uid, situationId, query, calibration,
+  schema, ... })` helper consumed by every agent route. Single
+  pipeline for persona role prompt + calibration + corpus evidence +
+  Pro-model generation against a Zod schema.
+- `AgentRunnerError` codes: `unknown-persona`, `inactive-persona`,
+  `corpus-retrieval-failed`, `model-call-failed`. Routes return
+  501/502 accordingly.
+- Tests at `tests/services/run-agent.test.ts` cover persona block,
+  calibration block (RESPOND IN + red lines), corpus block (empty +
+  populated), clamp helper.
+
+#### Lane T — Source Scout agent (agentic workflow #1)
+- `POST /api/ai/source-scout` calibrated route + Zod schema
+  (`SourceScoutSchema`). Proposes 3–8 fresh defensible sources on a
+  question the analyst hasn't seen yet, ranked by reliability tier
+  (a/b/c/d) and corroboration. Consults `searchSituationCorpus` to
+  avoid recommending duplicates.
+- Activated `'source-scout'` persona in `src/lib/agents/registry.ts`.
+- `ai_source_scout` (3 credits) added to `with-credits.ts`.
+- Tool registry entry under intelligence category, 168h staleness.
+- `'source-scout'` added to `ToolName` union.
+- Page at `src/app/app/source-scout/page.tsx` — question textarea,
+  timeframe pills, results table with reliability badges + 'Copy for
+  Sources Library' helper, intelligence-gaps banner, provenance
+  panel.
+- `tests/services/source-scout-schema.test.ts` covers positive case +
+  7 invalid cases.
+
+#### Lane U — Red-Team auto-review agent (agentic workflow #2)
+- `POST /api/ai/red-team-review` accepts any tool output (toolId +
+  JSON payload, capped at 12K chars) and returns a structured
+  adversarial critique: unstated assumptions (severity-tagged),
+  source diversity issues, motivated reasoning red flags, missing
+  intelligence gaps, confidence adjustment block (original →
+  suggested with rationale), mandatory `whatWouldChangeMyMind`
+  falsifiability signal, recommended follow-ups (often Source Scout
+  or Brainstorming Table).
+- `ai_red_team_review` (3 credits) added to `with-credits.ts`.
+- Tool registry entry under analysis category, 72h staleness.
+- `'red-team-review'` added to `ToolName` union.
+- `tests/services/red-team-review-schema.test.ts`: 8 schema tests.
+
+#### Lane V — `<AiErrorToast />` + `<DegradedDataChip />` shared primitives
+- Closes F-CCM-1 (silent 503) and F-CCM-4 (invisible feed-degraded
+  state) from `docs/TOOL_RELIABILITY_AUDIT_2026-04-26.md`.
+- `src/stores/ai-error-store.ts` — Zustand store with publish() /
+  dismiss() / clear(); each entry carries
+  `{id, toolId, status, message, retryable, retry?, at}`.
+- `src/components/praxis/ai-error-toast.tsx` — top-right toast
+  portal, mounted in app-shell. Auto-dismisses after 12s, supports
+  Retry button when `entry.retry` is provided. Tones by status code
+  (5xx rose / 429 amber / other slate).
+- `src/components/praxis/degraded-data-chip.tsx` — small chip surfaced
+  next to a tool's headline when live feeds were unavailable; shows
+  missing feed names in tooltip + body.
+- `tests/services/ai-error-store.test.ts` — 6 tests covering publish,
+  dismiss, retry callback preservation, clear, unique-id under load.
+
+#### Lane W — Citation parser + chip primitives for Ask PRAXIS chat
+- `src/lib/chat/citation-parser.ts` — pure parser turning a chat
+  reply into `ChatToken[]` (text / citation-index / citation-layer).
+  Case-insensitive layer matching; nine recognised layers.
+- `src/components/assistant/citation-chip.tsx` — `<CitationIndex />`
+  and `<CitationLayer />` primitives with per-layer colour tone,
+  tooltip, optional click handlers for opening a side panel.
+- `tests/services/citation-parser.test.ts` — 11 tests covering plain
+  text, single index/layer, multiple citations, case-insensitive
+  match, unrecognised brackets staying text, rejected `[#0]`,
+  empty/undefined input.
+- Threading the chips into the streaming chat-interface itself is
+  queued as a follow-up.
+
+#### Lane X — Brainstorming Table Markdown export
+- Closes step 6 of `docs/AGENTIC_SYSTEM.md` First Implementation
+  Queue and item #7 of `docs/IMPROVEMENT_15_2026-04-26.md`.
+- `src/lib/exports/brainstorming-markdown.ts` — pure function
+  `brainstormingTableToMarkdown(input)` renders YAML frontmatter +
+  title + BLUF + personas + per-turn sections (with reasoning-only
+  marker when evidence is empty) + synthesis (consensus, divergences,
+  options with preferredBy attribution, open questions, next actions)
+  + provenance footer with retrieval trace.
+  `brainstormingTableFilename()` helper slugifies and dates.
+- `src/app/app/brainstorming-table/page.tsx`: 'Download memo' button
+  on the deliberation header creates a Blob + triggers download.
+- `tests/services/brainstorming-markdown.test.ts` — 11 tests covering
+  frontmatter, BLUF blockquote, per-turn sections, reasoning-only
+  marker, synthesis sub-sections (populated + empty), retrieval
+  trace footer, fallback for missing trace, filename slugging edges.
+
+#### Lane LP1 — Landing page hero animation + product copy overhaul
+- User flagged the hero right-column was rendering blank because
+  `HeroVisual` gambled on a missing `/landing/hero-loop.mp4`.
+- `src/components/landing/hero-visual.tsx`: drop the missing-video
+  path; always render the live `ProductGlimpse` SVG (Conflict Graph
+  + Risk Gauge + Live Updates ticker + grounded-source pills) wrapped
+  in a subtle floating motion + soft gold/blue glow + three orbiting
+  pings. Honours `prefers-reduced-motion`.
+- `src/components/landing/hero.tsx`: removed `"Demo data is labelled"`
+  trust signal; new signals are `Calibrated to your role`, `Open-data
+  first`, `Google Cloud native`, `Sources you can defend`.
+  Subheadline rewritten around the user's product framing: "Most of
+  policy is not classified. PRAXIS turns the open record into a
+  calibrated workspace where AI experts you train help you assess,
+  draft, and decide."
+- `src/components/landing/ai-companion-section.tsx` (NEW) — three-
+  pillar product section explaining (1) most policy work is open,
+  (2) sensitive work stays private, (3) AI as a pro not a chatbot
+  — plus four companion benefits (expert team, persistent memory,
+  companion you train, Source Scout) and a six-domain general-path /
+  specific-toolkits grid (diplomacy, humanitarian, human rights,
+  development, conflict analysis, narrative).
+- Mounted after `HowItWorks` in `src/app/(landing)/page.tsx`.
+
+#### Lane LP2 — Audit of previous lanes
+- Verified every code file from rounds 1–2 + round 3 exists and is
+  committed: `src/types/corpus.ts`,
+  `src/lib/intelligence/corpus-search.ts`,
+  `src/app/api/intelligence/corpus-search/route.ts`,
+  `src/app/api/ai/humanitarian/route.ts`,
+  `src/app/api/ai/brainstorming-table/route.ts`,
+  `src/app/api/ai/source-scout/route.ts`,
+  `src/app/app/source-scout/page.tsx`,
+  `src/app/app/brainstorming-table/page.tsx`,
+  `src/components/praxis/{confidence-badge,citation,output-provenance-panel}.tsx`,
+  `src/components/landing/ai-companion-section.tsx`,
+  `src/lib/agents/registry.ts`,
+  `src/lib/agents/run-agent.ts`. Working tree clean.
+
+#### Lane M — Agent registry codified (this round)
+- See round-2 entry below; round 3 activates `'source-scout'` and
+  refactors the Brainstorming Table route to import from the
+  registry.
+
+#### Lanes N, O, P, Q, R, S
+- See round-2 entries below.
+
+#### Lane Y — Seven specs for the remaining improvements
+- `docs/specs/2026-04-26-improvements/` holds drop-in specs for items
+  9–15 of `docs/IMPROVEMENT_15_2026-04-26.md`:
+  - 09-onboarding-rationale.md (Codex, ~1d, NEW BRICK 39).
+  - 10-document-ai.md (Codex ops, ~2d, BIG #31).
+  - 11-cloud-translation.md (~2d, BIG #32).
+  - 12-brainstorming-cloud-tasks.md (Codex backend+ops, ~3d, BIG #18).
+  - 13-changed-since.md (Codex, ~1d, NEW BRICK 40).
+  - 14-briefing-versioning.md (Claude UX, ~2d, BIG #9).
+  - 15-domain-overrides.md (Claude Tools, ~1d, BIG #6).
+- README indexes them with owner / brick id / effort estimate.
+
+#### Round 3 validation
+- `npx tsc --noEmit` clean.
+- `node scripts/audit-ai-routes.mjs` reports
+  `57 AI route files, 57 calibrated, 4 exempt` (was 55/4 entering round 3).
+- `npm run audit:gcp` 0 hard / 0 soft.
+- `npx vitest run` 270/270 (was 215, +55 tests across round 3).
+- `npm run build` clean.
+
 ### Lane N — Ask PRAXIS wired to the shared corpus retriever
 
 - Closes step 4 of `docs/CORPUS_ARCHITECTURE.md`. Ask PRAXIS chat
