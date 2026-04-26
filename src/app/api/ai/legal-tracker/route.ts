@@ -113,7 +113,7 @@ const DEMO_RESPONSE = {
   ],
 };
 
-export const POST = withCalibration('commitments', 'ai_analysis', {
+export const POST = withCalibration('legal_tracker', 'ai_legal_tracker', {
   retrievalQuery: (_req, body) => {
     const s = body.situation as { name?: string; region?: string } | undefined;
     return [s?.name, s?.region].filter(Boolean).join(' — ') || undefined;
