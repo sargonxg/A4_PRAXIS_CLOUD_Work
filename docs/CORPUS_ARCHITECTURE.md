@@ -107,14 +107,27 @@ Response:
 
 ## Implementation Order
 
-1. Normalize corpus result type in `src/types/corpus.ts`.
-2. Extract current ARGUS corpus ranking from `src/lib/argus/corpus-context.ts`
-   into reusable `searchSituationCorpus`.
-3. Add `/api/intelligence/corpus-search` with `withAuth`.
-4. Update Ask PRAXIS to call the shared function instead of manually building
-   context.
-5. Add citation disclosure in the chat UI.
-6. Add Firestore vector-search pilot for document chunks after index planning.
-7. Add BigQuery aggregate metrics for coverage/freshness, never raw sensitive
+1. ✅ Normalize corpus result type in `src/types/corpus.ts`. Shipped 2026-04-26
+   in the tenth session — defines `CorpusItem`, `CorpusLayer`,
+   `CorpusSearchRequest`, `CorpusSearchResponse`, `CorpusSearchTrace`, and the
+   `DEFAULT_CORPUS_LAYERS` constant.
+2. ✅ Reusable `searchSituationCorpus` in `src/lib/intelligence/corpus-search.ts`.
+   Shipped 2026-04-26 with parallel layer retrieval, layer-priority weighted
+   ranking, document-chunk hybrid scoring through `retrieveRelevantChunks`,
+   and a recency tiebreaker. The legacy `buildAskPraxisCorpusContext` in
+   `src/lib/argus/corpus-context.ts` still composes a flat string for the
+   chat route and is intentionally left untouched until step 4 lands.
+3. ✅ `POST /api/intelligence/corpus-search` shipped 2026-04-26
+   (`src/app/api/intelligence/corpus-search/route.ts`). Wrapped with
+   `withAuth`, Zod-validated, demo-session bypass, 50-item hard cap, and
+   a trace block reporting per-layer counts and server-side `durationMs`.
+4. ⏳ Update Ask PRAXIS to call the shared function instead of manually
+   building context. Deferred to next session to keep Lane A self-contained.
+5. ⏳ Add citation disclosure in the chat UI.
+6. ⏳ Add Firestore vector-search pilot for document chunks after index
+   planning. Note: today the `documents` layer already ranks via Gemini
+   text-embedding-004 vectors when chunks have them; expanding that to other
+   layers needs Firestore vector indexes per layer-specific subcollection.
+7. ⏳ Add BigQuery aggregate metrics for coverage/freshness, never raw sensitive
    text by default.
 

@@ -1,11 +1,33 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
-> **Last updated**: 2026-04-26 (Codex strategic-uplift review — architecture, landing, media/agentic specs)
+> **Last updated**: 2026-04-26 (Claude Code multi-lane sprint — corpus-search shipped; humanitarian, brainstorming-table, citation primitives, strategic roadmap queued)
+> **Local clone**: `C:\Users\giuli\ANTIGRAVITY\A4_PRAXIS_CLOUD_Work` (fresh `git clone` of `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`). The older locked clone at `C:\Users\giuli\ANTIGRAVITY\A4_PRAXIS_CLOUD_TACITUS\A4_PRAXIS_CLOUD_Work` could not be removed because of an open Windows file handle; secrets were preserved at `C:\Users\giuli\ANTIGRAVITY\_praxis_env_backup_20260426\` before re-cloning.
 > **Next agent**: Codex 5.5 (or Claude Code)
 > **Read first**: `CLAUDE.md`, `AGENTS.md`, `docs/OPERATIONAL_SPINE.md`, `CHANGELOG.md` Unreleased, `docs/NEXT_BRICKS_2026-04-26.md`.
 > **Sprint execution plan**: `docs/SPRINT_EXECUTION_PLAN_2026-04-25.md`
 > **Tool audit**: `docs/tools/UX_AUDIT_2026-04-26.md`
 > **Claude tandem prompts**: `docs/CLAUDE_TANDEM_PROMPTS_2026-04-25.md`
+
+> **2026-04-26 tenth-session update (Claude Code, multi-lane sprint)**:
+> Lane A shipped — situation corpus retrieval API. `POST /api/intelligence/corpus-search`
+> (auth-gated, Zod-validated, demo bypass, 50-item cap) ranks evidence
+> across `argus | sources | documents | graph | tool-output` layers via
+> `searchSituationCorpus({uid, situationId, query, layers, limit})` in
+> `src/lib/intelligence/corpus-search.ts`. Document-chunk layer leverages the
+> existing Gemini text-embedding-004 hybrid ranking. Each layer fails
+> closed (returns []) so a partial Firestore failure still yields a usable
+> response. `src/types/corpus.ts` defines the canonical retrieval contract;
+> `tests/services/corpus-search.test.ts` covers tokenization, scoring,
+> layer priority, confidence mapping, summarisation, slug fallback.
+> `src/lib/argus/corpus-context.ts` is intentionally left untouched in this
+> commit — Ask PRAXIS still composes its own context string. Step 4 of
+> `docs/CORPUS_ARCHITECTURE.md` (chat route delegates to the shared helper)
+> is queued for the next session. Validation: `npx tsc --noEmit` clean,
+> `node scripts/audit-ai-routes.mjs` 53/4, `npx vitest run` 188/188.
+> Lanes B–E (Humanitarian calibrated route, Brainstorming Table MVP,
+> shared Citation/ConfidenceBadge primitives, big-improvement roadmap)
+> are queued in `TaskList` for this session and will land as separate
+> commits to `main`.
 
 > **2026-04-26 ninth-session update**: Claude Code shipped the public-UX
 > source-truth lane and the first-run-UX lane, plus a tool-by-tool audit

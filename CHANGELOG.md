@@ -6,7 +6,47 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Unreleased] — 2026-04-26 (ninth session — public UX, onboarding, tool audit)
+## [Unreleased] — 2026-04-26 (tenth session — Claude Code multi-lane sprint)
+
+> Local clone path: `C:\Users\giuli\ANTIGRAVITY\A4_PRAXIS_CLOUD_Work` (fresh `git clone https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`). Older locked clone at `C:\Users\giuli\ANTIGRAVITY\A4_PRAXIS_CLOUD_TACITUS\A4_PRAXIS_CLOUD_Work` was abandoned (Windows file lock prevented removal); secrets were preserved at `C:\Users\giuli\ANTIGRAVITY\_praxis_env_backup_20260426\` before re-cloning.
+
+### Lane A — Situation corpus retrieval API (NEW)
+
+- Added `src/types/corpus.ts` defining `CorpusItem`, `CorpusLayer`,
+  `CorpusSearchRequest`, `CorpusSearchResponse`, `CorpusSearchTrace`,
+  and the `argus | sources | documents | graph | tool-output` retrieval
+  contract from `docs/CORPUS_ARCHITECTURE.md`.
+- Added `src/lib/intelligence/corpus-search.ts` exposing
+  `searchSituationCorpus({uid, situationId, query, layers, limit})` —
+  the shared retrieval helper that ranks evidence across five layers via
+  parallel firebase-admin reads, deterministic keyword + recency scoring,
+  and document-chunk hybrid (vector + keyword) scoring through the
+  existing `retrieveRelevantChunks` pipeline. Each layer fails closed: a
+  Firestore error or missing tool-data doc returns `[]` for that layer
+  while the others still resolve.
+- Added `POST /api/intelligence/corpus-search`
+  (`src/app/api/intelligence/corpus-search/route.ts`) — `withAuth`-wrapped
+  endpoint with Zod request validation, 50-item hard cap, demo-session
+  bypass (returns an empty corpus rather than leaking demo data), and a
+  trace block exposing layer counts, total candidates, ranking strategy,
+  and server-side `durationMs`.
+- This endpoint is intentionally NOT registered as an AI route: it is a
+  retrieval/intelligence endpoint, does not call any model, and does not
+  consume credits. `node scripts/audit-ai-routes.mjs` continues to pass
+  with 53 calibrated / 4 exempt because nothing under
+  `src/app/api/intelligence/*` is in scope for that audit.
+- Added unit tests at `tests/services/corpus-search.test.ts` covering
+  tokenization, scoring, layer-priority ordering, severity/reliability
+  → confidence mapping, tool-output summarisation, slug fallback.
+- Step 4 of `docs/CORPUS_ARCHITECTURE.md` (Ask PRAXIS calling the shared
+  helper instead of building its own context) is intentionally deferred
+  to a follow-up session to avoid touching the chat route in the same
+  commit. The existing `src/lib/argus/corpus-context.ts` continues to
+  work unchanged.
+- Validation: `npx tsc --noEmit` clean, `node scripts/audit-ai-routes.mjs`
+  passes 53/4, `npx vitest run` passes 188/188.
+
+
 
 ### Codex strategic-uplift pass
 
