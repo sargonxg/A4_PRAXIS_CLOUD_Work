@@ -10,6 +10,7 @@ import {
   failToolRun,
 } from '@/lib/jobs/job-service';
 import { emitSystemEvent, emitNotification } from '@/lib/events/event-service';
+import { publishBacklogEntry } from '@/lib/dev-backlog/service';
 
 export interface CalibrationCtx extends AuthenticatedUser {
   calibration: ContextBlock;
@@ -149,6 +150,19 @@ export function withCalibration(
             situationId,
             toolRunId,
           }).catch(() => {});
+          // Auto-file the failure into the developer backlog so code agents
+          // see it on their next planning sweep.
+          await publishBacklogEntry({
+            kind: 'error.route',
+            source: 'auto',
+            severity: 'high',
+            message: `Tool ${toolId} threw: ${message}`,
+            toolId,
+            situationId: situationId ?? undefined,
+            uid: user.uid,
+            route: new URL(req.url).pathname,
+            httpStatus: 500,
+          }).catch(() => {});
         }
         throw err;
       }
@@ -181,6 +195,21 @@ export function withCalibration(
             message: `Tool ${toolId} returned HTTP ${status}`,
             source: 'frontend',
           }).catch(() => {});
+          // Backlog row for non-2xx (5xx = high, 4xx = medium, 401/403 = low).
+          if (status >= 400) {
+            const severity = status >= 500 ? 'high' : status === 401 || status === 403 ? 'low' : 'medium';
+            await publishBacklogEntry({
+              kind: 'error.route',
+              source: 'auto',
+              severity,
+              message: `Tool ${toolId} returned HTTP ${status}`,
+              toolId,
+              situationId: situationId ?? undefined,
+              uid: user.uid,
+              route: new URL(req.url).pathname,
+              httpStatus: status,
+            }).catch(() => {});
+          }
         }
       }
 
