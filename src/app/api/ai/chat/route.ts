@@ -9,7 +9,7 @@ import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse 
 import { withCalibration } from '@/lib/api/with-calibration';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { buildAskPraxisCorpusContext } from '@/lib/argus/corpus-context';
+import { searchSituationCorpus } from '@/lib/intelligence/corpus-search';
 import { messageContentSchema, situationContextSchema, aiSettingsSchema } from '@/lib/api/schemas';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import type { Situation } from '@/types/situation';
@@ -162,34 +162,39 @@ You have access to the user's active situation data. When answering questions:
       systemPrompt += `\n\n## Active Conflict Context\nThe user is analyzing: **${conflictContext}**\nUse queryConflictGraph to retrieve structured data before answering.`;
     }
 
-    // --- RAG: retrieve the user's situation corpus for Ask PRAXIS ---
-    if (situation && !situation.isDemo) {
+    // --- RAG: retrieve the user's situation corpus via the shared retriever ---
+    // Replaces the older `buildAskPraxisCorpusContext` cookie-parsing path with
+    // the canonical `searchSituationCorpus` (Lane A, 2026-04-26) so Ask PRAXIS,
+    // Brainstorming Table, Humanitarian, and any future agent reason over the
+    // same evidence layers ranked the same way.
+    if (situation && !_user.isDemo && _user.uid && situation.id) {
       try {
         const lastMessage = messages?.[messages.length - 1];
         const query = typeof lastMessage?.content === 'string' ? lastMessage.content : '';
-        if (query && situation.id) {
-          // Try to get the auth cookie to extract uid
-          const cookie = request.headers.get('cookie') || '';
-          const sessionMatch = cookie.match(/tacitus-auth-session=([^;]+)/);
-          if (sessionMatch) {
-            const sessionData = JSON.parse(decodeURIComponent(sessionMatch[1]));
-            if (sessionData?.uid) {
-              const corpusContext = await buildAskPraxisCorpusContext({
-                uid: sessionData.uid,
-                situationId: situation.id,
-                query,
-              });
-              if (corpusContext) {
-                systemPrompt += `\n\n## User Situation Corpus\nThe following ARGUS alerts, saved sources, and document excerpts are from this user's active situation. Use them before general knowledge and cite them by source label when relevant:\n\n${corpusContext}`;
-              }
-            }
+        if (query) {
+          const corpus = await searchSituationCorpus({
+            uid: _user.uid,
+            situationId: situation.id,
+            query,
+            limit: 12,
+          });
+          if (corpus.items.length > 0) {
+            const lines = corpus.items.map((it, i) =>
+              `[#${i + 1}] (${it.sourceType}) ${it.title} — ${it.excerpt}\n    citation=${it.citation} confidence=${it.confidence}${it.freshness ? ` freshness=${it.freshness}` : ''}`
+            );
+            systemPrompt += `\n\n## User Situation Corpus (${corpus.items.length} items, layers: ${corpus.trace.layersSearched.join(', ')}, retrieval=${corpus.trace.durationMs}ms)\nUse these items to ground every factual claim. Cite inline by reference like [#3] (corpus index) or by the layer name in brackets (e.g. [argus], [documents]). NEVER fabricate sources — when an item is missing, say "intelligence gap on X" and suggest a relevant tool to fill it.\n\n${lines.join('\n\n')}`;
+          } else {
+            systemPrompt += `\n\n## User Situation Corpus\nThe shared retriever found 0 evidence items across layers ${corpus.trace.layersSearched.join(', ')}. Treat any factual claim as an intelligence gap. Recommend a tool run (e.g. Brainstorming Table, Risk Monitor, Humanitarian, Briefing Room) to fill the gap before answering with high confidence.`;
           }
         }
       } catch (ragErr) {
-        console.error('[chat] RAG retrieval failed (non-fatal):', ragErr);
+        console.error('[chat] corpus retrieval failed (non-fatal):', ragErr);
         // Continue without RAG — non-fatal
       }
     }
+
+    // --- Heavy-question routing — point users at the Brainstorming Table ---
+    systemPrompt += `\n\n## Routing Heavy Questions\nWhen the user asks a strategic, multi-stakeholder question that warrants multi-perspective deliberation (e.g. "should I attribute publicly", "is a pause better than a statement", "how does my mediation step play vs the UNSC track"), recommend running the **Brainstorming Table** at \`/app/brainstorming-table\`. That tool convenes mediator, humanitarian, legal, media, security, and red-team personas over the same situation corpus and produces a structured options memo with consensus, divergences, and decision tradeoffs.`;
 
     // Build situation-aware tool instances.
     // For real users, pre-fetch the conflict graph from Firestore so that
