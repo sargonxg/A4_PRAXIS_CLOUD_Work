@@ -2,6 +2,63 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-26 — Agentic roadmap + trust-fix deploy
+
+Source commit deployed: `865c507`
+
+Cloud Build:
+
+- Build ID: `09485e11-9863-4a49-af71-9082f28a9390`
+- Status: `SUCCESS`
+- Duration: `8M18S`
+- Project: `praxisbytacitus`
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00067-mz2` (ready)
+- Backend revision: `praxis-backend-00042-m4v` (ready)
+- Function services still ready: `on-document-uploaded-00001-taz`,
+  `on-situation-created-00001-zay`
+- GDELT service still ready: `gdelt-poller-00001-wag`
+
+Validation before deploy:
+
+- `npx tsc --noEmit --pretty false`: pass
+- `node scripts/audit-ai-routes.mjs`: 53 calibrated / 4 exempt
+- `npm run build`: pass
+- Stale-copy search for `Gemini 2.5 Flash`, `2× credits`,
+  `Update with Research`, `Background research started`, `PRAXIS v6.3`, and
+  package `6.2.0`: no matches in `src`, `docs`, or package metadata after the
+  cleanup.
+
+Production smoke:
+
+- `https://praxis.tacitus.me/` returned `200`.
+- `https://praxis.tacitus.me/login` returned `200`.
+- `https://praxis.tacitus.me/api/health` returned `status: ok` with
+  Firestore, AI provider, and cookie secret checks healthy.
+
+What shipped:
+
+- `docs/STRATEGIC_AGENTIC_ROADMAP_2026-04-26.md`: consolidated 20+ item
+  high-impact queue, agent lanes, Google Cloud service path, and Claude Code
+  prompt.
+- `docs/CORPUS_ARCHITECTURE.md`: dedicated situation-corpus retrieval plan for
+  profile, situation, ARGUS, documents, sources, graph, timeline, tool outputs,
+  and operational spine.
+- `docs/AGENTIC_SYSTEM.md`: Brainstorming Table and agent execution blueprint.
+- Release identity centralized in `src/lib/constants/app-version.ts` and
+  package metadata aligned to `6.4.0`.
+- Timeline live mode no longer falls back to fictional demo events.
+- Inactive background research now returns `501` instead of a false pending
+  status; `AiPopulate` now exposes only the working regenerate path.
+- Assistant detailed mode is sent as `aiSettings.analysisDepth`; stale
+  model/credit copy was removed from Assistant, Settings, Docs, and registry
+  surfaces.
+- Feed Alerts now expose `Open source` and `Ask PRAXIS` actions.
+- Situation overview now includes next-action cards for Ask PRAXIS, Media
+  Roundup, Conflict Graph, and Timeline.
+
 ## 2026-04-26 — Codex strategic uplift + ARGUS corpus deploy
 
 Source commits deployed:
