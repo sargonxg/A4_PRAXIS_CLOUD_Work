@@ -6,6 +6,14 @@
 > **Sprint execution plan**: `docs/SPRINT_EXECUTION_PLAN_2026-04-25.md`
 > **Claude tandem prompts**: `docs/CLAUDE_TANDEM_PROMPTS_2026-04-25.md`
 
+> **2026-04-26 update**: Codex started the workspace-personalization lane.
+> User preferences now include `hiddenToolIds` and `toolOrder`, Settings →
+> Preferences exposes show/hide and move controls for tools, and the sidebar
+> applies those preferences while showing analyst role/domain in the user
+> block. Claude should avoid `src/components/app/app-sidebar.tsx`,
+> `src/types/preferences.ts`, `src/hooks/use-user-preferences.ts`, and
+> `src/lib/navigation/tool-preferences.ts` unless explicitly handed off.
+
 ---
 
 ## Current state

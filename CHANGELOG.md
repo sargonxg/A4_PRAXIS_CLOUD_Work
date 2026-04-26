@@ -6,6 +6,30 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-04-26 (eighth session — workspace personalization)
+
+### Improved
+
+- Added durable workspace tool layout preferences to
+  `users/{uid}/preferences/default`: `hiddenToolIds` and `toolOrder`.
+- Added a shared `useUserPreferences` hook for authenticated client
+  surfaces that read and patch `/api/preferences`.
+- Added navigation helpers that preserve route aliases while applying
+  hidden/reordered tool preferences.
+- The app sidebar now filters hidden tools, respects user ordering within
+  sections, hides matching role recommendations, and shows the analyst role,
+  domain, and org/team in the user block.
+- Settings → Preferences now includes a workspace tools section with show/hide
+  and move-up/move-down controls backed by Firestore preferences.
+
+### Tests
+
+- Added preference schema/API tests for workspace tool layout fields.
+- Added navigation helper tests for unknown IDs, deduplication, hidden sets,
+  and route alias preservation.
+
+---
+
 ## [Unreleased] — 2026-04-25 (seventh session — deploy hardening)
 
 ### Context and persistence hardening

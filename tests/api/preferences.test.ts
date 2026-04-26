@@ -45,6 +45,17 @@ describe('/api/preferences', () => {
     expect(json.citationStyle).toBe('inline-links');
   });
 
+  it('PATCH saves workspace tool layout preferences', async () => {
+    const res = await PATCH(new Request('http://localhost/api/preferences', {
+      method: 'PATCH',
+      body: JSON.stringify({ hiddenToolIds: ['game-theory'], toolOrder: ['dashboard', 'risk-monitor'] }),
+    }));
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.hiddenToolIds).toEqual(['game-theory']);
+    expect(json.toolOrder).toEqual(['dashboard', 'risk-monitor']);
+  });
+
   it('PATCH returns 400 on malformed JSON body', async () => {
     const res = await PATCH(new Request('http://localhost/api/preferences', {
       method: 'PATCH',

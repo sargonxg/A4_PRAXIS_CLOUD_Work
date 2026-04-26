@@ -14,6 +14,8 @@ export const UserPreferencesSchema = z.object({
   confidenceLabelling: z.enum(CONFIDENCE_LABELLING),
   defaultTimeHorizon: z.enum(TIME_HORIZONS),
   preferredAdvisor: z.enum(ADVISOR_IDS).nullable(),
+  hiddenToolIds: z.array(z.string().min(1).max(80)).max(80).default([]),
+  toolOrder: z.array(z.string().min(1).max(80)).max(120).default([]),
   updatedAt: z.any().nullable().default(null),
 });
 
@@ -26,5 +28,7 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   confidenceLabelling: 'icd-203',
   defaultTimeHorizon: '90d',
   preferredAdvisor: null,
+  hiddenToolIds: [],
+  toolOrder: [],
   updatedAt: null,
 };

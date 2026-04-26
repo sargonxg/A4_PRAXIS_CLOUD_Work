@@ -47,6 +47,86 @@ Definition of done:
 - Update CHANGELOG.md and docs/CONTINUATION.md with exactly what changed.
 ```
 
+## Prompt 1A — Current Handoff After Codex Workspace Preferences
+
+```text
+You are Claude Code working in tandem with Codex on PRAXIS.
+
+First run:
+git pull origin main
+git status
+git log --oneline -5
+
+Read in order:
+- CLAUDE.md
+- AGENTS.md
+- CHANGELOG.md, especially the 2026-04-26 workspace-personalization entry
+- docs/CONTINUATION.md
+- docs/SPRINT_EXECUTION_PLAN_2026-04-25.md
+- docs/CLAUDE_TANDEM_PROMPTS_2026-04-25.md
+- docs/COMPLIANCE.md
+
+Current Codex lane just completed or is committing:
+- durable user workspace tool preferences in users/{uid}/preferences/default
+- new fields: hiddenToolIds, toolOrder
+- sidebar applies hidden/reordered tools and shows analyst role/domain
+- Settings > Preferences exposes show/hide and move controls
+
+Do not touch these Codex-owned files unless Giulio explicitly asks you to take over:
+- src/components/app/app-sidebar.tsx
+- src/app/app/settings/preferences/page.tsx
+- src/hooks/use-user-preferences.ts
+- src/lib/navigation/tool-preferences.ts
+- src/types/preferences.ts
+- tests/api/preferences.test.ts
+- tests/types/preferences.test.ts
+- tests/unit/lib/navigation/tool-preferences.test.ts
+
+Your non-conflicting task:
+Clean stale source/vendor claims in public landing, onboarding, and
+system-health copy. PRAXIS has pivoted away from ACLED, Firecrawl, Anthropic,
+Tavily, and Parallel.ai as user-facing promises. The current public stack is
+Google Cloud / Firebase / Vertex AI, GDELT, UCDP, ReliefWeb, HDX, UN News,
+World Bank, and grounded Google Search. Be precise and compliance-safe.
+
+Own only:
+- src/components/landing/*
+- src/app/(landing)/*
+- src/app/onboarding/*
+- src/components/onboarding/*
+- src/app/app/settings/system-health/page.tsx
+- docs/EXTERNAL_TOOLS_WIRING.md
+- docs/CONTEXT_INJECTION.md only for feed examples/copy
+
+Do not touch:
+- cloudbuild.yaml
+- infrastructure/*
+- cloud_functions/*
+- backend/*
+- src/components/app/*
+- src/hooks/*
+- src/app/app/settings/preferences/page.tsx
+- src/types/preferences.ts
+
+Definition of done:
+- No user-facing CTA tells users to configure ACLED, Firecrawl, Anthropic,
+  Tavily, or Parallel.ai.
+- Feed/source descriptions are truthful and compliance-safe.
+- Onboarding still explains why analyst profile/context improves outputs.
+- Login/landing do not claim named institutional trust unless the repo has
+  evidence and permission.
+- Update CHANGELOG.md and docs/CONTINUATION.md with exactly what changed.
+- Run npx tsc --noEmit and npm run build. Run focused tests if you touch
+  test-covered onboarding components.
+- Commit and push to main with no Co-Authored-By line.
+
+After that, report:
+- commit hash
+- files changed
+- build/typecheck result
+- any stale-source references intentionally left for a later backend/API pass
+```
+
 ## Prompt 2 — Onboarding Completion Payoff
 
 ```text
@@ -165,4 +245,3 @@ Find bugs, deploy risks, Firestore rules/index mismatches, auth mistakes,
 or user-facing regressions. Output findings ordered by severity with file
 and line references. If no blocking issues, say so and list residual risks.
 ```
-

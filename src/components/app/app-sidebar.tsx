@@ -1,15 +1,12 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
 import { PraxisLink } from '@/components/shared/praxis-link';
-import { usePraxisRoute } from '@/lib/utils/routes';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
   FileText,
   MessageSquare,
-  Compass,
   GitBranch,
   Building2,
   FolderOpen,
@@ -19,7 +16,6 @@ import {
   ChevronsRight,
   MessageCircle,
   Users,
-  Calendar,
   Shield,
   AlertTriangle,
   Sparkles,
@@ -34,17 +30,15 @@ import {
   UsersRound,
   Presentation,
   Newspaper,
-  Bell,
   Radio,
   Handshake,
-  Library,
   Clock,
   Heart,
   Globe,
   Telescope,
   Target,
   Sigma,
-  Map,
+  Map as MapIcon,
   Package,
   Settings as SettingsIcon,
   Vote,
@@ -57,7 +51,9 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { SituationSelector } from '@/components/app/situation-selector';
 import { useAppStore } from '@/stores/app-store';
 import { useSituationStore } from '@/stores/situation-store';
-import { recommendToolsForRole } from '@/lib/dashboard/role-recommendations';
+import { recommendToolsForRole, roleLabel } from '@/lib/dashboard/role-recommendations';
+import { hiddenToolSet, orderedToolIds } from '@/lib/navigation/tool-preferences';
+import { useUserPreferences } from '@/hooks/use-user-preferences';
 import type { AnalystDomainId } from '@/types/analyst-profile';
 import {
   Tooltip,
@@ -65,7 +61,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { X, ChevronRight, ChevronDown, Loader2, Crown } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAllToolStatuses, type ToolHealth } from '@/hooks/use-tool-status';
 
 const CHANGELOG = [
@@ -236,7 +232,7 @@ const navSections: NavSection[] = [
       { label: 'Intelligence Requirements', icon: Target, href: '/requirements' },
       { label: 'Commitment Tracker', icon: FileCheck, href: '/commitments' },
       { label: 'Info Environment', icon: Radio, href: '/info-environment' },
-      { label: 'Geospatial Monitor', icon: Map, href: '/geospatial-monitor' },
+      { label: 'Geospatial Monitor', icon: MapIcon, href: '/geospatial-monitor' },
     ],
   },
   {
@@ -348,11 +344,17 @@ function ChangelogButton() {
 // Map sidebar hrefs to tool-data IDs for status indicators
 const HREF_TO_TOOL_ID: Record<string, string> = {
   // Context
+  '/dashboard': 'dashboard',
   '/documents': 'documents',
   '/sources': 'sources-library',
   '/timeline': 'timeline',
   '/humanitarian': 'humanitarian',
   '/calendar': 'calendar',
+  '/requirements': 'pir',
+  '/assistant': 'assistant',
+  '/reports': 'report-studio',
+  '/cases': 'cases',
+  '/team': 'team',
   // Analysis
   '/actors': 'actor-profiles',
   '/risk-monitor': 'risk-monitor',
@@ -404,14 +406,26 @@ const PLAN_LABELS: Record<string, string> = {
   enterprise: 'Enterprise',
 };
 
+function formatDomainLabel(domain: string): string {
+  return domain
+    .split('-')
+    .map((word) => (word[0]?.toUpperCase() ?? '') + word.slice(1))
+    .join(' ');
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const route = usePraxisRoute();
   const { user, logout, analystProfile } = useAuth();
   const { sidebarOpen, toggleSidebar } = useAppStore();
   const { activeSituationId, setActiveSituation, activeSituation } = useSituationStore();
   const allToolStatuses = useAllToolStatuses(activeSituationId);
+  const { preferences } = useUserPreferences({ enabled: Boolean(user && !user.isDemo) });
+  const hiddenTools = hiddenToolSet(preferences);
+  const sidebarOrder = orderedToolIds(preferences);
+  const orderIndex = new Map(sidebarOrder.map((toolId, index) => [toolId, index]));
+  const isToolHidden = (toolId?: string) =>
+    Boolean(toolId && (hiddenTools.has(toolId) || (toolId === 'sources' && hiddenTools.has('sources-library'))));
 
   // Role-aware "For you" anchor — same module the dashboard widget uses, so
   // the sidebar and the dashboard agree on what the user should look at first.
@@ -422,8 +436,22 @@ export function AppSidebar() {
     if (!role) return [];
     const profileDomain = analystProfile?.perspective.primaryDomain;
     const domain = (activeSituation?.domain as AnalystDomainId | undefined) || profileDomain;
-    return recommendToolsForRole(role, domain, 3);
+    return recommendToolsForRole(role, domain, 6)
+      .filter((rec) => !isToolHidden(rec.toolId))
+      .slice(0, 3);
   })();
+  const visibleNavSections = navSections
+    .map((section) => ({
+      ...section,
+      items: [...section.items]
+        .filter((item) => !isToolHidden(HREF_TO_TOOL_ID[item.href]))
+        .sort((a, b) => {
+          const aIndex = orderIndex.get(HREF_TO_TOOL_ID[a.href] ?? '') ?? Number.MAX_SAFE_INTEGER;
+          const bIndex = orderIndex.get(HREF_TO_TOOL_ID[b.href] ?? '') ?? Number.MAX_SAFE_INTEGER;
+          return aIndex - bIndex;
+        }),
+    }))
+    .filter((section) => section.items.length > 0);
   // Extract simple health map for backward compat with semaphore rendering
   const toolHealthMap: Record<string, ToolHealth> = {};
   for (const [id, info] of Object.entries(allToolStatuses)) {
@@ -448,6 +476,14 @@ export function AppSidebar() {
         .toUpperCase()
         .slice(0, 2)
     : '??';
+  const analystType = roleLabel(analystProfile?.identity.role);
+  const analystDomain = analystProfile?.perspective.primaryDomain
+    ? formatDomainLabel(analystProfile.perspective.primaryDomain)
+    : null;
+  const orgLine = analystProfile?.identity.team
+    || analystProfile?.identity.org
+    || user?.orgName
+    || 'PRAXIS workspace';
 
   async function handleLogout() {
     try {
@@ -576,7 +612,7 @@ export function AppSidebar() {
           </div>
         )}
 
-        {navSections.map((section) => {
+        {visibleNavSections.map((section) => {
           const isSectionOpen = openSections[section.label] ?? true;
           return (
           <div key={section.label} className="mb-3">
@@ -977,7 +1013,10 @@ export function AppSidebar() {
                   {user?.name}
                 </p>
                 <p className="truncate text-xs text-navy-500">
-                  {user?.orgName}
+                  {analystType}{analystDomain ? ` · ${analystDomain}` : ''}
+                </p>
+                <p className="truncate text-[11px] text-navy-400">
+                  {orgLine}
                 </p>
               </motion.div>
             )}

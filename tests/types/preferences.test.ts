@@ -17,4 +17,21 @@ describe('UserPreferences', () => {
     const parsed = UserPreferencesSchema.parse({ ...DEFAULT_USER_PREFERENCES, preferredAdvisor: null });
     expect(parsed.preferredAdvisor).toBeNull();
   });
+
+  it('accepts workspace tool visibility preferences', () => {
+    const parsed = UserPreferencesSchema.parse({
+      ...DEFAULT_USER_PREFERENCES,
+      hiddenToolIds: ['game-theory'],
+      toolOrder: ['dashboard', 'risk-monitor'],
+    });
+    expect(parsed.hiddenToolIds).toEqual(['game-theory']);
+    expect(parsed.toolOrder).toEqual(['dashboard', 'risk-monitor']);
+  });
+
+  it('rejects oversized tool ids', () => {
+    expect(() => UserPreferencesSchema.parse({
+      ...DEFAULT_USER_PREFERENCES,
+      hiddenToolIds: ['x'.repeat(81)],
+    })).toThrow();
+  });
 });

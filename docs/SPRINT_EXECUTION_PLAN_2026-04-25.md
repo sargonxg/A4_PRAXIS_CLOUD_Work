@@ -52,6 +52,16 @@ Goal: production reliably records jobs, tool runs, events, and notifications.
 Goal: a new analyst immediately understands why onboarding matters and sees
 the workspace shaped around their role.
 
+Status update 2026-04-26:
+
+- Done by Codex: workspace tool layout preferences are now server-backed
+  under `users/{uid}/preferences/default` with `hiddenToolIds` and
+  `toolOrder`; the sidebar applies hidden tools and per-user ordering, and
+  the sidebar user block now shows analyst role + primary domain.
+- Next in this phase: Claude should still clean stale landing/onboarding
+  source claims and improve the onboarding completion payoff without
+  touching sidebar/preferences files.
+
 1. Clean stale vendor/source claims.
    - Files: `src/components/landing/*`, `src/app/onboarding/*`,
      `src/app/app/settings/system-health/page.tsx`,
