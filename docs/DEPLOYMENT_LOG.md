@@ -2,6 +2,39 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-26 — Workspace preferences + recovered docs deploy
+
+Source commit deployed: `488fa0c`
+
+Cloud Build:
+
+- Build ID: `3988d944-4865-4608-9577-eb1aa81bac1b`
+- Status: `SUCCESS`
+- Duration: `9M25S`
+- Project: `praxisbytacitus`
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00057-z64` (ready)
+- Backend revision: `praxis-backend-00037-5pt` (ready)
+
+Validation before deploy:
+
+- `npx tsc --noEmit`
+- `npm run build`
+- `npm run lint` (warnings only; existing lint backlog)
+- `npm run audit:gcp`
+- `node scripts/audit-ai-routes.mjs`
+- `npx vitest run`
+
+What shipped:
+
+- Durable workspace tool preferences: hidden tools and user ordering.
+- Sidebar applies tool preferences and shows analyst role/domain.
+- Settings → Preferences exposes show/hide and move controls for tools.
+- Public pricing/reference docs updated to monthly workspace language.
+- README/AGENTS simplified and aligned with the Google-native open-data stack.
+
 ## 2026-04-25 — Deploy hardening in progress (session 7)
 
 Source commit deployed: `b4c88cd`

@@ -10,6 +10,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Improved
 
+- `AuthProvider` now subscribes live to `users/{uid}/profile/analyst`, so
+  onboarding completion and profile edits immediately refresh workspace
+  personalization surfaces without requiring a reload.
 - Added durable workspace tool layout preferences to
   `users/{uid}/preferences/default`: `hiddenToolIds` and `toolOrder`.
 - Added a shared `useUserPreferences` hook for authenticated client
@@ -25,6 +28,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   older clone while preserving the newer spine/context code: public pricing
   now describes monthly workspaces instead of internal tool tariffs, and
   landing/schema copy is aligned with grounded open-data workflows.
+- Added `docs/PRAXIS_HIGH_IMPACT_PRODUCT_PLAN_2026-04-26.md`, a multi-day
+  product and knowledge-architecture plan for dashboard, Ask PRAXIS,
+  tool-output contracts, graph/document intelligence, and agent handoffs.
 
 ### Tests
 

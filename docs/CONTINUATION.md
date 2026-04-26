@@ -16,6 +16,10 @@
 > The old-clone pricing/reference-doc commits were integrated into current
 > `main` after this update, with newer spine/context/sidebar behavior kept as
 > authoritative.
+> **Product plan**: `docs/PRAXIS_HIGH_IMPACT_PRODUCT_PLAN_2026-04-26.md`
+> now defines the multi-day knowledge-management, tool-quality, dashboard,
+> and agent-workflow plan. Use it with the sprint plan before starting any
+> broad feature pass.
 
 ---
 

@@ -16,7 +16,7 @@ import {
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { doc, onSnapshot } from 'firebase/firestore';
-import type { AnalystProfile } from '@/types/analyst-profile';
+import { AnalystProfileSchema, type AnalystProfile } from '@/types/analyst-profile';
 import type { SubscriptionTier } from '@/lib/firebase/firestore';
 
 // ---------------------------------------------------------------------------
@@ -359,15 +359,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [firebaseUser, isDemoMode]);
 
   // ---------------------------------------------------------------------------
-  // Analyst profile: load once when the Firebase user changes.
+  // Analyst profile: live subscription so onboarding/settings edits reshape the
+  // shell, dashboard recommendations, and guards without a page reload.
   // Stays null on logout / demo mode — banner and card check this field.
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (!firebaseUser?.uid) { setAnalystProfile(null); return; }
-    import('@/lib/firebase/analyst-profile-service')
-      .then(({ loadAnalystProfile }) => loadAnalystProfile(firebaseUser.uid))
-      .then(setAnalystProfile)
-      .catch(() => setAnalystProfile(null));
+    const profileRef = doc(db, 'users', firebaseUser.uid, 'profile', 'analyst');
+    const unsubscribe = onSnapshot(
+      profileRef,
+      (snapshot) => {
+        if (!snapshot.exists()) {
+          setAnalystProfile(null);
+          return;
+        }
+        const parsed = AnalystProfileSchema.safeParse(snapshot.data());
+        setAnalystProfile(parsed.success ? parsed.data : null);
+      },
+      (err) => {
+        console.warn('[auth] Analyst profile listener error:', err);
+        setAnalystProfile(null);
+      },
+    );
+    return () => unsubscribe();
   }, [firebaseUser?.uid]);
 
   // Email/password sign in
