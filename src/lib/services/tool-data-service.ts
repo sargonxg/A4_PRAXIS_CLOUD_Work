@@ -48,7 +48,9 @@ export type ToolName =
   | 'economic-impact'
   | 'peacebuilding-index'
   | 'human-rights'
-  | 'electoral-risk';
+  | 'electoral-risk'
+  // v6.4 — multi-agent brainstorming table (synchronous MVP)
+  | 'brainstorming-table';
 
 function toolRef(uid: string, sitId: string, tool: ToolName) {
   return doc(db, 'users', uid, 'situations', sitId, 'tools', tool);

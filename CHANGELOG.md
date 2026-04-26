@@ -80,6 +80,55 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   now reports `54 AI route files, 54 calibrated, 4 exempt` (was 53/4),
   `tests/services/*` green.
 
+### Lane C — Brainstorming Table MVP (NEW)
+
+- Ships the synchronous prototype of the Brainstorming Table tool from
+  `docs/AGENTIC_SYSTEM.md`. Six expert personas (mediator, humanitarian
+  lead, legal analyst, media analyst, security/risk analyst, red-team
+  critic) deliberate over a single analyst question, each contributing
+  a structured row (claim, evidence with sourceType, optional critique,
+  optional recommendation, confidence, status). The orchestrator writes
+  a synthesis block: BLUF, consensusPoints, divergences, decision
+  options with trade-offs and preferredBy persona attribution, open
+  questions, and next actions with owner + urgency.
+- Added `POST /api/ai/brainstorming-table`
+  (`src/app/api/ai/brainstorming-table/route.ts`) wrapped with
+  `withCalibration('brainstorming-table', 'ai_brainstorming_table')`
+  (5 credits). Pulls evidence from the new
+  `searchSituationCorpus` so every claim is anchored to a corpus item
+  or marked `sourceType="reasoning"` when no evidence supports it.
+  Pro-model call with `Output.object({ schema: BrainstormingTableSchema })`,
+  Zod-validated output, demo-mode fixture, persistence to
+  `users/{uid}/situations/{sitId}/tools/brainstorming-table` via
+  `saveToolOutput` with personas, retrievalTrace, and question metadata.
+- Added `'brainstorming-table'` to the `ToolName` union in
+  `src/lib/services/tool-data-service.ts` so the page can subscribe via
+  `useToolData`.
+- Added the tool to `src/lib/constants/tool-registry.ts` under the
+  `simulation` category, with related tools (negotiation-prep,
+  mediation-design, concordia, humanitarian, legal-tracker), 48-hour
+  staleness, and Pro model tier.
+- Added `ai_brainstorming_table` (5 credits) to `AI_CREDIT_COSTS` in
+  `src/lib/api/with-credits.ts`.
+- Added `src/app/app/brainstorming-table/page.tsx` — synchronous UI:
+  question textarea, "Convene the table" CTA, structured deliberation
+  table with persona pills, evidence pills, critique/recommendation
+  cells, confidence and status badges, plus a synthesis card with
+  consensus/divergences/decision options/next actions. Onboarding gate
+  + situation guard + demo banner included. Reads persisted output via
+  `useToolData('brainstorming-table')`.
+- Added `tests/services/brainstorming-table-schema.test.ts` covering
+  positive case, minimum-2-turn requirement, unknown persona id,
+  unknown status, BLUF length floor, unsupported next-action urgency,
+  unsupported confidence, and the `reasoning` evidence sourceType.
+- Cloud Tasks fan-out (per-turn delivery via `praxis-agents`) and a
+  `/demo/brainstorming-table` mirror page are intentionally deferred
+  per `docs/AGENTIC_SYSTEM.md` "First Implementation Queue".
+- Validation: `npx tsc --noEmit` clean,
+  `node scripts/audit-ai-routes.mjs` now reports
+  `55 AI route files, 55 calibrated, 4 exempt` (was 54/4),
+  `tests/services/*` green.
+
 
 
 ### Codex strategic-uplift pass

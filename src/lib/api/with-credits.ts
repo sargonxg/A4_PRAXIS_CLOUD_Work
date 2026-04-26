@@ -84,6 +84,8 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   'ai_un_toolkit': 4,         // UN Toolkit document generation
   // Humanitarian calibrated route (v6.4 — promoted from /api/ai/chat fallback)
   'ai_humanitarian': 2,
+  // Multi-persona Brainstorming Table (v6.4 MVP — synchronous prototype)
+  'ai_brainstorming_table': 5,
 };
 
 /**
