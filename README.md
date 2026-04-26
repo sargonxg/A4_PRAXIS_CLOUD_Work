@@ -1,98 +1,57 @@
 # PRAXIS by TACITUS
 
-**The AI-native workspace for policy, diplomacy, and political analysis.**
+> **The AI-native workspace for policy, diplomacy, and political analysis.**
+>
+> v6.4.x · Pure GCP Cloud Run (Next.js 16 frontend + Python FastAPI backend) · Project `praxisbytacitus` · Region `us-central1` · Domain `praxis.tacitus.me`
 
-PRAXIS structures sources, documents, graph context, and live feeds into cited assessments, briefings, reports, and decision support for policy officers, political affairs desks, mediators, humanitarian coordinators, legal analysts, and conflict researchers. It includes 40+ specialised tool pages, a Python FastAPI graph backend with ACO conflict intelligence pipeline, and real-time intelligence feeds from sources such as ACLED, GDELT, UCDP, UNHCR, HDX, ReliefWeb, UN News, World Bank, Crisis Group, and SIPRI.
+PRAXIS turns sources, documents, open feeds, and graph context into cited assessments, briefings, reports, and decision support for policy officers, diplomats, mediators, humanitarian coordinators, legal/sanctions analysts, and conflict researchers. It ships **40+ tool pages**, a large calibrated Next.js API surface, a **Python FastAPI graph backend** (ACO conflict intelligence pipeline), and a Google-native open-data stack centered on GDELT, UCDP, ReliefWeb, HDX, UN News, World Bank, UNHCR, and grounded Google Search.
 
-> **v6.2.0** — Build 2026.04.07 | Dual-service GCP Cloud Run (Next.js 16 + Python FastAPI) · Project: praxisbytacitus
-
-> **Next agent:** Read `docs/CONTINUATION.md` before deploying or continuing feature work. The latest session updated branding/pricing language and onboarding persistence, but did not deploy to `praxis.tacitus.me`.
-
----
-
-## Quick Start
-
-### Local Development (dual-service)
-
-```bash
-# Terminal 1 — Next.js frontend (port 3000)
-npm install
-npm run dev
-
-# Terminal 2 — Python backend + Neo4j + FalkorDB (port 8080)
-docker-compose up
-```
-
-Open [http://localhost:3000](http://localhost:3000). **The demo works with zero configuration** — no API keys needed.
-
-### Environment Setup
-
-Copy `.env.example` to `.env.local`:
-
-```bash
-# Required for live AI (demo works without)
-GOOGLE_AI_API_KEY=your_gemini_key
-
-# Required for server-side Firestore + Vertex AI auth
-FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"praxisbytacitus",...}
-
-# Backend URL (auto-set by Cloud Build for production)
-NEXT_PUBLIC_PRAXIS_BACKEND_URL=http://localhost:8080
-
-# Optional — enables Claude deep analysis
-ANTHROPIC_API_KEY=your_key
-
-# Optional — enables Firecrawl web research
-FIRECRAWL_API_KEY=your_key
-
-# Required for Deep Research Agent (Vertex AI ADK)
-VERTEX_AGENT_ENGINE_ID=your_numeric_engine_id
-
-# Required for cron job auth
-CRON_SECRET=your_secret
-```
-
-See `.env.local.example` for the complete grouped list including Neo4j, FalkorDB, Stripe, and GCP variables.
-
-The Firebase Client SDK block is public and has built-in defaults for the `praxisbytacitus` project, so `npm run build` works from a clean clone. Use `.env.local` to override those public values for another Firebase project. Server-side Firebase Admin, AI, Stripe, cron, and encryption secrets are still required for live authenticated workflows.
+This README is a **reference document for both human developers and AI agents** (Claude Code + Codex). For agent-specific conventions, model-string discipline, security boundaries, and anti-patterns, see [`CLAUDE.md`](./CLAUDE.md) (Codex agents: see [`AGENTS.md`](./AGENTS.md)).
 
 ---
 
-## Two Experiences in One Codebase
+## Table of Contents
 
-| | Demo (`/demo/*`) | Real App (`/app/*`) |
-|---|---|---|
-| **Auth** | Cookie-only, no account needed | Firebase — Google + email/password |
-| **Data** | Pre-loaded Nordalia Crisis | User creates situations; all data in Firestore |
-| **AI** | Cached demo responses | Live Gemini Pro / Claude + Firecrawl |
-| **Credits** | Unlimited (shown as ∞) | 5,000 on sign-up, deducted per use |
-| **Persistence** | In-memory (Zustand + localStorage) | Firestore (user-scoped subcollections) |
-| **Purpose** | Investor demos, prospect exploration | Real conflict intelligence work |
+1. [Architecture](#architecture)
+2. [Tech Stack](#tech-stack)
+3. [File Map](#file-map)
+4. [Two Experiences: Demo vs Real App](#two-experiences-demo-vs-real-app)
+5. [Quick Start (Local Development)](#quick-start-local-development)
+6. [Environment Variables](#environment-variables)
+7. [Scripts](#scripts)
+8. [Deployment (Cloud Run)](#deployment-cloud-run)
+9. [Verification Before Deploy](#verification-before-deploy)
+10. [Tools, Frameworks, Data Feeds](#tools-frameworks-data-feeds)
+11. [Calibration Contract (AnalystProfile)](#calibration-contract-analystprofile)
+12. [What's Next](#whats-next)
+13. [Documentation Map](#documentation-map)
+14. [Working With Agents](#working-with-agents)
 
 ---
 
-## Architecture (v6.0.0 — Dual-Service GCP)
+## Architecture
 
 ```
-┌─────────────────────────────────┐    ┌──────────────────────────────────┐
-│   Next.js Frontend              │    │   Python FastAPI Backend          │
-│   Cloud Run (us-central1)       │◄──►│   Cloud Run (us-central1)         │
-│   /app/* — React workspace      │    │   /api/v1/* — Graphify pipeline   │
-│   /demo/* — Nordalia demo       │    │   NetworkX + Leiden clustering    │
-│   68 API routes (Next.js)       │    │   Genkit AI flows                 │
-└──────────────┬──────────────────┘    └─────────────┬────────────────────┘
-               │                                     │
-               ▼                                     ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│   Firebase / GCP                                                         │
-│   Firestore — users/{uid}/situations/{sitId}/graph,tools,documents       │
-│   Firebase Auth — Google + email/password                                │
-│   Vertex AI — Gemini Pro/Flash, ADK Deep Research Agent                  │
-│   BigQuery — analytics logging                                           │
-│   Cloud Storage — document uploads                                       │
-│   Cloud Functions — on_situation_created, on_document_uploaded, GDELT   │
-└──────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│  Frontend (Next.js 16 App Router) → Cloud Run praxis-frontend   │
+│    src/app/app/*       40+ tool pages (auth required)           │
+│    src/app/demo/*      Demo mirror pages (cookie auth)          │
+│    src/app/onboarding  3-screen wizard                          │
+│    src/app/api/*       calibrated routes for AI, data, auth      │
+├─────────────────────────────────────────────────────────────────┤
+│  Backend (Python FastAPI) → Cloud Run praxis-backend (private)  │
+│    /api/v1/pipeline/*   extract → build → cluster → analyze     │
+│    /api/v1/graph/*      graph queries, temporal                 │
+│    /api/v1/analyze/*    pre-computed analysis                   │
+├─────────────────────────────────────────────────────────────────┤
+│  Firebase: Auth + Firestore (single source of truth)            │
+│  GCP:  Vertex AI · BigQuery · Cloud Storage · Pub/Sub           │
+│        Cloud Functions · Cloud Scheduler · Secret Manager       │
+│        Artifact Registry · Cloud Build                          │
+└─────────────────────────────────────────────────────────────────┘
 ```
+
+**Backend invocation:** Frontend calls backend via OIDC service-account auth (backend is `--no-allow-unauthenticated`). See `backend/auth.py::verify_oidc`.
 
 ### Graphify ACO Pipeline (Backend)
 
@@ -100,416 +59,242 @@ The Firebase Client SDK block is public and has built-in defaults for the `praxi
 extract → build → cluster → analyze → report → export
 ```
 
-1. **extract.py** — Gemini reads source text → structured ACO nodes + edges (8 types, 42 relationships)
+1. **extract.py** — Gemini reads source text → structured ACO nodes + edges
 2. **build.py** — Merges extractions into a NetworkX multigraph
 3. **cluster.py** — Leiden community detection (graspologic) → faction assignments
 4. **analyze.py** — Pivot actors (centrality), hidden linkages, Glasl escalation, ZOPA
 5. **report.py** — Markdown brief + structured JSON output
-6. **export.py** — Push to Neo4j/FalkorDB, HTML visualization
+6. **export.py** — Firestore sync and optional graph export adapters
 
-### ACO — Agentic Conflict Ontology
+### ACO v2.0 — Agentic Conflict Ontology
 
-8 primitive types: `Actor` · `Claim` · `Interest` · `Constraint` · `Leverage` · `Commitment` · `Event` · `Narrative`
+**14 entity types** (8 core + 6 extended): Actor · Claim · Interest · Constraint · Leverage · Commitment · Event · Narrative · Institution · Norm · Resource · Risk · Policy · Grievance.
 
-42 typed relationships — see `backend/graphify_tacitus/schemas/relationships.py`
+**72 typed relationships** in 5 categories (causal, structural, antagonistic, cooperative, foundational). See `backend/graphify_tacitus/schemas/relationships.py`.
 
-Visualization colors: Actor `#4E79A7` · Claim `#F28E2B` · Interest `#59A14F` · Constraint `#E15759` · Leverage `#EDC948` · Commitment `#76B7B2` · Event `#B07AA1` · Narrative `#FF9DA7`
-
-### Frontend source layout
-
-```
-src/
-├── app/
-│   ├── (landing)/          Public landing page
-│   ├── (auth)/             Login — Google, email/password, demo, password reset
-│   ├── app/                40+ authenticated workspace pages (/app/*)
-│   ├── demo/               30 demo pages (/demo/*) — Nordalia Crisis data
-│   └── api/                68 API routes (auth, AI, data, admin, cron)
-│
-├── components/
-│   ├── ui/                 Radix UI primitives
-│   ├── shared/             Cross-app reusable components
-│   ├── app/                AppShell, AppSidebar, Header, DebugPanel, FloatingPRAXIS
-│   ├── praxis/             AiPopulate, ToolInfoPanel, situation/error states
-│   ├── assistant/          Chat interface, tool invocation renderer
-│   ├── visualizations/     10 SVG/D3 components (RiskGauge, ForceGraph, etc.)
-│   ├── graph/              D3.js conflict knowledge graph
-│   ├── reports/            Report composer & DOCX/PDF export
-│   └── landing/            Landing page sections
-│
-├── lib/
-│   ├── ai/                 Providers, 27 chat tools, prompts, schemas, Firecrawl, Vertex AI ADK
-│   ├── firebase/           Client config, Admin SDK, Firestore services (9 service files)
-│   ├── api/                withAuth, withCredits, rate limiting, error handling
-│   ├── auth/               AuthProvider (auth-context.tsx)
-│   ├── analytics/          Risk engine (INFORM), escalation scorer (Glasl), geospatial engine
-│   ├── data-feeds/         ACLED, GDELT, UCDP, UNHCR, HDX, ReliefWeb, UN News, World Bank, CrisisWatch
-│   ├── constants/          Tool registry (40 tools), frameworks (15), demo data, pricing
-│   └── utils/              Routes, formatting, cn, streaming helpers
-│
-├── stores/                 Zustand — situation, app, conflict, report, debug, notification, preferences
-├── hooks/                  useSituationGuard, usePraxisApi, useKeyboardShortcuts, usePersistedToolData
-└── types/                  Situation v2, conflict grammar (ACO), report, API types
-```
-
----
-
-## Authentication
-
-See [`docs/AUTH.md`](./docs/AUTH.md) for the full token lifecycle, CSRF protection design, and session architecture.
-
-**Summary:**
-
-| Method | Provider | Notes |
-|--------|----------|-------|
-| Google OAuth | Firebase (redirect flow) | `signInWithRedirect` — avoids COOP popup blocking |
-| Email/Password | Firebase | Full error code surface + password reset |
-| Demo Mode | Cookie-only | `{demo: true}` JSON cookie, no Firebase involved |
-
-**Password reset:** Users click "Forgot password?" on the sign-in form → enter email → Firebase sends a reset link. The response is deliberately ambiguous (no confirmation of whether the email exists) to prevent enumeration attacks.
-
-**Diagnostic:** `GET /api/auth/test-firebase` confirms Admin SDK initialisation, Firebase reachability, and Email/Password provider status from the Vercel runtime — without requiring auth credentials.
-
----
-
-## Tool Pages
-
-### Context (7)
-| Tool | Route |
-|------|-------|
-| Dashboard | `/app/dashboard` |
-| Documents | `/app/documents` |
-| Sources Library | `/app/sources` |
-| Timeline | `/app/timeline` |
-| Humanitarian | `/app/humanitarian` |
-| Calendar | `/app/calendar` |
-| Conflict Graph | `/app/conflict-graph` |
-
-### Analysis (7)
-| Tool | Route |
-|------|-------|
-| Risk Monitor | `/app/risk-monitor` |
-| Early Warning | `/app/early-warning` |
-| Actor Profiles | `/app/actors` |
-| Stakeholder Map | `/app/stakeholder-map` |
-| Power Map | `/app/power-map` |
-| Info Environment | `/app/info-environment` |
-| Compare | `/app/compare` |
-
-### Drafting (7)
-| Tool | Route |
-|------|-------|
-| PRAXIS Assistant | `/app/assistant` |
-| Report Studio | `/app/reports` |
-| Dossier Generator | `/app/dossier` |
-| Talking Points | `/app/talking-points` |
-| Briefing Room | `/app/briefing` |
-| Daily Brief | `/app/auto-briefings` |
-| UN Toolkit | `/app/un-toolkit` |
-
-### Simulation (5)
-| Tool | Route |
-|------|-------|
-| Scenario Planner | `/app/scenarios` |
-| Negotiation Prep | `/app/negotiation-prep` |
-| Game Theory | `/app/game-theory` |
-| CONCORDIA | `/app/concordia` |
-| Mediation Designer | `/app/mediation-design` |
-
-### Intelligence (11)
-| Tool | Route |
-|------|-------|
-| Deep Research Agent | `/app/deep-search-agent` |
-| ARGUS Deep Research | `/app/argus` |
-| ARGUS Grounded | `/app/argus-grounded` |
-| Media Compass | `/app/media-compass` |
-| Media Roundup | `/app/media-roundup` |
-| Geospatial Monitor | `/app/geospatial-monitor` |
-| Sanctions Tracker | `/app/sanctions` |
-| Commitment Tracker | `/app/commitments` |
-| Treaty Analyzer | `/app/treaty-analyzer` |
-| Alert Center | `/app/alerts` |
-| Deep Research | `/app/deep-research` |
-
-### Workspace (4)
-| Tool | Route |
-|------|-------|
-| Case Library | `/app/cases` |
-| Team Hub | `/app/team` |
-| Advisory Council | `/app/advisory` |
-| Settings | `/app/settings` |
-
----
-
-## AI Pipeline
-
-### Model Tiers
-
-| Helper | Model | Used for |
-|--------|-------|----------|
-| `getModel()` | `gemini-2.5-flash` | Chat, terminology, lightweight tasks |
-| `getProModel()` | `gemini-2.5-pro` | All structured tool generation (Zod schemas) |
-| `getAnalysisModel()` | `claude-sonnet-4` | Deep analysis, bias detection (falls back to Pro) |
-| `getGroundedModel()` | `gemini-2.5-flash + Google Search` | Research with real-time grounding |
-| `streamAgentTurn()` | Vertex AI Agent Engine (ADK) | Deep Research Agent — 3-phase pipeline |
-
-### 27 AI Chat Tools
-
-All tools call `generateText + Output.object()` with Zod schemas via `getProModel()`:
-
-| # | Tool | Credits |
-|---|------|---------|
-| 1 | `webSearch` | 1 |
-| 2 | `analyzeDocument` | 2 |
-| 3 | `queryConflictGraph` | 1 |
-| 4 | `draftSection` | 2 |
-| 5 | `editForDiplomaticTone` | 1 |
-| 6 | `analyzeMediaSource` | 2 |
-| 7 | `compareMediaCoverage` | 2 |
-| 8 | `checkUNTerminology` | 1 |
-| 9 | `draftResolutionLanguage` | 2 |
-| 10 | `generateTalkingPoints` | 2 |
-| 11 | `escalationAssessment` | 3 |
-| 12 | `negotiationSpaceAnalysis` | 3 |
-| 13 | `narrativeEcosystemMap` | 3 |
-| 14 | `historicalParallelAnalysis` | 3 |
-| 15 | `generateTimeline` | 2 |
-| 16 | `sanctionsCheck` | 2 |
-| 17 | `humanitarianSnapshot` | 2 |
-| 18 | `compareConflicts` | 3 |
-| 19 | `canonicalNameLookup` | 1 |
-| 20 | `deepSourceResearch` | 4 |
-| 21 | `verifyAndStandardize` | 1 |
-| 22 | `stakeholderInfluenceMap` | 3 |
-| 23 | `ceasefireMonitor` | 3 |
-| 24 | `peaceAgreementAnalyzer` | 4 |
-| 25 | `earlyWarningBrief` | 3 |
-| 26 | `gameTheoryAnalysis` | 3 |
-| 27 | `protectionOfCiviliansAssessment` | 4 |
-
-### Analytical Frameworks (15)
-
-| Framework | Used by |
-|-----------|---------|
-| Glasl 9-Stage Escalation | Early Warning, Dashboard, Scenarios, Timeline |
-| INFORM Risk Index (IASC) | Risk Monitor, Dashboard, Humanitarian |
-| Fisher-Ury Principled Negotiation | Negotiation Prep, Talking Points, Actor Profiles |
-| Mitchell-Agle-Wood Stakeholder Salience | Stakeholder Map, Actor Profiles |
-| Barnett-Duvall 4 Faces of Power | Power Map, Stakeholder Map |
-| Zartman Ripeness Theory | Mediation Design, Scenarios, Calendar |
-| Stedman Spoiler Management | Mediation Design, Scenarios |
-| OCHA Humanitarian Principles | Humanitarian, Briefing |
-| IPC Food Security Phases | Humanitarian, Risk Monitor |
-| Lederach Peacebuilding Pyramid | Mediation Design, Stakeholder Map |
-| Galtung ABC Conflict Triangle | Risk Monitor, Info Environment |
-| UN DPPA Brief Format | Auto-Briefings, Briefing, Report Studio |
-| Berghof Mediation Framework | Mediation Design, CONCORDIA |
-| Putnam Two-Level Games | Game Theory, Negotiation Prep |
-| Fearon Rationalist War Causes | Game Theory, Scenarios |
-
-### Live Data Feeds (9)
-
-| Feed | Covers | Auth |
-|------|--------|------|
-| ACLED | Armed conflict events (pagination to 15k, 1h cache) | API key |
-| GDELT | Media events, tone, instability (Z-score anomaly detection) | Free |
-| UCDP GED | Georeferenced conflict event dataset | Free |
-| UNHCR Refugee Data Finder | Displacement statistics, time-series | Free |
-| HDX HAPI | IDP figures, nutrition, operational presence | Free |
-| ReliefWeb | UN situation reports and disaster updates | Free |
-| UN News RSS | 6 feeds — SG statements, Security Council, regional desks | Free |
-| World Bank | GDP, governance indicators (WGI), fragility indices | Free |
-| CrisisWatch (ICG) | Monthly conflict status via Firecrawl scraper | Firecrawl key |
-
----
-
-## API Routes (68 total)
-
-### Auth (4)
-`POST /api/auth/session` — Set session cookie (Firebase token or demo flag). CSRF-protected.
-`DELETE /api/auth/session` — Clear session cookie (logout).
-`GET /api/auth/session` — Check session status.
-`GET /api/auth/test-firebase` — Ops diagnostic: Admin SDK status + Email/Password provider check.
-
-### AI Generation (35 routes, all behind `withAuth()` + `checkAndDeductCredits()`)
-**Core**: `chat`, `research`, `deep-research`, `grounded-search`, `claude-analyze`, `deep-search-agent` (Vertex AI ADK)
-**Structured Analysis**: `risk-assessment`, `actor-profiles`, `actor-brief`, `actor-enrichment`, `power-map`, `escalation-scan`, `scenario`, `commitment-scan`, `sanctions-scan`, `treaty-analyze`, `negotiation`, `mediation`, `mediation-design`, `info-environment`, `game-theory`
-**Content Generation**: `report`, `briefing-generate`, `auto-briefing`, `dossier-generate`, `talking-points`, `resolution`, `terminology`
-**Research**: `argus`, `media-scan`, `media-roundup`, `media-analyze`, `discover-sources`, `extract`, `auto-structure`, `advisor-chat`
-
-### Data (17 routes)
-`situations` (CRUD) | `documents` (upload, retrieve, extract) | `graph` (ingest, query) | `reports` (CRUD, export) | `settings/ai` | `tool-data` | `sources` | `data/conflicts` | `data/geospatial` | `export`
-
-### System (5 routes)
-`health` | `stripe/checkout` | `stripe/webhook` | `cron/check-alerts` | `cron/generate-briefing`
-
-### Admin (3 routes)
-`admin/add-credits` (self-service +1000 via Debug Panel) | `admin/set-all-credits` (bulk reset, CRON_SECRET required) | `account` (GDPR Art. 17 erasure — cascade-deletes all user data)
-
----
-
-## Credit System
-
-New users receive **5,000 credits** on sign-up. Demo users have unlimited credits (shown as ∞).
-
-| Tier | Cost | Operations |
-|------|------|------------|
-| 1 credit | Basic | Chat, terminology check, canonical name lookup |
-| 2 credits | Standard | Scenario, media roundup, talking points, commitment scan, morning digest |
-| 3 credits | Analysis | Risk assessment, actor profiles, negotiation, mediation, power map, info environment, web crawl |
-| 4 credits | Deep | Claude analysis, dossier, briefing generation, treaty analysis, sanctions scan, peace agreement analyzer, PoC assessment |
-| 5 credits | Research | Report generation, deep research |
-| 8 credits | Advisory | Advisor panel discussion (parallel calls + synthesis) |
-| 10 credits | Agent | Deep Research Agent (Vertex AI ADK, 3-phase pipeline) |
-
-Credits are pre-deducted before AI calls and refunded on error (atomic Firestore transaction).
-
----
-
-## Security
-
-| Layer | Mechanism |
-|-------|-----------|
-| **Authentication** | Firebase Auth — Google OAuth + email/password. Session in `httpOnly` `secure` `sameSite=lax` cookie |
-| **Token verification** | All API routes use `withAuth()` — verifies Firebase ID token via Admin SDK (`verifyIdToken`) |
-| **Session cookie** | `tacitus-auth-session` — stores raw Firebase ID token (not Firebase session cookie). 24h expiry |
-| **Token refresh** | Client-side: `onIdTokenChanged` listener + proactive forced refresh at 50 min (tokens expire at 60 min) |
-| **CSRF** | Origin vs `x-forwarded-host` / `host` comparison on session POST. Rejects cross-origin requests with 403 |
-| **Rate limiting** | 100 req/min per user (in-memory, per Vercel function cold start) |
-| **Firestore rules** | Owner-only: `auth.uid == uid`. Credit writes server-only (Admin SDK). Demo data never touches production |
-| **Password reset** | Firebase `sendPasswordResetEmail`. Response is always success for unknown emails (prevents enumeration) |
-| **Demo isolation** | Demo cookie never touches Firebase. Separate session branch in middleware |
-
----
-
-## Situation-Driven Data Model
-
-Every piece of data belongs to a user-created situation:
-
-```
-Firestore:
-  users/{uid}/
-    profile (credits, role, orgId, subscription, consent fields)
-    situations/{situationId}/
-      metadata         — name, type, region, actors, risk score, Glasl stage
-      conflict-grammar — extracted ACO v2.0 entities (8 core + 6 extended)
-      graph            — nodes + edges (ConflictGraphSchema)
-      documents/{id}   — uploaded files + RAG extraction results
-      reports/{id}     — generated reports
-      scenarios/{id}   — what-if analyses
-      chats/{id}       — conversation history (tool calls + responses)
-      briefings/{id}
-      dossiers/{id}
-      talking-points/{id}
-      risk-assessments/{id}
-      timeline-events/{id}
-      stakeholder-map
-      negotiation-preps/{id}
-      media-analyses/{id}
-      treaty-analyses/{id}
-      sanctions-scans/{id}
-```
-
-All tool pages call `useSituationGuard()` — if no situation is active, they render `<NoSituationState />` prompting the user to create or select one.
-
----
-
-## Conflict Grammar (ACO v2.0)
-
-The 14-entity conflict grammar is the backbone of PRAXIS's knowledge representation:
-
-**Core 8**: Actor · Claim · Interest · Constraint · Leverage · Commitment · Event · Narrative
-
-**Extended 6**: Institutions · Norms · Resources · Risks · Policies · Grievances
-
-Defined as Zod schemas in `src/lib/ai/schemas/conflict-grammar.ts`. Every structured AI output is typed against these schemas.
-
----
-
-## Visualization Components
-
-10 reusable SVG/D3 dark-theme components in `src/components/visualizations/`:
-
-| Component | Uses | Used by |
-|-----------|------|---------|
-| `RiskGauge` | SVG arc, animated stroke-dashoffset | Dashboard, Risk Monitor |
-| `RadarChart` | SVG spider, animated polygon | Dashboard, Risk Monitor |
-| `EscalationLadder` | Glasl 9-stage, interactive | Dashboard, Early Warning |
-| `ProbabilityTree` | SVG BFS tree, probability-colored nodes | Scenarios |
-| `TornadoChart` | Horizontal sensitivity bars | Risk Monitor |
-| `SankeyFlow` | Layered column flow, curved fill paths | Scenarios |
-| `TimeSeriesChart` | SVG multi-series, ResizeObserver responsive, hover crosshair | Risk Monitor, Early Warning |
-| `HeatmapGrid` | RGB lerp color interpolation | Early Warning |
-| `ForceGraph` | D3 v7, force simulation, drag+zoom | Stakeholder Map, Conflict Graph |
-| `ComplianceTracker` | Progress bar, collapsible categories | Treaty Analyzer, Commitments |
-
-Import individually for tree-shaking: `import { RiskGauge } from '@/components/visualizations/risk-gauge'`
+**Confidence levels:** EXTRACTED · INFERRED · AMBIGUOUS · ASSESSED.
 
 ---
 
 ## Tech Stack
 
 | Layer | Technology |
-|-------|------------|
+|---|---|
 | Framework | Next.js 16.1.6 (App Router, Turbopack) |
-| Language | TypeScript 5.9 (strict mode) |
-| Styling | Tailwind CSS 4 (`@theme inline` CSS variables), Radix UI |
-| AI SDK | Vercel AI SDK 6.0.105 |
-| AI Providers | Google Gemini 2.5 Flash/Pro, Anthropic Claude Sonnet 4, Vertex AI Agent Engine (ADK) |
-| Auth & DB | Firebase Auth + Firestore + Admin SDK |
+| Language | TypeScript 5.9 (strict), Python 3.11 |
+| UI | React 19, Tailwind CSS 4, Radix UI, Framer Motion 12, D3.js 7, react-leaflet |
 | State | Zustand 5 (persisted) |
+| AI SDK | Vercel AI SDK v6 (`@ai-sdk/google`, `@ai-sdk/google-vertex`) |
+| AI Providers | Gemini Flash / Gemini Pro on Google AI and Vertex AI, Vertex AI Agent Engine (ADK) |
+| Backend | Python FastAPI, NetworkX, Graspologic, Pydantic v2, Genkit |
+| Auth & DB | Firebase Auth + Firestore + Admin SDK |
+| Graph | Firestore baseline with optional graph export adapters |
 | Validation | Zod 4 |
-| Visualization | D3.js 7, react-leaflet (Geospatial Monitor) |
-| Animation | Framer Motion 12 |
 | Documents | pdf-parse, mammoth, docx, jspdf |
-| Web Research | Firecrawl |
+| Web Research | Grounded Google Search and open-data feed clients |
 | Payments | Stripe |
-| Deployment | Vercel (iad1 region, Node.js 24.x) |
+| Observability | Sentry, OpenTelemetry → Cloud Trace, BigQuery analytics |
+| Deployment | GCP Cloud Run (us-central1), Cloud Build CI/CD |
 
 ---
 
-## Firebase Setup
+## File Map
 
-**Project ID**: `praxisbytacitus`
-
-1. Firebase Console → Authentication → Sign-in method → Enable **Google** and **Email/Password**
-2. Authentication → Settings → Authorized domains → add your domain
-3. Project Settings → Service Accounts → Generate new private key → set as `FIREBASE_SERVICE_ACCOUNT_KEY` in Vercel
-4. Deploy security rules and indexes:
-
-```bash
-firebase use praxisbytacitus
-firebase deploy --only firestore:rules,firestore:indexes
 ```
-
-**Verify the setup is working:**
+/                            Next.js frontend (root)
+├── src/app/
+│   ├── app/                 38+ authenticated tool pages (/app/*)
+│   ├── demo/                Demo mirror (/demo/*)
+│   ├── onboarding/          3-screen wizard
+│   ├── (auth)/login/        Sign-in (Google OAuth + email/password + demo)
+│   ├── (landing)/           Public marketing pages
+│   └── api/                 73 routes
+│       ├── ai/              AI tool routes (all use withCalibration unless exempt)
+│       ├── auth/            Session, login, logout, test-firebase
+│       ├── data/            Intelligence, geospatial, conflicts
+│       ├── settings/        api-keys, ai
+│       ├── onboarding/      profile GET/PATCH, complete, chips, skip
+│       ├── cron/            check-alerts, generate-briefing
+│       └── admin/           operator console, account, governance surfaces
+├── src/components/
+│   ├── ui/                  Radix primitives
+│   ├── app/                 AppShell, AppSidebar, Header, DebugPanel, FloatingPRAXIS
+│   ├── praxis/              AiPopulate, ToolInfoPanel, NoSituationState, OnboardingRequiredState
+│   ├── visualizations/      10 SVG/D3 components (force-graph, risk-gauge, etc.)
+│   ├── assistant/           Chat interface, tool invocation
+│   ├── reports/             Composer + DOCX/PDF export
+│   ├── graph/               D3 conflict knowledge graph
+│   └── landing/             Landing sections
+├── src/lib/
+│   ├── ai/                  providers.ts (single source of model strings), tools.ts (27 chat tools), prompts/, schemas/, vertex-agent.ts
+│   ├── api/                 with-auth, with-credits, with-calibration, save-tool-output, standard-error
+│   ├── auth/                auth-context.tsx, cookie-signer.ts (HMAC)
+│   ├── firebase/            config.ts, admin.ts, situations-service.ts, analyst-profile-service.ts
+│   ├── context/             profile-context.ts (buildCalibratedContext), system-prompt-block.ts
+│   ├── crypto/              envelope.ts (AES-256-GCM for user API keys)
+│   ├── data-feeds/          11 source clients + feed-aggregator + capabilities resolver
+│   ├── analytics/           risk-engine, escalation-scorer (Glasl), geospatial, trustworthiness
+│   ├── knowledge/           Situation Knowledge Core (4 layers: graph, vector, feed, tool-output)
+│   ├── domain/              11-domain taxonomy (seeds, classifier, resolve)
+│   ├── services/            entity-extraction, canonical-precheck, feedback, graphify-client
+│   └── constants/           tool-registry (40), frameworks (15), entity-colors, lens-catalog
+├── src/stores/              Zustand: situation, app, conflict, report, debug, notification, preferences
+├── src/hooks/               useSituationGuard, usePraxisApi, usePersistedToolData, useKeyboardShortcuts
+├── src/types/               Situation v2, AnalystProfile, ConflictGraph, ACO, API
+├── src/middleware.ts        Edge: routing + CSP + COOP + HSTS (do NOT rename to proxy.ts)
+│
+├── backend/                 Python FastAPI on Cloud Run
+│   ├── main.py              FastAPI app entry
+│   ├── config.py            Pydantic BaseSettings (single env source)
+│   ├── auth.py              Firebase token + OIDC verification
+│   ├── routers/             pipeline, graph, analyze
+│   ├── services/            firestore_sync, graph_adapter, bigquery, graphiti, gemini
+│   ├── ai/                  genkit_app.py, flows.py
+│   ├── graphify_tacitus/    ACO pipeline modules (extract, build, cluster, analyze, report, export)
+│   └── tests/               pytest
+│
+├── cloud_functions/
+│   ├── on_situation_created/    Auto-trigger pipeline on new situation
+│   ├── on_document_uploaded/    Extract text + run pipeline
+│   └── gdelt_poller/            Scheduled GDELT ingestion (Cloud Scheduler, every 15 min)
+│
+├── infrastructure/
+│   ├── setup-gcp.sh             One-time: enable APIs, BigQuery, Pub/Sub, IAM
+│   ├── deploy.sh                Full deploy via Cloud Build (backend → frontend)
+│   ├── deploy-backend.sh        Backend only
+│   ├── deploy-frontend.sh       Frontend only
+│   ├── deploy-windows.ps1       Windows PowerShell deploy
+│   ├── bootstrap-user-key-master.sh  Create envelope-encryption master key
+│   ├── monitoring-alerts.sh     Cloud Monitoring alert policies
+│   └── setup-domain.sh          Custom domain mapping
+│
+├── scripts/                 audit-ai-routes.mjs, audit-tools.ts, audit-gcp.mjs, verify-tools.ts,
+│                            seed-domains.ts, seed-advisors.ts, migrate-user-api-keys.mjs, ...
+│
+├── tests/                   Vitest unit + Playwright e2e (golden-path, capabilities-api)
+│
+├── cloudbuild.yaml          CI/CD: build backend → deploy → inject URL → build frontend → deploy
+├── docker-compose.yml       Local backend dependencies
+├── Dockerfile               Frontend container
+├── firestore.rules          Owner-only data isolation
+├── firestore.indexes.json   Composite indexes
+└── storage.rules            Cloud Storage access control
 ```
-GET https://your-domain/api/auth/test-firebase
-```
-Expected: `{"diagnosis":"✅ Email/Password auth is ENABLED", "adminSdkStatus":"INITIALIZED_OK"}`
 
 ---
 
-## Deployment
+## Two Experiences: Demo vs Real App
 
-PRAXIS deploys to **Google Cloud Run** (no Vercel). Both services run as containers.
+| | Demo (`/demo/*`) | Real App (`/app/*`) |
+|---|---|---|
+| **Auth** | Cookie-only `{demo: true}`, no account | Firebase — Google OAuth + email/password |
+| **Data** | Pre-loaded Nordalia Crisis | User creates situations; all data in Firestore |
+| **AI** | Cached demo responses | Live Gemini / Vertex AI + grounded Google Search |
+| **Usage** | Demo capacity | Plan-based workspace limits with internal fair-use controls |
+| **Persistence** | In-memory (Zustand + localStorage) | Firestore (user-scoped subcollections) |
+| **Purpose** | Investor demos, prospect exploration | Real conflict intelligence work |
 
-### One-command deploy (Cloud Build)
+Demo sessions are **completely isolated from Firebase** — separate cookie path, never touch production Firestore.
+
+---
+
+## Quick Start (Local Development)
 
 ```bash
-# First time: enable GCP APIs, create BigQuery dataset, Pub/Sub topics, etc.
+# Terminal 1 — Next.js frontend (port 3000)
+npm install
+npm run dev
+
+# Terminal 2 — Backend services (port 8080)
+docker-compose up
+
+# Backend health
+curl http://localhost:8080/health
+```
+
+Open http://localhost:3000. **Demo mode works with zero configuration** — no API keys needed.
+
+For live AI in `/app/*`, copy `.env.example` to `.env.local` and set at minimum `GOOGLE_AI_API_KEY` and `FIREBASE_SERVICE_ACCOUNT_KEY`. The full grouped list is in `.env.local.example`.
+
+---
+
+## Environment Variables
+
+Critical (production):
+
+| Variable | Purpose |
+|---|---|
+| `FIREBASE_SERVICE_ACCOUNT_KEY` | Admin SDK JSON string (Firestore + token verify) |
+| `GOOGLE_AI_API_KEY` | Gemini API (or use Vertex ADC on Cloud Run) |
+| `NEXT_PUBLIC_PRAXIS_BACKEND_URL` | Backend Cloud Run URL (auto-set by Cloud Build) |
+| `VERTEX_AGENT_ENGINE_ID` | Numeric Reasoning Engine ID for Deep Research Agent |
+| `CRON_SECRET` | Cron + admin auth bearer |
+| `COOKIE_SIGNING_SECRET` | Session cookie HMAC (primary) — `SESSION_SECRET` is its alias |
+| `USER_KEY_MASTER` | 32-byte base64 master key for envelope-encrypted user API keys |
+| `ADMIN_ALLOWLIST` | Comma-separated Firebase UIDs that can access `/app/admin/*` |
+
+Optional integrations: `STRIPE_*`, `RESEND_API_KEY`, `NEXT_PUBLIC_SENTRY_DSN`, graph backend credentials, and operator/monitoring configuration.
+
+See `.env.example` and `.env.local.example` for the full grouped reference with placeholders.
+
+---
+
+## Scripts
+
+```bash
+# Development
+npm run dev                    # Next.js dev server (Turbopack, :3000)
+npm run build                  # Production build
+npm start                      # Production server
+npm run lint                   # ESLint
+
+# Verification
+npx tsc --noEmit               # Type check
+npm run verify-tools           # Tool registry sanity
+npm run audit:tools            # Per-tool calibration scoring (11 dimensions)
+npm run audit:routes           # AI route compliance (auth, credits, error handling)
+npm run audit:calibration      # Alias of audit:routes
+npm run audit:verify           # Confirm latest audit is fresh
+npm run audit:gcp              # GCP resource readiness (APIs, secrets, indexes, topics)
+
+# Testing
+npx vitest run                                           # Vitest unit
+npm run smoke:public                                     # Playwright unauth smoke
+npm run smoke:golden-path                                # Full signed-in smoke
+cd backend && python -m pytest tests/ -v                 # Backend pytest
+
+# Seeds + migrations
+npm run seed:onboarding        # Seed config/onboarding_suggestions
+npm run seed:preferences       # Seed default model preferences
+npm run seed:advisors          # Seed advisor catalogue (4 flagships)
+npx tsx scripts/seed-domains.ts            # Seed 11 domain configs (idempotent)
+npm run migrate:user-api-keys  # Encrypt legacy plaintext API keys (--commit to apply)
+```
+
+---
+
+## Deployment (Cloud Run)
+
+PRAXIS deploys to **Google Cloud Run** — both services run as containers. **No Vercel.**
+
+```bash
+# One-time: enable APIs, BigQuery, Pub/Sub, IAM, Artifact Registry
 bash infrastructure/setup-gcp.sh
 
-# Deploy both services (backend first, then frontend with backend URL injected)
+# Bootstrap envelope-encryption master key (idempotent)
+bash infrastructure/bootstrap-user-key-master.sh
+
+# Full deploy (backend first, then frontend with backend URL injected)
 bash infrastructure/deploy.sh
-# Equivalent: gcloud builds submit --config=cloudbuild.yaml
-```
+# Equivalent:
+gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus
 
-### Deploy individual services
+# Individual services
+bash infrastructure/deploy-backend.sh
+bash infrastructure/deploy-frontend.sh
 
-```bash
-bash infrastructure/deploy-backend.sh   # Python FastAPI on Cloud Run
-bash infrastructure/deploy-frontend.sh  # Next.js on Cloud Run
+# Windows
+./infrastructure/deploy-windows.ps1
 ```
 
 ### Custom domain
@@ -519,71 +304,172 @@ gcloud run domain-mappings create --service=praxis-frontend \
   --domain=praxis.tacitus.me --region=us-central1
 ```
 
-### Local build verification
+See [`docs/CUSTOM_DOMAIN_SETUP.md`](./docs/CUSTOM_DOMAIN_SETUP.md) for DNS, Firebase Auth authorized domains, and OAuth client setup.
 
-```bash
-npm run build     # Production Next.js build
-npx tsc --noEmit  # TypeScript check
-cd backend && python -m pytest tests/ -v  # Python tests
-```
+### Build artifacts
+
+- Artifact Registry: `us-central1-docker.pkg.dev/praxisbytacitus/praxis/`
+- Frontend service: `praxis-frontend` (public)
+- Backend service: `praxis-backend` (`--no-allow-unauthenticated`, OIDC-only)
 
 ---
 
-## Documentation
+## Verification Before Deploy
+
+**Do not deploy to `praxis.tacitus.me` until all four pass:**
+
+```bash
+npx tsc --noEmit                       # 1. TypeScript clean
+npm run build                          # 2. Production build clean
+node scripts/audit-ai-routes.mjs       # 3. AI routes compliant
+npm run audit:gcp                      # 4. GCP resources ready
+```
+
+After deploy, verify:
+
+```bash
+curl -sI https://praxis.tacitus.me/
+curl -sI https://praxis.tacitus.me/login
+curl -sI https://praxis.tacitus.me/onboarding
+curl -s  https://praxis.tacitus.me/api/health      # status: ok
+```
+
+For 5xx triage, see [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md).
+
+---
+
+## Tools, Frameworks, Data Feeds
+
+### Tool Categories (40 pages)
+
+| Category | Pages |
+|---|---|
+| **Context (7)** | Dashboard, Documents, Sources, Timeline, Humanitarian, Calendar, Conflict Graph |
+| **Analysis (7)** | Risk Monitor, Early Warning, Actor Profiles, Stakeholder Map, Power Map, Info Environment, Compare |
+| **Drafting (7)** | Assistant, Report Studio, Dossier, Talking Points, Briefing Room, Daily Brief, UN Toolkit |
+| **Simulation (5)** | Scenarios, Negotiation Prep, Game Theory, CONCORDIA, Mediation Designer |
+| **Intelligence (10)** | Deep Research Agent, ARGUS, ARGUS Grounded, Media Compass, Media Roundup, Geospatial, Sanctions, Commitments, Treaty Analyzer, Alert Center |
+| **Workspace (4)** | Cases, Team, Advisory Council, Settings |
+
+Tool registry: `src/lib/constants/tool-registry.ts` (single source of truth for route metadata, schemas, methodology, and demo data).
+
+### Analytical Frameworks (15)
+
+Glasl Escalation · Fisher-Ury · INFORM Risk Index · Barnett-Duvall Power · Zartman Ripeness · Stedman Spoilers · Mitchell-Agle-Wood Salience · OCHA Humanitarian · IPC Food Security · Lederach Pyramid · Galtung Triangle · UN DPPA Brief · Berghof Mediation · Putnam Two-Level · Fearon Rationalist War.
+
+Source: `src/lib/constants/frameworks.ts`.
+
+### Live Data Feeds
+
+| Feed | Tier | Coverage |
+|---|---|---|
+| Google Search Grounding | Free (default) | Real-time web research via Vertex |
+| GDELT | Free | Media events, tone, instability |
+| ReliefWeb | Free | UN situation reports, disasters |
+| UNHCR | Free | Displacement statistics |
+| UCDP GED | Free | Georeferenced conflict events |
+| World Bank | Free | GDP, governance (WGI), fragility |
+| HDX HAPI | Free | IDP figures, nutrition, operational presence |
+| UN News RSS | Free | 6 feeds — SG, Security Council, regional desks |
+
+Per-user keys are stored **envelope-encrypted** (AES-256-GCM, master key in Secret Manager `praxis-user-key-master`). See `src/lib/crypto/envelope.ts`.
+
+### AI Model Tiers
+
+| Helper | Model | Used for |
+|---|---|---|
+| `getModel()` | `gemini-3-flash-preview` | Chat, terminology, lightweight |
+| `getProModel()` | `gemini-3.1-pro-preview` | Structured tool generation (Zod schemas) |
+| `getDeepThinkModel()` | `gemini-3.1-pro-preview` + `thinkingLevel: 'high'` | Game Theory, Scenarios, Treaty |
+| `getAnalysisModel()` | Gemini Pro fallback chain | Diplomatic language, bias-sensitive |
+| `getEmbeddingModel()` | `gemini-embedding-2-preview` → `text-embedding-005` → null | SKC vector layer |
+| `getGroundedModel()` | `gemini-3-flash-preview` + Google Search | Research with grounding |
+| Vertex Agent Engine | ADK | Deep Research Agent (3-phase pipeline) |
+| `callProModel()` | Pro→Flash auto-fallback wrapper | All structured-output AI routes |
+
+**Never hardcode `gemini-*` strings outside `src/lib/ai/providers.ts`.** See [CLAUDE.md → Model String Discipline](./CLAUDE.md#model-string-discipline-critical) for forbidden strings and the verification grep.
+
+---
+
+## Calibration Contract (AnalystProfile)
+
+Every authenticated user has an `AnalystProfile` at `users/{uid}/profile/analyst`. It is the **single source of truth for personalising every AI tool output**.
+
+- **Capture** — 3-screen onboarding wizard (`src/app/onboarding/`): Identity → Perspective → Working Style
+- **Persistence** — Each completion bumps `meta.version`, writes immutable snapshot to `users/{uid}/profile_versions/{vN}`, publishes `profile.events` Pub/Sub → embedding refresh
+- **Consumption** — `withCalibration(toolId, creditOpType)(handler)` wraps every AI route. It builds the analyst, situation, output-constraint, domain, interaction, advisor, and SKC retrieval frames that prepend the system prompt.
+- **Gate** — Returns HTTP 403 when a non-demo user has no `profile.meta.completedAt`. Client-side: `useSituationGuard()` returns `needsOnboarding: true` and renders `<OnboardingRequiredState />`
+- **Audit** — `node scripts/audit-ai-routes.mjs` verifies route calibration/exemption discipline; focused tests cover context rendering and persistence contracts.
+
+Specs: [`docs/CONTEXT_INJECTION.md`](./docs/CONTEXT_INJECTION.md), [`docs/OPERATIONAL_SPINE.md`](./docs/OPERATIONAL_SPINE.md), and the current sprint plan in [`docs/SPRINT_EXECUTION_PLAN_2026-04-25.md`](./docs/SPRINT_EXECUTION_PLAN_2026-04-25.md).
+
+### 11-Domain Taxonomy
+
+Every user and every situation carries one `DomainId`. Domains resolve from Firestore with seed fallback, so the taxonomy can evolve without forcing every prompt to change.
+
+`generic` · `armed-conflict-security` · `diplomacy-negotiation` · `humanitarian` · `human-rights` · `governance-rule-of-law` · `economic-sanctions` · `development-stabilization` · `climate-environmental-security` · `information-cyber` · `transnational-threats`
+
+Auto-classified by `classifyDomain()` during situation creation; user can confirm or override. Admin edits live at `/app/admin/domains` (gated by `ADMIN_ALLOWLIST`).
+
+Seed: `npx tsx scripts/seed-domains.ts` (idempotent).
+
+---
+
+## What's Next
+
+**Active sprint plan:** [`docs/SPRINT_EXECUTION_PLAN_2026-04-25.md`](./docs/SPRINT_EXECUTION_PLAN_2026-04-25.md).
+
+Current high-impact lanes:
+
+1. Deployment spine lock: Firestore rules/indexes, TTL, worker/function service accounts, smoke tests.
+2. First-run UX: landing/onboarding source truth, completion payoff, profile-visible workspace.
+3. Dashboard and notifications: activity feed, notification bell, situation overview.
+4. Tool quality retrofit: persistence, canonical tool IDs, useful empty/error states.
+5. Context/store reliability: unified tool-output contract, prompt transparency, low-confidence warnings.
+
+**Next-session handoff:** [`docs/CONTINUATION.md`](./docs/CONTINUATION.md).
+
+---
+
+## Documentation Map
 
 | File | Purpose |
-|------|---------|
-| [AGENTS.md](./AGENTS.md) | Codex/Claude Code operating guide, validation, deploy rules, and one-line continuation prompt |
-| [docs/CONTINUATION.md](./docs/CONTINUATION.md) | Latest handoff state and next actions |
-| [docs/SPRINT_BACKLOG.md](./docs/SPRINT_BACKLOG.md) | **Canonical actionable list — pick the next task here** |
-| [docs/SPRINT_2026-04-25.md](./docs/SPRINT_2026-04-25.md) | Current week-long sprint plan (4 streams) |
-| [docs/VISION_2026.md](./docs/VISION_2026.md) | Strategic north-star objective for 2026 |
-| [docs/STRATEGY.md](./docs/STRATEGY.md) | Six-week product/infra roadmap |
-| [docs/USER_ACTION_LIST.md](./docs/USER_ACTION_LIST.md) | **Things only Giulio can do** — ACLED, Vertex ADK, Stripe, SOC 2, etc. |
-| [docs/CONTEXT_INJECTION.md](./docs/CONTEXT_INJECTION.md) | The architectural contract every AI route must honour |
-| [docs/COMPLIANCE.md](./docs/COMPLIANCE.md) | Licensing, certifications, sub-processors, audit log |
-| [docs/TEAM_OPS.md](./docs/TEAM_OPS.md) | Multi-agent operations playbook |
-| [docs/GCP_OPERATIONS.md](./docs/GCP_OPERATIONS.md) | Every gcloud / Secret Manager command |
-| [docs/RESEARCH_PROMPTS.md](./docs/RESEARCH_PROMPTS.md) | Deep-research prompt catalogue (all 10 answered 2026-04-25) |
-| [docs/EXTERNAL_TOOLS_WIRING.md](./docs/EXTERNAL_TOOLS_WIRING.md) | Per-feed × per-tool wiring map and degradation chain |
-| [docs/tacitus-acled-integration-brief.md](./docs/tacitus-acled-integration-brief.md) | ACLED integration playbook (OAuth, ACO mapping, Cloud Run Job) |
-| [docs/implementation/gdelt-ingestion-2026-04-25.md](./docs/implementation/gdelt-ingestion-2026-04-25.md) | GDELT BigQuery ingestion playbook (1,036 lines, T1+T2 pattern) |
-| [docs/tools/INDEX.md](./docs/tools/INDEX.md) | Per-tool micro-app spec catalogue |
-| [docs/DEPLOYMENT_LOG.md](./docs/DEPLOYMENT_LOG.md) | Daily deployment status, Cloud Run revisions, and production verification |
-| [docs/HANDOFF_PROMPTS.md](./docs/HANDOFF_PROMPTS.md) | Long-form prompts for Claude Code and Codex continuation |
-| [docs/AUTH.md](./docs/AUTH.md) | Auth architecture — token lifecycle, CSRF, session design |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Dual-app architecture, route structure, data flow |
-| [CHANGELOG.md](./CHANGELOG.md) | Full version history (v3.7.0 → present) |
-| [CLAUDE.md](./CLAUDE.md) | AI-assistant guide — comprehensive codebase reference |
-| [TOOL_AUDIT.md](./TOOL_AUDIT.md) | Tool-by-tool wiring audit |
+|---|---|
+| [`README.md`](./README.md) | This file — reference overview |
+| [`CLAUDE.md`](./CLAUDE.md) | Agent conventions: model discipline, security, file structure, key flows, anti-patterns |
+| [`AGENTS.md`](./AGENTS.md) | Codex/OpenAI agents pointer to CLAUDE.md |
+| [`CHANGELOG.md`](./CHANGELOG.md) | Version history (Keep a Changelog) |
+| [`docs/CONTINUATION.md`](./docs/CONTINUATION.md) | Next-session handoff + weekly ship plan |
+| [`docs/AUTH.md`](./docs/AUTH.md) | Token lifecycle, CSRF, session architecture, diagnostics |
+| [`docs/MAINTENANCE.md`](./docs/MAINTENANCE.md) | Secret rotation, envelope-encryption migration, monitoring setup |
+| [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) | Production 5xx triage |
+| [`docs/CUSTOM_DOMAIN_SETUP.md`](./docs/CUSTOM_DOMAIN_SETUP.md) | DNS + Firebase Auth + OAuth setup for praxis.tacitus.me |
+| [`docs/golden-path.md`](./docs/golden-path.md) | Free-tier walkthrough (manual QA + Playwright spec) |
+| [`docs/DOC_IMPROVEMENTS.md`](./docs/DOC_IMPROVEMENTS.md) | Documentation backlog |
+| [`docs/superpowers/specs/`](./docs/superpowers/specs/) | Active design specs (calibration, domain taxonomy, generic-route hardening, master plan) |
 
 ---
 
-## Cron Jobs
+## Working With Agents
 
-| Job | Schedule | Route |
-|-----|----------|-------|
-| Alert check | 06:00 UTC daily | `POST /api/cron/check-alerts` |
-| Briefing generation | 05:00 UTC daily | `POST /api/cron/generate-briefing` |
+This codebase is actively worked on by **Claude Code** and **OpenAI Codex** agents. Conventions are kept in **`CLAUDE.md`** (auto-loaded by Claude Code) with a thin pointer in **`AGENTS.md`** (auto-loaded by Codex). Do not duplicate content between them.
 
-Both require `Authorization: Bearer {CRON_SECRET}` header (set automatically by Vercel).
+**Before any agent makes a change:**
 
----
+1. Read [`CLAUDE.md`](./CLAUDE.md) — repository conventions
+2. Read [`docs/CONTINUATION.md`](./docs/CONTINUATION.md) — what just shipped, what's next
+3. For code touching AI routes: see [`CLAUDE.md` § AI Model Tiers + Calibration Contract](./CLAUDE.md)
+4. For security-critical files (`firestore.rules`, `middleware.ts`, `with-auth.ts`, `cookie-signer.ts`, `admin.ts`, `storage.rules`): **stop and ask the human first**
 
-## Scripts
+**Before declaring a change "done":**
 
 ```bash
-npm run dev    # Development server with Turbopack (port 3000)
-npm run build  # Production build
-npm start      # Production server
-npm run lint   # ESLint
-npm test       # Vitest unit tests
+npx tsc --noEmit
+npm run build
+node scripts/audit-ai-routes.mjs
+npm run audit:gcp
 ```
-
-Current deployability checkpoint (2026-04-25): `npm run build`, `npm run lint`, `npm run audit:gcp`, `node scripts/audit-ai-routes.mjs`, and `npx vitest run` pass locally. Lint still reports warnings for the React Compiler migration backlog and unused code cleanup.
-
-Production deployment checkpoint (2026-04-25): Cloud Build `06b20a50-c0ef-4159-906f-5c97efad8159` deployed commit `5cdfebf` to Cloud Run. `praxis.tacitus.me` and `/login` return 200, `/onboarding` redirects unauthenticated users to `/login` as expected, `/api/health` is `ok`, and Firebase Auth diagnostics pass. See [docs/DEPLOYMENT_LOG.md](./docs/DEPLOYMENT_LOG.md).
 
 ---
 
-Built by [TACITUS](https://tacitus.me) · Contact: giulio@tacitus.me
+**Built by [TACITUS](https://tacitus.me)** · Contact: `giulio@tacitus.me`

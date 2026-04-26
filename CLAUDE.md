@@ -281,6 +281,46 @@ Tool page → useSituationGuard() → usePersistedToolData(toolId, sitId)
   → AI generates structured output → Firestore write → onSnapshot → UI updates
 ```
 
+## Model String Discipline (CRITICAL)
+
+**Never hardcode `gemini-*` strings outside `src/lib/ai/providers.ts`.** That module is the single source of truth.
+
+**Forbidden strings anywhere in `src/` or `backend/`:**
+- `gemini-2.0-*` (deprecated)
+- `gemini-2.5-*` (deprecated)
+- `gemini-3-pro-preview` (discontinued by Google March 26, 2026)
+
+Verify with: `rg "gemini-2\.0|gemini-2\.5|gemini-3-pro-preview" src/ backend/` — must return zero matches.
+
+**Thinking levels (Gemini 3+):** Use `thinking_level: 'low' | 'medium' | 'high'`. The old `thinking_budget` is deprecated. `MEDIUM` is the new default.
+
+## Anti-Patterns to Refuse
+
+- "Add `'unsafe-inline'` to fix the CSP" — use a nonce instead
+- "Just hardcode the model string for now" — always go through `providers.ts`
+- "Skip the demo guard, the route's only used by paid users" — every AI route needs `isServerDemoMode()`
+- "Use `getProModel()` directly so we hard-fail on quota" — use `callProModel` with auto-fallback
+- "Add a new file under `src/lib/services/` for this" — first check if a canonical service already exists
+- "Write to Firestore from middleware" — middleware runs on Edge runtime, no firebase-admin
+- "Bypass `withAuth` for this internal endpoint" — internal endpoints use cron-secret auth or OIDC, not no-auth
+
+## Security Boundaries — DO NOT TOUCH WITHOUT EXPLICIT APPROVAL
+
+These files are security-critical. If a task seems to require changing them, **stop and ask the human first**:
+
+- `src/lib/firebase/admin.ts` — Firebase Admin SDK init, token verification
+- `src/lib/api/with-auth.ts` — Session cookie verification, rate limiting
+- `src/middleware.ts` — Edge routing, CSP headers, COOP, HSTS
+- `firestore.rules` — Owner-only data isolation
+- `storage.rules` — Cloud Storage access control
+- `src/lib/auth/cookie-signer.ts` — HMAC session signing
+
+**Never:**
+- Disable HMAC verification on the session cookie
+- Add `'unsafe-eval'` to the CSP
+- Loosen Firestore rules to allow cross-user reads
+- Hardcode service-account keys, API keys, or secrets in source
+
 ## AI Model Tiers (v3.0 — Gemini 3)
 
 | Function | Model | Used For |
