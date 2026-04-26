@@ -6,6 +6,91 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-04-26 (ninth session — public UX, onboarding, tool audit)
+
+### Public UX source-truth cleanup
+
+- Removed retired-vendor claims from user-facing landing and auth
+  copy: `ACLED EULA`, `Firecrawl`, multi-source crawling, and the
+  unverifiable "Trusted by analysts at UN, OSCE, and leading think
+  tanks" line on `/login`. Replaced with truthful Vertex AI Deep
+  Research and grounded Google Search wording.
+- Updated landing footer version badge from `v6.3.1` to `v6.4.0` to
+  match the current operational-spine release recorded in `CLAUDE.md`,
+  `README.md`, and `docs/CONTINUATION.md`.
+
+### Onboarding first-run UX
+
+- Added a per-step "Why this matters" rationale to the three onboarding
+  screens (Identity, Perspective, Working Style), explaining how each
+  choice flows into the analyst profile prompt block that PRAXIS
+  injects on every AI route.
+- Rewrote `live-preview.tsx`: the default panel is now a human-readable
+  calibration card (audience tone, language, lenses, regions, red
+  lines, recommended tools), with the raw `<analyst-profile>` XML
+  hidden behind an "Advanced: view system prompt block" disclosure.
+- Rewrote `completion-success.tsx`: the screen now surfaces a
+  calibration summary (role, primary domain, secondary domains,
+  audience, output language, lenses, mandate, red-line count) plus the
+  top five recommended tools driven by `recommendToolsForRole`. Primary
+  CTA is "Create your first situation"; secondary "Go to dashboard".
+- Replaced retired-vendor mentions inside onboarding copy: ACLED /
+  Tavily / Parallel / Firecrawl Working Style chips and panels are now
+  Vertex AI / Gemini plus open-data feed wording (UCDP, SIPRI,
+  Crisis Group, GDELT, ReliefWeb, HDX, UN News, World Bank, UNHCR).
+- Welcome modal, walkthrough, and demo-mode banner copy now read
+  "Vertex AI / Gemini" and "grounded Google Search" rather than
+  "Gemini 2.5 + Claude".
+- Situation creation wizard: each input (Name, Type, Description,
+  Region, Source URLs, Documents, Notes) now has a one-line explainer
+  describing exactly what PRAXIS does with it. Schema, validation, and
+  persistence unchanged. Internal `firecrawlCount` renamed to
+  `liveSearchCount`.
+
+### Settings — graph backend BYO clarity
+
+- Added a "PRAXIS works without this" default-state explainer above
+  the BYO graph-backend selector, plus a credentials-storage note
+  pointing at `users/{uid}/settings/graph_backend`.
+- System Health page: removed `ACLED` and `SIPRI-via-Firecrawl`
+  strings from feed-cache and activation-guide detail rows.
+
+### Production correction
+
+- Fixed `src/app/api/ai/legal-tracker/route.ts` calibration: route was
+  registered as `withCalibration('commitments', 'ai_analysis', …)` but
+  the rest of the route saved tool output under `legal_tracker` and
+  pulled graph context as `legal_tracker`. Restored to
+  `('legal_tracker', 'ai_legal_tracker')`. This fixes `tool_runs`
+  attribution, credit accounting (`ai_legal_tracker` is `2`,
+  `ai_analysis` was a generic fallback), and SKC dependency resolution.
+  `node scripts/audit-ai-routes.mjs` continues to pass with
+  53 calibrated / 4 exempt.
+
+### Documentation
+
+- New `docs/tools/UX_AUDIT_2026-04-26.md` (449 lines): tool-by-tool UX
+  audit covering Assistant, Conflict Graph, Briefing Room, Daily Brief,
+  Risk Monitor, Early Warning, Media Compass, Media Roundup, Deep
+  Research Agent, ARGUS, Documents, Negotiation Prep, Dossier, Policy
+  Memo, Humanitarian, and Legal & Resolution Tracker. Records canonical
+  IDs, calibration coverage, persistence, citations/confidence,
+  empty/error states, top low-risk fixes, and major-brick
+  recommendations per tool. Cross-tool findings: persistence vocabulary
+  drift, demo-data leaks, oversized page files (>1.5k lines on three
+  tools), missing shared `<Citation>` / `<ConfidenceBadge>` primitives.
+- New `docs/NEXT_BRICKS_2026-04-26.md`: ranked top-10 bricks for the
+  next 7 days plus lane assignments and intentionally-left drifts
+  (e.g. `package.json` `6.2.0` vs canonical `6.4.0`).
+
+### Tests
+
+- `npx tsc --noEmit --pretty false`: PASS
+- `node scripts/audit-ai-routes.mjs`: 53 calibrated / 4 exempt
+- `npx vitest run`: PASS (168 tests)
+
+---
+
 ## [Unreleased] — 2026-04-26 (eighth session — workspace personalization)
 
 ### Improved

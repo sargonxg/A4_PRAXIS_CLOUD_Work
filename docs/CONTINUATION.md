@@ -1,10 +1,37 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
-> **Last updated**: 2026-04-26 (eighth session — workspace personalization)
+> **Last updated**: 2026-04-26 (ninth session — public UX, onboarding, tool audit)
 > **Next agent**: Codex 5.5 (or Claude Code)
-> **Read first**: `CLAUDE.md`, `AGENTS.md`, `docs/OPERATIONAL_SPINE.md`, `CHANGELOG.md` Unreleased.
+> **Read first**: `CLAUDE.md`, `AGENTS.md`, `docs/OPERATIONAL_SPINE.md`, `CHANGELOG.md` Unreleased, `docs/NEXT_BRICKS_2026-04-26.md`.
 > **Sprint execution plan**: `docs/SPRINT_EXECUTION_PLAN_2026-04-25.md`
+> **Tool audit**: `docs/tools/UX_AUDIT_2026-04-26.md`
 > **Claude tandem prompts**: `docs/CLAUDE_TANDEM_PROMPTS_2026-04-25.md`
+
+> **2026-04-26 ninth-session update**: Claude Code shipped the public-UX
+> source-truth lane and the first-run-UX lane, plus a tool-by-tool audit
+> doc and a settings/landing polish pass. Specifically: stripped retired
+> vendor claims (ACLED, Firecrawl, Anthropic, Tavily, Parallel.ai) from
+> landing/auth/onboarding/system-health user copy; rewrote onboarding
+> live-preview and completion screens around a human calibration summary
+> with the raw XML behind an Advanced disclosure; added a
+> "PRAXIS works without this" explainer to Settings → Graph Backend; and
+> fixed a production calibration bug in `/api/ai/legal-tracker`
+> (was attributing to `commitments` with `ai_analysis` credits — now
+> `legal_tracker` with `ai_legal_tracker`). New strategy doc:
+> `docs/NEXT_BRICKS_2026-04-26.md` ranks the top 10 bricks for the next
+> seven days; the tool-by-tool audit lives at
+> `docs/tools/UX_AUDIT_2026-04-26.md` (top 5 fixes by impact: legal-tracker
+> calibration is now done; remaining four are tool-id canonicalization,
+> humanitarian real route, demo-leak audit, and document → graph
+> cross-link). Validation: tsc clean, route audit 53/4, vitest 168 PASS.
+> Files Claude is responsible for staying off this week:
+> `src/lib/auth/auth-context.tsx`, `src/components/app/app-sidebar.tsx`,
+> `src/components/dashboard/recommended-tools-widget.tsx`,
+> `src/components/dashboard/operational-status-panel.tsx`,
+> `src/lib/navigation/tool-preferences.ts`,
+> `src/lib/dashboard/tool-status-summary.ts`,
+> `src/lib/dashboard/role-recommendations.ts`,
+> `src/types/preferences.ts`, `src/hooks/use-user-preferences.ts`.
 
 > **2026-04-26 update**: Codex started the workspace-personalization lane.
 > User preferences now include `hiddenToolIds` and `toolOrder`, Settings →
