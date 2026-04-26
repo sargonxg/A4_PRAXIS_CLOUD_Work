@@ -82,6 +82,8 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   'ai_stakeholder_map': 3,    // Stakeholder map
   'ai_treaty_analyzer': 4,    // Treaty analysis (duplicate key for treaty-analyzer route)
   'ai_un_toolkit': 4,         // UN Toolkit document generation
+  // Humanitarian calibrated route (v6.4 — promoted from /api/ai/chat fallback)
+  'ai_humanitarian': 2,
 };
 
 /**

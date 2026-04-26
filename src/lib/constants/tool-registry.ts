@@ -90,7 +90,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     shortDescription: 'OCHA humanitarian snapshot from HDX feeds',
     credits: 2,
     icon: 'Heart',
-    aiRoute: '/api/ai/chat',
+    aiRoute: '/api/ai/humanitarian',
     dataSchema: 'HumanitarianSnapshotSchema',
     requiredSituationFields: ['region', 'name'],
     outputType: 'structured',

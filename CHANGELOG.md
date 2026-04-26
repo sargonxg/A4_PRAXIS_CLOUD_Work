@@ -46,6 +46,40 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Validation: `npx tsc --noEmit` clean, `node scripts/audit-ai-routes.mjs`
   passes 53/4, `npx vitest run` passes 188/188.
 
+### Lane B — Humanitarian calibrated route (NEW)
+
+- Closes the highest-impact tool fix flagged in
+  `docs/tools/UX_AUDIT_2026-04-26.md` (Humanitarian had no dedicated AI
+  route; the registry pointed at `/api/ai/chat` so the analyst profile
+  language, audience tone, and red-line clauses never made it into
+  humanitarian briefs).
+- Added `POST /api/ai/humanitarian` (`src/app/api/ai/humanitarian/route.ts`)
+  with full `withCalibration('humanitarian', 'ai_humanitarian')` wrapping,
+  Zod-validated `HumanitarianSnapshotSchema` output (BLUF, IPC phases,
+  displacement, funding, protection concerns, access constraints,
+  intelligence gaps, recommended actions, confidence, aggregated primary
+  sources), live data grounding via `getSituationIntelligence` (HDX HAPI,
+  ReliefWeb, UNHCR, OCHA FTS, UN News, GDELT), `saveToolOutput`
+  persistence under `tool-data/humanitarian` with provenance metadata,
+  and a demo-mode bypass that returns a labelled demo snapshot.
+- Added `ai_humanitarian` (cost: 2 credits) to `AI_CREDIT_COSTS` in
+  `src/lib/api/with-credits.ts`.
+- Updated `src/lib/constants/tool-registry.ts` Humanitarian entry:
+  `aiRoute` flipped from `/api/ai/chat` → `/api/ai/humanitarian`.
+- Added `tests/services/humanitarian-schema.test.ts` covering positive
+  cases, empty-evidence sections, BLUF gating, invalid IPC phase,
+  negative displacement, gapPercent overflow, unsupported categories,
+  unsupported confidence values.
+- Page-level wiring (`src/app/app/humanitarian/page.tsx` switching from
+  `/api/ai/chat` stream to the structured snapshot) is intentionally
+  deferred to keep blast radius small — the page still renders, the
+  legacy "AI brief" stream still works, and analysts can call the new
+  route directly from `Ask PRAXIS`/agents/Brainstorming Table once
+  those land. Page wiring is queued for the next session.
+- Validation: `npx tsc --noEmit` clean, `node scripts/audit-ai-routes.mjs`
+  now reports `54 AI route files, 54 calibrated, 4 exempt` (was 53/4),
+  `tests/services/*` green.
+
 
 
 ### Codex strategic-uplift pass
