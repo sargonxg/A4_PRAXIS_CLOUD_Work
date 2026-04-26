@@ -229,6 +229,10 @@ You have access to the user's active situation data. When answering questions:
       }
     }
     const tools = createSituationBoundTools(situationCtx, graphSnapshot);
+    const depthDirective = aiSettings?.analysisDepth === 'deep'
+      ? '\n\nANALYSIS DEPTH: Provide a more detailed answer with explicit assumptions, alternative interpretations, source/corpus gaps, and practical next actions. Keep it concise enough for an analyst to use.'
+      : '\n\nANALYSIS DEPTH: Provide a concise operational answer with the most relevant assumptions and next action.';
+    systemPrompt += depthDirective;
 
     // Select model based on user preferences.
     // Default: gemini-3-flash for fast conversational chat. Users can override

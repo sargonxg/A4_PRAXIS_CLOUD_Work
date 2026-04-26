@@ -101,6 +101,14 @@
 > now defines the multi-day knowledge-management, tool-quality, dashboard,
 > and agent-workflow plan. Use it with the sprint plan before starting any
 > broad feature pass.
+> **Strategic roadmap**:
+> `docs/STRATEGIC_AGENTIC_ROADMAP_2026-04-26.md` adds the 20-item
+> high-impact queue, agentic lane ownership model, Google Cloud architecture
+> notes, and a Claude Code copy-paste prompt for the next implementation
+> session.
+> **Corpus / agents**: `docs/CORPUS_ARCHITECTURE.md` and
+> `docs/AGENTIC_SYSTEM.md` now split the shared retrieval architecture and the
+> agentic execution model into dedicated handoff docs.
 > **User research synthesis**:
 > `docs/USER_RESEARCH_SYNTHESIS_2026-04-26.md` records persona walkthroughs,
 > survey comments, implemented fixes, and next UX/product bricks.

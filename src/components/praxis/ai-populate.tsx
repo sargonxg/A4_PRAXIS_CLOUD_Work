@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Loader2, X, Settings2, RotateCcw, Clock, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Sparkles, Loader2, X, Settings2, RotateCcw, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { usePreferencesStore, type DataSourceMode } from '@/stores/preferences-store';
 import { useSituationStore } from '@/stores/situation-store';
@@ -122,30 +122,6 @@ export function AiPopulate({
 
     return () => { if (researchPollRef.current) clearInterval(researchPollRef.current); };
   }, [researchStatus, activeSituation?.id, toolId, persisted]);
-
-  const triggerBackgroundResearch = useCallback(async () => {
-    if (!activeSituation) return;
-    setResearchStatus('pending');
-    setResearchError(null);
-    try {
-      const res = await fetch('/api/research', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          toolId,
-          situationId: activeSituation.id,
-          situation: activeSituation,
-        }),
-      });
-      if (!res.ok) {
-        setResearchStatus('failed');
-        setResearchError('Failed to start research');
-      }
-    } catch {
-      setResearchStatus('failed');
-      setResearchError('Network error starting research');
-    }
-  }, [activeSituation, toolId]);
 
   // Check for persisted data before showing the AI generation prompt
   useEffect(() => {
@@ -299,17 +275,6 @@ export function AiPopulate({
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Deep Research button — triggers background research with live sources */}
-              {!isResearching && (
-                <button
-                  onClick={triggerBackgroundResearch}
-                  className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:border-emerald-300 hover:bg-emerald-100"
-                  title="Run background research using live data feeds (ACLED, GDELT, ReliefWeb, etc.)"
-                >
-                  <RefreshCw className="h-3 w-3" />
-                  Update with Research
-                </button>
-              )}
               <button
                 onClick={handleRegenerate}
                 className="flex items-center gap-1.5 rounded-lg border border-navy-200 px-3 py-1.5 text-xs font-medium text-navy-500 transition-colors hover:border-navy-300 hover:text-navy-700"

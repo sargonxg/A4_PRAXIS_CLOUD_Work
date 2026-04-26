@@ -1,0 +1,83 @@
+# PRAXIS Agentic System
+
+Status: active design.
+Last updated: 2026-04-26.
+
+## Objective
+
+PRAXIS agents should help analysts think, research, challenge assumptions, and
+prepare defensible products. They should not silently mutate canonical
+knowledge. Agents propose, explain, cite, and ask for approval.
+
+## Agent Types
+
+| Agent | Role | Inputs | Outputs | Execution path |
+|---|---|---|---|---|
+| Situation Analyst | Summarizes what changed and what matters | Situation corpus, recent feed alerts, profile | Daily read, next action | Cloud Run request now; Cloud Tasks later |
+| Source Scout | Finds and ranks current sources | Keywords, source domains, region, language | Search plan, source list, citations | Grounded Google Search, future Cloud Tasks |
+| Graph Cartographer | Proposes actor/claim/edge changes | Documents, ARGUS, tool outputs | `graph_updates` proposals | Backend extraction + approval queue |
+| Timeline Editor | Builds evidence-backed event sequence | Feed alerts, docs, graph updates | Timeline event proposals | Cloud Tasks + Firestore |
+| Media Analyst | Clusters narratives and framing | Media Roundup query plan, sources | Clusters, divergence, source diversity | AI route + BigQuery/feed cache |
+| Legal Analyst | Tracks commitments and mandates | Legal Tracker, resolutions, sources | Obligations, breaches, deadlines | Calibrated AI route |
+| Humanitarian Analyst | Assesses access, protection, displacement | ReliefWeb/HDX/OCHA-style sources, docs | Humanitarian snapshot | Dedicated route planned |
+| Red Team Critic | Challenges assumptions and weak evidence | Any draft output + corpus trace | Critique, confidence adjustment | Brainstorming Table |
+| Synthesis Chair | Consolidates expert discussion | Expert turns, critique, user mandate | Memo, options, trade-offs | Brainstorming Table |
+
+## Brainstorming Table MVP
+
+The Brainstorming Table should show agent reasoning as a table, not as hidden
+chain-of-thought. Each row is a structured contribution:
+
+| Field | Meaning |
+|---|---|
+| `turnId` | Stable row identifier |
+| `persona` | Expert role, e.g. mediator, humanitarian, legal, media, red team |
+| `claim` | The proposed analytical point |
+| `evidence` | Citations or corpus items supporting it |
+| `critique` | Objections, uncertainty, missing sources |
+| `recommendation` | Practical next action |
+| `confidence` | high / medium / low |
+| `status` | proposed / challenged / accepted / rejected |
+
+MVP route:
+
+- UI: `/app/brainstorming-table`
+- API: `/api/ai/brainstorming-table`
+- Storage: `users/{uid}/situations/{situationId}/tool-data/brainstorming-table`
+- Long-running execution: Cloud Tasks queue `praxis-agents` after the first
+  synchronous prototype.
+
+## Guardrails
+
+- Agents never write canonical graph/timeline/profile state directly.
+- Agent proposals must contain provenance and confidence.
+- User approvals create canonical writes and append audit events.
+- Long-running work writes `background_jobs` and `system_events`.
+- Any failed agent run must be visible in Activity Feed or admin diagnostics.
+
+## Cloud Architecture
+
+- Cloud Run frontend API routes orchestrate short synchronous work.
+- Cloud Tasks queues durable work:
+  - `praxis-research`: web/source research and media scans.
+  - `praxis-agents`: multi-agent deliberation and critique phases.
+  - `praxis-embeddings`: corpus embedding refresh.
+- Pub/Sub handles event fan-out such as `profile.events`, document uploads,
+  and future graph/timeline proposal notifications.
+- Firestore stores user-visible state, proposals, jobs, events, and tool
+  outputs.
+- BigQuery stores aggregate operational/feed intelligence.
+- Vertex AI provides models, embeddings, grounding, and future Agent Engine
+  experiments.
+
+## First Implementation Queue
+
+1. Add Brainstorming Table registry entry and tool doc if not already present.
+2. Create structured schemas for persona turns and synthesis.
+3. Build read-only UI with seeded personas and empty state.
+4. Add synchronous calibrated route using active situation corpus.
+5. Persist output to `tool-data/brainstorming-table`.
+6. Add export to memo/Markdown.
+7. Move execution to Cloud Tasks once the schema is stable.
+8. Add red-team pass and approval statuses.
+

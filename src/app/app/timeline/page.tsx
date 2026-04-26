@@ -831,7 +831,7 @@ export default function TimelinePage() {
 
   if (showGuard || !situation) return <NoSituationState />;
 
-  const displayData = timelineData ?? { events: DEMO_EVENTS };
+  const displayData = timelineData ?? { events: [] };
 
   return (
     <>

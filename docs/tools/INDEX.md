@@ -101,3 +101,9 @@ When adding a new tool's doc:
 - Brainstorming Table: added a planned-tool spec for expert-agent
   deliberation, shared context packet requirements, persistence, and export
   targets.
+- Strategic roadmap: `docs/STRATEGIC_AGENTIC_ROADMAP_2026-04-26.md` now
+  defines the 20-item high-impact queue, agent ownership lanes, and next
+  Claude Code prompt for tool-quality and dashboard work.
+- Corpus and agents: `docs/CORPUS_ARCHITECTURE.md` and
+  `docs/AGENTIC_SYSTEM.md` now define the shared situation corpus and
+  Brainstorming Table / Cloud Tasks agent execution model.

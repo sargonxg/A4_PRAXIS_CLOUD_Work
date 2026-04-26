@@ -39,6 +39,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   / 0 soft findings, Cloud Build successful, Cloud Run ready on
   `praxis-frontend-00065-nhs` and `praxis-backend-00041-g29`, and production
   `/`, `/login`, `/api/health` smoke checks passing.
+- Added `docs/STRATEGIC_AGENTIC_ROADMAP_2026-04-26.md`, a consolidated
+  20-item high-impact queue covering dashboard mission control, situation
+  health, Ask PRAXIS corpus operation, Brainstorming Table, media research,
+  graph/timeline provenance, Cloud Tasks agents, Firestore vector search, and
+  admin diagnostics.
+- Centralized the visible app release identity in
+  `src/lib/constants/app-version.ts` and aligned package metadata, landing
+  footer, and sidebar build label to `6.4.0`.
+- Added `docs/CORPUS_ARCHITECTURE.md` and `docs/AGENTIC_SYSTEM.md` to split
+  situation-corpus retrieval and agent execution into dedicated handoff docs.
+- Closed several user-trust gaps: Timeline no longer falls back to fictional
+  demo events in live mode, inactive background research now returns `501`
+  instead of false pending progress, Assistant detailed mode is sent as
+  `aiSettings.analysisDepth`, Feed Alerts expose source/Ask actions, and the
+  situation overview now includes next-action cards.
 
 ### Public UX source-truth cleanup
 

@@ -54,6 +54,7 @@ import { useSituationStore } from '@/stores/situation-store';
 import { recommendToolsForRole, roleLabel } from '@/lib/dashboard/role-recommendations';
 import { isToolHiddenByPreference, orderedToolIds } from '@/lib/navigation/tool-preferences';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
+import { APP_BUILD_LABEL } from '@/lib/constants/app-version';
 import type { AnalystDomainId } from '@/types/analyst-profile';
 import {
   Tooltip,
@@ -303,7 +304,7 @@ function ChangelogButton() {
         onClick={() => setOpen(true)}
         className="mt-1 w-full text-center text-[9px] text-navy-300 hover:text-navy-500 transition-colors"
       >
-        PRAXIS v6.3 · Build 2026.04.14
+        {APP_BUILD_LABEL}
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setOpen(false)}>

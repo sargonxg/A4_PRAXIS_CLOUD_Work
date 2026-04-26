@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, ExternalLink, MessageSquare } from 'lucide-react';
 import { WidgetShell } from './widget-shell';
 import { formatRelativeTime } from '@/lib/utils/format';
+import { PraxisLink } from '@/components/shared/praxis-link';
 
 interface FeedAlertItem {
   id: string;
@@ -79,6 +80,26 @@ export function FeedAlertsWidget({ situationId }: FeedAlertsWidgetProps) {
               <span className="truncate text-xs text-slate-200">{it.title}</span>
               <span className="text-[10px] text-slate-500">
                 {it.source}{it.publishedAt ? ` · ${formatRelativeTime(it.publishedAt)}` : ''}
+              </span>
+              <span className="mt-1 flex flex-wrap gap-2 text-[10px]">
+                {it.url ? (
+                  <a
+                    href={it.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-slate-400 hover:text-slate-100"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Open source
+                  </a>
+                ) : null}
+                <PraxisLink
+                  href={`/assistant?prompt=${encodeURIComponent(`Assess this feed alert for the active situation: ${it.title} (${it.source}).`)}`}
+                  className="inline-flex items-center gap-1 text-slate-400 hover:text-slate-100"
+                >
+                  <MessageSquare className="h-3 w-3" />
+                  Ask PRAXIS
+                </PraxisLink>
               </span>
             </li>
           ))}

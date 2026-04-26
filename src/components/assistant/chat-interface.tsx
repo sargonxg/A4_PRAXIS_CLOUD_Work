@@ -217,7 +217,7 @@ export function ChatInterface() {
   const chatBody = {
     conflictContext: conflictLabel || undefined,
     situation: !demoMode && activeSituation ? activeSituation : undefined,
-    mode: analysisMode,
+    aiSettings: { analysisDepth: analysisMode },
   };
 
   const toolChat = useChat({
@@ -413,8 +413,8 @@ export function ChatInterface() {
             <div className="flex items-center gap-2 border-b border-diplomatic-blue/20 bg-diplomatic-blue/8 px-6 py-2">
               <Globe className="h-3.5 w-3.5 shrink-0 text-diplomatic-blue" />
               <p className="text-[11px] text-diplomatic-blue">
-                <strong>Live Research mode</strong> — powered by Gemini 2.5 Flash with Google Search grounding.
-                Real-time web search with source citations. Custom tools unavailable in this mode (SDK limitation).
+                <strong>Live Research mode</strong> — Google Search-grounded research for current information.
+                Use Tool Analysis when you need workspace tools, graph context, or saved corpus context.
               </p>
             </div>
           </motion.div>
@@ -444,7 +444,7 @@ export function ChatInterface() {
                 </h2>
                 <p className="text-sm text-navy-400 max-w-lg mx-auto leading-relaxed">
                   {useGroundedMode
-                    ? 'Real-time conflict intelligence powered by Gemini 2.5 Flash with Google Search grounding. Ask about current developments, breaking news, or recent diplomatic activity — get cited, searchable answers.'
+                    ? 'Search-grounded conflict intelligence for current developments, breaking news, and recent diplomatic activity. Use this when recency matters most.'
                     : 'AI-powered diplomatic intelligence with structured tool access. Query the conflict graph, draft reports, analyze media, assess escalation, and map negotiation space.'}
                 </p>
               </div>
@@ -557,7 +557,7 @@ export function ChatInterface() {
                     <span className="text-[10px] text-diplomatic-blue mr-2">Searching the web...</span>
                   )}
                   {analysisMode === 'deep' && !useGroundedMode && (
-                    <span className="text-[10px] text-amber-500 mr-2">Deep Analysis running...</span>
+                    <span className="text-[10px] text-amber-500 mr-2">Detailed analysis running...</span>
                   )}
                   <span className="flex gap-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-gold-400 animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -702,12 +702,12 @@ export function ChatInterface() {
                     : "bg-white text-navy-400 hover:bg-navy-50 hover:text-navy-700"
                 )}
               >
-                Deep Analysis{" "}
+                Detailed{" "}
                 <span className={cn(
                   "text-[10px]",
                   analysisMode === 'deep' ? "text-amber-300" : "text-amber-400"
                 )}>
-                  2× credits
+                  broader
                 </span>
               </button>
             </div>

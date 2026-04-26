@@ -142,15 +142,12 @@ ordered by user-visible impact × shippability.
 - Owner: Claude (research + brief), Codex (implementation later).
 
 ### 10. Visual coherence pass
-- Problem: version badges drift (footer was v6.3.1 — fixed this session
-  to v6.4.0; sidebar still says v6.3 build 2026.04.14; package.json is
-  6.2.0). Heroes/landing/onboarding share a palette but section spacing
-  and badge styles diverge.
-- Action: pick one source of truth for the displayed version (export
-  from `package.json` or a `src/lib/constants/app-version.ts`).
-  Audit landing sections for consistent badge/pill styles. Audit
-  onboarding screens against the new completion-success layout to
-  share spacing tokens.
+- Status: first slice shipped by Codex. `src/lib/constants/app-version.ts`
+  is now the UI source of truth; sidebar/footer labels and package metadata
+  are aligned to `6.4.0` / build `2026.04.26`.
+- Remaining action: audit landing sections for consistent badge/pill styles.
+  Audit onboarding screens against the new completion-success layout to share
+  spacing tokens.
 - Owner: Claude or designer.
 
 ---
@@ -191,11 +188,8 @@ ordered by user-visible impact × shippability.
 
 ## Known drifts intentionally left
 
-- `package.json` still reads `6.2.0` while docs say `6.4.0`. Bumping
-  this affects build metadata; deferred to Codex deploy lane.
-- `src/components/app/app-sidebar.tsx` build line `v6.3 · Build
-  2026.04.14` — Codex-owned, leave for the workspace-personalization
-  lane to bump.
+- Package/UI release label drift was closed by Codex: package metadata,
+  landing footer, and sidebar now read from the `6.4.0` release identity.
 - `src/lib/api/with-credits.ts` comment references `v6.3.1` — historical
   comment, fine to leave.
 - `src/app/api/data/geospatial/route.ts` still has internal

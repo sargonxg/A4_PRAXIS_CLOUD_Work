@@ -26,6 +26,9 @@ import {
   Settings,
   Eye,
   LayoutDashboard,
+  Search,
+  Newspaper,
+  Clock,
 } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { useSituationStore } from '@/stores/situation-store';
@@ -282,6 +285,61 @@ export default function SituationOverviewPage() {
           <ArrowRight className="h-4 w-4 text-navy-300 opacity-0 transition-opacity group-hover:opacity-100" />
         </PraxisLink>
       </nav>
+
+      {/* Next actions */}
+      <section className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold text-navy-900">Recommended next actions</h2>
+          <p className="text-[11px] text-navy-500">
+            Use these to turn the situation record into current, source-backed working context.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            {
+              href: '/assistant',
+              icon: Search,
+              title: 'Ask PRAXIS',
+              detail: 'Question the situation corpus and prior tool output.',
+            },
+            {
+              href: '/media-roundup',
+              icon: Newspaper,
+              title: 'Run 24h media scan',
+              detail: 'Check recent coverage and narrative shifts.',
+            },
+            {
+              href: '/conflict-graph',
+              icon: GitBranch,
+              title: 'Review graph',
+              detail: 'Inspect actors, claims, interests, and gaps.',
+            },
+            {
+              href: '/timeline',
+              icon: Clock,
+              title: 'Build timeline',
+              detail: 'Create an evidence-backed event sequence.',
+            },
+          ].map((action) => {
+            const Icon = action.icon;
+            return (
+              <PraxisLink
+                key={action.href}
+                href={action.href}
+                className="group rounded-lg border border-navy-100 p-3 transition-all hover:border-diplomatic-blue/30 hover:bg-diplomatic-blue/5"
+              >
+                <div className="mb-2 flex items-center gap-2">
+                  <Icon className="h-4 w-4 text-diplomatic-blue" />
+                  <span className="text-xs font-semibold text-navy-900 group-hover:text-diplomatic-blue">
+                    {action.title}
+                  </span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-navy-500">{action.detail}</p>
+              </PraxisLink>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Activity feed scoped to this situation */}
       <section className="rounded-xl border border-[var(--color-app-border)] bg-white">

@@ -8,6 +8,10 @@ This document complements `docs/SPRINT_EXECUTION_PLAN_2026-04-25.md`. The
 sprint file tracks immediate workstreams; this file defines the product and
 knowledge architecture those workstreams should build toward.
 
+For the expanded execution queue with 20 high-impact improvements, agent
+lanes, Google Cloud architecture notes, and the copy-paste Claude Code prompt,
+read `docs/STRATEGIC_AGENTIC_ROADMAP_2026-04-26.md`.
+
 ## Product North Star
 
 PRAXIS should help a user move from raw context to defensible action:

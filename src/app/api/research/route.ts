@@ -158,26 +158,20 @@ export const POST = withAuth(async (req, user) => {
     );
   }
 
-  // Save initial pending status
   const progress: ResearchProgress = {
-    status: 'pending',
+    status: 'failed',
     toolId,
     sourcesQueried: 0,
     sourcesTotal: 0,
     startedAt: new Date().toISOString(),
+    completedAt: new Date().toISOString(),
+    error: 'Background research queue is not active. Use the tool-specific regenerate action.',
   };
   await saveResearchStatus(user.uid, situationId, progress);
 
-  // Background research engine removed — tools populate on-demand via their own AI routes
-  void saveResearchStatus(user.uid, situationId, {
-    ...progress,
-    status: 'failed',
-    error: 'Background research not available — use tool-specific regenerate',
-    completedAt: new Date().toISOString(),
-  }).catch(() => {});
-
   return NextResponse.json({
-    status: 'pending',
-    message: `Background research started for ${toolId}`,
-  });
+    status: 'failed',
+    error: progress.error,
+    message: `Background research is not currently enabled for ${toolId}.`,
+  }, { status: 501 });
 });

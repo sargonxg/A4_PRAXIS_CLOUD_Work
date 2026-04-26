@@ -335,7 +335,7 @@ export default function SettingsPage() {
                   Google AI Studio — Active
                 </p>
                 <p className="mt-0.5 text-xs text-navy-600">
-                  Gemini 2.5 Flash · Tool Analysis · Live Research (Google Search Grounding)
+                  Google AI · Tool Analysis · Live Research with Google Search grounding
                 </p>
                 <p className="mt-1 text-[11px] text-navy-500">
                   Env: <Code>GOOGLE_AI_API_KEY</Code>
@@ -576,7 +576,7 @@ export default function SettingsPage() {
               <Cpu className="h-4 w-4 text-teal" />
               <p className="text-xs font-semibold text-navy-900">AI Layer</p>
             </div>
-            <p className="text-[11px] text-navy-600 leading-relaxed">AI SDK v6 · Gemini 2.5 Flash · Tool-augmented generation · Streaming</p>
+            <p className="text-[11px] text-navy-600 leading-relaxed">AI SDK v6 · Google AI / Vertex-ready · Tool-augmented generation · Streaming</p>
           </div>
           <div className="rounded-lg border border-navy-200 bg-white p-4">
             <div className="mb-2 flex items-center gap-2">
