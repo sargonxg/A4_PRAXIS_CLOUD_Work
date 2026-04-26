@@ -62,7 +62,7 @@ const ROLE_TOOLS: Record<AnalystRole, string[]> = {
     'compare',          // Historical Parallels
     'media-compass',
     'conflict-graph',   // ACO graph
-    'sources',          // Sources Library — credibility tracking
+    'sources-library',  // Sources Library — credibility tracking
     'deep-search-agent',
   ],
   journalist: [
@@ -71,7 +71,7 @@ const ROLE_TOOLS: Record<AnalystRole, string[]> = {
     'info-environment', // Info Environment
     'compare',
     'argus',
-    'sources',
+    'sources-library',
   ],
   private_sector: [
     'risk-monitor',     // Risk Assessment — primary for private-sector clients
@@ -126,7 +126,7 @@ const TOOL_RATIONALES: Record<string, string> = {
   'media-roundup': 'Daily media roundup tuned to your audience and red lines.',
   'info-environment': 'Galtung cultural-violence and disinformation mapping.',
   'conflict-graph': 'ACO 14-entity knowledge graph with hidden-linkage analysis.',
-  'sources': 'Credibility-weighted source library with Ad Fontes scoring.',
+  'sources-library': 'Credibility-weighted source library with Ad Fontes scoring.',
   'deep-search-agent': 'Multi-agent ADK research pipeline with planner + synthesizer.',
   'economic-impact': 'Sectoral impact, trade flows, and macro-fragility view.',
   'electoral-risk': 'Electoral-violence risk with calendar overlay.',
@@ -137,7 +137,7 @@ const TOOL_RATIONALES: Record<string, string> = {
 };
 
 const TOOL_HREFS: Record<string, string> = {
-  'sources': '/sources',
+  'sources-library': '/sources',
 };
 
 export function recommendToolsForRole(

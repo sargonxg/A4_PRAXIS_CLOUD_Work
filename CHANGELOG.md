@@ -13,6 +13,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `AuthProvider` now subscribes live to `users/{uid}/profile/analyst`, so
   onboarding completion and profile edits immediately refresh workspace
   personalization surfaces without requiring a reload.
+- Dashboard recommendations now apply the real user's workspace tool
+  preferences, so hidden tools stay out of the main command surface and moved
+  tools can rank higher in "Recommended for you".
+- Added Sources Library to the customizable workspace tool list and normalized
+  the recommendation id to `sources-library`, fixing a mismatch between
+  dashboard recommendations, sidebar visibility, and Settings → Preferences.
 - Added durable workspace tool layout preferences to
   `users/{uid}/preferences/default`: `hiddenToolIds` and `toolOrder`.
 - Added a shared `useUserPreferences` hook for authenticated client
@@ -31,12 +37,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Added `docs/PRAXIS_HIGH_IMPACT_PRODUCT_PLAN_2026-04-26.md`, a multi-day
   product and knowledge-architecture plan for dashboard, Ask PRAXIS,
   tool-output contracts, graph/document intelligence, and agent handoffs.
+- Added `docs/USER_RESEARCH_SYNTHESIS_2026-04-26.md`, a persona-based survey
+  synthesis that converts diplomat, humanitarian, legal, research, and UN
+  officer walkthroughs into implementation bricks and Claude Code lanes.
 
 ### Tests
 
 - Added preference schema/API tests for workspace tool layout fields.
 - Added navigation helper tests for unknown IDs, deduplication, hidden sets,
-  and route alias preservation.
+  route alias preservation, legacy id normalization, and preference-aware
+  recommendation ordering.
+- Added role-recommendation tests covering canonical Sources Library links and
+  situation-domain boosts.
 
 ---
 

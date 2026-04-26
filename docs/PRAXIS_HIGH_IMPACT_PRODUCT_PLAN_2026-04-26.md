@@ -107,7 +107,8 @@ Each brick should follow the same loop:
 ## Next 10 High-Impact Bricks
 
 1. Live profile and preference propagation.
-   - Status: in progress by Codex.
+   - Status: shipped by Codex in `d1fd8c1` plus the follow-on dashboard
+     recommendation/preferences brick.
    - Goal: profile edits immediately reshape sidebar/dashboard recommendations.
    - Files: `src/lib/auth/auth-context.tsx`, `src/components/app/app-sidebar.tsx`,
      `src/components/dashboard/recommended-tools-widget.tsx`.
@@ -220,4 +221,3 @@ Definition of done:
    readiness tracker, and UN vendor path.
 5. Decide when to spend on managed retrieval infrastructure:
    Firestore/SKC first, then Vertex AI Vector Search/RAG Engine pilot.
-

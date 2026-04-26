@@ -7,6 +7,10 @@ export interface CustomizableToolItem {
   toolId: string;
 }
 
+const LEGACY_TOOL_ID_ALIASES: Record<string, string> = {
+  sources: 'sources-library',
+};
+
 export const CUSTOMIZABLE_SIDEBAR_TOOLS: CustomizableToolItem[] = [
   { section: 'Situation', label: 'Dashboard', href: '/dashboard', toolId: 'dashboard' },
   { section: 'Situation', label: 'Conflict Graph', href: '/conflict-graph', toolId: 'conflict-graph' },
@@ -39,6 +43,7 @@ export const CUSTOMIZABLE_SIDEBAR_TOOLS: CustomizableToolItem[] = [
   { section: 'Production', label: 'Daily Brief', href: '/auto-briefings', toolId: 'auto-briefing' },
   { section: 'Research', label: 'Deep Research Agent', href: '/deep-search-agent', toolId: 'deep-search-agent' },
   { section: 'Research', label: 'ARGUS', href: '/argus', toolId: 'argus' },
+  { section: 'Research', label: 'Sources Library', href: '/sources', toolId: 'sources-library' },
   { section: 'Research', label: 'Actor Enrichment', href: '/actors', toolId: 'actor-profiles' },
   { section: 'Research', label: 'External Actor Monitor', href: '/external-actors', toolId: 'external-actors' },
   { section: 'Research', label: 'Legal & Resolution Tracker', href: '/legal-tracker', toolId: 'legal-tracker' },
@@ -51,15 +56,20 @@ export const CUSTOMIZABLE_SIDEBAR_TOOLS: CustomizableToolItem[] = [
   { section: 'Workspace', label: 'Humanitarian', href: '/humanitarian', toolId: 'humanitarian' },
 ];
 
+export function normalizeToolPreferenceId(toolId: string): string {
+  return LEGACY_TOOL_ID_ALIASES[toolId] ?? toolId;
+}
+
 export function orderedToolIds(preferences: Pick<UserPreferences, 'toolOrder'>): string[] {
   const known = CUSTOMIZABLE_SIDEBAR_TOOLS.map((tool) => tool.toolId);
   const seen = new Set<string>();
   const ordered: string[] = [];
 
   for (const id of preferences.toolOrder) {
-    if (known.includes(id) && !seen.has(id)) {
-      seen.add(id);
-      ordered.push(id);
+    const normalized = normalizeToolPreferenceId(id);
+    if (known.includes(normalized) && !seen.has(normalized)) {
+      seen.add(normalized);
+      ordered.push(normalized);
     }
   }
 
@@ -71,6 +81,39 @@ export function orderedToolIds(preferences: Pick<UserPreferences, 'toolOrder'>):
 }
 
 export function hiddenToolSet(preferences: Pick<UserPreferences, 'hiddenToolIds'>): Set<string> {
-  return new Set(preferences.hiddenToolIds);
+  return new Set(preferences.hiddenToolIds.map(normalizeToolPreferenceId));
 }
 
+export function isToolHiddenByPreference(
+  preferences: Pick<UserPreferences, 'hiddenToolIds'>,
+  toolId: string,
+): boolean {
+  return hiddenToolSet(preferences).has(normalizeToolPreferenceId(toolId));
+}
+
+export function applyToolPreferences<T extends { toolId: string }>(
+  items: T[],
+  preferences: Pick<UserPreferences, 'hiddenToolIds' | 'toolOrder'>,
+): T[] {
+  const hidden = hiddenToolSet(preferences);
+  const known = new Set(CUSTOMIZABLE_SIDEBAR_TOOLS.map((tool) => tool.toolId));
+  const orderIndex = new Map<string, number>();
+
+  for (const id of preferences.toolOrder) {
+    const normalized = normalizeToolPreferenceId(id);
+    if (known.has(normalized) && !orderIndex.has(normalized)) {
+      orderIndex.set(normalized, orderIndex.size);
+    }
+  }
+
+  return items
+    .filter((item) => !hidden.has(normalizeToolPreferenceId(item.toolId)))
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      const aIndex = orderIndex.get(normalizeToolPreferenceId(a.item.toolId)) ?? Number.MAX_SAFE_INTEGER;
+      const bIndex = orderIndex.get(normalizeToolPreferenceId(b.item.toolId)) ?? Number.MAX_SAFE_INTEGER;
+      if (aIndex !== bIndex) return aIndex - bIndex;
+      return a.index - b.index;
+    })
+    .map(({ item }) => item);
+}

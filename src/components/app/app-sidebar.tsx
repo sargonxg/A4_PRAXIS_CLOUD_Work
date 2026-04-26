@@ -52,7 +52,7 @@ import { SituationSelector } from '@/components/app/situation-selector';
 import { useAppStore } from '@/stores/app-store';
 import { useSituationStore } from '@/stores/situation-store';
 import { recommendToolsForRole, roleLabel } from '@/lib/dashboard/role-recommendations';
-import { hiddenToolSet, orderedToolIds } from '@/lib/navigation/tool-preferences';
+import { isToolHiddenByPreference, orderedToolIds } from '@/lib/navigation/tool-preferences';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import type { AnalystDomainId } from '@/types/analyst-profile';
 import {
@@ -270,6 +270,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Deep Research Agent', icon: Telescope, href: '/deep-search-agent', badge: 'TACITUS' },
       { label: 'ARGUS', icon: Network, href: '/argus', badge: 'TACITUS' },
+      { label: 'Sources Library', icon: BookOpen, href: '/sources' },
       { label: 'Actor Enrichment', icon: UserCircle, href: '/actors' },
       { label: 'External Actor Monitor', icon: Globe2, href: '/external-actors' },
       { label: 'Legal & Resolution Tracker', icon: BookMarked, href: '/legal-tracker' },
@@ -421,11 +422,9 @@ export function AppSidebar() {
   const { activeSituationId, setActiveSituation, activeSituation } = useSituationStore();
   const allToolStatuses = useAllToolStatuses(activeSituationId);
   const { preferences } = useUserPreferences({ enabled: Boolean(user && !user.isDemo) });
-  const hiddenTools = hiddenToolSet(preferences);
   const sidebarOrder = orderedToolIds(preferences);
   const orderIndex = new Map(sidebarOrder.map((toolId, index) => [toolId, index]));
-  const isToolHidden = (toolId?: string) =>
-    Boolean(toolId && (hiddenTools.has(toolId) || (toolId === 'sources' && hiddenTools.has('sources-library'))));
+  const isToolHidden = (toolId?: string) => Boolean(toolId && isToolHiddenByPreference(preferences, toolId));
 
   // Role-aware "For you" anchor — same module the dashboard widget uses, so
   // the sidebar and the dashboard agree on what the user should look at first.

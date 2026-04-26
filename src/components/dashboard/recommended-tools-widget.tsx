@@ -23,6 +23,8 @@ import {
   recommendToolsForRole,
   roleLabel,
 } from '@/lib/dashboard/role-recommendations';
+import { applyToolPreferences } from '@/lib/navigation/tool-preferences';
+import { useUserPreferences } from '@/hooks/use-user-preferences';
 import type { Situation } from '@/types/situation';
 import type { AnalystDomainId } from '@/types/analyst-profile';
 import { WidgetShell } from './widget-shell';
@@ -32,7 +34,8 @@ interface RecommendedToolsWidgetProps {
 }
 
 export function RecommendedToolsWidget({ situation }: RecommendedToolsWidgetProps) {
-  const { analystProfile } = useAuth();
+  const { analystProfile, user } = useAuth();
+  const { preferences } = useUserPreferences({ enabled: Boolean(user && !user.isDemo) });
 
   const role = analystProfile?.identity.role;
   const profileDomain = analystProfile?.perspective.primaryDomain;
@@ -40,7 +43,10 @@ export function RecommendedToolsWidget({ situation }: RecommendedToolsWidgetProp
   // the work in front of the user right now.
   const domain = (situation.domain as AnalystDomainId | undefined) || profileDomain;
 
-  const recommendations = recommendToolsForRole(role, domain, 5);
+  const recommendations = applyToolPreferences(
+    recommendToolsForRole(role, domain, 8),
+    preferences,
+  ).slice(0, 5);
   const subtitle = role
     ? `Tuned for ${roleLabel(role)}${domain && domain !== 'generic' ? ` · ${formatDomain(domain)}` : ''}`
     : 'Top tools for this situation';

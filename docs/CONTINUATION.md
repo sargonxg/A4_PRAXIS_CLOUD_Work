@@ -1,6 +1,6 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
-> **Last updated**: 2026-04-25 (seventh session — deploy hardening)
+> **Last updated**: 2026-04-26 (eighth session — workspace personalization)
 > **Next agent**: Codex 5.5 (or Claude Code)
 > **Read first**: `CLAUDE.md`, `AGENTS.md`, `docs/OPERATIONAL_SPINE.md`, `CHANGELOG.md` Unreleased.
 > **Sprint execution plan**: `docs/SPRINT_EXECUTION_PLAN_2026-04-25.md`
@@ -9,8 +9,10 @@
 > **2026-04-26 update**: Codex started the workspace-personalization lane.
 > User preferences now include `hiddenToolIds` and `toolOrder`, Settings →
 > Preferences exposes show/hide and move controls for tools, and the sidebar
-> applies those preferences while showing analyst role/domain in the user
-> block. Claude should avoid `src/components/app/app-sidebar.tsx`,
+> plus dashboard recommendations apply those preferences while showing analyst
+> role/domain in the user block. Sources Library is now a canonical
+> `sources-library` customizable tool. Claude should avoid
+> `src/components/app/app-sidebar.tsx`,
 > `src/types/preferences.ts`, `src/hooks/use-user-preferences.ts`, and
 > `src/lib/navigation/tool-preferences.ts` unless explicitly handed off.
 > The old-clone pricing/reference-doc commits were integrated into current
@@ -20,6 +22,9 @@
 > now defines the multi-day knowledge-management, tool-quality, dashboard,
 > and agent-workflow plan. Use it with the sprint plan before starting any
 > broad feature pass.
+> **User research synthesis**:
+> `docs/USER_RESEARCH_SYNTHESIS_2026-04-26.md` records persona walkthroughs,
+> survey comments, implemented fixes, and next UX/product bricks.
 
 ---
 
