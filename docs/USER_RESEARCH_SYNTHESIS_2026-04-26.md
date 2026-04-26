@@ -25,6 +25,8 @@ friction, and converts the friction into a product/code brick.
 - Implemented: live analyst-profile subscription in `AuthProvider`, sidebar
   role/domain display, persistent tool visibility/order, and dashboard
   recommendations that honor hidden/reordered tools.
+- Implemented: dashboard operational-status panel now summarizes fresh,
+  running, stale, warning, and failed tool outputs for the active situation.
 - Next: dashboard v2 should show source coverage, running jobs, stale outputs,
   and outstanding approvals before generic metrics.
 

@@ -144,6 +144,8 @@ Each brick should follow the same loop:
      confidence/gaps.
 
 8. Dashboard v2.
+   - Status: started by Codex; operational-status panel now surfaces real
+     tool freshness/running/failure state from existing semaphores.
    - Goal: command center, not metrics grid.
    - Include: daily read, active risks, recent changes, source coverage,
      outstanding approvals, running jobs, recommended tools, and user role.

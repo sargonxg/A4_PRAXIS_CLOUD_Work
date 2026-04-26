@@ -19,6 +19,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Added Sources Library to the customizable workspace tool list and normalized
   the recommendation id to `sources-library`, fixing a mismatch between
   dashboard recommendations, sidebar visibility, and Settings → Preferences.
+- Replaced the dashboard's static operational-status placeholder with a real
+  tool-status panel summarizing fresh, running, stale, warning, and failed
+  outputs for the active situation.
 - Added durable workspace tool layout preferences to
   `users/{uid}/preferences/default`: `hiddenToolIds` and `toolOrder`.
 - Added a shared `useUserPreferences` hook for authenticated client
@@ -49,6 +52,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   recommendation ordering.
 - Added role-recommendation tests covering canonical Sources Library links and
   situation-domain boosts.
+- Added dashboard status-summary tests for health/freshness counts and
+  priority ordering.
 
 ---
 

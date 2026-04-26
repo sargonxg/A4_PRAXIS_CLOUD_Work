@@ -25,6 +25,7 @@ import { RecentToolsWidget } from '@/components/dashboard/recent-tools-widget';
 import { FeedAlertsWidget } from '@/components/dashboard/feed-alerts-widget';
 import { RecommendedToolsWidget } from '@/components/dashboard/recommended-tools-widget';
 import { SourceCoverageBanner } from '@/components/dashboard/source-coverage-banner';
+import { OperationalStatusPanel } from '@/components/dashboard/operational-status-panel';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { ActivityFeed } from '@/components/app/activity-feed';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -150,12 +151,7 @@ function RealDashboard({ situation }: { situation: Situation }) {
       </section>
 
       <section className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="rounded-md border border-slate-800 bg-slate-900/40 p-4">
-          <h2 className="text-sm font-semibold text-slate-100">Operational status</h2>
-          <p className="mt-1 text-xs text-slate-400">
-            Tool runs, ingestion jobs, and PRAXIS notifications for this situation.
-          </p>
-        </div>
+        <OperationalStatusPanel situationId={situation.id} />
         <div>
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-slate-400">Latest activity</h2>
           <ActivityFeed
