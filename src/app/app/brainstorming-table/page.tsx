@@ -14,7 +14,8 @@
  */
 
 import { useCallback, useState } from 'react';
-import { Loader2, Users, Sparkles, AlertTriangle, ShieldAlert, MessageSquare, ListChecks } from 'lucide-react';
+import { Loader2, Users, Sparkles, AlertTriangle, ShieldAlert, MessageSquare, ListChecks, Download } from 'lucide-react';
+import { brainstormingTableToMarkdown, brainstormingTableFilename } from '@/lib/exports/brainstorming-markdown';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { useToolData } from '@/hooks/useToolData';
@@ -175,7 +176,7 @@ export default function BrainstormingTablePage() {
 
       {current && (
         <>
-          <BrainstormingTableView data={current} />
+          <BrainstormingTableView data={current} situationName={situation?.name ?? activeSituation?.name} />
           <OutputProvenancePanel
             toolId="brainstorming-table"
             generatedAt={current.generatedAt}
@@ -196,7 +197,21 @@ export default function BrainstormingTablePage() {
   );
 }
 
-function BrainstormingTableView({ data }: { data: BrainstormingTable }) {
+function BrainstormingTableView({ data, situationName }: { data: BrainstormingTable; situationName?: string }) {
+  const handleDownload = () => {
+    const md = brainstormingTableToMarkdown({ ...data, situationName });
+    const filename = brainstormingTableFilename({ ...data, situationName }) + '.md';
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -204,11 +219,21 @@ function BrainstormingTableView({ data }: { data: BrainstormingTable }) {
           <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
             <Users className="h-4 w-4" /> Deliberation
           </h2>
-          {data.retrievalTrace && (
-            <span className="text-xs text-slate-500">
-              {data.retrievalTrace.itemCount} corpus items · layers: {data.retrievalTrace.layersSearched.join(', ')}
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            {data.retrievalTrace && (
+              <span className="text-xs text-slate-500">
+                {data.retrievalTrace.itemCount} corpus items · layers: {data.retrievalTrace.layersSearched.join(', ')}
+              </span>
+            )}
+            <button
+              onClick={handleDownload}
+              className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              title="Download as Markdown memo"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download memo
+            </button>
+          </div>
         </header>
         <p className="mb-4 text-sm text-slate-700"><strong>Question:</strong> {data.question}</p>
         <div className="overflow-x-auto">
