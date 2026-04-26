@@ -38,7 +38,7 @@ const TOOL_CATEGORIES = [
     id: 'intelligence',
     label: 'Intelligence Tools',
     tools: [
-      { name: 'ARGUS Intelligence', icon: Search, desc: 'Deep web research with Firecrawl. Multi-source crawling across news, think tanks, government reports.' },
+      { name: 'ARGUS Intelligence', icon: Search, desc: 'Deep web research powered by Vertex AI Deep Research and grounded Google Search across news, think tanks, and government reports.' },
       { name: 'Media Compass', icon: Compass, desc: 'Map 50+ outlets by bias and reliability. CRAAP test scoring, cross-reference recommendations.' },
       { name: 'Treaty Analyzer', icon: FileText, desc: 'Clause-by-clause analysis with ambiguity flagging. Compare against IHL/ICL frameworks.' },
       { name: 'Sanctions Tracker', icon: Shield, desc: 'UN, OFAC, EU, UK OFSI sanctions exposure scanning with escalation indicators.' },

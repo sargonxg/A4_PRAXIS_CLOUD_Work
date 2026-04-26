@@ -104,11 +104,21 @@ export default function GraphBackendPage() {
   return (
     <div className="p-8 max-w-2xl">
       <h1 className="text-2xl font-semibold text-foreground mb-2">Graph Backend</h1>
-      <p className="text-muted-foreground mb-6 text-sm">
+      <p className="text-muted-foreground mb-3 text-sm">
         Choose where PRAXIS stores the conflict knowledge graph.
         Cloud Spanner Graph is recommended for production (managed, multi-region, ISO GQL, ZeroETL with BigQuery).
         Neo4j AuraDB is a solid managed alternative; FalkorDB offers Redis-compatible sub-millisecond performance.
       </p>
+      <div className="mb-6 rounded-md border border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
+        <p>
+          <span className="font-medium text-foreground">PRAXIS works without this.</span>{' '}
+          By default, the conflict graph for each situation is stored in Firestore subcollections under your user, with the same calibration, citations, and tool-output contract.
+          Configure a dedicated graph backend only when you need cross-situation traversals, large-graph analytics, or organisation-wide deployment.
+        </p>
+        <p className="mt-2">
+          Connection settings are saved to <code className="font-mono">users/{'{'}uid{'}'}/settings/graph_backend</code> and are readable only by you and the PRAXIS server. Treat any credentials you paste here as production secrets.
+        </p>
+      </div>
 
       {/* Provider selection */}
       <div className="space-y-2 mb-6">

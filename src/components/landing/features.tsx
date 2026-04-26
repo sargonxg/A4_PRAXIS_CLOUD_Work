@@ -27,7 +27,7 @@ const FEATURE_BLOCKS = [
     eyebrow: 'Open-license substrate',
     title: 'Cite-able sources, no licensing traps',
     body:
-      'GDELT, UCDP GED, UNHCR, ReliefWeb, HDX, World Bank, UN News — all open license, all redistributable. Vertex Deep Research and grounded Google Search for the long tail. No ACLED EULA, no Firecrawl bill.',
+      'GDELT, UCDP GED, UNHCR, ReliefWeb, HDX, World Bank, UN News — all open license, all redistributable. Vertex AI Deep Research and grounded Google Search for the long tail. No paywalled feeds, no licensing traps.',
   },
   {
     icon: GaugeCircle,

@@ -434,7 +434,7 @@ export default function SystemHealthPage() {
           icon={Globe}
           label="Feed Cache Layer"
           status={{ status: loading ? 'loading' : skcHealth?.feeds ? 'ok' : 'degraded' }}
-          detail="TTL-cached ACLED, GDELT, HDX, ReliefWeb, UNHCR, World Bank"
+          detail="TTL-cached GDELT, UCDP, HDX, ReliefWeb, UNHCR, UN News, World Bank"
         />
         <HealthRow
           icon={BarChart3}
@@ -501,10 +501,10 @@ export default function SystemHealthPage() {
       {/* ── Data source activation guide ─────────────────────────────────── */}
       <Card title="Activate paid / freemium data sources" icon={Plug}>
         <p className="mb-3 text-xs text-muted-foreground">
-          PRAXIS works out-of-the-box on 9 free feeds (GDELT, UCDP, UNHCR, HDX,
-          ReliefWeb, UN News, World Bank, SIPRI-via-Firecrawl, Grounded Search) plus
-          Gemini AI. The sources below are <em>optional</em> — each one degrades
-          gracefully if its env var is missing. Turn them on in priority order.
+          PRAXIS works out-of-the-box on the open-data feeds (GDELT, UCDP, UNHCR, HDX,
+          ReliefWeb, UN News, World Bank) plus Vertex AI / Gemini and grounded Google
+          Search. The sources below are <em>optional</em> — each one degrades gracefully
+          if its env var is missing. Turn them on in priority order.
         </p>
         <ol className="space-y-3">
           {ACTIVATION_STEPS.map((step, i) => (

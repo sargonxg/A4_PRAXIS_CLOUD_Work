@@ -211,9 +211,6 @@ function LoginForm() {
             <p className="mt-1.5 text-sm tracking-widest text-navy-400 uppercase">
               Diplomatic Intelligence Platform
             </p>
-            <p className="mt-3 text-[11px] text-navy-500">
-              Trusted by analysts at UN, OSCE, and leading think tanks
-            </p>
           </motion.div>
 
           {/* Google Sign In */}
