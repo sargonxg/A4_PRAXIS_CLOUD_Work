@@ -2,6 +2,54 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-26 — Tenth-session multi-lane sprint deploy (Claude Code)
+
+Source commit deployed: `6f10860` (working-tree snapshot at `gcloud builds submit` time; the three subsequent docs-only commits `b70d4c3`, `d736182`, `2937013` landed on `main` after the build started and will deploy on the next build).
+
+Cloud Build:
+
+- Build ID: `05a1e8dd-0248-483f-aab3-5d1a72895220`
+- Status: `SUCCESS`
+- Duration: `~11M18S` (createTime 2026-04-26T21:36:19Z → finishTime 21:47:37Z)
+- Project: `praxisbytacitus`
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00071-m95` (ready, active)
+- Backend revision: `praxis-backend-00044-lf2` (ready, active)
+- Function services still ready: `on-document-uploaded-00001-taz`, `on-situation-created-00001-zay`
+- GDELT worker still ready: `gdelt-poller-00001-wag`
+
+Validation before submit:
+
+- `npx tsc --noEmit` clean (0 errors)
+- `npm run build` clean (Next.js 16.1.6, build standalone)
+- `npm run audit:gcp` 0 hard / 0 soft
+- `node scripts/audit-ai-routes.mjs` reports `55 AI route files, 55 calibrated, 4 exempt` (was 53/4 entering the session — +2 from Lanes B and C)
+- `npx vitest run` 207/207 (was 168 entering the session — +39 across the four lane test files)
+
+Production smoke (post-deploy):
+
+- `https://praxis.tacitus.me/` returned `200`
+- `https://praxis.tacitus.me/login` returned `200`
+- `https://praxis.tacitus.me/api/health` returned `status: ok` with Firestore, AI provider, and cookie secret checks healthy. `anthropic`, `firecrawl`, `vertex_adk`, and `stripe` continue to report `unconfigured` — that is expected operating posture.
+
+What shipped (Lanes A–E):
+
+- **Lane A** — `POST /api/intelligence/corpus-search` (auth-gated, Zod-validated, demo bypass, 50-item cap) plus shared `searchSituationCorpus()` retriever in `src/lib/intelligence/corpus-search.ts`. Ranks evidence across `argus | sources | documents | graph | tool-output`. Document-chunk layer leverages existing Gemini text-embedding-004 hybrid scoring. Each layer fails closed. `src/types/corpus.ts` is the canonical retrieval contract; `tests/services/corpus-search.test.ts` covers tokenization, scoring, layer priority, confidence mapping, summarisation, slug fallback.
+- **Lane B** — `/api/ai/humanitarian/route.ts` with `withCalibration('humanitarian', 'ai_humanitarian')` (2 credits) and `HumanitarianSnapshotSchema` (BLUF, IPC phases, displacement, funding, protection, access constraints, intelligence gaps, recommended actions, confidence, primarySources). Live grounding via `getSituationIntelligence` (HDX HAPI, ReliefWeb, UNHCR, OCHA FTS, UN News, GDELT) with degraded path when feeds fail. `saveToolOutput` persistence to `tool-data/humanitarian` with metadata. Tool registry `aiRoute` flipped from `/api/ai/chat` → `/api/ai/humanitarian`. Tests at `tests/services/humanitarian-schema.test.ts`. Page wiring queued as Lane G.
+- **Lane C** — Brainstorming Table MVP (synchronous prototype). `/api/ai/brainstorming-table/route.ts` wrapped with `withCalibration('brainstorming-table', 'ai_brainstorming_table')` (5 credits). Six personas (mediator, humanitarian, legal, media, security, red-team) deliberate over a single question, citing corpus items via `searchSituationCorpus`. `BrainstormingTableSchema` Pro-model generation, demo fixture, persistence to `tools/brainstorming-table`. UI at `src/app/app/brainstorming-table/page.tsx`. Cloud Tasks fan-out and `/demo/brainstorming-table` mirror page intentionally deferred.
+- **Lane D** — Shared confidence/citation primitives + provenance panel: `<ConfidenceBadge />`, `<Citation />`, `<OutputProvenancePanel />`. Wired into the Brainstorming Table page as the first consumer.
+- **Lane E** — `docs/PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md` (flagship-grade 90-day roadmap, 30 named bricks) and `docs/personas/PERSONA_WALKTHROUGHS_2026-04-26.md` (five scenario-driven walkthroughs + cross-persona heatmap).
+
+Handoff:
+
+- `docs/CODEX_HANDOFF_2026-04-26.md` is the drop-in prompt for the next Codex session. Lanes F–K queued (Ask PRAXIS corpus wiring, Humanitarian page wiring, Situation Health Card, real notification bell, tool id canonicalization, document-graph cross-link).
+
+Next deploy will pick up the three docs-only commits already on `main` (CONTINUATION update, personas README, AGENTIC_SYSTEM queue refresh).
+
+---
+
 ## 2026-04-26 — Agentic roadmap + trust-fix deploy
 
 Source commit deployed: `865c507`
