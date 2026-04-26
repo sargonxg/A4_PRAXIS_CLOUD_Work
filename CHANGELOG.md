@@ -159,6 +159,83 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Codex-owned Workspace Personalization files (sidebar, dashboard,
   recommendations). Future Codex/Claude lanes can opt tools in.
 
+### Lane N — Ask PRAXIS wired to the shared corpus retriever
+
+- Closes step 4 of `docs/CORPUS_ARCHITECTURE.md`. Ask PRAXIS chat
+  (`src/app/api/ai/chat/route.ts`) now reasons over the same evidence
+  layers as Brainstorming Table, Humanitarian, and any future agent —
+  `argus | sources | documents | graph | tool-output` — ranked the same
+  way via `searchSituationCorpus` from Lane A.
+- Removed the legacy cookie-parsing `buildAskPraxisCorpusContext` call;
+  `_user.uid` from `withCalibration` is the canonical source.
+- Inline citation refs: corpus items are surfaced as numbered references
+  (`[#1]` / `[#2]` …) plus their layer tag in `[brackets]` so analysts
+  can trace each claim to its origin.
+- Empty-retrieval path: when 0 corpus items match, the system prompt
+  marks the question as an intelligence gap and recommends a relevant
+  tool run instead of fabricating an answer.
+- New "Routing Heavy Questions" system-prompt section: when the user
+  asks a strategic, multi-stakeholder question, the chat recommends
+  running the Brainstorming Table at `/app/brainstorming-table` for a
+  structured deliberation with mediator / humanitarian / legal / media /
+  security / red-team personas + synthesis chair.
+
+### Lane M — Agent registry codified
+
+- New `src/lib/agents/registry.ts` is the single source of truth for
+  every persona PRAXIS can invoke. 10 personas registered: 6 active
+  (mediator, humanitarian, legal, media, security, red-team), 1
+  orchestrator (synthesis-chair, used inside Brainstorming Table), and 3
+  forward-compatibility stubs (source-scout, graph-cartographer,
+  timeline-editor) declared `active: false`.
+- `AGENT_REGISTRY`, `DEFAULT_BRAINSTORMING_PANEL`, `activePersonas()`,
+  `criticPersonas()`, `getPersona(id)` exports.
+- Refactored `src/app/api/ai/brainstorming-table/route.ts` to read
+  personas from the registry rather than inlining a duplicate. Type
+  alias keeps the Zod enum tight.
+- New `tests/services/agent-registry.test.ts` covers registry
+  consistency, panel membership, critic presence, handoff requirement,
+  null-safety on stubs and unknown ids.
+- New `docs/AGENT_REGISTRY.md` documents anatomy, active vs stub
+  tables, how to add a persona, the agent-invocation flow, and the
+  five operating principles.
+
+### Lanes O–S — Strategy / test / GCP / TODO / index docs
+
+- New `docs/TEST_PLAN_2026-04-26.md` — runnable multi-persona test
+  matrix covering onboarding, profile, top-10 tools (no situation /
+  no profile / live happy path / live cold-reload / demo / failure
+  modes), Ask PRAXIS regression, operational spine, production smoke,
+  and an automation backlog (`P-Test-1` … `P-Test-7`).
+- New `docs/GCP_EXPANSION_PLAN_2026-04-26.md` — 12 new Google Cloud
+  services to layer in, ranked by user value × shippability:
+  Document AI (NEW BRICK 31), Cloud Translation (NEW BRICK 32),
+  Vertex AI Search, Cloud Workflows (NEW BRICK 33), Cloud KMS
+  (NEW BRICK 34), Cloud Run Jobs fallback, Vertex AI Eval
+  (NEW BRICK 35), Cloud Logging→BigQuery sink, Cloud Armor
+  (NEW BRICK 36), Vertex AI Pipelines (NEW BRICK 37), IAP
+  (NEW BRICK 38), plus DLP / Confidential Compute as cross-cutting.
+- New `docs/TODO_BOARD_2026-04-26.md` — single-pane source of truth
+  for every open brick. Status legend (🟢 done · 🟡 in-progress · ⚪
+  queued · 🔴 blocked · 🔵 stub), owner, priority. Tracks Lanes
+  shipped this session, Lanes queued for Codex (F–K), all 30 big
+  bricks from `PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md`, the 8 new
+  bricks from `GCP_EXPANSION_PLAN`, and the 7 test-automation
+  backlog items.
+- New `docs/TOOL_RELIABILITY_AUDIT_2026-04-26.md` — top-10 tools
+  walked through 5 failure modes (no situation / no profile / feed
+  timeout / model quota / persistence fail). Each tool gets a
+  per-mode pass/fail and a TODO list. Cross-cutting findings: model
+  quota 503 silent across all tools (file as `tools/ask-praxis-error-state`),
+  persistence id drift on 5+ tools (Lane J), demo data leaks in
+  live mode on 5+ tools (BIG #29), feed-degraded state lacks a chip
+  (file as `<DegradedDataChip />` brick).
+- New `docs/INDEX.md` — single-pane navigation across every doc in
+  the repo. Sections: Read in this order (cold start), Strategy &
+  roadmap, Architecture, Tools, Testing, Operations, Handoffs &
+  prompts, Specs, Research artifacts. "Where new docs go" rules
+  documented.
+
 ### Lane E — Strategy: large-scale improvement roadmap + persona walkthroughs
 
 - Added `docs/PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md` — flagship-grade
