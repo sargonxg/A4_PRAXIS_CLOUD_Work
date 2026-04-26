@@ -38,7 +38,7 @@ const TOOL_CATEGORIES = [
     id: 'intelligence',
     label: 'Intelligence Tools',
     tools: [
-      { name: 'ARGUS Intelligence', icon: Search, desc: 'Deep web research powered by Vertex AI Deep Research and grounded Google Search across news, think tanks, and government reports.' },
+      { name: 'ARGUS Intelligence', icon: Search, desc: 'Structured web intelligence powered by Vertex AI Deep Research and grounded Google Search across news, think tanks, and government reports.' },
       { name: 'Media Compass', icon: Compass, desc: 'Map 50+ outlets by bias and reliability. CRAAP test scoring, cross-reference recommendations.' },
       { name: 'Treaty Analyzer', icon: FileText, desc: 'Clause-by-clause analysis with ambiguity flagging. Compare against IHL/ICL frameworks.' },
       { name: 'Sanctions Tracker', icon: Shield, desc: 'UN, OFAC, EU, UK OFSI sanctions exposure scanning with escalation indicators.' },
@@ -62,7 +62,7 @@ export function LivePlatformPreview() {
             40+ Tools. One Situation.
           </h2>
           <p className="mt-4 text-base text-navy-500 leading-relaxed">
-            Every tool in PRAXIS is powered by your situation context. Create a situation once — AI auto-populates actor profiles, risk assessments, conflict graphs, and dozens of specialized analyses.
+            Every tool in PRAXIS is powered by your situation context, analyst profile, and source constraints. Create a situation once, then generate actor profiles, risk assessments, conflict graphs, and specialized analyses without re-entering context.
           </p>
         </div>
 

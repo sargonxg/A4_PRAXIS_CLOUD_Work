@@ -167,7 +167,7 @@ Cite web intelligence sources for all compliance assessments. Flag intelligence 
       await saveToolOutput({
         uid: ctx.uid,
         situationId,
-        toolId: 'commitments',
+        toolId: 'legal-tracker',
         profileVersion: provenance.profileVersion,
         output: result.output as Record<string, unknown>,
         metadata: { variant: 'legal-tracker' },

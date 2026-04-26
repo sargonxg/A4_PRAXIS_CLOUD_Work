@@ -65,6 +65,7 @@ long tail. Tools that already have a doc in this folder:
 - `geospatial-monitor.md` — ACLED event map
 - `briefing.md` — UN-DPPA-style intelligence briefing
 - `assistant.md` — Multi-tool chat assistant
+- `brainstorming-table.md` — Planned expert-agent deliberation table
 - `risk-monitor.md` — INFORM Risk Index dashboard
 - `early-warning.md` — Glasl-stage escalation monitor
 - `argus.md` — Deep web research
@@ -97,3 +98,6 @@ When adding a new tool's doc:
   `src/lib/geo/region-centers.ts` for the initial map centroid when no
   explicit `geoBoundingBox` is set. Previously defaulted to Sudan for
   every bbox-less situation.
+- Brainstorming Table: added a planned-tool spec for expert-agent
+  deliberation, shared context packet requirements, persistence, and export
+  targets.

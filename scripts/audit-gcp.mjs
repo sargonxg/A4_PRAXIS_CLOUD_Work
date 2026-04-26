@@ -56,6 +56,7 @@ const checks = [
   { name: 'Pub/Sub API enabled',                           category: 'api',     run: () => gcloudValue('services list --filter=name:pubsub.googleapis.com').length > 0 },
   { name: 'Cloud Functions API enabled',                   category: 'api',     run: () => gcloudValue('services list --filter=name:cloudfunctions.googleapis.com').length > 0 },
   { name: 'Cloud Scheduler API enabled',                   category: 'api',     run: () => gcloudValue('services list --filter=name:cloudscheduler.googleapis.com').length > 0 },
+  { name: 'Cloud Tasks API enabled',                       category: 'api',     run: () => gcloudValue('services list --filter=name:cloudtasks.googleapis.com').length > 0 },
   { name: 'Secret Manager API enabled',                    category: 'api',     run: () => gcloudValue('services list --filter=name:secretmanager.googleapis.com').length > 0 },
   { name: 'BigQuery API enabled',                          category: 'api',     run: () => gcloudValue('services list --filter=name:bigquery.googleapis.com').length > 0 },
   { name: 'Artifact Registry API enabled',                 category: 'api',     run: () => gcloudValue('services list --filter=name:artifactregistry.googleapis.com').length > 0 },
@@ -74,9 +75,15 @@ const checks = [
   // Pub/Sub topics (5 referenced in CLAUDE.md)
   { name: 'Pub/Sub topic: profile.events',                 category: 'pubsub',  run: () => gcloudDescribe('pubsub topics describe profile.events') },
 
+  // Cloud Tasks queues (provisioned for the async dispatcher roadmap)
+  { name: 'Cloud Tasks queue: praxis-research',             category: 'tasks',   soft: true, run: () => gcloudDescribe('tasks queues describe praxis-research --location=us-central1') },
+  { name: 'Cloud Tasks queue: praxis-agents',               category: 'tasks',   soft: true, run: () => gcloudDescribe('tasks queues describe praxis-agents --location=us-central1') },
+  { name: 'Cloud Tasks queue: praxis-embeddings',           category: 'tasks',   soft: true, run: () => gcloudDescribe('tasks queues describe praxis-embeddings --location=us-central1') },
+
   // Cloud Run services
   { name: 'Cloud Run: praxis-frontend',                    category: 'runtime', run: () => gcloudDescribe('run services describe praxis-frontend --region=us-central1') },
   { name: 'Cloud Run: praxis-backend',                     category: 'runtime', run: () => gcloudDescribe('run services describe praxis-backend --region=us-central1') },
+  { name: 'Cloud Run worker pool: gdelt-poller',            category: 'runtime', soft: true, run: () => gcloudDescribe('beta run worker-pools describe gdelt-poller --region=us-central1') },
 
   // Cloud Scheduler jobs (GDELT poll, alerts, briefing — declared in plan)
   { name: 'Scheduler job exists',                          category: 'schedule', soft: true, run: () => gcloudList('scheduler jobs list --location=us-central1').length > 0 },

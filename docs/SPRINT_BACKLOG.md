@@ -28,6 +28,45 @@ verify your local clone builds before changing anything.
 
 ---
 
+## Strategic Uplift Addendum — 2026-04-26
+
+This addendum reconciles PR #1's strategic uplift plan with the current
+open-data / Google Cloud source-of-truth in `README.md`, `CLAUDE.md`, and
+`docs/CONTINUATION.md`.
+
+- **Status:** `In progress (Codex)` — branch `codex/strategic-uplift-sprint1`.
+- **Remote:** `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work`.
+- **Do not resurrect retired vendor assumptions:** ACLED, Firecrawl, Tavily,
+  Parallel, Anthropic, Crisis Group premium, and SIPRI premium references in
+  older roadmap text must be treated as historical unless current code and
+  docs explicitly re-enable them.
+- **Current source stack for user-facing copy:** Google Cloud/Firebase/Vertex
+  AI, grounded Google Search, GDELT, UCDP, ReliefWeb, HDX, UNHCR, UN News,
+  World Bank, uploaded documents, saved user sources.
+- **New product track:** Brainstorming Table expert-agent deliberation and
+  Media Intelligence Uplift. Canonical spec:
+  `docs/superpowers/specs/2026-04-26-brainstorming-table-media-intelligence-plan.md`.
+
+### New P0/P1 tasks
+
+- [ ] `[context-P0]` Build a compact `BrainstormingContextPacket` from
+  AnalystProfile, active situation, SKC retrieval, saved tool outputs, source
+  freshness, and media snippets.
+- [ ] `[agentic-P0]` Add `brainstorming-table` to the registry and implement a
+  calibrated `/api/ai/brainstorming-table` route with expert personas,
+  critique phases, confidence, and citations.
+- [ ] `[agentic-P0]` Build `/app/brainstorming-table` with phase rows, expert
+  columns, assumption pins, "run another round", and export targets.
+- [ ] `[media-P1]` Upgrade `media-roundup` around user keyword bundles,
+  reproducible Google advanced-search query plans, clustering, and citations.
+- [ ] `[media-P1]` Add per-situation keyword bundles and source
+  whitelist/blocklist settings consumed by Media Compass, Media Roundup, and
+  ARGUS.
+- [ ] `[ops-P0]` Finish GCP/Firebase auth refresh, rerun `npm run audit:gcp`,
+  verify Cloud Run services, and only then deploy to `praxis.tacitus.me`.
+
+---
+
 ## How this backlog is organised
 
 Tasks are organised by **stream** (A–D from `docs/SPRINT_2026-04-25.md`)

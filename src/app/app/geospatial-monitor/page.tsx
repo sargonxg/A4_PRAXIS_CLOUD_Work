@@ -383,6 +383,7 @@ export default function GeospatialMonitorPage() {
   const [fetchedAt, setFetchedAt] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDegraded, setIsDegraded] = useState(false);
   const [mapReady, setMapReady] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -418,6 +419,7 @@ export default function GeospatialMonitorPage() {
 
     setIsLoading(true);
     setError(null);
+    setIsDegraded(false);
 
     try {
       const country = countryFilter || activeSituation?.region || 'Sudan';
@@ -436,6 +438,10 @@ export default function GeospatialMonitorPage() {
       setAllEvents(data.events);
       setHotspots(data.hotspots);
       setFetchedAt(data.fetchedAt);
+      setIsDegraded(Boolean(data.degraded));
+      if (data.degraded) {
+        setError(data.message ?? 'Live geospatial feeds are temporarily unavailable.');
+      }
 
       // Set timeline cutoff to newest event date
       if (data.events.length > 0) {
@@ -448,8 +454,10 @@ export default function GeospatialMonitorPage() {
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return;
       console.error('[geospatial-monitor] fetch error:', err);
-      setError('Failed to load event data. Showing sample data.');
-      // The route already returns demo data on error, but handle client-side fallback
+      setError('Failed to load live event data. No sample events are shown in authenticated workspaces.');
+      setIsDegraded(true);
+      setAllEvents([]);
+      setHotspots([]);
     } finally {
       setIsLoading(false);
     }
@@ -627,6 +635,19 @@ export default function GeospatialMonitorPage() {
               <ConflictMap events={filteredEvents} center={mapCenter} />
             )}
 
+            {!isLoading && isDegraded && filteredEvents.length === 0 && (
+              <div className="absolute inset-0 z-[600] flex items-center justify-center bg-[#0B1628]/80 px-6 text-center backdrop-blur-sm">
+                <div className="max-w-sm rounded-xl border border-orange-500/20 bg-[#0F172A]/95 p-5 shadow-2xl">
+                  <AlertTriangle className="mx-auto mb-3 h-6 w-6 text-orange-300" />
+                  <p className="text-sm font-semibold text-white">No live geospatial events available</p>
+                  <p className="mt-2 text-xs leading-5 text-white/50">
+                    The live feed request failed or returned no verified events. PRAXIS is not substituting
+                    sample incidents in the authenticated workspace.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Legend overlay */}
             <div className="absolute bottom-4 left-4 z-[500] rounded-xl border border-white/[0.08] bg-[#0F172A]/90 px-3 py-2.5 backdrop-blur-sm">
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/30">
@@ -686,7 +707,7 @@ export default function GeospatialMonitorPage() {
 
       {/* ── Source attribution ───────────────────────────────────────── */}
       <p className="text-[10px] text-white/20">
-        Data: ACLED (Armed Conflict Location &amp; Event Data Project) · Map tiles: CartoDB Dark Matter ·
+        Data: verified live feed results when available; sample events are limited to demo mode · Map tiles: CartoDB Dark Matter ·
         Clustering: DBSCAN (eps=50km) ·{' '}
         <PraxisLink href="/docs" className="underline hover:text-white/40 transition-colors">
           Methodology

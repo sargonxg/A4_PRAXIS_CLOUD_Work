@@ -1,6 +1,6 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
-> **Last updated**: 2026-04-26 (ninth session — public UX, onboarding, tool audit)
+> **Last updated**: 2026-04-26 (Codex strategic-uplift review — architecture, landing, media/agentic specs)
 > **Next agent**: Codex 5.5 (or Claude Code)
 > **Read first**: `CLAUDE.md`, `AGENTS.md`, `docs/OPERATIONAL_SPINE.md`, `CHANGELOG.md` Unreleased, `docs/NEXT_BRICKS_2026-04-26.md`.
 > **Sprint execution plan**: `docs/SPRINT_EXECUTION_PLAN_2026-04-25.md`
@@ -39,6 +39,33 @@
 > `src/lib/dashboard/tool-status-summary.ts`,
 > `src/lib/dashboard/role-recommendations.ts`,
 > `src/types/preferences.ts`, `src/hooks/use-user-preferences.ts`.
+
+> **2026-04-26 Codex strategic-uplift update**: Fresh clone was recreated from
+> `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work`, implementation branch
+> `codex/strategic-uplift-sprint1` tracks `origin/main`, and the remote is
+> verified as the same GitHub repo for fetch/push. PR #1
+> (`docs/strategic-uplift-sprint-plan`) has no checks and a dirty merge state,
+> so Codex imported the two sprint docs onto the implementation branch rather
+> than basing code on the PR branch's broad deletions. Low-risk shipped fixes:
+> Legal Tracker now persists via `saveToolOutput` under `legal-tracker` instead
+> of polluting `commitments`; `AiPopulate` no longer exposes internal credit
+> costs in user-facing copy; geospatial authenticated failures now return an
+> honest degraded empty state instead of generated demo events; Ask PRAXIS and
+> landing copy now align with the Google Cloud / open-data stack; and
+> `infrastructure/setup-gcp.sh` now creates the required `profile.events`
+> Pub/Sub topic. New strategic spec:
+> `docs/superpowers/specs/2026-04-26-brainstorming-table-media-intelligence-plan.md`
+> defines the Brainstorming Table expert-agent product, context architecture,
+> and media scanner / 24-hour roundup uplift. Live GCP verification is blocked
+> locally until `gcloud auth login` refreshes the `giulio@tacitus.me` token;
+> Firebase CLI is logged in but `firebase projects:list` failed and should be
+> retried after auth refresh. Local validation after the Codex patch:
+> `npx tsc --noEmit` clean, `npm run build` clean on Next 16.2.4, AI route
+> audit clean (53 calibrated / 4 exempt), focused media query-builder tests
+> pass, production `https://praxis.tacitus.me/`, `/login`, and `/api/health`
+> return 200/ok. `npm audit --omit=dev` is improved to 0 critical / 0 high /
+> 16 moderate / 2 low; remaining findings are mostly Google SDK / uuid chains
+> that need separate dependency-risk review.
 
 > **2026-04-26 update**: Codex started the workspace-personalization lane.
 > User preferences now include `hiddenToolIds` and `toolOrder`, Settings →

@@ -8,6 +8,30 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased] — 2026-04-26 (ninth session — public UX, onboarding, tool audit)
 
+### Codex strategic-uplift pass
+
+- Imported the strategic uplift sprint docs from PR #1 into the implementation
+  branch without adopting the PR branch's broad code/doc deletions.
+- Added `docs/superpowers/specs/2026-04-26-brainstorming-table-media-intelligence-plan.md`,
+  covering the new Brainstorming Table expert-agent tool, shared context packet,
+  media scanner, and 24-hour media roundup roadmap.
+- Fixed Legal Tracker's secondary persistence path so `saveToolOutput` writes
+  under `legal-tracker` instead of `commitments`.
+- Removed user-facing internal credit-cost copy from `AiPopulate` generation
+  prompts.
+- Changed authenticated geospatial feed failures to return a degraded empty
+  state instead of synthetic demo incidents, and updated the page attribution.
+- Refreshed Ask PRAXIS and landing-page copy around the current Google Cloud,
+  Vertex AI, grounded Google Search, and open-data source stack.
+- Added `profile.events` to `infrastructure/setup-gcp.sh` Pub/Sub topic
+  creation and expanded `audit:gcp` soft coverage for Cloud Tasks queues and
+  the GDELT worker pool.
+- Added a reusable media advanced-search query builder and wired Media Roundup
+  to include a reproducible keyword/domain/date query plan in the AI prompt.
+- Upgraded Next/React patch dependencies and added narrow transitive overrides
+  for critical/high production advisories; production `npm audit --omit=dev`
+  now reports 0 critical and 0 high findings.
+
 ### Public UX source-truth cleanup
 
 - Removed retired-vendor claims from user-facing landing and auth

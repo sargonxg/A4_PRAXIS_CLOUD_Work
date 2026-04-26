@@ -11,6 +11,10 @@ import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { situationContextSchema } from '@/lib/api/schemas';
 import type { Situation } from '@/types/situation';
+import {
+  buildAdvancedMediaSearchQuery,
+  buildSituationMediaKeywords,
+} from '@/lib/media/search-query';
 
 export const maxDuration = 60;
 
@@ -206,11 +210,15 @@ export const POST = withCalibration('media_roundup', 'ai_analysis', {
 
     const requestSchema = z.object({
       situation: situationContextSchema.optional(),
+      keywords: z.array(z.string()).optional(),
+      exactPhrases: z.array(z.string()).optional(),
+      sourceDomains: z.array(z.string()).optional(),
+      language: z.string().optional(),
     });
 
     const validation = validateAiRequest(body, requestSchema);
     if (!validation.success) return validation.response;
-    const { situation } = validation.data;
+    const { situation, keywords, exactPhrases, sourceDomains, language } = validation.data;
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -222,6 +230,17 @@ export const POST = withCalibration('media_roundup', 'ai_analysis', {
     // --- Contexts ---
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
     const situationId = (situation as Situation | undefined)?.id ?? '';
+    const mediaKeywords = [
+      ...buildSituationMediaKeywords((situation ?? {}) as Situation),
+      ...(keywords ?? []),
+    ];
+    const queryPlan = buildAdvancedMediaSearchQuery({
+      keywords: mediaKeywords,
+      exactPhrases,
+      domains: sourceDomains,
+      since: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      language,
+    });
 
     // Web-grounded context is the PRIMARY data source for media roundup
     const [graphCtx, webCtx] = await Promise.all([
@@ -264,7 +283,7 @@ Apply Galtung's cultural violence lens to identify dehumanisation and structural
 ${systemPromptBlock}
 
 Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
-      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${webCtx}
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}MEDIA SEARCH QUERY PLAN:\n${queryPlan || 'No explicit keyword plan supplied; derive from the active situation.'}\n\n${webCtx}
 
 Generate a Media Intelligence Roundup for today based on the web intelligence above.
 

@@ -27,6 +27,8 @@ export interface GeospatialResponse {
   events: GeospatialEvent[];
   hotspots: HotspotCluster[];
   fetchedAt: string;
+  degraded?: boolean;
+  message?: string;
 }
 
 // ─── Cache ────────────────────────────────────────────────────────────────────
@@ -257,14 +259,12 @@ export const POST = withAuth(async (req, user) => {
     return NextResponse.json(response);
   } catch (err) {
     console.error('[geospatial] Failed:', err);
-    // Fall back to demo data so the page doesn't break
-    const events = generateDemoEvents();
-    const acledShape = eventsToACLEDShape(events);
-    const hotspots = clusterEvents(acledShape);
     const response: GeospatialResponse = {
-      events,
-      hotspots: hotspots.slice(0, 5),
+      events: [],
+      hotspots: [],
       fetchedAt: new Date().toISOString(),
+      degraded: true,
+      message: 'Live geospatial feeds are temporarily unavailable. No sample events are shown in authenticated workspaces.',
     };
     return NextResponse.json(response);
   }

@@ -50,6 +50,12 @@ const practitionerBackgrounds = [
   "Policy Think Tanks",
 ];
 
+const trustSignals = [
+  "Demo data is labelled",
+  "Open-data first",
+  "Google Cloud native",
+];
+
 // ---- Animated Conflict Graph SVG ----
 // 7 nodes: 3 state actors, 2 armed groups, 1 institution, 1 norm
 const NODES = [
@@ -375,7 +381,8 @@ export function Hero() {
           >
             PRAXIS by TACITUS is the intelligence workspace for policy,
             diplomacy, and political analysis. Bring your sources and context —
-            PRAXIS structures them into cited assessments, graphs, and briefings.
+            PRAXIS structures them into cited assessments, conflict graphs, and
+            decision-ready briefings for real situations.
           </motion.p>
 
           {/* Data sources tagline */}
@@ -385,8 +392,24 @@ export function Hero() {
             transition={{ delay: 1.4, duration: 0.6 }}
             className="mb-10 text-sm text-navy-400 italic"
           >
-            Powered by GDELT, UCDP, ReliefWeb, HDX — grounded AI you can cite.
+            Built on GDELT, UCDP, ReliefWeb, HDX, UN News, World Bank, and grounded Google Search.
           </motion.p>
+
+          <motion.div
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.45, duration: 0.6 }}
+            className="mb-8 flex flex-wrap justify-center gap-2 lg:justify-start"
+          >
+            {trustSignals.map((signal) => (
+              <span
+                key={signal}
+                className="rounded-md border border-diplomatic-blue/12 bg-white/70 px-3 py-1.5 text-xs font-semibold text-navy-600 shadow-sm"
+              >
+                {signal}
+              </span>
+            ))}
+          </motion.div>
 
           {/* Single CTA — all paths go through /login */}
           <motion.div
@@ -411,7 +434,7 @@ export function Hero() {
               </Link>
             </div>
             <p className="text-xs text-navy-400">
-              Sign in for full access · Demo requires no account
+              Sign in for the live workspace · demo opens a labelled sample crisis
             </p>
           </motion.div>
 

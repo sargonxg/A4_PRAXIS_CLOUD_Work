@@ -408,9 +408,8 @@ export function AiPopulate({
               Generate {toolName} for &ldquo;{activeSituation?.name}&rdquo;
             </h3>
             <p className="mt-1 text-xs text-navy-600">
-              PRAXIS will analyze your situation data and generate {toolName.toLowerCase()} intelligence.
-              This uses {creditCost} credit{creditCost !== 1 ? 's' : ''}.
-              You have {credits} credits.
+              PRAXIS will analyze your active situation, apply your profile calibration, and generate
+              {` ${toolName.toLowerCase()} `}intelligence with source-aware constraints.
             </p>
 
             {/* Source mode picker */}
