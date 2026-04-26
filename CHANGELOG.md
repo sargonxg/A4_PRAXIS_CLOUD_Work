@@ -159,6 +159,27 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Codex-owned Workspace Personalization files (sidebar, dashboard,
   recommendations). Future Codex/Claude lanes can opt tools in.
 
+### Lane E — Strategy: large-scale improvement roadmap + persona walkthroughs
+
+- Added `docs/PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md` — flagship-grade
+  90-day improvement roadmap. 30 named bricks grouped into Calibration
+  & Corpus, Tools & Workflows, Agents & Long-Running Jobs, Operational
+  Excellence & Trust. Each brick names persona, decision unlocked, GCP
+  service path, and definition of done. Includes a layered view of
+  the five working layers (Calibration, Corpus, Tools, Agents,
+  Operations), a Google Cloud architecture diagram showing where each
+  brick lives, a 7-day / 30-day / 90-day plan, eight operating
+  principles every future lane must respect, weekly risk tracking, and
+  a "how to pick your next lane" handoff procedure.
+- Added `docs/personas/PERSONA_WALKTHROUGHS_2026-04-26.md` — five
+  persona walkthroughs (UN/OSCE diplomat, humanitarian lead, legal
+  analyst, mediator, researcher), each scenario-driven with friction
+  observed, bricks unlocked, and what was tested today. Includes a
+  cross-persona heatmap surfacing the two themes that hit every
+  persona: citation/provenance gap and persistence vocabulary drift.
+  This is the new home for ongoing persona testing — future agents
+  append addendums after each brick lands.
+
 
 
 ### Codex strategic-uplift pass
