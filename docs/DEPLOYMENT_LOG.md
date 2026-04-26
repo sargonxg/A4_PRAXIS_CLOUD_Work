@@ -2,6 +2,44 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-26 — Workspace personalization deploy
+
+Source commit deployed: `69424ad`
+
+Cloud Build:
+
+- Build ID: `e0b57fe4-7ee4-4d2c-8ed7-6e71d0e65182`
+- Status: `SUCCESS`
+- Duration: `11M31S`
+- Project: `praxisbytacitus`
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00059-g4j` (ready)
+- Backend revision: `praxis-backend-00038-pbf` (ready)
+
+Validation before deploy:
+
+- `npx tsc --noEmit --pretty false`
+- `npx vitest run tests/unit/lib/navigation/tool-preferences.test.ts tests/unit/lib/dashboard/role-recommendations.test.ts tests/api/preferences.test.ts`
+- `npx eslint` on touched recommendation/sidebar/preference files
+- `npm run build`
+
+Production smoke:
+
+- `https://praxis.tacitus.me/` returned `200`.
+- `https://praxis.tacitus.me/api/health` returned `status: ok` with Firestore,
+  AI provider, and cookie secret checks healthy.
+
+What shipped:
+
+- Live analyst profile subscription for real authenticated users.
+- Dashboard recommendations now honor hidden/reordered workspace tools.
+- Sources Library is visible and customizable through the canonical
+  `sources-library` id.
+- User-research synthesis and high-impact product plan are documented for
+  Codex, Claude Code, and the broader team.
+
 ## 2026-04-26 — Workspace preferences + recovered docs deploy
 
 Source commit deployed: `488fa0c`
