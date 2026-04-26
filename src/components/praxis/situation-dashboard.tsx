@@ -967,7 +967,7 @@ const TEMPLATE_SITUATIONS = [
     region: 'Southeast Asia',
     actors: ['State Administration Council (SAC)', 'National Unity Government (NUG)', 'Peoples Defence Force (PDF)', 'Karen National Union (KNU)', 'Arakan Army', 'ASEAN', 'China', 'UN Special Envoy'],
     userRole: 'analyst' as const,
-    sources: ['Wikipedia', 'Reuters', 'ACLED', 'The Irrawaddy', 'Crisis Group'],
+    sources: ['Wikipedia', 'Reuters', 'UCDP', 'The Irrawaddy', 'Crisis Group'],
     tag: 'Armed conflict',
   },
   {
