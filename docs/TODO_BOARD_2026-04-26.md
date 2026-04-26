@@ -15,6 +15,26 @@
 
 ## Active sprint (Week ending 2026-05-03)
 
+### Round 3 + 4 lanes shipped (2026-04-26)
+
+| Lane | Status | Owner | Brick | Notes |
+|---|---|---|---|---|
+| Z — Agent runner framework | 🟢 done | claude | enables BIG #18-22 | `src/lib/agents/run-agent.ts` |
+| T — Source Scout | 🟢 done | claude | BIG #19 | `/api/ai/source-scout` + page; persona activated |
+| U — Red-Team auto-review | 🟢 done | claude | BIG #22 | `/api/ai/red-team-review` |
+| V — AiErrorToast + DegradedDataChip | 🟢 done | claude | F-CCM-1, F-CCM-4 | mounted in app-shell |
+| W — Citation chips | 🟢 done | claude | NEXT_BRICKS #5 step 5 | parser + CitationIndex/Layer |
+| X — BT Markdown export | 🟢 done | claude | AGENTIC step 6 | "Download memo" CTA |
+| LP1 — Landing hero overhaul | 🟢 done | claude | meta | hero animation + AI-companion section |
+| LP2 — Lane audit | 🟢 done | claude | meta | working tree clean verified |
+| AA — Bottom-right collision fix | 🟢 done | claude | screenshot fix | activity pill moved up |
+| BB — Dashboard card legibility | 🟢 done | claude | screenshot fix | WidgetShell light-mode tokens |
+| CC — Developer backlog | 🟢 done | claude | NEW BRICK 41 | dev_backlog/, autopub from withCalibration |
+| DD — Clarifying questions | 🟢 done | claude | NEW BRICK 42 | schema + route helper + modal |
+| EE — Wikipedia enrichment | 🟢 done | claude | NEW BRICK 43 | client + prompt-block helper |
+| FF — Analyst notes | 🟢 done | claude | NEW BRICK 44 | CRUD + prompt-block helper |
+| Y specs (×7) | 🟢 done | claude | meta | docs/specs/2026-04-26-improvements/ |
+
 ### Lanes shipped this session
 
 | Lane | Status | Owner | Brick | Notes |
@@ -110,6 +130,17 @@ bricks**; status per brick below.
 | 36 | Cloud Armor WAF/rate-limit at edge | ⚪ queued | codex (infra) | P2 |
 | 37 | Vertex AI Pipelines embedding refresh | ⚪ queued | unassigned | P2 |
 | 38 | IAP admin gating | ⚪ queued | codex (infra) | P2 |
+
+### NEW bricks from rounds 3 + 4 (39–44)
+
+| # | Brick | Status | Owner | Priority |
+|---|---|---|---|---|
+| 39 | Onboarding rationale + persona-fit messaging | ⚪ queued | codex | P1 |
+| 40 | "What changed since I last looked" diff card | ⚪ queued | codex | P1 |
+| 41 | Developer backlog admin UI + auto-publish on slow-tool / corpus-empty | ⚪ partial | claude | P1 — Lane CC shipped the Firestore + API; UI + extra autopub queued |
+| 42 | Clarifying questions wired into 3 high-impact routes (Risk Monitor, Briefing Room, Negotiation Prep) | ⚪ partial | claude | P1 — Lane DD shipped framework; per-route adoption queued |
+| 43 | Wikipedia enrichment threaded into Conflict Graph + Timeline routes | ⚪ partial | claude | P1 — Lane EE shipped client; per-route adoption queued |
+| 44 | Analyst notes settings UI + corpus-search 'analyst-notes' layer | ⚪ partial | claude | P1 — Lane FF shipped the helper; UI + corpus-layer queued |
 
 ## Test automation backlog (P-Test-X)
 

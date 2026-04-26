@@ -17,10 +17,12 @@
 
 | Doc | Purpose |
 |---|---|
+| [`IMPROVEMENT_15_2026-04-26.md`](./IMPROVEMENT_15_2026-04-26.md) | **Round-3 plan: 15 named improvements with rationale + persona impact + DoD.** |
 | [`STRATEGIC_AGENTIC_ROADMAP_2026-04-26.md`](./STRATEGIC_AGENTIC_ROADMAP_2026-04-26.md) | 20-item high-impact queue + agent lanes |
 | [`PRAXIS_HIGH_IMPACT_PRODUCT_PLAN_2026-04-26.md`](./PRAXIS_HIGH_IMPACT_PRODUCT_PLAN_2026-04-26.md) | Multi-day product plan (dashboard, Ask PRAXIS, tool envelopes, knowledge architecture) |
-| [`PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md`](./PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md) | **Flagship 90-day roadmap. 30 named bricks. Read this for the big picture.** |
+| [`PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md`](./PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md) | **Flagship 90-day roadmap. 30+ named bricks (now 44 with rounds 3-4 additions). Read this for the big picture.** |
 | [`NEXT_BRICKS_2026-04-26.md`](./NEXT_BRICKS_2026-04-26.md) | Top-10 bricks for the next 7 days + lane assignments |
+| [`specs/2026-04-26-improvements/`](./specs/2026-04-26-improvements/) | Drop-in specs for round-3 items 9-15 (onboarding rationale, Document AI, Cloud Translation, Brainstorming Cloud Tasks, changed-since diff, Briefing versioning, domain overrides) |
 | [`SPRINT_EXECUTION_PLAN_2026-04-25.md`](./SPRINT_EXECUTION_PLAN_2026-04-25.md) | This week's sprint plan |
 | [`SPRINT_BACKLOG.md`](./SPRINT_BACKLOG.md) | Canonical actionable backlog |
 | [`SPRINT_2026-04-25.md`](./SPRINT_2026-04-25.md) | Week sprint plan |

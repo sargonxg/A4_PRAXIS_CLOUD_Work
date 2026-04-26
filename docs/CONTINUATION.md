@@ -1,6 +1,6 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
-> **Last updated**: 2026-04-26 (Claude Code multi-lane sprint — corpus-search shipped; humanitarian, brainstorming-table, citation primitives, strategic roadmap queued)
+> **Last updated**: 2026-04-26 (Claude Code rounds 1–4 multi-lane sprint — corpus-search, humanitarian, brainstorming-table, citation primitives, strategic roadmap, agent runner, source-scout, red-team review, AI error toast, BT markdown export, citation chips, landing-page hero overhaul, dashboard legibility fix, debug pill relocation, dev backlog, clarifying questions, Wikipedia enrichment, analyst notes — all shipped)
 > **Local clone**: `C:\Users\giuli\ANTIGRAVITY\A4_PRAXIS_CLOUD_Work` (fresh `git clone` of `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`). The older locked clone at `C:\Users\giuli\ANTIGRAVITY\A4_PRAXIS_CLOUD_TACITUS\A4_PRAXIS_CLOUD_Work` could not be removed because of an open Windows file handle; secrets were preserved at `C:\Users\giuli\ANTIGRAVITY\_praxis_env_backup_20260426\` before re-cloning.
 > **Next agent**: Codex 5.5 (or Claude Code)
 > **Read first**: `CLAUDE.md`, `AGENTS.md`, `docs/OPERATIONAL_SPINE.md`, `CHANGELOG.md` Unreleased, `docs/NEXT_BRICKS_2026-04-26.md`.
@@ -8,6 +8,118 @@
 > **Tool audit**: `docs/tools/UX_AUDIT_2026-04-26.md`
 > **Claude tandem prompts**: `docs/CLAUDE_TANDEM_PROMPTS_2026-04-25.md`
 
+> **2026-04-26 tenth-session — rounds 3 & 4 update**:
+>
+> **Round 3 lanes shipped (build `8bda8f5d-...` deployed
+> `praxis-frontend-00075-lzv` / `praxis-backend-00046-xdp`):**
+> - Lane Z — `src/lib/agents/run-agent.ts` generalized agent runner
+>   (every agentic route now composes the same pipeline: persona role
+>   prompt + calibration + corpus evidence + Pro-model + Zod schema).
+>   AgentRunnerError codes: unknown-persona / inactive-persona /
+>   corpus-retrieval-failed / model-call-failed.
+> - Lane T — `POST /api/ai/source-scout` (agentic workflow #1) +
+>   `/app/source-scout` page. Activated `'source-scout'` persona in
+>   `src/lib/agents/registry.ts`. `ai_source_scout` (3 credits).
+>   Avoids duplicates by consulting `searchSituationCorpus`. Returns
+>   tier_a/b/c/d reliability + corroboration flags +
+>   intelligenceGaps[].
+> - Lane U — `POST /api/ai/red-team-review` (agentic workflow #2).
+>   Accepts any tool output JSON, runs Heuer SAT-style adversarial
+>   review. Mandatory `whatWouldChangeMyMind` + confidence adjustment.
+>   `ai_red_team_review` (3 credits).
+> - Lane V — `<AiErrorToast />` (Zustand store + portal mounted in
+>   app-shell) + `<DegradedDataChip />`. Closes F-CCM-1 silent 503
+>   and F-CCM-4 invisible feed-degraded state from the reliability
+>   audit.
+> - Lane W — Citation parser + chip primitives for Ask PRAXIS chat.
+>   `[#n]` / `[argus]` / `[documents]` style refs become clickable
+>   `<CitationIndex />` / `<CitationLayer />`. Threading into the
+>   streaming chat-interface itself queued.
+> - Lane X — Brainstorming Table Markdown export. "Download memo"
+>   button on the deliberation page renders YAML frontmatter +
+>   personas + per-turn sections + synthesis + provenance footer.
+>   Slugified filename.
+> - Lane LP1 — Landing-page hero animation + product copy. Removed
+>   `"Demo data is labelled"` trust signal; replaced with
+>   `Calibrated to your role / Open-data first / Google Cloud native /
+>   Sources you can defend`. Subheadline rewritten around the user's
+>   product framing. New `<AiCompanionSection />` between HowItWorks
+>   and ProblemSection: 3 pillars (most policy is open / sensitive
+>   stays private / AI as a pro), 4 companion benefits (expert team /
+>   persistent memory / companion you train / Source Scout), 6-domain
+>   general-path / specific-toolkits grid. Hero visual flipped from
+>   missing-video gamble to always-on `ProductGlimpse` SVG with
+>   floating motion + glow + orbiting pings.
+> - Lane LP2 — Audit confirmed every code file from rounds 1–3 is on
+>   `main` and the working tree is clean.
+> - Lane M — Agent registry codified (10 personas, 6 active + 1
+>   orchestrator + 3 stubs). `src/lib/agents/registry.ts` + tests +
+>   `docs/AGENT_REGISTRY.md`. Brainstorming Table refactored to read
+>   from the registry.
+> - Lane N — Ask PRAXIS chat wired to `searchSituationCorpus` shared
+>   retriever. Inline `[#n]` citations in replies. Heavy strategic
+>   questions routed to the Brainstorming Table.
+> - Lanes O-S — Test plan, GCP expansion plan, TODO board, tool
+>   reliability audit, INDEX consolidation.
+> - Lane Y — Seven specs at
+>   `docs/specs/2026-04-26-improvements/` (onboarding rationale,
+>   Document AI, Cloud Translation, Brainstorming Cloud Tasks,
+>   changed-since diff, Briefing versioning, domain overrides).
+>
+> **Round 4 lanes shipped (build `7761707d-...` queued at session end —
+> deploy details land in DEPLOYMENT_LOG when build completes):**
+> - Lane AA — Activity-panel pill moved from `bottom-4 right-4` to
+>   `bottom-24 right-6` so it no longer overlaps the FloatingPraxis
+>   dome. `Screenshot*.png` ignored from git so screenshots dropped
+>   in the repo for agent review never ship.
+> - Lane BB — Dashboard widget-shell light-mode token swap. Was using
+>   dark-theme `slate-800/900/300/500/600` inside the `app-light`
+>   shell which read as washed-out grey. Now uses
+>   `navy-700/600/500/400` + `slate-200` borders + `bg-white` (WCAG
+>   AA). Same WidgetShell powers RiskGaugeWidget + EscalationWidget +
+>   RecommendedToolsWidget.
+> - Lane CC — Developer backlog (`dev_backlog/{id}` Firestore root
+>   collection). 8 kinds, 5 severities, 7 statuses, dedupe key
+>   (SHA-1 of normalised signature), TTL by severity (30/90/365 days).
+>   Auto-published from `withCalibration` failure path on every 4xx /
+>   5xx. `GET / POST /api/intelligence/dev-backlog` admin-gated.
+> - Lane DD — Clarifying questions framework. Schema, route helper
+>   `clarificationResponse(req)`, type guard `isClarificationResponse`,
+>   prompt-block `answersToPromptBlock`, modal component with 5 input
+>   types and 6 topics. Threading into specific routes queued.
+> - Lane EE — Wikipedia enrichment client. `getWikipediaSummary`,
+>   `getWikipediaRelated`, `searchWikipedia` against the
+>   unauthenticated REST API. `formatWikipediaPromptBlock` renders the
+>   `## WIKIPEDIA BACKGROUND (CC-BY-SA, cite by URL on use)` section
+>   with explicit citation reminder. Threading into Conflict Graph +
+>   Timeline routes queued.
+> - Lane FF — Analyst notes natural-language knowledge retention.
+>   CRUD on `users/{uid}/situations/{sitId}/analyst_notes/{id}`.
+>   `formatAnalystNotesBlock(notes)` renders a `## ANALYST NOTES
+>   (PROVIDED BY USER, TREAT AS HIGH-PRIORITY CONTEXT)` block with a
+>   "do NOT contradict an analyst note silently" instruction.
+>   Threading into specific routes + UI editor queued.
+>
+> **End-of-session validation (round 4):**
+> `npx tsc --noEmit` clean · `audit-ai-routes` 57/4 ·
+> `audit:gcp` 0/0 (round 3 verified, no infra changes round 4) ·
+> `npx vitest run` 317/317 (was 168 entering the session — +149) ·
+> `npm run build` clean.
+>
+> **Cumulative tenth-session totals (rounds 1–4):**
+> - Code lanes shipped: A, B, C, D, M, N, T, U, V, W, X, Z, AA, BB,
+>   CC, DD, EE, FF (18).
+> - Doc lanes shipped: E, O, P, Q, R, S, Y, LP1, LP2 plus persona
+>   walkthroughs, Codex handoff, agent registry doc, agentic-system
+>   refresh (13).
+> - Cloud Build SUCCESS deploys: 3 (`05a1e8dd`, `8bda8f5d`,
+>   `0bbb5830` — round 4 build at session end is `7761707d` and
+>   queued).
+> - AI routes calibrated: 57 (was 53).
+> - Vitest: 317/317 (was 168).
+> - Open bricks tracked on `docs/TODO_BOARD_2026-04-26.md`: 38 BIG
+>   bricks + 7 P-Test items + queued lanes.
+>
 > **2026-04-26 tenth-session update (Claude Code, multi-lane sprint — Lanes A–E shipped)**:
 >
 > All five lanes landed as separate commits on `main`. Cloud Build deploy
