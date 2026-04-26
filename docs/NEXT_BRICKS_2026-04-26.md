@@ -103,17 +103,21 @@ ordered by user-visible impact × shippability.
   `src/app/app/conflict-graph/page.tsx`, `src/app/app/documents/page.tsx`.
 - Owner: Codex (backend changes), Claude (UI).
 
-### 7. Situation detail overview page
-- Problem: `/app/situations/[id]` redirects to settings rather than
-  serving a real case overview.
-- Action: render situation status, source/document health, graph
-  health, latest activity feed (already mountable), recommended next
-  action, outstanding approvals queue. No new Firestore queries —
-  reuse existing snapshots.
-- Files: `src/app/app/situations/[id]/page.tsx`,
-  `src/components/praxis/situation-dashboard.tsx`. (Prompt 3 in
-  `docs/CLAUDE_TANDEM_PROMPTS_2026-04-25.md`.)
-- Owner: Claude.
+### 7. Situation detail overview page — first slice shipped 2026-04-26
+- ~~Problem~~: `/app/situations/[id]` used to redirect to settings.
+- Status: done in the ninth session. New `[id]/page.tsx` renders
+  header + risk + Glasl + actor chips + quick nav + scoped
+  `ActivityFeed`.
+- Follow-ups still open:
+  - Surface `data_ingestions` source-health (which feeds were tried,
+    last success, last failure).
+  - Outstanding approvals (`graph_updates`) queue.
+  - Document-extraction status (chunk count, citation coverage).
+  - "Next recommended action" derived from tool-output freshness +
+    role recommendations.
+  Files for the follow-up: same `[id]/page.tsx` plus a small new
+  hook reading `data_ingestions`, `graph_updates`, and the
+  document/chunk index.
 
 ### 8. Real notification bell
 - Problem: top-bar notifications still read demo Zustand state for
@@ -150,6 +154,14 @@ ordered by user-visible impact × shippability.
 - Owner: Claude or designer.
 
 ---
+
+## Brick shipped late in the ninth session
+
+- `/app/situations/[id]` overview page (brick #7 above). Replaces the
+  redirect-only stub with a focused per-situation overview that
+  mounts the spine `ActivityFeed` scoped to the situation, surfaces
+  risk/Glasl/actor chips, and routes to inspect/settings/dashboard.
+  See commit on 2026-04-26 EOD.
 
 ## Cleanups done this session (for changelog reference)
 

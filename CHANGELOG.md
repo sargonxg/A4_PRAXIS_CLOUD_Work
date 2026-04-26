@@ -67,6 +67,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `node scripts/audit-ai-routes.mjs` continues to pass with
   53 calibrated / 4 exempt.
 
+### Situation overview
+
+- `/app/situations/[id]` no longer redirects to the settings editor.
+  It now renders a focused per-situation overview: title/type/status
+  header, INFORM Risk gauge, Glasl badge, key-actor chips, quick
+  navigation to dashboard / inspect / settings, and the operational
+  spine `ActivityFeed` scoped to the situation. The page lazy-fetches
+  via `/api/situations` if the store is empty and keeps the global
+  active situation in sync so deep-linked tool runs receive the right
+  calibration context.
+- Replaced the lingering `ACLED` entry in the Myanmar welcome
+  template (`src/components/praxis/situation-dashboard.tsx`) with
+  `UCDP` so template-created situations no longer carry a
+  retired-vendor source claim.
+
 ### Documentation
 
 - New `docs/tools/UX_AUDIT_2026-04-26.md` (449 lines): tool-by-tool UX

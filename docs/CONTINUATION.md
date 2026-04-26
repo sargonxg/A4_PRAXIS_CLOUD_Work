@@ -24,6 +24,13 @@
 > calibration is now done; remaining four are tool-id canonicalization,
 > humanitarian real route, demo-leak audit, and document → graph
 > cross-link). Validation: tsc clean, route audit 53/4, vitest 168 PASS.
+> Late in the same session, Claude also shipped a focused
+> `/app/situations/[id]` overview page (was a redirect to settings;
+> now renders header + risk/Glasl + actor chips + scoped activity
+> feed + quick nav into inspect/settings/dashboard) and replaced
+> the last user-facing `ACLED` source claim in the Myanmar welcome
+> template with UCDP. Follow-ups for that page are tracked in
+> `docs/NEXT_BRICKS_2026-04-26.md` brick #7.
 > Files Claude is responsible for staying off this week:
 > `src/lib/auth/auth-context.tsx`, `src/components/app/app-sidebar.tsx`,
 > `src/components/dashboard/recommended-tools-widget.tsx`,
