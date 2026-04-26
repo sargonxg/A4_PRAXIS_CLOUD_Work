@@ -51,9 +51,10 @@ const practitionerBackgrounds = [
 ];
 
 const trustSignals = [
-  "Demo data is labelled",
+  "Calibrated to your role",
   "Open-data first",
   "Google Cloud native",
+  "Sources you can defend",
 ];
 
 // ---- Animated Conflict Graph SVG ----
@@ -379,10 +380,11 @@ export function Hero() {
             transition={{ delay: 1.2, duration: 0.7 }}
             className="mb-6 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
           >
-            PRAXIS by TACITUS is the intelligence workspace for policy,
-            diplomacy, and political analysis. Bring your sources and context —
-            PRAXIS structures them into cited assessments, conflict graphs, and
-            decision-ready briefings for real situations.
+            Most of policy is not classified. PRAXIS by TACITUS turns the
+            open record — UN reports, treaties, news wires, humanitarian
+            feeds, your own notes — into a calibrated workspace where AI
+            experts you train help you assess, draft, and decide. A
+            companion you teach, an expert team you direct.
           </motion.p>
 
           {/* Data sources tagline */}
