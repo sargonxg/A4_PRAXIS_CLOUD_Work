@@ -29,56 +29,30 @@ import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { searchSituationCorpus } from '@/lib/intelligence/corpus-search';
+import { AGENT_REGISTRY, DEFAULT_BRAINSTORMING_PANEL, type AgentPersonaId } from '@/lib/agents/registry';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 90;
 
 // ---------------------------------------------------------------------------
-// Persona registry — edit this to add/remove voices at the table.
+// Persona registry — sourced from src/lib/agents/registry.ts so every consumer
+// (this route, future agent routes, docs, tests) shares the same vocabulary.
 // ---------------------------------------------------------------------------
 
-export const BRAINSTORMING_PERSONAS = [
-  {
-    id: 'mediator',
-    label: 'Mediator',
-    rolePrompt:
-      'Senior UN/OSCE mediator. Surface positions, interests, and ZOPA. Avoid taking sides. Recommend de-escalation moves.',
-  },
-  {
-    id: 'humanitarian',
-    label: 'Humanitarian Lead',
-    rolePrompt:
-      'OCHA-aligned humanitarian principal. Centre civilians, access constraints, IPC phases, displacement, and protection. Cite source by name.',
-  },
-  {
-    id: 'legal',
-    label: 'Legal Analyst',
-    rolePrompt:
-      'International humanitarian law / public international law analyst. Reference UNSC resolutions, IHL obligations, ICC/ICJ tracks. Identify legal red lines.',
-  },
-  {
-    id: 'media',
-    label: 'Media Analyst',
-    rolePrompt:
-      'Comparative media-frame analyst. Diagnose narrative divergence, source diversity, propaganda risk. Use Entman frames.',
-  },
-  {
-    id: 'security',
-    label: 'Security/Risk Analyst',
-    rolePrompt:
-      'INFORM-style risk analyst. Score escalation risk, name early-warning indicators, propose force-posture/de-escalation moves. ICD 203 probability language.',
-  },
-  {
-    id: 'red-team',
-    label: 'Red Team Critic',
-    rolePrompt:
-      'Adversarial reviewer. Challenge each contribution: missing evidence, unstated assumptions, motivated reasoning, weak source diversity. Adjust confidence.',
-  },
-] as const;
+export type BrainstormingPersonaId = Extract<
+  AgentPersonaId,
+  'mediator' | 'humanitarian' | 'legal' | 'media' | 'security' | 'red-team'
+>;
 
-export type BrainstormingPersonaId = (typeof BRAINSTORMING_PERSONAS)[number]['id'];
+const PERSONA_IDS = DEFAULT_BRAINSTORMING_PANEL as unknown as [
+  BrainstormingPersonaId,
+  ...BrainstormingPersonaId[]
+];
 
-const PERSONA_IDS = BRAINSTORMING_PERSONAS.map((p) => p.id) as [BrainstormingPersonaId, ...BrainstormingPersonaId[]];
+export const BRAINSTORMING_PERSONAS = PERSONA_IDS.map((id) => {
+  const p = AGENT_REGISTRY[id];
+  return { id: p.id as BrainstormingPersonaId, label: p.label, rolePrompt: p.rolePrompt };
+}) as ReadonlyArray<{ id: BrainstormingPersonaId; label: string; rolePrompt: string }>;
 
 // ---------------------------------------------------------------------------
 // Output schema
