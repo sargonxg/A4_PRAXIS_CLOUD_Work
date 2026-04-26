@@ -72,12 +72,33 @@ MVP route:
 
 ## First Implementation Queue
 
-1. Add Brainstorming Table registry entry and tool doc if not already present.
-2. Create structured schemas for persona turns and synthesis.
-3. Build read-only UI with seeded personas and empty state.
-4. Add synchronous calibrated route using active situation corpus.
-5. Persist output to `tool-data/brainstorming-table`.
-6. Add export to memo/Markdown.
-7. Move execution to Cloud Tasks once the schema is stable.
-8. Add red-team pass and approval statuses.
+1. ✅ Brainstorming Table registry entry — shipped 2026-04-26 in
+   `src/lib/constants/tool-registry.ts` (simulation category, 5 credits,
+   48h staleness, Pro tier, related tools negotiation-prep / mediation-design
+   / concordia / humanitarian / legal-tracker).
+2. ✅ Structured schemas for persona turns and synthesis — shipped
+   2026-04-26 as `BrainstormingTableSchema` in
+   `src/app/api/ai/brainstorming-table/route.ts` (Zod). Tests live at
+   `tests/services/brainstorming-table-schema.test.ts`.
+3. ✅ Read-only UI with seeded personas and empty state — shipped
+   2026-04-26 at `src/app/app/brainstorming-table/page.tsx` (question
+   textarea, persona-coloured table, synthesis card, demo-mode banner,
+   onboarding gate, situation guard).
+4. ✅ Synchronous calibrated route using active situation corpus —
+   shipped 2026-04-26. `withCalibration('brainstorming-table',
+   'ai_brainstorming_table')`, calls `searchSituationCorpus` (Lane A),
+   degrades closed when retrieval fails, runs Pro model with
+   `Output.object`.
+5. ✅ Persist output to `tool-data/brainstorming-table` — shipped via
+   `saveToolOutput` with personas, retrievalTrace, and question metadata.
+6. ⏳ Add export to memo/Markdown.
+7. ⏳ Move execution to Cloud Tasks once the schema is stable. The
+   `praxis-agents` queue is provisioned (audit:gcp passes) — needs a
+   per-turn dispatcher reading `background_jobs`, an HTTP target on the
+   frontend Cloud Run service, and CAS-locked claim semantics. Detailed
+   plan: brick #18 in `docs/PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md`.
+8. ⏳ Add red-team pass and approval statuses (deeper review loop than
+   the in-table red-team turn — a separate critique pass that flags
+   confidence and source-diversity issues before the synthesis chair
+   composes).
 
