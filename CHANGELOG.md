@@ -159,6 +159,110 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Codex-owned Workspace Personalization files (sidebar, dashboard,
   recommendations). Future Codex/Claude lanes can opt tools in.
 
+### Round 4 — Visual fixes + dev backlog + clarifying questions + Wikipedia + analyst notes
+
+> User flagged a screenshot at the dashboard showing illegible
+> grey-on-grey cards and a debug pill overlapping the Ask PRAXIS
+> dome, plus asked for: a developer backlog readable by code agents,
+> clarifying-question popups when AI tools need more input, Wikipedia-
+> backed Conflict Graph / Timeline generation, and natural-language
+> knowledge retention every tool can consult.
+
+#### Lane AA — Bottom-right collision + Screenshot gitignore
+- `.gitignore`: `Screenshot*.png|jpg|jpeg` now ignored so personal
+  screenshots dropped into the repo for agent review never ship.
+- `src/components/app/activity-panel.tsx`: pill moved from
+  `fixed bottom-4 right-4` to `bottom-24 right-6` so it sits ABOVE
+  the FloatingPraxis dome with a clear gap. Open-panel position
+  moved from `bottom-14 right-4` to `bottom-36 right-6` to match.
+
+#### Lane BB — Dashboard card legibility
+- Root cause: `WidgetShell` used dark-theme `slate-800/900/300/500/600`
+  tokens but the dashboard renders inside the `app-light` shell.
+- `src/components/dashboard/widget-shell.tsx`: token swap to light-mode
+  `navy-700/600/500/400` + `slate-200` borders + `bg-white` + soft
+  shadow. Hits WCAG AA contrast.
+- `src/components/dashboard/recommended-tools-widget.tsx`: list-item
+  text flipped to `text-navy-900` / `text-navy-600` with hover-to
+  diplomatic-blue. Hover bg flipped from `slate-800/60` to `slate-100`.
+- Same WidgetShell powers RiskGaugeWidget + EscalationWidget so all
+  three cards in the screenshot now render with proper contrast.
+
+#### Lane CC — Developer backlog system
+- New `src/lib/dev-backlog/types.ts` + `service.ts` define the
+  `dev_backlog/{id}` Firestore collection: 8 kinds (`error.route`,
+  `error.calibration`, `perf.slow-tool`, `corpus.empty`,
+  `ux.friction`, `idea.agent`, `idea.user`, `data.gap`), 5
+  severities, 7 statuses, dedupe key (SHA-1 of normalised
+  signature), occurrences counter, brick id linkage, TTL by severity
+  (30/90/365 days).
+- `publishBacklogEntry()` folds duplicates by dedupe key —
+  occurrences bump instead of flooding the collection. Severity rises
+  but never falls on duplicates.
+- `queryBacklog()` supports filters by kind/severity/status/toolId/
+  situationId + bounded look-back window. `setBacklogStatus()` flips
+  state and links a brickId.
+- `src/app/api/intelligence/dev-backlog/route.ts`: GET + POST gated
+  by `ADMIN_ALLOWLIST` env var, Zod-validated.
+- `src/lib/api/with-calibration.ts`: every handler throw + every
+  4xx/5xx response now auto-publishes a backlog row (5xx high, 4xx
+  medium, 401/403 low). Existing tool_run + system_event +
+  notification flow unchanged.
+- `tests/services/dev-backlog.test.ts` — 18 tests covering normalize,
+  dedupe-key collision under dynamic ids, severity rank, TTL by
+  severity, capString, clamp.
+
+#### Lane DD — Clarifying Questions framework
+- `src/lib/agents/clarifying-questions.ts`: ClarifyingQuestionSchema
+  (id, prompt, why, inputType, options, required, topic) with 6
+  topics (scope/sources/audience/red-line/tradeoff/data/other) and 5
+  inputTypes (short-text/long-text/single-choice/multi-choice/yes-no).
+  `clarificationResponse(req)` helper any AI route returns INSTEAD of
+  its normal output (HTTP 200 with discriminator body). `isClarification
+  Response()` type guard for client-side detection.
+  `answersToPromptBlock()` renders the analyst's answers as a
+  `## ANALYST ANSWERS TO CLARIFYING QUESTIONS` section the resume
+  route prepends.
+- `src/components/praxis/clarifying-questions-modal.tsx`: dialog
+  with topic-coloured pills, per-input-type widgets, Cancel /
+  Resume CTAs, required-question gating.
+- `tests/services/clarifying-questions.test.ts` — 15 tests covering
+  schema validation, defaults, request caps (1..5), bundle
+  validation, type guard, response helper happy path + malformed
+  throw, prompt-block rendering for string/array/boolean answers.
+
+#### Lane EE — Wikipedia enrichment client
+- `src/lib/enrichment/wikipedia.ts`: `getWikipediaSummary`,
+  `getWikipediaRelated`, `searchWikipedia` using the unauthenticated
+  REST API + opensearch endpoint with 6s timeout, AbortController,
+  PRAXIS user-agent. `formatWikipediaPromptBlock(summary, related)`
+  renders a `## WIKIPEDIA BACKGROUND (CC-BY-SA, cite by URL on use)`
+  block with extract capped at 1800 chars, related entities, and an
+  explicit citation reminder.
+- `tests/services/wikipedia-enrichment.test.ts` — 5 tests covering
+  URL encoding, opensearch params, empty-state hint, populated
+  render, extract cap.
+
+#### Lane FF — Analyst Notes (natural-language knowledge retention)
+- `src/lib/knowledge/analyst-notes.ts`: CRUD on
+  `users/{uid}/situations/{sitId}/analyst_notes/{id}`. AnalystNoteSchema
+  caps text at 4000 chars + 12 tags + 4 confidence levels.
+  `formatAnalystNotesBlock(notes)` renders a `## ANALYST NOTES
+  (PROVIDED BY USER, TREAT AS HIGH-PRIORITY CONTEXT)` block with an
+  explicit "do NOT contradict an analyst note silently — flag the
+  contradiction" instruction.
+- `tests/services/analyst-notes.test.ts` — 8 tests covering schema
+  defaults, validation, prompt-block formatting (empty + populated +
+  no-tags case), contradict-warning instruction.
+
+#### Round 4 validation
+- `npx tsc --noEmit` clean.
+- `node scripts/audit-ai-routes.mjs` 57/4 (no new AI routes — only
+  intelligence + helper modules).
+- `npx vitest run` 317/317 (was 270 at round-3 end; +47 from
+  CC/DD/EE/FF tests).
+- `npm run build` clean.
+
 ### Round 3 — 15-improvement sprint (Lanes M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z + LP1 + LP2)
 
 > Plan doc: `docs/IMPROVEMENT_15_2026-04-26.md`. Round 3 ships 8 code
