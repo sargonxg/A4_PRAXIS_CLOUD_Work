@@ -24,6 +24,8 @@ import { OnboardingRequiredState } from '@/components/praxis/onboarding-required
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils/cn';
+import { ConfidenceBadge } from '@/components/praxis/confidence-badge';
+import { OutputProvenancePanel } from '@/components/praxis/output-provenance-panel';
 
 const PERSONA_LABELS: Record<string, string> = {
   mediator: 'Mediator',
@@ -171,7 +173,18 @@ export default function BrainstormingTablePage() {
         )}
       </section>
 
-      {current && <BrainstormingTableView data={current} />}
+      {current && (
+        <>
+          <BrainstormingTableView data={current} />
+          <OutputProvenancePanel
+            toolId="brainstorming-table"
+            generatedAt={current.generatedAt}
+            sourceCount={current.retrievalTrace?.itemCount}
+            retrievalQuery={current.question}
+            retrievalLayers={current.retrievalTrace?.layersSearched}
+          />
+        </>
+      )}
 
       {!current && !generating && (
         <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
@@ -248,16 +261,7 @@ function BrainstormingTableView({ data }: { data: BrainstormingTable }) {
                     {turn.recommendation && <p>↪ {turn.recommendation}</p>}
                   </td>
                   <td className="py-3 pr-3 text-xs">
-                    <span
-                      className={cn(
-                        'rounded px-1.5 py-0.5 font-medium',
-                        turn.confidence === 'high' && 'bg-emerald-100 text-emerald-700',
-                        turn.confidence === 'medium' && 'bg-amber-100 text-amber-700',
-                        turn.confidence === 'low' && 'bg-red-100 text-red-700'
-                      )}
-                    >
-                      {turn.confidence}
-                    </span>
+                    <ConfidenceBadge confidence={turn.confidence} />
                   </td>
                   <td className="py-3 text-xs uppercase tracking-wide text-slate-500">{turn.status}</td>
                 </tr>

@@ -129,6 +129,36 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `55 AI route files, 55 calibrated, 4 exempt` (was 54/4),
   `tests/services/*` green.
 
+### Lane D — Shared confidence/citation primitives + provenance panel
+
+- Closes the cross-tool finding in `docs/tools/UX_AUDIT_2026-04-26.md`
+  ("extract a shared `<Citation>` and `<ConfidenceBadge>` so every tool
+  surfaces these the same way") and brick #4 of
+  `docs/NEXT_BRICKS_2026-04-26.md` (Output Provenance Panel).
+- New: `src/components/praxis/confidence-badge.tsx` — canonical
+  high/medium/low/unknown badge using ICD 203 / Heuer vocabulary, with
+  `normalizeConfidence()` helper for safe coercion of unknown strings.
+- New: `src/components/praxis/citation.tsx` — inline + chip variants
+  for source citations with optional URL, publish date, and sourceType
+  badge. Replaces ad-hoc `<a>` tags scattered across tool pages.
+- New: `src/components/praxis/output-provenance-panel.tsx` —
+  default-collapsed "Why this output?" disclosure showing tool id,
+  generated-at, profile version, domain version, model, source count,
+  retrieval query, layers searched, and primary-source chips. Will read
+  directly from `ToolOutputEnvelope` once that lands (NEXT_BRICKS #2).
+- Wired the new primitives into `src/app/app/brainstorming-table/page.tsx`
+  as the first consumer: persona-row confidence column now uses
+  `<ConfidenceBadge />` and the page renders an
+  `<OutputProvenancePanel />` below the synthesis card so analysts can
+  see retrieval trace and timestamp at a glance.
+- `tests/services/confidence-badge.test.ts`: covers happy path,
+  case-insensitive normalisation, fall-through to `unknown` on
+  unsupported strings / null / undefined.
+- Did NOT migrate Risk Monitor / Briefing Room / Legal Tracker /
+  Humanitarian to the new primitives in this commit — that touches
+  Codex-owned Workspace Personalization files (sidebar, dashboard,
+  recommendations). Future Codex/Claude lanes can opt tools in.
+
 
 
 ### Codex strategic-uplift pass
