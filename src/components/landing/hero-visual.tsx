@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { ProductGlimpse } from "./hero";
+import { HeroQuadrantTour } from "./hero-quadrant-tour";
 
 /**
  * Hero visual slot.
@@ -43,7 +43,8 @@ export function HeroVisual() {
         }
       />
 
-      {/* Card with subtle floating motion */}
+      {/* Quadrant tour — cycles through four product surfaces every 4.2s.
+          Subtle floating motion preserved on the wrapper for parallax feel. */}
       <motion.div
         initial={shouldReduceMotion ? false : { y: 0 }}
         animate={shouldReduceMotion ? undefined : { y: [0, -6, 0] }}
@@ -54,7 +55,7 @@ export function HeroVisual() {
         }
         className="relative"
       >
-        <ProductGlimpse />
+        <HeroQuadrantTour />
       </motion.div>
 
       {/* Decorative orbiting pings — three small dots that orbit the card.

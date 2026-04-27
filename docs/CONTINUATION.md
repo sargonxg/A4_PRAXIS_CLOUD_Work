@@ -1,6 +1,9 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
-> **Last updated**: 2026-04-26 (Claude Code rounds 1–4 multi-lane sprint — corpus-search, humanitarian, brainstorming-table, citation primitives, strategic roadmap, agent runner, source-scout, red-team review, AI error toast, BT markdown export, citation chips, landing-page hero overhaul, dashboard legibility fix, debug pill relocation, dev backlog, clarifying questions, Wikipedia enrichment, analyst notes — all shipped)
+> **Last updated**: 2026-04-26 (Claude Code rounds 1–5 multi-lane sprint — corpus-search, humanitarian, brainstorming-table, citation primitives, strategic roadmap, agent runner, source-scout, red-team review, AI error toast, BT markdown export, citation chips, landing-page hero overhaul, dashboard legibility fix, debug pill relocation, dev backlog, clarifying questions, Wikipedia enrichment, analyst notes, hero quadrant tour, color system audit, 10 new bricks 45-54, Codex handoff doc — all shipped)
+>
+> **Codex handoff**: `docs/CODEX_HANDOFF_2026-04-27.md` is the fresh
+> drop-in prompt for the next session. Read it first.
 > **Local clone**: `C:\Users\giuli\ANTIGRAVITY\A4_PRAXIS_CLOUD_Work` (fresh `git clone` of `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`). The older locked clone at `C:\Users\giuli\ANTIGRAVITY\A4_PRAXIS_CLOUD_TACITUS\A4_PRAXIS_CLOUD_Work` could not be removed because of an open Windows file handle; secrets were preserved at `C:\Users\giuli\ANTIGRAVITY\_praxis_env_backup_20260426\` before re-cloning.
 > **Next agent**: Codex 5.5 (or Claude Code)
 > **Read first**: `CLAUDE.md`, `AGENTS.md`, `docs/OPERATIONAL_SPINE.md`, `CHANGELOG.md` Unreleased, `docs/NEXT_BRICKS_2026-04-26.md`.

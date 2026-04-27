@@ -159,6 +159,75 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Codex-owned Workspace Personalization files (sidebar, dashboard,
   recommendations). Future Codex/Claude lanes can opt tools in.
 
+### Round 5 — Hero quadrant tour + 10 new bricks + Codex handoff doc
+
+> User asked for a fifth round: 10+ high-impact improvements, hero
+> animation that shows breadth of tools (graph, media, drafting, user
+> context), color/legibility audit, agentic objectives + GCP/Firebase
+> research, and a fresh Codex handoff document.
+
+#### Round 5 plan
+- New `docs/ROUND_5_PLAN_2026-04-26.md` — 10 named bricks (45-54),
+  10 super-solid agent objectives, GCP + Firebase research summary
+  with new candidate services (Vertex AI Vector Search, BigQuery
+  Vector Search preview, Eventarc Advanced, Firebase Data Connect,
+  Firestore Bundles, Firebase Extensions, Remote Config, FCM, Cloud
+  CDN), large-scale landing roadmap, and 5 deferred decisions for
+  the human.
+
+#### Brick #45 — Hero quadrant tour (CODE)
+- New `src/components/landing/hero-quadrant-tour.tsx` cycles four
+  product surfaces in the right column of the hero every 4.2s:
+  Conflict Graph → Media Monitor → Drafting Studio → User Context.
+  Honours `prefers-reduced-motion` (stacks panels statically when
+  reduced). Step-indicator pills let visitors jump between panels.
+- `src/components/landing/hero-visual.tsx` swapped from
+  `<ProductGlimpse />` (single panel) to `<HeroQuadrantTour />`
+  (four panels). The wrapping floating-motion + glow + orbiting
+  pings preserved.
+- The four panels are deliberately simplified animated SVG/HTML
+  cards — representational not pixel-perfect screenshots.
+
+#### Brick #46 — Color system audit (DOC + verified)
+- Round 4 Lane BB already fixed the worst offender (the dashboard
+  WidgetShell). Round 5 audits the remaining surfaces.
+- New `docs/COLOR_SYSTEM_AUDIT_2026-04-26.md`:
+  * Lists 5 legitimate inverted blocks (DON'T fix these — they're
+    intentional terminal/code/ops-console surfaces).
+  * Catalogues 10 candidate files for follow-up review.
+  * Defines the canonical swap table (slate-900/40 → bg-white +
+    shadow, slate-300 → navy-700 titles, slate-400 → navy-500
+    subtitles, etc.).
+  * Documents the WCAG AA acceptance test for any future fix.
+
+#### Bricks #47-54 — Specs only (NEW BRICKS in roadmap)
+- 47 — Brief Builder agent (versioned, lock-able UNSC-style brief).
+- 48 — Conflict Graph delta panel (graph_updates approval queue UI).
+- 49 — Daily Brief 06:00 cron per situation (Cloud Scheduler).
+- 50 — Sources Library priority lift (preferred / blocked / neutral).
+- 51 — Onboarding rationale messaging (now P0 from BIG #39).
+- 52 — Real notification bell wired to Firestore.
+- 53 — Document → graph cross-link UI.
+- 54 — Stripe Meters for usage billing.
+
+Each brick has rationale, persona impact, GCP service path, files
+involved, and definition of done documented in
+`docs/ROUND_5_PLAN_2026-04-26.md`.
+
+#### Codex handoff
+- New `docs/CODEX_HANDOFF_2026-04-27.md` — fresh drop-in prompt for
+  the next Codex session. Covers rounds 1-5 work + a complete
+  ownership rules section + lane queue + validation gate + hard
+  rules (12 of them now, 4 of which are new in round 5).
+
+#### Round 5 validation
+- `npx tsc --noEmit` clean.
+- `node scripts/audit-ai-routes.mjs` 57/4 (no new AI routes —
+  round 5 ships product-surface + docs).
+- `npx vitest run` 317/317 (no test changes — code is hero-only +
+  docs).
+- `npm run build` clean.
+
 ### Round 4 — Visual fixes + dev backlog + clarifying questions + Wikipedia + analyst notes
 
 > User flagged a screenshot at the dashboard showing illegible

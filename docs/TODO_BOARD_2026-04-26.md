@@ -142,6 +142,23 @@ bricks**; status per brick below.
 | 43 | Wikipedia enrichment threaded into Conflict Graph + Timeline routes | ⚪ partial | claude | P1 — Lane EE shipped client; per-route adoption queued |
 | 44 | Analyst notes settings UI + corpus-search 'analyst-notes' layer | ⚪ partial | claude | P1 — Lane FF shipped the helper; UI + corpus-layer queued |
 
+### NEW bricks from round 5 (45–54)
+
+Plan: `docs/ROUND_5_PLAN_2026-04-26.md`
+
+| # | Brick | Status | Owner | Priority |
+|---|---|---|---|---|
+| 45 | Hero quadrant tour (4-panel cycle) | 🟢 done | claude | round 5 — `hero-quadrant-tour.tsx` |
+| 46 | Color system audit | 🟢 done (memo) | claude | round 5 — `COLOR_SYSTEM_AUDIT_2026-04-26.md`; per-page leaks queued |
+| 47 | Brief Builder agent (agentic workflow #3) | ⚪ queued | unassigned | P1 |
+| 48 | Conflict Graph delta panel | ⚪ queued | claude (UI) + codex (backend) | P1 |
+| 49 | Daily Brief 06:00 cron per situation | ⚪ queued | codex (infra) | P1 |
+| 50 | Sources Library priority lift | ⚪ queued | unassigned | P2 |
+| 51 | Onboarding rationale messaging (= BIG #39, now P0) | ⚪ queued | codex | P0 |
+| 52 | Real notification bell wired to Firestore | ⚪ queued | codex | P0 |
+| 53 | Document → graph cross-link UI | ⚪ queued | claude (UI) + codex (backend) | P1 |
+| 54 | Stripe Meters for usage billing | ⚪ queued | unassigned | P1 |
+
 ## Test automation backlog (P-Test-X)
 
 From `docs/TEST_PLAN_2026-04-26.md`:

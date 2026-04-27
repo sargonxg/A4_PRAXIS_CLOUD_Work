@@ -17,10 +17,13 @@
 
 | Doc | Purpose |
 |---|---|
+| [`ROUND_5_PLAN_2026-04-26.md`](./ROUND_5_PLAN_2026-04-26.md) | **Round-5 plan: 10 new bricks (45-54) + 10 agent objectives + GCP/Firebase research summary + landing roadmap.** |
+| [`COLOR_SYSTEM_AUDIT_2026-04-26.md`](./COLOR_SYSTEM_AUDIT_2026-04-26.md) | Color leak map + canonical token swap rules. |
+| [`CODEX_HANDOFF_2026-04-27.md`](./CODEX_HANDOFF_2026-04-27.md) | **Active fresh Codex drop-in prompt.** |
 | [`IMPROVEMENT_15_2026-04-26.md`](./IMPROVEMENT_15_2026-04-26.md) | **Round-3 plan: 15 named improvements with rationale + persona impact + DoD.** |
 | [`STRATEGIC_AGENTIC_ROADMAP_2026-04-26.md`](./STRATEGIC_AGENTIC_ROADMAP_2026-04-26.md) | 20-item high-impact queue + agent lanes |
 | [`PRAXIS_HIGH_IMPACT_PRODUCT_PLAN_2026-04-26.md`](./PRAXIS_HIGH_IMPACT_PRODUCT_PLAN_2026-04-26.md) | Multi-day product plan (dashboard, Ask PRAXIS, tool envelopes, knowledge architecture) |
-| [`PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md`](./PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md) | **Flagship 90-day roadmap. 30+ named bricks (now 44 with rounds 3-4 additions). Read this for the big picture.** |
+| [`PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md`](./PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md) | **Flagship 90-day roadmap. 54 named bricks (rounds 1-5 additions tracked).** |
 | [`NEXT_BRICKS_2026-04-26.md`](./NEXT_BRICKS_2026-04-26.md) | Top-10 bricks for the next 7 days + lane assignments |
 | [`specs/2026-04-26-improvements/`](./specs/2026-04-26-improvements/) | Drop-in specs for round-3 items 9-15 (onboarding rationale, Document AI, Cloud Translation, Brainstorming Cloud Tasks, changed-since diff, Briefing versioning, domain overrides) |
 | [`SPRINT_EXECUTION_PLAN_2026-04-25.md`](./SPRINT_EXECUTION_PLAN_2026-04-25.md) | This week's sprint plan |
