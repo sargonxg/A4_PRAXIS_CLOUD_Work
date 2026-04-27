@@ -2,6 +2,56 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-27 — Codex Admin Console v2 foundation deploy
+
+Source commits deployed:
+
+- `67b5130 feat(admin): harden operator console and advisor feed`
+- `c578677 fix(deploy): escape admin email allowlist env`
+
+Cloud Build:
+
+- Failed build: `8986edf2-4eba-4b52-9543-775d6b00bf47` — frontend deploy failed because
+  `ADMIN_EMAIL_ALLOWLIST` comma needed gcloud custom-delimiter escaping.
+- Successful build: `c7253b62-c058-4b1d-b3c0-00ac650b8edc` — `SUCCESS`, `9M24S`.
+
+Cloud Run:
+
+- Frontend revision after final deploy: `praxis-frontend-00087-w42`
+- Backend revision after final deploy: `praxis-backend-00053-w9x`
+- `ADMIN_EMAIL_ALLOWLIST` confirmed on frontend runtime:
+  `giulio@tacitus.me,giuliocatanzariti@gmail.com`
+
+Validation before deploy:
+
+- `npx tsc --noEmit` clean after `.next/types` regeneration.
+- `npm run build` clean.
+- `npm run lint` clean with warnings only.
+- `npm run audit:gcp` passed with zero hard failures and zero soft warnings.
+- `node scripts/audit-ai-routes.mjs` passed: `58 AI route files, 58 calibrated, 4 exempt`.
+- `npx vitest run` passed: `367/367`.
+- `python -m pytest tests\test_langgraph_runtime.py -q` passed: `2/2`.
+
+Production smoke:
+
+- `https://praxis.tacitus.me/` returned `200`.
+- `https://praxis.tacitus.me/login` returned `200`.
+- `https://praxis.tacitus.me/api/health` returned `200`.
+- `https://praxis.tacitus.me/app/admin` returned `307` to `/login?redirect=%2Fapp%2Fadmin` unauthenticated.
+- `https://praxis.tacitus.me/api/admin/advisor-feed` returned `401` unauthenticated.
+- Private backend `GET /agents/health` returned `200` with Cloud SQL
+  `praxis_langgraph` checkpointer reachable and `schemaSetup: true`.
+
+Firestore deploy note:
+
+- `firebase deploy --only firestore:rules,firestore:indexes --project=praxisbytacitus`
+  is blocked by expired Firebase CLI credentials (`firebase login --reauth`
+  required). Existing catch-all rules still deny client access to the new
+  `advisor_feed_items` collection; the added index is queued in source and
+  should be deployed after reauth.
+
+---
+
 ## 2026-04-27 — Codex Brick #1 LangGraph runtime deploy
 
 Source commits deployed:
