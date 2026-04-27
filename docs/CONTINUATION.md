@@ -1,5 +1,148 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
+> **2026-04-27 Round 7 (late session) — Landing refresh + Statecraft positioning + Cloud Build pending verification**
+>
+> ## What just shipped (commits on `origin/main`)
+>
+> All four are landing-page only — Codex-owned files (sidebar, dashboard,
+> backend, infra) untouched.
+>
+> - `c6afdd4` — Hero quadrant tour panels filled with real Sahel/Mali
+>   content. 14 ACO entities, 16 typed edges, real source mix in Media
+>   Monitor (Reuters · AFP · Le Monde · Al Jazeera · RFI · Crisis Group
+>   · ACLED · TASS · Anadolu · Africa Confidential), senior-analyst
+>   exchange in Ask PRAXIS with inline OCHA/ICG/ACLED citations, EU FAC
+>   briefing skeleton with ICD-203 badge in Drafting Studio, full
+>   `<analyst-profile>` + `<situation-frame>` render in the Calibration
+>   spine.
+> - `5a1929a` — Hero headline repositioned to **"AI Built for
+>   Statecraft. Calibrated to You."** Audience row replaced with seven
+>   explicit roles (Diplomats · Conflict Analysts · Mediators ·
+>   Humanitarian Leads · Policy Officers · Foreign-Policy Researchers ·
+>   Sanctions & Compliance Teams). CTAs sharpened to outcome-led. AI
+>   companion section retitled "Generic AI guesses. PRAXIS knows your
+>   mandate." Pricing rebalanced: Demo (free, read-only) · Analyst
+>   single licence **\$49 → \$100/mo** · Team **\$199 → \$499/mo** ·
+>   Institution custom.
+> - `0548c78` — Waitlist replaced with a "Talk to TACITUS" section:
+>   `hello@tacitus.me` + `tacitus.me` CTAs and a three-card "What
+>   TACITUS is building" block (Today · PRAXIS, Next · Calibrated
+>   agents, Building · Institutional graph). Component export name
+>   preserved.
+> - `b088e8f` — Share-metadata + SEO refresh. New OG image with portal
+>   ring + "AI Built for Statecraft" headline + source pills.
+>   Root-layout metadata expanded (title template, applicationName,
+>   keywords, og/twitter, robots `max-image-preview: large`,
+>   appleWebApp). Landing JSON-LD split into SoftwareApplication +
+>   Organization (with `hello@tacitus.me`) + WebSite nodes.
+>
+> ## Validation gate run (all green)
+>
+> - `npx tsc --noEmit` — clean.
+> - `npm run build` — `Errors: 0 | Warnings: 0`.
+> - `node scripts/audit-ai-routes.mjs` — `58 calibrated · 4 exempt`.
+> - `node scripts/audit-gcp.mjs` — `0 hard / 0 soft`.
+>
+> ## Deploy state (NEEDS VERIFICATION — first thing Codex should do)
+>
+> Cloud Build `b2287473-897e-49be-92c5-33a051932420` was submitted
+> async at ~11:40 local. It was last seen `WORKING` at 11:43 before
+> Claude Code lost gcloud auth tokens (`gcloud auth login` is
+> interactive and could not run from the non-interactive shell). The
+> production-smoke-test step never ran from this session.
+>
+> Run from a fresh terminal (in this order):
+>
+> ```bash
+> gcloud auth login
+> gcloud builds describe b2287473-897e-49be-92c5-33a051932420 --format='value(status,startTime,finishTime)'
+> gcloud run services describe praxis-frontend --region=us-central1 --format='value(status.latestReadyRevisionName,status.url)'
+> gcloud run services describe praxis-backend  --region=us-central1 --format='value(status.latestReadyRevisionName,status.url)'
+> for p in / /login /pricing /api/health; do
+>   curl -s -o /dev/null -w "%{http_code}  https://praxis.tacitus.me$p\n" "https://praxis.tacitus.me$p";
+> done
+> curl -sI https://praxis.tacitus.me/opengraph-image | head -3
+> ```
+>
+> Then update `docs/DEPLOYMENT_LOG.md` with the build status, both
+> revision names, and the smoke-test results, replacing the
+> "verification pending" stanza I left at the top.
+>
+> If the build failed: tree is clean, just resubmit
+> `gcloud builds submit --config=cloudbuild.yaml`.
+>
+> ## Strategic priority going forward — "every tool produces something"
+>
+> Giulio's emphasis at handover: **make sure every tool actually works
+> and produces something useful**. The landing page now claims "40+
+> agentic tools" prominently; that promise has to land when a visitor
+> signs in. Suggested order of attack:
+>
+> 1. **Tool output audit (do this first).**
+>    - Scope: every page under `src/app/app/` that ends in a tool name
+>      (40+ surfaces). Open each on a real authenticated session
+>      bound to the demo "Nordalia" situation, click Regenerate, and
+>      record what happens (UI, network call, AI route response,
+>      Firestore write).
+>    - Output: a punch list at `docs/TOOL_QUALITY_AUDIT_2026-04-28.md`
+>      with one row per tool: `tool · works? · output non-empty? ·
+>      cited? · saved? · regression`.
+>    - Categorise findings into: (a) silently empty, (b) stale demo
+>      content leaking on real situations, (c) AI route returns but
+>      UI doesn't render, (d) credit-deducted but no output, (e) ok.
+>    - Reference: `src/lib/api/with-calibration.ts` is the contract;
+>      `src/lib/api/save-tool-output.ts` is the persistence helper.
+>      Pattern is already established in `src/app/api/ai/*`.
+> 2. **Demo-leak sweep continuation.** Bricks #56 (Humanitarian) and
+>    #57 (Dossier) closed two leaks in round 6. Audit the remaining
+>    tools for hard-coded `DEMO_*` constants leaking into real
+>    situations. Same pattern as the dossier fix: thread `isDemo` from
+>    `useSituationGuard()` through to the rendering component.
+> 3. **Calibration receipts in the UI.** The hero now markets the
+>    `<analyst-profile>` + `<situation-frame>` calibration spine.
+>    Surface a small "calibrated to: profile v3 · domain ·
+>    frameworks" chip on every tool output so the marketing claim is
+>    visibly true. `src/components/praxis/output-provenance-panel.tsx`
+>    already has scaffolding.
+> 4. **Source provenance discipline.** The hero advertises 11 named
+>    feeds. Make sure every tool that uses live data renders source
+>    pills with the feed name and timestamp; for tools that don't yet
+>    use feeds, route them through the SKC Feed Layer
+>    (`src/lib/knowledge/feed-layer.ts`).
+> 5. **Pricing/Stripe integration.** Pricing page now reads \$100
+>    Analyst / \$499 Team. The `withCredits` middleware is already
+>    metering; round-6 plan calls for Stripe Meters wiring on
+>    `src/lib/billing/stripe-meters.ts`. Once tool quality is green,
+>    flip on Stripe so the new prices actually charge.
+> 6. **Share-image + OG verification.** Send the production URL
+>    through <https://www.opengraph.xyz/> and the LinkedIn /
+>    WhatsApp / Twitter / Slack debuggers. Confirm
+>    `praxis.tacitus.me/opengraph-image` renders the new portal-ring
+>    design and that all four platforms pick up the new title and
+>    description. Bust caches as needed.
+>
+> ## Files Claude touched this round (so Codex doesn't double-edit)
+>
+> - `src/components/landing/hero.tsx`
+> - `src/components/landing/hero-visual.tsx`
+> - `src/components/landing/hero-quadrant-tour.tsx`
+> - `src/components/landing/ai-companion-section.tsx`
+> - `src/components/landing/waitlist-form.tsx` (now "Talk to TACITUS")
+> - `src/lib/constants/pricing.ts`
+> - `src/app/(landing)/page.tsx`
+> - `src/app/layout.tsx`
+> - `src/app/opengraph-image.tsx`
+> - `CHANGELOG.md`
+> - `docs/DEPLOYMENT_LOG.md`
+> - `docs/CONTINUATION.md` (this file)
+>
+> Codex-owned files were not edited. The stale debug string in
+> `src/components/app/app-sidebar.tsx` line 87 still mentions the
+> pre-rebalance prices (\$49 / \$199); leaving that for Codex since
+> the file is in the Codex-owned list.
+
+---
+
 > **2026-04-27 Round 6 — Claude Code MONSTER plan + Persona 4 P0 + demo-leak P0**:
 > Fresh clone re-pulled at `C:\Users\giuli\praxiscodexworking`. Baseline gate
 > verified green: tsc 0 errors / build 0/0 / vitest 366 PASS / audit-ai-routes

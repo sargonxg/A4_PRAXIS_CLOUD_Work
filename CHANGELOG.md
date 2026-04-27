@@ -6,6 +6,73 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-04-27 (Landing-page + share-metadata refresh)
+
+### Changed
+
+- Hero portal animation rebuilt: counter-rotating conic-gradient ring
+  frame, breathing aurora, cursor-driven 3D parallax tilt, prismatic
+  light sweep, animated ACO node entrances + pulse rings, top-to-bottom
+  scan line on every quadrant card, `rotateY + blur` quadrant
+  transitions with `layoutId` step pill. Reduced-motion path retained.
+- Hero quadrant tour panels now use real Sahel/Mali content: 14 ACO
+  entities (Mali junta, JNIM, IS-Sahel, CMA-FLA, Africa Corps, AES,
+  ECOWAS, MINUSMA, Algeria, France, Algiers Accord, IDPs, uranium
+  leverage, sovereignty narrative) with 16 typed edges; Media Monitor
+  with 10 real outlets and σ drift; Ask PRAXIS with a senior-analyst
+  exchange citing OCHA/ICG/ACLED inline; Drafting Studio EU FAC
+  briefing skeleton with ICD-203 badge and 8 source pills; Calibration
+  spine showing `<analyst-profile>` + `<situation-frame>` + 7
+  institutional frameworks (Glasl, INFORM, Fisher-Ury, Lederach, OCHA,
+  IPC, IHL).
+- Hero headline repositioned: **"AI Built for Statecraft. Calibrated to
+  You."** with gold accents. Audience row replaced with seven explicit
+  practitioner roles (diplomats, conflict analysts, mediators,
+  humanitarian leads, policy officers, foreign-policy researchers,
+  sanctions and compliance teams). CTAs sharpened to outcome-led
+  ("Start Your Workspace" / "See It on a Live Crisis"). Subhead now
+  names the institutional frameworks PRAXIS reasons with.
+- AI companion section retitled "Generic AI guesses. PRAXIS knows your
+  mandate." for narrative continuity; references "statecraft careers".
+- Pricing: Demo simplified to a read-only walkthrough, Analyst single
+  licence repriced **\$49 → \$100/mo**, Team repriced **\$199 → \$499/mo**
+  (up to 10 seats, includes Analyst features), Institution unchanged
+  (custom). Landing JSON-LD offers updated to match.
+- Replaced the waitlist form with a "Talk to TACITUS" section: two
+  prominent CTAs (`hello@tacitus.me` mailto + `tacitus.me` visit), a
+  "What TACITUS is building" three-card block (Today · PRAXIS, Next ·
+  Calibrated agents, Building · Institutional graph), and a
+  positioning paragraph framing PRAXIS as "the first surface of an
+  AI-native stack TACITUS is building for statecraft." Component
+  export name preserved so the dynamic import in
+  `src/app/(landing)/page.tsx` did not change.
+
+### Added (SEO + share metadata)
+
+- Open Graph image (`src/app/opengraph-image.tsx`) redesigned: deep
+  navy gradient with decorative gold + diplomatic-blue portal-ring
+  composition, "AI-native stack for statecraft" eyebrow, large
+  serif headline matching the hero, audience subhead, and bottom
+  source-pill strip (ACLED · UCDP · GDELT · OCHA · ReliefWeb · World
+  Bank · UN News) plus a "40+ tools · Glasl · INFORM · ICD-203"
+  credibility line.
+- Root metadata expanded in `src/app/layout.tsx`: title template,
+  applicationName, authors/creator/publisher, category,
+  formatDetection (no auto email/phone linkify),
+  alternates.canonical, og:locale, og:image:type, twitter
+  site/creator, googleBot `max-image-preview: large` + `max-snippet:
+  -1`, appleWebApp, og:image:secure_url, expanded keyword set
+  covering audience and frameworks.
+- Landing JSON-LD split into three nodes: SoftwareApplication
+  (PRAXIS, with audience and image), Organization (TACITUS, with
+  `hello@tacitus.me` ContactPoint and sameAs links), and WebSite.
+  SoftwareApplication featureList rewritten to match what PRAXIS
+  ships today (agentic tools, ACO v2.0, drafting with ICD-203, full
+  feed mix, source-grounded research, Advisor Council, deep-think
+  scenarios, GCP tenancy).
+
+---
+
 ## [Unreleased] — 2026-04-27 (Round 6 — MONSTER plan + onboarding/demo P0)
 
 ### Added

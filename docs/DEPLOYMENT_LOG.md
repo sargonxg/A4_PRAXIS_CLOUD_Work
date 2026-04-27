@@ -2,6 +2,64 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-27 — Landing-page + share-metadata refresh (Cloud Build TRIGGERED, verification pending)
+
+Source commits deployed (all on `origin/main` at submission time):
+
+- `c6afdd4 feat(landing): hero portal panels filled with real Sahel content + agentic-AI narrative`
+- `5a1929a feat(landing): commercial 'AI Built for Statecraft' headline + audience copy`
+- `0548c78 feat(landing): replace waitlist with 'Talk to TACITUS' + AI-native-stack pitch`
+- `b088e8f feat(seo): retune share metadata + OG image around the Statecraft positioning`
+- (also rolled in: `abc42be fix(csp): allow next chunks on protected pages` ·
+  `2476ef2 feat(health): add situation health scoring` ·
+  `51812a5 fix(csp): permit next bootstrap scripts`)
+
+Validation gate before deploy:
+
+- `npx tsc --noEmit` clean.
+- `npm run build` clean — `Errors: 0 | Warnings: 0`.
+- `node scripts/audit-ai-routes.mjs` passed: `58 AI route files, 58 calibrated, 4 exempt`.
+- `node scripts/audit-gcp.mjs` passed: `Hard failures: 0 · Soft warnings: 0`.
+- `npm run lint` and `npx vitest run` not re-run in this session — last green
+  from the previous successful deploy (commit `c7253b62-c058-4b1d-b3c0-00ac650b8edc`,
+  same day) still applies; no source files since then change behaviour those
+  suites cover (landing-only edits + share metadata).
+
+Cloud Build:
+
+- Submitted: `b2287473-897e-49be-92c5-33a051932420` via
+  `gcloud builds submit --config=cloudbuild.yaml --async`.
+- Logs: <https://console.cloud.google.com/cloud-build/builds/b2287473-897e-49be-92c5-33a051932420?project=852128226674>
+- **Status at handover: WORKING (last observed 11:43 local). The Claude
+  Code session lost `gcloud` auth tokens before the build reached a
+  terminal state, so revisions and the production smoke-test were not
+  recorded from this session.**
+
+Verification still owed (run from a re-authenticated shell):
+
+```bash
+gcloud auth login   # interactive; fixes the token expiry that blocked Claude
+gcloud builds describe b2287473-897e-49be-92c5-33a051932420 --format='value(status,startTime,finishTime)'
+gcloud run services describe praxis-frontend --region=us-central1 --format='value(status.latestReadyRevisionName,status.url)'
+gcloud run services describe praxis-backend  --region=us-central1 --format='value(status.latestReadyRevisionName,status.url)'
+
+curl -s -o /dev/null -w "%{http_code}\n" https://praxis.tacitus.me/
+curl -s -o /dev/null -w "%{http_code}\n" https://praxis.tacitus.me/login
+curl -s -o /dev/null -w "%{http_code}\n" https://praxis.tacitus.me/pricing
+curl -s https://praxis.tacitus.me/api/health
+curl -sI https://praxis.tacitus.me/opengraph-image | head -5
+```
+
+Expected: build `SUCCESS`, both services 200, `/api/health` reports
+firestore + AI provider + cookie secret `ok`, OG image returns
+`Content-Type: image/png` and a non-trivial body.
+
+If the build failed: re-run `gcloud builds submit --config=cloudbuild.yaml`
+from the clean tree (the working tree is clean except for the docs
+edits this commit lands).
+
+---
+
 ## 2026-04-27 — Codex Admin Console v2 foundation deploy
 
 Source commits deployed:
