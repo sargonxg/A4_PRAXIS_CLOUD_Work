@@ -11,6 +11,8 @@ import {
 } from '@/lib/jobs/job-service';
 import { emitSystemEvent, emitNotification } from '@/lib/events/event-service';
 import { publishBacklogEntry } from '@/lib/dev-backlog/service';
+import { emitToolRunMetered } from '@/lib/billing/stripe-meters';
+import { getStripeCustomerIdForUid } from '@/lib/billing/get-stripe-customer';
 
 export interface CalibrationCtx extends AuthenticatedUser {
   calibration: ContextBlock;
@@ -180,6 +182,20 @@ export function withCalibration(
             toolRunId,
             message: `Tool ${toolId} completed (HTTP ${status})`,
             source: 'frontend',
+          }).catch(() => {});
+          // Emit a Stripe Meter event for paying customers. Fire-and-forget;
+          // never blocks the tool response. Helper no-ops for free users
+          // (no `users/{uid}.stripeCustomerId`) and when STRIPE_METERS_DISABLE=1.
+          // Token-dimension meters require AI SDK usage capture — a
+          // follow-up brick. For now we emit the per-tool-run dimension
+          // which already enables usage-based billing on paid plans.
+          void getStripeCustomerIdForUid(user.uid).then((stripeCustomerId) => {
+            if (!stripeCustomerId) return;
+            return emitToolRunMetered({
+              stripeCustomerId,
+              toolId,
+              toolRunId,
+            });
           }).catch(() => {});
         } else {
           await failToolRun(toolRunId, {
