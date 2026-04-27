@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, X, CheckCheck, AlertCircle, AlertTriangle, Info, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import { useNotificationStore, type NotificationType } from '@/stores/notification-store';
+import { type NotificationType } from '@/stores/notification-store';
+import { useLiveNotifications } from '@/hooks/use-live-notifications';
 
 function formatRelative(date: Date): string {
   const diff = Date.now() - date.getTime();
@@ -25,11 +26,11 @@ const typeConfig: Record<NotificationType, { icon: React.ElementType; color: str
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
-  const notifications = useNotificationStore((s) => s.notifications);
-  const unreadCount = useNotificationStore((s) => s.unreadCount);
-  const markRead = useNotificationStore((s) => s.markRead);
-  const markAllRead = useNotificationStore((s) => s.markAllRead);
-  const dismiss = useNotificationStore((s) => s.dismiss);
+  // Switched 2026-04-26 round 5 (Brick #52) from useNotificationStore (demo
+  // Zustand only) to useLiveNotifications which reads users/{uid}/notifications
+  // from Firestore for authenticated users and keeps demo behaviour for the
+  // demo cookie. Mark-read fires PATCH /api/notifications/[id] in the live path.
+  const { notifications, unreadCount, markRead, markAllRead, dismiss } = useLiveNotifications();
 
   const handleClick = (id: string, href?: string) => {
     markRead(id);
