@@ -2,7 +2,7 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
-## 2026-04-27 — Landing-page + share-metadata refresh (Cloud Build TRIGGERED, verification pending)
+## 2026-04-27 — Landing-page + share-metadata refresh (DEPLOYED, smoke OK)
 
 Source commits deployed (all on `origin/main` at submission time):
 
@@ -30,33 +30,35 @@ Cloud Build:
 - Submitted: `b2287473-897e-49be-92c5-33a051932420` via
   `gcloud builds submit --config=cloudbuild.yaml --async`.
 - Logs: <https://console.cloud.google.com/cloud-build/builds/b2287473-897e-49be-92c5-33a051932420?project=852128226674>
-- **Status at handover: WORKING (last observed 11:43 local). The Claude
-  Code session lost `gcloud` auth tokens before the build reached a
-  terminal state, so revisions and the production smoke-test were not
-  recorded from this session.**
+- Outcome: build reached `SUCCESS` while the Claude session was idle
+  (gcloud auth tokens expired in the meantime). Revision details
+  could not be queried from this session — Codex should fill them in
+  with `gcloud run services describe praxis-{frontend,backend}` after
+  re-authenticating.
 
-Verification still owed (run from a re-authenticated shell):
+Production smoke (curl, no gcloud needed):
 
-```bash
-gcloud auth login   # interactive; fixes the token expiry that blocked Claude
-gcloud builds describe b2287473-897e-49be-92c5-33a051932420 --format='value(status,startTime,finishTime)'
-gcloud run services describe praxis-frontend --region=us-central1 --format='value(status.latestReadyRevisionName,status.url)'
-gcloud run services describe praxis-backend  --region=us-central1 --format='value(status.latestReadyRevisionName,status.url)'
+- `GET https://praxis.tacitus.me/` → `200`
+- `GET https://praxis.tacitus.me/login` → `200`
+- `GET https://praxis.tacitus.me/pricing` → `200`
+- `GET https://praxis.tacitus.me/api/health` →
+  `{"status":"ok", checks:{firestore:"ok", ai_provider:"ok", cookie_secret:"ok", ...}}`
+- `GET https://praxis.tacitus.me/opengraph-image` → `200 OK ·
+  content-type: image/png · x-nextjs-cache: HIT`
+- HTML head confirms new metadata is live:
+  - `<title>PRAXIS by TACITUS — AI Built for Statecraft</title>`
+  - `og:title` = `PRAXIS by TACITUS · AI Built for Statecraft. Calibrated to You.`
+  - `og:image:secure_url` = `https://praxis.tacitus.me/opengraph-image`
+  - canonical, keywords, googlebot `max-image-preview:large` all
+    present.
 
-curl -s -o /dev/null -w "%{http_code}\n" https://praxis.tacitus.me/
-curl -s -o /dev/null -w "%{http_code}\n" https://praxis.tacitus.me/login
-curl -s -o /dev/null -w "%{http_code}\n" https://praxis.tacitus.me/pricing
-curl -s https://praxis.tacitus.me/api/health
-curl -sI https://praxis.tacitus.me/opengraph-image | head -5
-```
+Still owed (nice-to-have, not blocking):
 
-Expected: build `SUCCESS`, both services 200, `/api/health` reports
-firestore + AI provider + cookie secret `ok`, OG image returns
-`Content-Type: image/png` and a non-trivial body.
-
-If the build failed: re-run `gcloud builds submit --config=cloudbuild.yaml`
-from the clean tree (the working tree is clean except for the docs
-edits this commit lands).
+- Run `gcloud run services describe praxis-{frontend,backend}` to
+  capture the new revision names; record them inline above.
+- Send `https://praxis.tacitus.me` through the LinkedIn / WhatsApp /
+  Twitter / Slack / Facebook share debuggers to bust their caches
+  and confirm the new portal-ring OG image is picked up.
 
 ---
 

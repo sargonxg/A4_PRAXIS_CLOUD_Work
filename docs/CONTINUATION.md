@@ -43,33 +43,31 @@
 > - `node scripts/audit-ai-routes.mjs` — `58 calibrated · 4 exempt`.
 > - `node scripts/audit-gcp.mjs` — `0 hard / 0 soft`.
 >
-> ## Deploy state (NEEDS VERIFICATION — first thing Codex should do)
+> ## Deploy state — LIVE on praxis.tacitus.me
 >
-> Cloud Build `b2287473-897e-49be-92c5-33a051932420` was submitted
-> async at ~11:40 local. It was last seen `WORKING` at 11:43 before
-> Claude Code lost gcloud auth tokens (`gcloud auth login` is
-> interactive and could not run from the non-interactive shell). The
-> production-smoke-test step never ran from this session.
+> Cloud Build `b2287473-897e-49be-92c5-33a051932420` reached `SUCCESS`
+> while the Claude session was idle. Curl smoke-test from the
+> non-authenticated session confirms the new revision is serving:
 >
-> Run from a fresh terminal (in this order):
+> - `/`, `/login`, `/pricing`, `/api/health` all 200.
+> - `/api/health` reports firestore + ai_provider + cookie_secret OK.
+> - `/opengraph-image` returns `200 image/png` with `x-nextjs-cache: HIT`.
+> - HTML `<title>` is now `PRAXIS by TACITUS — AI Built for Statecraft`
+>   and `og:title` is `… AI Built for Statecraft. Calibrated to You.`.
+>
+> Still owed but non-blocking — Codex, please pick up after `gcloud
+> auth login`:
 >
 > ```bash
-> gcloud auth login
 > gcloud builds describe b2287473-897e-49be-92c5-33a051932420 --format='value(status,startTime,finishTime)'
-> gcloud run services describe praxis-frontend --region=us-central1 --format='value(status.latestReadyRevisionName,status.url)'
-> gcloud run services describe praxis-backend  --region=us-central1 --format='value(status.latestReadyRevisionName,status.url)'
-> for p in / /login /pricing /api/health; do
->   curl -s -o /dev/null -w "%{http_code}  https://praxis.tacitus.me$p\n" "https://praxis.tacitus.me$p";
-> done
-> curl -sI https://praxis.tacitus.me/opengraph-image | head -3
+> gcloud run services describe praxis-frontend --region=us-central1 --format='value(status.latestReadyRevisionName)'
+> gcloud run services describe praxis-backend  --region=us-central1 --format='value(status.latestReadyRevisionName)'
 > ```
 >
-> Then update `docs/DEPLOYMENT_LOG.md` with the build status, both
-> revision names, and the smoke-test results, replacing the
-> "verification pending" stanza I left at the top.
->
-> If the build failed: tree is clean, just resubmit
-> `gcloud builds submit --config=cloudbuild.yaml`.
+> Drop the revision names into `docs/DEPLOYMENT_LOG.md` (top stanza),
+> and run the WhatsApp / LinkedIn / Twitter / Slack / Facebook share
+> debuggers against `https://praxis.tacitus.me` to bust their OG
+> caches so the new portal-ring image picks up everywhere.
 >
 > ## Strategic priority going forward — "every tool produces something"
 >
