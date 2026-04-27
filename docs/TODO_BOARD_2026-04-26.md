@@ -115,7 +115,7 @@ bricks**; status per brick below.
 | 26 | BigQuery `praxis_analytics.system_events` sink | ⚪ queued | unassigned | P2 |
 | 27 | Stripe Meters for usage billing | ⚪ queued | unassigned | P2 |
 | 28 | Email notification path (SendGrid) | ⚪ queued | unassigned | P1 |
-| 29 | Demo-leak audit closed | ⚪ queued | unassigned | P0 |
+| 29 | Demo-leak audit closed | 🟡 partial | claude | P0 — Humanitarian + Dossier closed 2026-04-27 (round 6); 50+ lower-impact pages still grep for `DEMO_*` |
 | 30 | SOC 2 / DPA path documented | ⚪ queued | human-only | P2 |
 
 ### NEW bricks from GCP_EXPANSION_PLAN (31–38)
@@ -141,6 +141,17 @@ bricks**; status per brick below.
 | 42 | Clarifying questions wired into 3 high-impact routes (Risk Monitor, Briefing Room, Negotiation Prep) | ⚪ partial | claude | P1 — Lane DD shipped framework; per-route adoption queued |
 | 43 | Wikipedia enrichment threaded into Conflict Graph + Timeline routes | ⚪ partial | claude | P1 — Lane EE shipped client; per-route adoption queued |
 | 44 | Analyst notes settings UI + corpus-search 'analyst-notes' layer | ⚪ partial | claude | P1 — Lane FF shipped the helper; UI + corpus-layer queued |
+
+### NEW bricks from round 6 (55–58)
+
+Plan: `docs/MONSTER_TODO_2026-04-27.md`
+
+| # | Brick | Status | Owner | Priority |
+|---|---|---|---|---|
+| 55 | Add `mediator` role + chips + tools (Persona 4 P0 fix) | 🟢 done | claude | round 6 — `analyst-profile.ts`, `onboarding-chips.ts`, `role-recommendations.ts`, `step-identity.tsx`; closes onboarding audit blocker |
+| 56 | Humanitarian demo-leak close (Brick #29 portion) | 🟢 done | claude | round 6 — `humanitarian/page.tsx` swapped `isNordalia` for `isDemo` + DegradedDataChip |
+| 57 | Dossier demo-leak close (Brick #29 portion) | 🟢 done | claude | round 6 — `dossier/_demo.tsx` ViewStep gates `DEMO_DOSSIER_CONTENT` behind `isDemo` |
+| 58 | MONSTER TODO — round 6 execution plan | 🟢 done | claude | round 6 — `docs/MONSTER_TODO_2026-04-27.md` (22 items) |
 
 ### NEW bricks from round 5 (45–54)
 

@@ -1,5 +1,66 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
+> **2026-04-27 Round 6 — Claude Code MONSTER plan + Persona 4 P0 + demo-leak P0**:
+> Fresh clone re-pulled at `C:\Users\giuli\praxiscodexworking`. Baseline gate
+> verified green: tsc 0 errors / build 0/0 / vitest 366 PASS / audit-ai-routes
+> 58 calibrated / 4 exempt / audit:gcp 0 hard / 0 soft.
+>
+> **Authored**: `docs/MONSTER_TODO_2026-04-27.md` — 22-item production-grade
+> execution plan grouped by tier (T0 durable runtime → T11 close-out). It is
+> the round-6 single-pane queue. Pair with `docs/TODO_BOARD_2026-04-26.md`
+> (now extended with bricks 55-58).
+>
+> **Shipped this round**:
+> - Brick #55 — Added `mediator` role to `ROLES` + 6 mediation-anchored
+>   mandate chips + 3 mediator-specific red-line chips + 6-tool
+>   recommendation list (mediation-design / negotiation-prep / concordia /
+>   brainstorming-table / stakeholder-map / commitments). Closes Persona 4
+>   onboarding blocker surfaced in 5-persona audit.
+> - Brick #56 — Closed Humanitarian demo-leak. Replaced
+>   `situation.name.toLowerCase().includes('nordalia')` fallback test with
+>   the canonical `isDemo` flag from `useSituationGuard()`. Added
+>   `<DegradedDataChip />` near the page header that surfaces when live
+>   feeds return empty in non-demo mode. Live "Nordalia Regional Conflict
+>   2025" situations no longer render demo IDP/food/funding figures.
+> - Brick #57 — Closed Dossier demo-leak. `ViewStep` now receives `isDemo`
+>   from the parent. When a real situation is bound and AI sections are
+>   not yet generated, every section renders an "Awaiting AI generation"
+>   placeholder instead of `DEMO_DOSSIER_CONTENT` Nordalia text.
+>
+> **Audits delivered (in `docs/MONSTER_TODO_2026-04-27.md` + via subagent
+> reports)**:
+> - 5-persona onboarding audit identified 10 friction points; mediator
+>   role was the single P0 blocker. Remaining P1: contextual rationale
+>   messaging (BIG #51 follow-through), session-cookie refresh resilience,
+>   org autocomplete expansion, legal-IHL domain, humanitarian page
+>   wiring (Lane F — codex).
+> - Demo-leak audit confirmed 2 leaks (Humanitarian, Dossier — both
+>   closed) + 37 correctly-gated tools.
+> - All-tools audit revealed 52 tools (not 40); average production
+>   readiness 2.5/8. Top systemic gap: zero tools render `<Citation />`
+>   /`<CitationLayer />` despite the primitives existing. Top fixes
+>   (T-cross-cutting): build a `<ToolPageShell>` template that wraps
+>   every AI-powered tool with `<ConfidenceBadge />` +
+>   `<OutputProvenancePanel />` + `<DegradedDataChip />` and standardises
+>   `usePersistedToolData(toolId)` adoption. This is the next-highest
+>   leverage move — unblocks ≥48 tools.
+>
+> **Validation gate** after round-6 edits:
+> tsc 0 / build 0/0 / vitest 366 PASS / audit-ai-routes 58 calibrated /
+> 4 exempt / audit:gcp 0 hard / 0 soft.
+>
+> **Codex compatibility note**: minimal additive entries were made to
+> `src/lib/dashboard/role-recommendations.ts` (Codex-touched file)
+> because `Record<AnalystRole, ...>` exhaustiveness forces them when a
+> new role is added. No existing logic changed. The handoff rule
+> "edit only if your lane explicitly requires" applies.
+>
+> **Backend (Codex-owned) work** for round 6: see
+> `docs/DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md` Lane 7 (LangGraph
+> runtime foundation), Lane 3 (structured backend extraction), Lane 4
+> (Document AI), Lane 12 (Cloud Tasks dispatcher). The Cloud SQL
+> infrastructure is provisioned and verified by `npm run audit:gcp`.
+
 > **2026-04-27 Codex cleanup/readiness update**:
 > Fresh clone now lives at `C:\Users\giuli\praxiscodexworking`.
 > Start with `docs/ROUND_6_READINESS_2026-04-27.md` before the longer

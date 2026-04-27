@@ -6,6 +6,55 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-04-27 (Round 6 — MONSTER plan + onboarding/demo P0)
+
+### Added
+
+- Added `docs/MONSTER_TODO_2026-04-27.md`: 22-item production-grade
+  execution plan covering durable runtime (LangGraph + Cloud SQL),
+  data quality (structured extraction, Document AI, Vertex Search/RAG),
+  UX trust (onboarding, user creation, demo-leak close, all-tools audit),
+  brand (landing page polish), real intelligence (multi-session Deep
+  Search Agent), async backbone (Cloud Tasks dispatcher), money + comms
+  (Stripe Meters, email), trust + abuse (App Check, evals), visualisation
+  scale (Sigma.js), operability (Operator Console v2, BigQuery sink),
+  hygiene (tool-output unification, Postgres cleanup), and close-out.
+- Added `mediator` to `ROLES` (`src/types/analyst-profile.ts`) — closes
+  the Persona 4 friction surfaced in the 5-persona onboarding audit.
+  Mediator users can now self-select instead of falling through to
+  `other`. Added 6 mediation-anchored mandate chips
+  (`src/lib/constants/onboarding-chips.ts`) and a 6-tool recommendation
+  list (mediation-design / negotiation-prep / concordia /
+  brainstorming-table / stakeholder-map / commitments) in
+  `src/lib/dashboard/role-recommendations.ts`. Added 3 mediator-specific
+  red-line chips (BATNA confidentiality, position vs interest, methodology
+  limitations).
+
+### Fixed
+
+- Brick #29 P0 — closed the Humanitarian Dashboard demo-leak: replaced
+  the brittle `situation.name.toLowerCase().includes('nordalia')` test
+  with the canonical `isDemo` flag from `useSituationGuard()`. Live
+  users on a "Nordalia Regional Conflict 2025" situation no longer see
+  hard-coded `DEMO_DISPLACEMENT` / `DEMO_FOOD_PHASES` / `DEMO_FUNDING`
+  figures when feeds (HDX HAPI, ReliefWeb, UNHCR, OCHA FTS) return
+  empty. Added `<DegradedDataChip />` next to the page header that
+  surfaces when live data is missing in non-demo mode.
+- Brick #29 P0 — closed the Dossier demo-leak: `ViewStep` now accepts
+  `isDemo` from the parent. When a real situation is bound and AI
+  generation has not yet produced sections, every dossier section
+  renders "Awaiting AI generation — click Regenerate to draft this
+  section" instead of the Nordalia template content from
+  `DEMO_DOSSIER_CONTENT`.
+
+### Notes
+
+- Adding `mediator` to `Record<AnalystRole, ...>` maps required minimal
+  additive entries in `src/lib/dashboard/role-recommendations.ts`
+  (Codex-touched file). No existing logic changed; the file ownership
+  rule "edit only if your lane explicitly requires" applies because
+  TypeScript exhaustiveness forces the additions.
+
 ## [Unreleased] — 2026-04-27 (Codex docs cleanup and LangGraph readiness)
 
 ### Added
