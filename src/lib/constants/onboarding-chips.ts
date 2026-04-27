@@ -82,11 +82,61 @@ export const FALLBACK_CHIPS: ChipLibrary = {
     'Always cite methodology limitations alongside findings.',
   ],
   orgAutocomplete: [
-    'UN DPPA', 'UN DPO', 'UN OCHA', 'UN OHCHR', 'UN DGC',
-    'OSCE', 'EU EEAS', 'African Union', 'ASEAN', 'ICRC', 'MSF',
-    'Crisis Group', 'Carnegie Endowment', 'Chatham House', 'Brookings', 'RAND',
-    'Wilson Center', 'SIPRI', 'IISS', 'Geneva Academy', 'HRW', 'Amnesty International',
-    'US State Department', 'UK FCDO', 'French MFA', 'German AA',
+    // Core UN HQ
+    'UN DPPA', 'UN DPO', 'UN OCHA', 'UN OHCHR', 'UN DGC', 'UN DESA',
+    'UN Mediation Support Unit', 'UN Peacebuilding Support Office',
+    'UN Counter-Terrorism Office', 'UN Office of the Special Envoy for Yemen',
+    // UN regional offices
+    'UNOCA (UN Regional Office for Central Africa)',
+    'UNOWAS (UN Office for West Africa and the Sahel)',
+    'UNAMI (UN Assistance Mission for Iraq)',
+    'UNAMA (UN Assistance Mission in Afghanistan)',
+    'UNSMIL (UN Support Mission in Libya)',
+    'UNMHA (UN Mission in Hudaydah)',
+    'UNRCCA (UN Regional Centre for Preventive Diplomacy for Central Asia)',
+    // UN funds, programmes, agencies
+    'UNDP', 'UNHCR', 'UNICEF', 'WFP', 'UNFPA', 'WHO', 'IOM', 'UN Women',
+    'UNESCO', 'UNEP', 'UNODC', 'UNIDIR',
+    // Regional intergovernmental
+    'OSCE', 'EU EEAS', 'EU Commission DG NEAR', 'EU Commission DG INTPA',
+    'African Union', 'AU Peace and Security Council', 'ECOWAS', 'IGAD',
+    'ASEAN', 'OAS', 'League of Arab States', 'GCC',
+    'Council of Europe', 'NATO', 'NATO PA',
+    // ICRC / Movement / IOs
+    'ICRC', 'IFRC', 'MSF', 'Norwegian Refugee Council', 'Save the Children',
+    'Oxfam', 'Mercy Corps', 'Refugees International',
+    // Conflict-prevention / mediation NGOs
+    'Crisis Group', 'Centre for Humanitarian Dialogue', 'Berghof Foundation',
+    'Conciliation Resources', 'Inter-Mediate', 'Carter Center',
+    'Community of Sant’Egidio', 'Crisis Action',
+    // Think tanks (global)
+    'Carnegie Endowment', 'Chatham House', 'Brookings', 'RAND',
+    'Wilson Center', 'SIPRI', 'IISS', 'Geneva Academy', 'CSIS',
+    'Atlantic Council', 'Council on Foreign Relations', 'USIP',
+    'European Council on Foreign Relations', 'IFRI', 'IPI',
+    'ODI', 'Clingendael', 'PRIO', 'GIGA Hamburg', 'IISS Manama',
+    'Asia Society', 'Stimson Center', 'Quincy Institute',
+    // Human rights / accountability
+    'HRW', 'Amnesty International', 'FIDH', 'CIVICUS', 'Front Line Defenders',
+    'Privacy International', 'Article 19', 'Reporters Without Borders',
+    // National foreign-policy ministries
+    'US State Department', 'US AID', 'US INR', 'UK FCDO', 'UK MoD',
+    'French MFA', 'French AFD', 'German AA', 'German GIZ',
+    'Swiss FDFA', 'Norwegian MFA', 'Swedish MFA', 'Dutch BZ',
+    'Canadian GAC', 'Australian DFAT', 'Japanese MoFA', 'Korean MOFA',
+    'Brazilian Itamaraty', 'Indian MEA', 'South African DIRCO',
+    // Permanent missions to the UN (frequent picks)
+    'Permanent Mission of France to the UN',
+    'Permanent Mission of the United Kingdom to the UN',
+    'Permanent Mission of Switzerland to the UN',
+    'Permanent Mission of Norway to the UN',
+    // Universities (research)
+    'Harvard Kennedy School', 'Princeton SPIA', 'Tufts Fletcher School',
+    'Georgetown Walsh', 'SOAS University of London', 'King’s College War Studies',
+    'Sciences Po', 'Hertie School', 'Graduate Institute Geneva',
+    // Private-sector adjacent
+    'Control Risks', 'Eurasia Group', 'Risk Advisory', 'Verisk Maplecroft',
+    'S-RM', 'Teneo', 'Dragonfly Intelligence',
   ],
 };
 
