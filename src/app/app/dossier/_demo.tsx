@@ -676,6 +676,7 @@ function ViewStep({
   config,
   onReset,
   aiSections,
+  isDemo,
 }: {
   config: {
     caseId: string;
@@ -687,6 +688,7 @@ function ViewStep({
   };
   onReset: () => void;
   aiSections?: AiSection[];
+  isDemo: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const caseName = CASE_REGISTRY[config.caseId]?.meta.name || config.caseId;
@@ -727,7 +729,12 @@ function ViewStep({
     ];
 
     sectionDetails.forEach((sec, i) => {
-      const content = DEMO_DOSSIER_CONTENT[sec.id] || 'Content generation pending...';
+      // Demo mode renders Nordalia template content; live mode without AI
+      // sections shows a generation-pending placeholder so analysts never
+      // see Nordalia copy on a real situation (Brick #29 P0).
+      const content = isDemo
+        ? (DEMO_DOSSIER_CONTENT[sec.id] || 'Content generation pending...')
+        : 'Awaiting AI generation — click Regenerate to draft this section.';
       lines.push(`## ${i + 1}. ${sec.name}`, '', content, '', '---', '');
     });
 
@@ -824,7 +831,9 @@ function ViewStep({
           </div>
         ))
         : sectionDetails.map((sec, i) => {
-          const content = DEMO_DOSSIER_CONTENT[sec.id] || 'Content generation pending...';
+          const content = isDemo
+            ? (DEMO_DOSSIER_CONTENT[sec.id] || 'Content generation pending...')
+            : 'Awaiting AI generation — click Regenerate to draft this section.';
           const confidence = confidenceScores[sec.id] || 82;
 
           const sectionSource =
@@ -979,7 +988,7 @@ export function DemoDossierPage({ situation }: { situation?: Situation }) {
         />
       )}
       {step === 'view' && config && (
-        <ViewStep config={config} onReset={handleReset} aiSections={aiSections} />
+        <ViewStep config={config} onReset={handleReset} aiSections={aiSections} isDemo={!situation} />
       )}
       <PoweredByTacitus />
     </div>

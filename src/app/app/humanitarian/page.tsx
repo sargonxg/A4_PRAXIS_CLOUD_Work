@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils/cn';
 import { Badge } from '@/components/ui/badge';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
+import { DegradedDataChip } from '@/components/praxis/degraded-data-chip';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 import type { Situation } from '@/types/situation';
 
@@ -448,7 +449,7 @@ function AiHumanitarianBrief({ situation }: { situation: Situation }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function HumanitarianPage() {
-  const { showGuard, situation } = useSituationGuard();
+  const { showGuard, situation, isDemo } = useSituationGuard();
   const [data, setData] = useState<HumanitarianData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -496,20 +497,23 @@ export default function HumanitarianPage() {
 
   if (showGuard || !situation) return <NoSituationState />;
 
-  // Resolve data: prefer live API, fall back to demo for Nordalia situations
-  const isNordalia = situation.name.toLowerCase().includes('nordalia');
+  // Resolve data: prefer live API. Demo mode (cookie-auth /demo/* routes) renders
+  // the Nordalia fallback constants; live mode renders nulls so the UI shows an
+  // honest empty/degraded state instead of inventing figures (Brick #29 P0).
   const displayFoodPhases =
     data?.foodSecurity?.phases && data.foodSecurity.phases.length > 0
       ? data.foodSecurity.phases
-      : isNordalia ? DEMO_FOOD_PHASES : null;
+      : isDemo ? DEMO_FOOD_PHASES : null;
 
   const displayDisplacement = data?.displacement
     ? { ...DEMO_DISPLACEMENT, idps: data.displacement.idps, refugees: data.displacement.refugees }
-    : isNordalia ? DEMO_DISPLACEMENT : null;
+    : isDemo ? DEMO_DISPLACEMENT : null;
 
   const displayFunding = data?.funding
     ? { ...DEMO_FUNDING, required: data.funding.required, funded: data.funding.funded, percentage: data.funding.percentage }
-    : isNordalia ? DEMO_FUNDING : null;
+    : isDemo ? DEMO_FUNDING : null;
+
+  const liveDataMissing = !isDemo && !data?.displacement && !data?.funding && !data?.foodSecurity?.phases?.length;
 
   const foodInsecureCount = displayFoodPhases
     ? displayFoodPhases.filter((p) => parseInt(p.phase) >= 3).reduce((s, p) => s + p.population, 0)
@@ -528,6 +532,13 @@ export default function HumanitarianPage() {
             <p className="text-sm text-navy-500">
               Live humanitarian data for {situation.region || situation.name}
             </p>
+            <div className="mt-2">
+              <DegradedDataChip
+                degraded={liveDataMissing}
+                missingFeeds={['HDX HAPI', 'ReliefWeb', 'UNHCR', 'OCHA FTS']}
+                message="Live humanitarian feeds returned no data — refresh in a moment or check feed health in Settings."
+              />
+            </div>
           </div>
         </div>
         <button
@@ -564,7 +575,7 @@ export default function HumanitarianPage() {
           <Loader2 className="h-6 w-6 animate-spin text-diplomatic-blue" />
           <span className="ml-3 text-sm text-navy-500">Loading humanitarian data...</span>
         </div>
-      ) : error && !isNordalia ? (
+      ) : error && !isDemo ? (
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
           <AlertTriangle className="mx-auto h-8 w-8 text-red-400" />
           <p className="mt-3 text-sm text-red-700">{error}</p>
