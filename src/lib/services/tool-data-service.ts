@@ -54,7 +54,9 @@ export type ToolName =
   // v6.4 — Source Scout agentic workflow
   | 'source-scout'
   // v6.4 — Red-Team auto-review agent
-  | 'red-team-review';
+  | 'red-team-review'
+  // v6.4 round 5 — Brief Builder agentic workflow #3
+  | 'brief-builder';
 
 function toolRef(uid: string, sitId: string, tool: ToolName) {
   return doc(db, 'users', uid, 'situations', sitId, 'tools', tool);

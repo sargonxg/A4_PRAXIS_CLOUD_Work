@@ -90,6 +90,9 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   'ai_source_scout': 3,
   // Red-Team auto-review agent (v6.4 — adversarial pass on any tool output)
   'ai_red_team_review': 3,
+  // Brief Builder agentic workflow (v6.4 round 5 — synthesis-chair persona
+  // composing a versioned, lock-able UNSC-style brief from corpus + tools)
+  'ai_brief_builder': 5,
 };
 
 /**
