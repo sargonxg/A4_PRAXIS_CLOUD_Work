@@ -62,14 +62,14 @@ const jsonLd = {
     {
       "@type": "Offer",
       name: "Analyst",
-      price: "49.00",
+      price: "100.00",
       priceCurrency: "USD",
-      description: "Individual workspace for live situations, grounded research, canonical actor checks, reports, and exports",
+      description: "Single-licence individual workspace for live situations, grounded research, canonical actor checks, reports, and exports",
     },
     {
       "@type": "Offer",
       name: "Team",
-      price: "199.00",
+      price: "499.00",
       priceCurrency: "USD",
       priceSpecification: {
         "@type": "UnitPriceSpecification",

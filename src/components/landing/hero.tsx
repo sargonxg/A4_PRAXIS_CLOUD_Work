@@ -363,8 +363,7 @@ export function Hero() {
                 variants={shouldReduceMotion ? {} : wordVariants}
                 className={cn(
                   "mr-[0.25em] inline-block",
-                  word === "Credible" && "text-gold-600",
-                  word === "Intelligence." && "text-gold-600"
+                  (word === "System." || word === "Sources.") && "text-gold-600"
                 )}
               >
                 {word}
