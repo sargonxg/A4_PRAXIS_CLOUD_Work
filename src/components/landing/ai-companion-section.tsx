@@ -113,7 +113,7 @@ export function AiCompanionSection() {
           transition={{ duration: 0.7 }}
           className="mb-5 text-center font-serif text-4xl leading-[1.1] tracking-tight text-navy-950 sm:text-5xl"
         >
-          Use AI like a pro — with context, memory, and a team that learns.
+          Generic AI guesses. <span className="text-gold-600">PRAXIS knows your mandate.</span>
         </motion.h2>
 
         {/* Subhead */}
@@ -124,13 +124,13 @@ export function AiCompanionSection() {
           transition={{ duration: 0.7, delay: 0.1 }}
           className="mx-auto mb-16 max-w-3xl text-center text-lg leading-relaxed text-navy-500"
         >
-          Generic chatbots forget who you are between turns. PRAXIS does
-          not. Every tool reasons over your analyst profile, the active
-          situation, your saved sources, your uploaded documents, your
-          graph, and the outputs you have already produced — so each
-          answer compounds the last one. Built by practitioners with
-          policy careers, deployed on Google Cloud, grounded in the open
-          record.
+          Chatbots forget who you are between turns. PRAXIS is the
+          opposite: every tool reasons over your analyst profile, the
+          active situation, your saved sources, your uploaded documents,
+          your conflict graph, and the outputs you have already produced
+          — so each answer compounds the last one. Built by practitioners
+          with statecraft careers, deployed on Google Cloud, grounded in
+          the open record.
         </motion.p>
 
         {/* Pillars row */}

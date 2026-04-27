@@ -10,14 +10,13 @@ import { HeroVisual } from "./hero-visual";
 // --- Word-by-word reveal ---
 
 const headlineWords = [
-  "Agentic",
-  "AI,",
+  "AI",
+  "Built",
+  "for",
+  "Statecraft.",
   "Calibrated",
   "to",
-  "Your",
-  "Mandate",
-  "and",
-  "Situation.",
+  "You.",
 ];
 
 const containerVariants = {
@@ -42,12 +41,13 @@ const wordVariants = {
 
 // --- Practitioner backgrounds (aspirational fit, not endorsements) ---
 const practitionerBackgrounds = [
-  "Multilateral Missions",
-  "Foreign Ministries",
-  "Conflict Research Institutes",
-  "Mediation Teams",
-  "Humanitarian Leadership",
-  "Policy Think Tanks",
+  "Diplomats",
+  "Conflict Analysts",
+  "Mediators",
+  "Humanitarian Leads",
+  "Policy Officers",
+  "Foreign-Policy Researchers",
+  "Sanctions & Compliance Teams",
 ];
 
 const trustSignals = [
@@ -365,7 +365,7 @@ export function Hero() {
                 variants={shouldReduceMotion ? {} : wordVariants}
                 className={cn(
                   "mr-[0.25em] inline-block",
-                  (word === "Mandate" || word === "Situation.") && "text-gold-600"
+                  (word === "Statecraft." || word === "You.") && "text-gold-600"
                 )}
               >
                 {word}
@@ -380,12 +380,12 @@ export function Hero() {
             transition={{ delay: 1.2, duration: 0.7 }}
             className="mb-6 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
           >
-            PRAXIS by TACITUS transforms policy, diplomacy, and political
-            analysis. Bring your mandate, your sources, your situation —
-            and unlock 40+ agentic tools that reason with the frameworks
-            your institution already uses: Glasl, Fisher-Ury, INFORM,
-            OCHA, IPC, ICD-203, IHL. From question to evidence to
-            defensible decision, without losing the thread.
+            PRAXIS by TACITUS gives diplomats, conflict analysts,
+            mediators, and policy officers an agentic AI partner —
+            calibrated to your mandate, grounded in your sources, and
+            reasoning with the frameworks your institution already
+            trusts: Glasl, Fisher-Ury, INFORM, OCHA, IPC, ICD-203, IHL.
+            From question to evidence to defensible decision, end to end.
           </motion.p>
 
           {/* Data sources tagline */}
@@ -427,18 +427,18 @@ export function Hero() {
                 href="/login"
                 className="group inline-flex items-center justify-center gap-2 rounded-md bg-gold-600 px-10 py-4 text-base font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-xl hover:shadow-gold-600/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500/60"
               >
-                Access PRAXIS
+                Start Your Workspace
                 <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
               </Link>
               <Link
                 href="/login?mode=demo"
                 className="inline-flex items-center justify-center rounded-md border border-diplomatic-blue/20 px-8 py-4 text-base font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40"
               >
-                Explore Demo
+                See It on a Live Crisis
               </Link>
             </div>
             <p className="text-xs text-navy-400">
-              Sign in for the live workspace · demo opens a labelled sample crisis
+              Sign in for your private workspace · demo runs PRAXIS on the Nordalia sample crisis
             </p>
           </motion.div>
 
@@ -470,7 +470,7 @@ export function Hero() {
         className="relative z-10 mt-16 w-full max-w-6xl"
       >
         <p className="mb-4 text-center text-xs font-medium uppercase tracking-[0.12em] text-navy-400">
-          Built for practitioners across
+          Built for the people who practice statecraft
         </p>
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
           {practitionerBackgrounds.map((name) => (
