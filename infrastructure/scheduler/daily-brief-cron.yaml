@@ -1,0 +1,38 @@
+# Cloud Scheduler — Daily Brief cron (Brick #49 round 5).
+#
+# Triggers /api/cron/daily-brief every hour. The route filters down to
+# situations whose owner's local timezone is 06:00 right now; non-matches
+# are skipped with reason "local hour N". This way one schedule covers
+# all timezones; we don't need 24 separate jobs.
+#
+# Apply via Cloud Build / gcloud:
+#
+#   gcloud scheduler jobs create http praxis-daily-brief \
+#     --location=us-central1 \
+#     --project=praxisbytacitus \
+#     --schedule="0 * * * *" \
+#     --time-zone="UTC" \
+#     --uri="https://praxis.tacitus.me/api/cron/daily-brief" \
+#     --http-method=GET \
+#     --oidc-service-account-email=praxis-frontend-sa@praxisbytacitus.iam.gserviceaccount.com \
+#     --headers="X-Cron-Secret=$(gcloud secrets versions access latest --secret=praxis-cron-secret)"
+#
+# Verify with:
+#
+#   gcloud scheduler jobs describe praxis-daily-brief --location=us-central1
+#   gcloud scheduler jobs run praxis-daily-brief --location=us-central1   # manual trigger
+
+name: praxis-daily-brief
+description: Hourly trigger that picks up situations at 06:00 local and writes a Daily Brief.
+schedule: "0 * * * *"
+timeZone: UTC
+httpTarget:
+  uri: https://praxis.tacitus.me/api/cron/daily-brief
+  method: GET
+  headers:
+    X-Cron-Secret: ${CRON_SECRET}
+retryConfig:
+  retryCount: 1
+  minBackoffDuration: 60s
+  maxBackoffDuration: 300s
+attemptDeadline: 540s   # 9 min — the route's maxDuration is 300s; allow margin
