@@ -101,7 +101,7 @@ export function Features() {
         </ul>
 
         <p className="mt-10 text-center text-sm text-zinc-500">
-          Powered by Gemini 3.1 Pro on Vertex AI · Firebase · Cloud Run · BigQuery ·
+          Powered by Gemini 2.5 Pro on Vertex AI · Firebase · Cloud Run · BigQuery ·
           Pub/Sub · Eventarc
         </p>
       </div>

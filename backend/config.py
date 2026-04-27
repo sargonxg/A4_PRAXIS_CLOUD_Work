@@ -38,7 +38,7 @@ class Settings(BaseSettings):
 
     # AI Models
     gemini_model: str = "gemini-3-flash"
-    gemini_deep_model: str = "gemini-3.1-pro-preview"
+    gemini_deep_model: str = "gemini-2.5-pro"
     graphiti_llm_model: str = "gemini-3-flash"
     graphiti_embedder_model: str = "gemini-embedding-2-preview"
 

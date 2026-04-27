@@ -90,7 +90,7 @@ def build_agent() -> SequentialAgent:
 
     synthesizer = LlmAgent(
         name="synthesizer",
-        model="gemini-3.1-pro-preview",
+        model="gemini-2.5-pro",
         instruction=SYNTHESIZER_INSTRUCTION,
     )
 

@@ -28,7 +28,7 @@ export interface OutputProvenancePanelProps {
   profileVersion?: number;
   /** Domain version used to merge user × situation domain. */
   domainVersion?: number;
-  /** Model identifier (e.g. "gemini-3.1-pro-preview"). */
+  /** Model identifier (e.g. "gemini-2.5-pro"). */
   model?: string;
   /** Aggregated confidence asserted by the tool. */
   confidence?: Confidence | string;
@@ -36,6 +36,12 @@ export interface OutputProvenancePanelProps {
   sourceCount?: number;
   /** Optional: list a few primary source names as chips. */
   primarySources?: string[];
+  /** Optional: live-feed receipts with feed name and fetch timestamp. */
+  sourceReceipts?: Array<{ name: string; timestamp?: string; url?: string }>;
+  /** Optional: calibrated frameworks applied to this output. */
+  frameworks?: string[];
+  /** Optional: analyst/domain calibration label. */
+  calibratedTo?: string;
   /** Retrieval query used by `searchSituationCorpus`. */
   retrievalQuery?: string;
   /** Layer counts from the corpus retrieval trace. */
@@ -56,6 +62,9 @@ export function OutputProvenancePanel({
   confidence,
   sourceCount,
   primarySources,
+  sourceReceipts,
+  frameworks,
+  calibratedTo,
   retrievalQuery,
   retrievalLayers,
   legacy,
@@ -72,6 +81,9 @@ export function OutputProvenancePanel({
     !!confidence ||
     typeof sourceCount === 'number' ||
     (primarySources && primarySources.length > 0) ||
+    (sourceReceipts && sourceReceipts.length > 0) ||
+    (frameworks && frameworks.length > 0) ||
+    !!calibratedTo ||
     !!retrievalQuery ||
     (retrievalLayers && retrievalLayers.length > 0);
 
@@ -100,6 +112,7 @@ export function OutputProvenancePanel({
         {typeof domainVersion === 'number' ? (
           <ProvRow label="Domain version">v{domainVersion}</ProvRow>
         ) : null}
+        {calibratedTo ? <ProvRow label="Calibrated to">{calibratedTo}</ProvRow> : null}
         {model ? <ProvRow label="Model">{model}</ProvRow> : null}
         {typeof sourceCount === 'number' ? <ProvRow label="Sources used">{sourceCount}</ProvRow> : null}
         {retrievalQuery ? (
@@ -115,6 +128,32 @@ export function OutputProvenancePanel({
         <div className="mt-2 flex flex-wrap gap-1">
           {primarySources.map((s) => (
             <Citation key={s} name={s} sourceType="primary" variant="chip" />
+          ))}
+        </div>
+      ) : null}
+      {frameworks && frameworks.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {frameworks.slice(0, 6).map((framework) => (
+            <span
+              key={framework}
+              className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-700"
+            >
+              {framework}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {sourceReceipts && sourceReceipts.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {sourceReceipts.slice(0, 8).map((receipt) => (
+            <span
+              key={`${receipt.name}-${receipt.timestamp ?? ''}`}
+              title={receipt.url}
+              className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700"
+            >
+              {receipt.name}
+              {receipt.timestamp ? ` · ${formatTimestamp(receipt.timestamp)}` : ''}
+            </span>
           ))}
         </div>
       ) : null}

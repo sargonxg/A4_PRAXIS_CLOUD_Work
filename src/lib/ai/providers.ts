@@ -6,16 +6,16 @@
  *   2. Google AI Studio via GOOGLE_AI_API_KEY — dev fallback
  *   3. Anthropic via ANTHROPIC_API_KEY — deep analysis
  *
- * Models (Gemini 3 / v3.0):
- *   - gemini-3-flash-preview   : Standard tasks — chat, lightweight analysis, terminology
- *   - gemini-3.1-pro-preview   : Pro + Deep Think — structured generation, analysis, 65K output
- *   - gemini-embedding-2-preview: Multimodal embeddings — 768-dim text/image/PDF
+ * Models:
+ *   - gemini-2.5-flash          : Standard tasks — chat, lightweight analysis, terminology
+ *   - gemini-2.5-pro            : Pro + Deep Think — structured generation, analysis, 65K output
+ *   - text-embedding-005        : Embeddings — 768-dim text vectors
  *   - claude-sonnet-4-20250514 : Deep analysis — nuanced conflict analysis, diplomatic language
  *
  * Zero-Config Fallback Chain (Part 3):
- *   getProModel():       Vertex Gemini 3.1 Pro → Google AI Gemini 3.1 Pro → Flash
- *   getAnalysisModel():  Claude Sonnet 4 → Gemini 3.1 Pro
- *   getEmbeddingModel(): gemini-embedding-2 → text-embedding-005 → null (vector disabled)
+ *   getProModel():       Vertex Gemini 2.5 Pro → Google AI Gemini 2.5 Pro → Flash
+ *   getAnalysisModel():  Claude Sonnet 4 → Gemini 2.5 Pro
+ *   getEmbeddingModel(): text-embedding-005 → null (vector disabled)
  *
  * All routes import from here — never hardcode model strings in route files.
  */
@@ -35,15 +35,15 @@ export interface ProviderInfo {
 }
 
 // ---------------------------------------------------------------------------
-// Model IDs — Gemini 3 (v3.0)
+// Model IDs — Vertex latest stable aliases.
+// Google Cloud's Vertex model lifecycle page lists gemini-2.5-pro and
+// gemini-2.5-flash as latest stable model IDs. The previous Gemini 3 preview
+// strings returned Vertex 404s in praxisbytacitus.
 // ---------------------------------------------------------------------------
 
-const MODEL_FLASH        = 'gemini-3-flash-preview';
-const MODEL_PRO          = 'gemini-3.1-pro-preview';
-const MODEL_EMBED        = 'gemini-embedding-2-preview';
-const MODEL_EMBED_LEGACY = 'text-embedding-005'; // fallback if embedding-2 unavailable
-// Deep Think uses same model as PRO; thinking level set per-request:
-//   providerOptions: { google: { thinkingLevel: 'high' } }
+const MODEL_FLASH = 'gemini-2.5-flash';
+const MODEL_PRO   = 'gemini-2.5-pro';
+const MODEL_EMBED = 'text-embedding-005';
 
 // ---------------------------------------------------------------------------
 // Internal factories
@@ -63,15 +63,25 @@ function createGoogleModel(modelId: string): LanguageModel {
 }
 
 function createModel(modelId: string): LanguageModel {
-  if (process.env.GOOGLE_VERTEX_PROJECT && process.env.AI_PROVIDER === 'vertex') {
+  if (isVertexProviderActive()) {
     try { return createVertexModel(modelId); } catch { /* fall through */ }
   }
   if (process.env.GOOGLE_AI_API_KEY) {
     try { return createGoogleModel(modelId); } catch { /* fall through */ }
   }
   throw new Error(
-    `[providers] No AI provider configured. Set GOOGLE_AI_API_KEY. Attempted: ${modelId}`
+    `[providers] No AI provider configured. Set GOOGLE_AI_API_KEY or GOOGLE_VERTEX_PROJECT. Attempted: ${modelId}`
   );
+}
+
+export function isVertexProviderActive(): boolean {
+  if (!process.env.GOOGLE_VERTEX_PROJECT) return false;
+  const provider = (process.env.AI_PROVIDER ?? '').toLowerCase();
+  return provider === 'vertex' || (!provider && !process.env.GOOGLE_AI_API_KEY);
+}
+
+export function hasServerAiProvider(): boolean {
+  return Boolean(process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_VERTEX_PROJECT);
 }
 
 function createAnthropicModel(): LanguageModel | null {
@@ -89,18 +99,18 @@ function createAnthropicModel(): LanguageModel | null {
 // ---------------------------------------------------------------------------
 
 /**
- * Standard model (gemini-3-flash-preview) — chat, lightweight analysis, terminology.
+ * Standard model (gemini-2.5-flash) — chat, lightweight analysis, terminology.
  */
 export function getModel(modelId?: string): LanguageModel {
   return createModel(modelId ?? MODEL_FLASH);
 }
 
 /**
- * Pro model (gemini-3.1-pro-preview) — structured tool generation, dossiers, reports.
+ * Pro model (gemini-2.5-pro) — structured tool generation, dossiers, reports.
  * 1M context window, 65K output tokens. Falls back to Flash if Pro unavailable.
  */
 export function getProModel(): LanguageModel {
-  if (process.env.GOOGLE_VERTEX_PROJECT && process.env.AI_PROVIDER === 'vertex') {
+  if (isVertexProviderActive()) {
     try { return createVertexModel(MODEL_PRO); } catch { /* fall through */ }
   }
   if (process.env.GOOGLE_AI_API_KEY) {
@@ -108,11 +118,11 @@ export function getProModel(): LanguageModel {
     // Fallback to Flash if Pro unavailable
     try { return createGoogleModel(MODEL_FLASH); } catch { /* fall through */ }
   }
-  throw new Error('[providers] No AI provider configured. Set GOOGLE_AI_API_KEY.');
+  throw new Error('[providers] No AI provider configured. Set GOOGLE_AI_API_KEY or GOOGLE_VERTEX_PROJECT.');
 }
 
 /**
- * Analysis model — Claude Sonnet 4 if configured, else Gemini 3.1 Pro.
+ * Analysis model — Claude Sonnet 4 if configured, else Gemini Pro.
  * Best for nuanced conflict analysis, diplomatic language, creative scenarios.
  */
 export function getAnalysisModel(): LanguageModel {
@@ -122,11 +132,11 @@ export function getAnalysisModel(): LanguageModel {
 }
 
 /**
- * Deep Think model — Gemini 3.1 Pro with configurable thinking level.
+ * Deep Think model — Gemini Pro with configurable thinking level.
  * Use for: Game Theory, scenario probability, treaty legal analysis.
  *
- * The thinking_level parameter (Gemini 3+) replaces the deprecated thinking_budget.
- * MEDIUM is the default for Gemini 3.1 — meaningful improvement over old binary on/off.
+ * The thinking_level parameter is provider-specific; callers pass it
+ * per-request when supported by the active model.
  * Callers pass it per-request: { providerOptions: { google: { thinking_level: 'high' } } }
  */
 export function getDeepThinkModel(_level: 'low' | 'medium' | 'high' = 'medium'): LanguageModel {
@@ -167,7 +177,7 @@ export async function callProModel(
  * Returns null if unavailable — caller must handle (vector search gracefully disabled).
  */
 export function getEmbeddingModel(): ReturnType<ReturnType<typeof import('@ai-sdk/google')['createGoogleGenerativeAI']>['textEmbeddingModel']> | null {
-  if (process.env.GOOGLE_VERTEX_PROJECT && process.env.AI_PROVIDER === 'vertex') {
+  if (isVertexProviderActive()) {
     try {
       const { createVertex } = require('@ai-sdk/google-vertex') as typeof import('@ai-sdk/google-vertex');
       return createVertex({
@@ -182,14 +192,8 @@ export function getEmbeddingModel(): ReturnType<ReturnType<typeof import('@ai-sd
       return createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY })
         .textEmbeddingModel(MODEL_EMBED);
     } catch { /* fall through */ }
-    // Legacy fallback
-    try {
-      const { createGoogleGenerativeAI } = require('@ai-sdk/google') as typeof import('@ai-sdk/google');
-      return createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY })
-        .textEmbeddingModel(MODEL_EMBED_LEGACY);
-    } catch { /* fall through */ }
   }
-  console.warn('[providers] No embedding model available. Vector search disabled. Set GOOGLE_AI_API_KEY.');
+  console.warn('[providers] No embedding model available. Vector search disabled. Set GOOGLE_AI_API_KEY or GOOGLE_VERTEX_PROJECT.');
   return null;
 }
 
@@ -209,7 +213,7 @@ export function getThinkingModel(): LanguageModel {
 }
 
 /**
- * Grounded search model — Gemini 3 Flash + Google Search + Maps grounding.
+ * Grounded search model — Gemini Flash + Google Search + Maps grounding.
  * Enable grounding per-request: tools: [{ type: 'web_search_20250305', name: 'web_search' }]
  */
 export function getGroundedModel(_modelId?: string): LanguageModel {
@@ -219,10 +223,12 @@ export function getGroundedModel(_modelId?: string): LanguageModel {
 /** User-preference model — routes to the model the user selected in settings. */
 export function getModelForUser(settings?: { preferredModel?: string; model?: string }): LanguageModel {
   switch (settings?.preferredModel ?? settings?.model) {
-    case 'gemini-3.1-pro-preview':   return getProModel();
+    case 'gemini-2.5-pro':
+    case 'gemini-2.5-pro':   return getProModel();
     case 'claude-sonnet-4':
     case 'claude-sonnet-4-20250514': return getAnalysisModel();
-    case 'gemini-3-flash-preview':
+    case 'gemini-2.5-flash':
+    case 'gemini-2.5-flash':
     case 'gemini-3-flash':
     default:                         return getModel();
   }
@@ -238,7 +244,7 @@ export async function getModelAsync(modelId?: string): Promise<LanguageModel> {
 // ---------------------------------------------------------------------------
 
 export function getProviderInfo(): ProviderInfo {
-  if (process.env.GOOGLE_VERTEX_PROJECT && process.env.AI_PROVIDER === 'vertex') {
+  if (isVertexProviderActive()) {
     return {
       name:            'vertex',
       displayName:     'Google Vertex AI',
@@ -257,7 +263,7 @@ export function getProviderInfo(): ProviderInfo {
     isConfigured:    !!apiKey,
     configNote:      apiKey
       ? `API key configured (${apiKey.slice(0, 6)}...)`
-      : 'Set GOOGLE_AI_API_KEY in environment',
+      : 'Set GOOGLE_AI_API_KEY or GOOGLE_VERTEX_PROJECT in environment',
   };
 }
 
@@ -267,14 +273,14 @@ export function getAvailableProviders() {
       name:         'Google AI Studio',
       configured:   !!process.env.GOOGLE_AI_API_KEY,
       model:        MODEL_FLASH,
-      capabilities: ['Chat', 'Google Search Grounding', 'Tool Use', 'Streaming', 'Gemini 3', 'Embeddings (768-dim)'],
-      note:         'Primary provider — set GOOGLE_AI_API_KEY (required)',
+      capabilities: ['Chat', 'Google Search Grounding', 'Tool Use', 'Streaming', 'Gemini 2.5', 'Embeddings (768-dim)'],
+      note:         'Primary provider — set GOOGLE_AI_API_KEY for local dev, or use Vertex on Cloud Run',
     },
     vertex: {
       name:         'Google Vertex AI',
-      configured:   !!process.env.GOOGLE_VERTEX_PROJECT,
+      configured:   isVertexProviderActive(),
       model:        MODEL_FLASH,
-      capabilities: ['VPC-SC', 'IAM', 'Audit Logs', 'Enterprise SLA', 'ADC Auth', 'Gemini 3'],
+      capabilities: ['VPC-SC', 'IAM', 'Audit Logs', 'Enterprise SLA', 'ADC Auth', 'Gemini 2.5'],
       note:         'Optional — set AI_PROVIDER=vertex + GOOGLE_VERTEX_PROJECT',
     },
     anthropic: {

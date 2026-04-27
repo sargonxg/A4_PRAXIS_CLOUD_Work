@@ -8,8 +8,9 @@
  *   VERTEX_AGENT_ENGINE_ID   — Reasoning Engine numeric ID
  *   VERTEX_AGENT_LOCATION    — Region (default: us-central1)
  *
- * Auth uses FIREBASE_SERVICE_ACCOUNT_KEY (already required for PRAXIS)
- * → the service account must have the "Vertex AI User" IAM role.
+ * Auth uses Cloud Run Application Default Credentials when available, with
+ * FIREBASE_SERVICE_ACCOUNT_KEY as a local-development fallback. The runtime
+ * service account must have the "Vertex AI User" IAM role.
  */
 
 import { GoogleAuth } from 'google-auth-library';
@@ -50,12 +51,14 @@ let authInstance: GoogleAuth | null = null;
 function getAuth(): GoogleAuth {
   if (authInstance) return authInstance;
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-  if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY not set — required for Vertex AI auth');
-  const credentials = JSON.parse(raw);
-  authInstance = new GoogleAuth({
-    credentials,
-    scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-  });
+  authInstance = raw
+    ? new GoogleAuth({
+        credentials: JSON.parse(raw),
+        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+      })
+    : new GoogleAuth({
+        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+      });
   return authInstance;
 }
 

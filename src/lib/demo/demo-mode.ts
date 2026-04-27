@@ -5,21 +5,22 @@
 // ---------------------------------------------------------------------------
 
 import { CACHED_RESPONSES } from './cached-responses';
+import { hasServerAiProvider } from '@/lib/ai/providers';
 
 /**
  * Determines whether the application is running in demo mode.
  *
  * Demo mode is active when:
- * 1. The GOOGLE_AI_API_KEY environment variable is not set (server-side), OR
+ * 1. No live server AI provider is configured (Google AI key or Vertex), OR
  * 2. The URL contains the query parameter ?demo=true (client-side)
  *
  * On the server (API routes), only condition 1 is checked.
  * On the client, condition 2 is also evaluated.
  */
 export function isDemoMode(): boolean {
-  // Server-side: no API key means demo mode
+  // Server-side: no live AI provider means demo mode
   if (typeof window === 'undefined') {
-    return !process.env.GOOGLE_AI_API_KEY;
+    return !hasServerAiProvider();
   }
 
   // Client-side: check URL param or absence of API key (proxied via a header/flag)
@@ -33,10 +34,10 @@ export function isDemoMode(): boolean {
 
 /**
  * Checks demo mode on the server side only (for use in API routes).
- * Returns true if GOOGLE_AI_API_KEY is not set.
+ * Returns true if no live server AI provider is configured.
  */
 export function isServerDemoMode(): boolean {
-  return !process.env.GOOGLE_AI_API_KEY;
+  return !hasServerAiProvider();
 }
 
 /**

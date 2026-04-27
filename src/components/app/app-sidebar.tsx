@@ -195,7 +195,7 @@ const CHANGELOG = [
     date: '2024.03.24',
     notes: [
       'AiPopulate pattern — auto-generates structured data on first tool visit',
-      'Pro model pipeline (gemini-3.1-pro-preview) for all analytical tools',
+      'Pro model pipeline (gemini-2.5-pro) for all analytical tools',
       'Daily Intelligence Brief with cron-based auto-generation',
       'Floating Ask PRAXIS chat (all pages, / shortcut)',
     ],

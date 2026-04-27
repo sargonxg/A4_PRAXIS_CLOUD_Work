@@ -59,6 +59,9 @@ export interface ToolOutputFrameProps {
   model?: string;
   sourceCount?: number;
   primarySources?: string[];
+  sourceReceipts?: Array<{ name: string; timestamp?: string; url?: string }>;
+  frameworks?: string[];
+  calibratedTo?: string;
   retrievalQuery?: string;
   retrievalLayers?: string[];
 
@@ -83,6 +86,9 @@ export function ToolOutputFrame({
   model,
   sourceCount,
   primarySources,
+  sourceReceipts,
+  frameworks,
+  calibratedTo,
   retrievalQuery,
   retrievalLayers,
   hideProvenance = false,
@@ -99,6 +105,9 @@ export function ToolOutputFrame({
     !!confidence ||
     typeof sourceCount === 'number' ||
     (primarySources && primarySources.length > 0) ||
+    (sourceReceipts && sourceReceipts.length > 0) ||
+    (frameworks && frameworks.length > 0) ||
+    !!calibratedTo ||
     !!retrievalQuery ||
     (retrievalLayers && retrievalLayers.length > 0);
 
@@ -128,6 +137,9 @@ export function ToolOutputFrame({
           confidence={confidence}
           sourceCount={sourceCount}
           primarySources={primarySources}
+          sourceReceipts={sourceReceipts}
+          frameworks={frameworks}
+          calibratedTo={calibratedTo}
           retrievalQuery={retrievalQuery}
           retrievalLayers={retrievalLayers}
           defaultOpen={provenanceDefaultOpen}

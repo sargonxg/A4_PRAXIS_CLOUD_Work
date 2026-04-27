@@ -9,6 +9,8 @@ import { useSituationStore } from '@/stores/situation-store';
 import { useAuth } from '@/lib/auth/auth-context';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 import { useDebugStore } from '@/stores/debug-store';
+import { getToolById } from '@/lib/constants/tool-registry';
+import { OutputProvenancePanel } from '@/components/praxis/output-provenance-panel';
 import type { Situation } from '@/types/situation';
 
 // Hard cap: abort after 90 seconds to avoid infinite hangs
@@ -67,7 +69,7 @@ export function AiPopulate({
   children,
 }: AiPopulateProps) {
   const { activeSituation } = useSituationStore();
-  const { credits } = useAuth();
+  const { credits, analystProfile } = useAuth();
   const { aiAutoPopulate, getEffectiveMode, setToolOverride } = usePreferencesStore();
 
   const persisted = usePersistedToolData(toolId, activeSituation?.id);
@@ -212,6 +214,13 @@ export function AiPopulate({
       }
 
       const data = await res.json();
+      if (!hasMeaningfulOutput(data)) {
+        const errMsg = `${toolName} returned an empty output. No result was saved; retry or check the tool route.`;
+        debugLog({ id: requestId, type: 'error', tool: toolId, status: res.status, error: errMsg, ts: new Date().toISOString() });
+        setErrorMsg(errMsg);
+        setStatus('error');
+        return;
+      }
       debugLog({ id: requestId, type: 'success', tool: toolId, elapsed: Math.floor((Date.now() - startTime) / 1000), ts: new Date().toISOString() });
       onDataGenerated(data);
       persisted.save(data);
@@ -241,6 +250,21 @@ export function AiPopulate({
   if (status === 'skipped' || status === 'done' || hasExistingData) {
     const isResearching = ['pending', 'fetching-sources', 'synthesizing', 'saving'].includes(researchStatus);
     const rsLabel = RESEARCH_STATUS_LABELS[researchStatus];
+
+    const toolDefinition = getToolById(toolId);
+    const provenance = extractOutputProvenance({
+      data: persisted.data,
+      fallbackGeneratedAt: persisted.generatedAt,
+      toolFrameworks: toolDefinition?.frameworks ?? [],
+      toolSources: toolDefinition?.dataSources ?? [],
+    });
+    const calibrationLabel = analystProfile
+      ? [
+          analystProfile.identity.role.replace(/_/g, ' '),
+          analystProfile.perspective.primaryDomain !== 'generic' ? analystProfile.perspective.primaryDomain : null,
+          analystProfile.workingStyle.analyticalStyle.replace(/_/g, ' '),
+        ].filter(Boolean).join(' · ')
+      : undefined;
 
     return (
       <>
@@ -285,6 +309,23 @@ export function AiPopulate({
             </div>
           </div>
         )}
+        <OutputProvenancePanel
+          toolId={toolId}
+          generatedAt={provenance.generatedAt}
+          profileVersion={analystProfile?.meta.version}
+          domainVersion={activeSituation?.domainVersion}
+          model={provenance.model}
+          confidence={provenance.confidence}
+          sourceCount={provenance.sourceCount}
+          primarySources={provenance.primarySources}
+          sourceReceipts={provenance.sourceReceipts}
+          frameworks={provenance.frameworks}
+          calibratedTo={calibrationLabel}
+          retrievalQuery={provenance.retrievalQuery}
+          retrievalLayers={provenance.retrievalLayers}
+          legacy={!persisted.data}
+          className="mb-4"
+        />
         {children}
       </>
     );
@@ -444,6 +485,102 @@ export function AiPopulate({
       {children}
     </div>
   );
+}
+
+function hasMeaningfulOutput(value: unknown): boolean {
+  if (value == null) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (Array.isArray(value)) return value.some(hasMeaningfulOutput);
+  if (typeof value !== 'object') return true;
+
+  const obj = value as Record<string, unknown>;
+  if (Object.keys(obj).length === 0) return false;
+  const candidate = obj.output ?? obj.data ?? obj.result ?? obj.analysis ?? obj.content ?? obj.summary ?? obj.items;
+  if (candidate !== undefined) return hasMeaningfulOutput(candidate);
+  return Object.values(obj).some((v) => {
+    if (typeof v === 'boolean' || typeof v === 'number') return false;
+    return hasMeaningfulOutput(v);
+  });
+}
+
+function extractOutputProvenance({
+  data,
+  fallbackGeneratedAt,
+  toolFrameworks,
+  toolSources,
+}: {
+  data: unknown;
+  fallbackGeneratedAt?: string | null;
+  toolFrameworks: string[];
+  toolSources: string[];
+}) {
+  const obj = data && typeof data === 'object' ? data as Record<string, unknown> : {};
+  const metadata = obj.metadata && typeof obj.metadata === 'object' ? obj.metadata as Record<string, unknown> : {};
+  const provenance = obj.provenance && typeof obj.provenance === 'object' ? obj.provenance as Record<string, unknown> : {};
+  const sourceLike = obj.sources ?? obj.citations ?? metadata.sources ?? provenance.sources;
+
+  const sourceNames = extractSourceNames(sourceLike);
+  const sourceReceipts = extractSourceReceipts(sourceLike);
+  const primarySources = sourceNames.length > 0 ? sourceNames : toolSources.slice(0, 6);
+
+  return {
+    generatedAt: stringFrom(obj.generatedAt ?? metadata.generatedAt ?? provenance.generatedAt ?? fallbackGeneratedAt),
+    model: stringFrom(obj.model ?? metadata.model ?? provenance.model),
+    confidence: stringFrom(obj.confidence ?? metadata.confidence ?? provenance.confidence),
+    sourceCount: numberFrom(obj.sourceCount ?? metadata.sourceCount ?? provenance.sourceCount) ?? primarySources.length,
+    primarySources,
+    sourceReceipts,
+    frameworks: extractStrings(obj.frameworks ?? metadata.frameworks ?? provenance.frameworks).concat(toolFrameworks).filter(unique).slice(0, 6),
+    retrievalQuery: stringFrom(obj.retrievalQuery ?? metadata.retrievalQuery ?? provenance.retrievalQuery),
+    retrievalLayers: extractStrings(obj.retrievalLayers ?? metadata.retrievalLayers ?? provenance.retrievalLayers),
+  };
+}
+
+function extractSourceNames(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => {
+      if (typeof item === 'string') return [item];
+      if (item && typeof item === 'object') {
+        const obj = item as Record<string, unknown>;
+        return extractStrings(obj.name ?? obj.title ?? obj.feed ?? obj.source ?? obj.label);
+      }
+      return [];
+    }).filter(unique).slice(0, 8);
+  }
+  return extractStrings(value).filter(unique).slice(0, 8);
+}
+
+function extractSourceReceipts(value: unknown): Array<{ name: string; timestamp?: string; url?: string }> {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const obj = item as Record<string, unknown>;
+    const name = stringFrom(obj.feed ?? obj.name ?? obj.title ?? obj.source);
+    if (!name) return [];
+    return [{
+      name,
+      timestamp: stringFrom(obj.timestamp ?? obj.fetchedAt ?? obj.publishedAt ?? obj.date),
+      url: stringFrom(obj.url ?? obj.href),
+    }];
+  }).slice(0, 8);
+}
+
+function extractStrings(value: unknown): string[] {
+  if (typeof value === 'string') return value.trim() ? [value.trim()] : [];
+  if (Array.isArray(value)) return value.flatMap(extractStrings);
+  return [];
+}
+
+function stringFrom(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function numberFrom(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function unique<T>(value: T, index: number, arr: T[]): boolean {
+  return arr.indexOf(value) === index;
 }
 
 /** Format an ISO timestamp as a relative age string (e.g., "2h ago", "3d ago") */

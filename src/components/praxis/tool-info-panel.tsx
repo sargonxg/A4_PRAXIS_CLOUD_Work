@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Circle, BookOpen, Database, Wrench, ListOrdered, Clock } from 'lucide-react';
+import { ChevronDown, ChevronUp, Circle, BookOpen, Database, Wrench, ListOrdered, Clock, Sparkles } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
 
 export interface ToolInfoPanelProps {
@@ -12,6 +12,7 @@ export interface ToolInfoPanelProps {
   dataSources: Array<{ name: string; status: 'live' | 'offline' | 'estimated' }>;
   relatedTools: Array<{ name: string; href: string }>;
   howToUse: [string, string, string]; // exactly 3 steps
+  whyThisWorks?: string;
   lastGenerated?: Date | null;
   defaultOpen?: boolean;
 }
@@ -61,6 +62,7 @@ export function ToolInfoPanel({
   dataSources,
   relatedTools,
   howToUse,
+  whyThisWorks,
   lastGenerated,
   defaultOpen = false,
 }: ToolInfoPanelProps) {
@@ -95,6 +97,16 @@ export function ToolInfoPanel({
         <div className="border-t border-[var(--color-app-border)] px-5 py-4 space-y-5">
           {/* Description */}
           <p className="text-xs text-navy-600 leading-relaxed">{description}</p>
+
+          {whyThisWorks ? (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2">
+              <h4 className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
+                <Sparkles className="h-3 w-3" />
+                Why this works
+              </h4>
+              <p className="text-xs leading-relaxed text-emerald-900">{whyThisWorks}</p>
+            </div>
+          ) : null}
 
           {/* Divider */}
           <div className="border-t border-[var(--color-app-border)]" />

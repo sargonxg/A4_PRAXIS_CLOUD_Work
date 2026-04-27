@@ -13,15 +13,15 @@ interface ModelPreferences {
 }
 
 const DEFAULT_PREFS: ModelPreferences = {
-  fast_analysis: 'gemini-3-flash-preview',
-  deep_analysis: 'gemini-3.1-pro-preview',
-  creative_drafting: 'gemini-3.1-pro-preview',
-  research: 'gemini-3-flash-preview',
+  fast_analysis: 'gemini-2.5-flash',
+  deep_analysis: 'gemini-2.5-pro',
+  creative_drafting: 'gemini-2.5-pro',
+  research: 'gemini-2.5-flash',
 };
 
 const MODEL_OPTIONS = [
-  { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash (fast, economical)' },
-  { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro (deep, comprehensive)' },
+  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (fast, economical)' },
+  { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (deep, comprehensive)' },
   { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4 (requires Anthropic key)' },
   { value: 'gpt-4o', label: 'GPT-4o (requires OpenAI key)' },
 ];

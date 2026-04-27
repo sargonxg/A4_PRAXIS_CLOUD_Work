@@ -68,8 +68,8 @@ def get_model_for_category(user_settings: dict, category: str) -> str:
     prefs = user_settings.get("model_preferences", {})
     defaults = {
         "fast_analysis": "googleai/gemini-3-flash",
-        "deep_analysis": "googleai/gemini-3.1-pro-preview",
-        "creative_drafting": "googleai/gemini-3.1-pro-preview",
+        "deep_analysis": "googleai/gemini-2.5-pro",
+        "creative_drafting": "googleai/gemini-2.5-pro",
         "research": "googleai/gemini-3-flash",
     }
     return prefs.get(category, defaults.get(category, "googleai/gemini-3-flash"))

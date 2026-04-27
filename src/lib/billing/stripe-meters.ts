@@ -38,7 +38,7 @@ export interface MeterEvent {
   value: number;
   /** Tool id for breakdown (e.g. "risk-monitor"). */
   toolId?: string;
-  /** Optional model identifier, e.g. "gemini-3.1-pro-preview". */
+  /** Optional model identifier, e.g. "gemini-2.5-pro". */
   modelId?: string;
   /** Optional ISO timestamp; Stripe defaults to now. */
   occurredAt?: string;

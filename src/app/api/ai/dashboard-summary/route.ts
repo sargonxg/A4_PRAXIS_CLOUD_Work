@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { Output, generateText } from 'ai';
+import { Output } from 'ai';
 import { withCalibration } from '@/lib/api/with-calibration';
-import { getProModel } from '@/lib/ai/providers';
+import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { audienceTonePreset, audienceTuningEnabled } from '@/lib/ai/audience-presets';
@@ -29,14 +29,13 @@ export const POST = withCalibration('dashboard', 'ai_analysis', {
     ? `\n\n${audienceTonePreset(outputConstraints.audienceTone)}`
     : '';
 
-  const result = await generateText({
-    model: getProModel(),
-    experimental_output: Output.object({ schema: DailyReadSchema }),
+  const result = await callProModel({
+    output: Output.object({ schema: DailyReadSchema }),
     system: `${systemPromptBlock}\n\nYou produce the "Daily read" — a 2-4 sentence situational summary written for the analyst whose profile appears above. Suggest up to 4 PRAXIS tool ids to open next (from this set: risk-monitor, early-warning, stakeholder-map, timeline, info-environment, geospatial, actor-profiles, dossier, talking-points).${audienceDirective}`,
     prompt: `Situation context:\n${sitCtx}\n\nWrite the Daily read now.`,
   });
 
-  const output = (result as { experimental_output?: z.infer<typeof DailyReadSchema> }).experimental_output;
+  const output = result.output as z.infer<typeof DailyReadSchema> | undefined;
   if (!output) {
     return NextResponse.json({ error: 'generation failed' }, { status: 502 });
   }

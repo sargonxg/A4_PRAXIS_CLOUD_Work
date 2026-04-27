@@ -10,7 +10,7 @@ from .tools import web_search_tool, document_retrieval_tool, graph_query_tool
 
 deep_research_agent = Agent(
     name="praxis_deep_research",
-    model="gemini-3.1-pro-preview",
+    model="gemini-2.5-pro",
     instruction="""You are a research assistant for peace and security professionals using PRAXIS.
 
 Your three-phase pipeline:

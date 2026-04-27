@@ -51,9 +51,9 @@ def _register_flows(ai: Any) -> None:
 
         @ai.flow()
         async def deep_extract_aco(text: str, source_file: str = "") -> dict:
-            """Deep extraction with gemini-3.1-pro-preview for complex or long sources."""
+            """Deep extraction with gemini-2.5-pro for complex or long sources."""
             response = await ai.generate(
-                model="googleai/gemini-3.1-pro-preview",
+                model="googleai/gemini-2.5-pro",
                 prompt=f"{ACO_EXTRACTION_PROMPT}\n\nSOURCE TEXT:\n{text[:60_000]}",
                 output=ACOExtractionOutput,
             )
@@ -63,7 +63,7 @@ def _register_flows(ai: Any) -> None:
         async def generate_situation_brief(situation_context: str, graph_analysis: dict) -> dict:
             """Generate comprehensive intelligence brief from graph analysis."""
             response = await ai.generate(
-                model="googleai/gemini-3.1-pro-preview",
+                model="googleai/gemini-2.5-pro",
                 prompt=f"""You are PRAXIS, a conflict intelligence AI.
 
 {situation_context}

@@ -1,5 +1,34 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
+> **2026-04-28 Codex handover — Core MVP tools + receipts baseline**
+>
+> Strategic priority remains **"every tool produces something"**. This pass
+> hardened the shared path rather than hand-editing 40+ pages:
+>
+> - `src/components/praxis/ai-populate.tsx` now rejects successful-but-empty
+>   AI responses before saving them and shows a visible generation error
+>   instead of a blank tool.
+> - The same shared generator now renders `OutputProvenancePanel` above
+>   generated/persisted output with analyst profile version, domain version,
+>   framework chips, source pills, and feed receipts where the output carries
+>   them.
+> - `src/components/praxis/output-provenance-panel.tsx` and
+>   `tool-output-frame.tsx` now support `<analyst-profile>` style calibration
+>   labels, framework chips, and feed-name + timestamp source receipts.
+> - `src/lib/constants/tool-groups.ts` defines the first ten Core MVP tools:
+>   Dashboard, Early Warning, Risk Monitor, Actor Profiles, Stakeholder Map,
+>   Briefing, Talking Points, Negotiation Prep, Commitments, Sanctions.
+> - `src/components/dashboard/core-tools-widget.tsx` surfaces those ten tools
+>   on the dashboard with readiness indicators.
+> - `docs/TOOL_QUALITY_AUDIT_2026-04-28.md` is the active audit table. Continue
+>   by running each tool on Nordalia, clicking Regenerate, and filling
+>   works/non-empty/provenance/saved/category.
+>
+> Next agents: prioritize real browser verification and persistence mismatches.
+> The explorer found ID drift between hyphenated registry ids, underscored
+> `withCalibration()` ids, `/tools/{toolId}`, and `/tool-data/{toolId}`. That
+> is the likely cause when a route saves but the page renders empty.
+
 > **2026-04-27 Round 7 (late session) — Landing refresh + Statecraft positioning + Cloud Build pending verification**
 >
 > ## What just shipped (commits on `origin/main`)

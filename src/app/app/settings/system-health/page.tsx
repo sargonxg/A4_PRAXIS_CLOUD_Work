@@ -385,7 +385,7 @@ export default function SystemHealthPage() {
       <Card title="AI Provider" icon={Brain}>
         <HealthRow
           icon={Cpu}
-          label="Google AI Studio (Gemini 3 Flash)"
+          label="Google AI Studio (Gemini 2.5 Flash)"
           status={{ status: loading ? 'loading' : providerHealth?.google ? 'ok' : 'error' }}
           detail={providerHealth?.note ?? 'Set GOOGLE_AI_API_KEY'}
         />

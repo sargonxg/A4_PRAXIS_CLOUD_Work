@@ -5,8 +5,8 @@ steps:
     args:
       - '-c'
       - |
-        if grep -rE "gemini-2\.0|gemini-2\.5|gemini-3-pro-preview" src/ backend/ --include="*.ts" --include="*.tsx" --include="*.py" 2>/dev/null; then
-          echo "ERROR: Forbidden model strings found. Use src/lib/ai/providers.ts (frontend) or backend/config.py (backend)."
+        if grep -rE "gemini-2\.0|gemini-3-flash-preview|gemini-3\.1-pro-preview|gemini-3-pro-preview" src/ backend/ --include="*.ts" --include="*.tsx" --include="*.py" 2>/dev/null; then
+          echo "ERROR: Forbidden retired/unavailable model strings found. Use src/lib/ai/providers.ts (frontend) or backend/config.py (backend)."
           exit 1
         fi
         echo "OK: no forbidden model strings"

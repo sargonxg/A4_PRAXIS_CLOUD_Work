@@ -180,6 +180,15 @@ const TOOL_HREFS: Record<string, string> = {
   'team': '/team',
   'advisory': '/advisory',
   'settings': '/settings',
+  'policy-memo': '/policy-memo',
+  'human-rights': '/human-rights',
+  'electoral-risk': '/electoral-risk',
+  'external-actors': '/external-actors',
+  'peacebuilding-index': '/peacebuilding-index',
+  'economic-impact': '/economic-impact',
+  'legal-tracker': '/legal-tracker',
+  'source-scout': '/source-scout',
+  'pir': '/requirements',
 };
 
 interface RegistryToolInfoProps {
@@ -216,8 +225,23 @@ export function RegistryToolInfo({ toolId, lastGenerated, defaultOpen }: Registr
         href: TOOL_HREFS[rt.id] ?? `/${rt.id}`,
       }))}
       howToUse={HOW_TO_USE_BY_CATEGORY[tool.category] ?? HOW_TO_USE_BY_CATEGORY.context}
+      whyThisWorks={buildWhyThisWorks(tool)}
       lastGenerated={lastGenerated}
       defaultOpen={defaultOpen}
     />
   );
+}
+
+function buildWhyThisWorks(tool: NonNullable<ReturnType<typeof getToolById>>): string {
+  const frameworkText = tool.frameworks.length
+    ? ` It applies ${tool.frameworks.slice(0, 2).join(' and ')} instead of a generic chat prompt.`
+    : ' It uses the active situation record as the constraint layer instead of a generic chat prompt.';
+  const sourceText = tool.dataSources.length
+    ? ` It is designed to ground claims in ${tool.dataSources.slice(0, 3).join(', ')} and the evidence already attached to the situation.`
+    : ' It is designed to ground claims in the situation graph, uploaded material, and saved PRAXIS outputs.';
+  const outputText = tool.outputType === 'streaming'
+    ? ' The output is interactive, so the analyst can challenge assumptions and refine the answer in context.'
+    : ' The output is structured, so it can be saved, cited, reused by other tools, and audited later.';
+
+  return `${frameworkText}${sourceText} ${outputText}`;
 }
