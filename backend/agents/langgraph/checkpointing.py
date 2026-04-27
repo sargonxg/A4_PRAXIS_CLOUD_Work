@@ -20,7 +20,10 @@ _setup_complete = False
 def _resolve_password() -> str:
     settings = get_settings()
     if settings.langgraph_db_password:
-        return settings.langgraph_db_password
+        password = settings.langgraph_db_password.strip()
+        if not password:
+            raise RuntimeError("LANGGRAPH_DB_PASSWORD is set but empty after trimming")
+        return password
 
     try:
         from google.cloud import secretmanager

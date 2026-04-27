@@ -12,7 +12,7 @@ def test_conninfo_prefers_direct_password(monkeypatch):
         checkpointing,
         "get_settings",
         lambda: SimpleNamespace(
-            langgraph_db_password="pa:ss@word",
+            langgraph_db_password="pa:ss@word\n",
             langgraph_db_user="praxis",
             langgraph_db_host="127.0.0.1",
             langgraph_db_port=5432,
