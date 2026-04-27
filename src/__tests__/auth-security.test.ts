@@ -68,13 +68,13 @@ describe('Auth Security Contracts', () => {
     }
   });
 
-  it('CSP keeps strict-dynamic off script-src-elem so Next chunks can load', () => {
+  it('CSP keeps strict-dynamic and nonce off script-src-elem so auth redirect scripts can run', () => {
     const middlewareSource = readFileSync(join(process.cwd(), 'src', 'middleware.ts'), 'utf8');
     const scriptSrcElemInitializer = middlewareSource.match(/const scriptSrcElem = nonce[\s\S]*?: scriptSrc;/)?.[0] ?? '';
 
     expect(scriptSrcElemInitializer).toContain("`'self'");
-    expect(scriptSrcElemInitializer).toContain("'nonce-${nonce}'");
     expect(scriptSrcElemInitializer).toContain("'unsafe-inline'");
+    expect(scriptSrcElemInitializer).not.toContain("'nonce-${nonce}'");
     expect(scriptSrcElemInitializer).not.toContain('strict-dynamic');
   });
 });

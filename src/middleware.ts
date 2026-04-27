@@ -146,13 +146,16 @@ function addSecurityHeaders(response: NextResponse, nonce?: string): NextRespons
   // etc.) remain valid fallbacks for browsers that do not support
   // strict-dynamic; modern browsers rely on the nonce chain.
   //
-  // ADDED: www.google.com (reCAPTCHA Enterprise for App Check) and
-  // www.recaptcha.net (reCAPTCHA v3 fallback).
+  // `script-src-elem` intentionally does not include the nonce. Chrome ignores
+  // `unsafe-inline` whenever a nonce is present on the same directive, and the
+  // Firebase/Google redirect return flow injects inline script elements that
+  // are not under our nonce control. Keep the stricter nonce on `script-src`
+  // while allowing those auth-managed script elements to execute.
   const scriptSrc = nonce
     ? `'self' 'nonce-${nonce}' 'strict-dynamic' apis.google.com *.firebaseapp.com *.googleapis.com *.google.com *.gstatic.com www.googletagmanager.com www.google.com www.recaptcha.net`
     : `'self' 'unsafe-inline' apis.google.com *.firebaseapp.com *.googleapis.com *.google.com *.gstatic.com www.googletagmanager.com www.google.com www.recaptcha.net`;
   const scriptSrcElem = nonce
-    ? `'self' 'unsafe-inline' 'nonce-${nonce}' apis.google.com *.firebaseapp.com *.googleapis.com *.google.com *.gstatic.com www.googletagmanager.com www.google.com www.recaptcha.net`
+    ? `'self' 'unsafe-inline' apis.google.com *.firebaseapp.com *.googleapis.com *.google.com *.gstatic.com www.googletagmanager.com www.google.com www.recaptcha.net`
     : scriptSrc;
 
   response.headers.set(

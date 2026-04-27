@@ -7,6 +7,7 @@ import {
   streamAgentTurn,
   parseAgentEvent,
 } from '@/lib/ai/vertex-agent';
+import { conductResearch } from '@/lib/ai/research-engine';
 import { getSituationAdmin } from '@/lib/firebase/situations';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 
@@ -46,14 +47,6 @@ export const POST = withCalibration('deep_research', 'ai_deep_think', {
     );
   }
 
-  const config = getVertexAgentConfig();
-  if (!config) {
-    return new Response(
-      JSON.stringify({ error: 'Deep Research Agent is not configured. Set VERTEX_AGENT_ENGINE_ID env var.' }),
-      { status: 503, headers: { 'Content-Type': 'application/json' } },
-    );
-  }
-
   // Build situation-enriched query
   let enrichedQuery = query.trim();
   if (situationId && !user.isDemo) {
@@ -77,6 +70,85 @@ Provide a thorough, evidence-based analysis using your web research capabilities
 
   function emit(obj: Record<string, unknown>): Uint8Array {
     return encoder.encode(`data: ${JSON.stringify(obj)}\n\n`);
+  }
+
+  function streamResearchEngineFallback(reason: 'not-configured' | 'agent-unavailable') {
+    return new ReadableStream({
+      async start(controller) {
+        try {
+          controller.enqueue(emit({
+            type: 'planning',
+            phase: 'planning',
+            author: 'praxis_research_router',
+            text: reason === 'not-configured'
+              ? 'Managed Vertex Agent Engine is not configured yet. Routing this request through the PRAXIS research engine.'
+              : 'Managed Vertex Agent Engine is unavailable. Falling back to the PRAXIS research engine.',
+          }));
+          controller.enqueue(emit({
+            type: 'research',
+            phase: 'research',
+            author: 'praxis_research_engine',
+            text: 'Gathering available web/source context and preparing a cited intelligence brief.',
+          }));
+
+          const result = await conductResearch({
+            query: enrichedQuery,
+            mode: 'background',
+            depth: 'comprehensive',
+          });
+
+          controller.enqueue(emit({
+            type: 'synthesis',
+            phase: 'synthesis',
+            author: 'praxis_report_composer',
+            text: '',
+          }));
+
+          for await (const delta of result.textStream) {
+            if (delta) {
+              controller.enqueue(emit({
+                type: 'synthesis',
+                phase: 'synthesis',
+                author: 'praxis_report_composer',
+                text: delta,
+              }));
+            }
+          }
+
+          if (situationId && ctx.uid && !ctx.isDemo) {
+            await saveToolOutput({
+              uid: ctx.uid,
+              situationId,
+              toolId: 'deep_research',
+              profileVersion: ctx.calibration.provenance.profileVersion,
+              output: { query, fallback: reason, streamed: true },
+              metadata: { variant: 'research-engine-fallback', fallbackReason: reason },
+            }).catch((err) => console.warn('[deep_search_agent] fallback saveToolOutput failed:', err));
+          }
+
+          controller.enqueue(emit({ type: 'done' }));
+          controller.close();
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Unknown error';
+          console.error('[deep-search-agent:fallback]', err);
+          controller.enqueue(emit({ type: 'error', text: `Research engine fallback error: ${message}` }));
+          controller.close();
+        }
+      },
+    });
+  }
+
+  const config = getVertexAgentConfig();
+  if (!config) {
+    return new Response(streamResearchEngineFallback('not-configured'), {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+        'X-Accel-Buffering': 'no',
+        'X-PRAXIS-Agent-Fallback': 'research-engine',
+      },
+    });
   }
 
   const stream = new ReadableStream({
@@ -125,10 +197,20 @@ Provide a thorough, evidence-based analysis using your web research capabilities
 
         if (!agentRes.ok) {
           const errText = await agentRes.text();
-          controller.enqueue(emit({
-            type: 'error',
-            text: `Agent returned HTTP ${agentRes.status}: ${errText.slice(0, 200)}`,
-          }));
+          if (agentRes.status >= 500 || agentRes.status === 404) {
+            const fallback = streamResearchEngineFallback('agent-unavailable');
+            const reader = fallback.getReader();
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              controller.enqueue(value);
+            }
+          } else {
+            controller.enqueue(emit({
+              type: 'error',
+              text: `Agent returned HTTP ${agentRes.status}: ${errText.slice(0, 200)}`,
+            }));
+          }
           controller.close();
           return;
         }
