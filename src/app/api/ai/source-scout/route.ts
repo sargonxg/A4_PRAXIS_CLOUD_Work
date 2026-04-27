@@ -22,6 +22,8 @@ import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { runAgent, AgentRunnerError } from '@/lib/agents/run-agent';
+import { applySourcePreferences, type SavedSource } from '@/lib/services/sources-preference';
+import { getToolData } from '@/lib/firebase/tool-data-service';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -167,8 +169,37 @@ Always populate intelligenceGaps[] with at least one entry naming a perspective 
       corpusLimit: 12,
     });
 
+    // Apply analyst's Sources Library preferences (Brick #50 round 5):
+    // 'preferred' publishers float to the top; 'blocked' publishers are
+    // dropped from the output entirely. The model can't see saved
+    // sources structurally — we filter post-hoc so the page renders only
+    // what the analyst actually wants to see.
+    let scoutOutput = result.output as z.infer<typeof SourceScoutSchema>;
+    let blockedCount = 0;
+    let liftedCount = 0;
+    if (situationId) {
+      try {
+        const lib = await getToolData(user.uid, situationId, 'sources-library').catch(() => null);
+        const savedRaw = Array.isArray(lib?.data) ? (lib?.data as unknown[]) : [];
+        const saved: SavedSource[] = savedRaw
+          .filter((x): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x))
+          .map((x) => ({
+            name: typeof x.name === 'string' ? x.name : undefined,
+            url: typeof x.url === 'string' ? x.url : undefined,
+            domain: typeof x.domain === 'string' ? x.domain : undefined,
+            preference: x.preference === 'preferred' || x.preference === 'blocked' ? x.preference : 'neutral',
+          }));
+        const { kept, blocked, lift } = applySourcePreferences(scoutOutput.proposedSources, saved);
+        blockedCount = blocked.length;
+        liftedCount = lift.length;
+        scoutOutput = { ...scoutOutput, proposedSources: kept };
+      } catch (err) {
+        console.warn('[source-scout] preference filter failed:', err instanceof Error ? err.message : err);
+      }
+    }
+
     const finalOutput = {
-      ...result.output,
+      ...scoutOutput,
       retrievalTrace: result.retrievalTrace ?? undefined,
     };
 
@@ -185,6 +216,7 @@ Always populate intelligenceGaps[] with at least one entry naming a perspective 
           languages: languages ?? [],
           retrievalTrace: result.retrievalTrace,
           existingSourcesConsidered: result.corpusItems.length,
+          preferenceFilter: { blocked: blockedCount, lifted: liftedCount },
         },
       }).catch((err) => console.warn('[source-scout] saveToolOutput failed:', err));
     }
