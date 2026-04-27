@@ -150,14 +150,14 @@ Plan: `docs/ROUND_5_PLAN_2026-04-26.md`
 |---|---|---|---|---|
 | 45 | Hero quadrant tour (4-panel cycle) | 🟢 done | claude | round 5 — `hero-quadrant-tour.tsx` |
 | 46 | Color system audit | 🟢 done (memo) | claude | round 5 — `COLOR_SYSTEM_AUDIT_2026-04-26.md`; per-page leaks queued |
-| 47 | Brief Builder agent (agentic workflow #3) | ⚪ queued | unassigned | P1 |
-| 48 | Conflict Graph delta panel | ⚪ queued | claude (UI) + codex (backend) | P1 |
-| 49 | Daily Brief 06:00 cron per situation | ⚪ queued | codex (infra) | P1 |
-| 50 | Sources Library priority lift | ⚪ queued | unassigned | P2 |
-| 51 | Onboarding rationale messaging (= BIG #39, now P0) | ⚪ queued | codex | P0 |
-| 52 | Real notification bell wired to Firestore | ⚪ queued | codex | P0 |
-| 53 | Document → graph cross-link UI | ⚪ queued | claude (UI) + codex (backend) | P1 |
-| 54 | Stripe Meters for usage billing | ⚪ queued | unassigned | P1 |
+| 47 | Brief Builder agent (agentic workflow #3) | 🟢 done | claude | round 5 — `/api/ai/brief-builder` + schema + tests |
+| 48 | Conflict Graph delta panel | 🟢 done (UI shipped) | claude | round 5 — service + API + panel; canonical-graph mutate stub queued |
+| 49 | Daily Brief 06:00 cron per situation | 🟢 done | claude | round 5 — `/api/cron/daily-brief` + scheduler config; gcloud apply queued |
+| 50 | Sources Library priority lift | 🟢 done | claude | round 5 — preference helper + Source Scout integration + 15 tests |
+| 51 | Onboarding rationale messaging | 🟢 done (helper shipped) | claude | round 5 — 7 roles × 10 domains × 4 langs; page wiring queued for codex |
+| 52 | Real notification bell wired to Firestore | 🟢 done | claude | round 5 — useLiveNotifications + NotificationBell swap |
+| 53 | Document → graph cross-link primitive | 🟢 done (chip shipped) | claude | round 5 — `<DocumentRefChip />` + tests; per-page wiring queued |
+| 54 | Stripe Meters for usage billing | 🟢 done (helper shipped) | claude | round 5 — emitMeterEvent + emitToolRunMetered; withCalibration wiring queued |
 
 ## Test automation backlog (P-Test-X)
 

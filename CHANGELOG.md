@@ -220,12 +220,67 @@ involved, and definition of done documented in
   ownership rules section + lane queue + validation gate + hard
   rules (12 of them now, 4 of which are new in round 5).
 
-#### Round 5 validation
+#### Bricks #47-54 — second sweep (CODE shipped)
+
+User pushed back on "specs only" — round 5 must ship code on every
+brick. Done:
+
+- **Brick #47** — Brief Builder agent (agentic workflow #3).
+  `POST /api/ai/brief-builder` runs the Synthesis Chair persona via
+  runAgent over the situation corpus, emitting a versioned, lock-able
+  UNSC-style brief. BriefBuilderSchema enforces 3-10 sections each with
+  per-section provenance, 0-8 decision points, intelligenceGaps[],
+  recommendedSources[]. ai_brief_builder credit op (5). Tool registry
+  entry under drafting category, 24h staleness. Tests:
+  brief-builder-schema (9).
+- **Brick #48** — Conflict Graph delta panel.
+  `src/lib/firebase/graph-updates-service.ts` — admin-side helpers
+  (count / list / get / approve / reject + applyApprovedProposal stub).
+  `/api/situations/[id]/graph-updates` GET + POST routes for list +
+  decision flips. `<GraphProposalsPanel />` component with compact
+  banner mode + full panel mode (per-proposal Approve/Reject CTAs +
+  kind labels + confidence bands + provenance links).
+- **Brick #49** — Daily Brief 06:00 cron.
+  `/api/cron/daily-brief` collectionGroup-iterates active situations,
+  filters to `localHour === 6` per analyst timezone (falls back UTC),
+  dispatches per-situation `/api/ai/auto-briefing`. Failures
+  auto-publish to dev_backlog. infrastructure/scheduler/daily-brief-cron.yaml
+  ships the schedule (every hour UTC) with retry + 9-min deadline.
+- **Brick #50** — Sources Library priority lift.
+  `src/lib/services/sources-preference.ts` (preferenceForUrl,
+  applySourcePreferences, normalizeHost). Source Scout route now
+  filters proposals: 'preferred' float to top, 'blocked' dropped,
+  'neutral' preserved. saveToolOutput metadata records {blocked,
+  lifted} counts. Tests: sources-preference (15).
+- **Brick #51** — Onboarding rationale messaging.
+  `src/lib/onboarding/rationale.ts` returns OnboardingRationale
+  ({headline, bullets[3-5], example: {tool, outcome}}) for 7 named
+  roles, 10 named domains, fr/ar/es working-language copy + English
+  fallback. Tests: onboarding-rationale (12).
+- **Brick #52** — Real notification bell.
+  `src/hooks/use-live-notifications.ts` — bridge hook that picks demo
+  vs Firestore source by `user.isDemo`. Live source uses
+  useNotifications from use-activity-feed (Firestore onSnapshot).
+  Mark-read fires PATCH /api/notifications/[id]. NotificationBell
+  swapped from useNotificationStore (demo-only) to useLiveNotifications.
+- **Brick #53** — Document → graph cross-link primitive.
+  `<DocumentRefChip />` chip + hover popover linking to
+  /app/documents?docId=<id>&chunkId=<id>. buildDocumentRefHref +
+  readDocRefFromSearch helpers. Tests: document-ref-chip (9).
+- **Brick #54** — Stripe Meters helper.
+  `src/lib/billing/stripe-meters.ts` — emitMeterEvent (single event,
+  4xx/5xx auto-publish to dev_backlog) + emitToolRunMetered (emits
+  tool_run + input/output/thinking token meters per successful run,
+  idempotent on tool_run id). No-ops cleanly when STRIPE_METERS_DISABLE
+  or STRIPE_SECRET_KEY unset. Tests: stripe-meters (4).
+
+#### Round 5 validation (final)
 - `npx tsc --noEmit` clean.
-- `node scripts/audit-ai-routes.mjs` 57/4 (no new AI routes —
-  round 5 ships product-surface + docs).
-- `npx vitest run` 317/317 (no test changes — code is hero-only +
-  docs).
+- `node scripts/audit-ai-routes.mjs` 58/4 (was 57/4 entering — +1 from
+  Brick #47 Brief Builder route).
+- `npm run audit:gcp` 0 hard / 0 soft.
+- `npx vitest run` 366/366 (was 317 entering round 5 — +49 from
+  bricks 47/50/51/53/54 tests).
 - `npm run build` clean.
 
 ### Round 4 — Visual fixes + dev backlog + clarifying questions + Wikipedia + analyst notes
