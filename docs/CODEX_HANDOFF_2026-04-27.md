@@ -1,326 +1,405 @@
-# Codex Handoff — 2026-04-27 (after Claude Code's tenth-session, rounds 1-5)
+# PRAXIS — Codex Handoff (2026-04-27, Round 6 close)
 
-> **READ THIS FIRST.** The next Codex session starts here. Copy the
-> "Prompt" block below verbatim into Codex. Do not modify the prompt
-> unless you change the queue.
->
-> Local clone for Codex round 6: `C:\Users\giuli\praxiscodexworking`.
->
-> GitHub auth: `gh auth status` confirms `sargonxg` logged in via
-> keyring. gcloud auth: `giulio@tacitus.me` active on
-> `praxisbytacitus`. Firebase: `praxisbytacitus` visible.
->
-> Latest production state (verified at session close):
-> - Cloud Build round 5 deploy: triggered at session end; revisions
->   land in `docs/DEPLOYMENT_LOG.md` once it completes.
-> - Cloud Build round 4 (`7761707d`): SUCCESS. Frontend
->   `praxis-frontend-00077-lqg`, backend `praxis-backend-00047-vbg`
->   live before round 5 takes over.
-> - Smoke `/`, `/login`, `/api/health` → 200/200/200.
+> **READ THIS FIRST.** Replaces every prior handoff doc. Contains full
+> environment, repo, GCP, validation, and ownership context so a fresh
+> Codex session can open this file and start a brick within 5 minutes.
 
 ---
 
-## Prompt (paste this verbatim into Codex)
+## 1. Environment
 
-```text
-You are continuing PRAXIS by TACITUS development inside the existing
-local clone at C:\Users\giuli\praxiscodexworking.
+### Local clone
 
-Step 0 — Sync from origin/main.
+| Item | Value |
+|---|---|
+| Path | `C:\Users\giuli\praxiscodexworking` |
+| Host OS | Windows 11 Pro (10.0.26200) |
+| Shells available | Git Bash (`bash`), PowerShell 7+ (`pwsh`) |
+| Working tree state | Clean against `origin/main` at session close (verify with `git status`) |
 
-  cd C:\Users\giuli\praxiscodexworking
-  git pull origin main
-  git status
-  git log --oneline -12
+### GitHub
 
-Step 1 — Read these in order before touching code:
+| Item | Value |
+|---|---|
+| Repo | `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work` |
+| Branch | `main` (push-to-deploy via Cloud Build trigger) |
+| GitHub CLI auth | `gh auth status` should report `sargonxg` logged in via keyring |
+| Commit identity (REQUIRED) | `giuliocatanzariti@gmail.com` — other emails rejected by repo rules |
+| Co-Authored-By trailer | **Forbidden.** Do not add. |
+| Force-push to main | **Forbidden** unless Giulio explicitly asks. |
 
-  1. CLAUDE.md
-  2. AGENTS.md
-  3. docs/ROUND_6_READINESS_2026-04-27.md (short current plan,
-     LangGraph readiness, and human decisions)
-  4. docs/CONTINUATION.md (read the tenth-session block at the top — it
-     covers rounds 1-5)
-  5. docs/ROUND_5_PLAN_2026-04-26.md (10 bricks 45-54 + 10 agent
-     objectives + GCP/Firebase research summary + landing roadmap)
-  6. docs/IMPROVEMENT_15_2026-04-26.md (round-3 plan — bricks 1-15)
-  7. docs/PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md (the canonical 90-day
-     roadmap — now 54 named bricks)
-  8. docs/TODO_BOARD_2026-04-26.md (single-pane status — start here to
-     pick a lane)
-  9. docs/TOOL_RELIABILITY_AUDIT_2026-04-26.md
- 10. docs/COLOR_SYSTEM_AUDIT_2026-04-26.md (round-5 — color leak
-     map + canonical token swap rules)
- 11. docs/AGENT_REGISTRY.md (10 personas — 6 active, 1 orchestrator,
-     3 stubs)
- 12. docs/AGENTIC_SYSTEM.md (Brainstorming Table queue is steps 1-5 done)
- 13. docs/CORPUS_ARCHITECTURE.md (steps 1-3 done; step 4 done in Lane N)
- 14. docs/specs/2026-04-26-improvements/ (drop-in specs for round-3
-     items 9-15 — Onboarding rationale, Document AI, Cloud Translation,
-     Brainstorming Cloud Tasks, Changed-since diff, Briefing
-     versioning, Domain overrides)
- 15. CHANGELOG.md (Unreleased — covers rounds 1-5)
+### Google Cloud
 
-Step 2 — Pick ONE lane from the queue below and own it end-to-end.
+| Item | Value |
+|---|---|
+| Project | `praxisbytacitus` (number `852128226674`) |
+| Default region | `us-central1` (Cloud Run, Cloud Build, Pub/Sub, Cloud Tasks) |
+| LangGraph Cloud SQL region | `us-east4` (private-IP only — `constraints/sql.restrictPublicIp` enforced) |
+| Production domain | `https://praxis.tacitus.me` |
+| gcloud auth | `giulio@tacitus.me` (run `gcloud auth login` to refresh if needed) |
+| Firebase CLI | `firebase login --reauth` if `firebase projects:list` fails |
 
-File-ownership rules to respect (Claude touched these in rounds 1-5,
-edit only if your lane explicitly requires):
+### Stack
 
-  - src/types/corpus.ts, src/lib/intelligence/corpus-search.ts
-  - src/app/api/intelligence/corpus-search/route.ts
-  - src/lib/intelligence/dev-backlog/ + service.ts
-  - src/app/api/intelligence/dev-backlog/route.ts
-  - src/app/api/ai/{humanitarian,brainstorming-table,source-scout,
-    red-team-review}/route.ts
-  - src/app/app/{brainstorming-table,source-scout}/
-  - src/components/praxis/{confidence-badge,citation,output-provenance-
-    panel,ai-error-toast,degraded-data-chip,clarifying-questions-modal}.tsx
-  - src/components/landing/{ai-companion-section,hero-quadrant-tour,
-    hero-visual,hero}.tsx
-  - src/components/dashboard/widget-shell.tsx (round 4 Lane BB)
-  - src/lib/agents/{registry,run-agent,clarifying-questions}.ts
-  - src/lib/exports/brainstorming-markdown.ts
-  - src/lib/chat/citation-parser.ts
-  - src/lib/enrichment/wikipedia.ts
-  - src/lib/knowledge/analyst-notes.ts
-  - src/lib/services/tool-data-service.ts (ToolName union — add new
-    entries here when you ship a new tool)
-  - src/lib/api/with-credits.ts (credit ops table)
-  - src/lib/api/with-calibration.ts (round-4 backlog auto-publish)
-  - src/lib/constants/tool-registry.ts (registry entries)
+- **Frontend**: Next.js 16.2.4 App Router, TypeScript 5.9, React 19, Tailwind CSS 4, Radix UI, Zustand 5, D3.js 7, Framer Motion 12, AI SDK v6
+- **Backend**: Python 3.11 FastAPI, Pydantic v2, NetworkX, Graspologic
+- **Auth + DB**: Firebase Auth + Firestore (single source of truth); Cloud Storage for uploads; Neo4j/FalkorDB optional graph fallback
+- **AI**: Vertex AI ADK Deep Research Agent, Gemini 3 family via `src/lib/ai/providers.ts` (NEVER hardcode `gemini-*` strings outside that module)
+- **LangGraph durable runtime**: Cloud SQL `praxisbytacitus-instance` (Postgres 16, `us-east4`, private IP `10.101.0.3`, db `praxis_langgraph`, user `praxis_langgraph`, password secret `praxis-langgraph-db-password`, SA `praxis-agents-sa`) — **provisioned, not yet wired into runtime code** (Brick #1)
+- **Cloud Tasks queues**: `praxis-research`, `praxis-agents`, `praxis-embeddings`
+- **Operational spine**: Firestore collections `tool_runs`, `background_jobs`, `system_events`, `users/{uid}/notifications`, `audit_logs`, `dev_backlog` — all with TTL policies
 
-Codex-owned (untouched in rounds 1-5):
+### Repo layout
 
-  - src/components/app/app-sidebar.tsx
-  - src/lib/auth/auth-context.tsx (live profile sync)
-  - src/components/dashboard/recommended-tools-widget.tsx — Lane BB
-    color swap was minimal; the sort logic is yours
-  - src/components/dashboard/operational-status-panel.tsx
-  - src/lib/navigation/tool-preferences.ts
-  - src/lib/dashboard/{tool-status-summary,role-recommendations}.ts
-  - src/types/preferences.ts
-  - src/hooks/use-user-preferences.ts
-  - cloud_functions/* (operational spine)
-  - infrastructure/* (Cloud Run / Cloud Build / scheduler / IAM)
-  - cloudbuild.yaml
-  - backend/* (Python FastAPI)
-  - firestore.rules / firestore.indexes.json (rules-as-code)
-
-Lane queue (lowest brick id first; check TODO_BOARD for status):
-
-  Brick #29 — Demo-leak audit close (P0). 5+ tools render Nordalia
-    constants in !isDemo. Per-tool list in
-    docs/tools/UX_AUDIT_2026-04-26.md; pattern: gate every demo
-    constant behind isClientDemoMode() OR remove it; replace with an
-    empty-state if no live data yet.
-
-  Brick #41 — Developer backlog admin UI + extra autopub. Lane CC
-    shipped the Firestore + API. Add /app/admin/dev-backlog page
-    consuming GET /api/intelligence/dev-backlog; render kind +
-    severity filters + status flip CTA + brick-id linker. Auto-pub on
-    perf.slow-tool (run > 30s) and corpus.empty hits.
-
-  Brick #42 — Wire clarifying questions into 3 high-impact routes
-    (Risk Monitor, Briefing Room, Negotiation Prep). Lane DD shipped
-    the framework. Pattern: when the route's input is incomplete,
-    return clarificationResponse({...}) with 1-3 questions; the page
-    detects via isClarificationResponse() and renders
-    <ClarifyingQuestionsModal />.
-
-  Brick #43 — Wikipedia enrichment threaded into Conflict Graph +
-    Timeline routes. Lane EE shipped getWikipediaSummary +
-    getWikipediaRelated + formatWikipediaPromptBlock. Pattern: in
-    each route's calibrated path, derive title from situation.name +
-    fetch summary + format the block + prepend to system prompt.
-
-  Brick #44 — Analyst notes settings UI + corpus-search 'analyst-
-    notes' layer. Lane FF shipped the helper. Add
-    /app/situations/[id]/notes panel + extend searchSituationCorpus
-    layers to include 'analyst-notes' with the existing keyword/
-    recency scoring.
-
-  Brick #45 — Hero quadrant tour was Claude (round 5). Done.
-
-  Brick #47 — Brief Builder agent (P1). Spec in
-    docs/ROUND_5_PLAN_2026-04-26.md. New /api/ai/brief-builder using
-    runAgent + 'synthesis-chair' persona. Versioned, lock-able,
-    per-section provenance. ai_brief_builder credit op.
-
-  Brick #48 — Conflict Graph delta panel (P1). Wire the
-    graph_updates approval queue into the situation overview banner +
-    side panel.
-
-  Brick #49 — Daily Brief 06:00 cron (P1). Cloud Scheduler →
-    /api/cron/daily-brief → iterate active situations.
-
-  Brick #50 — Sources Library priority lift (P1). Add 'preferred' /
-    'blocked' / 'neutral' field; Source Scout consults.
-
-  Brick #51 — Onboarding rationale messaging (P0 — first-run UX).
-    Spec at docs/specs/2026-04-26-improvements/09-onboarding-rationale.md.
-
-  Brick #52 — Real notification bell (P0). Spec at NEXT_BRICKS #8.
-    Replace demo Zustand state with useActivityFeed.
-
-  Brick #53 — Document → graph cross-link UI (P1). Hover affordance
-    + deep-link.
-
-  Brick #54 — Stripe Meters for usage billing (P1). Lane CC's
-    auto-publish patterns are a useful reference.
-
-Step 3 — Validate exactly per AGENTS.md before pushing:
-
-  npx tsc --noEmit
-  npm run build
-  npm run lint
-  npm run audit:gcp
-  node scripts/audit-ai-routes.mjs
-  npx vitest run
-
-  All must pass except lint (warnings tracked tech debt).
-
-Step 4 — Commit + push.
-
-  - Commit message format: feat(<area>): <subject>; body explains why
-    + what + how validated. NO Co-Authored-By trailer.
-  - git config user.email must be giuliocatanzariti@gmail.com.
-  - Push to origin main when validation is green.
-
-Step 5 — Document.
-
-  - CHANGELOG.md: add a Lane <letter> or Brick <#> entry under
-    Unreleased.
-  - docs/CONTINUATION.md: append a tenth-session-or-later update
-    block at the top.
-  - docs/TODO_BOARD_2026-04-26.md: flip the brick row's status to
-    🟢 done / 🟡 partial / etc.
-  - docs/personas/PERSONA_WALKTHROUGHS_2026-04-26.md: append a 5-10
-    minute walkthrough addendum after the lane lands.
-
-Step 6 — Deploy to Cloud Run via Cloud Build.
-
-  Trigger:
-    gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus
-
-  After SUCCESS, smoke-check:
-    curl -s https://praxis.tacitus.me/                  -o /dev/null -w "%{http_code}\n"
-    curl -s https://praxis.tacitus.me/login             -o /dev/null -w "%{http_code}\n"
-    curl -s https://praxis.tacitus.me/api/health        -o /dev/null -w "%{http_code}\n"
-
-  Append the build id + revision names to docs/DEPLOYMENT_LOG.md.
-
-Step 7 — When you're done, leave a fresh handoff for the next agent.
-
-  Either edit this file (CODEX_HANDOFF_2026-04-27.md) to add a
-  "Round 2" prompt at the bottom, or create
-  docs/CODEX_HANDOFF_<next-date>.md with your fresh queue.
-
-Hard rules carrying over:
-
-  1. Never break withCalibration on AI routes. The audit script must
-     keep reporting "57 calibrated, 4 exempt" or higher.
-  2. Never reference retired vendors (ACLED, Firecrawl, Tavily,
-     Parallel.ai) in user-facing copy.
-  3. Never auto-commit when typecheck / build / route audit / vitest
-     fails. Lint warnings are acceptable.
-  4. Never add a new Firestore collection without rules + indexes
-     in the same commit.
-  5. Always commit as giuliocatanzariti@gmail.com, no Co-Authored-By
-     trailer.
-  6. Light-mode tokens only on app surfaces — see
-     docs/COLOR_SYSTEM_AUDIT_2026-04-26.md for the canonical swap
-     table.
-  7. Auto-publish to dev_backlog on every 4xx/5xx — Lane CC's
-     withCalibration wiring already does this, but if you add a route
-     that doesn't go through withCalibration, call publishBacklogEntry
-     yourself on failure.
-  8. Pages > 1500 lines should be split before adding features
-     (Conflict Graph, Documents, Negotiation Prep are flagged).
-
-Hard rules NEW in round 5:
-
-  9. Every new agentic workflow registers its persona in
-     src/lib/agents/registry.ts (active: true) AND adds the persona
-     id to src/lib/services/tool-data-service.ts ToolName union.
-  10. Every new tool route uses the runAgent() helper from Lane Z
-      unless it has a deliberately-different generation path.
-  11. Every new tool that pulls live data degrades to a
-      <DegradedDataChip /> visible state (not a silent failure).
-  12. Every new tool that may need analyst input mid-flight returns
-      clarificationResponse(...) instead of guessing.
+```
+C:\Users\giuli\praxiscodexworking\
+├── src/                          Next.js frontend (Claude territory)
+│   ├── app/app/                  Tool pages (52 tools, authenticated)
+│   ├── app/demo/                 Demo mirror pages (cookie auth, /demo/*)
+│   ├── app/onboarding/           3-screen wizard (Identity / Perspective / Working Style)
+│   ├── app/api/                  73 API routes (35 AI tool routes, auth, data, cron, admin)
+│   ├── components/praxis/        Trust-layer primitives (ConfidenceBadge, Citation, OutputProvenancePanel, DegradedDataChip, ToolOutputFrame)
+│   ├── components/landing/       Hero, AI-companion section, problem/solution
+│   ├── lib/agents/               run-agent.ts, registry.ts, clarifying-questions.ts
+│   ├── lib/api/                  with-auth, with-credits, with-calibration, save-tool-output
+│   ├── lib/billing/              stripe-meters.ts, get-stripe-customer.ts
+│   ├── lib/context/              profile-context.ts (buildCalibratedContext)
+│   ├── lib/firebase/             admin.ts, situations-service.ts, analyst-profile-admin.ts
+│   ├── lib/intelligence/         corpus-search.ts, dev-backlog/
+│   ├── lib/knowledge/            Situation Knowledge Core layers (graph, vector, feed, tool-output)
+│   └── types/                    analyst-profile.ts, corpus.ts
+├── backend/                      Python FastAPI (Codex territory)
+│   ├── graphify_tacitus/         ACO pipeline (extract → build → cluster → analyze → report → export)
+│   ├── ai/                       genkit_app.py, flows.py
+│   ├── routers/                  pipeline.py, graph.py, analyze.py
+│   ├── services/                 firestore_sync, graph_adapter, bigquery_client
+│   ├── agents/                   deep_research/   (LangGraph subdir to be created — Brick #1)
+│   ├── auth.py                   Firebase token verification
+│   └── main.py                   FastAPI entry
+├── cloud_functions/              GCP Cloud Functions (Codex territory)
+│   ├── on_situation_created/     Auto-trigger pipeline on new situation
+│   ├── on_document_uploaded/     Extract text + run pipeline
+│   ├── gdelt_poller/             Scheduled GDELT feed ingestion (every 15 min)
+│   └── _shared/                  Vendored at deploy time — never edit standalone
+├── infrastructure/               GCP setup scripts (Codex territory)
+│   ├── setup-gcp.sh              One-time project setup
+│   ├── deploy.sh / deploy-*.sh   Cloud Build trigger wrappers
+│   ├── setup-langgraph-cloudsql.sh
+│   └── setup-ttl.sh              Firestore TTL policies
+├── tests/                        Vitest (frontend), pytest (backend)
+├── docs/                         Architecture, specs, audits, persona walkthroughs
+├── firestore.rules               Codex-owned
+├── firestore.indexes.json        Codex-owned
+├── cloudbuild.yaml               Codex-owned (CI/CD)
+├── package.json                  v6.4.0
+├── pyproject.toml                Backend deps
+├── CLAUDE.md                     Architecture overview
+├── AGENTS.md                     Hard rules + validation gate
+└── README.md
 ```
 
 ---
 
-## What Codex should NOT touch (Claude-owned in rounds 1-5)
+## 2. Validation gate (BEFORE EVERY PUSH)
 
-See the file-ownership rules section in the prompt above. The list is
-authoritative.
-
-## Open questions that need a human answer (from ROUND_5_PLAN)
-
-1. **Stripe Meters integration (Brick #54)** — Vercel Marketplace
-   integration or direct Stripe? **Default**: direct Stripe.
-2. **Daily Brief 06:00 (Brick #49)** — analyst's local timezone or
-   UTC? **Default**: analyst's local; UTC if no tz on profile.
-3. **Brief Builder lock (Brick #47)** — irreversible or admin-
-   overridable? **Default**: admin-overridable with audit-log row.
-4. **Onboarding rationale copy (Brick #51)** — Giulio writes or
-   Claude/Codex drafts? **Default**: Claude/Codex drafts; Giulio
-   reviews.
-5. **Vertex AI Vector Search migration trigger** — chunk count or
-   query latency? **Default**: p99 latency > 800ms on documents
-   layer.
-
-## Useful one-liners
+Run from repo root. Order matters — typecheck first because every later step assumes a clean tree.
 
 ```bash
-# How many AI route files now? Should be >= 57 / 4 exempt.
-node scripts/audit-ai-routes.mjs
+npx tsc --noEmit          # 0 errors required
+npm run build             # 0 errors required (warnings tracked debt)
+npm run lint              # warnings OK; errors fail
+npm run audit:gcp         # 0 hard / 0 soft required
+node scripts/audit-ai-routes.mjs   # ≥58 calibrated / 4 exempt
+npx vitest run            # 366 PASS / 0 FAIL (as of round 6 close)
+```
 
-# Targeted vitest for the new lanes only (~30s).
+Gate state at round-6 close: **all green** (lint warnings are tracked debt — React Compiler migration, unused vars, hook deps).
+
+**NEVER** push or trigger Cloud Build if any of the four hard gates (tsc, build, audit:gcp, audit-ai-routes, vitest) fail. Lint warnings only are acceptable.
+
+---
+
+## 3. File ownership (DO NOT BLINDLY EDIT)
+
+### Codex-owned (Claude does not touch unless lane explicitly requires)
+
+```
+backend/*                                           Python FastAPI
+cloud_functions/*                                   GCP Cloud Functions
+infrastructure/*                                    Setup + deploy scripts
+cloudbuild.yaml                                     CI/CD pipeline
+firestore.rules                                     Rules-as-code
+firestore.indexes.json                              Composite indexes
+src/components/app/app-sidebar.tsx                  Live profile sync sidebar
+src/lib/auth/auth-context.tsx                       Live profile sync provider
+src/components/dashboard/recommended-tools-widget.tsx  (color-only Lane BB exception)
+src/components/dashboard/operational-status-panel.tsx
+src/lib/navigation/tool-preferences.ts
+src/lib/dashboard/tool-status-summary.ts
+src/lib/dashboard/role-recommendations.ts          (round-6 mediator-role addition was forced by TS exhaustiveness)
+src/types/preferences.ts
+src/hooks/use-user-preferences.ts
+```
+
+### Claude-owned (Codex does not touch unless lane explicitly requires)
+
+```
+src/types/corpus.ts
+src/lib/intelligence/*
+src/app/api/intelligence/corpus-search/route.ts
+src/lib/intelligence/dev-backlog/*
+src/app/api/intelligence/dev-backlog/route.ts
+src/app/api/ai/{humanitarian,brainstorming-table,source-scout,red-team-review,brief-builder}/route.ts
+src/app/app/{brainstorming-table,source-scout}/*
+src/components/praxis/{confidence-badge,citation,output-provenance-panel,
+                      ai-error-toast,degraded-data-chip,clarifying-questions-modal,
+                      tool-output-frame}.tsx
+src/components/landing/{ai-companion-section,hero-quadrant-tour,hero-visual,hero}.tsx
+src/components/dashboard/widget-shell.tsx
+src/lib/agents/{registry,run-agent,clarifying-questions}.ts
+src/lib/exports/brainstorming-markdown.ts
+src/lib/chat/citation-parser.ts
+src/lib/enrichment/wikipedia.ts
+src/lib/knowledge/analyst-notes.ts
+src/lib/services/tool-data-service.ts          (ToolName union — coordinate when adding)
+src/lib/api/with-credits.ts                    (credit ops table)
+src/lib/api/with-calibration.ts                (round-6 Stripe Meters wiring)
+src/lib/billing/{stripe-meters,get-stripe-customer}.ts
+src/lib/constants/tool-registry.ts
+src/types/analyst-profile.ts
+src/lib/constants/onboarding-chips.ts
+src/app/onboarding/*
+docs/* (except specs Codex creates)
+```
+
+When a lane spans both territories (e.g. adding a new role requires both `analyst-profile.ts` and `role-recommendations.ts`), document the cross-cut in the commit body — round 6 mediator-role addition is the template.
+
+---
+
+## 4. Hard rules (do not break)
+
+1. **NEVER** hardcode `gemini-*` strings outside `src/lib/ai/providers.ts`. Forbidden: `gemini-2.0-*`, `gemini-2.5-*`, `gemini-3-pro-preview`. Verify with `rg "gemini-2\.0|gemini-2\.5|gemini-3-pro-preview" src/ backend/` — must return zero matches.
+2. **NEVER** bypass `withCalibration` on AI routes. Audit script must keep ≥58 calibrated / 4 exempt.
+3. **NEVER** reference retired vendors in user-facing copy: ACLED, Firecrawl, Tavily, Parallel.ai. Type-name imports like `MinimalACLEDEvent` are OK.
+4. **NEVER** add a Firestore collection without rules + indexes in the same commit.
+5. **NEVER** mutate canonical graph/timeline/profile state from agents — use `graph_updates` proposal queues.
+6. **NEVER** call `os.environ[...]` in Cloud Functions / workers — always `os.getenv(...)` with explicit validation. See `cloud_functions/gdelt_poller/worker.py` for pattern.
+7. **NEVER** add an Eventarc trigger without an idempotency key.
+8. **NEVER** invoke a Cloud Run service without granting `roles/run.invoker` to the calling SA on the specific service.
+9. **NEVER** skip hooks (`--no-verify`) or signing (`--no-gpg-sign`) on commits.
+10. **ALWAYS** vendor `cloud_functions/_shared/` next to a function source dir at deploy time. `cloudbuild.yaml` does this; ad-hoc `gcloud functions deploy` must copy `_shared` first.
+11. **ALWAYS** include `expiresAt` when writing to spine collections (TTL policies require it).
+12. **ALWAYS** commit as `giuliocatanzariti@gmail.com`, no Co-Authored-By trailer.
+13. **ALWAYS** follow conventional-commit format (`feat(area): subject`, `fix(area): subject`, `docs(area): subject`).
+
+---
+
+## 5. What round 6 just shipped (commits already on `main`)
+
+```
+6c7720f docs(round-6): LangGraph runtime spec for Codex + compact handover
+8399fb7 feat(praxis): ToolOutputFrame trust-layer wrapper + org autocomplete expansion
+44386c6 feat(billing): wire Stripe Meters into withCalibration on success
+355e333 docs(round-6): MONSTER TODO + CHANGELOG + TODO board + CONTINUATION
+0080f39 fix(demo): close Nordalia leak in humanitarian and dossier (Brick #29 P0)
+518a83a feat(onboarding): add mediator role with chips and tool recommendations
+```
+
+### High-impact additions Codex should know about
+
+- **`docs/MONSTER_TODO_2026-04-27.md`** — 22-item production-grade execution plan grouped by tier (T0 durable runtime → T11 close-out). Single-pane queue.
+- **`docs/HANDOVER_2026-04-27.md`** — round-6 close-out summary. Read after this file if you need the long history.
+- **`docs/specs/2026-04-27-langgraph-runtime/README.md`** — drop-in spec for **YOU (Codex)** to land Brick #1. Names files, lists deps, defines API, lists Firestore schema, calls out the open `praxis-backend` vs `praxis-agents` decision.
+- **`mediator` role** added to `src/types/analyst-profile.ts` `ROLES` enum + chips + tool recommendations. Closes the Persona 4 onboarding P0.
+- **Demo-leak P0 closed** in Humanitarian (`isNordalia` → `isDemo` + `<DegradedDataChip />`) and Dossier (`ViewStep` gates `DEMO_DOSSIER_CONTENT` behind `isDemo`).
+- **Stripe Meters wired** into `withCalibration` success path. Free users + missing `STRIPE_SECRET_KEY` no-op cleanly. Token-dimension meters need AI SDK `usage` capture (follow-up brick).
+- **`<ToolOutputFrame />`** new wrapper at `src/components/praxis/tool-output-frame.tsx` bundles ConfidenceBadge + DegradedDataChip + OutputProvenancePanel. Drop-in, opt-in, no layout impact when consumers pass nothing. The 48-tool unblocker.
+- **Org autocomplete** expanded from 26 → ~85 entries (UN HQ, regional, agencies, IGOs, ICRC, NGOs, think tanks, ministries, missions, universities, private sector).
+
+---
+
+## 6. What's queued for Codex (drop-in specs ready)
+
+Pick ONE lane and own it end-to-end. Validate per the gate, commit as conventional-commit, push.
+
+### Brick #1 — LangGraph runtime foundation (Lane 7)
+
+**Spec**: `docs/specs/2026-04-27-langgraph-runtime/README.md`. Cloud SQL `praxisbytacitus-instance` is provisioned and verified by `npm run audit:gcp`.
+
+**Open decision**: host first graph in existing `praxis-backend` or new `praxis-agents` service? Spec recommends `praxis-backend` (simpler IAM, fewer deploys). Confirm with Giulio before merge if you disagree.
+
+**Deliverables** (per spec):
+- `backend/agents/langgraph/{checkpointing.py, schemas.py, _smoke.py}`
+- `backend/agents/requirements-langgraph.txt` adding `langgraph`, `langgraph-checkpoint-postgres`, `psycopg[binary,pool]`
+- `GET /agents/health` route on the chosen service
+- Firestore `agent_runs/{runId}` schema with collection-group indexes
+- Local Postgres integration test
+- VPC egress wired for Cloud SQL connector (private IP `10.101.0.3`)
+
+### Brick #2 — Brainstorming Table → LangGraph (Lane 8)
+
+Depends on #1. Migrate `src/app/api/ai/brainstorming-table/route.ts` to enqueue work into Cloud Tasks `praxis-agents`, persist via LangGraph checkpoint, allow human-in-the-loop interrupt before synthesis.
+
+### Brick #3 — Structured backend extraction (Lane 3)
+
+`backend/graphify_tacitus/extract.py` Pydantic enforcement. Tests for malformed JSON, schema-invalid nodes, empty extraction.
+
+### Brick #4 — Document AI ingestion (Lane 4 / Brick 31)
+
+Layout Parser fallback when `pdf-parse` returns < 500 chars. Chunk metadata (page, heading, table/list hint). Cost/degrade chip in document detail UI.
+
+### Brick #12 — Cloud Tasks dispatcher (Brick #23)
+
+Drain `background_jobs` into `praxis-research|agents|embeddings`. CAS lock on `lockedBy/lockedUntil`. Per-job retry policy.
+
+### Brick #14 — Email notification path (Brick #28)
+
+Cloud Function on `notifications.create` where `semaphore in [red,yellow]` and `kind in [action.required, data.ingest_failed, tool.warning]`. Use **Resend** (already in `package.json` deps). Env: `RESEND_API_KEY` in Secret Manager. Dedupe by `notificationId`.
+
+### Brick #19 — BigQuery system_events sink (Brick #26)
+
+Firestore `onCreate('system_events/{id}')` Cloud Function streams to `praxis_analytics.system_events`. Schema mirrors the doc.
+
+### Brick #21 — Postgres cleanup cron (Lane 14)
+
+Depends on #1. Nightly cron reads expired `agent_runs`, calls LangGraph checkpointer `delete_thread(thread_id)` (never raw SQL), marks Firestore `checkpointDeletedAt`, emits `system_events`.
+
+### Brick #38 — IAP admin gating (was queued for Codex)
+
+Identity-Aware Proxy on `/app/admin/*`. Allowlist `ADMIN_ALLOWLIST` users.
+
+---
+
+## 7. What Claude is doing in parallel (don't collide)
+
+- `<ToolOutputFrame />` adoption across top 10 tools (Risk Monitor, Briefing Room, Negotiation Prep, Daily Brief, Source Scout, Brainstorming Table, Mediation Design, Game Theory, Compare, Dossier).
+- Brick #6 user creation + auth flow audit (Playwright matrix).
+- Brick #9 landing page production polish.
+- Brick #11 Deep Search Agent multi-session migration.
+- Brick #15 App Check phase-1 logging-only rollout (logs `appCheckPresent` to `system_events` for 7-day burn-in before enforcement).
+- Brick #20 tool-output store unification (canonical `saveToolOutput` + `toolKey()` helper).
+
+If your lane touches any file in the Claude-owned list above, document the cross-cut in your commit body.
+
+---
+
+## 8. Session-start checklist (cold start, < 5 minutes)
+
+```bash
+# 1. Sync
+cd C:\Users\giuli\praxiscodexworking
+git pull origin main
+git status            # tree must be clean
+git log --oneline -10 # confirm round-6 commits present
+
+# 2. Read in order (don't read older docs unless you need history)
+#    - CLAUDE.md
+#    - AGENTS.md
+#    - docs/CODEX_HANDOFF_2026-04-27.md   <- THIS FILE
+#    - docs/MONSTER_TODO_2026-04-27.md
+#    - docs/specs/2026-04-27-langgraph-runtime/README.md  (if doing Brick #1)
+
+# 3. Install deps if /node_modules is missing
+npm install
+
+# 4. Verify the gate is green BEFORE you start changing things
+npx tsc --noEmit
+npm run build
+node scripts/audit-ai-routes.mjs
+npx vitest run
+npm run audit:gcp
+
+# 5. Pick a brick from §6 above and own it
+```
+
+---
+
+## 9. Useful one-liners
+
+```bash
+# Targeted vitest for the new lanes only (~30s)
 npx vitest run tests/services/
 
-# Search for any remaining demo-leak
-grep -RIn "DEMO_\|NORDALIA_PARTIES\|isClientDemoMode" src/app/app/
+# Search for any remaining demo-leaks in /app/* (target: ≤30 hits)
+grep -RIn "DEMO_\|NORDALIA_\|isClientDemoMode" src/app/app/ | wc -l
 
-# Check Firestore rules deploy
-firebase firestore:rules:get --project=praxisbytacitus | head -50
+# Confirm calibration coverage
+node scripts/audit-ai-routes.mjs
+
+# Verify Cloud SQL + IAM
+npm run audit:gcp
+
+# Pull recent backlog entries (auto-published on every 4xx/5xx)
+gcloud firestore documents list dev_backlog \
+  --filter='status="open"' --limit=20 --order-by="-updatedAt" \
+  --project=praxisbytacitus
 
 # Check which Cloud Run revision serves prod
 gcloud run services describe praxis-frontend --region=us-central1 \
   --project=praxisbytacitus --format='value(status.latestReadyRevisionName)'
 
-# Pull recent backlog entries for code-agent planning
-gcloud firestore documents list dev_backlog \
-  --filter='status="open"' --limit=20 --order-by="-updatedAt" \
-  --project=praxisbytacitus
-
-# Trigger a fresh deploy (round 6)
+# Trigger production deploy (round 6 commits not yet deployed)
 gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus
+
+# Smoke after deploy
+for path in '/' '/login' '/api/health'; do
+  curl -s -o /dev/null -w "$path %{http_code}\n" "https://praxis.tacitus.me$path"
+done
+
+# Append the new revision to the deployment log
+echo "<paste build id + revisions>" >> docs/DEPLOYMENT_LOG.md
 ```
 
-## Tooling cheatsheet
+---
 
-The four agentic workflows that exist today (rounds 1-4):
+## 10. Open questions for Giulio (defer to defaults if he's not online)
 
-| Tool | Endpoint | Persona | Credits |
-|---|---|---|---|
-| Brainstorming Table | `POST /api/ai/brainstorming-table` | 6 personas + synthesis-chair | 5 |
-| Source Scout | `POST /api/ai/source-scout` | source-scout | 3 |
-| Red-Team Review | `POST /api/ai/red-team-review` | red-team | 3 |
-| Humanitarian | `POST /api/ai/humanitarian` | n/a (calibrated direct) | 2 |
+| # | Question | Default if no answer |
+|---|----------|----------------------|
+| 1 | LangGraph host — new `praxis-agents` Cloud Run service or inside existing `praxis-backend`? | Inside `praxis-backend` |
+| 2 | Stripe Meters integration — Vercel Marketplace integration or direct Stripe? | Direct Stripe (already wired) |
+| 3 | Daily Brief 06:00 cron — analyst's local timezone or UTC? | Analyst local; UTC if no tz on profile |
+| 4 | Brief Builder lock — irreversible or admin-overridable? | Admin-overridable with audit row |
+| 5 | Email path provider — Resend or SendGrid? | Resend (already in deps) |
+| 6 | App Check rollout — log-only burn-in length? | 7 days, then enforce on mutating AI routes |
+| 7 | Vertex AI Vector Search migration trigger — chunk count or query latency? | p99 latency > 800ms on documents layer |
+| 8 | Eval harness location — repo root `evals/` or `backend/evals/`? | Repo root `evals/` (covers frontend + backend) |
+| 9 | Document AI budget approved? | Assume yes (already in deep-research memo) |
+| 10 | Audit-log retention — 365d (current) or 7y for SOC 2? | 365d until SOC 2 path activates |
 
-Each follows the same pattern: withCalibration → runAgent (when
-applicable) → Pro model → Output.object(schema) → saveToolOutput.
+---
 
-## Round-5 changes summary
+## 11. When you finish a brick
 
-- Hero animation cycles through 4 product surfaces (Conflict Graph
-  → Media Monitor → Drafting Studio → User Context).
-- Landing right column now shows the breadth of PRAXIS at a glance.
-- Color audit memo names every leak + the canonical swap table.
-- 10 new bricks (45-54) + 10 agent objectives in the round-5 plan.
-- Codex handoff (this doc) is fresh and self-contained.
+1. Validation gate green (§2).
+2. Conventional-commit message; commit as `giuliocatanzariti@gmail.com`; no Co-Authored-By.
+3. Push to `origin main` once tests pass.
+4. Update `CHANGELOG.md` Unreleased section with a Brick / Lane entry.
+5. Flip the row in `docs/TODO_BOARD_2026-04-26.md`.
+6. Append a block at the top of this file (`docs/CODEX_HANDOFF_2026-04-27.md`) summarising what shipped and what's queued next, OR create `docs/CODEX_HANDOFF_<next-date>.md`.
+7. Trigger Cloud Build (`gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus`) when ready.
+8. Smoke test (`/`, `/login`, `/api/health`) and append revision to `docs/DEPLOYMENT_LOG.md`.
 
-Welcome to PRAXIS round 6.
+---
+
+## 12. Where to find the long story (skip unless needed)
+
+| Doc | Why you'd open it |
+|---|---|
+| `docs/CONTINUATION.md` | Multi-round chronological history (rounds 1-5 + tenth-session) |
+| `docs/ROUND_6_READINESS_2026-04-27.md` | Round-6 short plan written before Claude's round-6 work |
+| `docs/DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md` | 16-lane execution plan from the deep-research memo |
+| `docs/LANGGRAPH_CLOUDSQL_CHECKPOINTING.md` | Provisioned infrastructure spec for Brick #1 |
+| `docs/OPERATIONAL_SPINE.md` | tool_runs / background_jobs / system_events / notifications contract |
+| `docs/CONTEXT_INJECTION.md` | Calibration system-prompt injection contract — the most important architectural doc |
+| `docs/CORPUS_ARCHITECTURE.md` | SKC retrieval contract |
+| `docs/AGENT_REGISTRY.md` | 6 active personas + synthesis-chair + 3 stubs |
+| `docs/AGENTIC_SYSTEM.md` | Agent execution model |
+| `docs/COMPLIANCE.md` | Licensing, sub-processors, certs |
+| `docs/COLOR_SYSTEM_AUDIT_2026-04-26.md` | Color-token swap rules |
+| `docs/personas/PERSONA_WALKTHROUGHS_2026-04-26.md` | 5-persona walkthroughs (UN diplomat, humanitarian, legal, mediator, researcher) |
+| `docs/tools/UX_AUDIT_2026-04-26.md` | Per-tool UX findings |
+| `docs/PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md` | Canonical 90-day roadmap (54 named bricks) |
+| `docs/HANDOVER_2026-04-27.md` | Compact human-style handover written same day as this file |
+
+Welcome to round 6. Pick a brick.
