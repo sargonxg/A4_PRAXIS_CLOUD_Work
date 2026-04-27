@@ -1,122 +1,174 @@
-# PRAXIS Strategy And Roadmap
+# PRAXIS Strategy
 
-This document keeps Codex, Claude Code, and human maintainers aligned on where PRAXIS is heading.
+Status: current as of 2026-04-27. Pair this with
+`docs/MONSTER_TODO_2026-04-27.md`, which is the execution queue.
 
-## Product North Star
+## Product Position
 
-PRAXIS is the conflict operating system for policy, diplomacy, politics, humanitarian coordination, legal/sanctions work, mediation, and research teams. The app should feel like a serious professional workspace, not a generic AI chatbot.
+PRAXIS is a calibrated intelligence workspace for policy, diplomacy,
+mediation, humanitarian, legal/sanctions, political-risk, and research teams.
+It should feel like a professional case-file system with embedded expert
+agents, not a generic chatbot.
+
+The product promise is simple: a user opens a situation and gets defensible,
+role-aware analysis that is grounded in their mandate, sources, prior work,
+tool outputs, and operational constraints. Every output should be citeable,
+auditable, and safe to brief upward.
 
 Primary users:
 
-- Policy Officer
-- Political Affairs Desk
-- Research Analyst
-- Mediator or Envoy Team
-- Humanitarian Coordinator
-- Legal or Sanctions Analyst
-- Institutional or Enterprise Team
+- Policy officer or political affairs desk
+- Diplomatic advisor, envoy team, mediator, or negotiation support cell
+- Humanitarian access, protection, or coordination lead
+- Legal, sanctions, accountability, or compliance analyst
+- Conflict, media, disinformation, or political-risk researcher
+- Institutional team that needs repeatable intelligence workflows
 
-## Strategic Priorities
+## Strategic Bets
 
-1. Deployability and operational trust
-   - Clean clone installs and builds.
-   - Cloud Run deploys are repeatable.
-   - GCP/Firebase audits pass.
-   - Production health and auth diagnostics are easy to check.
+1. **Situation-first workspace**
+   - The active situation is the unit of work.
+   - Onboarding, dashboard recommendations, context injection, retrieval,
+     tool persistence, agents, and admin diagnostics must all resolve through
+     the same situation frame.
+   - Empty states should explain which profile, situation, source, document,
+     or prior-output context is missing.
 
-2. Situation-centered workspace
-   - Every tool should use the active situation.
-   - Onboarding should shape dashboards, defaults, tool paths, and AI prompts.
-   - Dashboard should show role, situation, risks, recommended actions, active tools, and missing context.
+2. **Calibrated expert outputs**
+   - Every authenticated AI route must prepend the context-injection block
+     from `docs/CONTEXT_INJECTION.md`.
+   - AnalystProfile, situation frame, domain frame, retrieval context, red
+     lines, language, audience, and citation discipline are product
+     requirements, not prompt niceties.
+   - Expert agents should behave like policy/diplomacy specialists: clear
+     assumptions, BLUF, confidence, citations, dissenting views, and concrete
+     next actions.
 
-3. Pricing and entitlements
-   - Public pricing remains monthly and plan-based.
-   - Internal credit metering stays private.
-   - Plan IDs, subscription fields, Stripe lookup keys, and entitlement checks must use one model: `free`, `analyst`, `team`, `enterprise`.
+3. **Trustable operational spine**
+   - `tool_runs`, `background_jobs`, `system_events`, notifications, audit
+     logs, TTL, idempotency, and semaphore states are the shared runtime
+     language.
+   - Users should see degraded data, stale feeds, failed jobs, and missing
+     evidence explicitly.
+   - Operators should be able to move from a user-visible failure to the
+     source job, tool run, event, retry action, and audit row in a few clicks.
 
-4. Tool quality
-   - Every visible tool needs clear inputs, useful outputs, error states, persistence, and tests.
-   - Route IDs, registry IDs, and stored tool IDs must match.
-   - Placeholder tools should be hidden or completed.
+4. **Durable agent runtime**
+   - LangGraph on Cloud SQL is the durable runtime for multi-step agents.
+   - Firestore remains the user-facing source of truth.
+   - Agents may draft, critique, synthesize, and propose graph/profile/timeline
+     updates, but they must not silently mutate canonical state.
+   - Cloud Tasks should carry long-running jobs; duplicate delivery must be
+     idempotent.
 
-5. Agent expertise
-   - Build concrete expert pages, prompts, docs, and knowledge pathways for:
-     Policy Analyst, Diplomatic Advisor, Conflict Analyst, Media/Disinformation Analyst, Sanctions/Legal Analyst, Humanitarian Access Analyst, Scenario Planner, Negotiation/Mediation Advisor.
-   - Agents must read canonical situation context, AnalystProfile, source preferences, and workspace constraints.
+5. **Evidence and data quality before breadth**
+   - Structured extraction, OCR/layout fallback, corpus normalization,
+     provenance, and RAG faithfulness matter more than adding more visible
+     tools.
+   - All retrievable knowledge should normalize toward `CorpusItem` or the
+     canonical Firestore tool-output contract.
+   - Graph and entity work should start with canonical naming, schema
+     validation, and approval queues before adding more storage systems.
 
-6. Canonical data and graph
-   - Firestore remains the near-term source of truth.
-   - Define canonical entities for actors, organizations, places, issues, claims, events, relationships, sources, and situations.
-   - Add canonical naming/entity resolution before adding more storage systems.
-   - Neo4j/Falkor/TrustGraph/Spanner are optional only when integration value is concrete and testable.
+6. **Launch-grade commercial surface**
+   - Public pricing is monthly and plan-based: `free`, `analyst`, `team`,
+     `enterprise`.
+   - Internal credits, token costs, and meter plumbing remain private unless
+     intentionally exposed in admin/billing surfaces.
+   - Landing, onboarding, and first-run workflows must make PRAXIS legible to
+     serious buyers without leaking demo data or retired vendor names.
 
-7. MCP and agentic operations
-   - MCP is future work after production stability.
-   - Candidate safe MCP tools: situation retrieval, actor graph retrieval, source search, canonical entity lookup, report generation, workspace usage status.
+## Technical Strategy
 
-## Infrastructure Strategy
-
-Current target stack:
+Current production stack:
 
 - Cloud Run: `praxis-frontend`, `praxis-backend`
-- Firebase Auth and Firestore: identity and primary app data
-- Secret Manager: Firebase service account, Google AI key, cron secret, cookie secret, user key master
-- Cloud Build: container build and deploy
-- Artifact Registry: frontend, backend, and GDELT worker images
-- Pub/Sub: profile and pipeline event topics
-- Cloud Scheduler: scheduled intelligence and briefing jobs
-- BigQuery: analytics and pipeline logging
-- Cloud Storage: document uploads
+- Firebase Auth and Firestore: identity and primary application state
+- Cloud SQL Postgres: LangGraph checkpointing only
+- Secret Manager: service credentials, AI keys, cron/cookie/user secrets,
+  LangGraph database password
+- Cloud Build and Artifact Registry: build and deploy path
+- Pub/Sub, Cloud Tasks, Cloud Scheduler: async and scheduled work
+- BigQuery: analytics and long-tail operational analysis
+- Cloud Storage and Document AI: uploads and OCR/layout extraction
 
-Required operational checks:
+Source-of-truth decisions:
 
+- Firestore is canonical for users, situations, tool outputs, jobs, events,
+  notifications, audit logs, and agent run metadata.
+- Cloud SQL stores LangGraph checkpoints and should not become product state.
+- Tool outputs should converge on one canonical write helper and one readable
+  envelope.
+- Model selection flows through `src/lib/ai/providers.ts`.
+- Retired vendors do not appear in user-facing copy.
+
+Operational checks:
+
+- `npx tsc --noEmit`
+- `npm run build`
 - `npm run audit:gcp`
-- `curl -s https://praxis.tacitus.me/api/health`
-- `curl -s https://praxis.tacitus.me/api/auth/test-firebase`
-- Cloud Run latest ready revisions for frontend and backend
-- Firebase Auth authorized domains include `praxis.tacitus.me`
+- `node scripts/audit-ai-routes.mjs`
+- `npx vitest run`
+- Production smoke: `/`, `/login`, `/api/health`, and backend
+  `/agents/health` when agent runtime changed
 
-## Six-Week Roadmap
+## Current High-Impact Coding Queue
 
-Week 1: production hardening
-- Keep Cloud Run deployment healthy.
-- Verify domain, auth, health, and onboarding routing after each deploy.
-- Reduce shared-hook React Compiler warnings that can hide real bugs.
-- Migrate from `middleware.ts` to the Next.js 16 `proxy.ts` convention after tests confirm auth behavior.
+This is the strategy-level queue. The detailed acceptance criteria and owner
+notes live in `docs/MONSTER_TODO_2026-04-27.md`.
 
-Week 2: pricing and entitlement alignment
-- Audit pricing constants, Stripe checkout, settings UI, Firestore subscription fields, and credit checks.
-- Create one entitlement helper consumed by UI and API routes.
-- Ensure public pages never expose internal per-tool costs.
+| Rank | Item | Why it matters |
+|---|---|---|
+| 1 | LangGraph runtime hardening | Proves durable agents are healthy in Cloud Run, with TTL, indexes, private-IP DB access, and failure events. |
+| 2 | Brainstorming Table -> LangGraph + Cloud Tasks | First policy-native long-running agent with persona turns, edit-before-synthesis, checkpoint recovery, and provenance. |
+| 3 | Structured ACO extraction validation | Removes the largest silent data-quality failure mode in graph extraction. |
+| 4 | Document AI fallback for scanned PDFs | Makes uploaded reports usable for real policy and humanitarian workflows. |
+| 5 | Situation/user/data health layer | Gives dashboards and admin surfaces a shared red/yellow/green view of stale feeds, failed jobs, missing profile fields, and degraded corpus coverage. |
+| 6 | Cloud Tasks dispatcher | Replaces fragile polling with idempotent, retryable queues for research, agents, and embeddings. |
+| 7 | BigQuery `system_events` sink | Makes operational failures queryable beyond Firestore console workflows. |
+| 8 | Secure admin console v2 | Lets operators diagnose and retry failures without exposing sensitive payloads. |
+| 9 | Digital advisor knowledge feeding | Ensures Ask PRAXIS/SKC reads uploaded docs, notes, Source Scout, grounded search, and prior tool outputs with citations. |
+| 10 | Eval harness | Adds quality gates for extraction, RAG faithfulness, and top-tool schema validity. |
+| 11 | Landing paid-launch polish | Clarifies the product for buyers and removes remaining funnel, accessibility, and demo-data trust issues. |
+| 12 | Postgres checkpoint cleanup | Prevents unbounded LangGraph storage growth using checkpointer APIs, not raw SQL. |
 
-Week 3: onboarding and dashboard
-- Make onboarding role and situation choices drive tool recommendations.
-- Reorganize dashboard around user role, active situation, current intelligence, and recommended next actions.
-- Add clearer empty states for missing situation/profile/source context.
+## Roadmap
 
-Week 4: tool registry and route audit
-- Reconcile tool registry IDs, route IDs, sidebar IDs, persisted Firestore tool docs, and audit script expectations.
-- Hide or finish placeholder tools.
-- Add tests for high-value tool routes and persistence helpers.
+### Next 7 days
 
-Week 5: canonical entity model
-- Define canonical entity schema and resolution rules.
-- Add migration/read adapters for existing graph fragments.
-- Keep Firestore-first until graph traversal requirements justify Neo4j/Falkor/TrustGraph.
+- Finish LangGraph production hardening and checkpoint cleanup plan.
+- Start Brainstorming Table durable runtime after health is proven.
+- Land structured extraction validation and Document AI fallback.
+- Build the situation/data health helper as a library first, then wire UI.
+- Keep demo-leak closures and onboarding/auth audit moving in parallel.
 
-Week 6: agent docs and MCP design
-- Write agent-specific knowledge pages and prompts.
-- Design a minimal read-safe MCP server.
-- Add a test plan before implementing MCP tools.
+### Next 30 days
+
+- Migrate background work to Cloud Tasks with CAS locking and retries.
+- Ship BigQuery system-event sink and admin console v2 drill-down.
+- Unify tool-output writes and retrieval so SKC always sees fresh outputs.
+- Feed digital advisor/SKC from notes, uploaded docs, grounded search, Source
+  Scout, and tool outputs through normalized provenance.
+- Add optional eval gates for extraction and RAG quality.
+
+### Next 90 days
+
+- Expand durable agents beyond Brainstorming Table into source scout, graph
+  cartography, timeline editing, red-team review, and negotiation support.
+- Scale graph visualization with Sigma.js/Graphology once canonical graph
+  quality and approval flows are stable.
+- Add App Check enforcement after logging burn-in, stronger admin gating,
+  email alerting, and billing/meter visibility.
+- Keep Firestore-first until graph traversal or retrieval performance proves
+  a concrete need for Neo4j/Falkor/TrustGraph/Spanner.
 
 ## Definition Of Done
 
 A change is done when:
 
-- Build passes.
-- Core tests pass.
-- Relevant audits pass.
-- Production deploy is verified if infra or runtime behavior changed.
-- Documentation reflects what changed, what passed, what failed, and what remains.
-- Commit is pushed when credentials are available.
-
+- The relevant validation gate passes.
+- The route, job, tool, or agent emits spine events with TTL where applicable.
+- User-visible degraded, empty, and failure states are explicit.
+- Data writes use canonical helpers and preserve provenance.
+- Docs reflect what shipped, what remains, and any changed ownership.
+- Production deploy and smoke are recorded when runtime behavior changed.

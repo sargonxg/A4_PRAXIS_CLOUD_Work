@@ -2,8 +2,9 @@
 
 > Single-pane source of truth for every open brick. Updated by every
 > agent that lands a commit. Read this BEFORE picking your next lane.
-> Pair with `docs/PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md` (canonical
-> roadmap) and `docs/CODEX_HANDOFF_2026-04-27.md` (file ownership).
+> Pair with `docs/STRATEGY.md` (product/technical strategy),
+> `docs/MONSTER_TODO_2026-04-27.md` (current execution queue), and
+> `docs/CODEX_HANDOFF_2026-04-27.md` (file ownership).
 
 ## Legend
 
@@ -52,21 +53,21 @@
 | R — Tool reliability soak audit | 🟡 in-progress | claude | meta | `docs/TOOL_RELIABILITY_AUDIT_2026-04-26.md` |
 | S — INDEX consolidation | 🟡 in-progress | claude | meta | `docs/INDEX.md` |
 
-### Lanes queued for Codex (handoff doc)
+### Legacy lanes queued for Codex (superseded by MONSTER TODO where mapped)
 
 | Lane | Status | Owner | Brick | Notes |
 |---|---|---|---|---|
 | F — Ask PRAXIS chat → searchSituationCorpus | 🟢 done | claude | BIG #2 | Originally queued for Codex; promoted into Lane N this session |
-| G — Humanitarian page wiring | ⚪ queued | codex | BIG #13 | Replace `/api/ai/chat` fallback in `humanitarian/page.tsx`; add demo-fallback badge |
-| H — Situation Health Card library + tests | ⚪ queued | codex | BIG #2 (roadmap) | `src/lib/situations/health.ts` |
-| I — Real notification bell | ⚪ queued | codex | NEXT_BRICKS #8 | Swap `notifications.tsx` to `users/{uid}/notifications` |
-| J — Tool registry id canonicalization | ⚪ queued | codex | NEXT_BRICKS #1 | `toolKey()` helper, migrate Briefing Room + Daily Brief first |
+| G — Humanitarian page wiring | ⚪ queued | codex | BIG #13 | Lower-priority residue after round-6 Humanitarian demo-leak close; coordinate before touching Claude-owned page files. |
+| H — Situation Health Card library + tests | ⚪ queued | codex | HQ-05 / BIG #2 | `src/lib/situations/health.ts`; library/tests first, UI adoption later. |
+| I — Real notification bell | 🟢 done | claude | Brick #52 | Superseded by round-5 real notification bell wiring. |
+| J — Tool registry id canonicalization | ⚪ queued | codex + coordination | HQ-09 / #20 | Fold into tool-output store unification; avoid isolated migration without tests. |
 | K — Document → graph cross-link UI | ⚪ queued | codex | BIG #5 / NEXT_BRICKS #6 | Hover affordance + deep-link |
 
 ## Big bricks (90-day roadmap)
 
-Tracking from `docs/PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md`. **30 named
-bricks**; status per brick below.
+Historical 90-day brick set from `docs/PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md`.
+For current priority order, use `docs/MONSTER_TODO_2026-04-27.md`.
 
 ### Calibration & Corpus (1–8)
 

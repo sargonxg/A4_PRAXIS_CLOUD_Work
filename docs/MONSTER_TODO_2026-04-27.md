@@ -1,11 +1,13 @@
 # PRAXIS — MONSTER TODO 2026-04-27
 
-> **Round 6 ambitious production-grade execution plan.** 22 strategic items
-> plus the current high-impact queue.
+> **Round 6 production execution plan.** This is the implementation queue
+> for `docs/STRATEGY.md`: 22 strategic items plus the current high-impact
+> coding queue.
 > Authored after fresh clone of `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work`.
-> Replaces ad-hoc round-6 lane picking with a single-pane queue covering app,
-> graphics, landing, database, agents, tools, ops, and trust.
-> Pair with `docs/TODO_BOARD_2026-04-26.md` (54 named bricks) and
+> Replaces ad-hoc round-6 lane picking with a single-pane queue covering
+> durable agents, data quality, user trust, landing, async operations,
+> observability, billing, and production hygiene.
+> Pair with `docs/TODO_BOARD_2026-04-26.md` (brick ledger/status board) and
 > `docs/CODEX_HANDOFF_2026-04-27.md` (file ownership). Mark each row as work
 > lands. **Codex compatibility: respect file-ownership rules.**
 
@@ -19,6 +21,21 @@
 5. **Co-developed with Codex**: respect file-ownership in `docs/CODEX_HANDOFF_2026-04-27.md`.
 6. **Commit identity**: `giuliocatanzariti@gmail.com`, no Co-Authored-By trailer.
 7. **Deploy**: `gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus`. Append revision to `docs/DEPLOYMENT_LOG.md`.
+
+## Product and technical decision frame
+
+- Build for policy, diplomacy, mediation, humanitarian, legal/sanctions,
+  political-risk, and research users who need defensible analysis, not generic
+  chat.
+- The active situation is the unit of work. Tools, agents, retrieval,
+  dashboards, and admin diagnostics should all resolve through it.
+- Firestore remains canonical for user-facing state. Cloud SQL stores
+  LangGraph checkpoints only.
+- Context injection and the Operational Spine are non-negotiable contracts:
+  calibrated prompts, explicit degraded states, provenance, idempotency, TTL,
+  and system events are part of done.
+- Agents can propose canonical graph/timeline/profile changes, but approval
+  queues own mutation.
 
 ## Priority lanes
 

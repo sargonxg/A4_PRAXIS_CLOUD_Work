@@ -8,16 +8,19 @@
 
 1. [`CLAUDE.md`](../CLAUDE.md) — repo + architecture guide
 2. [`AGENTS.md`](../AGENTS.md) — hard rules + validation gate
-3. [`docs/ROUND_6_READINESS_2026-04-27.md`](./ROUND_6_READINESS_2026-04-27.md) — current short operational plan
-4. [`docs/CODEX_HANDOFF_2026-04-27.md`](./CODEX_HANDOFF_2026-04-27.md) — active drop-in prompt
-5. [`docs/CONTINUATION.md`](./CONTINUATION.md) — cumulative handoff history
-6. [`docs/TODO_BOARD_2026-04-26.md`](./TODO_BOARD_2026-04-26.md) — every open brick
-7. [`CHANGELOG.md`](../CHANGELOG.md) — what just shipped (Unreleased section)
+3. [`docs/STRATEGY.md`](./STRATEGY.md) — current product and technical strategy
+4. [`docs/MONSTER_TODO_2026-04-27.md`](./MONSTER_TODO_2026-04-27.md) — current high-impact execution queue
+5. [`docs/CODEX_HANDOFF_2026-04-27.md`](./CODEX_HANDOFF_2026-04-27.md) — active drop-in prompt and file ownership
+6. [`docs/TODO_BOARD_2026-04-26.md`](./TODO_BOARD_2026-04-26.md) — status board and historical brick ledger
+7. [`docs/CONTINUATION.md`](./CONTINUATION.md) — cumulative handoff history
+8. [`CHANGELOG.md`](../CHANGELOG.md) — what just shipped (Unreleased section)
 
 ## Strategy & roadmap
 
 | Doc | Purpose |
 |---|---|
+| [`STRATEGY.md`](./STRATEGY.md) | **Current product and technical strategy for policy/diplomacy users; defines source-of-truth decisions and the high-impact coding queue.** |
+| [`MONSTER_TODO_2026-04-27.md`](./MONSTER_TODO_2026-04-27.md) | **Current execution queue aligned to Strategy: durable agents, data quality, trust, async ops, observability, billing, and close-out.** |
 | [`ROUND_6_READINESS_2026-04-27.md`](./ROUND_6_READINESS_2026-04-27.md) | **Current short plan: deep-research memo distilled, LangGraph readiness, required human decisions.** |
 | [`DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md`](./DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md) | **Canonical 16-lane action plan distilled from the deep-research memo.** |
 | [`LANGGRAPH_CLOUDSQL_CHECKPOINTING.md`](./LANGGRAPH_CLOUDSQL_CHECKPOINTING.md) | **LangGraph checkpointing architecture, Cloud SQL resources, cleanup, and verification.** |
@@ -33,7 +36,6 @@
 | [`SPRINT_EXECUTION_PLAN_2026-04-25.md`](./SPRINT_EXECUTION_PLAN_2026-04-25.md) | This week's sprint plan |
 | [`SPRINT_BACKLOG.md`](./SPRINT_BACKLOG.md) | Canonical actionable backlog |
 | [`SPRINT_2026-04-25.md`](./SPRINT_2026-04-25.md) | Week sprint plan |
-| [`STRATEGY.md`](./STRATEGY.md) | Six-week roadmap |
 | [`VISION_2026.md`](./VISION_2026.md) | Strategic north-star objective |
 
 ## Architecture
