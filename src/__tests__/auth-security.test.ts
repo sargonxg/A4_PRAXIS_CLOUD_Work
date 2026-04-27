@@ -72,7 +72,9 @@ describe('Auth Security Contracts', () => {
     const middlewareSource = readFileSync(join(process.cwd(), 'src', 'middleware.ts'), 'utf8');
     const scriptSrcElemInitializer = middlewareSource.match(/const scriptSrcElem = nonce[\s\S]*?: scriptSrc;/)?.[0] ?? '';
 
-    expect(scriptSrcElemInitializer).toContain("`'self' 'nonce-${nonce}'");
+    expect(scriptSrcElemInitializer).toContain("`'self'");
+    expect(scriptSrcElemInitializer).toContain("'nonce-${nonce}'");
+    expect(scriptSrcElemInitializer).toContain("'unsafe-inline'");
     expect(scriptSrcElemInitializer).not.toContain('strict-dynamic');
   });
 });
