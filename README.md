@@ -232,6 +232,7 @@ Critical (production):
 | `COOKIE_SIGNING_SECRET` | Session cookie HMAC (primary) — `SESSION_SECRET` is its alias |
 | `USER_KEY_MASTER` | 32-byte base64 master key for envelope-encrypted user API keys |
 | `ADMIN_ALLOWLIST` | Comma-separated Firebase UIDs that can access `/app/admin/*` |
+| `ADMIN_EMAIL_ALLOWLIST` | Comma-separated verified admin emails; defaults to `giulio@tacitus.me` |
 
 Optional integrations: `STRIPE_*`, `RESEND_API_KEY`, `NEXT_PUBLIC_SENTRY_DSN`, graph backend credentials, and operator/monitoring configuration.
 
@@ -440,6 +441,8 @@ Current high-impact lanes:
 | [`AGENTS.md`](./AGENTS.md) | Codex/OpenAI agents pointer to CLAUDE.md |
 | [`CHANGELOG.md`](./CHANGELOG.md) | Version history (Keep a Changelog) |
 | [`docs/ROUND_6_READINESS_2026-04-27.md`](./docs/ROUND_6_READINESS_2026-04-27.md) | Current short plan: deep-research memo distilled, LangGraph readiness, human decisions |
+| [`docs/DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md`](./docs/DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md) | Current 16-lane execution plan from the deep-research memo |
+| [`docs/LANGGRAPH_CLOUDSQL_CHECKPOINTING.md`](./docs/LANGGRAPH_CLOUDSQL_CHECKPOINTING.md) | LangGraph Cloud SQL checkpointing, cleanup, and verification |
 | [`docs/CODEX_HANDOFF_2026-04-27.md`](./docs/CODEX_HANDOFF_2026-04-27.md) | Active Codex drop-in prompt |
 | [`docs/CONTINUATION.md`](./docs/CONTINUATION.md) | Next-session handoff + weekly ship plan |
 | [`docs/AUTH.md`](./docs/AUTH.md) | Token lifecycle, CSRF, session architecture, diagnostics |

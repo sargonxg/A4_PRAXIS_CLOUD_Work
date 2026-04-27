@@ -166,6 +166,55 @@ curl -s  https://praxis.tacitus.me/api/auth/test-firebase | jq
 
 ---
 
+## 2a. LangGraph Cloud SQL Checkpoint Store
+
+Authoritative playbook: `docs/LANGGRAPH_CLOUDSQL_CHECKPOINTING.md`.
+
+Use this for durable PRAXIS agents. Do not use the Firebase console flow that
+tries to create a public-IP Cloud SQL instance; the project correctly blocks
+that with `constraints/sql.restrictPublicIp`.
+
+One-time setup or verification:
+
+```bash
+bash infrastructure/setup-langgraph-cloudsql.sh
+```
+
+Windows PowerShell:
+
+```powershell
+.\infrastructure\setup-langgraph-cloudsql.ps1
+```
+
+Verify:
+
+```bash
+gcloud sql instances describe praxisbytacitus-instance \
+  --project=praxisbytacitus \
+  --format="yaml(name,state,databaseVersion,region,ipAddresses,settings.ipConfiguration)"
+
+gcloud sql databases list \
+  --instance=praxisbytacitus-instance \
+  --project=praxisbytacitus
+
+gcloud secrets versions list praxis-langgraph-db-password \
+  --project=praxisbytacitus
+```
+
+Expected: Postgres 16 instance is `RUNNABLE`, has only a PRIVATE IP, database
+`praxis_langgraph` exists, and the password secret has an enabled version.
+
+Firebase SQL Connect / Data Connect:
+
+```bash
+firebase dataconnect:services:list --project=praxisbytacitus
+```
+
+Do not run `firebase deploy --only dataconnect` until this repo contains
+`dataconnect.yaml`, schema files, and connector files.
+
+---
+
 ## 3. Rollback
 
 If the latest deploy is broken:

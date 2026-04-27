@@ -16,16 +16,7 @@ import { z } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { publishBacklogEntry, queryBacklog } from '@/lib/dev-backlog/service';
-
-const ALLOWLIST = (process.env.ADMIN_ALLOWLIST ?? '')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
-
-function isAdmin(uid: string, email: string): boolean {
-  if (ALLOWLIST.length === 0) return false;
-  return ALLOWLIST.includes(uid) || ALLOWLIST.includes(email);
-}
+import { isAdminPrincipal } from '@/lib/auth/admin-gate';
 
 const QuerySchema = z.object({
   kind: z
@@ -75,7 +66,7 @@ const PublishSchema = z.object({
 
 export const GET = withAuth(async (request, user) => {
   try {
-    if (!isAdmin(user.uid, user.email)) {
+    if (!isAdminPrincipal(user)) {
       return NextResponse.json({ error: 'Admin only' }, { status: 403 });
     }
     const url = new URL(request.url);
@@ -92,7 +83,7 @@ export const GET = withAuth(async (request, user) => {
 
 export const POST = withAuth(async (request, user) => {
   try {
-    if (!isAdmin(user.uid, user.email)) {
+    if (!isAdminPrincipal(user)) {
       return NextResponse.json({ error: 'Admin only' }, { status: 403 });
     }
     const raw = await request.json().catch(() => ({}));

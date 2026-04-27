@@ -19,12 +19,13 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Network, Newspaper, FileText, UserCog } from "lucide-react";
+import { MessageSquareText, Network, Newspaper, FileText, UserCog } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 const PANELS = [
   { id: 'graph', label: 'Conflict Graph', icon: Network },
   { id: 'media', label: 'Media Monitor', icon: Newspaper },
+  { id: 'assistant', label: 'Ask PRAXIS', icon: MessageSquareText },
   { id: 'drafting', label: 'Drafting Studio', icon: FileText },
   { id: 'context', label: 'User Context', icon: UserCog },
 ] as const;
@@ -44,6 +45,7 @@ export function HeroQuadrantTour() {
       <div className="grid grid-cols-1 gap-3">
         <PanelGraph />
         <PanelMedia />
+        <PanelAssistant />
         <PanelDrafting />
         <PanelContext />
       </div>
@@ -65,6 +67,7 @@ export function HeroQuadrantTour() {
           >
             {active.id === 'graph' && <PanelGraph />}
             {active.id === 'media' && <PanelMedia />}
+            {active.id === 'assistant' && <PanelAssistant />}
             {active.id === 'drafting' && <PanelDrafting />}
             {active.id === 'context' && <PanelContext />}
           </motion.div>
@@ -197,7 +200,62 @@ function PanelMedia() {
 }
 
 // ---------------------------------------------------------------------------
-// Panel 3 — Drafting Studio
+// Panel 3 — Ask PRAXIS operational companion
+// ---------------------------------------------------------------------------
+
+function PanelAssistant() {
+  const messages = [
+    { role: 'user', text: 'What should I prepare before tomorrow\'s donor call?' },
+    { role: 'praxis', text: 'I found 3 gaps: displacement figures, access constraints, and counterpart positions. I can draft a two-page brief now.' },
+    { role: 'user', text: 'Use my Sahel situation and keep it neutral.' },
+  ];
+
+  return (
+    <Card title="Ask PRAXIS · Situation-aware" subtitle="assistant · profile + active situation">
+      <div className="grid h-full grid-rows-[1fr_auto] gap-2 p-4">
+        <div className="space-y-2 overflow-hidden">
+          {messages.map((msg, i) => (
+            <motion.div
+              key={`${msg.role}-${i}`}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: i * 0.12 }}
+              className={cn(
+                'max-w-[88%] rounded-lg border px-3 py-2 text-[10px] leading-relaxed',
+                msg.role === 'praxis'
+                  ? 'border-diplomatic-blue/15 bg-diplomatic-blue/6 text-navy-700'
+                  : 'ml-auto border-cream-200 bg-white/75 text-navy-600',
+              )}
+            >
+              <span className="mb-1 block text-[8px] font-semibold uppercase tracking-wider text-navy-400">
+                {msg.role === 'praxis' ? 'PRAXIS' : 'Analyst'}
+              </span>
+              {msg.text}
+            </motion.div>
+          ))}
+        </div>
+        <div className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-emerald-700">
+              Ready actions
+            </span>
+            <span className="font-mono text-[9px] text-emerald-700">3 suggested</span>
+          </div>
+          <div className="mt-1.5 grid grid-cols-3 gap-1">
+            {['Draft brief', 'Find sources', 'Create tasks'].map((action) => (
+              <span key={action} className="rounded border border-emerald-200 bg-white/70 px-1.5 py-1 text-center text-[8px] font-semibold text-emerald-800">
+                {action}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Panel 4 — Drafting Studio
 // ---------------------------------------------------------------------------
 
 function PanelDrafting() {

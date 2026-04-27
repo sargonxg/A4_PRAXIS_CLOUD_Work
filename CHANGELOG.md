@@ -17,6 +17,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Documented the approved Cloud SQL/Postgres LangGraph checkpointing setup:
   private-IP-only `praxisbytacitus-instance`, `praxis_langgraph` database/user,
   Secret Manager password, and `praxis-agents-sa`.
+- Added the canonical deep-research execution plan with 16 lanes covering
+  onboarding context, situation creation, structured extraction, Document AI,
+  Vertex AI Search/RAG, real search, LangGraph agents, cleanup, evals, graph
+  scale, and App Check.
+- Added idempotent LangGraph Cloud SQL setup scripts for Bash and PowerShell,
+  backend/env configuration keys, GCP audit checks for Cloud SQL readiness, and
+  compliance/runbook documentation for the private-IP-only database.
 
 ### Changed
 

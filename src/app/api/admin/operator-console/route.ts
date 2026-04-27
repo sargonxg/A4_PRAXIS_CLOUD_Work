@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
-import { isAdmin } from '@/lib/auth/admin-gate';
+import { isAdminPrincipal } from '@/lib/auth/admin-gate';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +17,7 @@ export const runtime = 'nodejs';
  * gates access via the env-var allowlist (no JWT claim trust).
  */
 export const GET = withAuth(async (_req, user) => {
-  if (!isAdmin(user.uid)) {
+  if (!isAdminPrincipal(user)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

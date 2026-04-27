@@ -23,26 +23,30 @@ the architectural contract.
 4. `CHANGELOG.md`
 5. `docs/ROUND_6_READINESS_2026-04-27.md` — current short plan, LangGraph
    readiness, and human decisions
-6. `docs/CODEX_HANDOFF_2026-04-27.md` — active Codex drop-in prompt
-7. `docs/CONTINUATION.md` — last "do this next" note from previous agent
-8. `docs/STRATEGY.md` — six-week roadmap
-9. `docs/SPRINT_2026-04-25.md` — current week-long sprint plan
-10. **`docs/SPRINT_BACKLOG.md`** — canonical actionable list. Pick your
+6. `docs/DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md` — 12-lane execution plan
+   distilled from the deep-research memo
+7. `docs/LANGGRAPH_CLOUDSQL_CHECKPOINTING.md` — Cloud SQL/Postgres
+   checkpoint store, cleanup, and verification
+8. `docs/CODEX_HANDOFF_2026-04-27.md` — active Codex drop-in prompt
+9. `docs/CONTINUATION.md` — last "do this next" note from previous agent
+10. `docs/STRATEGY.md` — six-week roadmap
+11. `docs/SPRINT_2026-04-25.md` — current week-long sprint plan
+12. **`docs/SPRINT_BACKLOG.md`** — canonical actionable list. Pick your
    task from here; mark `In progress` before starting.
-11. **`docs/CONTEXT_INJECTION.md`** — the architectural contract every AI
+13. **`docs/CONTEXT_INJECTION.md`** — the architectural contract every AI
    route must honour. This is the most important doc in the repo.
-12. **`docs/OPERATIONAL_SPINE.md`** — the second-most important doc.
+14. **`docs/OPERATIONAL_SPINE.md`** — the second-most important doc.
     Defines tool_runs, background_jobs, system_events, notifications,
     semaphore states, idempotency, retention. Every async unit of work
     in PRAXIS lives in this layer. Read this BEFORE adding new
     triggers, agents, or tools.
-13. `docs/tools/INDEX.md` — per-tool micro-app specs catalogue
-14. `docs/GCP_OPERATIONS.md` — every gcloud / Secret Manager command
-15. `docs/RESEARCH_PROMPTS.md` — prompts to give the user when you need
+15. `docs/tools/INDEX.md` — per-tool micro-app specs catalogue
+16. `docs/GCP_OPERATIONS.md` — every gcloud / Secret Manager command
+17. `docs/RESEARCH_PROMPTS.md` — prompts to give the user when you need
     info you don't have access to (vendor docs, current API limits, etc.)
-16. `docs/HANDOFF_PROMPTS.md` — drop-in prompts to start a fresh session
-17. `docs/DEPLOYMENT_LOG.md` — last successful production deploy
-18. **`docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`**
+18. `docs/HANDOFF_PROMPTS.md` — drop-in prompts to start a fresh session
+19. `docs/DEPLOYMENT_LOG.md` — last successful production deploy
+20. **`docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`**
     — deep-research artifact (789 lines, 2026-04-25) answering all 10
     research prompts: Vertex ADK deployment recipe (with working
     `deploy.py`), ACLED licensing risk (CRITICAL — see G-2), GDELT
@@ -51,12 +55,12 @@ the architectural contract.
     AI vs. AI Studio decision, GraphRAG architecture extension, UN
     procurement / SOC 2 / DPA path. **Read this before doing any
     Stream C / Stream G work.**
-19. `docs/USER_ACTION_LIST.md` — exact playbook for things only Giulio
+21. `docs/USER_ACTION_LIST.md` — exact playbook for things only Giulio
     (CEO/CTO) can do.
-20. `docs/VISION_2026.md` — strategic north-star objective. Every
+22. `docs/VISION_2026.md` — strategic north-star objective. Every
     backlog item ladders up to one of the priorities here.
-21. `docs/COMPLIANCE.md` — licensing, certs, sub-processors, audit log.
-22. `docs/TEAM_OPS.md` — multi-agent operations playbook.
+23. `docs/COMPLIANCE.md` — licensing, certs, sub-processors, audit log.
+24. `docs/TEAM_OPS.md` — multi-agent operations playbook.
 
 Fresh-clone start command:
 

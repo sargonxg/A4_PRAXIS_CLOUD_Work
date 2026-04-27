@@ -10,11 +10,10 @@ import { HeroVisual } from "./hero-visual";
 // --- Word-by-word reveal ---
 
 const headlineWords = [
-  "Policy,",
-  "Diplomacy,",
-  "and",
-  "Politics",
-  "Intelligence.",
+  "Your",
+  "Policy",
+  "Operating",
+  "System.",
   "Grounded",
   "in",
   "Sources.",
@@ -380,11 +379,11 @@ export function Hero() {
             transition={{ delay: 1.2, duration: 0.7 }}
             className="mb-6 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
           >
-            Most of policy is not classified. PRAXIS by TACITUS turns the
-            open record — UN reports, treaties, news wires, humanitarian
-            feeds, your own notes — into a calibrated workspace where AI
-            experts you train help you assess, draft, and decide. A
-            companion you teach, an expert team you direct.
+            PRAXIS by TACITUS turns messy policy work into an organized
+            workspace: sources, situations, actor maps, briefings, tasks,
+            and AI advisors that stay calibrated to your role. It helps a
+            practitioner move from question to evidence to decision without
+            losing the thread.
           </motion.p>
 
           {/* Data sources tagline */}
@@ -449,7 +448,7 @@ export function Hero() {
           >
             <span className={cn("h-1.5 w-1.5 rounded-full bg-gold-500", !shouldReduceMotion && "animate-pulse")} />
             <span className="text-xs font-medium text-gold-700">
-              Early Demo — exploring how we can serve practitioners like you
+              Business-ready workflow: onboard, create a situation, ask PRAXIS, brief, export
             </span>
           </motion.div>
         </div>

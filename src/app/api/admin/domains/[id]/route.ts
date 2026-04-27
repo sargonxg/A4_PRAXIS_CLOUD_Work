@@ -6,7 +6,7 @@
  *         snapshot to config/domains_history/{id}_{version}, busts the
  *         resolve cache.
  *
- * Gate: ADMIN_ALLOWLIST env var.
+ * Gate: admin allowlist.
  */
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -33,7 +33,7 @@ function parseId(id: string): DomainId | null {
 }
 
 export const GET = withAuth(async (req, user) => {
-  const forbidden = requireAdmin(user.uid);
+  const forbidden = requireAdmin(user);
   if (forbidden) return forbidden;
 
   const url = new URL(req.url);
@@ -46,7 +46,7 @@ export const GET = withAuth(async (req, user) => {
 });
 
 export const PATCH = withAuth(async (req, user) => {
-  const forbidden = requireAdmin(user.uid);
+  const forbidden = requireAdmin(user);
   if (forbidden) return forbidden;
 
   const url = new URL(req.url);

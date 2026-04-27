@@ -14,6 +14,13 @@
 > `praxis-langgraph-db-password`, and service account `praxis-agents-sa`.
 > The Firebase console public-IP error was an org-policy guardrail; keep it
 > and use private IP.
+> The deep-research memo is now consolidated into
+> `docs/DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md` with 16 build lanes:
+> onboarding context capture, situation creation intelligence, structured
+> extraction, Document AI, Vertex AI Search/RAG, real search/Deep Search Agent,
+> LangGraph runtime, Brainstorming Table migration, Brief Builder, Source
+> Scout/citations, Graph Cartographer, tool-output unification, evals, Postgres
+> cleanup, Sigma canvas, and App Check.
 
 > **Last updated**: 2026-04-26 (Claude Code rounds 1–5 multi-lane sprint — corpus-search, humanitarian, brainstorming-table, citation primitives, strategic roadmap, agent runner, source-scout, red-team review, AI error toast, BT markdown export, citation chips, landing-page hero overhaul, dashboard legibility fix, debug pill relocation, dev backlog, clarifying questions, Wikipedia enrichment, analyst notes, hero quadrant tour, color system audit, 10 new bricks 45-54, Codex handoff doc — all shipped)
 >

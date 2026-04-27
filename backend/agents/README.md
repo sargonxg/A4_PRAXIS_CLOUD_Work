@@ -3,6 +3,15 @@
 This folder holds the deployable Vertex AI Agent Engine (Reasoning Engine)
 that backs the PRAXIS Deep Research Agent tool at `/app/deep-search-agent`.
 
+It will also host PRAXIS internal LangGraph agents. Keep the two runtimes
+separate:
+
+- **Vertex AI Agent Engine / ADK** — Google-managed Deep Research Agent path.
+- **Internal LangGraph runtime** — PRAXIS-owned durable workflows such as
+  Brainstorming Table, Brief Builder, Graph Cartographer, and Timeline Editor.
+  Checkpoints live in Cloud SQL Postgres; user-visible outputs stay in
+  Firestore. See `docs/LANGGRAPH_CLOUDSQL_CHECKPOINTING.md`.
+
 > The full walk-through is in **`docs/USER_ACTION_LIST.md` §3**. This README is
 > the in-folder quick reference. Recipe verified against
 > `docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`
@@ -52,6 +61,28 @@ Verify:
 ```bash
 curl -s https://praxis.tacitus.me/api/health | jq '.checks.vertex_adk'
 # expect "ok"
+```
+
+## LangGraph Runtime Plan
+
+Provisioned checkpoint store:
+
+- Cloud SQL instance: `praxisbytacitus-instance`
+- Database/user: `praxis_langgraph`
+- Password secret: `praxis-langgraph-db-password`
+- Agent service account: `praxis-agents-sa@praxisbytacitus.iam.gserviceaccount.com`
+
+First implementation target: Brainstorming Table. The synchronous Next.js
+route remains live until the LangGraph graph has checkpoint/resume tests.
+
+Recommended future package layout:
+
+```text
+backend/agents/langgraph/
+  checkpointing.py
+  brainstorming.py
+  brief_builder.py
+  schemas.py
 ```
 
 ## IAM (one-time)

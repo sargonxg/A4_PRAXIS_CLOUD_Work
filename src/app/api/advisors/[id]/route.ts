@@ -21,7 +21,7 @@ export const GET = withAuth<RouteContext>(async (_req: Request, _user: Authentic
 });
 
 export const POST = withAuth<RouteContext>(async (req: Request, user: AuthenticatedUser, context) => {
-  const denied = requireAdmin(user.uid);
+  const denied = requireAdmin(user);
   if (denied) return denied;
 
   const { id } = await context.params;

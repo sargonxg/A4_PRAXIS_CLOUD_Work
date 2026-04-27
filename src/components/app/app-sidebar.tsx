@@ -292,6 +292,7 @@ const navSections: NavSection[] = [
       { label: 'Team Hub', icon: UsersRound, href: '/team' },
       { label: 'Humanitarian', icon: Heart, href: '/humanitarian' },
       { label: 'Settings', icon: SettingsIcon, href: '/settings' },
+      { label: 'Admin', icon: Shield, href: '/admin' },
     ],
   },
 ];

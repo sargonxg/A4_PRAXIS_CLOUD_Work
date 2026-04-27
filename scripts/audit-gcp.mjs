@@ -57,6 +57,8 @@ const checks = [
   { name: 'Cloud Functions API enabled',                   category: 'api',     run: () => gcloudValue('services list --filter=name:cloudfunctions.googleapis.com').length > 0 },
   { name: 'Cloud Scheduler API enabled',                   category: 'api',     run: () => gcloudValue('services list --filter=name:cloudscheduler.googleapis.com').length > 0 },
   { name: 'Cloud Tasks API enabled',                       category: 'api',     run: () => gcloudValue('services list --filter=name:cloudtasks.googleapis.com').length > 0 },
+  { name: 'Cloud SQL Admin API enabled',                    category: 'api',     run: () => gcloudValue('services list --filter=name:sqladmin.googleapis.com').length > 0 },
+  { name: 'Service Networking API enabled',                 category: 'api',     run: () => gcloudValue('services list --filter=name:servicenetworking.googleapis.com').length > 0 },
   { name: 'Secret Manager API enabled',                    category: 'api',     run: () => gcloudValue('services list --filter=name:secretmanager.googleapis.com').length > 0 },
   { name: 'BigQuery API enabled',                          category: 'api',     run: () => gcloudValue('services list --filter=name:bigquery.googleapis.com').length > 0 },
   { name: 'Artifact Registry API enabled',                 category: 'api',     run: () => gcloudValue('services list --filter=name:artifactregistry.googleapis.com').length > 0 },
@@ -71,6 +73,7 @@ const checks = [
   { name: 'Secret: praxis-cron-secret',                    category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-cron-secret') },
   { name: 'Secret: praxis-cookie-secret',                  category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-cookie-secret') },
   { name: 'Secret: praxis-user-key-master',                category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-user-key-master') },
+  { name: 'Secret: praxis-langgraph-db-password',           category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-langgraph-db-password') },
 
   // Pub/Sub topics (5 referenced in CLAUDE.md)
   { name: 'Pub/Sub topic: profile.events',                 category: 'pubsub',  run: () => gcloudDescribe('pubsub topics describe profile.events') },
@@ -84,6 +87,11 @@ const checks = [
   { name: 'Cloud Run: praxis-frontend',                    category: 'runtime', run: () => gcloudDescribe('run services describe praxis-frontend --region=us-central1') },
   { name: 'Cloud Run: praxis-backend',                     category: 'runtime', run: () => gcloudDescribe('run services describe praxis-backend --region=us-central1') },
   { name: 'Cloud Run worker pool: gdelt-poller',            category: 'runtime', soft: true, run: () => gcloudDescribe('beta run worker-pools describe gdelt-poller --region=us-central1') },
+
+  // LangGraph checkpoint database
+  { name: 'Cloud SQL: praxisbytacitus-instance',            category: 'sql',     run: () => gcloudDescribe('sql instances describe praxisbytacitus-instance') },
+  { name: 'Cloud SQL database: praxis_langgraph',           category: 'sql',     run: () => gcloudList('sql databases list --instance=praxisbytacitus-instance').includes('praxis_langgraph') },
+  { name: 'Service account: praxis-agents-sa',              category: 'iam',     run: () => gcloudDescribe('iam service-accounts describe praxis-agents-sa@praxisbytacitus.iam.gserviceaccount.com') },
 
   // Cloud Scheduler jobs (GDELT poll, alerts, briefing — declared in plan)
   { name: 'Scheduler job exists',                          category: 'schedule', soft: true, run: () => gcloudList('scheduler jobs list --location=us-central1').length > 0 },

@@ -19,6 +19,8 @@
 | Doc | Purpose |
 |---|---|
 | [`ROUND_6_READINESS_2026-04-27.md`](./ROUND_6_READINESS_2026-04-27.md) | **Current short plan: deep-research memo distilled, LangGraph readiness, required human decisions.** |
+| [`DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md`](./DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md) | **Canonical 16-lane action plan distilled from the deep-research memo.** |
+| [`LANGGRAPH_CLOUDSQL_CHECKPOINTING.md`](./LANGGRAPH_CLOUDSQL_CHECKPOINTING.md) | **LangGraph checkpointing architecture, Cloud SQL resources, cleanup, and verification.** |
 | [`ROUND_5_PLAN_2026-04-26.md`](./ROUND_5_PLAN_2026-04-26.md) | **Round-5 plan: 10 new bricks (45-54) + 10 agent objectives + GCP/Firebase research summary + landing roadmap.** |
 | [`COLOR_SYSTEM_AUDIT_2026-04-26.md`](./COLOR_SYSTEM_AUDIT_2026-04-26.md) | Color leak map + canonical token swap rules. |
 | [`CODEX_HANDOFF_2026-04-27.md`](./CODEX_HANDOFF_2026-04-27.md) | **Active fresh Codex drop-in prompt.** |

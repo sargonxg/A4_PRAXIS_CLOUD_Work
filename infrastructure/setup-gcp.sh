@@ -23,6 +23,8 @@ gcloud services enable \
   pubsub.googleapis.com \
   cloudfunctions.googleapis.com \
   cloudscheduler.googleapis.com \
+  sqladmin.googleapis.com \
+  servicenetworking.googleapis.com \
   firestore.googleapis.com \
   secretmanager.googleapis.com \
   storage.googleapis.com \
@@ -57,6 +59,12 @@ echo "Creating Pub/Sub topics..."
 for topic in praxis.pipeline praxis.extract praxis.ingest praxis.alert profile.events; do
   gcloud pubsub topics create "$topic" 2>/dev/null || echo "Topic $topic already exists"
 done
+
+# ── LangGraph Cloud SQL checkpoint store ─────────────────────────────────────
+if [ -f "infrastructure/setup-langgraph-cloudsql.sh" ]; then
+  echo "Ensuring LangGraph Cloud SQL checkpoint store..."
+  PROJECT_ID="${PROJECT_ID}" bash infrastructure/setup-langgraph-cloudsql.sh
+fi
 
 # ── Cloud Storage ────────────────────────────────────────────────────────────
 echo "Creating Cloud Storage bucket..."

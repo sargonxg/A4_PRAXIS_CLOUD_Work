@@ -44,6 +44,8 @@ interface AuthContextValue {
   credits: number;
   analystProfile: AnalystProfile | null;
   onboardingComplete: boolean;
+  authError: string | null;
+  clearAuthError: () => void;
   signInWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUpWithEmail: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
@@ -80,6 +82,8 @@ const AuthContext = createContext<AuthContextValue>({
   credits: 0,
   analystProfile: null,
   onboardingComplete: false,
+  authError: null,
+  clearAuthError: () => {},
   signInWithEmail: async () => ({ success: false }),
   signUpWithEmail: async () => ({ success: false }),
   signInWithGoogle: async () => ({ success: false }),
@@ -119,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [credits, setCredits] = useState(0);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [analystProfile, setAnalystProfile] = useState<AnalystProfile | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // ---------------------------------------------------------------------------
   // Restore demo session on mount / page refresh.
@@ -205,17 +210,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
-        // First: set the user immediately from Firebase Auth data (no Firestore dependency)
         const authUser = fbUserToAuthUser(fbUser);
-        setUser(authUser);
         setFirebaseUser(fbUser);
-        setCredits(0);
         setIsDemoMode(false);
 
-        // Second: sync cookie (needed for middleware)
-        await syncTokenCookie(fbUser);
+        // First: sync the session cookie required by middleware. If this fails,
+        // do not expose an authenticated app state; otherwise /login can push
+        // to /app while middleware immediately bounces back to /login.
+        const synced = await syncTokenCookie(fbUser);
+        if (!synced) {
+          setAuthError('We signed you in with Google, but PRAXIS could not initialize your secure session. Please try again, or contact TACITUS with the time of the attempt.');
+          setUser(null);
+          setFirebaseUser(null);
+          setCredits(0);
+          try {
+            await firebaseSignOut(auth);
+          } catch {
+            // Non-fatal: local state and server cookie are already cleared/broken.
+          }
+          firebaseAuthDoneRef.current = true;
+          setLoading(false);
+          return;
+        }
 
-        // Third: try to load/create Firestore profile (non-blocking)
+        // Session is ready: set the user immediately from Firebase Auth data
+        // while Firestore profile hydration runs below.
+        setAuthError(null);
+        setUser(authUser);
+        setCredits(0);
+
+        // Then try to load/create Firestore profile (non-blocking).
         try {
           const { ensureUserProfile } = await import('@/lib/firebase/firestore');
           const profile = await ensureUserProfile({
@@ -270,6 +294,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getRedirectResult(auth).catch((err: unknown) => {
       const code = (err as { code?: string }).code || '';
       console.error('[auth] Google redirect result error:', code, err);
+      setAuthError(
+        code === 'auth/unauthorized-domain'
+          ? 'This domain is not authorized for Google sign-in. Contact TACITUS support.'
+          : `Google sign-in could not finish${code ? ` (${code})` : ''}. Please try again.`,
+      );
     });
   }, []);
 
@@ -389,6 +418,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set loading=true immediately so AppShell doesn't redirect to /login while
     // React hasn't yet re-rendered with the new user state from onAuthStateChanged.
     setLoading(true);
+    setAuthError(null);
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
       // Sync cookie before returning so middleware sees the token when router.push fires.
@@ -431,6 +461,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Email/password sign up
   const signUpWithEmail = useCallback(async (email: string, password: string, name: string) => {
     setLoading(true);
+    setAuthError(null);
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: name });
@@ -466,6 +497,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Google sign in — uses redirect flow to avoid COOP popup blocking
   const signInWithGoogle = useCallback(async () => {
     try {
+      setAuthError(null);
       const provider = new GoogleAuthProvider();
       await signInWithRedirect(auth, provider);
       // Page navigates to Google — this line is never reached
@@ -482,6 +514,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Demo mode
   const signInAsDemo = useCallback(async () => {
+    setAuthError(null);
     // Set demo cookie FIRST so middleware allows navigation
     await fetch('/api/auth/session', {
       method: 'POST',
@@ -505,6 +538,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setFirebaseUser(null);
       setCredits(0);
       setIsDemoMode(false);
+      setAuthError(null);
       await fetch('/api/auth/session', { method: 'DELETE' });
     } catch (err) {
       console.error('[auth] Logout error:', err);
@@ -513,6 +547,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setFirebaseUser(null);
       setCredits(0);
       setIsDemoMode(false);
+      setAuthError(null);
     }
   }, [firebaseUser]);
 
@@ -553,6 +588,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const clearAuthError = useCallback(() => setAuthError(null), []);
+
   const onboardingComplete = Boolean(analystProfile?.meta?.completedAt);
 
   const value = useMemo<AuthContextValue>(() => ({
@@ -562,6 +599,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     credits,
     analystProfile,
     onboardingComplete,
+    authError,
+    clearAuthError,
     signInWithEmail,
     signUpWithEmail,
     signInWithGoogle,
@@ -576,6 +615,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     credits,
     analystProfile,
     onboardingComplete,
+    authError,
+    clearAuthError,
     signInWithEmail,
     signUpWithEmail,
     signInWithGoogle,

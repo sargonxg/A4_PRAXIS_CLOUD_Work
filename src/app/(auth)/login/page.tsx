@@ -33,7 +33,17 @@ function LoginForm() {
     ? `/app/settings?upgrade=${planParam}` // Send to settings with upgrade prompt
     : rawRedirect?.startsWith('/app') ? rawRedirect : '/app/dashboard';
   const demoRedirect = rawRedirect?.startsWith('/demo') ? rawRedirect : '/demo/dashboard';
-  const { user, loading, signInWithEmail, signUpWithEmail, signInWithGoogle, signInAsDemo, resetPassword } = useAuth();
+  const {
+    user,
+    loading,
+    authError,
+    clearAuthError,
+    signInWithEmail,
+    signUpWithEmail,
+    signInWithGoogle,
+    signInAsDemo,
+    resetPassword,
+  } = useAuth();
 
   // Guard: prevents double-navigation when both handleEmailSubmit and this
   // useEffect are triggered for the same sign-in event.
@@ -70,18 +80,28 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
+  useEffect(() => {
+    if (authError) {
+      setError(authError);
+      setIsLoading(false);
+    }
+  }, [authError]);
+
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim()) {
       setError('Please enter an email address.');
+      clearAuthError();
       return;
     }
     if (!password.trim()) {
       setError('Please enter a password.');
+      clearAuthError();
       return;
     }
 
     setError('');
+    clearAuthError();
     setIsLoading(true);
 
     try {
@@ -89,6 +109,7 @@ function LoginForm() {
       if (mode === 'signup') {
         if (!name.trim()) {
           setError('Please enter your name.');
+          clearAuthError();
           setIsLoading(false);
           return;
         }
@@ -115,6 +136,7 @@ function LoginForm() {
 
   async function handleGoogleSignIn() {
     setError('');
+    clearAuthError();
     setIsLoading(true);
     try {
       const result = await signInWithGoogle();
@@ -136,9 +158,11 @@ function LoginForm() {
     e.preventDefault();
     if (!email.trim()) {
       setError('Please enter your email address.');
+      clearAuthError();
       return;
     }
     setError('');
+    clearAuthError();
     setSuccessMsg('');
     setIsLoading(true);
     try {

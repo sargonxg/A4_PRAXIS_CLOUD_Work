@@ -23,6 +23,16 @@ class Settings(BaseSettings):
     spanner_instance_id: str = "praxis-graph"
     spanner_database_id: str = "praxis-graph-db"
 
+    # LangGraph checkpointing (Cloud SQL Postgres; see docs/LANGGRAPH_CLOUDSQL_CHECKPOINTING.md)
+    langgraph_checkpoint_backend: str = "postgres"
+    langgraph_db_instance_connection_name: str = "praxisbytacitus:us-east4:praxisbytacitus-instance"
+    langgraph_db_host: str = "10.101.0.3"
+    langgraph_db_port: int = 5432
+    langgraph_db_name: str = "praxis_langgraph"
+    langgraph_db_user: str = "praxis_langgraph"
+    langgraph_db_password_secret: str = "praxis-langgraph-db-password"
+    langgraph_db_password: str = ""
+
     # BigQuery
     bigquery_dataset: str = "praxis_analytics"
 

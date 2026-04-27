@@ -1,7 +1,7 @@
 # PRAXIS Agentic System
 
 Status: active design.
-Last updated: 2026-04-26.
+Last updated: 2026-04-27.
 
 ## Objective
 
@@ -9,19 +9,24 @@ PRAXIS agents should help analysts think, research, challenge assumptions, and
 prepare defensible products. They should not silently mutate canonical
 knowledge. Agents propose, explain, cite, and ask for approval.
 
+Round 6 architecture decision: durable multi-step agents use LangGraph with
+Cloud SQL Postgres checkpointing. Vertex AI Agent Engine remains the managed
+Deep Research path. Firestore remains the source of truth for user-visible
+state, tool outputs, graph proposals, jobs, events, and notifications.
+
 ## Agent Types
 
 | Agent | Role | Inputs | Outputs | Execution path |
 |---|---|---|---|---|
-| Situation Analyst | Summarizes what changed and what matters | Situation corpus, recent feed alerts, profile | Daily read, next action | Cloud Run request now; Cloud Tasks later |
-| Source Scout | Finds and ranks current sources | Keywords, source domains, region, language | Search plan, source list, citations | Grounded Google Search, future Cloud Tasks |
-| Graph Cartographer | Proposes actor/claim/edge changes | Documents, ARGUS, tool outputs | `graph_updates` proposals | Backend extraction + approval queue |
-| Timeline Editor | Builds evidence-backed event sequence | Feed alerts, docs, graph updates | Timeline event proposals | Cloud Tasks + Firestore |
+| Situation Analyst | Summarizes what changed and what matters | Situation corpus, recent feed alerts, profile | Daily read, next action | LangGraph after runtime foundation |
+| Source Scout | Finds and ranks current sources | Keywords, source domains, region, language | Search plan, source list, citations | Grounded Google Search; LangGraph later |
+| Graph Cartographer | Proposes actor/claim/edge changes | Documents, ARGUS, tool outputs | `graph_updates` proposals | LangGraph + approval queue |
+| Timeline Editor | Builds evidence-backed event sequence | Feed alerts, docs, graph updates | Timeline event proposals | LangGraph + Firestore proposals |
 | Media Analyst | Clusters narratives and framing | Media Roundup query plan, sources | Clusters, divergence, source diversity | AI route + BigQuery/feed cache |
 | Legal Analyst | Tracks commitments and mandates | Legal Tracker, resolutions, sources | Obligations, breaches, deadlines | Calibrated AI route |
 | Humanitarian Analyst | Assesses access, protection, displacement | ReliefWeb/HDX/OCHA-style sources, docs | Humanitarian snapshot | Dedicated route planned |
-| Red Team Critic | Challenges assumptions and weak evidence | Any draft output + corpus trace | Critique, confidence adjustment | Brainstorming Table |
-| Synthesis Chair | Consolidates expert discussion | Expert turns, critique, user mandate | Memo, options, trade-offs | Brainstorming Table |
+| Red Team Critic | Challenges assumptions and weak evidence | Any draft output + corpus trace | Critique, confidence adjustment | LangGraph review pass |
+| Synthesis Chair | Consolidates expert discussion | Expert turns, critique, user mandate | Memo, options, trade-offs | Brainstorming Table / Brief Builder |
 
 ## Brainstorming Table MVP
 
@@ -58,6 +63,8 @@ MVP route:
 ## Cloud Architecture
 
 - Cloud Run frontend API routes orchestrate short synchronous work.
+- Future `praxis-agents` Cloud Run service hosts long-running LangGraph work.
+- Cloud SQL Postgres stores LangGraph checkpoints only.
 - Cloud Tasks queues durable work:
   - `praxis-research`: web/source research and media scans.
   - `praxis-agents`: multi-agent deliberation and critique phases.
@@ -69,6 +76,10 @@ MVP route:
 - BigQuery stores aggregate operational/feed intelligence.
 - Vertex AI provides models, embeddings, grounding, and future Agent Engine
   experiments.
+- Vertex AI Search / RAG Engine is the planned managed retrieval path for
+  large public/situation corpora once the current SKC contracts are stable.
+- Grounded Google Search stays the default real-search path for current,
+  source-backed public research.
 
 ## First Implementation Queue
 
@@ -91,12 +102,11 @@ MVP route:
    `Output.object`.
 5. ✅ Persist output to `tool-data/brainstorming-table` — shipped via
    `saveToolOutput` with personas, retrievalTrace, and question metadata.
-6. ⏳ Add export to memo/Markdown.
-7. ⏳ Move execution to Cloud Tasks once the schema is stable. The
-   `praxis-agents` queue is provisioned (audit:gcp passes) — needs a
-   per-turn dispatcher reading `background_jobs`, an HTTP target on the
-   frontend Cloud Run service, and CAS-locked claim semantics. Detailed
-   plan: brick #18 in `docs/PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md`.
+6. ✅ Add export to memo/Markdown — shipped in round 4.
+7. ⏳ Move execution to LangGraph + Cloud SQL checkpoints once the runtime
+   foundation is in place. The `praxis-agents` queue and Cloud SQL checkpoint
+   database are provisioned. Detailed plan:
+   `docs/DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md`.
 8. ⏳ Add red-team pass and approval statuses (deeper review loop than
    the in-table red-team turn — a separate critique pass that flags
    confidence and source-diversity issues before the synthesis chair

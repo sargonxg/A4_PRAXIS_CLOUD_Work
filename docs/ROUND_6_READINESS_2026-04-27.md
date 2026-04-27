@@ -22,11 +22,16 @@ Keep the long research memo as reference, but start here when choosing work.
   - `docs/OPERATIONAL_SPINE.md`
   - `docs/CORPUS_ARCHITECTURE.md`
   - `docs/AGENTIC_SYSTEM.md`
+  - `docs/DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md`
+  - `docs/LANGGRAPH_CLOUDSQL_CHECKPOINTING.md`
 
 ## What The Deep Research Memo Changes
 
 The memo's highest-leverage recommendation is correct: the next big PRAXIS
 upgrade is not more tool pages. It is durable, auditable agent execution.
+The surrounding product work still matters: first-run onboarding, situation
+creation, tool empty states, citation/provenance, and real search/RAG all need
+to be built around that agent runtime.
 
 Priority order:
 
@@ -36,6 +41,8 @@ Priority order:
 3. LangGraph-backed durable agent runtime for multi-step workflows.
 4. Evaluation harness for extraction, retrieval, and prompt regressions.
 5. Sigma.js / Graphology graph canvas for large conflict graphs.
+
+The actionable lane board is now `docs/DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md`.
 
 ## LangGraph Readiness
 

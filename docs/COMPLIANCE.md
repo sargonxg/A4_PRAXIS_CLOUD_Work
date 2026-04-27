@@ -99,7 +99,7 @@ of the open-source pivot.
 
 | Vendor | Purpose | Data residency | DPA on file |
 |---|---|---|---|
-| Google Cloud (Firestore, Cloud Run, BigQuery, Vertex AI, Secret Manager, Pub/Sub, Cloud Storage, Cloud Build, Artifact Registry) | Infrastructure, AI, storage, computation | us-central1 (default) · `europe-west1` / `europe-west4` on request | Yes (Google Cloud DPA) |
+| Google Cloud (Firestore, Cloud Run, Cloud SQL, BigQuery, Vertex AI, Secret Manager, Pub/Sub, Cloud Storage, Cloud Build, Artifact Registry) | Infrastructure, AI, storage, computation, LangGraph checkpointing | us-central1 default; Cloud SQL LangGraph checkpoint instance currently `us-east4`; `europe-west1` / `europe-west4` on request | Yes (Google Cloud DPA) |
 | Stripe (when activated) | Payments only | US + EU | Yes (Stripe DPA) |
 | Cloudflare (DNS) | DNS + CDN | Global | Yes |
 | GitHub | Source code hosting (no customer data) | US | Yes |
@@ -116,6 +116,7 @@ log below for historical traceability.
 |---|---|
 | 2026-04-25 (initial) | Compliance tracker created. ACLED licensing risk flagged as P0. |
 | 2026-04-25 (pivot) | Strategic pivot: dropped ACLED, Firecrawl, Anthropic from the dependency stack. Sub-processor list reduced to Google Cloud + Stripe + Cloudflare + GitHub. ACLED Corporate License negotiation cancelled. |
+| 2026-04-27 (LangGraph) | Added private-IP-only Cloud SQL Postgres as the approved LangGraph checkpoint store. This remains within the Google Cloud sub-processor boundary; user-visible canonical state stays in Firestore. |
 
 ---
 
@@ -125,6 +126,9 @@ log below for historical traceability.
   landing page + system-health activation guide
 - [ ] Verify GDELT 2.0 attribution copy renders on every
   GDELT-derived surface
+- [ ] Decide whether the LangGraph Cloud SQL region should move from
+  `us-east4` to `us-central1` before production agent traffic, or keep
+  `us-east4` because it was created there by Firebase/Cloud SQL setup
 - [ ] Deploy GDELT BigQuery hot slice per
   `docs/implementation/gdelt-ingestion-2026-04-25.md`
 - [ ] Engage SOC 2 auditor (Drata / Vanta / Secureframe)
