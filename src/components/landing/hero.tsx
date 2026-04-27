@@ -10,13 +10,14 @@ import { HeroVisual } from "./hero-visual";
 // --- Word-by-word reveal ---
 
 const headlineWords = [
+  "Agentic",
+  "AI,",
+  "Calibrated",
+  "to",
   "Your",
-  "Policy",
-  "Operating",
-  "System.",
-  "Grounded",
-  "in",
-  "Sources.",
+  "Mandate",
+  "and",
+  "Situation.",
 ];
 
 const containerVariants = {
@@ -50,10 +51,11 @@ const practitionerBackgrounds = [
 ];
 
 const trustSignals = [
-  "Calibrated to your role",
-  "Open-data first",
-  "Google Cloud native",
-  "Sources you can defend",
+  "40+ agentic tools",
+  "Calibrated to your mandate",
+  "Institutional frameworks built-in",
+  "Private GCP workspace · isolated by tenant",
+  "Every claim cited, every output exportable",
 ];
 
 // ---- Animated Conflict Graph SVG ----
@@ -346,7 +348,7 @@ export function Hero() {
           >
             <Shield className="h-3.5 w-3.5 text-gold-600" />
             <span className="text-xs font-medium tracking-wide text-navy-700">
-              Built by practitioners with careers in multilateral and bilateral diplomacy
+              Built by practitioners with careers in multilateral and bilateral diplomacy · GCP-native · private workspace
             </span>
           </motion.div>
 
@@ -363,7 +365,7 @@ export function Hero() {
                 variants={shouldReduceMotion ? {} : wordVariants}
                 className={cn(
                   "mr-[0.25em] inline-block",
-                  (word === "System." || word === "Sources.") && "text-gold-600"
+                  (word === "Mandate" || word === "Situation.") && "text-gold-600"
                 )}
               >
                 {word}
@@ -378,11 +380,12 @@ export function Hero() {
             transition={{ delay: 1.2, duration: 0.7 }}
             className="mb-6 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
           >
-            PRAXIS by TACITUS turns messy policy work into an organized
-            workspace: sources, situations, actor maps, briefings, tasks,
-            and AI advisors that stay calibrated to your role. It helps a
-            practitioner move from question to evidence to decision without
-            losing the thread.
+            PRAXIS by TACITUS transforms policy, diplomacy, and political
+            analysis. Bring your mandate, your sources, your situation —
+            and unlock 40+ agentic tools that reason with the frameworks
+            your institution already uses: Glasl, Fisher-Ury, INFORM,
+            OCHA, IPC, ICD-203, IHL. From question to evidence to
+            defensible decision, without losing the thread.
           </motion.p>
 
           {/* Data sources tagline */}
@@ -392,7 +395,8 @@ export function Hero() {
             transition={{ delay: 1.4, duration: 0.6 }}
             className="mb-10 text-sm text-navy-400 italic"
           >
-            Built on GDELT, UCDP, ReliefWeb, HDX, UN News, World Bank, and grounded Google Search.
+            Grounded in ACLED, UCDP, GDELT BigQuery, ReliefWeb, OCHA, HDX, UNHCR,
+            UN News, World Bank, Crisis Group, SIPRI — and your private corpus.
           </motion.p>
 
           <motion.div
@@ -447,7 +451,7 @@ export function Hero() {
           >
             <span className={cn("h-1.5 w-1.5 rounded-full bg-gold-500", !shouldReduceMotion && "animate-pulse")} />
             <span className="text-xs font-medium text-gold-700">
-              Business-ready workflow: onboard, create a situation, ask PRAXIS, brief, export
+              Onboard · calibrate · ingest sources · build the graph · brief, draft, export — every step on the record
             </span>
           </motion.div>
         </div>

@@ -111,65 +111,101 @@ export function HeroQuadrantTour() {
 
 function PanelGraph() {
   const shouldReduceMotion = useReducedMotion() ?? false;
-  const edges = [
-    { x1: 50, y1: 50, x2: 82, y2: 30, color: '#E15759' },
-    { x1: 50, y1: 50, x2: 82, y2: 72, color: '#59A14F' },
-    { x1: 50, y1: 50, x2: 20, y2: 22, color: '#59A14F' },
-    { x1: 82, y1: 30, x2: 65, y2: 15, color: '#E15759' },
-    { x1: 82, y1: 72, x2: 65, y2: 85, color: '#EDC948' },
-  ];
+  // Real Sahel actor map — Northern Mali post-MINUSMA
   const nodes = [
-    { cx: 50, cy: 50, r: 14, fill: '#4E79A7' },
-    { cx: 82, cy: 30, r: 10, fill: '#E15759' },
-    { cx: 82, cy: 72, r: 10, fill: '#4E79A7' },
-    { cx: 20, cy: 22, r: 8, fill: '#76B7B2' },
-    { cx: 20, cy: 76, r: 8, fill: '#F28E2B' },
-    { cx: 65, cy: 85, r: 7, fill: '#FF9DA7' },
-    { cx: 65, cy: 15, r: 7, fill: '#EDC948' },
+    { id: 'mali', cx: 50, cy: 50, r: 8, fill: '#4E79A7', label: 'Mali (Junta)', type: 'state' },
+    { id: 'jnim', cx: 78, cy: 28, r: 7, fill: '#E15759', label: 'JNIM', type: 'armed' },
+    { id: 'isgs', cx: 86, cy: 56, r: 6, fill: '#E15759', label: 'IS-Sahel', type: 'armed' },
+    { id: 'cma', cx: 22, cy: 22, r: 6, fill: '#E15759', label: 'CMA / FLA', type: 'armed' },
+    { id: 'wagner', cx: 60, cy: 78, r: 6, fill: '#9C755F', label: 'Africa Corps', type: 'pmc' },
+    { id: 'aes', cx: 35, cy: 78, r: 7, fill: '#4E79A7', label: 'AES', type: 'state' },
+    { id: 'ecowas', cx: 14, cy: 50, r: 6, fill: '#76B7B2', label: 'ECOWAS', type: 'institution' },
+    { id: 'minusma', cx: 86, cy: 80, r: 5, fill: '#BAB0AC', label: 'MINUSMA †', type: 'institution' },
+    { id: 'algeria', cx: 50, cy: 12, r: 5, fill: '#4E79A7', label: 'Algeria', type: 'state' },
+    { id: 'france', cx: 22, cy: 92, r: 5, fill: '#4E79A7', label: 'France', type: 'state' },
+    { id: 'algiers', cx: 32, cy: 38, r: 4, fill: '#76B7B2', label: 'Algiers Accord', type: 'commitment' },
+    { id: 'idps', cx: 70, cy: 92, r: 5, fill: '#F28E2B', label: 'IDPs · 354k', type: 'population' },
+    { id: 'ipi', cx: 92, cy: 38, r: 4, fill: '#EDC948', label: 'Uranium', type: 'leverage' },
+    { id: 'narr', cx: 8, cy: 30, r: 4, fill: '#FF9DA7', label: 'Sovereignty', type: 'narrative' },
   ];
+  const edges = [
+    { from: 'mali', to: 'jnim', color: '#E15759', kind: 'antagonistic' },
+    { from: 'mali', to: 'isgs', color: '#E15759', kind: 'antagonistic' },
+    { from: 'mali', to: 'cma', color: '#E15759', kind: 'antagonistic' },
+    { from: 'mali', to: 'wagner', color: '#59A14F', kind: 'cooperative' },
+    { from: 'mali', to: 'aes', color: '#59A14F', kind: 'cooperative' },
+    { from: 'aes', to: 'ecowas', color: '#E15759', kind: 'antagonistic' },
+    { from: 'jnim', to: 'isgs', color: '#E15759', kind: 'antagonistic' },
+    { from: 'cma', to: 'algiers', color: '#76B7B2', kind: 'commitment' },
+    { from: 'mali', to: 'algiers', color: '#76B7B2', kind: 'commitment' },
+    { from: 'algeria', to: 'algiers', color: '#76B7B2', kind: 'commitment' },
+    { from: 'minusma', to: 'mali', color: '#BAB0AC', kind: 'historical' },
+    { from: 'france', to: 'mali', color: '#BAB0AC', kind: 'historical' },
+    { from: 'jnim', to: 'idps', color: '#EDC948', kind: 'causal' },
+    { from: 'isgs', to: 'idps', color: '#EDC948', kind: 'causal' },
+    { from: 'mali', to: 'narr', color: '#FF9DA7', kind: 'structural' },
+    { from: 'mali', to: 'ipi', color: '#EDC948', kind: 'leverage' },
+  ];
+  function nodeById(id: string) {
+    return nodes.find((n) => n.id === id)!;
+  }
   return (
-    <Card title="Conflict Graph · ACO v2.0" subtitle="praxis.tacitus.me · Northern Mali">
-      <div className="grid h-full grid-cols-2 gap-3 p-4">
-        <div className="relative overflow-hidden rounded-lg border border-cream-200/60 bg-gradient-to-br from-white/80 via-white/60 to-cream-50/60 p-3">
-          <span className="text-[9px] font-semibold uppercase tracking-wider text-navy-500">
-            Nodes (7) · Edges (8)
-          </span>
-          <svg viewBox="0 0 100 100" className="mt-2 h-full w-full" aria-hidden="true">
+    <Card title="ACO v2.0 · Conflict Graph" subtitle="praxis.tacitus.me · Northern Mali · 14 entities · 16 edges">
+      <div className="grid h-full grid-cols-[1.4fr_1fr] gap-3 p-3">
+        <div className="relative overflow-hidden rounded-lg border border-cream-200/60 bg-gradient-to-br from-white/85 via-white/60 to-cream-50/60 p-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-navy-500">
+              Glasl 7 · Critical
+            </span>
+            <span className="font-mono text-[8.5px] text-navy-500">
+              risk 78 · density 0.18
+            </span>
+          </div>
+          <svg viewBox="0 0 100 100" className="mt-1 h-full w-full" aria-hidden="true">
             <defs>
               <radialGradient id="hero-graph-glow" cx="50%" cy="50%" r="50%">
                 <stop offset="0%" stopColor="rgba(232,185,49,0.18)" />
                 <stop offset="100%" stopColor="rgba(232,185,49,0)" />
               </radialGradient>
+              <linearGradient id="hero-edge-anti" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0%" stopColor="#E15759" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="#E15759" stopOpacity="0.85" />
+              </linearGradient>
             </defs>
-            <circle cx="50" cy="50" r="48" fill="url(#hero-graph-glow)" />
-            {edges.map((e, i) => (
-              <motion.line
-                key={i}
-                x1={e.x1}
-                y1={e.y1}
-                x2={e.x2}
-                y2={e.y2}
-                stroke={e.color}
-                strokeWidth={0.8}
-                strokeOpacity={0.55}
-                initial={shouldReduceMotion ? false : { pathLength: 0 }}
-                animate={shouldReduceMotion ? undefined : { pathLength: 1 }}
-                transition={shouldReduceMotion ? undefined : { duration: 1.2, delay: 0.15 + i * 0.08, ease: 'easeOut' }}
-              />
-            ))}
+            <circle cx="50" cy="50" r="50" fill="url(#hero-graph-glow)" />
+            {edges.map((e, i) => {
+              const a = nodeById(e.from);
+              const b = nodeById(e.to);
+              return (
+                <motion.line
+                  key={i}
+                  x1={a.cx}
+                  y1={a.cy}
+                  x2={b.cx}
+                  y2={b.cy}
+                  stroke={e.color}
+                  strokeWidth={e.kind === 'antagonistic' ? 0.9 : 0.65}
+                  strokeOpacity={e.kind === 'historical' ? 0.35 : 0.6}
+                  strokeDasharray={e.kind === 'historical' ? '1.5 1.5' : undefined}
+                  initial={shouldReduceMotion ? false : { pathLength: 0 }}
+                  animate={shouldReduceMotion ? undefined : { pathLength: 1 }}
+                  transition={shouldReduceMotion ? undefined : { duration: 1.1, delay: 0.1 + i * 0.05, ease: 'easeOut' }}
+                />
+              );
+            })}
             {nodes.map((n, i) => (
-              <g key={i}>
-                {!shouldReduceMotion && (
+              <g key={n.id}>
+                {!shouldReduceMotion && n.type !== 'historical' && (
                   <motion.circle
                     cx={n.cx}
                     cy={n.cy}
                     r={n.r}
                     fill="none"
                     stroke={n.fill}
-                    strokeWidth={0.6}
-                    initial={{ r: n.r, opacity: 0.5 }}
-                    animate={{ r: [n.r, n.r + 5, n.r], opacity: [0.55, 0, 0.55] }}
-                    transition={{ duration: 2.4 + i * 0.3, repeat: Infinity, ease: 'easeInOut', delay: i * 0.25 }}
+                    strokeWidth={0.5}
+                    initial={{ r: n.r, opacity: 0.45 }}
+                    animate={{ r: [n.r, n.r + 4, n.r], opacity: [0.55, 0, 0.55] }}
+                    transition={{ duration: 2.4 + (i % 4) * 0.4, repeat: Infinity, ease: 'easeInOut', delay: (i % 5) * 0.2 }}
                   />
                 )}
                 <motion.circle
@@ -177,22 +213,55 @@ function PanelGraph() {
                   cy={n.cy}
                   r={n.r}
                   fill={n.fill}
-                  fillOpacity={0.88}
+                  fillOpacity={0.9}
                   initial={shouldReduceMotion ? false : { scale: 0, opacity: 0 }}
                   animate={shouldReduceMotion ? undefined : { scale: 1, opacity: 1 }}
-                  transition={shouldReduceMotion ? undefined : { duration: 0.45, delay: 0.4 + i * 0.07, ease: 'backOut' }}
+                  transition={shouldReduceMotion ? undefined : { duration: 0.4, delay: 0.35 + i * 0.05, ease: 'backOut' }}
                   style={{ transformOrigin: `${n.cx}px ${n.cy}px` }}
                 />
+                <text
+                  x={n.cx}
+                  y={n.cy + n.r + 3.2}
+                  textAnchor="middle"
+                  fontSize={2.6}
+                  fill="#1B3A5C"
+                  fontFamily="Inter, sans-serif"
+                  fontWeight="600"
+                  opacity={0.78}
+                >
+                  {n.label}
+                </text>
               </g>
             ))}
           </svg>
         </div>
-        <div className="flex flex-col gap-2">
-          <Pill color="#4E79A7" label="State actors" count={3} />
-          <Pill color="#E15759" label="Armed groups" count={1} />
-          <Pill color="#76B7B2" label="Institutions" count={1} />
-          <Pill color="#F28E2B" label="Claims" count={1} />
-          <Pill color="#FF9DA7" label="Narratives" count={1} />
+        <div className="flex flex-col gap-1.5 overflow-hidden">
+          <div className="rounded-md border border-crimson/20 bg-crimson/5 px-2 py-1">
+            <div className="text-[8.5px] font-semibold uppercase tracking-wider text-crimson">
+              Pivot actors
+            </div>
+            <div className="mt-0.5 text-[10px] font-semibold text-navy-800 leading-tight">
+              JNIM · Africa Corps · CMA-FLA
+            </div>
+          </div>
+          <div className="rounded-md border border-cream-200/60 bg-white/70 px-2 py-1">
+            <div className="text-[8.5px] font-semibold uppercase tracking-wider text-navy-500">
+              Hidden linkage
+            </div>
+            <div className="mt-0.5 text-[9.5px] text-navy-700 leading-snug">
+              JNIM ↔ Algiers Accord (broken)
+            </div>
+          </div>
+          <Pill color="#4E79A7" label="States · AES" count={4} />
+          <Pill color="#E15759" label="Armed · jihadi+CMA" count={3} />
+          <Pill color="#9C755F" label="PMC · Africa Corps" count={1} />
+          <Pill color="#76B7B2" label="Commitments" count={1} />
+          <Pill color="#F28E2B" label="Civ · IDPs 354k" count={1} />
+          <div className="mt-auto rounded-md border border-emerald-200 bg-emerald-50/80 px-2 py-1">
+            <span className="text-[8.5px] font-semibold uppercase tracking-wider text-emerald-700">
+              ACLED 7d · 142 events
+            </span>
+          </div>
         </div>
       </div>
     </Card>
@@ -204,57 +273,96 @@ function PanelGraph() {
 // ---------------------------------------------------------------------------
 
 function PanelMedia() {
+  // Realistic frame divergence on Sahel coverage — Western mainstream (A)
+  // versus state/affiliated outlets (B). Scores are illustrative but
+  // mirror what frame-divergence audits actually surface.
+  const frames = [
+    { label: 'Problem', a: 78, b: 92 },
+    { label: 'Cause', a: 64, b: 88 },
+    { label: 'Actor', a: 72, b: 41 },
+    { label: 'Moral', a: 81, b: 35 },
+    { label: 'Threat', a: 58, b: 90 },
+    { label: 'Remedy', a: 55, b: 70 },
+  ];
   const sources = [
-    { name: 'Reuters', dot: '#4E79A7', tone: 'neutral', signals: 7 },
-    { name: 'Al Jazeera', dot: '#76B7B2', tone: 'critical', signals: 5 },
-    { name: 'Le Monde', dot: '#F28E2B', tone: 'analytical', signals: 4 },
-    { name: 'Crisis Group', dot: '#59A14F', tone: 'expert', signals: 3 },
+    { name: 'Reuters', dot: '#4E79A7', tone: 'neutral', signals: 14, drift: '+2σ' },
+    { name: 'AFP', dot: '#4E79A7', tone: 'neutral', signals: 11, drift: '+1σ' },
+    { name: 'Le Monde', dot: '#F28E2B', tone: 'analytical', signals: 9, drift: '−' },
+    { name: 'Al Jazeera', dot: '#76B7B2', tone: 'critical', signals: 8, drift: '+1σ' },
+    { name: 'RFI', dot: '#F28E2B', tone: 'analytical', signals: 7, drift: '−' },
+    { name: 'Crisis Group', dot: '#59A14F', tone: 'expert', signals: 4, drift: '−' },
+    { name: 'ACLED', dot: '#59A14F', tone: 'data', signals: 6, drift: '−' },
+    { name: 'TASS', dot: '#E15759', tone: 'state · RU', signals: 5, drift: '+3σ' },
+    { name: 'Anadolu', dot: '#E15759', tone: 'state · TR', signals: 4, drift: '+2σ' },
+    { name: 'Africa Confid.', dot: '#9C755F', tone: 'expert', signals: 3, drift: '−' },
   ];
   return (
-    <Card title="Media Monitor · 24h" subtitle="praxis.tacitus.me · narrative diff">
-      <div className="flex h-full flex-col gap-2 p-4">
-        <span className="text-[9px] font-semibold uppercase tracking-wider text-navy-500">
-          Frame divergence — Entman
-        </span>
-        <div className="flex flex-1 items-end gap-2 rounded-md border border-cream-200/60 bg-white/60 p-2">
-          {[
-            { label: 'Problem', a: 60, b: 92 },
-            { label: 'Cause', a: 48, b: 75 },
-            { label: 'Moral', a: 70, b: 35 },
-            { label: 'Remedy', a: 55, b: 80 },
-          ].map((bar, i) => (
-            <div key={bar.label} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
-              <div className="flex h-3/4 w-full items-end gap-0.5">
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: `${bar.a}%` }}
-                  transition={{ duration: 0.7, delay: i * 0.08 }}
-                  className="w-1/2 rounded-t-sm bg-diplomatic-blue/70"
-                />
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: `${bar.b}%` }}
-                  transition={{ duration: 0.7, delay: 0.05 + i * 0.08 }}
-                  className="w-1/2 rounded-t-sm bg-crimson/70"
-                />
-              </div>
-              <span className="text-[8px] font-medium uppercase tracking-wider text-navy-400">
-                {bar.label}
-              </span>
-            </div>
-          ))}
+    <Card title="Media Monitor · 24h" subtitle="praxis.tacitus.me · Sahel · narrative diff · 71 articles">
+      <div className="flex h-full flex-col gap-2 p-3">
+        <div className="flex items-center justify-between">
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-navy-500">
+            Entman frame divergence
+          </span>
+          <span className="font-mono text-[8.5px] text-navy-500">
+            Δ frame = 0.42 · GDELT-grounded
+          </span>
         </div>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid flex-1 grid-cols-[1.3fr_1fr] gap-2">
+          <div className="flex items-end gap-1.5 rounded-md border border-cream-200/60 bg-white/70 p-2">
+            {frames.map((bar, i) => (
+              <div key={bar.label} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
+                <div className="flex h-[80%] w-full items-end gap-0.5">
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: `${bar.a}%` }}
+                    transition={{ duration: 0.8, delay: i * 0.07 }}
+                    className="w-1/2 rounded-t-sm bg-gradient-to-t from-diplomatic-blue to-diplomatic-blue/55"
+                  />
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: `${bar.b}%` }}
+                    transition={{ duration: 0.8, delay: 0.05 + i * 0.07 }}
+                    className="w-1/2 rounded-t-sm bg-gradient-to-t from-crimson to-crimson/55"
+                  />
+                </div>
+                <span className="text-[7.5px] font-medium uppercase tracking-wider text-navy-400">
+                  {bar.label}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-rows-2 gap-1.5">
+            <div className="rounded-md border border-diplomatic-blue/15 bg-diplomatic-blue/5 px-2 py-1">
+              <div className="text-[8.5px] font-semibold uppercase tracking-wider text-diplomatic-blue">
+                Western frame
+              </div>
+              <div className="mt-0.5 text-[9px] leading-snug text-navy-700">
+                JNIM advance · MINUSMA gap · civilian deaths cited
+              </div>
+            </div>
+            <div className="rounded-md border border-crimson/20 bg-crimson/5 px-2 py-1">
+              <div className="text-[8.5px] font-semibold uppercase tracking-wider text-crimson">
+                State-aligned frame
+              </div>
+              <div className="mt-0.5 text-[9px] leading-snug text-navy-700">
+                Sovereignty · &ldquo;neo-colonial&rdquo; framing · Wagner success
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-1">
           {sources.map((s) => (
             <div
               key={s.name}
-              className="flex items-center justify-between rounded-md border border-cream-200/60 bg-white/70 px-2 py-1"
+              className="flex items-center justify-between rounded-md border border-cream-200/60 bg-white/75 px-1.5 py-0.5"
             >
               <div className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: s.dot }} />
-                <span className="text-[9px] font-semibold text-navy-700">{s.name}</span>
+                <span className="text-[8.5px] font-semibold text-navy-700">{s.name}</span>
               </div>
-              <span className="font-mono text-[9px] text-navy-500">{s.signals} signals · {s.tone}</span>
+              <span className="font-mono text-[8px] text-navy-500">
+                {s.signals} · {s.tone} <span className="text-crimson/80">{s.drift}</span>
+              </span>
             </div>
           ))}
         </div>
@@ -268,49 +376,103 @@ function PanelMedia() {
 // ---------------------------------------------------------------------------
 
 function PanelAssistant() {
-  const messages = [
-    { role: 'user', text: 'What should I prepare before tomorrow\'s donor call?' },
-    { role: 'praxis', text: 'I found 3 gaps: displacement figures, access constraints, and counterpart positions. I can draft a two-page brief now.' },
-    { role: 'user', text: 'Use my Sahel situation and keep it neutral.' },
+  // Sophisticated, role-calibrated exchange. PRAXIS speaks like a senior
+  // analyst: cites sources inline, names the framework, flags uncertainty,
+  // and proposes the next concrete artefact.
+  const messages: { role: 'user' | 'praxis'; text: React.ReactNode }[] = [
+    {
+      role: 'user',
+      text: (
+        <>
+          Compare the post-MINUSMA security gap in Gao vs Kidal — civilian
+          protection and humanitarian access. Use my saved corpus.
+        </>
+      ),
+    },
+    {
+      role: 'praxis',
+      text: (
+        <>
+          Reasoning over 142 ACLED events (last 7d), 9 OCHA situation
+          reports and 3 Crisis Group briefings.
+          <br />
+          <span className="font-semibold text-navy-900">Gao</span>:
+          authority is split between FAMa, Africa Corps and JNIM-aligned
+          cells; ACLED records 38 violence-against-civilians events in
+          7d, OCHA flags &ldquo;severe&rdquo; access on 4 of 6 cercles
+          <span className="text-diplomatic-blue/80"> [OCHA · 2026-04-22]</span>.
+          <br />
+          <span className="font-semibold text-navy-900">Kidal</span>:
+          since the Nov-2023 takeover, FAMa holds the town but the CMA-FLA
+          coalition contests the periphery; Crisis Group assesses the
+          Algiers Accord as &ldquo;de facto void&rdquo;
+          <span className="text-diplomatic-blue/80"> [ICG · Briefing 198]</span>.
+          <br />
+          Glasl stage 7 in both, but driver mix differs. Want a 2-page
+          comparative brief calibrated to your humanitarian-lead profile?
+        </>
+      ),
+    },
+    {
+      role: 'user',
+      text: <>Yes — neutral tone, IHL framing, no targeting language.</>,
+    },
   ];
 
   return (
-    <Card title="Ask PRAXIS · Situation-aware" subtitle="assistant · profile + active situation">
-      <div className="grid h-full grid-rows-[1fr_auto] gap-2 p-4">
-        <div className="space-y-2 overflow-hidden">
+    <Card title="Ask PRAXIS · Calibrated" subtitle="agent · profile v3 · Sahel situation · 14 sources cited">
+      <div className="grid h-full grid-rows-[1fr_auto] gap-2 p-3">
+        <div className="space-y-1.5 overflow-hidden">
           {messages.map((msg, i) => (
             <motion.div
-              key={`${msg.role}-${i}`}
+              key={i}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: i * 0.12 }}
               className={cn(
-                'max-w-[88%] rounded-lg border px-3 py-2 text-[10px] leading-relaxed',
+                'max-w-[92%] rounded-lg border px-2.5 py-1.5 text-[9.5px] leading-snug',
                 msg.role === 'praxis'
                   ? 'border-diplomatic-blue/15 bg-diplomatic-blue/6 text-navy-700'
-                  : 'ml-auto border-cream-200 bg-white/75 text-navy-600',
+                  : 'ml-auto border-cream-200 bg-white/80 text-navy-700',
               )}
             >
-              <span className="mb-1 block text-[8px] font-semibold uppercase tracking-wider text-navy-400">
-                {msg.role === 'praxis' ? 'PRAXIS' : 'Analyst'}
+              <span className="mb-0.5 block text-[7.5px] font-semibold uppercase tracking-wider text-navy-400">
+                {msg.role === 'praxis' ? 'PRAXIS · senior-analyst tone' : 'Sara K. · Humanitarian Lead'}
               </span>
               {msg.text}
             </motion.div>
           ))}
         </div>
-        <div className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1.5">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-emerald-700">
-              Ready actions
-            </span>
-            <span className="font-mono text-[9px] text-emerald-700">3 suggested</span>
-          </div>
-          <div className="mt-1.5 grid grid-cols-3 gap-1">
-            {['Draft brief', 'Find sources', 'Create tasks'].map((action) => (
-              <span key={action} className="rounded border border-emerald-200 bg-white/70 px-1.5 py-1 text-center text-[8px] font-semibold text-emerald-800">
-                {action}
+        <div className="grid grid-cols-2 gap-1.5">
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[8.5px] font-semibold uppercase tracking-wider text-emerald-700">
+                Agent actions
               </span>
-            ))}
+              <span className="font-mono text-[8.5px] text-emerald-700">4 ready</span>
+            </div>
+            <div className="mt-1 flex flex-wrap gap-1">
+              {['Draft brief', 'Update graph', 'Open dossier', 'Save sources'].map((a) => (
+                <span key={a} className="rounded border border-emerald-200 bg-white/70 px-1.5 py-[1px] text-[7.5px] font-semibold text-emerald-800">
+                  {a}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-md border border-cream-200/60 bg-white/80 px-2 py-1">
+            <div className="text-[8.5px] font-semibold uppercase tracking-wider text-navy-500">
+              Sources used
+            </div>
+            <div className="mt-1 flex flex-wrap gap-1">
+              {['ACLED', 'OCHA', 'ICG', 'UCDP', 'ReliefWeb'].map((s) => (
+                <span
+                  key={s}
+                  className="rounded px-1.5 py-[1px] text-[7.5px] font-semibold uppercase tracking-wide text-diplomatic-blue bg-diplomatic-blue/8 border border-diplomatic-blue/15"
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -323,45 +485,80 @@ function PanelAssistant() {
 // ---------------------------------------------------------------------------
 
 function PanelDrafting() {
+  // Real-looking EU FAC briefing section structure with one-line abstracts.
+  const sections = [
+    {
+      label: 'Executive summary',
+      body: 'Sahel security has deteriorated in Q1; AES exit from ECOWAS now structural.',
+    },
+    {
+      label: 'Situation · 7d',
+      body: '142 ACLED events · 354k IDPs · 4/6 Gao cercles severe access (OCHA).',
+    },
+    {
+      label: 'Stakeholder map',
+      body: 'Mali junta · AES · Africa Corps · JNIM · IS-Sahel · CMA-FLA · ECOWAS.',
+    },
+    {
+      label: 'Risk assessment',
+      body: 'Glasl 7 · INFORM 7.8 · escalation index +0.34 vs 30d baseline.',
+    },
+    {
+      label: 'Options',
+      body: 'Track 1: humanitarian corridor via Algeria · Track 2: ICRC IHL training.',
+    },
+    {
+      label: 'Recommendation',
+      body: 'Decouple humanitarian dialogue from sanctions track; protect Algiers backchannel.',
+    },
+  ];
   return (
-    <Card title="Drafting Studio · Briefing Room" subtitle="UNSC informal · v3 locked">
-      <div className="flex h-full flex-col gap-2 p-4">
-        <div className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
-            v3 · locked for 10:30 informal
-          </span>
-          <span className="font-mono text-[9px] text-emerald-600">2026-04-26 09:14</span>
+    <Card title="Drafting Studio · Brief 04-26" subtitle="EU FAC · Sahel · v4 locked · 23 inline citations">
+      <div className="flex h-full flex-col gap-2 p-3">
+        <div className="grid grid-cols-[1fr_auto] gap-1.5">
+          <div className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-emerald-700">
+              v4 · locked · IHL-clean · diff +18/−6
+            </span>
+            <span className="font-mono text-[8.5px] text-emerald-600">2026-04-26 11:42</span>
+          </div>
+          <div className="rounded-md border border-diplomatic-blue/20 bg-diplomatic-blue/6 px-2 py-1 text-[8.5px] font-semibold uppercase tracking-wider text-diplomatic-blue">
+            ICD-203 ✓
+          </div>
         </div>
-        <div className="grid flex-1 grid-cols-3 gap-1.5">
-          {['Title', 'Summary', 'Map', 'Timeline', 'Risk', 'Actions'].map((slide, i) => (
+        <div className="grid flex-1 grid-cols-2 gap-1.5">
+          {sections.map((s, i) => (
             <motion.div
-              key={slide}
+              key={s.label}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: i * 0.06 }}
-              className="flex flex-col gap-1 rounded-md border border-cream-200/60 bg-white/70 p-2"
+              className="flex flex-col gap-0.5 rounded-md border border-cream-200/60 bg-white/80 p-1.5"
             >
-              <span className="text-[9px] font-semibold text-navy-700">{slide}</span>
-              <div className="h-1 w-3/4 rounded-full bg-diplomatic-blue/15" />
-              <div className="h-1 w-1/2 rounded-full bg-diplomatic-blue/10" />
-              <div className="h-1 w-2/3 rounded-full bg-diplomatic-blue/10" />
+              <span className="text-[8.5px] font-semibold uppercase tracking-wider text-navy-500">
+                {s.label}
+              </span>
+              <span className="text-[9px] leading-snug text-navy-700">
+                {s.body}
+              </span>
             </motion.div>
           ))}
         </div>
-        <div className="flex items-center gap-2 rounded-md border border-cream-200/60 bg-cream-50/60 px-2 py-1">
-          <span className="text-[9px] font-semibold uppercase tracking-wider text-navy-500">
-            Sources cited
+        <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-cream-200/60 bg-cream-50/60 px-2 py-1">
+          <span className="text-[8.5px] font-semibold uppercase tracking-wider text-navy-500">
+            Sources
           </span>
-          <div className="flex gap-1">
-            {['UCDP', 'GDELT', 'OCHA', 'UN News'].map((s) => (
-              <span
-                key={s}
-                className="rounded px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-diplomatic-blue bg-diplomatic-blue/8 border border-diplomatic-blue/15"
-              >
-                {s}
-              </span>
-            ))}
-          </div>
+          {['UCDP', 'ACLED', 'OCHA', 'ReliefWeb', 'ICG', 'World Bank', 'UN News', 'GDELT'].map((s) => (
+            <span
+              key={s}
+              className="rounded px-1.5 py-[1px] text-[8px] font-semibold uppercase tracking-wide text-diplomatic-blue bg-diplomatic-blue/8 border border-diplomatic-blue/15"
+            >
+              {s}
+            </span>
+          ))}
+          <span className="ml-auto font-mono text-[8.5px] text-navy-500">
+            export → DOCX · PDF · UNDP-template
+          </span>
         </div>
       </div>
     </Card>
@@ -373,33 +570,66 @@ function PanelDrafting() {
 // ---------------------------------------------------------------------------
 
 function PanelContext() {
+  const shouldReduceMotion = useReducedMotion() ?? false;
   return (
-    <Card title="Analyst calibration" subtitle="profile v3 · domain: humanitarian">
-      <div className="flex h-full flex-col gap-2 p-4">
-        <div className="rounded-md border border-cream-200/60 bg-white/70 p-2">
-          <span className="text-[9px] font-semibold uppercase tracking-wider text-navy-500">
-            &lt;analyst-profile&gt;
-          </span>
-          <pre className="mt-1 whitespace-pre-wrap font-mono text-[9px] leading-snug text-navy-700">
-{`role: humanitarian_lead
-seniority: senior
-audience: cluster, donors
-language: en
-lenses: protection > IPC > displacement
-red-lines: no-targeting-advice`}
-          </pre>
+    <Card title="Calibration spine · agentic context" subtitle="profile v3 · 4 layers · injected into every tool">
+      <div className="grid h-full grid-cols-[1.4fr_1fr] gap-2 p-3">
+        <div className="flex flex-col gap-2">
+          <div className="rounded-md border border-diplomatic-blue/15 bg-diplomatic-blue/6 p-2">
+            <span className="text-[8.5px] font-semibold uppercase tracking-wider text-diplomatic-blue">
+              &lt;analyst-profile&gt;
+            </span>
+            <pre className="mt-1 whitespace-pre-wrap font-mono text-[8.5px] leading-snug text-navy-700">
+{`role:        humanitarian_lead
+org:         OCHA · West Africa
+seniority:   senior · 12y
+audience:    cluster leads · donors · ERC
+language:    en · fr backup
+lenses:      protection > IPC >
+             displacement > IHL
+domains:     humanitarian + sec
+red-lines:   no targeting advice
+             no off-record sources`}
+            </pre>
+          </div>
+          <div className="rounded-md border border-cream-200/60 bg-white/80 p-2">
+            <span className="text-[8.5px] font-semibold uppercase tracking-wider text-navy-500">
+              &lt;situation-frame&gt;
+            </span>
+            <pre className="mt-1 whitespace-pre-wrap font-mono text-[8.5px] leading-snug text-navy-700">
+{`name:    Sahel · Northern Mali
+phase:   Glasl 7 · INFORM 7.8
+actors:  14 · edges 16
+since:   2024-09-12 · update 12m`}
+            </pre>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-1.5">
-          <ContextChip label="Profile" value="v3" />
-          <ContextChip label="Domain" value="humanitarian" />
-          <ContextChip label="Sources" value="42 saved" />
-          <ContextChip label="Notes" value="11 facts" />
-        </div>
-        <div className="flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[9px] font-semibold text-emerald-700">
-            Calibration applied · Risk Monitor now scoring with humanitarian-domain emphasis
-          </span>
+        <div className="flex flex-col gap-1.5">
+          <div className="rounded-md border border-cream-200/60 bg-white/80 px-2 py-1">
+            <div className="text-[8.5px] font-semibold uppercase tracking-wider text-navy-500">
+              Frameworks active
+            </div>
+            <div className="mt-1 flex flex-wrap gap-1">
+              {['Glasl', 'INFORM', 'Fisher-Ury', 'Lederach', 'OCHA', 'IPC', 'IHL'].map((f) => (
+                <span
+                  key={f}
+                  className="rounded px-1.5 py-[1px] text-[7.5px] font-semibold uppercase tracking-wide text-diplomatic-blue bg-diplomatic-blue/8 border border-diplomatic-blue/15"
+                >
+                  {f}
+                </span>
+              ))}
+            </div>
+          </div>
+          <ContextChip label="Profile" value="v3 · 12 edits" />
+          <ContextChip label="Corpus" value="217 sources" />
+          <ContextChip label="Memory" value="48 facts · 9 trace" />
+          <ContextChip label="SKC vector" value="768d · KNN" />
+          <div className="mt-auto flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1">
+            <span className={cn('h-1.5 w-1.5 rounded-full bg-emerald-500', !shouldReduceMotion && 'animate-pulse')} />
+            <span className="text-[8.5px] font-semibold leading-tight text-emerald-700">
+              Calibration injected · 38 tools live
+            </span>
+          </div>
         </div>
       </div>
     </Card>
