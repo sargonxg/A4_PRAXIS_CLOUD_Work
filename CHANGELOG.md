@@ -14,6 +14,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   that distills the deep-research memo, confirms LangGraph package
   availability, identifies the production checkpointing decision, and lists
   the human approvals needed before implementing a durable agent runtime.
+- Documented the approved Cloud SQL/Postgres LangGraph checkpointing setup:
+  private-IP-only `praxisbytacitus-instance`, `praxis_langgraph` database/user,
+  Secret Manager password, and `praxis-agents-sa`.
 
 ### Changed
 

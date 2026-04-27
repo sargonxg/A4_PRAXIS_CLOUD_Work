@@ -75,34 +75,47 @@ Recommended PRAXIS direction:
 
 ## Storage Decision Needed For LangGraph
 
-Choose one before implementation:
+Decision approved by Giulio on 2026-04-27: use Cloud SQL / Postgres for
+LangGraph checkpointing.
 
-1. **Postgres checkpointer via Cloud SQL / AlloyDB**
-   - Most aligned with current official production guidance.
-   - Adds a new GCP database service and operational surface.
-   - Best if many long-running concurrent agent sessions are expected soon.
+Provisioned infrastructure:
 
-2. **Firestore custom checkpointer**
-   - Keeps PRAXIS on the existing Firestore-first architecture.
-   - Requires implementing and testing LangGraph's checkpointer interface.
-   - Best if avoiding a new database is more important than using a
-     battle-tested saver immediately.
+- Cloud SQL instance: `praxisbytacitus-instance`
+- Region/zone: `us-east4` / `us-east4-a`
+- Database version: Postgres 16
+- Edition/tier: Enterprise `db-f1-micro`
+- Public IP: disabled
+- Private IP: `10.101.0.3`
+- VPC: `default`
+- Private service range: `praxis-private-services`
+- Database: `praxis_langgraph`
+- User: `praxis_langgraph`
+- Password secret: `praxis-langgraph-db-password`
+- Agent service account: `praxis-agents-sa@praxisbytacitus.iam.gserviceaccount.com`
+- IAM: `praxis-agents-sa` and `praxis-backend-sa` have
+  `roles/cloudsql.client` and Secret Manager access to the password secret.
 
-Default recommendation: start with Postgres checkpointer for production
-durability unless Giulio wants to keep the stack Firestore-only.
+The Firebase console error about `constraints/sql.restrictPublicIp` was
+expected: the organization policy blocks Cloud SQL public IPs. Do not remove
+that policy. The correct pattern is private-IP-only Cloud SQL, which is now
+in place.
+
+Firebase Data Connect note: `firebase dataconnect:services:list` shows Data
+Connect services exist in the Firebase project, but this repo does not yet
+contain `dataconnect.yaml`, schema files, or connector files. Do not run
+`firebase deploy --only dataconnect` from this repo until those files are
+created intentionally.
 
 ## What I Need From Giulio
 
 Before a full LangGraph implementation:
 
-1. Approve the checkpoint storage choice: Cloud SQL/AlloyDB Postgres or a
-   custom Firestore checkpointer.
-2. Confirm whether adding a new `praxis-agents` Cloud Run service is acceptable
+1. Confirm whether adding a new `praxis-agents` Cloud Run service is acceptable
    now, or whether the first graph should run inside the existing backend.
-3. Confirm the first workflow to migrate. Recommended: Brainstorming Table.
-4. Confirm whether the eval harness should live at repo root `evals/` or under
+2. Confirm the first workflow to migrate. Recommended: Brainstorming Table.
+3. Confirm whether the eval harness should live at repo root `evals/` or under
    `backend/evals/`.
-5. Confirm whether Document AI budget is approved for scanned PDFs.
+4. Confirm whether Document AI budget is approved for scanned PDFs.
 
 ## Clean Next Implementation Lane
 

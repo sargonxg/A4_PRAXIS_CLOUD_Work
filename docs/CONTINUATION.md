@@ -8,6 +8,12 @@
 > durable agent runtime. Stale Codex prompt docs from 2026-04-25/26 were
 > removed from the active docs set; `docs/CODEX_HANDOFF_2026-04-27.md` is
 > the only active Codex prompt.
+> Cloud SQL/Postgres checkpointing is approved and provisioned:
+> `praxisbytacitus-instance` (Postgres 16, private IP only, `us-east4`),
+> database/user `praxis_langgraph`, password secret
+> `praxis-langgraph-db-password`, and service account `praxis-agents-sa`.
+> The Firebase console public-IP error was an org-policy guardrail; keep it
+> and use private IP.
 
 > **Last updated**: 2026-04-26 (Claude Code rounds 1–5 multi-lane sprint — corpus-search, humanitarian, brainstorming-table, citation primitives, strategic roadmap, agent runner, source-scout, red-team review, AI error toast, BT markdown export, citation chips, landing-page hero overhaul, dashboard legibility fix, debug pill relocation, dev backlog, clarifying questions, Wikipedia enrichment, analyst notes, hero quadrant tour, color system audit, 10 new bricks 45-54, Codex handoff doc — all shipped)
 >
