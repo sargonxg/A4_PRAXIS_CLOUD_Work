@@ -41,6 +41,14 @@ const ROLE_TOOLS: Record<AnalystRole, string[]> = {
     'briefing',
     'treaty-analyzer',
   ],
+  mediator: [
+    'mediation-design',     // Process architecture — primary for mediators
+    'negotiation-prep',     // Fisher-Ury BATNA/ZOPA prep
+    'concordia',            // Mediation simulation
+    'brainstorming-table',  // Multi-persona deliberation
+    'stakeholder-map',      // Spoiler & salience mapping
+    'commitments',          // Commitment tracker
+  ],
   think_tank: [
     'compare',          // Historical Parallels — think-tank bread & butter
     'scenarios',        // Scenario Planner
@@ -171,6 +179,7 @@ export function recommendToolsForRole(
 const ROLE_LABELS: Record<AnalystRole, string> = {
   un_official: 'UN / IO Official',
   diplomat: 'Diplomat',
+  mediator: 'Mediator',
   think_tank: 'Think Tank Analyst',
   ngo: 'NGO / Humanitarian',
   researcher: 'Researcher',

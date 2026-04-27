@@ -26,6 +26,14 @@ export const FALLBACK_CHIPS: ChipLibrary = {
       'I advise the foreign minister on a regional dossier.',
       'I lead a country desk.',
     ],
+    mediator: [
+      'I prepare for mediation sessions with multi-party frameworks.',
+      'I track party positions, interests, and ZOPA before each round.',
+      'I design confidence-building measures and process architecture.',
+      'I run shuttle diplomacy and track each party privately.',
+      'I support a special envoy with options analysis and red-line maps.',
+      'I draft mediation strategy notes for senior leadership.',
+    ],
     think_tank: [
       'I publish policy briefs for a generalist policymaker audience.',
       'I produce scenario analyses on conflict trajectories.',
@@ -69,6 +77,9 @@ export const FALLBACK_CHIPS: ChipLibrary = {
     'Use gender-inclusive language throughout.',
     'Avoid securitizing humanitarian framing.',
     'Cite UN resolutions by number (e.g., S/RES/2286).',
+    'Never reveal one party’s BATNA or red lines to another.',
+    'Distinguish stated positions from revealed interests in every memo.',
+    'Always cite methodology limitations alongside findings.',
   ],
   orgAutocomplete: [
     'UN DPPA', 'UN DPO', 'UN OCHA', 'UN OHCHR', 'UN DGC',

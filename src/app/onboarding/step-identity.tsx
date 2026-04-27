@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils/cn';
 const ROLE_LABEL: Record<AnalystRole, string> = {
   un_official: 'UN official',
   diplomat: 'Diplomat',
+  mediator: 'Mediator',
   think_tank: 'Think tank',
   ngo: 'NGO',
   researcher: 'Researcher',

@@ -15,7 +15,7 @@ export const LENSES = [
 export type Lens = typeof LENSES[number];
 
 export const ROLES = [
-  'un_official', 'diplomat', 'think_tank', 'ngo', 'researcher',
+  'un_official', 'diplomat', 'mediator', 'think_tank', 'ngo', 'researcher',
   'journalist', 'private_sector', 'other',
 ] as const;
 export type AnalystRole = typeof ROLES[number];
