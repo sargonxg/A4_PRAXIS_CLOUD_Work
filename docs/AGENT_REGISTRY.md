@@ -106,5 +106,5 @@ caller (chat route / Brainstorming Table / future agent runner)
   (synchronous → Cloud Tasks fan-out).
 - `docs/CORPUS_ARCHITECTURE.md` is the retrieval contract every agent
   reasons over.
-- `docs/CODEX_HANDOFF_2026-04-26.md` lists who's working on what so
+- `docs/CODEX_HANDOFF_2026-04-27.md` lists who's working on what so
   ownership doesn't collide.

@@ -8,15 +8,17 @@
 
 1. [`CLAUDE.md`](../CLAUDE.md) — repo + architecture guide
 2. [`AGENTS.md`](../AGENTS.md) — hard rules + validation gate
-3. [`docs/CONTINUATION.md`](./CONTINUATION.md) — last "do this next" handoff
-4. [`docs/CODEX_HANDOFF_2026-04-26.md`](./CODEX_HANDOFF_2026-04-26.md) — the active drop-in prompt
-5. [`docs/TODO_BOARD_2026-04-26.md`](./TODO_BOARD_2026-04-26.md) — every open brick
-6. [`CHANGELOG.md`](../CHANGELOG.md) — what just shipped (Unreleased section)
+3. [`docs/ROUND_6_READINESS_2026-04-27.md`](./ROUND_6_READINESS_2026-04-27.md) — current short operational plan
+4. [`docs/CODEX_HANDOFF_2026-04-27.md`](./CODEX_HANDOFF_2026-04-27.md) — active drop-in prompt
+5. [`docs/CONTINUATION.md`](./CONTINUATION.md) — cumulative handoff history
+6. [`docs/TODO_BOARD_2026-04-26.md`](./TODO_BOARD_2026-04-26.md) — every open brick
+7. [`CHANGELOG.md`](../CHANGELOG.md) — what just shipped (Unreleased section)
 
 ## Strategy & roadmap
 
 | Doc | Purpose |
 |---|---|
+| [`ROUND_6_READINESS_2026-04-27.md`](./ROUND_6_READINESS_2026-04-27.md) | **Current short plan: deep-research memo distilled, LangGraph readiness, required human decisions.** |
 | [`ROUND_5_PLAN_2026-04-26.md`](./ROUND_5_PLAN_2026-04-26.md) | **Round-5 plan: 10 new bricks (45-54) + 10 agent objectives + GCP/Firebase research summary + landing roadmap.** |
 | [`COLOR_SYSTEM_AUDIT_2026-04-26.md`](./COLOR_SYSTEM_AUDIT_2026-04-26.md) | Color leak map + canonical token swap rules. |
 | [`CODEX_HANDOFF_2026-04-27.md`](./CODEX_HANDOFF_2026-04-27.md) | **Active fresh Codex drop-in prompt.** |
@@ -74,7 +76,7 @@
 
 | Doc | Purpose |
 |---|---|
-| [`CODEX_HANDOFF_2026-04-26.md`](./CODEX_HANDOFF_2026-04-26.md) | **Active** Codex drop-in prompt |
+| [`CODEX_HANDOFF_2026-04-27.md`](./CODEX_HANDOFF_2026-04-27.md) | **Active** Codex drop-in prompt |
 | [`CONTINUATION.md`](./CONTINUATION.md) | Cumulative session-by-session handoff history |
 | [`HANDOFF_PROMPTS.md`](./HANDOFF_PROMPTS.md) | Drop-in prompts to start a fresh session |
 | [`RESEARCH_PROMPTS.md`](./RESEARCH_PROMPTS.md) | Prompts to give the user when info is missing |

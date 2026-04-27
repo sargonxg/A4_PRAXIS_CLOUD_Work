@@ -167,7 +167,7 @@ What shipped (Lanes A–E):
 
 Handoff:
 
-- `docs/CODEX_HANDOFF_2026-04-26.md` is the drop-in prompt for the next Codex session. Lanes F–K queued (Ask PRAXIS corpus wiring, Humanitarian page wiring, Situation Health Card, real notification bell, tool id canonicalization, document-graph cross-link).
+- `docs/CODEX_HANDOFF_2026-04-27.md` is the active drop-in prompt for the next Codex session. Lanes F–K queued (Ask PRAXIS corpus wiring, Humanitarian page wiring, Situation Health Card, real notification bell, tool id canonicalization, document-graph cross-link).
 
 Next deploy will pick up the three docs-only commits already on `main` (CONTINUATION update, personas README, AGENTIC_SYSTEM queue refresh).
 

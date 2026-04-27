@@ -4,7 +4,7 @@
 > "Prompt" block below verbatim into Codex. Do not modify the prompt
 > unless you change the queue.
 >
-> Local clone: `C:\Users\giuli\ANTIGRAVITY\A4_PRAXIS_CLOUD_Work`.
+> Local clone for Codex round 6: `C:\Users\giuli\praxiscodexworking`.
 >
 > GitHub auth: `gh auth status` confirms `sargonxg` logged in via
 > keyring. gcloud auth: `giulio@tacitus.me` active on
@@ -24,11 +24,11 @@
 
 ```text
 You are continuing PRAXIS by TACITUS development inside the existing
-local clone at C:\Users\giuli\ANTIGRAVITY\A4_PRAXIS_CLOUD_Work.
+local clone at C:\Users\giuli\praxiscodexworking.
 
 Step 0 — Sync from origin/main.
 
-  cd C:\Users\giuli\ANTIGRAVITY\A4_PRAXIS_CLOUD_Work
+  cd C:\Users\giuli\praxiscodexworking
   git pull origin main
   git status
   git log --oneline -12
@@ -37,27 +37,29 @@ Step 1 — Read these in order before touching code:
 
   1. CLAUDE.md
   2. AGENTS.md
-  3. docs/CONTINUATION.md (read the tenth-session block at the top — it
+  3. docs/ROUND_6_READINESS_2026-04-27.md (short current plan,
+     LangGraph readiness, and human decisions)
+  4. docs/CONTINUATION.md (read the tenth-session block at the top — it
      covers rounds 1-5)
-  4. docs/ROUND_5_PLAN_2026-04-26.md (NEW — 10 bricks 45-54 + 10 agent
+  5. docs/ROUND_5_PLAN_2026-04-26.md (10 bricks 45-54 + 10 agent
      objectives + GCP/Firebase research summary + landing roadmap)
-  5. docs/IMPROVEMENT_15_2026-04-26.md (round-3 plan — bricks 1-15)
-  6. docs/PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md (the canonical 90-day
+  6. docs/IMPROVEMENT_15_2026-04-26.md (round-3 plan — bricks 1-15)
+  7. docs/PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md (the canonical 90-day
      roadmap — now 54 named bricks)
-  7. docs/TODO_BOARD_2026-04-26.md (single-pane status — start here to
+  8. docs/TODO_BOARD_2026-04-26.md (single-pane status — start here to
      pick a lane)
-  8. docs/TOOL_RELIABILITY_AUDIT_2026-04-26.md
-  9. docs/COLOR_SYSTEM_AUDIT_2026-04-26.md (NEW round-5 — color leak
+  9. docs/TOOL_RELIABILITY_AUDIT_2026-04-26.md
+ 10. docs/COLOR_SYSTEM_AUDIT_2026-04-26.md (round-5 — color leak
      map + canonical token swap rules)
- 10. docs/AGENT_REGISTRY.md (10 personas — 6 active, 1 orchestrator,
+ 11. docs/AGENT_REGISTRY.md (10 personas — 6 active, 1 orchestrator,
      3 stubs)
- 11. docs/AGENTIC_SYSTEM.md (Brainstorming Table queue is steps 1-5 done)
- 12. docs/CORPUS_ARCHITECTURE.md (steps 1-3 done; step 4 done in Lane N)
- 13. docs/specs/2026-04-26-improvements/ (drop-in specs for round-3
+ 12. docs/AGENTIC_SYSTEM.md (Brainstorming Table queue is steps 1-5 done)
+ 13. docs/CORPUS_ARCHITECTURE.md (steps 1-3 done; step 4 done in Lane N)
+ 14. docs/specs/2026-04-26-improvements/ (drop-in specs for round-3
      items 9-15 — Onboarding rationale, Document AI, Cloud Translation,
      Brainstorming Cloud Tasks, Changed-since diff, Briefing
      versioning, Domain overrides)
- 14. CHANGELOG.md (Unreleased — covers rounds 1-5)
+ 15. CHANGELOG.md (Unreleased — covers rounds 1-5)
 
 Step 2 — Pick ONE lane from the queue below and own it end-to-end.
 

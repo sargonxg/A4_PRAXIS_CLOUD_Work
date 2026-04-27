@@ -3,7 +3,7 @@
 **Date:** 2026-04-26
 **Author:** Giulio Catanzariti
 **Repo:** https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work
-**Workspace for execution:** `C:\Users\giuli\praxiscodexworking` (fresh clone — see `docs/CODEX_KICKOFF_PROMPT.md`)
+**Workspace for execution:** `C:\Users\giuli\praxiscodexworking` (fresh clone — see `docs/ROUND_6_READINESS_2026-04-27.md`)
 **Status:** Ready to execute
 **Layers on top of:**
 - `docs/superpowers/specs/2026-04-24-praxis-completion-master-plan.md` (Phases A–D — secure-by-default, advisor v2, observability, golden-path QA)
@@ -460,7 +460,7 @@ npm run smoke:public
 
 ## 13. Kickoff
 
-See **[`docs/CODEX_KICKOFF_PROMPT.md`](../../CODEX_KICKOFF_PROMPT.md)**.
+See **[`docs/ROUND_6_READINESS_2026-04-27.md`](../../ROUND_6_READINESS_2026-04-27.md)**.
 
 Codex starts each sprint Monday morning with a fresh clone into `C:\Users\giuli\praxiscodexworking`.
 

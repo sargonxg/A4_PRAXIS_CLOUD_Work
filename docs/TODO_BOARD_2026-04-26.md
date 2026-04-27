@@ -3,7 +3,7 @@
 > Single-pane source of truth for every open brick. Updated by every
 > agent that lands a commit. Read this BEFORE picking your next lane.
 > Pair with `docs/PRAXIS_BIG_IMPROVEMENTS_2026-04-26.md` (canonical
-> roadmap) and `docs/CODEX_HANDOFF_2026-04-26.md` (file ownership).
+> roadmap) and `docs/CODEX_HANDOFF_2026-04-27.md` (file ownership).
 
 ## Legend
 

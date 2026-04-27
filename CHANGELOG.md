@@ -6,6 +6,30 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-04-27 (Codex docs cleanup and LangGraph readiness)
+
+### Added
+
+- Added `docs/ROUND_6_READINESS_2026-04-27.md`, a concise operational plan
+  that distills the deep-research memo, confirms LangGraph package
+  availability, identifies the production checkpointing decision, and lists
+  the human approvals needed before implementing a durable agent runtime.
+
+### Changed
+
+- Updated `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/INDEX.md`,
+  `docs/CONTINUATION.md`, and `docs/CODEX_HANDOFF_2026-04-27.md` so the
+  active workspace is `C:\Users\giuli\praxiscodexworking` and the current
+  read order starts with the Round 6 readiness note.
+- Repointed stale internal doc links from `CODEX_HANDOFF_2026-04-26.md` and
+  `CODEX_KICKOFF_PROMPT.md` to the current 2026-04-27 handoff/readiness docs.
+
+### Removed
+
+- Removed superseded prompt docs from the active docs set:
+  `docs/CODEX_HANDOFF_2026-04-26.md`, `docs/CODEX_KICKOFF_PROMPT.md`, and
+  `docs/HANDOFF_TO_CODEX_5_5.md`.
+
 ## [Unreleased] — 2026-04-26 (tenth session — Claude Code multi-lane sprint)
 
 > Local clone path: `C:\Users\giuli\ANTIGRAVITY\A4_PRAXIS_CLOUD_Work` (fresh `git clone https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`). Older locked clone at `C:\Users\giuli\ANTIGRAVITY\A4_PRAXIS_CLOUD_TACITUS\A4_PRAXIS_CLOUD_Work` was abandoned (Windows file lock prevented removal); secrets were preserved at `C:\Users\giuli\ANTIGRAVITY\_praxis_env_backup_20260426\` before re-cloning.

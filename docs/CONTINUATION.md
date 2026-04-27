@@ -1,10 +1,19 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
+> **2026-04-27 Codex cleanup/readiness update**:
+> Fresh clone now lives at `C:\Users\giuli\praxiscodexworking`.
+> Start with `docs/ROUND_6_READINESS_2026-04-27.md` before the longer
+> handoff docs. It consolidates the deep-research memo, confirms LangGraph
+> viability, and lists the human decisions needed before implementing a
+> durable agent runtime. Stale Codex prompt docs from 2026-04-25/26 were
+> removed from the active docs set; `docs/CODEX_HANDOFF_2026-04-27.md` is
+> the only active Codex prompt.
+
 > **Last updated**: 2026-04-26 (Claude Code rounds 1–5 multi-lane sprint — corpus-search, humanitarian, brainstorming-table, citation primitives, strategic roadmap, agent runner, source-scout, red-team review, AI error toast, BT markdown export, citation chips, landing-page hero overhaul, dashboard legibility fix, debug pill relocation, dev backlog, clarifying questions, Wikipedia enrichment, analyst notes, hero quadrant tour, color system audit, 10 new bricks 45-54, Codex handoff doc — all shipped)
 >
 > **Codex handoff**: `docs/CODEX_HANDOFF_2026-04-27.md` is the fresh
 > drop-in prompt for the next session. Read it first.
-> **Local clone**: `C:\Users\giuli\ANTIGRAVITY\A4_PRAXIS_CLOUD_Work` (fresh `git clone` of `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`). The older locked clone at `C:\Users\giuli\ANTIGRAVITY\A4_PRAXIS_CLOUD_TACITUS\A4_PRAXIS_CLOUD_Work` could not be removed because of an open Windows file handle; secrets were preserved at `C:\Users\giuli\ANTIGRAVITY\_praxis_env_backup_20260426\` before re-cloning.
+> **Local clone**: `C:\Users\giuli\praxiscodexworking` (fresh clone of `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`).
 > **Next agent**: Codex 5.5 (or Claude Code)
 > **Read first**: `CLAUDE.md`, `AGENTS.md`, `docs/OPERATIONAL_SPINE.md`, `CHANGELOG.md` Unreleased, `docs/NEXT_BRICKS_2026-04-26.md`.
 > **Sprint execution plan**: `docs/SPRINT_EXECUTION_PLAN_2026-04-25.md`
@@ -196,7 +205,7 @@
 > a cross-persona heatmap showing citation/provenance gap and persistence
 > vocabulary drift hit every persona.
 >
-> **Codex handoff prompt:** `docs/CODEX_HANDOFF_2026-04-26.md` has the
+> **Codex handoff prompt:** `docs/CODEX_HANDOFF_2026-04-27.md` has the
 > drop-in prompt for the next Codex session. Lanes F–K queued (Ask
 > PRAXIS corpus wiring, Humanitarian page wiring, Situation Health
 > Card, real notification bell, tool id canonicalization, document-graph
@@ -320,7 +329,7 @@
 ## Current state
 
 - **Project**: `praxisbytacitus` (`852128226674`), region `us-central1`, domain `praxis.tacitus.me`.
-- **Repo**: fresh clone at `C:\Users\giuli\praxiscodexworking\A4_PRAXIS_CLOUD_Work`.
+- **Repo**: fresh clone at `C:\Users\giuli\praxiscodexworking`.
 - **Version**: bumped from 6.3.1 → 6.4.0 (operational spine).
 - **What just shipped in code**:
   - 14 new Firestore indexes (incl. the `situations.status` collection-group index that was crashing gdelt-poller).
