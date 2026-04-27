@@ -15,6 +15,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Cloud SQL database, `/agents/health`, typed `agent_runs` schemas,
   local smoke-test entry point, Firestore collection-group indexes, and
   Cloud Run private VPC/Secret Manager deploy wiring.
+- Added the first Admin Console v2 foundation: `/app/admin/*` now has a
+  server-side verified admin layout gate, admin email defaults include both
+  `giulio@tacitus.me` and `giuliocatanzariti@gmail.com`, admin email access
+  requires Firebase `email_verified`, the operator console includes
+  LangGraph agent runs/data ingestions/dev backlog, and a server-only
+  Advisor Feed control plane was added for future advisor retrieval.
 - Added `docs/MONSTER_TODO_2026-04-27.md`: 22-item production-grade
   execution plan covering durable runtime (LangGraph + Cloud SQL),
   data quality (structured extraction, Document AI, Vertex Search/RAG),

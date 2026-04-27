@@ -129,6 +129,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /advisor_feed_items/{itemId} {
+      // Digital advisor control-plane content is server-only. Admin UI reads
+      // and writes through /api/admin/advisor-feed with Admin SDK gating.
+      allow read, write: if false;
+    }
+
     // ── Per-user notifications (subcollection) ──
     // Owners can read and mark-as-read their own notifications, but
     // cannot create or delete them. Server (Admin SDK) creates them.

@@ -2,6 +2,52 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-27 — Codex Brick #1 LangGraph runtime deploy
+
+Source commits deployed:
+
+- `be39dbd feat(agents): add langgraph postgres runtime foundation`
+- `17a85b9 fix(agents): trim langgraph database secret`
+
+Cloud Build:
+
+- Build ID: `c7c9f090-fc43-4d14-a2ac-dc35c18b79a2` — `SUCCESS`, `11M28S`.
+- Build ID: `b6a61ecb-196e-47d2-80d8-8cf842abb606` — `SUCCESS`, `9M49S` (password-secret trim fix).
+- Project: `praxisbytacitus`
+
+Cloud Run:
+
+- Frontend revision after final deploy: `praxis-frontend-00085-qvq`
+- Backend revision after final deploy: `praxis-backend-00051-55q`
+- Backend URL: `https://praxis-backend-pgoyqovcza-uc.a.run.app`
+
+Validation before deploy:
+
+- `npx tsc --noEmit` clean.
+- `npm run build` clean.
+- `npm run lint` clean with warnings only.
+- `npm run audit:gcp` passed with zero hard failures and zero soft warnings.
+- `node scripts/audit-ai-routes.mjs` passed: `58 AI route files, 58 calibrated, 4 exempt`.
+- `npx vitest run` passed: `366/366`.
+- `python -m pytest tests\test_langgraph_runtime.py -q` passed: `2/2`.
+
+Production smoke:
+
+- `https://praxis.tacitus.me/` returned `200`.
+- `https://praxis.tacitus.me/login` returned `200`.
+- `https://praxis.tacitus.me/api/health` returned `200`.
+- Private backend `GET /agents/health` returned `200` with Cloud SQL
+  `praxis_langgraph` checkpointer reachable and `schemaSetup: true`.
+
+Notes:
+
+- First deploy surfaced a real production issue: Cloud Run could reach
+  private IP `10.101.0.3:5432`, but Postgres rejected the password because
+  the mounted Secret Manager env value needed trimming. Commit `17a85b9`
+  normalizes the env secret and production health is now green.
+
+---
+
 ## 2026-04-26 — Tenth-session round 4 deploy (Claude Code) — Lanes AA, BB, CC, DD, EE, FF
 
 Source commit deployed: head of `main` at `gcloud builds submit` time (round-4 lanes AA → FF + the round-4 CHANGELOG commit).

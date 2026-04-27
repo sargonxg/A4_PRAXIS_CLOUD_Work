@@ -1,6 +1,7 @@
 # PRAXIS — MONSTER TODO 2026-04-27
 
-> **Round 6 ambitious production-grade execution plan.** 22 strategic items.
+> **Round 6 ambitious production-grade execution plan.** 22 strategic items
+> plus the current high-impact queue.
 > Authored after fresh clone of `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work`.
 > Replaces ad-hoc round-6 lane picking with a single-pane queue covering app,
 > graphics, landing, database, agents, tools, ops, and trust.
@@ -36,25 +37,47 @@
 | **T10 — Hygiene** | Tool-output unification, Postgres cleanup | #20, #21 |
 | **T11 — Close** | Docs, deploy, smoke | #22 |
 
+## Current high-impact queue
+
+This is the consolidated working queue from the handoff, TODO board,
+Operational Spine, and LangGraph Cloud SQL notes. Treat these as the next
+explicit in-progress/queued items before pulling from the broader backlog.
+
+| ID | Status | Priority | Area | Item | Acceptance criteria | Owner notes |
+|---|---|---|---|---|---|---|
+| HQ-01 | 🟡 in-progress | P0 | Database / Firestore / Cloud SQL | Finish Cloud SQL-backed LangGraph runtime hardening after Brick #1: confirm `agent_runs` schema, indexes, TTL, secret wiring, VPC/private-IP deploy path, and `/agents/health` production readiness. | `GET /agents/health` passes in Cloud Run; `agent_runs` rows include `thread_id`, `checkpointThreadId`, `status`, `lastActivityAt`, `expiresAt`; Firestore indexes deploy cleanly; failure emits `system_events` with `expiresAt`. | Codex owns backend/infra/docs. Do not turn Postgres into product state; Firestore remains the user-facing source of truth. |
+| HQ-02 | ⚪ queued | P0 | LangGraph agentic runtime | Brainstorming Table -> LangGraph via Cloud Tasks `praxis-agents`, with persona turns, critique, synthesis-chair, interrupt/resume, and durable checkpoint recovery. | Run survives Cloud Run restart; analyst can edit a persona row before synthesis; final output writes canonical Firestore tool output with provenance; no canonical graph/profile mutation outside proposal queues. | Codex backend + infra, coordinate with Claude before touching `src/app/api/ai/brainstorming-table` or UI-owned files. |
+| HQ-03 | ⚪ queued | P0 | Data ingestion | Document AI fallback for scanned/layout-heavy PDFs when existing extraction produces <500 chars; preserve page/heading/table metadata. | Scanned PDF produces at least 10 usable chunks; document row records `extractionMethod`; failed or costly fallback surfaces a degraded/cost signal and a `system_events` row. | Split ownership: Codex owns Cloud Function/backend path; Claude owns UI chips unless explicitly coordinated. |
+| HQ-04 | ⚪ queued | P0 | Data quality / ingestion | Structured backend extraction with Pydantic-enforced ACO nodes/edges and visible failure events for malformed model output. | Malformed JSON, schema-invalid nodes, and empty extraction all fail loudly in pytest; no empty graph is silently emitted; extraction failure writes `system_events`. | Codex owns `backend/graphify_tacitus/*`. Keep tests narrow and fixture-driven. |
+| HQ-05 | ⚪ queued | P0 | User / data / situation health | Situation/user/data health layer: compute stale feeds, missing profile fields, stale tool outputs, failed jobs, and degraded corpus coverage for dashboard and admin surfaces. | Health helper returns deterministic red/yellow/green/grey state; at least one unit test covers each degradation class; output can be rendered without extra Firestore round trips. | Existing queued Lane H is Codex-owned, but UI adoption is Claude territory. Keep first brick as library + tests. |
+| HQ-06 | ⚪ queued | P1 | Background jobs | Cloud Tasks dispatcher drains `background_jobs` into `praxis-research`, `praxis-agents`, and `praxis-embeddings` with CAS locking and retry/dead-letter semantics. | 100 queued jobs drain in <5 minutes at parallelism 10; duplicate Cloud Tasks deliveries are idempotent; every job emits `job.queued`, terminal completion/failure events, and `expiresAt`. | Codex infra/backend. Preserve current GDELT worker-pool path until dispatcher is verified in production. |
+| HQ-07 | ⚪ queued | P1 | Observability | BigQuery `system_events` sink and backfill for long-tail operational analysis. | New events appear in `praxis_analytics.system_events`; 24h of events queryable by severity/source/kind; backfill is idempotent and can be dry-run. | Codex owns Cloud Function + scripts. Schema must mirror Operational Spine fields and tolerate missing optional links. |
+| HQ-08 | ⚪ queued | P1 | Secure admin console | Secure admin console v2: IAP or allowlist-gated job/event drill-down, retry CTA, linked tool run, linked job, and audit trail. | Admin can go from error event to source job/tool run in <=3 clicks; retry creates an audit row; non-admin access is denied; sensitive payloads are redacted. | Codex owns admin API/infra gating; coordinate before editing Claude-owned UI components. IAP admin gating Brick #38 can be paired here. |
+| HQ-09 | ⚪ queued | P1 | Digital advisor knowledge feeding | Feed digital advisor/SKC from tool outputs, analyst notes, Source Scout, grounded search, uploaded docs, and corpus search with normalized `CorpusItem` provenance. | New tool output is retrievable by SKC without legacy fallback; citations point to a corpus item; degraded retrieval returns a visible degraded signal rather than uncited generation. | Cross-cut with Claude-owned intelligence files. Codex can own backend/data contracts and docs unless UI/API route changes are explicitly assigned. |
+| HQ-10 | ⚪ queued | P1 | Landing page polish | Landing production polish for paid-launch funnel: messaging, comparison/pricing/trust bands, responsive audit, accessibility, and Lighthouse. | `/` scores at least 90 performance, 95 accessibility, 95 SEO on mobile; 360px viewport has no text overlap; reduced motion and keyboard navigation pass. | Claude owns landing files. Codex only updates docs or validation notes unless asked to coordinate implementation. |
+| HQ-11 | ⚪ queued | P1 | Evals | Repo-root `evals/` harness for extraction, RAG faithfulness, and top-tool schema validity with optional Cloud Build gate. | Extraction golden set reaches >=85% precision/recall; RAG faithfulness >=95%; `_RUN_EVALS=1` can run in CI without slowing default builds. | Shared quality lane. Codex can own backend extraction evals; coordinate for frontend/tool route fixtures. |
+| HQ-12 | ⚪ queued | P1 | Observability / retention | Postgres checkpoint cleanup cron using LangGraph checkpointer API and Firestore `agent_runs.expiresAt`. | Dry-run reports expired threads; live run calls `delete_thread(thread_id)`, marks `checkpointDeletedAt`, and emits cleanup summary/failure `system_events`. | Codex owns. Never use raw SQL deletes against LangGraph tables unless schema is pinned and tested. |
+
 ---
 
 ## #1 — LangGraph runtime foundation
 
-**Lane** 7 · **Brick** new (round-6 anchor) · **Status** ⚪ queued
-**Why**: durable, auditable agent execution is the most strategic upgrade. Cloud SQL `praxisbytacitus-instance` (Postgres 16, private IP `10.101.0.3`, db `praxis_langgraph`) is already provisioned but unused.
+**Lane** 7 · **Brick** 59 · **Status** 🟢 done (Codex continuation)
+**Why**: durable, auditable agent execution is the most strategic upgrade. Cloud SQL `praxisbytacitus-instance` (Postgres 16, private IP `10.101.0.3`, db `praxis_langgraph`) is now wired into the backend LangGraph foundation.
 **Deliverables**:
-- `backend/agents/langgraph/{checkpointing.py, schemas.py, brainstorming.py}`
+- `backend/agents/langgraph/{checkpointing.py, schemas.py, _smoke.py}`
 - `backend/agents/requirements-langgraph.txt` (`langgraph`, `langgraph-checkpoint-postgres`, `psycopg[binary,pool]`)
 - Health endpoint `GET /agents/health` verifies checkpoint DB reachable
-- `.setup()` migration runs once at startup (not per-request)
+- `.setup()` migration path available for controlled checkpointer setup
 - VPC egress + Cloud SQL connector wired for `praxis-backend` Cloud Run service
 - Local Postgres integration test
 - Firestore `agent_runs/{runId}` schema (`thread_id`, `status`, `expiresAt`, `checkpointThreadId`)
-**Acceptance**: agent thread persists across process restart; health probe green; tests pass.
+**Acceptance**: targeted `python -m pytest tests\test_langgraph_runtime.py -q` passes; health probe checks Postgres checkpointer; follow-up HQ-01 verifies production deploy behavior and retention.
+**Owner notes**: Codex owns hardening and cleanup. Do not move user-facing state out of Firestore.
 
 ## #2 — Brainstorming Table → LangGraph migration
 
-**Lane** 8 · **Brick** 18 · **Depends on** #1
+**Lane** 8 · **Brick** 18 · **Status** ⚪ queued · **Depends on** #1
 **Why**: first multi-step agent with natural pause/edit/resume shape. Validates runtime end-to-end.
 **Deliverables**:
 - `backend/agents/langgraph/brainstorming.py` graph: persona-turn nodes → critique → synthesis-chair
@@ -63,22 +86,24 @@
 - Resume endpoint accepts edited persona row
 - Final output still writes Firestore `tools/brainstorming-table` with provenance
 - Cloud Tasks queue `praxis-agents` enqueues long-running deliberation
-**Acceptance**: deliberation survives Cloud Run restart; analyst can edit a persona row before synthesis; output has full provenance trail.
+**Acceptance**: deliberation survives Cloud Run restart; analyst can edit a persona row before synthesis; output has full provenance trail; duplicate task delivery does not create duplicate charges or duplicate output.
+**Owner notes**: Codex owns backend graph + Cloud Tasks. Coordinate before changing Claude-owned Brainstorming UI or route files.
 
 ## #3 — Structured backend extraction
 
-**Lane** 3 · **Status** P0
+**Lane** 3 · **Status** ⚪ queued · **Priority** P0
 **Why**: raw JSON parsing is the #1 silent-failure surface. Bad model output should fail loudly.
 **Deliverables**:
 - `backend/graphify_tacitus/extract.py` returns Pydantic models (Node, Edge)
 - `backend/graphify_tacitus/schemas/` finalised (cross-references `ACO v2.0` 14 entity types + 72 typed relationships)
 - `backend/tests/test_extract.py`: malformed JSON, schema-invalid nodes, empty extraction
 - `system_events` row on extraction failure with reason
-**Acceptance**: invalid model output triggers visible failure (not empty graph); pytest green.
+**Acceptance**: invalid model output triggers visible failure (not empty graph); pytest green; failure emits Operational Spine-compatible `system_events`.
+**Owner notes**: Codex backend lane. Keep ACO schema changes explicit and fixture-backed.
 
 ## #4 — Document AI ingestion
 
-**Lane** 4 · **Brick** 31
+**Lane** 4 · **Brick** 31 · **Status** ⚪ queued
 **Why**: scanned PDFs and layout-heavy reports currently extract too little text via `pdf-parse`.
 **Deliverables**:
 - New service module `src/lib/documents/document-ai-client.ts` (Layout Parser)
@@ -86,11 +111,12 @@
 - Chunk metadata: page, heading, table/list hint
 - Cost/degrade chip in document detail UI
 - Firestore document `documents/{id}` carries `extractionMethod: 'pdf-parse' | 'document-ai'`
-**Acceptance**: scanned PDF produces ≥10 usable chunks; UI shows extraction method.
+**Acceptance**: scanned PDF produces ≥10 usable chunks; UI shows extraction method; degraded fallback writes an observable event.
+**Owner notes**: Codex owns function/backend ingestion; Claude owns document UI unless coordinated.
 
 ## #5 — Onboarding audit + 5-persona test pass
 
-**Brick** 39 · **Status** P0
+**Brick** 39 · **Status** ⚪ queued · **Priority** P0
 **Why**: first-run UX defines retention. Audit must validate all 7 roles × 10 domains × 4 langs.
 **Deliverables**:
 - Manual walk-through: UN diplomat, humanitarian lead, legal analyst, mediator, researcher
@@ -99,7 +125,8 @@
 - Update `docs/personas/PERSONA_WALKTHROUGHS_2026-04-26.md` with addendum
 - Open `dev_backlog/` rows for every gap
 - Verify `<analyst-profile>` block appears in every calibrated route's system prompt (Lane R)
-**Acceptance**: every persona reaches first calibrated tool output without confusion; addendum documented.
+**Acceptance**: every persona reaches first calibrated tool output without confusion; addendum documented; any failures become `dev_backlog` rows.
+**Owner notes**: Claude owns most onboarding UI. Codex should limit itself to docs/tests unless assigned a specific owned file.
 
 ## #6 — User creation + auth flow audit
 
@@ -112,6 +139,7 @@
 - Verify `cookie-signer.ts` HMAC mismatch returns 401
 - Add Playwright test `tests/e2e/auth-matrix.spec.ts`
 **Acceptance**: 6 sign-up paths × 3 sessions matrix all green.
+**Owner notes**: Coordinate ownership before editing auth context or middleware; preserve profile and credit bootstrap invariants.
 
 ## #7 — All-tools audit (40 tools production check)
 
@@ -127,6 +155,7 @@
   - demo banner present when `isClientDemoMode()`
 - Spreadsheet tracker `docs/tools/PRODUCTION_AUDIT_2026-04-27.md` with ✅/⚠️/❌ per axis × tool
 **Acceptance**: ≥35 of 40 tools all-green; remaining ≤5 have spec'd fixes filed.
+**Owner notes**: Mostly Claude UI/API territory. Codex can own audit docs and backend-only findings.
 
 ## #8 — Demo-leak audit close
 
@@ -138,6 +167,7 @@
 - `grep -RIn "DEMO_\|NORDALIA_\|isClientDemoMode" src/app/app/` returns ≤30 lines (was higher)
 - Add Vitest assertion that no demo constant imports happen on production tool routes
 **Acceptance**: production user creating a fresh situation sees zero Nordalia copy outside `/demo/*`.
+**Owner notes**: Claude owns current demo-leak closures. Codex should avoid app-page edits unless asked.
 
 ## #9 — Landing page production-grade overhaul
 
@@ -152,7 +182,8 @@
 - Mobile responsive audit: all sections readable at 360px
 - WCAG AA compliance: contrast checker + keyboard nav + reduced motion respect
 - Lighthouse: ≥90 perf, ≥95 a11y, ≥95 SEO
-**Acceptance**: Lighthouse mobile score ≥90/95/90/95 on `/`.
+**Acceptance**: Lighthouse mobile score ≥90/95/90/95 on `/`; 360px and desktop screenshots show no text overlap.
+**Owner notes**: Claude owns landing components. Codex may contribute validation notes only unless implementation ownership changes.
 
 ## #10 — Vertex AI Search / RAG expansion
 
@@ -167,6 +198,7 @@
 - Results normalize to `CorpusItem` (existing contract)
 - Cost telemetry to BigQuery
 **Acceptance**: situation with 10k+ chunks returns top-k with p95 <1s; provenance preserved.
+**Owner notes**: Cross-cut with intelligence/SKC ownership. Normalize everything to existing `CorpusItem`.
 
 ## #11 — Real Search / Deep Search Agent multi-session
 
@@ -178,10 +210,11 @@
 - Grounded Google Search results become `CorpusItem` with citations
 - `<DegradedDataChip />` when search degraded
 **Acceptance**: two concurrent Deep Research calls coexist; older session preserved.
+**Owner notes**: Claude-owned route and intelligence files. Codex should only take backend/storage support work.
 
 ## #12 — Cloud Tasks dispatcher
 
-**Brick** 23 · **Status** P1
+**Brick** 23 · **Status** ⚪ queued · **Priority** P1
 **Why**: worker pool single-instance polling doesn't scale. Three queues already exist (`praxis-research`, `praxis-agents`, `praxis-embeddings`).
 **Deliverables**:
 - Backend dispatcher reads `background_jobs.where('status','==','queued').orderBy('nextRunAt').limit(10)`
@@ -189,7 +222,8 @@
 - Worker is HTTP endpoint that consumes a Cloud Tasks delivery, claims via CAS on `lockedBy/lockedUntil`, runs, calls `complete_job`
 - Per-job retry policy + parallelism + no custom lock service
 - Migration leaves `gdelt-poller` worker pool path until verified
-**Acceptance**: 100 queued jobs drain in <5min with parallelism=10.
+**Acceptance**: 100 queued jobs drain in <5min with parallelism=10; terminal states and retries emit Operational Spine events with `expiresAt`.
+**Owner notes**: Codex owns dispatcher/infra. Keep existing worker pool active until production drain is verified.
 
 ## #13 — Stripe Meters wiring
 
@@ -202,10 +236,11 @@
 - Idempotency key per `tool_runs.{id}`
 - Admin page `/app/admin/billing` shows aggregate meter usage per tenant
 **Acceptance**: every successful AI route emits a meter event visible in Stripe dashboard within 60s.
+**Owner notes**: Helper wiring is partially landed. Token-dimension accuracy depends on AI SDK usage capture.
 
 ## #14 — Email notification path
 
-**Brick** 28 · **Status** P1
+**Brick** 28 · **Status** ⚪ queued · **Priority** P1
 **Why**: notifications today live only in Firestore. Critical alerts must escape app.
 **Deliverables**:
 - Cloud Function `cloud_functions/on_notification_created/main.py`
@@ -215,6 +250,7 @@
 - Dedupe by `notificationId`; idempotent retry
 - Env: `RESEND_API_KEY` in Secret Manager
 **Acceptance**: red/yellow notification arrives in inbox within 2min; dupe suppressed.
+**Owner notes**: Use Resend, not SendGrid. Dedupe by notification id and keep retries idempotent.
 
 ## #15 — App Check enforcement
 
@@ -228,6 +264,7 @@
 - Playwright test: missing token → 403
 - Documented exceptions for cron + admin paths
 **Acceptance**: 7-day metrics show ≥99% of mutating-route traffic carries App Check token; enforcement flag flipped without prod alarm.
+**Owner notes**: Logging-only first; enforcement requires clean telemetry and documented cron/admin exceptions.
 
 ## #16 — Eval harness
 
@@ -241,6 +278,7 @@
 - Cloud Build optional gate via `_RUN_EVALS=1`
 - Vertex AI Eval integration for model regression (Brick #35)
 **Acceptance**: golden extraction set ≥85% precision/recall; faithfulness ≥95%; gate available in CI.
+**Owner notes**: Keep default CI fast; wire evals behind `_RUN_EVALS=1`.
 
 ## #17 — Sigma.js / Graphology graph canvas
 
@@ -254,10 +292,11 @@
 - 90-day update sparkline (Brick 14) overlays on edges
 - Layout: ForceAtlas2 for >300 nodes; force-directed for smaller
 **Acceptance**: 5,000-node graph renders at 60fps; provenance drawer opens on click.
+**Owner notes**: Frontend-heavy; Codex should not edit visualization components without explicit lane ownership.
 
 ## #18 — Operator Console v2 drill-down
 
-**Brick** 25 · **Status** P1
+**Brick** 25 · **Status** ⚪ queued · **Priority** P1
 **Why**: today flat table; admins need root-cause path.
 **Deliverables**:
 - Click job row → side panel with full payload, error stack, "Retry" CTA
@@ -265,11 +304,12 @@
 - Click error event → linked job + linked tool_run + recent events for same uid
 - Search bar filtering events by uid (admin-allowlist gated)
 - Live `useSemaphoreSummary()` head row
-**Acceptance**: admin can drill from `system_events` error to source job in ≤3 clicks.
+**Acceptance**: admin can drill from `system_events` error to source job in ≤3 clicks; retry action is audit-logged and admin-gated.
+**Owner notes**: Pair with IAP admin gating where practical. Redact sensitive payloads before rendering.
 
 ## #19 — BigQuery system_events sink
 
-**Brick** 26 · **Status** P2
+**Brick** 26 · **Status** ⚪ queued · **Priority** P1
 **Why**: long-tail observability needs SQL access; Firestore alone won't scale aggregations.
 **Deliverables**:
 - Cloud Function `cloud_functions/on_system_event_created/main.py` streams to BigQuery `praxis_analytics.system_events`
@@ -277,6 +317,7 @@
 - Backfill script `scripts/backfill-system-events.mjs`
 - Looker Studio template in `docs/dashboards/`
 **Acceptance**: 24h of events queryable in BigQuery; backfill script idempotent.
+**Owner notes**: Codex owns function/schema/scripts. Match `docs/OPERATIONAL_SPINE.md` fields and tolerate optional links.
 
 ## #20 — Tool output store unification
 
@@ -290,6 +331,7 @@
 - Migration script `scripts/migrate-tool-data.mjs` (idempotent)
 - Test: SKC retrieves newly generated outputs immediately
 **Acceptance**: every AI route writes through one helper; SKC retrieval works without legacy fallback.
+**Owner notes**: Cross-cut with Claude-owned service files. Avoid broad migration without tests and coordination.
 
 ## #21 — Postgres cleanup + retention
 
@@ -303,6 +345,7 @@
 - Emits `system_events` row per cleanup batch
 - Cloud Scheduler config in `infrastructure/setup-gcp.sh`
 **Acceptance**: dry-run shows expired threads; live run deletes them; `system_events` recorded.
+**Owner notes**: Codex owns. Use LangGraph checkpointer API (`delete_thread`) instead of raw SQL.
 
 ## #22 — Final docs + deploy + smoke
 
@@ -322,7 +365,7 @@
 
 ## Execution model
 
-- **Sequence**: roughly T0 → T11. #1 must land before #2.
+- **Sequence**: #1 has landed; harden via HQ-01, then prioritize #2, #3, #4, #12, #18, and #21.
 - **Parallelism**: #3, #4, #5, #6, #7, #8, #9 are independent and can run in parallel agents.
 - **Daily checkpoint**: validation gate must pass before any commit lands on `main`.
 - **Codex handoff**: when finishing a brick, append a row to `CONTINUATION.md` describing what shipped and what's queued next.

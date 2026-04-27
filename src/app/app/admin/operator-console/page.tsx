@@ -14,9 +14,10 @@ interface FirestoreTimestamp {
 }
 
 interface SystemEvent {
+  id?: string;
   eventId: string;
   kind: string;
-  severity: 'info' | 'warn' | 'error' | 'critical';
+  severity: 'info' | 'warn' | 'warning' | 'error' | 'critical';
   uid: string | null;
   situationId: string | null;
   jobId: string | null;
@@ -41,6 +42,7 @@ interface BackgroundJobAdmin {
 }
 
 interface ToolRunAdmin {
+  id?: string;
   toolRunId: string;
   uid: string;
   toolId: string;
@@ -51,13 +53,53 @@ interface ToolRunAdmin {
   error: { code: string; message: string } | null;
 }
 
-const SEVERITY_RANK: Record<string, number> = { critical: 4, error: 3, warn: 2, info: 1 };
+interface AgentRunAdmin {
+  id?: string;
+  runId?: string;
+  uid?: string;
+  situationId?: string | null;
+  toolId?: string;
+  workflow?: string;
+  status?: string;
+  semaphore?: Semaphore;
+  checkpointThreadId?: string;
+  lastActivityAt?: FirestoreTimestamp;
+  expiresAt?: FirestoreTimestamp;
+  error?: { code?: string; message?: string } | null;
+}
+
+interface DataIngestionAdmin {
+  id?: string;
+  uid?: string;
+  situationId?: string | null;
+  source?: string;
+  status?: string;
+  createdAt?: FirestoreTimestamp;
+  error?: { code?: string; message?: string } | null;
+}
+
+interface DevBacklogAdmin {
+  id?: string;
+  title?: string;
+  status?: string;
+  severity?: string;
+  route?: string;
+  updatedAt?: FirestoreTimestamp;
+}
+
+type QueryErrors = Record<string, string | null | undefined>;
+
+const SEVERITY_RANK: Record<string, number> = { critical: 4, error: 3, warning: 2, warn: 2, info: 1 };
 
 export default function OperatorConsole() {
   const { user, loading } = useAuth();
   const [events, setEvents] = useState<SystemEvent[]>([]);
   const [jobs, setJobs] = useState<BackgroundJobAdmin[]>([]);
   const [runs, setRuns] = useState<ToolRunAdmin[]>([]);
+  const [agentRuns, setAgentRuns] = useState<AgentRunAdmin[]>([]);
+  const [ingestions, setIngestions] = useState<DataIngestionAdmin[]>([]);
+  const [backlog, setBacklog] = useState<DevBacklogAdmin[]>([]);
+  const [queryErrors, setQueryErrors] = useState<QueryErrors>({});
   const [filter, setFilter] = useState<'all' | 'failed' | 'warn'>('all');
   const [error, setError] = useState<string | null>(null);
 
@@ -76,6 +118,10 @@ export default function OperatorConsole() {
         setEvents(data.events ?? []);
         setJobs(data.jobs ?? []);
         setRuns(data.runs ?? []);
+        setAgentRuns(data.agentRuns ?? []);
+        setIngestions(data.ingestions ?? []);
+        setBacklog(data.backlog ?? []);
+        setQueryErrors(data.queryErrors ?? {});
         setError(null);
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : String(err));
@@ -97,8 +143,12 @@ export default function OperatorConsole() {
     failedJobs: jobs.filter((j) => j.status === 'failed').length,
     deadLetter: jobs.filter((j) => j.status === 'dead_letter').length,
     failedRunsLast: runs.filter((r) => r.status === 'failed').length,
+    activeAgentRuns: agentRuns.filter((r) => r.status === 'running' || r.status === 'awaiting-human').length,
+    failedAgentRuns: agentRuns.filter((r) => r.status === 'failed').length,
+    failedIngestions: ingestions.filter((r) => r.status === 'failed').length,
+    openBacklog: backlog.filter((r) => r.status === 'open').length,
     errorEventsLast: events.filter((e) => e.severity === 'error' || e.severity === 'critical').length,
-  }), [jobs, runs, events]);
+  }), [jobs, runs, agentRuns, ingestions, backlog, events]);
 
   if (loading) return null;
   if (!user) return <div className="p-6 text-zinc-400">Not authenticated.</div>;
@@ -134,12 +184,34 @@ export default function OperatorConsole() {
         </div>
       ) : null}
 
-      <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
+      <QueryErrorBanner errors={queryErrors} />
+
+      <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
         <Counter label="Running" value={counters.runningJobs} state="yellow" />
         <Counter label="Failed jobs" value={counters.failedJobs} state={counters.failedJobs > 0 ? 'red' : 'green'} />
         <Counter label="Dead-letter" value={counters.deadLetter} state={counters.deadLetter > 0 ? 'red' : 'green'} />
         <Counter label="Failed tool runs" value={counters.failedRunsLast} state={counters.failedRunsLast > 0 ? 'yellow' : 'green'} />
+        <Counter label="Agent active" value={counters.activeAgentRuns} state={counters.activeAgentRuns > 0 ? 'yellow' : 'green'} />
+        <Counter label="Agent failed" value={counters.failedAgentRuns} state={counters.failedAgentRuns > 0 ? 'red' : 'green'} />
+        <Counter label="Ingest failed" value={counters.failedIngestions} state={counters.failedIngestions > 0 ? 'red' : 'green'} />
+        <Counter label="Backlog open" value={counters.openBacklog} state={counters.openBacklog > 0 ? 'yellow' : 'green'} />
         <Counter label="Error events" value={counters.errorEventsLast} state={counters.errorEventsLast > 0 ? 'red' : 'green'} />
+      </section>
+
+      <section className="mb-6">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-zinc-400">LangGraph agent runs</h2>
+        <Table
+          rows={agentRuns.slice(0, 30)}
+          columns={[
+            { key: 'workflow', label: 'Workflow' },
+            { key: 'toolId', label: 'Tool' },
+            { key: 'status', label: 'Status', render: (r) => <SemaphoreChip state={r.semaphore ?? statusToSemaphore(r.status)} label={r.status ?? 'unknown'} /> },
+            { key: 'checkpointThreadId', label: 'Thread', render: (r) => <span className="font-mono text-xs">{shortId(r.checkpointThreadId)}</span> },
+            { key: 'error', label: 'Error', render: (r) => r.error ? <span className="text-rose-400">{r.error.code ?? r.error.message}</span> : '-' },
+            { key: 'lastActivityAt', label: 'Activity', render: (r) => formatRel(r.lastActivityAt) },
+            { key: 'expiresAt', label: 'Expires', render: (r) => formatRel(r.expiresAt) },
+          ]}
+        />
       </section>
 
       <section className="mb-6">
@@ -155,6 +227,35 @@ export default function OperatorConsole() {
             { key: 'updatedAt', label: 'Updated', render: (r) => formatRel(r.updatedAt) },
           ]}
         />
+      </section>
+
+      <section className="mb-6 grid gap-6 xl:grid-cols-2">
+        <div>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-zinc-400">Data ingestion</h2>
+          <Table
+            rows={ingestions.slice(0, 20)}
+            columns={[
+              { key: 'source', label: 'Source' },
+              { key: 'status', label: 'Status', render: (r) => <SemaphoreChip state={statusToSemaphore(r.status)} label={r.status ?? 'unknown'} /> },
+              { key: 'situationId', label: 'Situation', render: (r) => shortId(r.situationId ?? undefined) },
+              { key: 'error', label: 'Error', render: (r) => r.error ? <span className="text-rose-400">{r.error.code ?? r.error.message}</span> : '-' },
+              { key: 'createdAt', label: 'Created', render: (r) => formatRel(r.createdAt) },
+            ]}
+          />
+        </div>
+        <div>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-zinc-400">Developer backlog</h2>
+          <Table
+            rows={backlog.slice(0, 20)}
+            columns={[
+              { key: 'title', label: 'Title', render: (r) => <span className="line-clamp-2">{r.title ?? '-'}</span> },
+              { key: 'severity', label: 'Severity', render: (r) => severityBadge((r.severity ?? 'info') as SystemEvent['severity']) },
+              { key: 'status', label: 'Status' },
+              { key: 'route', label: 'Route', render: (r) => <span className="font-mono text-xs">{r.route ?? '-'}</span> },
+              { key: 'updatedAt', label: 'Updated', render: (r) => formatRel(r.updatedAt) },
+            ]}
+          />
+        </div>
       </section>
 
       <section className="mb-6">
@@ -202,9 +303,30 @@ function Counter({ label, value, state }: { label: string; value: number; state:
 
 function severityBadge(s: SystemEvent['severity']) {
   const map: Record<SystemEvent['severity'], Semaphore> = {
-    info: 'green', warn: 'yellow', error: 'red', critical: 'red',
+    info: 'green', warn: 'yellow', warning: 'yellow', error: 'red', critical: 'red',
   };
   return <SemaphoreChip state={map[s]} label={s} />;
+}
+
+function statusToSemaphore(status: string | undefined): Semaphore {
+  if (status === 'completed' || status === 'succeeded' || status === 'ok') return 'green';
+  if (status === 'failed' || status === 'dead_letter' || status === 'error') return 'red';
+  return 'yellow';
+}
+
+function shortId(value: string | undefined): string {
+  if (!value) return '-';
+  return value.length > 18 ? `${value.slice(0, 8)}...${value.slice(-6)}` : value;
+}
+
+function QueryErrorBanner({ errors }: { errors: QueryErrors }) {
+  const failed = Object.entries(errors).filter(([, value]) => value);
+  if (failed.length === 0) return null;
+  return (
+    <div className="mb-4 rounded-md border border-amber-700 bg-amber-950/40 p-3 text-sm text-amber-200">
+      Partial console data: {failed.map(([key]) => key).join(', ')} failed to load. Check Firestore indexes or Admin SDK logs.
+    </div>
+  );
 }
 
 function formatRel(ts: FirestoreTimestamp | undefined): string {

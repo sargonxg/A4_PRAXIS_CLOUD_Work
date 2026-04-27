@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Activity, Brain, Database, ShieldCheck, Users } from 'lucide-react';
+import { Activity, Brain, Database, FileText, ShieldCheck, Users } from 'lucide-react';
 
 const adminTools = [
   {
@@ -25,6 +25,12 @@ const adminTools = [
     title: 'Advisor Council',
     description: 'Edit advisor personas, source categories, tools, model tier, and memory policy.',
     icon: Brain,
+  },
+  {
+    href: '/app/admin/advisor-feed',
+    title: 'Advisor Feed',
+    description: 'Curate methodology notes, source guidance, warnings, and playbooks for advisor retrieval.',
+    icon: FileText,
   },
   {
     href: '/app/admin/domains',

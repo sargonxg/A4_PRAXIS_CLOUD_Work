@@ -104,7 +104,7 @@ bricks**; status per brick below.
 | 20 | Graph Cartographer + delta approval queue | 🔵 stub registered | unassigned | P1 |
 | 21 | Timeline Editor agent | 🔵 stub registered | unassigned | P2 |
 | 22 | Red-Team agent on every report | ⚪ queued | unassigned | P2 |
-| 23 | Cloud Tasks dispatcher migrating off worker pool | ⚪ queued | codex (infra) | P2 |
+| 23 | Cloud Tasks dispatcher migrating off worker pool | ⚪ queued | codex (infra) | P1 |
 | 24 | Multi-session Vertex Agent storage | ⚪ queued | unassigned | P2 |
 
 ### Operational Excellence & Trust (25–30)
@@ -112,9 +112,9 @@ bricks**; status per brick below.
 | # | Brick | Status | Owner | Priority |
 |---|---|---|---|---|
 | 25 | Operator Console v2 | ⚪ queued | codex | P1 |
-| 26 | BigQuery `praxis_analytics.system_events` sink | ⚪ queued | unassigned | P2 |
+| 26 | BigQuery `praxis_analytics.system_events` sink | ⚪ queued | codex | P1 |
 | 27 | Stripe Meters for usage billing | ⚪ queued | unassigned | P2 |
-| 28 | Email notification path (SendGrid) | ⚪ queued | unassigned | P1 |
+| 28 | Email notification path (Resend) | ⚪ queued | codex | P1 |
 | 29 | Demo-leak audit closed | 🟡 partial | claude | P0 — Humanitarian + Dossier closed 2026-04-27 (round 6); 50+ lower-impact pages still grep for `DEMO_*` |
 | 30 | SOC 2 / DPA path documented | ⚪ queued | human-only | P2 |
 
@@ -122,14 +122,14 @@ bricks**; status per brick below.
 
 | # | Brick | Status | Owner | Priority |
 |---|---|---|---|---|
-| 31 | Document AI OCR for uploaded PDFs | ⚪ queued | unassigned | P1 |
+| 31 | Document AI OCR for uploaded PDFs | ⚪ queued | codex (backend) + claude (UI) | P0 |
 | 32 | Cloud Translation multilingual calibration | ⚪ queued | unassigned | P1 |
 | 33 | Cloud Workflows pipeline orchestration | ⚪ queued | codex (infra) | P2 |
 | 34 | Cloud KMS cookie/session secret rotation | ⚪ queued | codex (infra) | P1 |
-| 35 | Vertex AI Eval model regression catch | ⚪ queued | unassigned | P2 |
+| 35 | Vertex AI Eval model regression catch | ⚪ queued | unassigned | P1 |
 | 36 | Cloud Armor WAF/rate-limit at edge | ⚪ queued | codex (infra) | P2 |
 | 37 | Vertex AI Pipelines embedding refresh | ⚪ queued | unassigned | P2 |
-| 38 | IAP admin gating | ⚪ queued | codex (infra) | P2 |
+| 38 | IAP admin gating | ⚪ queued | codex (infra) | P1 |
 
 ### NEW bricks from rounds 3 + 4 (39–44)
 
@@ -153,6 +153,19 @@ Plan: `docs/MONSTER_TODO_2026-04-27.md`
 | 57 | Dossier demo-leak close (Brick #29 portion) | 🟢 done | claude | round 6 — `dossier/_demo.tsx` ViewStep gates `DEMO_DOSSIER_CONTENT` behind `isDemo` |
 | 58 | MONSTER TODO — round 6 execution plan | 🟢 done | claude | round 6 — `docs/MONSTER_TODO_2026-04-27.md` (22 items) |
 | 59 | LangGraph runtime foundation | 🟢 done | codex | round 6 — `backend/agents/langgraph/*`, `/agents/health`, Cloud SQL Postgres checkpointer, Firestore `agent_runs` indexes, Cloud Run VPC/secret wiring |
+| 60 | High-impact queue consolidation | 🟢 done | codex | docs-only — `docs/MONSTER_TODO_2026-04-27.md` now consolidates current P0/P1 queue with acceptance criteria and owner notes |
+| 61 | LangGraph runtime production hardening | 🟡 in-progress | codex | HQ-01 / P0 — verify Cloud Run health, `agent_runs` TTL/index contract, private-IP DB wiring, and system events |
+| 62 | Brainstorming Table -> LangGraph durable runtime | ⚪ queued | codex + claude coordination | HQ-02 / BIG #18 / P0 — Cloud Tasks `praxis-agents`, interrupt/resume, provenance-preserving final output |
+| 63 | Document AI ingestion fallback | ⚪ queued | codex (backend) + claude (UI) | HQ-03 / Brick #31 / P0 — scanned PDFs, layout metadata, extraction method, degraded/cost signal |
+| 64 | Structured ACO extraction validation | ⚪ queued | codex | HQ-04 / P0 — Pydantic nodes/edges, malformed-output tests, visible extraction failure events |
+| 65 | Situation/user/data health layer | ⚪ queued | codex + claude coordination | HQ-05 / Lane H / P0 — deterministic health helper for stale feeds, degraded corpus, missing profile, failed jobs |
+| 66 | Cloud Tasks dispatcher | ⚪ queued | codex | HQ-06 / Brick #23 / P1 — CAS locking, retries, dead-letter semantics, three queues |
+| 67 | Observability warehouse path | ⚪ queued | codex | HQ-07 / Brick #26 / P1 — `system_events` BigQuery sink plus idempotent backfill |
+| 68 | Secure admin console v2 | ⚪ queued | codex + claude coordination | HQ-08 / Bricks #25/#38 / P1 — admin gating, event/job drill-down, retry CTA, audit row |
+| 69 | Digital advisor knowledge feeding | ⚪ queued | unassigned | HQ-09 / P1 — SKC fed by tool outputs, notes, Source Scout, docs, grounded search with `CorpusItem` provenance |
+| 70 | Landing page paid-launch polish | ⚪ queued | claude | HQ-10 / P1 — messaging, comparison/pricing/trust bands, mobile/a11y/Lighthouse |
+| 71 | Eval harness | ⚪ queued | unassigned | HQ-11 / Brick #35 / P1 — extraction goldens, RAG faithfulness, top-tool schema checks, optional CI gate |
+| 72 | Postgres checkpoint cleanup cron | ⚪ queued | codex | HQ-12 / Lane 14 / P1 — `delete_thread`, `checkpointDeletedAt`, cleanup `system_events` |
 
 ### NEW bricks from round 5 (45–54)
 

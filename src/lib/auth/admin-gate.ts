@@ -7,6 +7,8 @@
  * Kept minimal so the gate is auditable at a glance.
  */
 
+const DEFAULT_ADMIN_EMAILS = ['giulio@tacitus.me', 'giuliocatanzariti@gmail.com'];
+
 export function isAdmin(uid: string | null | undefined): boolean {
   if (!uid) return false;
   const raw = process.env.ADMIN_ALLOWLIST ?? '';
@@ -20,7 +22,7 @@ export function isAdmin(uid: string | null | undefined): boolean {
 export function isAdminEmail(email: string | null | undefined): boolean {
   if (!email) return false;
   const normalized = email.trim().toLowerCase();
-  const raw = process.env.ADMIN_EMAIL_ALLOWLIST ?? 'giulio@tacitus.me';
+  const raw = process.env.ADMIN_EMAIL_ALLOWLIST ?? DEFAULT_ADMIN_EMAILS.join(',');
   const allowed = raw
     .split(',')
     .map((s) => s.trim().toLowerCase())
@@ -31,8 +33,9 @@ export function isAdminEmail(email: string | null | undefined): boolean {
 export function isAdminPrincipal(user: {
   uid?: string | null;
   email?: string | null;
+  emailVerified?: boolean | null;
 } | null | undefined): boolean {
-  return isAdmin(user?.uid) || isAdminEmail(user?.email);
+  return isAdmin(user?.uid) || (user?.emailVerified === true && isAdminEmail(user?.email));
 }
 
 /** Fast helper for API routes — returns 403 NextResponse if not allowed. */

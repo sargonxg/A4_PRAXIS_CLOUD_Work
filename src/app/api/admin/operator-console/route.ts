@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
 import { isAdminPrincipal } from '@/lib/auth/admin-gate';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
+import type { QuerySnapshot } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -27,19 +28,47 @@ export const GET = withAuth(async (_req, user) => {
   const jobLimit = Math.min(Number(url.searchParams.get('jobLimit') ?? 50), 200);
   const runLimit = Math.min(Number(url.searchParams.get('runLimit') ?? 50), 200);
 
-  const [eventsSnap, jobsSnap, runsSnap, deadLetterSnap] = await Promise.all([
-    db.collection('system_events').orderBy('createdAt', 'desc').limit(eventLimit).get(),
-    db.collection('background_jobs').orderBy('updatedAt', 'desc').limit(jobLimit).get(),
-    db.collection('tool_runs').orderBy('startedAt', 'desc').limit(runLimit).get(),
-    db.collection('background_jobs').where('status', '==', 'dead_letter')
-      .orderBy('updatedAt', 'desc').limit(20).get(),
+  const safeDocs = async (
+    label: string,
+    query: Promise<QuerySnapshot>,
+  ) => {
+    try {
+      const snap = await query;
+      return { rows: snap.docs.map((d) => ({ id: d.id, ...d.data() })), error: null };
+    } catch (err) {
+      console.warn(`[admin/operator-console] ${label} query failed:`, err);
+      return { rows: [], error: err instanceof Error ? err.message : String(err) };
+    }
+  };
+
+  const [events, jobs, runs, deadLetter, agentRuns, ingestions, backlog] = await Promise.all([
+    safeDocs('system_events', db.collection('system_events').orderBy('createdAt', 'desc').limit(eventLimit).get()),
+    safeDocs('background_jobs', db.collection('background_jobs').orderBy('updatedAt', 'desc').limit(jobLimit).get()),
+    safeDocs('tool_runs', db.collection('tool_runs').orderBy('startedAt', 'desc').limit(runLimit).get()),
+    safeDocs('dead_letter', db.collection('background_jobs').where('status', '==', 'dead_letter')
+      .orderBy('updatedAt', 'desc').limit(20).get()),
+    safeDocs('agent_runs', db.collectionGroup('agent_runs').orderBy('lastActivityAt', 'desc').limit(50).get()),
+    safeDocs('data_ingestions', db.collection('data_ingestions').orderBy('createdAt', 'desc').limit(50).get()),
+    safeDocs('dev_backlog', db.collection('dev_backlog').orderBy('updatedAt', 'desc').limit(50).get()),
   ]);
 
   return NextResponse.json({
-    events: eventsSnap.docs.map((d) => d.data()),
-    jobs: jobsSnap.docs.map((d) => d.data()),
-    runs: runsSnap.docs.map((d) => d.data()),
-    deadLetter: deadLetterSnap.docs.map((d) => d.data()),
+    events: events.rows,
+    jobs: jobs.rows,
+    runs: runs.rows,
+    deadLetter: deadLetter.rows,
+    agentRuns: agentRuns.rows,
+    ingestions: ingestions.rows,
+    backlog: backlog.rows,
+    queryErrors: {
+      events: events.error,
+      jobs: jobs.error,
+      runs: runs.error,
+      deadLetter: deadLetter.error,
+      agentRuns: agentRuns.error,
+      ingestions: ingestions.error,
+      backlog: backlog.error,
+    },
     fetchedAt: Date.now(),
   });
 });

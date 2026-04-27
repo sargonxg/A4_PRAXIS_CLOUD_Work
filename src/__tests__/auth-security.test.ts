@@ -37,6 +37,34 @@ describe('Auth Security Contracts', () => {
     const DEMO_UID = 'demo-user-001';
     expect(DEMO_UID).toBe('demo-user-001');
   });
+
+  it('admin email allowlist includes both Giulio addresses and requires verified email', async () => {
+    const original = process.env.ADMIN_EMAIL_ALLOWLIST;
+    delete process.env.ADMIN_EMAIL_ALLOWLIST;
+    const { isAdminPrincipal } = await import('../lib/auth/admin-gate');
+
+    expect(isAdminPrincipal({
+      uid: 'not-allowlisted',
+      email: 'giulio@tacitus.me',
+      emailVerified: true,
+    })).toBe(true);
+    expect(isAdminPrincipal({
+      uid: 'not-allowlisted',
+      email: 'giuliocatanzariti@gmail.com',
+      emailVerified: true,
+    })).toBe(true);
+    expect(isAdminPrincipal({
+      uid: 'not-allowlisted',
+      email: 'giulio@tacitus.me',
+      emailVerified: false,
+    })).toBe(false);
+
+    if (original === undefined) {
+      delete process.env.ADMIN_EMAIL_ALLOWLIST;
+    } else {
+      process.env.ADMIN_EMAIL_ALLOWLIST = original;
+    }
+  });
 });
 
 describe('Credit Cost Validation', () => {

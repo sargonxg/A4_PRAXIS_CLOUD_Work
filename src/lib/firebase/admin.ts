@@ -84,6 +84,7 @@ export async function verifyIdToken(token: string): Promise<{
   uid: string;
   email: string;
   name: string;
+  emailVerified: boolean;
 }> {
   if (!_auth) {
     throw new Error(
@@ -97,6 +98,7 @@ export async function verifyIdToken(token: string): Promise<{
     uid: decoded.uid,
     email: decoded.email || '',
     name: decoded.name || decoded.email?.split('@')[0] || 'User',
+    emailVerified: decoded.email_verified === true,
   };
 }
 
