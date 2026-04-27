@@ -1,213 +1,169 @@
 "use client";
 
-import { useState, useRef, useEffect, FormEvent } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Mail, CheckCircle, Loader2 } from "lucide-react";
+/**
+ * "Talk to TACITUS" — replaces the old waitlist form.
+ *
+ * The product is now in early access without a queue. Visitors who want
+ * to engage commercially or institutionally write to hello@tacitus.me;
+ * everyone else can spin up the live workspace or the demo from /login.
+ *
+ * The section also positions TACITUS itself: PRAXIS is the first surface
+ * of an AI-native stack we are building for statecraft.
+ */
 
-type FormState = "idle" | "loading" | "success" | "error";
+import { motion, useReducedMotion } from "framer-motion";
+import { Mail, ArrowUpRight, Sparkles } from "lucide-react";
+
+const PILLARS = [
+  {
+    label: "Today",
+    title: "PRAXIS",
+    body: "Agentic AI workspace for diplomats, conflict analysts, mediators, and policy officers. Live now.",
+  },
+  {
+    label: "Next",
+    title: "Calibrated agents",
+    body: "Mandate-aware autonomous agents for monitoring, briefing, and negotiation prep — built on the PRAXIS calibration spine.",
+  },
+  {
+    label: "Building",
+    title: "Institutional graph",
+    body: "Shared knowledge graph for ministries, missions, and research institutes — your sources, your taxonomy, your doctrine.",
+  },
+];
 
 export function WaitlistForm() {
-  const [email, setEmail] = useState("");
-  const [website, setWebsite] = useState(""); // honeypot — hidden, bots fill
-  const [formState, setFormState] = useState<FormState>("idle");
-  const [errorMessage, setErrorMessage] = useState("");
-  const mountedAt = useRef<number>(Date.now());
-
-  useEffect(() => {
-    mountedAt.current = Date.now();
-  }, []);
-
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    if (!email || !email.includes("@")) {
-      setErrorMessage("Please enter a valid email address.");
-      setFormState("error");
-      return;
-    }
-
-    setFormState("loading");
-    setErrorMessage("");
-
-    try {
-      const res = await fetch('/api/waitlist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          website,
-          elapsedMs: Date.now() - mountedAt.current,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Something went wrong');
-      }
-
-      setFormState("success");
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "Something went wrong. Please try again.");
-      setFormState("error");
-    }
-  }
+  const shouldReduceMotion = useReducedMotion() ?? false;
 
   return (
-    <section id="waitlist" className="relative overflow-hidden px-6 py-28 lg:py-36">
+    <section id="contact" className="relative overflow-hidden px-6 py-28 lg:py-36">
       {/* Warm gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-cream-100 via-cream-200/50 to-cream-100" />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-gradient-to-b from-cream-100 via-cream-200/40 to-cream-100"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 40% at 30% 20%, rgba(232,185,49,0.12) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 80% 80%, rgba(75,146,219,0.10) 0%, transparent 60%)",
+        }}
+      />
 
-      <div className="relative mx-auto max-w-2xl text-center">
+      <div className="relative mx-auto max-w-5xl">
+        {/* Eyebrow */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 14 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.6 }}
+          className="mb-5 flex justify-center"
+        >
+          <span className="inline-flex items-center gap-2 rounded-full border border-gold-600/20 bg-white/80 px-4 py-1.5 shadow-sm backdrop-blur-sm">
+            <Sparkles className="h-3.5 w-3.5 text-gold-600" />
+            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-gold-700">
+              TACITUS · AI-native stack for statecraft
+            </span>
+          </span>
+        </motion.div>
+
+        {/* Headline */}
+        <motion.h2
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7 }}
+          className="mb-5 text-center font-serif text-4xl leading-[1.1] tracking-tight text-navy-950 sm:text-5xl"
         >
-          {/* Demo badge */}
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-gold-600/20 bg-gold-600/5 px-4 py-1.5">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold-500" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-gold-700">
-              Limited Early Access — Now Open
-            </span>
-          </div>
+          Talk to <span className="text-gold-600">TACITUS</span>.
+        </motion.h2>
 
-          <h2 className="mb-6 font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl">
-            Help Shape the Future of Diplomatic Intelligence
-          </h2>
-          <p className="mb-10 text-lg text-navy-500">
-            PRAXIS is in early access. We&apos;re gathering feedback from
-            practitioners in peace, security, and diplomacy to build the tool
-            you actually need.
+        <motion.p
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.7, delay: 0.08 }}
+          className="mx-auto mb-12 max-w-2xl text-center text-lg leading-relaxed text-navy-500"
+        >
+          PRAXIS is the first surface of an AI-native stack TACITUS is
+          building for statecraft — agentic software for the institutions
+          that shape policy, peace, and security. Pilots, partnerships,
+          and institutional access start with one email.
+        </motion.p>
+
+        {/* CTA pair */}
+        <motion.div
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.7, delay: 0.15 }}
+          className="mx-auto mb-14 flex max-w-3xl flex-col items-stretch justify-center gap-3 sm:flex-row"
+        >
+          <a
+            href="mailto:hello@tacitus.me?subject=PRAXIS%20%E2%80%94%20introduction"
+            className="group inline-flex flex-1 items-center justify-center gap-3 rounded-md bg-navy-950 px-7 py-4 text-base font-semibold text-white transition-all duration-200 hover:bg-navy-900 hover:shadow-xl hover:shadow-navy-950/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500/60"
+          >
+            <Mail className="h-4 w-4 text-gold-400" />
+            <span>hello@tacitus.me</span>
+            <ArrowUpRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </a>
+          <a
+            href="https://tacitus.me"
+            target="_blank"
+            rel="noreferrer"
+            className="group inline-flex flex-1 items-center justify-center gap-3 rounded-md border border-diplomatic-blue/25 bg-white/80 px-7 py-4 text-base font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/45 hover:bg-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40"
+          >
+            <span>Visit tacitus.me</span>
+            <ArrowUpRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </a>
+        </motion.div>
+
+        {/* What TACITUS is building */}
+        <motion.div
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.7, delay: 0.2 }}
+          className="mb-6 text-center"
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-navy-500">
+            What TACITUS is building
           </p>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2, duration: 0.6 }}
+        <div className="grid gap-4 sm:grid-cols-3">
+          {PILLARS.map((p, i) => (
+            <motion.div
+              key={p.title}
+              initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.55, delay: 0.25 + i * 0.06 }}
+              className="rounded-2xl border border-diplomatic-blue/12 bg-white/85 p-5 shadow-sm shadow-navy-950/5 backdrop-blur-sm"
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gold-700">
+                  {p.label}
+                </span>
+                <span className="h-1.5 w-1.5 rounded-full bg-gold-500/70" />
+              </div>
+              <h3 className="font-serif text-xl text-navy-900">{p.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-navy-600">{p.body}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Closing line */}
+        <motion.p
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.7, delay: 0.5 }}
+          className="mt-12 text-center text-xs text-navy-400"
         >
-          <AnimatePresence mode="wait">
-            {formState === "success" ? (
-              <motion.div
-                key="success"
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4 }}
-                className="flex flex-col items-center gap-4 rounded-2xl border border-sage/20 bg-sage/5 px-8 py-10"
-              >
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-sage/10">
-                  <CheckCircle className="h-7 w-7 text-sage" strokeWidth={1.5} />
-                </div>
-                <div>
-                  <p className="text-lg font-semibold text-navy-900">
-                    You&apos;re on the list.
-                  </p>
-                  <p className="mt-1 text-sm text-navy-500">
-                    We&apos;ll be in touch within 48 hours.
-                  </p>
-                </div>
-                <a
-                  href="/login"
-                  className="mt-2 inline-flex items-center justify-center gap-2 rounded-md border border-diplomatic-blue/20 px-6 py-2.5 text-sm font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
-                >
-                  Explore the Demo Now
-                </a>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="form"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center gap-4"
-              >
-                {/* Email form */}
-                <form
-                  onSubmit={handleSubmit}
-                  className="flex w-full max-w-md flex-col gap-3 sm:flex-row"
-                  noValidate
-                >
-                  {/* Honeypot — hidden from real users, bots will fill it */}
-                  <div
-                    aria-hidden="true"
-                    className="absolute left-[-9999px] top-auto h-0 w-0 overflow-hidden"
-                  >
-                    <label htmlFor="waitlist-website">Website (leave blank)</label>
-                    <input
-                      id="waitlist-website"
-                      type="text"
-                      tabIndex={-1}
-                      autoComplete="off"
-                      value={website}
-                      onChange={(e) => setWebsite(e.target.value)}
-                    />
-                  </div>
-                  <label htmlFor="waitlist-email" className="sr-only">
-                    Email address
-                  </label>
-                  <div className="relative flex-1">
-                    <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400 pointer-events-none" />
-                    <input
-                      id="waitlist-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        if (formState === "error") setFormState("idle");
-                      }}
-                      placeholder="your@organization.org"
-                      required
-                      className="h-12 w-full rounded-md border border-cream-300 bg-white/90 pl-10 pr-4 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue/40 focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/10 transition-colors"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={formState === "loading"}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-gold-600 px-6 text-sm font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-lg hover:shadow-gold-600/20 active:bg-gold-700 disabled:opacity-70 disabled:cursor-not-allowed shrink-0"
-                  >
-                    {formState === "loading" ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Joining…
-                      </>
-                    ) : (
-                      "Join Waitlist"
-                    )}
-                  </button>
-                </form>
-
-                {/* Error message */}
-                <AnimatePresence>
-                  {formState === "error" && errorMessage && (
-                    <motion.p
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="text-xs text-crimson"
-                    >
-                      {errorMessage}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-
-                <p className="text-xs text-navy-400">
-                  No spam. No account required to explore the demo.
-                </p>
-
-                {/* Secondary CTA */}
-                <a
-                  href="/login"
-                  className="inline-flex items-center justify-center gap-2 rounded-md border border-diplomatic-blue/20 px-8 py-3.5 text-sm font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
-                >
-                  Explore the Demo First
-                </a>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+          Built by practitioners with statecraft careers · Deployed on Google Cloud · Private workspace per tenant
+        </motion.p>
       </div>
     </section>
   );
