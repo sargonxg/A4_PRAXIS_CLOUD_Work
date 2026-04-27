@@ -4,6 +4,24 @@
 > environment, repo, GCP, validation, and ownership context so a fresh
 > Codex session can open this file and start a brick within 5 minutes.
 
+## Codex continuation update — Brick #1 landed
+
+- Implemented LangGraph runtime foundation in existing `praxis-backend`
+  (not a new `praxis-agents` service): `backend/agents/langgraph/`
+  checkpointer, schemas, and local smoke entry point.
+- Added `GET /agents/health`; it verifies the Postgres checkpointer and
+  emits `system_events` with `expiresAt` on failure.
+- Added backend dependencies (`langgraph`, `langgraph-checkpoint-postgres`,
+  `psycopg[binary,pool]`, Secret Manager), Firestore `agent_runs`
+  collection-group indexes, and Cloud Run deploy wiring for
+  `praxis-backend-sa`, direct VPC egress to the `default` subnet, and
+  `LANGGRAPH_DB_PASSWORD` from Secret Manager.
+- Targeted validation: `python -m pytest tests\test_langgraph_runtime.py -q`
+  passes. Full backend pytest still stops on pre-existing
+  `ACOEdge` import mismatch in `tests/test_aco_schemas.py`.
+- Next durable-runtime brick: Brick #2, Brainstorming Table -> LangGraph
+  through Cloud Tasks `praxis-agents`.
+
 ---
 
 ## 1. Environment
@@ -222,11 +240,11 @@ When a lane spans both territories (e.g. adding a new role requires both `analys
 
 Pick ONE lane and own it end-to-end. Validate per the gate, commit as conventional-commit, push.
 
-### Brick #1 — LangGraph runtime foundation (Lane 7)
+### Brick #1 — LangGraph runtime foundation (Lane 7) — DONE by Codex continuation
 
 **Spec**: `docs/specs/2026-04-27-langgraph-runtime/README.md`. Cloud SQL `praxisbytacitus-instance` is provisioned and verified by `npm run audit:gcp`.
 
-**Open decision**: host first graph in existing `praxis-backend` or new `praxis-agents` service? Spec recommends `praxis-backend` (simpler IAM, fewer deploys). Confirm with Giulio before merge if you disagree.
+**Decision used**: host first graph in existing `praxis-backend` (simpler IAM, fewer deploys).
 
 **Deliverables** (per spec):
 - `backend/agents/langgraph/{checkpointing.py, schemas.py, _smoke.py}`

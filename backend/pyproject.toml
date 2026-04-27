@@ -26,6 +26,11 @@ dependencies = [
     "google-cloud-spanner>=3.50.0",
     # Auth (for OIDC token verification in service-to-service)
     "google-auth>=2.0,<3.0",
+    # Durable LangGraph checkpointing
+    "langgraph>=1.1,<2.0",
+    "langgraph-checkpoint-postgres>=3.0,<4.0",
+    "psycopg[binary,pool]>=3.2,<4.0",
+    "google-cloud-secret-manager>=2.24,<3.0",
     # Observability — Sentry errors + traces; no-op when SENTRY_DSN is unset
     "sentry-sdk[fastapi]>=2.17,<3.0",
 ]

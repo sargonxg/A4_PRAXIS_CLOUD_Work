@@ -5,8 +5,10 @@ Writes all results back to Firestore (single source of truth).
 """
 import logging
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime, timedelta
+import asyncio
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -45,6 +47,11 @@ async def lifespan(app: FastAPI):
     logger.info("PRAXIS Backend v6.2.0 starting — project=%s region=%s",
                 settings.gcp_project_id, settings.gcp_region)
     yield
+    try:
+        from agents.langgraph import close_checkpointer
+        close_checkpointer()
+    except Exception as exc:
+        logger.warning("LangGraph checkpointer close failed: %s", exc)
     logger.info("PRAXIS Backend shutting down")
 
 
@@ -110,6 +117,38 @@ app.add_middleware(RequestContextMiddleware)
 @app.get("/health")
 async def health() -> dict:
     return {"status": "ok", "service": "praxis-backend", "version": "6.2.0"}
+
+
+async def _emit_agents_health_failure(exc: Exception) -> None:
+    try:
+        from google.cloud import firestore
+        from google.cloud.firestore_v1 import SERVER_TIMESTAMP
+
+        db = firestore.AsyncClient(project=settings.gcp_project_id or None)
+        event_id = f"agents-health-failed-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
+        await db.collection("system_events").document(event_id).set({
+            "kind": "agents.health.failed",
+            "severity": "error",
+            "uid": None,
+            "situationId": None,
+            "message": str(exc)[:500],
+            "createdAt": SERVER_TIMESTAMP,
+            "expiresAt": datetime.now(UTC) + timedelta(days=30),
+            "source": "praxis-backend",
+        })
+    except Exception as emit_exc:
+        logger.warning("Failed to emit agents.health.failed system_event: %s", emit_exc)
+
+
+@app.get("/agents/health")
+async def agents_health() -> dict:
+    try:
+        from agents.langgraph import health_check
+        return await asyncio.to_thread(health_check)
+    except Exception as exc:
+        logger.exception("LangGraph health check failed")
+        await _emit_agents_health_failure(exc)
+        raise HTTPException(status_code=503, detail="LangGraph checkpoint store unavailable") from exc
 
 
 # Router registration

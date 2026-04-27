@@ -152,6 +152,7 @@ Plan: `docs/MONSTER_TODO_2026-04-27.md`
 | 56 | Humanitarian demo-leak close (Brick #29 portion) | 🟢 done | claude | round 6 — `humanitarian/page.tsx` swapped `isNordalia` for `isDemo` + DegradedDataChip |
 | 57 | Dossier demo-leak close (Brick #29 portion) | 🟢 done | claude | round 6 — `dossier/_demo.tsx` ViewStep gates `DEMO_DOSSIER_CONTENT` behind `isDemo` |
 | 58 | MONSTER TODO — round 6 execution plan | 🟢 done | claude | round 6 — `docs/MONSTER_TODO_2026-04-27.md` (22 items) |
+| 59 | LangGraph runtime foundation | 🟢 done | codex | round 6 — `backend/agents/langgraph/*`, `/agents/health`, Cloud SQL Postgres checkpointer, Firestore `agent_runs` indexes, Cloud Run VPC/secret wiring |
 
 ### NEW bricks from round 5 (45–54)
 
