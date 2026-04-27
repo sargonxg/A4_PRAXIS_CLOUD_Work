@@ -45,10 +45,13 @@ Production smoke:
 Firestore deploy note:
 
 - `firebase deploy --only firestore:rules,firestore:indexes --project=praxisbytacitus`
-  is blocked by expired Firebase CLI credentials (`firebase login --reauth`
-  required). Existing catch-all rules still deny client access to the new
-  `advisor_feed_items` collection; the added index is queued in source and
-  should be deployed after reauth.
+  was re-run after Firebase CLI reauth and completed successfully.
+- Rules compiled and were released to `cloud.firestore`.
+- Indexes in `firestore.indexes.json` deployed successfully for the default
+  database, including the `advisor_feed_items(status, updatedAt desc)` index.
+- Firebase reported six existing field overrides in the project that are not
+  present in source. The deploy was intentionally run without `--force`, so no
+  existing production field overrides were deleted.
 
 ---
 
