@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 /**
  * Auth security contract tests.
@@ -64,6 +66,14 @@ describe('Auth Security Contracts', () => {
     } else {
       process.env.ADMIN_EMAIL_ALLOWLIST = original;
     }
+  });
+
+  it('CSP keeps strict-dynamic off script-src-elem so Next chunks can load', () => {
+    const middlewareSource = readFileSync(join(process.cwd(), 'src', 'middleware.ts'), 'utf8');
+    const scriptSrcElemInitializer = middlewareSource.match(/const scriptSrcElem = nonce[\s\S]*?: scriptSrc;/)?.[0] ?? '';
+
+    expect(scriptSrcElemInitializer).toContain("`'self' 'nonce-${nonce}'");
+    expect(scriptSrcElemInitializer).not.toContain('strict-dynamic');
   });
 });
 

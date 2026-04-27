@@ -7,9 +7,11 @@
 > Replaces ad-hoc round-6 lane picking with a single-pane queue covering
 > durable agents, data quality, user trust, landing, async operations,
 > observability, billing, and production hygiene.
-> Pair with `docs/TODO_BOARD_2026-04-26.md` (brick ledger/status board) and
-> `docs/CODEX_HANDOFF_2026-04-27.md` (file ownership). Mark each row as work
-> lands. **Codex compatibility: respect file-ownership rules.**
+> Pair with `docs/TODO_BOARD_2026-04-26.md` (brick ledger/status board),
+> `docs/CODEX_HANDOFF_2026-04-27.md` (file ownership), and
+> `docs/tools/CORE_TOOL_AUDIT_2026-04-27.md` (tool-by-tool $100/month core
+> offer audit and one-week sprint plan). Mark each row as work lands.
+> **Codex compatibility: respect file-ownership rules.**
 
 ## Operating contract
 
@@ -74,6 +76,9 @@ explicit in-progress/queued items before pulling from the broader backlog.
 | HQ-10 | ⚪ queued | P1 | Landing page polish | Landing production polish for paid-launch funnel: messaging, comparison/pricing/trust bands, responsive audit, accessibility, and Lighthouse. | `/` scores at least 90 performance, 95 accessibility, 95 SEO on mobile; 360px viewport has no text overlap; reduced motion and keyboard navigation pass. | Claude owns landing files. Codex only updates docs or validation notes unless asked to coordinate implementation. |
 | HQ-11 | ⚪ queued | P1 | Evals | Repo-root `evals/` harness for extraction, RAG faithfulness, and top-tool schema validity with optional Cloud Build gate. | Extraction golden set reaches >=85% precision/recall; RAG faithfulness >=95%; `_RUN_EVALS=1` can run in CI without slowing default builds. | Shared quality lane. Codex can own backend extraction evals; coordinate for frontend/tool route fixtures. |
 | HQ-12 | ⚪ queued | P1 | Observability / retention | Postgres checkpoint cleanup cron using LangGraph checkpointer API and Firestore `agent_runs.expiresAt`. | Dry-run reports expired threads; live run calls `delete_thread(thread_id)`, marks `checkpointDeletedAt`, and emits cleanup summary/failure `system_events`. | Codex owns. Never use raw SQL deletes against LangGraph tables unless schema is pinned and tested. |
+| HQ-13 | ⚪ queued | P0 | Paid-core tool quality | Execute the `$100/month core` flagship hardening sprint from `docs/tools/CORE_TOOL_AUDIT_2026-04-27.md`: canonical tool ids, durable expensive outputs, provenance primitives, no unlabelled demo data, and role-visible recommendations. | A new user can create a situation, upload a document, generate Dashboard/Daily Brief/Risk or Humanitarian, create Policy Memo or Briefing, red-team it, reload, and find cited artifacts still present. | Treat this as product packaging plus engineering quality, not more tool breadth. Start with the audit's Top 15 coding priorities. |
+| HQ-14 | ⚪ queued | P0 | Tool persistence / provenance | Canonicalize registry id as the Firestore persistence key for flagship tools and migrate known drift (`conflict_graph`, `briefing_room`, `daily_brief`, `escalation_scan`, `policy_memo`, `media_compass`, `media_roundup`, `deep_research`). | Top 12 flagship tools read/write the same canonical key; migrated legacy rows still load; regenerated outputs survive navigation and reload. | Enables the core audit. Coordinate before touching Claude-owned UI hooks/routes. |
+| HQ-15 | ⚪ queued | P1 | Decision artifacts | Version and lock the paid-core artifacts: Daily Brief, Briefing Room, Policy Memo, Dossier, Deep Research Agent, Brainstorming Table, and Advisory Council. | Expensive outputs are durable, versioned where appropriate, cite sources, show confidence/gaps, and can be exported or promoted to Report Studio. | Use `CORE_TOOL_AUDIT_2026-04-27.md` tickets T15, T17, T19, T20, T27, T31, T43, T45. |
 
 ---
 

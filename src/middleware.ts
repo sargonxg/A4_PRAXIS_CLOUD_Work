@@ -151,12 +151,15 @@ function addSecurityHeaders(response: NextResponse, nonce?: string): NextRespons
   const scriptSrc = nonce
     ? `'self' 'nonce-${nonce}' 'strict-dynamic' apis.google.com *.firebaseapp.com *.googleapis.com *.google.com *.gstatic.com www.googletagmanager.com www.google.com www.recaptcha.net`
     : `'self' 'unsafe-inline' apis.google.com *.firebaseapp.com *.googleapis.com *.google.com *.gstatic.com www.googletagmanager.com www.google.com www.recaptcha.net`;
+  const scriptSrcElem = nonce
+    ? `'self' 'nonce-${nonce}' apis.google.com *.firebaseapp.com *.googleapis.com *.google.com *.gstatic.com www.googletagmanager.com www.google.com www.recaptcha.net`
+    : scriptSrc;
 
   response.headers.set(
     'Content-Security-Policy',
     "default-src 'self'; " +
       `script-src ${scriptSrc}; ` +
-      `script-src-elem ${scriptSrc}; ` +
+      `script-src-elem ${scriptSrcElem}; ` +
       "style-src 'self' 'unsafe-inline' fonts.googleapis.com; " +
       "img-src 'self' data: blob: *.googleapis.com *.googleusercontent.com *.gstatic.com www.googletagmanager.com www.google-analytics.com *.google-analytics.com; " +
       "font-src 'self' fonts.gstatic.com; " +
