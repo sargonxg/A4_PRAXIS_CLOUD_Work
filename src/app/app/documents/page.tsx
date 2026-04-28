@@ -4,6 +4,7 @@ import { useSituationGuard } from "@/hooks/use-situation-guard";
 import { useSituationStore } from "@/stores/situation-store";
 import { NoSituationState } from "@/components/praxis/no-situation-state";
 import { RegistryToolInfo } from "@/components/praxis/tool-info-from-registry";
+import { usePraxisRoute } from "@/lib/utils/routes";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -40,6 +41,7 @@ import {
   ChevronRight,
   SlidersHorizontal,
   TrendingUp,
+  Brain,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/button";
@@ -1145,6 +1147,7 @@ interface DocumentVaultUIProps {
 }
 
 function DocumentVaultUI({ situationId }: DocumentVaultUIProps) {
+  const route = usePraxisRoute();
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -1217,6 +1220,16 @@ function DocumentVaultUI({ situationId }: DocumentVaultUIProps) {
     setDocuments((prev) => prev.filter((d) => !selectedIds.has(d.id)));
     if (selectedDoc && selectedIds.has(selectedDoc.id)) setSelectedDoc(null);
     setSelectedIds(new Set());
+  }
+
+  function openBrainstormingWithDocs(ids: string[]) {
+    const uniqueIds = Array.from(new Set(ids)).slice(0, 5);
+    if (uniqueIds.length === 0) return;
+    const params = new URLSearchParams({
+      documents: uniqueIds.join(","),
+      question: "What should the team conclude from these documents, and what should we do next?",
+    });
+    window.location.assign(`${route("/brainstorming-table")}?${params.toString()}`);
   }
 
   /* ---- Load documents from Firestore on mount ---- */
@@ -1325,6 +1338,21 @@ function DocumentVaultUI({ situationId }: DocumentVaultUIProps) {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {documents.length > 0 && (
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => {
+                  const ids = selectedIds.size > 0
+                    ? Array.from(selectedIds)
+                    : documents.slice(0, 3).map((doc) => doc.id);
+                  openBrainstormingWithDocs(ids);
+                }}
+              >
+                <Brain className="h-4 w-4" />
+                Expert context pack
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -1744,6 +1772,16 @@ function DocumentVaultUI({ situationId }: DocumentVaultUIProps) {
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => openBrainstormingWithDocs(Array.from(selectedIds))}
+                          disabled={batchExtracting}
+                          className="gap-1.5 text-xs h-7"
+                        >
+                          <Brain className="h-3 w-3" />
+                          Expert Table
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={handleBatchDelete}
                           disabled={batchExtracting}
                           className="gap-1.5 text-xs h-7 border-crimson/40 text-crimson hover:bg-crimson/10"
@@ -1799,6 +1837,32 @@ function DocumentVaultUI({ situationId }: DocumentVaultUIProps) {
                               <span className="text-navy-600">&middot;</span>
                               {getStatusBadge(selectedDoc.status)}
                             </CardDescription>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-1.5 text-xs"
+                                onClick={() => openBrainstormingWithDocs([selectedDoc.id])}
+                              >
+                                <Brain className="h-3.5 w-3.5" />
+                                Send to expert table
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="gap-1.5 text-xs"
+                                onClick={() => {
+                                  setSelectedIds((prev) => {
+                                    const next = new Set(prev);
+                                    next.add(selectedDoc.id);
+                                    return next;
+                                  });
+                                }}
+                              >
+                                <CheckSquare className="h-3.5 w-3.5" />
+                                Add to context pack
+                              </Button>
+                            </div>
                           </CardHeader>
 
                           <CardContent className="pt-0">

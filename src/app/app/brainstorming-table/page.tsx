@@ -13,7 +13,7 @@
  *     Report Studio, and Ask PRAXIS can pull from it.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, Users, Sparkles, AlertTriangle, ShieldAlert, MessageSquare, ListChecks, Download, FileText, ClipboardList } from 'lucide-react';
 import { brainstormingTableToMarkdown, brainstormingTableFilename } from '@/lib/exports/brainstorming-markdown';
 
@@ -103,12 +103,16 @@ export default function BrainstormingTablePage() {
   const [documents, setDocuments] = useState<BrainstormingDocument[]>([]);
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
+  const [contextNotice, setContextNotice] = useState('');
+  const queryContextAppliedRef = useRef(false);
 
   const current: BrainstormingTable | null = generated ?? (hasData ? persisted : null);
 
   useEffect(() => {
     if (!activeSituation?.id || isDemo) return;
     let cancelled = false;
+    queryContextAppliedRef.current = false;
+    setSelectedDocumentIds([]);
     setDocsLoading(true);
     fetch(`/api/documents?situationId=${encodeURIComponent(activeSituation.id)}`, { cache: 'no-store' })
       .then((res) => res.ok ? res.json() : { documents: [] })
@@ -125,6 +129,30 @@ export default function BrainstormingTablePage() {
       cancelled = true;
     };
   }, [activeSituation?.id, isDemo]);
+
+  useEffect(() => {
+    if (queryContextAppliedRef.current || docsLoading || documents.length === 0) return;
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const requested = (params.get('documents') ?? '')
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean)
+      .slice(0, 5);
+    if (requested.length === 0) return;
+    queryContextAppliedRef.current = true;
+    const available = new Set(documents.map((doc) => doc.id));
+    const matched = requested.filter((id) => available.has(id));
+    if (matched.length > 0) {
+      setSelectedDocumentIds(matched);
+      if (!question.trim()) {
+        setQuestion(params.get('question') ?? 'What should the team conclude from these documents, and what should we do next?');
+      }
+      setContextNotice(`Loaded ${matched.length} document${matched.length === 1 ? '' : 's'} from the Document Vault context pack.`);
+    } else {
+      setContextNotice('The requested Document Vault context pack was not found for this situation.');
+    }
+  }, [docsLoading, documents, question]);
 
   const handleLocalTextFile = useCallback(async (file: File | null) => {
     if (!file) return;
@@ -190,6 +218,11 @@ export default function BrainstormingTablePage() {
       )}
 
       <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        {contextNotice ? (
+          <div className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+            {contextNotice}
+          </div>
+        ) : null}
         <label htmlFor="bt-question" className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-800">
           <MessageSquare className="h-4 w-4" />
           Frame the question for the table
@@ -347,6 +380,11 @@ function BrainstormingTableView({ data, situationName }: { data: BrainstormingTa
     URL.revokeObjectURL(url);
   };
 
+  const openDecisionPack = (mode: 'memo' | 'red-team' | 'gaps') => {
+    const prompt = buildDecisionPackPrompt(data, mode);
+    window.dispatchEvent(new CustomEvent('open-praxis-chat', { detail: { prompt } }));
+  };
+
   return (
     <div className="space-y-6">
       <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -480,9 +518,76 @@ function BrainstormingTableView({ data, situationName }: { data: BrainstormingTa
             </ul>
           </div>
         )}
+
+        <div className="mt-4 rounded-lg border border-gold-500/30 bg-gold-500/10 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-gold-700">Decision Pack</h3>
+              <p className="mt-1 text-xs text-slate-600">
+                Hand this deliberation to Ask PRAXIS for a briefable next product.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => openDecisionPack('memo')}
+                className="rounded-md border border-gold-500/40 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-800 hover:bg-gold-50"
+              >
+                Draft policy memo
+              </button>
+              <button
+                type="button"
+                onClick={() => openDecisionPack('red-team')}
+                className="rounded-md border border-gold-500/40 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-800 hover:bg-gold-50"
+              >
+                Red-team option
+              </button>
+              <button
+                type="button"
+                onClick={() => openDecisionPack('gaps')}
+                className="rounded-md border border-gold-500/40 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-800 hover:bg-gold-50"
+              >
+                Find evidence gaps
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   );
+}
+
+function buildDecisionPackPrompt(data: BrainstormingTable, mode: 'memo' | 'red-team' | 'gaps'): string {
+  const options = data.synthesis.optionsForDecision
+    .map((opt, i) => `${i + 1}. ${opt.label}: ${opt.tradeoffs}`)
+    .join('\n');
+  const openQuestions = data.synthesis.openQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n');
+  const nextActions = data.synthesis.nextActions
+    .map((a, i) => `${i + 1}. ${a.action}${a.owner ? ` (${a.owner})` : ''} [${a.urgency}]`)
+    .join('\n');
+  const modeInstruction =
+    mode === 'memo'
+      ? 'Draft a concise policy memo with BLUF, evidence-backed recommendation, risks, and next steps.'
+      : mode === 'red-team'
+        ? 'Red-team the preferred option, identify weak assumptions, source gaps, and what would change the confidence rating.'
+        : 'Identify evidence gaps, missing sources, and a prioritized research plan using Google/open-source search first and premium providers only where justified.';
+
+  return `Use the latest Brainstorming Table output as the primary context and ${modeInstruction}
+
+Question:
+${data.question}
+
+BLUF:
+${data.synthesis.bluf}
+
+Decision options:
+${options || 'No options recorded.'}
+
+Open questions:
+${openQuestions || 'No open questions recorded.'}
+
+Next actions:
+${nextActions || 'No next actions recorded.'}`;
 }
 
 function SynthesisBlock({ title, items }: { title: string; items: string[] }) {

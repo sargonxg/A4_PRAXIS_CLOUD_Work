@@ -145,11 +145,19 @@ function buildReadiness(situation: Situation) {
 
 function buildNextActions(situation: Situation) {
   const actions = [];
-  if (!situation.documentCount) {
+  const hasDocuments = (situation.documentCount || 0) > 0;
+  const hasSourceUrls = Boolean(situation.sourceUrls?.length);
+  if (!hasDocuments && !hasSourceUrls) {
     actions.push({
       href: '/documents',
       label: 'Add evidence',
       detail: 'Upload PDFs, DOCX, TXT, or notes so tools cite your own material.',
+    });
+  } else if (!hasDocuments && hasSourceUrls) {
+    actions.push({
+      href: '/documents',
+      label: 'Upload documents',
+      detail: 'You have URLs queued. Add PDFs or notes for richer document-grounded analysis.',
     });
   }
   actions.push({
@@ -168,7 +176,7 @@ function buildNextActions(situation: Situation) {
     detail: 'Turn the case file into a concise, citable briefing product.',
   });
   actions.push({
-    href: '/red-team-review',
+    href: TOOL_HREFS['red-team-review'] ?? '/brainstorming-table',
     label: 'Red-team output',
     detail: 'Challenge assumptions, source gaps, and confidence claims.',
   });

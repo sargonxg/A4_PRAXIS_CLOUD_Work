@@ -411,6 +411,36 @@ function summarizeToolOutput(data: unknown): string {
     return head.join(' | ').slice(0, 600);
   }
   const rec = asRecord(data);
+  const synthesis = asRecord(rec.synthesis);
+  if (synthesis && typeof synthesis.bluf === 'string') {
+    const parts = [`BLUF: ${synthesis.bluf}`];
+    if (Array.isArray(synthesis.optionsForDecision) && synthesis.optionsForDecision.length > 0) {
+      const options = synthesis.optionsForDecision
+        .slice(0, 3)
+        .map((x) => {
+          const opt = asRecord(x);
+          return [opt?.label, opt?.tradeoffs]
+            .filter((v): v is string => typeof v === 'string' && v.length > 0)
+            .join(': ');
+        })
+        .filter(Boolean);
+      if (options.length) parts.push(`Options: ${options.join(' | ')}`);
+    }
+    if (Array.isArray(synthesis.openQuestions) && synthesis.openQuestions.length > 0) {
+      parts.push(`Open questions: ${synthesis.openQuestions.slice(0, 3).join(' | ')}`);
+    }
+    if (Array.isArray(synthesis.nextActions) && synthesis.nextActions.length > 0) {
+      const actions = synthesis.nextActions
+        .slice(0, 3)
+        .map((x) => {
+          const action = asRecord(x);
+          return typeof action?.action === 'string' ? action.action : null;
+        })
+        .filter(Boolean);
+      if (actions.length) parts.push(`Next actions: ${actions.join(' | ')}`);
+    }
+    return parts.join(' ').slice(0, 600);
+  }
   // Common useful keys, ranked by analyst usefulness.
   const keys = [
     'headline',

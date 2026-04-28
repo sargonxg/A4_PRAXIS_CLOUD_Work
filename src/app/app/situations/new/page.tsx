@@ -769,6 +769,7 @@ function DomainReviewCard({
 function StepReview({
   form,
   sourceUrls,
+  contextSummary,
   onBack,
   onCreate,
   isCreating,
@@ -777,6 +778,12 @@ function StepReview({
 }: {
   form: SituationForm;
   sourceUrls: string[];
+  contextSummary: {
+    customSourceCount: number;
+    fileCount: number;
+    hasNotes: boolean;
+    selectedSourceCount: number;
+  };
   onBack: () => void;
   onCreate: () => void;
   isCreating: boolean;
@@ -836,11 +843,28 @@ function StepReview({
           </div>
 
           <div className="rounded-lg border border-navy-200 bg-white p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-400 mb-3">Context queued</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {[
+                { label: 'Source categories', value: `${contextSummary.selectedSourceCount} selected` },
+                { label: 'URLs', value: `${sourceUrls.length + contextSummary.customSourceCount} queued` },
+                { label: 'Documents', value: `${contextSummary.fileCount} file${contextSummary.fileCount === 1 ? '' : 's'} after creation` },
+                { label: 'Analyst notes', value: contextSummary.hasNotes ? 'Included' : 'Not added' },
+              ].map(({ label, value }) => (
+                <div key={label} className="rounded-md border border-navy-100 bg-navy-50/40 px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">{label}</p>
+                  <p className="mt-0.5 text-xs font-medium text-navy-800">{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-navy-200 bg-white p-4">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-400 mb-3">PRAXIS will create</p>
             <div className="grid gap-2 sm:grid-cols-2">
               {[
                 { label: 'Dashboard overview', desc: 'Situation snapshot & quick actions' },
-                { label: 'Conflict graph', desc: 'Populated from your context' },
+                { label: 'Conflict graph', desc: 'Graph seeding starts after creation' },
                 { label: 'Actor profiles', desc: `${form.actors.length || 'No'} actors ready to enrich` },
                 { label: 'AI assistant', desc: 'Ready for situation-aware questions' },
               ].map(({ label, desc }) => (
@@ -879,6 +903,7 @@ export default function NewSituationPage() {
   const [direction, setDirection] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
+  const [fromOnboarding, setFromOnboarding] = useState(false);
 
   const [form, setForm] = useState<SituationForm>({
     name: '',
@@ -914,6 +939,11 @@ export default function NewSituationPage() {
     loading: false,
   });
   const classifiedSignatureRef = useRef<string>('');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setFromOnboarding(new URLSearchParams(window.location.search).get('fromOnboarding') === '1');
+  }, []);
 
   const goNext = useCallback(() => { setDirection(1); setStep((s) => Math.min(s + 1, 4) as Step); }, []);
   const goBack = useCallback(() => { setDirection(-1); setStep((s) => Math.max(s - 1, 1) as Step); }, []);
@@ -1115,7 +1145,7 @@ export default function NewSituationPage() {
         } catch { /* non-critical */ }
       }
 
-      router.push(route('/dashboard'));
+      router.push(`${route('/dashboard')}?created=1`);
     } catch (err) {
       console.error('[situations/new] create failed:', err);
       setError('Network error. Please check your connection and try again.');
@@ -1146,8 +1176,19 @@ export default function NewSituationPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-navy-900">New Situation</h1>
-        <p className="mt-1 text-sm text-navy-500">Create a conflict or geopolitical situation for intelligence tracking and analysis.</p>
+        <h1 className="text-2xl font-semibold text-navy-900">
+          {fromOnboarding ? 'Create your first situation' : 'New Situation'}
+        </h1>
+        <p className="mt-1 text-sm text-navy-500">
+          {fromOnboarding
+            ? 'Profile complete. Now create the case file that will anchor your documents, research, expert agents, and briefings.'
+            : 'Create a conflict or geopolitical situation for intelligence tracking and analysis.'}
+        </p>
+        {fromOnboarding ? (
+          <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+            Your AnalystProfile is ready; this situation becomes the context PRAXIS injects into every calibrated tool.
+          </div>
+        ) : null}
       </div>
 
       <StepIndicator current={step} />
@@ -1170,6 +1211,12 @@ export default function NewSituationPage() {
               <StepReview
                 form={form}
                 sourceUrls={context.urls.filter((u) => u.trim())}
+                contextSummary={{
+                  customSourceCount: context.customSources.length,
+                  fileCount: context.files.length,
+                  hasNotes: Boolean(context.notes.trim()),
+                  selectedSourceCount: context.selectedSources.length,
+                }}
                 onBack={goBack}
                 onCreate={handleCreate}
                 isCreating={isCreating}

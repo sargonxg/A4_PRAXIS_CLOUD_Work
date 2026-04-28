@@ -12,7 +12,7 @@
  * continuity with prospect content.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { OnboardingRequiredState } from '@/components/praxis/onboarding-required-state';
@@ -83,6 +83,13 @@ function RealDashboard({ situation }: { situation: Situation }) {
   const [dailyRead, setDailyRead] = useState<DailyRead | null>(null);
   const [reading, setReading] = useState(false);
   const [readError, setReadError] = useState<string | null>(null);
+  const [showCreatedBanner, setShowCreatedBanner] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    setShowCreatedBanner(params.get('created') === '1');
+  }, []);
 
   async function runDailyRead() {
     setReading(true);
@@ -145,6 +152,25 @@ function RealDashboard({ situation }: { situation: Situation }) {
       <SituationStatusStrip situation={situation} />
 
       {/* Operating sequence — readiness, deliverables, and next best actions */}
+      {showCreatedBanner ? (
+        <section className="rounded-lg border border-gold-500/30 bg-gold-500/10 px-4 py-3 shadow-sm shadow-navy-950/5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-navy-900">Building your situation</p>
+              <p className="mt-1 text-xs leading-relaxed text-navy-600">
+                PRAXIS is starting background extraction, source research, timeline seeding, and graph preparation. Counts will update as jobs complete.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCreatedBanner(false)}
+              className="rounded-md border border-gold-500/40 px-2 py-1 text-xs font-medium text-gold-700 hover:bg-gold-500/10"
+            >
+              Dismiss
+            </button>
+          </div>
+        </section>
+      ) : null}
       <SituationLaunchpad situation={situation} />
 
       {/* Calibration recap + account state — who you are, what you have */}

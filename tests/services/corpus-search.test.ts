@@ -94,6 +94,25 @@ describe('corpus-search/summarizeToolOutput', () => {
     const long = 'x'.repeat(2000);
     expect(summarizeToolOutput({ summary: long }).length).toBeLessThanOrEqual(600);
   });
+
+  it('summarizes brainstorming synthesis as decision context', () => {
+    const summary = summarizeToolOutput({
+      question: 'What should the envoy do?',
+      synthesis: {
+        bluf: 'Quiet access channel first.',
+        optionsForDecision: [
+          { label: 'Quiet channel', tradeoffs: 'Lower public pressure but higher compliance chance.' },
+          { label: 'Public attribution', tradeoffs: 'Signals resolve but may harden positions.' },
+        ],
+        openQuestions: ['Who can verify detainee access?'],
+        nextActions: [{ action: 'Ask OCHA for corridor verification', urgency: 'immediate' }],
+      },
+    });
+    expect(summary).toContain('BLUF: Quiet access channel first.');
+    expect(summary).toContain('Options: Quiet channel');
+    expect(summary).toContain('Open questions: Who can verify detainee access?');
+    expect(summary).toContain('Next actions: Ask OCHA for corridor verification');
+  });
 });
 
 describe('corpus-search/slug', () => {

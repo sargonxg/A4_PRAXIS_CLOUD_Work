@@ -197,7 +197,11 @@ export function FloatingPraxis() {
 
   // Listen for header "Ask PRAXIS" button and keyboard shortcut
   useEffect(() => {
-    const openHandler = () => setIsOpen(true);
+    const openHandler = (event: Event) => {
+      const detail = (event as CustomEvent<{ prompt?: string }>).detail;
+      if (detail?.prompt) setInput(detail.prompt);
+      setIsOpen(true);
+    };
     const keyHandler = (e: KeyboardEvent) => {
       if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const tag = (e.target as HTMLElement)?.tagName;
@@ -209,10 +213,10 @@ export function FloatingPraxis() {
         setIsOpen(false);
       }
     };
-    window.addEventListener('open-praxis-chat', openHandler);
+    window.addEventListener('open-praxis-chat', openHandler as EventListener);
     window.addEventListener('keydown', keyHandler);
     return () => {
-      window.removeEventListener('open-praxis-chat', openHandler);
+      window.removeEventListener('open-praxis-chat', openHandler as EventListener);
       window.removeEventListener('keydown', keyHandler);
     };
   }, [isOpen]);
