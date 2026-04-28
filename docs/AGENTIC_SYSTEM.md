@@ -33,6 +33,11 @@ PRAXIS agents should help analysts think, research, challenge assumptions, and
 prepare defensible products. They should not silently mutate canonical
 knowledge. Agents propose, explain, cite, and ask for approval.
 
+The canonical reasoning substrate is the TACITUS Core-8: Actor, Claim,
+Interest, Constraint, Leverage, Commitment, Event, and Narrative. Agents may
+produce broader ACO entities, but every graph-backed answer should make clear
+which Core-8 primitives are present, missing, inferred, or weakly sourced.
+
 Round 6 architecture decision: durable multi-step agents use LangGraph with
 Cloud SQL Postgres checkpointing. Vertex AI Agent Engine remains the managed
 Deep Research path. Firestore remains the source of truth for user-visible
@@ -57,6 +62,19 @@ SKC `ToolOutputLayer` now falls back across canonical and legacy IDs. This
 means Ask PRAXIS, Brainstorming Table, Source Scout, Red Team, and future bots
 can retrieve prior generated work even while the app still has mixed storage
 keys.
+
+## Core-8 Coverage (2026-04-28/29 Codex continuation)
+
+Graph persistence now computes `corePrimitiveCoverage` with counts, missing
+primitive names, and a coverage ratio for the TACITUS Core-8. The helper lives
+at `src/lib/graph/core-primitives.ts` and is written by both client graph saves
+and server graph population. This is intentionally small: it does not block
+analysis, but it makes ontology gaps visible to future UI panels, corpus traces,
+and graph-cartographer agents.
+
+Agent rule: if a graph is missing a Core-8 primitive needed for the user's
+question, the agent should state the gap and ask for evidence or propose a
+graph update instead of inventing the missing structure.
 
 ## Agent Types
 

@@ -1,5 +1,28 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
+> **2026-04-28/29 Codex continuation — backend trust boundary + Core-8 coverage**
+>
+> Continued the TACITUS production sprint by tightening the private backend
+> boundary and making ontology coverage explicit:
+>
+> - `backend/auth.py` now verifies service-to-service OIDC audience and trusted
+>   service-account email before accepting `X-PRAXIS-UID`.
+> - `/agents/health` and `/api/v1/graph/test-connection` now require trusted
+>   service auth; the graph backend settings UI calls an admin-gated Next API
+>   bridge at `/api/backend/graph/test-connection`.
+> - Backend CORS now allows `X-Firebase-Token` / `X-PRAXIS-UID` to match the
+>   documented auth split.
+> - `src/lib/graph/core-primitives.ts` adds Core-8 coverage for Actor, Claim,
+>   Interest, Constraint, Leverage, Commitment, Event, and Narrative; graph
+>   writes now persist `corePrimitiveCoverage`.
+> - README, CLAUDE, AGENTIC_SYSTEM, and CORPUS_ARCHITECTURE now describe the
+>   TACITUS system-of-record mission, backend trust boundary, and Core-8 graph
+>   coverage.
+>
+> Next priorities: replace remaining browser-to-backend rewrite usage with
+>   Next API bridges, add a Conflict Graph UI panel for Core-8 coverage, and
+>   automate GCP audit + Firestore rules deployment.
+
 > **2026-04-28 Codex continuation — integration readiness + security hardening**
 >
 > Continued the production-readiness sprint after sub-agent review from

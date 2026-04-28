@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 import asyncio
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -17,6 +17,8 @@ from logging_config import configure_logging
 
 # Install structured JSON logging before anything else imports a logger.
 configure_logging()
+
+from auth import verify_service_token  # noqa: E402
 
 # Observability — Sentry. No-op when SENTRY_DSN is not set in env.
 import os as _os
@@ -74,7 +76,7 @@ app.add_middleware(
     allow_origin_regex=_cors_run_regex,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Request-Id"],
+    allow_headers=["Authorization", "Content-Type", "X-Firebase-Token", "X-PRAXIS-UID", "X-Request-Id"],
 )
 
 
@@ -141,7 +143,7 @@ async def _emit_agents_health_failure(exc: Exception) -> None:
 
 
 @app.get("/agents/health")
-async def agents_health() -> dict:
+async def agents_health(_service: dict = Depends(verify_service_token)) -> dict:
     try:
         from agents.langgraph import health_check
         return await asyncio.to_thread(health_check)

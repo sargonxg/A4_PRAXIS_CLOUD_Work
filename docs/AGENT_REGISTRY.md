@@ -89,12 +89,16 @@ caller (chat route / Brainstorming Table / future agent runner)
    frameworks the analyst recognises — not "you are an expert".
 2. **Citations or gaps.** Every persona must cite a corpus item or mark
    `sourceType="reasoning"`. The Brainstorming Table schema enforces this.
-3. **At least one critic per deliberation.** The default panel always
+3. **Core-8 awareness.** When a persona reasons over a graph, it must check
+   TACITUS Core-8 coverage (Actor, Claim, Interest, Constraint, Leverage,
+   Commitment, Event, Narrative) and name missing primitives that affect the
+   answer.
+4. **At least one critic per deliberation.** The default panel always
    includes `red-team`. Custom panels must include at least one
    `critic: true` persona.
-4. **No silent persona drift.** Adding/changing a persona requires
+5. **No silent persona drift.** Adding/changing a persona requires
    touching this doc, the registry, and a test.
-5. **Stubs are public.** Stub personas appear in this doc so future
+6. **Stubs are public.** Stub personas appear in this doc so future
    agents know what's queued — they're not hidden until activation.
 
 ## Where this fits in the bigger picture

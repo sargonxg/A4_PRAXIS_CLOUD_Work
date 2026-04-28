@@ -4,7 +4,9 @@
 >
 > v6.4.x · Pure GCP Cloud Run (Next.js 16 frontend + Python FastAPI backend) · Project `praxisbytacitus` · Region `us-central1` · Domain `praxis.tacitus.me`
 
-PRAXIS turns sources, documents, open feeds, and graph context into cited assessments, briefings, reports, and decision support for policy officers, diplomats, mediators, humanitarian coordinators, legal/sanctions analysts, and conflict researchers. It ships **40+ tool pages**, a large calibrated Next.js API surface, a **Python FastAPI graph backend** (ACO conflict intelligence pipeline), and a Google-native open-data stack centered on GDELT, UCDP, ReliefWeb, HDX, UN News, World Bank, UNHCR, and grounded Google Search.
+PRAXIS turns sources, documents, open feeds, and graph context into cited assessments, briefings, reports, and decision support for policy officers, diplomats, mediators, humanitarian coordinators, legal/sanctions analysts, and conflict researchers. It is designed as a **system of record for conflict**: a governed data layer for human friction where claims, actors, interests, constraints, leverage, commitments, events, and narratives can be extracted, reasoned over, challenged, and reused.
+
+It ships **40+ tool pages**, a large calibrated Next.js API surface, a **Python FastAPI graph backend** (ACO conflict intelligence pipeline), and a Google-native open-data stack centered on GDELT, UCDP, ReliefWeb, HDX, UN News, World Bank, UNHCR, and grounded Google Search.
 
 This README is a **reference document for both human developers and AI agents** (Claude Code + Codex). For agent-specific conventions, model-string discipline, security boundaries, and anti-patterns, see [`CLAUDE.md`](./CLAUDE.md) (Codex agents: see [`AGENTS.md`](./AGENTS.md)).
 
@@ -51,7 +53,13 @@ This README is a **reference document for both human developers and AI agents** 
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Backend invocation:** Frontend calls backend via OIDC service-account auth (backend is `--no-allow-unauthenticated`). See `backend/auth.py::verify_oidc`.
+**Backend invocation:** The Python backend is private Cloud Run
+(`--no-allow-unauthenticated`). Browser-facing Next.js API routes call it
+server-side with Cloud Run OIDC via `src/lib/api/praxis-backend-server.ts`.
+The backend verifies the OIDC token audience and an allowlist of trusted
+service-account emails before accepting service-to-service calls. End-user
+identity is forwarded separately through `X-Firebase-Token` or, for trusted
+internal workers only, `X-PRAXIS-UID`.
 
 ### Graphify ACO Pipeline (Backend)
 
@@ -74,13 +82,18 @@ extract → build → cluster → analyze → report → export
 
 **Confidence levels:** EXTRACTED · INFERRED · AMBIGUOUS · ASSESSED.
 
+Graph writes store `corePrimitiveCoverage`, a compact Core-8 report that
+counts Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, and
+Narrative nodes and lists missing primitives. This makes ontology gaps visible
+before an analyst trusts a graph-backed assessment.
+
 ---
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 16.1.6 (App Router, Turbopack) |
+| Framework | Next.js 16.2.4 (App Router, Turbopack) |
 | Language | TypeScript 5.9 (strict), Python 3.11 |
 | UI | React 19, Tailwind CSS 4, Radix UI, Framer Motion 12, D3.js 7, react-leaflet |
 | State | Zustand 5 (persisted) |

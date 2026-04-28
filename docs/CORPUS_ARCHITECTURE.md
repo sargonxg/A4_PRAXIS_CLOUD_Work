@@ -18,7 +18,7 @@ that Ask PRAXIS, tools, dashboards, and future agents can retrieve from.
 | Sources Library | `tool-data/sources-library` | User-approved source list, reliability notes, source preferences | Add source whitelist/blocklist to Media Roundup and ARGUS. |
 | ARGUS | `tool-data/argus` | Alerts, watch items, claims, suspicious narratives | Persist extracted sources and claims as reusable corpus artifacts. |
 | Documents | uploaded files + extracted chunks | Grounded citations and local evidence | Add Firestore vector-search pilot over chunks. |
-| Graph | conflict graph nodes/edges | Actors, interests, claims, constraints, relationships | Add graph-delta approval queue with provenance. |
+| Graph | conflict graph nodes/edges | Actors, interests, claims, constraints, relationships, Core-8 coverage | Add graph-delta approval queue with provenance. |
 | Timeline | generated/approved events | Chronology and escalation sequence | Generate from evidence-backed events only; no live-mode demo fallback. |
 | Tool outputs | `tool-data/{toolId}` and legacy `tools/{toolId}` | Derived analysis, assumptions, recommendations | Migrate to canonical `ToolOutputEnvelope`. |
 | Operational spine | `tool_runs`, `background_jobs`, `system_events`, notifications | Freshness, failures, provenance, auditability | Surface in Situation Health and admin diagnostics. |
@@ -36,6 +36,11 @@ Every corpus retrieval should return:
 - `confidence`: high, medium, low, or unknown.
 - `freshness`: generated/observed timestamp.
 - `reason`: why this item was selected.
+
+For graph-backed retrieval, include Core-8 coverage when available:
+`corePrimitiveCoverage.counts`, `missing`, and `coverageRatio`. This lets
+agents say "the graph has actors and events but no commitments" instead of
+silently reasoning over an incomplete structure.
 
 ## Current Implementation
 

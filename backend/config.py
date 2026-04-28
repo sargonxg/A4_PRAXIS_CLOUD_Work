@@ -58,6 +58,28 @@ class Settings(BaseSettings):
     google_ai_api_key: str = ""
     anthropic_api_key: str = ""
 
+    # Backend service-to-service auth.
+    # OIDC audience defaults to the request origin when unset. The allowlist is
+    # comma-separated service account emails that may forward X-PRAXIS-UID.
+    backend_oidc_audience: str = ""
+    backend_trusted_service_accounts: str = ""
+
+    @property
+    def trusted_service_accounts(self) -> set[str]:
+        configured = {
+            email.strip().lower()
+            for email in self.backend_trusted_service_accounts.split(",")
+            if email.strip()
+        }
+        project = self.gcp_project_id.strip()
+        if project:
+            configured.update({
+                f"praxis-frontend-sa@{project}.iam.gserviceaccount.com",
+                f"praxis-functions-sa@{project}.iam.gserviceaccount.com",
+                f"praxis-worker-sa@{project}.iam.gserviceaccount.com",
+            })
+        return configured
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

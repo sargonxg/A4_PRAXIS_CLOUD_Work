@@ -22,6 +22,7 @@ import { extractEntities, type ExtractedEdge, type ExtractedNode } from '@/lib/s
 import { enrichEntity } from '@/lib/services/entity-enrichment';
 import { getGroundedSearchEvents } from '@/lib/data-feeds/grounded-search-client';
 import type { GraphData, GraphEdge, GraphNode } from '@/lib/firebase/graph-service';
+import { computeCorePrimitiveCoverage } from '@/lib/graph/core-primitives';
 
 export interface PopulateResult {
   situationId: string;
@@ -90,6 +91,7 @@ async function writeGraph(uid: string, situationId: string, graph: GraphData): P
     nodeCount: graph.nodes.length,
     edgeCount: graph.edges.length,
     entityTypeCounts,
+    corePrimitiveCoverage: computeCorePrimitiveCoverage(graph.nodes),
   });
 }
 
@@ -274,6 +276,7 @@ export async function populateSituationGraph(opts: {
       lastUpdated: new Date().toISOString(),
       nodeCount: mergedGraph.nodes.length,
       edgeCount: mergedGraph.edges.length,
+      corePrimitiveCoverage: computeCorePrimitiveCoverage(mergedGraph.nodes),
       stagedFrom: { trigger, ts: new Date().toISOString() },
     });
   }

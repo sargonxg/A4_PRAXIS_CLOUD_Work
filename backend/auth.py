@@ -96,17 +96,15 @@ async def verify_firebase_token(
         praxis_uid = request.headers.get("X-PRAXIS-UID")
         if praxis_uid:
             try:
-                import google.oauth2.id_token
-                import google.auth.transport.requests
-                auth_req = google.auth.transport.requests.Request()
-                claims = google.oauth2.id_token.verify_oauth2_token(oidc_token, auth_req)
-                # Verify the OIDC token is from a Google service account
-                if claims.get("iss") in (
-                    "accounts.google.com",
-                    "https://accounts.google.com",
-                ):
-                    logger.info("Service-to-service auth accepted for uid=%s", praxis_uid)
-                    return {"uid": praxis_uid, "service_account": claims.get("email", "")}
+                service_credentials = HTTPAuthorizationCredentials(
+                    scheme=credentials.scheme,
+                    credentials=oidc_token,
+                )
+                claims = await verify_service_token(request, service_credentials)
+                logger.info("Service-to-service auth accepted for uid=%s", praxis_uid)
+                return {"uid": praxis_uid, "service_account": claims.get("email", "")}
+            except HTTPException:
+                raise
             except Exception as exc:
                 logger.warning("OIDC token verification failed: %s", exc)
 
@@ -114,3 +112,55 @@ async def verify_firebase_token(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Authentication failed: provide Firebase ID token in X-Firebase-Token header",
     )
+
+
+async def verify_service_token(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+) -> dict:
+    """FastAPI dependency: verify a trusted Google service-account OIDC token.
+
+    Use this for backend operational endpoints that should be callable only by
+    Cloud Run / Cloud Functions workers, not directly by end users.
+    """
+    if not credentials or not credentials.credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed: missing service token",
+        )
+
+    settings = get_settings()
+    expected_audience = settings.backend_oidc_audience.strip() or str(request.base_url).rstrip("/")
+    trusted = settings.trusted_service_accounts
+
+    try:
+        import google.oauth2.id_token
+        import google.auth.transport.requests
+        auth_req = google.auth.transport.requests.Request()
+        claims = google.oauth2.id_token.verify_oauth2_token(
+            credentials.credentials,
+            auth_req,
+            expected_audience,
+        )
+    except Exception as exc:
+        logger.warning("Service OIDC verification failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed: invalid service token",
+        ) from exc
+
+    issuer = claims.get("iss")
+    email = str(claims.get("email", "")).lower()
+    if issuer not in ("accounts.google.com", "https://accounts.google.com"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed: invalid service token issuer",
+        )
+    if not email or email not in trusted:
+        logger.warning("Rejected service account email=%s audience=%s", email, expected_audience)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: service account is not trusted",
+        )
+
+    return claims

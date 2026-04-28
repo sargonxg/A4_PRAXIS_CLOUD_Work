@@ -8,6 +8,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased] — 2026-04-28 (Five-pillar uplift: ask-praxis, dashboard, conflict-graph, risk+timeline, briefing)
 
+### Codex Continuation — backend trust boundary + Core-8 graph coverage
+
+- Backend service-to-service auth now verifies Google OIDC audience and trusted
+  service-account email before accepting `X-PRAXIS-UID`.
+- Backend `/agents/health` and `/api/v1/graph/test-connection` are no longer
+  open operational surfaces; graph connection testing now goes through an
+  admin-gated Next.js API bridge that calls the private backend with Cloud Run
+  OIDC.
+- Backend CORS now explicitly allows `X-Firebase-Token` and `X-PRAXIS-UID`,
+  matching the documented auth-header separation.
+- Graph writes now persist `corePrimitiveCoverage` for the TACITUS Core-8:
+  Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, Narrative.
+- Docs updated: README, CLAUDE, AGENTIC_SYSTEM, CORPUS_ARCHITECTURE.
+- Tests: backend auth OIDC allowlist/audience behavior and Core-8 coverage.
+
 ### Codex Continuation — integration readiness + security hardening
 
 - `/api/health/provider` now reports non-secret readiness for Firecrawl,

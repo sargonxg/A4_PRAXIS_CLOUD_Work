@@ -5,7 +5,7 @@ Tests that verify_firebase_token raises proper HTTP exceptions.
 from __future__ import annotations
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 
@@ -14,6 +14,7 @@ def _mock_request(headers: dict | None = None):
     """Create a mock FastAPI Request object."""
     req = MagicMock()
     req.headers = headers or {}
+    req.base_url = "https://praxis-backend-pgoyqovcza-uc.a.run.app/"
     return req
 
 
@@ -36,12 +37,12 @@ async def test_verify_firebase_token_raises_401_for_invalid_token():
         credentials="invalid.token.here"
     )
 
-    with patch("auth.firebase_auth") as mock_fb_auth:
-        mock_fb_auth.verify_id_token.side_effect = Exception("Invalid token")
+    with patch("auth._init_firebase"), patch("auth.firebase_auth.verify_id_token") as mock_verify:
+        mock_verify.side_effect = Exception("Invalid token")
 
         with pytest.raises(HTTPException) as exc_info:
             await verify_firebase_token(
-                request=_mock_request(),
+                request=_mock_request({"X-Firebase-Token": "invalid.token.here"}),
                 credentials=fake_credentials,
             )
 
@@ -53,20 +54,15 @@ async def test_verify_firebase_token_returns_uid_for_valid_token():
     """verify_firebase_token should return dict with uid for a valid token."""
     from auth import verify_firebase_token
 
-    fake_credentials = HTTPAuthorizationCredentials(
-        scheme="Bearer",
-        credentials="valid.test.token"
-    )
-
-    with patch("auth.firebase_auth") as mock_fb_auth:
-        mock_fb_auth.verify_id_token.return_value = {
+    with patch("auth._init_firebase"), patch("auth.firebase_auth.verify_id_token") as mock_verify:
+        mock_verify.return_value = {
             "uid": "test-user-123",
             "email": "test@example.com",
         }
 
         result = await verify_firebase_token(
-            request=_mock_request(),
-            credentials=fake_credentials,
+            request=_mock_request({"X-Firebase-Token": "valid.test.token"}),
+            credentials=None,
         )
 
         assert result["uid"] == "test-user-123"
@@ -82,14 +78,11 @@ async def test_verify_firebase_token_accepts_oidc_with_praxis_uid():
         credentials="oidc.service.token"
     )
 
-    with patch("auth.firebase_auth") as mock_fb_auth, \
-         patch("auth.google.oauth2.id_token") as mock_oidc:
-        # Firebase rejects the token
-        mock_fb_auth.verify_id_token.side_effect = Exception("Not a Firebase token")
-        # OIDC accepts it
-        mock_oidc.verify_oauth2_token.return_value = {
+    with patch("auth._init_firebase"), \
+         patch("google.oauth2.id_token.verify_oauth2_token") as mock_verify:
+        mock_verify.return_value = {
             "iss": "accounts.google.com",
-            "email": "sa@praxisbytacitus.iam.gserviceaccount.com",
+            "email": "praxis-frontend-sa@praxisbytacitus.iam.gserviceaccount.com",
         }
 
         result = await verify_firebase_token(
@@ -98,3 +91,30 @@ async def test_verify_firebase_token_accepts_oidc_with_praxis_uid():
         )
 
         assert result["uid"] == "user-from-cloud-function"
+        assert result["service_account"] == "praxis-frontend-sa@praxisbytacitus.iam.gserviceaccount.com"
+        assert mock_verify.call_args.args[2] == "https://praxis-backend-pgoyqovcza-uc.a.run.app"
+
+
+@pytest.mark.asyncio
+async def test_verify_service_token_rejects_untrusted_service_account():
+    """verify_service_token should reject valid Google tokens from non-allowlisted SAs."""
+    from auth import verify_service_token
+
+    fake_credentials = HTTPAuthorizationCredentials(
+        scheme="Bearer",
+        credentials="oidc.service.token"
+    )
+
+    with patch("google.oauth2.id_token.verify_oauth2_token") as mock_verify:
+        mock_verify.return_value = {
+            "iss": "accounts.google.com",
+            "email": "other-sa@praxisbytacitus.iam.gserviceaccount.com",
+        }
+
+        with pytest.raises(HTTPException) as exc_info:
+            await verify_service_token(
+                request=_mock_request(),
+                credentials=fake_credentials,
+            )
+
+        assert exc_info.value.status_code == 403

@@ -16,7 +16,7 @@ from fastapi.responses import HTMLResponse, Response, StreamingResponse
 from networkx.readwrite import json_graph
 from pydantic import BaseModel
 
-from auth import verify_firebase_token
+from auth import verify_firebase_token, verify_service_token
 from graphify_tacitus.build import build_from_json
 from graphify_tacitus.cypher_export import to_cypher as _to_cypher
 from graphify_tacitus.export import to_html
@@ -36,8 +36,11 @@ class GraphBackendConfig(BaseModel):
 
 
 @router.post("/test-connection")
-async def test_connection(config: GraphBackendConfig):
-    """Test graph backend connection without auth (used from Settings UI)."""
+async def test_connection(
+    config: GraphBackendConfig,
+    _service: dict = Depends(verify_service_token),
+):
+    """Test graph backend connection from trusted backend callers only."""
     try:
         adapter = create_graph_adapter(
             provider=config.provider,

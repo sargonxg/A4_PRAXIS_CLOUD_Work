@@ -11,9 +11,9 @@
  * Snapshots path: users/{uid}/situations/{sitId}/graph/snapshots/{timestamp}
  */
 
-import { doc, getDoc, setDoc, collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './config';
-import type { ACOType } from '@/lib/constants/aco-colors';
+import { computeCorePrimitiveCoverage, type CorePrimitiveCoverage } from '@/lib/graph/core-primitives';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -68,6 +68,7 @@ export interface GraphData {
   nodeCount?: number;
   edgeCount?: number;
   entityTypeCounts?: Record<string, number>;
+  corePrimitiveCoverage?: CorePrimitiveCoverage;
 }
 
 export interface GraphSnapshot {
@@ -85,10 +86,6 @@ function graphDoc(uid: string, situationId: string) {
 
 function snapshotDoc(uid: string, situationId: string, timestamp: string) {
   return doc(db, 'users', uid, 'situations', situationId, 'graph', `snapshot-${timestamp}`);
-}
-
-function analysisDoc(uid: string, situationId: string) {
-  return doc(db, 'users', uid, 'situations', situationId, 'graph', 'analysis');
 }
 
 // ─── CRUD operations ────────────────────────────────────────────────────────
@@ -111,6 +108,7 @@ export async function saveGraph(uid: string, situationId: string, graph: GraphDa
     nodeCount: graph.nodes.length,
     edgeCount: graph.edges.length,
     entityTypeCounts,
+    corePrimitiveCoverage: computeCorePrimitiveCoverage(graph.nodes),
   });
 }
 

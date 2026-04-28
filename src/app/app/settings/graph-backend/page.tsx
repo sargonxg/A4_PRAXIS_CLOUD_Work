@@ -79,7 +79,7 @@ export default function GraphBackendPage() {
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await fetch('/backend/graph/test-connection', {
+      const res = await fetch('/api/backend/graph/test-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),

@@ -5,11 +5,24 @@
 > Project: `praxisbytacitus` (852128226674) · Region: `us-central1`
 > Domain: praxis.tacitus.me
 
-> **Current handoff:** Before continuing work, read `docs/CONTINUATION.md` and the `[Unreleased] — 2026-04-25` section in `CHANGELOG.md`. The latest session changed public pricing/branding language, improved situation onboarding persistence, fixed `ai_deep_think` metering, and did not deploy. Validate with `npx tsc --noEmit`, `npm run build`, `node scripts/audit-ai-routes.mjs`, and `npm run audit:gcp` before deploying via Cloud Build.
+> **Current handoff:** Before continuing work, read `docs/CONTINUATION.md`,
+> `docs/DEPLOYMENT_LOG.md`, and the `[Unreleased] — 2026-04-28` section in
+> `CHANGELOG.md`. The latest Codex sessions deployed dashboard route
+> hardening, evidence-envelope retrieval, integration readiness, admin/security
+> hardening, and backend trust-boundary work. Validate with `npx tsc --noEmit`,
+> focused Vitest/pytest for touched areas, `npm run build`, and
+> `npm run audit:routes` before deploying via Cloud Build.
 
 ## What This Is
 
-The AI-native workspace for policy, diplomacy, and political analysis. PRAXIS helps practitioners turn sources, documents, live feeds, and graph context into cited assessments, briefings, reports, and decision support. Two experiences: a demo for prospects (`/demo/*`) and a real situation-driven workspace for authenticated users (`/app/*`). Deployed on GCP Cloud Run.
+The AI-native workspace for policy, diplomacy, and political analysis. PRAXIS
+helps practitioners turn sources, documents, live feeds, and graph context into
+cited assessments, briefings, reports, and decision support. In TACITUS terms,
+PRAXIS is the system of record for conflict: a governed data layer for human
+friction centered on Actor, Claim, Interest, Constraint, Leverage, Commitment,
+Event, and Narrative. Two experiences: a demo for prospects (`/demo/*`) and a
+real situation-driven workspace for authenticated users (`/app/*`). Deployed
+on GCP Cloud Run.
 
 ## Agent Handoff
 
@@ -99,7 +112,19 @@ npm install
 - **Backend**: Python 3.11, FastAPI, NetworkX, Graspologic, Pydantic v2
 - **AI**: AI SDK v6 (`@ai-sdk/google`, `@ai-sdk/anthropic`), Google Genkit (backend), Vertex AI ADK
 - **Database**: Firebase Auth + Firestore, Neo4j/FalkorDB (graph), BigQuery (analytics)
-- **Data Feeds**: ACLED, GDELT, UNHCR, UCDP, HDX, ReliefWeb, UN News, World Bank, Crisis Group, SIPRI
+- **Data Feeds**: GDELT, UCDP, HDX, ReliefWeb, UN News, World Bank, UNHCR, grounded Google Search; Firecrawl and Parallel are optional accelerators. ACLED is withdrawn for SaaS redistribution/licensing reasons.
+
+## Backend Trust Boundary
+
+- `praxis-backend` is private Cloud Run. Do not expose it publicly.
+- Browser users should call Next.js API routes; server routes call the backend
+  through `src/lib/api/praxis-backend-server.ts` with Cloud Run OIDC.
+- Backend service auth must verify both OIDC audience and trusted service
+  account email before accepting `X-PRAXIS-UID`.
+- Operational backend endpoints such as `/agents/health` and graph connection
+  testing are service-only or admin-bridged through the frontend API.
+- Keep `X-Firebase-Token` separate from `Authorization`; `Authorization` is for
+  Cloud Run IAM/OIDC.
 
 ## File Structure
 
