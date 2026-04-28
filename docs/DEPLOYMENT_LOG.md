@@ -2,6 +2,64 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-28 — Authenticated backend proxy + admin reset hardening (DEPLOYED, smoke OK)
+
+Source commits deployed:
+
+- `f01ab12 Route backend access through authenticated proxy`
+- `16cf6f7 Harden bulk credit reset endpoint`
+
+What changed:
+
+- Added authenticated, allowlisted `/api/backend/*` proxy for user-scoped
+  pipeline, graph, temporal, and analysis calls to the private Python backend.
+- Updated the browser-facing `praxisBackend` facade to call `/api/backend/*`
+  instead of direct private Cloud Run URLs.
+- Removed the legacy `/backend/:path*` rewrite from `next.config.ts`.
+- Conflict Graph now surfaces TACITUS Core-8 coverage in the main workflow.
+- Added long-form production backlog:
+  `docs/PRODUCTION_TODO_2026-04-28.md`.
+- Hardened `/api/admin/set-all-credits`; it now requires authenticated admin
+  session plus explicit confirmation body.
+
+Validation before deploy:
+
+- `npx vitest run tests/unit/app/api/backend/proxy.test.ts tests/unit/lib/graph/core-primitives.test.ts` passed.
+- `npx tsc --noEmit` clean.
+- Strict ESLint passed on touched TS/TSX/config files.
+- `npm run audit:routes` passed.
+- `npm run build` passed.
+
+Cloud Build:
+
+- Build: `6d7b95b9-7272-4baa-b145-01c5c8ade45b`
+- Status: `SUCCESS`
+- Duration: `9M50S`
+- Logs: <https://console.cloud.google.com/cloud-build/builds/6d7b95b9-7272-4baa-b145-01c5c8ade45b?project=852128226674>
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00111-w8z`
+- Backend revision: `praxis-backend-00066-d6d`
+
+Production smoke:
+
+- `GET https://praxis.tacitus.me/api/health` -> `200`, `status:"ok"`,
+  `firestore:"ok"`, `ai_provider:"ok"`, `cookie_secret:"ok"`,
+  `firecrawl:"ok"`, `vertex_adk:"unconfigured"`, `polar:"unconfigured"`.
+- Unauthenticated `GET https://praxis.tacitus.me/api/backend/graph/test-situation` -> `401`.
+- Unauthenticated `POST https://praxis.tacitus.me/api/admin/set-all-credits`
+  with confirmation body -> `401`.
+- Legacy `GET https://praxis.tacitus.me/backend/graph/test-situation` -> `404`.
+
+Notes:
+
+- Known optional integrations remain unconfigured: Vertex ADK and Polar.
+- Next best sprint: add Core-8 coverage to corpus traces / Ask PRAXIS warnings,
+  rotate local secrets, and automate GCP audit + Firestore rules deployment.
+
+---
+
 ## 2026-04-28 — Backend trust boundary + Core-8 coverage (DEPLOYED, smoke OK)
 
 Source commit deployed:
