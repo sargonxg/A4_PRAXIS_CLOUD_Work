@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PRAXIS — Public Landing</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body { background: var(--navy-950); color: var(--navy-100); }
+  .site-nav { position: fixed; inset: 0 0 auto; height: 64px; z-index: 20; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background: var(--navy-950); border-bottom: 1px solid var(--navy-800); }
+  .wordmark { display: flex; align-items: center; gap: 10px; color: var(--navy-50); font-family: 'EB Garamond'; font-size: 24px; font-weight: 500; letter-spacing: .02em; }
+  .wordmark .mark { color: var(--gold-400); }
+  .wordmark small { font-family: 'Inter'; font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--gold-700); }
+  .nav-links { display: flex; gap: 22px; }
+  .nav-links a { color: var(--navy-300); text-decoration: none; font-size: 13px; }
+  .nav-actions { display: flex; align-items: center; gap: 10px; }
+  .hamb { display: none; }
+  .hero { min-height: 100vh; padding: 160px 32px 92px; position: relative; overflow: hidden; background: var(--navy-950); }
+  .hero-inner { max-width: 1180px; margin: 0 auto; position: relative; z-index: 2; }
+  .map-bg { position: absolute; right: -40px; top: 88px; width: 760px; height: 520px; opacity: .42; }
+  .map-bg path, .map-bg polyline { fill: none; stroke: var(--navy-700); stroke-width: 1.2; }
+  .map-bg circle { fill: var(--gold-500); filter: drop-shadow(0 0 12px rgba(232,185,49,.55)); }
+  .hero h1 { max-width: 760px; margin: 0; font-family: 'EB Garamond'; font-size: 64px; line-height: 72px; font-weight: 500; letter-spacing: -0.02em; color: var(--cream-50); }
+  .hero p { max-width: 60ch; color: var(--navy-300); margin: 22px 0 0; font-size: 17px; line-height: 28px; }
+  .hero-actions { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
+  .btn-dark-outline { color: var(--navy-100); border-color: var(--navy-700); }
+  .trust { max-width: 1180px; margin: 72px auto 0; color: var(--navy-400); }
+  .marks { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 12px; font-weight: 500; letter-spacing: .04em; }
+  .pillars { padding: 88px 32px; background: var(--navy-950); }
+  .pillar-grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  .pillar { background: var(--navy-900); border: 1px solid var(--navy-800); border-radius: var(--r-lg); padding: 28px; min-height: 310px; }
+  .pillar h2 { margin: 18px 0 8px; font-family: 'EB Garamond'; font-size: 28px; line-height: 36px; font-weight: 500; color: var(--cream-50); }
+  .pillar p { color: var(--navy-300); font-size: 15px; line-height: 24px; }
+  .pillar .quote { margin-top: 18px; color: var(--gold-400); font-family: 'JetBrains Mono'; font-size: 11px; line-height: 18px; }
+  .broadsheet { background: var(--app-bg); color: var(--app-text); padding: 88px 32px; }
+  .section-inner { max-width: 1180px; margin: 0 auto; }
+  .sample-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  .excerpt { position: relative; min-height: 260px; overflow: hidden; }
+  .excerpt::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 72px; background: linear-gradient(transparent,var(--app-surface)); }
+  .excerpt h3 { margin: 0 0 10px; font-family: 'EB Garamond'; font-size: 28px; line-height: 34px; font-weight: 500; color: var(--navy-950); }
+  .excerpt p { color: var(--app-text-secondary); }
+  .excerpt .read { position: absolute; left: 24px; bottom: 20px; z-index: 2; color: var(--diplomatic-blue); font-size: 13px; font-weight: 600; text-decoration: none; }
+  .method { display: grid; grid-template-columns: 1fr 320px; gap: 40px; align-items: center; margin-top: 72px; }
+  .method p { font-family: 'EB Garamond'; font-size: 22px; line-height: 34px; color: var(--navy-800); }
+  .pricing { margin-top: 72px; }
+  .price-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-top: 20px; }
+  .price { border: 1px solid var(--app-border); border-radius: var(--r-lg); padding: 24px; background: var(--app-surface); }
+  .price.featured { border: 2px solid var(--gold-500); }
+  .price h3 { margin: 0; font-family: 'EB Garamond'; font-size: 28px; font-weight: 500; color: var(--navy-950); }
+  .price .amt { margin-top: 10px; font-size: 28px; font-weight: 600; color: var(--navy-950); }
+  .footer { padding: 48px 32px 24px; background: var(--navy-950); border-top: 1px solid var(--navy-800); }
+  .footer-grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr repeat(3,1fr); gap: 24px; }
+  .footer a { display: block; color: var(--navy-300); text-decoration: none; font-size: 13px; margin-top: 8px; }
+  .build { max-width: 1180px; margin: 28px auto 0; padding-top: 16px; border-top: 1px solid var(--navy-800); color: var(--navy-500); font-family: 'JetBrains Mono'; font-size: 11px; }
+  @media (max-width: 767px) {
+    .site-nav { padding: 0 16px; }
+    .nav-links, .nav-actions { display: none; }
+    .hamb { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--navy-700); border-radius: var(--r); color: var(--navy-100); }
+    .hero { padding: 120px 20px 64px; }
+    .hero h1 { font-size: 46px; line-height: 52px; }
+    .map-bg { width: 560px; right: -220px; top: 120px; }
+    .pillar-grid, .sample-grid, .price-grid, .footer-grid, .method { grid-template-columns: 1fr; }
+    .pillars, .broadsheet { padding: 56px 20px; }
+  }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  <div class="wordmark"><span class="mark">✦</span> PRAXIS <small>by Tacitus</small></div>
+  <div class="nav-links"><a href="#product">Product</a><a href="#method">Method</a><a href="#customers">Customers</a><a href="#pricing">Pricing</a><a href="#note">Method note</a></div>
+  <div class="nav-actions"><button class="btn btn-ghost" style="color:var(--navy-200);">Sign in</button><button class="btn btn-primary">Request access</button></div>
+  <button class="hamb" aria-label="Menu">☰</button>
+</nav>
+
+<header class="hero" id="product">
+  <svg class="map-bg" viewBox="0 0 760 520" aria-hidden="true">
+    <path d="M64 252 C154 198 221 201 304 162 C401 116 484 98 638 132" />
+    <path d="M110 330 C220 292 324 312 410 255 C496 198 568 206 702 246" />
+    <polyline points="124,112 220,155 298,134 392,190 506,170 628,238 700,214" />
+    <polyline points="82,418 180,372 266,390 356,338 460,358 578,304 710,336" />
+    <circle cx="310" cy="230" r="4" /><circle cx="462" cy="274" r="4" /><circle cx="575" cy="190" r="4" />
+  </svg>
+  <div class="hero-inner">
+    <h1>For desks that have to be right by Friday.</h1>
+    <p>PRAXIS turns sources, documents, live feeds, and analyst profile context into citable briefings, expert deliberation, and operational decision support for serious policy teams.</p>
+    <div class="hero-actions"><button class="btn btn-primary">Request access</button><button class="btn btn-outline btn-dark-outline">See a sample briefing</button></div>
+    <div class="trust" id="customers">
+      <div class="overline" style="color:var(--navy-500);">Used by analysts at</div>
+      <div class="marks"><span>ICG</span><span>DGAP</span><span>STIFTUNG WISSENSCHAFT</span><span>RUSI</span><span>BROOKINGS</span><span>ECFR</span></div>
+    </div>
+  </div>
+</header>
+
+<section class="pillars">
+  <div class="pillar-grid">
+    <article class="pillar"><svg width="96" height="72" viewBox="0 0 96 72"><text x="32" y="52" fill="#E8B931" font-family="EB Garamond" font-size="56">P</text><path d="M18 18h18M18 54h18M60 18h18M60 54h18" stroke="#334155" fill="none"/></svg><h2>Calibrated to your perspective</h2><p>Role, mandate, region, red lines, audience, and lenses are part of the system prompt, not decorative preferences.</p><div class="quote">Every AI route wraps `withCalibration(toolId, op)` — the profile is the prompt.</div></article>
+    <article class="pillar"><svg width="96" height="72" viewBox="0 0 96 72"><circle cx="24" cy="22" r="7" fill="#3D5A80"/><circle cx="70" cy="28" r="7" fill="#C75B39"/><circle cx="48" cy="54" r="7" fill="#5B8C5A"/><path d="M30 24 64 28M28 27 44 50M65 32 52 50" stroke="#64748B"/></svg><h2>Defensible by source</h2><p>Outputs carry source IDs, retrieval traces, confidence language, and explicit gaps so analysts can brief upward safely.</p><div class="quote">Firestore remains the source of truth for user-visible state, tool outputs, jobs, events, and notifications.</div></article>
+    <article class="pillar"><svg width="96" height="72" viewBox="0 0 96 72"><path d="M28 28a20 20 0 0 1 34-11l6 6M68 44a20 20 0 0 1-34 11l-6-6" stroke="#E8B931" fill="none" stroke-width="2"/><path d="M68 12v12H56M28 60V48h12" stroke="#E8B931" fill="none" stroke-width="2"/></svg><h2>Continuous, not session-based</h2><p>Situations accumulate documents, graph proposals, tools, reports, and agent runs instead of disappearing after one chat.</p><div class="quote">The active situation is the unit of work across onboarding, retrieval, tools, agents, and admin diagnostics.</div></article>
+  </div>
+</section>
+
+<main class="broadsheet">
+  <section class="section-inner">
+    <div class="sample-grid">
+      <article class="card excerpt"><div class="overline">Sample briefing</div><h3>Ceasefire window narrowing</h3><p>The near-term diplomatic opening depends on whether coalition interlocutors can credibly separate access guarantees from status questions.</p><p class="mono">[S-217] [G-031] [T-018]</p><a class="read" href="briefing.html">Read full briefing</a></article>
+      <article class="card excerpt"><div class="overline">Risk signal</div><h3>Local triggers, regional effects</h3><p>Market closures and convoy restrictions remain the clearest leading indicators for displacement and local retaliation cycles.</p><p class="mono">[R-006] [S-319]</p><a class="read" href="briefing.html">Read full briefing</a></article>
+      <article class="card excerpt"><div class="overline">Decision option</div><h3>Quiet channel first</h3><p>A public condemnation may harden positions. A private access package gives both parties room to test compliance.</p><p class="mono">[B-002] [S-244]</p><a class="read" href="briefing.html">Read full briefing</a></article>
+    </div>
+
+    <section class="method" id="method">
+      <p>The Agentic Conflict Ontology gives PRAXIS a disciplined grammar for policy analysis: 14 entity types and 72 typed relationships distinguish actors, claims, interests, constraints, events, narratives, institutions, resources, risks, and policy instruments without flattening them into generic notes.</p>
+      <svg viewBox="0 0 320 180" role="img" aria-label="Typed edge diagram">
+        <rect x="22" y="34" width="74" height="38" rx="8" fill="rgba(61,90,128,.2)" stroke="rgba(61,90,128,.3)"/><text x="59" y="58" text-anchor="middle" fill="#3D5A80" font-size="12" font-weight="600">Actor</text>
+        <rect x="210" y="34" width="88" height="38" rx="8" fill="rgba(199,91,57,.2)" stroke="rgba(199,91,57,.3)"/><text x="254" y="58" text-anchor="middle" fill="#C75B39" font-size="12" font-weight="600">Claim</text>
+        <rect x="110" y="116" width="100" height="38" rx="8" fill="rgba(91,140,90,.2)" stroke="rgba(91,140,90,.3)"/><text x="160" y="140" text-anchor="middle" fill="#5B8C5A" font-size="12" font-weight="600">Commitment</text>
+        <path d="M96 53h112" stroke="#A63D40" stroke-width="2"/><text x="152" y="45" text-anchor="middle" fill="#A63D40" font-size="10">antagonistic</text>
+        <path d="M75 74 132 116" stroke="#C8961E" stroke-width="2"/><text x="88" y="108" fill="#A37A14" font-size="10">causal</text>
+        <path d="M222 75 184 116" stroke="#5B8C5A" stroke-width="2"/><text x="210" y="108" fill="#5B8C5A" font-size="10">cooperative</text>
+      </svg>
+    </section>
+
+    <section class="pricing" id="pricing">
+      <div class="overline">Pricing</div>
+      <div class="price-grid">
+        <article class="price"><h3>Free</h3><div class="amt">$0</div><p class="secondary">Situation setup, limited grounded research, documents, and a real taste of expert tools.</p><button class="btn btn-outline">Start</button></article>
+        <article class="price featured"><h3>Practitioner</h3><div class="amt">$99/mo</div><p class="secondary">Deep research, premium providers, larger context, exports, and higher expert-agent capacity.</p><button class="btn btn-primary">Request access</button></article>
+        <article class="price"><h3>Desk</h3><div class="amt">Custom</div><p class="secondary">Shared corpora, admin controls, knowledge bots, private deployment posture, and procurement support.</p><button class="btn btn-outline">Contact</button></article>
+      </div>
+    </section>
+  </section>
+</main>
+
+<footer class="footer" id="note">
+  <div class="footer-grid">
+    <div><div class="wordmark"><span class="mark">✦</span> PRAXIS</div><p class="muted">Institutional intelligence workspace for policy, diplomacy, mediation, and research teams.</p></div>
+    <div><div class="overline">Product</div><a>Dashboard</a><a>Expert agents</a><a>Briefings</a></div>
+    <div><div class="overline">Company</div><a>Tacitus</a><a>Method</a><a>Contact</a></div>
+    <div><div class="overline">Legal</div><a>Privacy</a><a>Terms</a><a>Security</a></div>
+  </div>
+  <div class="build">build: praxis-web-6.4.0-25644d2 · last deployed: pending · operational spine: jobs/events/notifications</div>
+</footer>
+</body>
+</html>

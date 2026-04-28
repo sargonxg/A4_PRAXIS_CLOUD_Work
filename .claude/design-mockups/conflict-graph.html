@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PRAXIS — Conflict Graph</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  .graph-shell { display: grid; grid-template-columns: 1fr 360px; gap: 16px; height: calc(100vh - 56px); }
+  .graph-canvas { position: relative; background: var(--app-surface); border: 1px solid var(--app-border); border-radius: var(--r-lg); box-shadow: var(--shadow-2); overflow: hidden; }
+  .graph-toolbar { position: absolute; top: 16px; left: 16px; right: 16px; display: flex; gap: 8px; align-items: center; z-index: 5; flex-wrap: wrap; }
+  .toolbar-group { display: flex; align-items: center; background: rgba(255,255,255,.95); backdrop-filter: blur(8px); border: 1px solid var(--app-border); border-radius: var(--r); padding: 4px; box-shadow: var(--shadow-1); }
+  .toolbar-group .btn-icon { height: 28px; width: 28px; border-radius: 4px; }
+  .toolbar-group .divider { width: 1px; align-self: stretch; background: var(--app-border); margin: 4px 2px; }
+  .toolbar-search { flex: 1; max-width: 320px; }
+  .toolbar-search .input { height: 36px; width: 100%; padding-left: 36px; background: rgba(255,255,255,.95); backdrop-filter: blur(8px); }
+  .toolbar-search { position: relative; }
+  .toolbar-search svg { position: absolute; left: 12px; top: 10px; color: var(--app-text-muted); }
+  .filter-pill { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; background: rgba(255,255,255,.95); backdrop-filter: blur(8px); border: 1px solid var(--app-border); font-size: 12px; font-weight: 500; cursor: pointer; }
+  .filter-pill .x { width: 14px; height: 14px; color: var(--app-text-muted); }
+
+  .graph-svg { width: 100%; height: 100%; display: block; }
+  .legend { position: absolute; bottom: 16px; left: 16px; background: rgba(255,255,255,.96); backdrop-filter: blur(8px); border: 1px solid var(--app-border); border-radius: var(--r); padding: 12px 14px; box-shadow: var(--shadow-2); display: grid; grid-template-columns: repeat(4, auto); gap: 6px 16px; }
+  .legend-row { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--app-text-secondary); }
+  .legend-row .swatch { width: 10px; height: 10px; border-radius: 999px; flex-shrink: 0; }
+  .zoom-ctrl { position: absolute; bottom: 16px; right: 16px; display: flex; flex-direction: column; background: rgba(255,255,255,.95); backdrop-filter: blur(8px); border: 1px solid var(--app-border); border-radius: var(--r); box-shadow: var(--shadow-1); }
+  .zoom-ctrl button { width: 32px; height: 32px; background: transparent; border: 0; cursor: pointer; color: var(--app-text-secondary); display: grid; place-items: center; }
+  .zoom-ctrl button + button { border-top: 1px solid var(--app-border); }
+
+  /* inspector */
+  .inspector { background: var(--app-surface); border: 1px solid var(--app-border); border-radius: var(--r-lg); box-shadow: var(--shadow-2); overflow: auto; display: flex; flex-direction: column; }
+  .inspector-header { padding: 20px 24px 12px; border-bottom: 1px solid var(--app-border-light); }
+  .inspector-body { padding: 16px 24px 24px; display: flex; flex-direction: column; gap: 20px; }
+  .inspector h2 { margin: 0; font-family: 'EB Garamond'; font-weight: 500; font-size: 28px; line-height: 36px; color: var(--navy-950); }
+  .meta-grid { display: grid; grid-template-columns: 88px 1fr; gap: 8px 12px; font-size: 13px; }
+  .meta-grid dt { color: var(--app-text-muted); font-weight: 500; }
+  .meta-grid dd { margin: 0; color: var(--app-text); }
+  .relation-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--app-border-light); }
+  .relation-row:first-child { border-top: 0; }
+  .relation-row .arrow { font-family: 'JetBrains Mono'; font-size: 10px; color: var(--app-text-muted); white-space: nowrap; }
+  .relation-row .target { font-size: 13px; font-weight: 500; flex: 1; }
+  .confidence-pill { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 8px; border-radius: 999px; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; background: var(--app-surface-alt); color: var(--app-text-secondary); border: 1px solid var(--app-border); }
+  .confidence-pill.extracted { background: rgba(91,140,90,.15); color: var(--sage); border-color: rgba(91,140,90,.30); }
+  .confidence-pill.inferred  { background: rgba(74,144,164,.15); color: var(--teal); border-color: rgba(74,144,164,.30); }
+  .confidence-pill.assessed  { background: rgba(232,185,49,.18); color: var(--gold-700); border-color: rgba(232,185,49,.30); }
+
+  .source-cite { display: flex; gap: 8px; padding: 8px 10px; border: 1px solid var(--app-border); border-radius: var(--r-sm); font-size: 12px; }
+  .source-cite .mono { color: var(--app-text-muted); flex-shrink: 0; }
+
+  /* mobile: graph full width, inspector becomes bottom sheet */
+  @media (max-width: 1023px) {
+    .graph-shell { grid-template-columns: 1fr; height: auto; }
+    .inspector { position: fixed; left: 0; right: 0; bottom: 0; max-height: 60vh; border-radius: var(--r-xl) var(--r-xl) 0 0; box-shadow: var(--shadow-4); border-bottom: 0; z-index: 40; transform: translateY(calc(100% - 80px)); transition: transform 200ms cubic-bezier(.2,0,0,1); }
+    .inspector.expanded { transform: translateY(0); }
+    .inspector::before { content: ""; display: block; width: 40px; height: 4px; border-radius: 999px; background: var(--app-border); margin: 8px auto 4px; }
+    .graph-canvas { height: 70vh; min-height: 460px; }
+    .graph-toolbar { flex-wrap: wrap; }
+    .legend { grid-template-columns: repeat(2, auto); }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- compact sidebar (same as dashboard, condensed for brevity) -->
+  <aside class="sidebar">
+    <div class="workspace-switcher">
+      <div class="row">
+        <div style="width:24px;height:24px;border-radius:6px;background:var(--navy-950);color:var(--gold-500);display:grid;place-items:center;font-family:'EB Garamond';font-weight:500;font-size:14px;">P</div>
+        <div class="col"><div style="font-size:13px;font-weight:500;">TACITUS</div><div style="font-size:11px;color:var(--app-text-muted);">Sahel Desk</div></div>
+      </div>
+      <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="m6 9 6 6 6-6"/></svg>
+    </div>
+    <h6>Intelligence</h6>
+    <a class="nav-item">Dashboard</a>
+    <a class="nav-item active">Conflict Graph</a>
+    <a class="nav-item">Timeline</a>
+    <a class="nav-item">Risk Monitor</a>
+    <a class="nav-item">Early Warning</a>
+    <a class="nav-item">Actor Profiles</a>
+    <h6>Workspace</h6>
+    <a class="nav-item">Documents</a>
+    <a class="nav-item">Sources</a>
+    <a class="nav-item">Reports</a>
+    <a class="nav-item">Cases</a>
+    <a class="nav-item">Team</a>
+    <h6>Admin</h6>
+    <a class="nav-item">Settings</a>
+    <div class="upgrade-card">
+      <div class="overline">Free Plan</div>
+      <div style="font-family:'EB Garamond';font-weight:500;font-size:18px;color:var(--navy-950);">3,470 / 5,000</div>
+      <button class="btn btn-primary" style="width:100%;margin-top:10px;justify-content:center;">Upgrade</button>
+    </div>
+  </aside>
+
+  <main style="min-width:0;display:flex;flex-direction:column;">
+    <div class="header">
+      <div class="crumbs">
+        <span>Workspace</span><span class="muted">/</span>
+        <span>Sahel Desk</span><span class="muted">/</span>
+        <strong>Conflict Graph</strong>
+      </div>
+      <div class="row gap-3">
+        <button class="ask-pill"><svg class="i-sm" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7z"/></svg>Ask PRAXIS</button>
+        <button class="btn btn-ghost btn-icon"><svg class="i" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.75"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+        <div style="width:32px;height:32px;border-radius:999px;background:linear-gradient(135deg,var(--steel),var(--diplomatic-blue));color:white;display:grid;place-items:center;font-size:12px;font-weight:600;">GC</div>
+      </div>
+    </div>
+
+    <div class="canvas" style="padding:16px 24px 24px;flex:1;display:flex;flex-direction:column;min-height:0;">
+      <div class="row between mb-3">
+        <div>
+          <div class="overline">Situation Knowledge Core · Graph Layer</div>
+          <h1 style="margin:4px 0 0;font-family:'EB Garamond';font-weight:500;font-size:28px;line-height:36px;letter-spacing:-0.005em;color:var(--navy-950);">Sahel — Mali Northern Insurgency · v3</h1>
+          <div class="caption mt-1"><span class="mono">147 nodes</span> · <span class="mono">312 edges</span> · 8 communities · last sync <span class="mono">11:42 UTC</span></div>
+        </div>
+        <div class="row gap-2">
+          <button class="btn btn-outline">Export GraphML</button>
+          <button class="btn btn-primary"><svg class="i" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7z"/></svg>Re-cluster (Leiden)</button>
+        </div>
+      </div>
+
+      <div class="graph-shell">
+
+        <!-- GRAPH CANVAS -->
+        <div class="graph-canvas">
+          <div class="graph-toolbar">
+            <div class="toolbar-search">
+              <svg class="i" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.75"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input class="input" placeholder="Search entities, relations…" />
+            </div>
+            <div class="toolbar-group">
+              <button class="btn btn-ghost btn-icon" title="Layout: Force"><svg class="i" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.75"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M6.5 7.5 10 11M17.5 7.5 14 11M6.5 16.5 10 13M17.5 16.5 14 13"/></svg></button>
+              <button class="btn btn-ghost btn-icon" title="Layout: Tree"><svg class="i" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.75"><circle cx="12" cy="4" r="2"/><circle cx="6" cy="14" r="2"/><circle cx="18" cy="14" r="2"/><circle cx="9" cy="20" r="2"/><circle cx="15" cy="20" r="2"/><path d="M12 6v3l-6 3M12 9l6 3M9 18 7 16M15 18l2-2"/></svg></button>
+              <button class="btn btn-ghost btn-icon" title="Layout: Communities"><svg class="i" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.75"><circle cx="7" cy="7" r="4"/><circle cx="17" cy="7" r="4"/><circle cx="12" cy="17" r="4"/></svg></button>
+            </div>
+            <span class="filter-pill" style="background:rgba(199,91,57,.12);border-color:rgba(199,91,57,.30);color:var(--terracotta);">Claim <svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></span>
+            <span class="filter-pill" style="background:rgba(61,90,128,.12);border-color:rgba(61,90,128,.30);color:var(--steel);">Actor <svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></span>
+            <span class="filter-pill">Confidence: ≥ Inferred <svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></span>
+          </div>
+
+          <!-- the graph itself -->
+          <svg class="graph-svg" viewBox="0 0 800 560" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 z" fill="#94A3B8"/></marker>
+              <marker id="arrow-red" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 z" fill="#A63D40"/></marker>
+              <marker id="arrow-sage" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 z" fill="#5B8C5A"/></marker>
+            </defs>
+            <!-- subtle grid -->
+            <g stroke="#F1F5F9" stroke-width="1">
+              <line x1="0" y1="140" x2="800" y2="140"/><line x1="0" y1="280" x2="800" y2="280"/>
+              <line x1="0" y1="420" x2="800" y2="420"/><line x1="200" y1="0" x2="200" y2="560"/>
+              <line x1="400" y1="0" x2="400" y2="560"/><line x1="600" y1="0" x2="600" y2="560"/>
+            </g>
+
+            <!-- community hulls -->
+            <ellipse cx="220" cy="200" rx="170" ry="120" fill="rgba(61,90,128,.06)" stroke="rgba(61,90,128,.20)" stroke-dasharray="4 4"/>
+            <ellipse cx="560" cy="180" rx="160" ry="110" fill="rgba(199,91,57,.06)" stroke="rgba(199,91,57,.20)" stroke-dasharray="4 4"/>
+            <ellipse cx="380" cy="430" rx="200" ry="90" fill="rgba(91,140,90,.06)" stroke="rgba(91,140,90,.20)" stroke-dasharray="4 4"/>
+
+            <!-- edges -->
+            <g stroke-width="1.5" fill="none">
+              <!-- antagonistic (crimson dashed) -->
+              <path d="M180 180 L520 200" stroke="#A63D40" stroke-dasharray="6 3" marker-end="url(#arrow-red)" opacity="0.7"/>
+              <path d="M260 240 L500 250" stroke="#A63D40" stroke-dasharray="6 3" marker-end="url(#arrow-red)" opacity="0.7"/>
+              <!-- causal (navy solid) -->
+              <path d="M180 180 L350 410" stroke="#475569" marker-end="url(#arrow)" opacity="0.6"/>
+              <path d="M520 200 L420 410" stroke="#475569" marker-end="url(#arrow)" opacity="0.6"/>
+              <path d="M620 220 L460 430" stroke="#475569" marker-end="url(#arrow)" opacity="0.6"/>
+              <!-- structural -->
+              <path d="M170 130 L260 150" stroke="#94A3B8" opacity="0.7"/>
+              <path d="M170 250 L150 220" stroke="#94A3B8" opacity="0.7"/>
+              <path d="M540 130 L470 170" stroke="#94A3B8" opacity="0.7"/>
+              <path d="M620 130 L590 170" stroke="#94A3B8" opacity="0.7"/>
+              <!-- cooperative (sage) -->
+              <path d="M340 430 L430 430" stroke="#5B8C5A" marker-end="url(#arrow-sage)" opacity="0.7"/>
+              <path d="M430 430 L520 430" stroke="#5B8C5A" marker-end="url(#arrow-sage)" opacity="0.7"/>
+              <!-- foundational -->
+              <path d="M180 180 L260 100" stroke="#94A3B8" opacity="0.5"/>
+              <path d="M520 200 L590 110" stroke="#94A3B8" opacity="0.5"/>
+            </g>
+
+            <!-- nodes -->
+            <g font-family="Inter" font-size="11" font-weight="500">
+              <!-- Mali community (steel/actor cluster) -->
+              <g transform="translate(170,180)">
+                <circle r="22" fill="#3D5A80" stroke="#0F172A" stroke-width="1.5"/>
+                <circle r="22" fill="none" stroke="#E8B931" stroke-width="2" opacity="0.0"/>
+                <text y="38" text-anchor="middle" fill="#0F172A">Mali State</text>
+              </g>
+              <g transform="translate(260,150)">
+                <circle r="14" fill="#3D5A80"/>
+                <text y="28" text-anchor="middle" fill="#0F172A">FAMa</text>
+              </g>
+              <g transform="translate(150,250)">
+                <circle r="14" fill="#3D5A80"/>
+                <text y="28" text-anchor="middle" fill="#0F172A">CMA</text>
+              </g>
+              <g transform="translate(260,240)">
+                <circle r="14" fill="#3D5A80"/>
+                <text y="28" text-anchor="middle" fill="#0F172A">MNLA</text>
+              </g>
+              <g transform="translate(260,100)">
+                <circle r="11" fill="#7B6D8D"/>
+                <text y="-18" text-anchor="middle" fill="#0F172A">Pan-Sahelian narrative</text>
+              </g>
+
+              <!-- JNIM/Insurgent cluster -->
+              <g transform="translate(540,180)">
+                <circle r="22" fill="#3D5A80" stroke="#0F172A" stroke-width="1.5"/>
+                <text y="38" text-anchor="middle" fill="#0F172A">JNIM</text>
+              </g>
+              <g transform="translate(620,220)">
+                <circle r="16" fill="#3D5A80"/>
+                <text y="32" text-anchor="middle" fill="#0F172A">ISGS</text>
+              </g>
+              <g transform="translate(470,170)">
+                <circle r="11" fill="#3D5A80"/>
+                <text y="-18" text-anchor="middle" fill="#0F172A">Iyad Ag Ghaly</text>
+              </g>
+              <g transform="translate(620,130)">
+                <circle r="13" fill="#C75B39"/>
+                <text y="-22" text-anchor="middle" fill="#0F172A">Liptako-Gourma claim</text>
+              </g>
+              <g transform="translate(540,130)">
+                <circle r="11" fill="#C75B39"/>
+                <text y="-18" text-anchor="middle" fill="#0F172A">Self-determination claim</text>
+              </g>
+
+              <!-- Diplomatic cluster (sage cooperative) -->
+              <g transform="translate(340,430)">
+                <circle r="18" fill="#5B8C5A"/>
+                <text y="34" text-anchor="middle" fill="#0F172A">ECOWAS</text>
+              </g>
+              <g transform="translate(430,430)">
+                <circle r="22" fill="#5B8C5A" stroke="#E8B931" stroke-width="3"/>
+                <text y="38" text-anchor="middle" fill="#0F172A" font-weight="600">Algiers Process</text>
+              </g>
+              <g transform="translate(520,430)">
+                <circle r="14" fill="#5B8C5A"/>
+                <text y="30" text-anchor="middle" fill="#0F172A">UN MINUSMA</text>
+              </g>
+
+              <!-- Resources/risks scattered -->
+              <g transform="translate(450,330)">
+                <circle r="13" fill="#D4A373"/>
+                <text y="-20" text-anchor="middle" fill="#0F172A">Niger uranium</text>
+              </g>
+              <g transform="translate(360,300)">
+                <circle r="10" fill="#A63D40"/>
+                <text y="-18" text-anchor="middle" fill="#0F172A">Civilian-targeting risk</text>
+              </g>
+              <g transform="translate(700,300)">
+                <circle r="10" fill="#4A90A4"/>
+                <text y="-16" text-anchor="middle" fill="#0F172A">Algerian interest</text>
+              </g>
+            </g>
+          </svg>
+
+          <!-- legend -->
+          <div class="legend">
+            <div class="legend-row"><span class="swatch" style="background:#3D5A80;"></span>Actor</div>
+            <div class="legend-row"><span class="swatch" style="background:#C75B39;"></span>Claim</div>
+            <div class="legend-row"><span class="swatch" style="background:#4A90A4;"></span>Interest</div>
+            <div class="legend-row"><span class="swatch" style="background:#5B8C5A;"></span>Cooperative</div>
+            <div class="legend-row"><span class="swatch" style="background:#A63D40;"></span>Risk</div>
+            <div class="legend-row"><span class="swatch" style="background:#7B6D8D;"></span>Narrative</div>
+            <div class="legend-row"><span class="swatch" style="background:#D4A373;"></span>Resource</div>
+            <div class="legend-row"><span class="swatch" style="background:#9C755F;"></span>Institution</div>
+          </div>
+
+          <!-- zoom controls -->
+          <div class="zoom-ctrl">
+            <button title="Zoom in"><svg class="i" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.75"><path d="M12 5v14M5 12h14"/></svg></button>
+            <button title="Zoom out"><svg class="i" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.75"><path d="M5 12h14"/></svg></button>
+            <button title="Fit"><svg class="i" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.75"><path d="M4 4h6M4 4v6M20 4h-6M20 4v6M4 20h6M4 20v-6M20 20h-6M20 20v-6"/></svg></button>
+          </div>
+        </div>
+
+        <!-- INSPECTOR -->
+        <aside class="inspector">
+          <div class="inspector-header">
+            <div class="row gap-2">
+              <span class="chip chip-cooperative">Cooperative · Process</span>
+              <span class="confidence-pill assessed">Assessed</span>
+            </div>
+            <h2 style="margin-top:8px;">Algiers Process</h2>
+            <div class="caption mono">tacitus://aco/process/algiers-2015</div>
+          </div>
+          <div class="inspector-body">
+            <dl class="meta-grid">
+              <dt>Type</dt><dd>Mediation framework</dd>
+              <dt>Inception</dt><dd class="mono">2014-07-16</dd>
+              <dt>Convener</dt><dd>Algeria · UN DPPA</dd>
+              <dt>Status</dt><dd><span class="chip chip-medium">Stalled · Q2 2026</span></dd>
+              <dt>Coverage</dt><dd>14 signatory parties · 4 observer states</dd>
+            </dl>
+
+            <div>
+              <div class="overline mb-2">Outgoing relations</div>
+              <div class="relation-row">
+                <span class="arrow">supports_claim →</span>
+                <span class="target">Self-determination · Azawad</span>
+                <span class="confidence-pill extracted">Extracted</span>
+              </div>
+              <div class="relation-row">
+                <span class="arrow">de_escalates →</span>
+                <span class="target">Mali–CMA antagonism</span>
+                <span class="confidence-pill assessed">Assessed</span>
+              </div>
+              <div class="relation-row">
+                <span class="arrow">requires_resource →</span>
+                <span class="target">UN MINUSMA verification</span>
+                <span class="confidence-pill inferred">Inferred</span>
+              </div>
+              <div class="relation-row">
+                <span class="arrow">conflicts_with →</span>
+                <span class="target">JNIM rejection · 2024-09 communiqué</span>
+                <span class="confidence-pill extracted">Extracted</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="overline mb-2">Sources · 11</div>
+              <div class="source-cite">
+                <span class="mono">[S-217]</span>
+                <span>UN S/RES/2737 — extends MINUSMA, references Algiers framework, paragraph 14.</span>
+              </div>
+              <div class="source-cite mt-2">
+                <span class="mono">[S-218]</span>
+                <span>ICG report no. 311, "Mali Mid-Cycle Review", March 2026.</span>
+              </div>
+              <a href="#" style="color:var(--diplomatic-blue);font-size:13px;font-weight:500;display:inline-block;margin-top:10px;">View 9 more →</a>
+            </div>
+
+            <div class="row gap-2">
+              <button class="btn btn-outline">Pin to Briefing</button>
+              <button class="btn btn-primary">Open Dossier</button>
+            </div>
+          </div>
+        </aside>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

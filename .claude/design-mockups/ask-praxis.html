@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PRAXIS — Ask PRAXIS</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body { min-height: 100vh; background: var(--app-bg); }
+  .backdrop { min-height: 100vh; opacity: .42; filter: saturate(.9); pointer-events: none; }
+  .mini-canvas { padding: 24px; max-width: 1280px; }
+  .mini-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  .mini-card { min-height: 148px; }
+  .mini-line { height: 8px; border-radius: 999px; background: var(--app-border); margin-top: 10px; }
+  .mini-line.gold { background: var(--gold-500); width: 64%; }
+  .mini-line.blue { background: var(--diplomatic-blue); width: 48%; opacity: .35; }
+  .ask-panel { position: fixed; right: 32px; bottom: 32px; width: 380px; height: 560px; display: flex; flex-direction: column; background: var(--navy-900); color: var(--navy-100); border: 1px solid var(--navy-700); border-radius: var(--r-xl); box-shadow: var(--shadow-3); overflow: hidden; }
+  .ask-head { height: 52px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--navy-800); }
+  .ask-brand { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; letter-spacing: .04em; }
+  .ask-brand .spark { color: var(--gold-400); }
+  .ask-context { height: 24px; padding: 0 8px; display: inline-flex; align-items: center; border: 1px solid var(--navy-700); border-radius: 999px; color: var(--navy-300); font-family: 'JetBrains Mono'; font-size: 11px; }
+  .ask-close { width: 28px; height: 28px; border: 0; background: transparent; color: var(--navy-300); font-size: 20px; cursor: pointer; border-radius: var(--r); }
+  .ask-close:hover { background: var(--navy-800); color: var(--navy-50); }
+  .ask-scroll { flex: 1; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .ask-msg-assistant { background: var(--navy-800); border-radius: var(--r-lg); padding: 12px 14px; color: var(--navy-100); font-size: 13px; line-height: 20px; }
+  .ask-msg-user { align-self: flex-end; max-width: 84%; color: var(--navy-50); padding: 8px 14px; border-radius: var(--r-lg); background: rgba(232,185,49,.12); border: 1px solid rgba(232,185,49,.24); font-size: 13px; line-height: 20px; }
+  .ask-inline-code { background: var(--navy-950); color: var(--gold-400); padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono'; font-size: 12px; }
+  .ask-sources { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+  .ask-source-pill { background: var(--navy-950); border: 1px solid var(--navy-700); color: var(--navy-200); border-radius: var(--r); padding: 6px 10px; font-family: 'JetBrains Mono'; font-size: 11px; text-decoration: none; }
+  .ask-source-pill:hover { border-color: var(--gold-500); color: var(--gold-400); }
+  .ask-composer { background: var(--navy-950); border-top: 1px solid var(--navy-800); padding: 12px; }
+  .trace { margin-bottom: 8px; color: var(--navy-400); font-family: 'JetBrains Mono'; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .compose-row { display: grid; grid-template-columns: 28px 28px 1fr 52px; gap: 6px; align-items: center; }
+  .compose-row button { height: 32px; border-radius: var(--r); border: 1px solid var(--navy-700); background: var(--navy-900); color: var(--navy-300); cursor: pointer; }
+  .compose-row input { height: 32px; min-width: 0; border-radius: var(--r); border: 1px solid var(--navy-700); background: var(--navy-950); color: var(--navy-100); padding: 0 10px; outline: none; font-size: 13px; }
+  .compose-row input:focus { border-color: transparent; box-shadow: var(--ring); }
+  .send { background: var(--gold-500) !important; color: var(--navy-950) !important; border-color: var(--gold-500) !important; font-weight: 600; }
+  .mobile-sources { display: none; }
+  @media (max-width: 767px) {
+    body { background: var(--navy-950); }
+    .backdrop { display: none; }
+    .ask-panel { inset: 0; width: auto; height: auto; border: 0; border-radius: 0; box-shadow: none; background: var(--navy-900); }
+    .ask-head { position: sticky; top: 0; z-index: 3; height: 56px; }
+    .ask-head::before { content: "Workspace / Sahel Desk / Ask"; position: absolute; left: 15px; bottom: 5px; color: var(--navy-500); font-family: 'JetBrains Mono'; font-size: 10px; }
+    .ask-brand { align-self: flex-start; padding-top: 8px; }
+    .ask-context { display: none; }
+    .ask-scroll { padding-bottom: 170px; }
+    .ask-sources { grid-template-columns: 1fr; }
+    .ask-composer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; }
+    .mobile-sources { display: block; position: fixed; left: 0; right: 0; bottom: 70px; z-index: 3; height: 40vh; transform: translateY(0); background: var(--navy-950); border-top: 1px solid var(--navy-700); border-radius: 16px 16px 0 0; padding: 14px 16px; box-shadow: var(--shadow-5); }
+    .mobile-sources h3 { margin: 0 0 10px; font-family: 'EB Garamond'; font-size: 22px; font-weight: 500; color: var(--navy-50); }
+  }
+</style>
+</head>
+<body>
+<div class="backdrop">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="workspace-switcher"><div class="row"><div style="width:24px;height:24px;border-radius:6px;background:var(--navy-950);color:var(--gold-500);display:grid;place-items:center;font-family:'EB Garamond';">P</div><div><div style="font-size:13px;font-weight:500;">TACITUS</div><div class="caption">Sahel Desk</div></div></div></div>
+      <h6>Intelligence</h6><a class="nav-item active">Dashboard</a><a class="nav-item">Conflict Graph</a><a class="nav-item">Timeline</a><a class="nav-item">Risk Monitor</a>
+      <h6>Workspace</h6><a class="nav-item">Documents</a><a class="nav-item">Sources</a><a class="nav-item">Reports</a>
+    </aside>
+    <main>
+      <div class="header"><div class="crumbs"><span>Workspace</span><span>/</span><strong>Dashboard</strong></div><button class="ask-pill">Ask PRAXIS</button></div>
+      <div class="mini-canvas">
+        <h1 class="headline-lg" style="margin:0 0 20px;color:var(--navy-950);">Sahel Region Briefing</h1>
+        <div class="mini-grid">
+          <div class="card mini-card"><div class="overline">Risk Composite</div><div class="display-md" style="color:var(--navy-950);">7.3</div><div class="mini-line gold"></div></div>
+          <div class="card mini-card"><div class="overline">Escalation</div><div class="headline-sm">Stage 5</div><div class="mini-line blue"></div></div>
+          <div class="card mini-card"><div class="overline">Triggers</div><div class="mini-line"></div><div class="mini-line"></div><div class="mini-line"></div></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<section class="ask-panel" aria-label="Ask PRAXIS chat">
+  <header class="ask-head">
+    <div class="ask-brand"><span class="spark">✦</span><span>PRAXIS</span><span class="ask-context">Sahel · v7</span></div>
+    <button class="ask-close" aria-label="Close">×</button>
+  </header>
+  <div class="ask-scroll">
+    <article class="ask-msg-assistant">
+      The strongest near-term assessment is that a local ceasefire window still exists, but it is narrowing. I am weighting <span class="ask-inline-code">withCalibration()</span> profile v7 and source IDs <span class="ask-inline-code">[S-217]</span>, <span class="ask-inline-code">[S-244]</span>, and <span class="ask-inline-code">[G-031]</span>.
+      <div class="ask-sources">
+        <a class="ask-source-pill" href="briefing.html">[S-217] OCHA</a>
+        <a class="ask-source-pill" href="briefing.html">[S-244] UNSC</a>
+        <a class="ask-source-pill" href="briefing.html">[G-031] Actor edge</a>
+        <a class="ask-source-pill" href="briefing.html">[T-018] Event</a>
+      </div>
+    </article>
+    <div class="ask-msg-user">What would change the confidence rating before Friday?</div>
+    <article class="ask-msg-assistant">
+      Three indicators would move confidence: a verified meeting between intermediary channels, cessation language from the main armed coalition, and movement on detainee access. Missing evidence remains explicit in <span class="ask-inline-code">retrievalTrace</span>.
+      <div class="ask-sources">
+        <a class="ask-source-pill" href="briefing.html">[S-301] ICG</a>
+        <a class="ask-source-pill" href="briefing.html">[S-319] ReliefWeb</a>
+        <a class="ask-source-pill" href="briefing.html">[R-006] Risk scan</a>
+        <a class="ask-source-pill" href="briefing.html">[B-002] Brief</a>
+      </div>
+    </article>
+  </div>
+  <div class="mobile-sources">
+    <h3>Sources</h3>
+    <div class="ask-sources">
+      <a class="ask-source-pill" href="briefing.html">[S-217] OCHA access note</a>
+      <a class="ask-source-pill" href="briefing.html">[S-244] UNSC consultation readout</a>
+      <a class="ask-source-pill" href="briefing.html">[G-031] Coalition edge</a>
+      <a class="ask-source-pill" href="briefing.html">[T-018] Market closure event</a>
+    </div>
+  </div>
+  <footer class="ask-composer">
+    <div class="trace">analyst.v7 · situation/sahel-mali-2026q2 · 14 nodes retrieved · 2 credits</div>
+    <div class="compose-row">
+      <button aria-label="Attach">⌘</button>
+      <button aria-label="Commands">/</button>
+      <input value="" placeholder="Ask about this situation...">
+      <button class="send">Send</button>
+    </div>
+  </footer>
+</section>
+</body>
+</html>

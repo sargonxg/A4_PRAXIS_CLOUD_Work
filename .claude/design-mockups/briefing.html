@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PRAXIS — Briefing Reader</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body[data-mode="ops"] { background: var(--navy-950); color: var(--navy-100); }
+  body[data-mode="ops"] .reader-header { background: var(--navy-900); border-bottom-color: var(--navy-800); }
+  body[data-mode="ops"] .crumbs strong { color: var(--navy-50); }
+  body[data-mode="ops"] .crumbs { color: var(--navy-400); }
+  body[data-mode="ops"] .toc-rail { background: var(--navy-900); border-color: var(--navy-800); }
+  body[data-mode="ops"] .toc-rail h6 { color: var(--navy-400); }
+  body[data-mode="ops"] .toc-rail a { color: var(--navy-300); }
+  body[data-mode="ops"] .toc-rail a.active { color: var(--gold-400); border-color: var(--gold-500); }
+  body[data-mode="ops"] .article { color: var(--navy-100); }
+  body[data-mode="ops"] .article h1, body[data-mode="ops"] .article h2, body[data-mode="ops"] .article h3 { color: var(--navy-50); }
+  body[data-mode="ops"] .article a { color: var(--gold-400); }
+  body[data-mode="ops"] .pullquote { border-color: var(--gold-500); color: var(--navy-50); }
+  body[data-mode="ops"] .citebox { background: var(--navy-900); border-color: var(--navy-700); color: var(--navy-200); }
+  body[data-mode="ops"] .citebox .mono { color: var(--gold-400); }
+  body[data-mode="ops"] .footnote { background: var(--navy-900); border-color: var(--navy-700); color: var(--navy-300); }
+  body[data-mode="ops"] code, body[data-mode="ops"] kbd { background: var(--navy-950); color: var(--gold-400); }
+  body[data-mode="ops"] .figure { background: var(--navy-900); border-color: var(--navy-700); color: var(--navy-300); }
+  body[data-mode="ops"] .summary-card { background: var(--navy-900); border-color: var(--navy-700); }
+  body[data-mode="ops"] .meta-grid dt { color: var(--navy-400); }
+  body[data-mode="ops"] .meta-grid dd { color: var(--navy-100); }
+
+  .reader-header { position: sticky; top: 0; z-index: 20; height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: var(--app-surface); border-bottom: 1px solid var(--app-border); }
+  .reader-shell { display: grid; grid-template-columns: 240px minmax(0, 1fr) 280px; gap: 32px; max-width: 1280px; margin: 0 auto; padding: 32px 24px 96px; align-items: start; }
+  .toc-rail { position: sticky; top: 88px; align-self: start; padding: 16px; border: 1px solid var(--app-border); border-radius: var(--r-lg); background: var(--app-surface); }
+  .toc-rail h6 { font-size: 11px; font-weight: 600; line-height: 16px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--app-text-muted); margin: 0 0 8px; }
+  .toc-rail a { display: block; padding: 8px 12px; border-left: 2px solid transparent; color: var(--app-text-secondary); font-size: 13px; line-height: 18px; text-decoration: none; }
+  .toc-rail a.active { color: var(--navy-950); border-left-color: var(--gold-500); font-weight: 500; background: rgba(232,185,49,.08); }
+  .toc-rail a:hover { background: var(--app-surface-alt); }
+  .toc-rail .progress { margin-top: 16px; height: 4px; background: var(--app-border); border-radius: 999px; overflow: hidden; }
+  .toc-rail .progress > div { width: 38%; height: 100%; background: var(--gold-500); }
+  .toc-rail .progress-label { font-size: 11px; color: var(--app-text-muted); margin-top: 6px; font-family: 'JetBrains Mono'; }
+
+  .article { max-width: 72ch; }
+  .article header h1 { font-family: 'EB Garamond'; font-weight: 500; font-size: 48px; line-height: 56px; letter-spacing: -0.015em; color: var(--navy-950); margin: 0 0 16px; }
+  .article header .deck { font-family: 'EB Garamond'; font-weight: 400; font-size: 22px; line-height: 32px; color: var(--app-text-secondary); margin: 0 0 24px; }
+  .article header .meta { display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 0; border-top: 1px solid var(--app-border); border-bottom: 1px solid var(--app-border); font-size: 13px; color: var(--app-text-muted); }
+  .article header .meta strong { color: var(--app-text); font-weight: 500; }
+  .article h2 { font-family: 'EB Garamond'; font-weight: 500; font-size: 28px; line-height: 36px; color: var(--navy-950); margin: 48px 0 16px; }
+  .article h3 { font-family: 'EB Garamond'; font-weight: 500; font-size: 22px; line-height: 30px; color: var(--navy-950); margin: 32px 0 12px; }
+  .article p { font-family: 'Inter'; font-size: 17px; line-height: 28px; color: var(--app-text); margin: 0 0 16px; }
+  .article p .footref { font-family: 'JetBrains Mono'; font-size: 11px; color: var(--diplomatic-blue); vertical-align: super; line-height: 1; padding: 0 2px; }
+  .article a { color: var(--diplomatic-blue); text-decoration: none; border-bottom: 1px solid currentColor; }
+  .article code, .article kbd { font-family: 'JetBrains Mono'; font-size: 13px; background: var(--cream-200); padding: 1px 6px; border-radius: 4px; color: var(--navy-950); }
+  .pullquote { margin: 32px 0; padding: 8px 0 8px 24px; border-left: 3px solid var(--gold-500); font-family: 'EB Garamond'; font-size: 22px; line-height: 32px; color: var(--navy-950); }
+  .pullquote cite { display: block; margin-top: 8px; font-family: 'Inter'; font-style: normal; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--app-text-muted); }
+  .figure { margin: 32px 0; padding: 16px; border: 1px solid var(--app-border); border-radius: var(--r-lg); background: var(--app-surface-alt); color: var(--app-text-secondary); font-size: 13px; }
+  .figure svg { width: 100%; height: auto; display: block; margin-bottom: 8px; }
+
+  .right-rail { position: sticky; top: 88px; display: flex; flex-direction: column; gap: 16px; }
+  .summary-card { padding: 20px; border: 1px solid var(--app-border); border-radius: var(--r-lg); background: var(--app-surface); }
+  .summary-card h6 { font-size: 11px; font-weight: 600; line-height: 16px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--app-text-muted); margin: 0 0 12px; }
+  .meta-grid { display: grid; grid-template-columns: 88px 1fr; gap: 8px 12px; font-size: 13px; }
+  .meta-grid dt { color: var(--app-text-muted); }
+  .meta-grid dd { margin: 0; }
+  .citebox { padding: 12px 14px; border: 1px solid var(--app-border); border-radius: var(--r); background: var(--app-surface-alt); font-size: 12px; line-height: 18px; }
+  .citebox .mono { color: var(--diplomatic-blue); }
+
+  .footnote { padding: 10px 12px; border-left: 2px solid var(--gold-500); border-radius: 0 var(--r) var(--r) 0; background: var(--app-surface-alt); font-size: 13px; color: var(--app-text-secondary); }
+  .footnote .mono { color: var(--diplomatic-blue); margin-right: 6px; }
+
+  .reader-actions { display: flex; gap: 8px; align-items: center; }
+  .toggle-mode { display: inline-flex; background: var(--app-surface-alt); border: 1px solid var(--app-border); border-radius: 999px; padding: 2px; }
+  .toggle-mode button { height: 28px; padding: 0 12px; border: 0; background: transparent; border-radius: 999px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--app-text-secondary); display: inline-flex; align-items: center; gap: 6px; }
+  .toggle-mode button.active { background: var(--app-surface); color: var(--app-text); box-shadow: var(--shadow-1); }
+  body[data-mode="ops"] .toggle-mode { background: var(--navy-800); border-color: var(--navy-700); }
+  body[data-mode="ops"] .toggle-mode button { color: var(--navy-300); }
+  body[data-mode="ops"] .toggle-mode button.active { background: var(--navy-950); color: var(--gold-400); box-shadow: none; }
+
+  /* mobile */
+  @media (max-width: 1023px) {
+    .reader-shell { grid-template-columns: 1fr; padding: 24px 16px 80px; gap: 24px; }
+    .toc-rail, .right-rail { position: static; }
+    .toc-rail { order: -1; }
+    .article header h1 { font-size: 36px; line-height: 44px; }
+    .article p { font-size: 16px; line-height: 26px; }
+  }
+</style>
+</head>
+<body data-mode="light">
+<div class="reader-header">
+  <div class="crumbs">
+    <span>Workspace</span><span class="muted">/</span>
+    <span>Sahel Desk</span><span class="muted">/</span>
+    <span>Briefings</span><span class="muted">/</span>
+    <strong>Sahel Q2 2026 — Mid-Cycle Review</strong>
+  </div>
+  <div class="reader-actions">
+    <div class="toggle-mode" role="tablist" aria-label="Reading mode">
+      <button class="active" data-target="light" aria-pressed="true">
+        <svg class="i-sm" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></svg>
+        Broadsheet
+      </button>
+      <button data-target="ops">
+        <svg class="i-sm" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        Ops Room
+      </button>
+    </div>
+    <button class="btn btn-outline">Cite</button>
+    <button class="btn btn-outline">Export</button>
+    <button class="ask-pill"><svg class="i-sm" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7z"/></svg>Ask PRAXIS</button>
+  </div>
+</div>
+
+<div class="reader-shell">
+
+  <aside class="toc-rail">
+    <h6>In this briefing</h6>
+    <a href="#summary" class="active">Executive summary</a>
+    <a href="#stakes">What's at stake</a>
+    <a href="#actors">Actor configuration</a>
+    <a href="#scenarios">Three scenarios</a>
+    <a href="#policy">Policy implications</a>
+    <a href="#sources">Source register</a>
+    <div class="progress"><div></div></div>
+    <div class="progress-label">38% · 14 of 36 min</div>
+  </aside>
+
+  <article class="article">
+    <header>
+      <h1 id="top">Sahel Q2 2026 — Mid-Cycle Review</h1>
+      <p class="deck">JNIM consolidation in northern Mali is converging with a slow-motion ECOWAS realignment. The negotiating window through stage 6 is narrower than usual, but it has not yet closed.</p>
+      <div class="meta">
+        <span><strong>Author</strong> · PRAXIS Daily Brief</span>
+        <span><strong>Calibrated for</strong> · Senior Conflict Analyst, Foreign Policy Desk</span>
+        <span><strong>Generated</strong> · <span class="mono">2026-04-28 13:42 UTC</span></span>
+        <span><strong>Profile</strong> · <span class="mono">v7</span></span>
+        <span><strong>Reading time</strong> · 36 min</span>
+      </div>
+    </header>
+
+    <h2 id="summary">Executive summary</h2>
+    <p>The Mali Northern Insurgency moved another half-step on the Glasl scale during April. JNIM communiqués this month are no longer purely defensive; they now articulate a positive territorial program for the Liptako-Gourma corridor, and a thin but consistent line of internal succession discussion has appeared across three independent intercepts.<span class="footref">[S-217]</span> The Algiers Process is stalled but not collapsed; Algerian foreign-ministry signaling on 25 April was the strongest pro-mediation gesture in seven months.<span class="footref">[S-219]</span></p>
+
+    <p>Risk composite stands at <code>7.3</code> (medium-high), up <code>+0.4</code> from the seven-day average. INFORM v2.1 places the situation inside its "ripeness" band per Zartman, which historically opens a 60–90 day track-II window before the next escalation step.</p>
+
+    <div class="pullquote">"De-escalation through stage 6 is still viable, but the cost of waiting compounds linearly after week three."
+      <cite>— Risk engine summary, calibrated to mandate <span class="mono">conflict-prevention</span></cite>
+    </div>
+
+    <h2 id="stakes">What's at stake</h2>
+    <p>Three things that matter, in priority order for a foreign-policy desk: (1) the survival of a credible mediation framework anchored to the Algiers process; (2) the durability of the ECOWAS sanctions architecture under intra-bloc pressure; and (3) the integrity of UN MINUSMA's verification mandate as it transitions to a leaner mission.</p>
+
+    <h3 id="actors">Actor configuration</h3>
+    <p>Inside JNIM, a quiet succession discussion has begun. Three internal communiqués this month reference a <em>shura</em> rotation that would, if implemented, move operational authority away from the Iyad Ag Ghaly faction toward a younger mid-tier cadre with stronger ties to the Macina front. PRAXIS has not yet confirmed this shift; it is currently rated <em>Inferred</em>, not <em>Extracted</em>.<span class="footref">[S-221]</span></p>
+
+    <p>On the state side, FAMa command has produced two operational orders that — read together — suggest preparation for a defensive posture along the <code>16N</code> line rather than a renewed offensive into Kidal. This is a more meaningful tell than any public statement.<span class="footref">[S-225]</span></p>
+
+    <figure class="figure">
+      <svg viewBox="0 0 720 220" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="rg" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#5B8C5A" stop-opacity="0.4"/>
+            <stop offset="0.55" stop-color="#E8B931" stop-opacity="0.55"/>
+            <stop offset="1" stop-color="#A63D40" stop-opacity="0.6"/>
+          </linearGradient>
+        </defs>
+        <line x1="0" y1="180" x2="720" y2="180" stroke="#E2E8F0"/>
+        <path d="M0 130 L100 120 L200 110 L300 92 L400 80 L500 70 L600 62 L720 50 L720 180 L0 180 Z" fill="url(#rg)"/>
+        <path d="M0 130 L100 120 L200 110 L300 92 L400 80 L500 70 L600 62 L720 50" fill="none" stroke="#0F172A" stroke-opacity="0.4" stroke-width="1.5"/>
+        <g font-family="JetBrains Mono" font-size="10" fill="#64748B">
+          <text x="0" y="200">Q1 '26</text><text x="180" y="200">Feb</text>
+          <text x="350" y="200">Mar</text><text x="540" y="200">Apr</text>
+          <text x="700" y="200" text-anchor="end">Now</text>
+        </g>
+        <line x1="540" y1="40" x2="540" y2="180" stroke="#0F172A" stroke-dasharray="3 3" stroke-opacity="0.5"/>
+        <text x="544" y="38" font-family="Inter" font-size="11" fill="#0F172A">JNIM commun. shift</text>
+      </svg>
+      Figure 1 — Risk composite trajectory, Q1–Q2 2026. Source: PRAXIS Risk Engine, calibrated to INFORM v2.1.
+    </figure>
+
+    <h2 id="scenarios">Three scenarios</h2>
+    <p>The three plausible trajectories below are weighted by independent probability per the Fearon-rationalist branch of the scenario engine. Weights sum to 92%; the residual 8% is allocated to "tail" trajectories not detailed here.</p>
+
+    <h3>Scenario A — Algiers reactivation (32%)</h3>
+    <p>Algeria reopens the mediation process with Mauritanian and Nigerien observer states, taking advantage of the ECOWAS opening. JNIM's mid-tier cadre signals contingent willingness through Mauritanian channels. <em>Implication: a 45-day track-II window opens; risk composite falls toward 6.4 by June.</em></p>
+
+    <h3>Scenario B — Status-quo erosion (38%)</h3>
+    <p>Neither side moves. ECOWAS sanctions hold, Algiers stays stalled. JNIM advances along the corridor without serious territorial overreach. <em>Implication: risk drifts to 7.6–7.9, stage 6 reached late summer.</em></p>
+
+    <h3>Scenario C — Externalization (22%)</h3>
+    <p>JNIM-ISGS rivalry tips into an external operation aimed at coastal states (Togo, Benin), forcing ECOWAS into a security-first posture and freezing diplomatic initiatives. <em>Implication: risk composite jumps to 8.5+ within 30 days; stage 7 dynamics become live.</em></p>
+
+    <h2 id="policy">Policy implications</h2>
+    <p>For a desk operating with a conflict-prevention mandate, three near-term moves matter most:</p>
+    <ol>
+      <li>Quietly reinforce Algerian mediation capacity — bilateral, not multilateral; multilateral framing has consistently triggered JNIM hardening.</li>
+      <li>Pre-position humanitarian access agreements with both Mali and Burkina, decoupled from the mediation track, to reduce escalation friction in Scenario B.</li>
+      <li>Prepare a rapid sanctions-relief signaling package contingent on a Stage 5 → 4 step-down — rewarding the <em>direction</em> of motion rather than waiting for full reversal.</li>
+    </ol>
+
+    <h2 id="sources">Source register</h2>
+    <div class="footnote"><span class="mono">[S-217]</span> JNIM internal communiqué series, intercepted via three independent channels, week of 2026-04-21 → 2026-04-27. Inter-source agreement: 0.86.</div>
+    <div class="footnote" style="margin-top:8px;"><span class="mono">[S-219]</span> Algerian Ministry of Foreign Affairs, public statement, 2026-04-25.</div>
+    <div class="footnote" style="margin-top:8px;"><span class="mono">[S-221]</span> Confidential analyst note · ICG fellow · 2026-04-23. Confidence: <em>Inferred</em>.</div>
+    <div class="footnote" style="margin-top:8px;"><span class="mono">[S-225]</span> FAMa operational orders no. 144 and 147, leaked via OSINT channel <code>SAHEL-OSINT-LEAKS</code>; corroborated by two independent reporters.</div>
+
+  </article>
+
+  <aside class="right-rail">
+    <div class="summary-card">
+      <h6>Key parameters</h6>
+      <dl class="meta-grid">
+        <dt>Risk composite</dt><dd><strong>7.3</strong> · medium</dd>
+        <dt>Glasl stage</dt><dd>5 of 9 — Loss of Face</dd>
+        <dt>Ripeness</dt><dd>Active window</dd>
+        <dt>Mandate</dt><dd>Conflict prevention</dd>
+        <dt>Audience</dt><dd>FP desk · senior</dd>
+        <dt>Output lang</dt><dd>en-US · formal</dd>
+      </dl>
+    </div>
+    <div class="summary-card">
+      <h6>Cite this briefing</h6>
+      <div class="citebox">
+        <span class="mono">PRAXIS · Sahel Q2 2026 Mid-Cycle Review · 2026-04-28T13:42Z · profile/v7 · sit/sahel-mali-2026q2</span>
+      </div>
+      <button class="btn btn-outline" style="width:100%;justify-content:center;margin-top:10px;">Copy citation</button>
+    </div>
+    <div class="summary-card">
+      <h6>Calibration trace</h6>
+      <p class="caption" style="margin:0;">11 of 11 calibration dimensions applied. SKC retrieval used 14 nodes, 6 documents, 11 sources. Memory Bank trace: <span class="mono">mb/2026-04-28/Q2-mid</span>.</p>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+  document.querySelectorAll('.toggle-mode button').forEach(b =>
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.toggle-mode button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      document.body.dataset.mode = b.dataset.target;
+    })
+  );
+</script>
+</body>
+</html>
