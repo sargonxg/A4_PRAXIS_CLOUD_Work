@@ -27,6 +27,9 @@ import { RecommendedToolsWidget } from '@/components/dashboard/recommended-tools
 import { CoreToolsWidget } from '@/components/dashboard/core-tools-widget';
 import { SourceCoverageBanner } from '@/components/dashboard/source-coverage-banner';
 import { OperationalStatusPanel } from '@/components/dashboard/operational-status-panel';
+import { OnboardingRecapWidget } from '@/components/dashboard/onboarding-recap-widget';
+import { SituationStatusStrip } from '@/components/dashboard/situation-status-strip';
+import { AccountStatusCard } from '@/components/dashboard/account-status-card';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { ActivityFeed } from '@/components/app/activity-feed';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -100,14 +103,14 @@ function RealDashboard({ situation }: { situation: Situation }) {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      {/* Header */}
-      <header className="flex flex-col gap-2 border-b border-slate-800 pb-4">
-        <div className="flex items-baseline justify-between gap-4">
+    <div className="flex flex-col gap-5 p-6">
+      {/* Header — situation title + Daily Read CTA */}
+      <header className="flex flex-col gap-3 border-b border-slate-200 pb-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wider text-slate-500">{greeting()}</p>
-            <h1 className="truncate text-xl font-semibold text-slate-100">{situation.name}</h1>
-            <p className="truncate text-xs text-slate-300">
+            <p className="text-[11px] uppercase tracking-wider text-navy-500">{greeting()}</p>
+            <h1 className="truncate text-2xl font-semibold text-navy-900">{situation.name}</h1>
+            <p className="truncate text-xs text-navy-500">
               {situation.region}
               {situation.domain && situation.domain !== 'generic' ? ` · ${situation.domain}` : ''}
             </p>
@@ -116,7 +119,7 @@ function RealDashboard({ situation }: { situation: Situation }) {
             type="button"
             onClick={runDailyRead}
             disabled={reading}
-            className="inline-flex items-center gap-1.5 rounded-md bg-gold-500/10 px-3 py-1.5 text-xs font-medium text-gold-500 border border-gold-500/30 hover:bg-gold-500/20 disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-md border border-gold-500/40 bg-gold-500/10 px-3 py-1.5 text-xs font-medium text-gold-700 hover:bg-gold-500/20 disabled:opacity-60"
           >
             {reading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
             {dailyRead ? 'Refresh daily read' : 'Generate daily read'}
@@ -124,18 +127,27 @@ function RealDashboard({ situation }: { situation: Situation }) {
         </div>
 
         {dailyRead ? (
-          <div className="mt-2 rounded-md border border-gold-500/20 bg-gold-500/5 p-3">
-            <h2 className="text-sm font-semibold text-slate-100">{dailyRead.headline}</h2>
-            <div className="mt-1 prose prose-invert prose-sm max-w-none text-slate-300">
+          <div className="rounded-md border border-gold-500/30 bg-gold-50 p-3">
+            <h2 className="text-sm font-semibold text-navy-900">{dailyRead.headline}</h2>
+            <div className="prose prose-sm mt-1 max-w-none text-navy-700">
               <MarkdownRenderer content={dailyRead.body} />
             </div>
           </div>
         ) : null}
 
         {readError ? (
-          <p className="text-xs text-amber-500">Daily read failed: {readError}</p>
+          <p className="text-xs text-amber-700">Daily read failed: {readError}</p>
         ) : null}
       </header>
+
+      {/* Status strip — at-a-glance situation telemetry */}
+      <SituationStatusStrip situation={situation} />
+
+      {/* Calibration recap + account state — who you are, what you have */}
+      <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <OnboardingRecapWidget />
+        <AccountStatusCard />
+      </section>
 
       {/* Source coverage banner — honest surface of tier state */}
       <SourceCoverageBanner />
@@ -154,7 +166,7 @@ function RealDashboard({ situation }: { situation: Situation }) {
       <section className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
         <OperationalStatusPanel situationId={situation.id} />
         <div>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-slate-400">Latest activity</h2>
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-navy-500">Latest activity</h2>
           <ActivityFeed
             uid={user?.id ?? null}
             situationId={situation.id}
@@ -199,9 +211,9 @@ function EmptySituationHint({ situationId }: { situationId: string }) {
   }
 
   return (
-    <section className="rounded-md border border-slate-800 bg-slate-900/50 p-4">
-      <h3 className="text-sm font-semibold text-slate-200">Get this situation running</h3>
-      <ol className="mt-2 flex flex-col gap-1 text-xs text-slate-400 sm:flex-row sm:gap-4">
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
+      <h3 className="text-sm font-semibold text-navy-900">Get this situation running</h3>
+      <ol className="mt-2 flex flex-col gap-1 text-xs text-navy-600 sm:flex-row sm:gap-4">
         <li>1. Ingest sources — upload documents or add URLs.</li>
         <li>2. Build the graph — extract entities and relationships.</li>
         <li>3. Run a risk scan — classify Glasl stage and INFORM composite.</li>
@@ -211,11 +223,11 @@ function EmptySituationHint({ situationId }: { situationId: string }) {
           type="button"
           onClick={runPopulate}
           disabled={busy}
-          className="rounded-md bg-gold-500/10 px-3 py-1.5 text-xs font-medium text-gold-400 border border-gold-500/30 hover:bg-gold-500/20 disabled:opacity-60"
+          className="rounded-md border border-gold-500/40 bg-gold-500/10 px-3 py-1.5 text-xs font-medium text-gold-700 hover:bg-gold-500/20 disabled:opacity-60"
         >
           {busy ? 'Seeding graph…' : 'Seed graph from grounded search + docs'}
         </button>
-        {result && <span className="text-xs text-slate-400">{result}</span>}
+        {result && <span className="text-xs text-navy-500">{result}</span>}
       </div>
     </section>
   );

@@ -4,33 +4,36 @@
  * Source of truth: `users/{uid}.subscription` (set by Stripe webhook + onboarding).
  * Non-paying users default to 'free'. Demo users always pass `requireTier`.
  *
- * Tier ordering (low → high): free < analyst < team < institution.
+ * Tier ordering (low → high): free < analyst < team < enterprise.
+ * Re-exports the client-side SubscriptionTier so the two halves stay aligned.
  */
 
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
+import type { SubscriptionTier } from '@/lib/firebase/firestore';
 
-export type SubscriptionTier = 'free' | 'analyst' | 'team' | 'institution';
+export type { SubscriptionTier };
 
 const TIER_ORDER: Record<SubscriptionTier, number> = {
   free: 0,
   analyst: 1,
   team: 2,
-  institution: 3,
+  enterprise: 3,
 };
 
 /**
  * Looks up the user's subscription tier from Firestore.
  * Always returns a value — defaults to 'free' on read errors.
- * Demo users return 'institution' so all features unlock.
+ * Demo users return 'enterprise' so all features unlock.
  */
 export async function resolveTier(uid: string, isDemo: boolean): Promise<SubscriptionTier> {
-  if (isDemo) return 'institution';
+  if (isDemo) return 'enterprise'; // demo unlimited
+
   try {
     const db = getAdminDbOrThrow();
     const snap = await db.collection('users').doc(uid).get();
     if (!snap.exists) return 'free';
     const sub = (snap.data() as { subscription?: string } | undefined)?.subscription;
-    if (sub === 'analyst' || sub === 'team' || sub === 'institution') return sub;
+    if (sub === 'analyst' || sub === 'team' || sub === 'enterprise') return sub as SubscriptionTier;
     return 'free';
   } catch {
     return 'free';
