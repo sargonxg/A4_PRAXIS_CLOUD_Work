@@ -1,7 +1,31 @@
 # PRAXIS Agentic System
 
 Status: active design.
-Last updated: 2026-04-27.
+Last updated: 2026-04-28.
+
+## Ask PRAXIS extension tools (2026-04-28)
+
+The calibrated chat backbone (`/api/ai/chat`, aliased at
+`/api/ai/ask-praxis`) attaches four tier-aware extension tools on every
+request via `buildAskPraxisExtensions()` in `src/lib/ai/ask-praxis-tools.ts`:
+
+| Tool | Description | Tier gate | Key gate |
+|---|---|---|---|
+| `writeToTool` | Persist a structured payload to `tools/{toolId}` under the active situation. Use to populate briefing blocks, indicator cards, timeline events. | none | none |
+| `firecrawlFetch` | Scrape one URL and return clean markdown. Free users limited to 5 fetches per session. | rate-limit on `free` | optional Firecrawl key (free fallback) |
+| `parallelResearch` | Multi-step research via Parallel.ai. | `analyst+` | required Parallel key |
+| `runDeepResearch` | Vertex ADK Deep Research Agent directive. | `analyst+` (free returns fallback) | none |
+
+Each tool returns a structured `requiresTier` / `requiresKey` payload
+when the user lacks a plan or credentials so the UI surfaces upgrade /
+settings chips inline. Tier resolver: `src/lib/api/tier.ts`.
+
+Server-side helper `delegateToAskPraxis()` (`src/lib/ai/ask-praxis.ts`)
+lets any tool route ask the calibrated backbone a sub-question with
+shared corpus retrieval — used by Briefing block regeneration and risk
+indicator commentary.
+
+
 
 ## Objective
 

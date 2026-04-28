@@ -6,6 +6,117 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-04-28 (Five-pillar uplift: ask-praxis, dashboard, conflict-graph, risk+timeline, briefing)
+
+### Spec
+
+- `docs/superpowers/specs/2026-04-28-five-pillar-uplift-design.md` — approved
+  umbrella spec covering Ask PRAXIS backbone, Dashboard recap polish, Conflict
+  Graph auto-populate (stage-then-approve), Risk Monitor + Timeline live data,
+  and Briefing Room block builder. Cross-cut: subscription tier resolver,
+  optional-key surfacing for Firecrawl + Parallel.ai, ML-readable outputs.
+
+### Phase 1 — Ask PRAXIS backbone (commit `8fe211e`)
+
+- `src/lib/api/tier.ts` — server-side subscription tier resolver + `gateTier`
+  helper. Re-exports the client-side `SubscriptionTier` so the union stays
+  aligned across halves. Demo users resolve to `enterprise`.
+- `src/lib/ai/ask-praxis-tools.ts` — four new bound tools attached to the
+  calibrated chat backbone: `writeToTool` (persist a structured payload to
+  any tool slot under the active situation), `firecrawlFetch` (free-tier
+  rate-limited URL scrape via Firecrawl with a free fallback chain),
+  `parallelResearch` (premium-tier multi-step research via parallel-web,
+  requires user-supplied key), `runDeepResearch` (Vertex ADK directive +
+  fallback hint for free users). Each returns a structured
+  `requiresTier` / `requiresKey` payload when the user lacks a plan or
+  credentials so the UI can render upgrade / settings chips inline.
+- `src/lib/ai/ask-praxis.ts` — server-side `delegateToAskPraxis()` helper
+  used by other tool routes (briefing, risk-monitor, timeline,
+  conflict-graph) to ask the calibrated chat backbone a sub-question with
+  shared corpus retrieval.
+- `src/app/api/ai/ask-praxis/route.ts` — thin alias re-exporting the
+  calibrated chat handler so client code can target a stable
+  `/api/ai/ask-praxis` endpoint.
+- `src/app/api/ai/chat/route.ts` — wires the four extension tools into the
+  bound tool set with a freshly resolved tier.
+- `scripts/audit-ai-routes.mjs` — `ask-praxis` added to the exempt set with
+  a rationale comment.
+
+### Phase 2 — Dashboard recap polish (commit `9a822cc`)
+
+- `src/components/dashboard/onboarding-recap-widget.tsx` — pulls the
+  AnalystProfile and renders identity, mandate excerpt, lens chips,
+  audience, primary domain, regions. Click-through to `/app/settings`.
+- `src/components/dashboard/situation-status-strip.tsx` — five-cell
+  at-a-glance strip: region/domain, risk + Glasl stage, escalation trend,
+  graph counts, document counts + relative updated time. Mobile-stacking.
+- `src/components/dashboard/account-status-card.tsx` — subscription tier
+  badge, credits, premium-key effective state for Firecrawl + Parallel,
+  Manage-keys + Upgrade chips.
+- `src/app/app/dashboard/page.tsx` — recompose layout: header → status
+  strip → recap + account → core grid → ops + activity → empty hint →
+  methodology. Replace `bg-slate-900/50` + dark grays with white-on-navy
+  slate-200 surfaces for legibility on the cream app background.
+
+### Phase 3 — Conflict Graph stage-then-approve (commit `0e21c55`)
+
+- `src/lib/services/graph-populate.ts` — `populateSituationGraph` now
+  accepts `mode: 'commit' | 'staged'`. Staged mode writes to
+  `users/{uid}/situations/{sitId}/graph/staged` and leaves `/main`
+  untouched. New helpers: `approveStagedGraph` (merge → main + snapshot,
+  delete staged), `getStagedGraph`, `discardStagedGraph`.
+- `src/app/api/graph/populate/route.ts` — accepts `body.mode`, defaults
+  `commit` to preserve the existing dashboard EmptySituationHint flow.
+- `src/app/api/graph/approve-staged/route.ts` — GET returns the current
+  staged graph; POST accepts `{ action: 'approve' | 'discard' }`.
+- `src/components/conflict-graph/auto-populate-panel.tsx` — one-click
+  Stage → review (counts + sample-by-type) → Approve & merge / Discard /
+  Restage. Hydrates an existing staged graph on mount so a refresh during
+  review does not lose the user's place.
+- `src/app/app/conflict-graph/page.tsx` — mount the panel under the
+  RealConflictGraphPage disambiguation banner.
+
+### Phase 4 — Risk Monitor + Timeline live data (commit `226401e`)
+
+- `src/lib/constants/indicator-catalog.ts` — domain-specific indicator
+  catalogs (INFORM, Glasl, IPC, OCHA, Galtung, ACLED proxy) keyed off
+  the 11 ANALYST_DOMAIN_IDS.
+- `src/app/api/ai/risk-indicators/route.ts` — calibrated route returning
+  Zod-validated indicator cards with severity, trend, source, confidence,
+  lastUpdated. Persists to `tools/risk-indicators`.
+- `src/app/api/ai/timeline-events/route.ts` — calibrated route returning
+  Zod-validated events with type, severity, actors, sources, related,
+  confidence. Configurable window 30/90/180/365 days. Persists to
+  `tools/timeline-events`.
+- `src/components/risk-monitor/live-indicators-panel.tsx` — three-column
+  expandable card grid with severity badges, trend arrows, source pills,
+  Ask-PRAXIS deep-link per indicator.
+- `src/components/timeline/live-events-panel.tsx` — vertical timeline
+  with filter chips (type + severity), expandable detail panes, source
+  pills, Ask-PRAXIS deep-link per event, configurable window.
+- `src/app/app/risk-monitor/page.tsx` and `src/app/app/timeline/page.tsx` —
+  mount the live panels alongside the existing AI populate flows.
+
+### Phase 5 — Briefing block builder (commit `e764666`)
+
+- `src/components/briefing/brief-blocks-panel.tsx` — block-based builder
+  on top of `/api/ai/brief-builder`. Sortable via `@dnd-kit` (already in
+  deps). Per-block actions: regenerate (with focus override), inline edit
+  (heading + body), delete, freeform-block insertion, markdown export.
+  Surfaces a missing-keys banner for Firecrawl + Parallel and a free-tier
+  upgrade chip when applicable.
+- `src/app/app/briefing/page.tsx` — mount the BriefBlocksPanel above the
+  legacy slide builder so analysts get both surfaces concurrently.
+
+### Validation
+
+- `npx tsc --noEmit` — clean across all five phases.
+- `node scripts/audit-ai-routes.mjs` — 61 calibrated, 5 exempt
+  (chat, terminology, grounded-search, advisor-chat, ask-praxis).
+- Build + GCP audit + vitest run before deploy (see deployment log).
+
+---
+
 ## [Unreleased] — 2026-04-27 (Landing-page + share-metadata refresh)
 
 ### Changed

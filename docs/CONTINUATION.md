@@ -1,5 +1,59 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
+> **2026-04-28 (PM) Claude handover — Five-pillar uplift shipped**
+>
+> Five-phase pass landed across Ask PRAXIS, Dashboard, Conflict Graph,
+> Risk Monitor + Timeline, and Briefing. Spec lives at
+> `docs/superpowers/specs/2026-04-28-five-pillar-uplift-design.md` and
+> `CHANGELOG.md` lists every file with commit hashes.
+>
+> Highlights:
+> - Ask PRAXIS now ships four tier-aware extension tools (`writeToTool`,
+>   `firecrawlFetch`, `parallelResearch`, `runDeepResearch`) attached to
+>   the calibrated chat backbone. Each returns structured
+>   `requiresTier` / `requiresKey` payloads instead of failing — UI
+>   surfaces upgrade / settings chips inline. Server-side
+>   `delegateToAskPraxis()` helper lets every tool route ask the
+>   backbone a calibrated sub-question. Tier resolver lives in
+>   `src/lib/api/tier.ts`.
+> - Dashboard recap is rebuilt: situation status strip, onboarding
+>   recap widget, account status card with credits + premium-key
+>   effective state. Light-grey surfaces replaced with white-on-navy +
+>   slate-200 borders.
+> - Conflict Graph has a stage-then-approve auto-populate flow.
+>   `populateSituationGraph({ mode: 'staged' })` writes to
+>   `graph/staged`; the user reviews a sample-by-type diff and clicks
+>   Approve or Discard. New endpoint:
+>   `/api/graph/approve-staged`.
+> - Risk Monitor mounts a `LiveIndicatorsPanel` calling new
+>   `/api/ai/risk-indicators` (Zod-validated, domain-specific catalog,
+>   severity + source per indicator). Timeline mounts a
+>   `LiveEventsPanel` calling new `/api/ai/timeline-events` (filterable,
+>   expandable, configurable window).
+> - Briefing has a drag-drop block builder
+>   (`BriefBlocksPanel`) on top of `/api/ai/brief-builder`, with
+>   per-block regenerate, inline edit, freeform insertion, missing-keys
+>   banner, free-tier upgrade chip, markdown export.
+>
+> Next agent should:
+> 1. Smoke-test the five tools end-to-end on a real situation
+>    (recommend Nordalia) before promoting any further branding/UX
+>    changes.
+> 2. Wire `parallelResearch` results into a follow-up persisted state
+>    so the LLM can cite a Parallel run in subsequent answers.
+> 3. Hook `writeToTool` calls from the Briefing builder so the
+>    assistant can populate freeform blocks directly.
+> 4. Reconcile `subscription` literal — landing page uses "Institution"
+>    while client/server type uses `enterprise`. Pick one and align
+>    pricing copy.
+>
+> Run the full validation gate before any deploy:
+> ```
+> npx tsc --noEmit && npm run build && \
+>   node scripts/audit-ai-routes.mjs && node scripts/audit-gcp.mjs && \
+>   npx vitest run
+> ```
+
 > **2026-04-28 Codex handover — Core MVP tools + receipts baseline**
 >
 > Strategic priority remains **"every tool produces something"**. This pass
