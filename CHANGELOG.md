@@ -22,6 +22,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   URL directly.
 - Removed the legacy `/backend/:path*` rewrite so browsers can no longer proxy
   arbitrary backend paths outside the authenticated allowlist.
+- `/api/admin/set-all-credits` now requires an authenticated admin session and
+  explicit confirmation body instead of relying on the shared cron secret.
 - Backend CORS now explicitly allows `X-Firebase-Token` and `X-PRAXIS-UID`,
   matching the documented auth-header separation.
 - Graph writes now persist `corePrimitiveCoverage` for the TACITUS Core-8:

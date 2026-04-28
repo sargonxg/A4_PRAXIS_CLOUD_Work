@@ -13,6 +13,8 @@
 > - Added an allowlisted authenticated `/api/backend/*` proxy and moved the
 >   browser-facing `praxisBackend` facade off direct private Cloud Run URLs.
 > - Removed the legacy `/backend/:path*` rewrite from `next.config.ts`.
+> - Hardened `/api/admin/set-all-credits` behind admin auth plus explicit
+>   confirmation; it no longer accepts only the shared cron secret.
 > - Backend CORS now allows `X-Firebase-Token` / `X-PRAXIS-UID` to match the
 >   documented auth split.
 > - `src/lib/graph/core-primitives.ts` adds Core-8 coverage for Actor, Claim,
@@ -26,8 +28,7 @@
 >   for continuing production hardening.
 >
 > Next priorities: add Core-8 coverage to corpus traces / Ask PRAXIS warnings,
-> harden `/api/admin/set-all-credits`, and automate GCP audit + Firestore rules
-> deployment.
+> rotate local secrets, and automate GCP audit + Firestore rules deployment.
 
 > **2026-04-28 Codex continuation — integration readiness + security hardening**
 >

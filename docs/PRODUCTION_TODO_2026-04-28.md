@@ -38,8 +38,8 @@ and decision intelligence.
 5. Remove or hard-gate destructive admin credit reset.
    - Why: `/api/admin/set-all-credits` still relies on shared cron secret.
    - Impact: smaller admin blast radius.
-   - Next: require both admin session and a dedicated one-time operation token,
-     or remove the endpoint after bootstrap.
+   - Status: hardened. The endpoint now requires an authenticated admin session
+     plus explicit `SET_ALL_CREDITS_TO_5000` confirmation.
 
 ## Tier 2 — High Impact
 

@@ -1,40 +1,35 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
-import { timingSafeEqual } from 'crypto';
+import { withAuth } from '@/lib/api/with-auth';
+import { isAdminPrincipal } from '@/lib/auth/admin-gate';
 
 export const maxDuration = 60;
 
 const TARGET_CREDITS = 5000;
-
-function timingSafeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
-}
+const CONFIRMATION = 'SET_ALL_CREDITS_TO_5000';
 
 /**
  * POST /api/admin/set-all-credits
  *
- * Sets ALL users' credits to 5000. Protected by CRON_SECRET header.
+ * Sets ALL users' credits to 5000. Admin-only and intentionally requires an
+ * explicit confirmation body because this is a destructive bulk operation.
  * Run once to bootstrap credits for existing users.
  *
- * Headers:
- *   Authorization: Bearer <CRON_SECRET>
+ * Body:
+ *   { "confirm": "SET_ALL_CREDITS_TO_5000" }
  */
-export async function POST(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
+export const POST = withAuth(async (req, user) => {
+  if (!isAdminPrincipal(user)) {
+    return NextResponse.json({ error: 'Forbidden - admin only' }, { status: 403 });
   }
 
-  const authHeader = req.headers.get('Authorization') ?? '';
-  const expected = `Bearer ${secret}`;
-  if (!authHeader || !timingSafeCompare(authHeader, expected)) {
-    console.warn('[set-all-credits] Unauthorized attempt', {
-      ip: req.headers.get('x-forwarded-for') ?? 'unknown',
-      timestamp: new Date().toISOString(),
-    });
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const body = await req.json().catch(() => null) as { confirm?: unknown } | null;
+  if (body?.confirm !== CONFIRMATION) {
+    return NextResponse.json(
+      { error: `Confirmation required: ${CONFIRMATION}` },
+      { status: 400 },
+    );
   }
 
   try {
@@ -69,6 +64,8 @@ export async function POST(req: NextRequest) {
       amount: TARGET_CREDITS,
       type: 'admin_bulk_reset',
       description: `Bulk reset: ${updated} users set to ${TARGET_CREDITS} credits`,
+      actorUid: user.uid,
+      actorEmail: user.email,
       createdAt: FieldValue.serverTimestamp(),
     });
 
@@ -81,4 +78,4 @@ export async function POST(req: NextRequest) {
     console.error('[set-all-credits]', err);
     return NextResponse.json({ error: 'Failed to update credits' }, { status: 500 });
   }
-}
+});
