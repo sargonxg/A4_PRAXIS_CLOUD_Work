@@ -38,6 +38,26 @@ Cloud SQL Postgres checkpointing. Vertex AI Agent Engine remains the managed
 Deep Research path. Firestore remains the source of truth for user-visible
 state, tool outputs, graph proposals, jobs, events, and notifications.
 
+## Evidence Envelope (2026-04-28 Codex continuation)
+
+Agents now have a first shared adapter for generated research artifacts:
+`src/lib/knowledge/evidence-envelope.ts`. It normalizes tool outputs from both
+Firestore paths (`tool-data/{toolId}` and `tools/{toolId}`) into a
+citation-ready shape with:
+
+- canonical registry id (`risk_assessment` -> `risk-monitor`,
+  `commitment_scan` -> `commitments`, etc.);
+- stable citation path;
+- excerpt suitable for retrieval prompts;
+- confidence band derived from metadata when present;
+- freshness, version, and analyst profile version when available.
+
+`searchSituationCorpus()` uses this adapter for the tool-output layer, and the
+SKC `ToolOutputLayer` now falls back across canonical and legacy IDs. This
+means Ask PRAXIS, Brainstorming Table, Source Scout, Red Team, and future bots
+can retrieve prior generated work even while the app still has mixed storage
+keys.
+
 ## Agent Types
 
 | Agent | Role | Inputs | Outputs | Execution path |

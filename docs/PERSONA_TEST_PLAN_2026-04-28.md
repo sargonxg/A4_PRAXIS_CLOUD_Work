@@ -30,6 +30,17 @@ of testing only generic analyst flows.
    citations, public/internal visibility, revocation, and audit controls are
    explicit.
 
+## 2026-04-28 Evidence Retrieval Persona Checks
+
+Use these after every corpus/SKC sprint slice:
+
+| Persona | Prior artifact | Follow-up prompt | Expected retrieval behavior |
+|---|---|---|---|
+| Bilateral country desk | `risk_assessment` saved via legacy `tools` path | "Turn the latest risk assessment into ambassador talking points." | Ask PRAXIS sees it as canonical `risk-monitor` evidence with a citation. |
+| Envoy support officer | `commitment_scan` saved via legacy `tools` path | "Which commitments should I test before shuttle diplomacy?" | Corpus retrieval sees it as `commitments`, not a missing output. |
+| Think-tank researcher | `policy-memo` saved via versioned `tool-data` path | "What evidence underpins the latest memo recommendation?" | Versioned `tool-data` wins over older `tools` rows and includes version metadata. |
+| Humanitarian access lead | Humanitarian snapshot plus notes/reports | "What changed since the last access update?" | Next sprint should add analyst notes and research-run artifacts to the same evidence envelope. |
+
 ## Free Tier Guardrail
 
 Free users should never feel like every valuable action is blocked. The minimum

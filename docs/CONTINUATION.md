@@ -1,5 +1,44 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
+> **2026-04-28 Codex continuation — Evidence envelope + SKC retrieval hardening**
+>
+> Continued the agentic research/information-system sprint by normalizing
+> generated tool outputs into a citation-ready evidence envelope:
+>
+> - Added `src/lib/knowledge/evidence-envelope.ts` with canonical tool-id
+>   aliases, excerpt summarization, timestamp coercion, confidence mapping,
+>   profile/version metadata, and `CorpusItem` projection.
+> - Updated `searchSituationCorpus()` so the `tool-output` layer reads both
+>   `tool-data/{toolId}` and `tools/{toolId}`. Versioned `tool-data` wins;
+>   saveToolOutput-only `tools` docs now backfill into corpus retrieval instead
+>   of being invisible to Ask PRAXIS / agents.
+> - Updated SKC `ToolOutputLayer` related-output lookup to fall back across
+>   canonical registry ids and legacy underscore keys (`risk_assessment` ->
+>   `risk-monitor`, `commitment_scan` -> `commitments`, etc.) across both
+>   storage paths.
+> - Added focused tests:
+>   `tests/unit/lib/knowledge/evidence-envelope.test.ts`,
+>   `tests/unit/lib/knowledge/tool-output-layer.test.ts`, plus existing
+>   corpus-search helper coverage.
+> - Fixed the dashboard upgrade-link production break: public routes are no
+>   longer prefixed by `PraxisLink`, and middleware plus `/app/pricing` now
+>   redirect to `/pricing` to cover cached clients before auth routing.
+> - Soft-metered credits so depleted balances no longer block AI execution.
+>   Credits still deduct/log when present; first-value AI, search, dashboard,
+>   and situation creation flows keep working.
+> - Switched the post-create `/api/ai/auto-structure` stream to the standard
+>   Flash model for reliability; the Pro model remains available through
+>   `callProModel()` routes with fallback.
+>
+> Validation run: `npx tsc --noEmit` clean; focused Vitest for evidence,
+> routes, evidence, tool-output layer, corpus-search helpers, and
+> with-calibration passed; strict lint passed on touched files; `npm run build`
+> passed and produced `/app/pricing` in the route table.
+>
+> Next sprint slice: add analyst notes and explicit research-run artifacts to
+> the same envelope, then expose a corpus health panel showing source age,
+> citation coverage, extraction failures, and retrieval latency.
+
 > **2026-04-28 (PM) Claude handover — Five-pillar uplift shipped**
 >
 > Five-phase pass landed across Ask PRAXIS, Dashboard, Conflict Graph,

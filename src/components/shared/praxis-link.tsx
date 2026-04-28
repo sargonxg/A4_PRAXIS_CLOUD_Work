@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { ComponentProps } from 'react';
-import { useRoutePrefix } from '@/lib/utils/routes';
+import { shouldPrefixPraxisHref, useRoutePrefix } from '@/lib/utils/routes';
 
 type PraxisLinkProps = ComponentProps<typeof Link>;
 
@@ -14,14 +14,7 @@ export function PraxisLink({ href, ...props }: PraxisLinkProps) {
   const prefix = useRoutePrefix();
 
   const hrefStr = typeof href === 'string' ? href : href.pathname ?? '';
-  const isAlreadyPrefixed =
-    hrefStr.startsWith('/app') ||
-    hrefStr.startsWith('/demo') ||
-    hrefStr.startsWith('http') ||
-    hrefStr.startsWith('#') ||
-    hrefStr.startsWith('mailto:');
-
-  const prefixedHref = isAlreadyPrefixed ? href : `${prefix}${hrefStr}`;
+  const prefixedHref = shouldPrefixPraxisHref(hrefStr) ? `${prefix}${hrefStr}` : href;
 
   return <Link href={prefixedHref} {...props} />;
 }

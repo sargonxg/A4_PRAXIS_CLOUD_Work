@@ -8,6 +8,33 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased] — 2026-04-28 (Five-pillar uplift: ask-praxis, dashboard, conflict-graph, risk+timeline, briefing)
 
+### Codex Continuation — Evidence envelope + SKC retrieval hardening
+
+- `src/lib/knowledge/evidence-envelope.ts` — adds the first reusable
+  citation-ready evidence envelope for tool outputs, including canonical
+  tool-id normalization, timestamp coercion, confidence mapping, excerpt
+  summarization, and CorpusItem projection.
+- `src/lib/intelligence/corpus-search.ts` — tool-output retrieval now reads
+  both `tool-data` and current/legacy `tools` documents, preferring versioned
+  `tool-data` while backfilling saveToolOutput-only routes into the situation
+  corpus. This closes a major gap where agents could miss prior generated
+  outputs because they lived on the other Firestore path.
+- `src/lib/knowledge/tool-output-layer.ts` — related-tool SKC context now
+  falls back across canonical registry ids and legacy underscore keys
+  (`risk_assessment` -> `risk-monitor`, `commitment_scan` -> `commitments`,
+  etc.) across both storage paths.
+- Tests: `tests/unit/lib/knowledge/evidence-envelope.test.ts`,
+  `tests/unit/lib/knowledge/tool-output-layer.test.ts`, and existing
+  corpus-search helper tests cover the normalization and retrieval contracts.
+- Dashboard production fix: `PraxisLink` now leaves public root routes such as
+  `/pricing`, `/login`, `/privacy`, and `/terms` unprefixed, and
+  middleware plus `/app/pricing` defensively redirect to `/pricing` so cached
+  app bundles no longer 404 or bounce through login on upgrade links.
+- AI access reliability: credits are now soft-metered instead of hard-blocking
+  generation when depleted, and `/api/ai/auto-structure` uses the standard
+  Flash model for the post-create situation build so every user gets a
+  dependable first-value AI pass.
+
 ### Spec
 
 - `docs/superpowers/specs/2026-04-28-five-pillar-uplift-design.md` — approved

@@ -21,6 +21,10 @@ assistants, including ARGUS-style public or internal chatbots.
 Near-term Firestore envelope:
 
 - `users/{uid}/situations/{sid}/corpus/{corpusItemId}`
+- `users/{uid}/situations/{sid}/tool-data/{toolId}` for versioned generated
+  outputs
+- `users/{uid}/situations/{sid}/tools/{toolId}` for current/legacy live tool
+  outputs and annotations
 - `organizations/{orgId}/corpora/{corpusId}/items/{corpusItemId}` for team
   corpora
 - `published_bots/{botId}` for public/internal bot metadata
@@ -30,6 +34,13 @@ Near-term Firestore envelope:
 Each `CorpusItem` should include source type, owner scope, visibility, hash,
 language, extraction status, citation metadata, reliability label, chunk count,
 embedding model, and approval state.
+
+2026-04-28 implementation note: `src/lib/knowledge/evidence-envelope.ts`
+now normalizes tool outputs into a citation-ready envelope and projects them
+into `CorpusItem`. `searchSituationCorpus()` reads both `tool-data` and
+`tools`, preferring versioned `tool-data` while backfilling legacy/current
+`tools` rows. This is the first step toward a single corpus table without
+breaking existing tool pages.
 
 ## Retrieval Path
 
@@ -50,6 +61,8 @@ embedding model, and approval state.
 ## First Build Tickets
 
 1. Normalize tool outputs, notes, documents, and research into `CorpusItem`.
+   Status: tool outputs are partially done through the evidence envelope; next
+   iteration should add analyst notes and explicit research run artifacts.
 2. Add a corpus health panel: chunk count, source age, citation coverage,
    extraction failures, and retrieval latency.
 3. Add a private "Bot Preview" for a single situation before any public sharing.

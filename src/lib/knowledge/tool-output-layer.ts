@@ -6,6 +6,7 @@
 
 import { adminDb } from '@/lib/firebase/admin';
 import type { RelatedToolData } from './types';
+import { canonicalToolId, coerceIsoTimestamp } from './evidence-envelope';
 
 // Which tools inform which other tool's context
 const TOOL_DEPENDENCIES: Record<string, string[]> = {
@@ -31,22 +32,56 @@ const TOOL_DEPENDENCIES: Record<string, string[]> = {
   'dossier': ['actor-profiles', 'timeline', 'info-environment'],
 };
 
+const LEGACY_TOOL_KEYS: Record<string, string[]> = {
+  'actor-profiles': ['actor_profiles', 'actor_enrichment'],
+  'briefing': ['briefing_room'],
+  'commitments': ['commitment_scan'],
+  'conflict-graph': ['conflict_graph'],
+  'daily-brief': ['daily_brief', 'auto_briefing'],
+  'deep-research': ['deep_research'],
+  'early-warning': ['escalation_scan'],
+  'game-theory': ['game_theory'],
+  'human-rights': ['human_rights'],
+  'info-environment': ['info_environment'],
+  'media-compass': ['media_compass', 'media_analysis'],
+  'media-roundup': ['media_roundup'],
+  'mediation-design': ['mediation_design'],
+  'negotiation-prep': ['negotiation_prep'],
+  'policy-memo': ['policy_memo'],
+  'power-map': ['power_map'],
+  'risk-monitor': ['risk_assessment'],
+  'sanctions': ['sanctions_scan'],
+  'scenarios': ['scenario_analysis'],
+  'stakeholder-map': ['stakeholder_map'],
+  'talking-points': ['talking_points'],
+  'treaty-analyzer': ['treaty_analysis'],
+  'un-toolkit': ['un_toolkit'],
+};
+
 export class ToolOutputLayer {
   constructor(private uid: string, private situationId: string) {}
 
-  private toolDataRef(toolId: string) {
+  private situationRef() {
     return adminDb
       .collection('users').doc(this.uid)
-      .collection('situations').doc(this.situationId)
-      .collection('tool-data').doc(toolId);
+      .collection('situations').doc(this.situationId);
+  }
+
+  private toolOutputRef(collectionName: 'tool-data' | 'tools', toolId: string) {
+    return this.situationRef().collection(collectionName).doc(toolId);
   }
 
   async getToolData(toolId: string): Promise<RelatedToolData | null> {
     try {
-      const doc = await this.toolDataRef(toolId).get();
-      if (!doc.exists) return null;
-      const d = doc.data()!;
-      return { data: d.data ?? d, generatedAt: d.generatedAt ?? '', version: d.version ?? 1 };
+      for (const candidate of candidateToolIds(toolId)) {
+        const versioned = await this.toolOutputRef('tool-data', candidate).get();
+        if (versioned.exists) return normalizeToolDoc(versioned.data() ?? {});
+      }
+      for (const candidate of candidateToolIds(toolId)) {
+        const legacy = await this.toolOutputRef('tools', candidate).get();
+        if (legacy.exists) return normalizeToolDoc(legacy.data() ?? {});
+      }
+      return null;
     } catch {
       return null;
     }
@@ -74,3 +109,27 @@ export class ToolOutputLayer {
     }
   }
 }
+
+function candidateToolIds(toolId: string): string[] {
+  const canonical = canonicalToolId(toolId);
+  const keys = [
+    toolId,
+    canonical,
+    canonical.replace(/-/g, '_'),
+    ...(LEGACY_TOOL_KEYS[canonical] ?? []),
+  ];
+  return keys.filter((key, index) => key && keys.indexOf(key) === index);
+}
+
+function normalizeToolDoc(doc: Record<string, unknown>): RelatedToolData {
+  return {
+    data: doc.data ?? doc.output ?? doc,
+    generatedAt: coerceIsoTimestamp(doc.generatedAt) ?? '',
+    version: typeof doc.version === 'number' ? doc.version : 1,
+  };
+}
+
+export const __test__ = {
+  candidateToolIds,
+  normalizeToolDoc,
+};

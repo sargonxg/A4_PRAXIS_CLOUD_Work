@@ -14,9 +14,11 @@ export const GET = withAuth(async () => {
     vertex:    providers.vertex.configured,
     anthropic: providers.anthropic.configured,
     model:     MODEL_NAMES.flash,
-    note:      providers.google.configured
-      ? providers.google.note
-      : 'Set GOOGLE_AI_API_KEY to enable AI features',
+    note:      providers.vertex.configured
+      ? providers.vertex.note
+      : providers.google.configured
+        ? providers.google.note
+        : 'Set GOOGLE_AI_API_KEY or GOOGLE_VERTEX_PROJECT to enable AI features',
     timestamp: new Date().toISOString(),
   });
 });

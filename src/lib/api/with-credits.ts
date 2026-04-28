@@ -129,22 +129,23 @@ async function deductCreditsAdmin(
   uid: string,
   operationType: string,
   description: string,
-): Promise<{ success: boolean; remainingCredits: number }> {
+): Promise<{ success: boolean; remainingCredits: number; reason?: 'insufficient' | 'unmapped' }> {
   const adminDb = getAdminDbOrThrow();
   const cost = AI_CREDIT_COSTS[operationType];
   if (cost === undefined) {
     console.error(`[credits] Unmapped operation type: "${operationType}" — refusing to default`);
-    return { success: false, remainingCredits: 0 };
+    return { success: false, remainingCredits: 0, reason: 'unmapped' };
   }
   const userRef = adminDb.collection('users').doc(uid);
 
-  const result = await adminDb.runTransaction(async (tx) => {
+  const result: { success: boolean; remainingCredits: number; reason?: 'insufficient' | 'unmapped' } =
+    await adminDb.runTransaction(async (tx) => {
     const userSnap = await tx.get(userRef);
 
     if (!userSnap.exists) {
       // No profile yet — create one with initial credits then deduct
       const initial = 5000;
-      if (initial < cost) return { success: false, remainingCredits: 0 };
+      if (initial < cost) return { success: false, remainingCredits: 0, reason: 'insufficient' as const };
       tx.set(userRef, {
         uid,
         credits: initial - cost,
@@ -165,7 +166,7 @@ async function deductCreditsAdmin(
     const credits = typeof data.credits === 'number' ? data.credits : 0;
 
     if (credits < cost) {
-      return { success: false, remainingCredits: credits };
+      return { success: false, remainingCredits: credits, reason: 'insufficient' as const };
     }
 
     tx.update(userRef, {
@@ -201,10 +202,13 @@ async function deductCreditsAdmin(
 
 /**
  * Checks and deducts credits for an AI operation.
- * Demo users always pass. Live users must have sufficient credits.
+ * Demo users always pass. Live users are soft-metered: if credits are depleted,
+ * the operation still runs and the unpaid usage is logged. PRAXIS monetization
+ * should not block first-value AI, situation creation, or research workflows.
  *
  * Returns { allowed: true } if the user can proceed,
- * or { allowed: false, response: Response } with a 402/401/503 error.
+ * or { allowed: false, response: Response } only when auth or the meter itself
+ * is unavailable. Depleted credits never block AI execution.
  */
 export async function checkAndDeductCredits(
   operationType: string,
@@ -231,18 +235,10 @@ export async function checkAndDeductCredits(
     const result = await deductCreditsAdmin(session.uid, operationType, description);
 
     if (!result.success) {
-      return {
-        allowed: false,
-        response: new Response(
-          JSON.stringify({
-            error: 'Insufficient TACITUS Credits',
-            creditsRequired: cost,
-            creditsRemaining: result.remainingCredits,
-            message: `This operation requires ${cost} credit(s). You have ${result.remainingCredits} remaining.`,
-          }),
-          { status: 402, headers: { 'Content-Type': 'application/json' } }
-        ),
-      };
+      console.warn(
+        `[credits] Soft-metering ${operationType}; uid=${session.uid} reason=${result.reason ?? 'unknown'} has ${result.remainingCredits}, needs ${cost}`
+      );
+      return { allowed: true };
     }
 
     return { allowed: true };
@@ -273,18 +269,10 @@ export async function checkAndDeductCreditsForUid(
   try {
     const result = await deductCreditsAdmin(uid, operationType, description);
     if (!result.success) {
-      return {
-        allowed: false,
-        response: new Response(
-          JSON.stringify({
-            error: 'Insufficient TACITUS Credits',
-            creditsRequired: cost,
-            creditsRemaining: result.remainingCredits,
-            message: `This operation requires ${cost} credit(s). You have ${result.remainingCredits} remaining.`,
-          }),
-          { status: 402, headers: { 'Content-Type': 'application/json' } }
-        ),
-      };
+      console.warn(
+        `[credits] Soft-metering ${operationType}; uid=${uid} reason=${result.reason ?? 'unknown'} has ${result.remainingCredits}, needs ${cost}`
+      );
+      return { allowed: true };
     }
     return { allowed: true };
   } catch (err) {

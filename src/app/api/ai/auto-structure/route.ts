@@ -1,5 +1,5 @@
 import { streamText, stepCountIs } from 'ai';
-import { getProModel } from '@/lib/ai/providers';
+import { getModel } from '@/lib/ai/providers';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
@@ -337,10 +337,10 @@ For each major actor (aim for 5 to 8):
 
 Ground every claim in the pre-scraped context above first, then use web search only for missing current details. Use UN diplomatic language standards.`;
 
-    // Intentionally uses getProModel() directly: this is a streamText route (not generateText)
-    // and callProModel only wraps generateText. Long-form streaming output benefits from Pro.
+    // Use Flash for the first-value situation build. This route is fired in the
+    // background after creation, so reliability beats Pro-only depth here.
     const result = streamText({
-      model: getProModel(),
+      model: getModel(),
       system: systemPrompt,
       prompt: `Research and produce a complete initial intelligence briefing for: "${situationName}" in ${region || 'the relevant region'}. Use web search to find current, accurate information. Be thorough and cite your sources.`,
       tools: {

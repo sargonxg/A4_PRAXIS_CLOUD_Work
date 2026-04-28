@@ -32,6 +32,12 @@ import {
   DEFAULT_CORPUS_LIMIT,
   MAX_CORPUS_LIMIT,
 } from '@/types/corpus';
+import {
+  evidenceEnvelopeToCorpusItem,
+  scoreText,
+  summarizeToolOutput,
+  toolOutputToEvidenceEnvelope,
+} from '@/lib/knowledge/evidence-envelope';
 
 const MAX_EXCERPT_CHARS = 480;
 
@@ -275,43 +281,53 @@ async function retrieveToolOutputs(
   queryTerms: string[]
 ): Promise<CorpusItem[]> {
   if (!adminDb) return [];
-  const snap = await adminDb
+  const situationRef = adminDb
     .collection('users')
     .doc(uid)
     .collection('situations')
-    .doc(situationId)
-    .collection('tool-data')
-    .limit(40)
-    .get()
-    .catch(() => null);
-  if (!snap) return [];
+    .doc(situationId);
+
+  const [toolDataSnap, legacyToolsSnap] = await Promise.all([
+    situationRef.collection('tool-data').limit(40).get().catch(() => null),
+    situationRef.collection('tools').limit(80).get().catch(() => null),
+  ]);
+  if (!toolDataSnap && !legacyToolsSnap) return [];
 
   const items: CorpusItem[] = [];
-  for (const doc of snap.docs) {
-    const toolId = doc.id;
-    if (toolId === 'argus' || toolId === 'sources-library') continue; // covered by dedicated layers
-    const docData = doc.data();
-    const generatedAt = pickString(docData?.generatedAt) ?? '';
-    const versionStr = typeof docData?.version === 'number' ? `v${docData.version}` : '';
-    const summary = summarizeToolOutput(docData?.data);
-    if (!summary) continue;
-    const haystack = `${toolId} ${summary}`;
-    const score = scoreText(haystack, queryTerms);
-    if (queryTerms.length > 0 && score === 0) continue;
-    items.push({
-      sourceType: 'tool-output',
-      sourceId: `tool-output#${toolId}`,
-      title: `${toolId} ${versionStr}`.trim(),
-      excerpt: summary,
-      citation: `users/${uid}/situations/${situationId}/tool-data/${toolId}`,
-      confidence: 'medium',
-      freshness: generatedAt,
-      reason: queryTerms.length
-        ? `Matches output of ${toolId}`
-        : `Recent output of ${toolId}`,
-      score,
-    });
+  const seenCanonicalIds = new Set<string>();
+
+  const collect = (
+    docs: Array<{ id: string; data: () => Record<string, unknown> }>,
+    sourceCollection: 'tool-data' | 'tools',
+  ) => {
+    for (const doc of docs) {
+      const toolId = doc.id;
+      if (toolId === 'argus' || toolId === 'sources-library') continue; // covered by dedicated layers
+      const envelope = toolOutputToEvidenceEnvelope({
+        uid,
+        situationId,
+        toolId,
+        docData: doc.data(),
+        sourceCollection,
+        queryTerms,
+      });
+      if (!envelope) continue;
+      if (queryTerms.length > 0 && envelope.score === 0) continue;
+      if (seenCanonicalIds.has(envelope.canonicalToolId)) continue;
+      seenCanonicalIds.add(envelope.canonicalToolId);
+      items.push(evidenceEnvelopeToCorpusItem(envelope));
+    }
+  };
+
+  // Prefer the versioned `tool-data` shape, then backfill from legacy/current
+  // `tools` outputs so saveToolOutput-only routes still enter the corpus.
+  if (toolDataSnap) {
+    collect(toolDataSnap.docs, 'tool-data');
   }
+  if (legacyToolsSnap) {
+    collect(legacyToolsSnap.docs, 'tools');
+  }
+
   return topByScore(items, 6, queryTerms.length === 0);
 }
 
@@ -336,18 +352,6 @@ function tokenize(query: string): string[] {
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter(t => t.length > 2);
-}
-
-function scoreText(text: string, queryTerms: string[]): number {
-  if (queryTerms.length === 0) return 0;
-  const lower = (text || '').toLowerCase();
-  let score = 0;
-  for (const term of queryTerms) {
-    if (!term) continue;
-    const occurrences = lower.split(term).length - 1;
-    if (occurrences > 0) score += occurrences;
-  }
-  return score;
 }
 
 function topByScore(items: CorpusItem[], n: number, allowZero: boolean): CorpusItem[] {
@@ -399,75 +403,6 @@ function slug(input: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 60) || 'item';
-}
-
-function summarizeToolOutput(data: unknown): string {
-  if (data == null) return '';
-  if (typeof data === 'string') return data.slice(0, 600);
-  if (typeof data === 'number' || typeof data === 'boolean') return String(data);
-  if (Array.isArray(data)) {
-    if (data.length === 0) return '';
-    const head = data.slice(0, 3).map(x => summarizeToolOutput(x)).filter(Boolean);
-    return head.join(' | ').slice(0, 600);
-  }
-  const rec = asRecord(data);
-  const synthesis = asRecord(rec.synthesis);
-  if (synthesis && typeof synthesis.bluf === 'string') {
-    const parts = [`BLUF: ${synthesis.bluf}`];
-    if (Array.isArray(synthesis.optionsForDecision) && synthesis.optionsForDecision.length > 0) {
-      const options = synthesis.optionsForDecision
-        .slice(0, 3)
-        .map((x) => {
-          const opt = asRecord(x);
-          return [opt?.label, opt?.tradeoffs]
-            .filter((v): v is string => typeof v === 'string' && v.length > 0)
-            .join(': ');
-        })
-        .filter(Boolean);
-      if (options.length) parts.push(`Options: ${options.join(' | ')}`);
-    }
-    if (Array.isArray(synthesis.openQuestions) && synthesis.openQuestions.length > 0) {
-      parts.push(`Open questions: ${synthesis.openQuestions.slice(0, 3).join(' | ')}`);
-    }
-    if (Array.isArray(synthesis.nextActions) && synthesis.nextActions.length > 0) {
-      const actions = synthesis.nextActions
-        .slice(0, 3)
-        .map((x) => {
-          const action = asRecord(x);
-          return typeof action?.action === 'string' ? action.action : null;
-        })
-        .filter(Boolean);
-      if (actions.length) parts.push(`Next actions: ${actions.join(' | ')}`);
-    }
-    return parts.join(' ').slice(0, 600);
-  }
-  // Common useful keys, ranked by analyst usefulness.
-  const keys = [
-    'headline',
-    'summary',
-    'executiveSummary',
-    'bluf',
-    'overview',
-    'description',
-    'recommendation',
-    'recommendations',
-    'finding',
-    'findings',
-    'title',
-  ];
-  for (const k of keys) {
-    const v = rec[k];
-    if (typeof v === 'string' && v.length > 0) return v.slice(0, 600);
-    if (Array.isArray(v) && v.length > 0) {
-      const joined = v.slice(0, 3).map(x => (typeof x === 'string' ? x : summarizeToolOutput(x))).join(' | ');
-      if (joined) return joined.slice(0, 600);
-    }
-  }
-  // Fallback: stringify a shallow projection.
-  const shallow = Object.fromEntries(
-    Object.entries(rec).slice(0, 6).map(([k, v]) => [k, typeof v === 'object' ? '[object]' : v])
-  );
-  return JSON.stringify(shallow).slice(0, 600);
 }
 
 // Exposed for unit tests only.
