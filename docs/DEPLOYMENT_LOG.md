@@ -2,6 +2,62 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-28 — Dashboard pricing route + evidence retrieval hardening (DEPLOYED, smoke OK)
+
+Source commit deployed:
+
+- `ca1f870 Harden dashboard links and evidence retrieval`
+
+What changed:
+
+- Fixed authenticated dashboard upgrade links that were resolving `/pricing`
+  as `/app/pricing` and causing `_rsc` 404s.
+- Added middleware-level `/app/pricing` -> `/pricing` redirect so cached
+  clients bypass app auth and no longer bounce through login.
+- Soft-metered AI credits so depleted balances no longer block AI execution.
+- Switched post-create `/api/ai/auto-structure` to the standard Flash model for
+  reliable first-value situation creation.
+- Added a citation-ready evidence envelope and SKC/corpus fallback across both
+  `tool-data/{toolId}` and `tools/{toolId}`.
+
+Validation before deploy:
+
+- `npx tsc --noEmit` clean.
+- Focused Vitest passed for routes, with-calibration, evidence envelope,
+  tool-output layer, and corpus-search helpers.
+- Strict ESLint passed on touched files.
+- `npm run build` passed and route table included `/app/pricing`.
+
+Cloud Build:
+
+- Build: `9d80d0f1-f8f9-4402-b6a1-dedec064b110`
+- Status: `SUCCESS`
+- Duration: `8M53S`
+- Logs: <https://console.cloud.google.com/cloud-build/builds/9d80d0f1-f8f9-4402-b6a1-dedec064b110?project=852128226674>
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00103-g86`
+- Backend revision: `praxis-backend-00062-f58`
+
+Production smoke:
+
+- `GET https://praxis.tacitus.me/app/pricing` -> `307 location: /pricing`
+- `GET https://praxis.tacitus.me/pricing` -> `200`
+- `GET https://praxis.tacitus.me/app/dashboard` unauthenticated ->
+  `307 location: /login?redirect=%2Fapp%2Fdashboard`
+- `GET https://praxis.tacitus.me/api/health` ->
+  `status:"ok"`, `firestore:"ok"`, `ai_provider:"ok"`,
+  `cookie_secret:"ok"`, `firecrawl:"ok"`
+
+Notes:
+
+- `vertex_adk` remains `unconfigured`; this is optional for managed Agent
+  Engine deep-research paths. Core PRAXIS AI provider health is `ok`.
+- `polar` remains `unconfigured`; paid checkout still needs live Polar secrets.
+
+---
+
 ## 2026-04-27 — Landing-page + share-metadata refresh (DEPLOYED, smoke OK)
 
 Source commits deployed (all on `origin/main` at submission time):
