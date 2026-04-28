@@ -5,6 +5,7 @@ import { useToolData } from '@/hooks/useToolData';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
+import { BriefBlocksPanel } from '@/components/briefing/brief-blocks-panel';
 
 import { useState, useEffect, useCallback } from 'react';
 import {
@@ -450,6 +451,7 @@ function RealBriefingPage({ situation }: { situation: Situation }) {
   return (
     <>
     <RegistryToolInfo toolId="briefing" />
+    <BriefBlocksPanel situation={situation} />
     <AiPopulate
       toolId="briefing"
       toolName="Briefing"
