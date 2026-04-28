@@ -22,6 +22,7 @@ import { RiskGauge } from '@/components/visualizations/risk-gauge';
 import { TimeSeriesChart } from '@/components/visualizations/time-series-chart';
 import { TornadoChart } from '@/components/visualizations/tornado-chart';
 import { RadarChart } from '@/components/visualizations/radar-chart';
+import { LiveIndicatorsPanel } from '@/components/risk-monitor/live-indicators-panel';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -754,6 +755,7 @@ export default function RiskMonitorPage() {
         )}
       </div>
       <RegistryToolInfo toolId="risk-monitor" />
+      <LiveIndicatorsPanel situation={situation} />
       <AiPopulate
       toolId="risk-monitor"
       toolName="Risk Monitor"

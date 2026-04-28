@@ -3,6 +3,7 @@
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
+import { LiveEventsPanel } from '@/components/timeline/live-events-panel';
 import { useState, useMemo, useCallback } from 'react';
 import {
   Clock,
@@ -836,21 +837,24 @@ export default function TimelinePage() {
   return (
     <>
     <RegistryToolInfo toolId="timeline" />
-    <AiPopulate
-      toolId="timeline"
-      toolName="Conflict Timeline"
-      apiEndpoint="/api/ai/escalation-scan"
-      creditCost={3}
-      hasExistingData={!!timelineData}
-      onDataGenerated={(data) => {
-        try {
-          const parsed = data as { events: TimelineEvent[] };
-          if (parsed?.events?.length) setTimelineData(parsed);
-        } catch { /* ignore */ }
-      }}
-    >
-      <TimelineView data={displayData} />
-    </AiPopulate>
+    <div className="space-y-4">
+      <LiveEventsPanel situation={situation} />
+      <AiPopulate
+        toolId="timeline"
+        toolName="Conflict Timeline"
+        apiEndpoint="/api/ai/escalation-scan"
+        creditCost={3}
+        hasExistingData={!!timelineData}
+        onDataGenerated={(data) => {
+          try {
+            const parsed = data as { events: TimelineEvent[] };
+            if (parsed?.events?.length) setTimelineData(parsed);
+          } catch { /* ignore */ }
+        }}
+      >
+        <TimelineView data={displayData} />
+      </AiPopulate>
+    </div>
     </>
   );
 }
