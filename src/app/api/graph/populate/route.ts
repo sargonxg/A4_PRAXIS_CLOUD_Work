@@ -8,7 +8,14 @@ export const maxDuration = 300;
 /**
  * POST /api/graph/populate
  *
- * Body: { situationId: string }
+ * Body: { situationId: string, mode?: 'commit' | 'staged' }
+ *
+ * mode='commit' (default) — legacy: writes directly into graph/main and
+ * snapshots. Use this when the caller is OK with an immediate merge.
+ *
+ * mode='staged' — writes the merged graph into graph/staged so the user can
+ * review a diff before approving. Approval flows through
+ * /api/graph/approve-staged.
  *
  * Rebuilds or extends the ACO knowledge graph for the given situation. Reads
  * the caller's uploaded documents, the situation description, and — when no
@@ -21,12 +28,18 @@ export const maxDuration = 300;
  */
 export const POST = withAuth(async (req, user) => {
   try {
-    const body = (await req.json().catch(() => ({}))) as { situationId?: string };
+    const body = (await req.json().catch(() => ({}))) as { situationId?: string; mode?: 'commit' | 'staged' };
     if (!body.situationId) {
       return NextResponse.json({ error: 'situationId required' }, { status: 400 });
     }
-    const result = await populateSituationGraph({ uid: user.uid, situationId: body.situationId, trigger: 'api' });
-    return NextResponse.json(result);
+    const mode = body.mode === 'staged' ? 'staged' : 'commit';
+    const result = await populateSituationGraph({
+      uid: user.uid,
+      situationId: body.situationId,
+      trigger: mode === 'staged' ? 'api-staged' : 'api',
+      mode,
+    });
+    return NextResponse.json({ ...result, mode });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Graph population failed';
     console.error('[api/graph/populate]', msg);

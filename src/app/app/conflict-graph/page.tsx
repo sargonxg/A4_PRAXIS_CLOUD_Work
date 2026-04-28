@@ -36,6 +36,7 @@ import { PraxisLink } from "@/components/shared/praxis-link";
 import { ACO_COLORS } from '@/lib/constants/aco-colors';
 
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
+import { AutoPopulatePanel } from '@/components/conflict-graph/auto-populate-panel';
 const COLOR_BY_TYPE: Record<string, string> = { ...ACO_COLORS };
 
 // ── Entity type toggle config ───────────────────────────────────
@@ -1387,6 +1388,19 @@ function RealConflictGraphPage() {
               <PraxisLink href="/argus" className="font-medium text-diplomatic-blue hover:underline">ARGUS → Conflict Grammar Engine</PraxisLink>.
             </span>
           </div>
+
+          {/* ── Auto-populate (stage-then-approve) ───────────── */}
+          {activeSituation?.id ? (
+            <div className="mt-3">
+              <AutoPopulatePanel
+                situationId={activeSituation.id}
+                onCommitted={() => {
+                  // Re-render the page so the freshly-merged graph paints.
+                  if (typeof window !== 'undefined') window.location.reload();
+                }}
+              />
+            </div>
+          ) : null}
         </motion.div>
 
         {/* ── Controls Bar ───────────────────────────────────── */}

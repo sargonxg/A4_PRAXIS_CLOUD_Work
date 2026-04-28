@@ -55,6 +55,9 @@ interface UploadedDocument {
 function graphPath(uid: string, situationId: string) {
   return adminDb.collection('users').doc(uid).collection('situations').doc(situationId).collection('graph').doc('main');
 }
+function stagedPath(uid: string, situationId: string) {
+  return adminDb.collection('users').doc(uid).collection('situations').doc(situationId).collection('graph').doc('staged');
+}
 function snapshotPath(uid: string, situationId: string, timestamp: string) {
   return adminDb.collection('users').doc(uid).collection('situations').doc(situationId).collection('graph').doc(`snapshot-${timestamp}`);
 }
@@ -200,8 +203,18 @@ async function enrichActors(graph: GraphData, maxActors = 6): Promise<number> {
   return enriched;
 }
 
-export async function populateSituationGraph(opts: { uid: string; situationId: string; trigger?: string }): Promise<PopulateResult> {
-  const { uid, situationId, trigger = 'on-demand' } = opts;
+export async function populateSituationGraph(opts: {
+  uid: string;
+  situationId: string;
+  trigger?: string;
+  /**
+   * 'commit' = merge into graph/main and write a snapshot (legacy behaviour).
+   * 'staged' = write only to graph/staged so the user can review a diff
+   *            before approving via approveStagedGraph().
+   */
+  mode?: 'commit' | 'staged';
+}): Promise<PopulateResult> {
+  const { uid, situationId, trigger = 'on-demand', mode = 'commit' } = opts;
   const warnings: string[] = [];
 
   const situation = await getSituation(uid, situationId);
@@ -249,8 +262,21 @@ export async function populateSituationGraph(opts: { uid: string; situationId: s
 
   const actorsEnriched = await enrichActors(mergedGraph);
 
-  await writeGraph(uid, situationId, mergedGraph);
-  const snapshotId = await writeSnapshot(uid, situationId, trigger);
+  let snapshotId: string | null = null;
+  if (mode === 'commit') {
+    await writeGraph(uid, situationId, mergedGraph);
+    snapshotId = await writeSnapshot(uid, situationId, trigger);
+  } else {
+    // 'staged' — only write to /graph/staged, leave /graph/main untouched.
+    await stagedPath(uid, situationId).set({
+      ...mergedGraph,
+      version: '2.0',
+      lastUpdated: new Date().toISOString(),
+      nodeCount: mergedGraph.nodes.length,
+      edgeCount: mergedGraph.edges.length,
+      stagedFrom: { trigger, ts: new Date().toISOString() },
+    });
+  }
 
   return {
     situationId,
@@ -265,4 +291,66 @@ export async function populateSituationGraph(opts: { uid: string; situationId: s
     snapshotId,
     fetchedAt: new Date().toISOString(),
   };
+}
+
+/**
+ * Approve a previously-staged graph: merges /graph/staged into /graph/main,
+ * writes a snapshot, then deletes /graph/staged. Idempotent — calling on a
+ * missing staged doc is a no-op that returns the current main counts.
+ */
+export async function approveStagedGraph(opts: { uid: string; situationId: string; trigger?: string }): Promise<PopulateResult> {
+  const { uid, situationId, trigger = 'approve-staged' } = opts;
+  const stagedSnap = await stagedPath(uid, situationId).get();
+  const main = await getExistingGraph(uid, situationId);
+
+  if (!stagedSnap.exists) {
+    return {
+      situationId,
+      nodesBefore: main.nodes.length,
+      nodesAfter: main.nodes.length,
+      edgesBefore: main.edges.length,
+      edgesAfter: main.edges.length,
+      documentsProcessed: 0,
+      groundedSearchUsed: false,
+      actorsEnriched: 0,
+      warnings: ['No staged graph to approve.'],
+      snapshotId: null,
+      fetchedAt: new Date().toISOString(),
+    };
+  }
+
+  const staged = stagedSnap.data() as GraphData;
+  const merged = mergeGraph(main, staged.nodes, staged.edges);
+  await writeGraph(uid, situationId, merged);
+  const snapshotId = await writeSnapshot(uid, situationId, trigger);
+  await stagedPath(uid, situationId).delete().catch(() => {});
+
+  return {
+    situationId,
+    nodesBefore: main.nodes.length,
+    nodesAfter: merged.nodes.length,
+    edgesBefore: main.edges.length,
+    edgesAfter: merged.edges.length,
+    documentsProcessed: 0,
+    groundedSearchUsed: false,
+    actorsEnriched: 0,
+    warnings: [],
+    snapshotId,
+    fetchedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Read the current staged graph for diff rendering.
+ */
+export async function getStagedGraph(uid: string, situationId: string): Promise<GraphData | null> {
+  const snap = await stagedPath(uid, situationId).get();
+  return snap.exists ? (snap.data() as GraphData) : null;
+}
+
+/**
+ * Discard the staged graph without merging.
+ */
+export async function discardStagedGraph(uid: string, situationId: string): Promise<void> {
+  await stagedPath(uid, situationId).delete().catch(() => {});
 }
