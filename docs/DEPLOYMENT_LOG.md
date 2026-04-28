@@ -2,6 +2,69 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-28 — Integration readiness + admin/security hardening (DEPLOYED, smoke OK)
+
+Source commit deployed:
+
+- `db4a78c Harden integration readiness and admin controls`
+
+What changed:
+
+- `/api/health/provider` and `/app/settings/system-health` now expose live,
+  non-secret readiness for Firecrawl, Parallel, Vertex AI Agent Engine, and
+  Polar.
+- Admin credit top-up and advisor-feed reads now require the admin allowlist.
+- Signed sessions now require `COOKIE_SIGNING_SECRET`; unsafe fallback secrets
+  were removed.
+- Firestore user create rules now reject client-seeded subscription, Polar,
+  promo, and full-access fields except for the expected free-plan bootstrap.
+- Backend Python/ADK defaults now use stable `gemini-2.5-flash` /
+  `gemini-2.5-pro` model IDs.
+
+Validation before deploy:
+
+- `npx vitest run tests/unit/app/api/health/provider.test.ts tests/unit/lib/auth/cookie-signer.test.ts` passed.
+- `npx tsc --noEmit` clean.
+- Strict ESLint passed on touched TS/TSX files.
+- `python -m py_compile backend/config.py backend/ai/flows.py backend/ai/genkit_app.py backend/agents/deploy.py` passed.
+- `npm run audit:routes` passed: `61 AI route files, 61 calibrated, 5 exempt`.
+- `npm run build` passed.
+
+Cloud Build:
+
+- Build: `7a2cdb66-d62f-4b45-923c-9442abcb13ef`
+- Status: `SUCCESS`
+- Duration: `10M6S`
+- Logs: <https://console.cloud.google.com/cloud-build/builds/7a2cdb66-d62f-4b45-923c-9442abcb13ef?project=852128226674>
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00105-6d5`
+- Backend revision: `praxis-backend-00063-2t2`
+
+Firestore:
+
+- `firebase deploy --only firestore:rules --project praxisbytacitus` succeeded
+  after Firebase CLI re-auth.
+
+Production smoke:
+
+- `GET https://praxis.tacitus.me/api/health` -> `200`, `status:"ok"`,
+  `firestore:"ok"`, `ai_provider:"ok"`, `cookie_secret:"ok"`,
+  `firecrawl:"ok"`, `vertex_adk:"unconfigured"`, `polar:"unconfigured"`.
+- `GET https://praxis.tacitus.me/app/pricing` -> `307 location: /pricing`.
+- `GET https://praxis.tacitus.me/app/dashboard` unauthenticated ->
+  `307 location: /login?redirect=%2Fapp%2Fdashboard`.
+
+Notes:
+
+- Vertex ADK and Polar are intentionally still unconfigured until their live
+  Secret Manager values are created/mounted.
+- Security review found local `.env.local` contains live secrets; rotate those
+  credentials as the next manual owner action.
+
+---
+
 ## 2026-04-28 — Dashboard pricing route + evidence retrieval hardening (DEPLOYED, smoke OK)
 
 Source commit deployed:
