@@ -1,5 +1,30 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
+> **2026-04-28 Codex continuation — integration readiness + security hardening**
+>
+> Continued the production-readiness sprint after sub-agent review from
+> architecture, GCP, security, and data/AI lenses.
+>
+> - Extended `/api/health/provider` with live, non-secret integration status
+>   for Firecrawl, Parallel, Vertex AI Agent Engine, and Polar.
+> - Updated `/app/settings/system-health` so the activation guide reflects
+>   live provider readiness and names the exact missing env vars for optional
+>   paid capabilities.
+> - Locked `/api/admin/add-credits` and `/api/admin/advisor-feed` GET behind
+>   the existing admin allowlist gate.
+> - Removed unsafe cookie-signing fallbacks; signed sessions now require
+>   `COOKIE_SIGNING_SECRET` and health/diagnostics report that directly.
+> - Tightened `firestore.rules` for `users/{uid}` creation: clients can only
+>   create the exact free-plan bootstrap profile and cannot seed Polar,
+>   subscription, promo, or full-access fields.
+> - Standardized backend Python/ADK model defaults on stable
+>   `gemini-2.5-flash` / `gemini-2.5-pro`.
+>
+> Remaining high-priority items: rotate local `.env.local` secrets, harden
+> backend OIDC audience/service-account checks, automate Firestore rules and
+> GCP audit gates, and mount `VERTEX_AGENT_ENGINE_ID` only after the Agent
+> Engine is deployed and smoke-tested.
+
 > **2026-04-28 Codex continuation — Evidence envelope + SKC retrieval hardening**
 >
 > Continued the agentic research/information-system sprint by normalizing

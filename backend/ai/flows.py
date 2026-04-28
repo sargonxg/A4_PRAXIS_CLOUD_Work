@@ -43,7 +43,7 @@ def _register_flows(ai: Any) -> None:
         async def extract_aco_entities(text: str, source_file: str = "") -> dict:
             """Extract ACO conflict entities from text using Gemini 2.5 Flash."""
             response = await ai.generate(
-                model="googleai/gemini-3-flash",
+                model="googleai/gemini-2.5-flash",
                 prompt=f"{ACO_EXTRACTION_PROMPT}\n\nSOURCE TEXT:\n{text[:30_000]}",
                 output=ACOExtractionOutput,
             )
@@ -81,7 +81,7 @@ Generate a comprehensive intelligence brief.""",
             tool_name: str,
             tool_prompt: str,
             situation_context: str,
-            model: str = "googleai/gemini-3-flash",
+            model: str = "googleai/gemini-2.5-flash",
         ) -> dict:
             """Generic tool output generation with situation context."""
             response = await ai.generate(
@@ -101,7 +101,7 @@ Respond with structured JSON only.""",
         async def research_with_grounding(query: str, situation_context: str) -> dict:
             """Research using Vertex AI with Google Search grounding."""
             response = await ai.generate(
-                model="googleai/gemini-3-flash",
+                model="googleai/gemini-2.5-flash",
                 prompt=f"""Research the following question about this conflict situation.
 
 {situation_context}

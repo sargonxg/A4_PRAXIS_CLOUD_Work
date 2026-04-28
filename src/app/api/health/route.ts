@@ -34,11 +34,7 @@ export async function GET() {
   }
 
   // --- Cookie signing secret ---
-  const hasCookieSecret = !!(
-    process.env.COOKIE_SIGNING_SECRET ||
-    process.env.SESSION_SECRET ||
-    process.env.CRON_SECRET
-  );
+  const hasCookieSecret = !!process.env.COOKIE_SIGNING_SECRET;
   checks.cookie_secret = hasCookieSecret ? 'ok' : 'error';
   if (!hasCookieSecret) healthy = false;
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Activity,
   CheckCircle2,
@@ -54,6 +54,12 @@ interface ProviderHealth {
   google: boolean;
   vertex: boolean;
   anthropic: boolean;
+  firecrawl: boolean;
+  parallel: boolean;
+  vertexAdk: boolean;
+  polar: boolean;
+  polarMissing?: string[];
+  providerMode?: 'vertex' | 'google' | 'offline';
   model: string;
   note: string;
 }
@@ -217,6 +223,55 @@ const ACTIVATION_STEPS: Array<{
   },
 ];
 
+function getActivationState(
+  stepId: string,
+  providerHealth: ProviderHealth | null | undefined,
+): { label: string; className: string; detail?: string } {
+  if (!providerHealth) {
+    return {
+      label: 'Checking',
+      className: 'border-border bg-muted text-muted-foreground',
+    };
+  }
+
+  const activeClass = 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700';
+  const missingClass = 'border-amber-500/30 bg-amber-500/10 text-amber-700';
+
+  switch (stepId) {
+    case 'firecrawl':
+      return providerHealth.firecrawl
+        ? { label: 'Live', className: activeClass }
+        : { label: 'Needs key', className: missingClass, detail: 'FIRECRAWL_API_KEY is not mounted' };
+    case 'parallel':
+      return providerHealth.parallel
+        ? { label: 'Live', className: activeClass }
+        : { label: 'Needs key', className: missingClass, detail: 'PARALLEL_API_KEY is not mounted' };
+    case 'vertex-adk':
+      return providerHealth.vertexAdk
+        ? { label: 'Live', className: activeClass }
+        : { label: 'Needs engine', className: missingClass, detail: 'VERTEX_AGENT_ENGINE_ID is not mounted' };
+    case 'polar':
+      return providerHealth.polar
+        ? { label: 'Live', className: activeClass }
+        : {
+            label: 'Needs setup',
+            className: missingClass,
+            detail:
+              providerHealth.polarMissing && providerHealth.polarMissing.length > 0
+                ? `Missing ${providerHealth.polarMissing.join(', ')}`
+                : 'Polar secrets are not fully mounted',
+          };
+    case 'gdelt-bq':
+      return {
+        label: 'Optional',
+        className: 'border-sky-500/30 bg-sky-500/10 text-sky-700',
+        detail: 'Public BigQuery fallback remains available',
+      };
+    default:
+      return { label: 'Optional', className: 'border-border bg-muted text-muted-foreground' };
+  }
+}
+
 export default function SystemHealthPage() {
   const { user, credits } = useAuth();
   const { activeSituation } = useSituationStore();
@@ -265,7 +320,7 @@ export default function SystemHealthPage() {
 
   const skcHealth = health?.skc;
   const providerHealth = health?.provider;
-  const breakers = health?.breakers ?? [];
+  const breakers = useMemo(() => health?.breakers ?? [], [health?.breakers]);
 
   // ── Diagnostic snapshot — copy-to-clipboard so the user can paste a
   //    structured report into Slack / Codex / Claude Code without
@@ -307,7 +362,6 @@ export default function SystemHealthPage() {
       setTimeout(() => setCopied(false), 2500);
     } catch {
       // Fallback: log so the user can copy from the console.
-      // eslint-disable-next-line no-console
       console.log('[system-health snapshot]', text);
     }
   }, [user, activeSituation, providerHealth, skcHealth, breakers, health?.timestamp]);
@@ -421,9 +475,46 @@ export default function SystemHealthPage() {
           status={{ status: loading ? 'loading' : providerHealth?.anthropic ? 'ok' : 'degraded' }}
           detail={providerHealth?.anthropic ? 'Active — used for deep analysis' : 'Optional — set ANTHROPIC_API_KEY'}
         />
+        <HealthRow
+          icon={Globe}
+          label="Firecrawl Web Intelligence"
+          status={{ status: loading ? 'loading' : providerHealth?.firecrawl ? 'ok' : 'degraded' }}
+          detail={providerHealth?.firecrawl ? 'Active — premium web extraction enabled' : 'Optional — set FIRECRAWL_API_KEY'}
+        />
+        <HealthRow
+          icon={Zap}
+          label="Parallel Search API"
+          status={{ status: loading ? 'loading' : providerHealth?.parallel ? 'ok' : 'degraded' }}
+          detail={providerHealth?.parallel ? 'Active — LLM-optimized source discovery enabled' : 'Optional — set PARALLEL_API_KEY'}
+        />
+        <HealthRow
+          icon={Layers}
+          label="Vertex AI Agent Engine"
+          status={{ status: loading ? 'loading' : providerHealth?.vertexAdk ? 'ok' : 'degraded' }}
+          detail={providerHealth?.vertexAdk ? 'Active — managed deep research agent enabled' : 'Optional — set VERTEX_AGENT_ENGINE_ID'}
+        />
+        <HealthRow
+          icon={Plug}
+          label="Polar Billing"
+          status={{ status: loading ? 'loading' : providerHealth?.polar ? 'ok' : 'degraded' }}
+          detail={
+            providerHealth?.polar
+              ? 'Active — subscription checkout enabled'
+              : providerHealth?.polarMissing?.length
+                ? `Optional — missing ${providerHealth.polarMissing.join(', ')}`
+                : 'Optional — set Polar token, webhook secret, and product IDs'
+          }
+        />
         {providerHealth?.model && (
           <div className="mt-2 pt-2 border-t border-border/40">
-            <p className="text-xs text-muted-foreground">Active model: <span className="font-mono">{providerHealth.model}</span></p>
+            <p className="text-xs text-muted-foreground">
+              Active model: <span className="font-mono">{providerHealth.model}</span>
+              {providerHealth.providerMode ? (
+                <>
+                  {' '}via <span className="font-mono">{providerHealth.providerMode}</span>
+                </>
+              ) : null}
+            </p>
           </div>
         )}
       </Card>
@@ -527,42 +618,60 @@ export default function SystemHealthPage() {
           Each source degrades gracefully if its env var is missing.
         </p>
         <ol className="space-y-3">
-          {ACTIVATION_STEPS.map((step, i) => (
-            <li
-              key={step.id}
-              className="rounded-md border border-border/60 bg-muted/30 p-3"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground">
-                    {i + 1}. {step.name}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{step.why}</p>
+          {ACTIVATION_STEPS.map((step, i) => {
+            const activation = getActivationState(step.id, providerHealth);
+
+            return (
+              <li
+                key={step.id}
+                className="rounded-md border border-border/60 bg-muted/30 p-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground">
+                      {i + 1}. {step.name}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{step.why}</p>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span
+                      className={cn(
+                        'rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
+                        activation.className,
+                      )}
+                    >
+                      {activation.label}
+                    </span>
+                    <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {step.effort}
+                    </span>
+                  </div>
                 </div>
-                <span className="shrink-0 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-600">
-                  {step.effort}
-                </span>
-              </div>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
-                <span className="font-mono text-muted-foreground">
-                  env:&nbsp;{step.envVars.join(', ')}
-                </span>
-                <span className="text-muted-foreground">·</span>
-                <span className="text-muted-foreground">{step.costNote}</span>
-                {step.signupUrl ? (
-                  <a
-                    href={step.signupUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-auto inline-flex items-center gap-1 rounded border border-border px-2 py-0.5 font-medium text-foreground hover:bg-accent"
-                  >
-                    Sign up
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                ) : null}
-              </div>
-            </li>
-          ))}
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                  {step.envVars.length > 0 ? (
+                    <span className="font-mono text-muted-foreground">
+                      env:&nbsp;{step.envVars.join(', ')}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">No app secret required</span>
+                  )}
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-muted-foreground">{activation.detail ?? step.costNote}</span>
+                  {step.signupUrl ? (
+                    <a
+                      href={step.signupUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-auto inline-flex items-center gap-1 rounded border border-border px-2 py-0.5 font-medium text-foreground hover:bg-accent"
+                    >
+                      Sign up
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
         </ol>
         <p className="mt-3 text-[11px] text-muted-foreground">
           After signup, store every value in Google Secret Manager

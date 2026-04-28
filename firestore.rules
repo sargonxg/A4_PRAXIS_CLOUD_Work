@@ -2,34 +2,91 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function protectedUserFields() {
+      return [
+        'credits',
+        'totalCreditsUsed',
+        'subscription',
+        'subscriptionExpiresAt',
+        'subscriptionProvider',
+        'subscriptionStatus',
+        'polarCustomerId',
+        'polarSubscriptionId',
+        'polarProductId',
+        'polarTrialEndsAt',
+        'fullAccessCode',
+        'fullAccessCodeRedeemedAt',
+        'fullAccessExpiresAt'
+      ];
+    }
+
+    function serverOnlyUserCreateFields() {
+      return [
+        'subscriptionExpiresAt',
+        'subscriptionProvider',
+        'subscriptionStatus',
+        'polarCustomerId',
+        'polarSubscriptionId',
+        'polarProductId',
+        'polarTrialEndsAt',
+        'fullAccessCode',
+        'fullAccessCodeRedeemedAt',
+        'fullAccessExpiresAt'
+      ];
+    }
+
+    function clientUserCreateFields() {
+      return [
+        'uid',
+        'email',
+        'displayName',
+        'photoURL',
+        'role',
+        'orgId',
+        'orgName',
+        'credits',
+        'totalCreditsUsed',
+        'isDemo',
+        'subscription',
+        'createdAt',
+        'lastLoginAt',
+        'aiProvider',
+        'aiSettings',
+        'researchProviders',
+        'calendarSources',
+        'savedItems',
+        'tosAcceptedAt',
+        'gdprConsentDate',
+        'cookieConsentVersion',
+        'marketingConsent'
+      ];
+    }
+
     // User profiles: owner-only access with field-level protection
     match /users/{uid} {
       // Read: owner only
       allow read: if request.auth != null && request.auth.uid == uid;
 
-      // Write: owner only, but NEVER allow direct modification of credit fields.
+      // Update: owner only, but NEVER allow direct modification of credit fields.
       // Credits must only be changed via Admin SDK (server-side).
-      allow write: if request.auth != null
-                   && request.auth.uid == uid
-                   && (!request.resource.data.diff(resource.data).affectedKeys()
-                       .hasAny([
-                         'credits',
-                         'totalCreditsUsed',
-                         'subscription',
-                         'subscriptionExpiresAt',
-                         'subscriptionProvider',
-                         'subscriptionStatus',
-                         'polarCustomerId',
-                         'polarSubscriptionId',
-                         'polarProductId',
-                         'polarTrialEndsAt',
-                         'fullAccessCode',
-                         'fullAccessCodeRedeemedAt',
-                         'fullAccessExpiresAt'
-                       ]));
+      allow update: if request.auth != null
+                    && request.auth.uid == uid
+                    && (!request.resource.data.diff(resource.data).affectedKeys()
+                        .hasAny(protectedUserFields()));
 
-      // Allow create (first sign-up) — ensureUserProfile sets initial credits server-side
-      allow create: if request.auth != null && request.auth.uid == uid;
+      // Allow owner create for client-safe profile fields only. Credits,
+      // subscriptions, and promo/full-access fields are server-managed.
+      allow create: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.keys().hasOnly(clientUserCreateFields())
+                    && request.resource.data.uid == uid
+                    && request.resource.data.credits == 5000
+                    && request.resource.data.totalCreditsUsed == 0
+                    && request.resource.data.subscription == 'free'
+                    && request.resource.data.isDemo == false
+                    && (!request.resource.data.keys().hasAny(serverOnlyUserCreateFields()));
+
+      allow delete: if false;
 
       // All situation subcollections: owner-only
       match /situations/{situationId}/{document=**} {

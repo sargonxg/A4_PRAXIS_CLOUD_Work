@@ -75,14 +75,14 @@ SYNTHESIZER_INSTRUCTION = (
 def build_agent() -> SequentialAgent:
     planner = LlmAgent(
         name="planner",
-        model="gemini-3-flash",
+        model="gemini-2.5-flash",
         instruction=PLANNER_INSTRUCTION,
         output_key="plan",
     )
 
     researcher = LlmAgent(
         name="researcher",
-        model="gemini-3-flash",
+        model="gemini-2.5-flash",
         instruction=RESEARCHER_INSTRUCTION,
         tools=[google_search],
         output_key="findings",

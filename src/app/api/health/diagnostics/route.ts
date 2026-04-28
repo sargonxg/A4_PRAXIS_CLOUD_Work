@@ -51,7 +51,6 @@ export async function GET(request: Request) {
   // --- AI Provider ---
   diagnostics.aiProvider = {
     googleAiKeySet: !!process.env.GOOGLE_AI_API_KEY,
-    googleAiKeyPrefix: process.env.GOOGLE_AI_API_KEY?.slice(0, 8) ?? null,
     anthropicKeySet: !!process.env.ANTHROPIC_API_KEY,
     vertexProject: process.env.GOOGLE_VERTEX_PROJECT ?? null,
     aiProvider: process.env.AI_PROVIDER ?? 'google',
@@ -72,11 +71,7 @@ export async function GET(request: Request) {
     cronSecretSet: !!process.env.CRON_SECRET,
     activeSecretSource: process.env.COOKIE_SIGNING_SECRET
       ? 'COOKIE_SIGNING_SECRET'
-      : process.env.SESSION_SECRET
-        ? 'SESSION_SECRET'
-        : process.env.CRON_SECRET
-          ? 'CRON_SECRET (fallback — not ideal)'
-          : 'dev-fallback (DANGEROUS in production)',
+      : 'missing (sessions fail closed)',
   };
 
   // --- Optional integrations ---

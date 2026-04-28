@@ -9,7 +9,11 @@ export const dynamic = 'force-dynamic';
 
 const ALLOWED_TYPES = new Set(['policy', 'methodology', 'source', 'playbook', 'warning']);
 
-export const GET = withAuth(async () => {
+export const GET = withAuth(async (_req, user) => {
+  if (!isAdminPrincipal(user)) {
+    return NextResponse.json({ error: 'Forbidden - admin only' }, { status: 403 });
+  }
+
   const db = getAdminDbOrThrow();
   const snap = await db
     .collection('advisor_feed_items')

@@ -8,6 +8,27 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased] — 2026-04-28 (Five-pillar uplift: ask-praxis, dashboard, conflict-graph, risk+timeline, briefing)
 
+### Codex Continuation — integration readiness + security hardening
+
+- `/api/health/provider` now reports non-secret readiness for Firecrawl,
+  Parallel, Vertex AI Agent Engine, and Polar, including missing Polar env var
+  names so operators know exactly what remains to mount.
+- `/app/settings/system-health` now shows live status rows and activation
+  pills for the optional research/billing stack instead of relying on static
+  "paid-live" labels.
+- Admin credit top-up and advisor-feed GET routes now require the existing
+  admin allowlist gate.
+- Session signing now fails closed unless `COOKIE_SIGNING_SECRET` is mounted;
+  it no longer falls back to `SESSION_SECRET`, `CRON_SECRET`, or a static dev
+  value. Health diagnostics no longer expose provider key prefixes.
+- Firestore `users/{uid}` create rules now allow only the expected free-plan
+  bootstrap shape and reject server-managed Polar, subscription, promo, and
+  full-access fields on client create.
+- Backend Python Gemini defaults and Vertex Agent Engine deployment script now
+  use stable `gemini-2.5-flash` / `gemini-2.5-pro` IDs instead of stale
+  Gemini 3 preview names.
+- Tests: provider integration readiness and cookie signer fail-closed behavior.
+
 ### Codex Continuation — Evidence envelope + SKC retrieval hardening
 
 - `src/lib/knowledge/evidence-envelope.ts` — adds the first reusable

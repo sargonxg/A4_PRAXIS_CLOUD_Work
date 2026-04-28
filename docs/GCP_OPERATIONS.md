@@ -15,6 +15,11 @@ can. Every command is scoped to project `praxisbytacitus` and region
 The order below is the same as `docs/SPRINT_2026-04-25.md` Stream C — fastest
 user value first.
 
+Current production note (2026-04-28): core Gemini/Vertex provider health and
+Firecrawl are expected to work without blocking free users. Vertex AI Agent
+Engine and Polar remain optional until their Secret Manager values are mounted;
+`/app/settings/system-health` now shows the live status for each integration.
+
 ### 1a. ~~ACLED~~ — **withdrawn 2026-04-25**
 
 PRAXIS no longer ingests ACLED. The 2026 EULA's prohibition on SaaS

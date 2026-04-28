@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
+import { isAdminPrincipal } from '@/lib/auth/admin-gate';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -16,6 +17,10 @@ const MAX_DAILY_TOPUPS = 5;
  * Rate-limited to prevent abuse: max 5 top-ups per day.
  */
 export const POST = withAuth(async (_req, user) => {
+  if (!isAdminPrincipal(user)) {
+    return NextResponse.json({ error: 'Forbidden - admin only' }, { status: 403 });
+  }
+
   if (user.isDemo) {
     return NextResponse.json({ error: 'Demo users have unlimited credits' }, { status: 400 });
   }
