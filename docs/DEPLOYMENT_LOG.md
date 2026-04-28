@@ -2,6 +2,63 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-28 — Backend trust boundary + Core-8 coverage (DEPLOYED, smoke OK)
+
+Source commit deployed:
+
+- `8dbe521 Harden backend trust and add core graph coverage`
+
+What changed:
+
+- Backend service-to-service auth now verifies Google OIDC audience and trusted
+  service-account email before accepting `X-PRAXIS-UID`.
+- `/agents/health` and `/api/v1/graph/test-connection` are service-only
+  backend operations.
+- Graph connection testing now goes through the admin-gated frontend API bridge
+  `/api/backend/graph/test-connection`.
+- Backend CORS allows `X-Firebase-Token` and `X-PRAXIS-UID`, matching the
+  documented auth split.
+- Graph writes now persist `corePrimitiveCoverage` for the TACITUS Core-8.
+- README, CLAUDE, AGENTIC_SYSTEM, AGENT_REGISTRY, CORPUS_ARCHITECTURE, and
+  continuation docs were updated.
+
+Validation before deploy:
+
+- `python -m py_compile backend/auth.py backend/config.py backend/main.py backend/routers/graph.py` passed.
+- `python -m pytest tests/test_auth.py` passed from `backend/`.
+- `npx vitest run tests/unit/lib/graph/core-primitives.test.ts` passed.
+- `npx tsc --noEmit` clean.
+- Strict ESLint passed on touched TS/TSX files.
+- `npm run audit:routes` passed.
+- `npm run build` passed and route table included `/api/backend/graph/test-connection`.
+
+Cloud Build:
+
+- Build: `52b79304-7779-4699-835e-78981b687ae8`
+- Status: `SUCCESS`
+- Duration: `12M6S`
+- Logs: <https://console.cloud.google.com/cloud-build/builds/52b79304-7779-4699-835e-78981b687ae8?project=852128226674>
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00107-vg2`
+- Backend revision: `praxis-backend-00064-hbl`
+
+Production smoke:
+
+- `GET https://praxis.tacitus.me/api/health` -> `200`, `status:"ok"`,
+  `firestore:"ok"`, `ai_provider:"ok"`, `cookie_secret:"ok"`,
+  `firecrawl:"ok"`, `vertex_adk:"unconfigured"`, `polar:"unconfigured"`.
+- Unauthenticated `POST https://praxis.tacitus.me/api/backend/graph/test-connection` -> `401`.
+- Direct unauthenticated `GET https://praxis-backend-pgoyqovcza-uc.a.run.app/agents/health` -> `403` from Cloud Run IAM.
+
+Notes:
+
+- Next iteration should replace remaining browser-to-backend rewrite usage with
+  Next API bridges and surface Core-8 coverage inside the Conflict Graph UI.
+
+---
+
 ## 2026-04-28 — Integration readiness + admin/security hardening (DEPLOYED, smoke OK)
 
 Source commit deployed:
