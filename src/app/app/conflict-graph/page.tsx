@@ -31,6 +31,11 @@ import {
 } from "lucide-react";
 import { ENTITY_COLORS, ENTITY_TYPES } from "@/lib/constants/entity-colors";
 import { PraxisLink } from "@/components/shared/praxis-link";
+import {
+  computeCorePrimitiveCoverage,
+  TACITUS_CORE_PRIMITIVES,
+  type CorePrimitiveCoverage,
+} from "@/lib/graph/core-primitives";
 
 // ── ForceGraph color mapping by entity type (ACO standard palette) ─────
 import { ACO_COLORS } from '@/lib/constants/aco-colors';
@@ -401,10 +406,6 @@ function DemoConflictGraphPage() {
       type: e.type,
     }));
   }, [filteredEdges]);
-
-  const handleSelectNode = useCallback((id: string | null) => {
-    setSelectedNodeId(id);
-  }, []);
 
   const handleForceNodeClick = useCallback((node: { id: string }) => {
     setSelectedNodeId(prev => prev === node.id ? null : node.id);
@@ -908,6 +909,60 @@ function TemporalMemoryPanel({ situationId }: { situationId: string }) {
   );
 }
 
+function CorePrimitiveCoveragePanel({
+  coverage,
+  loading,
+}: {
+  coverage: CorePrimitiveCoverage;
+  loading: boolean;
+}) {
+  const percent = Math.round(coverage.coverageRatio * 100);
+  const isComplete = coverage.missing.length === 0;
+
+  return (
+    <div className="rounded-lg border border-[var(--color-app-border)] bg-white px-4 py-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-navy-500">
+            TACITUS Core-8 Coverage
+          </p>
+          <p className="mt-1 text-sm text-navy-700">
+            {loading
+              ? 'Checking graph primitives...'
+              : isComplete
+                ? 'Graph includes all eight conflict primitives.'
+                : `Graph is missing ${coverage.missing.join(', ')}.`}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-2xl font-semibold text-navy-900">{loading ? '--' : `${percent}%`}</p>
+          <p className="text-[11px] text-navy-400">primitive coverage</p>
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
+        {TACITUS_CORE_PRIMITIVES.map((primitive) => {
+          const count = coverage.counts[primitive];
+          const active = count > 0;
+          return (
+            <div
+              key={primitive}
+              className={cn(
+                'rounded-md border px-2 py-1.5 text-center',
+                active
+                  ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700'
+                  : 'border-amber-500/25 bg-amber-500/10 text-amber-700',
+              )}
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-wide">{primitive}</p>
+              <p className="text-xs">{loading ? '-' : count}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Helpers ─────────────────────────────────────────────────────
 
 /** Layout centers for spreading nodes by entity type (ACO v2.0 — all 14 types) */
@@ -1043,6 +1098,7 @@ function RealConflictGraphPage() {
   const [allNodes, setAllNodes] = useState<GraphNode[]>([]);
   const [allEdges, setAllEdges] = useState<GraphEdge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const coreCoverage = useMemo(() => computeCorePrimitiveCoverage(allNodes), [allNodes]);
 
   // Restore from persisted tool-data
   useEffect(() => {
@@ -1332,10 +1388,6 @@ function RealConflictGraphPage() {
     }));
   }, [filteredEdges]);
 
-  const handleSelectNode = useCallback((id: string | null) => {
-    setSelectedNodeId(id);
-  }, []);
-
   const handleForceNodeClick = useCallback((node: { id: string }) => {
     setSelectedNodeId(prev => prev === node.id ? null : node.id);
   }, []);
@@ -1401,6 +1453,13 @@ function RealConflictGraphPage() {
               />
             </div>
           ) : null}
+
+          <div className="mt-3">
+            <CorePrimitiveCoveragePanel
+              coverage={coreCoverage}
+              loading={isLoading || persisted.isLoading}
+            />
+          </div>
         </motion.div>
 
         {/* ── Controls Bar ───────────────────────────────────── */}

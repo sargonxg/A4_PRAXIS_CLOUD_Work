@@ -10,18 +10,24 @@
 > - `/agents/health` and `/api/v1/graph/test-connection` now require trusted
 >   service auth; the graph backend settings UI calls an admin-gated Next API
 >   bridge at `/api/backend/graph/test-connection`.
+> - Added an allowlisted authenticated `/api/backend/*` proxy and moved the
+>   browser-facing `praxisBackend` facade off direct private Cloud Run URLs.
+> - Removed the legacy `/backend/:path*` rewrite from `next.config.ts`.
 > - Backend CORS now allows `X-Firebase-Token` / `X-PRAXIS-UID` to match the
 >   documented auth split.
 > - `src/lib/graph/core-primitives.ts` adds Core-8 coverage for Actor, Claim,
 >   Interest, Constraint, Leverage, Commitment, Event, and Narrative; graph
->   writes now persist `corePrimitiveCoverage`.
+>   writes now persist `corePrimitiveCoverage`, and Conflict Graph now shows it
+>   in the main workflow.
 > - README, CLAUDE, AGENTIC_SYSTEM, and CORPUS_ARCHITECTURE now describe the
 >   TACITUS system-of-record mission, backend trust boundary, and Core-8 graph
 >   coverage.
+> - `docs/PRODUCTION_TODO_2026-04-28.md` is the long-form prioritized backlog
+>   for continuing production hardening.
 >
-> Next priorities: replace remaining browser-to-backend rewrite usage with
->   Next API bridges, add a Conflict Graph UI panel for Core-8 coverage, and
->   automate GCP audit + Firestore rules deployment.
+> Next priorities: add Core-8 coverage to corpus traces / Ask PRAXIS warnings,
+> harden `/api/admin/set-all-credits`, and automate GCP audit + Firestore rules
+> deployment.
 
 > **2026-04-28 Codex continuation — integration readiness + security hardening**
 >

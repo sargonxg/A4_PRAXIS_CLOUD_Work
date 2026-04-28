@@ -46,6 +46,10 @@ open-data / Google Cloud source-of-truth in `README.md`, `CLAUDE.md`, and
 - **New product track:** Brainstorming Table expert-agent deliberation and
   Media Intelligence Uplift. Canonical spec:
   `docs/superpowers/specs/2026-04-26-brainstorming-table-media-intelligence-plan.md`.
+- **Production-grade TACITUS backlog:** see
+  `docs/PRODUCTION_TODO_2026-04-28.md` for the long-form prioritized roadmap
+  covering backend trust, Core-8 graph coverage, agent durability, GCP gates,
+  billing, and enterprise trust.
 
 ### New P0/P1 tasks
 

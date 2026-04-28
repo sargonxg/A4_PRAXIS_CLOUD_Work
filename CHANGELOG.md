@@ -16,10 +16,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   open operational surfaces; graph connection testing now goes through an
   admin-gated Next.js API bridge that calls the private backend with Cloud Run
   OIDC.
+- Added an authenticated, allowlisted `/api/backend/*` proxy for user-scoped
+  graph, pipeline, temporal, and analysis backend calls. The client
+  `praxisBackend` facade now uses this proxy instead of the private Cloud Run
+  URL directly.
+- Removed the legacy `/backend/:path*` rewrite so browsers can no longer proxy
+  arbitrary backend paths outside the authenticated allowlist.
 - Backend CORS now explicitly allows `X-Firebase-Token` and `X-PRAXIS-UID`,
   matching the documented auth-header separation.
 - Graph writes now persist `corePrimitiveCoverage` for the TACITUS Core-8:
   Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, Narrative.
+- Conflict Graph now surfaces Core-8 primitive coverage in the main workflow.
+- Added `docs/PRODUCTION_TODO_2026-04-28.md` as the long-form production
+  roadmap and linked it from the sprint backlog.
 - Docs updated: README, CLAUDE, AGENTIC_SYSTEM, CORPUS_ARCHITECTURE.
 - Tests: backend auth OIDC allowlist/audience behavior and Core-8 coverage.
 

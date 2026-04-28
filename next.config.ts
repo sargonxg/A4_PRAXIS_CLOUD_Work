@@ -61,18 +61,6 @@ const nextConfig: NextConfig = {
       permanent: false,
     }));
   },
-
-  async rewrites() {
-    return [
-      // NOTE: This rewrite is for local dev convenience only.
-      // Server-to-server calls (API routes → backend) use the absolute URL
-      // via callBackend() in src/lib/api/praxis-backend.ts with OIDC auth.
-      {
-        source: '/backend/:path*',
-        destination: `${process.env.NEXT_PUBLIC_PRAXIS_BACKEND_URL || 'http://localhost:8080'}/api/v1/:path*`,
-      },
-    ];
-  },
 };
 
 export default nextConfig;

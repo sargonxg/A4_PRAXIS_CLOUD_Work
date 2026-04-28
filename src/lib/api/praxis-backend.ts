@@ -1,32 +1,18 @@
 /**
- * PRAXIS Python Backend client — CLIENT-SIDE.
+ * PRAXIS Python Backend client — CLIENT-SIDE facade.
  *
- * Used by React components to call the backend directly.
- * Sends the Firebase ID token in X-Firebase-Token so it does not collide
- * with the Cloud Run OIDC Authorization header at the network layer.
+ * React components call the authenticated Next.js proxy at /api/backend/*.
+ * The proxy attaches Cloud Run OIDC plus X-PRAXIS-UID server-side so the
+ * private Python backend never needs to be exposed to browsers.
  *
  * For server-side API routes → backend calls, use callBackend() from
  * src/lib/api/praxis-backend-server.ts instead (OIDC-authenticated).
  */
-import { getAuth } from 'firebase/auth';
-
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_PRAXIS_BACKEND_URL || 'http://localhost:8080';
-
 async function backendFetch(path: string, options: RequestInit = {}): Promise<unknown> {
-  const auth = getAuth();
-  const token = await auth.currentUser?.getIdToken();
-  if (!token) {
-    throw new Error('Not authenticated — cannot call PRAXIS backend');
-  }
-
-  const res = await fetch(`${BACKEND_URL}/api/v1${path}`, {
+  const res = await fetch(`/api/backend${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      // Firebase ID token goes in X-Firebase-Token so it does not collide with
-      // the Cloud Run OIDC Authorization header at the network layer.
-      'X-Firebase-Token': token,
       ...(options.headers ?? {}),
     },
   });
@@ -75,7 +61,7 @@ export const praxisBackend = {
 
   /** Get interactive HTML visualization URL */
   getVisualizationUrl: (sitId: string) =>
-    `${BACKEND_URL}/api/v1/graph/${sitId}/visualization`,
+    `/api/backend/graph/${sitId}/visualization`,
 
   /** Get full actor profile from graph */
   getActorProfile: (sitId: string, actorId: string) =>
