@@ -12,6 +12,8 @@ import { handleRouteError } from '@/lib/api/standard-error';
 import { searchSituationCorpus } from '@/lib/intelligence/corpus-search';
 import { messageContentSchema, situationContextSchema, aiSettingsSchema } from '@/lib/api/schemas';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
+import { resolveTier } from '@/lib/api/tier';
+import { buildAskPraxisExtensions } from '@/lib/ai/ask-praxis-tools';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -233,7 +235,20 @@ You have access to the user's active situation data. When answering questions:
         }
       }
     }
-    const tools = createSituationBoundTools(situationCtx, graphSnapshot);
+    const baseTools = createSituationBoundTools(situationCtx, graphSnapshot);
+    // Ask PRAXIS extensions — writeToTool / firecrawlFetch / parallelResearch /
+    // runDeepResearch. Tier-gated; safe to attach for all callers because each
+    // tool returns a structured `requiresTier` / `requiresKey` payload when the
+    // user lacks the necessary plan or credentials.
+    const tier = await resolveTier(_user.uid ?? 'demo-user-001', _user.isDemo === true);
+    const askPraxisExt = buildAskPraxisExtensions({
+      uid: _user.uid ?? 'demo-user-001',
+      situationId: (situation as Situation | undefined)?.id,
+      profileVersion: _user.calibration.provenance.profileVersion ?? 1,
+      tier,
+      isDemo: _user.isDemo === true,
+    });
+    const tools = { ...baseTools, ...askPraxisExt };
     const depthDirective = aiSettings?.analysisDepth === 'deep'
       ? '\n\nANALYSIS DEPTH: Provide a more detailed answer with explicit assumptions, alternative interpretations, source/corpus gaps, and practical next actions. Keep it concise enough for an analyst to use.'
       : '\n\nANALYSIS DEPTH: Provide a concise operational answer with the most relevant assumptions and next action.';
