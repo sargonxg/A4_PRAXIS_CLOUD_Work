@@ -53,7 +53,7 @@ export interface ProviderSpec {
   /** What new capabilities the user gains after adding this key. */
   unlocks: string[];
   /** Which validator branch to call when the user clicks Validate. */
-  validator?: 'google_ai' | 'anthropic' | 'openai' | 'firecrawl' | 'tavily' | 'acled';
+  validator?: 'google_ai' | 'anthropic' | 'openai' | 'firecrawl' | 'tavily' | 'parallel' | 'acled';
   /** Whether the platform has a tenant-wide fallback (ENV var on the server). */
   platformFallbackEnvVars: string[];
 }
@@ -118,27 +118,38 @@ export const PROVIDER_REGISTRY: Readonly<Record<ProviderId, ProviderSpec>> = Obj
   parallel: {
     id: 'parallel',
     label: 'Parallel.ai',
-    tagline: 'Agentic web research for entity enrichment, monitoring, and dossier drafting.',
+    tagline: 'LLM-optimized web search and research tasks for entity enrichment, monitoring, and dossier drafting.',
     category: 'research',
     tier: 'premium',
     fields: [{ name: 'key', label: 'API Key', placeholder: 'par-…', required: true, secret: true }],
     signupUrl: 'https://platform.parallel.ai/',
     docsUrl: 'https://docs.parallel.ai/',
-    costHint: 'Usage-based — metered per task',
-    unlocks: ['Actor dossier enrichment', 'Media landscape monitoring', 'Deep Research Agent fallback'],
+    costHint: 'Usage-based. Search is synchronous and low latency; Task runs are heavier and should be reserved for paid/trial workflows.',
+    unlocks: [
+      'Second-lens source discovery for contested claims',
+      'Longer LLM-ready excerpts for briefings and dossiers',
+      'Entity enrichment and source monitoring',
+      'MCP-backed agent search for research workflows',
+    ],
+    validator: 'parallel',
     platformFallbackEnvVars: ['PARALLEL_API_KEY'],
   },
   firecrawl: {
     id: 'firecrawl',
     label: 'Firecrawl',
-    tagline: 'Render-capable page scraping (JS-heavy sites) for Document ingestion and source monitoring.',
+    tagline: 'Premium web intelligence for search, scrape, crawl, map, and structured extraction from hard-to-parse sites.',
     category: 'scraping',
     tier: 'freemium',
     fields: [{ name: 'key', label: 'API Key', placeholder: 'fc-…', required: true, secret: true }],
     signupUrl: 'https://firecrawl.dev/',
     docsUrl: 'https://docs.firecrawl.dev/',
-    costHint: 'Free: 500 pages/month',
-    unlocks: ['Scrape JS-rendered pages', 'Deep document ingestion'],
+    costHint: 'Credit-based. Search is metered by result bands; basic scrape is typically one credit per page. Keep heavy crawls behind support approval.',
+    unlocks: [
+      'Full-page markdown search for live research',
+      'JS-rendered page scraping and PDF parsing',
+      'Source monitoring with crawl/map discovery',
+      'Structured extraction for policy knowledge bases',
+    ],
     validator: 'firecrawl',
     platformFallbackEnvVars: ['FIRECRAWL_API_KEY'],
   },

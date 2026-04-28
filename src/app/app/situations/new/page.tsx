@@ -34,6 +34,11 @@ import {
   idArrayToEnabledMap,
   type CustomSource,
 } from '@/lib/constants/source-categories';
+import {
+  POLICY_WORKFLOW_PATHS,
+  getPolicyWorkflowPath,
+  type PolicyWorkflowPathId,
+} from '@/lib/constants/policy-workflow-paths';
 
 /* ---------- Types ---------- */
 
@@ -49,6 +54,7 @@ interface SituationForm {
   riskScore: number;
   glaslStage: number | null;
   escalationTrend: 'stable' | 'escalating' | 'de-escalating';
+  workflowPath: PolicyWorkflowPathId | '';
 }
 
 type Step = 1 | 2 | 3 | 4;
@@ -133,7 +139,17 @@ const stepVariants = {
 
 /* ---------- Step 1: Describe ---------- */
 
-function StepDescribe({ form, setForm, onNext }: { form: SituationForm; setForm: React.Dispatch<React.SetStateAction<SituationForm>>; onNext: () => void }) {
+function StepDescribe({
+  form,
+  setForm,
+  onWorkflowPathChange,
+  onNext,
+}: {
+  form: SituationForm;
+  setForm: React.Dispatch<React.SetStateAction<SituationForm>>;
+  onWorkflowPathChange: (pathId: PolicyWorkflowPathId) => void;
+  onNext: () => void;
+}) {
   const isValid = form.name.trim().length > 0;
   const [showRegions, setShowRegions] = useState(false);
   const [intelPreview, setIntelPreview] = useState<{ articles: { title: string; url: string; domain: string }[]; reports: { title: string; source: string }[]; loading: boolean }>({ articles: [], reports: [], loading: false });
@@ -173,6 +189,38 @@ function StepDescribe({ form, setForm, onNext }: { form: SituationForm; setForm:
         <p className="mt-2 text-[11px] leading-relaxed text-navy-500">
           A situation is the canonical case file. Every tool, document, graph, and tool
           output you generate is anchored to it — citations and confidence travel with it.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-navy-700">Policy workflow path</label>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {POLICY_WORKFLOW_PATHS.map((path) => {
+            const selected = form.workflowPath === path.id;
+            return (
+              <button
+                key={path.id}
+                type="button"
+                onClick={() => onWorkflowPathChange(path.id)}
+                className={cn(
+                  'rounded-lg border px-3 py-2.5 text-left transition-all',
+                  selected
+                    ? 'border-diplomatic-blue bg-diplomatic-blue/5 ring-1 ring-diplomatic-blue/20'
+                    : 'border-navy-200 bg-white hover:border-navy-300'
+                )}
+              >
+                <span className={cn('block text-xs font-semibold', selected ? 'text-diplomatic-blue' : 'text-navy-800')}>
+                  {path.shortLabel}
+                </span>
+                <span className="mt-0.5 line-clamp-2 block text-[10px] leading-snug text-navy-500">
+                  {path.description}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-navy-400">
+          This tunes the starter sources, dashboard quick actions, and first deliverables. You can change details later.
         </p>
       </div>
 
@@ -737,6 +785,7 @@ function StepReview({
 }) {
   const typeLabel = SITUATION_TYPES.find((t) => t.value === form.type)?.label ?? form.type;
   const roleLabel = USER_ROLES.find((r) => r.value === form.userRole)?.label ?? form.userRole;
+  const workflowPath = getPolicyWorkflowPath(form.workflowPath);
 
   return (
     <div className="space-y-5">
@@ -750,6 +799,7 @@ function StepReview({
           <h3 className="text-base font-bold text-navy-900">{form.name}</h3>
           <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-navy-500">
             <span className="rounded-full bg-diplomatic-blue/10 px-2 py-0.5 font-medium text-diplomatic-blue">{typeLabel}</span>
+            {workflowPath ? <span>{workflowPath.shortLabel}</span> : null}
             {form.region && <span className="flex items-center gap-1"><Globe className="h-3 w-3" />{form.region}</span>}
             <span className="capitalize">{form.status}</span>
           </div>
@@ -841,6 +891,7 @@ export default function NewSituationPage() {
     riskScore: 0,
     glaslStage: null,
     escalationTrend: 'stable',
+    workflowPath: '',
   });
 
   const [context, setContext] = useState<ContextData>(() => {
@@ -926,6 +977,29 @@ export default function NewSituationPage() {
     });
   }, []);
 
+  const handleWorkflowPathChange = useCallback((pathId: PolicyWorkflowPathId) => {
+    const path = getPolicyWorkflowPath(pathId);
+    if (!path) return;
+    setForm((f) => ({
+      ...f,
+      workflowPath: path.id,
+      type: path.situationType,
+      userRole: path.userRole,
+    }));
+    setContext((c) => {
+      const enabled = Object.fromEntries(
+        SOURCE_CATEGORIES.map((source) => [
+          source.id,
+          source.alwaysOn ? true : path.recommendedSourceIds.includes(source.id),
+        ])
+      );
+      return {
+        ...c,
+        selectedSources: enabledMapToIdArray(enabled),
+      };
+    });
+  }, []);
+
   const handleCreate = useCallback(async () => {
     setIsCreating(true);
     setError('');
@@ -973,6 +1047,8 @@ export default function NewSituationPage() {
             context.selectedSources.map((id) => [id, true]),
           ),
           sourceCategoryOrder: context.sourceOrder,
+          workflowPath: form.workflowPath || undefined,
+          workflowPathLabel: getPolicyWorkflowPath(form.workflowPath)?.label,
           customSources: context.customSources,
           domain: domainPreview.domainId,
           domainOverriddenByUser: domainPreview.overridden,
@@ -1080,7 +1156,14 @@ export default function NewSituationPage() {
         {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div key={step} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25, ease: 'easeInOut' }}>
-            {step === 1 && <StepDescribe form={form} setForm={setForm} onNext={goNext} />}
+            {step === 1 && (
+              <StepDescribe
+                form={form}
+                setForm={setForm}
+                onWorkflowPathChange={handleWorkflowPathChange}
+                onNext={goNext}
+              />
+            )}
             {step === 2 && <StepActors form={form} setForm={setForm} onNext={goNext} onBack={goBack} />}
             {step === 3 && <StepSources context={context} setContext={setContext} onNext={goNext} onBack={goBack} situationName={form.name} situationRegion={form.region} />}
             {step === 4 && (

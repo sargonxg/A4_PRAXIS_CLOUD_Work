@@ -12,7 +12,21 @@ service cloud.firestore {
       allow write: if request.auth != null
                    && request.auth.uid == uid
                    && (!request.resource.data.diff(resource.data).affectedKeys()
-                       .hasAny(['credits', 'totalCreditsUsed', 'subscription', 'subscriptionExpiresAt']));
+                       .hasAny([
+                         'credits',
+                         'totalCreditsUsed',
+                         'subscription',
+                         'subscriptionExpiresAt',
+                         'subscriptionProvider',
+                         'subscriptionStatus',
+                         'polarCustomerId',
+                         'polarSubscriptionId',
+                         'polarProductId',
+                         'polarTrialEndsAt',
+                         'fullAccessCode',
+                         'fullAccessCodeRedeemedAt',
+                         'fullAccessExpiresAt'
+                       ]));
 
       // Allow create (first sign-up) — ensureUserProfile sets initial credits server-side
       allow create: if request.auth != null && request.auth.uid == uid;

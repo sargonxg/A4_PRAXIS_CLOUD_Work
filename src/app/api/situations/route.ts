@@ -57,6 +57,8 @@ export const POST = withAuth(async (req, user) => {
       escalationTrend,
       sourceCategoriesEnabled,
       sourceCategoryOrder,
+      workflowPath,
+      workflowPathLabel,
       customSources,
     } = body;
 
@@ -117,6 +119,8 @@ export const POST = withAuth(async (req, user) => {
         ? { sourceCategoriesEnabled: sourceCategoriesEnabled as Record<string, boolean> }
         : {}),
       ...(Array.isArray(sourceCategoryOrder) ? { sourceCategoryOrder } : {}),
+      ...(typeof workflowPath === 'string' ? { workflowPath } : {}),
+      ...(typeof workflowPathLabel === 'string' ? { workflowPathLabel } : {}),
       ...(Array.isArray(customSources) ? { customSources } : {}),
       domain,
       domainConfidence,

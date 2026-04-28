@@ -73,8 +73,23 @@ MVP route:
 - UI: `/app/brainstorming-table`
 - API: `/api/ai/brainstorming-table`
 - Storage: `users/{uid}/situations/{situationId}/tool-data/brainstorming-table`
+- Working material: pasted text, local `.txt` / `.md` upload into the browser,
+  and up to five selected uploaded document extracts from the active situation.
 - Long-running execution: Cloud Tasks queue `praxis-agents` after the first
   synchronous prototype.
+
+Free and paid posture:
+
+- Free users can run the Brainstorming Table when they have credits. This is a
+  key "wow" surface: they should be able to see expert deliberation over a real
+  question, their active situation, and limited working material.
+- Analyst and Team users should get higher credit ceilings, deeper supporting
+  research, premium provider tools such as Firecrawl and Parallel through Ask
+  PRAXIS, and eventually durable LangGraph sessions that can pause, resume, and
+  request approval before synthesis.
+- Enterprise users should be able to route the same expert deliberation over
+  private corpora and future published knowledge-base assistants with audit
+  logs, Model Armor checks, and admin visibility.
 
 ## Guardrails
 
@@ -105,6 +120,44 @@ MVP route:
 - Grounded Google Search stays the default real-search path for current,
   source-backed public research.
 
+## 2026-04-28 Agentic Runtime Audit
+
+What is working:
+
+- Ask PRAXIS has tier-aware extension tools for writing structured tool
+  payloads, URL fetch/scrape, Parallel research handoff, and Deep Research
+  handoff.
+- LangGraph Cloud SQL checkpointing has an architecture document and provisioned
+  Cloud SQL resources. It is the right runtime for long-running deliberation,
+  critique, and interrupt/resume workflows.
+- Firestore vector storage exists in `src/lib/knowledge/vector-layer.ts`, which
+  is the right near-term path for situation/private corpus retrieval.
+- Google Cloud already has Vertex AI, Firebase Vertex AI, Cloud Tasks, Pub/Sub,
+  Secret Manager, Model Armor, and Firestore enabled for the project.
+
+Gaps:
+
+- The core Next.js tool routes are still mostly request/response. Brainstorming
+  Table and Deep Research Agent need Cloud Tasks + LangGraph sessions before
+  they are durable enough for paid workflows.
+- `getGroundedModel()` does not yet express a provider-specific Google Search
+  tool contract in code. Until that is explicit, app-level source discovery
+  should keep using `searchWeb()` fallbacks and cite the returned sources.
+- Agent proposals need a single approval queue contract before graph/timeline
+  mutation expands.
+
+Recommended structure:
+
+- Use LangGraph for PRAXIS-native multi-step agents: Brainstorming Table,
+  Source Scout, red-team review, negotiation prep, graph cartography, and
+  timeline editing.
+- Use Vertex AI Agent Engine / ADK for managed Google-native deep research,
+  memory, Google Search-enabled agent experiments, and enterprise deployments.
+- Keep Firestore as canonical product state; keep Cloud SQL limited to
+  checkpoints; store agent run summaries in Firestore with TTL and provenance.
+- Use Model Armor and citation checks before any public or internal knowledge
+  chatbot response is shown outside the owner team.
+
 ## First Implementation Queue
 
 1. ✅ Brainstorming Table registry entry — shipped 2026-04-26 in
@@ -127,11 +180,15 @@ MVP route:
 5. ✅ Persist output to `tool-data/brainstorming-table` — shipped via
    `saveToolOutput` with personas, retrievalTrace, and question metadata.
 6. ✅ Add export to memo/Markdown — shipped in round 4.
-7. ⏳ Move execution to LangGraph + Cloud SQL checkpoints once the runtime
+7. ✅ Add direct working material — shipped 2026-04-28. The UI accepts pasted
+   text, local `.txt` / `.md` files, and selected active-situation documents;
+   the API loads selected document extracts server-side and records source
+   metadata.
+8. ⏳ Move execution to LangGraph + Cloud SQL checkpoints once the runtime
    foundation is in place. The `praxis-agents` queue and Cloud SQL checkpoint
    database are provisioned. Detailed plan:
    `docs/DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md`.
-8. ⏳ Add red-team pass and approval statuses (deeper review loop than
+9. ⏳ Add red-team pass and approval statuses (deeper review loop than
    the in-table red-team turn — a separate critique pass that flags
    confidence and source-diversity issues before the synthesis chair
    composes).

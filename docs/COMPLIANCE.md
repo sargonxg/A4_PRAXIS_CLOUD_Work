@@ -100,7 +100,7 @@ of the open-source pivot.
 | Vendor | Purpose | Data residency | DPA on file |
 |---|---|---|---|
 | Google Cloud (Firestore, Cloud Run, Cloud SQL, BigQuery, Vertex AI, Secret Manager, Pub/Sub, Cloud Storage, Cloud Build, Artifact Registry) | Infrastructure, AI, storage, computation, LangGraph checkpointing | us-central1 default; Cloud SQL LangGraph checkpoint instance currently `us-east4`; `europe-west1` / `europe-west4` on request | Yes (Google Cloud DPA) |
-| Stripe (when activated) | Payments only | US + EU | Yes (Stripe DPA) |
+| Polar (when activated) | Merchant of Record subscription billing and customer portal | US + EU | Yes (Polar terms/DPA) |
 | Cloudflare (DNS) | DNS + CDN | Global | Yes |
 | GitHub | Source code hosting (no customer data) | US | Yes |
 
@@ -117,6 +117,7 @@ log below for historical traceability.
 | 2026-04-25 (initial) | Compliance tracker created. ACLED licensing risk flagged as P0. |
 | 2026-04-25 (pivot) | Strategic pivot: dropped ACLED, Firecrawl, Anthropic from the dependency stack. Sub-processor list reduced to Google Cloud + Stripe + Cloudflare + GitHub. ACLED Corporate License negotiation cancelled. |
 | 2026-04-27 (LangGraph) | Added private-IP-only Cloud SQL Postgres as the approved LangGraph checkpoint store. This remains within the Google Cloud sub-processor boundary; user-visible canonical state stays in Firestore. |
+| 2026-04-28 (billing) | Began Stripe-to-Polar transition. New payments stack uses Polar hosted Checkout, Customer Portal, webhooks, and Firestore entitlement mirroring. |
 
 ---
 

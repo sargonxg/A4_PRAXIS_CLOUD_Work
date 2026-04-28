@@ -202,7 +202,7 @@ function PaymentBanner() {
   async function handleUpgrade(planId: string) {
     setIsCheckingOut(true);
     try {
-      const res = await fetch('/api/stripe/checkout', {
+      const res = await fetch('/api/polar/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ planId }),
@@ -255,13 +255,97 @@ function PaymentBanner() {
         <CreditCard className="h-5 w-5 shrink-0 text-diplomatic-blue animate-pulse" />
         <div className="flex-1">
           <p className="text-sm font-semibold text-navy-800">Redirecting to checkout...</p>
-          <p className="text-xs text-navy-500">You&apos;ll be taken to Stripe to complete your upgrade.</p>
+          <p className="text-xs text-navy-500">You&apos;ll be taken to Polar to complete your upgrade.</p>
         </div>
       </div>
     );
   }
 
   return null;
+}
+
+function FullAccessCodeSection() {
+  const { user } = useAuth();
+  const [code, setCode] = useState('');
+  const [status, setStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message?: string }>({
+    type: 'idle',
+  });
+
+  async function redeemCode() {
+    const trimmed = code.trim();
+    if (!trimmed) {
+      setStatus({ type: 'error', message: 'Enter an access code.' });
+      return;
+    }
+
+    setStatus({ type: 'loading' });
+    try {
+      const res = await fetch('/api/promo/redeem', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: trimmed }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setStatus({ type: 'error', message: data.error || 'Code could not be redeemed.' });
+        return;
+      }
+
+      const expires = data.expiresAt ? new Date(data.expiresAt).toLocaleDateString() : 'seven days';
+      setStatus({ type: 'success', message: `Full access is active until ${expires}.` });
+      window.setTimeout(() => window.location.reload(), 1200);
+    } catch {
+      setStatus({ type: 'error', message: 'Code could not be redeemed.' });
+    }
+  }
+
+  return (
+    <SettingsSection
+      icon={Sparkles}
+      title="Full Access Code"
+      description="Redeem a TACITUS code for one week of enterprise capabilities"
+    >
+      <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+        <div className="space-y-2">
+          <label htmlFor="full-access-code" className="text-xs font-medium text-navy-600">
+            Access code
+          </label>
+          <input
+            id="full-access-code"
+            value={code}
+            onChange={(event) => setCode(event.target.value)}
+            placeholder="PRAXIS-WEEK-PASS"
+            disabled={status.type === 'loading' || user?.isDemo}
+            className="w-full rounded-lg border border-navy-200 bg-white px-3 py-2 text-sm text-navy-900 outline-none transition-colors placeholder:text-navy-300 focus:border-diplomatic-blue focus:ring-2 focus:ring-diplomatic-blue/10 disabled:cursor-not-allowed disabled:bg-navy-50"
+          />
+          <p className="text-xs text-navy-500">
+            Free accounts keep live research and core analysis. Full access temporarily opens analyst, team, and enterprise-grade tools.
+          </p>
+        </div>
+        <button
+          onClick={redeemCode}
+          disabled={status.type === 'loading' || user?.isDemo}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-diplomatic-blue px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-diplomatic-blue/90 disabled:cursor-not-allowed disabled:bg-navy-300"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          {status.type === 'loading' ? 'Redeeming...' : 'Redeem'}
+        </button>
+      </div>
+      {status.message && (
+        <div
+          className={cn(
+            'mt-4 rounded-lg border px-3 py-2 text-xs',
+            status.type === 'success'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+              : 'border-gold-200 bg-gold-50 text-gold-700'
+          )}
+        >
+          {status.message}
+        </div>
+      )}
+    </SettingsSection>
+  );
 }
 
 export default function SettingsPage() {
@@ -315,9 +399,11 @@ export default function SettingsPage() {
         </div>
         <div className="mt-4 flex items-center gap-3">
           <span className="text-xs text-navy-500">Plan:</span>
-          <Badge variant="gold">Demo</Badge>
+          <Badge variant="gold">{user?.subscription ?? 'free'}</Badge>
         </div>
       </SettingsSection>
+
+      <FullAccessCodeSection />
 
       {/* ── AI Provider ───────────────────────────────────────────── */}
       <SettingsSection
@@ -519,36 +605,42 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Coming Soon integrations */}
+          {/* Premium research integrations */}
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-dashed border-navy-200 bg-navy-50 px-4 py-4">
+            <div className="rounded-lg border border-gold-500/25 bg-gold-500/5 px-4 py-4">
               <div className="flex items-start gap-3">
-                <Globe className="mt-0.5 h-4 w-4 shrink-0 text-navy-400" />
+                <Globe className="mt-0.5 h-4 w-4 shrink-0 text-gold-600" />
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-navy-400">Firecrawl</p>
-                    <span className="rounded-full bg-navy-100 px-2 py-0.5 text-[10px] font-semibold text-navy-400">
-                      Coming soon
+                    <p className="text-sm font-semibold text-navy-900">Firecrawl</p>
+                    <span className="rounded-full bg-gold-500/15 px-2 py-0.5 text-[10px] font-semibold text-gold-700">
+                      Premium
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-navy-400">
-                    Deep web scraping for structured data extraction from complex web pages and documents.
+                  <p className="mt-1 text-xs text-navy-600">
+                    Search, scrape, crawl, map, and structured extraction for PDFs, JS-rendered pages, source monitors, and knowledge-base ingestion.
+                  </p>
+                  <p className="mt-1 text-[11px] text-navy-500">
+                    Credit-based. Broad crawls and extraction should run on paid/trial plans or through support.
                   </p>
                 </div>
               </div>
             </div>
-            <div className="rounded-lg border border-dashed border-navy-200 bg-navy-50 px-4 py-4">
+            <div className="rounded-lg border border-diplomatic-blue/20 bg-diplomatic-blue/5 px-4 py-4">
               <div className="flex items-start gap-3">
-                <Globe className="mt-0.5 h-4 w-4 shrink-0 text-navy-400" />
+                <Globe className="mt-0.5 h-4 w-4 shrink-0 text-diplomatic-blue" />
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-navy-400">Tavily</p>
-                    <span className="rounded-full bg-navy-100 px-2 py-0.5 text-[10px] font-semibold text-navy-400">
-                      Coming soon
+                    <p className="text-sm font-semibold text-navy-900">Parallel.ai</p>
+                    <span className="rounded-full bg-diplomatic-blue/15 px-2 py-0.5 text-[10px] font-semibold text-diplomatic-blue">
+                      MCP + API
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-navy-400">
-                    Search API optimized for AI agents with real-time results and answer extraction.
+                  <p className="mt-1 text-xs text-navy-600">
+                    LLM-optimized web search for contested claims, second-source checks, entity enrichment, and agent research.
+                  </p>
+                  <p className="mt-1 text-[11px] text-navy-500">
+                    Use basic search for routine work; reserve advanced/deep tasks for paid workflows.
                   </p>
                 </div>
               </div>

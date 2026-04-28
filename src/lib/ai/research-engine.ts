@@ -1,13 +1,13 @@
 /**
  * PRAXIS Research Engine
  *
- * Replaces Google Search grounding with Firecrawl-powered web intelligence.
- * Searches the web, scrapes full page content, and feeds it as context
- * to the AI model for synthesis and analysis.
+ * Uses free/open web search fallbacks plus optional Firecrawl-powered web
+ * intelligence. Searches the web, scrapes full page content, and feeds it as
+ * context to the AI model for synthesis and analysis.
  */
 
 import { streamText, type LanguageModel } from 'ai';
-import { searchWeb, scrapeMultiple, formatResultsAsContext, isFirecrawlConfigured, type WebSearchResult } from './firecrawl';
+import { searchWeb, scrapeMultiple, formatResultsAsContext, type WebSearchResult } from './firecrawl';
 import { getModel, getProModel } from './providers';
 
 // ---------------------------------------------------------------------------
@@ -153,11 +153,11 @@ export async function conductResearch(params: ResearchParams) {
       }));
   }
 
-  if (isFirecrawlConfigured()) {
-    // Search the web for additional sources
-    const searchResults = await searchWeb(query, { numResults });
-    webContent = [...webContent, ...searchResults];
-  }
+  // Search the web for additional sources. `searchWeb` falls back to free
+  // Wikipedia/GDELT/native-fetch sources when Firecrawl is not configured, so
+  // free-tier users still receive live, cited research context.
+  const searchResults = await searchWeb(query, { numResults });
+  webContent = [...webContent, ...searchResults];
 
   // Step 2: Format web content as context
   const webContext = formatResultsAsContext(webContent);
@@ -211,6 +211,5 @@ ${sourceSummary}
  * Useful for getting URLs and content for other tools.
  */
 export async function quickSearch(query: string, numResults = 5): Promise<WebSearchResult[]> {
-  if (!isFirecrawlConfigured()) return [];
   return searchWeb(query, { numResults });
 }

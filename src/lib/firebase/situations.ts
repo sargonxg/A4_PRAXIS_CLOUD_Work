@@ -507,6 +507,8 @@ export async function createSituationAdmin(
     ...(data.ontology ? { ontology: data.ontology } : {}),
     ...(data.sourceCategoriesEnabled ? { sourceCategoriesEnabled: data.sourceCategoriesEnabled } : {}),
     ...(data.sourceCategoryOrder?.length ? { sourceCategoryOrder: data.sourceCategoryOrder } : {}),
+    ...(data.workflowPath ? { workflowPath: data.workflowPath } : {}),
+    ...(data.workflowPathLabel ? { workflowPathLabel: data.workflowPathLabel } : {}),
     ...(data.customSources?.length ? { customSources: data.customSources } : {}),
     ...(data.domain ? { domain: data.domain } : {}),
     ...(typeof data.domainConfidence === 'number'

@@ -30,6 +30,7 @@ import { handleRouteError } from '@/lib/api/standard-error';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { searchSituationCorpus } from '@/lib/intelligence/corpus-search';
 import { AGENT_REGISTRY, DEFAULT_BRAINSTORMING_PANEL, type AgentPersonaId } from '@/lib/agents/registry';
+import { getDocumentById } from '@/lib/firebase/documents-service';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 90;
@@ -190,11 +191,14 @@ export const POST = withCalibration('brainstorming-table', 'ai_brainstorming_tab
       question: z.string().min(5).max(800),
       situation: z.any().optional(),
       personas: z.array(z.enum(PERSONA_IDS)).max(BRAINSTORMING_PERSONAS.length).optional(),
+      sourceText: z.string().max(20000).optional(),
+      sourceLabel: z.string().max(160).optional(),
+      selectedDocumentIds: z.array(z.string().min(1)).max(5).optional(),
     });
 
     const validation = validateAiRequest(body, requestSchema);
     if (!validation.success) return validation.response;
-    const { question, situation, personas } = validation.data;
+    const { question, situation, personas, sourceText, sourceLabel, selectedDocumentIds } = validation.data;
 
     if (isServerDemoMode()) {
       return NextResponse.json({ ...DEMO_RESPONSE, question });
@@ -250,6 +254,31 @@ export const POST = withCalibration('brainstorming-table', 'ai_brainstorming_tab
       }
     }
 
+    const contextBlocks: string[] = [];
+    if (sourceText?.trim()) {
+      contextBlocks.push(
+        `### Analyst-provided text: ${sourceLabel?.trim() || 'Working note'}\nsourceId=context:analyst-text\n${sourceText.trim().slice(0, 20000)}`
+      );
+    }
+
+    if (situationId && selectedDocumentIds?.length) {
+      const docs = await Promise.all(
+        Array.from(new Set(selectedDocumentIds)).map((docId) =>
+          getDocumentById(user.uid, situationId, docId).catch(() => null)
+        )
+      );
+      for (const doc of docs) {
+        if (!doc) continue;
+        contextBlocks.push(
+          `### Uploaded document: ${doc.title}\nsourceId=documents:${doc.id}\nfileType=${doc.fileType} status=${doc.status} chunks=${doc.chunkCount ?? 0}\n${doc.text.slice(0, 12000)}`
+        );
+      }
+    }
+
+    const directContextBlock = contextBlocks.length
+      ? `\n## DIRECT WORKING MATERIAL\nThe analyst explicitly asked the table to deliberate over this material. Treat it as high-priority context, cite it with sourceType="documents" or sourceType="situation" and the sourceId shown below when relevant.\n\n${contextBlocks.join('\n\n---\n\n')}\n`
+      : '';
+
     const { systemPromptBlock, outputConstraints, provenance } = user.calibration;
     const langDirective =
       outputConstraints.language !== 'en'
@@ -270,11 +299,12 @@ ${personaPrompt}
 
 DELIBERATION RULES:
 - Every turn must include a claim and confidence (high/medium/low).
-- Every claim must cite at least one piece of evidence from the CORPUS EVIDENCE block when available; if no corpus item supports the claim, set sourceType="reasoning" and acknowledge the gap.
+- Every claim must cite at least one piece of evidence from DIRECT WORKING MATERIAL or CORPUS EVIDENCE when available; if no evidence supports the claim, set sourceType="reasoning" and acknowledge the gap.
+- When DIRECT WORKING MATERIAL is present, at least three personas must engage it explicitly.
 - Red Team Critic challenges at least one prior turn (status="challenged") and recommends adjustments.
 - Synthesis Chair (the orchestrator — that is YOU) writes the synthesis: BLUF, consensus, divergences, decision options with trade-offs, open questions, next actions.
 - Never invent sources. If the analyst's working language is non-English, write all claims/critiques/synthesis in that language; persona ids stay English.${langDirective}${redLineDirective}`,
-      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${corpusBlock}
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${directContextBlock}${corpusBlock}
 
 ANALYST QUESTION:
 ${question}
@@ -305,6 +335,9 @@ OUTPUT SHAPE:
           personas: personaList,
           retrievalTrace,
           question,
+          selectedDocumentIds: selectedDocumentIds ?? [],
+          sourceLabel: sourceLabel ?? null,
+          hasSourceText: Boolean(sourceText?.trim()),
         },
       }).catch((err) => console.warn('[brainstorming-table] saveToolOutput failed:', err));
     }

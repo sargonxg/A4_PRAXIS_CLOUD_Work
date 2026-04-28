@@ -92,7 +92,7 @@ extract → build → cluster → analyze → report → export
 | Validation | Zod 4 |
 | Documents | pdf-parse, mammoth, docx, jspdf |
 | Web Research | Grounded Google Search and open-data feed clients |
-| Payments | Stripe |
+| Payments | Polar |
 | Observability | Sentry, OpenTelemetry → Cloud Trace, BigQuery analytics |
 | Deployment | GCP Cloud Run (us-central1), Cloud Build CI/CD |
 
@@ -234,7 +234,18 @@ Critical (production):
 | `ADMIN_ALLOWLIST` | Comma-separated Firebase UIDs that can access `/app/admin/*` |
 | `ADMIN_EMAIL_ALLOWLIST` | Comma-separated verified admin emails; defaults to `giulio@tacitus.me` |
 
-Optional integrations: `STRIPE_*`, `RESEND_API_KEY`, `NEXT_PUBLIC_SENTRY_DSN`, graph backend credentials, and operator/monitoring configuration.
+Optional integrations: `POLAR_*`, `RESEND_API_KEY`, `NEXT_PUBLIC_SENTRY_DSN`, graph backend credentials, and operator/monitoring configuration.
+
+Premium research integrations:
+
+| Variable | Purpose |
+|---|---|
+| `FIRECRAWL_API_KEY` | Premium search/scrape/crawl/map/extract for source acquisition and knowledge-base ingestion |
+| `PARALLEL_API_KEY` | Parallel Search API + MCP for LLM-optimized second-lens research |
+
+Both are optional for free users; PRAXIS falls back to Google/open-source
+research paths when they are absent. In production they are stored in Secret
+Manager as `praxis-firecrawl-api-key` and `praxis-parallel-api-key`.
 
 See `.env.example` and `.env.local.example` for the full grouped reference with placeholders.
 

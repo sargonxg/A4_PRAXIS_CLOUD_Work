@@ -1,9 +1,10 @@
 /**
  * Firecrawl Web Intelligence Service for PRAXIS
  *
- * Replaces Google Search grounding with full-page web crawling.
- * Returns clean markdown content from any URL, handles JS rendering,
- * and provides structured web search results.
+ * Premium web intelligence with free fallbacks. When FIRECRAWL_API_KEY is
+ * configured it searches and scrapes full-page markdown from JS-rendered sites.
+ * Without a key it falls back to Wikipedia, GDELT, and native fetch so free
+ * users still get useful web context.
  */
 
 import FirecrawlApp from '@mendable/firecrawl-js';
@@ -48,6 +49,38 @@ interface CacheEntry<T> {
 
 const scrapeCache = new Map<string, CacheEntry<ScrapeResult>>();
 const searchCache = new Map<string, CacheEntry<WebSearchResult[]>>();
+
+type FirecrawlSearchItem = {
+  title?: string;
+  url?: string;
+  markdown?: string;
+  content?: string;
+  description?: string;
+  publishedDate?: string;
+  metadata?: {
+    title?: string;
+    description?: string;
+    sourceURL?: string;
+  };
+};
+
+type FirecrawlScrapeResponse = {
+  success?: boolean;
+  markdown?: string;
+  data?: {
+    markdown?: string;
+    metadata?: {
+      title?: string;
+      description?: string;
+      sourceURL?: string;
+    };
+  };
+  metadata?: {
+    title?: string;
+    description?: string;
+    sourceURL?: string;
+  };
+};
 
 function getCached<T>(cache: Map<string, CacheEntry<T>>, key: string): T | null {
   const entry = cache.get(key);
@@ -105,25 +138,27 @@ export async function searchWeb(
 
   try {
     const numResults = options.numResults || 5;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response: any = await client.search(query, {
+    const response = await client.search(query, {
       limit: numResults,
       scrapeOptions: {
         formats: ['markdown'],
       },
-    });
+    }) as unknown as { success?: boolean; data?: FirecrawlSearchItem[] | { web?: FirecrawlSearchItem[]; news?: FirecrawlSearchItem[]; images?: FirecrawlSearchItem[] } };
 
     if (!response.success || !response.data) return [];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const results: WebSearchResult[] = (response.data as any[])
+    const items = Array.isArray(response.data)
+      ? response.data
+      : [...(response.data.web ?? []), ...(response.data.news ?? [])];
+
+    const results: WebSearchResult[] = items
       .filter((r) => r.markdown || r.url)
       .map((r) => ({
-        title: r.title || r.url || '',
-        url: r.url || '',
-        content: (r.markdown || r.description || '').slice(0, 8000),
+        title: r.title || r.metadata?.title || r.url || r.metadata?.sourceURL || '',
+        url: r.url || r.metadata?.sourceURL || '',
+        content: (r.markdown || r.content || r.description || '').slice(0, 8000),
         publishedDate: r.publishedDate,
-        description: r.description || '',
+        description: r.description || r.metadata?.description || '',
       }));
 
     setCache(searchCache, cacheKey, results);
@@ -153,21 +188,23 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response: any = await client.scrape(url, {
+    const response = await client.scrape(url, {
       formats: ['markdown'],
-    });
+    }) as unknown as FirecrawlScrapeResponse;
 
     if (!response.success) {
       // Firecrawl failed — try free fallback
       return scrapeUrlFree(url);
     }
 
+    const markdown = response.data?.markdown ?? response.markdown ?? '';
+    const metadata = response.data?.metadata ?? response.metadata;
+
     const result: ScrapeResult = {
-      url,
-      content: (response.markdown || '').slice(0, 15000),
-      title: response.metadata?.title || '',
-      description: response.metadata?.description || '',
+      url: metadata?.sourceURL || url,
+      content: markdown.slice(0, 15000),
+      title: metadata?.title || '',
+      description: metadata?.description || '',
       success: true,
     };
 

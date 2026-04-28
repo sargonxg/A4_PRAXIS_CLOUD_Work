@@ -166,6 +166,26 @@ const ACTIVATION_STEPS: Array<{
   effort: string;
 }> = [
   {
+    id: 'firecrawl',
+    name: 'Firecrawl Web Intelligence',
+    status: 'paid-live',
+    why: 'Premium search, scrape, crawl, map, and structured extraction for hard-to-parse policy sites, PDFs, source monitors, and knowledge-base ingestion. Free PRAXIS research still works without it through Google/open-source fallbacks.',
+    envVars: ['FIRECRAWL_API_KEY'],
+    signupUrl: 'https://docs.firecrawl.dev/',
+    costNote: 'Credit-based. Keep broad crawls, maps, and structured extraction behind paid/trial workflows or support approval.',
+    effort: '~15 min',
+  },
+  {
+    id: 'parallel',
+    name: 'Parallel Search MCP + API',
+    status: 'paid-live',
+    why: 'LLM-optimized web search for contested claims, second-source checks, entity enrichment, and agent research. Codex MCP is configured as parallel-search with PARALLEL_API_KEY bearer auth.',
+    envVars: ['PARALLEL_API_KEY'],
+    signupUrl: 'https://docs.parallel.ai/getting-started/overview',
+    costNote: 'Usage-based. Use basic search for routine source discovery; reserve advanced/deep tasks for paid or trial users.',
+    effort: '~15 min',
+  },
+  {
     id: 'vertex-adk',
     name: 'Vertex AI Agent Engine (Deep Research Agent)',
     status: 'unconfigured-paid',
@@ -186,13 +206,13 @@ const ACTIVATION_STEPS: Array<{
     effort: '~2 h',
   },
   {
-    id: 'stripe',
-    name: 'Stripe Billing (when monetising)',
+    id: 'polar',
+    name: 'Polar Billing (subscriptions)',
     status: 'unconfigured-paid',
-    why: 'Required for live monthly subscriptions. Until configured, /api/stripe/checkout returns 503 and users stay on the free plan.',
-    envVars: ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_PRICE_ANALYST', 'STRIPE_PRICE_TEAM'],
-    signupUrl: 'https://dashboard.stripe.com/',
-    costNote: '2.9% + $0.30 per successful charge',
+    why: 'Required for live monthly subscriptions. Until configured, /api/polar/checkout returns 503 and users stay on the free plan.',
+    envVars: ['POLAR_ACCESS_TOKEN', 'POLAR_WEBHOOK_SECRET', 'POLAR_PRODUCT_ANALYST', 'POLAR_PRODUCT_TEAM'],
+    signupUrl: 'https://polar.sh/tacitus',
+    costNote: 'Polar Merchant of Record fees apply; use a 14-day trial on self-serve plans',
     effort: '~2 h',
   },
 ];
@@ -501,10 +521,10 @@ export default function SystemHealthPage() {
       {/* ── Data source activation guide ─────────────────────────────────── */}
       <Card title="Activate paid / freemium data sources" icon={Plug}>
         <p className="mb-3 text-xs text-muted-foreground">
-          PRAXIS works out-of-the-box on the open-data feeds (GDELT, UCDP, UNHCR, HDX,
-          ReliefWeb, UN News, World Bank) plus Vertex AI / Gemini and grounded Google
-          Search. The sources below are <em>optional</em> — each one degrades gracefully
-          if its env var is missing. Turn them on in priority order.
+          PRAXIS works out-of-the-box on open-data feeds plus Vertex AI / Gemini and
+          grounded research fallbacks. Firecrawl and Parallel are premium accelerators:
+          use them for deeper source acquisition, not as a prerequisite for free value.
+          Each source degrades gracefully if its env var is missing.
         </p>
         <ol className="space-y-3">
           {ACTIVATION_STEPS.map((step, i) => (

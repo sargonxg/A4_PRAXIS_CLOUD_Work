@@ -5,13 +5,13 @@ export const maxDuration = 15;
 
 /**
  * POST /api/settings/validate-key
- * Body: { provider: 'tavily' | 'firecrawl' | 'anthropic' | 'openai', apiKey: string }
+ * Body: { provider: 'tavily' | 'parallel' | 'firecrawl' | 'anthropic' | 'openai', apiKey: string }
  * Returns: { valid: boolean, error?: string }
  */
 export const POST = withAuth(async (request) => {
   try {
     const { provider, apiKey } = await request.json() as {
-      provider: 'tavily' | 'firecrawl' | 'anthropic' | 'openai';
+      provider: 'tavily' | 'parallel' | 'firecrawl' | 'anthropic' | 'openai';
       apiKey: string;
     };
 
@@ -34,12 +34,31 @@ export const POST = withAuth(async (request) => {
       }
 
       case 'firecrawl': {
-        const res = await fetch('https://api.firecrawl.dev/v1/team', {
+        const res = await fetch('https://api.firecrawl.dev/v2/search', {
+          method: 'POST',
           headers: { Authorization: `Bearer ${apiKey}` },
+          body: JSON.stringify({ query: 'Firecrawl validation', limit: 1, sources: ['web'] }),
           signal: AbortSignal.timeout(10_000),
         });
         if (res.status === 401 || res.status === 403) {
           return NextResponse.json({ valid: false, error: 'Invalid Firecrawl API key' });
+        }
+        return NextResponse.json({ valid: res.ok });
+      }
+
+      case 'parallel': {
+        const res = await fetch('https://api.parallel.ai/v1/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+          body: JSON.stringify({
+            objective: 'Validate Parallel API access. Return one official source about the United Nations.',
+            search_queries: ['United Nations official website'],
+            mode: 'basic',
+          }),
+          signal: AbortSignal.timeout(15_000),
+        });
+        if (res.status === 401 || res.status === 403) {
+          return NextResponse.json({ valid: false, error: 'Invalid Parallel API key' });
         }
         return NextResponse.json({ valid: res.ok });
       }

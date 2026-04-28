@@ -190,11 +190,12 @@
 >    pills with the feed name and timestamp; for tools that don't yet
 >    use feeds, route them through the SKC Feed Layer
 >    (`src/lib/knowledge/feed-layer.ts`).
-> 5. **Pricing/Stripe integration.** Pricing page now reads \$100
->    Analyst / \$499 Team. The `withCredits` middleware is already
->    metering; round-6 plan calls for Stripe Meters wiring on
->    `src/lib/billing/stripe-meters.ts`. Once tool quality is green,
->    flip on Stripe so the new prices actually charge.
+> 5. **Pricing/Polar integration.** Pricing page now reads \$99
+>    Analyst / \$499 Team with a 14-day free trial. Checkout now points
+>    at Polar (`/api/polar/checkout`), while webhooks mirror
+>    `users/{uid}.subscription`, `polarCustomerId`, `polarSubscriptionId`,
+>    trial end, and period end into Firestore. A fresh Polar OAT and product
+>    IDs are still required before live checkout can succeed.
 > 6. **Share-image + OG verification.** Send the production URL
 >    through <https://www.opengraph.xyz/> and the LinkedIn /
 >    WhatsApp / Twitter / Slack debuggers. Confirm
@@ -778,7 +779,7 @@ resource.type="firestore.googleapis.com/Database"
 ```
 Or, simpler: add a `Firestore.onCreate('system_events/{id}')` Cloud Function that streams to BigQuery `praxis_analytics.system_events`. Schema mirrors the doc.
 
-### 10. Stripe Meters for usage billing (1 week)
+### 10. Polar usage reconciliation for billing analytics (1 week)
 
 Per `docs/compass_artifact_*.md`. Define meters:
 - `vertex.input_tokens` (model name dimension)
@@ -787,7 +788,7 @@ Per `docs/compass_artifact_*.md`. Define meters:
 - `gdelt.queries`
 - `firecrawl.pages` (already retired but kept for legacy users)
 
-Emit at every `complete_tool_run` if `creditsDeducted > 0`. Already the credits cost matches an internal cost model — Stripe meters track the real GCP cost in parallel.
+Emit at every `complete_tool_run` if `creditsDeducted > 0`. Internal credits remain the product-facing fair-use model; Polar should receive only the billing/entitlement events needed for customer state until usage-based pricing is explicitly turned on.
 
 ---
 

@@ -24,6 +24,12 @@
 | [`ROUND_6_READINESS_2026-04-27.md`](./ROUND_6_READINESS_2026-04-27.md) | **Current short plan: deep-research memo distilled, LangGraph readiness, required human decisions.** |
 | [`DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md`](./DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md) | **Canonical 16-lane action plan distilled from the deep-research memo.** |
 | [`LANGGRAPH_CLOUDSQL_CHECKPOINTING.md`](./LANGGRAPH_CLOUDSQL_CHECKPOINTING.md) | **LangGraph checkpointing architecture, Cloud SQL resources, cleanup, and verification.** |
+| [`TOOL_QUALITY_AUDIT_2026-04-28.md`](./TOOL_QUALITY_AUDIT_2026-04-28.md) | Current tool output, billing, free-tier, and data-shape audit. |
+| [`PRAXIS_FULL_AUDIT_2026-04-28.md`](./PRAXIS_FULL_AUDIT_2026-04-28.md) | Full audit of billing, providers, admin, Google/Vertex, situation creation, RAG, and next actions. |
+| [`POLICY_PROFESSIONAL_OPERATING_MODEL_2026-04-28.md`](./POLICY_PROFESSIONAL_OPERATING_MODEL_2026-04-28.md) | Product operating model for policy professionals: workflows, deliverables, free/paid experience, admin, expert personas, and next shipping queue. |
+| [`DATABASE_DASHBOARD_IMPROVEMENT_PLAN_2026-04-28.md`](./DATABASE_DASHBOARD_IMPROVEMENT_PLAN_2026-04-28.md) | Database, dashboard, Firestore, Vertex AI, Firecrawl, and Parallel improvement plan tied to the case-file launchpad. |
+| [`KNOWLEDGE_BOTS_PLAN_2026-04-28.md`](./KNOWLEDGE_BOTS_PLAN_2026-04-28.md) | Plan for team-owned policy knowledge bases and public/internal ARGUS-style bots. |
+| [`PERSONA_TEST_PLAN_2026-04-28.md`](./PERSONA_TEST_PLAN_2026-04-28.md) | Diplomat/persona smoke tests for free, trial, and paid flows. |
 | [`ROUND_5_PLAN_2026-04-26.md`](./ROUND_5_PLAN_2026-04-26.md) | **Round-5 plan: 10 new bricks (45-54) + 10 agent objectives + GCP/Firebase research summary + landing roadmap.** |
 | [`COLOR_SYSTEM_AUDIT_2026-04-26.md`](./COLOR_SYSTEM_AUDIT_2026-04-26.md) | Color leak map + canonical token swap rules. |
 | [`CODEX_HANDOFF_2026-04-27.md`](./CODEX_HANDOFF_2026-04-27.md) | **Active fresh Codex drop-in prompt.** |

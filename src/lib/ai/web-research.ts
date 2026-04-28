@@ -402,7 +402,7 @@ async function searchTavily(
 async function searchParallel(
   ctx: ResearchContext
 ): Promise<WebResearchResult[]> {
-  const apiKey = ctx.userKeys.parallel_key;
+  const apiKey = ctx.userKeys.parallel_key || process.env.PARALLEL_API_KEY;
   if (!apiKey) return [];
 
   try {
@@ -414,15 +414,14 @@ async function searchParallel(
         `${ctx.situationName} latest developments`,
         ...(ctx.options.region ? [`${ctx.options.region} ${ctx.query}`] : []),
       ],
-      mode: 'balanced',
-      max_results: ctx.options.maxResults ?? 5,
+      mode: 'basic',
     };
 
     const res = await fetch('https://api.parallel.ai/v1/search', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'x-api-key': apiKey,
       },
       body: JSON.stringify(searchBody),
       signal: AbortSignal.timeout(30000),
@@ -438,11 +437,14 @@ async function searchParallel(
 
     if (Array.isArray(data.results)) {
       for (const r of data.results) {
+        const excerpt = Array.isArray(r.excerpts)
+          ? r.excerpts.map((e: { text?: string } | string) => typeof e === 'string' ? e : e.text ?? '').filter(Boolean).join('\n\n')
+          : r.excerpt ?? r.content ?? '';
         results.push({
           title: r.title ?? 'Untitled',
           url: r.url ?? '',
-          content: r.excerpt ?? r.content ?? '',
-          snippet: (r.excerpt ?? r.content ?? '').slice(0, 300),
+          content: excerpt,
+          snippet: excerpt.slice(0, 300),
           source: r.url ? new URL(r.url).hostname.replace('www.', '') : 'parallel',
           provider: 'parallel',
           publishedDate: r.published_date,
@@ -599,8 +601,8 @@ export async function executeWebResearch(
     console.log('[web-research] Phase 2: Tavily (user key configured)');
     premiumProviders.push(searchTavily(ctx));
   }
-  if (userKeys.parallel_key) {
-    console.log('[web-research] Phase 2: Parallel.ai (user key configured)');
+  if (userKeys.parallel_key || process.env.PARALLEL_API_KEY) {
+    console.log('[web-research] Phase 2: Parallel.ai');
     premiumProviders.push(searchParallel(ctx));
   }
   if (userKeys.firecrawl_key || process.env.FIRECRAWL_API_KEY) {

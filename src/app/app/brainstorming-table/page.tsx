@@ -13,8 +13,8 @@
  *     Report Studio, and Ask PRAXIS can pull from it.
  */
 
-import { useCallback, useState } from 'react';
-import { Loader2, Users, Sparkles, AlertTriangle, ShieldAlert, MessageSquare, ListChecks, Download } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Loader2, Users, Sparkles, AlertTriangle, ShieldAlert, MessageSquare, ListChecks, Download, FileText, ClipboardList } from 'lucide-react';
 import { brainstormingTableToMarkdown, brainstormingTableFilename } from '@/lib/exports/brainstorming-markdown';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
@@ -81,6 +81,14 @@ interface BrainstormingTable {
   retrievalTrace?: { layersSearched: string[]; itemCount: number; durationMs: number };
 }
 
+interface BrainstormingDocument {
+  id: string;
+  title: string;
+  fileType: string;
+  status: string;
+  chunkCount: number;
+}
+
 export default function BrainstormingTablePage() {
   const { isDemo, showGuard, needsOnboarding, situation } = useSituationGuard();
   const activeSituation = useSituationStore((s) => s.activeSituation);
@@ -90,8 +98,51 @@ export default function BrainstormingTablePage() {
   const [generating, setGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [generated, setGenerated] = useState<BrainstormingTable | null>(null);
+  const [sourceText, setSourceText] = useState('');
+  const [sourceLabel, setSourceLabel] = useState('');
+  const [documents, setDocuments] = useState<BrainstormingDocument[]>([]);
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+  const [docsLoading, setDocsLoading] = useState(false);
 
   const current: BrainstormingTable | null = generated ?? (hasData ? persisted : null);
+
+  useEffect(() => {
+    if (!activeSituation?.id || isDemo) return;
+    let cancelled = false;
+    setDocsLoading(true);
+    fetch(`/api/documents?situationId=${encodeURIComponent(activeSituation.id)}`, { cache: 'no-store' })
+      .then((res) => res.ok ? res.json() : { documents: [] })
+      .then((data) => {
+        if (!cancelled) setDocuments(Array.isArray(data.documents) ? data.documents : []);
+      })
+      .catch(() => {
+        if (!cancelled) setDocuments([]);
+      })
+      .finally(() => {
+        if (!cancelled) setDocsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSituation?.id, isDemo]);
+
+  const handleLocalTextFile = useCallback(async (file: File | null) => {
+    if (!file) return;
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext !== 'txt' && ext !== 'md') {
+      setErrorMsg('For PDFs and DOCX files, upload them in Documents first, then select them here.');
+      return;
+    }
+    const text = await file.text();
+    setSourceText(text.slice(0, 20000));
+    setSourceLabel(file.name);
+  }, []);
+
+  const toggleDocument = useCallback((docId: string) => {
+    setSelectedDocumentIds((prev) =>
+      prev.includes(docId) ? prev.filter((id) => id !== docId) : [...prev, docId].slice(0, 5)
+    );
+  }, []);
 
   const generate = useCallback(async () => {
     if (!question.trim() || !activeSituation) return;
@@ -106,6 +157,9 @@ export default function BrainstormingTablePage() {
           situationId: activeSituation.id,
           situation: activeSituation,
           question: question.trim(),
+          sourceText: sourceText.trim() || undefined,
+          sourceLabel: sourceLabel.trim() || undefined,
+          selectedDocumentIds,
         }),
       });
       if (!res.ok) {
@@ -120,7 +174,7 @@ export default function BrainstormingTablePage() {
     } finally {
       setGenerating(false);
     }
-  }, [question, activeSituation]);
+  }, [question, activeSituation, selectedDocumentIds, sourceLabel, sourceText]);
 
   if (needsOnboarding) return <OnboardingRequiredState />;
   if (!isDemo && (showGuard || !situation)) return <NoSituationState />;
@@ -174,6 +228,87 @@ export default function BrainstormingTablePage() {
         )}
       </section>
 
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <label htmlFor="bt-source-text" className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-800">
+            <ClipboardList className="h-4 w-4" />
+            Working text for the experts
+          </label>
+          <input
+            value={sourceLabel}
+            onChange={(e) => setSourceLabel(e.target.value)}
+            placeholder="Optional label, e.g. Draft cable, ceasefire text, memo excerpt"
+            className="mb-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          />
+          <textarea
+            id="bt-source-text"
+            value={sourceText}
+            onChange={(e) => setSourceText(e.target.value.slice(0, 20000))}
+            rows={7}
+            placeholder="Paste a paragraph, draft statement, negotiating text, policy memo, cable excerpt, or field note. The expert table will debate it alongside the situation corpus."
+            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          />
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+            <span>{sourceText.length.toLocaleString()} / 20,000 characters</span>
+            <label className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
+              <FileText className="h-3.5 w-3.5" />
+              Load .txt / .md
+              <input
+                type="file"
+                accept=".txt,.md,text/plain,text/markdown"
+                className="sr-only"
+                onChange={(e) => void handleLocalTextFile(e.target.files?.[0] ?? null)}
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h2 className="flex items-center gap-2 text-sm font-medium text-slate-800">
+              <FileText className="h-4 w-4" />
+              Uploaded documents
+            </h2>
+            <span className="text-xs text-slate-500">{selectedDocumentIds.length} / 5 selected</span>
+          </div>
+          <p className="mb-3 text-xs text-slate-500">
+            Select PDFs, DOCX, text, or markdown files already uploaded to Documents. Their extracted text and chunks will be high-priority evidence for the expert table.
+          </p>
+          {docsLoading ? (
+            <p className="text-xs text-slate-400">Loading documents...</p>
+          ) : documents.length === 0 ? (
+            <p className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-3 text-xs text-slate-500">
+              No uploaded documents for this situation yet. Upload PDFs or text files in Documents, then return here to convene experts over them.
+            </p>
+          ) : (
+            <div className="max-h-64 space-y-2 overflow-auto pr-1">
+              {documents.map((doc) => {
+                const selected = selectedDocumentIds.includes(doc.id);
+                return (
+                  <button
+                    key={doc.id}
+                    type="button"
+                    onClick={() => toggleDocument(doc.id)}
+                    className={cn(
+                      'w-full rounded-md border px-3 py-2 text-left transition',
+                      selected ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white hover:bg-slate-50'
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-medium text-slate-800">{doc.title}</span>
+                      <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase text-slate-500">{doc.fileType}</span>
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {doc.status} · {doc.chunkCount ?? 0} retrieval chunks
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </section>
+
       {current && (
         <>
           <BrainstormingTableView data={current} situationName={situation?.name ?? activeSituation?.name} />
@@ -190,7 +325,7 @@ export default function BrainstormingTablePage() {
       {!current && !generating && (
         <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
           <Users className="mx-auto mb-2 h-6 w-6 text-slate-400" />
-          No deliberation yet. Frame a question and convene the table — six expert personas will reason over the situation corpus and propose decision options.
+          No deliberation yet. Frame a question and convene the table. The experts can reason over the active situation, uploaded PDFs/documents, pasted text, and prior PRAXIS outputs.
         </div>
       )}
     </div>

@@ -46,7 +46,7 @@ export async function GET() {
   checks.anthropic = hasAnthropic ? 'ok' : 'unconfigured';
   checks.firecrawl = process.env.FIRECRAWL_API_KEY ? 'ok' : 'unconfigured';
   checks.vertex_adk = process.env.VERTEX_AGENT_ENGINE_ID ? 'ok' : 'unconfigured';
-  checks.stripe = (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET) ? 'ok' : 'unconfigured';
+  checks.polar = (process.env.POLAR_ACCESS_TOKEN && process.env.POLAR_WEBHOOK_SECRET) ? 'ok' : 'unconfigured';
 
   const status = healthy ? 200 : 503;
 

@@ -83,7 +83,9 @@ export async function GET(request: Request) {
   diagnostics.integrations = {
     firecrawlSet: !!process.env.FIRECRAWL_API_KEY,
     vertexAgentEngineId: process.env.VERTEX_AGENT_ENGINE_ID ?? null,
-    stripeSecretSet: !!process.env.STRIPE_SECRET_KEY,
+    polarAccessTokenSet: !!process.env.POLAR_ACCESS_TOKEN,
+    polarWebhookSecretSet: !!process.env.POLAR_WEBHOOK_SECRET,
+    polarServer: process.env.POLAR_SERVER ?? 'production',
     resendSet: !!process.env.RESEND_API_KEY,
     acledSet: !!process.env.ACLED_API_KEY,
   };

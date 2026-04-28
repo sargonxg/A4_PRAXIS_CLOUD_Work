@@ -15,9 +15,17 @@ interface AdminUser {
   profile: {
     credits: number | null;
     subscription: string | null;
+    subscriptionProvider: string | null;
+    subscriptionStatus: string | null;
+    subscriptionExpiresAt: string | null;
+    fullAccessExpiresAt: string | null;
+    polarCustomerId: string | null;
     totalCreditsUsed: number | null;
   } | null;
+  premiumKeys: Record<string, { present: boolean; effective: boolean; platformFallbackAvailable: boolean } | null> | null;
 }
+
+const KEY_LABELS = ['google_ai', 'firecrawl', 'parallel', 'tavily', 'anthropic'];
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -50,7 +58,7 @@ export default function AdminUsersPage() {
           <p className="text-xs font-semibold uppercase tracking-wider text-diplomatic-blue">Administrator</p>
           <h1 className="mt-1 text-2xl font-semibold text-navy-900">Users</h1>
           <p className="mt-1 text-sm text-navy-500">
-            Firebase Auth users with profile, provider, and credit summary. User data remains owner-scoped.
+            Firebase Auth users with profile, billing, premium provider, and credit summary. User data remains owner-scoped.
           </p>
         </div>
         <button
@@ -78,15 +86,17 @@ export default function AdminUsersPage() {
               <th className="px-3 py-2 text-left font-semibold">Providers</th>
               <th className="px-3 py-2 text-left font-semibold">Status</th>
               <th className="px-3 py-2 text-left font-semibold">Plan</th>
+              <th className="px-3 py-2 text-left font-semibold">Billing</th>
+              <th className="px-3 py-2 text-left font-semibold">Research keys</th>
               <th className="px-3 py-2 text-right font-semibold">Credits</th>
               <th className="px-3 py-2 text-left font-semibold">Last sign-in</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="px-3 py-8 text-center text-navy-400">Loading users...</td></tr>
+              <tr><td colSpan={8} className="px-3 py-8 text-center text-navy-400">Loading users...</td></tr>
             ) : users.length === 0 ? (
-              <tr><td colSpan={6} className="px-3 py-8 text-center text-navy-400">No users returned.</td></tr>
+              <tr><td colSpan={8} className="px-3 py-8 text-center text-navy-400">No users returned.</td></tr>
             ) : users.map((u) => (
               <tr key={u.uid} className="border-t border-navy-100">
                 <td className="px-3 py-2">
@@ -102,6 +112,32 @@ export default function AdminUsersPage() {
                   <span className="ml-2 text-navy-400">{u.emailVerified ? 'verified' : 'unverified'}</span>
                 </td>
                 <td className="px-3 py-2 text-xs text-navy-600">{u.profile?.subscription ?? 'no profile'}</td>
+                <td className="px-3 py-2 text-xs text-navy-600">
+                  <div>{u.profile?.subscriptionProvider ?? '-'}</div>
+                  <div className="text-navy-400">{u.profile?.subscriptionStatus ?? '-'}</div>
+                  {u.profile?.subscriptionExpiresAt || u.profile?.fullAccessExpiresAt ? (
+                    <div className="font-mono text-[10px] text-navy-400">
+                      exp {String(u.profile.fullAccessExpiresAt ?? u.profile.subscriptionExpiresAt).slice(0, 10)}
+                    </div>
+                  ) : null}
+                </td>
+                <td className="px-3 py-2 text-xs">
+                  <div className="flex max-w-[220px] flex-wrap gap-1">
+                    {KEY_LABELS.map((key) => {
+                      const status = u.premiumKeys?.[key];
+                      const active = status?.effective;
+                      return (
+                        <span
+                          key={key}
+                          className={active ? 'rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-700' : 'rounded bg-navy-50 px-1.5 py-0.5 text-navy-400'}
+                          title={status?.platformFallbackAvailable ? 'Platform fallback available' : status?.present ? 'User key present' : 'Not configured'}
+                        >
+                          {key.replace('_', ' ')}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </td>
                 <td className="px-3 py-2 text-right font-mono text-xs text-navy-700">{u.profile?.credits ?? '-'}</td>
                 <td className="px-3 py-2 text-xs text-navy-500">{u.lastSignInAt ?? 'never'}</td>
               </tr>

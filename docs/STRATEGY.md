@@ -15,6 +15,16 @@ role-aware analysis that is grounded in their mandate, sources, prior work,
 tool outputs, and operational constraints. Every output should be citeable,
 auditable, and safe to brief upward.
 
+Ambitious operating goal for 2026: PRAXIS becomes the policy professional's
+operating room. A user should be able to create a situation, add documents and
+sources, ask calibrated questions, watch expert personas deliberate over their
+text or uploaded files, red-team the result, and ship a briefing, memo, talking
+points, negotiation plan, or knowledge-base answer without leaving the case
+file. The full operating model is in
+`docs/POLICY_PROFESSIONAL_OPERATING_MODEL_2026-04-28.md`.
+The database and dashboard implementation plan is in
+`docs/DATABASE_DASHBOARD_IMPROVEMENT_PLAN_2026-04-28.md`.
+
 Primary users:
 
 - Policy officer or political affairs desk
@@ -23,6 +33,27 @@ Primary users:
 - Legal, sanctions, accountability, or compliance analyst
 - Conflict, media, disinformation, or political-risk researcher
 - Institutional team that needs repeatable intelligence workflows
+
+## Ten Role Paths
+
+The paid core should stay understandable through ten role paths, not an
+unbounded tool catalog:
+
+1. UN / OSCE political officer
+2. Bilateral diplomat / country desk
+3. Mediator / envoy support
+4. Humanitarian access / protection lead
+5. IHL / accountability / sanctions analyst
+6. Political-risk / private-sector analyst
+7. Think-tank / policy researcher
+8. Media / disinformation analyst
+9. Stabilization / peacebuilding program lead
+10. Election / governance specialist
+
+Each path should start from the same situation, then recommend the first ten
+core tools in a role-specific order: Dashboard, Early Warning, Risk Monitor,
+Actor Profiles, Stakeholder Map, Briefing, Talking Points, Negotiation Prep,
+Commitments, and Sanctions.
 
 ## Strategic Bets
 
@@ -73,10 +104,30 @@ Primary users:
 6. **Launch-grade commercial surface**
    - Public pricing is monthly and plan-based: `free`, `analyst`, `team`,
      `enterprise`.
+   - Polar is the launch billing provider. Checkout, portal, and webhooks must
+     mirror entitlements into Firestore; Organization Access Tokens never
+     appear in client code.
+   - Free is not a dead demo. It keeps grounded research, situation setup,
+     Google-first analysis, limited web/source tools, and enough credits for a
+     serious user to see the policy workflow.
+   - `PROMO_FULL_ACCESS_CODES` supports one-week full-access pilots. Promo
+     access is expiry-aware in the server tier resolver and should be rotated
+     after each cohort.
    - Internal credits, token costs, and meter plumbing remain private unless
      intentionally exposed in admin/billing surfaces.
    - Landing, onboarding, and first-run workflows must make PRAXIS legible to
      serious buyers without leaking demo data or retired vendor names.
+
+7. **Knowledge-base products**
+   - PRAXIS should let teams turn their corpus into an internal or public
+     policy chatbot: upload sources, approve extraction, tune persona and
+     citation rules, publish an ARGUS-style assistant, and monitor gaps.
+   - Firestore vector search is the near-term personal/situation corpus path.
+     Vertex AI Vector Search and Vertex AI Search/RAG become the managed
+     path when corpora exceed Firestore latency, scale, or governance limits.
+   - Published bots must be source-bounded, citation-first, and revocable.
+     They should answer from approved corpora, disclose uncertainty, and
+     refuse unsupported claims.
 
 ## Technical Strategy
 
@@ -101,6 +152,20 @@ Source-of-truth decisions:
   envelope.
 - Model selection flows through `src/lib/ai/providers.ts`.
 - Retired vendors do not appear in user-facing copy.
+
+GCP/API posture checked on 2026-04-28:
+
+- Enabled and strategically useful now: Vertex AI (`aiplatform`), Firebase
+  Vertex AI, Firestore, Firebase Auth, Secret Manager, Cloud Run, Cloud Tasks,
+  Cloud Scheduler, Pub/Sub, BigQuery, Cloud Storage, Model Armor, and
+  Text-to-Speech.
+- Use official Google paths for the next build decisions:
+  - Vertex AI Agent Engine supports ADK, LangChain, and LangGraph style
+    agents.
+  - Vertex AI Vector Search is the managed semantic search layer for larger
+    RAG and recommendation workloads.
+  - Firestore vector search is appropriate for user/situation-scoped chunks
+    that should stay close to canonical app state.
 
 Operational checks:
 
@@ -131,6 +196,8 @@ notes live in `docs/MONSTER_TODO_2026-04-27.md`.
 | 10 | Eval harness | Adds quality gates for extraction, RAG faithfulness, and top-tool schema validity. |
 | 11 | Landing paid-launch polish | Clarifies the product for buyers and removes remaining funnel, accessibility, and demo-data trust issues. |
 | 12 | Postgres checkpoint cleanup | Prevents unbounded LangGraph storage growth using checkpointer APIs, not raw SQL. |
+| 13 | Polar billing completion | Turns the paid funnel live with checkout, customer portal, webhooks, trial state, and Firestore entitlements. |
+| 14 | Firestore artifact normalization | Unifies research/tool/document outputs so the SKC and Ask PRAXIS retrieve one canonical evidence envelope. |
 
 ## Roadmap
 
@@ -141,6 +208,13 @@ notes live in `docs/MONSTER_TODO_2026-04-27.md`.
 - Land structured extraction validation and Document AI fallback.
 - Build the situation/data health helper as a library first, then wire UI.
 - Keep demo-leak closures and onboarding/auth audit moving in parallel.
+- Finish Polar product/webhook setup and run the checkout-to-entitlement smoke.
+- Run a free-account research smoke: grounded-search route, Ask PRAXIS
+  fallback, Firecrawl-free URL fetch, and at least three core tools.
+- Run a free-account Brainstorming Table smoke over pasted text and one
+  uploaded document, then repeat as Analyst/Team with premium provider keys.
+- Browser-test `PRAXIS-WEEK-PASS` locally, then replace with real short-lived
+  pilot codes in Vercel/Secret Manager before inviting users.
 
 ### Next 30 days
 
@@ -150,6 +224,8 @@ notes live in `docs/MONSTER_TODO_2026-04-27.md`.
 - Feed digital advisor/SKC from notes, uploaded docs, grounded search, Source
   Scout, and tool outputs through normalized provenance.
 - Add optional eval gates for extraction and RAG quality.
+- Convert the ten role paths into onboarding recommendations and dashboard
+  quick-start paths.
 
 ### Next 90 days
 

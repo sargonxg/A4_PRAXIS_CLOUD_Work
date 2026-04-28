@@ -56,11 +56,29 @@ async function runValidator(providerId: string, payload: Record<string, string>)
       if (res.status === 401 || res.status === 403) return { ok: false, error: 'Invalid Tavily key' };
       return { ok: res.ok, error: res.ok ? undefined : `Tavily responded ${res.status}` };
     }
+    case 'parallel': {
+      const key = payload.key;
+      if (!key) return { ok: false, error: 'Missing key' };
+      const res = await fetch('https://api.parallel.ai/v1/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': key },
+        body: JSON.stringify({
+          objective: 'Validate Parallel API access. Return one official source about the United Nations.',
+          search_queries: ['United Nations official website'],
+          mode: 'basic',
+        }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (res.status === 401 || res.status === 403) return { ok: false, error: 'Invalid Parallel key' };
+      return { ok: res.ok, error: res.ok ? undefined : `Parallel responded ${res.status}` };
+    }
     case 'firecrawl': {
       const key = payload.key;
       if (!key) return { ok: false, error: 'Missing key' };
-      const res = await fetch('https://api.firecrawl.dev/v1/team', {
+      const res = await fetch('https://api.firecrawl.dev/v2/search', {
+        method: 'POST',
         headers: { Authorization: `Bearer ${key}` },
+        body: JSON.stringify({ query: 'Firecrawl validation', limit: 1, sources: ['web'] }),
         signal: AbortSignal.timeout(10_000),
       });
       if (res.status === 401 || res.status === 403) return { ok: false, error: 'Invalid Firecrawl key' };

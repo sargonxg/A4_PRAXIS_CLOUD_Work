@@ -49,7 +49,7 @@
 | **T3 — Brand & growth** | Landing production polish | #9 |
 | **T4 — Real intelligence** | Multi-session Deep Search Agent | #11 |
 | **T5 — Async backbone** | Cloud Tasks dispatcher | #12 |
-| **T6 — Money + comms** | Stripe Meters, email | #13, #14 |
+| **T6 — Money + comms** | Polar billing, email | #13, #14 |
 | **T7 — Trust + abuse** | App Check, evals | #15, #16 |
 | **T8 — Visualisation scale** | Sigma.js graph canvas | #17 |
 | **T9 — Operability** | Operator console v2, BigQuery sink | #18, #19 |
@@ -79,6 +79,8 @@ explicit in-progress/queued items before pulling from the broader backlog.
 | HQ-13 | ⚪ queued | P0 | Paid-core tool quality | Execute the `$100/month core` flagship hardening sprint from `docs/tools/CORE_TOOL_AUDIT_2026-04-27.md`: canonical tool ids, durable expensive outputs, provenance primitives, no unlabelled demo data, and role-visible recommendations. | A new user can create a situation, upload a document, generate Dashboard/Daily Brief/Risk or Humanitarian, create Policy Memo or Briefing, red-team it, reload, and find cited artifacts still present. | Treat this as product packaging plus engineering quality, not more tool breadth. Start with the audit's Top 15 coding priorities. |
 | HQ-14 | ⚪ queued | P0 | Tool persistence / provenance | Canonicalize registry id as the Firestore persistence key for flagship tools and migrate known drift (`conflict_graph`, `briefing_room`, `daily_brief`, `escalation_scan`, `policy_memo`, `media_compass`, `media_roundup`, `deep_research`). | Top 12 flagship tools read/write the same canonical key; migrated legacy rows still load; regenerated outputs survive navigation and reload. | Enables the core audit. Coordinate before touching Claude-owned UI hooks/routes. |
 | HQ-15 | ⚪ queued | P1 | Decision artifacts | Version and lock the paid-core artifacts: Daily Brief, Briefing Room, Policy Memo, Dossier, Deep Research Agent, Brainstorming Table, and Advisory Council. | Expensive outputs are durable, versioned where appropriate, cite sources, show confidence/gaps, and can be exported or promoted to Report Studio. | Use `CORE_TOOL_AUDIT_2026-04-27.md` tickets T15, T17, T19, T20, T27, T31, T43, T45. |
+| HQ-16 | 🟡 in-progress | P0 | Billing / entitlements | Complete Stripe-to-Polar transition: fresh OAT, three Polar products, 14-day trials, webhook secret, checkout smoke, customer portal smoke, Firestore entitlement mirror, and docs cleanup. | `/api/polar/checkout` returns a hosted checkout URL; Polar webhook updates `users/{uid}.subscription`; canceled/revoked subs downgrade to free; `/api/polar/portal` opens customer portal; no `STRIPE_*` vars are required for paid launch. | Current supplied OAT failed production and sandbox auth on 2026-04-28; regenerate from Polar org settings before live test. |
+| HQ-17 | ⚪ queued | P0 | Firestore / corpus shape | Normalize research artifacts and tool outputs into one canonical evidence envelope, then feed it to Ask PRAXIS/SKC. | `research`, `auto-briefings`, `tool-data`, and `tools` either migrate or expose a shared read adapter; every retrieved item has source, situation id, tool id, createdAt, confidence/provenance, and owner uid. | Preserve Firestore as canonical user-facing state. Consider tightening client writes for server-generated situation artifacts after migration. |
 
 ---
 

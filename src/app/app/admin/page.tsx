@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Activity, Brain, Database, FileText, ShieldCheck, Users } from 'lucide-react';
+import { Activity, Brain, CreditCard, Database, FileText, KeyRound, ShieldCheck, Users } from 'lucide-react';
 
 const adminTools = [
   {
@@ -17,8 +17,20 @@ const adminTools = [
   {
     href: '/app/admin/users',
     title: 'Users',
-    description: 'Review authenticated users, providers, profile status, and credits.',
+    description: 'Review authenticated users, Polar status, promo expiry, provider keys, and credits.',
     icon: Users,
+  },
+  {
+    href: '/app/settings/system-health',
+    title: 'Billing & Provider Health',
+    description: 'Check Polar, Firecrawl, Parallel, Vertex, Google AI, Secret Manager, and runtime configuration.',
+    icon: CreditCard,
+  },
+  {
+    href: '/app/settings/api-keys',
+    title: 'Provider Key Registry',
+    description: 'Validate user/platform provider coverage for Google AI, Firecrawl, Parallel, Tavily, and model keys.',
+    icon: KeyRound,
   },
   {
     href: '/app/admin/advisors',

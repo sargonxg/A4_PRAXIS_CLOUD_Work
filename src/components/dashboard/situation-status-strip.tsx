@@ -40,6 +40,7 @@ function relativeDate(iso?: string): string {
 
 export function SituationStatusStrip({ situation }: Props) {
   const risk = typeof situation.riskScore === 'number' ? Math.round(situation.riskScore) : null;
+  const riskMax = risk !== null && risk <= 10 ? 10 : 100;
   const stage = typeof situation.glaslStage === 'number' ? situation.glaslStage : null;
 
   const cells: Array<{
@@ -58,8 +59,13 @@ export function SituationStatusStrip({ situation }: Props) {
     {
       icon: <Activity className="h-3.5 w-3.5" />,
       label: 'Risk',
-      value: risk !== null ? `${risk}` : '—',
-      valueClass: risk !== null && risk >= 65 ? 'text-red-600' : risk !== null && risk >= 35 ? 'text-amber-600' : 'text-emerald-600',
+      value: risk !== null ? `${risk}/${riskMax}` : '—',
+      valueClass:
+        risk !== null && (riskMax === 10 ? risk >= 7 : risk >= 65)
+          ? 'text-red-600'
+          : risk !== null && (riskMax === 10 ? risk >= 4 : risk >= 35)
+            ? 'text-amber-600'
+            : 'text-emerald-600',
       sub: stage !== null ? `Glasl ${stage}` : undefined,
     },
     {

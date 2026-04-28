@@ -95,7 +95,60 @@ apply the `praxis_analytics.gdelt_situation_events` DDL per §3, build
 the Cloud Run Job per §4, schedule per §5. Cap at $2–5/month at MVP
 scale.
 
-### 1d. Stripe (~2 h, when ready to monetize)
+### 1d. Polar billing (~2 h, active launch path)
+
+Polar is the active subscription provider. Stripe references below are legacy
+research notes only and should not be used for launch unless the billing
+provider decision changes again.
+
+Required secrets:
+
+```bash
+gcloud secrets create praxis-polar-access-token --replication-policy=automatic
+gcloud secrets create praxis-polar-webhook-secret --replication-policy=automatic
+gcloud secrets create praxis-polar-product-analyst --replication-policy=automatic
+gcloud secrets create praxis-polar-product-team --replication-policy=automatic
+```
+
+Cloud Run env names:
+
+- `POLAR_ACCESS_TOKEN`
+- `POLAR_WEBHOOK_SECRET`
+- `POLAR_SERVER=production`
+- `POLAR_SUCCESS_URL=https://praxis.tacitus.me/app/settings?payment=success&provider=polar&checkout_id={CHECKOUT_ID}`
+- `POLAR_PRODUCT_ANALYST`
+- `POLAR_PRODUCT_TEAM`
+- `POLAR_PRODUCT_ENTERPRISE` if institution becomes self-serve
+
+Webhook endpoint:
+
+- `https://praxis.tacitus.me/api/polar/webhook`
+
+Subscribe to subscription lifecycle events and `order.paid`. The app mirrors
+entitlements into `users/{uid}` and reads them from Firestore through
+`src/lib/api/tier.ts`.
+
+### 1e. Premium research providers
+
+Secrets now created in project `praxisbytacitus`:
+
+- `praxis-firecrawl-api-key` -> `FIRECRAWL_API_KEY`
+- `praxis-parallel-api-key` -> `PARALLEL_API_KEY`
+
+`cloudbuild.yaml` mounts both on frontend and backend Cloud Run services.
+Firecrawl is used for premium search/scrape/crawl/map/extract workflows with
+free fallbacks. Parallel is used for LLM-optimized second-lens search and is
+also configured as Codex MCP server `parallel-search`.
+
+Recommended use:
+
+- Free users: Google/Vertex + open fallbacks.
+- Promo/Analyst/Team/Enterprise: Firecrawl + Parallel enabled by platform key,
+  with user keys overriding in `/app/settings/api-keys`.
+- Heavy crawls, maps, structured extraction, and advanced Parallel/deep tasks:
+  paid/trial only or support-approved.
+
+### 1f. Stripe (legacy)
 
 1. In the Stripe Dashboard:
    - Create products **PRAXIS Analyst** ($49/mo) and **PRAXIS Team** ($199/mo).

@@ -142,6 +142,12 @@ export interface Situation {
    */
   sourceCategoryOrder?: string[];
   /**
+   * Product-facing workflow path selected at situation creation. Used to tune
+   * dashboard quick actions and onboarding recommendations.
+   */
+  workflowPath?: string;
+  workflowPathLabel?: string;
+  /**
    * Custom per-situation source URLs the user attached via the SourcePicker
    * "Add custom source" dialog. These are scraped alongside the built-in
    * feeds for this situation.
@@ -175,6 +181,8 @@ export interface CreateSituationInput {
   escalationTrend?: EscalationTrend;
   sourceCategoriesEnabled?: Record<string, boolean>;
   sourceCategoryOrder?: string[];
+  workflowPath?: string;
+  workflowPathLabel?: string;
   customSources?: Array<{
     id: string;
     url: string;

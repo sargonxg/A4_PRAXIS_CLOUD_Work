@@ -351,7 +351,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // ---------------------------------------------------------------------------
   // Real-time credit sync: listen for Firestore profile changes so credits
-  // update instantly after Stripe payments, AI usage, or admin adjustments.
+  // update instantly after Polar payments, AI usage, or admin adjustments.
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (!firebaseUser || isDemoMode) return;

@@ -88,7 +88,7 @@ export function AccountStatusCard() {
           ) : keys.length === 0 ? (
             <p className="text-xs text-navy-500">
               <KeyRound className="mr-1 inline h-3 w-3" />
-              Add Firecrawl + Parallel keys for deep research.
+              Firecrawl + Parallel are available as platform premium research boosters.
             </p>
           ) : (
             <ul className="flex flex-col gap-0.5">
