@@ -295,10 +295,10 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
   // ── DRAFTING ──────────────────────────────────────────────────────────────
   {
     id: 'assistant',
-    name: 'PRAXIS Assistant',
+    name: 'Ask PRAXIS',
     category: 'drafting',
-    description: 'Full AI assistant with 21 specialist tools, situation-aware context, and UN/diplomatic language standards. Handles research, drafting, analysis, and structured data extraction in a persistent multi-turn chat interface.',
-    shortDescription: '21-tool AI assistant with situation context',
+    description: 'Situation-aware AI research chat with 21 specialist tools, grounded search, document retrieval, and UN/diplomatic language standards. Handles research, drafting, analysis, and structured data extraction in a persistent multi-turn interface.',
+    shortDescription: 'Situation-aware research chat with 21 tools',
     credits: 1,
     icon: 'MessageSquare',
     aiRoute: '/api/ai/chat',
@@ -308,7 +308,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     frameworks: ['UN Editorial Manual', 'Fisher-Ury Principled Negotiation', 'Glasl Escalation Model'],
     dataSources: ['GDELT', 'UCDP', 'Firecrawl'],
     relatedTools: ['report-studio', 'argus', 'deep-search-agent'],
-    methodology: 'The PRAXIS Assistant operates with a situation-enriched system prompt containing the full ACO conflict grammar context (25-line context block: risk level, Glasl stage, actor list, graph entities, document inventory). Tool calls are dispatched via AI SDK 6 tool-calling to 21 specialist functions: webSearch, analyzeDocument, queryConflictGraph, draftSection, editForDiplomaticTone, analyzeMediaSource, compareMediaCoverage, checkUNTerminology, draftResolutionLanguage, generateTalkingPoints, escalationAssessment, negotiationSpaceAnalysis, narrativeEcosystemMap, historicalParallelAnalysis, generateTimeline, sanctionsCheck, humanitarianSnapshot, compareConflicts, canonicalNameLookup, deepSourceResearch, verifyAndStandardize. All output uses UN Editorial Manual standards for spelling (British English), abbreviations, and diplomatic formulations.',
+    methodology: 'Ask PRAXIS operates with a situation-enriched system prompt containing the full ACO conflict grammar context (25-line context block: risk level, Glasl stage, actor list, graph entities, document inventory). Tool calls are dispatched via AI SDK 6 tool-calling to 21 specialist functions: webSearch, analyzeDocument, queryConflictGraph, draftSection, editForDiplomaticTone, analyzeMediaSource, compareMediaCoverage, checkUNTerminology, draftResolutionLanguage, generateTalkingPoints, escalationAssessment, negotiationSpaceAnalysis, narrativeEcosystemMap, historicalParallelAnalysis, generateTimeline, sanctionsCheck, humanitarianSnapshot, compareConflicts, canonicalNameLookup, deepSourceResearch, verifyAndStandardize. All output uses UN Editorial Manual standards for spelling (British English), abbreviations, and diplomatic formulations.',
   },
   {
     id: 'report-studio',

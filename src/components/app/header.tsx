@@ -24,7 +24,7 @@ const routeLabels: Record<string, string> = {
   dashboard: 'Dashboard',
   reports: 'Report Studio',
   new: 'New Report',
-  assistant: 'PRAXIS Assistant',
+  assistant: 'Ask PRAXIS',
   'media-compass': 'Media Compass',
   'conflict-graph': 'Conflict Graph',
   'un-toolkit': 'UN Toolkit',

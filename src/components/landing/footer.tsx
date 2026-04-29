@@ -9,7 +9,7 @@ const footerSections = [
       { label: "Demo", href: "/demo/dashboard" },
       { label: "Pricing", href: "/pricing" },
       { label: "Report Studio", href: "/demo/reports" },
-      { label: "PRAXIS Assistant", href: "/demo/assistant" },
+      { label: "Ask PRAXIS", href: "/demo/assistant" },
       { label: "Conflict Graph", href: "/demo/conflict-graph" },
       { label: "Deep Search Agent", href: "/demo/deep-search-agent" },
     ],

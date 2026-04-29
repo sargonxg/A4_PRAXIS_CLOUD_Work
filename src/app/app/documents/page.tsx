@@ -1932,7 +1932,7 @@ function DocumentVaultUI({ situationId }: DocumentVaultUIProps) {
                                   {selectedDoc.chunkCount > 0 && (
                                     <p className="text-xs text-navy-500 flex items-center gap-1.5">
                                       <CheckCircle2 className="h-3 w-3 text-sage shrink-0" />
-                                      This document is chunked and indexed for AI-assisted analysis in the PRAXIS Assistant.
+                                      This document is chunked and indexed for AI-assisted analysis in Ask PRAXIS.
                                     </p>
                                   )}
                                 </div>

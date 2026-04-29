@@ -118,7 +118,7 @@ const TOOL_DOCS: ToolDoc[] = [
 
   // ── Analysis & Drafting ──
   {
-    name: 'PRAXIS Assistant',
+    name: 'Ask PRAXIS',
     path: '/assistant',
     icon: MessageSquare,
     section: 'Analysis & Drafting',

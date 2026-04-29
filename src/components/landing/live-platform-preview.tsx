@@ -26,7 +26,7 @@ const TOOL_CATEGORIES = [
     id: 'analysis',
     label: 'Analysis & Drafting',
     tools: [
-      { name: 'PRAXIS Assistant', icon: MessageSquare, desc: 'Specialized tools for conflict-analysis questions with web research, document retrieval, and structured outputs.' },
+      { name: 'Ask PRAXIS', icon: MessageSquare, desc: 'Situation-aware research chat for conflict-analysis questions with web research, document retrieval, and structured outputs.' },
       { name: 'Report Studio', icon: FileText, desc: 'Report generation with DOCX/PDF export and templates for situation reports, dossiers, and UNSC-style briefs.' },
       { name: 'Scenario Planner', icon: Zap, desc: 'Compare escalation paths, ceasefire scenarios, and intervention options with assumptions made explicit' },
       { name: 'Negotiation Prep', icon: Scale, desc: 'ZOPA/BATNA analysis grounded in Fisher/Ury methodology. Map negotiation space and value-creation opportunities.' },

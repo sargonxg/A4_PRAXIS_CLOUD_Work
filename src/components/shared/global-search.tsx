@@ -16,7 +16,7 @@ interface SearchResult {
 
 const STATIC_RESULTS: SearchResult[] = [
   { id: 'dashboard', label: 'Dashboard', description: 'Situation overview & AI daily brief', category: 'page', href: '/dashboard' },
-  { id: 'assistant', label: 'PRAXIS Assistant', description: 'AI chat interface', category: 'page', href: '/assistant' },
+  { id: 'assistant', label: 'Ask PRAXIS', description: 'Situation-aware AI research chat', category: 'page', href: '/assistant' },
   { id: 'reports', label: 'Report Studio', description: 'Draft intelligence reports', category: 'page', href: '/reports' },
   { id: 'early-warning', label: 'Early Warning System', description: 'Risk monitoring & alerts', category: 'page', href: '/early-warning' },
   { id: 'conflict-graph', label: 'Conflict Graph', description: 'Visual entity mapping', category: 'page', href: '/conflict-graph' },
@@ -243,7 +243,7 @@ export function GlobalSearch({ onClose }: { onClose: () => void }) {
                   <Sparkles className="h-3.5 w-3.5 text-gold-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-navy-900">Ask PRAXIS Assistant about &ldquo;{query}&rdquo;</p>
+                  <p className="text-sm font-medium text-navy-900">Ask PRAXIS about &ldquo;{query}&rdquo;</p>
                   <p className="text-[11px] text-navy-400">Get AI-powered analysis</p>
                 </div>
               </button>

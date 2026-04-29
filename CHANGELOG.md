@@ -17,6 +17,8 @@
 - Cloud Build GCP audit enforcement is now enabled by default and the audit
   checks all mounted production research/agent secrets.
 - Ask PRAXIS naming and guided-tour copy were updated for product coherence.
+- Standardized remaining live app, landing, search, sidebar, document, and
+  tool-registry labels from “PRAXIS Assistant” to “Ask PRAXIS”.
 
 All notable changes to PRAXIS by TACITUS are documented in this file.
 
