@@ -2,6 +2,74 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-29 — Tool Provenance Hardening + Enforced GCP Audit
+
+Source:
+
+- Commit: `8fbe2f7`
+- Branch: `main`
+- Remote: `origin/main`
+
+What changed:
+
+- Added the consolidated 20-item subagent roadmap:
+  `docs/PRAXIS_NEXT_20_IMPROVEMENTS_2026-04-29.md`.
+- Added canonical versioned tool-output envelopes under `tool-data/{toolId}`
+  while preserving the legacy `tools/{toolId}` compatibility documents.
+- Updated Export Center to read canonical and legacy outputs, prefer canonical
+  envelopes, and include provenance/compatibility metadata in exported bundles.
+- Added structured validation and canonical persistence to terminology,
+  extract-episodes, deep research, deep search agent, and grounded-search
+  flows.
+- Renamed user-facing assistant surfaces to Ask PRAXIS and passed the active
+  `situationId` into grounded-search chat requests.
+- Improved guided walkthrough copy so it no longer depends on stale demo
+  language.
+- Hardened `scripts/audit-tools.ts` so delegated AI routes are scored against
+  their real implementation files.
+- Turned Cloud Build GCP audit enforcement back on with `_AUDIT_GCP_SKIP=0`.
+
+Validation before deploy:
+
+- `npx vitest run tests/unit/lib/api/save-tool-output.test.ts tests/unit/scripts/audit-tools.test.ts tests/unit/lib/knowledge/evidence-envelope.test.ts tests/unit/lib/knowledge/tool-output-layer.test.ts tests/unit/lib/api/with-calibration.test.ts` passed.
+- `npx tsc --noEmit` passed.
+- `npm run audit:tools` passed and regenerated
+  `docs/audits/tools-2026-04-29.md`.
+- `npm run audit:routes` passed: 62 calibrated AI routes and 5 exempt.
+- `npm run audit:gcp` passed locally with zero hard failures and zero soft
+  warnings.
+- `npm run build` passed with only the known Next.js middleware-to-proxy
+  warning.
+- `npm run lint` exited successfully with existing repo-wide warnings and no
+  errors.
+- Exact secret scan over changed source, scripts, docs, tests, cloudbuild, and
+  changelog/TODO files returned no sensitive-token hits.
+
+Cloud Build:
+
+- Initial enforced audit build `a8b62d27-b9d3-499b-b674-3195159ab5bb` failed
+  because the actual build identity lacked read-only audit permissions.
+- Follow-up build `110fd631-d7e3-40ca-b5ee-294eb1f13742` failed only on
+  upload bucket metadata visibility.
+- Granted the Cloud Build service identities project-level read-only audit
+  roles plus bucket-level `roles/storage.legacyBucketReader` on the uploads
+  bucket.
+- Successful build: `d6c0bbb8-2bf9-4266-81cd-d20064d3a693`
+- Status: `SUCCESS`
+- Duration: `9M46S`
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00132-jz6`
+- Backend revision: `praxis-backend-00076-ttp`
+
+Production verification:
+
+- `https://praxis.tacitus.me/api/health` returned `status: ok`.
+- `/api/health` reported `ai_provider: ok`, `vertex_adk: ok`, and request
+  safeguard limits including `maxMessages: 50`.
+- `https://praxis.tacitus.me/api/health/feeds` returned `11/11 feeds active`.
+
 ## 2026-04-29 — Vertex AI Agent Engine activation
 
 Provisioned the PRAXIS Deep Research Agent on Vertex AI Agent Engine in
