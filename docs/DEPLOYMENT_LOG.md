@@ -2,6 +2,35 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-04-29 — Vertex AI Agent Engine activation
+
+Provisioned the PRAXIS Deep Research Agent on Vertex AI Agent Engine in
+`praxisbytacitus` / `us-central1`.
+
+What changed:
+
+- Enabled and verified Vertex AI / Storage / Secret Manager prerequisites.
+- Installed a supported local Python 3.12 runtime for Agent Engine deployment.
+- Deployed `backend/agents/deploy.py` to Vertex AI Agent Engine using the
+  staging bucket `gs://praxisbytacitus-agent-staging`.
+- Stored the numeric engine ID in Secret Manager
+  `praxis-vertex-adk-engine-id`.
+- Granted the frontend and backend Cloud Run service accounts access to the
+  engine ID secret.
+- Mounted `VERTEX_AGENT_ENGINE_ID` and `VERTEX_AGENT_LOCATION=us-central1` on
+  `praxis-frontend`.
+- Updated `cloudbuild.yaml` so future Cloud Build deploys preserve the Vertex
+  Agent Engine mount.
+- Removed ACLED references from the deployable deep-research agent prompts in
+  favor of UCDP, GDELT, ReliefWeb, UN sources, peer-reviewed work, and media of
+  record.
+
+Production verification:
+
+- Frontend revision: `praxis-frontend-00128-fnd`.
+- `https://praxis.tacitus.me/api/health` reports `checks.vertex_adk = ok`.
+- `checks.ai_provider = ok`.
+
 ## 2026-04-28 — Authenticated backend proxy + admin reset hardening (DEPLOYED, smoke OK)
 
 Source commits deployed:

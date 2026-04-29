@@ -15,10 +15,10 @@ can. Every command is scoped to project `praxisbytacitus` and region
 The order below is the same as `docs/SPRINT_2026-04-25.md` Stream C — fastest
 user value first.
 
-Current production note (2026-04-28): core Gemini/Vertex provider health and
-Firecrawl are expected to work without blocking free users. Vertex AI Agent
-Engine and Polar remain optional until their Secret Manager values are mounted;
-`/app/settings/system-health` now shows the live status for each integration.
+Current production note (2026-04-29): core Gemini/Vertex provider health,
+Firecrawl, and Vertex AI Agent Engine are active in production. Polar remains
+optional until its Secret Manager values are mounted; `/app/settings/system-health`
+now shows the live status for each integration.
 
 ### 1a. ~~ACLED~~ — **withdrawn 2026-04-25**
 
@@ -76,9 +76,9 @@ Event-level intelligence is now served from **GDELT BigQuery**
    ```
    (There is **no separate `roles/aiplatform.reasoningEngineUser`**;
    `roles/aiplatform.user` is the canonical invoker role as of April 2026.)
-7. Add `VERTEX_AGENT_ENGINE_ID=praxis-vertex-adk-engine-id:latest` to
-   `cloudbuild.yaml` `--update-secrets` for the frontend.
-8. Verify: `curl -s https://praxis.tacitus.me/api/health | jq '.vertex_adk'`.
+7. Keep `VERTEX_AGENT_ENGINE_ID=praxis-vertex-adk-engine-id:latest` mounted in
+   `cloudbuild.yaml` `--set-secrets` for the frontend.
+8. Verify: `curl -s https://praxis.tacitus.me/api/health | jq '.checks.vertex_adk'`.
 
 ### 1c. GDELT BigQuery hot slice (free <1 TB/mo, ~2 h)
 
