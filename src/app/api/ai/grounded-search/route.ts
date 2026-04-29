@@ -65,6 +65,7 @@ export const POST = withCalibration('grounded-search', 'ai_grounded_search', {
         situationId,
         toolId: 'grounded-search',
         profileVersion: ctx.calibration.provenance.profileVersion,
+        toolRunId: ctx.toolRunId,
         output: {
           query,
           conflictContextPresent: Boolean(conflictContext),

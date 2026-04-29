@@ -14,6 +14,9 @@ interface ToolOutput {
   displayName: string;
   generatedAt: string | null;
   hasData: boolean;
+  sourceCollection: 'tool-data' | 'tools';
+  version?: number;
+  profileVersion?: number;
 }
 
 const TOOL_DISPLAY_NAMES: Record<string, string> = {
@@ -37,7 +40,38 @@ const TOOL_DISPLAY_NAMES: Record<string, string> = {
   power_map: 'Power Map',
   actor_enrichment: 'Actor Enrichment',
   historical_parallels: 'Historical Parallels',
+  'deep-search-agent': 'Deep Search Agent',
+  deep_research: 'Deep Research',
+  'deep-research': 'Deep Research',
+  terminology: 'UN Terminology Check',
+  'extract-episodes': 'Timeline Episode Extraction',
+  'situation-intelligence': 'Executive Situation Intelligence',
 };
+
+function normalizeToolDoc(id: string, raw: Record<string, unknown>, sourceCollection: 'tool-data' | 'tools') {
+  const payload = sourceCollection === 'tool-data'
+    ? {
+        toolId: id,
+        output: raw.data ?? raw.output ?? raw,
+        generatedAt: raw.generatedAt,
+        profileVersion: raw.profileVersion,
+        version: raw.version,
+        metadata: raw.metadata,
+        sourceReceipts: raw.sourceReceipts,
+      }
+    : raw;
+
+  return {
+    payload: payload as Record<string, unknown>,
+    generatedAt: typeof raw.generatedAt === 'string'
+      ? raw.generatedAt
+      : typeof raw.generatedAtIso === 'string'
+        ? raw.generatedAtIso
+        : null,
+    version: typeof raw.version === 'number' ? raw.version : undefined,
+    profileVersion: typeof raw.profileVersion === 'number' ? raw.profileVersion : undefined,
+  };
+}
 
 function downloadJSON(filename: string, data: unknown) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -100,28 +134,61 @@ export default function ExportCenterPage() {
   const [exportingAll, setExportingAll] = useState(false);
 
   useEffect(() => {
-    if (!user?.id || !situation?.id) { setLoading(false); return; }
+    let cancelled = false;
 
-    getDocs(collection(db, 'users', user.id, 'situations', situation.id, 'tools'))
-      .then((snap) => {
+    async function loadOutputs() {
+      if (!user?.id || !situation?.id) {
+        if (!cancelled) {
+          setTools([]);
+          setToolData({});
+          setLoading(false);
+        }
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const [toolDataSnap, toolsSnap] = await Promise.all([
+          getDocs(collection(db, 'users', user.id, 'situations', situation.id, 'tool-data')),
+          getDocs(collection(db, 'users', user.id, 'situations', situation.id, 'tools')),
+        ]);
         const data: Record<string, Record<string, unknown>> = {};
         const outputs: ToolOutput[] = [];
 
-        snap.forEach((doc) => {
+        function addDoc(doc: { id: string; data: () => Record<string, unknown> }, sourceCollection: 'tool-data' | 'tools') {
+          if (data[doc.id] && sourceCollection === 'tools') return;
           const d = doc.data() as Record<string, unknown>;
-          data[doc.id] = d;
+          const normalized = normalizeToolDoc(doc.id, d, sourceCollection);
+          data[doc.id] = normalized.payload;
+          const existingIndex = outputs.findIndex((item) => item.toolName === doc.id);
+          if (existingIndex >= 0) outputs.splice(existingIndex, 1);
           outputs.push({
             toolName: doc.id,
             displayName: TOOL_DISPLAY_NAMES[doc.id] || doc.id,
-            generatedAt: d.generatedAt as string | null,
+            generatedAt: normalized.generatedAt,
             hasData: true,
+            sourceCollection,
+            version: normalized.version,
+            profileVersion: normalized.profileVersion,
           });
-        });
+        }
 
-        setToolData(data);
-        setTools(outputs.sort((a, b) => a.displayName.localeCompare(b.displayName)));
-      })
-      .finally(() => setLoading(false));
+        toolDataSnap.forEach((doc) => addDoc(doc, 'tool-data'));
+        toolsSnap.forEach((doc) => addDoc(doc, 'tools'));
+
+        if (!cancelled) {
+          setToolData(data);
+          setTools(outputs.sort((a, b) => a.displayName.localeCompare(b.displayName)));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void loadOutputs();
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id, situation?.id]);
 
   if (showGuard) return <NoSituationState />;
@@ -132,6 +199,12 @@ export default function ExportCenterPage() {
       situation: { id: situation?.id, name: situation?.name },
       exportedAt: new Date().toISOString(),
       tools: toolData,
+      provenance: {
+        exportedFrom: 'Export Center',
+        canonicalCollection: 'tool-data',
+        compatibilityCollections: ['tool-data', 'tools'],
+        note: 'tool-data entries are canonical versioned envelopes; tools entries are legacy compatibility outputs.',
+      },
     };
     downloadJSON(`praxis-${situation?.name?.replace(/\s+/g, '-').toLowerCase()}-export.json`, bundle);
     setExportingAll(false);
@@ -180,6 +253,11 @@ export default function ExportCenterPage() {
                     Generated {new Date(tool.generatedAt).toLocaleDateString()} at {new Date(tool.generatedAt).toLocaleTimeString()}
                   </p>
                 )}
+                <p className="text-[10px] text-navy-400">
+                  {tool.sourceCollection === 'tool-data' ? 'Canonical envelope' : 'Legacy output'}
+                  {tool.version ? ` · v${tool.version}` : ''}
+                  {tool.profileVersion ? ` · profile v${tool.profileVersion}` : ''}
+                </p>
               </div>
               <div className="flex gap-2">
                 <button

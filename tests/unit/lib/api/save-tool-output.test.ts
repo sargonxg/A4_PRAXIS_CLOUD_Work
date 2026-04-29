@@ -8,11 +8,27 @@ import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 describe('saveToolOutput', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('writes to situations/{id}/tools/{toolId} with profile version', async () => {
-    const setMock = vi.fn().mockResolvedValue(undefined);
-    const toolsDocMock = vi.fn(() => ({ set: setMock }));
+  it('writes canonical tool-data and legacy tools documents with profile version', async () => {
+    const legacySetMock = vi.fn().mockResolvedValue(undefined);
+    const canonicalSetMock = vi.fn().mockResolvedValue(undefined);
+    const versionSetMock = vi.fn().mockResolvedValue(undefined);
+    const versionDocMock = vi.fn(() => ({ set: versionSetMock }));
+    const versionsCollMock = vi.fn(() => ({ doc: versionDocMock }));
+    const toolsDocMock = vi.fn(() => ({ set: legacySetMock }));
+    const toolDataDocMock = vi.fn(() => ({
+      get: vi.fn().mockResolvedValue({ exists: false }),
+      set: canonicalSetMock,
+      collection: versionsCollMock,
+    }));
     const toolsCollMock = vi.fn(() => ({ doc: toolsDocMock }));
-    const situationsDocMock = vi.fn(() => ({ collection: toolsCollMock }));
+    const toolDataCollMock = vi.fn(() => ({ doc: toolDataDocMock }));
+    const situationsDocMock = vi.fn(() => ({
+      collection: vi.fn((name: string) => {
+        if (name === 'tools') return toolsCollMock();
+        if (name === 'tool-data') return toolDataCollMock();
+        throw new Error(`Unexpected collection ${name}`);
+      }),
+    }));
     const situationsCollMock = vi.fn(() => ({ doc: situationsDocMock }));
     const usersDocMock = vi.fn(() => ({ collection: situationsCollMock }));
     const db = { collection: vi.fn(() => ({ doc: usersDocMock })) };
@@ -21,8 +37,14 @@ describe('saveToolOutput', () => {
       uid: 'u1', situationId: 's1', toolId: 'risk-monitor',
       profileVersion: 3, output: { score: 8 },
     });
-    expect(setMock).toHaveBeenCalledWith(expect.objectContaining({
-      output: { score: 8 }, profileVersion: 3,
+    expect(canonicalSetMock).toHaveBeenCalledWith(expect.objectContaining({
+      data: { score: 8 }, profileVersion: 3, version: 1,
+    }), expect.any(Object));
+    expect(versionSetMock).toHaveBeenCalledWith(expect.objectContaining({
+      data: { score: 8 }, profileVersion: 3, version: 1,
+    }));
+    expect(legacySetMock).toHaveBeenCalledWith(expect.objectContaining({
+      output: { score: 8 }, profileVersion: 3, version: 1,
     }), expect.any(Object));
   });
 

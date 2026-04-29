@@ -30,6 +30,9 @@ current product direction: grounded Google Search is the primary live research
 path; GDELT, ReliefWeb, UN News, UCDP, HDX, UNHCR, World Bank, SIPRI, and
 Crisis Group are corroborating layers.
 
+The latest 20-item subagent audit and implementation wave is
+`docs/PRAXIS_NEXT_20_IMPROVEMENTS_2026-04-29.md`.
+
 ## Current Baseline
 
 - Product: PRAXIS by TACITUS, an AI-native workspace for policy, diplomacy,
@@ -61,6 +64,9 @@ Crisis Group are corroborating layers.
     `docs/audits/tools-2026-04-29.md`; `grounded-search` is now 6/11 and
     `research-extract` is 6/11.
   - `npm run audit:gcp`: passed, 0 hard failures and 0 soft warnings.
+  - GCP audit enforcement wave: Cloud Build audit IAM granted, `_AUDIT_GCP_SKIP`
+    flipped to `0`, and the audit now checks Firecrawl, Parallel, UCDP, and
+    Vertex Agent Engine secrets.
   - Shared AI safeguard tests:
     `npx vitest run tests/unit/lib/api/with-calibration.test.ts` passed
     with malformed JSON, excessive message history, and oversized request
@@ -100,6 +106,16 @@ trustworthy for a real user?
   - Next priority tools: deep-research source receipts, extract-episodes
     persistence, terminology persistence, report schema/provenance, and
     browser-regression coverage for Ask PRAXIS.
+  - Progress this wave: audit now scores delegated `ask-praxis` from the chat
+    implementation; `terminology`, `extract-episodes`, `deep-research`, and
+    `deep-search-agent` gained validation and/or canonical persistence.
+
+- [ ] Complete canonical tool-output envelope migration.
+  - Progress this wave: `saveToolOutput` writes canonical versioned
+    `tool-data/{toolId}` envelopes plus legacy `tools/{toolId}` compatibility
+    docs; Export Center reads both and labels canonical vs legacy exports.
+  - Next: migrate direct `writeToolDataServer` paths and add source receipts,
+    model/provider, and output-path telemetry to every flagship route.
 
 - [x] Fix the first Ask PRAXIS demo trust failure found by browser testing.
   - Browser path: `/login?mode=demo` -> `/demo/dashboard` -> `/demo/assistant`.
@@ -202,8 +218,10 @@ trustworthy for a real user?
   - Why: infrastructure drift must fail before production deploy, not after.
   - Files: `cloudbuild.yaml`, `scripts/audit-gcp.mjs`,
     `infrastructure/grant-cloudbuild-audit-iam.sh`.
-  - Done when: the Cloud Build service account has read-only audit permissions
-    and `_AUDIT_GCP_SKIP` is removed or defaults to blocked.
+  - Progress this wave: Cloud Build service account received read-only audit
+    roles and `_AUDIT_GCP_SKIP` now defaults to `0`.
+  - Done when: a full Cloud Build deploy proves the enforced audit passes
+    under the build service account.
 
 - [ ] Smoke-test the five recently uplifted tools end-to-end on a real
   situation.

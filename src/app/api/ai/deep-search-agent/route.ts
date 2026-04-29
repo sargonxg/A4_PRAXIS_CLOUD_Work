@@ -10,8 +10,16 @@ import {
 import { conductResearch } from '@/lib/ai/research-engine';
 import { getSituationAdmin } from '@/lib/firebase/situations';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
+import { validateAiRequest } from '@/lib/api/validate-request';
+import { z } from 'zod';
 
 export const maxDuration = 120;
+
+const DeepSearchAgentRequestSchema = z.object({
+  query: z.string().min(1),
+  situationId: z.string().optional(),
+  sessionId: z.string().optional(),
+});
 
 /**
  * POST /api/ai/deep-search-agent
@@ -36,16 +44,11 @@ export const POST = withCalibration('deep_research', 'ai_deep_think', {
 
   // Credits + profile gate already handled by withCalibration above.
 
-  const body = await req.json() as { query?: string; situationId?: string; sessionId?: string };
-  const { query, situationId, sessionId: incomingSessionId } = body;
+  const body = await req.json();
+  const validation = validateAiRequest(body, DeepSearchAgentRequestSchema);
+  if (!validation.success) return validation.response;
+  const { query, situationId, sessionId: incomingSessionId } = validation.data;
   const user = ctx; // alias for existing code below that references `user.uid` / `user.isDemo`
-
-  if (!query?.trim()) {
-    return new Response(
-      JSON.stringify({ error: 'query is required' }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } },
-    );
-  }
 
   // Build situation-enriched query
   let enrichedQuery = query.trim();
@@ -119,8 +122,9 @@ Provide a thorough, evidence-based analysis using your web research capabilities
             await saveToolOutput({
               uid: ctx.uid,
               situationId,
-              toolId: 'deep_research',
+              toolId: 'deep-search-agent',
               profileVersion: ctx.calibration.provenance.profileVersion,
+              toolRunId: ctx.toolRunId,
               output: { query, fallback: reason, streamed: true },
               metadata: { variant: 'research-engine-fallback', fallbackReason: reason },
             }).catch((err) => console.warn('[deep_search_agent] fallback saveToolOutput failed:', err));
@@ -154,6 +158,7 @@ Provide a thorough, evidence-based analysis using your web research capabilities
   const stream = new ReadableStream({
     async start(controller) {
       let sessionId = incomingSessionId;
+      let outputSaved = false;
 
       try {
         // Resolve session ID: prefer incoming → Firestore persisted → create new
@@ -250,11 +255,13 @@ Provide a thorough, evidence-based analysis using your web research capabilities
                 await saveToolOutput({
                   uid: ctx.uid,
                   situationId,
-                  toolId: 'deep_research',
+                  toolId: 'deep-search-agent',
                   profileVersion: ctx.calibration.provenance.profileVersion,
+                  toolRunId: ctx.toolRunId,
                   output: { query, sessionId, streamed: true },
                   metadata: { variant: 'adk-agent', sessionId },
                 }).catch((err) => console.warn('[deep_search_agent] saveToolOutput failed:', err));
+                outputSaved = true;
               }
               controller.enqueue(emit({ type: 'done' }));
               controller.close();
@@ -274,6 +281,18 @@ Provide a thorough, evidence-based analysis using your web research capabilities
               text: event.text,
             }));
           }
+        }
+
+        if (!outputSaved && situationId && ctx.uid && !ctx.isDemo) {
+          await saveToolOutput({
+            uid: ctx.uid,
+            situationId,
+            toolId: 'deep-search-agent',
+            profileVersion: ctx.calibration.provenance.profileVersion,
+            toolRunId: ctx.toolRunId,
+            output: { query, sessionId, streamed: true, endedWithoutDoneEvent: true },
+            metadata: { variant: 'adk-agent', sessionId, endedWithoutDoneEvent: true },
+          }).catch((err) => console.warn('[deep_search_agent] final saveToolOutput failed:', err));
         }
 
         controller.enqueue(emit({ type: 'done' }));

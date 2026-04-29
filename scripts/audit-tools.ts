@@ -6,7 +6,7 @@
  * Run: npx tsx scripts/audit-tools.ts
  */
 import { readFileSync, writeFileSync, readdirSync, statSync, mkdirSync, existsSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 
 export interface ToolScore {
   toolId: string;
@@ -52,6 +52,22 @@ export function scoreRouteSource(toolId: string, src: string): ToolScore {
   return { toolId, path: '', dimensions: dims, score, notes };
 }
 
+function resolveDelegatedRouteSource(routePath: string, src: string): string {
+  const match = src.match(/export\s*\{\s*POST\s*\}\s*from\s*['"](.+)['"]/);
+  if (!match) return src;
+
+  const targetBase = resolve(dirname(routePath), match[1]);
+  const candidates = [targetBase, `${targetBase}.ts`, join(targetBase, 'route.ts')];
+  for (const target of candidates) {
+    try {
+      return `${readFileSync(target, 'utf8')}\n\n// Delegated route source: ${relative(process.cwd(), target)}`;
+    } catch {
+      // Try next candidate.
+    }
+  }
+  return src;
+}
+
 function walkRoutes(dir: string, out: string[] = []): string[] {
   for (const ent of readdirSync(dir)) {
     const full = join(dir, ent);
@@ -68,11 +84,12 @@ function toolIdFromPath(p: string): string {
 }
 
 function renderReport(results: ToolScore[]): string {
+  const dimensionCount = Object.keys(results[0]?.dimensions ?? {}).length;
   const header = `# PRAXIS Tool Calibration Audit — ${new Date().toISOString().slice(0, 10)}\n\n` +
-    `Audited ${results.length} AI routes. Score = count of 11 calibration dimensions satisfied.\n\n`;
+    `Audited ${results.length} AI routes. Score = count of ${dimensionCount} calibration dimensions satisfied.\n\n`;
   const table = ['| Tool | Score | withCal | SaveOut | VerStamp | SKC | Zod | Credits |',
                  '|---|---|---|---|---|---|---|---|']
-    .concat(results.map(r => `| ${r.toolId} | ${r.score}/11 | ${mark(r.dimensions.withCalibration)} | ${mark(r.dimensions.saveToolOutput)} | ${mark(r.dimensions.profileVersionStamp)} | ${mark(r.dimensions.usesSKCRetrieval)} | ${mark(r.dimensions.zodSchema)} | ${mark(r.dimensions.creditsDeducted)} |`))
+    .concat(results.map(r => `| ${r.toolId} | ${r.score}/${dimensionCount} | ${mark(r.dimensions.withCalibration)} | ${mark(r.dimensions.saveToolOutput)} | ${mark(r.dimensions.profileVersionStamp)} | ${mark(r.dimensions.usesSKCRetrieval)} | ${mark(r.dimensions.zodSchema)} | ${mark(r.dimensions.creditsDeducted)} |`))
     .join('\n');
   const details = results.filter(r => r.notes.length).map(r => `### ${r.toolId}\n${r.notes.map(n => `- ${n}`).join('\n')}`).join('\n\n');
   return header + table + '\n\n## Per-tool notes\n\n' + details + '\n';
@@ -85,7 +102,7 @@ function main() {
   const routes = walkRoutes(root);
   const results = routes.map(p => {
     const src = readFileSync(p, 'utf8');
-    const score = scoreRouteSource(toolIdFromPath(p), src);
+    const score = scoreRouteSource(toolIdFromPath(p), resolveDelegatedRouteSource(p, src));
     score.path = relative(process.cwd(), p);
     return score;
   }).sort((a, b) => a.score - b.score);
@@ -95,8 +112,9 @@ function main() {
   if (!existsSync(auditsDir)) mkdirSync(auditsDir, { recursive: true });
   const out = join(auditsDir, `tools-${dateStr}.md`);
   writeFileSync(out, renderReport(results));
+  const dimensionCount = Object.keys(results[0]?.dimensions ?? {}).length;
   console.log(`✓ Wrote ${out}`);
-  console.log(`  ${results.filter(r => r.score >= 10).length}/${results.length} tools ≥10/11`);
+  console.log(`  ${results.filter(r => r.score >= 10).length}/${results.length} tools ≥10/${dimensionCount}`);
 }
 
 // Run only when invoked directly

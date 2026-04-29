@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X, Mail, Compass } from 'lucide-react';
@@ -29,9 +29,9 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   },
   {
     id: 'step-2',
-    title: 'Active Conflicts',
+    title: 'Active Situations',
     description:
-      'These are your monitored conflict scenarios. Each shows real-time risk scores and recent events.',
+      'These are your monitored situations. Each shows risk, recent work, source coverage, and next recommended actions.',
     targetDataAttr: 'data-tour="active-conflicts"',
     page: '/dashboard',
     position: 'right',
@@ -48,9 +48,9 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   },
   {
     id: 'step-4',
-    title: 'AI Analysis',
+    title: 'Ask PRAXIS',
     description:
-      'Ask the AI anything about the conflict. Try: "What leverage does Karovia have over the Government?"',
+      'Ask PRAXIS about the active situation, request a cited research pass, or turn graph context into a briefing question.',
     targetDataAttr: 'data-tour="ai-explore"',
     page: '/conflict-graph',
     position: 'left',
@@ -89,7 +89,7 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     id: 'step-8',
     title: 'Tour Complete!',
     description:
-      "You've seen the core features. PRAXIS has 15+ tools to explore. Every AI feature is live — grounded in Vertex AI / Gemini and your situation context.",
+      "You've seen the core workflow. PRAXIS has 40+ specialized tools; live outputs use Vertex AI / Gemini, grounded search, and your situation context when configured.",
     page: '/scenarios',
     position: 'center',
     isLast: true,

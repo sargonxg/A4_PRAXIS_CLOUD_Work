@@ -239,6 +239,7 @@ export function ChatInterface() {
   // Pass full situation data to AI for context-aware responses
   const chatBody = {
     conflictContext: conflictLabel || effectiveSituation?.name || undefined,
+    situationId: effectiveSituation?.id,
     situation: effectiveSituation ?? undefined,
     aiSettings: { analysisDepth: analysisMode },
   };
@@ -376,8 +377,8 @@ export function ChatInterface() {
             <span className="text-lg font-serif font-bold text-gold-600">T</span>
           </div>
           <div>
-            <h1 className="font-serif text-xl text-navy-900">Diplomatic Assistant</h1>
-            <p className="text-xs text-navy-400">AI-powered analysis, drafting, and research</p>
+            <h1 className="font-serif text-xl text-navy-900">Ask PRAXIS</h1>
+            <p className="text-xs text-navy-400">Situation-aware analysis, drafting, and live research</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
@@ -460,12 +461,12 @@ export function ChatInterface() {
                   )}
                 </div>
                 <h2 className="font-serif text-2xl text-navy-900 mb-2">
-                  {useGroundedMode ? 'Live Research Assistant' : 'TACITUS Diplomatic Assistant'}
+                  {useGroundedMode ? 'Ask PRAXIS Live Research' : 'Ask PRAXIS'}
                 </h2>
                 <p className="text-sm text-navy-400 max-w-lg mx-auto leading-relaxed">
                   {useGroundedMode
                     ? 'Search-grounded conflict intelligence for current developments, breaking news, and recent diplomatic activity. Use this when recency matters most.'
-                    : 'AI-powered diplomatic intelligence with structured tool access. Query the conflict graph, draft reports, analyze media, assess escalation, and map negotiation space.'}
+                    : 'Situation-aware intelligence with structured tool access. Query the conflict graph, draft reports, analyze media, assess escalation, and map negotiation space.'}
                 </p>
               </div>
 

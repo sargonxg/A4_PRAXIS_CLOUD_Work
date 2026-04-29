@@ -1,7 +1,9 @@
 import { generateText, Output } from 'ai';
-import { getModel } from '@/lib/ai/providers';
+import { getModel, hasServerAiProvider } from '@/lib/ai/providers';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { handleRouteError } from '@/lib/api/standard-error';
+import { validateAiRequest } from '@/lib/api/validate-request';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { z } from 'zod';
 
@@ -21,6 +23,12 @@ const TerminologyResponseSchema = z.object({
   complianceScore: z.number().min(0).max(100),
   styleRecommendations: z.array(z.string()),
   recommendation: z.string(),
+});
+
+const TerminologyRequestSchema = z.object({
+  text: z.string().min(1),
+  context: z.string().optional(),
+  situationId: z.string().optional(),
 });
 
 // Programmatic checks for common UN terminology issues
@@ -68,21 +76,18 @@ export const POST = withCalibration('un_toolkit', 'ai_chat', {
     return Response.json({ issues: [], overallCompliance: 'compliant', complianceScore: 100, styleRecommendations: ['Demo mode — configure GOOGLE_AI_API_KEY for AI-powered terminology checking'], recommendation: 'Demo mode active. AI analysis unavailable.' });
   }
 
-  if (!process.env.GOOGLE_AI_API_KEY) {
+  if (!hasServerAiProvider()) {
     return new Response(
-      JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in environment variables.' }),
+      JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY or GOOGLE_VERTEX_PROJECT in environment variables.' }),
       { status: 503, headers: { 'Content-Type': 'application/json' } }
     );
   }
 
   try {
-    const { text, context } = await request.json();
-
-    // Credits + profile gate already handled by withCalibration above.
-
-    if (!text) {
-      return Response.json({ error: 'No text provided' }, { status: 400 });
-    }
+    const body = await request.json();
+    const validation = validateAiRequest(body, TerminologyRequestSchema);
+    if (!validation.success) return validation.response;
+    const { text, context, situationId } = validation.data;
 
     const { systemPromptBlock, outputConstraints } = ctx.calibration;
     const langDirective = outputConstraints.language !== 'en'
@@ -137,7 +142,7 @@ Include BOTH the programmatic issues AND any additional issues you identify. Cal
       }
     }
 
-    return Response.json({
+    const response = {
       text,
       context: context || 'general',
       issueCount: mergedIssues.length,
@@ -146,7 +151,23 @@ Include BOTH the programmatic issues AND any additional issues you identify. Cal
       complianceScore: object.complianceScore,
       styleRecommendations: object.styleRecommendations,
       recommendation: object.recommendation,
-    });
+    };
+
+    await saveToolOutput({
+      uid: ctx.uid,
+      situationId,
+      toolId: 'terminology',
+      profileVersion: ctx.calibration.provenance.profileVersion,
+      output: response,
+      toolRunId: ctx.toolRunId,
+      metadata: {
+        context: context || 'general',
+        issueCount: mergedIssues.length,
+        checker: 'un-terminology',
+      },
+    }).catch((err) => console.warn('[terminology] saveToolOutput failed:', err));
+
+    return Response.json(response);
   } catch (err) {
     return handleRouteError(err, 'terminology');
   }

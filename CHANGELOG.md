@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-04-29 — Subagent audit wave: persistence, exports, and deploy gates
+
+- Added `docs/PRAXIS_NEXT_20_IMPROVEMENTS_2026-04-29.md`, consolidating product,
+  AI/backend, and security/cloud subagent findings into 20 ranked improvements.
+- Started the canonical tool-output migration: `saveToolOutput` now writes a
+  versioned `tool-data/{toolId}` envelope and a legacy `tools/{toolId}`
+  compatibility document.
+- Export Center now reads both canonical `tool-data` and legacy `tools`
+  collections, labels provenance, and includes export metadata in JSON bundles.
+- Improved tool audit accuracy for delegated routes such as `ask-praxis`.
+- Added request validation and persistence improvements for `terminology`,
+  `extract-episodes`, `deep-research`, and `deep-search-agent`.
+- Grounded Ask PRAXIS mode now sends the active `situationId` so results can be
+  persisted against the current situation.
+- Cloud Build GCP audit enforcement is now enabled by default and the audit
+  checks all mounted production research/agent secrets.
+- Ask PRAXIS naming and guided-tour copy were updated for product coherence.
+
 All notable changes to PRAXIS by TACITUS are documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).

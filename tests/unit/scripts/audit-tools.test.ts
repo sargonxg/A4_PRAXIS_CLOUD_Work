@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { scoreRouteSource } from '../../../scripts/audit-tools';
 
 const EXAMPLE_BAD = `
@@ -40,12 +42,20 @@ describe('scoreRouteSource', () => {
     expect(s.dimensions.withCalibration).toBe(false);
     expect(s.dimensions.saveToolOutput).toBe(false);
   });
-  it('scores a good route 11/11', () => {
+  it('scores a well-calibrated route high', () => {
     const s = scoreRouteSource('risk-monitor', EXAMPLE_GOOD);
     expect(s.dimensions.withCalibration).toBe(true);
     expect(s.dimensions.saveToolOutput).toBe(true);
     expect(s.dimensions.profileVersionStamp).toBe(true);
     expect(s.dimensions.zodSchema).toBe(true);
     expect(s.score).toBeGreaterThanOrEqual(8);
+  });
+
+  it('scores Ask PRAXIS from the delegated chat implementation', () => {
+    const chatRoute = readFileSync(join(process.cwd(), 'src/app/api/ai/chat/route.ts'), 'utf8');
+    const s = scoreRouteSource('ask-praxis', chatRoute);
+    expect(s.dimensions.withCalibration).toBe(true);
+    expect(s.dimensions.saveToolOutput).toBe(true);
+    expect(s.dimensions.zodSchema).toBe(true);
   });
 });

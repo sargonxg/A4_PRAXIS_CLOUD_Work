@@ -74,6 +74,10 @@ const checks = [
   { name: 'Secret: praxis-cookie-secret',                  category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-cookie-secret') },
   { name: 'Secret: praxis-user-key-master',                category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-user-key-master') },
   { name: 'Secret: praxis-langgraph-db-password',           category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-langgraph-db-password') },
+  { name: 'Secret: praxis-firecrawl-api-key',              category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-firecrawl-api-key') },
+  { name: 'Secret: praxis-parallel-api-key',               category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-parallel-api-key') },
+  { name: 'Secret: praxis-ucdp-api-token',                 category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-ucdp-api-token') },
+  { name: 'Secret: praxis-vertex-adk-engine-id',           category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-vertex-adk-engine-id') },
 
   // Pub/Sub topics (5 referenced in CLAUDE.md)
   { name: 'Pub/Sub topic: profile.events',                 category: 'pubsub',  run: () => gcloudDescribe('pubsub topics describe profile.events') },

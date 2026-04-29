@@ -3,6 +3,7 @@ import { Output } from 'ai';
 import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { createEpisode } from '@/lib/firebase/episodes';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { validateAiRequest } from '@/lib/api/validate-request';
@@ -127,6 +128,28 @@ RULES
           console.warn('[extract-episodes] createEpisode failed:', err);
         }
       }
+
+      await saveToolOutput({
+        uid: user.uid,
+        situationId,
+        toolId: 'extract-episodes',
+        profileVersion: provenance.profileVersion,
+        toolRunId: user.toolRunId,
+        output: {
+          episodeCount: saved.length,
+          episodes: saved,
+          generatedFrom: {
+            situationName: situation.name,
+            sourceUrlCount: situation.sourceUrls?.length ?? 0,
+            hasContextNotes: Boolean(situation.contextNotes),
+          },
+        },
+        metadata: {
+          domainVersion: provenance.domainVersion,
+          extractedCount: extracted.length,
+          savedCount: saved.length,
+        },
+      }).catch((err) => console.warn('[extract-episodes] saveToolOutput failed:', err));
 
       return NextResponse.json({ episodes: saved });
     } catch (err) {

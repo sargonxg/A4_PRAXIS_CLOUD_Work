@@ -229,9 +229,9 @@ images:
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/gdelt-poller'
 
 substitutions:
-  # Flip to '0' after running infrastructure/grant-cloudbuild-audit-iam.sh so the
-  # GCP audit enforces rather than silently passes.
-  _AUDIT_GCP_SKIP: '1'
+  # Enforce GCP readiness checks in Cloud Build. The Cloud Build service account
+  # has the read-only audit roles documented in infrastructure/grant-cloudbuild-audit-iam.sh.
+  _AUDIT_GCP_SKIP: '0'
   # Google Maps JavaScript API key (public, embedded at build-time). Leave
   # empty to render IntelligenceMap's SVG scatter fallback. Restrict the key
   # to your domain(s) before flipping it live.
