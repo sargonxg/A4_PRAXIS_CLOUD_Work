@@ -1164,6 +1164,57 @@ Known production configuration gaps:
 - Vertex ADK engine ID is unconfigured; Deep Research Agent should use fallback behavior.
 - Stripe is unconfigured.
 
+## 2026-04-29 — Grounded Intelligence + UCDP + Assistant Stream Fix
+
+Source:
+
+- Commit: `fe4d2d1`
+- Branch: `main`
+- Remote: `origin/main`
+
+Cloud Build:
+
+- Build ID: `23f307d1-684b-4bb3-84fc-f919eb5022f2`
+- Status: `SUCCESS`
+- Duration: `10M14S`
+- Project: `praxisbytacitus`
+
+Cloud Run:
+
+- Frontend service: `praxis-frontend`
+- Frontend URL: `https://praxis-frontend-pgoyqovcza-uc.a.run.app`
+- Frontend revision: `praxis-frontend-00121-wck`
+- Backend service: `praxis-backend`
+- Backend URL: `https://praxis-backend-pgoyqovcza-uc.a.run.app`
+- Backend revision: `praxis-backend-00071-7ln`
+
+Production verification:
+
+- `https://praxis.tacitus.me/` returned `200 OK`.
+- `https://praxis.tacitus.me/login` returned `200 OK`.
+- `https://praxis.tacitus.me/onboarding` returned `307 Temporary Redirect` to `/login` for unauthenticated requests.
+- `https://praxis.tacitus.me/api/health` returned `status: ok`.
+- `https://praxis.tacitus.me/api/health/feeds` returned `11/11 feeds active`, including `ucdp: ok` and `google_search: ok`.
+- `https://praxis.tacitus.me/api/auth/test-firebase` returned `adminSdkStatus: INITIALIZED_OK`.
+- Browser smoke with `agent-browser` loaded the landing page and production demo dashboard.
+- Browser smoke on `/demo/assistant` submitted a Nordalia risk/action question and received a context-aware answer without the previous stream parser failure.
+
+Production configuration changes:
+
+- Created Secret Manager secret `praxis-ucdp-api-token`.
+- Granted `praxis-frontend-sa@praxisbytacitus.iam.gserviceaccount.com` access to the UCDP secret.
+- Mounted `UCDP_API_TOKEN` in the frontend Cloud Run deployment through `cloudbuild.yaml`.
+
+Validation before deploy:
+
+- `npm run audit:routes` passed.
+- `npm run audit:tools` passed.
+- `npx tsc --noEmit` passed.
+- `npx eslint` on changed TypeScript/TSX files passed.
+- `npm run build` passed before deploy; Cloud Build also completed the production build successfully.
+- Full `npm run lint` did not complete within the local timeout during this iteration; no source errors were returned before timeout.
+- Exact UCDP token scan over commit candidates returned `0` hits.
+
 ## Deployment Verification Commands
 
 ```bash
