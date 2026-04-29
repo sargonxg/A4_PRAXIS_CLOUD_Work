@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback, useEffect, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -197,7 +197,7 @@ export function ChatInterface() {
 
   const [uploadedContext, setUploadedContext] = useState<{ name: string; text: string } | null>(null);
   const [conflictContext, setConflictContext] = useState(
-    !demoMode && activeSituation ? activeSituation.id : ''
+    activeSituation ? activeSituation.id : ''
   );
   const [isUploading, setIsUploading] = useState(false);
   const [showContextDropdown, setShowContextDropdown] = useState(false);
@@ -206,17 +206,25 @@ export function ChatInterface() {
 
   // Build context options: real situation for authenticated users, demo list for demo mode
   const CONFLICT_CONTEXTS = demoMode
-    ? [{ id: '', label: 'No conflict context' }, ...DEMO_CONFLICT_CONTEXTS]
+    ? [
+        { id: '', label: 'No conflict context' },
+        ...(activeSituation ? [{ id: activeSituation.id, label: activeSituation.name }] : []),
+        ...DEMO_CONFLICT_CONTEXTS,
+      ]
     : activeSituation
       ? [{ id: activeSituation.id, label: activeSituation.name }]
       : [{ id: '', label: 'No situation selected' }];
 
   const conflictLabel = CONFLICT_CONTEXTS.find((c) => c.id === conflictContext)?.label ?? '';
 
+  useEffect(() => {
+    if (activeSituation && !conflictContext) setConflictContext(activeSituation.id);
+  }, [activeSituation, conflictContext]);
+
   // Pass full situation data to AI for context-aware responses
   const chatBody = {
-    conflictContext: conflictLabel || undefined,
-    situation: !demoMode && activeSituation ? activeSituation : undefined,
+    conflictContext: conflictLabel || activeSituation?.name || undefined,
+    situation: activeSituation ?? undefined,
     aiSettings: { analysisDepth: analysisMode },
   };
 
