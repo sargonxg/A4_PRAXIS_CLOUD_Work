@@ -31,7 +31,7 @@ export interface ProviderKeyStatus {
   present: boolean;
   /** Masked preview of the stored secret ('' when not present). */
   maskedPreview: string;
-  /** Non-secret fields the user configured (e.g. ACLED email). */
+  /** Non-secret fields the user configured for a provider. */
   nonSecretValues: Record<string, string>;
   validatedAt: string | null;
   validationError: string | null;
@@ -197,7 +197,7 @@ export async function listUserKeyStatuses(uid: string): Promise<Record<ProviderI
 /**
  * Decrypt and return a user-configured payload, or null when the user has not
  * configured this provider. The caller receives the full plaintext blob
- * (e.g. `{ key, email }` for ACLED).
+ * for providers that require multiple fields.
  *
  * NEVER return this to the client. Use it only to authenticate outbound
  * provider calls.
@@ -219,7 +219,7 @@ export async function getUserApiKey(
 }
 
 /**
- * Effective credential resolver used by outbound clients (ACLED, Tavily, etc.).
+ * Effective credential resolver used by outbound clients (Tavily, Firecrawl, Parallel, etc.).
  * Tries user-configured first, falls back to platform ENV vars, returns null
  * when neither is available.
  */
@@ -249,8 +249,7 @@ export async function resolveEffectiveApiKey(
     TAVILY_API_KEY: 'key',
     FIRECRAWL_API_KEY: 'key',
     PARALLEL_API_KEY: 'key',
-    ACLED_API_KEY: 'key',
-    ACLED_EMAIL: 'email',
+    UCDP_API_TOKEN: 'token',
   };
   for (const envVar of spec.platformFallbackEnvVars) {
     const fieldName = envMap[envVar];

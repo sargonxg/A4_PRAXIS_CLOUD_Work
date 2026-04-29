@@ -14,10 +14,10 @@ const TOOL_CATEGORIES = [
     id: 'situation-room',
     label: 'Situation Room',
     tools: [
-      { name: 'Dashboard', icon: BarChart3, desc: 'Real-time situation overview with risk scores, Glasl escalation stage, and AI-generated intelligence briefs' },
-      { name: 'Risk Monitor', icon: AlertTriangle, desc: 'INFORM Risk Index assessment across 5 dimensions: political, security, humanitarian, economic, social' },
-      { name: 'Actor Profiles', icon: Users, desc: 'Deep stakeholder intelligence using Fisher/Ury framework: positions, interests, leverage, constraints' },
-      { name: 'Conflict Graph', icon: GitBranch, desc: 'Knowledge graph with 14-entity ontology: actors, claims, interests, constraints, leverage, commitments, events, narratives' },
+      { name: 'Dashboard', icon: BarChart3, desc: 'Situation overview with risk scores, Glasl escalation stage, active assumptions, and brief-ready updates' },
+      { name: 'Risk Monitor', icon: AlertTriangle, desc: 'INFORM-style assessment across political, security, humanitarian, economic, and social dimensions' },
+      { name: 'Actor Profiles', icon: Users, desc: 'Stakeholder intelligence using Fisher/Ury concepts: positions, interests, leverage, constraints, and red lines' },
+      { name: 'Conflict Graph', icon: GitBranch, desc: 'Versioned knowledge graph with typed actors, claims, interests, constraints, leverage, commitments, events, and narratives' },
       { name: 'Stakeholder Map', icon: Network, desc: 'Mitchell/Agle/Wood power-legitimacy-urgency mapping with interactive positioning' },
       { name: 'Early Warning', icon: Shield, desc: 'Glasl 9-stage escalation tracking with de-escalation windows and opportunity indicators' },
     ],
@@ -26,9 +26,9 @@ const TOOL_CATEGORIES = [
     id: 'analysis',
     label: 'Analysis & Drafting',
     tools: [
-      { name: 'PRAXIS Assistant', icon: MessageSquare, desc: '21 specialized AI tools for any conflict analysis question. Web research, document RAG, structured outputs.' },
-      { name: 'Report Studio', icon: FileText, desc: 'UN-standard report generation with DOCX/PDF export. Templates for situation reports, dossiers, UNSC briefs.' },
-      { name: 'Scenario Planner', icon: Zap, desc: 'Model escalation paths, ceasefire scenarios, and intervention options with probability assessments' },
+      { name: 'PRAXIS Assistant', icon: MessageSquare, desc: 'Specialized tools for conflict-analysis questions with web research, document retrieval, and structured outputs.' },
+      { name: 'Report Studio', icon: FileText, desc: 'Report generation with DOCX/PDF export and templates for situation reports, dossiers, and UNSC-style briefs.' },
+      { name: 'Scenario Planner', icon: Zap, desc: 'Compare escalation paths, ceasefire scenarios, and intervention options with assumptions made explicit' },
       { name: 'Negotiation Prep', icon: Scale, desc: 'ZOPA/BATNA analysis grounded in Fisher/Ury methodology. Map negotiation space and value-creation opportunities.' },
       { name: 'CONCORDIA', icon: Scale, desc: 'Mediation design using Berghof framework. Process architecture, CBM sequencing, spoiler management.' },
       { name: 'Briefing Room', icon: FileText, desc: 'Auto-generated daily intelligence briefs. DPPA morning brief format with speaker notes and Q&A prep.' },
@@ -62,7 +62,11 @@ export function LivePlatformPreview() {
             40+ Tools. One Situation.
           </h2>
           <p className="mt-4 text-base text-navy-500 leading-relaxed">
-            Every tool in PRAXIS is powered by your situation context, analyst profile, and source constraints. Create a situation once, then generate actor profiles, risk assessments, conflict graphs, and specialized analyses without re-entering context.
+            Every tool in PRAXIS works from the same situation record:
+            mandate calibration, source set, graph entities, assumptions, and
+            review history. Create context once, then produce actor profiles,
+            risk assessments, conflict graphs, and specialized analyses
+            without losing provenance.
           </p>
         </div>
 
@@ -121,10 +125,10 @@ export function LivePlatformPreview() {
         {/* Stats bar */}
         <div className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
-            { value: '40', label: 'Tool Pages', suffix: '+' },
-            { value: '27', label: 'AI Chat Tools', suffix: '' },
-            { value: '73', label: 'API Routes', suffix: '' },
-            { value: '11', label: 'Live Data Feeds', suffix: '' },
+            { value: '40', label: 'Workflow Tools', suffix: '+' },
+            { value: '14', label: 'Graph Entity Types', suffix: '' },
+            { value: '72', label: 'Typed Relationships', suffix: '' },
+            { value: '11', label: 'Data Feed Classes', suffix: '' },
           ].map((stat) => (
             <div key={stat.label} className="rounded-xl border border-navy-200 bg-white p-4 text-center">
               <p className="font-mono text-2xl font-bold text-diplomatic-blue">{stat.value}{stat.suffix}</p>

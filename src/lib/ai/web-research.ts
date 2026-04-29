@@ -38,6 +38,9 @@ export interface WebResearchResult {
   provider: SearchProvider;
   publishedDate?: string;
   reliabilityScore: number; // 0-1
+  query?: string;           // Search query that produced the record
+  retrievedAt?: string;     // ISO timestamp for provenance/debugging
+  isGroundedSummary?: boolean;
 }
 
 export type SearchProvider = 'google-search' | 'tavily' | 'parallel' | 'firecrawl';
@@ -109,7 +112,7 @@ const SOURCE_SEARCH_TERMS: Record<string, string[]> = {
   sipri: ['site:sipri.org'],
 
   // Data sources
-  acled: ['site:acleddata.com'],
+  ucdp: ['site:ucdp.uu.se'],
   wikipedia: ['site:en.wikipedia.org'],
   academic: ['site:jstor.org OR site:tandfonline.com OR site:journals.sagepub.com'],
 };
@@ -124,7 +127,7 @@ const HOST_RELIABILITY: Record<string, number> = {
   'brookings.edu': 0.85, 'carnegieendowment.org': 0.85,
   'rand.org': 0.85, 'sipri.org': 0.90,
   'worldbank.org': 0.90, 'state.gov': 0.88, 'eeas.europa.eu': 0.85,
-  'acleddata.com': 0.92, 'en.wikipedia.org': 0.70,
+  'ucdp.uu.se': 0.92, 'en.wikipedia.org': 0.70,
   'understandingwar.org': 0.82, 'iiss.org': 0.85,
 };
 
@@ -135,6 +138,66 @@ function scoreUrl(url: string): number {
   } catch {
     return 0.50;
   }
+}
+
+function hostnameFromUrl(url: string, fallback: string): string {
+  try {
+    return new URL(url).hostname.replace('www.', '');
+  } catch {
+    return fallback;
+  }
+}
+
+function uniqStrings(values: Array<string | undefined | null>): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (!trimmed) continue;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(trimmed);
+  }
+  return out;
+}
+
+function timeRangeInstruction(timeRange: WebResearchOptions['timeRange']): string {
+  switch (timeRange) {
+    case 'day':
+      return 'Prioritize developments from the past 24 hours. If nothing current exists, say so.';
+    case 'week':
+      return 'Prioritize developments from the past 7 days.';
+    case 'month':
+      return 'Prioritize developments from the past 30 days.';
+    case 'year':
+      return 'Prioritize developments from the past 12 months and clearly date older background.';
+    case 'all':
+      return 'Use the best available sources regardless of date, but clearly separate current reporting from background.';
+    default:
+      return 'Prioritize recent, current, and dated reporting.';
+  }
+}
+
+function resultCacheKey(
+  uid: string,
+  query: string,
+  situationName: string,
+  options: WebResearchOptions,
+): string {
+  return JSON.stringify({
+    uid,
+    query,
+    situationName,
+    maxResults: options.maxResults ?? null,
+    toolId: options.toolId ?? null,
+    region: options.region ?? null,
+    timeRange: options.timeRange ?? null,
+    favoriteSources: [...(options.favoriteSources ?? [])].sort(),
+    excludedSources: [...(options.excludedSources ?? [])].sort(),
+    actors: [...(options.actors ?? [])].sort(),
+    includeContent: Boolean(options.includeContent),
+  });
 }
 
 /** Injected into AI context when all search providers fail. */
@@ -227,22 +290,39 @@ async function searchGoogle(
   ctx: ResearchContext
 ): Promise<WebResearchResult[]> {
   const { query, situationName, options } = ctx;
-  const queries = buildSourceFocusedQueries(
+  const baseQuery = uniqStrings([
     `${query} ${situationName}`,
-    options.favoriteSources ?? [],
-    2
-  );
+    options.region ? `${query} ${situationName} ${options.region}` : undefined,
+    options.actors?.length ? `${query} ${situationName} ${options.actors.slice(0, 4).join(' ')}` : undefined,
+  ])[0] ?? `${query} ${situationName}`;
+  const sourceFocused = buildSourceFocusedQueries(baseQuery, options.favoriteSources ?? [], 3);
+  const actorQueries = (options.actors ?? [])
+    .slice(0, 3)
+    .map((actor) => `${actor} ${situationName} latest statements actions constraints`);
+  const queries = uniqStrings([
+    ...sourceFocused,
+    ...actorQueries,
+    options.region ? `${situationName} ${options.region} official statements conflict developments` : undefined,
+  ]).slice(0, 5);
 
   const results: WebResearchResult[] = [];
+  const retrievedAt = new Date().toISOString();
+  const dateInstruction = timeRangeInstruction(options.timeRange);
 
   for (const q of queries) {
     try {
       const { text, sources } = await generateText({
         model: getGroundedModel(),
-        prompt: `Search the web and provide a detailed research summary about: ${q}
+        prompt: `Use Google Search grounding to research: ${q}
 
-Focus on the most recent and authoritative sources. Include specific facts, dates, names, and numbers.
-For each key finding, note which source it comes from.`,
+${dateInstruction}
+Prioritize checkable, authoritative sources: wire services, official institutions, UN/OCHA/ReliefWeb, court or legislative records, reputable local outlets, and established think tanks.
+
+Return:
+1. A concise research brief with dated facts, named actors, concrete numbers, and uncertainty notes.
+2. A "Source receipts" section listing the source title, outlet, URL, publication date if visible, and which claim it supports.
+
+Do not invent URLs. If sources disagree, identify the disagreement.`,
       });
 
       // Parse the grounded response into individual results
@@ -256,22 +336,28 @@ For each key finding, note which source it comes from.`,
           source: 'Google Search (Gemini Grounded)',
           provider: 'google-search',
           reliabilityScore: 0.80,
+          query: q,
+          retrievedAt,
+          isGroundedSummary: true,
         });
       }
 
       // Extract individual source URLs if available in the response
       if (sources && Array.isArray(sources)) {
         for (const src of sources as Array<{ url?: string; title?: string }>) {
-          if (src.url) {
-            results.push({
-              title: src.title ?? 'Source',
-              url: src.url,
-              content: '',
-              source: new URL(src.url).hostname.replace('www.', ''),
-              provider: 'google-search',
-              reliabilityScore: scoreUrl(src.url),
-            });
-          }
+          if (!src.url || !/^https?:\/\//i.test(src.url)) continue;
+          const host = hostnameFromUrl(src.url, 'Google grounded source');
+          results.push({
+            title: src.title ?? host,
+            url: src.url,
+            content: `Grounded citation returned for query "${q}". Use the URL as a source receipt and prefer scraped/full-text content when available.`,
+            snippet: `Grounded citation returned for query "${q}".`,
+            source: host,
+            provider: 'google-search',
+            reliabilityScore: scoreUrl(src.url),
+            query: q,
+            retrievedAt,
+          });
         }
       }
     } catch (err) {
@@ -369,21 +455,26 @@ async function searchTavily(
         source: 'Tavily AI',
         provider: 'tavily',
         reliabilityScore: 0.75,
+        query: `${ctx.query} ${ctx.situationName}`,
+        retrievedAt: new Date().toISOString(),
       });
     }
 
     // Individual results
     if (Array.isArray(data.results)) {
       for (const r of data.results) {
+        const url = r.url ?? '';
         results.push({
           title: r.title ?? 'Untitled',
-          url: r.url ?? '',
+          url,
           content: r.raw_content ?? r.content ?? '',
           snippet: r.content?.slice(0, 300) ?? '',
-          source: r.url ? new URL(r.url).hostname.replace('www.', '') : 'tavily',
+          source: url ? hostnameFromUrl(url, 'tavily') : 'tavily',
           provider: 'tavily',
           publishedDate: r.published_date,
-          reliabilityScore: scoreUrl(r.url ?? ''),
+          reliabilityScore: scoreUrl(url),
+          query: `${ctx.query} ${ctx.situationName}`,
+          retrievedAt: new Date().toISOString(),
         });
       }
     }
@@ -440,15 +531,18 @@ async function searchParallel(
         const excerpt = Array.isArray(r.excerpts)
           ? r.excerpts.map((e: { text?: string } | string) => typeof e === 'string' ? e : e.text ?? '').filter(Boolean).join('\n\n')
           : r.excerpt ?? r.content ?? '';
+        const url = r.url ?? '';
         results.push({
           title: r.title ?? 'Untitled',
-          url: r.url ?? '',
+          url,
           content: excerpt,
           snippet: excerpt.slice(0, 300),
-          source: r.url ? new URL(r.url).hostname.replace('www.', '') : 'parallel',
+          source: url ? hostnameFromUrl(url, 'parallel') : 'parallel',
           provider: 'parallel',
           publishedDate: r.published_date,
-          reliabilityScore: scoreUrl(r.url ?? ''),
+          reliabilityScore: scoreUrl(url),
+          query: `${ctx.query} ${ctx.situationName}`,
+          retrievedAt: new Date().toISOString(),
         });
       }
     }
@@ -491,15 +585,18 @@ async function searchFirecrawl(
 
     if (Array.isArray(data.data)) {
       for (const r of data.data) {
+        const url = r.url ?? '';
         results.push({
           title: r.title ?? 'Untitled',
-          url: r.url ?? '',
+          url,
           content: r.markdown ?? r.content ?? '',
           snippet: (r.description ?? '').slice(0, 300),
-          source: r.url ? new URL(r.url).hostname.replace('www.', '') : 'firecrawl',
+          source: url ? hostnameFromUrl(url, 'firecrawl') : 'firecrawl',
           provider: 'firecrawl',
           publishedDate: r.publishedDate,
-          reliabilityScore: scoreUrl(r.url ?? ''),
+          reliabilityScore: scoreUrl(url),
+          query: `${ctx.query} ${ctx.situationName}`,
+          retrievedAt: new Date().toISOString(),
         });
       }
     }
@@ -532,10 +629,6 @@ export async function executeWebResearch(
   uid: string,
   options: WebResearchOptions = {}
 ): Promise<WebResearchResult[]> {
-  const cacheKey = `${uid}:${query}:${situationName}:${options.maxResults}:${options.toolId}`;
-  const cached = getCached(cacheKey);
-  if (cached) return cached;
-
   // Load user's API keys from Firestore
   const userKeys = await getUserApiKeys(uid);
 
@@ -564,6 +657,10 @@ export async function executeWebResearch(
       options.favoriteSources = toolHints;
     }
   }
+
+  const cacheKey = resultCacheKey(uid, query, situationName, options);
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
 
   // Use crafted primary query if available, otherwise use the raw query
   const effectiveQuery = craftedQueries?.primary ?? query;
@@ -610,7 +707,7 @@ export async function executeWebResearch(
     premiumProviders.push(searchFirecrawl(ctx));
   }
 
-  let premiumResults: WebResearchResult[] = [];
+  const premiumResults: WebResearchResult[] = [];
   if (premiumProviders.length > 0) {
     const settled = await Promise.allSettled(premiumProviders);
     for (const result of settled) {
@@ -620,19 +717,24 @@ export async function executeWebResearch(
     }
   }
 
-  // Merge and deduplicate by URL
+  // Merge and deduplicate by URL. Synthetic grounded summaries use their
+  // Google Search URL; malformed provider rows fall back to title/source.
   const allResults = [...googleResults, ...premiumResults];
   const seen = new Set<string>();
   const deduped: WebResearchResult[] = [];
   for (const r of allResults) {
-    const key = r.url.toLowerCase();
+    const key = (r.url || `${r.provider}:${r.source}:${r.title}`).toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
     deduped.push(r);
   }
 
-  // Sort by reliability score descending
-  deduped.sort((a, b) => b.reliabilityScore - a.reliabilityScore);
+  // Sort by source quality, with a small bonus for records that carry content.
+  deduped.sort((a, b) => {
+    const aScore = a.reliabilityScore + (a.content?.length > 80 ? 0.08 : 0);
+    const bScore = b.reliabilityScore + (b.content?.length > 80 ? 0.08 : 0);
+    return bScore - aScore;
+  });
 
   // Limit results
   const maxResults = options.maxResults ?? 10;

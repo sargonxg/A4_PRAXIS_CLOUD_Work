@@ -9,16 +9,6 @@ import { HeroVisual } from "./hero-visual";
 
 // --- Word-by-word reveal ---
 
-const headlineWords = [
-  "AI",
-  "Built",
-  "for",
-  "Statecraft.",
-  "Calibrated",
-  "to",
-  "You.",
-];
-
 const containerVariants = {
   hidden: {},
   visible: {
@@ -51,11 +41,11 @@ const practitionerBackgrounds = [
 ];
 
 const trustSignals = [
-  "40+ agentic tools",
-  "Calibrated to your mandate",
-  "Institutional frameworks built-in",
-  "Private GCP workspace · isolated by tenant",
-  "Every claim cited, every output exportable",
+  "Source-grounded research",
+  "Mandate-aware analysis",
+  "Conflict ontology + versioned graph",
+  "Private GCP workspace per tenant",
+  "Citations, exports, and audit trail",
 ];
 
 // ---- Animated Conflict Graph SVG ----
@@ -359,18 +349,16 @@ export function Hero() {
             animate="visible"
             className="mb-8 font-serif text-5xl leading-[1.08] font-normal tracking-tight text-navy-950 sm:text-6xl lg:text-[68px]"
           >
-            {headlineWords.map((word, i) => (
-              <motion.span
-                key={i}
-                variants={shouldReduceMotion ? {} : wordVariants}
-                className={cn(
-                  "mr-[0.25em] inline-block",
-                  (word === "Statecraft." || word === "You.") && "text-gold-600"
-                )}
-              >
-                {word}
-              </motion.span>
-            ))}
+            <motion.span variants={shouldReduceMotion ? {} : wordVariants}>
+              Operational Intelligence for
+            </motion.span>
+            {' '}
+            <motion.span
+              variants={shouldReduceMotion ? {} : wordVariants}
+              className="text-gold-600"
+            >
+              Statecraft.
+            </motion.span>
           </motion.h1>
 
           {/* Subheadline */}
@@ -380,12 +368,11 @@ export function Hero() {
             transition={{ delay: 1.2, duration: 0.7 }}
             className="mb-6 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
           >
-            PRAXIS by TACITUS gives diplomats, conflict analysts,
-            mediators, and policy officers an agentic AI partner —
-            calibrated to your mandate, grounded in your sources, and
-            reasoning with the frameworks your institution already
-            trusts: Glasl, Fisher-Ury, INFORM, OCHA, IPC, ICD-203, IHL.
-            From question to evidence to defensible decision, end to end.
+            Open a situation, attach the evidence base, and turn scattered
+            reporting into briefable, source-grounded analysis. PRAXIS gives
+            diplomats, conflict analysts, mediators, and policy officers a
+            mandate-aware workspace for actor mapping, risk assessment,
+            scenario analysis, drafting, and exportable decision support.
           </motion.p>
 
           {/* Data sources tagline */}
@@ -395,8 +382,9 @@ export function Hero() {
             transition={{ delay: 1.4, duration: 0.6 }}
             className="mb-10 text-sm text-navy-400 italic"
           >
-            Grounded in ACLED, UCDP, GDELT BigQuery, ReliefWeb, OCHA, HDX, UNHCR,
-            UN News, World Bank, Crisis Group, SIPRI — and your private corpus.
+            Uses Google-grounded search, GDELT BigQuery, UCDP, ReliefWeb,
+            OCHA, HDX, UNHCR, UN News, World Bank, and your approved corpus,
+            with provenance preserved in the output.
           </motion.p>
 
           <motion.div
@@ -434,7 +422,7 @@ export function Hero() {
                 href="/login?mode=demo"
                 className="inline-flex items-center justify-center rounded-md border border-diplomatic-blue/20 px-8 py-4 text-base font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40"
               >
-                See It on a Live Crisis
+                Explore Sample Workspace
               </Link>
             </div>
             <p className="text-xs text-navy-400">
@@ -451,7 +439,7 @@ export function Hero() {
           >
             <span className={cn("h-1.5 w-1.5 rounded-full bg-gold-500", !shouldReduceMotion && "animate-pulse")} />
             <span className="text-xs font-medium text-gold-700">
-              Onboard · calibrate · ingest sources · build the graph · brief, draft, export — every step on the record
+              Calibrate mandate · ingest sources · extract graph · assess risk · brief, draft, export — every step traceable
             </span>
           </motion.div>
         </div>

@@ -29,6 +29,8 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { useRouter } from 'next/navigation';
 import type { CaseOntology } from '@/lib/constants/case-registry';
 import { CASE_REGISTRY } from '@/lib/constants/case-registry';
+import type { AnalystRole } from '@/types/analyst-profile';
+import type { UserRole } from '@/types/situation';
 
 // ============================================================================
 // Types
@@ -99,6 +101,24 @@ interface CaseCreationWizardProps {
   onCancel: () => void;
 }
 
+function mapAnalystRoleToSituationRole(role?: AnalystRole | string): UserRole {
+  switch (role) {
+    case 'mediator':
+      return 'mediator';
+    case 'researcher':
+    case 'think_tank':
+    case 'journalist':
+      return 'researcher';
+    case 'diplomat':
+    case 'un_official':
+    case 'ngo':
+    case 'private_sector':
+      return 'advisor';
+    default:
+      return 'analyst';
+  }
+}
+
 // ============================================================================
 // Constants
 // ============================================================================
@@ -161,7 +181,7 @@ function Step1BasicInfo({
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm text-navy-600 mb-1 block">Conflict / Case Name *</label>
+        <label className="text-sm text-navy-600 mb-1 block">Situation Name *</label>
         <input
           type="text"
           value={data.name}
@@ -788,12 +808,12 @@ function Step6Review({
         {isLaunching ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Creating case...
+            Creating situation...
           </>
         ) : (
           <>
             <Rocket className="w-4 h-4 mr-2" />
-            Launch Case in PRAXIS
+            Create Situation in PRAXIS
           </>
         )}
       </Button>
@@ -801,7 +821,7 @@ function Step6Review({
       {(!data.name || data.actors.length < 2) && (
         <p className="text-xs text-amber-400 text-center flex items-center justify-center gap-1">
           <AlertTriangle className="w-3.5 h-3.5" />
-          {!data.name ? 'Case name required' : 'At least 2 actors required'}
+          {!data.name ? 'Situation name required' : 'At least 2 actors required'}
         </p>
       )}
     </div>
@@ -834,7 +854,7 @@ export function CaseCreationWizard({ onComplete, onCancel }: CaseCreationWizardP
   const [isLaunching, setIsLaunching] = useState(false);
 
   const { addConflict, addCustomCase, setActiveConflict } = useConflictStore();
-  const { user } = useAuth();
+  const { user, analystProfile } = useAuth();
   const router = useRouter(); 
 
   const handleChange = useCallback((updates: Partial<WizardData>) => {
@@ -980,7 +1000,7 @@ export function CaseCreationWizard({ onComplete, onCancel }: CaseCreationWizardP
               description: data.description,
               region: data.region,
               actors: data.actors.map(a => a.name),
-              userRole: 'analyst',
+              userRole: mapAnalystRoleToSituationRole(analystProfile?.identity.role ?? user.role),
               status: data.status,
               ontology: ontology, // Save the full grammar
             }),
@@ -1009,7 +1029,7 @@ export function CaseCreationWizard({ onComplete, onCancel }: CaseCreationWizardP
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-app-border)]">
         <div>
-          <h2 className="text-navy-900 font-semibold">Create New Case</h2>
+          <h2 className="text-navy-900 font-semibold">Create New Situation</h2>
           <p className="text-xs text-navy-400 mt-0.5">Step {currentStep} of {STEPS.length}</p>
         </div>
         <button onClick={onCancel} className="text-navy-400 hover:text-navy-700">

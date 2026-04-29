@@ -24,7 +24,6 @@ import { PROVIDER_REGISTRY, type ProviderId } from '@/lib/providers/registry';
 import { hasPlatformFallback, listUserKeyStatuses } from '@/lib/providers/user-keys';
 
 export type FeedProvider =
-  | 'acled'
   | 'gdelt'
   | 'reliefweb'
   | 'hdx'
@@ -140,11 +139,11 @@ const FEED_DEFS: Readonly<Record<FeedProvider, FeedDef>> = Object.freeze({
   ucdp: {
     provider: 'ucdp',
     label: 'UCDP',
-    tagline: 'Uppsala Conflict Data Program — authoritative academic dataset.',
+    tagline: 'Uppsala Conflict Data Program — authenticated structured conflict dataset.',
     tier: 'free',
-    providerId: null,
+    providerId: 'ucdp',
     unlocks: ['Historical conflict counts', 'Battle-related deaths'],
-    signupUrl: null,
+    signupUrl: 'https://ucdp.uu.se/apidocs/',
   },
   worldbank: {
     provider: 'worldbank',
@@ -181,20 +180,6 @@ const FEED_DEFS: Readonly<Record<FeedProvider, FeedDef>> = Object.freeze({
     providerId: null,
     unlocks: ['Secretary-General statements', 'Agency press releases'],
     signupUrl: null,
-  },
-  acled: {
-    provider: 'acled',
-    label: 'ACLED',
-    tagline: 'Event-by-event global conflict data — requires free academic / non-profit key.',
-    tier: 'freemium',
-    providerId: 'acled',
-    unlocks: [
-      'Timeline of every conflict event',
-      'Fatalities + violence type breakdowns',
-      'Geospatial event clustering',
-      'Precision layer for Risk Monitor',
-    ],
-    signupUrl: 'https://developer.acleddata.com/',
   },
 });
 

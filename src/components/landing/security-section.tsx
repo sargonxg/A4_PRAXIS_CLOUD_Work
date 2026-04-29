@@ -21,22 +21,22 @@ const securityFeatures: Array<{
 }> = [
   {
     icon: Lock,
-    title: "Encryption at Rest & in Transit",
-    description: "AES-256 at rest (Firestore + Cloud Storage) and TLS 1.3 in transit, managed by Google Cloud.",
+    title: "Encrypted Storage and Transport",
+    description: "Firestore and Cloud Storage encryption at rest with Google-managed infrastructure controls, plus HTTPS/TLS transport for application traffic.",
     badge: "live",
     badgeLabel: "Live",
   },
   {
     icon: Shield,
     title: "Owner-Scoped Data Access",
-    description: "Firestore security rules enforce owner-only reads on every user document. No cross-tenant access paths.",
+    description: "Firestore security rules enforce owner-scoped reads and writes on user records and situation data, limiting access paths across tenants.",
     badge: "live",
     badgeLabel: "Live",
   },
   {
     icon: Eye,
-    title: "Role-Based Access & Admin Allowlist",
-    description: "Admin surfaces gated by `ADMIN_ALLOWLIST`. Full audit trail for profile versions and domain edits.",
+    title: "Role Gates and Admin Allowlist",
+    description: "Admin surfaces are gated by explicit allowlist configuration. Profile versions and domain edits keep reviewable history.",
     badge: "live",
     badgeLabel: "Live",
   },
@@ -69,7 +69,7 @@ function badgeClasses(kind: BadgeKind): string {
   return "border-navy-200 bg-navy-50 text-navy-600";
 }
 
-const demoDisclaimer = "Security certifications (SOC 2, GDPR compliance) are planned features. PRAXIS is currently in demo mode and should not be used to process classified or highly sensitive information.";
+const demoDisclaimer = "SOC 2 and formal GDPR/data-residency controls are planned features. Until an enterprise agreement is in place, do not process classified, export-controlled, or highly sensitive operational information in PRAXIS.";
 
 export function SecuritySection() {
   return (
@@ -99,9 +99,9 @@ export function SecuritySection() {
             Security You Can Audit. A Roadmap You Can Verify.
           </h2>
           <p className="mx-auto max-w-2xl text-lg text-navy-500">
-            PRAXIS is built for environments where information security is
-            existential. Here&apos;s what ships today, and what&apos;s on the
-            enterprise roadmap.
+            PRAXIS states security posture plainly: what ships now, what is
+            planned, and what belongs behind an enterprise deployment and
+            review process.
           </p>
         </motion.div>
 

@@ -32,9 +32,9 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://praxis.tacitus.me';
 const PRIMARY_TITLE = "PRAXIS by TACITUS — AI Built for Statecraft";
 const SHARE_TITLE = "PRAXIS by TACITUS · AI Built for Statecraft. Calibrated to You.";
 const SHARE_DESCRIPTION =
-  "Agentic AI workspace for diplomats, conflict analysts, mediators, and policy officers. Calibrated to your mandate. Grounded in ACLED, UCDP, GDELT, OCHA, ReliefWeb, World Bank, and your private corpus.";
+  "Agentic AI workspace for diplomats, conflict analysts, mediators, and policy officers. Calibrated to your mandate. Grounded in Google Search, GDELT, UCDP, OCHA, ReliefWeb, World Bank, and your private corpus.";
 const SEARCH_DESCRIPTION =
-  "PRAXIS by TACITUS is the agentic AI workspace for statecraft. 40+ calibrated tools for diplomats, conflict analysts, mediators, and policy officers — grounded in ACLED, UCDP, GDELT, OCHA, and your sources.";
+  "PRAXIS by TACITUS is the agentic AI workspace for statecraft. 40+ calibrated tools for diplomats, conflict analysts, mediators, and policy officers — grounded in Google Search, GDELT, UCDP, OCHA, and your sources.";
 const SHARE_IMAGE_ALT =
   "PRAXIS by TACITUS — AI Built for Statecraft. Agentic AI for diplomats, conflict analysts, mediators, and policy officers.";
 
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     "INFORM Risk Index",
     "ICD-203",
     "ACO conflict ontology",
-    "ACLED",
+    "Google Search",
     "UCDP",
     "GDELT",
     "OCHA",

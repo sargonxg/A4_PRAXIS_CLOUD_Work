@@ -169,7 +169,16 @@ export const POST = withCalibration('sanctions', 'ai_analysis', {
 
     // ── Demo mode ──────────────────────────────────────────────────────────────
     if (isServerDemoMode()) {
-      return NextResponse.json(grounded ? DEMO_RESPONSE_GROUNDED : DEMO_RESPONSE_SCAN);
+      return NextResponse.json({
+        ...(grounded ? DEMO_RESPONSE_GROUNDED : DEMO_RESPONSE_SCAN),
+        metadata: {
+          demo: true,
+          fictional: true,
+          exportEligible: false,
+          confidence: 'demo-only',
+          sourceBasis: 'Synthetic Nordalia sample data; not live sanctions intelligence.',
+        },
+      });
     }
 
     // Credits + profile gate already handled by withCalibration above.
@@ -234,6 +243,20 @@ Quantify effectiveness (0–10) based on observed target behaviour change. Cite 
     );
     const webContext = formatResultsAsContext(searchResults);
 
+    if (!webContext) {
+      return NextResponse.json(
+        {
+          error: 'live_sanctions_sources_unavailable',
+          message: 'PRAXIS could not retrieve current sanctions sources. This tool will not produce a sanctions assessment from model training data alone.',
+          confidence: 'low',
+          updates: [],
+          analysis: 'No live sanctions assessment was generated because source retrieval failed.',
+          riskAssessment: 'Retry with live source access or provide current sanctions instruments and official notices as input.',
+        },
+        { status: 424 }
+      );
+    }
+
     const result = await callProModel({
       output: Output.object({ schema: SanctionsScanSchema }),
       prompt: `${sitContext ? `${sitContext}\n\n` : ''}You are a senior sanctions compliance analyst. Monitor and analyze the latest sanctions developments for the following entities.
@@ -242,7 +265,7 @@ ENTITIES: ${(entities ?? []).join(', ')}
 ${conflictContext ? `CONFLICT CONTEXT: ${conflictContext}` : ''}
 
 LATEST INTELLIGENCE:
-${webContext || 'No web results available. Base analysis on your training data and the conflict context provided.'}
+${webContext}
 
 For each entity, assess:
 1. Any recent sanctions changes (new designations, delistings, modifications)

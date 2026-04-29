@@ -84,19 +84,15 @@ async function runValidator(providerId: string, payload: Record<string, string>)
       if (res.status === 401 || res.status === 403) return { ok: false, error: 'Invalid Firecrawl key' };
       return { ok: res.ok, error: res.ok ? undefined : `Firecrawl responded ${res.status}` };
     }
-    case 'acled': {
-      const key = payload.key;
-      const email = payload.email;
-      if (!key || !email) return { ok: false, error: 'Missing key or email' };
-      const params = new URLSearchParams({ key, email, limit: '1' });
-      const res = await fetch(`https://api.acleddata.com/acled/read?${params}`, {
-        signal: AbortSignal.timeout(15_000),
+    case 'ucdp': {
+      const token = payload.token;
+      if (!token) return { ok: false, error: 'Missing token' };
+      const res = await fetch('https://ucdpapi.pcr.uu.se/api/gedevents/25.1?pagesize=1', {
+        headers: { Accept: 'application/json', 'x-ucdp-access-token': token },
+        signal: AbortSignal.timeout(10_000),
       });
-      if (res.status === 401 || res.status === 403) return { ok: false, error: 'Invalid ACLED credentials' };
-      if (!res.ok) return { ok: false, error: `ACLED responded ${res.status}` };
-      const data = (await res.json().catch(() => null)) as { success?: boolean } | null;
-      if (data && data.success === false) return { ok: false, error: 'ACLED rejected the credentials' };
-      return { ok: true };
+      if (res.status === 401 || res.status === 403) return { ok: false, error: 'Invalid UCDP token' };
+      return { ok: res.ok, error: res.ok ? undefined : `UCDP responded ${res.status}` };
     }
     default:
       return { ok: false, error: `No validator registered for ${providerId}` };

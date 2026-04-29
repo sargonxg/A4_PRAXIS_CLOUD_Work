@@ -57,7 +57,7 @@ export const usePreferencesStore = create<PreferencesStore>()(
       defaultMode: 'all',
       favoriteSources: ['wikipedia', 'reuters', 'crisisgroup', 'un'],
       excludedSources: [],
-      trustedSources: ['ACLED', 'UNHCR', 'ReliefWeb', 'World Bank'],
+      trustedSources: ['GDELT', 'UCDP', 'UNHCR', 'ReliefWeb', 'World Bank', 'UN News'],
       mediaPreferences: {
         preferredOutlets: [],
         avoidedOutlets: [],

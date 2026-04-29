@@ -14,13 +14,12 @@ export const GET = withAuth(async () => {
     hdx:         'ok',  // Always available (HDX HAPI)
     unhcr:       'ok',  // Always available
     worldbank:   'ok',  // Always available
-    ucdp:        'ok',  // Always available
+    ucdp:        process.env.UCDP_API_TOKEN || process.env.UCDP_ACCESS_TOKEN ? 'ok' : 'not_configured',
     unnews:      'ok',  // Always available
     sipri:       'ok',  // Always available
     crisisgroup: 'ok',  // Always available
-    acled:       process.env.ACLED_API_KEY    ? 'ok' : 'not_configured',
-    tavily:      process.env.TAVILY_API_KEY   ? 'ok' : 'not_configured',
-    firecrawl:   process.env.FIRECRAWL_API_KEY ? 'ok' : 'not_configured',
+    google_search: process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_VERTEX_PROJECT ? 'ok' : 'not_configured',
+    web_crawler: process.env.FIRECRAWL_API_KEY ? 'ok' : 'degraded',
   };
 
   const configured = Object.values(status).filter((s) => s === 'ok').length;

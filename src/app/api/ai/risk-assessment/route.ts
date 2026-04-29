@@ -179,14 +179,14 @@ export const POST = withCalibration('risk_assessment', 'ai_risk_assessment', {
     try {
       const intel = await getSituationIntelligence({ country, limit: 30 });
       const dataRisk = computeRiskScore({
-        acledEvents: intel.events.filter((e) => e.source === 'acled').map((e) => e.metadata as never),
+        acledEvents: [],
         stabilityScore: intel.stability?.score,
         stabilityTrend: intel.stability?.trend,
         foodSecurityPct: intel.humanitarian?.foodSecurity?.[0]?.pct,
         displacementCount: intel.humanitarian?.displacement?.idps,
         fundingGapPct: intel.humanitarian?.funding?.pct,
       });
-      dataContext = `\nDATA-DRIVEN PRE-SCORES (from ACLED, GDELT, HDX — use as baseline, refine with your analysis):
+      dataContext = `\nDATA-DRIVEN PRE-SCORES (from GDELT, UCDP, HDX, ReliefWeb and Google Search — use as baseline, refine with your analysis):
 Security: ${dataRisk.dimensions.security.score}/100 — ${dataRisk.dimensions.security.evidence.join('; ')}
 Political: ${dataRisk.dimensions.political.score}/100 — ${dataRisk.dimensions.political.evidence.join('; ')}
 Humanitarian: ${dataRisk.dimensions.humanitarian.score}/100 — ${dataRisk.dimensions.humanitarian.evidence.join('; ')}
@@ -236,7 +236,7 @@ ${dataContext}
 ## INFORM RISK INDEX METHODOLOGY (STRICTLY FOLLOW)
 
 Pillar 1 — HAZARD & EXPOSURE (weight: 0.33)
-- Armed conflict intensity (ACLED events, casualty figures from web sources)
+- Armed conflict intensity (GDELT/UCDP signals, casualty figures from web sources where available)
 - Natural disaster exposure (if applicable)
 - Political instability index (GDELT, Freedom House)
 

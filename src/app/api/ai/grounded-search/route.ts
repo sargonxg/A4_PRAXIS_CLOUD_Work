@@ -1,17 +1,36 @@
 import { conductResearch } from '@/lib/ai/research-engine';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 import { withCalibration } from '@/lib/api/with-calibration';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
+import { z } from 'zod';
 
 export const maxDuration = 60;
 
-export const POST = withCalibration('deep_research', 'ai_chat', {
+const GroundedSearchRequestSchema = z.object({
+  messages: z.array(z.object({
+    content: z.union([z.string(), z.array(z.unknown())]).optional(),
+  })).optional().default([]),
+  conflictContext: z.string().optional(),
+  situationId: z.string().optional(),
+});
+
+export const POST = withCalibration('grounded-search', 'ai_grounded_search', {
   retrievalQuery: (_req, body) => {
     const ctxStr = typeof body.conflictContext === 'string' ? body.conflictContext : '';
     return ctxStr || undefined;
   },
+  variant: 'streaming',
 })(async (request, ctx) => {
   try {
-    const { messages, conflictContext } = await request.json();
+    const rawBody = await request.json().catch(() => null);
+    const parsedBody = GroundedSearchRequestSchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid grounded search request.', details: parsedBody.error.flatten() }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+    const { messages, conflictContext, situationId } = parsedBody.data;
 
     // --- Demo mode: return pre-computed responses when no API key is set ---
     if (isServerDemoMode()) {
@@ -38,6 +57,22 @@ export const POST = withCalibration('deep_research', 'ai_chat', {
     const query = typeof lastMessage?.content === 'string'
       ? lastMessage.content
       : 'Provide a general conflict intelligence briefing.';
+
+    if (situationId && ctx.uid) {
+      await saveToolOutput({
+        uid: ctx.uid,
+        situationId,
+        toolId: 'grounded-search',
+        profileVersion: ctx.calibration.provenance.profileVersion,
+        output: {
+          query,
+          conflictContextPresent: Boolean(conflictContext),
+          streamed: true,
+          startedAt: new Date().toISOString(),
+        },
+        metadata: { streamed: true, sourceLayer: 'google-search-grounding' },
+      }).catch((err) => console.warn('[grounded-search] saveToolOutput failed:', err));
+    }
 
     const result = await conductResearch({
       query,

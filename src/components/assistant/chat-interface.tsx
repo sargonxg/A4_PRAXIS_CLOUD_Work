@@ -85,7 +85,7 @@ function getContextualPrompts(situation: Situation | null, phase?: string): stri
       `What are the latest developments in ${name}?`,
       `Generate a situation update for this week`,
       `Check ceasefire compliance status`,
-      `Any new ACLED events or GDELT spikes?`,
+      `Any new event-feed or GDELT spikes?`,
     ];
     case 'reporting': return [
       `Draft a situation report for ${name}`,

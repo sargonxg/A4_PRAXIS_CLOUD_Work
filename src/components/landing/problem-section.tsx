@@ -1,43 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-
-function AnimatedStat({ end, suffix = "" }: { end: number; suffix?: string }) {
-  const [count, setCount] = useState(0);
-  const [started, setStarted] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !started) setStarted(true);
-      },
-      { threshold: 0.5 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [started]);
-
-  useEffect(() => {
-    if (!started) return;
-    const startTime = Date.now();
-    const timer = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / 1500, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.floor(eased * end));
-      if (progress >= 1) clearInterval(timer);
-    }, 16);
-    return () => clearInterval(timer);
-  }, [started, end]);
-
-  return (
-    <div ref={ref} className="text-4xl font-semibold text-diplomatic-blue tabular-nums sm:text-5xl">
-      {count}{suffix}
-    </div>
-  );
-}
+import { motion } from "framer-motion";
 
 const chaosTools = [
   { label: "Chrome", detail: "47 tabs", color: "#EA4335" },
@@ -100,7 +63,7 @@ export function ProblemSection() {
           transition={{ duration: 0.7, delay: 0.1 }}
           className="mb-6 text-center font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl"
         >
-          Your Team Drowns in Information but Starves for Intelligence
+          Policy Teams Have Information. They Need a Defensible Record.
         </motion.h2>
 
         <motion.p
@@ -110,8 +73,9 @@ export function ProblemSection() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mx-auto mb-16 max-w-2xl text-center text-lg text-navy-500"
         >
-          Peace and security professionals face an impossible workflow — too many
-          sources, too many formats, not enough time.
+          Conflict and diplomacy teams work across cables, reports, datasets,
+          media monitoring, and institutional memory. The hard part is keeping
+          judgments tied to sources, assumptions, and reviewable reasoning.
         </motion.p>
 
         {/* Split-screen comparison */}
@@ -138,7 +102,7 @@ export function ProblemSection() {
                 8:47 AM — Security Council briefing in 73 minutes.
               </p>
               <p className="mt-1.5 text-sm text-navy-500">
-                Your intelligence is buried in 12 different tools.
+                The evidence is scattered across systems, formats, and inboxes.
               </p>
             </div>
 
@@ -170,7 +134,7 @@ export function ProblemSection() {
             {/* Chaos indicator */}
             <div className="mt-5 flex items-center gap-2 rounded-lg border border-crimson/15 bg-crimson/5 px-3 py-2">
               <span className="text-xs text-crimson">
-                73% of time spent formatting, not analyzing
+                Formatting and source reconciliation crowd out analysis
               </span>
             </div>
           </motion.div>
@@ -197,7 +161,7 @@ export function ProblemSection() {
                 8:47 AM — Your briefing is ready.
               </p>
               <p className="mt-1.5 text-sm text-navy-500">
-                AI-generated. Graph-sourced. UN-formatted.{" "}
+                Source-grounded. Graph-aware. Ready for human review.{" "}
                 <span className="font-medium text-navy-700">You review. You decide.</span>
               </p>
             </div>
@@ -234,7 +198,7 @@ export function ProblemSection() {
             {/* Efficiency indicator */}
             <div className="mt-5 flex items-center gap-2 rounded-lg border border-sage/20 bg-sage/5 px-3 py-2">
               <span className="text-xs text-sage">
-                Briefing ready in minutes, not hours
+                Briefing package includes citations, assumptions, and confidence notes
               </span>
             </div>
           </motion.div>
@@ -249,17 +213,17 @@ export function ProblemSection() {
           className="mt-14 text-center"
         >
           <p className="font-serif text-2xl font-medium text-navy-900 sm:text-3xl">
-            PRAXIS doesn&apos;t replace analysts.{" "}
-            <span className="text-diplomatic-blue">It gives analysts superpowers.</span>
+            PRAXIS doesn&apos;t replace judgment.{" "}
+            <span className="text-diplomatic-blue">It preserves the chain from source to recommendation.</span>
           </p>
         </motion.div>
 
         {/* Stats row */}
         <div className="mt-16 grid gap-8 sm:grid-cols-3">
           {[
-            { end: 73, suffix: "%", description: "of conflict analysts spend more time formatting than analyzing" },
-            { end: 14, suffix: "+", description: "disconnected tools where critical intelligence gets buried" },
-            { end: 6, suffix: "hrs", description: "average time to draft a diplomatic cable from scratch" },
+            { value: "Source", description: "claims stay tied to source basis, assumptions, and review status" },
+            { value: "14+", description: "entity classes in the PRAXIS conflict ontology for structured actor and event reasoning" },
+            { value: "Brief", description: "source intake, graph context, and drafting live in one workflow" },
           ].map((stat, i) => (
             <motion.div
               key={i}
@@ -269,7 +233,9 @@ export function ProblemSection() {
               transition={{ duration: 0.6, delay: i * 0.15 }}
               className="text-center"
             >
-              <AnimatedStat end={stat.end} suffix={stat.suffix} />
+              <div className="text-4xl font-semibold text-diplomatic-blue tabular-nums sm:text-5xl">
+                {stat.value}
+              </div>
               <p className="mt-4 text-sm leading-relaxed text-navy-500">
                 {stat.description}
               </p>
@@ -287,7 +253,7 @@ export function ProblemSection() {
         >
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-cream-300 to-transparent" />
           <span className="flex items-center gap-2 text-sm font-medium text-gold-700">
-            There&apos;s a better way &rarr;
+            Build from a traceable situation record &rarr;
           </span>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-cream-300 to-transparent" />
         </motion.div>

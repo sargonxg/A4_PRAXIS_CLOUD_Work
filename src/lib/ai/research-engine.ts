@@ -9,6 +9,7 @@
 import { streamText, type LanguageModel } from 'ai';
 import { searchWeb, scrapeMultiple, formatResultsAsContext, type WebSearchResult } from './firecrawl';
 import { getModel, getProModel } from './providers';
+import { getGroundedSearchEvents } from '@/lib/data-feeds/grounded-search-client';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -139,6 +140,20 @@ export async function conductResearch(params: ResearchParams) {
 
   // Step 1: Gather web content
   let webContent: WebSearchResult[] = [];
+
+  // Start with grounded Google Search so users get current, checkable sources
+  // even before optional scraping/enrichment providers run.
+  const grounded = await getGroundedSearchEvents({
+    query,
+    limit: Math.min(numResults, 8),
+  });
+  webContent.push(...grounded.map((item) => ({
+    title: item.title,
+    url: item.url,
+    content: item.description,
+    publishedDate: item.date,
+    description: `Google Search grounded result; severity ${item.severity}; actors: ${item.actors.join(', ') || 'not extracted'}`,
+  })));
 
   if (sources && sources.length > 0) {
     // Scrape specific URLs the user provided

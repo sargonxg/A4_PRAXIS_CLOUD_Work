@@ -54,7 +54,7 @@ const TONE_LEVELS = [
 ];
 
 // ── Tool info constants ────────────────────────────────────────────────────────
-const TOOL_METHODOLOGY = `PRAXIS Media Roundup combines GDELT sentiment data, ACLED media coverage metadata, and Gemini-powered analysis to compile comprehensive media briefings. The tool applies the Ad Fontes Media Bias Chart methodology for source reliability scoring.
+const TOOL_METHODOLOGY = `PRAXIS Media Roundup combines grounded web research, GDELT sentiment data, and Gemini-powered analysis to compile comprehensive media briefings. The tool applies the Ad Fontes Media Bias Chart methodology for source reliability scoring.
 
 Coverage is analyzed across wire services, quality press, state media, and regional outlets to identify framing patterns and narrative divergence.
 

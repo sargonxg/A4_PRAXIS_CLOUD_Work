@@ -8,6 +8,152 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased] — 2026-04-28 (Five-pillar uplift: ask-praxis, dashboard, conflict-graph, risk+timeline, briefing)
 
+### Codex Continuation — 2026-04-29 grounded-search intelligence spine
+
+- Hardened the unified web research client so Google-grounded research fans out
+  across source-focused, region-focused, and actor-focused queries; source
+  receipts now carry query/retrieval metadata, safe host parsing, and useful
+  snippet context even when Gemini only exposes a cited URL.
+- Fixed the `grounded-search` AI route identity from `deep_research` /
+  `ai_chat` to `grounded-search` / `ai_grounded_search`, added request schema
+  validation, marked it as a streaming calibrated route, and persisted a
+  metadata trace for streamed searches.
+- Hardened `research-extract` with Zod request validation, grounded-source-pack
+  retrieval before optional scrapers, UCDP corroboration, and `saveToolOutput`
+  metadata for extracted graph updates.
+- Improved no-key demo Ask PRAXIS behavior: realistic risk/evidence/mediator
+  prompts now return a concrete Nordalia answer instead of falling through to
+  the generic greeting.
+- Browser verification with `agent-browser` confirmed `/login?mode=demo` enters
+  `/demo/dashboard`, `/demo/assistant` loads, and the tested Ask PRAXIS prompt
+  returns a useful three-bullet response with no visible AI error text.
+- Added `docs/PRAXIS_GROUNDED_SEARCH_INTELLIGENCE_SPINE_2026-04-29.md`, a
+  verifiable product/engineering plan for grounded search, scrape/extract,
+  evidence records, political entity extraction, commitment tracing, media
+  analysis, and graph ingestion.
+- Changed the live intelligence aggregators so grounded Google Search runs as
+  the primary checkable research path; GDELT, ReliefWeb, UN News, UCDP, HDX,
+  UNHCR, World Bank, SIPRI, and Crisis Group now function as corroborating
+  structured layers.
+- Updated UCDP integration to use the versioned API plus `UCDP_API_TOKEN` /
+  `x-ucdp-access-token`, added UCDP as a credential-aware provider, and
+  surfaced UCDP conflict records as visible intelligence-feed items.
+- Updated Source Monitor to list grounded Google Search first and to call the
+  intelligence API with valid `country/query` parameters instead of the stale
+  `situationId/source` payload.
+- Removed active ACLED provider registration, validation, resilient-fetch, and
+  source-monitor surfaces so the app no longer presents a paid ACLED dependency
+  as part of the live product spine.
+
+### Codex Continuation — 2026-04-29 persona QA demo trust wave
+
+- Added `docs/PRAXIS_PERSONA_QA_WAVE_2026-04-29.md`, a structured browser QA
+  record covering first-time user, serious customer, returning user, power
+  user, and skeptical security/trust reviewer perspectives.
+- Updated the demo banner to describe the PRAXIS sample workspace directly and
+  label synthetic Nordalia data instead of relying on stale competitive
+  positioning.
+- Updated the dashboard Daily Intelligence Brief so demo mode renders a
+  deterministic, situation-derived sample brief rather than exposing an
+  admin-facing AI provider configuration message.
+- Updated the Ask PRAXIS system prompt product framing to describe PRAXIS as a
+  situation/source/graph-to-decision-support workspace.
+- Cleaned the dashboard intelligence-feed empty state and active helper copy so
+  the UI no longer tells demo users to configure retired provider-specific
+  credentials.
+- Aligned the demo welcome modal with the Nordalia contested-border sample
+  workspace and removed provider-powered claims from demo onboarding copy.
+
+### Codex Continuation — 2026-04-29 sophisticated persona and AI trust wave
+
+- Added `docs/PRAXIS_SOPHISTICATED_PERSONA_WAVE_2026-04-29.md`, a second,
+  more demanding persona QA record covering policy director, mediator/envoy
+  team, intelligence analyst, enterprise buyer, and skeptical security/trust
+  reviewer workflows.
+- Incorporated subagent findings into a 35-item roadmap covering grounded
+  search receipts, sanctions current-source enforcement, append-only tool run
+  history, export provenance, Ask PRAXIS write validation, model fallback
+  transparency, source-state banners, graph evidence, persona automation,
+  cloud/security tasks, and live deploy parity.
+- Completed a landing-page credibility pass across hero, workflow, problem,
+  data substrate, platform preview, security, and TACITUS CTA sections.
+- Removed placeholder testimonial social proof from the active landing page
+  until real approved practitioner quotes are available.
+- Hardened sanctions scan behavior: demo responses now identify synthetic
+  non-exportable sample data, and live scans refuse to produce current
+  sanctions analysis from model training data alone when source retrieval
+  fails.
+- Hardened situation-report DOCX export footer so it lists only supplied
+  sources or explicitly warns that no source list was supplied.
+
+### Codex Continuation — 2026-04-29 executive situation intelligence
+
+- Added `POST /api/ai/situation-intelligence`, a calibrated real-AI route with
+  Zod schema validation for executive diagnosis, strategic insight, causal
+  timeline, actor dossiers, best/likely/worst scenarios, derived risk score,
+  concrete actions, live graph primitives, provenance, lightweight memory, and
+  confidence handling.
+- Added `src/lib/ai/schemas/situation-intelligence.ts` as the shared contract.
+  The schema enforces exactly 3 executive insights, a strategic insight with
+  at least 2 actors and 1 constraint, exactly 3 scenario types, 0-100 risk
+  scoring, 3-5 actions, explicit graph nodes/edges, source fragments, and
+  confidence notes.
+- Added `ExecutiveIntelligencePanel` to the real dashboard. It calls the new AI
+  route on demand, persists successful outputs through the existing
+  `tool-data` API for cross-situation reopening, renders click-through graph
+  details, shows provenance and confidence, and exports the current analysis as
+  timestamped JSON.
+- Added focused schema tests for the requested geopolitical situation,
+  corporate conflict, and policy memo cases, plus a negative test for invalid
+  strategic insights.
+- Validation: `npx tsc --noEmit`, targeted `npx eslint`, and
+  `npx vitest run tests/unit/lib/ai/situation-intelligence-schema.test.ts`
+  passed. Live authenticated browser generation remains the next QA step.
+- Follow-up hardening: registered `situation-intelligence` as a first-class
+  tool, added explicit `ai_situation_intelligence` metering, changed the route
+  to write canonical `tool-data/situation-intelligence`, added controlled
+  schema/generation 502 responses, made the dashboard recommendation deep-link
+  to the panel, and removed retired source claims from registry/docs/landing
+  tour surfaces touched in this wave.
+- Added `tests/tools/situation-intelligence.smoke.test.ts` and expanded
+  `tests/unit/lib/dashboard/role-recommendations.test.ts`.
+
+### Codex Continuation — 2026-04-29 roadmap and root runbooks
+
+- Added root `TODO.md` as the current production continuation roadmap, carrying
+  the next prioritized tasks for product, persona testing, AI quality,
+  Firebase/GCP, security, documentation, and future roadmap work.
+- Added compact root runbooks: `ARCHITECTURE.md`, `DEPLOYMENT.md`,
+  `TESTING.md`, and `SECURITY.md`, each linking back to the deeper canonical
+  docs under `docs/`.
+- Updated `README.md` so the active continuation roadmap and root runbooks are
+  visible in the documentation map.
+- Confirmed the 2026-04-29 baseline: `npx tsc --noEmit`, `npm run build`,
+  `npm run lint`, `npm run audit:routes`, and `npm run audit:gcp` passed
+  locally. Build still reports the known Next middleware-to-proxy deprecation;
+  lint passes with existing warnings.
+- Added `docs/PRAXIS_SUPERPLAN_2026-04-29.md`, a hyper-detailed multi-agent
+  execution plan that folds Identity UX, QA Automation, and Security/Cloud/AI
+  subagent findings into verifiable workstreams.
+- Updated `TODO.md`, `README.md`, `TESTING.md`, `SECURITY.md`,
+  `DEPLOYMENT.md`, `ARCHITECTURE.md`, `CLAUDE.md`, `AGENTS.md`, and
+  `docs/CONTINUATION.md` to point future agents at the superplan.
+- Added `docs/PRAXIS_15_APP_WIDE_IMPROVEMENTS_2026-04-29.md`, a 15-initiative
+  app-wide improvement plan covering product identity, activation, role-aware
+  defaults, situation health, tool outputs, Ask PRAXIS, evidence discipline,
+  browser QA, route audits, security, deploy safety, operations, corpus trust,
+  commercial readiness, and enterprise trust.
+- Started the first app-wide product consistency pass: updated public source
+  claims and metadata away from retired/conflicting source claims, clarified
+  the hero promise, renamed the demo CTA to "Explore Sample Workspace", changed
+  legacy wizard copy to "Create New Situation" / "Situation Name", initialized
+  situation roles from AnalystProfile when available, and removed per-action
+  credit-cost copy from shared generation states.
+- Validation for this pass: `npx tsc --noEmit` passed; targeted `npx eslint`
+  on touched TS/TSX files passed with warnings only. Full `npm run lint` and
+  `npm run build` passed earlier in the session, with existing warning debt and
+  the known Next middleware-to-proxy deprecation.
+
 ### Codex Continuation — backend trust boundary + Core-8 graph coverage
 
 - Backend service-to-service auth now verifies Google OIDC audience and trusted

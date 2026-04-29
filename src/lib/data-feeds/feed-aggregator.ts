@@ -1,11 +1,10 @@
 /**
  * Unified data feed aggregator
- * Merges ACLED, GDELT, ReliefWeb, HDX, GDELT Stability, UN News,
+ * Merges GDELT, ReliefWeb, HDX, GDELT Stability, UN News,
  * UNHCR, UCDP, World Bank, Crisis Group and SIPRI into a single
  * intelligence and conflict-profile stream.
  */
 
-import { fetchEvents, isACLEDConfigured, type ACLEDEvent } from './acled-client';
 import { searchArticles, type GDELTArticle } from './gdelt-client';
 import { searchReports, type RWReport } from './reliefweb-client';
 import { countryNameToIso3, getDisplacement, getFoodSecurity, getFunding } from './hdx-client';
@@ -30,7 +29,7 @@ export type { UNHCRPopulation, UCDPConflict, WBEconomicSnapshot, WBGovernanceInd
 
 export interface IntelligenceItem {
   id: string;
-  source: 'acled' | 'gdelt' | 'reliefweb' | 'unnews' | 'grounded_search';
+  source: 'event_feed' | 'gdelt' | 'ucdp' | 'reliefweb' | 'unnews' | 'grounded_search';
   type: 'event' | 'article' | 'report' | 'statement';
   title: string;
   description: string;
@@ -58,7 +57,7 @@ export interface StabilitySnapshot {
 export interface SituationIntelligence {
   events: IntelligenceItem[];
   totalCount: number;
-  sources: { acled: number; gdelt: number; reliefweb: number; unnews: number; grounded_search?: number };
+  sources: { event_feed: number; gdelt: number; ucdp: number; reliefweb: number; unnews: number; grounded_search?: number };
   humanitarian?: HumanitarianSnapshot;
   stability?: StabilitySnapshot;
   /** True when the grounded-search fallback was used because every structured feed returned zero. */
@@ -192,23 +191,6 @@ function iso3ToIso2(iso3: string): string | null {
 
 // ─── Mappers (backwards-compatible) ─────────────────────────────────────────
 
-export function acledToIntel(e: ACLEDEvent): IntelligenceItem {
-  const severity = e.fatalities > 10 ? 'critical' : e.fatalities > 0 ? 'high' :
-    ['Battles', 'Violence against civilians'].includes(e.event_type) ? 'medium' : 'low';
-  return {
-    id: `acled-${e.event_id_cnty}`,
-    source: 'acled',
-    type: 'event',
-    title: `${e.event_type}: ${e.sub_event_type}`,
-    description: e.notes?.slice(0, 500) || '',
-    date: e.event_date,
-    actors: [e.actor1, e.actor2].filter(Boolean),
-    location: [e.location, e.admin1, e.country].filter(Boolean).join(', '),
-    severity,
-    metadata: { fatalities: e.fatalities, eventType: e.event_type, latitude: e.latitude, longitude: e.longitude },
-  };
-}
-
 export function gdeltToIntel(a: GDELTArticle): IntelligenceItem {
   return {
     id: `gdelt-${Buffer.from(a.url).toString('base64').slice(0, 20)}`,
@@ -221,6 +203,29 @@ export function gdeltToIntel(a: GDELTArticle): IntelligenceItem {
     actors: [],
     severity: Math.abs(a.tone) > 5 ? 'high' : Math.abs(a.tone) > 2 ? 'medium' : 'low',
     metadata: { tone: a.tone, domain: a.domain, language: a.language, sourcecountry: a.sourcecountry },
+  };
+}
+
+export function ucdpToIntel(c: UCDPConflict): IntelligenceItem {
+  const intensity = c.intensity_level === 2 ? 'high' : 'medium';
+  const ended = c.ep_end_date ? ` Ended: ${c.ep_end_date}.` : '';
+  return {
+    id: `ucdp-conflict-${c.conflict_id}-${c.start_date}`,
+    source: 'ucdp',
+    type: 'event',
+    title: c.conflict_name || `${c.side_a} - ${c.side_b}`,
+    description: `UCDP conflict record for ${c.location}: ${c.side_a} and ${c.side_b}. Start: ${c.start_date}.${ended}`,
+    date: c.ep_end_date ?? c.start_date,
+    actors: [c.side_a, c.side_b].filter(Boolean),
+    location: c.location,
+    severity: intensity,
+    metadata: {
+      conflictId: c.conflict_id,
+      typeOfConflict: c.type_of_conflict,
+      intensityLevel: c.intensity_level,
+      cumulativeIntensity: c.cumulative_intensity,
+      sourceDataset: 'UCDP/PRIO Armed Conflict Dataset',
+    },
   };
 }
 
@@ -331,9 +336,11 @@ export async function getSituationIntelligence(options: {
   const iso3 = countryNameToIso3(options.country);
 
   const results = await Promise.allSettled([
-    isACLEDConfigured()
-      ? fetchEvents({ country: options.country, dateStart: options.dateStart, limit: options.limit || 50 })
-      : Promise.resolve([]),
+    getGroundedSearchEvents({
+      query: options.query ?? options.country,
+      country: options.country,
+      limit: Math.min(options.limit ?? 12, 20),
+    }),
     searchArticles({ query: options.query || options.country, timespan: '7d', maxRecords: 20 }),
     searchReports({ country: options.country, limit: 10 }),
     iso3 ? getDisplacement(iso3) : Promise.resolve({ idps: 0, refugees: 0, source: '' }),
@@ -341,9 +348,10 @@ export async function getSituationIntelligence(options: {
     iso3 ? getFunding(iso3) : Promise.resolve(null),
     getCurrentStability(options.country.slice(0, 2).toUpperCase()),
     searchUNNews(options.query || options.country, 8),
+    getConflicts(options.country),
   ]);
 
-  const acledEvents = results[0].status === 'fulfilled' ? results[0].value as ACLEDEvent[] : [];
+  const groundedEvents = results[0].status === 'fulfilled' ? results[0].value as GroundedFeedEvent[] : [];
   const gdeltArticles = results[1].status === 'fulfilled' ? results[1].value as GDELTArticle[] : [];
   const rwReports = results[2].status === 'fulfilled' ? results[2].value as RWReport[] : [];
   const displacement = results[3].status === 'fulfilled' ? results[3].value as { idps: number; refugees: number } : undefined;
@@ -351,32 +359,19 @@ export async function getSituationIntelligence(options: {
   const funding = results[5].status === 'fulfilled' ? results[5].value as { required: number; funded: number; pct: number } | null : undefined;
   const stability = results[6].status === 'fulfilled' ? results[6].value as { score: number; trend: 'improving' | 'stable' | 'worsening' } | null : undefined;
   const unNews = results[7].status === 'fulfilled' ? results[7].value as UNNewsItem[] : [];
+  const ucdpConflicts = results[8].status === 'fulfilled' ? results[8].value as UCDPConflict[] : [];
 
   const items: IntelligenceItem[] = [
-    ...acledEvents.map(acledToIntel),
+    ...groundedEvents.map(groundedToIntel),
     ...gdeltArticles.map(gdeltToIntel),
+    ...ucdpConflicts.map(ucdpToIntel),
     ...rwReports.map(rwToIntel),
     ...unNews.map(unToIntel),
   ];
 
-  // ── Fallback: grounded Gemini + Google Search ────────────────────────────────
-  // If every structured feed returned empty (e.g., missing ACLED creds, GDELT
-  // rate-limited, ReliefWeb filter didn't match), reach for AI Search so the
-  // user still gets *something* instead of the dreaded "0 items from 0 sources".
-  let groundedCount = 0;
-  let fallbackUsed = false;
-  if (items.length === 0) {
-    const grounded = await getGroundedSearchEvents({
-      query: options.query ?? options.country,
-      country: options.country,
-      limit: options.limit ?? 10,
-    });
-    groundedCount = grounded.length;
-    if (grounded.length > 0) {
-      fallbackUsed = true;
-      items.push(...grounded.map(groundedToIntel));
-    }
-  }
+  // `fallbackUsed` now means the secondary structured feeds returned no items
+  // and the visible result set is fully dependent on grounded Google Search.
+  const fallbackUsed = groundedEvents.length > 0 && gdeltArticles.length === 0 && rwReports.length === 0 && unNews.length === 0;
 
   const severityOrder: Record<IntelligenceItem['severity'], number> = { critical: 0, high: 1, medium: 2, low: 3 };
   items.sort((a, b) => {
@@ -395,7 +390,7 @@ export async function getSituationIntelligence(options: {
 
     // Map source name for reliability lookup
     const sourceMap: Record<string, string> = {
-      acled: 'ACLED', gdelt: 'GDELT', reliefweb: 'ReliefWeb', unnews: 'UN News',
+      event_feed: 'Open Event Feed', gdelt: 'GDELT', ucdp: 'UCDP', reliefweb: 'ReliefWeb', unnews: 'UN News',
       grounded_search: 'Google Search (Gemini Grounded)',
     };
 
@@ -409,11 +404,12 @@ export async function getSituationIntelligence(options: {
     events: items,
     totalCount: items.length,
     sources: {
-      acled: acledEvents.length,
+      event_feed: 0,
       gdelt: gdeltArticles.length,
+      ucdp: ucdpConflicts.length,
       reliefweb: rwReports.length,
       unnews: unNews.length,
-      grounded_search: groundedCount,
+      grounded_search: groundedEvents.length,
     },
     fallbackUsed,
     humanitarian: (displacement || foodSecurity?.length || funding) ? {
@@ -452,7 +448,7 @@ export async function getConflictProfile(options: {
 
   // ── Parallel fetch all sources ──────────────────────────────────────────────
   const [
-    acledResult,
+    groundedResult,
     gdeltResult,
     rwResult,
     unNewsResult,
@@ -467,10 +463,12 @@ export async function getConflictProfile(options: {
     crisisWatchResult,
     sipriResult,
   ] = await Promise.all([
-    timed('ACLED', () =>
-      isACLEDConfigured()
-        ? fetchEvents({ country: options.country, dateStart: options.dateStart, limit: options.limit ?? 50 })
-        : Promise.resolve([]),
+    timed('Google Search (Gemini Grounded)', () =>
+      getGroundedSearchEvents({
+        query: options.query ?? options.country,
+        country: options.country,
+        limit: Math.min(options.limit ?? 12, 20),
+      }),
     ),
     timed('GDELT', () =>
       searchArticles({ query: options.query ?? options.country, timespan: '7d', maxRecords: 20 }),
@@ -514,7 +512,7 @@ export async function getConflictProfile(options: {
   ]);
 
   // ── Unpack results ──────────────────────────────────────────────────────────
-  const acledEvents = (acledResult.result as ACLEDEvent[] | null) ?? [];
+  const groundedEvents = (groundedResult.result as GroundedFeedEvent[] | null) ?? [];
   const gdeltArticles = (gdeltResult.result as GDELTArticle[] | null) ?? [];
   const rwReports = (rwResult.result as RWReport[] | null) ?? [];
   const unNews = (unNewsResult.result as UNNewsItem[] | null) ?? [];
@@ -533,8 +531,9 @@ export async function getConflictProfile(options: {
 
   // ── Build SituationIntelligence ─────────────────────────────────────────────
   const items: IntelligenceItem[] = [
-    ...acledEvents.map(acledToIntel),
+    ...groundedEvents.map(groundedToIntel),
     ...gdeltArticles.map(gdeltToIntel),
+    ...ucdpConflicts.map(ucdpToIntel),
     ...rwReports.map(rwToIntel),
     ...unNews.map(unToIntel),
   ];
@@ -552,33 +551,18 @@ export async function getConflictProfile(options: {
     funding: hdxFund ?? undefined,
   };
 
-  // Same grounded-search fallback as v1 path — keep ConflictProfile useful
-  // when every structured feed returns empty.
-  let v2GroundedCount = 0;
-  let v2FallbackUsed = false;
-  if (items.length === 0) {
-    const grounded = await getGroundedSearchEvents({
-      query: options.query ?? options.country,
-      country: options.country,
-      limit: options.limit ?? 10,
-    });
-    v2GroundedCount = grounded.length;
-    if (grounded.length > 0) {
-      v2FallbackUsed = true;
-      items.push(...grounded.map(groundedToIntel));
-      items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }
-  }
+  const v2FallbackUsed = groundedEvents.length > 0 && gdeltArticles.length === 0 && rwReports.length === 0 && unNews.length === 0;
 
   const intelligence: SituationIntelligence = {
     events: items,
     totalCount: items.length,
     sources: {
-      acled: acledEvents.length,
+      event_feed: 0,
       gdelt: gdeltArticles.length,
+      ucdp: ucdpConflicts.length,
       reliefweb: rwReports.length,
       unnews: unNews.length,
-      grounded_search: v2GroundedCount,
+      grounded_search: groundedEvents.length,
     },
     fallbackUsed: v2FallbackUsed,
     humanitarian,
@@ -588,10 +572,10 @@ export async function getConflictProfile(options: {
 
   // ── Risk composite ──────────────────────────────────────────────────────────
   // Three signals normalised to 0-100:
-  //   1. Security intensity: acled events / 100, clamped
+  //   1. Security intensity: GDELT article volume plus UCDP conflict signal, clamped
   //   2. GDELT instability: stability score (already 0-N instability; normalise against 3.0 as high)
   //   3. Humanitarian need: food insecurity phase 3+ population fraction
-  const securitySignal = Math.min(1, acledEvents.length / 100);
+  const securitySignal = Math.min(1, (gdeltArticles.length + ucdpConflicts.length * 10) / 100);
   const gdeltSignal = stability ? Math.min(1, stability.score / 3.0) : 0;
   const foodPhase3Plus = hdxFood
     .filter((f) => ['IPC 3', 'IPC 4', 'IPC 5', 'Phase 3', 'Phase 4', 'Phase 5', 'Crisis', 'Emergency', 'Catastrophe'].some((p) => f.phase.includes(p)))
@@ -603,7 +587,7 @@ export async function getConflictProfile(options: {
   const composite = Math.round(Math.min(100, compositeRaw * 100));
 
   const activeSources = [
-    acledEvents.length > 0 && 'ACLED',
+    groundedEvents.length > 0 && 'Google Search (Gemini Grounded)',
     gdeltArticles.length > 0 && 'GDELT',
     stability !== null && 'GDELT Stability',
     unhcrData !== null && 'UNHCR',
@@ -650,7 +634,7 @@ export async function getConflictProfile(options: {
 
   // ── Source health list ──────────────────────────────────────────────────────
   const sourceHealth: SourceHealth[] = [
-    acledResult.health,
+    groundedResult.health,
     gdeltResult.health,
     rwResult.health,
     unNewsResult.health,

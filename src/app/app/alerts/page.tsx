@@ -75,7 +75,7 @@ const SEVERITY_LABEL: Record<string, string> = {
 };
 
 // ── Tool info constants ────────────────────────────────────────────────────────
-const TOOL_METHODOLOGY = `The PRAXIS Alert System monitors situation-specific triggers using GDELT event detection, ACLED incident tracking, and Gemini-powered threat assessment. Alerts are generated through both automated background scans (daily cron at 06:00 UTC) and on-demand analysis.
+const TOOL_METHODOLOGY = `The PRAXIS Alert System monitors situation-specific triggers using GDELT event detection, ReliefWeb/UN News updates, Google Search-grounded web intelligence, and Gemini-powered threat assessment. Alerts are generated through both automated background scans (daily cron at 06:00 UTC) and on-demand analysis.
 
 Alert severity is calibrated against the Glasl Escalation Model — Critical alerts indicate Stage 7+ behavior, High alerts indicate Stage 4-6 dynamics, Medium covers Stages 2-3, and Low covers emerging tensions.
 
@@ -88,7 +88,8 @@ const TOOL_FRAMEWORKS = [
 
 const TOOL_SOURCES = [
   { name: 'GDELT',            status: 'live' as const },
-  { name: 'ACLED',            status: 'live' as const },
+  { name: 'ReliefWeb / UN News', status: 'live' as const },
+  { name: 'Google Search',    status: 'live' as const },
   { name: 'Gemini Analysis',  status: 'live' as const },
 ];
 
@@ -407,7 +408,7 @@ Focus on: security incidents, political developments, humanitarian access, cease
       {/* Tool Info Panel */}
       <ToolInfoPanel
         toolName="Alert Center"
-        description="Real-time conflict alert system combining GDELT, ACLED, and Gemini analysis to monitor situation-specific escalation triggers."
+        description="Real-time conflict alert system combining GDELT, ReliefWeb, UN News, Google Search, and Gemini analysis to monitor situation-specific escalation triggers."
         methodology={TOOL_METHODOLOGY}
         frameworks={TOOL_FRAMEWORKS}
         dataSources={TOOL_SOURCES}

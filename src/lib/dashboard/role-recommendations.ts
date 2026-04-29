@@ -26,6 +26,7 @@ export interface ToolRecommendation {
 
 const ROLE_TOOLS: Record<AnalystRole, string[]> = {
   un_official: [
+    'situation-intelligence',
     'briefing',         // Intelligence Briefing — primary deliverable
     'early-warning',    // Escalation monitor — UN PAO core workflow
     'risk-monitor',     // INFORM-style risk feed
@@ -34,6 +35,7 @@ const ROLE_TOOLS: Record<AnalystRole, string[]> = {
     'commitments',      // Commitment Tracker
   ],
   diplomat: [
+    'situation-intelligence',
     'negotiation-prep', // Negotiation Prep — primary tool for diplomats
     'talking-points',   // Talking points for meetings
     'stakeholder-map',  // Power & influence mapping
@@ -42,6 +44,7 @@ const ROLE_TOOLS: Record<AnalystRole, string[]> = {
     'treaty-analyzer',
   ],
   mediator: [
+    'situation-intelligence',
     'mediation-design',     // Process architecture — primary for mediators
     'negotiation-prep',     // Fisher-Ury BATNA/ZOPA prep
     'concordia',            // Mediation simulation
@@ -50,6 +53,7 @@ const ROLE_TOOLS: Record<AnalystRole, string[]> = {
     'commitments',          // Commitment tracker
   ],
   think_tank: [
+    'situation-intelligence',
     'compare',          // Historical Parallels — think-tank bread & butter
     'scenarios',        // Scenario Planner
     'game-theory',      // Strategic interaction modelling
@@ -58,6 +62,7 @@ const ROLE_TOOLS: Record<AnalystRole, string[]> = {
     'dossier',          // Diplomatic Dossier
   ],
   ngo: [
+    'situation-intelligence',
     'humanitarian',     // OCHA snapshot — NGO primary
     'human-rights',     // Human Rights Monitor
     'early-warning',
@@ -66,6 +71,7 @@ const ROLE_TOOLS: Record<AnalystRole, string[]> = {
     'commitments',
   ],
   researcher: [
+    'situation-intelligence',
     'argus',            // Deep research — researcher primary
     'compare',          // Historical Parallels
     'media-compass',
@@ -74,14 +80,16 @@ const ROLE_TOOLS: Record<AnalystRole, string[]> = {
     'deep-search-agent',
   ],
   journalist: [
+    'situation-intelligence',
     'media-compass',    // Media & Narrative
     'media-roundup',    // Media Roundup
     'info-environment', // Info Environment
+    'sources-library',
     'compare',
     'argus',
-    'sources-library',
   ],
   private_sector: [
+    'situation-intelligence',
     'risk-monitor',     // Risk Assessment — primary for private-sector clients
     'economic-impact',  // Economic Impact
     'sanctions',
@@ -90,6 +98,7 @@ const ROLE_TOOLS: Record<AnalystRole, string[]> = {
     'briefing',
   ],
   other: [
+    'situation-intelligence',
     'dashboard',
     'risk-monitor',
     'briefing',
@@ -113,6 +122,7 @@ const DOMAIN_TOOL_BOOSTS: Partial<Record<AnalystDomainId, string[]>> = {
 };
 
 const TOOL_RATIONALES: Record<string, string> = {
+  'situation-intelligence': 'Generate the executive diagnosis, scenarios, risk, graph, provenance, and next actions for this situation.',
   'briefing': 'Compose UN-DPPA-style intelligence briefings tied to the active situation.',
   'early-warning': 'Glasl-stage escalation monitor with INFORM risk index and real-time signals.',
   'risk-monitor': 'Composite risk gauge across hazard, vulnerability, and coping capacity.',
@@ -146,6 +156,7 @@ const TOOL_RATIONALES: Record<string, string> = {
 
 const TOOL_HREFS: Record<string, string> = {
   'sources-library': '/sources',
+  'situation-intelligence': '/dashboard#executive-intelligence',
 };
 
 export function recommendToolsForRole(

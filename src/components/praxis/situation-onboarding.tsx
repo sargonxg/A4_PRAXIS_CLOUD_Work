@@ -9,7 +9,6 @@ import {
 // Sparkles is used in two places: header icon and fallback badge below
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
-import { useAuth } from '@/lib/auth/auth-context';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import type { Situation } from '@/types/situation';
 
@@ -25,7 +24,6 @@ type OnboardingStep = 'research' | 'sources' | 'review' | 'done';
  * Helps the user populate their situation with real data via AI research.
  */
 export function SituationOnboarding({ situation, onComplete }: SituationOnboardingProps) {
-  const { credits } = useAuth();
   const { updateSituation } = useSituationStore();
 
   const [step, setStep] = useState<OnboardingStep>('research');
@@ -308,7 +306,7 @@ export function SituationOnboarding({ situation, onComplete }: SituationOnboardi
 
               <div className="flex items-center justify-between pt-2">
                 <p className="text-[11px] text-navy-400">
-                  Research uses 5 credits. {credits} credits available.
+                  Included in your workspace limits. You can continue manually if you prefer.
                 </p>
                 <div className="flex items-center gap-3">
                   <button onClick={() => { setStep('done'); onComplete(); }} className="text-xs text-navy-500 hover:text-navy-700">

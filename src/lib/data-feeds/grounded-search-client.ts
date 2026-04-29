@@ -1,10 +1,10 @@
 /**
- * Grounded Search Client — Gemini Flash + Google Search fallback.
+ * Grounded Search Client — Gemini Flash + Google Search.
  *
- * Used by the feed aggregator when structured feeds (ACLED/GDELT/ReliefWeb)
- * return empty (missing API keys in prod, rate-limits, or strict filters that
- * don't match a free-form situation name). Gives users *actual* intelligence
- * items instead of the dreaded "0 items from 0 sources" state.
+ * Primary PRAXIS live-research path. Structured feeds such as GDELT,
+ * ReliefWeb, HDX, UCDP, and UN News are corroborating signals; this client
+ * gives users checkable URLs for the current political information they are
+ * asking the system to understand.
  *
  * Zero-config: works with just GOOGLE_AI_API_KEY or Vertex ADC on Cloud Run.
  */
@@ -91,8 +91,8 @@ function toFeedEvent(raw: RawEvent): FeedEvent {
 // ───────────────────────────────────────────────────────────────────────────────
 
 /**
- * Fetch 10 recent news events about {query} via Gemini Flash + Google Search grounding.
- * Returns `[]` on any error — never throws — so it's safe to chain as a fallback.
+ * Fetch recent news events about {query} via Gemini Flash + Google Search grounding.
+ * Returns `[]` on any error so callers can continue with secondary feeds.
  */
 export async function getGroundedSearchEvents(opts: {
   query: string;

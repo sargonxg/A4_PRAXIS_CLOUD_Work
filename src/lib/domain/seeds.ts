@@ -40,7 +40,7 @@ const FW = {
 // ---------------------------------------------------------------------------
 
 const FEED = {
-  ACLED: 'acled',
+  GROUNDED_SEARCH: 'grounded_search',
   GDELT: 'gdelt',
   UCDP: 'ucdp',
   UNHCR: 'unhcr',
@@ -122,7 +122,7 @@ export const DOMAIN_SEEDS: Record<DomainId, Seed> = {
       mediation: 1.3,
       legal_ihl: 1.3,
     },
-    preferredFeeds: [FEED.ACLED, FEED.UCDP, FEED.GDELT, FEED.UNHCR, FEED.SIPRI],
+    preferredFeeds: [FEED.GROUNDED_SEARCH, FEED.UCDP, FEED.GDELT, FEED.UNHCR, FEED.SIPRI],
     frameworks: [FW.GLASL, FW.STEDMAN, FW.FEARON, FW.ZARTMAN, FW.MITCHELL, FW.INFORM],
     promptOverrides: {},
     defaultAudience: 'senior_leadership',
@@ -257,7 +257,7 @@ export const DOMAIN_SEEDS: Record<DomainId, Seed> = {
       humanitarian: 1.3,
       development: 1.2,
     },
-    preferredFeeds: [FEED.UNEP, FEED.RELIEFWEB, FEED.ACLED, FEED.HDX],
+    preferredFeeds: [FEED.GROUNDED_SEARCH, FEED.UNEP, FEED.RELIEFWEB, FEED.HDX],
     frameworks: [FW.GALTUNG, FW.INFORM, FW.LEDERACH, FW.IPC],
     promptOverrides: {},
     defaultAudience: 'external_partners',
@@ -295,7 +295,7 @@ export const DOMAIN_SEEDS: Record<DomainId, Seed> = {
       legal_ihl: 1.5,
       diplomatic: 1.3,
     },
-    preferredFeeds: [FEED.UNODC, FEED.INTERPOL, FEED.SIPRI, FEED.ACLED],
+    preferredFeeds: [FEED.GROUNDED_SEARCH, FEED.UNODC, FEED.INTERPOL, FEED.SIPRI],
     frameworks: [FW.STEDMAN, FW.MITCHELL, FW.FEARON, FW.BARNETT_DUVALL],
     promptOverrides: {},
     defaultAudience: 'senior_leadership',

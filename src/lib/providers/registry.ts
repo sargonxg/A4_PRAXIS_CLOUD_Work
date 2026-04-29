@@ -18,7 +18,7 @@ export type ProviderId =
   | 'firecrawl'
   | 'tavily'
   | 'parallel'
-  | 'acled';
+  | 'ucdp';
 
 export type ProviderCategory = 'ai' | 'research' | 'scraping' | 'feed';
 export type ProviderTier = 'free' | 'freemium' | 'premium';
@@ -53,7 +53,7 @@ export interface ProviderSpec {
   /** What new capabilities the user gains after adding this key. */
   unlocks: string[];
   /** Which validator branch to call when the user clicks Validate. */
-  validator?: 'google_ai' | 'anthropic' | 'openai' | 'firecrawl' | 'tavily' | 'parallel' | 'acled';
+  validator?: 'google_ai' | 'anthropic' | 'openai' | 'firecrawl' | 'tavily' | 'parallel' | 'ucdp';
   /** Whether the platform has a tenant-wide fallback (ENV var on the server). */
   platformFallbackEnvVars: string[];
 }
@@ -153,27 +153,23 @@ export const PROVIDER_REGISTRY: Readonly<Record<ProviderId, ProviderSpec>> = Obj
     validator: 'firecrawl',
     platformFallbackEnvVars: ['FIRECRAWL_API_KEY'],
   },
-  acled: {
-    id: 'acled',
-    label: 'ACLED — Armed Conflict Location & Event Data',
-    tagline: 'Structured, academically rigorous global conflict event dataset. The backbone of Risk Monitor and Early Warning when configured.',
+  ucdp: {
+    id: 'ucdp',
+    label: 'UCDP',
+    tagline: 'Uppsala Conflict Data Program API for structured conflict records, GED events, and battle-deaths history.',
     category: 'feed',
-    tier: 'freemium',
-    fields: [
-      { name: 'key', label: 'API Key', placeholder: 'your ACLED key', required: true, secret: true },
-      { name: 'email', label: 'Account Email', placeholder: 'you@org.org', required: true, secret: false },
-    ],
-    signupUrl: 'https://developer.acleddata.com/',
-    docsUrl: 'https://developer.acleddata.com/',
-    costHint: 'Free for academic / non-profit registrations. Commercial tiers available.',
+    tier: 'free',
+    fields: [{ name: 'token', label: 'API Token', placeholder: 'UCDP access token', required: true, secret: true }],
+    signupUrl: 'https://ucdp.uu.se/apidocs/',
+    docsUrl: 'https://ucdp.uu.se/apidocs/',
+    costHint: 'Authenticated access is limited by UCDP daily request quota',
     unlocks: [
-      'Event-by-event conflict timeline',
-      'Fatalities + violence type breakdowns',
-      'Geospatial event clustering',
-      'Risk Monitor precision layer',
+      'UCDP conflict records in live intelligence feeds',
+      'Historical battle-deaths trends for risk context',
+      'Structured corroboration for conflict timelines and geospatial analysis',
     ],
-    validator: 'acled',
-    platformFallbackEnvVars: ['ACLED_API_KEY', 'ACLED_EMAIL'],
+    validator: 'ucdp',
+    platformFallbackEnvVars: ['UCDP_API_TOKEN'],
   },
 });
 

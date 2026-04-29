@@ -57,6 +57,14 @@ export function hashInput(input: object): string {
     return 'key_actors';
   }
 
+  // Check for practical risk/evidence/mediation questions.
+  if (
+    matchesPattern(str, ['most important risk', 'biggest risk', 'primary risk', 'top risk', 'risk this week']) ||
+    (matchesPattern(str, ['risk']) && matchesPattern(str, ['evidence', 'supports', 'mediator', 'ask next', 'what should']))
+  ) {
+    return 'risk_mediator';
+  }
+
   // Check for ceasefire/scenario questions
   if (matchesPattern(str, ['ceasefire collapse', 'ceasefire fails', 'ceasefire breaks', 'what if the ceasefire', 'september ceasefire', 'what if ceasefire'])) {
     return 'ceasefire_collapse';

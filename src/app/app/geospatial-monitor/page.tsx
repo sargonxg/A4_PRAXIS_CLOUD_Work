@@ -532,7 +532,7 @@ export default function GeospatialMonitorPage() {
           <div>
             <h1 className="text-xl font-semibold text-white">Geospatial Monitor</h1>
             <p className="text-xs text-white/40">
-              ACLED conflict event mapping with hotspot analysis
+              Open-source event mapping with hotspot analysis
             </p>
           </div>
           {fetchedAt && (

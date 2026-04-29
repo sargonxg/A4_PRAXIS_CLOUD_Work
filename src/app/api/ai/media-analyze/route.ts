@@ -3,6 +3,7 @@ import { getModel } from '@/lib/ai/providers';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
+import { executeWebResearch } from '@/lib/ai/web-research';
 import { z } from 'zod';
 import type { Situation } from '@/types/situation';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
@@ -48,6 +49,23 @@ export const POST = withCalibration('media_compass', 'ai_analysis', {
     const graphCtx = situationId
       ? await buildGraphContext(ctx.uid, situationId, 'media_analysis').catch(() => '')
       : '';
+    const liveResults = await executeWebResearch(
+      [source, topic, situation?.name].filter(Boolean).join(' '),
+      situation?.name ?? source,
+      ctx.uid,
+      {
+        toolId: 'media-analysis',
+        actors: situation?.actors,
+        description: situation?.description,
+        maxResults: 6,
+      },
+    ).catch(() => []);
+    const liveContext = liveResults.length
+      ? liveResults
+          .slice(0, 6)
+          .map((r, i) => `[${i + 1}] ${r.title} — ${r.source}${r.publishedDate ? ` (${r.publishedDate})` : ''}\n${r.url}\n${(r.snippet ?? r.content).slice(0, 260)}`)
+          .join('\n\n')
+      : 'No live source results were retrieved. Flag this as an evidence gap if the outlet cannot be verified.';
 
     const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
     const langDirective = outputConstraints.language !== 'en'
@@ -61,7 +79,7 @@ export const POST = withCalibration('media_compass', 'ai_analysis', {
 ${topic ? `Specific topic context: ${topic}` : ''}
 Provide a professional assessment of political orientation (-1 left to +1 right), reliability (0-1), editorial independence (0-1), ownership type, country of origin, known biases, coverage strengths, and conflict coverage notes. Recommend cross-reference sources.`;
 
-    const fullPrompt = graphCtx ? `${graphCtx}\n\n${basePrompt}` : basePrompt;
+    const fullPrompt = `${graphCtx ? `${graphCtx}\n\n` : ''}LIVE SOURCE CONTEXT\n${liveContext}\n\n${basePrompt}`;
 
     const result = await generateText({
       model: getModel(),

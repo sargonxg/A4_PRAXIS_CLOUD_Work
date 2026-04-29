@@ -14,7 +14,7 @@ interface Source {
 const FREE_SOURCES: Source[] = [
   { name: "Google Search (grounded)", role: "Live web intelligence via Gemini grounding", tier: "platform" },
   { name: "Vertex AI Deep Research", role: "Multi-agent planner → researcher → synthesizer pipeline", tier: "platform" },
-  { name: "GDELT BigQuery", role: "Global media events + tone, 15-min cadence", tier: "free" },
+  { name: "GDELT BigQuery", role: "Global media events, themes, tone, and source context", tier: "free" },
   { name: "GDELT Knowledge Graph", role: "Entity mention volume + sentiment", tier: "free" },
   { name: "Wikipedia", role: "Actor and institution enrichment", tier: "free" },
   { name: "ReliefWeb", role: "OCHA humanitarian situation reports", tier: "free" },
@@ -68,13 +68,14 @@ export function DataSubstrate() {
         >
           <span className="text-overline text-gold-700">Data Substrate</span>
           <h2 className="mt-2 font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl">
-            Open sources. Open licenses. No paywalls.
+            Provenance before persuasion.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-navy-500">
-            Every PRAXIS feed is open data, mirrored on Google Cloud
-            BigQuery public datasets, and usable in commercial workflows
-            with attribution. We pair these with live Google grounded
-            search and Vertex AI Deep Research for everything else.
+            PRAXIS separates open-data feeds, Google Cloud research
+            services, and your approved private corpus. Outputs preserve
+            source names, retrieval context, methodology notes, and citation
+            paths so analysts can review the evidentiary basis before using
+            a finding.
           </p>
         </motion.div>
 
@@ -89,15 +90,16 @@ export function DataSubstrate() {
             <div className="mb-4 flex items-center gap-2">
               <Zap className="h-4 w-4 text-emerald-600" />
               <h3 className="text-sm font-semibold uppercase tracking-wider text-emerald-700">
-                Always on — open data + Google AI
+                Always on — open data, Google Cloud research, private corpus
               </h3>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               {FREE_SOURCES.map((s) => <SourceRow key={s.name} source={s} />)}
             </div>
             <p className="mt-4 text-xs italic text-navy-500">
-              No credit card required. No vendor licensing fees. Every
-              feed&rsquo;s license is logged in the Compliance page.
+              Source availability and licensing vary by feed. PRAXIS records
+              source class, retrieval path, and license notes where available
+              so teams can apply their own clearance and attribution rules.
             </p>
           </motion.div>
         </div>
@@ -112,7 +114,7 @@ export function DataSubstrate() {
           <div className="mb-4 flex items-center gap-2">
             <Database className="h-5 w-5 text-diplomatic-blue" />
             <h3 className="font-serif text-xl text-navy-900">
-              Everything flows into your situation&rsquo;s knowledge graph
+              The situation graph keeps analysis tied to evidence
             </h3>
           </div>
           <div className="grid gap-5 md:grid-cols-3">
@@ -134,14 +136,16 @@ export function DataSubstrate() {
           </div>
           <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-navy-600">
-              Full methodology is published in-product under every tool&rsquo;s
-              <span className="mx-1 font-semibold">About this tool</span>panel.
+              Methodology, source classes, and model assumptions are exposed
+              in-product under each tool&rsquo;s{' '}
+              <span className="mx-1 font-semibold">About this tool</span>{' '}
+              panel.
             </p>
             <Link
-              href="/demo"
+              href="/login?mode=demo"
               className="inline-flex items-center gap-1 rounded-md bg-diplomatic-blue px-4 py-2 text-xs font-semibold text-white hover:bg-diplomatic-blue/90"
             >
-              See it live in the demo →
+              Open the sample workspace →
             </Link>
           </div>
         </motion.div>

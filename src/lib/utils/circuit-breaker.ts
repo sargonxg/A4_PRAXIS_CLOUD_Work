@@ -47,7 +47,7 @@ class CircuitBreaker {
         console.log(`[circuit-breaker] ${this.config.name} CLOSED — recovered`);
       }
       return result;
-    } catch (error) {
+    } catch {
       this.failures++;
       this.lastFailure = Date.now();
       if (this.failures >= this.config.failureThreshold) {
@@ -60,7 +60,6 @@ class CircuitBreaker {
 }
 
 // Singleton breakers — one per external service
-export const acledBreaker    = new CircuitBreaker({ name: 'ACLED',    failureThreshold: 3, resetTimeoutMs: 300_000 });
 export const gdeltBreaker    = new CircuitBreaker({ name: 'GDELT',    failureThreshold: 5, resetTimeoutMs: 60_000 });
 export const hdxBreaker      = new CircuitBreaker({ name: 'HDX',      failureThreshold: 3, resetTimeoutMs: 300_000 });
 export const reliefwebBreaker= new CircuitBreaker({ name: 'ReliefWeb',failureThreshold: 3, resetTimeoutMs: 300_000 });
@@ -72,7 +71,6 @@ export const firecrawlBreaker= new CircuitBreaker({ name: 'Firecrawl',failureThr
 /** Returns simple state map — name → 'closed'|'open'|'half-open' */
 export function getAllBreakerStates(): Record<string, string> {
   return {
-    ACLED:     acledBreaker.getState(),
     GDELT:     gdeltBreaker.getState(),
     HDX:       hdxBreaker.getState(),
     ReliefWeb: reliefwebBreaker.getState(),
@@ -86,7 +84,6 @@ export function getAllBreakerStates(): Record<string, string> {
 /** Returns rich breaker details for health dashboard */
 export function getAllBreakerDetails() {
   return [
-    acledBreaker,
     gdeltBreaker,
     hdxBreaker,
     reliefwebBreaker,

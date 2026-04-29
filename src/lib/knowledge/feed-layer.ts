@@ -10,7 +10,6 @@ import type { FeedCacheEntry } from './types';
 // TTL per feed (in hours)
 const FEED_TTL_HOURS: Record<string, number> = {
   gdelt: 1,
-  acled: 4,
   hdx: 6,
   reliefweb: 6,
   unhcr: 12,
@@ -78,20 +77,20 @@ export class FeedLayer {
 
   async getToolRelevantFeeds(toolId: string): Promise<Record<string, FeedCacheEntry>> {
     const toolFeedMap: Record<string, string[]> = {
-      'risk-monitor': ['acled', 'gdelt', 'hdx', 'ucdp'],
-      'early-warning': ['acled', 'gdelt', 'icews', 'ucdp'],
+      'risk-monitor': ['gdelt', 'hdx', 'ucdp'],
+      'early-warning': ['gdelt', 'icews', 'ucdp'],
       'humanitarian': ['hdx', 'unhcr', 'reliefweb', 'acaps'],
-      'timeline': ['acled', 'gdelt', 'unnews', 'ucdp'],
-      'argus': ['acled', 'gdelt', 'icews', 'ucdp'],
+      'timeline': ['gdelt', 'unnews', 'ucdp'],
+      'argus': ['gdelt', 'icews', 'ucdp'],
       'media-compass': ['gdelt', 'reliefweb', 'unnews'],
       'media-roundup': ['gdelt', 'unnews', 'reliefweb'],
-      'geospatial-monitor': ['acled', 'hdx', 'unhcr'],
+      'geospatial-monitor': ['gdelt', 'hdx', 'unhcr'],
       'sanctions': ['opensanctions'],
-      'actor-profiles': ['acled', 'gdelt', 'opensanctions'],
-      'power-map': ['acled', 'gdelt', 'vdem'],
+      'actor-profiles': ['gdelt', 'opensanctions'],
+      'power-map': ['gdelt', 'vdem'],
       'info-environment': ['gdelt', 'unnews'],
-      'alert-center': ['acled', 'gdelt', 'hdx'],
-      'dashboard': ['acled', 'gdelt', 'hdx', 'reliefweb'],
+      'alert-center': ['gdelt', 'hdx'],
+      'dashboard': ['gdelt', 'hdx', 'reliefweb'],
       'sources-library': ['gdelt', 'reliefweb', 'unnews'],
     };
     const feeds = toolFeedMap[toolId] ?? ['gdelt'];

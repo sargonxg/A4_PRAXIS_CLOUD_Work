@@ -10,7 +10,7 @@ interface NoDataStateProps {
   loading?: boolean;
 }
 
-export function NoDataState({ toolName, situationName, creditCost, onGenerate, loading }: NoDataStateProps) {
+export function NoDataState({ toolName, situationName, onGenerate, loading }: NoDataStateProps) {
   return (
     <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-navy-200 bg-white py-16">
       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/10">
@@ -31,7 +31,7 @@ export function NoDataState({ toolName, situationName, creditCost, onGenerate, l
         {loading ? 'Generating...' : 'Generate with PRAXIS'}
       </button>
       <p className="mt-2 text-[11px] text-navy-400">
-        This will use {creditCost} credit{creditCost !== 1 ? 's' : ''}
+        Included in your workspace limits. PRAXIS will save the result back to this situation.
       </p>
     </div>
   );

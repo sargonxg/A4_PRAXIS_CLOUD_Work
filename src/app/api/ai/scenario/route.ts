@@ -84,7 +84,7 @@ export const POST = withCalibration('scenario', 'ai_deep_think', {
         const intel = await getSituationIntelligence({ country, limit: 15 });
         if (intel.events.length > 0) {
           dataContext = `\nCURRENT DATA (ground your analysis in this):
-- ${intel.sources.acled} ACLED events, ${intel.sources.gdelt} GDELT articles, ${intel.sources.reliefweb} ReliefWeb reports
+- ${intel.sources.gdelt} GDELT articles, ${intel.sources.reliefweb} ReliefWeb reports, ${intel.sources.unnews} UN News items, ${intel.sources.grounded_search ?? 0} Google Search items
 ${intel.stability ? `- GDELT stability: ${intel.stability.score.toFixed(1)} (${intel.stability.trend})` : ''}
 ${intel.humanitarian?.displacement ? `- Displacement: ${intel.humanitarian.displacement.idps} IDPs` : ''}
 - Recent events: ${intel.events.slice(0, 5).map((e) => e.title).join('; ')}\n`;

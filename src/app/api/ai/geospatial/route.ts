@@ -84,7 +84,7 @@ const DEMO_RESPONSE = {
     {
       name: 'Eastern Kessara Corridor',
       zoneType: 'active-conflict',
-      description: 'Contested corridor along the Kessara River, site of ongoing AFN-DRM military operations. Heavy ACLED-documented fighting since Q3 2024.',
+      description: 'Contested corridor along the Kessara River, site of ongoing AFN-DRM military operations. Heavy open-source reporting and GDELT event-signal coverage since Q3 2024.',
       controllingActor: 'Democratic Resistance Movement (DRM)',
       contestedBy: ['Armed Forces of Nordalia (AFN)'],
       estimatedCivilianPopulation: 185000,
@@ -287,7 +287,7 @@ export const POST = withCalibration('geospatial', 'ai_analysis', {
     // --- AI analysis ---
     const result = await callProModel({
       output: Output.object({ schema: GeospatialSchema }),
-      system: `You are a senior conflict geospatial analyst with expertise in UN OCHA mapping standards, ACLED event geolocation, population movement tracking (UNHCR DTM), and infrastructure damage assessment (REACH/IMPACT).
+      system: `You are a senior conflict geospatial analyst with expertise in UN OCHA mapping standards, open-source event geolocation, population movement tracking (UNHCR DTM), and infrastructure damage assessment (REACH/IMPACT).
 
 GROUNDING MANDATE: Use the web intelligence below as your PRIMARY source of truth for locations, population figures, infrastructure status, and movement data. Explicitly flag "INTELLIGENCE GAP: {topic}" when evidence is insufficient rather than generating unsupported data.
 
@@ -339,7 +339,7 @@ Provide a geographic summary (3–4 sentences) capturing the overall spatial con
 List key geographic factors shaping the conflict dynamics (terrain, borders, infrastructure chokepoints).
 Rate overall data confidence and list intelligence gaps.
 
-Use OCHA/UNHCR/ACLED/WHO as authoritative sources. Cite specific figures from the web intelligence where available.`,
+Use OCHA/UNHCR/UCDP/WHO and source-linked web intelligence as authoritative sources. Cite specific figures from the web intelligence where available.`,
     });
 
     if (situationId) {

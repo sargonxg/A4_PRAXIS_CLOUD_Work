@@ -99,7 +99,7 @@ export const POST = withCalibration('daily_brief', 'ai_report', {
         8000
       );
       if (intel && intel.events.length > 0) {
-        intelContext = '\n\nLIVE INTEL FEED (ACLED/GDELT/ReliefWeb — ' + new Date().toDateString() + '):\n' +
+        intelContext = '\n\nLIVE INTEL FEED (GDELT/ReliefWeb/UN News/Google Search — ' + new Date().toDateString() + '):\n' +
           intel.events.slice(0, 10).map(e =>
             `- [${e.source.toUpperCase()}] ${e.date}: ${e.title} (severity: ${e.severity})`
           ).join('\n');
@@ -179,7 +179,7 @@ STRUCTURE:
 6. mediaEnvironment: narratives, international coverage, info operations
 7. actionItems: 3-5 concrete, time-bound recommendations
 8. nextReview: specific monitoring triggers for next cycle
-${deepResearch ? '9. sourcesSummary: which sources (Firecrawl/grounded search/GDELT/ACLED) informed this brief' : ''}
+${deepResearch ? '9. sourcesSummary: which sources (web crawler/grounded search/GDELT/ReliefWeb/UN News) informed this brief' : ''}
 
 Be specific and evidence-grounded. Write for a senior UN Special Representative's morning briefing.`,
       system: `You are a senior UN DPPA political affairs officer writing the daily morning intelligence brief for the Special Representative. Be precise, specific, and actionable. Apply the UN Morning Note standard.
@@ -192,7 +192,7 @@ Calibrate the brief to the analyst profile above (role, lens, audience). Honour 
     // Attach source metadata for deep research
     const output = result.output as Record<string, unknown>;
     if (deepResearch && sourcesUsed.length > 0 && !output.sourcesSummary) {
-      output.sourcesSummary = `Sources: ${sourcesUsed.join(', ')}${intelContext ? ', ACLED/GDELT/ReliefWeb feeds' : ''}`;
+      output.sourcesSummary = `Sources: ${sourcesUsed.join(', ')}${intelContext ? ', GDELT/ReliefWeb/UN News/Google Search feeds' : ''}`;
     }
 
     if (situationId && user.uid) {

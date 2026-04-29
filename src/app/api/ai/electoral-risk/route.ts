@@ -55,7 +55,7 @@ const DEMO_RESPONSE = {
       {
         indicator: 'History of post-election violence (2019, 2022)',
         severity: 'high' as const,
-        evidence: 'ACLED records 340 election-related incidents in previous cycles',
+        evidence: 'Open-source monitoring records repeated election-related incidents in previous cycles',
       },
     ],
     institutional: [

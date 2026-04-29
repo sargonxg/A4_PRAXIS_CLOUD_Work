@@ -93,6 +93,9 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   // Brief Builder agentic workflow (v6.4 round 5 — synthesis-chair persona
   // composing a versioned, lock-able UNSC-style brief from corpus + tools)
   'ai_brief_builder': 5,
+  // Executive situation intelligence panel — structured diagnosis, scenarios,
+  // graph primitives, provenance, and confidence.
+  'ai_situation_intelligence': 4,
 };
 
 /**

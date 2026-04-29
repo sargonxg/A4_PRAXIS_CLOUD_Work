@@ -79,7 +79,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} escalation de-escalation indicators',
     ],
     methodologyTerms: ['INFORM risk index', 'conflict escalation', 'early warning indicators'],
-    sourceHints: ['crisisgroup', 'acled', 'reliefweb', 'un'],
+    sourceHints: ['crisisgroup', 'ucdp', 'reliefweb', 'un'],
   },
   'documents': {
     purpose: 'Find primary source documents for ingestion',
@@ -112,7 +112,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} major developments {actors} clashes negotiations',
     ],
     methodologyTerms: ['Glasl escalation stages', 'trigger events', 'conflict chronology'],
-    sourceHints: ['acled', 'wikipedia', 'crisisgroup'],
+    sourceHints: ['ucdp', 'wikipedia', 'crisisgroup'],
   },
   'humanitarian': {
     purpose: 'Humanitarian situation assessment',
@@ -148,7 +148,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
     ],
     actorQueryPattern: '{actor} military capability threat assessment {country}',
     methodologyTerms: ['INFORM risk index', 'hazard exposure', 'vulnerability', 'coping capacity'],
-    sourceHints: ['acled', 'crisisgroup', 'worldbank'],
+    sourceHints: ['ucdp', 'crisisgroup', 'worldbank'],
   },
   'early-warning': {
     purpose: 'Escalation indicators and de-escalation windows',
@@ -159,7 +159,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} de-escalation opportunity diplomatic window',
     ],
     methodologyTerms: ['Glasl 9-stage model', 'early warning', 'trigger events', 'tipping points'],
-    sourceHints: ['acled', 'crisisgroup', 'reuters'],
+    sourceHints: ['gdelt', 'crisisgroup', 'reuters'],
   },
   'actor-profiles': {
     purpose: 'Deep intelligence on conflict actors',
@@ -423,7 +423,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} commitment tracker verified breaches',
     ],
     methodologyTerms: ['agreement compliance', 'ceasefire monitoring', 'implementation tracking'],
-    sourceHints: ['un', 'acled', 'reliefweb'],
+    sourceHints: ['un', 'ucdp', 'reliefweb'],
   },
   'treaty-analyzer': {
     purpose: 'Legal clause analysis and ambiguity detection',
@@ -445,7 +445,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} emergency update critical development',
     ],
     methodologyTerms: ['anomaly detection', 'early warning alert', 'threshold monitoring'],
-    sourceHints: ['reuters', 'bbc', 'acled'],
+    sourceHints: ['reuters', 'bbc', 'gdelt'],
   },
   'deep-research': {
     purpose: 'Google-grounded real-time research',
@@ -466,7 +466,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} regional spillover cross-border incidents',
     ],
     methodologyTerms: ['DBSCAN clustering', 'geographic spread index', 'hotspot analysis'],
-    sourceHints: ['acled'],
+    sourceHints: ['ucdp'],
   },
   'source-monitor': {
     purpose: 'Track and evaluate new intelligence sources',

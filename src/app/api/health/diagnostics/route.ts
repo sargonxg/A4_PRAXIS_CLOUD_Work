@@ -82,7 +82,6 @@ export async function GET(request: Request) {
     polarWebhookSecretSet: !!process.env.POLAR_WEBHOOK_SECRET,
     polarServer: process.env.POLAR_SERVER ?? 'production',
     resendSet: !!process.env.RESEND_API_KEY,
-    acledSet: !!process.env.ACLED_API_KEY,
   };
 
   // --- Runtime ---

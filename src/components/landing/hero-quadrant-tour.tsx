@@ -259,7 +259,7 @@ function PanelGraph() {
           <Pill color="#F28E2B" label="Civ · IDPs 354k" count={1} />
           <div className="mt-auto rounded-md border border-emerald-200 bg-emerald-50/80 px-2 py-1">
             <span className="text-[8.5px] font-semibold uppercase tracking-wider text-emerald-700">
-              ACLED 7d · 142 events
+              GDELT/UCDP 7d · 142 signals
             </span>
           </div>
         </div>
@@ -291,7 +291,7 @@ function PanelMedia() {
     { name: 'Al Jazeera', dot: '#76B7B2', tone: 'critical', signals: 8, drift: '+1σ' },
     { name: 'RFI', dot: '#F28E2B', tone: 'analytical', signals: 7, drift: '−' },
     { name: 'Crisis Group', dot: '#59A14F', tone: 'expert', signals: 4, drift: '−' },
-    { name: 'ACLED', dot: '#59A14F', tone: 'data', signals: 6, drift: '−' },
+    { name: 'UCDP', dot: '#59A14F', tone: 'data', signals: 6, drift: '−' },
     { name: 'TASS', dot: '#E15759', tone: 'state · RU', signals: 5, drift: '+3σ' },
     { name: 'Anadolu', dot: '#E15759', tone: 'state · TR', signals: 4, drift: '+2σ' },
     { name: 'Africa Confid.', dot: '#9C755F', tone: 'expert', signals: 3, drift: '−' },
@@ -393,12 +393,12 @@ function PanelAssistant() {
       role: 'praxis',
       text: (
         <>
-          Reasoning over 142 ACLED events (last 7d), 9 OCHA situation
+          Reasoning over 142 GDELT/UCDP signals (last 7d), 9 OCHA situation
           reports and 3 Crisis Group briefings.
           <br />
           <span className="font-semibold text-navy-900">Gao</span>:
           authority is split between FAMa, Africa Corps and JNIM-aligned
-          cells; ACLED records 38 violence-against-civilians events in
+          cells; source triangulation flags 38 violence-against-civilians signals in
           7d, OCHA flags &ldquo;severe&rdquo; access on 4 of 6 cercles
           <span className="text-diplomatic-blue/80"> [OCHA · 2026-04-22]</span>.
           <br />
@@ -464,7 +464,7 @@ function PanelAssistant() {
               Sources used
             </div>
             <div className="mt-1 flex flex-wrap gap-1">
-              {['ACLED', 'OCHA', 'ICG', 'UCDP', 'ReliefWeb'].map((s) => (
+              {['GDELT', 'OCHA', 'ICG', 'UCDP', 'ReliefWeb'].map((s) => (
                 <span
                   key={s}
                   className="rounded px-1.5 py-[1px] text-[7.5px] font-semibold uppercase tracking-wide text-diplomatic-blue bg-diplomatic-blue/8 border border-diplomatic-blue/15"
@@ -493,7 +493,7 @@ function PanelDrafting() {
     },
     {
       label: 'Situation · 7d',
-      body: '142 ACLED events · 354k IDPs · 4/6 Gao cercles severe access (OCHA).',
+      body: '142 GDELT/UCDP signals · 354k IDPs · 4/6 Gao cercles severe access (OCHA).',
     },
     {
       label: 'Stakeholder map',
@@ -548,7 +548,7 @@ function PanelDrafting() {
           <span className="text-[8.5px] font-semibold uppercase tracking-wider text-navy-500">
             Sources
           </span>
-          {['UCDP', 'ACLED', 'OCHA', 'ReliefWeb', 'ICG', 'World Bank', 'UN News', 'GDELT'].map((s) => (
+          {['UCDP', 'GDELT', 'OCHA', 'ReliefWeb', 'ICG', 'World Bank', 'UN News', 'Google Search'].map((s) => (
             <span
               key={s}
               className="rounded px-1.5 py-[1px] text-[8px] font-semibold uppercase tracking-wide text-diplomatic-blue bg-diplomatic-blue/8 border border-diplomatic-blue/15"

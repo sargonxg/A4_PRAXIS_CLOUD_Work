@@ -104,7 +104,7 @@ const CHANGELOG = [
     date: '2026.03.31',
     notes: [
       '10 reusable visualization components: RiskGauge, RadarChart, EscalationLadder, ForceGraph, TimeSeriesChart, HeatmapGrid, TornadoChart, SankeyFlow, ProbabilityTree, ComplianceTracker',
-      'Geospatial Monitor: map-based ACLED event visualization with hotspot clustering',
+      'Geospatial Monitor: map-based event visualization with hotspot clustering',
       'Dashboard redesigned as command center with KPI cards, risk radar, live AI insights',
       'Interactive ForceGraph on Stakeholder Map and Conflict Graph pages',
       'D3 v7 force-directed network with type-colored nodes, zoom, drag, click-to-detail',
@@ -124,7 +124,7 @@ const CHANGELOG = [
     version: 'v4.0',
     date: '2026.03.31',
     notes: [
-      'Full data layer: ACLED, GDELT, ReliefWeb, HDX, WorldBank, UNHCR, UCDP, CrisisGroup, SIPRI — 9 real-time feeds',
+      'Full data layer: GDELT, ReliefWeb, HDX, World Bank, UNHCR, UCDP, UN News, grounded Google Search, and private corpus sources',
       'INFORM Risk Index: geometric mean (H×V×C)^(1/3) — rigorous multi-dimensional risk scoring',
       'DBSCAN geospatial clustering, movement detection, geographic spread index',
       'Tool Registry: single source of truth for 40 tools with frameworks, methodology, citations',
@@ -647,13 +647,13 @@ export function AppSidebar() {
                   style={{ overflow: 'hidden' }}
                 >
             {section.items.map((item) => {
+              const itemKey = `${section.label}:${item.href}:${item.label}`;
               const isActive =
                 barePath === item.href || barePath.startsWith(item.href + '/');
               const Icon = item.icon;
 
               const linkContent = (
                 <PraxisLink
-                  key={item.href}
                   href={item.href}
                   className={cn(
                     'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
@@ -737,7 +737,7 @@ export function AppSidebar() {
 
               if (!sidebarOpen) {
                 return (
-                  <Tooltip key={item.href}>
+                  <Tooltip key={itemKey}>
                     <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
                     <TooltipContent side="right" className="font-medium">
                       {item.label}
@@ -756,7 +756,7 @@ export function AppSidebar() {
                 );
               }
 
-              return <div key={item.href}>{linkContent}</div>;
+              return <div key={itemKey}>{linkContent}</div>;
             })}
                 </motion.div>
               )}

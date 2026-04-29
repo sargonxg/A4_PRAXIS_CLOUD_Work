@@ -342,7 +342,7 @@ function GenerateControls({
           <div className="mt-3 space-y-1">
             <p className="flex items-center gap-1.5 text-[11px] text-navy-400">
               <Zap className="h-3 w-3 text-navy-300" />
-              <span><strong>Standard</strong> — ACLED + GDELT + ReliefWeb + AI synthesis (2 credits, ~30s)</span>
+              <span><strong>Standard</strong> — GDELT + ReliefWeb + UN News + AI synthesis (2 credits, ~30s)</span>
             </p>
             <p className="flex items-center gap-1.5 text-[11px] text-navy-400">
               <Globe className="h-3 w-3 text-diplomatic-blue/50" />
@@ -360,13 +360,13 @@ function GenerateControls({
 function GeneratingState({ deep, situationName }: { deep: boolean; situationName: string }) {
   const steps = deep
     ? [
-        { label: 'Fetching live data feeds (ACLED, GDELT, ReliefWeb)', delay: 0 },
+        { label: 'Fetching live data feeds (GDELT, ReliefWeb, UN News)', delay: 0 },
         { label: 'Running Firecrawl web search for latest news', delay: 4000 },
         { label: 'Google-grounded real-time research', delay: 8000 },
         { label: 'Synthesizing intelligence with Gemini Pro', delay: 14000 },
       ]
     : [
-        { label: 'Fetching live data feeds (ACLED, GDELT, ReliefWeb)', delay: 0 },
+        { label: 'Fetching live data feeds (GDELT, ReliefWeb, UN News)', delay: 0 },
         { label: 'Analyzing current situation context', delay: 3000 },
         { label: 'Synthesizing brief with Gemini Pro', delay: 7000 },
       ];

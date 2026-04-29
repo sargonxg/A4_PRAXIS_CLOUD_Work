@@ -23,6 +23,7 @@ import {
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
 import type { SituationType, UserRole } from '@/types/situation';
+import type { AnalystRole } from '@/types/analyst-profile';
 import { DomainPicker } from '@/components/domain/domain-picker';
 import { DOMAIN_SEEDS } from '@/lib/domain/seeds';
 import { type DomainId, isDomainId } from '@/types/domain';
@@ -99,6 +100,24 @@ const STEPS: { step: Step; label: string; icon: React.ElementType }[] = [
 
 // Source category metadata now lives in a single shared module at
 // `src/lib/constants/source-categories.ts` and is consumed via <SourcePicker>.
+
+function mapAnalystRoleToSituationRole(role?: AnalystRole): UserRole {
+  switch (role) {
+    case 'mediator':
+      return 'mediator';
+    case 'researcher':
+    case 'think_tank':
+    case 'journalist':
+      return 'researcher';
+    case 'diplomat':
+    case 'un_official':
+    case 'ngo':
+    case 'private_sector':
+      return 'advisor';
+    default:
+      return 'analyst';
+  }
+}
 
 function StepIndicator({ current }: { current: Step }) {
   return (
@@ -897,7 +916,7 @@ function StepReview({
 export default function NewSituationPage() {
   const router = useRouter();
   const route = usePraxisRoute();
-  const { user, firebaseUser } = useAuth();
+  const { user, firebaseUser, analystProfile } = useAuth();
   const { addSituation } = useSituationStore();
   const [step, setStep] = useState<Step>(1);
   const [direction, setDirection] = useState(1);
@@ -912,12 +931,20 @@ export default function NewSituationPage() {
     region: '',
     status: 'active',
     actors: [],
-    userRole: 'analyst',
+    userRole: mapAnalystRoleToSituationRole(analystProfile?.identity.role),
     riskScore: 0,
     glaslStage: null,
     escalationTrend: 'stable',
     workflowPath: '',
   });
+
+  useEffect(() => {
+    if (!analystProfile?.identity.role) return;
+    setForm((current) => {
+      if (current.workflowPath || current.userRole !== 'analyst') return current;
+      return { ...current, userRole: mapAnalystRoleToSituationRole(analystProfile.identity.role) };
+    });
+  }, [analystProfile?.identity.role]);
 
   const [context, setContext] = useState<ContextData>(() => {
     const defaults = defaultEnabledMap();
@@ -1181,7 +1208,7 @@ export default function NewSituationPage() {
         </h1>
         <p className="mt-1 text-sm text-navy-500">
           {fromOnboarding
-            ? 'Profile complete. Now create the case file that will anchor your documents, research, expert agents, and briefings.'
+            ? 'Profile complete. Now create the situation workspace that will anchor your documents, research, expert agents, and briefings.'
             : 'Create a conflict or geopolitical situation for intelligence tracking and analysis.'}
         </p>
         {fromOnboarding ? (

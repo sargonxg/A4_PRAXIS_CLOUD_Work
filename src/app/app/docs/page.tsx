@@ -56,7 +56,7 @@ const TOOL_DOCS: ToolDoc[] = [
     purpose: 'Monitors escalation dynamics using the Glasl 9-stage model. Identifies which stage the conflict is in, tracks trajectory, and highlights windows for de-escalation intervention.',
     howItWorks: 'AiPopulate calls /api/ai/escalation-scan with full situation context. The AI analyzes actors, recent events, and conflict dynamics against the Glasl framework. Returns structured indicators per stage, trajectory forecast, and specific de-escalation opportunities.',
     analyticalFramework: 'Friedrich Glasl 9-Stage Escalation Model',
-    dataSource: 'Situation context + ACLED event data + GDELT stability scores',
+    dataSource: 'Situation context + GDELT/UCDP event signals + stability scores',
     status: 'working',
   },
   {

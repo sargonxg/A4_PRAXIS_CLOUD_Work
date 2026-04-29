@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
-import { buildToolContext } from '@/lib/ai/situation-context';
+import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import type { Situation } from '@/types/situation';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { writeToolDataServer } from '@/lib/ai/context-builder-server';
@@ -55,6 +55,13 @@ export const POST = withCalibration('source_monitor', 'ai_analysis', {
       existingSources?: { name: string }[];
     };
     const sitContext = situation ? buildToolContext(situation) : '';
+    const webContext = situation
+      ? await buildWebGroundedContext(
+          { name: situation.name, region: situation.region, actors: situation.actors, description: situation.description },
+          'discover-sources',
+          ctx.uid,
+        )
+      : '';
 
     const existingNames = (existingSources || []).map((s) => s.name).join(', ');
 
@@ -71,6 +78,9 @@ export const POST = withCalibration('source_monitor', 'ai_analysis', {
       prompt: `You are a conflict intelligence source analyst. For the situation below, discover 8-12 high-value intelligence sources that an analyst should monitor.
 
 SITUATION: ${sitContext}
+
+LIVE SOURCE CONTEXT:
+${webContext || 'No live source context available.'}
 
 ${existingNames ? `ALREADY TRACKED (do not repeat): ${existingNames}` : ''}
 
@@ -90,7 +100,7 @@ For each source:
 3. Identify coverage strengths and known biases
 4. Describe who their audience is
 
-IMPORTANT: Recommend REAL sources that actually exist. Do not fabricate outlets.`,
+IMPORTANT: Recommend REAL sources that actually exist. Prioritize sources that appear in the live source context. Do not fabricate outlets or URLs.`,
       system: `You are a senior conflict intelligence source analyst with experience at UN DPPA, ICG, and major think tanks. You specialize in mapping the information ecosystems of conflict zones — identifying which outlets, channels, and platforms provide actionable intelligence and understanding their editorial perspectives through nomenclature analysis.
 
 ${systemPromptBlock}

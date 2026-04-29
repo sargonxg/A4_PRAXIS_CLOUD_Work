@@ -7,9 +7,9 @@ const steps = [
   {
     step: "01",
     icon: UserCircle,
-    title: "Profile",
+    title: "Calibrate",
     description:
-      "Tell PRAXIS your mandate, analytical lenses, and red lines in 3 minutes. Your preferences calibrate every tool, every output.",
+      "Define your mandate, role, analytical lenses, source constraints, and review posture. PRAXIS carries that calibration into each tool run.",
     accentColor: "#4B92DB",
     accentBg: "bg-diplomatic-blue/8",
     accentText: "text-diplomatic-blue",
@@ -18,9 +18,9 @@ const steps = [
   {
     step: "02",
     icon: Network,
-    title: "Situation",
+    title: "Ground",
     description:
-      "Create a situation with your sources — URLs, documents, field reports. PRAXIS builds the conflict graph and actor landscape in seconds.",
+      "Create a situation from URLs, documents, field reports, and open-data feeds. The system extracts actors, claims, events, interests, constraints, and relationships into a versioned graph.",
     accentColor: "#C8961E",
     accentBg: "bg-gold-600/8",
     accentText: "text-gold-700",
@@ -29,9 +29,9 @@ const steps = [
   {
     step: "03",
     icon: Sparkles,
-    title: "Intelligence",
+    title: "Produce",
     description:
-      "40+ tools calibrate to your role and situation. Produce briefings, dossiers, risk scores, and game-theory analyses in your voice.",
+      "Generate briefings, actor dossiers, risk assessments, negotiation prep, and scenarios with citations, assumptions, confidence notes, and export-ready structure.",
     accentColor: "#59A14F",
     accentBg: "bg-sage/8",
     accentText: "text-sage",
@@ -69,7 +69,7 @@ export function HowItWorks() {
           transition={{ duration: 0.7, delay: 0.1 }}
           className="mb-4 text-center font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl"
         >
-          From Sources to Intelligence in Minutes
+          From Evidence to Decision Support
         </motion.h2>
 
         <motion.p
@@ -79,7 +79,8 @@ export function HowItWorks() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mx-auto mb-16 max-w-2xl text-center text-lg text-navy-500"
         >
-          Three steps. One workspace. Every output calibrated to your mandate.
+          One situation record connects source intake, graph extraction,
+          analysis, review, and briefing artifacts.
         </motion.p>
 
         {/* Steps */}

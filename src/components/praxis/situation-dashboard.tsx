@@ -41,7 +41,20 @@ function formatRelTime(iso: string): string {
 // Daily Digest Card
 // ---------------------------------------------------------------------------
 
+function buildDemoDailyBrief(situation: Situation): string {
+  const actors = situation.actors.slice(0, 3).join(', ') || 'the named actors';
+  const region = situation.region || 'the selected region';
+
+  return `**Situation Update** — ${situation.name} remains active in ${region}, with ${actors} shaping the current risk picture.
+
+**Priority Actions** — Review the graph, risk monitor, and briefing tools to see how PRAXIS turns situation data into reusable analysis.
+
+**Watch Points** — Track escalation trend, actor leverage, source coverage, and whether new documents change the assessment.`;
+}
+
 function DailyDigestCard({ situation }: { situation: Situation }) {
+  const { user } = useAuth();
+  const isDemo = user?.isDemo === true;
   const [brief, setBrief] = useState('');
   const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -49,6 +62,12 @@ function DailyDigestCard({ situation }: { situation: Situation }) {
 
   const generate = useCallback(async () => {
     if (loading) return;
+
+    if (isDemo) {
+      setBrief(buildDemoDailyBrief(situation));
+      return;
+    }
+
     setLoading(true);
     setBrief('');
     try {
@@ -95,13 +114,19 @@ Keep it under 120 words, professional, UN-standard diplomatic language.`;
     } finally {
       setLoading(false);
     }
-  }, [loading, situation]);
+  }, [isDemo, loading, situation]);
 
   // Auto-generate on first mount. Health route reports `checks.ai_provider = 'ok'`
   // when either GOOGLE_AI_API_KEY or GOOGLE_VERTEX_PROJECT is configured. We
   // default to generating on mount — if the call fails the catch below shows
   // a friendly message.
   useEffect(() => {
+    if (isDemo) {
+      generated.current = true;
+      setBrief(buildDemoDailyBrief(situation));
+      return;
+    }
+
     if (!generated.current) {
       generated.current = true;
       fetch('/api/health')
@@ -111,7 +136,7 @@ Keep it under 120 words, professional, UN-standard diplomatic language.`;
           if (aiOk) {
             generate();
           } else {
-            setBrief('_AI service is not yet configured. Ask your admin to enable either Google AI Studio or Vertex AI in the Cloud Run environment._');
+            setBrief('_Brief generation is unavailable because no AI provider is configured for this workspace._');
           }
         })
         .catch(() => {
@@ -119,8 +144,7 @@ Keep it under 120 words, professional, UN-standard diplomatic language.`;
           generate();
         });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [generate, isDemo, situation]);
 
   if (dismissed) return null;
 

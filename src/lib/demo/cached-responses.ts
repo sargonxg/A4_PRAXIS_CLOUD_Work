@@ -19,6 +19,12 @@ How can I assist your analysis today? I can:
 
 What would you like to explore?`;
 
+const CHAT_RISK_MEDIATOR = `- **Most important risk this week:** a localized ceasefire incident around the Kessara corridor could become a wider GoN-DRM escalation before UNMN/AU channels can contain it. The risk is not only the incident itself; it is the way GoN, DRM, Karovia, and Westmark each have incentives to frame blame quickly, harden public positions, and narrow the SRSG's private channel. **Confidence: medium-high** for the risk direction, lower for timing because this is synthetic demo data rather than live reporting.
+
+- **Evidence basis in the Nordalia sample case:** PRAXIS is reading a Glasl Stage 5 conflict with documented Stage 6 indicators, 47 ceasefire violations since September 2025, freedom-of-movement restrictions affecting monitors, external patron rivalry between Karovia and Westmark, and economic pressure around the Belara rare-earth corridor. The strongest supporting signals are: arms embargo erosion, field-commander spoiler incentives, contested humanitarian access, and the government/DRM legitimacy dispute becoming identity-framed rather than transaction-framed.
+
+- **Best next mediator question:** "What concrete, verifiable restraint can each side accept for the next 72 hours at Kessara without appearing to concede on elections, sovereignty, or disarmament?" That question keeps the talks away from maximalist positions and tests whether GoN, DRM, UNMN, and the AU Panel can agree on a narrow operational confidence-building measure before reopening the larger political package.`;
+
 const CHAT_KEY_ACTORS = `## Key Actors in the Nordalia Crisis
 
 Based on the structured conflict graph and open-source reporting through March 2026, there are five principal actors shaping the trajectory of this conflict. I'll outline each with their stated positions, underlying interests, and key relationships.
@@ -441,6 +447,7 @@ The psychographic model reveals that ceasefire collapse would **eliminate the mo
 export const CACHED_RESPONSES = new Map<string, string>([
   // Chat responses
   ['chat:greeting', CHAT_GREETING],
+  ['chat:risk_mediator', CHAT_RISK_MEDIATOR],
   ['chat:key_actors', CHAT_KEY_ACTORS],
 
   // Scenario analysis

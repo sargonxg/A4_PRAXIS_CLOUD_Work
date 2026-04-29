@@ -10,7 +10,6 @@ import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { computeEscalation } from '@/lib/analytics/escalation-scorer';
-import { fetchEvents, isACLEDConfigured } from '@/lib/data-feeds/acled-client';
 import { getCurrentStability } from '@/lib/data-feeds/gdelt-stability';
 import { situationContextSchema } from '@/lib/api/schemas';
 import type { Situation } from '@/types/situation';
@@ -142,10 +141,10 @@ export const POST = withCalibration('escalation_scan', 'ai_analysis', {
     let dataContext = '';
     try {
       const country = conflictContext?.split(' ')[0] || conflictId;
-      const [events, stability] = await Promise.all([
-        isACLEDConfigured() ? fetchEvents({ country, limit: 100 }) : Promise.resolve([]),
+      const [stability] = await Promise.all([
         getCurrentStability(country.slice(0, 2).toUpperCase()),
       ]);
+      const events: Parameters<typeof computeEscalation>[0] = [];
       if (events.length > 0 || stability) {
         const assessment = computeEscalation(events, stability?.score);
         dataContext = `\nDATA-DRIVEN ASSESSMENT (use as baseline):

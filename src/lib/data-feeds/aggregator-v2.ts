@@ -2,8 +2,8 @@
  * Feed Aggregator v2 — user-aware, tier-aware.
  *
  * Wraps the legacy `getSituationIntelligence` with:
- *   1. Per-user credential resolution (ACLED, future keyed feeds) so user
- *      BYO keys light up premium feeds.
+ *   1. Per-user capability resolution so optional feeds can light up without
+ *      changing the core open-source posture.
  *   2. A live feed-capability matrix attached to the response so callers
  *      can render accurate empty-states and "unlock" CTAs.
  *   3. Coverage-gap enumeration — every missing feed is surfaced with the
@@ -16,17 +16,16 @@
  */
 
 import { resolveFeedCapabilities, type FeedCapabilityMatrix } from './capabilities';
-import { resolveEffectiveApiKey } from '@/lib/providers/user-keys';
-import { fetchEvents, type ACLEDEvent } from './acled-client';
 import { searchArticles, type GDELTArticle } from './gdelt-client';
 import { searchReports, type RWReport } from './reliefweb-client';
 import { countryNameToIso3, getDisplacement, getFoodSecurity, getFunding } from './hdx-client';
 import { searchUNNews, type UNNewsItem } from './unnews-client';
 import { getCurrentStability } from './gdelt-stability';
 import { getGroundedSearchEvents } from './grounded-search-client';
+import { getConflicts, type UCDPConflict } from './ucdp-client';
 import {
-  acledToIntel,
   gdeltToIntel,
+  ucdpToIntel,
   rwToIntel,
   unToIntel,
   groundedToIntel,
@@ -70,21 +69,14 @@ async function timed<T>(name: string, fn: () => Promise<T>): Promise<{ result: T
 export async function getUserAwareIntelligence(opts: UserAwareOptions): Promise<UserAwareIntelligence> {
   const capabilities = await resolveFeedCapabilities(opts.uid);
 
-  // Resolve ACLED creds — user BYO first, then platform fallback, then null.
-  const acledCreds = opts.uid
-    ? await resolveEffectiveApiKey(opts.uid, 'acled')
-    : (process.env.ACLED_API_KEY && process.env.ACLED_EMAIL ? { key: process.env.ACLED_API_KEY, email: process.env.ACLED_EMAIL } : null);
-  const acledOk = !!acledCreds?.key && !!acledCreds?.email;
-
   const iso3 = countryNameToIso3(opts.country);
 
-  // Fan out feeds. ACLED is gated by creds; the rest are public or handle
-  // missing-credentials internally. Everything returns [] on failure.
-  const [acledR, gdeltR, rwR, displacementR, foodR, fundingR, stabilityR, unR] = await Promise.all([
-    acledOk
-      ? timed('acled', () => fetchEvents({ country: opts.country, dateStart: opts.dateStart, limit: opts.limit ?? 50, credentials: acledCreds as { key: string; email: string } }))
-      : Promise.resolve({ result: [] as ACLEDEvent[], health: { name: 'acled', available: false, latencyMs: 0, recordCount: 0, lastSuccess: null, error: 'Missing key — configure in Settings → API Keys' } as SourceHealth }),
+  // Fan out open feeds. Grounded Google Search is the primary live-research
+  // spine; structured public feeds corroborate and quantify what search finds.
+  const [groundedR, gdeltR, ucdpR, rwR, displacementR, foodR, fundingR, stabilityR, unR] = await Promise.all([
+    timed('grounded-search', () => getGroundedSearchEvents({ query: opts.query ?? opts.country, country: opts.country, limit: opts.limit ?? 12 })),
     timed('gdelt', () => searchArticles({ query: opts.query ?? opts.country, timespan: '7d', maxRecords: 20 })),
+    timed('ucdp', () => getConflicts(opts.country)),
     timed('reliefweb', () => searchReports({ country: opts.country, limit: 10 })),
     iso3 ? timed('hdx-displacement', () => getDisplacement(iso3)) : Promise.resolve({ result: null, health: { name: 'hdx-displacement', available: false, latencyMs: 0, recordCount: 0, lastSuccess: null } as SourceHealth }),
     iso3 ? timed('hdx-food', () => getFoodSecurity(iso3)) : Promise.resolve({ result: null, health: { name: 'hdx-food', available: false, latencyMs: 0, recordCount: 0, lastSuccess: null } as SourceHealth }),
@@ -93,29 +85,21 @@ export async function getUserAwareIntelligence(opts: UserAwareOptions): Promise<
     timed('unnews', () => searchUNNews(opts.query ?? opts.country, 8)),
   ]);
 
-  const acledEvents = (acledR.result as ACLEDEvent[] | null) ?? [];
+  const groundedEvents = (groundedR.result as Awaited<ReturnType<typeof getGroundedSearchEvents>> | null) ?? [];
   const gdeltArticles = (gdeltR.result as GDELTArticle[] | null) ?? [];
+  const ucdpConflicts = (ucdpR.result as UCDPConflict[] | null) ?? [];
   const rwReports = (rwR.result as RWReport[] | null) ?? [];
   const unNews = (unR.result as UNNewsItem[] | null) ?? [];
 
   const items: IntelligenceItem[] = ([] as IntelligenceItem[]).concat(
-    acledEvents.map(acledToIntel),
+    groundedEvents.map(groundedToIntel),
     gdeltArticles.map(gdeltToIntel),
+    ucdpConflicts.map(ucdpToIntel),
     rwReports.map(rwToIntel),
     unNews.map(unToIntel),
   );
 
-  // Grounded-search fallback when structured feeds returned nothing meaningful.
-  let groundedCount = 0;
-  let fallbackUsed = false;
-  if (items.length === 0) {
-    const grounded = await getGroundedSearchEvents({ query: opts.query ?? opts.country, country: opts.country, limit: opts.limit ?? 10 });
-    groundedCount = grounded.length;
-    if (grounded.length > 0) {
-      fallbackUsed = true;
-      items.push(...grounded.map(groundedToIntel));
-    }
-  }
+  const fallbackUsed = groundedEvents.length > 0 && gdeltArticles.length === 0 && ucdpConflicts.length === 0 && rwReports.length === 0 && unNews.length === 0;
 
   // Order: newest first, then by severity bucket
   const severityOrder: Record<IntelligenceItem['severity'], number> = { critical: 0, high: 1, medium: 2, low: 3 };
@@ -128,7 +112,7 @@ export async function getUserAwareIntelligence(opts: UserAwareOptions): Promise<
   const { computeTrustworthiness } = await import('@/lib/analytics/trustworthiness-engine');
   const now = Date.now();
   const sourceMap: Record<string, string> = {
-    acled: 'ACLED', gdelt: 'GDELT', reliefweb: 'ReliefWeb', unnews: 'UN News', grounded_search: 'Google Search (Gemini Grounded)',
+    event_feed: 'Open Event Feed', gdelt: 'GDELT', ucdp: 'UCDP', reliefweb: 'ReliefWeb', unnews: 'UN News', grounded_search: 'Google Search (Gemini Grounded)',
   };
   for (const item of items) {
     const days = item.date ? Math.max(0, Math.floor((now - new Date(item.date).getTime()) / 86400000)) : 30;
@@ -144,19 +128,16 @@ export async function getUserAwareIntelligence(opts: UserAwareOptions): Promise<
       unlockUrl: feed.signupUrl,
     });
   }
-  if (!acledOk) {
-    coverageGaps.push({ provider: 'ACLED event data', reason: 'Add an ACLED key and email in Settings → API Keys', unlockUrl: 'https://developer.acleddata.com/' });
-  }
-
   return {
     events: items,
     totalCount: items.length,
     sources: {
-      acled: acledEvents.length,
+      event_feed: 0,
       gdelt: gdeltArticles.length,
+      ucdp: ucdpConflicts.length,
       reliefweb: rwReports.length,
       unnews: unNews.length,
-      grounded_search: groundedCount,
+      grounded_search: groundedEvents.length,
     },
     fallbackUsed,
     humanitarian: (displacementR.result || (foodR.result && Array.isArray(foodR.result) && foodR.result.length) || fundingR.result)
@@ -169,7 +150,7 @@ export async function getUserAwareIntelligence(opts: UserAwareOptions): Promise<
     stability: stabilityR.result ? { score: (stabilityR.result as { score: number }).score, trend: (stabilityR.result as { trend: 'improving' | 'stable' | 'worsening' }).trend } : undefined,
     fetchedAt: new Date().toISOString(),
     capabilities,
-    sourceHealth: [acledR.health, gdeltR.health, rwR.health, displacementR.health, foodR.health, fundingR.health, stabilityR.health, unR.health],
+    sourceHealth: [groundedR.health, gdeltR.health, ucdpR.health, rwR.health, displacementR.health, foodR.health, fundingR.health, stabilityR.health, unR.health],
     coverageGaps,
   };
 }

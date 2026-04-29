@@ -1,7 +1,8 @@
 /**
  * UCDP API Client — Uppsala Conflict Data Program
  * https://ucdpapi.pcr.uu.se/api/
- * Free, no API key required.
+ * Uses UCDP's versioned API. If UCDP_API_TOKEN is configured, requests send
+ * it as the x-ucdp-access-token header for authenticated daily quota.
  */
 
 export interface UCDPEvent {
@@ -42,8 +43,37 @@ export interface UCDPConflict {
 }
 
 const UCDP_BASE = 'https://ucdpapi.pcr.uu.se/api';
+const UCDP_VERSION = process.env.UCDP_API_VERSION || '25.1';
 const CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours
 const cache = new Map<string, { data: unknown; ts: number }>();
+
+// Gleditsch and Ward country codes used by UCDP GED `Country`.
+// Keep this as a pragmatic hot-path map; yearly datasets can still use
+// Location=<country name>, while GED should not fan out globally by default.
+const GWNO_BY_COUNTRY: Record<string, number> = {
+  afghanistan: 700,
+  china: 710,
+  colombia: 100,
+  ethiopia: 530,
+  india: 750,
+  iran: 630,
+  iraq: 645,
+  israel: 666,
+  lebanon: 660,
+  libya: 620,
+  mali: 432,
+  mexico: 70,
+  myanmar: 775,
+  nigeria: 475,
+  pakistan: 770,
+  palestine: 666,
+  russia: 365,
+  somalia: 520,
+  sudan: 625,
+  syria: 652,
+  ukraine: 369,
+  yemen: 678,
+};
 
 function cached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
   const hit = cache.get(key);
@@ -54,12 +84,30 @@ function cached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
   });
 }
 
+function tokenHeaders(): HeadersInit {
+  const token = process.env.UCDP_API_TOKEN || process.env.UCDP_ACCESS_TOKEN;
+  return {
+    Accept: 'application/json',
+    ...(token ? { 'x-ucdp-access-token': token } : {}),
+  };
+}
+
+function versioned(endpoint: string): string {
+  return endpoint.includes('/') ? endpoint : `${endpoint}/${UCDP_VERSION}`;
+}
+
+function countryToGwno(country: string): number | null {
+  const trimmed = country.trim();
+  if (/^\d+$/.test(trimmed)) return Number(trimmed);
+  return GWNO_BY_COUNTRY[trimmed.toLowerCase()] ?? null;
+}
+
 async function ucdpFetch(endpoint: string, params: Record<string, string>): Promise<unknown> {
   try {
-    const qs = new URLSearchParams({ ...params, pagesize: '100', page: '1' });
-    const res = await fetch(`${UCDP_BASE}/${endpoint}?${qs}`, {
+    const qs = new URLSearchParams({ ...params, pagesize: '100', page: '0' });
+    const res = await fetch(`${UCDP_BASE}/${versioned(endpoint)}?${qs}`, {
       signal: AbortSignal.timeout(15000),
-      headers: { 'Accept': 'application/json' },
+      headers: tokenHeaders(),
     });
     if (!res.ok) return null;
     return res.json();
@@ -71,8 +119,13 @@ async function ucdpFetch(endpoint: string, params: Record<string, string>): Prom
 /** Get georeferenced conflict events for a country */
 export async function getEvents(country: string, year?: number): Promise<UCDPEvent[]> {
   return cached(`ucdp:events:${country}:${year ?? 'all'}`, async () => {
-    const params: Record<string, string> = { country };
-    if (year) params.year = String(year);
+    const gwno = countryToGwno(country);
+    if (!gwno) return [];
+    const params: Record<string, string> = { Country: String(gwno) };
+    if (year) {
+      params.StartDate = `${year}-01-01`;
+      params.EndDate = `${year}-12-31`;
+    }
     const data = await ucdpFetch('gedevents', params) as Record<string, unknown> | null;
     if (!data?.Result) return [];
     return ((data.Result as Record<string, unknown>[]) ?? []).map((e) => ({
@@ -104,7 +157,9 @@ export async function getEvents(country: string, year?: number): Promise<UCDPEve
 /** Get active conflicts for a country */
 export async function getConflicts(country: string): Promise<UCDPConflict[]> {
   return cached(`ucdp:conflicts:${country}`, async () => {
-    const data = await ucdpFetch('conflict', { location: country }) as Record<string, unknown> | null;
+    const gwno = countryToGwno(country);
+    if (!gwno) return [];
+    const data = await ucdpFetch('ucdpprioconflict', { Country: String(gwno) }) as Record<string, unknown> | null;
     if (!data?.Result) return [];
     return ((data.Result as Record<string, unknown>[]) ?? []).map((c) => ({
       conflict_id: Number(c.conflict_id ?? 0),
@@ -124,7 +179,9 @@ export async function getConflicts(country: string): Promise<UCDPConflict[]> {
 /** Get total battle deaths by year for a country */
 export async function getBattleDeaths(country: string): Promise<{ year: number; bestDeaths: number; lowDeaths: number; highDeaths: number }[]> {
   return cached(`ucdp:deaths:${country}`, async () => {
-    const data = await ucdpFetch('battledeaths', { location: country }) as Record<string, unknown> | null;
+    const gwno = countryToGwno(country);
+    if (!gwno) return [];
+    const data = await ucdpFetch('battledeaths', { Country: String(gwno) }) as Record<string, unknown> | null;
     if (!data?.Result) return [];
     return ((data.Result as Record<string, unknown>[]) ?? []).map((d) => ({
       year: Number(d.year ?? 0),
@@ -136,5 +193,5 @@ export async function getBattleDeaths(country: string): Promise<{ year: number; 
 }
 
 export function isUCDPConfigured(): boolean {
-  return true; // No API key required
+  return Boolean(process.env.UCDP_API_TOKEN || process.env.UCDP_ACCESS_TOKEN);
 }

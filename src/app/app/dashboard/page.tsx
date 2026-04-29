@@ -31,6 +31,7 @@ import { OnboardingRecapWidget } from '@/components/dashboard/onboarding-recap-w
 import { SituationStatusStrip } from '@/components/dashboard/situation-status-strip';
 import { AccountStatusCard } from '@/components/dashboard/account-status-card';
 import { SituationLaunchpad } from '@/components/dashboard/situation-launchpad';
+import { ExecutiveIntelligencePanel } from '@/components/dashboard/executive-intelligence-panel';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { ActivityFeed } from '@/components/app/activity-feed';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -172,6 +173,9 @@ function RealDashboard({ situation }: { situation: Situation }) {
         </section>
       ) : null}
       <SituationLaunchpad situation={situation} />
+
+      {/* Executive intelligence — real AI, structured output, provenance, export */}
+      <ExecutiveIntelligencePanel situation={situation} />
 
       {/* Calibration recap + account state — who you are, what you have */}
       <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">

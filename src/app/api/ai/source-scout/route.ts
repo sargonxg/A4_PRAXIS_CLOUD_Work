@@ -24,6 +24,7 @@ import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { runAgent, AgentRunnerError } from '@/lib/agents/run-agent';
 import { applySourcePreferences, type SavedSource } from '@/lib/services/sources-preference';
 import { getToolData } from '@/lib/firebase/tool-data-service';
+import { executeWebResearch } from '@/lib/ai/web-research';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -138,6 +139,19 @@ export const POST = withCalibration('source-scout', 'ai_source_scout', {
 
     const sit = situation as Situation | undefined;
     const situationId = sit?.id ?? '';
+    const liveResults = await executeWebResearch(question, sit?.name ?? question, user.uid, {
+      toolId: 'source-scout',
+      actors: sit?.actors,
+      description: sit?.description,
+      maxResults: 8,
+      timeRange: timeframe === '24h' ? 'day' : timeframe === '7d' ? 'week' : timeframe === '30d' ? 'month' : timeframe === '90d' ? 'year' : undefined,
+    }).catch(() => []);
+    const liveSourceBlock = liveResults.length
+      ? liveResults
+          .slice(0, 8)
+          .map((r, i) => `[${i + 1}] ${r.title} — ${r.source}${r.publishedDate ? ` (${r.publishedDate})` : ''}\n${r.url}\n${(r.snippet ?? r.content).slice(0, 220)}`)
+          .join('\n\n')
+      : 'No live web results were retrieved; propose only sources you can justify from known authoritative domains and flag the search gap.';
 
     const extraSystem = `
 You are operating as PRAXIS Source Scout. Output a structured search plan plus 5 proposed sources (or as few as 3 when the question is unusually narrow). Never invent URLs. If you cannot find a real URL, omit that source rather than fabricating one.
@@ -155,7 +169,8 @@ If the timeframe parameter is provided, restrict the searchPlan.timeframe accord
 Always populate intelligenceGaps[] with at least one entry naming a perspective that's still missing after this scout (e.g. "no direct ICRC verification of casualty figures").`;
 
     const extraPrompt = `\n\nTIMEFRAME: ${timeframe ?? '7d'}` +
-      (languages && languages.length > 0 ? `\nLANGUAGES: ${languages.join(', ')}` : '');
+      (languages && languages.length > 0 ? `\nLANGUAGES: ${languages.join(', ')}` : '') +
+      `\n\nLIVE WEB RESULTS TO PRIORITIZE:\n${liveSourceBlock}`;
 
     const result = await runAgent({
       personaId: 'source-scout',

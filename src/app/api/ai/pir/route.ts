@@ -12,7 +12,7 @@ import { handleRouteError } from '@/lib/api/standard-error';
 import type { Situation } from '@/types/situation';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 
-const DEMO_RESPONSE = { answers: [{ pirId: 'pir-1', question: 'What is the current military posture of the GoN AFN in the Eastern Provinces?', answer: 'Demo: AFN maintains defensive posture along Line 7 with approximately 3 brigade-equivalent forces. No major offensive operations observed.', confidence: 'medium', evidenceBasis: ['UNMN CIVPOL field reports', 'ACLED Q1 2026 data'], keyGaps: ['Real-time troop positioning', 'Reserve force deployment'], collectionPriorities: ['Source cultivation in AFN logistics', 'Aerial/satellite imagery of Kessara base'], updatedAt: new Date().toISOString() }], overallIntelligenceGap: 'Significant gaps remain in real-time military disposition and intent signaling from both parties.', recommendedCollectionPlan: '1) Task UNMN field observers to document AFN unit deployments weekly; 2) Establish contact with local informants in contested areas; 3) Cross-reference official communiques with field reporting.' };
+const DEMO_RESPONSE = { answers: [{ pirId: 'pir-1', question: 'What is the current military posture of the GoN AFN in the Eastern Provinces?', answer: 'Demo: AFN maintains defensive posture along Line 7 with approximately 3 brigade-equivalent forces. No major offensive operations observed.', confidence: 'medium', evidenceBasis: ['UNMN CIVPOL field reports', 'GDELT/UCDP open-source signal review'], keyGaps: ['Real-time troop positioning', 'Reserve force deployment'], collectionPriorities: ['Source cultivation in AFN logistics', 'Aerial/satellite imagery of Kessara base'], updatedAt: new Date().toISOString() }], overallIntelligenceGap: 'Significant gaps remain in real-time military disposition and intent signaling from both parties.', recommendedCollectionPlan: '1) Task UNMN field observers to document AFN unit deployments weekly; 2) Establish contact with local informants in contested areas; 3) Cross-reference official communiques with field reporting.' };
 
 export const maxDuration = 60;
 
@@ -180,7 +180,7 @@ ${pirList}
 For each PIR:
 1. Provide a direct, substantive answer based on all available context
 2. Rate confidence: high (strong evidence, consistent indicators), medium (partial evidence, some gaps), low (limited evidence, inferential), insufficient_data (cannot answer)
-3. List specific evidence sources (use tags like [GRAPH], [ACLED], [GDELT], [ANALYSIS], [AI Assessment])
+3. List specific evidence sources (use tags like [GRAPH], [GDELT], [UCDP], [ReliefWeb], [UN News], [ANALYSIS], [AI Assessment])
 4. Identify key information gaps preventing certainty
 5. Specify concrete collection tasks to fill gaps
 

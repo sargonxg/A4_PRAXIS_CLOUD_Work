@@ -1,6 +1,7 @@
 import type { Situation } from '@/types/situation';
-import { executeWebResearch, SEARCH_FAILURE_WARNING } from '@/lib/ai/web-research';
+import { SEARCH_FAILURE_WARNING } from '@/lib/ai/web-research';
 import { getToolData } from '@/lib/firebase/tool-data-service';
+import { buildLiveSourcePack } from '@/lib/ai/live-source-pack';
 
 /**
  * Builds a rich situation context string for AI system prompts (chat, assistant).
@@ -145,7 +146,7 @@ ANALYTICAL FRAMEWORK
 - Apply INFORM Risk Index (Hazard, Vulnerability, Coping) for multi-dimensional risk
 - Reference all actors by their exact names listed above
 - Tailor outputs to the role of: ${formatRole(situation.userRole)}
-- Flag data gaps explicitly and recommend: GDELT / ACLED / ReliefWeb / HDX sources
+- Flag data gaps explicitly and recommend: GDELT / UCDP / ReliefWeb / HDX / UN News / Google Search sources
 - Write to UN/diplomatic professional standards${situation.sourceUrls?.length ? `\n\nPRIMARY REFERENCES (analyst-provided — cite these):\n${situation.sourceUrls.map((u, i) => `${i + 1}. ${u}`).join('\n')}` : ''}${situation.contextNotes ? `\n\nANALYST CONTEXT NOTES:\n${situation.contextNotes}` : ''}`;
 }
 
@@ -165,27 +166,19 @@ export async function buildWebGroundedContext(
 ): Promise<string> {
   try {
     const query = `${situation.name}${situation.region ? ' ' + situation.region : ''} latest developments intelligence`;
-    const results = await executeWebResearch(query, situation.name, uid, {
+    const pack = await buildLiveSourcePack({
+      uid,
+      situationName: situation.name,
+      query,
       toolId,
+      region: situation.region,
       actors: situation.actors,
       description: situation.description,
-      maxResults: 8,
+      maxResults: 10,
+      scrapeTop: 2,
     });
 
-    if (results.length === 0) {
-      return `\n### Web Intelligence\n${SEARCH_FAILURE_WARNING}\n`;
-    }
-
-    const citations = results
-      .slice(0, 6)
-      .map((r, i) => {
-        const date = r.publishedDate ? ` (${r.publishedDate})` : '';
-        const excerpt = (r.snippet ?? r.content).slice(0, 250);
-        return `[${i + 1}] **${r.title}** — ${r.source}${date}\n${excerpt}`;
-      })
-      .join('\n\n');
-
-    return `\n### Current Intelligence (Web-Grounded)\nCRITICAL: The following verified sources are your PRIMARY ground truth. Prioritize these over training data. If they contradict your training data, trust the sources.\n\n${citations}\n`;
+    return `\n### Current Intelligence (Web-Grounded)\nCRITICAL: The following live source pack is your PRIMARY ground truth. Prioritize these sources over training data. If they contradict your training data, trust the sources.\n\n${pack.formatted}\n`;
   } catch {
     return `\n### Web Intelligence\n${SEARCH_FAILURE_WARNING}\n`;
   }

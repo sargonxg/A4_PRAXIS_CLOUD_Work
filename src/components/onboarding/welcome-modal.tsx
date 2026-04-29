@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Shield, Zap, Map, FileText, MessageSquare, Compass,
+  Shield, Zap, Map, FileText, MessageSquare,
   GitBranch, BarChart3, Scale, Newspaper, Search, Upload,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -25,8 +25,8 @@ const REAL_FEATURES = [
 ];
 
 const DEMO_FEATURES = [
-  { icon: Map, label: 'Conflict Knowledge Graph', description: 'Live actor & event networks' },
-  { icon: Zap, label: 'AI Intelligence Briefings', description: 'Powered by Vertex AI / Gemini' },
+  { icon: Map, label: 'Conflict Knowledge Graph', description: 'Synthetic actor and event network' },
+  { icon: Zap, label: 'Sample Intelligence Briefs', description: 'Derived from the Nordalia workspace' },
   { icon: FileText, label: 'Report Studio', description: '10 diplomatic templates' },
   { icon: Shield, label: 'Early Warning System', description: 'Glasl 9-stage escalation model' },
 ];
@@ -70,8 +70,8 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
             <p className="mt-4 text-sm leading-relaxed text-navy-600 max-w-sm mx-auto">
               {isDemo ? (
                 <>
-                  Explore with the <span className="font-semibold text-navy-800">Nordalia Crisis</span> scenario —
-                  a realistic conflict between a government, armed opposition, and international actors.
+                  Explore the <span className="font-semibold text-navy-800">Nordalia — Contested Border Arrangement</span> sample workspace —
+                  a synthetic sovereignty dispute built to show how PRAXIS organizes actors, sources, risks, and briefings.
                 </>
               ) : (
                 <>
@@ -139,7 +139,7 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
             </button>
 
             <p className="text-center text-[11px] text-navy-400 mt-1">
-              {isDemo ? 'Demo environment — no real data' : "You can revisit this from Settings anytime"}
+              {isDemo ? 'Demo environment — synthetic sample data only' : "You can revisit this from Settings anytime"}
             </p>
           </div>
         </motion.div>

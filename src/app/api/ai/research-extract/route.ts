@@ -1,5 +1,7 @@
 import { withCalibration } from '@/lib/api/with-calibration';
-import { scrapeUrl, searchWeb, isFirecrawlConfigured } from '@/lib/ai/firecrawl';
+import { z } from 'zod';
+import { scrapeUrl } from '@/lib/ai/firecrawl';
+import { buildLiveSourcePack } from '@/lib/ai/live-source-pack';
 import {
   extractEntities,
   mergeExtractions,
@@ -10,8 +12,23 @@ import { getGraph, saveGraph, saveSnapshot } from '@/lib/firebase/graph-service'
 import { saveToolData } from '@/lib/firebase/tool-data-service';
 import { runCanonicalPreCheck, formatPreCheckContext } from '@/lib/services/canonical-precheck';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
+import { saveToolOutput } from '@/lib/api/save-tool-output';
 
 export const maxDuration = 180;
+
+const ResearchExtractRequestSchema = z.object({
+  situationId: z.string().min(1),
+  situationName: z.string().min(2),
+  region: z.string().optional().default(''),
+  actors: z.array(z.string().min(1)).max(30).optional().default([]),
+  categories: z.array(z.string().min(1)).max(8).optional().default([
+    'conflict-security',
+    'diplomatic-official',
+    'think-tanks',
+  ]),
+  urls: z.array(z.string().url()).max(12).optional().default([]),
+  maxSourcesPerCategory: z.number().int().min(1).max(5).optional().default(2),
+});
 
 /**
  * Research-Extract Pipeline
@@ -49,24 +66,30 @@ export const POST = withCalibration('research-extract', 'ai_research', {
   }
 
   try {
+    const rawBody = await req.json().catch(() => null);
+    const parsedBody = ResearchExtractRequestSchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return Response.json(
+        {
+          error: 'Invalid research-extract request.',
+          details: parsedBody.error.flatten(),
+        },
+        { status: 400 },
+      );
+    }
     const {
       situationId,
       situationName,
       region,
-      actors = [],
-      categories = ['conflict-security', 'diplomatic-official', 'think-tanks'],
-      urls = [],
-      maxSourcesPerCategory = 2,
-    } = await req.json();
-
-    if (!situationId || !situationName) {
-      return Response.json({ error: 'situationId and situationName required' }, { status: 400 });
-    }
+      actors,
+      categories,
+      urls,
+      maxSourcesPerCategory,
+    } = parsedBody.data;
 
     // Credits + profile gate already handled by withCalibration above.
 
     const searchQuery = `${situationName}${region ? ` ${region}` : ''}`;
-    const firecrawlAvailable = isFirecrawlConfigured();
 
     // ── Step 1: Canonical pre-check ────────────────────────────────
     let preCheckContext = '';
@@ -106,30 +129,53 @@ export const POST = withCalibration('research-extract', 'ai_research', {
 
     const sources: SourceContent[] = [];
 
-    // Search web per category
-    if (firecrawlAvailable) {
-      const searchPromises = categories
-        .filter((cat: string) => CATEGORY_TERMS[cat])
-        .map(async (cat: string) => {
-          const terms = CATEGORY_TERMS[cat];
-          try {
-            const results = await searchWeb(`${searchQuery} ${terms}`, {
-              numResults: maxSourcesPerCategory,
-            });
-            return results.map((r) => ({
-              url: r.url,
-              title: r.title,
-              content: r.content,
+    // Search web per category. Live Source Pack gives us grounded Google
+    // Search first, optional scrape excerpts, and UCDP corroboration without
+    // requiring Firecrawl to be configured.
+    const searchPromises = categories
+      .filter((cat: string) => CATEGORY_TERMS[cat])
+      .slice(0, 6)
+      .map(async (cat: string) => {
+        const terms = CATEGORY_TERMS[cat];
+        try {
+          const pack = await buildLiveSourcePack({
+            uid: user.uid,
+            situationName,
+            query: `${searchQuery} ${terms}`,
+            toolId: `research-extract:${cat}`,
+            region,
+            actors,
+            description: situationContext,
+            maxResults: maxSourcesPerCategory,
+            scrapeTop: 1,
+          });
+
+          const scrapedSources = pack.scraped
+            .filter((s) => s.success && s.content.length >= 100)
+            .map((s) => ({
+              url: s.url,
+              title: s.title,
+              content: s.content,
               category: cat,
             }));
-          } catch {
-            return [];
-          }
-        });
+          const snippetSources = pack.results
+            .filter((r) => r.url && (r.content || r.snippet))
+            .slice(0, Math.max(1, maxSourcesPerCategory - scrapedSources.length))
+            .map((r) => ({
+              url: r.url,
+              title: r.title,
+              content: r.content || r.snippet || r.title,
+              category: cat,
+            }));
 
-      const searchResults = await Promise.all(searchPromises);
-      sources.push(...searchResults.flat());
-    }
+          return [...scrapedSources, ...snippetSources];
+        } catch {
+          return [];
+        }
+      });
+
+    const searchResults = await Promise.all(searchPromises);
+    sources.push(...searchResults.flat());
 
     // Scrape user-provided URLs
     if (urls.length > 0) {
@@ -156,7 +202,7 @@ export const POST = withCalibration('research-extract', 'ai_research', {
 
     if (sources.length === 0) {
       return Response.json({
-        error: 'No sources could be retrieved. Ensure Firecrawl API key is configured or provide URLs.',
+        error: 'No sources could be retrieved from grounded search, optional scrapers, or provided URLs.',
       }, { status: 422 });
     }
 
@@ -272,6 +318,24 @@ export const POST = withCalibration('research-extract', 'ai_research', {
         extractedAt: now,
         summary: consolidated.summary,
       }).catch(() => {});
+      await saveToolOutput({
+        uid: user.uid,
+        situationId,
+        toolId: 'research-extract',
+        profileVersion: user.calibration.provenance.profileVersion,
+        output: {
+          nodeCount: consolidated.nodes.length,
+          edgeCount: consolidated.edges.length,
+          sourcesSearched: sources.length,
+          sourcesExtracted: sourceResults.length,
+          summary: consolidated.summary,
+          extractedAt: now,
+        },
+        metadata: {
+          categories,
+          sourceUrls: sourceResults.map((s) => s.url).slice(0, 20),
+        },
+      }).catch((err) => console.warn('[research-extract] saveToolOutput failed:', err));
     } catch (err) {
       console.error('[research-extract] Failed to merge into graph:', err);
     }

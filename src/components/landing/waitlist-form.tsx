@@ -18,12 +18,12 @@ const PILLARS = [
   {
     label: "Today",
     title: "PRAXIS",
-    body: "Agentic AI workspace for diplomats, conflict analysts, mediators, and policy officers. Live now.",
+    body: "Policy and conflict-intelligence workspace for diplomats, conflict analysts, mediators, and policy officers. Live now.",
   },
   {
     label: "Next",
     title: "Calibrated agents",
-    body: "Mandate-aware autonomous agents for monitoring, briefing, and negotiation prep — built on the PRAXIS calibration spine.",
+    body: "Mandate-aware agents for monitoring, briefing, and negotiation prep, governed by the same source and review constraints as PRAXIS.",
   },
   {
     label: "Building",
@@ -87,9 +87,9 @@ export function WaitlistForm() {
           className="mx-auto mb-12 max-w-2xl text-center text-lg leading-relaxed text-navy-500"
         >
           PRAXIS is the first surface of an AI-native stack TACITUS is
-          building for statecraft — agentic software for the institutions
-          that shape policy, peace, and security. Pilots, partnerships,
-          and institutional access start with one email.
+          building for statecraft: software that keeps policy analysis tied
+          to sources, methods, institutional context, and human review.
+          Pilots, partnerships, and institutional access start with one email.
         </motion.p>
 
         {/* CTA pair */}
@@ -162,7 +162,7 @@ export function WaitlistForm() {
           transition={{ duration: 0.7, delay: 0.5 }}
           className="mt-12 text-center text-xs text-navy-400"
         >
-          Built by practitioners with statecraft careers · Deployed on Google Cloud · Private workspace per tenant
+          Built by practitioners with statecraft careers · Deployed on Google Cloud · Source-grounded workspace per tenant
         </motion.p>
       </div>
     </section>

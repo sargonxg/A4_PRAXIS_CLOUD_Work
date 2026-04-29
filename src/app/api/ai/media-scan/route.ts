@@ -61,7 +61,7 @@ const DEFAULT_MONITORED_SOURCES = [
   { name: 'Human Rights Watch', domain: 'hrw.org', reliability: 8.5 },
   { name: 'Amnesty International', domain: 'amnesty.org', reliability: 8.0 },
   { name: 'UN News', domain: 'news.un.org', reliability: 8.5 },
-  { name: 'ACLED', domain: 'acleddata.com', reliability: 9.5 },
+  { name: 'UN News', domain: 'news.un.org', reliability: 8.8 },
   { name: 'SIPRI', domain: 'sipri.org', reliability: 9.0 },
   { name: 'Chatham House', domain: 'chathamhouse.org', reliability: 8.5 },
   { name: 'Foreign Policy', domain: 'foreignpolicy.com', reliability: 7.5 },

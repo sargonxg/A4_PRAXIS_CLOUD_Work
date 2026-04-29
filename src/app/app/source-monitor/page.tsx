@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { useSituationStore } from '@/stores/situation-store';
-import { Rss, RefreshCw, ExternalLink, Loader2, AlertTriangle, Shield, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Rss, RefreshCw, ExternalLink, Loader2, AlertTriangle } from 'lucide-react';
 
 interface FeedItem {
   title: string;
@@ -37,7 +37,7 @@ interface FeedStatus {
  */
 const INITIAL_FEEDS: Omit<FeedStatus, 'items' | 'loading' | 'error' | 'lastFetched'>[] = [
   // Tier 1: Official / Institutional
-  { name: 'ACLED', description: 'Armed conflict events, fatalities, actor movements', endpoint: 'acled', tier: 1, reliability: 95 },
+  { name: 'Google Search Grounding', description: 'Primary checkable live web research through Gemini grounding', endpoint: 'grounded_search', tier: 1, reliability: 88 },
   { name: 'UNHCR', description: 'Refugee and displacement statistics', endpoint: 'unhcr', tier: 1, reliability: 95 },
   { name: 'ReliefWeb', description: 'Humanitarian situation reports and updates', endpoint: 'reliefweb', tier: 1, reliability: 85 },
   { name: 'UN News', description: 'UN Security Council and SG statements', endpoint: 'unnews', tier: 1, reliability: 85 },
@@ -52,13 +52,6 @@ const INITIAL_FEEDS: Omit<FeedStatus, 'items' | 'loading' | 'error' | 'lastFetch
   { name: 'GDELT', description: 'Global events from 100+ languages in near-real-time', endpoint: 'gdelt', tier: 4, reliability: 55 },
 ];
 
-const TIER_LABELS: Record<number, { label: string; color: string; icon: typeof ShieldCheck }> = {
-  1: { label: 'Tier 1 — Official', color: '#10B981', icon: ShieldCheck },
-  2: { label: 'Tier 2 — Expert', color: '#34D399', icon: Shield },
-  3: { label: 'Tier 3 — Media', color: '#FBBF24', icon: Shield },
-  4: { label: 'Tier 4 — Aggregated', color: '#F97316', icon: ShieldAlert },
-};
-
 export default function SourceMonitorPage() {
   const { showGuard } = useSituationGuard();
   const situation = useSituationStore((s) => s.activeSituation);
@@ -66,12 +59,14 @@ export default function SourceMonitorPage() {
   const [feeds, setFeeds] = useState<FeedStatus[]>(
     INITIAL_FEEDS.map((f) => ({ ...f, items: [], loading: false, error: '', lastFetched: null }))
   );
-  const [showTierInfo, setShowTierInfo] = useState(false);
   const [refreshingAll, setRefreshingAll] = useState(false);
 
   if (showGuard) return <NoSituationState />;
 
   async function fetchFeed(endpoint: string) {
+    const country = situation?.region || situation?.name;
+    if (!country) return;
+
     setFeeds((prev) =>
       prev.map((f) => (f.endpoint === endpoint ? { ...f, loading: true, error: '' } : f))
     );
@@ -80,20 +75,29 @@ export default function SourceMonitorPage() {
       const res = await fetch('/api/data/intelligence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ situationId: situation!.id, source: endpoint }),
+        body: JSON.stringify({
+          country,
+          query: situation!.name,
+          limit: 20,
+          forceGrounded: endpoint === 'grounded_search',
+        }),
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 
       // Map response to generic FeedItem format
-      const items: FeedItem[] = (data.articles || data.events || data.updates || [])
+      const rawItems = (data.articles || data.events || data.updates || []) as Array<Record<string, unknown>>;
+      const feedItems = endpoint === 'grounded_search'
+        ? rawItems.filter((item) => item.source === 'grounded_search')
+        : rawItems.filter((item) => String(item.source ?? '').toLowerCase() === endpoint.toLowerCase());
+      const items: FeedItem[] = (feedItems.length > 0 ? feedItems : rawItems)
         .slice(0, 10)
-        .map((item: Record<string, string>) => ({
-          title: item.title || item.headline || item.name || 'Untitled',
-          url: item.url || item.link || '#',
-          source: endpoint.toUpperCase(),
-          date: item.date || item.publishedAt || item.eventDate || '',
+        .map((item) => ({
+          title: String(item.title || item.headline || item.name || 'Untitled'),
+          url: String(item.url || item.link || '#'),
+          source: String(item.source || endpoint).toUpperCase(),
+          date: String(item.date || item.publishedAt || item.eventDate || ''),
           relevance: item.relevance ? parseFloat(String(item.relevance)) : undefined,
         }));
 
@@ -130,7 +134,7 @@ export default function SourceMonitorPage() {
             Source Monitor
           </h1>
           <p className="mt-1 text-sm text-navy-500">
-            Live intelligence feeds — GDELT, ACLED, ReliefWeb, UN News, ICG CrisisWatch.
+            Primary grounded web research with GDELT, UCDP, ReliefWeb, UN News, and ICG as corroborating feeds.
           </p>
         </div>
         <button

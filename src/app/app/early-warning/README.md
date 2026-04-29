@@ -4,7 +4,7 @@
 
 **Methodology.** `POST /api/ai/escalation-scan` (calibrated) produces structured output validated against a Zod schema: `{ glaslStage, trend, triggers[], actorPairs[] }`. Cron `/api/cron/early-warning-refresh` runs every 6h and flags active situations as stale; the tool page reads the flag on mount and re-fetches under the authenticated user's credit budget.
 
-**Inputs.** Graph analysis, recent episodes, ACLED + GDELT feeds, user profile (audience, language).
+**Inputs.** Graph analysis, recent episodes, grounded search, GDELT/UCDP signals, user profile (audience, language).
 
 **Outputs.** Stage gauge (Glasl 1-9), trend sparkline, trigger list, actor-pair matrix. Persisted at `tools/early-warning`.
 

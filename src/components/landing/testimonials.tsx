@@ -1,15 +1,10 @@
 "use client";
 
 /**
- * Testimonials strip — one real practitioner quote with a photo + org.
+ * Testimonials strip.
  *
- * The current entry is a placeholder clearly marked as such so the section
- * renders at release without misrepresenting anyone. Replace the single
- * `PLACEHOLDER_TESTIMONIAL` object with the collected quote + photo + org.
- * Add additional testimonials to TESTIMONIALS as they arrive.
- *
- * Design: deliberately compact — single rotating card at narrow widths, up
- * to two side-by-side at >= lg. Keeps landing height in check.
+ * Keep this section hidden until there are real approved practitioner quotes.
+ * PRAXIS should not use placeholder social proof on a trust-sensitive product.
  */
 
 import { Quote } from "lucide-react";
@@ -21,20 +16,9 @@ interface Testimonial {
   title: string;
   org: string;
   photoUrl?: string | null;
-  placeholder?: boolean;
 }
 
-const PLACEHOLDER_TESTIMONIAL: Testimonial = {
-  id: "placeholder-1",
-  quote:
-    "PRAXIS compresses the distance between raw source material and a brief I can actually send. The calibration to my role and red lines is the difference.",
-  name: "Practitioner quote pending",
-  title: "Political Affairs Officer",
-  org: "Multilateral Mission",
-  placeholder: true,
-};
-
-const TESTIMONIALS: Testimonial[] = [PLACEHOLDER_TESTIMONIAL];
+const TESTIMONIALS: Testimonial[] = [];
 
 export function Testimonials() {
   if (TESTIMONIALS.length === 0) return null;
@@ -72,11 +56,6 @@ export function Testimonials() {
                   <span className="text-xs text-navy-500">
                     {t.title} · {t.org}
                   </span>
-                  {t.placeholder ? (
-                    <span className="mt-0.5 text-[10px] uppercase tracking-wider text-gold-600">
-                      Placeholder — collecting quotes
-                    </span>
-                  ) : null}
                 </div>
               </figcaption>
             </figure>

@@ -42,7 +42,7 @@ export const praxisBackend = {
       body: JSON.stringify({ situation_id: sitId, url }),
     }),
 
-  /** Pull GDELT/ACLED feeds for the situation region */
+  /** Pull grounded-search and public corroborating feeds for the situation region */
   ingestFeeds: (sitId: string) =>
     backendFetch('/pipeline/ingest-feeds', {
       method: 'POST',

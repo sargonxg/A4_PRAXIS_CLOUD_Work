@@ -8,7 +8,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getGroundedModel } from '@/lib/ai/providers';
 import {
-  acledBreaker, gdeltBreaker, hdxBreaker, reliefwebBreaker,
+  gdeltBreaker, hdxBreaker,
   unhcrBreaker, worldbankBreaker,
 } from '@/lib/utils/circuit-breaker';
 
@@ -49,30 +49,7 @@ export async function fetchConflictEvents(
   country: string,
   dateRange: { from: string; to: string },
 ): Promise<z.infer<typeof ConflictEventSchema>['events']> {
-  // 1. Try ACLED
-  if (process.env.ACLED_API_KEY && process.env.ACLED_EMAIL) {
-    const result = await acledBreaker.execute(
-      async () => {
-        const url = `https://api.acleddata.com/acled/read?key=${process.env.ACLED_API_KEY}&email=${process.env.ACLED_EMAIL}&country=${encodeURIComponent(country)}&event_date=${dateRange.from}|${dateRange.to}&event_date_where=BETWEEN&limit=50`;
-        const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-        if (!res.ok) throw new Error(`ACLED ${res.status}`);
-        const data = await res.json();
-        return (data.data ?? []).map((e: Record<string, unknown>) => ({
-          date: String(e.event_date ?? ''),
-          title: String(e.event_type ?? ''),
-          description: String(e.notes ?? ''),
-          actors: [String(e.actor1 ?? ''), String(e.actor2 ?? '')].filter(Boolean),
-          location: String(e.location ?? ''),
-          fatalities: Number(e.fatalities ?? 0),
-          source: 'ACLED',
-        }));
-      },
-      async () => [],
-    );
-    if (result.length > 0) return result;
-  }
-
-  // 2. Try GDELT
+  // 1. Try GDELT's public document stream for conflict-event signals.
   const gdeltResult = await gdeltBreaker.execute(
     async () => {
       const query = encodeURIComponent(`${country} conflict violence`);
@@ -92,7 +69,7 @@ export async function fetchConflictEvents(
   );
   if (gdeltResult.length > 0) return gdeltResult;
 
-  // 3. Gemini grounded fallback (always available)
+  // 2. Gemini grounded fallback (always available)
   const grounded = await geminiGroundedFetch(
     `Find the 10 most significant conflict events in ${country} between ${dateRange.from} and ${dateRange.to}. For each: date, title, description, actors, location, estimated fatalities. Return as JSON.`,
     ConflictEventSchema,

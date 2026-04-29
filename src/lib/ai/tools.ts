@@ -143,7 +143,7 @@ function scoreUrlReliability(url: string): number {
   const lowerUrl = url.toLowerCase();
   if (/reuters|apnews|afp/.test(lowerUrl)) return 0.95;
   if (/bbc|guardian|nytimes|washingtonpost|ft\.com|aljazeera/.test(lowerUrl)) return 0.85;
-  if (/crisisgroup|icg|acled|sipri|iiss/.test(lowerUrl)) return 0.88;
+  if (/crisisgroup|icg|ucdp|sipri|iiss/.test(lowerUrl)) return 0.88;
   if (/un\.org|osce|europa\.eu/.test(lowerUrl)) return 0.90;
   if (/foreignpolicy|economist|foreignaffairs/.test(lowerUrl)) return 0.82;
   return 0.70;
@@ -2040,7 +2040,7 @@ export const deepSourceResearch = tool({
     topic: z.string().describe('Research topic or question'),
     situationContext: z.string().optional().describe('Active situation context'),
     depth: z.enum(['quick', 'standard', 'comprehensive']).default('standard'),
-    sourcePreferences: z.array(z.string()).optional().describe('Preferred sources (e.g., "Crisis Group", "ACLED", "Reuters")'),
+    sourcePreferences: z.array(z.string()).optional().describe('Preferred sources (e.g., "Crisis Group", "UCDP", "Reuters")'),
     timeRange: z.enum(['week', 'month', 'quarter', 'year']).optional(),
   }),
   execute: async ({ topic, situationContext, depth, sourcePreferences, timeRange }) => {
@@ -2050,7 +2050,7 @@ export const deepSourceResearch = tool({
     // Build targeted queries for different source categories
     const queries = [
       topic, // General
-      `${topic} site:crisisgroup.org OR site:acleddata.com OR site:sipri.org`, // Think tanks
+      `${topic} site:crisisgroup.org OR site:ucdp.uu.se OR site:sipri.org`, // Think tanks and conflict data
       `${topic} site:un.org OR site:reliefweb.int`, // UN/humanitarian
       `${topic} site:reuters.com OR site:apnews.com`, // Wire services
     ];

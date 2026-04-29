@@ -20,7 +20,7 @@ export interface GeospatialEvent {
   fatalities: number;
   actors: string[];
   description: string;
-  source: 'acled' | 'gdelt' | 'manual';
+  source: 'event_feed' | 'gdelt' | 'manual';
 }
 
 export interface GeospatialResponse {
@@ -55,7 +55,7 @@ const EVENT_TYPES = [
   'strategic-developments',
 ] as const;
 
-const ACLED_EVENT_TYPES: Record<string, string> = {
+const EVENT_TYPE_LABELS: Record<string, string> = {
   'battles': 'Battles',
   'explosions-remote-violence': 'Explosions/Remote violence',
   'violence-against-civilians': 'Violence against civilians',
@@ -114,17 +114,17 @@ function generateDemoEvents(): GeospatialEvent[] {
       lng: Math.round(lng * 10000) / 10000,
       fatalities,
       actors: actor1 !== actor2 ? [actor1, actor2] : [actor1],
-      description: `[DEMO] ${ACLED_EVENT_TYPES[type] ?? type} involving ${actor1} near ${location}.`,
-      source: 'acled',
+      description: `[DEMO] ${EVENT_TYPE_LABELS[type] ?? type} involving ${actor1} near ${location}.`,
+      source: 'event_feed',
     });
   }
 
   return events.sort((a, b) => b.date.localeCompare(a.date));
 }
 
-// ─── Hotspot helper (adapts GeospatialEvent → minimal ACLEDEvent shape) ───────
+// ─── Hotspot helper (adapts GeospatialEvent → minimal event shape) ───────────
 
-interface MinimalACLEDEvent {
+interface MinimalEvent {
   event_id_cnty: string;
   event_date: string;
   year: number;
@@ -147,12 +147,12 @@ interface MinimalACLEDEvent {
   timestamp: number;
 }
 
-function eventsToACLEDShape(events: GeospatialEvent[]): MinimalACLEDEvent[] {
+function eventsToHotspotShape(events: GeospatialEvent[]): MinimalEvent[] {
   return events.map((e) => ({
     event_id_cnty: e.id,
     event_date: e.date,
     year: new Date(e.date).getFullYear(),
-    event_type: ACLED_EVENT_TYPES[e.type] ?? e.type,
+    event_type: EVENT_TYPE_LABELS[e.type] ?? e.type,
     sub_event_type: e.subType ?? '',
     actor1: e.actors[0] ?? '',
     actor2: e.actors[1] ?? '',
@@ -177,8 +177,8 @@ function eventsToACLEDShape(events: GeospatialEvent[]): MinimalACLEDEvent[] {
 export const POST = withAuth(async (req, user) => {
   if (user.isDemo) {
     const events = generateDemoEvents();
-    const acledShape = eventsToACLEDShape(events);
-    const hotspots = clusterEvents(acledShape);
+    const hotspotShape = eventsToHotspotShape(events);
+    const hotspots = clusterEvents(hotspotShape);
     const response: GeospatialResponse = {
       events,
       hotspots: hotspots.slice(0, 5),
@@ -242,12 +242,12 @@ export const POST = withAuth(async (req, user) => {
         fatalities: typeof meta.fatalities === 'number' ? meta.fatalities : 0,
         actors: item.actors,
         description: item.description,
-        source: item.source === 'acled' ? 'acled' : item.source === 'gdelt' ? 'gdelt' : 'manual',
+        source: item.source === 'gdelt' ? 'gdelt' : item.source === 'grounded_search' ? 'event_feed' : 'manual',
       });
     }
 
-    const acledShape = eventsToACLEDShape(events);
-    const hotspots = clusterEvents(acledShape);
+    const hotspotShape = eventsToHotspotShape(events);
+    const hotspots = clusterEvents(hotspotShape);
 
     const response: GeospatialResponse = {
       events: events.slice(0, 200),

@@ -26,8 +26,8 @@ const FRAMEWORK_CITATIONS: Record<string, string> = {
   'CRAAP Test (Currency, Relevance, Authority, Accuracy, Purpose)': 'Meriam Library (2010) — Currency, Relevance, Authority, Accuracy, Purpose source evaluation',
   'CRAAP Source Evaluation': 'Meriam Library (2010) — Currency, Relevance, Authority, Accuracy, Purpose source evaluation',
   'CRAAP Evaluation': 'Meriam Library (2010) — Currency, Relevance, Authority, Accuracy, Purpose source evaluation',
-  'ACLED Event Typology': 'ACLED — Armed Conflict Location & Event Data: 6 event types, 25 sub-types, geocoded',
-  'ACLED Conflict Mapping Methodology': 'ACLED — disaggregated geocoded event data with precision levels 1-8',
+  'Open Event Typology': 'Structured event typology — event types, sub-types, actors, locations, and source confidence',
+  'Open Conflict Mapping Methodology': 'Structured conflict mapping methodology — geocoded event data with precision and confidence fields',
   'GDELT Event Ontology': 'GDELT Project — Global Database of Events, Language, and Tone (CAMEO ontology)',
   'GDELT GCAM Sentiment Analysis': 'GDELT GCAM — Global Content Analysis Measures across 65+ languages',
   'Galtung Triangle': 'Johan Galtung (1969) — Direct, Structural, Cultural violence triangle',
@@ -88,7 +88,6 @@ const FRAMEWORK_CITATIONS: Record<string, string> = {
 
 // Data source status mapping
 const DATA_SOURCE_STATUS: Record<string, 'live' | 'offline' | 'estimated'> = {
-  'ACLED': 'live',
   'GDELT': 'live',
   'HDX HAPI': 'live',
   'ReliefWeb': 'live',

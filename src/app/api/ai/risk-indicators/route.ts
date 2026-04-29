@@ -34,7 +34,7 @@ const IndicatorSchema = z.object({
   confidence: z.enum(['low', 'medium', 'high']),
   lastUpdated: z.string().describe('ISO date of the latest data point cited.'),
   sourceUrl: z.string().optional().describe('Direct URL when one citable source dominates.'),
-  sourceLabel: z.string().optional().describe('Short feed/site label, e.g. "ACLED", "OCHA", "Reuters".'),
+  sourceLabel: z.string().optional().describe('Short feed/site label, e.g. "GDELT", "OCHA", "Reuters".'),
   rationale: z.string().describe('One-sentence justification grounded in the corpus or grounded search.'),
 });
 

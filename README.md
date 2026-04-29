@@ -87,6 +87,15 @@ counts Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, and
 Narrative nodes and lists missing primitives. This makes ontology gaps visible
 before an analyst trusts a graph-backed assessment.
 
+### Executive Situation Intelligence
+
+The real dashboard includes an on-demand executive intelligence panel backed by
+`POST /api/ai/situation-intelligence`. The route uses the existing calibrated
+AI path and validates structured output for diagnosis, strategic insight,
+causal timeline, actor dossiers, scenarios, derived risk score, concrete
+actions, graph primitives, provenance, confidence, persisted memory, and JSON
+export. Shared schema: `src/lib/ai/schemas/situation-intelligence.ts`.
+
 ---
 
 ## Tech Stack
@@ -254,6 +263,7 @@ Premium research integrations:
 | Variable | Purpose |
 |---|---|
 | `FIRECRAWL_API_KEY` | Premium search/scrape/crawl/map/extract for source acquisition and knowledge-base ingestion |
+| `UCDP_API_TOKEN` | Optional UCDP API token sent as `x-ucdp-access-token` for structured conflict records |
 | `PARALLEL_API_KEY` | Parallel Search API + MCP for LLM-optimized second-lens research |
 
 Both are optional for free users; PRAXIS falls back to Google/open-source
@@ -442,6 +452,8 @@ Seed: `npx tsx scripts/seed-domains.ts` (idempotent).
 
 ## What's Next
 
+**Active continuation roadmap:** [`TODO.md`](./TODO.md).
+
 **Active sprint plan:** [`docs/SPRINT_EXECUTION_PLAN_2026-04-25.md`](./docs/SPRINT_EXECUTION_PLAN_2026-04-25.md).
 
 Current high-impact lanes:
@@ -461,6 +473,13 @@ Current high-impact lanes:
 | File | Purpose |
 |---|---|
 | [`README.md`](./README.md) | This file — reference overview |
+| [`TODO.md`](./TODO.md) | Current production continuation roadmap and long prioritized task list |
+| [`docs/PRAXIS_SUPERPLAN_2026-04-29.md`](./docs/PRAXIS_SUPERPLAN_2026-04-29.md) | Hyper-detailed multi-agent execution plan for identity, QA, AI, cloud, security, and docs |
+| [`docs/PRAXIS_15_APP_WIDE_IMPROVEMENTS_2026-04-29.md`](./docs/PRAXIS_15_APP_WIDE_IMPROVEMENTS_2026-04-29.md) | Fifteen top-level app-wide product, QA, AI, security, deploy, and trust initiatives |
+| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Compact system architecture summary with deeper links |
+| [`DEPLOYMENT.md`](./DEPLOYMENT.md) | Deploy gate, Cloud Build path, smoke checks, and deploy references |
+| [`TESTING.md`](./TESTING.md) | Automated and persona testing strategy |
+| [`SECURITY.md`](./SECURITY.md) | Security posture, trust boundary, and review checklist |
 | [`CLAUDE.md`](./CLAUDE.md) | Agent conventions: model discipline, security, file structure, key flows, anti-patterns |
 | [`AGENTS.md`](./AGENTS.md) | Codex/OpenAI agents pointer to CLAUDE.md |
 | [`CHANGELOG.md`](./CHANGELOG.md) | Version history (Keep a Changelog) |

@@ -21,7 +21,7 @@ export const POST = withAuth(async (req, user) => {
     return NextResponse.json({
       events: [],
       totalCount: 0,
-      sources: { acled: 0, gdelt: 0, reliefweb: 0, unnews: 0, grounded_search: 0 },
+      sources: { event_feed: 0, gdelt: 0, ucdp: 0, reliefweb: 0, unnews: 0, grounded_search: 0 },
       fetchedAt: new Date().toISOString(),
     });
   }
@@ -57,7 +57,7 @@ export const POST = withAuth(async (req, user) => {
       return NextResponse.json({
         events,
         totalCount: events.length,
-        sources: { acled: 0, gdelt: 0, reliefweb: 0, unnews: 0, grounded_search: grounded.length },
+        sources: { event_feed: 0, gdelt: 0, ucdp: 0, reliefweb: 0, unnews: 0, grounded_search: grounded.length },
         fallbackUsed: grounded.length > 0,
         fetchedAt: new Date().toISOString(),
       });

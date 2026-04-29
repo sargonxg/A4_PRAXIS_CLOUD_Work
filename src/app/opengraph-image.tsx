@@ -240,7 +240,7 @@ export default async function Image() {
           >
             Grounded in
           </div>
-          {['ACLED', 'UCDP', 'GDELT', 'OCHA', 'ReliefWeb', 'World Bank', 'UN News'].map((s) => (
+          {['Google Search', 'UCDP', 'GDELT', 'OCHA', 'ReliefWeb', 'World Bank', 'UN News'].map((s) => (
             <div
               key={s}
               style={{

@@ -8,7 +8,7 @@ import {
 import { cn } from '@/lib/utils/cn';
 import type { Situation } from '@/types/situation';
 
-type FeedSource = 'acled' | 'gdelt' | 'reliefweb' | 'unnews' | 'grounded_search';
+type FeedSource = 'event_feed' | 'gdelt' | 'ucdp' | 'reliefweb' | 'unnews' | 'grounded_search';
 
 interface IntelItem {
   id: string;
@@ -24,23 +24,26 @@ interface IntelItem {
 }
 
 interface SourcesCount {
-  acled: number;
+  event_feed: number;
   gdelt: number;
+  ucdp?: number;
   reliefweb: number;
   unnews?: number;
   grounded_search?: number;
 }
 
 const SOURCE_ICONS: Record<FeedSource, typeof AlertTriangle> = {
-  acled: AlertTriangle,
+  event_feed: AlertTriangle,
   gdelt: Newspaper,
+  ucdp: FileText,
   reliefweb: FileText,
   unnews: FileText,
   grounded_search: Sparkles,
 };
 const SOURCE_LABELS: Record<FeedSource, string> = {
-  acled: 'ACLED',
+  event_feed: 'Event Feed',
   gdelt: 'GDELT',
+  ucdp: 'UCDP',
   reliefweb: 'ReliefWeb',
   unnews: 'UN News',
   grounded_search: 'AI Search',
@@ -57,7 +60,7 @@ export function IntelligenceFeed({ situation }: { situation: Situation }) {
   const [loading, setLoading] = useState(false);
   const [groundedLoading, setGroundedLoading] = useState(false);
   const [sources, setSources] = useState<SourcesCount>({
-    acled: 0, gdelt: 0, reliefweb: 0, unnews: 0, grounded_search: 0,
+    event_feed: 0, gdelt: 0, ucdp: 0, reliefweb: 0, unnews: 0, grounded_search: 0,
   });
   const [fallbackUsed, setFallbackUsed] = useState(false);
   const [fetchedAt, setFetchedAt] = useState<string | null>(null);
@@ -96,7 +99,7 @@ export function IntelligenceFeed({ situation }: { situation: Situation }) {
         } else {
           setItems(data.events || []);
           setSources(
-            data.sources || { acled: 0, gdelt: 0, reliefweb: 0, unnews: 0, grounded_search: 0 },
+            data.sources || { event_feed: 0, gdelt: 0, ucdp: 0, reliefweb: 0, unnews: 0, grounded_search: 0 },
           );
           setFallbackUsed(Boolean(data.fallbackUsed));
         }
@@ -117,12 +120,14 @@ export function IntelligenceFeed({ situation }: { situation: Situation }) {
 
   const filtered = filter === 'all' ? items : items.filter((i) => i.source === filter);
   const totalItems =
-    sources.acled + sources.gdelt + sources.reliefweb +
+    sources.event_feed + sources.gdelt + (sources.ucdp ?? 0) + sources.reliefweb +
     (sources.unnews ?? 0) + (sources.grounded_search ?? 0);
   const activeSourceCount = Object.entries(sources).filter(([, v]) => (v ?? 0) > 0).length;
   const allZero = totalItems === 0 && !loading && !groundedLoading;
 
-  const filterChips: Array<'all' | FeedSource> = ['all', 'acled', 'gdelt', 'reliefweb'];
+  const filterChips: Array<'all' | FeedSource> = ['all', 'gdelt', 'reliefweb'];
+  if (sources.event_feed > 0) filterChips.splice(1, 0, 'event_feed');
+  if ((sources.ucdp ?? 0) > 0) filterChips.splice(2, 0, 'ucdp');
   if ((sources.unnews ?? 0) > 0) filterChips.push('unnews');
   if ((sources.grounded_search ?? 0) > 0) filterChips.push('grounded_search');
 
@@ -199,7 +204,7 @@ export function IntelligenceFeed({ situation }: { situation: Situation }) {
             </div>
             <p className="text-sm font-medium text-navy-700">No feeds configured</p>
             <p className="mx-auto mt-1 max-w-sm text-xs text-navy-500">
-              Structured feeds returned 0 items. Set <code className="rounded bg-navy-100 px-1 text-[10px]">ACLED_API_KEY</code> in Cloud Run env vars for event data, or click
+              Structured feeds returned 0 items. Connect event and humanitarian feed credentials in the deployment environment, or click
               {' '}<strong className="text-gold-700">Use AI Search</strong>{' '}
               above to pull recent intelligence via Gemini + Google Search.
             </p>

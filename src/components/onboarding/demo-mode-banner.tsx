@@ -119,7 +119,7 @@ export function DemoModeBanner() {
 
       {/* Center: description text */}
       <p className="hidden text-[11px] text-blue-100/70 lg:block">
-        You are exploring the Bloomberg Terminal for Conflict Resolution. AI features use demo data. Production runs on Vertex AI / Gemini with grounded Google Search.
+        You are exploring the PRAXIS sample workspace. Demo mode uses synthetic Nordalia data; production workspaces run on Vertex AI / Gemini with grounded Google Search and private sources.
       </p>
 
       {/* Right: ecosystem buttons + collapse */}

@@ -74,8 +74,8 @@ const DEMO_RESPONSE = {
       signal:
         'Open-source flight tracking (FlightRadar24 / ADS-B Exchange) shows 40% increase in KAF Il-76 sorties to Nordalia International Airport over the past 14 days versus the 90-day baseline.',
       evidence:
-        'ACLED data confirms 3 additional AFN heavy-weapons systems (M-46 artillery) repositioned to eastern front in same period. Pattern consistent with pre-offensive resupply in 6 historical cases analysed by ARGUS.',
-      source: 'OSINT / ACLED / UNMN logistics tracking',
+        'Open-source logistics monitoring indicates 3 additional AFN heavy-weapons systems (M-46 artillery) repositioned to eastern front in same period. Pattern consistent with pre-offensive resupply in 6 historical cases analysed by ARGUS.',
+      source: 'OSINT / UNMN logistics tracking / GDELT signal review',
       timestamp: '2026-04-08T14:30:00Z',
       glaslImpact:
         'Leading indicator for Stage 6 "strategy of threats" escalation. Historical pattern suggests 4-6 week window before operational use of resupplied assets.',

@@ -13,7 +13,7 @@ export const maxDuration = 15;
  * so the Settings UI can render itself without a second round-trip.
  *
  * Never returns plaintext secrets — only masked previews and non-secret
- * configured fields (e.g. ACLED email).
+ * configured fields for providers that require non-secret account metadata.
  */
 export const GET = withAuth(async (_req, user) => {
   try {

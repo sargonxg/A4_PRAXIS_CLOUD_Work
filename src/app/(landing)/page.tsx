@@ -50,7 +50,7 @@ const softwareJsonLd = {
   applicationSubCategory: "Policy & Statecraft AI",
   operatingSystem: "Web",
   description:
-    "PRAXIS by TACITUS is the agentic AI workspace for statecraft — diplomats, conflict analysts, mediators, and policy officers. Calibrated to your mandate, grounded in your sources, reasoning with the frameworks your institution already trusts (Glasl, Fisher-Ury, INFORM, OCHA, IPC, ICD-203, IHL).",
+    "PRAXIS by TACITUS is a policy and conflict-intelligence workspace for diplomats, conflict analysts, mediators, and policy officers. It connects mandate calibration, source intake, conflict-graph extraction, risk assessment, drafting, and exportable briefings with citations and methodology notes.",
   url: siteUrl,
   image: `${siteUrl}/opengraph-image`,
   inLanguage: "en",
@@ -103,13 +103,13 @@ const softwareJsonLd = {
     url: "https://tacitus.me",
   },
   featureList: [
-    "Agentic AI tools calibrated to your mandate and active situation",
+    "Mandate-aware tools calibrated to your role and active situation",
     "ACO v2.0 — 14-entity conflict ontology with 72 typed relationships",
     "Glasl 9-stage escalation, Fisher-Ury, INFORM Risk Index, OCHA, IPC",
     "Conflict graph extraction with cited evidence and version history",
     "Drafting Studio with ICD-203 analytic standards and source tracing",
-    "Open-data feeds: ACLED, UCDP, GDELT BigQuery, ReliefWeb, OCHA, HDX, UNHCR, World Bank, UN News, Crisis Group, SIPRI",
-    "Source-grounded research via Vertex AI with citation discipline",
+    "Open-data feeds: Google Search, GDELT BigQuery, UCDP, ReliefWeb, OCHA, HDX, UNHCR, World Bank, UN News, and user-approved private corpus sources",
+    "Source-grounded research via Google Cloud and approved user corpora with citation discipline",
     "Advisor Council simulation (six expert personas, ICD-203-aligned)",
     "Game-theory and scenario analysis with deep-think reasoning",
     "Geospatial monitoring and risk scoring",
@@ -125,7 +125,7 @@ const organizationJsonLd = {
   url: "https://tacitus.me",
   logo: `${siteUrl}/favicon.svg`,
   description:
-    "TACITUS is building the AI-native stack for statecraft — agentic software for the institutions that shape policy, peace, and security.",
+    "TACITUS is building the AI-native stack for statecraft: policy and conflict-intelligence software that keeps analysis tied to sources, methods, institutional context, and human review.",
   sameAs: [
     "https://praxis.tacitus.me",
     "https://tacitus.me",
