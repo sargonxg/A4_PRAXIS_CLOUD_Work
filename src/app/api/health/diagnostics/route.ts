@@ -64,6 +64,20 @@ export async function GET(request: Request) {
     diagnostics.models = { error: err instanceof Error ? err.message : String(err) };
   }
 
+  // --- AI route safeguards ---
+  try {
+    const { AI_REQUEST_LIMITS } = await import('@/lib/api/ai-request-limits');
+    diagnostics.safeguards = {
+      authenticatedRateLimitPerMinute: 100,
+      aiRequestLimits: AI_REQUEST_LIMITS,
+      calibratedAiRoutesStartToolRuns: true,
+      malformedJsonRejectedBeforeCreditDeduction: true,
+      oversizedRequestsRejectedBeforeCreditDeduction: true,
+    };
+  } catch (err) {
+    diagnostics.safeguards = { error: err instanceof Error ? err.message : String(err) };
+  }
+
   // --- Cookie / session secrets ---
   diagnostics.cookieSecret = {
     cookieSigningSecretSet: !!process.env.COOKIE_SIGNING_SECRET,

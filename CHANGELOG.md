@@ -8,6 +8,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased] — 2026-04-28 (Five-pillar uplift: ask-praxis, dashboard, conflict-graph, risk+timeline, briefing)
 
+### Codex Continuation — 2026-04-29 AI safeguards and health visibility
+
+- Added shared calibrated-AI request safeguards in `withCalibration()`:
+  malformed JSON, payloads over 750 KB, more than 50 chat messages, and
+  aggregate text over 250k characters are rejected before onboarding checks,
+  credit deduction, tool-run creation, calibration, or model calls.
+- Added `src/lib/api/ai-request-limits.ts` as the single source for these
+  non-secret limits.
+- Exposed the active AI request limits and calibrated-route safeguards in
+  `/api/health` and `/api/health/diagnostics`.
+- Added focused unit coverage for malformed JSON, excessive chat history, and
+  oversized calibrated-AI requests.
+- Updated security, testing, auth, and TODO docs to make the safeguard contract
+  explicit for future agents and operators.
+
 ### Codex Continuation — 2026-04-29 grounded-search intelligence spine
 
 - Hardened the unified web research client so Google-grounded research fans out

@@ -41,6 +41,9 @@ The current security/cloud execution plan is in
 - [ ] Firestore rules protect billing, subscription, promo, and admin fields.
 - [ ] Storage rules enforce ownership and avoid broad public reads.
 - [ ] AI routes use schema validation and calibrated context.
+- [ ] Calibrated AI routes reject malformed JSON, oversized bodies, excessive
+      chat history, and very large aggregate text before credit deduction or
+      model calls.
 - [ ] Logs redact secrets, tokens, document text where inappropriate, and raw
   provider responses that may contain sensitive user data.
 - [ ] Webhooks verify signatures.
@@ -54,6 +57,8 @@ The current security/cloud execution plan is in
 - Rotate local workstation secrets and update Secret Manager.
 - Automate GCP audit and Firestore rules/index drift checks in Cloud Build.
 - Add App Check or comparable abuse control for high-cost endpoints.
+- Tune the shared AI request limits from observed production traffic and add
+  per-tier concurrency controls for long-running agent routes.
 - Continue tests around admin gates, cookie signing, Firestore rules, Storage
   rules, backend OIDC, and tool-output access boundaries.
 - Document incident response for provider key exposure, Firebase credential

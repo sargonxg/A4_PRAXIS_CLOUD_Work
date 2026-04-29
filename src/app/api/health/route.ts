@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { AI_REQUEST_LIMITS } from '@/lib/api/ai-request-limits';
 
 /**
  * GET /api/health
@@ -51,6 +52,12 @@ export async function GET() {
       status: healthy ? 'ok' : 'degraded',
       timestamp: new Date().toISOString(),
       checks,
+      safeguards: {
+        authenticatedRateLimitPerMinute: 100,
+        aiRequestLimits: AI_REQUEST_LIMITS,
+        highCostAiRoutesRequireAuth: true,
+        calibratedAiRoutesStartToolRuns: true,
+      },
     },
     { status }
   );

@@ -11,6 +11,7 @@ import {
 } from '@/lib/jobs/job-service';
 import { emitSystemEvent, emitNotification } from '@/lib/events/event-service';
 import { publishBacklogEntry } from '@/lib/dev-backlog/service';
+import { AI_REQUEST_LIMITS } from './ai-request-limits';
 
 export interface CalibrationCtx extends AuthenticatedUser {
   calibration: ContextBlock;
@@ -18,6 +19,54 @@ export interface CalibrationCtx extends AuthenticatedUser {
 }
 
 export type CalibratedHandler = (req: Request, ctx: CalibrationCtx) => Promise<Response>;
+
+function jsonError(status: number, error: string, message: string, details?: Record<string, unknown>): Response {
+  return NextResponse.json(
+    { error, message, ...(details ? { details } : {}) },
+    {
+      status,
+      headers: {
+        'X-Praxis-Safeguard': error,
+      },
+    },
+  );
+}
+
+function estimateTextChars(value: unknown): number {
+  if (typeof value === 'string') return value.length;
+  if (Array.isArray(value)) return value.reduce((sum, item) => sum + estimateTextChars(item), 0);
+  if (value && typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).reduce<number>(
+      (sum, item) => sum + estimateTextChars(item),
+      0,
+    );
+  }
+  return 0;
+}
+
+function checkAiRequestLimits(body: Record<string, unknown>): Response | null {
+  const messages = body.messages;
+  if (Array.isArray(messages) && messages.length > AI_REQUEST_LIMITS.maxMessages) {
+    return jsonError(
+      413,
+      'ai_request_too_many_messages',
+      'This AI request includes too many chat messages. Start a new thread or summarize earlier context before continuing.',
+      { maxMessages: AI_REQUEST_LIMITS.maxMessages, receivedMessages: messages.length },
+    );
+  }
+
+  const textChars = estimateTextChars(body);
+  if (textChars > AI_REQUEST_LIMITS.maxTextChars) {
+    return jsonError(
+      413,
+      'ai_request_too_large',
+      'This AI request is too large. Upload large source material as documents or split the request into smaller sections.',
+      { maxTextChars: AI_REQUEST_LIMITS.maxTextChars, receivedTextChars: textChars },
+    );
+  }
+
+  return null;
+}
 
 /**
  * Wraps a route handler with auth → credits → calibration → tool_run lifecycle.
@@ -52,7 +101,26 @@ export function withCalibration(
       let situationId: string | undefined;
       try {
         const raw = await req.clone().text();
-        if (raw) body = JSON.parse(raw) as Record<string, unknown>;
+        const rawBytes = new TextEncoder().encode(raw).byteLength;
+        if (rawBytes > AI_REQUEST_LIMITS.maxBytes) {
+          return jsonError(
+            413,
+            'ai_request_payload_too_large',
+            'This AI request payload is too large. Upload source material as documents or split it into smaller requests.',
+            { maxBytes: AI_REQUEST_LIMITS.maxBytes, receivedBytes: rawBytes },
+          );
+        }
+        if (raw) {
+          try {
+            body = JSON.parse(raw) as Record<string, unknown>;
+          } catch {
+            if ((req.headers.get('content-type') ?? '').includes('application/json')) {
+              return jsonError(400, 'malformed_json', 'The AI request body is not valid JSON.');
+            }
+          }
+        }
+        const limitResponse = checkAiRequestLimits(body);
+        if (limitResponse) return limitResponse;
         if (typeof body.situationId === 'string') situationId = body.situationId;
         if (!situationId && body.situation && typeof body.situation === 'object') {
           const situation = body.situation as { id?: unknown };

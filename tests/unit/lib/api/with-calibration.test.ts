@@ -18,6 +18,7 @@ vi.mock('@/lib/firebase/analyst-profile-admin', () => ({
   getAnalystProfile: vi.fn().mockResolvedValue({ meta: { completedAt: new Date() } }),
 }));
 
+import { AI_REQUEST_LIMITS } from '@/lib/api/ai-request-limits';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { buildCalibratedContext } from '@/lib/context/profile-context';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
@@ -77,6 +78,81 @@ describe('withCalibration', () => {
     const res = await (route as unknown as (r: Request, u: { uid: string; email: string; name: string; isDemo: boolean }) => Promise<Response>)(req, { uid: 'u1', email: '', name: '', isDemo: false });
     expect(res.status).toBe(402);
     expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('rejects oversized AI request bodies before credits or calibration', async () => {
+    const { checkAndDeductCreditsForUid } = await import('@/lib/api/with-credits');
+    const handler = vi.fn();
+    const route = withCalibration('chat', 'ai_chat')(handler);
+    const req = new Request('http://x', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'x'.repeat(AI_REQUEST_LIMITS.maxTextChars + 1) }] }),
+    });
+
+    const res = await (route as unknown as (r: Request, u: { uid: string; email: string; name: string; isDemo: boolean }) => Promise<Response>)(
+      req,
+      { uid: 'u1', email: '', name: '', isDemo: false },
+    );
+    const body = await res.json() as { error: string; message: string };
+
+    expect(res.status).toBe(413);
+    expect(body.error).toBe('ai_request_too_large');
+    expect(handler).not.toHaveBeenCalled();
+    expect(getAnalystProfile).not.toHaveBeenCalled();
+    expect(checkAndDeductCreditsForUid).not.toHaveBeenCalled();
+    expect(buildCalibratedContext).not.toHaveBeenCalled();
+  });
+
+  it('rejects excessive chat history before credits or calibration', async () => {
+    const { checkAndDeductCreditsForUid } = await import('@/lib/api/with-credits');
+    const handler = vi.fn();
+    const route = withCalibration('chat', 'ai_chat')(handler);
+    const req = new Request('http://x', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: Array.from({ length: AI_REQUEST_LIMITS.maxMessages + 1 }, () => ({ role: 'user', content: 'hello' })),
+      }),
+    });
+
+    const res = await (route as unknown as (r: Request, u: { uid: string; email: string; name: string; isDemo: boolean }) => Promise<Response>)(
+      req,
+      { uid: 'u1', email: '', name: '', isDemo: false },
+    );
+    const body = await res.json() as { error: string; details: { maxMessages: number; receivedMessages: number } };
+
+    expect(res.status).toBe(413);
+    expect(body.error).toBe('ai_request_too_many_messages');
+    expect(body.details.maxMessages).toBe(AI_REQUEST_LIMITS.maxMessages);
+    expect(handler).not.toHaveBeenCalled();
+    expect(getAnalystProfile).not.toHaveBeenCalled();
+    expect(checkAndDeductCreditsForUid).not.toHaveBeenCalled();
+    expect(buildCalibratedContext).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed JSON requests before credits or calibration', async () => {
+    const { checkAndDeductCreditsForUid } = await import('@/lib/api/with-credits');
+    const handler = vi.fn();
+    const route = withCalibration('chat', 'ai_chat')(handler);
+    const req = new Request('http://x', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{"messages":',
+    });
+
+    const res = await (route as unknown as (r: Request, u: { uid: string; email: string; name: string; isDemo: boolean }) => Promise<Response>)(
+      req,
+      { uid: 'u1', email: '', name: '', isDemo: false },
+    );
+    const body = await res.json() as { error: string };
+
+    expect(res.status).toBe(400);
+    expect(body.error).toBe('malformed_json');
+    expect(handler).not.toHaveBeenCalled();
+    expect(getAnalystProfile).not.toHaveBeenCalled();
+    expect(checkAndDeductCreditsForUid).not.toHaveBeenCalled();
+    expect(buildCalibratedContext).not.toHaveBeenCalled();
   });
 
   it('returns 403 when non-demo user has no completed onboarding profile', async () => {

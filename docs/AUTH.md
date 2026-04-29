@@ -204,18 +204,31 @@ export const GET = withAuth(async (req, user) => {
 ```
 
 `withAuth()` in `src/lib/api/with-auth.ts`:
-1. Reads `Authorization: Bearer <token>` header
-2. Calls `verifyIdToken(token)` via Firebase Admin SDK
-3. Checks rate limit (100 req/min per uid, in-memory)
-4. Returns `{ uid, email }` to the handler
+1. Reads and verifies the signed `tacitus-auth-session` cookie.
+2. For demo sessions, returns the isolated demo principal.
+3. For real sessions, verifies the Firebase ID token via Admin SDK.
+4. Checks the Firestore-backed rate limit bucket: 100 requests/minute per uid.
+5. Returns `{ uid, email, name, isDemo }` to the handler.
 
-Credit deduction happens after auth, before AI calls:
+AI request safeguards happen in `withCalibration()` before onboarding,
+credit deduction, calibration, tool-run creation, or model calls:
+
+- Maximum request body: 750,000 bytes.
+- Maximum chat messages: 50.
+- Maximum aggregate text payload: 250,000 characters.
+- Malformed JSON requests with `Content-Type: application/json` return `400`.
+- Oversized requests return `413` with an `X-Praxis-Safeguard` response header.
+
+Credit deduction happens after auth and request safeguards, before AI calls:
 
 ```typescript
 await checkAndDeductCredits(uid, 'risk_assessment', 3);
-// throws 402 if insufficient credits
 const result = await generateText(…);
 ```
+
+The current product posture is soft-metered: depleted credits log usage but do
+not block first-value AI workflows. Unmapped credit operation types still fail
+closed so new routes cannot silently default to an arbitrary cost.
 
 ---
 

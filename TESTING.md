@@ -56,6 +56,9 @@ On 2026-04-29:
 - `npm run lint`: passed with existing warnings and no errors.
 - `npm run audit:routes`: passed, 61 AI routes calibrated and 5 exempt.
 - `npm run audit:gcp`: passed, 0 hard failures and 0 soft warnings.
+- `npx vitest run tests/unit/lib/api/with-calibration.test.ts`: passed,
+  including shared AI safeguards for malformed JSON, excessive chat history,
+  and oversized request bodies before credits or model calls.
 
 Full Vitest, Playwright, and backend pytest still need to be run for any
 production deploy checkpoint after this documentation pass.
@@ -86,6 +89,8 @@ reloadable.
   failure, persisted reopen, graph node click-through, provenance panel,
   confidence panel, and timestamped JSON export.
 - Ask PRAXIS over current situation and saved outputs.
+- Shared AI safeguards: oversized payloads return `413`, malformed JSON returns
+  `400`, and these failures happen before credits, tool runs, or model calls.
 - Tool generation through the shared `ToolPageShell`/`AiPopulate` path.
 - Document upload and retrieval.
 - Graph staged proposal approval.

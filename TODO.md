@@ -61,6 +61,10 @@ Crisis Group are corroborating layers.
     `docs/audits/tools-2026-04-29.md`; `grounded-search` is now 6/11 and
     `research-extract` is 6/11.
   - `npm run audit:gcp`: passed, 0 hard failures and 0 soft warnings.
+  - Shared AI safeguard tests:
+    `npx vitest run tests/unit/lib/api/with-calibration.test.ts` passed
+    with malformed JSON, excessive message history, and oversized request
+    rejection before credit deduction or model calls.
 
 ## Agentic Loop
 
@@ -412,6 +416,14 @@ For each persona, record:
 - [ ] Add or keep tests around `with-auth`, admin gates, cookie signing,
   Firebase rules, storage rules, and backend OIDC trust.
 - [ ] Add App Check or equivalent abuse controls for high-cost endpoints.
+- [x] Add shared pre-model request safeguards for calibrated AI routes.
+  - Done: `withCalibration()` rejects malformed JSON, payloads over 750 KB,
+    more than 50 chat messages, and aggregate text over 250k characters before
+    onboarding, credits, tool-run creation, calibration, or model calls.
+  - Visibility: `/api/health` and `/api/health/diagnostics` expose non-secret
+    safeguard limits for operator verification.
+  - Follow-up: add per-tier concurrency controls for long-running agent routes
+    and tune limits from production telemetry.
 - [ ] Document incident response: key rotation, user notification, provider
   revocation, and deploy rollback.
 
