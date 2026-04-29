@@ -2,6 +2,7 @@ import { conductResearch } from '@/lib/ai/research-engine';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
+import { toLegacyDataStreamResponse } from '@/lib/ai/legacy-data-stream';
 import { z } from 'zod';
 
 export const maxDuration = 60;
@@ -81,7 +82,7 @@ export const POST = withCalibration('grounded-search', 'ai_grounded_search', {
       conflictContext,
     });
 
-    return result.toTextStreamResponse();
+    return toLegacyDataStreamResponse(result.textStream);
   } catch (err) {
     console.error('Grounded search route error:', err);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {

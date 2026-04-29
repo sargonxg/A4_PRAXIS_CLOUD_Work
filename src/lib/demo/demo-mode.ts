@@ -121,7 +121,10 @@ export function formatAsStreamResponse(text: string): Response {
   // Vercel AI SDK text-stream format: each text chunk is prefixed with "0:"
   // followed by a JSON-encoded string, then a newline.
   const lines = splitIntoChunks(text, 80);
-  const streamLines = lines.map((chunk) => `0:${JSON.stringify(chunk)}\n`).join('');
+  const streamLines = [
+    ...lines.map((chunk) => `0:${JSON.stringify(chunk)}\n`),
+    `d:${JSON.stringify({ finishReason: 'stop' })}\n`,
+  ].join('');
 
   return new Response(streamLines, {
     status: 200,

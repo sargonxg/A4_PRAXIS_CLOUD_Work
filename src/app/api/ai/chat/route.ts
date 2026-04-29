@@ -14,6 +14,7 @@ import { messageContentSchema, situationContextSchema, aiSettingsSchema } from '
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { resolveTier } from '@/lib/api/tier';
 import { buildAskPraxisExtensions } from '@/lib/ai/ask-praxis-tools';
+import { toLegacyDataStreamResponse } from '@/lib/ai/legacy-data-stream';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -280,7 +281,7 @@ You have access to the user's active situation data. When answering questions:
       },
     });
 
-    return result.toUIMessageStreamResponse();
+    return toLegacyDataStreamResponse(result.textStream);
   } catch (err) {
     return handleRouteError(err, 'chat');
   }
