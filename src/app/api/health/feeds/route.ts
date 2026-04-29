@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { withAuth } from '@/lib/api/with-auth';
 
 /**
  * GET /api/health/feeds
@@ -7,7 +6,7 @@ import { withAuth } from '@/lib/api/with-auth';
  * Feeds marked 'ok' have no API key requirement and are always available.
  * Feeds marked 'not_configured' need an environment variable to activate.
  */
-export const GET = withAuth(async () => {
+export async function GET() {
   const status: Record<string, 'ok' | 'degraded' | 'not_configured'> = {
     gdelt:       'ok',  // Always available — no key needed
     reliefweb:   'ok',  // Always available
@@ -30,4 +29,4 @@ export const GET = withAuth(async () => {
     summary: `${configured}/${total} feeds active`,
     timestamp: new Date().toISOString(),
   });
-});
+}
