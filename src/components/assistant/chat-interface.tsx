@@ -39,6 +39,20 @@ const DEMO_CONFLICT_CONTEXTS = [
   { id: 'myanmar', label: 'Myanmar' },
 ];
 
+const DEMO_SITUATION_CONTEXT = {
+  id: 'demo-nordalia',
+  name: 'Nordalia — Contested Border Arrangement',
+  region: 'Eastern Marches / Belara corridor',
+  description:
+    'Synthetic demonstration case: the Government of Nordalia and the Democratic Reform Movement are contesting a border and ceasefire arrangement around Kessara and the Belara rare-earth corridor, with UNMN monitoring, AU facilitation, and external pressure from Karovia and Westmark.',
+  actors: ['Government of Nordalia', 'Democratic Reform Movement', 'UNMN', 'AU Panel', 'Karovia', 'Westmark'],
+  riskScore: 72,
+  glaslStage: 5,
+  escalationTrend: 'worsening',
+  contextNotes:
+    'Key demo signals: ceasefire violations, monitor freedom-of-movement restrictions, arms embargo erosion, field-commander spoiler incentives, humanitarian access constraints, and rival external patron narratives.',
+};
+
 /* -------------------------------------------------------------------------- */
 /*  Quick action bar config                                                   */
 /* -------------------------------------------------------------------------- */
@@ -194,10 +208,11 @@ export function ChatInterface() {
 
   const { activeSituation } = useSituationStore();
   const { demoMode } = useAppStore();
+  const effectiveSituation = activeSituation ?? (demoMode ? DEMO_SITUATION_CONTEXT : null);
 
   const [uploadedContext, setUploadedContext] = useState<{ name: string; text: string } | null>(null);
   const [conflictContext, setConflictContext] = useState(
-    activeSituation ? activeSituation.id : ''
+    effectiveSituation ? effectiveSituation.id : ''
   );
   const [isUploading, setIsUploading] = useState(false);
   const [showContextDropdown, setShowContextDropdown] = useState(false);
@@ -208,23 +223,23 @@ export function ChatInterface() {
   const CONFLICT_CONTEXTS = demoMode
     ? [
         { id: '', label: 'No conflict context' },
-        ...(activeSituation ? [{ id: activeSituation.id, label: activeSituation.name }] : []),
+        ...(effectiveSituation ? [{ id: effectiveSituation.id, label: effectiveSituation.name }] : []),
         ...DEMO_CONFLICT_CONTEXTS,
       ]
-    : activeSituation
-      ? [{ id: activeSituation.id, label: activeSituation.name }]
+    : effectiveSituation
+      ? [{ id: effectiveSituation.id, label: effectiveSituation.name }]
       : [{ id: '', label: 'No situation selected' }];
 
   const conflictLabel = CONFLICT_CONTEXTS.find((c) => c.id === conflictContext)?.label ?? '';
 
   useEffect(() => {
-    if (activeSituation && !conflictContext) setConflictContext(activeSituation.id);
-  }, [activeSituation, conflictContext]);
+    if (effectiveSituation && !conflictContext) setConflictContext(effectiveSituation.id);
+  }, [effectiveSituation, conflictContext]);
 
   // Pass full situation data to AI for context-aware responses
   const chatBody = {
-    conflictContext: conflictLabel || activeSituation?.name || undefined,
-    situation: activeSituation ?? undefined,
+    conflictContext: conflictLabel || effectiveSituation?.name || undefined,
+    situation: effectiveSituation ?? undefined,
     aiSettings: { analysisDepth: analysisMode },
   };
 
@@ -350,10 +365,7 @@ export function ChatInterface() {
   const isEmpty = messages.length === 0 && !isLoading;
 
   // Phase-aware contextual prompts for the empty state inline banner
-  const contextualPrompts = getContextualPrompts(
-    activeSituation ?? null,
-    activeSituation?.analysisPhase
-  );
+  const contextualPrompts = getContextualPrompts(effectiveSituation as Situation | null, activeSituation?.analysisPhase);
 
   return (
     <div className="flex h-full flex-col">
