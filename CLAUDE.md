@@ -413,7 +413,7 @@ Deducted atomically via Firestore transactions. Real-time sync via onSnapshot.
 | Pub/Sub | Async event messaging | 5 topics (pipeline, extract, ingest, alert, profile.events) |
 | Cloud Functions | Event triggers | 3 functions (situation, document, GDELT) |
 | Cloud Scheduler | Cron jobs | GDELT (15min), alerts (6am), briefing (5am) |
-| Secret Manager | Sensitive config | 4 secrets (firebase-sa, ai-key, cron, cookie) + `ADMIN_ALLOWLIST` env for `/app/admin/*` gate |
+| Secret Manager | Sensitive config | Runtime secrets for Firebase Admin, AI, Firecrawl, Parallel, UCDP, cron/session signing, and user-key encryption; `ADMIN_ALLOWLIST` / `ADMIN_EMAIL_ALLOWLIST` gate admin access |
 
 ## Tool Categories (40 tools)
 
@@ -459,6 +459,7 @@ See `.env.example` for complete list. Critical:
 - `CRON_SECRET` — Cron + admin auth
 - `COOKIE_SIGNING_SECRET` — Session cookie HMAC (primary; read first by `cookie-signer.ts`)
 - `SESSION_SECRET` — Alias for `COOKIE_SIGNING_SECRET`; Cloud Build mounts both from the same Secret Manager secret (`praxis-cookie-secret`) for backward compatibility
+- `UCDP_API_TOKEN` — Optional but recommended UCDP API token mounted from Secret Manager `praxis-ucdp-api-token`
 
 The `NEXT_PUBLIC_FIREBASE_*` client config values are public and have defaults in `src/lib/firebase/config.ts` for the `praxisbytacitus` project. This is intentional so clean-clone builds pass without `.env.local`; still use `.env.local` when pointing a local build at a different Firebase project.
 

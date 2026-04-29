@@ -268,7 +268,8 @@ Premium research integrations:
 
 Both are optional for free users; PRAXIS falls back to Google/open-source
 research paths when they are absent. In production they are stored in Secret
-Manager as `praxis-firecrawl-api-key` and `praxis-parallel-api-key`.
+Manager as `praxis-firecrawl-api-key`, `praxis-parallel-api-key`, and
+`praxis-ucdp-api-token`.
 
 See `.env.example` and `.env.local.example` for the full grouped reference with placeholders.
 

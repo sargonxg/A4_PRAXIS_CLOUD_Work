@@ -83,6 +83,8 @@ Then browser-test the core route sequence:
 - Do not commit secrets.
 - Runtime secrets belong in Secret Manager and are mounted by Cloud Build or
   Cloud Run.
+- Production UCDP access is mounted as `UCDP_API_TOKEN` from Secret Manager
+  secret `praxis-ucdp-api-token`; never hardcode the token in repo files.
 - The backend must remain private.
 - Frontend-to-backend calls must go through server-side Next.js API bridges.
 - Firestore rules and indexes must be deployed or drift-checked with releases.
