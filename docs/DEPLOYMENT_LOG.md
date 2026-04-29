@@ -1215,6 +1215,51 @@ Validation before deploy:
 - Full `npm run lint` did not complete within the local timeout during this iteration; no source errors were returned before timeout.
 - Exact UCDP token scan over commit candidates returned `0` hits.
 
+## 2026-04-29 — Calibrated AI Request Safeguards
+
+Source:
+
+- Commit: `b059944`
+- Branch: `main`
+- Remote: `origin/main`
+
+Cloud Build:
+
+- Build ID: `89e2247d-f4b7-4b6c-9d85-41e0807ed3ec`
+- Status: `SUCCESS`
+- Duration: `10M13S`
+- Project: `praxisbytacitus`
+
+Cloud Run:
+
+- Frontend service: `praxis-frontend`
+- Frontend URL: `https://praxis-frontend-pgoyqovcza-uc.a.run.app`
+- Frontend revision: `praxis-frontend-00125-zbm`
+- Backend service: `praxis-backend`
+- Backend URL: `https://praxis-backend-pgoyqovcza-uc.a.run.app`
+- Backend revision: `praxis-backend-00073-dck`
+
+Production verification:
+
+- `https://praxis.tacitus.me/` returned `200 OK`.
+- `https://praxis.tacitus.me/login` returned `200 OK`.
+- `https://praxis.tacitus.me/onboarding` returned `307 Temporary Redirect` to `/login` for unauthenticated requests.
+- `https://praxis.tacitus.me/api/health` returned `status: ok`.
+- `/api/health` exposed active safeguards: `maxMessages: 50`, `maxBytes: 750000`.
+- `https://praxis.tacitus.me/api/health/feeds` returned `11/11 feeds active`, including `ucdp: ok`.
+- `https://praxis.tacitus.me/api/auth/test-firebase` returned `adminSdkStatus: INITIALIZED_OK`.
+- Browser-backed demo-session fetch to `/api/ai/chat` with a 250,001-character message returned `413`, `error: ai_request_too_large`, and `X-Praxis-Safeguard: ai_request_too_large`.
+
+Validation before deploy:
+
+- `npx vitest run tests/unit/lib/api/with-calibration.test.ts` passed.
+- Targeted ESLint for touched files passed.
+- `npx tsc --noEmit` passed.
+- `npm run audit:routes` passed: 62 calibrated AI routes and 5 exempt.
+- `npm run build` passed with only the known Next.js middleware-to-proxy warning.
+- `npm run audit:gcp` passed with zero hard failures and zero soft warnings.
+- Exact UCDP token scan over changed files returned `0` hits.
+
 ## Deployment Verification Commands
 
 ```bash
