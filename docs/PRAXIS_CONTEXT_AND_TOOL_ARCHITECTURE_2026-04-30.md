@@ -150,3 +150,27 @@ LibreOffice/DOCX/PDF export should render saved structured outputs from
    into DOCX/PDF/LibreOffice-compatible sections.
 7. Add browser smoke flows for first-time user, power user, skeptical user,
    technical user, and professional policy user.
+
+## Admin And Operator Readiness
+
+Admin access is allowed through either:
+
+- explicit Firebase uid in `ADMIN_ALLOWLIST`; or
+- verified email in `ADMIN_EMAIL_ALLOWLIST`.
+
+The default verified admin emails are:
+
+- `giulio@tacitus.me`
+- `giuliocatanzariti@gmail.com`
+
+Production Cloud Build sets the same emails explicitly. Local verification:
+
+```powershell
+npm run admin:check -- giulio@tacitus.me
+```
+
+Expected result: `admin: true` and `reason: verified-email-allowlist`.
+
+The `/api/admin/me` endpoint returns the current principal, gate reason,
+verified-email status, configured email allowlist, and UID allowlist count so
+the admin panel can explain failures without exposing secrets.

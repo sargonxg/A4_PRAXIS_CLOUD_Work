@@ -57,7 +57,7 @@ export default function DiagnosticsPage() {
     try {
       const res = await fetch('/api/admin/diagnostics', { cache: 'no-store' });
       if (res.status === 403) {
-        setError('Forbidden — your uid is not on ADMIN_ALLOWLIST');
+        setError('Forbidden — sign in with a verified admin email or add your Firebase uid to ADMIN_ALLOWLIST');
         return;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

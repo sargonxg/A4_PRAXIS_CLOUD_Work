@@ -92,6 +92,16 @@ contracts, path taxonomy, or context blueprints.
 - [x] Tighten `/api/tool-data` so manual saves use a structured versioned
   envelope with metadata/source receipts, legacy compatibility mirroring, and
   payload-size protection.
+- [x] Add `npm run admin:check -- giulio@tacitus.me` and enrich `/api/admin/me`
+  so admin access is explainable by verified email allowlist vs UID allowlist.
+- [x] Update admin UI copy to stop implying UID-only access; verified
+  `giulio@tacitus.me` is an allowed admin identity when the Firebase email is
+  verified.
+- [x] Add a context-backbone readout to the dashboard launchpad showing tool
+  readiness, required context layers, graph/document/provenance coverage, and
+  the next missing situation field.
+- [x] Make `/api/tools/contracts` expose context blueprints in addition to
+  operating contracts for future agents, admin tools, and documentation.
 - [ ] Apply `RegistryToolInfo` / `ToolOperatingContractPanel` to every tool page
   that still bypasses the shared shell.
 - [ ] Move the active generic + conflict/political tools to the context

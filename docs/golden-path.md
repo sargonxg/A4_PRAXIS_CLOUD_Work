@@ -87,7 +87,8 @@ If ACLED is unconfigured the UI should clearly say "Configure ACLED to unlock ev
 
 ## Step 8 — Admin diagnostics (optional)
 
-If your uid is in `ADMIN_ALLOWLIST`, open `/app/admin/diagnostics`. Expect:
+If your verified email is in `ADMIN_EMAIL_ALLOWLIST` or your uid is in
+`ADMIN_ALLOWLIST`, open `/app/admin/diagnostics`. Expect:
 
 - 4 counter cards (users sampled, 24h credits burn, 7d credits burn, feed coverage)
 - Probe group **Storage** — Firestore: OK
@@ -117,4 +118,4 @@ PLAYWRIGHT_BASE_URL=https://preview-url \
 | Dashboard coverage banner missing | `/api/capabilities` 500 | Check Firestore Admin SDK init (FIREBASE_SERVICE_ACCOUNT_KEY) |
 | Every premium feed shows "missing-key" even after adding a key | Capability cache not busted | Re-save the key — cache TTL is 5 minutes; the settings route clears it via the status endpoint |
 | Advisor chat returns 500 | Anthropic not configured and Vertex ADC not active | Either set `GOOGLE_AI_API_KEY` or enable `AI_PROVIDER=vertex` with ADC |
-| Admin diagnostics 403 for your own uid | Not in ADMIN_ALLOWLIST | Add your uid to the env var and redeploy |
+| Admin diagnostics 403 for your admin account | Email is unverified or not in `ADMIN_EMAIL_ALLOWLIST`; uid not in `ADMIN_ALLOWLIST` | Run `npm run admin:check -- giulio@tacitus.me`, verify the Firebase email, or add the uid/env var and redeploy |

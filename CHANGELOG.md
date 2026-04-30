@@ -56,6 +56,16 @@
 - Tightened `/api/tool-data` and `src/lib/firebase/tool-data-service.ts` so
   manual tool saves use a versioned envelope shape, optional metadata/source
   receipts, legacy compatibility mirroring, and a direct-save payload limit.
+- Added an admin access diagnostic path: `getAdminPrincipalAccess()`,
+  richer `/api/admin/me` output, `npm run admin:check -- giulio@tacitus.me`,
+  and clearer admin UI error copy for verified email allowlist vs UID
+  allowlist.
+- Added a dashboard context-backbone readout to the Situation Launchpad so
+  users can see ready tools, missing situation fields, required context layers,
+  graph participation, document lanes, and provenance coverage for the selected
+  workflow.
+- Expanded `/api/tools/contracts` to return each tool's context blueprint along
+  with the operating contract.
 
 ## 2026-04-29 — Subagent audit wave: persistence, exports, and deploy gates
 

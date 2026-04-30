@@ -43,7 +43,7 @@ describe('Auth Security Contracts', () => {
   it('admin email allowlist includes both Giulio addresses and requires verified email', async () => {
     const original = process.env.ADMIN_EMAIL_ALLOWLIST;
     delete process.env.ADMIN_EMAIL_ALLOWLIST;
-    const { isAdminPrincipal } = await import('../lib/auth/admin-gate');
+    const { getAdminGateStatus, getAdminPrincipalAccess, isAdminPrincipal } = await import('../lib/auth/admin-gate');
 
     expect(isAdminPrincipal({
       uid: 'not-allowlisted',
@@ -60,6 +60,12 @@ describe('Auth Security Contracts', () => {
       email: 'giulio@tacitus.me',
       emailVerified: false,
     })).toBe(false);
+    expect(getAdminPrincipalAccess({
+      uid: 'not-allowlisted',
+      email: 'giulio@tacitus.me',
+      emailVerified: true,
+    }).reason).toBe('verified-email-allowlist');
+    expect(getAdminGateStatus().configuredEmailAllowlist).toContain('giulio@tacitus.me');
 
     if (original === undefined) {
       delete process.env.ADMIN_EMAIL_ALLOWLIST;
@@ -69,8 +75,8 @@ describe('Auth Security Contracts', () => {
   });
 
   it('CSP keeps strict-dynamic and nonce off script-src-elem so auth redirect scripts can run', () => {
-    const middlewareSource = readFileSync(join(process.cwd(), 'src', 'middleware.ts'), 'utf8');
-    const scriptSrcElemInitializer = middlewareSource.match(/const scriptSrcElem = nonce[\s\S]*?: scriptSrc;/)?.[0] ?? '';
+    const proxySource = readFileSync(join(process.cwd(), 'src', 'proxy.ts'), 'utf8');
+    const scriptSrcElemInitializer = proxySource.match(/const scriptSrcElem = nonce[\s\S]*?: scriptSrc;/)?.[0] ?? '';
 
     expect(scriptSrcElemInitializer).toContain("`'self'");
     expect(scriptSrcElemInitializer).toContain("'unsafe-inline'");

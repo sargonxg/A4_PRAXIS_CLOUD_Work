@@ -71,7 +71,7 @@ export default function AdminAdvisorsPage() {
       <div className="p-6">
         <h1 className="text-lg font-semibold text-navy-900">Admin · Advisors</h1>
         <p className="mt-2 text-sm text-red-700">
-          403 — your uid is not on <code>ADMIN_ALLOWLIST</code>. Ask an operator to add you.
+          403 — sign in with a verified email in <code>ADMIN_EMAIL_ALLOWLIST</code> or add your uid to <code>ADMIN_ALLOWLIST</code>.
         </p>
       </div>
     );

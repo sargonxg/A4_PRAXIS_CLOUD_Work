@@ -180,7 +180,8 @@ export default function OperatorConsole() {
 
       {error ? (
         <div className="mb-4 rounded-md border border-rose-700 bg-rose-950/40 p-3 text-sm text-rose-300">
-          Operator console fetch failed: {error}. If you are seeing 403, your uid is not in ADMIN_ALLOWLIST.
+          Operator console fetch failed: {error}. If you are seeing 403, sign in with a verified
+          admin email or add your Firebase uid to ADMIN_ALLOWLIST.
         </div>
       ) : null}
 

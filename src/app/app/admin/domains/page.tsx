@@ -157,8 +157,8 @@ export default function AdminDomainsPage() {
         <p className="font-semibold text-crimson">Admin access required</p>
         <p className="mt-2 text-navy-600">{authError}</p>
         <p className="mt-3 text-xs text-navy-500">
-          Add your uid to <code className="rounded bg-navy-100 px-1">ADMIN_ALLOWLIST</code> (comma-separated)
-          and redeploy.
+          Sign in with a verified email in <code className="rounded bg-navy-100 px-1">ADMIN_EMAIL_ALLOWLIST</code>
+          or add your uid to <code className="rounded bg-navy-100 px-1">ADMIN_ALLOWLIST</code> and redeploy.
         </p>
       </div>
     );

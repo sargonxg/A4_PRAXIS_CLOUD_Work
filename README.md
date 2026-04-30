@@ -163,7 +163,7 @@ export. Shared schema: `src/lib/ai/schemas/situation-intelligence.ts`.
 ├── src/stores/              Zustand: situation, app, conflict, report, debug, notification, preferences
 ├── src/hooks/               useSituationGuard, usePraxisApi, usePersistedToolData, useKeyboardShortcuts
 ├── src/types/               Situation v2, AnalystProfile, ConflictGraph, ACO, API
-├── src/middleware.ts        Edge: routing + CSP + COOP + HSTS (do NOT rename to proxy.ts)
+├── src/proxy.ts             Next.js proxy: routing + CSP + COOP + HSTS
 │
 ├── backend/                 Python FastAPI on Cloud Run
 │   ├── main.py              FastAPI app entry
@@ -255,6 +255,12 @@ Critical (production):
 | `USER_KEY_MASTER` | 32-byte base64 master key for envelope-encrypted user API keys |
 | `ADMIN_ALLOWLIST` | Comma-separated Firebase UIDs that can access `/app/admin/*` |
 | `ADMIN_EMAIL_ALLOWLIST` | Comma-separated verified admin emails; defaults to `giulio@tacitus.me` |
+
+Admin access check:
+
+```powershell
+npm run admin:check -- giulio@tacitus.me
+```
 
 Optional integrations: `POLAR_*`, `RESEND_API_KEY`, `NEXT_PUBLIC_SENTRY_DSN`, graph backend credentials, and operator/monitoring configuration.
 
@@ -508,7 +514,7 @@ This codebase is actively worked on by **Claude Code** and **OpenAI Codex** agen
 1. Read [`CLAUDE.md`](./CLAUDE.md) — repository conventions
 2. Read [`docs/CONTINUATION.md`](./docs/CONTINUATION.md) — what just shipped, what's next
 3. For code touching AI routes: see [`CLAUDE.md` § AI Model Tiers + Calibration Contract](./CLAUDE.md)
-4. For security-critical files (`firestore.rules`, `middleware.ts`, `with-auth.ts`, `cookie-signer.ts`, `admin.ts`, `storage.rules`): **stop and ask the human first**
+4. For security-critical files (`firestore.rules`, `src/proxy.ts`, `with-auth.ts`, `cookie-signer.ts`, `admin.ts`, `storage.rules`): **stop and ask the human first**
 
 **Before declaring a change "done":**
 

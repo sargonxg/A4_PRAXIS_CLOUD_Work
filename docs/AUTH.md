@@ -166,9 +166,9 @@ This handles the edge case where the client token is slightly ahead of Firebase'
 
 ---
 
-## Middleware (Route Protection)
+## Proxy (Route Protection)
 
-`src/middleware.ts` — runs at the Vercel edge on every matched request.
+`src/proxy.ts` — Next.js 16 proxy route guard for every matched request.
 
 ```
 matcher: ['/demo/:path*', '/app/:path*', '/login', '/pricing']
@@ -189,7 +189,9 @@ matcher: ['/demo/:path*', '/app/:path*', '/login', '/pricing']
 
 **Important:** The middleware does NOT verify the Firebase token cryptographically — it only checks for presence. Full `verifyIdToken` happens in each API route via `withAuth()`. The middleware is a UX guard (redirects unauthenticated users); the API routes enforce actual security.
 
-> **Do not rename `middleware.ts` to `proxy.ts`.** The Next.js proxy convention broke Google Sign-In in v3.9.1 (OAuth redirect returned to a `proxy.ts` that didn't handle the redirect result). Reverted in v3.9.2.
+The old `src/middleware.ts` convention was migrated to `src/proxy.ts` to remove
+the Next.js 16 deprecation warning. Keep auth redirect smoke tests in place when
+editing this file.
 
 ---
 

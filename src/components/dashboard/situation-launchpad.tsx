@@ -1,9 +1,11 @@
 'use client';
 
-import { ArrowRight, Brain, FileText, Gauge, Search, ShieldCheck, Users } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { ArrowRight, Brain, Database, FileText, Gauge, Network, ShieldCheck, Users } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { getPolicyWorkflowPath } from '@/lib/constants/policy-workflow-paths';
 import { getToolById } from '@/lib/constants/tool-registry';
+import { getToolContextBlueprint, getToolContextReadiness } from '@/lib/tools/tool-context-blueprints';
 import type { Situation } from '@/types/situation';
 
 interface SituationLaunchpadProps {
@@ -26,6 +28,7 @@ export function SituationLaunchpad({ situation }: SituationLaunchpadProps) {
   const readiness = buildReadiness(situation);
   const nextActions = buildNextActions(situation);
   const toolIds = path?.firstToolIds ?? ['dashboard', 'source-scout', 'brainstorming-table', 'briefing', 'red-team-review'];
+  const contextBackbone = buildContextBackbone(toolIds, situation);
 
   return (
     <section className="grid gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
@@ -107,8 +110,45 @@ export function SituationLaunchpad({ situation }: SituationLaunchpadProps) {
             ))}
           </div>
         ) : null}
+        <div className="mt-4 border-t border-slate-200 pt-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-navy-400">
+              <Database className="h-3.5 w-3.5" />
+              Context backbone
+            </p>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-navy-600">
+              {contextBackbone.readyTools}/{contextBackbone.totalTools} ready
+            </span>
+          </div>
+          <div className="mt-2 grid grid-cols-3 gap-1.5">
+            <BackboneMetric icon={<Network className="h-3 w-3" />} label="Graph" value={String(contextBackbone.graphTools)} />
+            <BackboneMetric icon={<FileText className="h-3 w-3" />} label="Docs" value={String(contextBackbone.documentTools)} />
+            <BackboneMetric icon={<ShieldCheck className="h-3 w-3" />} label="Evidence" value={String(contextBackbone.provenanceTools)} />
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1">
+            {contextBackbone.layers.slice(0, 6).map((layer) => (
+              <span key={layer} className="rounded-full bg-navy-50 px-1.5 py-0.5 text-[9px] font-medium text-navy-500">
+                {layer}
+              </span>
+            ))}
+          </div>
+          {contextBackbone.nextQuestion ? (
+            <p className="mt-2 text-[11px] leading-snug text-amber-700">{contextBackbone.nextQuestion}</p>
+          ) : (
+            <p className="mt-2 text-[11px] leading-snug text-emerald-700">Core context is sufficient for the first tool sequence.</p>
+          )}
+        </div>
       </div>
     </section>
+  );
+}
+
+function BackboneMetric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
+      <div className="flex items-center gap-1 text-navy-500">{icon}<span className="text-[9px] uppercase tracking-wider">{label}</span></div>
+      <p className="mt-0.5 text-sm font-semibold text-navy-900">{value}</p>
+    </div>
   );
 }
 
@@ -181,6 +221,31 @@ function buildNextActions(situation: Situation) {
     detail: 'Challenge assumptions, source gaps, and confidence claims.',
   });
   return actions.slice(0, 3);
+}
+
+function normalizeToolId(toolId: string): string {
+  if (toolId === 'scenario') return 'scenarios';
+  return toolId;
+}
+
+function buildContextBackbone(toolIds: string[], situation: Situation) {
+  const normalizedToolIds = toolIds.map(normalizeToolId).filter((toolId) => getToolById(toolId));
+  const blueprints = normalizedToolIds.map((toolId) => getToolContextBlueprint(toolId));
+  const readiness = normalizedToolIds.map((toolId) => getToolContextReadiness(toolId, situation));
+  const layers = Array.from(new Set(blueprints.flatMap((blueprint) => blueprint.requiredLayers)));
+  const graphTools = blueprints.filter((blueprint) => blueprint.graphBackbone.currentMode !== 'none').length;
+  const documentTools = blueprints.filter((blueprint) => blueprint.documentProduction.supportsLibreOfficeExport || blueprint.requiredLayers.includes('document-corpus')).length;
+  const provenanceTools = blueprints.filter((blueprint) => blueprint.evidencePolicy.mustShowProvenance).length;
+  const firstGap = readiness.find((item) => !item.ready);
+  return {
+    totalTools: normalizedToolIds.length,
+    readyTools: readiness.filter((item) => item.ready).length,
+    graphTools,
+    documentTools,
+    provenanceTools,
+    layers,
+    nextQuestion: firstGap?.nextQuestion ?? null,
+  };
 }
 
 function prettyToolName(id: string): string {

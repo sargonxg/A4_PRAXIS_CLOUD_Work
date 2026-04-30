@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAllToolOperatingContracts, getToolOperatingContract } from '@/lib/tools/tool-operating-contracts';
+import { getAllToolContextBlueprints, getToolContextBlueprint } from '@/lib/tools/tool-context-blueprints';
 import { getToolById } from '@/lib/constants/tool-registry';
 
 export const dynamic = 'force-dynamic';
@@ -16,12 +17,14 @@ export async function GET(request: Request) {
     return NextResponse.json({
       tool,
       contract: getToolOperatingContract(toolId),
+      contextBlueprint: getToolContextBlueprint(toolId),
       generatedAt: new Date().toISOString(),
     });
   }
 
   return NextResponse.json({
     contracts: getAllToolOperatingContracts(),
+    contextBlueprints: getAllToolContextBlueprints(),
     generatedAt: new Date().toISOString(),
   });
 }
