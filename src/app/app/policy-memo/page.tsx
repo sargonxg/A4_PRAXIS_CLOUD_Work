@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { useToolData } from '@/hooks/useToolData';
+import { DEMO_CONFLICT } from '@/lib/constants/demo-conflict';
 import { FileText, Loader2, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, List } from 'lucide-react';
+import type { Situation } from '@/types/situation';
 
 interface PolicyOption {
   option: string;
@@ -47,6 +49,35 @@ const RISK_COLORS: Record<string, string> = {
   high: 'text-red-600 bg-red-50 border-red-200',
 };
 
+const DEMO_POLICY_SITUATION: Situation = {
+  id: DEMO_CONFLICT.id,
+  name: DEMO_CONFLICT.name,
+  type: 'international',
+  description: DEMO_CONFLICT.description,
+  region: DEMO_CONFLICT.region,
+  actors: DEMO_CONFLICT.actors.slice(0, 12).map((actor) => actor.name),
+  userRole: 'advisor',
+  status: DEMO_CONFLICT.status,
+  riskScore: Math.round(DEMO_CONFLICT.riskScore * 10),
+  glaslStage: DEMO_CONFLICT.glaslStage,
+  escalationTrend: DEMO_CONFLICT.escalationTrend,
+  actorCount: DEMO_CONFLICT.actors.length,
+  graphEntities:
+    DEMO_CONFLICT.actors.length +
+    DEMO_CONFLICT.relationships.length +
+    DEMO_CONFLICT.events.length +
+    DEMO_CONFLICT.claims.length +
+    DEMO_CONFLICT.interests.length +
+    DEMO_CONFLICT.constraints.length,
+  documentCount: 0,
+  contextNotes: [
+    'Demo policy context: disputed 2024 elections, DRM insurgency, contested Belara mining revenues, UN-AU mediation, RECONA sanctions, humanitarian access limits, and external rivalry between Karovia and Westmark.',
+    `Recent event base: ${DEMO_CONFLICT.events.slice(-5).map((event) => `${event.date}: ${event.description}`).join(' ')}`,
+  ].join('\n\n'),
+  createdAt: DEMO_CONFLICT.startDate,
+  updatedAt: DEMO_CONFLICT.lastUpdated,
+};
+
 function Section({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
@@ -64,7 +95,7 @@ function Section({ title, children, defaultOpen = true }: { title: string; child
 }
 
 export default function PolicyMemoPage() {
-  const { showGuard, situation } = useSituationGuard();
+  const { isDemo, showGuard, situation } = useSituationGuard();
   const { data: savedMemo } = useToolData<PolicyMemoData>('policy_memo');
 
   const [question, setQuestion] = useState('');
@@ -79,14 +110,18 @@ export default function PolicyMemoPage() {
   if (showGuard) return <NoSituationState />;
 
   async function handleGenerate() {
-    if (!situation) return;
+    const requestSituation = situation ?? (isDemo ? DEMO_POLICY_SITUATION : null);
+    if (!requestSituation) {
+      setError('Create or select a situation before drafting a policy memo.');
+      return;
+    }
     setGenerating(true);
     setError('');
     try {
       const res = await fetch('/api/ai/policy-memo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ situationId: situation.id, situation, policyQuestion: question }),
+        body: JSON.stringify({ situationId: requestSituation.id, situation: requestSituation, policyQuestion: question }),
       });
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
       const data = await res.json();
