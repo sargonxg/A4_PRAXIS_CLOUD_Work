@@ -46,6 +46,15 @@ The current generated tool-by-tool sprint backlog is
 The current subagent synthesis for the tool sprint is
 `docs/PRAXIS_TOOL_SPRINT_SUBAGENT_SYNTHESIS_2026-04-30.md`.
 
+The current shared context/tool architecture note is
+`docs/PRAXIS_CONTEXT_AND_TOOL_ARCHITECTURE_2026-04-30.md`. It defines the
+context layers, database paths, graph/Dialectica plan, document-production
+lane, and active generic + conflict/political implementation focus.
+
+Generated per-tool specifications live under `docs/tools/generated/`. Refresh
+them with `npm run generate:tool-docs` after changing the registry, operating
+contracts, path taxonomy, or context blueprints.
+
 ## Active Tool Operating System Workstream
 
 - [x] Add a central operating contract for every registered PRAXIS tool:
@@ -72,8 +81,23 @@ The current subagent synthesis for the tool sprint is
   situation's workflow path, not only role/domain.
 - [x] Migrate `src/middleware.ts` to `src/proxy.ts` to resolve the recurring
   Next.js middleware convention warning.
+- [x] Add a central context-blueprint layer for every tool: required context
+  layers, canonical database paths, graph-backbone mode, evidence policy,
+  document/LibreOffice production readiness, and future Dialectica role.
+- [x] Show context blueprint and canonical data paths in the shared operating
+  contract panel so tool pages expose not only purpose but also the knowledge
+  context they require.
+- [x] Generate 53 per-tool documentation files under `docs/tools/generated/`
+  from live registry, contracts, paths, and context blueprints.
+- [x] Tighten `/api/tool-data` so manual saves use a structured versioned
+  envelope with metadata/source receipts, legacy compatibility mirroring, and
+  payload-size protection.
 - [ ] Apply `RegistryToolInfo` / `ToolOperatingContractPanel` to every tool page
   that still bypasses the shared shell.
+- [ ] Move the active generic + conflict/political tools to the context
+  blueprint in their AI route prompts via `buildToolContextBlueprintPrompt`.
+- [ ] Build a document export adapter that renders saved structured tool data
+  into DOCX/PDF/LibreOffice-compatible sections without a second AI call.
 - [ ] Work through the generated P0 queue: Conflict Graph, Deep Search Agent,
   Talking Points, Dashboard, Ask PRAXIS, Sources Library, ARGUS, Dossier,
   Human Rights, Legal Tracker, Policy Memo route-quality upgrade, Sanctions,

@@ -6,6 +6,16 @@ import {
   deleteToolData,
 } from '@/lib/firebase/tool-data-service';
 
+const MAX_TOOL_DATA_PAYLOAD_BYTES = 1_000_000;
+
+function estimatePayloadBytes(value: unknown): number {
+  try {
+    return new TextEncoder().encode(JSON.stringify(value)).length;
+  } catch {
+    return MAX_TOOL_DATA_PAYLOAD_BYTES + 1;
+  }
+}
+
 export const GET = withAuth(async (req, user) => {
   const { searchParams } = new URL(req.url);
   const toolId = searchParams.get('toolId');
@@ -41,7 +51,7 @@ export const POST = withAuth(async (req, user) => {
 
   try {
     const body = await req.json();
-    const { toolId, situationId, data } = body;
+    const { toolId, situationId, data, metadata } = body;
 
     if (!toolId || !situationId) {
       return NextResponse.json(
@@ -57,7 +67,17 @@ export const POST = withAuth(async (req, user) => {
       );
     }
 
-    const saved = await saveToolData(user.uid, situationId, toolId, data);
+    if (estimatePayloadBytes(data) > MAX_TOOL_DATA_PAYLOAD_BYTES) {
+      return NextResponse.json(
+        { error: 'Tool data payload is too large for direct save. Store large files as documents or reports.' },
+        { status: 413 }
+      );
+    }
+
+    const saved = await saveToolData(user.uid, situationId, toolId, data, {
+      metadata: metadata && typeof metadata === 'object' && !Array.isArray(metadata) ? metadata : {},
+      mirrorLegacyToolDoc: true,
+    });
     return NextResponse.json({ success: true, ...saved });
   } catch (err) {
     console.error('[tool-data] POST failed:', err);

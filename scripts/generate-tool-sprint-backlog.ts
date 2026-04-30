@@ -11,6 +11,7 @@ import { join } from 'node:path';
 
 const { TOOL_REGISTRY } = require('../src/lib/constants/tool-registry.ts') as typeof import('../src/lib/constants/tool-registry');
 const { getToolOperatingContract } = require('../src/lib/tools/tool-operating-contracts.ts') as typeof import('../src/lib/tools/tool-operating-contracts');
+const { getToolContextBlueprint } = require('../src/lib/tools/tool-context-blueprints.ts') as typeof import('../src/lib/tools/tool-context-blueprints');
 const {
   getToolPathMembership,
   isToolInActiveGenericOrPoliticalPath,
@@ -29,6 +30,9 @@ interface ToolBacklogRow {
   outputKinds: string[];
   activePathTool: boolean;
   pathMembership: string[];
+  requiredContextLayers: string[];
+  graphMode: string;
+  libreOfficeExport: boolean;
   priority: 'P0' | 'P1' | 'P2' | 'P3';
   sprintTasks: string[];
   verification: string[];
@@ -163,8 +167,12 @@ function graphicsTask(kind: string): string {
 function tasksFor(row: Omit<ToolBacklogRow, 'sprintTasks' | 'verification'>): string[] {
   const tasks: string[] = [];
   const contract = getToolOperatingContract(row.id);
+  const blueprint = getToolContextBlueprint(row.id);
 
   tasks.push(`Clarify tool purpose in the page header: ${contract.objective}`);
+  tasks.push(`Wire the shared context blueprint: required layers are ${blueprint.requiredLayers.join(', ')}.`);
+  if (blueprint.graphBackbone.currentMode !== 'none') tasks.push(`Connect output to graph backbone mode ${blueprint.graphBackbone.currentMode}; future-proof for Dialectica ontology-backed retrieval/proposals.`);
+  if (blueprint.documentProduction.supportsLibreOfficeExport) tasks.push(`Prepare document-production lane for ${blueprint.documentProduction.artifactTypes.join(', ')} with structured sections that LibreOffice/DOCX/PDF export can render.`);
   if (!row.hasRegistryInfo) tasks.push('Wire RegistryToolInfo so methodology, sources, operating contract, and related tools are visible.');
   if (!row.usesShell && row.category !== 'workspace') tasks.push('Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.');
   if (!row.hasToolOutputFrame && row.category !== 'workspace') tasks.push('Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.');
@@ -203,6 +211,7 @@ function buildRows(): ToolBacklogRow[] {
     const pagePath = pagePathFor(tool.id);
     const page = inspectPage(pagePath);
     const contract = getToolOperatingContract(tool.id);
+    const blueprint = getToolContextBlueprint(tool.id);
     const routeScore = scores[routeName] ?? scores[tool.id] ?? null;
     const memberships = getToolPathMembership(tool.id);
     const base = {
@@ -218,6 +227,9 @@ function buildRows(): ToolBacklogRow[] {
       outputKinds: contract.expectedOutputs.map((output) => output.kind),
       activePathTool: isToolInActiveGenericOrPoliticalPath(tool.id),
       pathMembership: memberships.map((membership) => `${membership.pathId}:${membership.tier}`),
+      requiredContextLayers: blueprint.requiredLayers,
+      graphMode: blueprint.graphBackbone.currentMode,
+      libreOfficeExport: blueprint.documentProduction.supportsLibreOfficeExport,
       priority: 'P3' as ToolBacklogRow['priority'],
     };
     const priority = priorityFor(base);
@@ -246,6 +258,8 @@ function renderRow(row: ToolBacklogRow): string {
     `- Output mode: ${row.outputKinds.join(', ')}`,
     `- Active generic/political path: ${row.activePathTool ? 'yes' : 'no'}`,
     `- Path membership: ${row.pathMembership.length ? row.pathMembership.join(', ') : 'none'}`,
+    `- Required context: ${row.requiredContextLayers.join(', ')}`,
+    `- Graph mode: ${row.graphMode}; LibreOffice/document lane: ${row.libreOfficeExport ? 'yes' : 'no'}`,
     '',
     'To do:',
     ...row.sprintTasks.map((task) => `- [ ] ${task}`),

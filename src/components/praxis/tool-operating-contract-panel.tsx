@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, ClipboardCheck, HelpCircle, PencilLine, Target, Workflow } from 'lucide-react';
+import { ChevronDown, ChevronUp, ClipboardCheck, Database, HelpCircle, PencilLine, Target, Workflow } from 'lucide-react';
 import { getToolOperatingContract } from '@/lib/tools/tool-operating-contracts';
+import { getToolContextBlueprint } from '@/lib/tools/tool-context-blueprints';
 import { getToolPathMembership } from '@/lib/tools/tool-path-taxonomy';
 import { cn } from '@/lib/utils/cn';
 
@@ -23,6 +24,7 @@ function Pill({ children }: { children: React.ReactNode }) {
 export function ToolOperatingContractPanel({ toolId, defaultOpen = false, className }: ToolOperatingContractPanelProps) {
   const [open, setOpen] = useState(defaultOpen);
   const contract = getToolOperatingContract(toolId);
+  const blueprint = getToolContextBlueprint(toolId);
   const pathMembership = getToolPathMembership(toolId);
 
   return (
@@ -141,6 +143,31 @@ export function ToolOperatingContractPanel({ toolId, defaultOpen = false, classN
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-navy-400">Quality bar</p>
               <div className="flex flex-wrap gap-1.5">
                 {contract.qualityBar.map((item) => <Pill key={item}>{item}</Pill>)}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 border-t border-[var(--color-app-border)] pt-4 lg:grid-cols-2">
+            <div>
+              <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-navy-400">
+                <Database className="h-3 w-3" />
+                Context blueprint
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {blueprint.requiredLayers.map((layer) => <Pill key={layer}>{layer}</Pill>)}
+              </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-navy-500">
+                Graph mode: {blueprint.graphBackbone.currentMode}. {blueprint.graphBackbone.futureDialecticaRole}
+              </p>
+            </div>
+            <div>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-navy-400">Data paths</p>
+              <div className="space-y-1.5 text-[11px] leading-relaxed text-navy-500">
+                <p><span className="font-medium text-navy-700">Canonical:</span> {blueprint.database.canonicalOutputPath}</p>
+                <p><span className="font-medium text-navy-700">Versions:</span> {blueprint.database.versionHistoryPath}</p>
+                {blueprint.documentProduction.supportsLibreOfficeExport ? (
+                  <p><span className="font-medium text-navy-700">Document output:</span> {blueprint.documentProduction.artifactTypes.join(', ')}</p>
+                ) : null}
               </div>
             </div>
           </div>

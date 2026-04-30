@@ -12,6 +12,7 @@
     "audit:tools": "tsx scripts/audit-tools.ts",
     "audit:tool-contracts": "tsx scripts/audit-tool-contracts.ts",
     "generate:tool-backlog": "tsx scripts/generate-tool-sprint-backlog.ts",
+    "generate:tool-docs": "tsx scripts/generate-tool-docs.ts",
     "audit:routes": "node scripts/audit-ai-routes.mjs",
     "audit:calibration": "node scripts/audit-ai-routes.mjs",
     "audit:verify": "tsx scripts/verify-audit-fresh.ts",

@@ -26,9 +26,13 @@ Summary: 53 registered tools; P0=19, P1=28, P2=4, P3=2.
 - Output mode: graph
 - Active generic/political path: yes
 - Path membership: generic-core:core, generic-core:secondary, generic-core:premium-future, political-officer:core, political-officer:premium-future, country-desk:core, country-desk:premium-future, mediator-envoy:core, mediator-envoy:premium-future, humanitarian-access:core, humanitarian-access:premium-future, legal-sanctions:core, legal-sanctions:premium-future, political-risk:core, political-risk:premium-future, policy-research:core, policy-research:premium-future, media-disinformation:core, media-disinformation:premium-future, stabilization:core, stabilization:premium-future, election-governance:core, election-governance:premium-future
+- Required context: analyst-profile, user-preferences, situation-record, graph-backbone
+- Graph mode: read-write; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Conflict Graph to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, graph-backbone.
+- [ ] Connect output to graph backbone mode read-write; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review graph graphics: node labels, edge meaning, centrality/cluster legend, click-to-edit details, and missing-link prompts.
@@ -51,9 +55,13 @@ Verification:
 - Output mode: brief, feed
 - Active generic/political path: yes
 - Path membership: generic-core:core, generic-core:secondary, generic-core:premium-future, political-officer:core, political-officer:primary, political-officer:premium-future, country-desk:core, country-desk:premium-future, mediator-envoy:core, mediator-envoy:premium-future, humanitarian-access:core, humanitarian-access:premium-future, legal-sanctions:core, legal-sanctions:secondary, legal-sanctions:premium-future, political-risk:core, political-risk:premium-future, policy-research:core, policy-research:primary, policy-research:premium-future, media-disinformation:core, media-disinformation:premium-future, stabilization:core, stabilization:premium-future, election-governance:core, election-governance:premium-future
+- Required context: analyst-profile, user-preferences, situation-record, source-library, live-web-research, graph-backbone
+- Graph mode: read-write; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Deep Research Agent to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, source-library, live-web-research, graph-backbone.
+- [ ] Connect output to graph backbone mode read-write; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -78,9 +86,14 @@ Verification:
 - Output mode: draft
 - Active generic/political path: yes
 - Path membership: political-officer:primary, country-desk:primary, mediator-envoy:secondary, legal-sanctions:primary, policy-research:primary, stabilization:secondary, election-governance:secondary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints
+- Graph mode: read; LibreOffice/document lane: yes
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Policy Memo to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
+- [ ] Prepare document-production lane for policy memo, options paper, decision memo with structured sections that LibreOffice/DOCX/PDF export can render.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Review drafting UI: section navigation, regenerate/rewrite actions, source/confidence panel, export, and audience/tone controls.
 - [ ] Add required-question preflight: Who is the audience and what decision must the document support? / What stance, red lines, or policy constraints must the draft respect?
@@ -103,9 +116,13 @@ Verification:
 - Output mode: table, dashboard
 - Active generic/political path: yes
 - Path membership: generic-core:core, generic-core:primary, political-officer:core, country-desk:core, mediator-envoy:core, humanitarian-access:core, legal-sanctions:core, political-risk:core, policy-research:core, media-disinformation:core, stabilization:core, election-governance:core
+- Required context: analyst-profile, user-preferences, situation-record, graph-backbone
+- Graph mode: read-write; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Executive Intelligence to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, graph-backbone.
+- [ ] Connect output to graph backbone mode read-write; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Wire RegistryToolInfo so methodology, sources, operating contract, and related tools are visible.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
@@ -130,9 +147,13 @@ Verification:
 - Output mode: table, feed
 - Active generic/political path: yes
 - Path membership: generic-core:specialized, legal-sanctions:secondary, political-risk:primary, policy-research:primary, media-disinformation:primary
+- Required context: analyst-profile, user-preferences, situation-record, source-library, live-web-research
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Source Scout to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, source-library, live-web-research.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -156,9 +177,14 @@ Verification:
 - Output mode: draft
 - Active generic/political path: yes
 - Path membership: political-officer:primary, country-desk:primary, mediator-envoy:primary, election-governance:primary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints
+- Graph mode: read; LibreOffice/document lane: yes
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Talking Points to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
+- [ ] Prepare document-production lane for talking points, Q&A prep, press lines with structured sections that LibreOffice/DOCX/PDF export can render.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review drafting UI: section navigation, regenerate/rewrite actions, source/confidence panel, export, and audience/tone controls.
@@ -182,9 +208,13 @@ Verification:
 - Output mode: dashboard
 - Active generic/political path: yes
 - Path membership: generic-core:core, generic-core:primary, political-officer:core, political-officer:primary, country-desk:core, country-desk:primary, mediator-envoy:core, humanitarian-access:core, legal-sanctions:core, political-risk:core, policy-research:core, media-disinformation:core, stabilization:core, election-governance:core
+- Required context: analyst-profile, user-preferences, situation-record
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Dashboard to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review dashboard layout: one-line diagnosis, next-best action, source coverage, stale outputs, and no-config/no-data states.
@@ -207,9 +237,13 @@ Verification:
 - Output mode: brief
 - Active generic/political path: yes
 - Path membership: generic-core:core, generic-core:primary, political-officer:core, country-desk:core, mediator-envoy:core, humanitarian-access:core, legal-sanctions:core, political-risk:core, policy-research:core, media-disinformation:core, stabilization:core, election-governance:core
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Ask PRAXIS to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Wire RegistryToolInfo so methodology, sources, operating contract, and related tools are visible.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
@@ -234,9 +268,14 @@ Verification:
 - Output mode: brief, draft
 - Active generic/political path: yes
 - Path membership: generic-core:core, generic-core:secondary, political-officer:core, country-desk:core, mediator-envoy:core, humanitarian-access:core, legal-sanctions:core, political-risk:core, policy-research:core, media-disinformation:core, stabilization:core, election-governance:core
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints
+- Graph mode: read; LibreOffice/document lane: yes
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Report Studio to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
+- [ ] Prepare document-production lane for full report, export packet with structured sections that LibreOffice/DOCX/PDF export can render.
 - [ ] Wire RegistryToolInfo so methodology, sources, operating contract, and related tools are visible.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
@@ -261,9 +300,13 @@ Verification:
 - Output mode: table, dashboard
 - Active generic/political path: yes
 - Path membership: generic-core:core, generic-core:primary, political-officer:core, country-desk:core, mediator-envoy:core, humanitarian-access:core, humanitarian-access:secondary, legal-sanctions:core, political-risk:core, policy-research:core, policy-research:secondary, media-disinformation:core, media-disinformation:secondary, stabilization:core, election-governance:core
+- Required context: analyst-profile, user-preferences, situation-record, source-library, live-web-research
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Sources Library to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, source-library, live-web-research.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -288,9 +331,13 @@ Verification:
 - Output mode: table, feed
 - Active generic/political path: yes
 - Path membership: generic-core:specialized, generic-core:premium-future, political-officer:primary, political-officer:premium-future, country-desk:premium-future, mediator-envoy:premium-future, humanitarian-access:premium-future, legal-sanctions:premium-future, political-risk:premium-future, policy-research:primary, policy-research:premium-future, media-disinformation:primary, media-disinformation:premium-future, stabilization:premium-future, election-governance:premium-future
+- Required context: analyst-profile, user-preferences, situation-record, source-library, live-web-research, graph-backbone
+- Graph mode: read-write; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use ARGUS Intelligence to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, source-library, live-web-research, graph-backbone.
+- [ ] Connect output to graph backbone mode read-write; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -315,9 +362,14 @@ Verification:
 - Output mode: table, draft
 - Active generic/political path: yes
 - Path membership: political-officer:primary, country-desk:secondary, policy-research:secondary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints
+- Graph mode: read; LibreOffice/document lane: yes
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Dossier Generator to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
+- [ ] Prepare document-production lane for diplomatic dossier, actor dossier, case file with structured sections that LibreOffice/DOCX/PDF export can render.
 - [ ] Wire RegistryToolInfo so methodology, sources, operating contract, and related tools are visible.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
@@ -342,9 +394,14 @@ Verification:
 - Output mode: table, scorecard
 - Active generic/political path: yes
 - Path membership: political-officer:secondary, humanitarian-access:secondary, legal-sanctions:primary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints, graph-backbone
+- Graph mode: read; LibreOffice/document lane: yes
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Human Rights Monitor to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints, graph-backbone.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
+- [ ] Prepare document-production lane for legal analysis note, compliance note with structured sections that LibreOffice/DOCX/PDF export can render.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -369,9 +426,13 @@ Verification:
 - Output mode: table, dashboard
 - Active generic/political path: yes
 - Path membership: political-officer:specialized, humanitarian-access:primary, stabilization:secondary
+- Required context: analyst-profile, user-preferences, situation-record
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Humanitarian to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Wire RegistryToolInfo so methodology, sources, operating contract, and related tools are visible.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
@@ -396,9 +457,14 @@ Verification:
 - Output mode: table, feed
 - Active generic/political path: yes
 - Path membership: political-officer:secondary, country-desk:secondary, legal-sanctions:primary, election-governance:secondary
+- Required context: analyst-profile, user-preferences, situation-record, document-corpus, drafting-constraints, source-library, live-web-research
+- Graph mode: read; LibreOffice/document lane: yes
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Legal & Resolution Tracker to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, document-corpus, drafting-constraints, source-library, live-web-research.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
+- [ ] Prepare document-production lane for legal analysis note, compliance note with structured sections that LibreOffice/DOCX/PDF export can render.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -423,9 +489,13 @@ Verification:
 - Output mode: table, feed
 - Active generic/political path: yes
 - Path membership: political-officer:primary, country-desk:secondary, humanitarian-access:secondary, political-risk:secondary, media-disinformation:primary, election-governance:secondary
+- Required context: analyst-profile, user-preferences, situation-record, source-library, live-web-research
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Media Roundup to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, source-library, live-web-research.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Wire RegistryToolInfo so methodology, sources, operating contract, and related tools are visible.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
@@ -450,9 +520,14 @@ Verification:
 - Output mode: table, feed
 - Active generic/political path: yes
 - Path membership: political-officer:secondary, country-desk:primary, legal-sanctions:primary, political-risk:primary
+- Required context: analyst-profile, user-preferences, situation-record, document-corpus, drafting-constraints, source-library, live-web-research
+- Graph mode: read; LibreOffice/document lane: yes
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Sanctions Tracker to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, document-corpus, drafting-constraints, source-library, live-web-research.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
+- [ ] Prepare document-production lane for legal analysis note, compliance note with structured sections that LibreOffice/DOCX/PDF export can render.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -477,9 +552,14 @@ Verification:
 - Output mode: table, feed
 - Active generic/political path: yes
 - Path membership: political-officer:secondary, legal-sanctions:primary
+- Required context: analyst-profile, user-preferences, situation-record, document-corpus, drafting-constraints, source-library, live-web-research
+- Graph mode: read; LibreOffice/document lane: yes
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Treaty Analyzer to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, document-corpus, drafting-constraints, source-library, live-web-research.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
+- [ ] Prepare document-production lane for legal analysis note, compliance note with structured sections that LibreOffice/DOCX/PDF export can render.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
 - [ ] Review feed UI: source receipts, freshness, credibility, filters, saved-source actions, and empty/degraded states.
@@ -503,9 +583,13 @@ Verification:
 - Output mode: table, dashboard
 - Active generic/political path: yes
 - Path membership: generic-core:core, generic-core:primary, political-officer:core, country-desk:core, mediator-envoy:core, humanitarian-access:core, legal-sanctions:core, legal-sanctions:secondary, political-risk:core, policy-research:core, policy-research:secondary, media-disinformation:core, stabilization:core, election-governance:core
+- Required context: analyst-profile, user-preferences, situation-record, graph-backbone
+- Graph mode: read-write; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Documents to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, graph-backbone.
+- [ ] Connect output to graph backbone mode read-write; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -529,9 +613,13 @@ Verification:
 - Output mode: table, draft
 - Active generic/political path: no
 - Path membership: none
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Brief Builder to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Wire RegistryToolInfo so methodology, sources, operating contract, and related tools are visible.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
@@ -556,9 +644,13 @@ Verification:
 - Output mode: brief, feed
 - Active generic/political path: no
 - Path membership: none
+- Required context: analyst-profile, user-preferences, situation-record, source-library, live-web-research
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use ARGUS Grounded to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, source-library, live-web-research.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Wire RegistryToolInfo so methodology, sources, operating contract, and related tools are visible.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
@@ -583,9 +675,13 @@ Verification:
 - Output mode: table, scorecard
 - Active generic/political path: no
 - Path membership: media-disinformation:primary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Red-Team Review to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Wire RegistryToolInfo so methodology, sources, operating contract, and related tools are visible.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
@@ -610,9 +706,13 @@ Verification:
 - Output mode: table, scorecard
 - Active generic/political path: yes
 - Path membership: political-officer:secondary, policy-research:secondary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Compare to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -636,9 +736,13 @@ Verification:
 - Output mode: graph
 - Active generic/political path: yes
 - Path membership: political-officer:primary, mediator-envoy:primary, stabilization:primary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone
+- Graph mode: read-write; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Stakeholder Map to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone.
+- [ ] Connect output to graph backbone mode read-write; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review graph graphics: node labels, edge meaning, centrality/cluster legend, click-to-edit details, and missing-link prompts.
@@ -661,9 +765,13 @@ Verification:
 - Output mode: table, scorecard
 - Active generic/political path: yes
 - Path membership: political-officer:primary, country-desk:primary, mediator-envoy:secondary, humanitarian-access:primary, media-disinformation:secondary, election-governance:primary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone
+- Graph mode: read-write; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Actor Profiles to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone.
+- [ ] Connect output to graph backbone mode read-write; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -687,9 +795,13 @@ Verification:
 - Output mode: table, feed
 - Active generic/political path: yes
 - Path membership: political-officer:primary, mediator-envoy:primary, humanitarian-access:secondary, legal-sanctions:secondary, stabilization:primary
+- Required context: analyst-profile, user-preferences, situation-record, source-library, live-web-research
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Commitment Tracker to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, source-library, live-web-research.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -713,9 +825,12 @@ Verification:
 - Output mode: brief, table
 - Active generic/political path: yes
 - Path membership: political-officer:specialized, mediator-envoy:secondary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone
+- Graph mode: none; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use CONCORDIA to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -738,9 +853,13 @@ Verification:
 - Output mode: scorecard
 - Active generic/political path: yes
 - Path membership: political-officer:primary, humanitarian-access:primary, political-risk:secondary, election-governance:primary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Early Warning to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review scorecard graphics: driver decomposition, confidence per score, method note, and assumption-edit controls.
 - [ ] Add required-question preflight: What decision or assessment will this analysis support? / What time horizon should the analysis use?
@@ -762,9 +881,13 @@ Verification:
 - Output mode: table, scorecard
 - Active generic/political path: yes
 - Path membership: political-officer:secondary, country-desk:secondary, political-risk:primary, stabilization:secondary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Economic Impact to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -788,9 +911,13 @@ Verification:
 - Output mode: table, scorecard
 - Active generic/political path: yes
 - Path membership: political-officer:specialized, election-governance:primary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Electoral Violence Risk to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -817,9 +944,13 @@ Verification:
 - Output mode: table, feed
 - Active generic/political path: yes
 - Path membership: political-officer:secondary, country-desk:primary, political-risk:secondary, media-disinformation:secondary
+- Required context: analyst-profile, user-preferences, situation-record, source-library, live-web-research
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use External Actor Monitor to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, source-library, live-web-research.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -843,9 +974,12 @@ Verification:
 - Output mode: table, table
 - Active generic/political path: yes
 - Path membership: political-officer:secondary, mediator-envoy:secondary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone
+- Graph mode: none; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Game Theory to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -868,9 +1002,13 @@ Verification:
 - Output mode: map
 - Active generic/political path: yes
 - Path membership: political-officer:primary, humanitarian-access:primary, political-risk:secondary
+- Required context: analyst-profile, user-preferences, situation-record, source-library, live-web-research
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Geospatial Monitor to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, source-library, live-web-research.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review map graphics: location precision, empty map state, hotspot legend, source/freshness badges, and click-through event details.
@@ -893,9 +1031,13 @@ Verification:
 - Output mode: table, scorecard
 - Active generic/political path: yes
 - Path membership: political-officer:primary, media-disinformation:primary, election-governance:secondary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, source-library, live-web-research, graph-backbone
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Info Environment to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, source-library, live-web-research, graph-backbone.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -919,9 +1061,13 @@ Verification:
 - Output mode: table, table
 - Active generic/political path: yes
 - Path membership: political-officer:secondary, mediator-envoy:primary, stabilization:secondary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints, graph-backbone
+- Graph mode: none; LibreOffice/document lane: yes
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Mediation Designer to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints, graph-backbone.
+- [ ] Prepare document-production lane for draft artifact with structured sections that LibreOffice/DOCX/PDF export can render.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -944,9 +1090,12 @@ Verification:
 - Output mode: table, table
 - Active generic/political path: yes
 - Path membership: political-officer:secondary, mediator-envoy:primary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone
+- Graph mode: none; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Negotiation Prep to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -969,9 +1118,13 @@ Verification:
 - Output mode: table, scorecard
 - Active generic/political path: yes
 - Path membership: political-officer:specialized, stabilization:primary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Peacebuilding Index to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -995,9 +1148,13 @@ Verification:
 - Output mode: table, scorecard
 - Active generic/political path: yes
 - Path membership: political-officer:secondary, mediator-envoy:secondary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Power Map to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -1021,9 +1178,13 @@ Verification:
 - Output mode: table, scorecard
 - Active generic/political path: yes
 - Path membership: political-officer:primary, country-desk:secondary, humanitarian-access:primary, political-risk:primary, stabilization:primary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Risk Monitor to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -1047,9 +1208,12 @@ Verification:
 - Output mode: brief, table
 - Active generic/political path: yes
 - Path membership: political-officer:secondary, political-risk:primary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone
+- Graph mode: none; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Scenario Planner to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -1072,9 +1236,13 @@ Verification:
 - Output mode: timeline
 - Active generic/political path: yes
 - Path membership: generic-core:core, generic-core:secondary, political-officer:core, country-desk:core, mediator-envoy:core, humanitarian-access:core, legal-sanctions:core, political-risk:core, policy-research:core, media-disinformation:core, stabilization:core, election-governance:core
+- Required context: analyst-profile, user-preferences, situation-record, graph-backbone
+- Graph mode: read-write; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Timeline to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, graph-backbone.
+- [ ] Connect output to graph backbone mode read-write; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review timeline graphics: causal arrows, event confidence, date uncertainty, source fragments, and add/correct event affordances.
@@ -1097,9 +1265,14 @@ Verification:
 - Output mode: table, draft
 - Active generic/political path: yes
 - Path membership: political-officer:secondary, legal-sanctions:secondary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints
+- Graph mode: read; LibreOffice/document lane: yes
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use UN Toolkit to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
+- [ ] Prepare document-production lane for draft clauses, mandate language, UN note with structured sections that LibreOffice/DOCX/PDF export can render.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -1123,9 +1296,13 @@ Verification:
 - Output mode: table, feed
 - Active generic/political path: no
 - Path membership: generic-core:hidden-default, political-officer:hidden-default
+- Required context: analyst-profile, user-preferences, situation-record, source-library, live-web-research
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Alert Center to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, source-library, live-web-research.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Wire RegistryToolInfo so methodology, sources, operating contract, and related tools are visible.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
@@ -1150,9 +1327,12 @@ Verification:
 - Output mode: table, workspace
 - Active generic/political path: no
 - Path membership: none
+- Required context: analyst-profile, user-preferences, situation-record, team-workspace
+- Graph mode: none; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Case Library to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, team-workspace.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
 - [ ] Add required-question preflight: What workspace object or setting is being managed? / Who can view, change, or export this object?
 - [ ] Confirm whether this tool should have an AI route; if yes, add calibrated route, schema, persistence, and smoke test.
@@ -1173,9 +1353,12 @@ Verification:
 - Output mode: table, workspace
 - Active generic/political path: no
 - Path membership: generic-core:hidden-default, political-officer:hidden-default, country-desk:hidden-default, mediator-envoy:hidden-default, humanitarian-access:hidden-default, legal-sanctions:hidden-default, political-risk:hidden-default, policy-research:hidden-default, media-disinformation:hidden-default, stabilization:hidden-default, election-governance:hidden-default
+- Required context: analyst-profile, user-preferences, situation-record, team-workspace
+- Graph mode: none; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Settings to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, team-workspace.
 - [ ] Wire RegistryToolInfo so methodology, sources, operating contract, and related tools are visible.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
 - [ ] Add required-question preflight: What workspace object or setting is being managed? / Who can view, change, or export this object?
@@ -1197,9 +1380,13 @@ Verification:
 - Output mode: table, feed
 - Active generic/political path: no
 - Path membership: generic-core:hidden-default, political-officer:hidden-default
+- Required context: analyst-profile, user-preferences, situation-record, source-library, live-web-research
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Source Monitor to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, source-library, live-web-research.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Wire RegistryToolInfo so methodology, sources, operating contract, and related tools are visible.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
@@ -1224,9 +1411,12 @@ Verification:
 - Output mode: table, workspace
 - Active generic/political path: no
 - Path membership: generic-core:hidden-default, political-officer:hidden-default, country-desk:hidden-default, mediator-envoy:hidden-default, humanitarian-access:hidden-default, legal-sanctions:hidden-default, political-risk:hidden-default, policy-research:hidden-default, media-disinformation:hidden-default, stabilization:hidden-default, election-governance:hidden-default
+- Required context: analyst-profile, user-preferences, situation-record, team-workspace
+- Graph mode: none; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Team Hub to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, team-workspace.
 - [ ] Wire RegistryToolInfo so methodology, sources, operating contract, and related tools are visible.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
 - [ ] Add required-question preflight: What workspace object or setting is being managed? / Who can view, change, or export this object?
@@ -1248,9 +1438,13 @@ Verification:
 - Output mode: table, dashboard
 - Active generic/political path: no
 - Path membership: none
+- Required context: analyst-profile, user-preferences, situation-record
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Calendar Monitor to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -1274,9 +1468,12 @@ Verification:
 - Output mode: brief, workspace
 - Active generic/political path: no
 - Path membership: generic-core:hidden-default, political-officer:hidden-default, country-desk:hidden-default, mediator-envoy:hidden-default, humanitarian-access:hidden-default, legal-sanctions:hidden-default, political-risk:hidden-default, policy-research:hidden-default, media-disinformation:hidden-default, stabilization:hidden-default, election-governance:hidden-default
+- Required context: analyst-profile, user-preferences, situation-record, team-workspace
+- Graph mode: none; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Advisory Council to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, team-workspace.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
 - [ ] Add required-question preflight: What workspace object or setting is being managed? / Who can view, change, or export this object?
 - [ ] Upgrade AI route from 9/12 to >=10/12: schema, audience/language/red-line usage, SKC/source receipts, canonical persistence, model metadata.
@@ -1297,9 +1494,12 @@ Verification:
 - Output mode: table, table
 - Active generic/political path: no
 - Path membership: generic-core:premium-future, political-officer:premium-future, country-desk:premium-future, mediator-envoy:primary, mediator-envoy:premium-future, humanitarian-access:premium-future, legal-sanctions:premium-future, political-risk:premium-future, policy-research:primary, policy-research:premium-future, media-disinformation:premium-future, stabilization:premium-future, election-governance:premium-future
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone
+- Graph mode: none; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Brainstorming Table to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, graph-backbone.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -1322,9 +1522,13 @@ Verification:
 - Output mode: table, feed
 - Active generic/political path: no
 - Path membership: media-disinformation:primary
+- Required context: analyst-profile, user-preferences, situation-record, source-library, live-web-research
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Media Compass to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, source-library, live-web-research.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -1348,9 +1552,13 @@ Verification:
 - Output mode: table, draft
 - Active generic/political path: no
 - Path membership: none
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints
+- Graph mode: read; LibreOffice/document lane: no
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Daily Brief to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
@@ -1373,9 +1581,14 @@ Verification:
 - Output mode: brief, draft
 - Active generic/political path: yes
 - Path membership: generic-core:core, generic-core:secondary, political-officer:core, political-officer:primary, country-desk:core, country-desk:primary, mediator-envoy:core, humanitarian-access:core, humanitarian-access:primary, legal-sanctions:core, legal-sanctions:primary, political-risk:core, political-risk:primary, policy-research:core, policy-research:primary, media-disinformation:core, media-disinformation:secondary, stabilization:core, stabilization:primary, election-governance:core, election-governance:primary
+- Required context: analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints
+- Graph mode: read; LibreOffice/document lane: yes
 
 To do:
 - [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Briefing Room to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record, prior-tool-outputs, document-corpus, drafting-constraints.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
+- [ ] Prepare document-production lane for intelligence briefing, daily read, situation brief with structured sections that LibreOffice/DOCX/PDF export can render.
 - [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
 - [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
 - [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.

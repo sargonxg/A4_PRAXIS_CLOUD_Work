@@ -52,6 +52,17 @@ This wave adds a central operating contract layer:
   - gives the dashboard/sidebar recommendation system a path-aware ranking
     layer while preserving future paths for economic, human-rights, media,
     legal, humanitarian, stabilization, and governance workflows.
+- `src/lib/tools/tool-context-blueprints.ts`
+  - computes the required context layers for every tool;
+  - declares canonical database paths, version history, graph proposal path,
+    source/document corpus paths, and audit trail target;
+  - marks each tool's current graph-backbone mode and future Dialectica role;
+  - declares evidence/degraded-state policy and document-production /
+    LibreOffice readiness.
+- `scripts/generate-tool-docs.ts`
+  - generates `docs/tools/generated/{toolId}.md` for all registered tools from
+    the live registry, operating contracts, path taxonomy, and context
+    blueprints.
 
 ## Product standard for each tool
 
@@ -164,6 +175,8 @@ hiding useful capabilities from advanced users.
 
 ```powershell
 npm run audit:tool-contracts
+npm run generate:tool-docs
+npm run generate:tool-backlog
 npm run audit:tools
 npm run audit:routes
 npx tsc --noEmit

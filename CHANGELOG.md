@@ -41,6 +41,21 @@
 - Migrated the deprecated Next.js `src/middleware.ts` convention to
   `src/proxy.ts` with `export function proxy` to remove the recurring build
   warning.
+- Added `src/lib/tools/tool-context-blueprints.ts`, a shared context blueprint
+  layer that declares required context layers, Firestore paths, graph-backbone
+  mode, evidence policy, document-production/LibreOffice readiness, and future
+  Dialectica role for every registered tool.
+- Expanded the operating-contract panel to show each tool's context blueprint,
+  canonical `tool-data` path, version path, graph mode, and document-production
+  lane.
+- Added `scripts/generate-tool-docs.ts`, `npm run generate:tool-docs`, and
+  generated 53 per-tool specifications under `docs/tools/generated/`.
+- Added `docs/PRAXIS_CONTEXT_AND_TOOL_ARCHITECTURE_2026-04-30.md`, defining
+  the shared knowledge-context layers, database contract, Dialectica backbone
+  plan, and LibreOffice/document-production plan.
+- Tightened `/api/tool-data` and `src/lib/firebase/tool-data-service.ts` so
+  manual tool saves use a versioned envelope shape, optional metadata/source
+  receipts, legacy compatibility mirroring, and a direct-save payload limit.
 
 ## 2026-04-29 — Subagent audit wave: persistence, exports, and deploy gates
 
