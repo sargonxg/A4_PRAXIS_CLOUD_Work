@@ -121,6 +121,15 @@ contracts, path taxonomy, or context blueprints.
 - [x] Upgrade the Nordalia demo Documents view from a passive placeholder to a
   labelled demo workspace with synthetic source documents and computed
   production readiness.
+- [x] Install and register Graphify for Codex on this repository, generate the
+  initial `graphify-out/` code graph, and use it to identify the current
+  architecture hubs before the next optimization pass.
+- [x] Add `cloudbuild.frontend.yaml` and `npm run deploy:frontend:cloud` as a
+  faster Cloud Build path for frontend/tool-surface iterations that do not need
+  backend or worker image rebuilds.
+- [x] Exclude `.codex/`, `.code-review-graph/`, and `graphify-out/` from GCP
+  and Docker build contexts so agent artifacts do not inflate production build
+  uploads or frontend images.
 - [ ] Audit prompts for duplicated contract text now that `withCalibration()`
   injects the shared backbone automatically.
 - [ ] Build a document export adapter that renders saved structured tool data

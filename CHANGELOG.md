@@ -14,6 +14,18 @@
   Nordalia document workspace with synthetic source documents, computed
   readiness, and routes into Conflict Graph, Policy Memo, Export Center, and
   Dashboard.
+- Installed and registered Graphify for Codex in this repository, generated the
+  initial `graphify-out/` code knowledge graph, and used the graph report/query
+  path to identify deployment, graph, AI, calibration, and Firestore hubs.
+- Added `cloudbuild.frontend.yaml` plus `npm run deploy:frontend:cloud`, a
+  faster Cloud Build path for frontend/UI/tool-surface iterations that skips
+  backend and worker image rebuilds while preserving model-string and AI route
+  calibration checks.
+- Updated `.gcloudignore` and `.dockerignore` so `.codex/`,
+  `.code-review-graph/`, and `graphify-out/` stay out of Cloud Build uploads
+  and Docker build contexts.
+- Updated `README.md` and `DEPLOYMENT.md` with the full deploy vs frontend-only
+  deploy distinction.
 - Added `src/lib/tools/tool-operating-contracts.ts`, a central operating
   contract layer for every registered PRAXIS tool covering objective, value,
   applicability, required questions, expected outputs, Ask PRAXIS actions,

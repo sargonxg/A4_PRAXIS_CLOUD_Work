@@ -130,7 +130,7 @@ Acceptance:
 
 ## 9. Admin And System Health Operations
 
-Status: next.
+Status: started.
 
 Objective: make production support observable for the operator.
 
@@ -141,6 +141,14 @@ Acceptance:
   health, and export queue status.
 - `giulio@tacitus.me` admin access remains explainable through the verified
   email allowlist.
+- Fast deploy runbook exists so frontend/tool-surface changes can ship without
+  rebuilding backend and worker images unnecessarily.
+
+Progress:
+
+- Added `cloudbuild.frontend.yaml` and `npm run deploy:frontend:cloud`.
+- Excluded Graphify/Codex/review artifacts from Cloud Build and Docker build
+  contexts.
 
 ## 10. Dialectica Graph Preparation
 

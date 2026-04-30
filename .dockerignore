@@ -2,6 +2,9 @@ node_modules
 .next
 .git
 .gitignore
+.codex/
+.code-review-graph/
+graphify-out/
 
 # Backend and cloud functions are separate Docker builds
 backend/

@@ -1,6 +1,6 @@
 # PRAXIS Deployment
 
-Last updated: 2026-04-29.
+Last updated: 2026-04-30.
 
 Production target:
 
@@ -43,11 +43,30 @@ secrets in local docs, tests, or screenshots.
 
 ## Cloud Build Deploy
 
+Use the full pipeline when backend, worker, Cloud Function, infrastructure,
+Secret Manager, IAM, or shared build behavior changed. It builds/deploys the
+private backend, frontend, and GDELT worker path:
+
 ```bash
 gcloud config set project praxisbytacitus
 gcloud config set run/region us-central1
 gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus
 ```
+
+Use the faster frontend-only pipeline for UI, docs, tool-page, dashboard,
+landing, and client/API-route changes that do not require rebuilding the Python
+backend or worker images:
+
+```bash
+npm run deploy:frontend:cloud
+# Equivalent:
+gcloud builds submit --config=cloudbuild.frontend.yaml --project=praxisbytacitus
+```
+
+The frontend-only pipeline still runs the model-string guard and AI route
+calibration audit, fetches the live backend URL, builds the frontend image,
+deploys `praxis-frontend`, and re-applies frontend runtime environment
+variables and secrets.
 
 After deploy, verify Cloud Run revisions:
 
@@ -96,6 +115,8 @@ Then browser-test the core route sequence:
 - `docs/GCP_OPERATIONS.md`: canonical copy-paste deploy, rollback, secret, IAM,
   and smoke-test commands.
 - `cloudbuild.yaml`: production build/deploy pipeline.
+- `cloudbuild.frontend.yaml`: faster frontend-only Cloud Build path for
+  product/UI iterations.
 - `infrastructure/deploy-windows.ps1`: Windows deployment helper.
 - `docs/DEPLOYMENT_LOG.md`: last known deploy state.
 - `TODO.md`: active deploy hardening tasks.

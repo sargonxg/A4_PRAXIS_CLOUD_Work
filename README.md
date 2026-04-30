@@ -331,6 +331,11 @@ bash infrastructure/deploy.sh
 # Equivalent:
 gcloud builds submit --config=cloudbuild.yaml --project=praxisbytacitus
 
+# Faster frontend-only deploy for UI/tool-page/docs iterations
+npm run deploy:frontend:cloud
+# Equivalent:
+gcloud builds submit --config=cloudbuild.frontend.yaml --project=praxisbytacitus
+
 # Individual services
 bash infrastructure/deploy-backend.sh
 bash infrastructure/deploy-frontend.sh

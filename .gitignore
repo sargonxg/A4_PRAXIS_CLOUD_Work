@@ -78,3 +78,6 @@ docker-compose.override.yml
 Screenshot*.png
 Screenshot*.jpg
 Screenshot*.jpeg
+
+# Graphify generated cache is local; committed graph outputs live in graphify-out/.
+graphify-out/cache/
