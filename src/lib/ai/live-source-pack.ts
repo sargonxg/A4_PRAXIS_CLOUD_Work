@@ -1,6 +1,13 @@
 import { executeWebResearch, SEARCH_FAILURE_WARNING, type WebResearchResult } from '@/lib/ai/web-research';
 import { scrapeUrl } from '@/lib/ai/firecrawl';
 import { getBattleDeaths, getConflicts, type UCDPConflict } from '@/lib/data-feeds/ucdp-client';
+import {
+  buildSourceReceipts,
+  formatSourceReceiptAudit,
+  summarizeSourceReceipts,
+  type SourceReceipt,
+  type SourceReceiptAudit,
+} from '@/lib/ai/source-receipts';
 
 export interface LiveSourcePackInput {
   uid: string;
@@ -31,6 +38,8 @@ export interface LiveSourcePack {
     conflicts: UCDPConflict[];
     battleDeaths: Array<{ year: number; bestDeaths: number; lowDeaths: number; highDeaths: number }>;
   };
+  sourceReceipts: SourceReceipt[];
+  sourceAudit: SourceReceiptAudit;
   gaps: string[];
   formatted: string;
 }
@@ -124,10 +133,24 @@ export async function buildLiveSourcePack(input: LiveSourcePackInput): Promise<L
   if (!scraped.some((s) => s.success)) gaps.push('No full-page scrape text was available; using result snippets only.');
   if (!conflicts.length && !battleDeaths.length) gaps.push('No UCDP structured records matched this region/name.');
 
+  const sourceReceipts = buildSourceReceipts({
+    results,
+    scraped,
+    ucdp: {
+      configured: Boolean(process.env.UCDP_API_TOKEN || process.env.UCDP_ACCESS_TOKEN),
+      conflicts,
+      battleDeaths,
+    },
+    gaps,
+    generatedAt,
+  });
+  const sourceAudit = summarizeSourceReceipts(sourceReceipts, gaps);
+
   const sourceBlock = formatSources(results);
   const scrapeBlock = formatScrapes(scraped);
   const ucdpBlock = formatUcdp(conflicts, battleDeaths);
   const gapBlock = gaps.length ? `\n\n### Live Source Gaps\n${gaps.map((g) => `- ${g}`).join('\n')}` : '';
+  const receiptAuditBlock = formatSourceReceiptAudit(sourceAudit);
 
   const formatted = `### Live Source Pack
 Generated: ${generatedAt}
@@ -136,7 +159,9 @@ Query: ${input.query}
 ### Grounded Search Results
 ${sourceBlock}
 ${scrapeBlock ? `\n\n### Scraped Source Excerpts\n${scrapeBlock}` : ''}
-${ucdpBlock ? `\n\n${ucdpBlock}` : ''}${gapBlock}
+${ucdpBlock ? `\n\n${ucdpBlock}` : ''}
+
+${receiptAuditBlock}${gapBlock}
 
 Instruction: Use this pack as the primary live evidence layer. Cite [S#] or [X#] for factual claims. If the pack is thin, state the limitation instead of filling gaps from memory.`;
 
@@ -150,6 +175,8 @@ Instruction: Use this pack as the primary live evidence layer. Cite [S#] or [X#]
       conflicts,
       battleDeaths,
     },
+    sourceReceipts,
+    sourceAudit,
     gaps,
     formatted,
   };

@@ -44,7 +44,7 @@ Acceptance:
 
 ## 3. Dashboard Command Center Visualization
 
-Status: next.
+Status: started.
 
 Objective: make the dashboard the command view for evidence readiness, risk,
 tool progress, next action, and operator trust.
@@ -98,6 +98,15 @@ Acceptance:
 - Tools can request fresh source packs instead of generating from memory.
 - Source Scout, Deep Search, Media Roundup, Policy Memo, and Ask PRAXIS expose
   receipts prominently.
+
+Progress:
+
+- Added a shared source receipt builder and audit summary for grounded web
+  results, Firecrawl scrapes, and UCDP structured records.
+- Live source packs now include a Source Receipt Audit in prompt context.
+- Source Scout persists and displays source receipts, provider counts,
+  checkable URLs, high-reliability source count, scrape coverage, and source
+  confidence.
 
 ## 7. Context Certainty And Entity Resolution
 

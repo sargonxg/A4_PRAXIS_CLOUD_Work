@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useState } from 'react';
-import { Loader2, Compass, Sparkles, AlertTriangle, ExternalLink, BookmarkPlus } from 'lucide-react';
+import { Loader2, Compass, Sparkles, AlertTriangle, ExternalLink, BookmarkPlus, ShieldCheck } from 'lucide-react';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { useToolData } from '@/hooks/useToolData';
@@ -56,6 +56,32 @@ interface SourceScoutOutput {
   duplicatesAvoided: string[];
   intelligenceGaps: string[];
   retrievalTrace?: { layersSearched: string[]; itemCount: number; durationMs: number };
+  sourceReceipts?: Array<{
+    name: string;
+    title: string;
+    url?: string;
+    provider: string;
+    source: string;
+    kind: 'web-result' | 'scraped-excerpt' | 'structured-data';
+    timestamp: string;
+    publishedDate?: string;
+    query?: string;
+    reliabilityScore: number;
+    confidence: 'high' | 'medium' | 'low';
+    excerpt?: string;
+  }>;
+  sourceAudit?: {
+    generatedAt: string;
+    sourceCount: number;
+    providerCounts: Record<string, number>;
+    highReliabilityCount: number;
+    checkableUrlCount: number;
+    scrapedExcerptCount: number;
+    structuredDataCount: number;
+    confidence: 'high' | 'medium' | 'low';
+    gaps: string[];
+    notes: string[];
+  };
 }
 
 const TIMEFRAMES: Array<SourceScoutOutput['searchPlan']['timeframe']> = ['24h', '7d', '30d', '90d', 'no-limit'];
@@ -222,6 +248,55 @@ export default function SourceScoutPage() {
             </ul>
           </section>
 
+          {current.sourceAudit && (
+            <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
+              <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-emerald-950">
+                  <ShieldCheck className="h-4 w-4" />
+                  Source receipt audit
+                </h3>
+                <ConfidenceBadge confidence={current.sourceAudit.confidence} />
+              </header>
+              <div className="grid gap-2 text-xs text-emerald-950 sm:grid-cols-4">
+                <AuditMetric label="Receipts" value={current.sourceAudit.sourceCount} />
+                <AuditMetric label="Checkable URLs" value={current.sourceAudit.checkableUrlCount} />
+                <AuditMetric label="High reliability" value={current.sourceAudit.highReliabilityCount} />
+                <AuditMetric label="Scraped text" value={current.sourceAudit.scrapedExcerptCount} />
+              </div>
+              {current.sourceAudit.notes.length > 0 && (
+                <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-emerald-900">
+                  {current.sourceAudit.notes.slice(0, 3).map((note) => (
+                    <li key={note}>{note}</li>
+                  ))}
+                </ul>
+              )}
+              {current.sourceReceipts && current.sourceReceipts.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {current.sourceReceipts.slice(0, 10).map((receipt) => (
+                    <a
+                      key={`${receipt.provider}-${receipt.url ?? receipt.title}`}
+                      href={receipt.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        'rounded-full border px-2 py-0.5 text-[10px] font-medium',
+                        receipt.confidence === 'high'
+                          ? 'border-emerald-300 bg-white text-emerald-700'
+                          : receipt.confidence === 'medium'
+                            ? 'border-amber-300 bg-white text-amber-700'
+                            : 'border-slate-300 bg-white text-slate-600',
+                        !receipt.url && 'pointer-events-none'
+                      )}
+                      title={receipt.excerpt}
+                    >
+                      {receipt.name}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
           {current.duplicatesAvoided.length > 0 && (
             <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <h3 className="mb-2 text-sm font-semibold text-slate-900">Duplicates avoided</h3>
@@ -247,7 +322,13 @@ export default function SourceScoutPage() {
           <OutputProvenancePanel
             toolId="source-scout"
             generatedAt={current.generatedAt}
-            sourceCount={current.retrievalTrace?.itemCount}
+            confidence={current.sourceAudit?.confidence}
+            sourceCount={current.sourceAudit?.sourceCount ?? current.retrievalTrace?.itemCount}
+            sourceReceipts={current.sourceReceipts?.map((receipt) => ({
+              name: receipt.name,
+              timestamp: receipt.timestamp,
+              url: receipt.url,
+            }))}
             retrievalQuery={current.question}
             retrievalLayers={current.retrievalTrace?.layersSearched}
           />
@@ -257,9 +338,18 @@ export default function SourceScoutPage() {
       {!current && !generating && (
         <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
           <Compass className="mx-auto mb-2 h-6 w-6 text-slate-400" />
-          No scout run yet. Frame the question — Source Scout will propose 3–8 fresh sources you don't already have.
+          No scout run yet. Frame the question — Source Scout will propose 3–8 fresh sources you do not already have.
         </div>
       )}
+    </div>
+  );
+}
+
+function AuditMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-md border border-emerald-200 bg-white/70 px-2 py-1.5">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700">{label}</p>
+      <p className="text-sm font-semibold text-emerald-950">{value}</p>
     </div>
   );
 }

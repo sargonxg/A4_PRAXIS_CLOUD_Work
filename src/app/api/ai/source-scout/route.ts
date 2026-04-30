@@ -25,6 +25,7 @@ import { runAgent, AgentRunnerError } from '@/lib/agents/run-agent';
 import { applySourcePreferences, type SavedSource } from '@/lib/services/sources-preference';
 import { getToolData } from '@/lib/firebase/tool-data-service';
 import { executeWebResearch } from '@/lib/ai/web-research';
+import { buildSourceReceipts, summarizeSourceReceipts } from '@/lib/ai/source-receipts';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -72,6 +73,32 @@ export const SourceScoutSchema = z.object({
       durationMs: z.number().nonnegative(),
     })
     .optional(),
+  sourceReceipts: z.array(z.object({
+    name: z.string(),
+    title: z.string(),
+    url: z.string().optional(),
+    provider: z.string(),
+    source: z.string(),
+    kind: z.enum(['web-result', 'scraped-excerpt', 'structured-data']),
+    timestamp: z.string(),
+    publishedDate: z.string().optional(),
+    query: z.string().optional(),
+    reliabilityScore: z.number(),
+    confidence: z.enum(['high', 'medium', 'low']),
+    excerpt: z.string().optional(),
+  })).default([]),
+  sourceAudit: z.object({
+    generatedAt: z.string(),
+    sourceCount: z.number().nonnegative(),
+    providerCounts: z.record(z.string(), z.number()),
+    highReliabilityCount: z.number().nonnegative(),
+    checkableUrlCount: z.number().nonnegative(),
+    scrapedExcerptCount: z.number().nonnegative(),
+    structuredDataCount: z.number().nonnegative(),
+    confidence: z.enum(['high', 'medium', 'low']),
+    gaps: z.array(z.string()),
+    notes: z.array(z.string()),
+  }).optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -146,6 +173,11 @@ export const POST = withCalibration('source-scout', 'ai_source_scout', {
       maxResults: 8,
       timeRange: timeframe === '24h' ? 'day' : timeframe === '7d' ? 'week' : timeframe === '30d' ? 'month' : timeframe === '90d' ? 'year' : undefined,
     }).catch(() => []);
+    const sourceReceipts = buildSourceReceipts({ results: liveResults });
+    const sourceAudit = summarizeSourceReceipts(
+      sourceReceipts,
+      liveResults.length ? [] : ['No live web results were retrieved for this scout.'],
+    );
     const liveSourceBlock = liveResults.length
       ? liveResults
           .slice(0, 8)
@@ -216,6 +248,8 @@ Always populate intelligenceGaps[] with at least one entry naming a perspective 
     const finalOutput = {
       ...scoutOutput,
       retrievalTrace: result.retrievalTrace ?? undefined,
+      sourceReceipts,
+      sourceAudit,
     };
 
     if (situationId) {
@@ -232,6 +266,8 @@ Always populate intelligenceGaps[] with at least one entry naming a perspective 
           retrievalTrace: result.retrievalTrace,
           existingSourcesConsidered: result.corpusItems.length,
           preferenceFilter: { blocked: blockedCount, lifted: liftedCount },
+          sourceReceipts,
+          sourceAudit,
         },
       }).catch((err) => console.warn('[source-scout] saveToolOutput failed:', err));
     }

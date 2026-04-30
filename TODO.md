@@ -138,6 +138,12 @@ contracts, path taxonomy, or context blueprints.
   instructions.
 - [x] Surface context-health score, dimension badges, and the first actionable
   context gap in the Dashboard Situation Launchpad.
+- [x] Add a shared source-receipt/audit layer that normalizes grounded web
+  results, Firecrawl scrapes, and UCDP structured records into checkable
+  provenance metadata.
+- [x] Wire Source Scout to persist and display source receipts, provider
+  counts, checkable URL count, high-reliability source count, scrape coverage,
+  and source-confidence badge.
 - [ ] Audit prompts for duplicated contract text now that `withCalibration()`
   injects the shared backbone automatically.
 - [ ] Build a document export adapter that renders saved structured tool data

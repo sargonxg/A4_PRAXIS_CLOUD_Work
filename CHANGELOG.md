@@ -39,6 +39,16 @@
   and graph/document/provenance backbone.
 - Added unit coverage for the context-health model across strong context, weak
   context, and model prompt guardrails.
+- Added `src/lib/ai/source-receipts.ts`, a shared provenance layer that turns
+  web results, Firecrawl scrapes, and UCDP structured records into normalized
+  source receipts plus a confidence audit.
+- `buildLiveSourcePack()` now includes a Source Receipt Audit in the prompt
+  context and returns structured `sourceReceipts` / `sourceAudit` metadata for
+  downstream tools.
+- Source Scout now saves and renders source receipts, provider counts,
+  checkable URL counts, high-reliability source counts, scrape coverage, and a
+  confidence badge so users can see whether the scout is grounded enough to
+  trust.
 - Added `src/lib/tools/tool-operating-contracts.ts`, a central operating
   contract layer for every registered PRAXIS tool covering objective, value,
   applicability, required questions, expected outputs, Ask PRAXIS actions,
