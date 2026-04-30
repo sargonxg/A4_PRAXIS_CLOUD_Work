@@ -36,6 +36,30 @@ The latest 20-item subagent audit and implementation wave is
 The latest diplomatic/policy writing architecture pass is
 `docs/PRAXIS_DIPLOMATIC_DRAFTING_ARCHITECTURE_2026-04-29.md`.
 
+The current all-tools operating-system architecture pass is
+`docs/PRAXIS_TOOL_OPERATING_SYSTEM_2026-04-30.md`.
+
+## Active Tool Operating System Workstream
+
+- [x] Add a central operating contract for every registered PRAXIS tool:
+  objective, value, applicability, required questions, expected outputs, Ask
+  PRAXIS actions, situation inputs, persistence expectations, and quality bar.
+- [x] Add a reusable tool operating-contract panel and wire it through the
+  registry-driven tool info component.
+- [x] Add `/api/tools/contracts` so tool metadata can be inspected and reused
+  by future UI, agents, audits, and admin workflows.
+- [x] Make floating Ask PRAXIS send the current tool id/path to chat and inject
+  the tool contract into the chat system prompt.
+- [x] Add `npm run audit:tool-contracts` to verify that every registered tool
+  has a route/page/contract baseline.
+- [ ] Apply `RegistryToolInfo` / `ToolOperatingContractPanel` to every tool page
+  that still bypasses the shared shell.
+- [ ] Add typed Ask PRAXIS writeback adapters for graph, timeline, draft,
+  scorecard, source, and workspace-state patches.
+- [ ] Upgrade the next 10 lowest-scoring AI tools to the generation baseline:
+  calibrated route, request schema, situation/user/context injection, useful
+  structured output, source/confidence notes, persistence, and degraded state.
+
 ## Active Diplomatic Drafting Workstream
 
 - [x] Add a central diplomatic drafting service inspired by durable legal

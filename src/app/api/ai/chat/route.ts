@@ -15,6 +15,7 @@ import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { resolveTier } from '@/lib/api/tier';
 import { buildAskPraxisExtensions } from '@/lib/ai/ask-praxis-tools';
 import { toLegacyDataStreamResponse } from '@/lib/ai/legacy-data-stream';
+import { buildToolPromptContract } from '@/lib/tools/tool-operating-contracts';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -34,12 +35,14 @@ export const POST = withCalibration('chat', 'ai_chat', {
       messages: z.array(z.object({ role: z.enum(['user', 'assistant', 'system', 'tool']), content: messageContentSchema })),
       conflictContext: z.string().optional(),
       situation: situationContextSchema.optional(),
+      currentToolId: z.string().optional(),
+      currentPath: z.string().optional(),
       aiSettings: aiSettingsSchema,
     });
 
     const validation = validateAiRequest(body, requestSchema);
     if (!validation.success) return validation.response;
-    const { messages, conflictContext, situation, aiSettings } = validation.data;
+    const { messages, conflictContext, situation, currentToolId, currentPath, aiSettings } = validation.data;
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -163,6 +166,13 @@ You have access to the user's active situation data. When answering questions:
       }
     } else if (conflictContext) {
       systemPrompt += `\n\n## Active Conflict Context\nThe user is analyzing: **${conflictContext}**\nUse queryConflictGraph to retrieve structured data before answering.`;
+    }
+
+    if (currentToolId) {
+      systemPrompt += `\n\n${buildToolPromptContract(currentToolId)}`;
+      if (currentPath) {
+        systemPrompt += `\nCurrent UI path: ${currentPath}`;
+      }
     }
 
     // --- RAG: retrieve the user's situation corpus via the shared retriever ---

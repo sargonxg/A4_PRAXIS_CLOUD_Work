@@ -135,6 +135,51 @@ function getQuickActions(pathname: string, situationName?: string): QuickAction[
   ];
 }
 
+const PAGE_TO_TOOL_ID: Record<string, string> = {
+  dashboard: 'dashboard',
+  'conflict-graph': 'conflict-graph',
+  timeline: 'timeline',
+  'risk-monitor': 'risk-monitor',
+  'early-warning': 'early-warning',
+  actors: 'actor-profiles',
+  'stakeholder-map': 'stakeholder-map',
+  'power-map': 'power-map',
+  scenarios: 'scenarios',
+  'negotiation-prep': 'negotiation-prep',
+  'game-theory': 'game-theory',
+  'mediation-design': 'mediation-design',
+  'geospatial-monitor': 'geospatial-monitor',
+  reports: 'report-studio',
+  briefing: 'briefing',
+  dossier: 'dossier',
+  'talking-points': 'talking-points',
+  'policy-memo': 'policy-memo',
+  'un-toolkit': 'un-toolkit',
+  'deep-search-agent': 'deep-search-agent',
+  argus: 'argus',
+  sources: 'sources-library',
+  commitments: 'commitments',
+  sanctions: 'sanctions',
+  'treaty-analyzer': 'treaty-analyzer',
+  'human-rights': 'human-rights',
+  'electoral-risk': 'electoral-risk',
+  'peacebuilding-index': 'peacebuilding-index',
+  'economic-impact': 'economic-impact',
+  'legal-tracker': 'legal-tracker',
+  humanitarian: 'humanitarian',
+  documents: 'documents',
+  'export-center': 'export-center',
+  cases: 'cases',
+  team: 'team',
+  settings: 'settings',
+  advisory: 'advisory',
+};
+
+function getCurrentToolId(pathname: string | null): string | undefined {
+  const page = pathname?.split('/').filter(Boolean).pop() || '';
+  return PAGE_TO_TOOL_ID[page];
+}
+
 /**
  * Floating Ask PRAXIS button + slide-over chat panel.
  * Available on every /app/* and /demo/* page.
@@ -144,6 +189,7 @@ export function FloatingPraxis() {
   const pathname = usePathname();
   const activeSituation = useSituationStore((s) => s.activeSituation);
   const demoMode = useAppStore((s) => s.demoMode);
+  const currentToolId = getCurrentToolId(pathname);
 
   // Per-situation storage key
   const storageKey = activeSituation
@@ -266,6 +312,8 @@ export function FloatingPraxis() {
             conflictContext: demoMode
               ? 'nordalia'
               : activeSituation?.name || undefined,
+            currentToolId,
+            currentPath: pathname,
           }),
         });
 
@@ -347,7 +395,7 @@ export function FloatingPraxis() {
         );
       }
     },
-    [isStreaming, messages, activeSituation, demoMode]
+    [isStreaming, messages, activeSituation, demoMode, currentToolId, pathname]
   );
 
   const sendMessage = useCallback(() => {

@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-04-30 — Tool operating system foundation
+
+- Added `src/lib/tools/tool-operating-contracts.ts`, a central operating
+  contract layer for every registered PRAXIS tool covering objective, value,
+  applicability, required questions, expected outputs, Ask PRAXIS actions,
+  situation inputs, persistence expectations, quality bar, and weak-input
+  failure modes.
+- Added `src/components/praxis/tool-operating-contract-panel.tsx` and wired it
+  into `RegistryToolInfo` so tool pages using the registry panel now expose
+  purpose, inputs, outputs, and Ask PRAXIS editability.
+- Added `/api/tools/contracts` for contract inspection and future agent/admin
+  workflows.
+- Updated floating Ask PRAXIS and `/api/ai/chat` so the assistant receives the
+  active `currentToolId` / path and injects the relevant tool contract before
+  answering or writing structured changes with `writeToTool`.
+- Added `scripts/audit-tool-contracts.ts`, `npm run audit:tool-contracts`, and
+  focused unit coverage for the all-tools contract baseline.
+- Added `docs/PRAXIS_TOOL_OPERATING_SYSTEM_2026-04-30.md` and updated `TODO.md`
+  with the next tool-sprint lanes.
+
 ## 2026-04-29 — Subagent audit wave: persistence, exports, and deploy gates
 
 - Added `docs/PRAXIS_NEXT_20_IMPROVEMENTS_2026-04-29.md`, consolidating product,

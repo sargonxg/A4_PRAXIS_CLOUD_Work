@@ -2,6 +2,7 @@
 
 import { getToolById, getRelatedTools } from '@/lib/constants/tool-registry';
 import { ToolInfoPanel } from './tool-info-panel';
+import { ToolOperatingContractPanel } from './tool-operating-contract-panel';
 
 // Framework citation lookup — maps framework names to academic citations
 const FRAMEWORK_CITATIONS: Record<string, string> = {
@@ -207,27 +208,30 @@ export function RegistryToolInfo({ toolId, lastGenerated, defaultOpen }: Registr
   const related = getRelatedTools(toolId);
 
   return (
-    <ToolInfoPanel
-      toolName={tool.name}
-      description={tool.description}
-      methodology={tool.methodology}
-      frameworks={tool.frameworks.map((name) => ({
-        name,
-        citation: FRAMEWORK_CITATIONS[name] ?? 'Analytical framework applied in this tool',
-      }))}
-      dataSources={tool.dataSources.map((name) => ({
-        name,
-        status: DATA_SOURCE_STATUS[name] ?? 'estimated',
-      }))}
-      relatedTools={related.map((rt) => ({
-        name: rt.name,
-        href: TOOL_HREFS[rt.id] ?? `/${rt.id}`,
-      }))}
-      howToUse={HOW_TO_USE_BY_CATEGORY[tool.category] ?? HOW_TO_USE_BY_CATEGORY.context}
-      whyThisWorks={buildWhyThisWorks(tool)}
-      lastGenerated={lastGenerated}
-      defaultOpen={defaultOpen}
-    />
+    <div className="space-y-3">
+      <ToolInfoPanel
+        toolName={tool.name}
+        description={tool.description}
+        methodology={tool.methodology}
+        frameworks={tool.frameworks.map((name) => ({
+          name,
+          citation: FRAMEWORK_CITATIONS[name] ?? 'Analytical framework applied in this tool',
+        }))}
+        dataSources={tool.dataSources.map((name) => ({
+          name,
+          status: DATA_SOURCE_STATUS[name] ?? 'estimated',
+        }))}
+        relatedTools={related.map((rt) => ({
+          name: rt.name,
+          href: TOOL_HREFS[rt.id] ?? `/${rt.id}`,
+        }))}
+        howToUse={HOW_TO_USE_BY_CATEGORY[tool.category] ?? HOW_TO_USE_BY_CATEGORY.context}
+        whyThisWorks={buildWhyThisWorks(tool)}
+        lastGenerated={lastGenerated}
+        defaultOpen={defaultOpen}
+      />
+      <ToolOperatingContractPanel toolId={toolId} defaultOpen={defaultOpen} />
+    </div>
   );
 }
 

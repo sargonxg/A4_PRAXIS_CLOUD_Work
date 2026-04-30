@@ -78,6 +78,13 @@ registry entry already includes `frameworks`, `dataSources`, `relatedTools`,
 `requiredSituationFields`, `methodology`, `staleAfterHours`, and `modelTier`
 — that is enough to wire a new tool or migrate an existing one.
 
+As of 2026-04-30, every registered tool also has a computed operating contract
+in `src/lib/tools/tool-operating-contracts.ts`. That contract defines objective,
+user value, applicability, required questions, expected outputs, Ask PRAXIS
+writeback actions, situation inputs, persistence expectations, and quality bar.
+Run `npm run audit:tool-contracts` to regenerate the verification report in
+`docs/audits/tool-contracts-YYYY-MM-DD.md`.
+
 ## Authoring guidance for future docs
 
 When adding a new tool's doc:
