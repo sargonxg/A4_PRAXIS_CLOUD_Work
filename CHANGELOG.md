@@ -13,6 +13,10 @@
 - Fixed Policy Memo generation so the route returns the schema the page
   renders, resolves `situationId` to the live situation record, saves under the
   compatible `policy_memo` key, and displays source/confidence gaps.
+- Fixed the remaining demo Policy Memo no-op by sending a real structured
+  Nordalia situation payload when `useSituationGuard()` intentionally returns
+  `situation: null` in demo mode; production smoke now confirms
+  `/api/ai/policy-memo` returns 200 and renders the memo sections.
 - Fixed Talking Points generation so the page sends a valid structured request,
   consumes JSON output instead of treating the route as a stream, and renders
   the result as Markdown.

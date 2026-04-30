@@ -1,7 +1,7 @@
 # PRAXIS Production TODO
 
 Status: active continuation roadmap.
-Last updated: 2026-04-29.
+Last updated: 2026-04-30.
 Workspace: `C:\Users\giuli\praxiscodexworking`.
 Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`.
 Branch: `main`.
@@ -43,8 +43,16 @@ The latest diplomatic/policy writing architecture pass is
   modes, and source/confidence audit fields.
 - [x] Fix Policy Memo contract mismatch so the page, route, persistence key,
   and structured output schema agree.
+- [x] Fix the remaining demo Policy Memo no-op by supplying the route with a
+  real structured Nordalia situation when demo mode has no active store
+  situation. Verified in production: first-time demo flow -> Policy Memo ->
+  `/api/ai/policy-memo` 200 -> Executive Summary / Policy Options /
+  Recommendation render.
 - [x] Fix Talking Points contract mismatch so the page sends valid route input
   and renders structured JSON output correctly.
+- [ ] Remove or gate the demo Firestore `permission-denied` snapshot listener
+  warning emitted by `useToolData` subscriptions; it does not block generation,
+  but it is noisy and weakens operator confidence during browser QA.
 - [ ] Extend the same drafting service to UN Toolkit, Legal Tracker,
   Treaty Analyzer, Dossier, Briefing, Report, and Resolution routes.
 - [ ] Add a unified diplomatic artifact route and reusable workflow templates
