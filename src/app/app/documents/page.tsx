@@ -1,9 +1,9 @@
 "use client";
 
 import { useSituationGuard } from "@/hooks/use-situation-guard";
-import { useSituationStore } from "@/stores/situation-store";
 import { NoSituationState } from "@/components/praxis/no-situation-state";
 import { RegistryToolInfo } from "@/components/praxis/tool-info-from-registry";
+import { DocumentWorkspaceSpine } from "@/components/documents/document-workspace-spine";
 import { usePraxisRoute } from "@/lib/utils/routes";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
@@ -16,15 +16,12 @@ import {
   Search,
   Eye,
   Filter,
-  ChevronDown,
   X,
   Clock,
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Tag,
   Users,
-  Calendar,
   Activity,
   FileUp,
   Sparkles,
@@ -1447,6 +1444,19 @@ function DocumentVaultUI({ situationId }: DocumentVaultUIProps) {
           )}
         </AnimatePresence>
 
+        <DocumentWorkspaceSpine
+          documents={documents}
+          loading={loading}
+          route={route}
+          onUpload={() => setUploadDialogOpen(true)}
+          onBuildContextPack={() => {
+            const ids = selectedIds.size > 0
+              ? Array.from(selectedIds)
+              : documents.slice(0, 5).map((doc) => doc.id);
+            openBrainstormingWithDocs(ids);
+          }}
+        />
+
         {/* ---- TAB BAR ---- */}
         <div className="flex items-center gap-1 mb-4 border-b border-[var(--color-app-border)]">
           {[
@@ -1983,7 +1993,94 @@ const DEMO_DOCUMENT_SUMMARY = {
   totalEntities: 73,
 };
 
+const DEMO_DOCUMENTS: DocumentItem[] = [
+  {
+    id: "demo-ceasefire-framework",
+    title: "Nordalia Ceasefire Framework - April 2026.docx",
+    fileType: "docx",
+    size: 432000,
+    status: "extracted",
+    uploadedAt: "2026-04-09T09:30:00.000Z",
+    entityCount: 18,
+    chunkCount: 12,
+    entities: {
+      actors: [
+        { id: "gon", name: "Government of Nordalia", actorType: "state", description: "Incumbent government party to the ceasefire.", confidence: 0.9 },
+        { id: "drm", name: "Democratic Reform Movement", actorType: "armed_group", description: "Opposition movement controlling parts of the eastern provinces.", confidence: 0.88 },
+      ],
+      claims: [],
+      interests: [],
+      constraints: [],
+      leverage: [],
+      commitments: [],
+      events: [
+        { id: "deadline", title: "72-hour pullback demand", description: "UNMN demand creates a short de-escalation window.", eventType: "deadline", impact: "high", confidence: 0.82 },
+      ],
+      narratives: [],
+    },
+  },
+  {
+    id: "demo-unmn-sitreps",
+    title: "UNMN Situation Reports - Sector Bravo.pdf",
+    fileType: "pdf",
+    size: 1820000,
+    status: "extracted",
+    uploadedAt: "2026-04-10T14:15:00.000Z",
+    entityCount: 27,
+    chunkCount: 18,
+    entities: {
+      actors: [
+        { id: "unmn", name: "UN Mission Nordalia", actorType: "international", description: "Monitoring mission issuing ceasefire verification reports.", confidence: 0.91 },
+      ],
+      claims: [],
+      interests: [],
+      constraints: [],
+      leverage: [],
+      commitments: [],
+      events: [
+        { id: "bravo-incursion", title: "Sector Bravo incursion", description: "Ceasefire violation reported near the Kessara corridor.", eventType: "violation", impact: "high", confidence: 0.86 },
+      ],
+      narratives: [],
+    },
+  },
+  {
+    id: "demo-media-roundup",
+    title: "Media Narrative Roundup - Kessara Corridor.md",
+    fileType: "md",
+    size: 96000,
+    status: "extracted",
+    uploadedAt: "2026-04-11T08:00:00.000Z",
+    entityCount: 14,
+    chunkCount: 8,
+    entities: {
+      actors: [
+        { id: "nbc", name: "Nordalia Broadcasting Corporation", actorType: "media", description: "State-aligned broadcaster shaping sovereignty narratives.", confidence: 0.8 },
+      ],
+      claims: [],
+      interests: [],
+      constraints: [],
+      leverage: [],
+      commitments: [],
+      events: [],
+      narratives: [],
+    },
+  },
+  {
+    id: "demo-aid-access",
+    title: "Humanitarian Access Notes - Eastern Provinces.txt",
+    fileType: "txt",
+    size: 74000,
+    status: "uploaded",
+    uploadedAt: "2026-04-11T13:20:00.000Z",
+    entityCount: 0,
+    chunkCount: 0,
+    entities: null,
+  },
+];
+
 function DemoVaultPlaceholder() {
+  const route = usePraxisRoute();
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6">
@@ -1996,6 +2093,11 @@ function DemoVaultPlaceholder() {
           {DEMO_DOCUMENT_SUMMARY.totalEntities} entities
         </p>
       </div>
+      <DocumentWorkspaceSpine
+        documents={DEMO_DOCUMENTS}
+        mode="demo"
+        route={route}
+      />
       <Card className="border-dashed">
         <CardContent className="py-16 text-center">
           <FileText className="h-10 w-10 mx-auto text-navy-600 mb-3" />

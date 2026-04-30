@@ -54,6 +54,9 @@ lane, and active generic + conflict/political implementation focus.
 The current ranked execution queue is
 `docs/PRAXIS_TOP_10_NEXT_EXECUTION_2026-04-30.md`.
 
+The current product/architecture wave for the next 10 critical improvements is
+`docs/PRAXIS_NEXT_10_CRITICAL_IMPROVEMENTS_2026-04-30.md`.
+
 Generated per-tool specifications live under `docs/tools/generated/`. Refresh
 them with `npm run generate:tool-docs` after changing the registry, operating
 contracts, path taxonomy, or context blueprints.
@@ -112,6 +115,12 @@ contracts, path taxonomy, or context blueprints.
   that still bypasses the shared shell.
 - [x] Move the active generic + conflict/political tools to the context
   blueprint in their AI route prompts via shared calibration.
+- [x] Add a document-production spine to Documents so live and demo workspaces
+  show intake, extraction, structure, context, draft, and export readiness from
+  real document/entity/chunk counts.
+- [x] Upgrade the Nordalia demo Documents view from a passive placeholder to a
+  labelled demo workspace with synthetic source documents and computed
+  production readiness.
 - [ ] Audit prompts for duplicated contract text now that `withCalibration()`
   injects the shared backbone automatically.
 - [ ] Build a document export adapter that renders saved structured tool data

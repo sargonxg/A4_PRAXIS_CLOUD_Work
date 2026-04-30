@@ -2,6 +2,18 @@
 
 ## 2026-04-30 — Tool operating system foundation
 
+- Added `docs/PRAXIS_NEXT_10_CRITICAL_IMPROVEMENTS_2026-04-30.md`, the next
+  critical product/architecture queue focused on document production, demo case
+  coherence, dashboard command-center visualization, canonical tool data,
+  Ask PRAXIS writebacks, grounded search receipts, context certainty,
+  diplomatic drafting, admin health, and Dialectica preparation.
+- Added `src/components/documents/document-workspace-spine.tsx` and wired it
+  into Documents so users see a live source-to-briefing pipeline: intake,
+  extraction, structure, context indexing, drafting, and export readiness.
+- Upgraded the demo Documents page from a passive placeholder to a labelled
+  Nordalia document workspace with synthetic source documents, computed
+  readiness, and routes into Conflict Graph, Policy Memo, Export Center, and
+  Dashboard.
 - Added `src/lib/tools/tool-operating-contracts.ts`, a central operating
   contract layer for every registered PRAXIS tool covering objective, value,
   applicability, required questions, expected outputs, Ask PRAXIS actions,
