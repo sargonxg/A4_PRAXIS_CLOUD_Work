@@ -66,6 +66,11 @@
   workflow.
 - Expanded `/api/tools/contracts` to return each tool's context blueprint along
   with the operating contract.
+- Added `docs/PRAXIS_TOP_10_NEXT_EXECUTION_2026-04-30.md`, the current ranked
+  execution list for the next product/architecture wave.
+- Upgraded `withCalibration()` so every calibrated AI route automatically
+  injects the canonical tool operating contract and tool context blueprint into
+  the system prompt, including snake-case route ids such as `policy_memo`.
 
 ## 2026-04-29 — Subagent audit wave: persistence, exports, and deploy gates
 

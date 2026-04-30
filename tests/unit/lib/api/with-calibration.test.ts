@@ -42,7 +42,9 @@ describe('withCalibration', () => {
     }));
     expect(handler).toHaveBeenCalledWith(expect.any(Request), expect.objectContaining({
       uid: 'u1',
-      calibration: expect.objectContaining({ systemPromptBlock: expect.stringContaining('analyst-profile') }),
+      calibration: expect.objectContaining({
+        systemPromptBlock: expect.stringContaining('Current PRAXIS Tool Contract: Risk Monitor'),
+      }),
     }));
     expect(res.status).toBe(200);
   });

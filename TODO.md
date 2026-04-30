@@ -51,6 +51,9 @@ The current shared context/tool architecture note is
 context layers, database paths, graph/Dialectica plan, document-production
 lane, and active generic + conflict/political implementation focus.
 
+The current ranked execution queue is
+`docs/PRAXIS_TOP_10_NEXT_EXECUTION_2026-04-30.md`.
+
 Generated per-tool specifications live under `docs/tools/generated/`. Refresh
 them with `npm run generate:tool-docs` after changing the registry, operating
 contracts, path taxonomy, or context blueprints.
@@ -102,10 +105,15 @@ contracts, path taxonomy, or context blueprints.
   the next missing situation field.
 - [x] Make `/api/tools/contracts` expose context blueprints in addition to
   operating contracts for future agents, admin tools, and documentation.
+- [x] Add a ranked top-10 execution plan for the next architecture wave.
+- [x] Make `withCalibration()` automatically inject the canonical operating
+  contract and context blueprint into every calibrated AI route.
 - [ ] Apply `RegistryToolInfo` / `ToolOperatingContractPanel` to every tool page
   that still bypasses the shared shell.
-- [ ] Move the active generic + conflict/political tools to the context
-  blueprint in their AI route prompts via `buildToolContextBlueprintPrompt`.
+- [x] Move the active generic + conflict/political tools to the context
+  blueprint in their AI route prompts via shared calibration.
+- [ ] Audit prompts for duplicated contract text now that `withCalibration()`
+  injects the shared backbone automatically.
 - [ ] Build a document export adapter that renders saved structured tool data
   into DOCX/PDF/LibreOffice-compatible sections without a second AI call.
 - [ ] Work through the generated P0 queue: Conflict Graph, Deep Search Agent,

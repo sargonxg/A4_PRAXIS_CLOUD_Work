@@ -12,6 +12,9 @@ import {
 import { emitSystemEvent, emitNotification } from '@/lib/events/event-service';
 import { publishBacklogEntry } from '@/lib/dev-backlog/service';
 import { AI_REQUEST_LIMITS } from './ai-request-limits';
+import { canonicalToolId } from '@/lib/knowledge/evidence-envelope';
+import { buildToolPromptContract } from '@/lib/tools/tool-operating-contracts';
+import { buildToolContextBlueprintPrompt } from '@/lib/tools/tool-context-blueprints';
 
 export interface CalibrationCtx extends AuthenticatedUser {
   calibration: ContextBlock;
@@ -66,6 +69,18 @@ function checkAiRequestLimits(body: Record<string, unknown>): Response | null {
   }
 
   return null;
+}
+
+export function enrichCalibrationWithToolBackbone(calibration: ContextBlock, toolId: string): ContextBlock {
+  const canonical = canonicalToolId(toolId);
+  const toolBackbone = [
+    buildToolPromptContract(canonical),
+    buildToolContextBlueprintPrompt(canonical),
+  ].join('\n\n');
+  return {
+    ...calibration,
+    systemPromptBlock: `${calibration.systemPromptBlock}\n\n${toolBackbone}`,
+  };
 }
 
 /**
@@ -155,6 +170,7 @@ export function withCalibration(
         toolId,
         retrievalQuery,
       });
+      const enrichedCalibration = enrichCalibrationWithToolBackbone(calibration, toolId);
 
       // Start tool_run record (non-demo only — demo users do not get persisted runs)
       let toolRunId: string | null = null;
@@ -174,7 +190,7 @@ export function withCalibration(
             variant,
             idempotencyKey,
             triggeredBy: 'user',
-            profileVersion: calibration.provenance.profileVersion,
+            profileVersion: enrichedCalibration.provenance.profileVersion,
           });
           toolRunId = run.toolRunId;
           await emitSystemEvent({
@@ -184,7 +200,7 @@ export function withCalibration(
             situationId: situationId ?? null,
             toolRunId,
             message: `Tool ${toolId} started`,
-            data: { variant, profileVersion: calibration.provenance.profileVersion },
+            data: { variant, profileVersion: enrichedCalibration.provenance.profileVersion },
             source: 'frontend',
           });
         } catch (err) {
@@ -195,7 +211,7 @@ export function withCalibration(
       // Invoke the actual handler
       let response: Response;
       try {
-        response = await handler(req, { ...user, calibration, toolRunId });
+        response = await handler(req, { ...user, calibration: enrichedCalibration, toolRunId });
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         if (toolRunId) {
