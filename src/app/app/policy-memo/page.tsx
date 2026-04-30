@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { useSituationStore } from '@/stores/situation-store';
@@ -13,12 +13,16 @@ interface PolicyOption {
   cons: string[];
   riskLevel: 'low' | 'medium' | 'high';
   resourceImplications: string;
+  levelOneAnalysis?: string;
+  levelTwoAnalysis?: string;
+  winSet?: string;
 }
 
-interface Lesson {
-  lesson: string;
-  fromSituation: 'a' | 'b';
-  applicableTo: string;
+interface DraftingAudit {
+  confidenceNote: string;
+  limits: string[];
+  followUpResearch: string[];
+  sourceUse: Array<{ source: string; claim: string; confidence: 'high' | 'medium' | 'low' }>;
 }
 
 interface PolicyMemoData {
@@ -34,6 +38,8 @@ interface PolicyMemoData {
   implementationSteps: string[];
   monitoringIndicators: string[];
   risks: string;
+  citations?: string[];
+  draftingAudit?: DraftingAudit;
 }
 
 const RISK_COLORS: Record<string, string> = {
@@ -68,6 +74,10 @@ export default function PolicyMemoPage() {
   const [memo, setMemo] = useState<PolicyMemoData | null>(savedMemo || null);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    if (savedMemo && !memo && !generating) setMemo(savedMemo);
+  }, [savedMemo, memo, generating]);
+
   if (showGuard) return <NoSituationState />;
 
   async function handleGenerate() {
@@ -78,7 +88,7 @@ export default function PolicyMemoPage() {
       const res = await fetch('/api/ai/policy-memo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ situationId: situation.id, policyQuestion: question }),
+        body: JSON.stringify({ situationId: situation.id, situation, policyQuestion: question }),
       });
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
       const data = await res.json();
@@ -189,6 +199,28 @@ export default function PolicyMemoPage() {
                     </div>
                   </div>
                   <p className="text-xs text-navy-500 italic">{opt.resourceImplications}</p>
+                  {(opt.levelOneAnalysis || opt.levelTwoAnalysis || opt.winSet) && (
+                    <div className="mt-3 grid gap-2 text-xs text-navy-600 md:grid-cols-3">
+                      {opt.levelOneAnalysis && (
+                        <div className="rounded-md bg-navy-50/60 p-2">
+                          <p className="font-semibold text-navy-800">Level I</p>
+                          <p className="mt-1">{opt.levelOneAnalysis}</p>
+                        </div>
+                      )}
+                      {opt.levelTwoAnalysis && (
+                        <div className="rounded-md bg-navy-50/60 p-2">
+                          <p className="font-semibold text-navy-800">Level II</p>
+                          <p className="mt-1">{opt.levelTwoAnalysis}</p>
+                        </div>
+                      )}
+                      {opt.winSet && (
+                        <div className="rounded-md bg-navy-50/60 p-2">
+                          <p className="font-semibold text-navy-800">Win-set</p>
+                          <p className="mt-1">{opt.winSet}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -223,6 +255,42 @@ export default function PolicyMemoPage() {
           <Section title="Risk Assessment" defaultOpen={false}>
             <p className="text-sm text-navy-700 leading-relaxed">{memo.risks}</p>
           </Section>
+
+          {(memo.draftingAudit || memo.citations?.length) && (
+            <Section title="Sources, Confidence & Gaps" defaultOpen={false}>
+              {memo.draftingAudit?.confidenceNote && (
+                <p className="mb-3 text-sm text-navy-700 leading-relaxed">{memo.draftingAudit.confidenceNote}</p>
+              )}
+              {memo.draftingAudit?.sourceUse?.length ? (
+                <div className="mb-4 space-y-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Source Use</p>
+                  {memo.draftingAudit.sourceUse.map((source, i) => (
+                    <div key={`${source.source}-${i}`} className="rounded-md border border-[var(--color-app-border)] bg-navy-50/40 p-2 text-xs text-navy-600">
+                      <span className="font-semibold text-navy-800">{source.source}</span>
+                      <span className="ml-2 rounded bg-white px-1.5 py-0.5 text-[10px] uppercase text-navy-500">{source.confidence}</span>
+                      <p className="mt-1">{source.claim}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {memo.draftingAudit?.limits?.length ? (
+                <div className="mb-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Limits</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-4 text-xs text-navy-600">
+                    {memo.draftingAudit.limits.map((item, i) => <li key={i}>{item}</li>)}
+                  </ul>
+                </div>
+              ) : null}
+              {memo.draftingAudit?.followUpResearch?.length ? (
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Follow-up Research</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-4 text-xs text-navy-600">
+                    {memo.draftingAudit.followUpResearch.map((item, i) => <li key={i}>{item}</li>)}
+                  </ul>
+                </div>
+              ) : null}
+            </Section>
+          )}
         </div>
       )}
     </div>

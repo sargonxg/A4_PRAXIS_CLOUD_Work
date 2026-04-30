@@ -2,16 +2,22 @@ import { NextResponse } from 'next/server';
 import { Output } from 'ai';
 import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
-import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
-import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
+import { writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { validateAiRequest } from '@/lib/api/validate-request';
-import { situationContextSchema } from '@/lib/api/schemas';
-import type { Situation } from '@/types/situation';
+import {
+  DIPLOMATIC_DRAFTING_PLAYBOOK,
+  DraftingAuditSchema,
+  buildDiplomaticDraftingContext,
+  buildDraftingEvidencePrompt,
+  diplomaticSituationRequestFields,
+  resolveSituationFromRequest,
+  sourceAuditPrompt,
+} from '@/lib/ai/diplomatic-drafting-service';
 
 export const maxDuration = 60;
 
@@ -32,6 +38,7 @@ const TalkingPointsSchema = z.object({
   pointsToAvoid: z.array(z.string()),
   toneGuidance: z.string().optional(),
   closingGuidance: z.string().optional(),
+  draftingAudit: DraftingAuditSchema,
 });
 
 const DEMO_RESPONSE = {
@@ -66,6 +73,13 @@ const DEMO_RESPONSE = {
   ],
   toneGuidance: 'Measured optimism grounded in concrete progress. Avoid triumphalism. Acknowledge the fragility of the situation while emphasising the cost of failure to both parties.',
   closingGuidance: 'Close by reaffirming AU commitment to the June mediation round and requesting PSC political support for SRSG access to both capitals.',
+  draftingAudit: {
+    artifactMode: 'talking-points' as const,
+    sourceUse: [{ source: 'demo situation record', claim: 'Nordalia talking points and likely questions', confidence: 'medium' as const }],
+    confidenceNote: 'Medium confidence because this is synthetic demo data.',
+    limits: ['No live source verification in demo mode'],
+    followUpResearch: ['Verify mandate renewal status', 'Update humanitarian access figures'],
+  },
 };
 
 export const POST = withCalibration('talking_points', 'ai_report', {
@@ -78,57 +92,53 @@ export const POST = withCalibration('talking_points', 'ai_report', {
   try {
     const body = await request.json();
     const requestSchema = z.object({
-      situation: situationContextSchema.optional(),
+      ...diplomaticSituationRequestFields,
       audience: z.string().optional(),
       tone: z.string().optional(),
       context: z.string().optional(),
-      // Legacy field support
-      situationData: situationContextSchema.optional(),
     });
     const validation = validateAiRequest(body, requestSchema);
     if (!validation.success) return validation.response;
 
-    const { situation, audience, tone, context, situationData } = validation.data;
-    const sitObj = (situation ?? situationData) as Situation | undefined;
-    const sitContext = sitObj ? buildToolContext(sitObj) : '';
-    const situationId = sitObj?.id ?? '';
+    const { audience, tone, context } = validation.data;
+    const { situation: sitObj, situationId } = await resolveSituationFromRequest({
+      uid: ctx.uid,
+      situation: validation.data.situation,
+      situationData: validation.data.situationData,
+      situationId: validation.data.situationId,
+    });
 
     if (isServerDemoMode()) return NextResponse.json(DEMO_RESPONSE);
 
     // Credits + profile gate already handled by withCalibration above.
 
-    const graphCtx = situationId
-      ? await buildGraphContext(ctx.uid, situationId, 'talking_points')
-      : '';
+    const draftContext = await buildDiplomaticDraftingContext({
+      ctx,
+      situation: sitObj,
+      situationId,
+      toolId: 'talking_points',
+      webPurpose: 'talking-points',
+    });
+    const evidencePrompt = buildDraftingEvidencePrompt({ ...draftContext, directContext: context });
+    const { provenance } = ctx.calibration;
 
-    const webCtx = sitObj
-      ? await buildWebGroundedContext(
-          { name: sitObj.name, region: sitObj.region, actors: sitObj.actors },
-          'talking-points',
-          ctx.uid
-        )
-      : '';
-
-    // --- Calibrated system prompt ---
-    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
-    const langDirective = outputConstraints.language !== 'en'
-      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
-      : '';
-    const redLineDirective = outputConstraints.redLineClauses.length
-      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
-      : '';
-
-    const systemPrompt = [graphCtx, sitContext, DIPLOMATIC_SYSTEM_PROMPT, systemPromptBlock, `Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`].filter(Boolean).join('\n\n');
+    const systemPrompt = [
+      DIPLOMATIC_DRAFTING_PLAYBOOK,
+      DIPLOMATIC_SYSTEM_PROMPT,
+      draftContext.systemCalibration,
+      'You are preparing speakable, audience-specific diplomatic lines, not generic bullet points.',
+    ].filter(Boolean).join('\n\n');
 
     const result = await callProModel({
       output: Output.object({ schema: TalkingPointsSchema }),
       system: systemPrompt,
       prompt: `Generate structured diplomatic talking points using Fisher-Ury interest-based framing.
 
-${webCtx ? `WEB INTELLIGENCE:\n${webCtx}\n\n` : ''}Situation: ${sitObj?.name ?? 'Unknown'}
+${evidencePrompt}
+
+Situation: ${sitObj?.name ?? 'Unknown'}
 Audience: ${audience ?? 'Senior diplomatic audience'}
 Tone: ${tone ?? 'formal and balanced'}
-${context ? `Additional context: ${context}` : ''}
 
 FRAMING REQUIREMENT: Apply Fisher-Ury interest-based negotiation framing throughout. For each key message:
 - Identify the shared INTEREST (not position) the message appeals to
@@ -137,17 +147,29 @@ FRAMING REQUIREMENT: Apply Fisher-Ury interest-based negotiation framing through
 
 ANTICIPATE: For each likely stakeholder question, provide a recommended response that stays on message while acknowledging legitimate concerns.
 
-TONE GUIDANCE: Provide explicit guidance on register, emphasis, and what to avoid, calibrated to the stated audience.`,
+TONE GUIDANCE: Provide explicit guidance on register, emphasis, and what to avoid, calibrated to the stated audience.
+
+${sourceAuditPrompt('talking-points')}`,
     });
 
     if (situationId) {
-      await writeToolDataServer(ctx.uid, situationId, 'talking-points', result.output as Record<string, unknown>);
+      await Promise.all([
+        writeToolDataServer(ctx.uid, situationId, 'talking_points', result.output as Record<string, unknown>),
+        writeToolDataServer(ctx.uid, situationId, 'talking-points', result.output as Record<string, unknown>),
+      ]);
       await saveToolOutput({
         uid: ctx.uid,
         situationId,
         toolId: 'talking_points',
         profileVersion: provenance.profileVersion,
+        toolRunId: ctx.toolRunId,
         output: result.output as Record<string, unknown>,
+        metadata: {
+          artifactMode: 'talking-points',
+          audience: audience ?? null,
+          tone: tone ?? null,
+          sourceReceipts: (result.output as { draftingAudit?: { sourceUse?: unknown[] } }).draftingAudit?.sourceUse ?? [],
+        },
       }).catch((err) => console.warn('[talking_points] saveToolOutput failed:', err));
     }
     return NextResponse.json(result.output);

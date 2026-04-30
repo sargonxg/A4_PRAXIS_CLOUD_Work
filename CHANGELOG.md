@@ -4,6 +4,18 @@
 
 - Added `docs/PRAXIS_NEXT_20_IMPROVEMENTS_2026-04-29.md`, consolidating product,
   AI/backend, and security/cloud subagent findings into 20 ranked improvements.
+- Added `docs/PRAXIS_DIPLOMATIC_DRAFTING_ARCHITECTURE_2026-04-29.md`, adapting
+  durable legal-document workspace patterns from the Mike reference repo into a
+  PRAXIS-specific diplomatic and policy artifact architecture.
+- Added `src/lib/ai/diplomatic-drafting-service.ts` to centralize situation
+  resolution, evidence-context assembly, artifact modes, and drafting audit
+  requirements for policy/legal/diplomatic writing tools.
+- Fixed Policy Memo generation so the route returns the schema the page
+  renders, resolves `situationId` to the live situation record, saves under the
+  compatible `policy_memo` key, and displays source/confidence gaps.
+- Fixed Talking Points generation so the page sends a valid structured request,
+  consumes JSON output instead of treating the route as a stream, and renders
+  the result as Markdown.
 - Started the canonical tool-output migration: `saveToolOutput` now writes a
   versioned `tool-data/{toolId}` envelope and a legacy `tools/{toolId}`
   compatibility document.

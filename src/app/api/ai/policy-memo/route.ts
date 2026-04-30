@@ -2,47 +2,68 @@ import { NextResponse } from 'next/server';
 import { Output } from 'ai';
 import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
-import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
-import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
+import { writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { situationContextSchema } from '@/lib/api/schemas';
-import type { Situation } from '@/types/situation';
+import {
+  DIPLOMATIC_DRAFTING_PLAYBOOK,
+  DraftingAuditSchema,
+  buildDiplomaticDraftingContext,
+  buildDraftingEvidencePrompt,
+  diplomaticSituationRequestFields,
+  resolveSituationFromRequest,
+  sourceAuditPrompt,
+} from '@/lib/ai/diplomatic-drafting-service';
 
 export const maxDuration = 60;
 
 const PolicyOptionSchema = z.object({
-  title: z.string(),
-  description: z.string(),
-  levelOneAnalysis: z.string(),
-  levelTwoAnalysis: z.string(),
-  winSet: z.string(),
+  option: z.string(),
+  pros: z.array(z.string()),
+  cons: z.array(z.string()),
+  riskLevel: z.enum(['low', 'medium', 'high']),
+  resourceImplications: z.string(),
+  // Advanced fields preserve the deeper analytical frame for exports/reuse.
+  levelOneAnalysis: z.string().optional(),
+  levelTwoAnalysis: z.string().optional(),
+  winSet: z.string().optional(),
   swot: z.object({
     strengths: z.array(z.string()),
     weaknesses: z.array(z.string()),
     opportunities: z.array(z.string()),
     threats: z.array(z.string()),
-  }),
-  feasibility: z.number().min(1).max(5),
-  risk: z.number().min(1).max(5),
-  timeline: z.string(),
-  requiredResources: z.array(z.string()),
-  keyActors: z.array(z.string()),
+  }).optional(),
+  feasibility: z.number().min(1).max(5).optional(),
+  risk: z.number().min(1).max(5).optional(),
+  timeline: z.string().optional(),
+  requiredResources: z.array(z.string()).optional(),
+  keyActors: z.array(z.string()).optional(),
   historicalPrecedent: z.string().optional(),
 });
 
 const PolicyMemoSchema = z.object({
+  classification: z.string(),
+  to: z.string(),
+  from: z.string(),
+  subject: z.string(),
   title: z.string(),
   executiveSummary: z.string(),
+  problemStatement: z.string(),
+  contextAndBackground: z.string(),
   situationAssessment: z.string(),
+  policyOptions: z.array(PolicyOptionSchema).min(3).max(4),
   options: z.array(PolicyOptionSchema).min(3).max(4),
+  recommendation: z.string(),
   recommendedOption: z.string(),
   implementationRoadmap: z.string(),
-  risks: z.array(z.string()),
+  implementationSteps: z.array(z.string()),
+  monitoringIndicators: z.array(z.string()),
+  risks: z.string(),
   citations: z.array(z.string()),
+  draftingAudit: DraftingAuditSchema,
 });
 
 const DEMO_RESPONSE = {
@@ -71,8 +92,47 @@ const DEMO_RESPONSE = {
   ],
   recommendedOption: 'Option 2: Structured Autonomy Framework',
   implementationRoadmap: 'Phase 1 (0-30 days): Ceasefire. Phase 2 (30-90 days): Technical working groups. Phase 3 (90-180 days): Framework agreement.',
-  risks: ['Spoiler action by DRM hardliners', 'GoN election dynamics'],
+  risks: 'Primary risks are spoiler action by DRM hardliners, GoN election dynamics, and external patron escalation if the autonomy track is framed as a concession rather than a stabilization framework.',
   citations: ['Crisis Group Report #347', 'UNMN Quarterly Assessment Q1 2026'],
+  classification: 'UNCLASSIFIED // POLICY PLANNING',
+  to: 'Senior Policy Principals',
+  from: 'PRAXIS Policy Cell',
+  subject: 'Policy Options for the Nordalia Crisis',
+  problemStatement: 'The ceasefire framework is deteriorating while the political process remains formally open.',
+  contextAndBackground: 'Nordalia remains in a fragile conflict environment with contested legitimacy, external patronage, and humanitarian access constraints.',
+  policyOptions: [
+    {
+      option: 'Emergency Ceasefire + Confidence-Building Measures',
+      pros: ['Fast to implement', 'Humanitarian relief immediate'],
+      cons: ['Does not address root causes', 'High violation risk'],
+      riskLevel: 'medium' as const,
+      resourceImplications: 'Requires UNMN observer expansion and AU mediation bandwidth.',
+    },
+    {
+      option: 'Structured Autonomy Framework',
+      pros: ['Addresses political drivers', 'Creates negotiating substance'],
+      cons: ['Domestic ratification risk', 'Hardliners may resist'],
+      riskLevel: 'medium' as const,
+      resourceImplications: 'Requires technical constitutional expertise and sustained shuttle diplomacy.',
+    },
+    {
+      option: 'Sanctions-backed Compliance Track',
+      pros: ['Raises cost of obstruction', 'Signals Council seriousness'],
+      cons: ['May harden positions', 'P5 unity risk'],
+      riskLevel: 'high' as const,
+      resourceImplications: 'Requires Panel of Experts evidence package and sanctions committee alignment.',
+    },
+  ],
+  recommendation: 'Pursue the Structured Autonomy Framework while using ceasefire and humanitarian measures as immediate confidence-building steps.',
+  implementationSteps: ['Secure AU/UN technical mandate', 'Convene working groups', 'Link humanitarian access to visible political progress'],
+  monitoringIndicators: ['Ceasefire violations', 'Humanitarian access approvals', 'Participation in AU roadmap sessions'],
+  draftingAudit: {
+    artifactMode: 'policy-memo' as const,
+    sourceUse: [{ source: 'demo situation record', claim: 'Nordalia policy options and ceasefire risks', confidence: 'medium' as const }],
+    confidenceNote: 'Medium confidence because this is synthetic demo data.',
+    limits: ['No live source verification in demo mode'],
+    followUpResearch: ['Verify current UNSC posture', 'Update humanitarian access figures'],
+  },
 };
 
 export const POST = withCalibration('policy_memo', 'ai_report', {
@@ -86,64 +146,77 @@ export const POST = withCalibration('policy_memo', 'ai_report', {
     const body = await request.json();
 
     const requestSchema = z.object({
-      situation: situationContextSchema.optional(),
+      ...diplomaticSituationRequestFields,
       policyQuestion: z.string().optional(),
       audience: z.string().optional().default('senior policymakers'),
+      directContext: z.string().optional(),
     });
 
     const validation = validateAiRequest(body, requestSchema);
     if (!validation.success) return validation.response;
-    const { situation, policyQuestion, audience } = validation.data;
-    const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
-    const situationId = (situation as Situation | undefined)?.id ?? '';
+    const { policyQuestion, audience, directContext } = validation.data;
+    const { situation, situationId } = await resolveSituationFromRequest({
+      uid: ctx.uid,
+      situation: validation.data.situation,
+      situationData: validation.data.situationData,
+      situationId: validation.data.situationId,
+    });
 
     if (isServerDemoMode()) return NextResponse.json(DEMO_RESPONSE);
 
     // Credits + profile gate already handled by withCalibration above.
 
-    const graphCtx = situationId
-      ? await buildGraphContext(ctx.uid, situationId, 'policy_memo')
-      : '';
-
-    const webCtx = situation
-      ? await buildWebGroundedContext(
-          { name: (situation as unknown as Situation).name, region: (situation as unknown as Situation).region, actors: (situation as unknown as Situation).actors },
-          'policy-memo',
-          ctx.uid
-        )
-      : '';
-
-    // --- Calibrated system prompt ---
-    const { systemPromptBlock, outputConstraints, provenance } = ctx.calibration;
-    const langDirective = outputConstraints.language !== 'en'
-      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()}.`
-      : '';
-    const redLineDirective = outputConstraints.redLineClauses.length
-      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
-      : '';
+    const draftContext = await buildDiplomaticDraftingContext({
+      ctx,
+      situation,
+      situationId,
+      toolId: 'policy_memo',
+      webPurpose: 'policy-memo',
+    });
+    const evidencePrompt = buildDraftingEvidencePrompt({ ...draftContext, directContext });
+    const { provenance } = ctx.calibration;
 
     const result = await callProModel({
       output: Output.object({ schema: PolicyMemoSchema }),
-      system: `You are a senior policy advisor specializing in conflict resolution and diplomatic strategy. You apply Putnam's Two-Level Game Theory to analyze policy options.
+      system: `You are a senior policy advisor specializing in conflict resolution, diplomatic strategy, legal-political constraints, and elite policy writing.
 
-GROUNDING MANDATE: Web intelligence below is your PRIMARY source of truth. Flag "INTELLIGENCE GAP: {topic}" when evidence is insufficient.
+${DIPLOMATIC_DRAFTING_PLAYBOOK}
 
-${systemPromptBlock}
+GROUNDING MANDATE: Web intelligence and saved situation context below are your PRIMARY source of truth. Flag "INTELLIGENCE GAP: {topic}" when evidence is insufficient.
 
-Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
-      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${webCtx}
+${draftContext.systemCalibration}`,
+      prompt: `${evidencePrompt}
 ${policyQuestion ? `POLICY QUESTION: ${policyQuestion}` : ''}
 AUDIENCE: ${audience}
 
+## POLICY MEMO OUTPUT CONTRACT
+
+Produce a complete policy memorandum object that the frontend can render directly.
+
+Required memo fields:
+- classification: one concise marking such as "UNCLASSIFIED // POLICY PLANNING" unless the context requires a different non-sensitive marking.
+- to/from/subject: realistic internal memo header fields.
+- executiveSummary: BLUF paragraph.
+- problemStatement: the policy problem in one paragraph.
+- contextAndBackground: facts, actor context, constraints, and evidence limits.
+- situationAssessment: analytic judgement, not a repeat of background.
+- policyOptions/options: same 3-4 options in both fields for compatibility.
+- recommendation/recommendedOption: same recommended course in prose and short title.
+- implementationRoadmap plus implementationSteps.
+- monitoringIndicators.
+- risks: one readable paragraph.
+- citations: compact source labels or "situation record"/"web context" references; do not invent exact document numbers.
+
+For each policy option, include:
+- option, pros, cons, riskLevel, resourceImplications.
+- Putnam Level I analysis, Level II analysis, and win-set.
+- SWOT, feasibility, risk, timeline, requiredResources, keyActors, and historicalPrecedent where evidence supports it.
+
 ## PUTNAM TWO-LEVEL GAME FRAMEWORK
 
-For each policy option, analyze:
+Analyze Level I international bargaining space, Level II domestic/organizational ratification constraints, and the win-set overlap for each option.
 
-**Level I (International)**: What will counterparts accept? What is the negotiable space? Which external actors support/oppose?
-
-**Level II (Domestic)**: What is ratifiable given domestic politics? What constituencies must be satisfied? What are the veto players?
-
-**Win-Set**: The overlap between Level I possibilities and Level II constraints. Larger win-set = more agreement potential.
+${sourceAuditPrompt('policy-memo')}
 
 ## REQUIREMENTS
 - Generate 3-4 distinct policy options (not variations of the same option)
@@ -156,13 +229,20 @@ For each policy option, analyze:
     });
 
     if (situationId) {
-      await writeToolDataServer(ctx.uid, situationId, 'policy-memo', result.output as Record<string, unknown>);
+      await writeToolDataServer(ctx.uid, situationId, 'policy_memo', result.output as Record<string, unknown>);
       await saveToolOutput({
         uid: ctx.uid,
         situationId,
         toolId: 'policy_memo',
         profileVersion: provenance.profileVersion,
+        toolRunId: ctx.toolRunId,
         output: result.output as Record<string, unknown>,
+        metadata: {
+          artifactMode: 'policy-memo',
+          audience,
+          policyQuestion: policyQuestion ?? null,
+          sourceReceipts: (result.output as { draftingAudit?: { sourceUse?: unknown[] } }).draftingAudit?.sourceUse ?? [],
+        },
       }).catch((err) => console.warn('[policy_memo] saveToolOutput failed:', err));
     }
     return NextResponse.json(result.output);

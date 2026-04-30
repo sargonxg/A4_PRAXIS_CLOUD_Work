@@ -9,7 +9,6 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { MessageCircle, Sparkles, Copy, FileText, Users, Shield, Check, Download, RefreshCw, AlertTriangle, Loader2, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
-import { parseDataStreamChunk } from '@/lib/utils/stream';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
@@ -58,6 +57,30 @@ interface TopicOption {
   context: string;
 }
 
+interface TalkingPointsResult {
+  audience: string;
+  keyMessages: Array<{
+    headline: string;
+    sharedInterest: string;
+    concession: string;
+    bridgeToCommonGround: string;
+    supportingArguments: string[];
+  }>;
+  anticipatedQuestions?: Array<{
+    question: string;
+    stakeholder: string;
+    recommendedResponse: string;
+  }>;
+  pointsToAvoid: string[];
+  toneGuidance?: string;
+  closingGuidance?: string;
+  draftingAudit?: {
+    confidenceNote: string;
+    limits: string[];
+    followUpResearch: string[];
+  };
+}
+
 const DEMO_TOPIC_OPTIONS: TopicOption[] = [
   { id: 'ceasefire', label: 'DRM-Government ceasefire status', context: 'The ceasefire brokered in February 2026 is fragile. DRM forces have made three reported incursions. Government forces have shelled two villages in violation. Both parties publicly claim adherence.' },
   { id: 'mandate', label: 'UNMN mandate renewal', context: 'UNMN mandate expires 31 March 2026 (in 19 days). France and Kenya co-sponsor renewal resolution. P5 member has threatened veto without ROE restrictions. TCCs want Chapter VII strengthening.' },
@@ -76,6 +99,53 @@ function buildRealTopicOptions(situation: Situation): TopicOption[] {
   options.push({ id: 'risk', label: 'Risk assessment update', context: `Risk level: ${situation.riskScore}/10, trend: ${situation.escalationTrend}. ${situation.description || ''}` });
   options.push({ id: 'custom', label: 'Custom topic...', context: '' });
   return options;
+}
+
+function formatTalkingPointsResult(result: TalkingPointsResult): string {
+  const lines: string[] = [];
+  lines.push('## Key Messages');
+  for (const message of result.keyMessages ?? []) {
+    lines.push(`- **${message.headline}**`);
+    lines.push(`  - Shared interest: ${message.sharedInterest}`);
+    lines.push(`  - Acknowledgement: ${message.concession}`);
+    lines.push(`  - Bridge: ${message.bridgeToCommonGround}`);
+    for (const arg of message.supportingArguments ?? []) lines.push(`  - ${arg}`);
+  }
+
+  if (result.anticipatedQuestions?.length) {
+    lines.push('', '## If Asked');
+    for (const item of result.anticipatedQuestions) {
+      lines.push(`**Q (${item.stakeholder}): ${item.question}**`);
+      lines.push(`A: ${item.recommendedResponse}`);
+      lines.push('');
+    }
+  }
+
+  if (result.pointsToAvoid?.length) {
+    lines.push('', '## Do Not Say');
+    for (const point of result.pointsToAvoid) lines.push(`- ${point}`);
+  }
+
+  if (result.toneGuidance || result.closingGuidance) {
+    lines.push('', '## Delivery Guidance');
+    if (result.toneGuidance) lines.push(`- ${result.toneGuidance}`);
+    if (result.closingGuidance) lines.push(`- ${result.closingGuidance}`);
+  }
+
+  if (result.draftingAudit) {
+    lines.push('', '## Confidence & Gaps');
+    lines.push(result.draftingAudit.confidenceNote);
+    if (result.draftingAudit.limits?.length) {
+      lines.push('', 'Limits:');
+      for (const item of result.draftingAudit.limits) lines.push(`- ${item}`);
+    }
+    if (result.draftingAudit.followUpResearch?.length) {
+      lines.push('', 'Follow-up research:');
+      for (const item of result.draftingAudit.followUpResearch) lines.push(`- ${item}`);
+    }
+  }
+
+  return lines.join('\n');
 }
 
 const DEMO_CONFLICT_OPTIONS = [
@@ -101,7 +171,7 @@ export default function TalkingPointsPage() {
 
   const defaultConflictId = isDemo ? 'nordalia' : (situation?.id ?? 'nordalia');
 
-  const topicOptions = isDemo ? DEMO_TOPIC_OPTIONS : buildRealTopicOptions(situation!);
+  const topicOptions = isDemo || !situation ? DEMO_TOPIC_OPTIONS : buildRealTopicOptions(situation);
 
   const [selectedAudience, setSelectedAudience] = useState('council');
   const [selectedTopic, setSelectedTopic] = useState(isDemo ? 'ceasefire' : 'security');
@@ -173,8 +243,8 @@ A: [answer]
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          situation: topicLabel,
-          situationData: situation ?? undefined,
+          situationId: situation?.id,
+          situation: situation ?? undefined,
           audience: audienceOption.label,
           tone: selectedAudience,
           context: prompt,
@@ -182,29 +252,17 @@ A: [answer]
         signal: controller.signal,
       });
 
-      // Fall back to generic chat endpoint if talking-points endpoint not available
-      const res = response.ok ? response : await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
-        signal: controller.signal,
-      });
-
-      if (!res.ok || !res.body) throw new Error('API error');
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let accumulated = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value);
-        for (const line of chunk.split('\n')) {
-          const parsed = parseDataStreamChunk(line);
-          if (parsed) { accumulated += parsed; setOutput(accumulated); }
-        }
-      }
-      if (accumulated) {
-        persisted.save({ content: accumulated, audience: selectedAudience, generatedAt: new Date().toISOString() });
+      if (!response.ok) throw new Error(`API error ${response.status}`);
+      const result = await response.json() as TalkingPointsResult;
+      const formatted = formatTalkingPointsResult(result);
+      setOutput(formatted);
+      if (formatted) {
+        persisted.save({
+          content: formatted,
+          structured: result,
+          audience: selectedAudience,
+          generatedAt: new Date().toISOString(),
+        });
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== 'AbortError') {
@@ -213,7 +271,7 @@ A: [answer]
     } finally {
       setIsGenerating(false);
     }
-  }, [isGenerating, topicLabel, topicContext, audienceOption, conflictOption, selectedAudience, selectedTopic, additionalContext, persisted]);
+  }, [isGenerating, topicLabel, topicContext, audienceOption, conflictOption, selectedAudience, selectedTopic, additionalContext, persisted, situation]);
 
   const handleCopy = useCallback(() => {
     if (!output) return;
@@ -243,7 +301,7 @@ A: [answer]
       await fetch('/api/ai/talking-points', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ situationId: situation.id }),
+        body: JSON.stringify({ situationId: situation.id, situation }),
       });
     } finally {
       setRegenerating(false);

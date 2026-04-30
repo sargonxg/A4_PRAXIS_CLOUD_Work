@@ -33,6 +33,24 @@ Crisis Group are corroborating layers.
 The latest 20-item subagent audit and implementation wave is
 `docs/PRAXIS_NEXT_20_IMPROVEMENTS_2026-04-29.md`.
 
+The latest diplomatic/policy writing architecture pass is
+`docs/PRAXIS_DIPLOMATIC_DRAFTING_ARCHITECTURE_2026-04-29.md`.
+
+## Active Diplomatic Drafting Workstream
+
+- [x] Add a central diplomatic drafting service inspired by durable legal
+  document workspaces: shared situation resolution, evidence context, artifact
+  modes, and source/confidence audit fields.
+- [x] Fix Policy Memo contract mismatch so the page, route, persistence key,
+  and structured output schema agree.
+- [x] Fix Talking Points contract mismatch so the page sends valid route input
+  and renders structured JSON output correctly.
+- [ ] Extend the same drafting service to UN Toolkit, Legal Tracker,
+  Treaty Analyzer, Dossier, Briefing, Report, and Resolution routes.
+- [ ] Add a unified diplomatic artifact route and reusable workflow templates
+  for policy memo, decision memo, diplomatic cable, demarche, non-paper,
+  communique, legal brief, and implementation checklist.
+
 ## Current Baseline
 
 - Product: PRAXIS by TACITUS, an AI-native workspace for policy, diplomacy,
