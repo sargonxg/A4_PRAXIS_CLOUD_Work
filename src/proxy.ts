@@ -61,7 +61,7 @@ function rewriteWithNonce(request: NextRequest, url: URL, nonce: string): NextRe
   return addSecurityHeaders(response, nonce);
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const session = request.cookies.get(SESSION_COOKIE);
   const nonce = generateNonce();

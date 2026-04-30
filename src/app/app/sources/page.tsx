@@ -2,6 +2,7 @@
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Library, Plus, Sparkles, Globe, Star, Trash2, ExternalLink, Languages, Radio,
@@ -917,6 +918,8 @@ Respond as a JSON array of objects with keys: name, type, region, language, reli
           </button>
         </div>
       </div>
+
+      <RegistryToolInfo toolId="sources-library" />
 
       {/* AI Discover Card (Phase 6) */}
       <div className="rounded-xl border border-gold-500/20 bg-gradient-to-br from-gold-500/5 to-transparent p-5 shadow-sm">

@@ -43,6 +43,15 @@ This wave adds a central operating contract layer:
     `writeToTool` for structured corrections when appropriate.
 - Floating Ask PRAXIS
   - maps current UI paths to tool ids and sends that context to chat.
+- `src/lib/tools/tool-path-taxonomy.ts`
+  - codifies the generic PRAXIS core plus the ten policy workflow paths;
+  - marks the current implementation focus as `generic-core` +
+    `political-officer` / Conflict Political Analyst;
+  - assigns tools by core, primary, secondary, specialized, premium-future, and
+    hidden-default tiers;
+  - gives the dashboard/sidebar recommendation system a path-aware ranking
+    layer while preserving future paths for economic, human-rights, media,
+    legal, humanitarian, stabilization, and governance workflows.
 
 ## Product standard for each tool
 
@@ -70,6 +79,24 @@ Each tool must satisfy this standard before being considered production-grade:
     structured so future sprints can improve one tool without breaking others.
 
 ## Next sprint lanes
+
+### Lane 0 - Active path focus
+
+Work only on the generic core plus conflict/political analyst path until the
+core loop is excellent. Future paths are codified, but should not distract
+implementation until the generic/political tools generate useful, saved,
+source-aware outputs.
+
+Active path tools:
+
+- Generic core: Dashboard, Executive Intelligence, Ask PRAXIS, Sources Library,
+  Documents, Conflict Graph, Timeline, Briefing, Report Studio, Deep Search.
+- Conflict/political primary: Early Warning, Risk Monitor, Actor Profiles,
+  Stakeholder Map, Geospatial Monitor, Commitment Tracker, Info Environment,
+  Media Roundup, ARGUS, Deep Search Agent, Policy Memo, Talking Points, Dossier.
+- Conflict/political secondary: Scenarios, Historical Parallels, Game Theory,
+  Power Map, External Actors, Legal Tracker, Human Rights, Sanctions, Treaty
+  Analyzer, UN Toolkit, Mediation Design, Negotiation Prep, Economic Impact.
 
 ### Lane A - Contract adoption on pages
 

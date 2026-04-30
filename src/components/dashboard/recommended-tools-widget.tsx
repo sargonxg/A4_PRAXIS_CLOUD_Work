@@ -5,6 +5,7 @@
  * concrete "do this next" surface on the dashboard. Reads:
  *   - AnalystProfile.identity.role  (from useAuth().analystProfile)
  *   - situation.domain               (active situation's resolved domain)
+ *   - situation.workflowPath         (selected policy workflow path)
  *
  * Prior to this widget the dashboard was identical for every role — a
  * journalist and a UN PAO saw the same six widgets in the same order. This
@@ -12,8 +13,9 @@
  * onboarding wizard has a tangible payoff on the very first screen the user
  * sees post-onboarding.
  *
- * Domain boost is applied: if the active situation has a non-generic domain
- * (e.g. `humanitarian`), domain-specific tools rise above the role baseline.
+ * Workflow path and domain boosts are applied: if the active situation is a
+ * conflict/political analyst path, those tools rise above the generic role
+ * baseline; future paths can use the same structure.
  */
 
 import { Sparkles } from 'lucide-react';
@@ -44,7 +46,7 @@ export function RecommendedToolsWidget({ situation }: RecommendedToolsWidgetProp
   const domain = (situation.domain as AnalystDomainId | undefined) || profileDomain;
 
   const recommendations = applyToolPreferences(
-    recommendToolsForRole(role, domain, 8),
+    recommendToolsForRole(role, domain, 8, situation.workflowPath),
     preferences,
   ).slice(0, 5);
   const subtitle = role

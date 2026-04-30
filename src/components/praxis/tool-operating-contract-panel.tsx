@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, ClipboardCheck, HelpCircle, PencilLine, Target, Workflow } from 'lucide-react';
 import { getToolOperatingContract } from '@/lib/tools/tool-operating-contracts';
+import { getToolPathMembership } from '@/lib/tools/tool-path-taxonomy';
 import { cn } from '@/lib/utils/cn';
 
 interface ToolOperatingContractPanelProps {
@@ -22,6 +23,7 @@ function Pill({ children }: { children: React.ReactNode }) {
 export function ToolOperatingContractPanel({ toolId, defaultOpen = false, className }: ToolOperatingContractPanelProps) {
   const [open, setOpen] = useState(defaultOpen);
   const contract = getToolOperatingContract(toolId);
+  const pathMembership = getToolPathMembership(toolId);
 
   return (
     <div className={cn('rounded-xl border border-[var(--color-app-border)] bg-white overflow-hidden', className)}>
@@ -64,6 +66,18 @@ export function ToolOperatingContractPanel({ toolId, defaultOpen = false, classN
                 {contract.persistence.editableByAskPraxis ? <Pill>Ask PRAXIS editable</Pill> : null}
                 {contract.persistence.versioned ? <Pill>versioned</Pill> : null}
               </div>
+              {pathMembership.length ? (
+                <div className="mt-3">
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-navy-400">Workflow paths</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {pathMembership.map((membership) => (
+                      <Pill key={`${membership.pathId}-${membership.tier}`}>
+                        {membership.label} · {membership.tier}
+                      </Pill>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
 

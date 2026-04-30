@@ -5,6 +5,8 @@ import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { useToolData } from '@/hooks/useToolData';
 import { DEMO_CONFLICT } from '@/lib/constants/demo-conflict';
+import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
+import { ToolOutputFrame } from '@/components/praxis/tool-output-frame';
 import { FileText, Loader2, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, List } from 'lucide-react';
 import type { Situation } from '@/types/situation';
 
@@ -94,6 +96,21 @@ function Section({ title, children, defaultOpen = true }: { title: string; child
   );
 }
 
+function deriveMemoConfidence(memo: PolicyMemoData): 'high' | 'medium' | 'low' | 'unknown' {
+  const levels = memo.draftingAudit?.sourceUse?.map((source) => source.confidence) ?? [];
+  if (levels.includes('low')) return 'low';
+  if (levels.includes('medium')) return 'medium';
+  if (levels.includes('high')) return 'high';
+  return memo.draftingAudit?.confidenceNote ? 'medium' : 'unknown';
+}
+
+function memoSources(memo: PolicyMemoData): string[] {
+  return Array.from(new Set([
+    ...(memo.draftingAudit?.sourceUse?.map((source) => source.source) ?? []),
+    ...(memo.citations ?? []),
+  ].filter(Boolean)));
+}
+
 export default function PolicyMemoPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
   const { data: savedMemo } = useToolData<PolicyMemoData>('policy_memo');
@@ -145,6 +162,8 @@ export default function PolicyMemoPage() {
         </p>
       </div>
 
+      <RegistryToolInfo toolId="policy-memo" />
+
       {/* Input */}
       <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5 space-y-4">
         <label className="block text-sm font-medium text-navy-700">
@@ -170,6 +189,14 @@ export default function PolicyMemoPage() {
 
       {/* Memo output */}
       {memo && (
+        <ToolOutputFrame
+          toolId="policy-memo"
+          confidence={deriveMemoConfidence(memo)}
+          primarySources={memoSources(memo)}
+          sourceCount={memoSources(memo).length}
+          frameworks={['Putnam Two-Level Games', 'UN DPPA Report Standards', 'Diplomatic Drafting Contract']}
+          calibratedTo={memo.to || 'Policy audience'}
+        >
         <div className="space-y-4">
           {/* Header */}
           <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
@@ -325,6 +352,7 @@ export default function PolicyMemoPage() {
             </Section>
           )}
         </div>
+        </ToolOutputFrame>
       )}
     </div>
   );

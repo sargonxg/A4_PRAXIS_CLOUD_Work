@@ -437,7 +437,7 @@ export function AppSidebar() {
     if (!role) return [];
     const profileDomain = analystProfile?.perspective.primaryDomain;
     const domain = (activeSituation?.domain as AnalystDomainId | undefined) || profileDomain;
-    return recommendToolsForRole(role, domain, 6)
+    return recommendToolsForRole(role, domain, 6, activeSituation?.workflowPath)
       .filter((rec) => !isToolHidden(rec.toolId))
       .slice(0, 3);
   })();

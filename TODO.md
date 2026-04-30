@@ -39,6 +39,13 @@ The latest diplomatic/policy writing architecture pass is
 The current all-tools operating-system architecture pass is
 `docs/PRAXIS_TOOL_OPERATING_SYSTEM_2026-04-30.md`.
 
+The current generated tool-by-tool sprint backlog is
+`docs/PRAXIS_TOOL_BY_TOOL_SPRINT_BACKLOG_2026-04-30.md`. Regenerate it with
+`npm run generate:tool-backlog` after tool/page/route changes.
+
+The current subagent synthesis for the tool sprint is
+`docs/PRAXIS_TOOL_SPRINT_SUBAGENT_SYNTHESIS_2026-04-30.md`.
+
 ## Active Tool Operating System Workstream
 
 - [x] Add a central operating contract for every registered PRAXIS tool:
@@ -52,8 +59,25 @@ The current all-tools operating-system architecture pass is
   the tool contract into the chat system prompt.
 - [x] Add `npm run audit:tool-contracts` to verify that every registered tool
   has a route/page/contract baseline.
+- [x] Add `npm run generate:tool-backlog` to build a verifiable per-tool TODO
+  list from the live registry, operating contracts, page inspection, and AI
+  route audit.
+- [x] Start the P0 page-surface upgrade with Policy Memo: registry tool info,
+  operating contract, and output confidence/provenance frame are now visible.
+- [x] Start the P0 Sources Library page-surface upgrade with registry tool info
+  and operating contract visibility.
+- [x] Codify the generic PRAXIS core plus ten policy workflow paths and mark
+  the current sprint focus as generic + conflict/political analyst.
+- [x] Make dashboard/sidebar recommendations account for the active
+  situation's workflow path, not only role/domain.
+- [x] Migrate `src/middleware.ts` to `src/proxy.ts` to resolve the recurring
+  Next.js middleware convention warning.
 - [ ] Apply `RegistryToolInfo` / `ToolOperatingContractPanel` to every tool page
   that still bypasses the shared shell.
+- [ ] Work through the generated P0 queue: Conflict Graph, Deep Search Agent,
+  Talking Points, Dashboard, Ask PRAXIS, Sources Library, ARGUS, Dossier,
+  Human Rights, Legal Tracker, Policy Memo route-quality upgrade, Sanctions,
+  Treaty Analyzer, and UN Toolkit.
 - [ ] Add typed Ask PRAXIS writeback adapters for graph, timeline, draft,
   scorecard, source, and workspace-state patches.
 - [ ] Upgrade the next 10 lowest-scoring AI tools to the generation baseline:

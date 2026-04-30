@@ -19,6 +19,28 @@
   focused unit coverage for the all-tools contract baseline.
 - Added `docs/PRAXIS_TOOL_OPERATING_SYSTEM_2026-04-30.md` and updated `TODO.md`
   with the next tool-sprint lanes.
+- Added `scripts/generate-tool-sprint-backlog.ts`,
+  `npm run generate:tool-backlog`, and
+  `docs/PRAXIS_TOOL_BY_TOOL_SPRINT_BACKLOG_2026-04-30.md`, a generated
+  tool-by-tool sprint backlog covering UX, graphics, usage, AI wiring,
+  Ask PRAXIS writeback, persistence, and verification for every registered
+  PRAXIS tool.
+- Added `docs/PRAXIS_TOOL_SPRINT_SUBAGENT_SYNTHESIS_2026-04-30.md`, folding
+  existing subagent UX, product, AI/backend, security, trust, and credibility
+  findings into the tool-by-tool sprint queue.
+- Upgraded Policy Memo's page surface with the registry-driven methodology /
+  operating-contract panel and the shared `ToolOutputFrame` confidence /
+  provenance wrapper.
+- Upgraded Sources Library with the registry-driven methodology and operating
+  contract panel.
+- Added `src/lib/tools/tool-path-taxonomy.ts` to codify the generic core plus
+  the ten policy workflow paths, with the current sprint focused on the
+  generic + conflict/political analyst path.
+- Made dashboard/sidebar tool recommendations path-aware using the active
+  situation's `workflowPath`.
+- Migrated the deprecated Next.js `src/middleware.ts` convention to
+  `src/proxy.ts` with `export function proxy` to remove the recurring build
+  warning.
 
 ## 2026-04-29 — Subagent audit wave: persistence, exports, and deploy gates
 

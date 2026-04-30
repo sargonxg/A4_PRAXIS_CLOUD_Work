@@ -15,6 +15,7 @@
  */
 import type { AnalystRole } from '@/types/analyst-profile';
 import type { AnalystDomainId } from '@/types/analyst-profile';
+import { getRecommendedToolIdsForWorkflowPath } from '@/lib/tools/tool-path-taxonomy';
 
 export interface ToolRecommendation {
   toolId: string;
@@ -163,6 +164,7 @@ export function recommendToolsForRole(
   role: AnalystRole | undefined,
   domain: AnalystDomainId | undefined,
   limit: number = 5,
+  workflowPath?: string | null,
 ): ToolRecommendation[] {
   const baseRole = role && role in ROLE_TOOLS ? role : 'other';
   const baseList = ROLE_TOOLS[baseRole];
@@ -173,7 +175,8 @@ export function recommendToolsForRole(
   // Stable union, boosted items first (preserving relative order from each list).
   const seen = new Set<string>();
   const ordered: string[] = [];
-  for (const id of [...boosts, ...baseList]) {
+  const pathTools = workflowPath ? getRecommendedToolIdsForWorkflowPath(workflowPath, limit + 4) : [];
+  for (const id of [...pathTools, ...boosts, ...baseList]) {
     if (!seen.has(id)) {
       seen.add(id);
       ordered.push(id);
