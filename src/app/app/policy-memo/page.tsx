@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
-import { useSituationStore } from '@/stores/situation-store';
 import { useToolData } from '@/hooks/useToolData';
 import { FileText, Loader2, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, List } from 'lucide-react';
 
@@ -65,8 +64,7 @@ function Section({ title, children, defaultOpen = true }: { title: string; child
 }
 
 export default function PolicyMemoPage() {
-  const { showGuard } = useSituationGuard();
-  const situation = useSituationStore((s) => s.activeSituation);
+  const { showGuard, situation } = useSituationGuard();
   const { data: savedMemo } = useToolData<PolicyMemoData>('policy_memo');
 
   const [question, setQuestion] = useState('');
