@@ -6,6 +6,8 @@ import { PraxisLink } from '@/components/shared/praxis-link';
 import { getPolicyWorkflowPath } from '@/lib/constants/policy-workflow-paths';
 import { getToolById } from '@/lib/constants/tool-registry';
 import { getToolContextBlueprint, getToolContextReadiness } from '@/lib/tools/tool-context-blueprints';
+import { computeSituationContextHealth, type ContextHealthState } from '@/lib/context/situation-context-health';
+import { cn } from '@/lib/utils/cn';
 import type { Situation } from '@/types/situation';
 
 interface SituationLaunchpadProps {
@@ -29,6 +31,11 @@ export function SituationLaunchpad({ situation }: SituationLaunchpadProps) {
   const nextActions = buildNextActions(situation);
   const toolIds = path?.firstToolIds ?? ['dashboard', 'source-scout', 'brainstorming-table', 'briefing', 'red-team-review'];
   const contextBackbone = buildContextBackbone(toolIds, situation);
+  const contextHealth = computeSituationContextHealth({
+    situation,
+    expectedToolIds: toolIds,
+    profileRequired: false,
+  });
 
   return (
     <section className="grid gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
@@ -47,6 +54,10 @@ export function SituationLaunchpad({ situation }: SituationLaunchpadProps) {
           <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-right">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Readiness</p>
             <p className="text-lg font-semibold text-navy-900">{readiness.score}%</p>
+          </div>
+          <div className={cn('rounded-md border px-3 py-2 text-right', healthClass(contextHealth.state))}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider">Context health</p>
+            <p className="text-lg font-semibold">{contextHealth.score}%</p>
           </div>
         </div>
 
@@ -137,6 +148,27 @@ export function SituationLaunchpad({ situation }: SituationLaunchpadProps) {
           ) : (
             <p className="mt-2 text-[11px] leading-snug text-emerald-700">Core context is sufficient for the first tool sequence.</p>
           )}
+          <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Health rollup</p>
+              <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase', healthPillClass(contextHealth.state))}>
+                {contextHealth.state}
+              </span>
+            </div>
+            <div className="mt-2 grid grid-cols-3 gap-1.5">
+              {Object.entries(contextHealth.dimensions).slice(1).map(([key, dimension]) => (
+                <span key={key} className={cn('rounded px-1.5 py-1 text-center text-[9px] font-semibold uppercase tracking-wide', healthPillClass(dimension.state))}>
+                  {prettyDimension(key)}
+                </span>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] leading-snug text-navy-500">{contextHealth.summary}</p>
+            {contextHealth.findings.find((finding) => finding.state === 'red' || finding.state === 'yellow') ? (
+              <p className="mt-1 text-[11px] leading-snug text-amber-700">
+                {contextHealth.findings.find((finding) => finding.state === 'red' || finding.state === 'yellow')?.message}
+              </p>
+            ) : null}
+          </div>
         </div>
       </div>
     </section>
@@ -253,4 +285,22 @@ function prettyToolName(id: string): string {
     .split('-')
     .map((w) => (w[0]?.toUpperCase() ?? '') + w.slice(1))
     .join(' ');
+}
+
+function healthClass(state: ContextHealthState): string {
+  if (state === 'green') return 'border-emerald-200 bg-emerald-50 text-emerald-800';
+  if (state === 'yellow') return 'border-amber-200 bg-amber-50 text-amber-800';
+  if (state === 'red') return 'border-red-200 bg-red-50 text-red-800';
+  return 'border-slate-200 bg-slate-50 text-navy-700';
+}
+
+function healthPillClass(state: ContextHealthState): string {
+  if (state === 'green') return 'bg-emerald-100 text-emerald-700';
+  if (state === 'yellow') return 'bg-amber-100 text-amber-700';
+  if (state === 'red') return 'bg-red-100 text-red-700';
+  return 'bg-slate-100 text-navy-500';
+}
+
+function prettyDimension(key: string): string {
+  return key.replace(/([A-Z])/g, ' $1').trim();
 }

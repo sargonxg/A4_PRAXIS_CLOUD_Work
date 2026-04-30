@@ -26,7 +26,7 @@ Acceptance:
 
 ## 2. Demo Case As A Complete Operating Picture
 
-Status: next.
+Status: started.
 
 Objective: make the Nordalia case a credible sample intelligence workspace, not
 a collection of isolated synthetic responses.
@@ -112,6 +112,16 @@ Acceptance:
   recency, and contradiction flags.
 - Conflict Graph and Documents expose low-certainty entities.
 - Drafting tools warn when an argument depends on weak or ambiguous evidence.
+
+Progress:
+
+- Added a deterministic situation-context health model covering profile,
+  evidence, graph, tool readiness, agentic memory, freshness, ready layers, and
+  missing layers.
+- Injected context-health instructions into calibrated AI prompts so tools must
+  qualify weak context and avoid invented source/document/graph facts.
+- Dashboard now exposes context-health score and actionable context gaps in the
+  Situation Launchpad.
 
 ## 8. Legal/Diplomatic Drafting Backbone
 

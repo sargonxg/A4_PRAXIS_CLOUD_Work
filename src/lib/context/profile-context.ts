@@ -13,6 +13,11 @@ import {
   type RetrievedChunk,
 } from './system-prompt-block';
 import {
+  buildSituationContextHealthPrompt,
+  computeSituationContextHealth,
+  type SituationContextHealthReport,
+} from './situation-context-health';
+import {
   resolveUserDomain,
   resolveDomain,
   mergeUserAndSituationDomains,
@@ -50,6 +55,12 @@ export interface ContextBlock {
    * currently always `null`.
    */
   advisor: AdvisorFrame | null;
+  /**
+   * Deterministic health snapshot for the context attached to this model call.
+   * Lets tools qualify confidence when source, graph, retrieval, or situation
+   * context is thin.
+   */
+  contextHealth: SituationContextHealthReport;
   /**
    * Effective merged domain: user.primary + user.secondaries + situation.domain.
    * Always populated — never null. Falls back to the `generic` seed if every
@@ -188,7 +199,7 @@ export async function buildCalibratedContext(opts: {
     domain = await resolveDomain('generic');
   }
 
-  const systemPromptBlock = renderSystemPromptBlock({
+  const baseSystemPromptBlock = renderSystemPromptBlock({
     profile,
     situation,
     retrievedChunks,
@@ -199,6 +210,17 @@ export async function buildCalibratedContext(opts: {
     interaction,
     advisor,
   });
+  const contextHealth = computeSituationContextHealth({
+    profile,
+    situation,
+    expectedToolIds: [opts.toolId],
+    retrievalCount: retrievedChunks.length,
+    episodeCount: episodes.length,
+  });
+  const systemPromptBlock = [
+    baseSystemPromptBlock,
+    buildSituationContextHealthPrompt(contextHealth),
+  ].join('\n\n');
   const outputConstraints = profile ? renderOutputConstraints(profile) : NEUTRAL_CONSTRAINTS;
 
   return {
@@ -208,6 +230,7 @@ export async function buildCalibratedContext(opts: {
     preferences,
     interaction,
     advisor,
+    contextHealth,
     domain,
     provenance: {
       profileVersion: profile?.meta?.version ?? 0,

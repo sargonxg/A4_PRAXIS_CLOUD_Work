@@ -130,6 +130,14 @@ contracts, path taxonomy, or context blueprints.
 - [x] Exclude `.codex/`, `.code-review-graph/`, and `graphify-out/` from GCP
   and Docker build contexts so agent artifacts do not inflate production build
   uploads or frontend images.
+- [x] Add a deterministic situation-context health model covering analyst
+  profile, evidence, graph, tool context, agentic memory, freshness, ready
+  layers, and missing layers.
+- [x] Inject situation-context health into `buildCalibratedContext()` so all
+  calibrated AI tools receive explicit confidence and missing-context
+  instructions.
+- [x] Surface context-health score, dimension badges, and the first actionable
+  context gap in the Dashboard Situation Launchpad.
 - [ ] Audit prompts for duplicated contract text now that `withCalibration()`
   injects the shared backbone automatically.
 - [ ] Build a document export adapter that renders saved structured tool data

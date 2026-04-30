@@ -26,6 +26,19 @@
   and Docker build contexts.
 - Updated `README.md` and `DEPLOYMENT.md` with the full deploy vs frontend-only
   deploy distinction.
+- Added `src/lib/context/situation-context-health.ts`, a deterministic
+  situation/context health model derived from the backend health architecture
+  highlighted by Graphify. It scores profile, evidence, graph, tool context,
+  agentic memory, and freshness.
+- `buildCalibratedContext()` now injects a Situation Context Health block into
+  every calibrated AI prompt so tools must qualify confidence and avoid
+  inventing source, document, graph, or prior-output context when the case file
+  is thin.
+- Dashboard Situation Launchpad now shows context-health score, dimension
+  badges, and the first actionable context gap beside the workflow readiness
+  and graph/document/provenance backbone.
+- Added unit coverage for the context-health model across strong context, weak
+  context, and model prompt guardrails.
 - Added `src/lib/tools/tool-operating-contracts.ts`, a central operating
   contract layer for every registered PRAXIS tool covering objective, value,
   applicability, required questions, expected outputs, Ask PRAXIS actions,
