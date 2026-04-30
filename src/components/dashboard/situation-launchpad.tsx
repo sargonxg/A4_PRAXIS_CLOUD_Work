@@ -1,12 +1,13 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ArrowRight, Brain, Database, FileText, Gauge, Network, ShieldCheck, Users } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { getPolicyWorkflowPath } from '@/lib/constants/policy-workflow-paths';
 import { getToolById } from '@/lib/constants/tool-registry';
 import { getToolContextBlueprint, getToolContextReadiness } from '@/lib/tools/tool-context-blueprints';
 import { computeSituationContextHealth, type ContextHealthState } from '@/lib/context/situation-context-health';
+import type { GraphOpsSummary } from '@/lib/graph/graphops';
 import { cn } from '@/lib/utils/cn';
 import type { Situation } from '@/types/situation';
 
@@ -169,9 +170,87 @@ export function SituationLaunchpad({ situation }: SituationLaunchpadProps) {
               </p>
             ) : null}
           </div>
+          <GraphOpsPanel situationId={situation.id} />
         </div>
       </div>
     </section>
+  );
+}
+
+function GraphOpsPanel({ situationId }: { situationId: string }) {
+  const [summary, setSummary] = useState<GraphOpsSummary | null>(null);
+  const [state, setState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const response = await fetch(`/api/graph/ops?situationId=${encodeURIComponent(situationId)}`, {
+          cache: 'no-store',
+        });
+        if (!response.ok) throw new Error(`GraphOps failed: ${response.status}`);
+        const payload = (await response.json()) as { summary?: GraphOpsSummary };
+        if (!cancelled) {
+          setSummary(payload.summary ?? null);
+          setState(payload.summary ? 'ready' : 'unavailable');
+        }
+      } catch {
+        if (!cancelled) setState('unavailable');
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [situationId]);
+
+  const firstAction = summary?.maintenanceActions[0];
+
+  return (
+    <div className="mt-3 rounded-md border border-slate-200 bg-white px-3 py-2">
+      <div className="flex items-center justify-between gap-3">
+        <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-navy-400">
+          <Network className="h-3.5 w-3.5" />
+          GraphOps
+        </p>
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-navy-600">
+          {summary?.backend?.replace('-', ' ') ?? state}
+        </span>
+      </div>
+      {state === 'ready' && summary ? (
+        <>
+          <div className="mt-2 grid grid-cols-4 gap-1.5">
+            <BackboneMetric icon={<Network className="h-3 w-3" />} label="Nodes" value={String(summary.nodeCount)} />
+            <BackboneMetric icon={<ArrowRight className="h-3 w-3" />} label="Edges" value={String(summary.edgeCount)} />
+            <BackboneMetric icon={<ShieldCheck className="h-3 w-3" />} label="Proof" value={`${summary.provenance.coveragePct}%`} />
+            <BackboneMetric icon={<Gauge className="h-3 w-3" />} label="Time" value={`${summary.temporal.coveragePct}%`} />
+          </div>
+          <p className="mt-2 text-[11px] leading-snug text-navy-500">
+            {firstAction ?? 'Graph maintenance queue is clear.'}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1">
+            {Object.entries(summary.nodeTypes).slice(0, 5).map(([type, count]) => (
+              <span key={type} className="rounded-full bg-navy-50 px-1.5 py-0.5 text-[9px] font-medium text-navy-500">
+                {type}: {count}
+              </span>
+            ))}
+          </div>
+          <PraxisLink
+            href="/conflict-graph"
+            className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-diplomatic-blue hover:text-navy-900"
+          >
+            Open graph workspace
+            <ArrowRight className="h-3 w-3" />
+          </PraxisLink>
+        </>
+      ) : (
+        <p className="mt-2 text-[11px] leading-snug text-navy-500">
+          {state === 'loading'
+            ? 'Checking canonical graph, pending proposals, provenance, and temporal coverage.'
+            : 'GraphOps is unavailable in this session; graph-dependent tools will still use the local situation context.'}
+        </p>
+      )}
+    </div>
   );
 }
 

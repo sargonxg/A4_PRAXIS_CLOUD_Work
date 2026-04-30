@@ -4,11 +4,8 @@
  */
 
 import { adminDb } from '@/lib/firebase/admin';
-import { FieldValue } from 'firebase-admin/firestore';
 import type { ACONode, ACOEdge, GraphLayer, GraphMetrics } from './types';
 import {
-  computeDegreeCentrality,
-  computeBetweennessCentrality,
   detectCommunities,
   getMostCentralNode,
   computeDensity,
@@ -136,13 +133,17 @@ export class Neo4jGraphLayer implements GraphLayer {
 
   getType(): 'neo4j' | 'firestore' { return 'neo4j'; }
 
+  private database() {
+    return process.env.NEO4J_DATABASE || 'neo4j';
+  }
+
   private async getDriver() {
     if (this.driver) return this.driver;
     try {
-      const neo4j = require('neo4j-driver');
+      const neo4j = await import('neo4j-driver');
       this.driver = neo4j.driver(
         process.env.NEO4J_URI!,
-        neo4j.auth.basic(process.env.NEO4J_USER || 'neo4j', process.env.NEO4J_PASSWORD || ''),
+        neo4j.auth.basic(process.env.NEO4J_USER || process.env.NEO4J_USERNAME || 'neo4j', process.env.NEO4J_PASSWORD || ''),
         { maxConnectionPoolSize: 5 }
       );
       return this.driver;
@@ -152,8 +153,8 @@ export class Neo4jGraphLayer implements GraphLayer {
   }
 
   private async runQuery(cypher: string, params: Record<string, unknown> = {}): Promise<unknown[]> {
-    const driver = await this.getDriver() as { session: () => { run: (q: string, p: Record<string, unknown>) => Promise<{ records: unknown[] }>; close: () => Promise<void> } };
-    const session = driver.session();
+    const driver = await this.getDriver() as { session: (opts?: { database?: string }) => { run: (q: string, p: Record<string, unknown>) => Promise<{ records: unknown[] }>; close: () => Promise<void> } };
+    const session = driver.session({ database: this.database() });
     try {
       const result = await session.run(cypher, params);
       return result.records;
@@ -204,9 +205,10 @@ export class Neo4jGraphLayer implements GraphLayer {
 
   async upsertNode(uid: string, sitId: string, node: Partial<ACONode> & { id: string }): Promise<void> {
     const now = new Date().toISOString();
+    const label = safeCypherIdentifier(node.type || 'Entity');
     try {
       await this.runQuery(
-        `MERGE (n:${node.type || 'Entity'} {id: $id, uid: $uid, situationId: $sitId})
+        `MERGE (n:${label} {id: $id, uid: $uid, situationId: $sitId})
          SET n += $props, n.updatedAt = $now`,
         { id: node.id, uid, sitId, props: { ...node, uid, situationId: sitId }, now }
       );
@@ -237,6 +239,11 @@ export class Neo4jGraphLayer implements GraphLayer {
       return false;
     }
   }
+}
+
+function safeCypherIdentifier(value: unknown): string {
+  const sanitized = String(value ?? 'Entity').replace(/[^A-Za-z0-9_]/g, '_');
+  return /^[A-Za-z_][A-Za-z0-9_]*$/.test(sanitized) ? sanitized : 'Entity';
 }
 
 // ---------------------------------------------------------------------------

@@ -104,6 +104,10 @@ Then browser-test the core route sequence:
   Cloud Run.
 - Production UCDP access is mounted as `UCDP_API_TOKEN` from Secret Manager
   secret `praxis-ucdp-api-token`; never hardcode the token in repo files.
+- Optional Neo4j Aura graph indexing should be mounted from Secret Manager as
+  `NEO4J_URI`, `NEO4J_USER` or `NEO4J_USERNAME`, `NEO4J_PASSWORD`, and
+  `NEO4J_DATABASE`. Firestore remains the canonical graph store, so the app
+  should degrade gracefully if Neo4j credentials are absent or unavailable.
 - The backend must remain private.
 - Frontend-to-backend calls must go through server-side Next.js API bridges.
 - Firestore rules and indexes must be deployed or drift-checked with releases.

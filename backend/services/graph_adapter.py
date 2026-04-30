@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from abc import ABC, abstractmethod
 
 import networkx as nx
@@ -37,14 +38,18 @@ class GraphAdapter(ABC):
 class Neo4jAdapter(GraphAdapter):
     """Neo4j graph backend using the async driver."""
 
-    def __init__(self, uri: str, user: str, password: str) -> None:
+    def __init__(self, uri: str, user: str, password: str, database: str = "neo4j") -> None:
         from neo4j import AsyncGraphDatabase
         self.driver = AsyncGraphDatabase.driver(uri, auth=(user, password))
+        self.database = database or "neo4j"
+
+    def _session(self):
+        return self.driver.session(database=self.database)
 
     async def ensure_constraints(self) -> None:
         primitives = ["Actor", "Claim", "Interest", "Constraint",
                       "Leverage", "Commitment", "Event", "Narrative"]
-        async with self.driver.session() as session:
+        async with self._session() as session:
             for p in primitives:
                 await session.run(
                     f"CREATE CONSTRAINT IF NOT EXISTS FOR (n:{p}) "
@@ -52,10 +57,10 @@ class Neo4jAdapter(GraphAdapter):
                 )
 
     async def push_graph(self, G: nx.Graph, tenant_id: str, situation_id: str) -> dict:
-        async with self.driver.session() as session:
+        async with self._session() as session:
             node_count = 0
             for node_id, data in G.nodes(data=True):
-                ptype = data.get("primitive_type", "Entity")
+                ptype = _safe_cypher_identifier(data.get("primitive_type", "Entity"))
                 props = {k: v for k, v in data.items()
                          if isinstance(v, (str, int, float, bool)) and not k.startswith("_")}
                 props.update({"id": node_id, "tenant_id": tenant_id, "situation_id": situation_id})
@@ -67,7 +72,10 @@ class Neo4jAdapter(GraphAdapter):
 
             edge_count = 0
             for u, v, data in G.edges(data=True):
-                relation = data.get("relation", "RELATED_TO").upper().split(",")[0].strip()
+                relation = _safe_cypher_identifier(
+                    data.get("relation", "RELATED_TO").upper().split(",")[0].strip(),
+                    fallback="RELATED_TO",
+                )
                 await session.run(
                     f"MATCH (a {{id: $u, tenant_id: $tid}}), (b {{id: $v, tenant_id: $tid}}) "
                     f"MERGE (a)-[r:{relation}]->(b) SET r.weight = $w, r.situation_id = $sid",
@@ -78,7 +86,7 @@ class Neo4jAdapter(GraphAdapter):
         return {"nodes_pushed": node_count, "edges_pushed": edge_count}
 
     async def query_situation(self, tenant_id: str, situation_id: str) -> dict:
-        async with self.driver.session() as session:
+        async with self._session() as session:
             result = await session.run(
                 "MATCH (n {tenant_id: $tid, situation_id: $sid}) "
                 "OPTIONAL MATCH (n)-[r]->(m {tenant_id: $tid, situation_id: $sid}) "
@@ -96,7 +104,7 @@ class Neo4jAdapter(GraphAdapter):
         return {"nodes": list(nodes.values()), "edges": edges}
 
     async def actor_profile(self, tenant_id: str, actor_id: str) -> dict:
-        async with self.driver.session() as session:
+        async with self._session() as session:
             result = await session.run(
                 "MATCH (a:Actor {id: $aid, tenant_id: $tid}) "
                 "OPTIONAL MATCH (a)-[r]-(c) RETURN a, collect({rel: type(r), node: c}) as conns",
@@ -108,7 +116,7 @@ class Neo4jAdapter(GraphAdapter):
             return {"actor": dict(record["a"]), "connections": record["conns"]}
 
     async def shortest_path(self, tenant_id: str, source_id: str, target_id: str) -> list:
-        async with self.driver.session() as session:
+        async with self._session() as session:
             result = await session.run(
                 "MATCH (s {id: $src, tenant_id: $tid}), (t {id: $tgt, tenant_id: $tid}), "
                 "path = shortestPath((s)-[*]-(t)) RETURN path",
@@ -349,8 +357,9 @@ def create_graph_adapter(provider: str, **kwargs) -> GraphAdapter:
     # Default: Neo4j
     return Neo4jAdapter(
         uri=kwargs.get("uri", ""),
-        user=kwargs.get("user", "neo4j"),
+        user=kwargs.get("user") or kwargs.get("username") or "neo4j",
         password=kwargs.get("password", ""),
+        database=kwargs.get("database", "neo4j"),
     )
 
 
@@ -362,8 +371,15 @@ def create_adapter_from_settings(user_settings: dict) -> GraphAdapter | None:
         from config import get_settings
         s = get_settings()
         if s.neo4j_uri:
-            return Neo4jAdapter(s.neo4j_uri, s.neo4j_user, s.neo4j_password)
+            return Neo4jAdapter(s.neo4j_uri, s.neo4j_user, s.neo4j_password, s.neo4j_database)
         return None
 
     provider = backend_config.get("provider", "neo4j")
     return create_graph_adapter(provider, **backend_config)
+
+
+def _safe_cypher_identifier(value: object, fallback: str = "Entity") -> str:
+    sanitized = re.sub(r"[^A-Za-z0-9_]", "_", str(value or fallback))
+    if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", sanitized):
+        return sanitized
+    return fallback

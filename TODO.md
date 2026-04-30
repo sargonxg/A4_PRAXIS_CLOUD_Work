@@ -144,8 +144,20 @@ contracts, path taxonomy, or context blueprints.
 - [x] Wire Source Scout to persist and display source receipts, provider
   counts, checkable URL count, high-reliability source count, scrape coverage,
   and source-confidence badge.
+- [x] Add GraphOps v0.1 as the canonical graph maintenance contract:
+  Firestore-backed summary API, dashboard panel, provenance/temporal coverage,
+  pending proposal pressure, low-confidence counts, orphan detection, and
+  snapshot awareness.
+- [x] Harden Neo4j wiring for production compatibility: support both
+  `NEO4J_USER` and `NEO4J_USERNAME`, honor `NEO4J_DATABASE`, and sanitize
+  dynamic Neo4j labels/relationships before Cypher execution.
 - [ ] Audit prompts for duplicated contract text now that `withCalibration()`
   injects the shared backbone automatically.
+- [ ] Add the graph approval mutator so approved `graph_updates` payloads are
+  applied to `graph/main` and mirrored to the derived Neo4j index when enabled.
+- [ ] Add a GraphOps workspace page with proposal review, temporal diff,
+  canonical-name merge suggestions, source-fragment evidence drawers, and
+  Neo4j connectivity diagnostics.
 - [ ] Build a document export adapter that renders saved structured tool data
   into DOCX/PDF/LibreOffice-compatible sections without a second AI call.
 - [ ] Work through the generated P0 queue: Conflict Graph, Deep Search Agent,

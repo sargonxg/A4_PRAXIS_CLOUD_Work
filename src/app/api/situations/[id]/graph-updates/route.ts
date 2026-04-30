@@ -13,7 +13,6 @@ import { z } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
 import {
-  approveProposal,
   applyApprovedProposal,
   getProposal,
   listProposals,
@@ -59,11 +58,14 @@ export const POST = withAuth<{ params: Promise<{ id: string }> }>(async (request
     if (!proposal) {
       return NextResponse.json({ error: 'Proposal not found' }, { status: 404 });
     }
-    const flipped = await approveProposal(user.uid, id, updateId, { editedPayload, decisionNote: note });
-    if (!flipped) {
-      return NextResponse.json({ error: 'Approve failed' }, { status: 502 });
+    const applied = await applyApprovedProposal(
+      user.uid,
+      id,
+      editedPayload ? { ...proposal, editedPayload, payload: editedPayload, decisionNote: note } : { ...proposal, decisionNote: note }
+    );
+    if (!applied.applied) {
+      return NextResponse.json({ error: 'Approve failed', reason: applied.reason }, { status: 422 });
     }
-    const applied = await applyApprovedProposal(user.uid, id, proposal);
     return NextResponse.json({ ok: true, applied: applied.applied, reason: applied.reason });
   } catch (err) {
     return handleRouteError(err, 'situations/graph-updates/post');

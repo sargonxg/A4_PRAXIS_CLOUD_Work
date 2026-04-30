@@ -1,6 +1,6 @@
 # PRAXIS Architecture
 
-Last updated: 2026-04-29.
+Last updated: 2026-04-30.
 
 PRAXIS is a dual-service GCP application:
 
@@ -69,6 +69,37 @@ Primary Firestore shapes:
   settings, events, graph updates, and staged graph proposals.
 - Operational spine collections: `tool_runs`, `background_jobs`,
   `system_events`, and user notifications.
+
+## GraphOps and DIALECTICA Context
+
+PRAXIS treats Firestore as the canonical situation context store. Neo4j Aura,
+FalkorDB, and future Spanner Graph integrations are derived indexes for
+traversal, pathfinding, and advanced graph analytics, not the first source of
+truth.
+
+Current graph paths:
+
+- `users/{uid}/situations/{situationId}/graph/main`: approved graph snapshot
+  used by PRAXIS tools.
+- `users/{uid}/situations/{situationId}/graph/staged`: temporary graph rebuild
+  waiting for analyst approval.
+- `users/{uid}/situations/{situationId}/graph/snapshot-{iso}`: time-stamped
+  snapshots for diffing and evolution review.
+- `users/{uid}/situations/{situationId}/graph_updates/{proposalId}`:
+  evidence-backed proposed node/edge mutations.
+
+The GraphOps surface normalizes this into a maintenance contract:
+
+- Pure summary builder: `src/lib/graph/graphops.ts`.
+- Firestore admin reader: `src/lib/graph/graphops-service.ts`.
+- API: `GET /api/graph/ops?situationId=...`.
+- Dashboard UI: Situation Launchpad GraphOps panel.
+
+GraphOps reports approved vs proposed items, provenance coverage, temporal
+coverage, low-confidence items, orphan nodes, node/edge type distribution, and
+the next maintenance action. This is the bridge toward the future DIALECTICA
+backbone: canonical Firestore records stay reviewable and auditable while
+Neo4j can be populated as a powerful derived graph index.
 
 ## AI Contract
 

@@ -383,14 +383,20 @@ These files are security-critical. If a task seems to require changing them, **s
 ## Situation Knowledge Core (SKC)
 
 4-layer hybrid GraphRAG system powering all 48 tools:
-- **Graph Layer**: `src/lib/knowledge/graph-layer.ts` — Neo4j (if configured) or Firestore subcollections + JS analytics
+- **Graph Layer**: Firestore canonical graph + optional Neo4j/Falkor/Spanner derived indexes. `src/lib/knowledge/graph-layer.ts` provides the adapter; `src/lib/graph/graphops.ts` and `src/lib/graph/graphops-service.ts` provide the maintenance/readiness contract.
 - **Vector Layer**: `src/lib/knowledge/vector-layer.ts` — Firestore native KNN (768-dim, COSINE distance)
 - **Feed Layer**: `src/lib/knowledge/feed-layer.ts` — TTL-cached data feeds (ACLED, GDELT, HDX, etc.)
 - **Tool Output Layer**: `src/lib/knowledge/tool-output-layer.ts` — cross-referenced versioned tool outputs
 
 Entry point: `new SituationKnowledgeCore(uid, situationId)` from `@/lib/knowledge`
 
-Zero-config fallback: Everything works with just GOOGLE_AI_API_KEY. Neo4j → Firestore graph. ACLED → GDELT → Gemini grounded. See Part 3 blueprint for full fallback matrix.
+Zero-config fallback: Everything works with just GOOGLE_AI_API_KEY. Firestore remains the canonical graph store; Neo4j is a derived index when configured. ACLED is not a required dependency; use grounded search, GDELT, UCDP, and document evidence first. See Part 3 blueprint for full fallback matrix.
+
+GraphOps v0.1:
+- API: `GET /api/graph/ops?situationId=...`
+- Dashboard: Situation Launchpad GraphOps panel.
+- Reports: approved/proposed counts, provenance coverage, temporal coverage, low-confidence items, orphan nodes, node/edge distribution, latest snapshot, and next graph-maintenance action.
+- Future rule: Ask PRAXIS and extraction agents should propose graph patches into `graph_updates`; approved changes update `graph/main` and then mirror to Neo4j/Falkor/Spanner if configured.
 
 ## TACITUS Credits
 
@@ -454,7 +460,7 @@ See `.env.example` for complete list. Critical:
 - `FIREBASE_SERVICE_ACCOUNT_KEY` — Admin SDK JSON string
 - `GOOGLE_AI_API_KEY` — Gemini API key
 - `NEXT_PUBLIC_PRAXIS_BACKEND_URL` — Backend Cloud Run URL (auto-set by Cloud Build)
-- `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` — Graph database
+- `NEO4J_URI`, `NEO4J_USER` or `NEO4J_USERNAME`, `NEO4J_PASSWORD`, `NEO4J_DATABASE` — optional graph database derived index
 - `VERTEX_AGENT_ENGINE_ID` — Deep Research Agent engine
 - `CRON_SECRET` — Cron + admin auth
 - `COOKIE_SIGNING_SECRET` — Session cookie HMAC (primary; read first by `cookie-signer.ts`)
@@ -470,7 +476,7 @@ The `NEXT_PUBLIC_FIREBASE_*` client config values are public and have defaults i
 - `withAuth()` wraps all protected API routes
 - `checkAndDeductCredits()` before AI calls
 - `usePersistedToolData()` for tool output caching
-- `middleware.ts` for route protection (NOT proxy.ts)
+- `src/proxy.ts` for route protection in Next.js 16; do not reintroduce the old `middleware.ts` convention.
 - All AI routes: `generateText + Output.object()` with Zod schemas (AI SDK v6)
 - Entity extraction: `extractEntities()` from `@/lib/services/entity-extraction`
 - Graph operations: `getGraph/saveGraph/saveSnapshot` from `@/lib/firebase/graph-service`

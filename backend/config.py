@@ -1,5 +1,6 @@
 """PRAXIS Backend configuration — loads from environment variables."""
 from functools import lru_cache
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings
 
 
@@ -10,8 +11,9 @@ class Settings(BaseSettings):
 
     # Neo4j (DIALECTICA graph DB)
     neo4j_uri: str = ""
-    neo4j_user: str = "neo4j"
+    neo4j_user: str = Field(default="neo4j", validation_alias=AliasChoices("NEO4J_USER", "NEO4J_USERNAME", "neo4j_user"))
     neo4j_password: str = ""
+    neo4j_database: str = "neo4j"
 
     # FalkorDB (alternative graph backend)
     falkordb_host: str = "localhost"
