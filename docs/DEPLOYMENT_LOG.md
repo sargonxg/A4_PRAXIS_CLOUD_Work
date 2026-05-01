@@ -2,6 +2,62 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-05-01 - Real App Prompt Isolation + Dialectica Backbone Docs
+
+Source:
+
+- App commit deployed: `747edfa`
+- Branch: `main`
+- Remote: `origin/main`
+
+What changed:
+
+- Ask PRAXIS suggested prompts now keep demo conflict prompts isolated to demo
+  mode. Real users without an active situation receive neutral setup, context
+  quality, workflow, and graph-backbone prompts.
+- Added regression coverage for real/no-situation, real/situation, and demo
+  prompt categories.
+- Added `docs/PRAXIS_REAL_APP_CRITICAL_ROADMAP_2026-05-01.md`, a
+  production-focused roadmap that separates real app content from demo content
+  and ranks the highest-impact user-success work.
+- Added `docs/PRAXIS_DIALECTICA_BACKBONE_ARCHITECTURE_2026-05-01.md`, a
+  researched architecture plan for future premium Dialectica-backed dynamic
+  ontologies, deterministic graph reasoning, and context packs.
+
+Validation before deploy:
+
+- `npx vitest run tests\unit\components\assistant\suggested-prompts.test.ts`
+  passed: 3 tests.
+- `npx tsc --noEmit --pretty false` passed.
+- `npm run lint` passed with the existing warning backlog and no errors.
+- `npx vitest run` passed: 87 files, 435 tests.
+- `npm run build` passed.
+
+Cloud Build:
+
+- Build: `aa47784b-ed5d-4d4b-8e1a-f0575775aa92`
+- Status: `SUCCESS`
+- Duration: `6M40S`
+- Logs: <https://console.cloud.google.com/cloud-build/builds/aa47784b-ed5d-4d4b-8e1a-f0575775aa92?project=852128226674>
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00176-k8z`
+- Frontend URL: `https://praxis-frontend-pgoyqovcza-uc.a.run.app`
+
+Production verification:
+
+- `GET https://praxis.tacitus.me/` -> `200`.
+- `GET https://praxis.tacitus.me/login` -> `200`.
+- `GET https://praxis.tacitus.me/onboarding` -> `307 /login`.
+- `GET https://praxis.tacitus.me/api/health` -> `status:"ok"`,
+  `firestore:"ok"`, `ai_provider:"ok"`, `vertex_adk:"ok"`,
+  `firecrawl:"ok"`.
+- `GET https://praxis.tacitus.me/api/auth/test-firebase` confirmed Firebase
+  is reachable and Email/Password auth is enabled.
+- Production browser smoke passed for `/login` and `/app/tools` unauth
+  redirect to `/login?redirect=%2Fapp%2Ftools`.
+
 ## 2026-05-01 - Tools Workspace + Context Creation Release
 
 Source:
