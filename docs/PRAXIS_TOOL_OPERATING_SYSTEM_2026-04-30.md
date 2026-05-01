@@ -52,6 +52,13 @@ This wave adds a central operating contract layer:
   - gives the dashboard/sidebar recommendation system a path-aware ranking
     layer while preserving future paths for economic, human-rights, media,
     legal, humanitarian, stabilization, and governance workflows.
+- `src/components/dashboard/tool-packages-panel.tsx`
+  - makes the taxonomy visible in the real dashboard;
+  - separates the always-on generic workspace from the active
+    conflict/political analyst package;
+  - shows next and future packages without implying they are complete;
+  - lists primary tools and concrete deliverables so users can understand why a
+    package exists before opening individual tools.
 - `src/lib/tools/tool-context-blueprints.ts`
   - computes the required context layers for every tool;
   - declares canonical database paths, version history, graph proposal path,
@@ -101,7 +108,8 @@ source-aware outputs.
 Active path tools:
 
 - Generic core: Dashboard, Executive Intelligence, Ask PRAXIS, Sources Library,
-  Documents, Conflict Graph, Timeline, Briefing, Report Studio, Deep Search.
+  Documents, GraphOps, Conflict Graph, Timeline, Briefing, Report Studio, Deep
+  Search.
 - Conflict/political primary: Early Warning, Risk Monitor, Actor Profiles,
   Stakeholder Map, Geospatial Monitor, Commitment Tracker, Info Environment,
   Media Roundup, ARGUS, Deep Search Agent, Policy Memo, Talking Points, Dossier.

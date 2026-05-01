@@ -4,7 +4,7 @@ import { CheckCircle2, Circle, Sparkles } from 'lucide-react';
 import { WidgetShell } from './widget-shell';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { getToolById } from '@/lib/constants/tool-registry';
-import { CORE_MVP_TOOL_IDS } from '@/lib/constants/tool-groups';
+import { getToolPath } from '@/lib/tools/tool-path-taxonomy';
 import { useAllToolStatuses } from '@/hooks/use-tool-status';
 import { cn } from '@/lib/utils/cn';
 
@@ -13,22 +13,28 @@ interface CoreToolsWidgetProps {
 }
 
 const TOOL_HREFS: Record<string, string> = {
+  assistant: '/assistant',
   'actor-profiles': '/actors',
+  documents: '/documents',
+  graphops: '/graphops',
+  'report-studio': '/reports',
+  'situation-intelligence': '/dashboard',
   'sources-library': '/sources',
 };
 
 export function CoreToolsWidget({ situationId }: CoreToolsWidgetProps) {
   const statuses = useAllToolStatuses(situationId);
-  const ready = CORE_MVP_TOOL_IDS.filter((toolId) => statuses[toolId]?.health === 'green').length;
+  const toolIds = getToolPath('generic-core')?.coreToolIds ?? [];
+  const ready = toolIds.filter((toolId) => statuses[toolId]?.health === 'green').length;
 
   return (
     <WidgetShell
-      title="Core MVP tools"
-      subtitle={`${ready}/${CORE_MVP_TOOL_IDS.length} ready for this situation`}
+      title="Core workspace tools"
+      subtitle={`${ready}/${toolIds.length} ready: context, sources, graph, timeline, outputs`}
       icon={<Sparkles className="h-4 w-4" />}
     >
       <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-        {CORE_MVP_TOOL_IDS.map((toolId) => {
+        {toolIds.map((toolId) => {
           const tool = getToolById(toolId);
           const health = statuses[toolId]?.health;
           const isReady = health === 'green';

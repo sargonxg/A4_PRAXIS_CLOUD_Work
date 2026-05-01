@@ -31,6 +31,7 @@ import { OnboardingRecapWidget } from '@/components/dashboard/onboarding-recap-w
 import { SituationStatusStrip } from '@/components/dashboard/situation-status-strip';
 import { AccountStatusCard } from '@/components/dashboard/account-status-card';
 import { SituationLaunchpad } from '@/components/dashboard/situation-launchpad';
+import { ToolPackagesPanel } from '@/components/dashboard/tool-packages-panel';
 import { ExecutiveIntelligencePanel } from '@/components/dashboard/executive-intelligence-panel';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { ActivityFeed } from '@/components/app/activity-feed';
@@ -173,6 +174,7 @@ function RealDashboard({ situation }: { situation: Situation }) {
         </section>
       ) : null}
       <SituationLaunchpad situation={situation} />
+      <ToolPackagesPanel situation={situation} />
 
       {/* Executive intelligence — real AI, structured output, provenance, export */}
       <ExecutiveIntelligencePanel situation={situation} />
@@ -186,7 +188,7 @@ function RealDashboard({ situation }: { situation: Situation }) {
       {/* Source coverage banner — honest surface of tier state */}
       <SourceCoverageBanner />
 
-      {/* Core grid — role-tuned recommendations plus the first ten MVP tools. */}
+      {/* Core grid — role-tuned recommendations plus reusable context tools. */}
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <RiskGaugeWidget situation={situation} />
         <EscalationWidget situation={situation} />

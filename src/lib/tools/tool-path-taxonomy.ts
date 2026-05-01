@@ -34,6 +34,7 @@ const GENERIC_CORE_TOOL_IDS = [
   'assistant',
   'sources-library',
   'documents',
+  'graphops',
   'conflict-graph',
   'timeline',
   'briefing',
@@ -243,4 +244,69 @@ export function isToolInActiveGenericOrPoliticalPath(toolId: string): boolean {
 export function getRecommendedToolIdsForWorkflowPath(pathId?: string | null, limit = 8): string[] {
   const path = getToolPath(pathId) ?? getToolPath('political-officer') ?? GENERIC_CORE_PATH;
   return getToolIdsForPath(path.id, ['primary', 'core', 'secondary']).slice(0, limit);
+}
+
+export interface ToolPathPackageSummary {
+  id: PraxisToolPathId;
+  label: string;
+  shortLabel: string;
+  stage: ToolPathStage;
+  statusLabel: string;
+  purpose: string;
+  primaryUser: string;
+  productPromise: string;
+  primaryToolIds: string[];
+  coreToolIds: string[];
+  secondaryToolIds: string[];
+  specialistToolIds: string[];
+  hiddenByDefaultToolIds: string[];
+  deliverables: string[];
+  toolCount: number;
+}
+
+export function summarizeToolPathPackage(path: ToolPathDefinition): ToolPathPackageSummary {
+  const specialistToolIds = unique([...path.specializedToolIds, ...path.premiumFutureToolIds]);
+  return {
+    id: path.id,
+    label: path.label,
+    shortLabel: path.shortLabel,
+    stage: path.stage,
+    statusLabel: stageStatusLabel(path.stage),
+    purpose: path.description,
+    primaryUser: path.primaryUser,
+    productPromise: path.productPromise,
+    primaryToolIds: path.primaryToolIds,
+    coreToolIds: path.coreToolIds,
+    secondaryToolIds: path.secondaryToolIds,
+    specialistToolIds,
+    hiddenByDefaultToolIds: path.hiddenByDefaultToolIds,
+    deliverables: path.deliverables,
+    toolCount: getToolIdsForPath(path.id, ['core', 'primary', 'secondary', 'specialized']).length,
+  };
+}
+
+export function getToolPathPackageSummary(pathId: PraxisToolPathId): ToolPathPackageSummary | null {
+  const path = getToolPath(pathId);
+  return path ? summarizeToolPathPackage(path) : null;
+}
+
+export function getDashboardToolPackageSummaries(selectedPathId?: string | null): ToolPathPackageSummary[] {
+  const selectedPath = getToolPath(selectedPathId);
+  const ordered = unique([
+    'generic-core',
+    selectedPath?.id ?? 'political-officer',
+    ...ACTIVE_TOOL_PATH_IDS,
+    ...TOOL_PATHS.filter((path) => path.stage === 'next').map((path) => path.id),
+    ...TOOL_PATHS.filter((path) => path.stage === 'future').map((path) => path.id),
+  ]);
+
+  return ordered
+    .map((id) => getToolPathPackageSummary(id as PraxisToolPathId))
+    .filter(Boolean) as ToolPathPackageSummary[];
+}
+
+function stageStatusLabel(stage: ToolPathStage): string {
+  if (stage === 'active') return 'Active now';
+  if (stage === 'next') return 'Next package';
+  return 'Future package';
 }

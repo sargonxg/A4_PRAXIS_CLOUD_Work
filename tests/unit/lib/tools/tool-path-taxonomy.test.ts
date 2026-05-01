@@ -3,6 +3,8 @@ import {
   ACTIVE_TOOL_PATH_IDS,
   getActiveToolPaths,
   getRecommendedToolIdsForWorkflowPath,
+  getDashboardToolPackageSummaries,
+  getToolPathPackageSummary,
   getToolIdsForPath,
   getToolPath,
   getToolPathMembership,
@@ -17,6 +19,7 @@ describe('tool path taxonomy', () => {
     expect(getToolPath('political-officer')?.label).toBe('Conflict / Political Analyst');
     expect(ACTIVE_TOOL_PATH_IDS).toEqual(['generic-core', 'political-officer']);
     expect(getActiveToolPaths().map((path) => path.id)).toEqual(['generic-core', 'political-officer']);
+    expect(getToolPath('generic-core')?.coreToolIds).toContain('graphops');
   });
 
   it('prioritizes generic and conflict/political tools for the active sprint', () => {
@@ -43,5 +46,17 @@ describe('tool path taxonomy', () => {
       'stakeholder-map',
       'geospatial-monitor',
     ]);
+  });
+
+  it('summarizes dashboard packages with core, active, next, and future paths', () => {
+    const core = getToolPathPackageSummary('generic-core');
+    expect(core?.statusLabel).toBe('Active now');
+    expect(core?.deliverables).toContain('Document-derived graph');
+
+    const packages = getDashboardToolPackageSummaries('political-officer');
+    expect(packages[0]?.id).toBe('generic-core');
+    expect(packages[1]?.id).toBe('political-officer');
+    expect(packages.some((pkg) => pkg.stage === 'next')).toBe(true);
+    expect(packages.some((pkg) => pkg.stage === 'future')).toBe(true);
   });
 });

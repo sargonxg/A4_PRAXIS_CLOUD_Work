@@ -1,7 +1,7 @@
 # PRAXIS Production TODO
 
 Status: active continuation roadmap.
-Last updated: 2026-04-30.
+Last updated: 2026-05-01.
 Workspace: `C:\Users\giuli\praxiscodexworking`.
 Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`.
 Branch: `main`.
@@ -61,6 +61,11 @@ The current Firestore-first graph backbone execution plan is
 `docs/PRAXIS_GRAPH_BACKBONE_SPRINT_A_2026-04-30.md`. Reference it as
 **Graph Backbone Sprint A** or **GB-A**. It defines GB-A-01 through GB-A-10
 plus the **GB-A-FALKOR** FalkorDB GraphRAG-SDK pilot.
+
+The current dashboard/tool-package wave is
+`docs/PRAXIS_TOOL_PACKAGES_DASHBOARD_WAVE_2026-05-01.md`. It records the
+generic-core plus conflict/political dashboard package surface and the next 10
+tool-workspace improvements.
 
 Generated per-tool specifications live under `docs/tools/generated/`. Refresh
 them with `npm run generate:tool-docs` after changing the registry, operating
@@ -163,6 +168,12 @@ contracts, path taxonomy, or context blueprints.
   envelope schema, temporal assertion schema, graph context-pack service,
   deterministic repair suggestions, proposal-first extraction writes, Ask
   PRAXIS `proposeGraphDelta`, and `/app/graphops`.
+- [x] Make tool-package structure visible on the real dashboard: generic core
+  workspace, active conflict/political analyst path, next packages, future
+  packages, primary tools, deliverables, and status labels now render from the
+  canonical workflow taxonomy.
+- [x] Promote GraphOps into the generic core workspace so graph maintenance is
+  treated as a baseline context capability, not an operator-only afterthought.
 - [ ] Audit prompts for duplicated contract text now that `withCalibration()`
   injects the shared backbone automatically.
 - [x] Add the graph approval mutator so approved `graph_updates` payloads are
