@@ -812,6 +812,16 @@ function StepReview({
   const typeLabel = SITUATION_TYPES.find((t) => t.value === form.type)?.label ?? form.type;
   const roleLabel = USER_ROLES.find((r) => r.value === form.userRole)?.label ?? form.userRole;
   const workflowPath = getPolicyWorkflowPath(form.workflowPath);
+  const aiContextChecks = [
+    { label: 'Situation summary', ready: form.description.trim().length >= 40 },
+    { label: 'Actors', ready: form.actors.length >= 2 },
+    { label: 'Region', ready: form.region.trim().length > 0 },
+    { label: 'Sources', ready: sourceUrls.length + contextSummary.customSourceCount > 0 },
+    { label: 'Documents', ready: contextSummary.fileCount > 0 },
+    { label: 'Analyst notes', ready: contextSummary.hasNotes },
+  ];
+  const aiContextReady = aiContextChecks.filter((check) => check.ready).length;
+  const aiContextScore = Math.round((aiContextReady / aiContextChecks.length) * 100);
 
   return (
     <div className="space-y-5">
@@ -873,6 +883,32 @@ function StepReview({
                 <div key={label} className="rounded-md border border-navy-100 bg-navy-50/40 px-3 py-2">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">{label}</p>
                   <p className="mt-0.5 text-xs font-medium text-navy-800">{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-diplomatic-blue/20 bg-diplomatic-blue/5 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-diplomatic-blue">AI context quality</p>
+                <p className="mt-1 text-sm font-semibold text-navy-900">{aiContextScore}% ready for first tool runs</p>
+                <p className="mt-1 text-xs leading-relaxed text-navy-600">
+                  PRAXIS will attach this situation context, your analyst profile, selected workflow path, domain, sources, notes, and future saved outputs to calibrated AI calls.
+                </p>
+              </div>
+              <span className={cn(
+                'rounded-full px-2.5 py-1 text-xs font-semibold',
+                aiContextScore >= 70 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700',
+              )}>
+                {aiContextReady}/{aiContextChecks.length} signals
+              </span>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              {aiContextChecks.map((check) => (
+                <div key={check.label} className="flex items-center gap-1.5 text-xs text-navy-700">
+                  <Check className={cn('h-3.5 w-3.5', check.ready ? 'text-emerald-600' : 'text-navy-300')} />
+                  <span>{check.label}</span>
                 </div>
               ))}
             </div>

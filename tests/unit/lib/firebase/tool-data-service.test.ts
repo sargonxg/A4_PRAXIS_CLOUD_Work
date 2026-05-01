@@ -49,7 +49,7 @@ describe('tool-data-service', () => {
       data: { score: 72 },
       version: 3,
       generatedAt: result.generatedAt,
-    }));
+    }), { merge: true });
     expect(setVersion).toHaveBeenCalledWith(expect.objectContaining({
       data: { score: 72 },
       version: 3,

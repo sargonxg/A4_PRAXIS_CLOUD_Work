@@ -26,6 +26,9 @@ This wave focuses on the active product scope:
   required context readiness, and AI/data route wiring.
 - Registered GraphOps as a first-class tool and made `/api/tool-status` derive
   bulk coverage from `TOOL_REGISTRY` instead of a static list.
+- Added `/app/tools` as a dedicated Tools Workspace with package filters,
+  search, package readiness, per-tool saved-output health, required-context
+  checks, stale output flags, and route wiring visibility.
 
 ## Dashboard Behavior
 
@@ -45,6 +48,7 @@ The dashboard now shows:
 
 1. Add a dedicated Tools Workspace page with package filters, readiness badges,
    search, and per-tool health.
+   - First pass: shipped at `/app/tools`.
 2. Add package-specific onboarding: if a situation is conflict/political, ask
    the missing questions required by early warning, risk, actors, sources, and
    graph tools.

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getToolById } from '@/lib/constants/tool-registry';
+import { getToolPackageActions } from '@/lib/tools/tool-package-actions';
 import { computeToolPackageReadiness } from '@/lib/tools/tool-package-readiness';
 import { getToolPathPackageSummary } from '@/lib/tools/tool-path-taxonomy';
 import type { Situation } from '@/types/situation';
@@ -40,5 +41,44 @@ describe('tool package readiness', () => {
     expect(readiness.counts.generated).toBe(3);
     expect(readiness.score).toBeGreaterThan(40);
     expect(readiness.nextAction).toMatch(/Run|Refresh|Package|Add/);
+  });
+
+  it('surfaces graph, source, and document blockers as package warnings', () => {
+    const core = getToolPathPackageSummary('generic-core');
+    expect(core).toBeTruthy();
+
+    const readiness = computeToolPackageReadiness(core!, {
+      id: 'sit-thin',
+      name: 'Thin Situation',
+      region: 'Test Region',
+      description: 'Thin case file',
+      actors: ['Actor A'],
+      graphEntities: 0,
+      documentCount: 0,
+      sourceUrls: [],
+    });
+
+    expect(readiness.warnings.map((warning) => warning.type)).toContain('graph');
+    expect(readiness.warnings.map((warning) => warning.type)).toContain('sources');
+    expect(readiness.warnings.map((warning) => warning.type)).toContain('documents');
+    expect(readiness.state).toBe('red');
+  });
+
+  it('recommends concrete package actions from readiness gaps', () => {
+    const core = getToolPathPackageSummary('generic-core');
+    expect(core).toBeTruthy();
+
+    const readiness = computeToolPackageReadiness(core!, {
+      ...situation,
+      graphEntities: 0,
+      documentCount: 0,
+      sourceUrls: [],
+    });
+    const actions = getToolPackageActions(core!, readiness, situation);
+
+    expect(actions[0]?.kind).toBe('seed-graph');
+    expect(actions.some((action) => action.kind === 'add-sources')).toBe(true);
+    expect(actions.some((action) => action.kind === 'upload-documents')).toBe(true);
+    expect(actions.every((action) => action.href.startsWith('/'))).toBe(true);
   });
 });

@@ -31,12 +31,18 @@ describe('buildCalibratedContext', () => {
 
   it('includes situation and profile when both exist', async () => {
     const profile = { ...DEFAULT_ANALYST_PROFILE, meta: { ...DEFAULT_ANALYST_PROFILE.meta, version: 4 } };
-    const situation = { id: 's1', name: 'Sudan', type: 'civil', region: 'Horn of Africa', actors: [], userRole: 'analyst', status: 'active', description: '', createdAt: null, updatedAt: null };
+    const situation = { id: 's1', name: 'Sudan', type: 'civil', region: 'Horn of Africa', actors: [], userRole: 'analyst', status: 'active', description: 'Ceasefire context', createdAt: null, updatedAt: null };
     (getAnalystProfile as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(profile);
     (getSituationById as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(situation);
     const ctx = await buildCalibratedContext({ uid: 'u1', toolId: 'risk-monitor', situationId: 's1' });
     expect(ctx.provenance.profileVersion).toBe(4);
     expect(ctx.systemPromptBlock).toContain('Sudan');
+    expect(retrieveForProfile).toHaveBeenCalledWith({
+      uid: 'u1',
+      situationId: 's1',
+      query: expect.stringContaining('risk-monitor | Sudan'),
+      topK: 5,
+    });
   });
 
   it('calls retrieval when retrievalQuery provided', async () => {

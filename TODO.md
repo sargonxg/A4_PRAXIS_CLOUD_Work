@@ -71,6 +71,15 @@ The current ranked next-10 improvement wave is
 `docs/PRAXIS_NEXT_10_IMPROVEMENTS_2026-05-01.md`. It records the package
 readiness, GraphOps registry, status coverage, and next AI/tool wiring work.
 
+The current tools usability round is
+`docs/PRAXIS_TOOLS_USABILITY_ROUND_2026-05-01.md`. It records the 10-target
+round for turning package readiness into concrete user actions.
+
+The current context-creation release note is
+`docs/PRAXIS_CONTEXT_CREATION_RELEASE_2026-05-01.md`. It records the
+situation/onboarding context improvements that make AI/tool outputs more
+user- and situation-specific.
+
 Generated per-tool specifications live under `docs/tools/generated/`. Refresh
 them with `npm run generate:tool-docs` after changing the registry, operating
 contracts, path taxonomy, or context blueprints.
@@ -125,6 +134,24 @@ contracts, path taxonomy, or context blueprints.
 - [x] Add a ranked top-10 execution plan for the next architecture wave.
 - [x] Make `withCalibration()` automatically inject the canonical operating
   contract and context blueprint into every calibrated AI route.
+- [x] Add a dedicated Tools Workspace page with package filters, search,
+  readiness badges, saved-output freshness, required-context checks, and route
+  wiring health.
+- [x] Turn package readiness into user-facing next actions across the dashboard
+  and Tools Workspace: context, GraphOps, sources, documents, stale refresh,
+  and first-run tool actions.
+- [x] Add package warnings for graph-dependent, source-dependent,
+  document-dependent, stale, missing-output, missing-context, and route-wiring
+  gaps so users can understand why a package is not ready.
+- [x] Expand calibrated AI prompts with richer situation context: description,
+  workflow path, domain confidence, source URLs, custom sources, analyst notes,
+  context inventory, and situation overrides.
+- [x] Add default situation-aware retrieval for calibrated AI routes that do
+  not provide their own retrieval query.
+- [x] Harden situation creation context intake with URL normalization,
+  deduping, protocol checks, source caps, custom-source filtering, and context
+  note caps.
+- [x] Add an AI context quality readout to the situation creation review step.
 - [ ] Apply `RegistryToolInfo` / `ToolOperatingContractPanel` to every tool page
   that still bypasses the shared shell.
 - [x] Move the active generic + conflict/political tools to the context

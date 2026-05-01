@@ -169,14 +169,22 @@ export async function buildCalibratedContext(opts: {
     }
   }
 
-  if (opts.retrievalQuery) {
+  const defaultRetrievalQuery = buildDefaultRetrievalQuery({
+    situation,
+    profile,
+    toolId: opts.toolId,
+  });
+  const retrievalQuery = opts.retrievalQuery ?? defaultRetrievalQuery;
+
+  if (retrievalQuery) {
     try {
-      retrievedChunks = await retrieveForProfile({
+      const hits = await retrieveForProfile({
         uid: opts.uid,
         situationId: opts.situationId,
-        query: opts.retrievalQuery,
+        query: retrievalQuery,
         topK: opts.retrievalTopK ?? 5,
       });
+      retrievedChunks = Array.isArray(hits) ? hits : [];
     } catch (err) {
       console.warn('[profile-context] retrieveForProfile failed:', err);
     }
@@ -240,4 +248,30 @@ export async function buildCalibratedContext(opts: {
       generatedAt: new Date().toISOString(),
     },
   };
+}
+
+function buildDefaultRetrievalQuery(input: {
+  situation: Situation | null;
+  profile: AnalystProfile | null;
+  toolId: string;
+}): string | undefined {
+  const situation = input.situation;
+  if (!situation?.id) return undefined;
+
+  const parts = [
+    input.toolId,
+    situation.name,
+    situation.region,
+    situation.domain,
+    situation.workflowPathLabel,
+    situation.description,
+    ...(situation.actors ?? []).slice(0, 8),
+    ...(input.profile?.perspective.lenses ?? []).slice(0, 4),
+    input.profile?.perspective.audience,
+  ]
+    .filter(Boolean)
+    .map((part) => String(part).trim())
+    .filter(Boolean);
+
+  return parts.length ? parts.join(' | ').slice(0, 1200) : undefined;
 }

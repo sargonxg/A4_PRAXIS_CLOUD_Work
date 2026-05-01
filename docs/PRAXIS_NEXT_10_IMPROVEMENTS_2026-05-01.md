@@ -22,9 +22,14 @@ live AI/tool backbone instead of adding isolated UI polish.
      evidence coverage, and temporal assertions must be exposed as a normal
      tool, not hidden maintenance.
 4. Dedicated Tools Workspace page.
-   - Status: next.
-   - Scope: package filters, tool search, readiness badges, output freshness,
-     graph dependency warnings, and "run next" actions.
+   - Status: first pass implemented in this wave; action-planning pass also
+     shipped.
+   - Scope shipped: package filters, tool search, readiness badges, output
+     freshness, required-context checks, route wiring health, and active-path
+     package summaries.
+   - Additional scope shipped: graph/source/document dependency warnings and
+     user-facing next actions.
+   - Remaining: package-level buttons that directly invoke generation.
 5. Package-specific onboarding.
    - Status: next.
    - Scope: conflict/political situations should ask the missing questions
@@ -39,9 +44,12 @@ live AI/tool backbone instead of adding isolated UI polish.
    - Scope: Ask PRAXIS should know the active package, recommend the right
      tool for a request, and write corrections into tool-specific outputs.
 8. Unified package actions.
-   - Status: next.
-   - Scope: Daily Read, Source Scout, Risk Scan, Actor Map, Policy Memo, and
-     Talking Points should be visible as package-level next actions.
+   - Status: first pass implemented in this wave.
+   - Scope shipped: deterministic next-action links for context, graph,
+     sources, documents, stale outputs, missing outputs, and primary package
+     tools.
+   - Remaining: direct generation actions for Daily Read, Source Scout, Risk
+     Scan, Actor Map, Policy Memo, and Talking Points.
 9. Active-path AI route uplift.
    - Status: next.
    - Scope: raise Conflict Graph, Deep Search Agent, Policy Memo, Executive
@@ -58,4 +66,7 @@ live AI/tool backbone instead of adding isolated UI polish.
 - `/api/tool-status` now derives bulk coverage from `TOOL_REGISTRY`.
 - Dashboard package cards now compute readiness from saved tool outputs,
   context readiness, and AI/data route wiring.
+- `/app/tools` now exposes the same readiness model in a searchable package
+  workspace.
+- Dashboard and `/app/tools` now share package-level action planning.
 - Generated tool docs and backlog now report 54 registered tools.

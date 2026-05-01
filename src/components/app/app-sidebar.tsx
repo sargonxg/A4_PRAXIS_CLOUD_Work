@@ -286,6 +286,7 @@ const navSections: NavSection[] = [
   {
     label: 'Workspace',
     items: [
+      { label: 'Tools Workspace', icon: Package, href: '/tools' },
       { label: 'Ask PRAXIS', icon: MessageSquare, href: '/assistant' },
       { label: 'Documents', icon: FolderOpen, href: '/documents' },
       { label: 'Report Studio', icon: FileText, href: '/reports' },

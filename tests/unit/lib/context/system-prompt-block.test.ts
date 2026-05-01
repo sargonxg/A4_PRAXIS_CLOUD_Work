@@ -34,6 +34,32 @@ describe('renderSystemPromptBlock', () => {
     expect(block).toContain('Constraint: Avoid regime-change framing.');
   });
 
+  it('includes user-created situation context, sources, workflow, and notes', () => {
+    const block = renderSystemPromptBlock({
+      profile: null,
+      retrievedChunks: [],
+      situation: {
+        ...SITUATION,
+        description: 'Ceasefire monitoring is disputed around the port corridor.',
+        sourceUrls: ['https://example.org/report'],
+        contextNotes: 'User needs a senior-leadership brief and no unsupported casualty claims.',
+        workflowPath: 'political-officer',
+        workflowPathLabel: 'Conflict / Political Analyst',
+        domain: 'political-security',
+        domainConfidence: 0.82,
+        customSources: [{ id: 'src-1', url: 'https://example.org/custom', name: 'Custom Monitor', categoryId: 'custom' }],
+      },
+    });
+
+    expect(block).toContain('Description: Ceasefire monitoring is disputed');
+    expect(block).toContain('Analyst context notes: User needs');
+    expect(block).toContain('Analyst-provided source URLs');
+    expect(block).toContain('https://example.org/report');
+    expect(block).toContain('Custom Monitor');
+    expect(block).toContain('Workflow path: Conflict / Political Analyst');
+    expect(block).toContain('Domain: political-security (82%)');
+  });
+
   it('falls back to neutral text when profile is null', () => {
     const block = renderSystemPromptBlock({ profile: null, situation: null, retrievedChunks: [] });
     expect(block).toContain('<analyst-profile version="0">');

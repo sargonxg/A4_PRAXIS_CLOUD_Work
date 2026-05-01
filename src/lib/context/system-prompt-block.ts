@@ -99,15 +99,34 @@ function renderProfileBlock(p: AnalystProfile | null): string {
 
 function renderSituationBlock(s: Situation | null): string {
   if (!s) return ['<situation-frame>', '  No active situation.', '</situation-frame>'].join('\n');
+  const sourceUrls = (s.sourceUrls ?? []).filter(Boolean).slice(0, 8);
+  const customSources = (s.customSources ?? []).filter((source) => source.url).slice(0, 8);
+  const notes = s.contextNotes?.trim();
+  const description = s.description?.trim();
   return [
     '<situation-frame>',
+    `  Id: ${escapeTag(s.id)}`,
     `  Name: ${escapeTag(s.name)}`,
     `  Type: ${s.type}`,
+    `  Status: ${s.status}`,
     `  Region: ${escapeTag(s.region || '—')}`,
     `  Key actors: ${(s.actors ?? []).map(escapeTag).join(', ') || '—'}`,
     `  Risk: ${s.riskScore ?? '—'}/10 · Glasl ${s.glaslStage ?? '—'} · ${escapeTag(s.escalationTrend ?? '—')}`,
+    `  Domain: ${escapeTag(s.domain ?? 'generic')} (${typeof s.domainConfidence === 'number' ? Math.round(s.domainConfidence * 100) + '%' : 'unknown confidence'})`,
+    `  Workflow path: ${escapeTag(s.workflowPathLabel ?? s.workflowPath ?? 'not selected')}`,
+    `  Context inventory: ${s.actorCount ?? s.actors?.length ?? 0} actors · ${s.graphEntities ?? 0} graph entities · ${s.documentCount ?? 0} documents · ${sourceUrls.length + customSources.length} source URLs`,
+    description ? `  Description: ${escapeTag(description.slice(0, 1400))}` : '  Description: —',
+    notes ? `  Analyst context notes: ${escapeTag(notes.slice(0, 1600))}` : '',
+    sourceUrls.length ? '  Analyst-provided source URLs:' : '',
+    ...sourceUrls.map((url, index) => `    [${index + 1}] ${escapeTag(url)}`),
+    customSources.length ? '  Custom sources:' : '',
+    ...customSources.map((source, index) => `    [${index + 1}] ${escapeTag(source.name || source.url)} — ${escapeTag(source.url)}`),
+    s.dateRangeFrom || s.dateRangeTo
+      ? `  Situation time window: ${escapeTag(s.dateRangeFrom ?? 'open')} to ${escapeTag(s.dateRangeTo ?? 'open')}`
+      : '',
+    s.languageOverride ? `  Situation language override: ${escapeTag(s.languageOverride)}` : '',
     '</situation-frame>',
-  ].join('\n');
+  ].filter((line) => line.length > 0).join('\n');
 }
 
 function renderDomainBlock(domain: MergedDomainConfig, toolId?: string): string {

@@ -1,10 +1,12 @@
 import { getToolById } from '@/lib/constants/tool-registry';
 import { getToolContextReadiness } from '@/lib/tools/tool-context-blueprints';
+import { getToolContextBlueprint } from '@/lib/tools/tool-context-blueprints';
 import type { ToolPathPackageSummary } from '@/lib/tools/tool-path-taxonomy';
 import type { Situation } from '@/types/situation';
 
 export type PackageReadinessState = 'green' | 'yellow' | 'red' | 'grey';
 export type PackageToolHealth = 'green' | 'yellow' | 'red';
+export type PackageReadinessWarningType = 'context' | 'route' | 'graph' | 'sources' | 'documents' | 'output' | 'stale';
 
 export interface PackageToolStatusSnapshot {
   health?: PackageToolHealth | null;
@@ -31,7 +33,19 @@ export interface ToolPackageReadiness {
   missingToolIds: string[];
   missingContextToolIds: string[];
   unwiredToolIds: string[];
+  staleToolIds: string[];
+  graphDependentToolIds: string[];
+  sourceDependentToolIds: string[];
+  documentDependentToolIds: string[];
+  warnings: PackageReadinessWarning[];
   nextAction: string;
+}
+
+export interface PackageReadinessWarning {
+  type: PackageReadinessWarningType;
+  severity: 'info' | 'warning' | 'critical';
+  toolIds: string[];
+  message: string;
 }
 
 export function computeToolPackageReadiness(
@@ -62,6 +76,11 @@ export function computeToolPackageReadiness(
       missingToolIds: [],
       missingContextToolIds: [],
       unwiredToolIds: [],
+      staleToolIds: [],
+      graphDependentToolIds: [],
+      sourceDependentToolIds: [],
+      documentDependentToolIds: [],
+      warnings: [],
       nextAction: 'No registered tools are mapped to this package yet.',
     };
   }
@@ -70,13 +89,17 @@ export function computeToolPackageReadiness(
   let generated = 0;
   let stale = 0;
   const missingToolIds: string[] = [];
+  const staleToolIds: string[] = [];
 
   for (const toolId of assessedToolIds) {
     const status = statuses[toolId];
     const health = status?.health ?? 'red';
     healthCounts[health] += 1;
     if (status?.generatedAt) generated += 1;
-    if (status?.isStale) stale += 1;
+    if (status?.isStale) {
+      stale += 1;
+      staleToolIds.push(toolId);
+    }
     if (health === 'red') missingToolIds.push(toolId);
   }
 
@@ -95,11 +118,33 @@ export function computeToolPackageReadiness(
   }, 0) / assessedToolIds.length;
   const contextScore = ((contextReadiness.length - missingContextToolIds.length) / contextReadiness.length) * 100;
   const aiScore = ((aiTools.length - unwiredToolIds.length) / aiTools.length) * 100;
-  const score = Math.round((healthScore * 0.45) + (contextScore * 0.35) + (aiScore * 0.2));
+  const graphDependentToolIds = assessedToolIds.filter((toolId) => {
+    const mode = getToolContextBlueprint(toolId).graphBackbone.currentMode;
+    return mode === 'read' || mode === 'read-write' || mode === 'premium-dialectica';
+  });
+  const sourceDependentToolIds = assessedToolIds.filter((toolId) =>
+    getToolContextBlueprint(toolId).requiredLayers.includes('source-library'),
+  );
+  const documentDependentToolIds = assessedToolIds.filter((toolId) =>
+    getToolContextBlueprint(toolId).requiredLayers.includes('document-corpus'),
+  );
+  const warnings = buildWarnings({
+    situation,
+    missingContextToolIds,
+    unwiredToolIds,
+    missingToolIds,
+    staleToolIds,
+    graphDependentToolIds,
+    sourceDependentToolIds,
+    documentDependentToolIds,
+  });
+  const criticalWarnings = warnings.filter((warning) => warning.severity === 'critical').length;
+  const warningPenalty = Math.min(20, criticalWarnings * 6 + warnings.filter((warning) => warning.severity === 'warning').length * 3);
+  const score = Math.max(0, Math.round((healthScore * 0.45) + (contextScore * 0.35) + (aiScore * 0.2) - warningPenalty));
 
   return {
     score,
-    state: readinessState(score, missingContextToolIds.length, unwiredToolIds.length),
+    state: readinessState(score, missingContextToolIds.length, unwiredToolIds.length, criticalWarnings),
     assessedToolIds,
     counts: {
       ...healthCounts,
@@ -113,6 +158,11 @@ export function computeToolPackageReadiness(
     missingToolIds,
     missingContextToolIds,
     unwiredToolIds,
+    staleToolIds,
+    graphDependentToolIds,
+    sourceDependentToolIds,
+    documentDependentToolIds,
+    warnings,
     nextAction: nextActionFor({ missingContextToolIds, unwiredToolIds, missingToolIds, generated, assessedToolIds }),
   };
 }
@@ -139,10 +189,85 @@ function nextActionFor(input: {
   return 'Package is ready for the next analyst workflow.';
 }
 
-function readinessState(score: number, missingContextCount: number, unwiredCount: number): PackageReadinessState {
-  if (unwiredCount > 0 || score < 40) return 'red';
+function readinessState(score: number, missingContextCount: number, unwiredCount: number, criticalWarningCount: number): PackageReadinessState {
+  if (unwiredCount > 0 || criticalWarningCount > 0 || score < 40) return 'red';
   if (missingContextCount > 0 || score < 75) return 'yellow';
   return 'green';
+}
+
+function buildWarnings(input: {
+  situation: Partial<Situation> | null | undefined;
+  missingContextToolIds: string[];
+  unwiredToolIds: string[];
+  missingToolIds: string[];
+  staleToolIds: string[];
+  graphDependentToolIds: string[];
+  sourceDependentToolIds: string[];
+  documentDependentToolIds: string[];
+}): PackageReadinessWarning[] {
+  const warnings: PackageReadinessWarning[] = [];
+  const graphCount = input.situation?.graphEntities ?? 0;
+  const documentCount = input.situation?.documentCount ?? 0;
+  const sourceCount = input.situation?.sourceUrls?.length ?? 0;
+
+  if (input.unwiredToolIds.length) {
+    warnings.push({
+      type: 'route',
+      severity: 'critical',
+      toolIds: input.unwiredToolIds,
+      message: `${input.unwiredToolIds.length} tool(s) do not have an AI/data route wired.`,
+    });
+  }
+  if (input.missingContextToolIds.length) {
+    warnings.push({
+      type: 'context',
+      severity: 'warning',
+      toolIds: input.missingContextToolIds,
+      message: `${input.missingContextToolIds.length} tool(s) are missing required situation context.`,
+    });
+  }
+  if (input.graphDependentToolIds.length && graphCount < 8) {
+    warnings.push({
+      type: 'graph',
+      severity: 'critical',
+      toolIds: input.graphDependentToolIds,
+      message: 'Graph-dependent tools need a stronger canonical graph before their outputs should be trusted.',
+    });
+  }
+  if (input.sourceDependentToolIds.length && sourceCount === 0) {
+    warnings.push({
+      type: 'sources',
+      severity: 'warning',
+      toolIds: input.sourceDependentToolIds,
+      message: 'Source-dependent tools need at least one saved source or source discovery pass.',
+    });
+  }
+  if (input.documentDependentToolIds.length && documentCount === 0) {
+    warnings.push({
+      type: 'documents',
+      severity: 'warning',
+      toolIds: input.documentDependentToolIds,
+      message: 'Document-production tools need uploaded documents or extracted fragments for grounded claims.',
+    });
+  }
+  if (input.missingToolIds.length) {
+    warnings.push({
+      type: 'output',
+      severity: 'info',
+      toolIds: input.missingToolIds,
+      message: `${input.missingToolIds.length} tool(s) have no current saved output.`,
+    });
+  }
+  if (input.staleToolIds.length) {
+    warnings.push({
+      type: 'stale',
+      severity: 'warning',
+      toolIds: input.staleToolIds,
+      message: `${input.staleToolIds.length} saved output(s) are stale.`,
+    });
+  }
+
+  return warnings;
 }
 
 function normalizeToolId(toolId: string): string {

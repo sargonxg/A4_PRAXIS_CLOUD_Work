@@ -27,6 +27,7 @@ vi.mock('@/lib/api/save-tool-output', () => ({
 vi.mock('@/lib/ai/situation-context', () => ({
   buildToolContext: () => 'minimal situation context',
   buildCrossToolContext: vi.fn(async () => 'prior saved analysis context'),
+  buildWebGroundedContext: vi.fn(async () => 'web-grounded situation context'),
 }));
 
 vi.mock('ai', () => ({

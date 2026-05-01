@@ -1,15 +1,26 @@
 import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('@/lib/api/with-calibration', () => ({
-  withCalibration: () => (h: (req: Request, ctx: { uid: string; calibration: { systemPromptBlock: string; provenance: { profileVersion: number } } }) => Promise<Response>) =>
+  withCalibration: () => (h: (req: Request, ctx: { uid: string; calibration: { systemPromptBlock: string; outputConstraints: { audienceTone: string }; provenance: { profileVersion: number } } }) => Promise<Response>) =>
     async (req: Request) => h(req, {
       uid: 'u1',
-      calibration: { systemPromptBlock: '<analyst-profile/>', provenance: { profileVersion: 1 } },
+      calibration: {
+        systemPromptBlock: '<analyst-profile/>',
+        outputConstraints: { audienceTone: 'concise' },
+        provenance: { profileVersion: 1 },
+      },
     } as never),
 }));
 
 vi.mock('@/lib/ai/providers', () => ({
   getProModel: () => ({}),
+  callProModel: vi.fn(async () => ({
+    output: {
+      headline: 'Nordalia deteriorating',
+      body: 'Lines of effort remain stalled. Track 1 actors have not convened in 14 days. Risk monitor indicators trending up. Consider tabling escalation brief for senior leadership tomorrow.',
+      suggestedTools: ['risk-monitor', 'early-warning'],
+    },
+  })),
 }));
 
 vi.mock('ai', () => ({
@@ -29,6 +40,7 @@ vi.mock('@/lib/api/save-tool-output', () => ({
 
 vi.mock('@/lib/ai/situation-context', () => ({
   buildToolContext: () => 'minimal context',
+  buildWebGroundedContext: vi.fn(async () => 'minimal web context'),
 }));
 
 describe('dashboard-summary route', () => {

@@ -47,6 +47,7 @@ export const CUSTOMIZABLE_SIDEBAR_TOOLS: CustomizableToolItem[] = [
   { section: 'Research', label: 'Actor Enrichment', href: '/actors', toolId: 'actor-profiles' },
   { section: 'Research', label: 'External Actor Monitor', href: '/external-actors', toolId: 'external-actors' },
   { section: 'Research', label: 'Legal & Resolution Tracker', href: '/legal-tracker', toolId: 'legal-tracker' },
+  { section: 'Workspace', label: 'Tools Workspace', href: '/tools', toolId: 'tools-workspace' },
   { section: 'Workspace', label: 'Ask PRAXIS', href: '/assistant', toolId: 'assistant' },
   { section: 'Workspace', label: 'Documents', href: '/documents', toolId: 'documents' },
   { section: 'Workspace', label: 'Report Studio', href: '/reports', toolId: 'report-studio' },

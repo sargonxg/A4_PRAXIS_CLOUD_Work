@@ -4,7 +4,8 @@ import { ArrowRight, CheckCircle2, Gauge, Layers3, PackageOpen } from 'lucide-re
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { useAllToolStatuses } from '@/hooks/use-tool-status';
 import { getToolById } from '@/lib/constants/tool-registry';
-import { CUSTOMIZABLE_SIDEBAR_TOOLS } from '@/lib/navigation/tool-preferences';
+import { getToolPackageActions, type ToolPackageAction } from '@/lib/tools/tool-package-actions';
+import { hrefForTool } from '@/lib/tools/tool-navigation';
 import { computeToolPackageReadiness, type ToolPackageReadiness } from '@/lib/tools/tool-package-readiness';
 import {
   getDashboardToolPackageSummaries,
@@ -17,14 +18,6 @@ import type { Situation } from '@/types/situation';
 interface ToolPackagesPanelProps {
   situation: Situation;
 }
-
-const TOOL_HREF_OVERRIDES: Record<string, string> = {
-  assistant: '/assistant',
-  graphops: '/graphops',
-  'report-studio': '/reports',
-  'situation-intelligence': '/dashboard',
-  'sources-library': '/sources',
-};
 
 const STAGE_CLASS: Record<ToolPathStage, string> = {
   active: 'border-emerald-200 bg-emerald-50 text-emerald-700',
@@ -43,6 +36,12 @@ export function ToolPackagesPanel({ situation }: ToolPackagesPanelProps) {
   const readinessByPackage = new Map(
     packages.map((pkg) => [pkg.id, computeToolPackageReadiness(pkg, situation, statuses)]),
   );
+  const actionsByPackage = new Map(
+    packages.map((pkg) => {
+      const readiness = readinessByPackage.get(pkg.id);
+      return [pkg.id, readiness ? getToolPackageActions(pkg, readiness, situation, statuses, 3) : []];
+    }),
+  );
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
@@ -57,20 +56,30 @@ export function ToolPackagesPanel({ situation }: ToolPackagesPanelProps) {
           </p>
         </div>
         <PraxisLink
-          href="/settings/preferences"
+          href="/tools"
           className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-navy-700 hover:bg-slate-50"
         >
-          Manage tools
+          Open tools
           <ArrowRight className="h-3.5 w-3.5" />
         </PraxisLink>
       </header>
 
       <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
         {corePackage ? (
-          <PackageCard pkg={corePackage} emphasis="Core workspace" readiness={readinessByPackage.get(corePackage.id)} />
+          <PackageCard
+            pkg={corePackage}
+            emphasis="Core workspace"
+            readiness={readinessByPackage.get(corePackage.id)}
+            actions={actionsByPackage.get(corePackage.id) ?? []}
+          />
         ) : null}
         {activeSpecialist ? (
-          <PackageCard pkg={activeSpecialist} emphasis="Active specialist path" readiness={readinessByPackage.get(activeSpecialist.id)} />
+          <PackageCard
+            pkg={activeSpecialist}
+            emphasis="Active specialist path"
+            readiness={readinessByPackage.get(activeSpecialist.id)}
+            actions={actionsByPackage.get(activeSpecialist.id) ?? []}
+          />
         ) : null}
       </div>
 
@@ -89,7 +98,17 @@ export function ToolPackagesPanel({ situation }: ToolPackagesPanelProps) {
   );
 }
 
-function PackageCard({ pkg, emphasis, readiness }: { pkg: ToolPathPackageSummary; emphasis: string; readiness?: ToolPackageReadiness }) {
+function PackageCard({
+  pkg,
+  emphasis,
+  readiness,
+  actions,
+}: {
+  pkg: ToolPathPackageSummary;
+  emphasis: string;
+  readiness?: ToolPackageReadiness;
+  actions: ToolPackageAction[];
+}) {
   const primaryTools = pkg.primaryToolIds.slice(0, 6);
 
   return (
@@ -127,6 +146,8 @@ function PackageCard({ pkg, emphasis, readiness }: { pkg: ToolPathPackageSummary
           </ul>
         </div>
       </div>
+
+      {actions.length ? <PackageActions actions={actions} /> : null}
     </article>
   );
 }
@@ -178,6 +199,34 @@ function ReadinessStrip({ readiness }: { readiness: ToolPackageReadiness }) {
         <span>{readiness.counts.stale} stale</span>
       </div>
       <p className="mt-1.5 text-[11px] leading-snug text-amber-700">{readiness.nextAction}</p>
+      {readiness.warnings[0] ? (
+        <p className={cn('mt-1 text-[11px] leading-snug', readiness.warnings[0].severity === 'critical' ? 'text-red-700' : 'text-amber-700')}>
+          {readiness.warnings[0].message}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function PackageActions({ actions }: { actions: ToolPackageAction[] }) {
+  return (
+    <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+      {actions.slice(0, 2).map((action, index) => (
+        <PraxisLink
+          key={action.id}
+          href={action.href}
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium',
+            index === 0
+              ? 'border border-diplomatic-blue bg-diplomatic-blue text-white hover:bg-diplomatic-blue/90'
+              : 'border border-slate-200 text-navy-700 hover:bg-slate-50',
+          )}
+          title={action.description}
+        >
+          {action.label}
+          <ArrowRight className="h-3.5 w-3.5" />
+        </PraxisLink>
+      ))}
     </div>
   );
 }
@@ -223,11 +272,6 @@ function readinessBarClass(state: ToolPackageReadiness['state']): string {
   if (state === 'yellow') return 'bg-amber-500';
   if (state === 'red') return 'bg-red-500';
   return 'bg-slate-400';
-}
-
-function hrefForTool(toolId: string): string {
-  if (TOOL_HREF_OVERRIDES[toolId]) return TOOL_HREF_OVERRIDES[toolId];
-  return CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === toolId)?.href ?? `/${toolId}`;
 }
 
 function prettyToolName(id: string): string {

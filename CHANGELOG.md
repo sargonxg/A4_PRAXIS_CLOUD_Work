@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-05-01 — Tools workspace continuation
+
+- Added `/app/tools`, a dedicated tools workspace for package filters, search,
+  package readiness, saved-output health, required context, stale output flags,
+  and route wiring across the active PRAXIS workflow.
+- Wired the dashboard Tool Packages panel to the new workspace and added a
+  Tools Workspace entry to the app sidebar.
+- Kept the page on the existing package taxonomy, tool status hook, context
+  blueprint readiness, and package readiness scorer so dashboard and tools
+  workspace health agree.
+- Added package-level action planning so the dashboard and Tools Workspace now
+  point users to the next concrete move: complete context, strengthen GraphOps,
+  add sources, upload documents, refresh stale outputs, or run the first
+  missing tool.
+- Added readiness warnings for graph-dependent, source-dependent,
+  document-dependent, stale, missing-output, missing-context, and unwired-route
+  package gaps.
+- Added `docs/PRAXIS_TOOLS_USABILITY_ROUND_2026-05-01.md`, the 10-target
+  usability round record for making the app more directly operable by users.
+- Expanded calibrated AI context so tool prompts now receive richer
+  situation-specific context: description, workflow path, domain confidence,
+  source URLs, custom sources, analyst notes, graph/document/source inventory,
+  and situation-level language/date overrides.
+- Added default situation-aware retrieval for calibrated AI routes that do not
+  provide their own retrieval query.
+- Hardened situation creation intake by normalizing and capping source URLs,
+  analyst notes, and custom sources before saving them to the situation record.
+- Added an AI context quality readout to the situation creation review step.
+- Added `docs/PRAXIS_CONTEXT_CREATION_RELEASE_2026-05-01.md` to capture the
+  context creation and AI-calibration release scope.
+
 ## 2026-04-30 — Tool operating system foundation
 
 - Added `docs/PRAXIS_NEXT_10_CRITICAL_IMPROVEMENTS_2026-04-30.md`, the next

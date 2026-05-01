@@ -10,9 +10,32 @@ import { isDomainId } from '@/types/domain';
 import type { EscalationTrend } from '@/types/situation';
 
 const ESCALATION_TRENDS: EscalationTrend[] = ['stable', 'escalating', 'de-escalating', 'volatile'];
+const MAX_CONTEXT_NOTES_CHARS = 12_000;
+const MAX_SOURCE_URLS = 40;
+const MAX_CUSTOM_SOURCES = 40;
 
 function isEscalationTrend(value: unknown): value is EscalationTrend {
   return typeof value === 'string' && ESCALATION_TRENDS.includes(value as EscalationTrend);
+}
+
+function cleanUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+function cleanContextNotes(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return trimmed.slice(0, MAX_CONTEXT_NOTES_CHARS);
 }
 
 export const GET = withAuth(async (_req, user) => {
@@ -66,8 +89,25 @@ export const POST = withAuth(async (req, user) => {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
-    // Filter out empty URL strings
-    const filteredUrls = (sourceUrls as string[] | undefined)?.filter((u: string) => u.trim()) || [];
+    const filteredUrls = Array.from(
+      new Set((Array.isArray(sourceUrls) ? sourceUrls : []).map(cleanUrl).filter(Boolean) as string[]),
+    ).slice(0, MAX_SOURCE_URLS);
+    const cleanedContextNotes = cleanContextNotes(contextNotes);
+    const cleanedCustomSources = (Array.isArray(customSources) ? customSources : [])
+      .map((source: unknown) => {
+        if (!source || typeof source !== 'object') return null;
+        const raw = source as Record<string, unknown>;
+        const url = cleanUrl(raw.url);
+        if (!url) return null;
+        return {
+          id: typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim().slice(0, 80) : `custom-${url}`,
+          url,
+          name: typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim().slice(0, 120) : undefined,
+          categoryId: typeof raw.categoryId === 'string' && raw.categoryId.trim() ? raw.categoryId.trim().slice(0, 80) : 'custom',
+        };
+      })
+      .filter(Boolean)
+      .slice(0, MAX_CUSTOM_SOURCES);
 
     // Resolve domain:
     //   1. If the wizard already ran a preview and the user confirmed a domain,
@@ -109,7 +149,7 @@ export const POST = withAuth(async (req, user) => {
       userRole: userRole || 'analyst',
       status: status || 'active',
       ...(filteredUrls.length ? { sourceUrls: filteredUrls } : {}),
-      ...(contextNotes?.trim() ? { contextNotes: contextNotes.trim() } : {}),
+      ...(cleanedContextNotes ? { contextNotes: cleanedContextNotes } : {}),
       ...(initialDocumentIds?.length ? { initialDocumentIds } : {}),
       ...(ontology ? { ontology } : {}),
       ...(typeof riskScore === 'number' ? { riskScore } : {}),
@@ -121,7 +161,7 @@ export const POST = withAuth(async (req, user) => {
       ...(Array.isArray(sourceCategoryOrder) ? { sourceCategoryOrder } : {}),
       ...(typeof workflowPath === 'string' ? { workflowPath } : {}),
       ...(typeof workflowPathLabel === 'string' ? { workflowPathLabel } : {}),
-      ...(Array.isArray(customSources) ? { customSources } : {}),
+      ...(cleanedCustomSources.length ? { customSources: cleanedCustomSources as NonNullable<typeof customSources> } : {}),
       domain,
       domainConfidence,
       domainOverriddenByUser: overridden,
