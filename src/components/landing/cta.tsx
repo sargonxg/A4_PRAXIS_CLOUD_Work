@@ -30,8 +30,8 @@ export function Cta() {
             Start Building Smarter Diplomatic Intelligence
           </h2>
           <p className="mb-10 text-lg text-navy-500">
-            Sign in for full access to all 40+ tools, or explore the demo
-            instantly — no account needed.
+            Sign in for the focused ten-tool workspace, or explore the live
+            demo with specialist labs instantly — no account needed.
           </p>
         </motion.div>
 

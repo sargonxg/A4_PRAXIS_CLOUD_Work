@@ -2,6 +2,17 @@
 
 ## 2026-05-01 — Tools workspace continuation
 
+- Added a demo-ready ten-tool command center to the landing page, replacing
+  the old "40+ tools" product story with the consolidated operating loop,
+  live AI chain, readiness metrics, and specialist-lab preview.
+- Added a Live Demo Runway to `/app/tools` and `/demo/tools` so reviewers can
+  click the ten primary surfaces in order and narrate context -> evidence ->
+  graph -> visualization -> Ask PRAXIS -> briefing.
+- Hardened demo auth hydration in the app shell so signed `/demo/*` routes no
+  longer bounce to `/login` while the client restores the demo session.
+- Updated login, metadata, OG copy, landing CTA, onboarding tour, sidebar
+  release copy, and Ask PRAXIS platform instructions to describe the ten-tool
+  workspace plus specialist labs consistently.
 - Registered Context Builder as the tenth first-class consolidated tool,
   including registry metadata, route mapping, sidebar status wiring,
   context-blueprint coverage, operating-contract audit coverage, and generated

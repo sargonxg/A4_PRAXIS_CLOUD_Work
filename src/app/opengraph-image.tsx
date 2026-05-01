@@ -273,7 +273,7 @@ export default async function Image() {
               gap: 8,
             }}
           >
-            <span style={{ color: DIPLOMATIC }}>40+ tools</span>
+            <span style={{ color: DIPLOMATIC }}>10-tool workspace</span>
             <span style={{ color: NAVY_400 }}>·</span>
             <span>Glasl · INFORM · ICD-203</span>
           </div>

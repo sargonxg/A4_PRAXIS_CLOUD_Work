@@ -28,6 +28,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const route = usePraxisRoute();
+  const isDemoRoute = pathname.startsWith('/demo');
   const [searchOpen, setSearchOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -49,10 +50,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [pathname, isMobile, setSidebarOpen]);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !isDemoRoute) {
       router.push('/login');
     }
-  }, [loading, user, router]);
+  }, [isDemoRoute, loading, user, router]);
 
   useEffect(() => {
     if (user) {
@@ -98,7 +99,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[var(--color-app-bg)]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-diplomatic-blue" />
+          <p className="text-sm text-navy-500">Loading demo workspace...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <TooltipProvider delayDuration={0}>

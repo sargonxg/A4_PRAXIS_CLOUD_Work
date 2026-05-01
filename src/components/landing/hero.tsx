@@ -368,11 +368,11 @@ export function Hero() {
             transition={{ delay: 1.2, duration: 0.7 }}
             className="mb-6 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
           >
-            Open a situation, attach the evidence base, and turn scattered
-            reporting into briefable, source-grounded analysis. PRAXIS gives
-            diplomats, conflict analysts, mediators, and policy officers a
-            mandate-aware workspace for actor mapping, risk assessment,
-            scenario analysis, drafting, and exportable decision support.
+            Open a situation, build the context file, attach evidence, and move
+            through ten focused tools that feel like one live operating room.
+            PRAXIS gives diplomats, conflict analysts, mediators, and policy
+            officers a mandate-aware workspace for graph-backed analysis,
+            risk signals, actor mapping, Ask PRAXIS, and exportable briefings.
           </motion.p>
 
           {/* Data sources tagline */}
@@ -439,7 +439,7 @@ export function Hero() {
           >
             <span className={cn("h-1.5 w-1.5 rounded-full bg-gold-500", !shouldReduceMotion && "animate-pulse")} />
             <span className="text-xs font-medium text-gold-700">
-              Calibrate mandate · ingest sources · extract graph · assess risk · brief, draft, export — every step traceable
+              Context Builder · Research · Documents · Firestore graph · Ask PRAXIS · Briefing Studio — every step traceable
             </span>
           </motion.div>
         </div>

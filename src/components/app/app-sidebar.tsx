@@ -107,7 +107,7 @@ const CHANGELOG = [
       'Full data layer: GDELT, ReliefWeb, HDX, World Bank, UNHCR, UCDP, UN News, grounded Google Search, and private corpus sources',
       'INFORM Risk Index: geometric mean (H×V×C)^(1/3) — rigorous multi-dimensional risk scoring',
       'DBSCAN geospatial clustering, movement detection, geographic spread index',
-      'Tool Registry: single source of truth for 40 tools with frameworks, methodology, citations',
+      'Tool Registry: single source of truth for the ten-tool workspace plus specialist labs',
       '15 fully documented analytical frameworks with academic citations',
     ],
   },

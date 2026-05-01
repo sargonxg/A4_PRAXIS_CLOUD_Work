@@ -525,7 +525,7 @@ function LoginForm() {
               )}
             </button>
             <p className="mt-2 text-center text-[11px] text-navy-500">
-              Full platform with pre-loaded Nordalia crisis data. Explore all 40+ tools instantly.
+              Pre-loaded Nordalia crisis data. Explore the ten-tool operating loop plus clearly marked specialist labs.
             </p>
           </motion.div>
 

@@ -4,15 +4,19 @@ import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   ArrowRight,
+  Bot,
   CheckCircle2,
   Circle,
   Filter,
   Gauge,
+  Layers3,
   Loader2,
   PackageOpen,
   Search,
+  ShieldCheck,
   SlidersHorizontal,
   Sparkles,
+  Target,
   TriangleAlert,
   Wrench,
 } from 'lucide-react';
@@ -181,6 +185,8 @@ function ToolsWorkspace({ situation }: { situation: Situation | null }) {
         </div>
       </header>
 
+      <DemoRunway rows={rows} />
+
       <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         {activePackages.map((pkg) => (
           <PackageOverview
@@ -284,6 +290,91 @@ function ToolsWorkspace({ situation }: { situation: Situation | null }) {
   );
 }
 
+function DemoRunway({ rows }: { rows: WorkspaceToolRow[] }) {
+  const rowById = new Map(rows.map((row) => [row.tool.id, row]));
+  const anchors = CONSOLIDATED_TOOLS.map((surface) => {
+    const row = surface.anchorToolId ? rowById.get(surface.anchorToolId) : undefined;
+    return { surface, row };
+  });
+  const wiredCount = anchors.filter((item) => item.row?.isWired).length;
+  const contextReadyCount = anchors.filter((item) => item.row?.contextReady).length;
+
+  return (
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-diplomatic-blue/5 shadow-sm shadow-navy-950/5">
+      <div className="grid gap-0 xl:grid-cols-[0.84fr_1.16fr]">
+        <div className="border-b border-slate-200 p-4 xl:border-b-0 xl:border-r">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-gold-600" />
+                <h2 className="text-sm font-semibold text-navy-900">Live demo runway</h2>
+              </div>
+              <p className="mt-1 max-w-xl text-xs leading-relaxed text-navy-600">
+                Open the ten-tool operating loop in order: build context, collect evidence, maintain the graph, visualize the situation, ask PRAXIS, and generate a decision-ready brief.
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              {wiredCount}/10 wired
+            </span>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <RunwayMetric label="Context-ready" value={`${contextReadyCount}/10`} />
+            <RunwayMetric label="AI/data routes" value={`${wiredCount}/10`} />
+            <RunwayMetric label="Specialist labs" value={getSpecializedToolDevelopmentGroups().length.toString()} />
+          </div>
+
+          <div className="mt-4 rounded-lg border border-slate-200 bg-white/80 p-3">
+            <div className="flex items-center gap-2">
+              <Bot className="h-4 w-4 text-diplomatic-blue" />
+              <p className="text-xs font-semibold text-navy-900">Demo story to narrate live</p>
+            </div>
+            <ol className="mt-2 space-y-1.5 text-[11px] leading-snug text-navy-600">
+              <li>1. Context Builder repairs the situation file before spend.</li>
+              <li>2. Research and Documents attach source receipts and fragments.</li>
+              <li>3. GraphOps and Conflict Graph expose the Firestore graph backbone.</li>
+              <li>4. Ask PRAXIS and Briefing Studio turn that context into cited output.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div className="p-4">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
+            {anchors.map(({ surface, row }, index) => (
+              <PraxisLink
+                key={surface.id}
+                href={surface.href}
+                className="group flex min-h-[142px] flex-col justify-between rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:border-diplomatic-blue/40 hover:shadow-md"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-diplomatic-blue/8 text-diplomatic-blue">
+                      {runwayIcon(surface.id)}
+                    </div>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 font-mono text-[10px] font-semibold text-navy-500">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                  </div>
+                  <h3 className="mt-2 text-xs font-semibold text-navy-900 group-hover:text-diplomatic-blue">{surface.shortLabel}</h3>
+                  <p className="mt-1 line-clamp-3 text-[11px] leading-snug text-navy-500">{surface.liveAiCapability}</p>
+                </div>
+                <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
+                    {row?.isWired ? <CheckCircle2 className="h-3 w-3" /> : <Wrench className="h-3 w-3" />}
+                    {row?.isWired ? 'Wired' : 'Check'}
+                  </span>
+                  <ArrowRight className="h-3.5 w-3.5 text-navy-400 transition group-hover:translate-x-0.5 group-hover:text-diplomatic-blue" />
+                </div>
+              </PraxisLink>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function SpecializedDevelopmentSection({ groups }: { groups: SpecializedToolDevelopmentGroup[] }) {
   const consolidatedLabels = new Map(CONSOLIDATED_TOOLS.map((tool) => [tool.id, tool.label]));
 
@@ -335,6 +426,29 @@ function SpecializedDevelopmentSection({ groups }: { groups: SpecializedToolDeve
       </div>
     </section>
   );
+}
+
+function RunwayMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-slate-200 bg-white/80 px-3 py-2">
+      <p className="font-mono text-lg font-semibold text-navy-900">{value}</p>
+      <p className="text-[10px] uppercase tracking-wider text-navy-500">{label}</p>
+    </div>
+  );
+}
+
+function runwayIcon(surfaceId: string): ReactNode {
+  const className = 'h-4 w-4';
+  if (surfaceId === 'situation-dashboard') return <Gauge className={className} />;
+  if (surfaceId === 'context-builder') return <Target className={className} />;
+  if (surfaceId === 'ask-praxis') return <Bot className={className} />;
+  if (surfaceId === 'research-sources') return <Search className={className} />;
+  if (surfaceId === 'documents') return <PackageOpen className={className} />;
+  if (surfaceId === 'graphops') return <Wrench className={className} />;
+  if (surfaceId === 'conflict-graph') return <Layers3 className={className} />;
+  if (surfaceId === 'timeline') return <Circle className={className} />;
+  if (surfaceId === 'actors-stakeholders') return <Sparkles className={className} />;
+  return <ArrowRight className={className} />;
 }
 
 function PackageOverview({

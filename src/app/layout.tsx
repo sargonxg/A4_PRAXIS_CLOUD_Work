@@ -34,7 +34,7 @@ const SHARE_TITLE = "PRAXIS by TACITUS · AI Built for Statecraft. Calibrated to
 const SHARE_DESCRIPTION =
   "Agentic AI workspace for diplomats, conflict analysts, mediators, and policy officers. Calibrated to your mandate. Grounded in Google Search, GDELT, UCDP, OCHA, ReliefWeb, World Bank, and your private corpus.";
 const SEARCH_DESCRIPTION =
-  "PRAXIS by TACITUS is the agentic AI workspace for statecraft. 40+ calibrated tools for diplomats, conflict analysts, mediators, and policy officers — grounded in Google Search, GDELT, UCDP, OCHA, and your sources.";
+  "PRAXIS by TACITUS is the agentic AI workspace for statecraft. Ten consolidated tools for diplomats, conflict analysts, mediators, and policy officers, with specialist labs behind them — grounded in Google Search, GDELT, UCDP, OCHA, and your sources.";
 const SHARE_IMAGE_ALT =
   "PRAXIS by TACITUS — AI Built for Statecraft. Agentic AI for diplomats, conflict analysts, mediators, and policy officers.";
 
