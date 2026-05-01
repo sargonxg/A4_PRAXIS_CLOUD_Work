@@ -47,12 +47,12 @@ const STORYBOARD = [
   },
   {
     step: '04',
-    title: 'Extract the graph backbone',
-    href: '/graphops',
+    title: 'Show the Dialectica backbone',
+    href: '/dialectica',
     icon: GitBranch,
-    cameraCue: 'Show actors and relationships as structured context, not decorative visualization.',
-    narration: 'The product backbone is a conflict grammar: actors, claims, interests, constraints, leverage, commitments, events, and narratives.',
-    proof: 'Show graph health, provenance warnings, staged extraction, or graph maintenance actions.',
+    cameraCue: 'Show the eight primitives, named graph layers, and capability staging before opening GraphOps.',
+    narration: 'The premium backbone is Dialectica: typed conflict primitives, provenance graphs, retrieval traces, contradiction detection, and analyst-approved graph actions.',
+    proof: 'Show Firestore today, Dialectica target, Datalog rule preview, and analyst approval gate.',
   },
   {
     step: '05',
@@ -79,6 +79,7 @@ const PROMISES = [
   'Demo mode is a synthetic Nordalia sample workspace and should be labelled as such in recordings.',
   'AI outputs should show source basis, uncertainty, and missing context instead of pretending completeness.',
   'The future premium backbone can connect these same typed primitives to Dialectica graph reasoning.',
+  'Dialectica is shown as a staged premium adapter target, not as an already-active backend in default workspaces.',
 ];
 
 export default function DemoGuidePage() {

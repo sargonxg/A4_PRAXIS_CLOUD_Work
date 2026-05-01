@@ -350,3 +350,71 @@ Future improvements:
   page.
 - Move reports and briefing onto the same evidence-summary contract.
 - Add a visual recording mode highlight for the evidence summary bars.
+
+## 2026-05-01 Wave - Dialectica Demo Readiness
+
+Top 10 active execution queue after subagent audit:
+
+1. Make Dialectica visible in the demo as a staged premium adapter target, not
+   as an already-active backend.
+2. Repair `/demo/context-builder` so the recording path has deterministic
+   context-builder content.
+3. Repair `/demo/graphops` so the recording path has deterministic graph health
+   and proposal content.
+4. Normalize canonical graph storage/read paths across frontend SKC, GraphOps,
+   and the Python backend.
+5. Fix graph backend provider-name mismatch between frontend settings and
+   backend adapter factory.
+6. Remove or relabel any copy implying graph backend credentials are encrypted
+   when currently saved through client Firestore settings.
+7. Add data-tour anchors to the six recording scenes.
+8. Hide floating chrome in `?recording=1` mode.
+9. Wrap Briefing in the evidence-summary trust layer.
+10. Replace report mock sources with real receipts or an explicit no-receipts
+    state.
+
+Implemented in this wave:
+
+- Added `src/lib/constants/dialectica-backbone.ts` with the conflict grammar,
+  named graph layers, capability staging, and a demo Datalog reasoning
+  scenario.
+- Added `/app/dialectica`, a read-only product surface that explains what is
+  live today in Firestore, what belongs to the standard graph layer, and what
+  remains premium/planned for Dialectica.
+- Added Dialectica to the sidebar and recording-mode sidebar.
+- Updated `/app/demo-guide` so the graph-backbone scene goes to Dialectica
+  instead of implying GraphOps alone is the premium reasoning backend.
+- Added graph-backend settings copy that distinguishes today's Neo4j/Falkor/
+  Spanner settings from the future Dialectica premium adapter.
+- Added unit tests for the Dialectica backbone constants.
+
+Why it matters:
+
+- The promo story can now show the future premium graph product without
+  overstating backend integration.
+- The user sees the exact primitives that flow from context creation and source
+  receipts into graph reasoning.
+- This creates a stable product contract for future adapter work: Firestore
+  canonical today, Dialectica premium reasoning later.
+
+How to test:
+
+1. Open `/app/dialectica` or `/demo/dialectica?recording=1`.
+2. Confirm the page shows eight primitives, named graph layers, capability
+   staging, a Datalog rule preview, and analyst approval gate.
+3. Open `/app/demo-guide?recording=1` and confirm step 04 links to
+   `/dialectica?recording=1`.
+4. Open `/app/settings/graph-backend` and confirm Dialectica is described as a
+   staged premium adapter target rather than a live credential provider.
+5. Run `npx vitest run tests/unit/lib/constants/dialectica-backbone.test.ts`.
+
+Future improvements:
+
+- Add `src/lib/dialectica/types.ts` and an adapter interface with typed
+  capability errors.
+- Fix frontend/backend canonical graph path mismatch before any live
+  Dialectica sync.
+- Add GraphOps demo fixture and context-builder demo fixture for the recording
+  path.
+- Add provider normalization tests for graph backend settings and backend
+  adapter factory.

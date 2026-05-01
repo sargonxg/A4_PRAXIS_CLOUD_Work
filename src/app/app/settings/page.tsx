@@ -886,7 +886,8 @@ export default function SettingsPage() {
         <div className="space-y-3">
           <p className="text-xs text-navy-500">
             Select Neo4j AuraDB or FalkorDB as the graph database for PRAXIS conflict intelligence.
-            Connection settings are encrypted and stored in your user profile.
+            Connection settings are stored in your user profile and should be treated as production secrets.
+            Dialectica is tracked separately as the premium graph-reasoning adapter target.
           </p>
           <PraxisLink
             href="/settings/graph-backend"
@@ -895,6 +896,13 @@ export default function SettingsPage() {
             <Server className="h-3.5 w-3.5" />
             Configure Graph Backend
             <ArrowRight className="h-3.5 w-3.5" />
+          </PraxisLink>
+          <PraxisLink
+            href="/dialectica"
+            className="ml-2 inline-flex items-center gap-2 px-4 py-2 border border-gold-500/30 bg-gold-500/10 hover:bg-gold-500/15 text-gold-800 rounded-md text-sm font-medium transition-colors"
+          >
+            <GitBranch className="h-3.5 w-3.5" />
+            Dialectica Preview
           </PraxisLink>
         </div>
       </SettingsSection>

@@ -225,6 +225,7 @@ const navSections: NavSection[] = [
       { label: 'Context Builder', icon: Target, href: '/context-builder' },
       { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
       { label: 'GraphOps', icon: Wrench, href: '/graphops' },
+      { label: 'Dialectica', icon: Network, href: '/dialectica', badge: 'Premium' },
       { label: 'Timeline', icon: Clock, href: '/timeline' },
     ],
   },
@@ -310,6 +311,7 @@ const RECORDING_NAV_HREFS = new Set([
   '/context-builder',
   '/source-scout',
   '/graphops',
+  '/dialectica',
   '/brainstorming-table',
   '/briefing',
 ]);
@@ -381,6 +383,7 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   '/early-warning': 'early-warning',
   '/conflict-graph': 'conflict-graph',
   '/graphops': 'conflict-graph',
+  '/dialectica': 'conflict-graph',
   '/stakeholder-map': 'stakeholder-map',
   '/power-map': 'power-map',
   '/compare': 'compare',

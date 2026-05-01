@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/lib/auth/auth-context';
+import { PraxisLink } from '@/components/shared/praxis-link';
 
 type GraphProvider = 'spanner' | 'neo4j' | 'neo4j_self' | 'falkordb_cloud' | 'falkordb_self';
 
@@ -118,6 +119,18 @@ export default function GraphBackendPage() {
         <p className="mt-2">
           Connection settings are saved to <code className="font-mono">users/{'{'}uid{'}'}/settings/graph_backend</code> and are readable only by you and the PRAXIS server. Treat any credentials you paste here as production secrets.
         </p>
+      </div>
+
+      <div className="mb-6 rounded-md border border-gold-500/30 bg-gold-500/10 p-3 text-xs leading-relaxed text-navy-700">
+        <p>
+          <span className="font-medium text-navy-900">Dialectica premium adapter:</span>{' '}
+          PRAXIS is preparing a separate Dialectica backend contract for Datalog reasoning, named provenance graphs,
+          contradiction detection, and scenario forks. It is intentionally not listed as a credential provider here
+          until the adapter and feature flags are production-ready.
+        </p>
+        <PraxisLink href="/dialectica" className="mt-2 inline-flex text-xs font-semibold text-gold-800 underline underline-offset-2">
+          View Dialectica backbone preview
+        </PraxisLink>
       </div>
 
       {/* Provider selection */}
