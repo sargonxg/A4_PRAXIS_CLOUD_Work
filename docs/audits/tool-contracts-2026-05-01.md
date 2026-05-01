@@ -1,6 +1,6 @@
 # PRAXIS Tool Operating Contract Audit - 2026-05-01
 
-Audited 54 registered tools. Passing threshold: 6/7 checks. Current passing: 54/54.
+Audited 55 registered tools. Passing threshold: 6/7 checks. Current passing: 55/55.
 
 | Tool | Score | Route | Page | Objective | Questions | Outputs | Ask PRAXIS | Quality |
 |---|---:|---|---|---|---|---|---|---|
@@ -22,6 +22,7 @@ Audited 54 registered tools. Passing threshold: 6/7 checks. Current passing: 54/
 | compare | 7/7 | yes | yes | yes | yes | yes | yes | yes |
 | concordia | 7/7 | yes | yes | yes | yes | yes | yes | yes |
 | conflict-graph | 7/7 | yes | yes | yes | yes | yes | yes | yes |
+| context-builder | 7/7 | yes | yes | yes | yes | yes | yes | yes |
 | dashboard | 7/7 | yes | yes | yes | yes | yes | yes | yes |
 | deep-search-agent | 7/7 | yes | yes | yes | yes | yes | yes | yes |
 | documents | 7/7 | yes | yes | yes | yes | yes | yes | yes |

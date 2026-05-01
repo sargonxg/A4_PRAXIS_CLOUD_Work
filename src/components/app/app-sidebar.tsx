@@ -293,7 +293,7 @@ function ChangelogButton() {
 const HREF_TO_TOOL_ID: Record<string, string> = {
   // Context
   '/dashboard': 'dashboard',
-  '/context-builder': 'dashboard',
+  '/context-builder': 'context-builder',
   '/documents': 'documents',
   '/sources': 'sources-library',
   '/source-scout': 'source-scout',

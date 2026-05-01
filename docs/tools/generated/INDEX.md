@@ -2,11 +2,12 @@
 
 This directory is generated from live PRAXIS code. It gives every registered tool a stable product, context, database, graph, document-production, and verification contract.
 
-Generated at: 2026-05-01T20:49:56.694Z
+Generated at: 2026-05-01T21:02:01.622Z
 
 | Tool | Category | Active path focus | AI route |
 |---|---:|---:|---|
 | [Dashboard](./dashboard.md) | context | yes | `/api/ai/dashboard-summary` |
+| [Context Builder](./context-builder.md) | context | yes | `/api/situations/classify-domain` |
 | [Executive Intelligence](./situation-intelligence.md) | context | yes | `/api/ai/situation-intelligence` |
 | [Documents](./documents.md) | context | yes | `/api/documents` |
 | [Sources Library](./sources-library.md) | context | yes | `/api/ai/discover-sources` |

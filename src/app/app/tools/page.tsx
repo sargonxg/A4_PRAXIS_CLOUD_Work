@@ -18,6 +18,12 @@ import {
 } from 'lucide-react';
 import { OnboardingRequiredState } from '@/components/praxis/onboarding-required-state';
 import { PraxisLink } from '@/components/shared/praxis-link';
+import {
+  CONSOLIDATED_TOOLS,
+  getSpecializedToolDevelopmentGroups,
+  type SpecializedToolDevelopmentGroup,
+  type SpecializedToolDevelopmentStatus,
+} from '@/lib/constants/consolidated-tools';
 import { getToolById, TOOL_REGISTRY } from '@/lib/constants/tool-registry';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { useAllToolStatuses, type ToolStatusInfo } from '@/hooks/use-tool-status';
@@ -154,6 +160,7 @@ function ToolsWorkspace({ situation }: { situation: Situation | null }) {
   const activePackages = packages.filter((pkg) => pkg.stage === 'active');
   const visiblePackages = packages.filter((pkg) => stageFilter === 'all' || pkg.stage === stageFilter);
   const readyCount = rows.filter((row) => row.status?.health === 'green').length;
+  const specializedDevelopmentGroups = getSpecializedToolDevelopmentGroups();
 
   return (
     <div className="flex flex-col gap-5 p-6">
@@ -184,6 +191,8 @@ function ToolsWorkspace({ situation }: { situation: Situation | null }) {
           />
         ))}
       </section>
+
+      <SpecializedDevelopmentSection groups={specializedDevelopmentGroups} />
 
       <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -272,6 +281,59 @@ function ToolsWorkspace({ situation }: { situation: Situation | null }) {
         </div>
       </section>
     </div>
+  );
+}
+
+function SpecializedDevelopmentSection({ groups }: { groups: SpecializedToolDevelopmentGroup[] }) {
+  const consolidatedLabels = new Map(CONSOLIDATED_TOOLS.map((tool) => [tool.id, tool.label]));
+
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <Wrench className="h-4 w-4 text-diplomatic-blue" />
+            <h2 className="text-sm font-semibold text-navy-900">Specialized tools in development</h2>
+          </div>
+          <p className="mt-1 max-w-3xl text-xs leading-relaxed text-navy-600">
+            These specialist pages stay available, but they are grouped under the ten primary surfaces so users start from a reliable workflow and graduate into narrower capabilities when the case calls for it.
+          </p>
+        </div>
+        <span className="rounded-full border border-gold-500/30 bg-gold-500/10 px-2.5 py-1 text-[11px] font-semibold text-gold-700">
+          Marked outside the primary 10
+        </span>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-5">
+        {groups.map((group) => {
+          const toolNames = group.toolIds.map((toolId) => getToolById(toolId)?.name ?? prettyToolName(toolId));
+          return (
+            <article key={group.id} className="rounded-md border border-slate-200 bg-slate-50/70 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="text-xs font-semibold text-navy-900">{group.label}</h3>
+                  <p className="mt-0.5 text-[11px] text-navy-500">
+                    Feeds {consolidatedLabels.get(group.consolidatedToolId) ?? prettyToolName(group.consolidatedToolId)}
+                  </p>
+                </div>
+                <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold', developmentStatusClass(group.status))}>
+                  {developmentStatusLabel(group.status)}
+                </span>
+              </div>
+              <p className="mt-2 line-clamp-3 text-[11px] leading-snug text-navy-600">{group.nextLiveAiUpgrade}</p>
+              <div className="mt-3 flex flex-wrap gap-1">
+                {group.userCases.map((userCase) => (
+                  <span key={userCase} className="rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-navy-500">
+                    {userCase}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-3 line-clamp-2 text-[11px] text-navy-500">{toolNames.slice(0, 5).join(' + ')}</p>
+            </article>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -486,6 +548,18 @@ function PackageActions({ actions }: { actions: ToolPackageAction[] }) {
   );
 }
 
+function developmentStatusLabel(status: SpecializedToolDevelopmentStatus): string {
+  if (status === 'active-support') return 'Support';
+  if (status === 'in-development') return 'Dev';
+  return 'Future';
+}
+
+function developmentStatusClass(status: SpecializedToolDevelopmentStatus): string {
+  if (status === 'active-support') return 'bg-emerald-100 text-emerald-700';
+  if (status === 'in-development') return 'bg-amber-100 text-amber-700';
+  return 'bg-slate-100 text-navy-500';
+}
+
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div>
@@ -604,4 +678,11 @@ function readinessBarClass(state: ToolPackageReadiness['state']): string {
   if (state === 'yellow') return 'bg-amber-500';
   if (state === 'red') return 'bg-red-500';
   return 'bg-slate-400';
+}
+
+function prettyToolName(id: string): string {
+  return id
+    .split('-')
+    .map((word) => (word[0]?.toUpperCase() ?? '') + word.slice(1))
+    .join(' ');
 }

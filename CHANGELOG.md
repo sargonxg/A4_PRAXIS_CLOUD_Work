@@ -2,6 +2,17 @@
 
 ## 2026-05-01 — Tools workspace continuation
 
+- Registered Context Builder as the tenth first-class consolidated tool,
+  including registry metadata, route mapping, sidebar status wiring,
+  context-blueprint coverage, operating-contract audit coverage, and generated
+  tool documentation.
+- Added specialized development groups for research, graph/ontology,
+  mediation, signals, and briefing/legal tools, and surfaced them in both the
+  Tools Workspace and dashboard Tool Packages panel as clearly outside the
+  primary ten-tool workspace.
+- Expanded consolidated-tool regression coverage so every primary surface must
+  have a registered anchor, app route, API/data route, context blueprint, and
+  matching navigation href.
 - Added `docs/PRAXIS_CONSOLIDATED_TOOL_AUDIT_2026-05-01.md`, a code-grounded
   audit of tool sprawl, onboarding, graph/context/research structure, and
   cloud-cost risk.

@@ -39,8 +39,16 @@ navigation or first-run recommendations.
 
 - Added `src/lib/constants/consolidated-tools.ts` as the canonical ten-surface
   map, including legacy-tool absorption and cost posture.
+- Registered Context Builder as a first-class operational tool, so all ten
+  primary surfaces now have registry anchors, app pages, API/data routes,
+  context blueprints, readiness checks, and sidebar status ids.
+- Added specialized development groups for research, graph/ontology,
+  mediation, signals, and briefing/legal tools. These preserve specialist
+  pages while clearly marking them outside the primary ten-tool workspace.
 - Rebuilt the sidebar around the consolidated workflow while preserving direct
   routes to legacy pages.
+- Surfaced the specialized development groups in `/app/tools` and the
+  dashboard Tool Packages panel.
 - Refocused package taxonomy and core tool groups on the ten anchors.
 - Normalized role recommendations so legacy IDs point to consolidated anchors.
 - Simplified situation creation from ten workflow choices to five primary
@@ -67,12 +75,15 @@ Default research depth is now light:
 
 - `npx tsc --noEmit`: passed.
 - `npm run lint`: passed with existing warning backlog, no errors.
-- `npx vitest run`: passed, 95 files and 456 tests.
+- `npx vitest run`: passed, 95 files and 457 tests.
 - `npm run build`: passed.
-- `npm run audit:tool-contracts`: passed, 54/54 tools.
+- `npm run audit:tool-contracts`: passed, 55/55 tools.
 - `npm run audit:routes`: passed, 62 calibrated AI routes and 5 exempt.
 - `npm run audit:tools`: passed and regenerated the 2026-05-01 audit.
 - `npm run audit:gcp`: passed, 0 hard failures and 0 soft warnings.
+- `npm run generate:tool-backlog`: passed and regenerated the sprint backlog.
+- `npm run generate:tool-docs`: passed, 55 generated tool specs.
+- `graphify update .`: passed, 3253 nodes and 3998 edges.
 - Browser smoke on `http://localhost:3100/demo/tools`: passed; consolidated
-  sidebar rendered, no framework overlay, package counts showed 9/10 active
-  tools and 5-6 future package tools.
+  sidebar rendered, Context Builder appeared as a primary tool, and the
+  specialized development groups rendered under the primary ten.

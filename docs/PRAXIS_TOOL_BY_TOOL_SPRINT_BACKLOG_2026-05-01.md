@@ -4,7 +4,7 @@ This backlog is generated from the live PRAXIS tool registry, operating contract
 
 Current implementation focus: generic core + conflict/political analyst path. Other workflow paths are codified for future activation, but they should not distract this sprint from making the common and political-analysis tools excellent.
 
-Summary: 54 registered tools; P0=20, P1=16, P2=16, P3=2.
+Summary: 55 registered tools; P0=21, P1=16, P2=16, P3=2.
 
 ## Cross-Tool Non-Negotiables
 
@@ -573,6 +573,37 @@ Verification:
 - [ ] Ask PRAXIS: "this output is wrong, update it because..." and verify it asks missing required questions before writing.
 - [ ] POST treaty-analyze route with a realistic situation fixture and verify non-empty, schema-valid output.
 - [ ] Verify export/reload path reads the saved output with provenance.
+### P0 - Context Builder (context-builder)
+
+- Category: context
+- AI route: classify-domain (n/a)
+- Page: src/app/app/context-builder/page.tsx
+- UI contract surface: no; shared shell: no; output frame: no
+- Output mode: table, dashboard
+- Active generic/political path: yes
+- Path membership: generic-core:core, generic-core:primary, political-officer:core, country-desk:core, mediator-envoy:core, humanitarian-access:core, legal-sanctions:core, political-risk:core, policy-research:core, media-disinformation:core, stabilization:core, election-governance:core
+- Required context: analyst-profile, user-preferences, situation-record
+- Graph mode: read; LibreOffice/document lane: no
+
+To do:
+- [ ] Clarify tool purpose in the page header: Help a policy or intelligence user use Context Builder to turn the active situation into a concrete, reviewable work product.
+- [ ] Wire the shared context blueprint: required layers are analyst-profile, user-preferences, situation-record.
+- [ ] Connect output to graph backbone mode read; future-proof for Dialectica ontology-backed retrieval/proposals.
+- [ ] Wire RegistryToolInfo so methodology, sources, operating contract, and related tools are visible.
+- [ ] Evaluate migration to ToolPageShell or shared page scaffolding for consistent guard, generation, and contract UI.
+- [ ] Wrap generated outputs in ToolOutputFrame or equivalent confidence/provenance/degraded-state surface.
+- [ ] Review UI output state: meaningful visualization, empty/error/loading states, provenance, and export/readback actions.
+- [ ] Review dashboard layout: one-line diagnosis, next-best action, source coverage, stale outputs, and no-config/no-data states.
+- [ ] Add required-question preflight: What situation, geography, and time window should this view represent? / Which actors, sources, or documents are currently missing?
+- [ ] Confirm whether this tool should have an AI route; if yes, add calibrated route, schema, persistence, and smoke test.
+- [ ] Add or verify Ask PRAXIS writeback schema so user corrections update the saved tool output instead of staying in chat.
+- [ ] Add one browser smoke path for a realistic user flow and one unit/schema test for the generated output contract.
+
+Verification:
+- [ ] Open /demo/context-builder or /app/context-builder and verify header, operating contract, loading, empty, error, and generated states.
+- [ ] Ask PRAXIS: "this output is wrong, update it because..." and verify it asks missing required questions before writing.
+- [ ] POST classify-domain route with a realistic situation fixture and verify non-empty, schema-valid output.
+- [ ] Verify export/reload path reads the saved output with provenance.
 ### P0 - Documents (documents)
 
 - Category: context
@@ -900,6 +931,9 @@ Verification:
 - [ ] Ask PRAXIS: "this output is wrong, update it because..." and verify it asks missing required questions before writing.
 - [ ] POST info-environment route with a realistic situation fixture and verify non-empty, schema-valid output.
 - [ ] Verify export/reload path reads the saved output with provenance.
+
+## Remaining Tools
+
 ### P1 - Risk Monitor (risk-monitor)
 
 - Category: analysis
@@ -930,9 +964,6 @@ Verification:
 - [ ] Ask PRAXIS: "this output is wrong, update it because..." and verify it asks missing required questions before writing.
 - [ ] POST risk-assessment route with a realistic situation fixture and verify non-empty, schema-valid output.
 - [ ] Verify export/reload path reads the saved output with provenance.
-
-## Remaining Tools
-
 ### P1 - Timeline (timeline)
 
 - Category: context

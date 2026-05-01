@@ -108,9 +108,10 @@ The current ten-tool consolidation audit is
 code audit, primary ten-tool surface, legacy-tool absorption map, onboarding
 simplification, and Google Cloud / premium research cost guardrails.
 
-Generated per-tool specifications live under `docs/tools/generated/`. Refresh
-them with `npm run generate:tool-docs` after changing the registry, operating
-contracts, path taxonomy, or context blueprints.
+Generated per-tool specifications live under `docs/tools/generated/` and
+currently cover 55 registered tools. Refresh them with
+`npm run generate:tool-docs` after changing the registry, operating contracts,
+path taxonomy, or context blueprints.
 
 ## Active Tool Operating System Workstream
 
@@ -144,7 +145,7 @@ contracts, path taxonomy, or context blueprints.
 - [x] Show context blueprint and canonical data paths in the shared operating
   contract panel so tool pages expose not only purpose but also the knowledge
   context they require.
-- [x] Generate 53 per-tool documentation files under `docs/tools/generated/`
+- [x] Generate per-tool documentation files under `docs/tools/generated/`
   from live registry, contracts, paths, and context blueprints.
 - [x] Tighten `/api/tool-data` so manual saves use a structured versioned
   envelope with metadata/source receipts, legacy compatibility mirroring, and
