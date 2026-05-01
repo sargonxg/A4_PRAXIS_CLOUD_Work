@@ -2,6 +2,14 @@
 
 ## 2026-05-01 — Tools workspace continuation
 
+- Added real-app content boundary documentation and a critical product roadmap
+  in `docs/PRAXIS_REAL_APP_CRITICAL_ROADMAP_2026-05-01.md`.
+- Added `docs/PRAXIS_DIALECTICA_BACKBONE_ARCHITECTURE_2026-05-01.md`, a
+  researched integration plan for future premium Dialectica-backed dynamic
+  ontologies, graph reasoning, and context packs.
+- Tightened Ask PRAXIS suggested prompts so real users without an active
+  situation see neutral setup/context prompts instead of Nordalia demo prompts,
+  with regression coverage for demo isolation.
 - Added `/app/tools`, a dedicated tools workspace for package filters, search,
   package readiness, saved-output health, required context, stale output flags,
   and route wiring across the active PRAXIS workflow.

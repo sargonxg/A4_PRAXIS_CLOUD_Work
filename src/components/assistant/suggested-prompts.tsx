@@ -118,13 +118,73 @@ const DEMO_CATEGORIES = [
   },
 ];
 
+const EMPTY_APP_CATEGORIES = [
+  {
+    title: 'Start a Workspace',
+    icon: GitBranch,
+    accent: 'border-diplomatic-blue',
+    iconBg: 'bg-diplomatic-blue/10',
+    iconColor: 'text-diplomatic-blue',
+    prompts: [
+      'Help me create my first situation',
+      'What context should I add before running PRAXIS tools?',
+      'Which sources should I attach to make the first analysis reliable?',
+    ],
+  },
+  {
+    title: 'Context Quality',
+    icon: Globe,
+    accent: 'border-gold-600',
+    iconBg: 'bg-gold-500/10',
+    iconColor: 'text-gold-600',
+    prompts: [
+      'What makes a strong situation description?',
+      'What actors, documents, and sources should I provide?',
+      'How does PRAXIS use my uploaded context?',
+    ],
+  },
+  {
+    title: 'Workflow Planning',
+    icon: FileText,
+    accent: 'border-teal',
+    iconBg: 'bg-teal/10',
+    iconColor: 'text-teal',
+    prompts: [
+      'Walk me through the real PRAXIS workflow',
+      'Which tool should I run first after creating a situation?',
+      'How do I turn tool outputs into a report?',
+    ],
+  },
+  {
+    title: 'Graph Backbone',
+    icon: Layers,
+    accent: 'border-emerald-500',
+    iconBg: 'bg-emerald-500/10',
+    iconColor: 'text-emerald-500',
+    prompts: [
+      'How does the situation graph improve analysis?',
+      'What should I verify before trusting graph-backed recommendations?',
+      'How can I improve the evidence behind my situation graph?',
+    ],
+  },
+];
+
+export function getSuggestedPromptCategories(input: {
+  demoMode: boolean;
+  activeSituation: { name: string; actors?: string[] } | null;
+}) {
+  if (input.demoMode) return DEMO_CATEGORIES;
+  if (input.activeSituation) {
+    return buildCategories(input.activeSituation.name, input.activeSituation.actors || []);
+  }
+  return EMPTY_APP_CATEGORIES;
+}
+
 export function SuggestedPrompts({ onSelect }: SuggestedPromptsProps) {
   const { activeSituation } = useSituationStore();
   const { demoMode } = useAppStore();
 
-  const categories = demoMode || !activeSituation
-    ? DEMO_CATEGORIES
-    : buildCategories(activeSituation.name, activeSituation.actors || []);
+  const categories = getSuggestedPromptCategories({ demoMode, activeSituation });
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -80,6 +80,17 @@ The current context-creation release note is
 situation/onboarding context improvements that make AI/tool outputs more
 user- and situation-specific.
 
+The current real-app critical roadmap is
+`docs/PRAXIS_REAL_APP_CRITICAL_ROADMAP_2026-05-01.md`. It separates production
+content from demo content and ranks the highest-impact work needed for a real
+user to operate PRAXIS end to end.
+
+The current Dialectica premium-backbone plan is
+`docs/PRAXIS_DIALECTICA_BACKBONE_ARCHITECTURE_2026-05-01.md`. It defines how
+future premium users can connect PRAXIS situations to Dialectica dynamic
+ontologies, deterministic graph reasoning, context packs, and analyst-approved
+graph mutations.
+
 Generated per-tool specifications live under `docs/tools/generated/`. Refresh
 them with `npm run generate:tool-docs` after changing the registry, operating
 contracts, path taxonomy, or context blueprints.
@@ -152,6 +163,15 @@ contracts, path taxonomy, or context blueprints.
   deduping, protocol checks, source caps, custom-source filtering, and context
   note caps.
 - [x] Add an AI context quality readout to the situation creation review step.
+- [x] Stop Ask PRAXIS from showing demo conflict prompts to real users without
+  an active situation; live no-situation prompts now focus on setup, context
+  quality, workflow, and graph readiness.
+- [x] Add a real-app critical roadmap and Dialectica backbone architecture note
+  so future work keeps demo mode separate from production user content.
+- [ ] Add a CI audit that blocks demo/sample content from appearing in real
+  `/app` empty states, exports, prompt suggestions, and saved outputs.
+- [ ] Add a typed content-origin field to saved tool outputs so production
+  reports can reject `demo_only` content for non-demo users.
 - [ ] Apply `RegistryToolInfo` / `ToolOperatingContractPanel` to every tool page
   that still bypasses the shared shell.
 - [x] Move the active generic + conflict/political tools to the context
