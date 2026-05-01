@@ -2,6 +2,71 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-05-01 - Context Builder Workspace
+
+Source:
+
+- App commit deployed: `125cd53`
+- Branch: `main`
+- Remote: `origin/main`
+
+What changed:
+
+- Added `docs/PRAXIS_DEEP_RESEARCH_SYNTHESIS_2026-05-01.md`, converting the
+  user-provided production research artifact into a PRAXIS execution thesis,
+  monster backlog, immediate waves, and next deep-research prompts.
+- Updated `docs/PRAXIS_AUTONOMOUS_IMPROVEMENT_PLAN.md` with the research
+  ingest priorities and marked the Context Builder wave as the first
+  implemented slice.
+- Added a reusable context planner in `src/lib/context/context-builder-plan.ts`
+  that derives context checklist status, missing inputs, recommended tool
+  sequence, first boardroom question, and a deep-research handoff prompt from
+  the active situation.
+- Added `/app/context-builder`, a protected situation workspace that exposes
+  context health, mission path, missing context, operating sequence, next best
+  actions, and a structured research-agent prompt.
+- Linked Context Builder from the authenticated sidebar and dashboard Situation
+  Launchpad.
+- Added unit coverage for mission-specific and thin-context planner behavior.
+- Refreshed the tracked Graphify graph after code changes.
+
+Validation before deploy:
+
+- `npx vitest run tests/unit/lib/context/context-builder-plan.test.ts` passed:
+  1 file, 2 tests.
+- `npx tsc --noEmit --pretty false` passed.
+- `npm run lint` passed with the existing warning backlog and no errors
+  (`205 warnings`).
+- `npx vitest run` passed: 90 files, 441 tests.
+- `npm run build` passed and included `/app/context-builder` in the compiled
+  route manifest.
+- Local dev smoke on `http://localhost:3100/login` returned `200`; protected
+  `/app/context-builder` returned `307` to `/login?redirect=%2Fapp%2Fcontext-builder`.
+
+Cloud Build:
+
+- Build: `f9df0f4e-59be-4ff4-93bf-24ebfff9a71e`
+- Status: `SUCCESS`
+- Duration: `6M24S`
+- Logs: <https://console.cloud.google.com/cloud-build/builds/f9df0f4e-59be-4ff4-93bf-24ebfff9a71e?project=852128226674>
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00188-6m7`
+- Frontend URL: `https://praxis-frontend-pgoyqovcza-uc.a.run.app`
+- Traffic: `100%`
+
+Production verification:
+
+- `GET https://praxis.tacitus.me/login` -> `200`.
+- `GET https://praxis.tacitus.me/app/context-builder` -> `307` to
+  `/login?redirect=%2Fapp%2Fcontext-builder` when unauthenticated.
+- `GET https://praxis.tacitus.me/api/health` -> `status:"ok"`,
+  `firestore:"ok"`, `ai_provider:"ok"`, `cookie_secret:"ok"`,
+  `firecrawl:"ok"`, `vertex_adk:"ok"`.
+- `GET https://praxis.tacitus.me/api/auth/test-firebase` confirmed Firebase
+  is reachable and Email/Password auth is enabled.
+
 ## 2026-05-01 - Mission Workflow Playbooks
 
 Source:
