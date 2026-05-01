@@ -4,6 +4,7 @@ import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
+import { ToolOutputFrame } from '@/components/praxis/tool-output-frame';
 import { AdvisorPicker } from '@/components/advisory/advisor-picker';
 import { AdvisorChatPane } from '@/components/advisory/advisor-chat-pane';
 import type { AdvisorConfig } from '@/types/advisor';
@@ -392,7 +393,16 @@ export default function AdvisoryPage() {
 
       {/* Results */}
       {advisoryData && (
-        <>
+        <ToolOutputFrame
+          toolId="advisory"
+          confidence={advisoryData.confidenceLevel}
+          generatedAt={persisted.generatedAt ?? undefined}
+          profileVersion={persisted.profileVersion}
+          sourceReceipts={persisted.sourceReceipts}
+          frameworks={['Glasl escalation', 'Fisher-Ury interests', 'Zartman ripeness', 'Stedman spoilers']}
+          calibratedTo={analystRole.trim() || (isDemo ? 'demo analyst' : 'active situation')}
+          className="space-y-6"
+        >
           {/* Strategic Assessment strip */}
           <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
             <h2 className="text-sm font-semibold text-navy-900 mb-4 flex items-center gap-2">
@@ -525,7 +535,7 @@ export default function AdvisoryPage() {
               )}
             </p>
           )}
-        </>
+        </ToolOutputFrame>
       )}
 
       {/* Empty state */}

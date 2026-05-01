@@ -52,6 +52,10 @@ describe('source receipts', () => {
     expect(receipts).toHaveLength(3);
     expect(receipts.map((receipt) => receipt.kind)).toEqual(['web-result', 'scraped-excerpt', 'structured-data']);
     expect(receipts[0].confidence).toBe('high');
+    expect(receipts[0].receiptId).toMatch(/^rcpt_/);
+    expect(receipts[0].sourceId).toMatch(/^src_/);
+    expect(receipts[0].retrievalMethod).toBe('web_search');
+    expect(receipts[0].span?.quote).toContain('UN report snippet');
   });
 
   it('summarizes confidence and formats prompt audit text', () => {

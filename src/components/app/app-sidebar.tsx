@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -272,6 +272,7 @@ const navSections: NavSection[] = [
   {
     label: 'Research',
     items: [
+      { label: 'Source Scout', icon: Telescope, href: '/source-scout' },
       { label: 'Deep Research Agent', icon: Telescope, href: '/deep-search-agent', badge: 'TACITUS' },
       { label: 'ARGUS', icon: Network, href: '/argus', badge: 'TACITUS' },
       { label: 'Sources Library', icon: BookOpen, href: '/sources' },
@@ -287,7 +288,9 @@ const navSections: NavSection[] = [
   {
     label: 'Workspace',
     items: [
+      { label: 'Demo Guide', icon: Presentation, href: '/demo-guide' },
       { label: 'Tools Workspace', icon: Package, href: '/tools' },
+      { label: 'Boardroom', icon: UsersRound, href: '/brainstorming-table' },
       { label: 'Ask PRAXIS', icon: MessageSquare, href: '/assistant' },
       { label: 'Documents', icon: FolderOpen, href: '/documents' },
       { label: 'Report Studio', icon: FileText, href: '/reports' },
@@ -300,6 +303,16 @@ const navSections: NavSection[] = [
     ],
   },
 ];
+
+const RECORDING_NAV_HREFS = new Set([
+  '/demo-guide',
+  '/dashboard',
+  '/context-builder',
+  '/source-scout',
+  '/graphops',
+  '/brainstorming-table',
+  '/briefing',
+]);
 
 function ChangelogButton() {
   const [open, setOpen] = useState(false);
@@ -385,6 +398,8 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   '/mediation-design': 'mediation-design',
   // Intelligence
   '/argus': 'argus',
+  '/source-scout': 'source-scout',
+  '/brainstorming-table': 'brainstorming-table',
   '/media-compass': 'media-compass',
   '/media-roundup': 'media-roundup',
   '/info-environment': 'info-environment',
@@ -423,10 +438,12 @@ function formatDomainLabel(domain: string): string {
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { user, logout, analystProfile } = useAuth();
   const { sidebarOpen, toggleSidebar } = useAppStore();
   const { activeSituationId, setActiveSituation, activeSituation } = useSituationStore();
+  const recordingMode = user?.isDemo === true && searchParams.get('recording') === '1';
   const allToolStatuses = useAllToolStatuses(activeSituationId);
   const { preferences } = useUserPreferences({ enabled: Boolean(user && !user.isDemo) });
   const sidebarOrder = orderedToolIds(preferences);
@@ -450,6 +467,7 @@ export function AppSidebar() {
     .map((section) => ({
       ...section,
       items: [...section.items]
+        .filter((item) => !recordingMode || RECORDING_NAV_HREFS.has(item.href))
         .filter((item) => !isToolHidden(HREF_TO_TOOL_ID[item.href]))
         .sort((a, b) => {
           const aIndex = orderIndex.get(HREF_TO_TOOL_ID[a.href] ?? '') ?? Number.MAX_SAFE_INTEGER;
@@ -656,10 +674,11 @@ export function AppSidebar() {
               const isActive =
                 barePath === item.href || barePath.startsWith(item.href + '/');
               const Icon = item.icon;
+              const href = recordingMode ? `${item.href}?recording=1` : item.href;
 
               const linkContent = (
                 <PraxisLink
-                  href={item.href}
+                  href={href}
                   className={cn(
                     'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
                     isActive
@@ -771,7 +790,7 @@ export function AppSidebar() {
         })}
 
         {/* Advisory Council - special item */}
-        <div className="mt-2 border-t border-[var(--color-app-border)] pt-3">
+        {!recordingMode && <div className="mt-2 border-t border-[var(--color-app-border)] pt-3">
           {(() => {
             const isActive = barePath.startsWith('/advisory');
             const linkContent = (
@@ -818,10 +837,10 @@ export function AppSidebar() {
             }
             return linkContent;
           })()}
-        </div>
+        </div>}
 
         {/* Settings */}
-        <div className="mt-1">
+        {!recordingMode && <div className="mt-1">
           {(() => {
             const isActive = barePath === '/settings';
             const linkContent = (
@@ -863,10 +882,10 @@ export function AppSidebar() {
             }
             return linkContent;
           })()}
-        </div>
+        </div>}
 
         {/* Cross-Situation Intelligence */}
-        <div className="mt-1">
+        {!recordingMode && <div className="mt-1">
           {(() => {
             const isActive = barePath.startsWith('/global-search');
             const linkContent = (
@@ -905,10 +924,10 @@ export function AppSidebar() {
             }
             return linkContent;
           })()}
-        </div>
+        </div>}
 
         {/* System Health */}
-        <div className="mt-1">
+        {!recordingMode && <div className="mt-1">
           {(() => {
             const isActive = barePath.startsWith('/settings/system-health');
             const linkContent = (
@@ -950,7 +969,7 @@ export function AppSidebar() {
             }
             return linkContent;
           })()}
-        </div>
+        </div>}
       </nav>
 
       {/* Keyboard shortcut hint — navy-200 keeps it readable at 10px small caps */}

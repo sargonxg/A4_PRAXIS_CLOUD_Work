@@ -59,7 +59,7 @@ export interface ToolOutputFrameProps {
   model?: string;
   sourceCount?: number;
   primarySources?: string[];
-  sourceReceipts?: Array<{ name: string; timestamp?: string; url?: string }>;
+  sourceReceipts?: unknown[];
   frameworks?: string[];
   calibratedTo?: string;
   retrievalQuery?: string;

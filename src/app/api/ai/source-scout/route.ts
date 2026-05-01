@@ -74,18 +74,27 @@ export const SourceScoutSchema = z.object({
     })
     .optional(),
   sourceReceipts: z.array(z.object({
+    receiptId: z.string().optional(),
+    sourceId: z.string().optional(),
     name: z.string(),
     title: z.string(),
     url: z.string().optional(),
     provider: z.string(),
     source: z.string(),
     kind: z.enum(['web-result', 'scraped-excerpt', 'structured-data']),
+    retrievalMethod: z.enum(['web_search', 'scrape', 'structured_data']).optional(),
     timestamp: z.string(),
     publishedDate: z.string().optional(),
     query: z.string().optional(),
     reliabilityScore: z.number(),
     confidence: z.enum(['high', 'medium', 'low']),
     excerpt: z.string().optional(),
+    contentHash: z.string().optional(),
+    span: z.object({
+      start: z.number().optional(),
+      end: z.number().optional(),
+      quote: z.string().optional(),
+    }).optional(),
   })).default([]),
   sourceAudit: z.object({
     generatedAt: z.string(),

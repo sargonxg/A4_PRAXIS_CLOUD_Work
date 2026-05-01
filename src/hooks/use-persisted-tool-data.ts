@@ -5,6 +5,10 @@ import { getToolById } from '@/lib/constants/tool-registry';
 
 interface UsePersistedToolDataReturn {
   data: unknown | null;
+  metadata: Record<string, unknown> | null;
+  sourceReceipts: unknown[];
+  profileVersion?: number;
+  toolRunId?: string | null;
   isLoading: boolean;
   generatedAt: string | null;
   version: number;
@@ -18,6 +22,10 @@ export function usePersistedToolData(
   situationId: string | undefined
 ): UsePersistedToolDataReturn {
   const [data, setData] = useState<unknown | null>(null);
+  const [metadata, setMetadata] = useState<Record<string, unknown> | null>(null);
+  const [sourceReceipts, setSourceReceipts] = useState<unknown[]>([]);
+  const [profileVersion, setProfileVersion] = useState<number | undefined>(undefined);
+  const [toolRunId, setToolRunId] = useState<string | null | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [version, setVersion] = useState<number>(1);
@@ -36,6 +44,10 @@ export function usePersistedToolData(
   useEffect(() => {
     if (!situationId || !toolId) {
       setData(null);
+      setMetadata(null);
+      setSourceReceipts([]);
+      setProfileVersion(undefined);
+      setToolRunId(undefined);
       setGeneratedAt(null);
       setVersion(1);
       return;
@@ -58,10 +70,18 @@ export function usePersistedToolData(
         fetchedRef.current = cacheKey;
         if (result.data != null) {
           setData(result.data);
+          setMetadata(result.metadata ?? null);
+          setSourceReceipts(Array.isArray(result.sourceReceipts) ? result.sourceReceipts : []);
+          setProfileVersion(typeof result.profileVersion === 'number' ? result.profileVersion : undefined);
+          setToolRunId(typeof result.toolRunId === 'string' ? result.toolRunId : result.toolRunId === null ? null : undefined);
           setGeneratedAt(result.generatedAt ?? null);
           setVersion(result.version ?? 1);
         } else {
           setData(null);
+          setMetadata(null);
+          setSourceReceipts([]);
+          setProfileVersion(undefined);
+          setToolRunId(undefined);
           setGeneratedAt(null);
           setVersion(1);
         }
@@ -69,6 +89,10 @@ export function usePersistedToolData(
       .catch(() => {
         if (!cancelled) {
           setData(null);
+          setMetadata(null);
+          setSourceReceipts([]);
+          setProfileVersion(undefined);
+          setToolRunId(undefined);
           setGeneratedAt(null);
           setVersion(1);
         }
@@ -87,6 +111,10 @@ export function usePersistedToolData(
       if (!situationId || !toolId) return;
 
       setData(newData);
+      setMetadata(null);
+      setSourceReceipts([]);
+      setProfileVersion(undefined);
+      setToolRunId(undefined);
       const now = new Date().toISOString();
       setGeneratedAt(now);
       setVersion(v => v + 1);
@@ -113,6 +141,10 @@ export function usePersistedToolData(
     if (!situationId || !toolId) return;
 
     setData(null);
+    setMetadata(null);
+    setSourceReceipts([]);
+    setProfileVersion(undefined);
+    setToolRunId(undefined);
     setGeneratedAt(null);
     setVersion(1);
     // Reset the fetch ref so next mount will re-fetch
@@ -128,5 +160,17 @@ export function usePersistedToolData(
     }
   }, [toolId, situationId]);
 
-  return { data, isLoading, generatedAt, version, isStale, save, clear };
+  return {
+    data,
+    metadata,
+    sourceReceipts,
+    profileVersion,
+    toolRunId,
+    isLoading,
+    generatedAt,
+    version,
+    isStale,
+    save,
+    clear,
+  };
 }

@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { ConfidenceBadge, type Confidence } from './confidence-badge';
 import { Citation } from './citation';
+import { SourceReceiptList } from './source-receipt-list';
 import { cn } from '@/lib/utils/cn';
 
 export interface OutputProvenancePanelProps {
@@ -37,7 +38,7 @@ export interface OutputProvenancePanelProps {
   /** Optional: list a few primary source names as chips. */
   primarySources?: string[];
   /** Optional: live-feed receipts with feed name and fetch timestamp. */
-  sourceReceipts?: Array<{ name: string; timestamp?: string; url?: string }>;
+  sourceReceipts?: unknown[];
   /** Optional: calibrated frameworks applied to this output. */
   frameworks?: string[];
   /** Optional: analyst/domain calibration label. */
@@ -144,18 +145,7 @@ export function OutputProvenancePanel({
         </div>
       ) : null}
       {sourceReceipts && sourceReceipts.length > 0 ? (
-        <div className="mt-2 flex flex-wrap gap-1">
-          {sourceReceipts.slice(0, 8).map((receipt) => (
-            <span
-              key={`${receipt.name}-${receipt.timestamp ?? ''}`}
-              title={receipt.url}
-              className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700"
-            >
-              {receipt.name}
-              {receipt.timestamp ? ` · ${formatTimestamp(receipt.timestamp)}` : ''}
-            </span>
-          ))}
-        </div>
+        <SourceReceiptList receipts={sourceReceipts} compact maxItems={8} className="mt-2" />
       ) : null}
       {legacy ? (
         <p className="mt-2 text-[11px] italic text-slate-500">

@@ -16,8 +16,10 @@ import { OnboardingRequiredState } from '@/components/praxis/onboarding-required
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { ConfidenceBadge } from '@/components/praxis/confidence-badge';
 import { OutputProvenancePanel } from '@/components/praxis/output-provenance-panel';
+import { SourceReceiptList } from '@/components/praxis/source-receipt-list';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils/cn';
+import type { CanonicalSourceReceipt } from '@/types/source-receipt';
 
 const RELIABILITY_LABEL: Record<string, string> = {
   tier_a: 'A · primary',
@@ -56,20 +58,7 @@ interface SourceScoutOutput {
   duplicatesAvoided: string[];
   intelligenceGaps: string[];
   retrievalTrace?: { layersSearched: string[]; itemCount: number; durationMs: number };
-  sourceReceipts?: Array<{
-    name: string;
-    title: string;
-    url?: string;
-    provider: string;
-    source: string;
-    kind: 'web-result' | 'scraped-excerpt' | 'structured-data';
-    timestamp: string;
-    publishedDate?: string;
-    query?: string;
-    reliabilityScore: number;
-    confidence: 'high' | 'medium' | 'low';
-    excerpt?: string;
-  }>;
+  sourceReceipts?: CanonicalSourceReceipt[];
   sourceAudit?: {
     generatedAt: string;
     sourceCount: number;
@@ -271,28 +260,7 @@ export default function SourceScoutPage() {
                 </ul>
               )}
               {current.sourceReceipts && current.sourceReceipts.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {current.sourceReceipts.slice(0, 10).map((receipt) => (
-                    <a
-                      key={`${receipt.provider}-${receipt.url ?? receipt.title}`}
-                      href={receipt.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={cn(
-                        'rounded-full border px-2 py-0.5 text-[10px] font-medium',
-                        receipt.confidence === 'high'
-                          ? 'border-emerald-300 bg-white text-emerald-700'
-                          : receipt.confidence === 'medium'
-                            ? 'border-amber-300 bg-white text-amber-700'
-                            : 'border-slate-300 bg-white text-slate-600',
-                        !receipt.url && 'pointer-events-none'
-                      )}
-                      title={receipt.excerpt}
-                    >
-                      {receipt.name}
-                    </a>
-                  ))}
-                </div>
+                <SourceReceiptList receipts={current.sourceReceipts} compact maxItems={10} className="mt-3" />
               )}
             </section>
           )}
@@ -324,11 +292,7 @@ export default function SourceScoutPage() {
             generatedAt={current.generatedAt}
             confidence={current.sourceAudit?.confidence}
             sourceCount={current.sourceAudit?.sourceCount ?? current.retrievalTrace?.itemCount}
-            sourceReceipts={current.sourceReceipts?.map((receipt) => ({
-              name: receipt.name,
-              timestamp: receipt.timestamp,
-              url: receipt.url,
-            }))}
+            sourceReceipts={current.sourceReceipts}
             retrievalQuery={current.question}
             retrievalLayers={current.retrievalTrace?.layersSearched}
           />

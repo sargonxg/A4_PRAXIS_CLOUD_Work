@@ -1,23 +1,12 @@
 import type { WebResearchResult } from '@/lib/ai/web-research';
 import type { LiveSourcePack } from '@/lib/ai/live-source-pack';
+import type {
+  CanonicalSourceReceipt,
+  SourceReceiptConfidence,
+} from '@/types/source-receipt';
 
-export type SourceReceiptKind = 'web-result' | 'scraped-excerpt' | 'structured-data';
-export type SourceReceiptConfidence = 'high' | 'medium' | 'low';
-
-export interface SourceReceipt {
-  name: string;
-  title: string;
-  url?: string;
-  provider: string;
-  source: string;
-  kind: SourceReceiptKind;
-  timestamp: string;
-  publishedDate?: string;
-  query?: string;
-  reliabilityScore: number;
-  confidence: SourceReceiptConfidence;
-  excerpt?: string;
-}
+export type SourceReceipt = CanonicalSourceReceipt;
+export type { SourceReceiptConfidence, SourceReceiptKind } from '@/types/source-receipt';
 
 export interface SourceReceiptAudit {
   generatedAt: string;
@@ -45,50 +34,72 @@ export function buildSourceReceipts(input: SourceReceiptBuildInput): SourceRecei
   const receipts: SourceReceipt[] = [];
 
   for (const result of input.results ?? []) {
+    const sourceId = stableId(result.url || `${result.provider}:${result.source}:${result.title}`, 'src');
+    const timestamp = result.retrievedAt ?? generatedAt;
+    const excerpt = cleanExcerpt(result.snippet || result.content, 260);
     receipts.push({
+      receiptId: stableId(`${sourceId}:${timestamp}:${result.query ?? ''}`, 'rcpt'),
+      sourceId,
       name: result.source || result.provider,
       title: result.title || result.source || result.provider,
       url: result.url,
       provider: result.provider,
       source: result.source,
       kind: 'web-result',
-      timestamp: result.retrievedAt ?? generatedAt,
+      retrievalMethod: 'web_search',
+      timestamp,
       publishedDate: result.publishedDate,
       query: result.query,
       reliabilityScore: clampReliability(result.reliabilityScore),
       confidence: confidenceForReliability(result.reliabilityScore, Boolean(result.url)),
-      excerpt: cleanExcerpt(result.snippet || result.content, 260),
+      excerpt,
+      contentHash: stableId([result.url, result.title, excerpt].filter(Boolean).join('|'), 'hash'),
+      span: excerpt ? { quote: excerpt } : undefined,
     });
   }
 
   for (const scrape of input.scraped ?? []) {
+    const sourceId = stableId(scrape.url || scrape.title || 'scraped-source', 'src');
+    const excerpt = scrape.success ? cleanExcerpt(scrape.content, 260) : scrape.error;
     receipts.push({
+      receiptId: stableId(`${sourceId}:${generatedAt}`, 'rcpt'),
+      sourceId,
       name: scrape.title || hostFromUrl(scrape.url) || 'Scraped source',
       title: scrape.title || scrape.url,
       url: scrape.url,
       provider: 'firecrawl',
       source: hostFromUrl(scrape.url) || 'firecrawl',
       kind: 'scraped-excerpt',
+      retrievalMethod: 'scrape',
       timestamp: generatedAt,
       reliabilityScore: scrape.success ? 0.78 : 0.35,
       confidence: scrape.success ? 'medium' : 'low',
-      excerpt: scrape.success ? cleanExcerpt(scrape.content, 260) : scrape.error,
+      excerpt,
+      contentHash: stableId([scrape.url, scrape.title, excerpt].filter(Boolean).join('|'), 'hash'),
+      span: excerpt ? { quote: excerpt } : undefined,
     });
   }
 
   const ucdp = input.ucdp;
   if (ucdp?.conflicts.length || ucdp?.battleDeaths.length) {
+    const sourceId = stableId('https://ucdp.uu.se/apidocs/', 'src');
+    const excerpt = `${ucdp.conflicts.length} conflict record(s), ${ucdp.battleDeaths.length} battle-death trend row(s).`;
     receipts.push({
+      receiptId: stableId(`${sourceId}:${generatedAt}`, 'rcpt'),
+      sourceId,
       name: 'UCDP API',
       title: 'UCDP structured conflict data',
       url: 'https://ucdp.uu.se/apidocs/',
       provider: 'ucdp',
       source: 'ucdp.uu.se',
       kind: 'structured-data',
+      retrievalMethod: 'structured_data',
       timestamp: generatedAt,
       reliabilityScore: 0.92,
       confidence: 'high',
-      excerpt: `${ucdp.conflicts.length} conflict record(s), ${ucdp.battleDeaths.length} battle-death trend row(s).`,
+      excerpt,
+      contentHash: stableId(excerpt, 'hash'),
+      span: { quote: excerpt },
     });
   }
 
@@ -184,4 +195,12 @@ function hostFromUrl(url: string | undefined): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+function stableId(input: string, prefix: string): string {
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
+  }
+  return `${prefix}_${hash.toString(36)}`;
 }

@@ -85,11 +85,24 @@ Targets:
 
 ### Wave B - Source Receipts
 
-Targets:
-- Add typed citation/source schemas.
-- Add a reusable receipt chip/panel component.
-- Wire at least Source Scout and one production document page.
-- Add fixture tests to prevent citation objects from drifting into prose-only output.
+Status: in progress.
+
+Implemented in this follow-on wave:
+- Added a canonical frontend receipt type with receipt id, source id,
+  retrieval method, reliability, confidence, span quote, content hash, and
+  optional graph/tool/advisor references.
+- Extended the Source Scout receipt builder so generated receipts include the
+  canonical fields while remaining compatible with existing outputs.
+- Added a client-safe normalizer for older saved receipt shapes.
+- Added a reusable `<SourceReceiptList />` component and wired it into Source
+  Scout and the shared provenance panel.
+- Added unit tests for canonical receipt generation and legacy normalization.
+
+Remaining targets:
+- Add inline citation chips for narrative/report text spans.
+- Wire source receipt panels into briefing, policy memo, and boardroom outputs.
+- Persist receipt objects in future `ToolOutputEnvelope` records without
+  flattening them to display-only chips.
 
 ### Wave C - Boardroom Artifact
 
@@ -106,6 +119,28 @@ Targets:
 - Add pending/rejected/approved review UI.
 - Write provenance records for approved changes.
 - Prepare adapter boundary for Dialectica/Cozo without requiring either backend now.
+
+### Wave E - Demo and Promo Readiness
+
+Status: in progress.
+
+Implemented in this follow-on wave:
+- Added an in-app Demo Guide route for recording a concise PRAXIS walkthrough
+  across dashboard, Context Builder, Source Scout, GraphOps, boardroom, and
+  briefing.
+- Added sidebar access to the guide so demo operators do not need an external
+  script.
+- Added provenance/trust framing to the Advisory output through
+  `ToolOutputFrame`.
+- Extended persisted tool data access so custom pages can read metadata,
+  source receipts, profile version, and tool run id from canonical envelopes.
+
+Remaining targets:
+- Add a public landing-page CTA that can send evaluators directly into the
+  guided demo flow after demo login.
+- Add compact evidence summary bars to briefing, boardroom, reports, and
+  assistant tool calls.
+- Label or replace mock report sources before recording customer-facing video.
 
 ## Deep Research Prompts Needed Next
 
