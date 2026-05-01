@@ -122,6 +122,20 @@ export function SituationLaunchpad({ situation }: SituationLaunchpadProps) {
             ))}
           </div>
         ) : null}
+        {path ? (
+          <div className="mt-4 rounded-md border border-diplomatic-blue/15 bg-diplomatic-blue/5 px-3 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-diplomatic-blue">Workflow playbook</p>
+            <p className="mt-1 text-xs font-semibold text-navy-900">{path.paidOutput}</p>
+            <p className="mt-1 text-[11px] leading-snug text-navy-600">{path.firstRunQuestion}</p>
+            <div className="mt-2 flex flex-wrap gap-1">
+              {path.requiredInputs.slice(0, 5).map((input) => (
+                <span key={input} className="rounded-full bg-white/80 px-1.5 py-0.5 text-[9px] font-medium text-navy-600">
+                  {input}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
         <div className="mt-4 border-t border-slate-200 pt-3">
           <div className="flex items-center justify-between gap-3">
             <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-navy-400">

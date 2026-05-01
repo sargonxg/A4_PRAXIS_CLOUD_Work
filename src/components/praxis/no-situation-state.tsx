@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { usePraxisRoute } from '@/lib/utils/routes';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Globe, Plus, ArrowRight, FileText, Shield, Users } from 'lucide-react';
+import { POLICY_WORKFLOW_PATHS } from '@/lib/constants/policy-workflow-paths';
 import { OnboardingRequiredState } from './onboarding-required-state';
 
 export function NoSituationState() {
@@ -29,6 +30,30 @@ export function NoSituationState() {
       <p className="mt-2 max-w-md text-center text-sm text-navy-500">
         Create a situation to unlock all PRAXIS tools. Each situation organizes your intelligence, analysis, and reports around a specific conflict or scenario.
       </p>
+
+      <div className="mt-8 grid w-full max-w-4xl gap-3 md:grid-cols-3">
+        {POLICY_WORKFLOW_PATHS.slice(0, 5).map((path) => (
+          <button
+            key={path.id}
+            type="button"
+            onClick={() => router.push(`${route('/situations/new')}?workflow=${path.id}`)}
+            className="rounded-lg border border-cream-300 bg-white/70 p-4 text-left transition hover:border-diplomatic-blue/30 hover:bg-diplomatic-blue/5"
+          >
+            <p className="text-xs font-semibold text-navy-900">{path.shortLabel}</p>
+            <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-navy-500">{path.description}</p>
+            <p className="mt-3 line-clamp-2 text-[11px] leading-snug text-diplomatic-blue">{path.paidOutput}</p>
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => router.push(route('/situations/new'))}
+          className="rounded-lg border border-dashed border-cream-400 bg-cream-100/60 p-4 text-left transition hover:border-gold-500/50 hover:bg-gold-500/5"
+        >
+          <p className="text-xs font-semibold text-navy-900">Start from scratch</p>
+          <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-navy-500">Use the generic PRAXIS workflow and tune details during creation.</p>
+          <p className="mt-3 text-[11px] font-semibold text-gold-700">Open context builder</p>
+        </button>
+      </div>
 
       <button
         onClick={() => router.push(route('/situations/new'))}

@@ -2,6 +2,16 @@
 
 ## 2026-05-01 — Tools workspace continuation
 
+- Added `docs/PRAXIS_AUTONOMOUS_IMPROVEMENT_PLAN.md`, a fresh codebase-grounded
+  autonomous audit covering product workflows, customer-fit scouting,
+  technical findings, prioritized improvement waves, defense/diplomacy
+  adaptations, validation, and next work.
+- Expanded policy workflow paths into mission playbooks with actual workflow,
+  valuable UI, pay-worthy output, first-run question, and required inputs.
+- Surfaced mission playbooks in the blank no-situation state, situation
+  creation workflow selection/review, and dashboard Situation Launchpad so new
+  and returning users understand what each workflow is trying to produce.
+- Added regression coverage for workflow playbook completeness.
 - Added `docs/PRAXIS_BOARDROOM_CONTEXT_SEARCH_AUDIT_2026-05-01.md`, a
   researched product/architecture audit for context building, search/data,
   returning-user memory, dynamic boardroom deliberation, and future Dialectica

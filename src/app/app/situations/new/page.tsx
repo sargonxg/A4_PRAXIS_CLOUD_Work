@@ -173,6 +173,7 @@ function StepDescribe({
   const [showRegions, setShowRegions] = useState(false);
   const [intelPreview, setIntelPreview] = useState<{ articles: { title: string; url: string; domain: string }[]; reports: { title: string; source: string }[]; loading: boolean }>({ articles: [], reports: [], loading: false });
   const [previewFetched, setPreviewFetched] = useState(false);
+  const selectedWorkflowPath = getPolicyWorkflowPath(form.workflowPath);
 
   // Auto-fetch intelligence preview when name has 3+ words
   const fetchPreview = useCallback(async () => {
@@ -241,6 +242,20 @@ function StepDescribe({
         <p className="text-[10px] text-navy-400">
           This tunes the starter sources, dashboard quick actions, and first deliverables. You can change details later.
         </p>
+        {selectedWorkflowPath ? (
+          <div className="rounded-lg border border-diplomatic-blue/15 bg-diplomatic-blue/5 p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-diplomatic-blue">Mission playbook</p>
+            <p className="mt-1 text-xs font-semibold text-navy-900">{selectedWorkflowPath.paidOutput}</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-navy-600">{selectedWorkflowPath.actualWorkflow}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {selectedWorkflowPath.requiredInputs.slice(0, 5).map((input) => (
+                <span key={input} className="rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-navy-600">
+                  {input}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="space-y-1.5">
@@ -867,6 +882,24 @@ function StepReview({
             sourceUrls={sourceUrls}
           />
 
+          {workflowPath ? (
+            <div className="rounded-lg border border-diplomatic-blue/20 bg-diplomatic-blue/5 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-diplomatic-blue">Workflow playbook</p>
+              <p className="mt-1 text-sm font-semibold text-navy-900">{workflowPath.paidOutput}</p>
+              <p className="mt-1 text-xs leading-relaxed text-navy-600">{workflowPath.valuableUi}</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <div className="rounded-md border border-diplomatic-blue/10 bg-white/70 px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">First boardroom question</p>
+                  <p className="mt-1 text-xs leading-relaxed text-navy-700">{workflowPath.firstRunQuestion}</p>
+                </div>
+                <div className="rounded-md border border-diplomatic-blue/10 bg-white/70 px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Inputs to strengthen next</p>
+                  <p className="mt-1 text-xs leading-relaxed text-navy-700">{workflowPath.requiredInputs.join(', ')}</p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <div className="rounded-lg border border-emerald-200/60 bg-emerald-50/50 px-4 py-3">
             <p className="text-xs text-emerald-700">Creating this situation is included. Document analysis uses your workspace capacity.</p>
           </div>
@@ -1092,6 +1125,13 @@ export default function NewSituationPage() {
       };
     });
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const workflow = new URLSearchParams(window.location.search).get('workflow');
+    if (!workflow || !getPolicyWorkflowPath(workflow)) return;
+    handleWorkflowPathChange(workflow as PolicyWorkflowPathId);
+  }, [handleWorkflowPathChange]);
 
   const handleCreate = useCallback(async () => {
     setIsCreating(true);

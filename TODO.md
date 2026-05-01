@@ -97,6 +97,12 @@ latest online research synthesis, four-expert boardroom capability pass,
 new/returning-user gaps, source-search improvements, and Dialectica-ready
 premium graph path.
 
+The current autonomous improvement plan is
+`docs/PRAXIS_AUTONOMOUS_IMPROVEMENT_PLAN.md`. It reconstructs the app from
+code, maps customer-fit workflows, audits product and technical gaps, records
+the latest mission-playbook implementation wave, and ranks the next 10
+improvements.
+
 Generated per-tool specifications live under `docs/tools/generated/`. Refresh
 them with `npm run generate:tool-docs` after changing the registry, operating
 contracts, path taxonomy, or context blueprints.
@@ -174,6 +180,13 @@ contracts, path taxonomy, or context blueprints.
 - [x] Add the boardroom/context/search audit with a ranked next queue for
   guided context building, search-plan visibility, returning-user memory,
   boardroom run artifacts, and Dialectica graph integration.
+- [x] Create the autonomous improvement plan and customer-fit audit requested
+  for the current product-engineering loop.
+- [x] Expand policy workflow paths into mission playbooks with actual workflow,
+  valuable UI, paid output, first-run question, and required inputs.
+- [x] Surface workflow mission playbooks in blank state, situation creation,
+  and dashboard launchpad so new and returning users can understand the work
+  PRAXIS is helping them complete.
 - [x] Harden situation creation context intake with URL normalization,
   deduping, protocol checks, source caps, custom-source filtering, and context
   note caps.
