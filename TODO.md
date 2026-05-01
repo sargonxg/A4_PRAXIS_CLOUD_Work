@@ -91,6 +91,12 @@ future premium users can connect PRAXIS situations to Dialectica dynamic
 ontologies, deterministic graph reasoning, context packs, and analyst-approved
 graph mutations.
 
+The current boardroom/context/search audit is
+`docs/PRAXIS_BOARDROOM_CONTEXT_SEARCH_AUDIT_2026-05-01.md`. It captures the
+latest online research synthesis, four-expert boardroom capability pass,
+new/returning-user gaps, source-search improvements, and Dialectica-ready
+premium graph path.
+
 Generated per-tool specifications live under `docs/tools/generated/`. Refresh
 them with `npm run generate:tool-docs` after changing the registry, operating
 contracts, path taxonomy, or context blueprints.
@@ -159,6 +165,15 @@ contracts, path taxonomy, or context blueprints.
   context inventory, and situation overrides.
 - [x] Add default situation-aware retrieval for calibrated AI routes that do
   not provide their own retrieval query.
+- [x] Add a public four-advisor capability registry covering each expert's
+  method, boardroom role, visible tool access, source/data diet, and
+  Dialectica-ready graph layer.
+- [x] Reuse that advisor capability registry on the landing page and real
+  Strategic Advisory picker so the app and marketing surface describe the same
+  differentiated agents.
+- [x] Add the boardroom/context/search audit with a ranked next queue for
+  guided context building, search-plan visibility, returning-user memory,
+  boardroom run artifacts, and Dialectica graph integration.
 - [x] Harden situation creation context intake with URL normalization,
   deduping, protocol checks, source caps, custom-source filtering, and context
   note caps.

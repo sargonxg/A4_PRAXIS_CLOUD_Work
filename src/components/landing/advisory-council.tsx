@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, X, MessageSquareQuote } from "lucide-react";
+import { ArrowRight, X, MessageSquareQuote, Database, Network, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { advisors, type Advisor } from "@/lib/constants/advisors";
 
@@ -48,6 +48,10 @@ function AdvisorCard({ advisor, onClick }: { advisor: Advisor; onClick: () => vo
 
       <p className="mt-4 text-sm italic leading-relaxed text-navy-500">
         &ldquo;{advisor.tagline}&rdquo;
+      </p>
+
+      <p className="mt-4 text-xs leading-relaxed text-navy-600 line-clamp-3">
+        {advisor.boardroomRole}
       </p>
 
       <ul className="mt-4 flex flex-wrap gap-1.5">
@@ -119,10 +123,29 @@ function AdvisorModal({ advisor, onClose }: { advisor: Advisor; onClose: () => v
         <div className="mt-6 rounded-lg border border-diplomatic-blue/15 bg-diplomatic-blue/5 p-3 text-xs text-navy-700">
           <p className="font-semibold text-diplomatic-blue">How {advisor.name.split(" ").slice(-1)[0]} reasons</p>
           <p className="mt-1 leading-relaxed">
-            Anchored in your situation&rsquo;s knowledge graph. Reads your analyst profile. Pulls
-            from a curated source whitelist — never invents citations. Keeps a rolling summary of
-            your conversation so context survives across sessions.
+            {advisor.method}
           </p>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <CapabilityBlock
+            icon={Wrench}
+            title="Tools"
+            items={advisor.toolAccess}
+          />
+          <CapabilityBlock
+            icon={Database}
+            title="Data"
+            items={advisor.dataAccess}
+          />
+        </div>
+
+        <div className="mt-4 rounded-lg border border-gold-600/20 bg-gold-600/5 p-3 text-xs text-navy-700">
+          <div className="flex items-center gap-2 font-semibold text-gold-800">
+            <Network className="h-3.5 w-3.5" />
+            Dialectica-ready graph layer
+          </div>
+          <p className="mt-1 leading-relaxed">{advisor.dialecticaLayer}</p>
         </div>
 
         <div className="mt-6 flex flex-col gap-2 sm:flex-row">
@@ -142,6 +165,32 @@ function AdvisorModal({ advisor, onClose }: { advisor: Advisor; onClose: () => v
         </div>
       </motion.div>
     </motion.div>
+  );
+}
+
+function CapabilityBlock({
+  icon: Icon,
+  title,
+  items,
+}: {
+  icon: typeof Wrench;
+  title: string;
+  items: string[];
+}) {
+  return (
+    <div className="rounded-lg border border-cream-300 bg-white/70 p-3">
+      <div className="flex items-center gap-2 text-xs font-semibold text-diplomatic-blue">
+        <Icon className="h-3.5 w-3.5" />
+        {title}
+      </div>
+      <ul className="mt-2 space-y-1">
+        {items.slice(0, 4).map((item) => (
+          <li key={item} className="text-[11px] leading-snug text-navy-600">
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -170,6 +219,11 @@ function GraphMemoryCallout() {
         response. Your rolling advisor summary keeps conversations coherent across weeks.
         That is the shift: from stateless chat to persistent analytical context that compounds
         over time.
+      </p>
+      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-navy-600">
+        The premium backbone is designed to plug into Dialectica dynamic ontologies: expert-specific
+        layers for actors, capabilities, claims, fiscal flows, commitments, and precedents that can
+        be queried, audited, and reused across boardroom deliberations.
       </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <Callout title="Per-user profile" body="11-dimension calibration, typed into every prompt." />
@@ -216,8 +270,8 @@ export function AdvisoryCouncil() {
             Four specialists. One persistent brief.
           </h2>
           <p className="mx-auto max-w-2xl text-lg text-navy-500">
-            Four AI advisors, each tuned to a discipline — political affairs, security,
-            political economy, diplomatic craft. They remember your situation and your style.
+            Four AI advisors, each with a distinct method, source diet, tool contract, and
+            boardroom role. They remember your situation and reason from your context.
           </p>
         </motion.div>
 

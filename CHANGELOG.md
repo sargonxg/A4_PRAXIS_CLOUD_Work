@@ -2,6 +2,17 @@
 
 ## 2026-05-01 — Tools workspace continuation
 
+- Added `docs/PRAXIS_BOARDROOM_CONTEXT_SEARCH_AUDIT_2026-05-01.md`, a
+  researched product/architecture audit for context building, search/data,
+  returning-user memory, dynamic boardroom deliberation, and future Dialectica
+  graph integration.
+- Added public capability metadata for the four flagship advisors: method,
+  boardroom role, tool access, data diet, and Dialectica-ready graph layer.
+- Updated the landing Advisory Council and authenticated advisor picker so the
+  four experts are presented as real differentiated agents, with visible tools,
+  source categories, model tiers, memory/data framing, and graph roles.
+- Added regression coverage to keep the four-advisor capability registry aligned
+  with the server advisor ids.
 - Added real-app content boundary documentation and a critical product roadmap
   in `docs/PRAXIS_REAL_APP_CRITICAL_ROADMAP_2026-05-01.md`.
 - Added `docs/PRAXIS_DIALECTICA_BACKBONE_ARCHITECTURE_2026-05-01.md`, a
