@@ -2,6 +2,74 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-05-01 - Dialectica Demo Backbone
+
+Source:
+
+- App commit deployed: `f217a7a`
+- Branch: `main`
+- Remote: `origin/main`
+
+What changed:
+
+- Added `/app/dialectica`, a read-only Dialectica Backbone preview for demo
+  and premium-product storytelling.
+- Added structured Dialectica constants for the eight conflict primitives,
+  named graph layers, capability staging, and a demo Datalog reasoning
+  scenario.
+- Added Dialectica to the normal and recording-mode sidebar.
+- Updated `/app/demo-guide` scene 04 so the recording path shows the
+  Dialectica backbone instead of implying GraphOps alone is the premium graph
+  reasoning layer.
+- Added graph-backend settings copy clarifying that Dialectica is a staged
+  premium adapter target and is not yet a live credential provider.
+- Corrected settings copy so graph backend credentials are not overstated as
+  encrypted by the current client-side settings path.
+- Updated `docs/PRAXIS_AUTONOMOUS_IMPROVEMENT_PLAN.md` with subagent findings,
+  the next top-10 demo-readiness queue, and Dialectica testing notes.
+- Refreshed the tracked Graphify graph after code changes.
+
+Validation before deploy:
+
+- `npx vitest run tests/unit/lib/constants/dialectica-backbone.test.ts`
+  passed: 1 file, 3 tests.
+- `npx tsc --noEmit --pretty false` passed.
+- `npx vitest run` passed: 94 files, 452 tests.
+- `npm run lint` passed with existing warning backlog and no errors
+  (`204 warnings`).
+- `npm run build` passed and included `/app/dialectica` in the compiled route
+  manifest.
+- Local browser smoke confirmed `/demo/dialectica?recording=1` renders the
+  eight primitives, named graph layers, Datalog rule preview, analyst gate,
+  and capability staging.
+- Local browser smoke confirmed `/demo/demo-guide?recording=1` scene 04 now
+  points to the Dialectica backbone.
+
+Cloud Build:
+
+- Build: `a50d95b5-59d4-45f8-b168-a31fd3685312`
+- Status: `SUCCESS`
+- Duration: `5M15S`
+- Logs: <https://console.cloud.google.com/cloud-build/builds/a50d95b5-59d4-45f8-b168-a31fd3685312?project=852128226674>
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00200-k7p`
+- Frontend URL: `https://praxis-frontend-pgoyqovcza-uc.a.run.app`
+- Traffic: `100%`
+
+Production verification:
+
+- `GET https://praxis.tacitus.me/demo/dialectica?recording=1` -> `307` to
+  `/login?mode=demo` without a demo cookie.
+- `GET https://praxis.tacitus.me/api/health` -> `status:"ok"`,
+  `firestore:"ok"`, `ai_provider:"ok"`, `cookie_secret:"ok"`,
+  `firecrawl:"ok"`, `vertex_adk:"ok"`.
+- Browser smoke confirmed `/demo/dialectica?recording=1` renders on
+  `praxis.tacitus.me` with `Conflict primitives: 8`, `Demo graph items: 66`,
+  `Primitive coverage: 100%`, `Named graph layers: 7`, staged capability
+  labels, and the analyst approval gate.
+
 ## 2026-05-01 - Evidence Summary Trust Layer
 
 Source:
