@@ -57,6 +57,11 @@ The current ranked execution queue is
 The current product/architecture wave for the next 10 critical improvements is
 `docs/PRAXIS_NEXT_10_CRITICAL_IMPROVEMENTS_2026-04-30.md`.
 
+The current Firestore-first graph backbone execution plan is
+`docs/PRAXIS_GRAPH_BACKBONE_SPRINT_A_2026-04-30.md`. Reference it as
+**Graph Backbone Sprint A** or **GB-A**. It defines GB-A-01 through GB-A-10
+plus the **GB-A-FALKOR** FalkorDB GraphRAG-SDK pilot.
+
 Generated per-tool specifications live under `docs/tools/generated/`. Refresh
 them with `npm run generate:tool-docs` after changing the registry, operating
 contracts, path taxonomy, or context blueprints.
@@ -151,6 +156,9 @@ contracts, path taxonomy, or context blueprints.
 - [x] Harden Neo4j wiring for production compatibility: support both
   `NEO4J_USER` and `NEO4J_USERNAME`, honor `NEO4J_DATABASE`, and sanitize
   dynamic Neo4j labels/relationships before Cypher execution.
+- [x] Save the next graph backbone roadmap as Graph Backbone Sprint A / GB-A,
+  including stable item codes GB-A-01 through GB-A-10 and the GB-A-FALKOR
+  derived GraphRAG pilot.
 - [ ] Audit prompts for duplicated contract text now that `withCalibration()`
   injects the shared backbone automatically.
 - [ ] Add the graph approval mutator so approved `graph_updates` payloads are
