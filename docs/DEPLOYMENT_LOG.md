@@ -2,6 +2,77 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-05-01 - Source Receipts + Demo Director
+
+Source:
+
+- App commit deployed: `fd25f63`
+- Branch: `main`
+- Remote: `origin/main`
+
+What changed:
+
+- Added canonical source receipt types with receipt id, source id, retrieval
+  method, confidence, reliability, content hash, span quote, and optional
+  graph/tool/advisor references.
+- Extended Source Scout receipt generation to emit canonical receipt fields
+  while keeping older saved receipt shapes renderable.
+- Added a client-safe source receipt normalizer and reusable
+  `<SourceReceiptList />` component.
+- Wired the reusable receipt display into Source Scout and the shared
+  Output Provenance panel.
+- Extended `usePersistedToolData` so custom pages can read canonical envelope
+  metadata, source receipts, profile version, and tool run id.
+- Wrapped Advisory output in `ToolOutputFrame` so strategic recommendations
+  now show shared confidence/provenance framing.
+- Added `/app/demo-guide`, a six-scene recording guide for demo/promo videos:
+  dashboard, Context Builder, Source Scout, GraphOps, boardroom, and briefing.
+- Added demo recording mode via `?recording=1`; demo users get a curated
+  sidebar path for the promo flow.
+- Refreshed the tracked Graphify graph after code changes.
+
+Validation before deploy:
+
+- `npx vitest run tests/unit/lib/ai/source-receipts.test.ts tests/unit/lib/sources/source-receipt-normalizer.test.ts`
+  passed: 2 files, 4 tests.
+- `npx tsc --noEmit --pretty false` passed.
+- `npx vitest run` passed: 91 files, 443 tests.
+- `npm run lint` passed with existing warning backlog and no errors
+  (`204 warnings`).
+- `npm run build` passed and included `/app/demo-guide` in the compiled route
+  manifest.
+- Local browser smoke confirmed `/demo/demo-guide?recording=1` renders with
+  the curated recording sidebar.
+
+Cloud Build:
+
+- Build: `8244b814-aa09-44af-8143-c7a3470d92dd`
+- Status: `SUCCESS`
+- Duration: `6M42S`
+- Logs: <https://console.cloud.google.com/cloud-build/builds/8244b814-aa09-44af-8143-c7a3470d92dd?project=852128226674>
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00192-tn4`
+- Frontend URL: `https://praxis-frontend-pgoyqovcza-uc.a.run.app`
+- Traffic: `100%`
+
+Production verification:
+
+- `GET https://praxis.tacitus.me/login` -> `200`.
+- `GET https://praxis.tacitus.me/app/demo-guide` -> `307` to
+  `/login?redirect=%2Fapp%2Fdemo-guide` when unauthenticated.
+- `GET https://praxis.tacitus.me/demo/demo-guide?recording=1` -> `307` to
+  `/login?mode=demo` without a demo cookie.
+- `GET https://praxis.tacitus.me/api/health` -> `status:"ok"`,
+  `firestore:"ok"`, `ai_provider:"ok"`, `cookie_secret:"ok"`,
+  `firecrawl:"ok"`, `vertex_adk:"ok"`.
+- `GET https://praxis.tacitus.me/api/auth/test-firebase` confirmed Firebase
+  is reachable and Email/Password auth is enabled.
+- Browser smoke confirmed `/login?mode=demo` enters `/demo/dashboard`, then
+  `/demo/demo-guide?recording=1` renders the six-scene guide with curated
+  recording navigation.
+
 ## 2026-05-01 - Context Builder Workspace
 
 Source:
