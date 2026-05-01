@@ -17,7 +17,7 @@ Info Environment exists so the user does not have to start from a blank chat pro
 
 ## Workflow Paths
 
-- Conflict analyst / primary / active
+- Conflict analyst / specialized / active
 - Media analyst / primary / future
 - Election / governance / secondary / future
 

@@ -17,21 +17,10 @@ Sources Library exists so the user does not have to start from a blank chat prom
 
 ## Workflow Paths
 
-- Generic core / core / active
-- Generic core / primary / active
-- Conflict analyst / core / active
-- Country desk / core / next
-- Mediator / core / next
-- Humanitarian / core / future
+- Generic core / secondary / active
 - Humanitarian / secondary / future
-- Legal / sanctions / core / future
-- Political risk / core / future
-- Policy research / core / future
 - Policy research / secondary / future
-- Media analyst / core / future
 - Media analyst / secondary / future
-- Stabilization / core / future
-- Election / governance / core / future
 
 ## Required Context
 

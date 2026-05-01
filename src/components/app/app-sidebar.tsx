@@ -8,44 +8,24 @@ import {
   FileText,
   MessageSquare,
   GitBranch,
-  Building2,
   FolderOpen,
   Settings,
   LogOut,
   ChevronsLeft,
   ChevronsRight,
-  MessageCircle,
   Users,
-  Shield,
-  AlertTriangle,
   Sparkles,
-  GitCompare,
   BookOpen,
-  Scale,
-  Network,
-  BookMarked,
-  FileCheck,
-  BarChart3,
-  UserCircle,
-  UsersRound,
-  Presentation,
-  Newspaper,
-  Radio,
-  Handshake,
   Clock,
-  Heart,
-  Globe,
   Telescope,
   Target,
-  Sigma,
-  Map as MapIcon,
   Package,
-  Settings as SettingsIcon,
-  Vote,
-  Globe2,
-  TrendingDown,
-  Activity,
   Wrench,
+  X,
+  ChevronRight,
+  ChevronDown,
+  Loader2,
+  Crown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -62,7 +42,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { X, ChevronRight, ChevronDown, Loader2, Crown } from 'lucide-react';
 import { useState } from 'react';
 import { useAllToolStatuses, type ToolHealth } from '@/hooks/use-tool-status';
 
@@ -219,88 +198,35 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    label: 'Situation',
+    label: 'Core',
     items: [
       { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
       { label: 'Context Builder', icon: Target, href: '/context-builder' },
-      { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
-      { label: 'GraphOps', icon: Wrench, href: '/graphops' },
-      { label: 'Dialectica', icon: Network, href: '/dialectica', badge: 'Premium' },
-      { label: 'Timeline', icon: Clock, href: '/timeline' },
+      { label: 'Ask PRAXIS', icon: MessageSquare, href: '/assistant' },
+      { label: 'Tools Workspace', icon: Package, href: '/tools' },
     ],
   },
   {
-    label: 'Intelligence',
+    label: 'Evidence',
     items: [
-      { label: 'Stakeholder Map', icon: Users, href: '/stakeholder-map' },
-      { label: 'Escalation Monitor', icon: AlertTriangle, href: '/early-warning' },
-      { label: 'Intelligence Requirements', icon: Target, href: '/requirements' },
-      { label: 'Commitment Tracker', icon: FileCheck, href: '/commitments' },
-      { label: 'Info Environment', icon: Radio, href: '/info-environment' },
-      { label: 'Geospatial Monitor', icon: MapIcon, href: '/geospatial-monitor' },
+      { label: 'Research & Sources', icon: Telescope, href: '/source-scout' },
+      { label: 'Sources Library', icon: BookOpen, href: '/sources' },
+      { label: 'Documents', icon: FolderOpen, href: '/documents' },
+    ],
+  },
+  {
+    label: 'Graph',
+    items: [
+      { label: 'GraphOps', icon: Wrench, href: '/graphops' },
+      { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
+      { label: 'Timeline', icon: Clock, href: '/timeline' },
     ],
   },
   {
     label: 'Analysis',
     items: [
-      { label: 'Scenario Planner', icon: GitCompare, href: '/scenarios' },
-      { label: 'Risk Assessment', icon: BarChart3, href: '/risk-monitor' },
-      { label: 'Negotiation Prep', icon: Scale, href: '/negotiation-prep' },
-      { label: 'Media & Narrative', icon: Newspaper, href: '/media-compass' },
-      { label: 'Sanctions & Compliance', icon: Shield, href: '/sanctions' },
-      { label: 'Treaty Analysis', icon: BookMarked, href: '/treaty-analyzer' },
-      { label: 'Human Rights Monitor', icon: Scale, href: '/human-rights' },
-      { label: 'Electoral Violence Risk', icon: Vote, href: '/electoral-risk' },
-      { label: 'Peacebuilding Index', icon: BarChart3, href: '/peacebuilding-index' },
-      { label: 'Economic Impact', icon: TrendingDown, href: '/economic-impact' },
-      { label: 'Historical Parallels', icon: BookOpen, href: '/compare' },
-      { label: 'Game Theory', icon: Sigma, href: '/game-theory' },
-      { label: 'Power Map', icon: UsersRound, href: '/power-map' },
-    ],
-  },
-  {
-    label: 'Production',
-    items: [
-      { label: 'Intelligence Briefing', icon: Presentation, href: '/briefing' },
-      { label: 'Diplomatic Dossier', icon: BookMarked, href: '/dossier' },
-      { label: 'Talking Points', icon: MessageCircle, href: '/talking-points' },
-      { label: 'Policy Memo', icon: FileText, href: '/policy-memo' },
-      { label: 'Mediation Design', icon: Handshake, href: '/mediation-design' },
-      { label: 'UN Toolkit', icon: Building2, href: '/un-toolkit' },
-      { label: 'Daily Brief', icon: Newspaper, href: '/auto-briefings' },
-    ],
-  },
-  {
-    label: 'Research',
-    items: [
-      { label: 'Source Scout', icon: Telescope, href: '/source-scout' },
-      { label: 'Deep Research Agent', icon: Telescope, href: '/deep-search-agent', badge: 'TACITUS' },
-      { label: 'ARGUS', icon: Network, href: '/argus', badge: 'TACITUS' },
-      { label: 'Sources Library', icon: BookOpen, href: '/sources' },
-      { label: 'Actor Enrichment', icon: UserCircle, href: '/actors' },
-      { label: 'External Actor Monitor', icon: Globe2, href: '/external-actors' },
-      { label: 'Legal & Resolution Tracker', icon: BookMarked, href: '/legal-tracker' },
-      // Source Monitor hidden until backed by an API — placeholder per
-      // 2026-04-25 tool audit. Re-add when /api/ai/source-monitor lands
-      // and the page persists output via usePersistedToolData.
-      { label: 'Situation Comparison', icon: GitCompare, href: '/compare' },
-    ],
-  },
-  {
-    label: 'Workspace',
-    items: [
-      { label: 'Demo Guide', icon: Presentation, href: '/demo-guide' },
-      { label: 'Tools Workspace', icon: Package, href: '/tools' },
-      { label: 'Boardroom', icon: UsersRound, href: '/brainstorming-table' },
-      { label: 'Ask PRAXIS', icon: MessageSquare, href: '/assistant' },
-      { label: 'Documents', icon: FolderOpen, href: '/documents' },
-      { label: 'Report Studio', icon: FileText, href: '/reports' },
-      { label: 'Export Center', icon: Package, href: '/export-center' },
-      { label: 'Case Library', icon: BookOpen, href: '/cases' },
-      { label: 'Team Hub', icon: UsersRound, href: '/team' },
-      { label: 'Humanitarian', icon: Heart, href: '/humanitarian' },
-      { label: 'Settings', icon: SettingsIcon, href: '/settings' },
-      { label: 'Admin', icon: Shield, href: '/admin' },
+      { label: 'Actors & Stakeholders', icon: Users, href: '/stakeholder-map' },
+      { label: 'Briefing Studio', icon: FileText, href: '/briefing' },
     ],
   },
 ];
@@ -367,8 +293,10 @@ function ChangelogButton() {
 const HREF_TO_TOOL_ID: Record<string, string> = {
   // Context
   '/dashboard': 'dashboard',
+  '/context-builder': 'dashboard',
   '/documents': 'documents',
   '/sources': 'sources-library',
+  '/source-scout': 'source-scout',
   '/timeline': 'timeline',
   '/humanitarian': 'humanitarian',
   '/calendar': 'calendar',
@@ -382,7 +310,7 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   '/risk-monitor': 'risk-monitor',
   '/early-warning': 'early-warning',
   '/conflict-graph': 'conflict-graph',
-  '/graphops': 'conflict-graph',
+  '/graphops': 'graphops',
   '/dialectica': 'conflict-graph',
   '/stakeholder-map': 'stakeholder-map',
   '/power-map': 'power-map',
@@ -401,7 +329,6 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   '/mediation-design': 'mediation-design',
   // Intelligence
   '/argus': 'argus',
-  '/source-scout': 'source-scout',
   '/brainstorming-table': 'brainstorming-table',
   '/media-compass': 'media-compass',
   '/media-roundup': 'media-roundup',
@@ -792,56 +719,6 @@ export function AppSidebar() {
           );
         })}
 
-        {/* Advisory Council - special item */}
-        {!recordingMode && <div className="mt-2 border-t border-[var(--color-app-border)] pt-3">
-          {(() => {
-            const isActive = barePath.startsWith('/advisory');
-            const linkContent = (
-              <PraxisLink
-                href="/advisory"
-                className={cn(
-                  'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
-                  isActive
-                    ? 'bg-gold-500/8 text-gold-700'
-                    : 'text-gold-600/70 hover:bg-gold-500/5 hover:text-gold-700'
-                )}
-              >
-                <Sparkles
-                  className={cn(
-                    'h-[18px] w-[18px] shrink-0',
-                    isActive ? 'text-gold-600' : 'text-gold-500/70'
-                  )}
-                />
-                <AnimatePresence mode="wait">
-                  {sidebarOpen && (
-                    <motion.span
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: 'auto' }}
-                      exit={{ opacity: 0, width: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="truncate whitespace-nowrap"
-                    >
-                      Advisory Council
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </PraxisLink>
-            );
-
-            if (!sidebarOpen) {
-              return (
-                <Tooltip>
-                  <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                  <TooltipContent side="right" className="font-medium">
-                    Advisory Council
-                  </TooltipContent>
-                </Tooltip>
-              );
-            }
-            return linkContent;
-          })()}
-        </div>}
-
         {/* Settings */}
         {!recordingMode && <div className="mt-1">
           {(() => {
@@ -887,92 +764,6 @@ export function AppSidebar() {
           })()}
         </div>}
 
-        {/* Cross-Situation Intelligence */}
-        {!recordingMode && <div className="mt-1">
-          {(() => {
-            const isActive = barePath.startsWith('/global-search');
-            const linkContent = (
-              <PraxisLink
-                href="/global-search"
-                className={cn(
-                  'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
-                  isActive
-                    ? 'bg-[var(--color-app-surface-alt)] text-navy-900'
-                    : 'text-navy-400 hover:bg-[var(--color-app-surface-alt)] hover:text-navy-600'
-                )}
-              >
-                <Globe className="h-[18px] w-[18px] shrink-0 text-navy-400 group-hover:text-navy-500" />
-                <AnimatePresence mode="wait">
-                  {sidebarOpen && (
-                    <motion.span
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: 'auto' }}
-                      exit={{ opacity: 0, width: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="truncate whitespace-nowrap"
-                    >
-                      Global Search
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </PraxisLink>
-            );
-            if (!sidebarOpen) {
-              return (
-                <Tooltip>
-                  <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                  <TooltipContent side="right" className="font-medium">Global Search</TooltipContent>
-                </Tooltip>
-              );
-            }
-            return linkContent;
-          })()}
-        </div>}
-
-        {/* System Health */}
-        {!recordingMode && <div className="mt-1">
-          {(() => {
-            const isActive = barePath.startsWith('/settings/system-health');
-            const linkContent = (
-              <PraxisLink
-                href="/settings/system-health"
-                className={cn(
-                  'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
-                  isActive
-                    ? 'bg-[var(--color-app-surface-alt)] text-navy-900'
-                    : 'text-navy-400 hover:bg-[var(--color-app-surface-alt)] hover:text-navy-600'
-                )}
-              >
-                <Activity className="h-[18px] w-[18px] shrink-0 text-navy-400 group-hover:text-navy-500" />
-                <AnimatePresence mode="wait">
-                  {sidebarOpen && (
-                    <motion.span
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: 'auto' }}
-                      exit={{ opacity: 0, width: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="truncate whitespace-nowrap"
-                    >
-                      System Health
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </PraxisLink>
-            );
-
-            if (!sidebarOpen) {
-              return (
-                <Tooltip>
-                  <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                  <TooltipContent side="right" className="font-medium">
-                    System Health
-                  </TooltipContent>
-                </Tooltip>
-              );
-            }
-            return linkContent;
-          })()}
-        </div>}
       </nav>
 
       {/* Keyboard shortcut hint — navy-200 keeps it readable at 10px small caps */}

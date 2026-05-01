@@ -17,7 +17,7 @@ Actor Profiles exists so the user does not have to start from a blank chat promp
 
 ## Workflow Paths
 
-- Conflict analyst / primary / active
+- Conflict analyst / secondary / active
 - Country desk / primary / next
 - Mediator / secondary / next
 - Humanitarian / primary / future

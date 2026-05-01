@@ -19,7 +19,7 @@ ARGUS Intelligence exists so the user does not have to start from a blank chat p
 
 - Generic core / specialized / active
 - Generic core / premium-future / active
-- Conflict analyst / primary / active
+- Conflict analyst / specialized / active
 - Conflict analyst / premium-future / active
 - Country desk / premium-future / next
 - Mediator / premium-future / next

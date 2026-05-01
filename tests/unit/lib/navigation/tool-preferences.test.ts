@@ -10,15 +10,15 @@ import {
 
 describe('tool preferences navigation helpers', () => {
   it('keeps known preferred ids first and appends the rest', () => {
-    const ordered = orderedToolIds({ toolOrder: ['risk-monitor', 'dashboard', 'unknown-tool'] });
-    expect(ordered.slice(0, 2)).toEqual(['risk-monitor', 'dashboard']);
+    const ordered = orderedToolIds({ toolOrder: ['source-scout', 'dashboard', 'unknown-tool'] });
+    expect(ordered.slice(0, 2)).toEqual(['source-scout', 'dashboard']);
     expect(ordered).toContain('conflict-graph');
     expect(ordered).not.toContain('unknown-tool');
   });
 
   it('deduplicates stored order ids', () => {
-    const ordered = orderedToolIds({ toolOrder: ['dashboard', 'dashboard', 'risk-monitor'] });
-    expect(ordered.slice(0, 2)).toEqual(['dashboard', 'risk-monitor']);
+    const ordered = orderedToolIds({ toolOrder: ['dashboard', 'dashboard', 'source-scout'] });
+    expect(ordered.slice(0, 2)).toEqual(['dashboard', 'source-scout']);
   });
 
   it('creates a hidden tool set from preferences', () => {
@@ -28,11 +28,11 @@ describe('tool preferences navigation helpers', () => {
   });
 
   it('preserves explicit route aliases', () => {
-    const reports = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'report-studio');
-    const actors = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'actor-profiles');
+    const briefing = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'briefing');
+    const actors = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'stakeholder-map');
     const sources = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'sources-library');
-    expect(reports?.href).toBe('/reports');
-    expect(actors?.href).toBe('/actors');
+    expect(briefing?.href).toBe('/briefing');
+    expect(actors?.href).toBe('/stakeholder-map');
     expect(sources?.href).toBe('/sources');
   });
 

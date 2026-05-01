@@ -2,7 +2,7 @@
 
 This directory is generated from live PRAXIS code. It gives every registered tool a stable product, context, database, graph, document-production, and verification contract.
 
-Generated at: 2026-05-01T04:27:00.762Z
+Generated at: 2026-05-01T20:49:56.694Z
 
 | Tool | Category | Active path focus | AI route |
 |---|---:|---:|---|
@@ -29,7 +29,7 @@ Generated at: 2026-05-01T04:27:00.762Z
 | [Briefing Room](./briefing.md) | drafting | yes | `/api/ai/briefing-generate` |
 | [Daily Brief](./auto-briefings.md) | drafting | no | `/api/ai/auto-briefing` |
 | [UN Toolkit](./un-toolkit.md) | drafting | yes | `/api/ai/un-toolkit` |
-| [Scenario Planner](./scenarios.md) | simulation | yes | `/api/ai/scenario` |
+| [Scenario Planner](./scenarios.md) | simulation | no | `/api/ai/scenario` |
 | [Negotiation Prep](./negotiation-prep.md) | simulation | yes | `/api/ai/negotiation` |
 | [Brief Builder](./brief-builder.md) | drafting | no | `/api/ai/brief-builder` |
 | [Red-Team Review](./red-team-review.md) | analysis | no | `/api/ai/red-team-review` |
@@ -43,7 +43,7 @@ Generated at: 2026-05-01T04:27:00.762Z
 | [Media Compass](./media-compass.md) | intelligence | no | `/api/ai/media-analyze` |
 | [Media Roundup](./media-roundup.md) | intelligence | yes | `/api/ai/media-roundup` |
 | [Sanctions Tracker](./sanctions.md) | intelligence | yes | `/api/ai/sanctions-scan` |
-| [Commitment Tracker](./commitments.md) | intelligence | yes | `/api/ai/commitment-scan` |
+| [Commitment Tracker](./commitments.md) | intelligence | no | `/api/ai/commitment-scan` |
 | [Treaty Analyzer](./treaty-analyzer.md) | intelligence | yes | `/api/ai/treaty-analyze` |
 | [Alert Center](./alert-center.md) | intelligence | yes | `/api/cron/check-alerts` |
 | [ARGUS Grounded](./deep-research.md) | intelligence | no | `/api/ai/deep-research` |

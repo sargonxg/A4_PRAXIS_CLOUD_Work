@@ -53,7 +53,7 @@ export function computeToolPackageReadiness(
   situation: Partial<Situation> | null | undefined,
   statuses: Record<string, PackageToolStatusSnapshot | undefined> = {},
 ): ToolPackageReadiness {
-  const assessedToolIds = unique([...pkg.primaryToolIds, ...pkg.coreToolIds])
+  const assessedToolIds = unique(pkg.primaryToolIds)
     .map(normalizeToolId)
     .filter((toolId) => Boolean(getToolById(toolId)));
 

@@ -17,6 +17,7 @@ Risk Monitor exists so the user does not have to start from a blank chat prompt.
 
 ## Workflow Paths
 
+- Generic core / secondary / active
 - Conflict analyst / primary / active
 - Country desk / secondary / next
 - Humanitarian / primary / future

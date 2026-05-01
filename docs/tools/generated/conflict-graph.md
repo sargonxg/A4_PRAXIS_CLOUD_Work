@@ -18,9 +18,10 @@ Conflict Graph exists so the user does not have to start from a blank chat promp
 ## Workflow Paths
 
 - Generic core / core / active
-- Generic core / secondary / active
+- Generic core / primary / active
 - Generic core / premium-future / active
 - Conflict analyst / core / active
+- Conflict analyst / primary / active
 - Conflict analyst / premium-future / active
 - Country desk / core / next
 - Country desk / premium-future / next

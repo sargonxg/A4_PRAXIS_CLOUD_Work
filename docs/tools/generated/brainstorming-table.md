@@ -17,7 +17,9 @@ Brainstorming Table exists so the user does not have to start from a blank chat 
 
 ## Workflow Paths
 
+- Generic core / specialized / active
 - Generic core / premium-future / active
+- Conflict analyst / secondary / active
 - Conflict analyst / premium-future / active
 - Country desk / premium-future / next
 - Mediator / primary / next

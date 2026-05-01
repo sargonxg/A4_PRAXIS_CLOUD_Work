@@ -17,7 +17,8 @@ Negotiation Prep exists so the user does not have to start from a blank chat pro
 
 ## Workflow Paths
 
-- Conflict analyst / secondary / active
+- Generic core / hidden-default / active
+- Conflict analyst / hidden-default / active
 - Mediator / primary / next
 
 ## Required Context

@@ -28,11 +28,11 @@ export function NoSituationState() {
       </div>
       <h2 className="mt-6 text-xl font-semibold text-navy-900">No situation selected</h2>
       <p className="mt-2 max-w-md text-center text-sm text-navy-500">
-        Create a situation to unlock all PRAXIS tools. Each situation organizes your intelligence, analysis, and reports around a specific conflict or scenario.
+        Create a situation to unlock the consolidated PRAXIS workspace: context, research, documents, graph, timeline, actor map, Ask PRAXIS, and briefing.
       </p>
 
       <div className="mt-8 grid w-full max-w-4xl gap-3 md:grid-cols-3">
-        {POLICY_WORKFLOW_PATHS.slice(0, 5).map((path) => (
+        {POLICY_WORKFLOW_PATHS.filter((path) => ['political-officer', 'mediator-envoy', 'policy-research'].includes(path.id)).map((path) => (
           <button
             key={path.id}
             type="button"
@@ -50,7 +50,7 @@ export function NoSituationState() {
           className="rounded-lg border border-dashed border-cream-400 bg-cream-100/60 p-4 text-left transition hover:border-gold-500/50 hover:bg-gold-500/5"
         >
           <p className="text-xs font-semibold text-navy-900">Start from scratch</p>
-          <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-navy-500">Use the generic PRAXIS workflow and tune details during creation.</p>
+          <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-navy-500">Use the generic ten-tool workspace and tune details in Context Builder.</p>
           <p className="mt-3 text-[11px] font-semibold text-gold-700">Open context builder</p>
         </button>
       </div>
@@ -68,18 +68,18 @@ export function NoSituationState() {
       <div className="mt-10 grid max-w-lg grid-cols-3 gap-4 text-center">
         <div className="rounded-lg border border-cream-300 bg-white/60 p-4">
           <FileText className="mx-auto h-5 w-5 text-diplomatic-blue" />
-          <p className="mt-2 text-xs font-medium text-navy-700">AI-Generated Reports</p>
-          <p className="mt-0.5 text-[10px] text-navy-400">Briefings, dossiers, memos</p>
+          <p className="mt-2 text-xs font-medium text-navy-700">Briefing Studio</p>
+          <p className="mt-0.5 text-[10px] text-navy-400">Briefs, memos, exports</p>
         </div>
         <div className="rounded-lg border border-cream-300 bg-white/60 p-4">
           <Shield className="mx-auto h-5 w-5 text-diplomatic-blue" />
-          <p className="mt-2 text-xs font-medium text-navy-700">Risk Assessment</p>
-          <p className="mt-0.5 text-[10px] text-navy-400">INFORM index, Glasl staging</p>
+          <p className="mt-2 text-xs font-medium text-navy-700">Source-Grounded</p>
+          <p className="mt-0.5 text-[10px] text-navy-400">Receipts and confidence</p>
         </div>
         <div className="rounded-lg border border-cream-300 bg-white/60 p-4">
           <Users className="mx-auto h-5 w-5 text-diplomatic-blue" />
-          <p className="mt-2 text-xs font-medium text-navy-700">Actor Intelligence</p>
-          <p className="mt-0.5 text-[10px] text-navy-400">Profiles, networks, mapping</p>
+          <p className="mt-2 text-xs font-medium text-navy-700">Graph Backbone</p>
+          <p className="mt-0.5 text-[10px] text-navy-400">Actors, events, claims</p>
         </div>
       </div>
     </div>

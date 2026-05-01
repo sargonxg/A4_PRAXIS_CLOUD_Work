@@ -11,30 +11,30 @@ describe('role-aware dashboard recommendations', () => {
     expect(tool?.staleAfterHours).toBe(24);
   });
 
-  it('surfaces Executive Intelligence as the default cross-role first action', () => {
+  it('normalizes Executive Intelligence into the consolidated dashboard action', () => {
     const recommendations = recommendToolsForRole('researcher', undefined, 3);
 
     expect(recommendations[0]).toEqual(expect.objectContaining({
-      toolId: 'situation-intelligence',
-      href: '/dashboard#executive-intelligence',
+      toolId: 'dashboard',
+      href: '/dashboard',
     }));
   });
 
-  it('uses the canonical sources-library id for research and journalism users', () => {
+  it('uses the consolidated research source anchor for research and journalism users', () => {
     const researcher = recommendToolsForRole('researcher', undefined, 6);
     const journalist = recommendToolsForRole('journalist', undefined, 6);
 
-    expect(researcher.map((rec) => rec.toolId)).toContain('sources-library');
-    expect(journalist.map((rec) => rec.toolId)).toContain('sources-library');
-    expect(researcher.find((rec) => rec.toolId === 'sources-library')?.href).toBe('/sources');
+    expect(researcher.map((rec) => rec.toolId)).toContain('source-scout');
+    expect(journalist.map((rec) => rec.toolId)).toContain('source-scout');
+    expect(researcher.find((rec) => rec.toolId === 'source-scout')?.href).toBe('/source-scout');
   });
 
   it('boosts situation-domain tools above the role baseline', () => {
     const recommendations = recommendToolsForRole('diplomat', 'humanitarian', 3);
     expect(recommendations.map((rec) => rec.toolId)).toEqual([
-      'humanitarian',
-      'human-rights',
-      'situation-intelligence',
+      'dashboard',
+      'briefing',
+      'stakeholder-map',
     ]);
   });
 });

@@ -17,7 +17,8 @@ Legal & Resolution Tracker exists so the user does not have to start from a blan
 
 ## Workflow Paths
 
-- Conflict analyst / secondary / active
+- Generic core / hidden-default / active
+- Conflict analyst / hidden-default / active
 - Country desk / secondary / next
 - Legal / sanctions / primary / future
 - Election / governance / secondary / future

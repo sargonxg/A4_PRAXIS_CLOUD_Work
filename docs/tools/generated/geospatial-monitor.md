@@ -17,7 +17,7 @@ Geospatial Monitor exists so the user does not have to start from a blank chat p
 
 ## Workflow Paths
 
-- Conflict analyst / primary / active
+- Conflict analyst / specialized / active
 - Humanitarian / primary / future
 - Political risk / secondary / future
 

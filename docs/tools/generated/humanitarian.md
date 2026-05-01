@@ -17,6 +17,7 @@ Humanitarian exists so the user does not have to start from a blank chat prompt.
 
 ## Workflow Paths
 
+- Generic core / hidden-default / active
 - Conflict analyst / specialized / active
 - Humanitarian / primary / future
 - Stabilization / secondary / future

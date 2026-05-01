@@ -55,6 +55,8 @@ export interface WebResearchOptions {
   toolId?: string;            // Tool requesting research (for query intelligence)
   actors?: string[];          // Key actors for actor-specific queries
   description?: string;       // Situation description for AI query crafting
+  researchDepth?: 'light' | 'standard' | 'deep';
+  allowServerPremiumProviders?: boolean;
 }
 
 export interface UserApiKeys {
@@ -211,6 +213,22 @@ export const SEARCH_FAILURE_WARNING =
 const CACHE_TTL_MS = 15 * 60 * 1000;
 const resultCache = new Map<string, { data: WebResearchResult[]; ts: number }>();
 
+function googleQueryLimit(depth: WebResearchOptions['researchDepth']): number {
+  if (depth === 'deep') return 5;
+  if (depth === 'standard') return 3;
+  return 2;
+}
+
+function focusedQueryLimit(depth: WebResearchOptions['researchDepth']): number {
+  if (depth === 'deep') return 2;
+  if (depth === 'standard') return 1;
+  return 0;
+}
+
+function serverPremiumProvidersEnabled(options: WebResearchOptions): boolean {
+  return options.allowServerPremiumProviders === true || process.env.PRAXIS_ENABLE_SERVER_PREMIUM_RESEARCH === '1';
+}
+
 function getCached(key: string): WebResearchResult[] | null {
   const entry = resultCache.get(key);
   if (!entry) return null;
@@ -303,7 +321,7 @@ async function searchGoogle(
     ...sourceFocused,
     ...actorQueries,
     options.region ? `${situationName} ${options.region} official statements conflict developments` : undefined,
-  ]).slice(0, 5);
+  ]).slice(0, googleQueryLimit(options.researchDepth));
 
   const results: WebResearchResult[] = [];
   const retrievedAt = new Date().toISOString();
@@ -678,9 +696,11 @@ export async function executeWebResearch(
   console.log(`[web-research] Phase 1: Google Search for "${effectiveQuery}"`);
   const googleResults = await searchGoogle(ctx);
 
-  // If we have crafted focused queries, run them too for richer results
-  if (craftedQueries && craftedQueries.focused.length > 0) {
-    for (const focusedQuery of craftedQueries.focused.slice(0, 2)) {
+  // If requested, run a small number of focused queries. Default is light to
+  // avoid multiplying grounded Gemini calls for ordinary dashboard/tool use.
+  const focusedLimit = focusedQueryLimit(options.researchDepth);
+  if (craftedQueries && craftedQueries.focused.length > 0 && focusedLimit > 0) {
+    for (const focusedQuery of craftedQueries.focused.slice(0, focusedLimit)) {
       try {
         const focusedCtx = { ...ctx, query: focusedQuery };
         const focusedResults = await searchGoogle(focusedCtx);
@@ -698,11 +718,13 @@ export async function executeWebResearch(
     console.log('[web-research] Phase 2: Tavily (user key configured)');
     premiumProviders.push(searchTavily(ctx));
   }
-  if (userKeys.parallel_key || process.env.PARALLEL_API_KEY) {
+  const allowServerPremium = serverPremiumProvidersEnabled(options);
+
+  if (userKeys.parallel_key || (allowServerPremium && process.env.PARALLEL_API_KEY)) {
     console.log('[web-research] Phase 2: Parallel.ai');
     premiumProviders.push(searchParallel(ctx));
   }
-  if (userKeys.firecrawl_key || process.env.FIRECRAWL_API_KEY) {
+  if (userKeys.firecrawl_key || (allowServerPremium && process.env.FIRECRAWL_API_KEY)) {
     console.log('[web-research] Phase 2: Firecrawl');
     premiumProviders.push(searchFirecrawl(ctx));
   }
@@ -760,6 +782,7 @@ export async function getAvailableProviders(uid: string): Promise<{
   }>;
 }> {
   const keys = await getUserApiKeys(uid);
+  const serverPremium = process.env.PRAXIS_ENABLE_SERVER_PREMIUM_RESEARCH === '1';
 
   return {
     providers: [
@@ -791,10 +814,12 @@ export async function getAvailableProviders(uid: string): Promise<{
       {
         id: 'firecrawl',
         name: 'Firecrawl',
-        available: !!(keys.firecrawl_key || process.env.FIRECRAWL_API_KEY),
+        available: !!(keys.firecrawl_key || (serverPremium && process.env.FIRECRAWL_API_KEY)),
         isDefault: false,
         note: keys.firecrawl_key
           ? 'Active — deep web scraping'
+          : serverPremium && process.env.FIRECRAWL_API_KEY
+            ? 'Active — server premium research enabled'
           : 'Add API key in Settings → API Keys',
       },
     ],

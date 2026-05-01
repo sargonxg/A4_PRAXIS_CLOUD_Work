@@ -17,7 +17,8 @@ Economic Impact exists so the user does not have to start from a blank chat prom
 
 ## Workflow Paths
 
-- Conflict analyst / secondary / active
+- Generic core / hidden-default / active
+- Conflict analyst / hidden-default / active
 - Country desk / secondary / next
 - Political risk / primary / future
 - Stabilization / secondary / future

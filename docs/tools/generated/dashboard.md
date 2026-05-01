@@ -22,7 +22,6 @@ Dashboard exists so the user does not have to start from a blank chat prompt. It
 - Conflict analyst / core / active
 - Conflict analyst / primary / active
 - Country desk / core / next
-- Country desk / primary / next
 - Mediator / core / next
 - Humanitarian / core / future
 - Legal / sanctions / core / future

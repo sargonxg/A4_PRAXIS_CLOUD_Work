@@ -17,31 +17,20 @@ Deep Research Agent exists so the user does not have to start from a blank chat 
 
 ## Workflow Paths
 
-- Generic core / core / active
-- Generic core / secondary / active
+- Generic core / specialized / active
 - Generic core / premium-future / active
-- Conflict analyst / core / active
-- Conflict analyst / primary / active
+- Conflict analyst / specialized / active
 - Conflict analyst / premium-future / active
-- Country desk / core / next
 - Country desk / premium-future / next
-- Mediator / core / next
 - Mediator / premium-future / next
-- Humanitarian / core / future
 - Humanitarian / premium-future / future
-- Legal / sanctions / core / future
 - Legal / sanctions / secondary / future
 - Legal / sanctions / premium-future / future
-- Political risk / core / future
 - Political risk / premium-future / future
-- Policy research / core / future
 - Policy research / primary / future
 - Policy research / premium-future / future
-- Media analyst / core / future
 - Media analyst / premium-future / future
-- Stabilization / core / future
 - Stabilization / premium-future / future
-- Election / governance / core / future
 - Election / governance / premium-future / future
 
 ## Required Context

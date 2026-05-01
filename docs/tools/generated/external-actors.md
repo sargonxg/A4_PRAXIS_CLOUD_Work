@@ -17,7 +17,8 @@ External Actor Monitor exists so the user does not have to start from a blank ch
 
 ## Workflow Paths
 
-- Conflict analyst / secondary / active
+- Generic core / hidden-default / active
+- Conflict analyst / hidden-default / active
 - Country desk / primary / next
 - Political risk / secondary / future
 - Media analyst / secondary / future

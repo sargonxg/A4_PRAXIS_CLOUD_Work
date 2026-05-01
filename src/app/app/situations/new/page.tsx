@@ -98,6 +98,14 @@ const STEPS: { step: Step; label: string; icon: React.ElementType }[] = [
   { step: 4, label: 'Create', icon: Check },
 ];
 
+const PRIMARY_WORKFLOW_PATH_IDS: PolicyWorkflowPathId[] = [
+  'political-officer',
+  'mediator-envoy',
+  'legal-sanctions',
+  'political-risk',
+  'policy-research',
+];
+
 // Source category metadata now lives in a single shared module at
 // `src/lib/constants/source-categories.ts` and is consumed via <SourcePicker>.
 
@@ -215,7 +223,7 @@ function StepDescribe({
       <div className="space-y-2">
         <label className="text-xs font-medium text-navy-700">Policy workflow path</label>
         <div className="grid gap-2 sm:grid-cols-2">
-          {POLICY_WORKFLOW_PATHS.map((path) => {
+          {POLICY_WORKFLOW_PATHS.filter((path) => PRIMARY_WORKFLOW_PATH_IDS.includes(path.id)).map((path) => {
             const selected = form.workflowPath === path.id;
             return (
               <button
@@ -240,7 +248,7 @@ function StepDescribe({
           })}
         </div>
         <p className="text-[10px] text-navy-400">
-          This tunes the starter sources, dashboard quick actions, and first deliverables. You can change details later.
+          Pick the closest mission. PRAXIS now starts from five focused workflows; specialized tools remain available later from the Tools Workspace.
         </p>
         {selectedWorkflowPath ? (
           <div className="rounded-lg border border-diplomatic-blue/15 bg-diplomatic-blue/5 p-3">
@@ -733,10 +741,8 @@ interface DomainPreview {
 }
 
 function DomainReviewCard({
-  form,
   preview,
   onPick,
-  sourceUrls,
 }: {
   form: SituationForm;
   preview: DomainPreview;

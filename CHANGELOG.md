@@ -2,6 +2,21 @@
 
 ## 2026-05-01 — Tools workspace continuation
 
+- Added `docs/PRAXIS_CONSOLIDATED_TOOL_AUDIT_2026-05-01.md`, a code-grounded
+  audit of tool sprawl, onboarding, graph/context/research structure, and
+  cloud-cost risk.
+- Added `src/lib/constants/consolidated-tools.ts`, the canonical ten-tool
+  surface for PRAXIS: Dashboard, Context Builder, Ask PRAXIS, Research &
+  Sources, Documents, GraphOps, Conflict Graph, Timeline & Signals, Actors &
+  Stakeholders, and Briefing Studio.
+- Simplified the app sidebar, core tool groups, workflow package taxonomy, role
+  recommendations, situation creation workflow choices, and no-situation state
+  around that ten-tool structure while preserving legacy specialist routes.
+- Reduced default grounded-search fanout and gated server-level Parallel /
+  Firecrawl keys behind explicit opt-in to avoid accidental Google Cloud and
+  premium-provider spend.
+- Added regression tests to keep the consolidated tool count, anchor registry
+  coverage, legacy absorption map, and active package focus from drifting.
 - Added `docs/PRAXIS_AUTONOMOUS_IMPROVEMENT_PLAN.md`, a fresh codebase-grounded
   autonomous audit covering product workflows, customer-fit scouting,
   technical findings, prioritized improvement waves, defense/diplomacy

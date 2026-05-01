@@ -17,7 +17,7 @@ Dossier Generator exists so the user does not have to start from a blank chat pr
 
 ## Workflow Paths
 
-- Conflict analyst / primary / active
+- Conflict analyst / secondary / active
 - Country desk / secondary / next
 - Policy research / secondary / future
 

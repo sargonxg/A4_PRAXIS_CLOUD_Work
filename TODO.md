@@ -103,6 +103,11 @@ code, maps customer-fit workflows, audits product and technical gaps, records
 the latest mission-playbook implementation wave, and ranks the next 10
 improvements.
 
+The current ten-tool consolidation audit is
+`docs/PRAXIS_CONSOLIDATED_TOOL_AUDIT_2026-05-01.md`. It records the latest
+code audit, primary ten-tool surface, legacy-tool absorption map, onboarding
+simplification, and Google Cloud / premium research cost guardrails.
+
 Generated per-tool specifications live under `docs/tools/generated/`. Refresh
 them with `npm run generate:tool-docs` after changing the registry, operating
 contracts, path taxonomy, or context blueprints.
@@ -196,6 +201,14 @@ contracts, path taxonomy, or context blueprints.
   quality, workflow, and graph readiness.
 - [x] Add a real-app critical roadmap and Dialectica backbone architecture note
   so future work keeps demo mode separate from production user content.
+- [x] Consolidate the product-facing workspace to ten primary tool surfaces:
+  Dashboard, Context Builder, Ask PRAXIS, Research & Sources, Documents,
+  GraphOps, Conflict Graph, Timeline & Signals, Actors & Stakeholders, and
+  Briefing Studio.
+- [x] Preserve specialized pages as supporting legacy capabilities while
+  removing them from first-run/sidebar dominance.
+- [x] Add grounded-research fanout limits and server-premium provider opt-in so
+  Google/Vertex, Parallel, and Firecrawl usage does not scale accidentally.
 - [ ] Add a CI audit that blocks demo/sample content from appearing in real
   `/app` empty states, exports, prompt suggestions, and saved outputs.
 - [ ] Add a typed content-origin field to saved tool outputs so production

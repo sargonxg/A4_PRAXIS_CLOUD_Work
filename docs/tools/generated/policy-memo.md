@@ -17,7 +17,8 @@ Policy Memo exists so the user does not have to start from a blank chat prompt. 
 
 ## Workflow Paths
 
-- Conflict analyst / primary / active
+- Generic core / secondary / active
+- Conflict analyst / secondary / active
 - Country desk / primary / next
 - Mediator / secondary / next
 - Legal / sanctions / primary / future

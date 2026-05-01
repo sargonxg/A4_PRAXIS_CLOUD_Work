@@ -17,7 +17,8 @@ Talking Points exists so the user does not have to start from a blank chat promp
 
 ## Workflow Paths
 
-- Conflict analyst / primary / active
+- Generic core / secondary / active
+- Conflict analyst / secondary / active
 - Country desk / primary / next
 - Mediator / primary / next
 - Election / governance / primary / future

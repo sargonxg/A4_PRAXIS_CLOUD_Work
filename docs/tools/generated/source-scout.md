@@ -17,11 +17,23 @@ Source Scout exists so the user does not have to start from a blank chat prompt.
 
 ## Workflow Paths
 
-- Generic core / specialized / active
+- Generic core / core / active
+- Generic core / primary / active
+- Conflict analyst / core / active
+- Conflict analyst / primary / active
+- Country desk / core / next
+- Mediator / core / next
+- Humanitarian / core / future
+- Legal / sanctions / core / future
 - Legal / sanctions / secondary / future
+- Political risk / core / future
 - Political risk / primary / future
+- Policy research / core / future
 - Policy research / primary / future
+- Media analyst / core / future
 - Media analyst / primary / future
+- Stabilization / core / future
+- Election / governance / core / future
 
 ## Required Context
 

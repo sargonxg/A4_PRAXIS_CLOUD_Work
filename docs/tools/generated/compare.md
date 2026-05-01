@@ -17,7 +17,8 @@ Compare exists so the user does not have to start from a blank chat prompt. It a
 
 ## Workflow Paths
 
-- Conflict analyst / secondary / active
+- Generic core / hidden-default / active
+- Conflict analyst / hidden-default / active
 - Policy research / secondary / future
 
 ## Required Context

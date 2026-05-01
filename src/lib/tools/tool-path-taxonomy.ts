@@ -1,4 +1,5 @@
 import { POLICY_WORKFLOW_PATHS, type PolicyWorkflowPathId } from '@/lib/constants/policy-workflow-paths';
+import { CONSOLIDATED_ANCHOR_TOOL_IDS } from '@/lib/constants/consolidated-tools';
 
 export type PraxisToolPathId = 'generic-core' | PolicyWorkflowPathId;
 export type ToolPathStage = 'active' | 'next' | 'future';
@@ -28,19 +29,7 @@ export interface ToolPathMembership {
   stage: ToolPathStage;
 }
 
-const GENERIC_CORE_TOOL_IDS = [
-  'dashboard',
-  'situation-intelligence',
-  'assistant',
-  'sources-library',
-  'documents',
-  'graphops',
-  'conflict-graph',
-  'timeline',
-  'briefing',
-  'report-studio',
-  'deep-search-agent',
-] as const;
+const GENERIC_CORE_TOOL_IDS = [...CONSOLIDATED_ANCHOR_TOOL_IDS] as const;
 
 const DIALECTICA_PREMIUM_FUTURE = [
   'argus',
@@ -55,39 +44,29 @@ const PATH_OVERRIDES: Record<PolicyWorkflowPathId, Partial<ToolPathDefinition>> 
     shortLabel: 'Conflict analyst',
     stage: 'active',
     primaryUser: 'Political affairs officer, conflict analyst, country analyst, OSINT analyst, or policy advisor.',
-    productPromise: 'Turn open sources, documents, media, and situation context into a live political operating picture: actors, risks, timelines, narratives, policy options, briefings, and checkable provenance.',
+    productPromise: 'Turn sources, documents, context, graph, and timeline signals into a live political operating picture with actors, risks, policy options, briefings, and checkable provenance.',
     primaryToolIds: [
-      'early-warning',
+      'dashboard',
+      'assistant',
+      'source-scout',
+      'documents',
+      'graphops',
+      'conflict-graph',
+      'timeline',
       'risk-monitor',
-      'actor-profiles',
       'stakeholder-map',
-      'geospatial-monitor',
-      'commitments',
-      'info-environment',
-      'media-roundup',
-      'argus',
-      'deep-search-agent',
+      'briefing',
+    ],
+    secondaryToolIds: [
+      'early-warning',
+      'actor-profiles',
       'policy-memo',
       'talking-points',
       'dossier',
+      'brainstorming-table',
     ],
-    secondaryToolIds: [
-      'scenarios',
-      'compare',
-      'game-theory',
-      'power-map',
-      'external-actors',
-      'legal-tracker',
-      'human-rights',
-      'sanctions',
-      'treaty-analyzer',
-      'un-toolkit',
-      'mediation-design',
-      'negotiation-prep',
-      'economic-impact',
-    ],
-    specializedToolIds: ['electoral-risk', 'peacebuilding-index', 'humanitarian', 'concordia'],
-    hiddenByDefaultToolIds: ['settings', 'team', 'advisory', 'source-monitor', 'alert-center'],
+    specializedToolIds: ['argus', 'deep-search-agent', 'geospatial-monitor', 'info-environment', 'media-roundup', 'sanctions', 'humanitarian'],
+    hiddenByDefaultToolIds: ['settings', 'team', 'advisory', 'source-monitor', 'alert-center', 'compare', 'game-theory', 'power-map', 'external-actors', 'legal-tracker', 'human-rights', 'treaty-analyzer', 'un-toolkit', 'mediation-design', 'negotiation-prep', 'economic-impact', 'electoral-risk', 'peacebuilding-index', 'concordia'],
     deliverables: [
       'Daily political read',
       'Actor and stakeholder map',
@@ -146,18 +125,18 @@ const PATH_OVERRIDES: Record<PolicyWorkflowPathId, Partial<ToolPathDefinition>> 
 
 const GENERIC_CORE_PATH: ToolPathDefinition = {
   id: 'generic-core',
-  label: 'Generic PRAXIS Core',
+  label: 'Consolidated PRAXIS Core',
   shortLabel: 'Generic core',
   stage: 'active',
-  description: 'The baseline workspace every serious PRAXIS user needs before specialized analysis: situation context, sources, documents, graph, timeline, assistant, briefing, reports, and research.',
+  description: 'The ten primary surfaces every PRAXIS situation should make usable before specialized analysis: dashboard, assistant, research, documents, graph, timeline, stakeholders, and briefing.',
   primaryUser: 'Any policy, intelligence, legal, diplomatic, humanitarian, media, or research user starting a situation.',
-  productPromise: 'Create a common operating picture that every specialized path can reuse: source intake, document analysis, graph structure, timeline, Ask PRAXIS, and exportable briefing/report outputs.',
+  productPromise: 'Create a common operating picture that every specialized path can reuse: source intake, document analysis, Firestore graph structure, timeline, Ask PRAXIS, and exportable briefing outputs.',
   coreToolIds: [...GENERIC_CORE_TOOL_IDS],
-  primaryToolIds: ['dashboard', 'situation-intelligence', 'assistant', 'sources-library', 'documents'],
-  secondaryToolIds: ['conflict-graph', 'timeline', 'briefing', 'report-studio', 'deep-search-agent'],
-  specializedToolIds: ['source-scout', 'argus', 'export-center'],
+  primaryToolIds: [...GENERIC_CORE_TOOL_IDS],
+  secondaryToolIds: ['situation-intelligence', 'sources-library', 'early-warning', 'risk-monitor', 'policy-memo', 'talking-points', 'report-studio'],
+  specializedToolIds: ['argus', 'deep-search-agent', 'export-center', 'brainstorming-table'],
   premiumFutureToolIds: [...DIALECTICA_PREMIUM_FUTURE],
-  hiddenByDefaultToolIds: ['settings', 'team', 'advisory', 'alert-center', 'source-monitor'],
+  hiddenByDefaultToolIds: ['settings', 'team', 'advisory', 'alert-center', 'source-monitor', 'compare', 'game-theory', 'power-map', 'external-actors', 'legal-tracker', 'human-rights', 'treaty-analyzer', 'un-toolkit', 'mediation-design', 'negotiation-prep', 'economic-impact', 'electoral-risk', 'peacebuilding-index', 'concordia', 'humanitarian'],
   deliverables: ['Situation file', 'Source library', 'Document-derived graph', 'Timeline', 'Briefing', 'Exportable report'],
 };
 
@@ -177,7 +156,7 @@ function buildPathFromPolicy(baseId: PolicyWorkflowPathId): ToolPathDefinition {
     primaryUser: override.primaryUser ?? policy?.label ?? 'Specialized PRAXIS user',
     productPromise: override.productPromise ?? `Configure PRAXIS around the ${policy?.shortLabel ?? baseId} workflow while keeping the same generic situation backbone.`,
     coreToolIds: override.coreToolIds ?? [...GENERIC_CORE_TOOL_IDS],
-    primaryToolIds: unique([...(override.primaryToolIds ?? []), ...(policy?.firstToolIds ?? [])]),
+    primaryToolIds: override.primaryToolIds ? unique(override.primaryToolIds) : unique(policy?.firstToolIds ?? []),
     secondaryToolIds: override.secondaryToolIds ?? [],
     specializedToolIds: override.specializedToolIds ?? [],
     premiumFutureToolIds: override.premiumFutureToolIds ?? [...DIALECTICA_PREMIUM_FUTURE],
@@ -281,7 +260,7 @@ export function summarizeToolPathPackage(path: ToolPathDefinition): ToolPathPack
     specialistToolIds,
     hiddenByDefaultToolIds: path.hiddenByDefaultToolIds,
     deliverables: path.deliverables,
-    toolCount: getToolIdsForPath(path.id, ['core', 'primary', 'secondary', 'specialized']).length,
+    toolCount: path.primaryToolIds.length,
   };
 }
 

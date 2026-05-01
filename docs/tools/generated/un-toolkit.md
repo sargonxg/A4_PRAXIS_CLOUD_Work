@@ -17,7 +17,8 @@ UN Toolkit exists so the user does not have to start from a blank chat prompt. I
 
 ## Workflow Paths
 
-- Conflict analyst / secondary / active
+- Generic core / hidden-default / active
+- Conflict analyst / hidden-default / active
 - Legal / sanctions / secondary / future
 
 ## Required Context

@@ -15,6 +15,7 @@
  */
 import type { AnalystRole } from '@/types/analyst-profile';
 import type { AnalystDomainId } from '@/types/analyst-profile';
+import { consolidatedToolForLegacyId } from '@/lib/constants/consolidated-tools';
 import { getRecommendedToolIdsForWorkflowPath } from '@/lib/tools/tool-path-taxonomy';
 
 export interface ToolRecommendation {
@@ -123,6 +124,12 @@ const DOMAIN_TOOL_BOOSTS: Partial<Record<AnalystDomainId, string[]>> = {
 };
 
 const TOOL_RATIONALES: Record<string, string> = {
+  'assistant': 'Ask PRAXIS questions over the active situation, saved outputs, documents, and graph context.',
+  'source-scout': 'Build a source plan and receipts before spending more on deep research.',
+  'documents': 'Upload and extract documents so generated analysis is grounded in your own corpus.',
+  'graphops': 'Check Firestore graph health, proposals, evidence coverage, and repair actions.',
+  'timeline': 'Review events, signal changes, and escalation timing before drafting.',
+  'stakeholder-map': 'Map actors, interests, leverage, constraints, and stakeholder salience.',
   'situation-intelligence': 'Generate the executive diagnosis, scenarios, risk, graph, provenance, and next actions for this situation.',
   'briefing': 'Compose UN-DPPA-style intelligence briefings tied to the active situation.',
   'early-warning': 'Glasl-stage escalation monitor with INFORM risk index and real-time signals.',
@@ -132,7 +139,6 @@ const TOOL_RATIONALES: Record<string, string> = {
   'commitments': 'Monitor pledges, ceasefires, and treaty commitments by actor.',
   'negotiation-prep': 'Fisher-Ury BATNA/ZOPA prep and audience-tone calibration.',
   'talking-points': 'Audience-aware talking points with red-line enforcement.',
-  'stakeholder-map': 'Mitchell-Agle-Wood salience and Barnett-Duvall power mapping.',
   'mediation-design': 'Process architecture, CBM design, Stedman spoiler analysis.',
   'treaty-analyzer': 'Treaty clause analysis and compliance tracking.',
   'compare': 'Historical parallels with prior conflicts and case-library matches.',
@@ -177,9 +183,11 @@ export function recommendToolsForRole(
   const ordered: string[] = [];
   const pathTools = workflowPath ? getRecommendedToolIdsForWorkflowPath(workflowPath, limit + 4) : [];
   for (const id of [...pathTools, ...boosts, ...baseList]) {
-    if (!seen.has(id)) {
-      seen.add(id);
-      ordered.push(id);
+    const consolidated = consolidatedToolForLegacyId(id);
+    const normalized = consolidated?.anchorToolId ?? id;
+    if (!seen.has(normalized)) {
+      seen.add(normalized);
+      ordered.push(normalized);
     }
   }
 

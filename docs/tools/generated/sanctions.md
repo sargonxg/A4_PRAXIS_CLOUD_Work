@@ -17,7 +17,7 @@ Sanctions Tracker exists so the user does not have to start from a blank chat pr
 
 ## Workflow Paths
 
-- Conflict analyst / secondary / active
+- Conflict analyst / specialized / active
 - Country desk / primary / next
 - Legal / sanctions / primary / future
 - Political risk / primary / future

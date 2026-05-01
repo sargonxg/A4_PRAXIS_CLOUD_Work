@@ -13,11 +13,10 @@ Commitment Tracker exists so the user does not have to start from a blank chat p
 - Data schema: `CommitmentSchema`
 - Output type: `structured`
 - Model tier: `pro`
-- Active path focus: Yes - active generic/conflict-political sprint focus.
+- Active path focus: No - documented for later path activation.
 
 ## Workflow Paths
 
-- Conflict analyst / primary / active
 - Mediator / primary / next
 - Humanitarian / secondary / future
 - Legal / sanctions / secondary / future

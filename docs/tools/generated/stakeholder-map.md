@@ -17,9 +17,21 @@ Stakeholder Map exists so the user does not have to start from a blank chat prom
 
 ## Workflow Paths
 
+- Generic core / core / active
+- Generic core / primary / active
+- Conflict analyst / core / active
 - Conflict analyst / primary / active
+- Country desk / core / next
+- Mediator / core / next
 - Mediator / primary / next
+- Humanitarian / core / future
+- Legal / sanctions / core / future
+- Political risk / core / future
+- Policy research / core / future
+- Media analyst / core / future
+- Stabilization / core / future
 - Stabilization / primary / future
+- Election / governance / core / future
 
 ## Required Context
 

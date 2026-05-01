@@ -17,7 +17,8 @@ Early Warning exists so the user does not have to start from a blank chat prompt
 
 ## Workflow Paths
 
-- Conflict analyst / primary / active
+- Generic core / secondary / active
+- Conflict analyst / secondary / active
 - Humanitarian / primary / future
 - Political risk / secondary / future
 - Election / governance / primary / future

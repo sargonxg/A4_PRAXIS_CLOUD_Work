@@ -17,18 +17,7 @@ Report Studio exists so the user does not have to start from a blank chat prompt
 
 ## Workflow Paths
 
-- Generic core / core / active
 - Generic core / secondary / active
-- Conflict analyst / core / active
-- Country desk / core / next
-- Mediator / core / next
-- Humanitarian / core / future
-- Legal / sanctions / core / future
-- Political risk / core / future
-- Policy research / core / future
-- Media analyst / core / future
-- Stabilization / core / future
-- Election / governance / core / future
 
 ## Required Context
 

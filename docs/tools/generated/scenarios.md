@@ -13,11 +13,10 @@ Scenario Planner exists so the user does not have to start from a blank chat pro
 - Data schema: `ScenarioSchema`
 - Output type: `streaming`
 - Model tier: `thinking`
-- Active path focus: Yes - active generic/conflict-political sprint focus.
+- Active path focus: No - documented for later path activation.
 
 ## Workflow Paths
 
-- Conflict analyst / secondary / active
 - Political risk / primary / future
 
 ## Required Context

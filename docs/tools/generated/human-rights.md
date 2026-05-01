@@ -17,7 +17,8 @@ Human Rights Monitor exists so the user does not have to start from a blank chat
 
 ## Workflow Paths
 
-- Conflict analyst / secondary / active
+- Generic core / hidden-default / active
+- Conflict analyst / hidden-default / active
 - Humanitarian / secondary / future
 - Legal / sanctions / primary / future
 

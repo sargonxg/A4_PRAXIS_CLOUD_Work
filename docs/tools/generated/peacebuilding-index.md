@@ -17,7 +17,8 @@ Peacebuilding Index exists so the user does not have to start from a blank chat 
 
 ## Workflow Paths
 
-- Conflict analyst / specialized / active
+- Generic core / hidden-default / active
+- Conflict analyst / hidden-default / active
 - Stabilization / primary / future
 
 ## Required Context
