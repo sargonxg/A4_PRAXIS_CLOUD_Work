@@ -310,6 +310,11 @@ function buildReadiness(situation: Situation) {
 
 function buildNextActions(situation: Situation) {
   const actions = [];
+  actions.push({
+    href: '/context-builder',
+    label: 'Build context',
+    detail: 'Resolve missing actors, sources, graph facts, and analyst constraints before AI output.',
+  });
   const hasDocuments = (situation.documentCount || 0) > 0;
   const hasSourceUrls = Boolean(situation.sourceUrls?.length);
   if (!hasDocuments && !hasSourceUrls) {

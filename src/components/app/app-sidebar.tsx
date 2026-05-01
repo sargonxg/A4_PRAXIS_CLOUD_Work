@@ -222,6 +222,7 @@ const navSections: NavSection[] = [
     label: 'Situation',
     items: [
       { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+      { label: 'Context Builder', icon: Target, href: '/context-builder' },
       { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
       { label: 'GraphOps', icon: Wrench, href: '/graphops' },
       { label: 'Timeline', icon: Clock, href: '/timeline' },

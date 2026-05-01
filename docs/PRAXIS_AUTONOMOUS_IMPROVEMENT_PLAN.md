@@ -4,6 +4,33 @@ Date: 2026-05-01
 Workspace: `C:\Users\giuli\praxiscodexworking`  
 Branch: `main`  
 Production: `https://praxis.tacitus.me`
+Research synthesis: `docs/PRAXIS_DEEP_RESEARCH_SYNTHESIS_2026-05-01.md`
+Latest execution wave: Context Builder workspace
+
+## 2026-05-01 Research Ingest - Monster Backlog
+
+The user-provided production research artifact was ingested into
+`docs/PRAXIS_DEEP_RESEARCH_SYNTHESIS_2026-05-01.md`. The actionable thesis is:
+PRAXIS wins by turning user and AI context into typed, source-grounded conflict
+grammar objects, then using those objects for boardroom agents, graph reasoning,
+auditable outputs, and future Dialectica premium graph capabilities.
+
+Highest-priority backlog now driving execution:
+
+1. First-class Context Builder for user-specific situation creation and missing
+   context repair. Status: implemented in this wave at `/app/context-builder`.
+2. Typed source receipts and citation objects across Source Scout, boardroom,
+   reports, and deep research.
+3. Four-expert boardroom artifact with explicit dissent preservation.
+4. Graph-ready conflict grammar schemas for actors, claims, interests,
+   constraints, leverage, commitments, events, and narratives.
+5. Human-reviewed graph mutation queue with PROV-O-style provenance records.
+6. Returning-user "what changed" digest.
+7. Hybrid retrieval plan spanning documents, source library, event feeds, graph,
+   and web search.
+8. Dialectica adapter boundary behind feature flags with Firestore fallback.
+9. OpenTelemetry/OpenInference trace spine for AI/tool calls.
+10. Compliance/data-boundary roadmap for sensitive policy and security users.
 
 ## Phase 1 - What PRAXIS Is Today
 
@@ -249,4 +276,3 @@ Known residual risk:
 8. Add graph diff review and analyst-approved graph mutation queue.
 9. Add workflow-specific Deep Search prompts generated from mission playbooks.
 10. Add Dialectica premium adapter interfaces behind a feature flag.
-
