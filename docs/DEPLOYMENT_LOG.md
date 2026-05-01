@@ -2,6 +2,64 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-05-01 - Mission Workflow Playbooks
+
+Source:
+
+- App commit deployed: `ab229d7`
+- Branch: `main`
+- Remote: `origin/main`
+
+What changed:
+
+- Added `docs/PRAXIS_AUTONOMOUS_IMPROVEMENT_PLAN.md`, a codebase-grounded
+  autonomous audit covering current architecture, customer-fit workflows,
+  technical/product gaps, prioritized build waves, defense/diplomacy
+  adaptations, and next improvements.
+- Expanded policy workflow paths into mission playbooks with actual workflow,
+  valuable UI, pay-worthy output, first-run question, and required inputs.
+- Surfaced the mission playbooks in the no-situation empty state, situation
+  creation workflow selection/review, and dashboard Situation Launchpad.
+- Added regression coverage for workflow playbook completeness.
+- Refreshed the tracked Graphify graph after code changes.
+
+Validation before deploy:
+
+- `npx vitest run tests/unit/lib/constants/policy-workflow-paths.test.ts`
+  passed: 1 file, 2 tests.
+- `npx tsc --noEmit --pretty false` passed.
+- `npm run lint` passed with the existing warning backlog and no errors.
+- `npx vitest run` passed: 89 files, 439 tests.
+- `npm run build` passed.
+- Local dev smoke on `http://localhost:3100/login` passed; protected
+  `/app/situations/new?workflow=mediator-envoy` redirected to login when
+  unauthenticated.
+
+Cloud Build:
+
+- Build: `74e3b2e8-d662-4873-8c82-73bfde327a5c`
+- Status: `SUCCESS`
+- Duration: `5M18S`
+- Logs: <https://console.cloud.google.com/cloud-build/builds/74e3b2e8-d662-4873-8c82-73bfde327a5c?project=852128226674>
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00184-8cl`
+- Frontend URL: `https://praxis-frontend-pgoyqovcza-uc.a.run.app`
+- Traffic: `100%`
+
+Production verification:
+
+- `GET https://praxis.tacitus.me/login` -> `200`.
+- `GET https://praxis.tacitus.me/api/health` -> `status:"ok"`,
+  `firestore:"ok"`, `ai_provider:"ok"`, `vertex_adk:"ok"`,
+  `firecrawl:"ok"`.
+- `GET https://praxis.tacitus.me/api/auth/test-firebase` confirmed Firebase
+  is reachable and Email/Password auth is enabled.
+- Production browser smoke passed for `/login`; protected
+  `/app/situations/new?workflow=mediator-envoy` redirected to
+  `/login?redirect=%2Fapp%2Fsituations%2Fnew` when unauthenticated.
+
 ## 2026-05-01 - Boardroom Capability + Context/Search Audit
 
 Source:
