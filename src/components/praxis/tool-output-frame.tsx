@@ -32,8 +32,9 @@
  * safe to drop in even before a tool's output schema carries provenance.
  */
 
-import { ConfidenceBadge, type Confidence } from './confidence-badge';
+import { type Confidence } from './confidence-badge';
 import { DegradedDataChip } from './degraded-data-chip';
+import { EvidenceSummaryBar } from './evidence-summary-bar';
 import { OutputProvenancePanel } from './output-provenance-panel';
 import { cn } from '@/lib/utils/cn';
 
@@ -95,7 +96,16 @@ export function ToolOutputFrame({
   provenanceDefaultOpen = false,
   className,
 }: ToolOutputFrameProps) {
-  const hasChipRow = !!confidence || !!degraded;
+  const hasEvidenceSummary =
+    !!confidence ||
+    !!generatedAt ||
+    typeof profileVersion === 'number' ||
+    typeof domainVersion === 'number' ||
+    !!model ||
+    typeof sourceCount === 'number' ||
+    (sourceReceipts && sourceReceipts.length > 0) ||
+    !!calibratedTo ||
+    (retrievalLayers && retrievalLayers.length > 0);
 
   const hasProvenance =
     !!generatedAt ||
@@ -113,19 +123,29 @@ export function ToolOutputFrame({
 
   return (
     <div className={cn('space-y-3', className)}>
-      {hasChipRow && (
+      {hasEvidenceSummary ? (
+        <EvidenceSummaryBar
+          confidence={confidence}
+          generatedAt={generatedAt}
+          profileVersion={profileVersion}
+          domainVersion={domainVersion}
+          model={model}
+          sourceCount={sourceCount}
+          receiptCount={sourceReceipts?.length}
+          retrievalLayers={retrievalLayers}
+          calibratedTo={calibratedTo}
+        />
+      ) : null}
+      {degraded ? (
         <div className="flex flex-wrap items-center gap-2">
-          {confidence ? <ConfidenceBadge confidence={confidence} /> : null}
-          {degraded ? (
-            <DegradedDataChip
-              degraded={degraded}
-              missingFeeds={missingFeeds}
-              message={degradedMessage}
-              hideWhenHealthy={false}
-            />
-          ) : null}
+          <DegradedDataChip
+            degraded={degraded}
+            missingFeeds={missingFeeds}
+            message={degradedMessage}
+            hideWhenHealthy={false}
+          />
         </div>
-      )}
+      ) : null}
       {children}
       {!hideProvenance && hasProvenance ? (
         <OutputProvenancePanel

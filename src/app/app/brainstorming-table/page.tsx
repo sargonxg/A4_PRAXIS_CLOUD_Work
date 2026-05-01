@@ -26,7 +26,9 @@ import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils/cn';
 import { ConfidenceBadge } from '@/components/praxis/confidence-badge';
-import { OutputProvenancePanel } from '@/components/praxis/output-provenance-panel';
+import { ToolOutputFrame } from '@/components/praxis/tool-output-frame';
+import { rollupConfidence } from '@/lib/tools/evidence-summary';
+import { DEMO_BRAINSTORMING_TABLE_OUTPUT } from '@/lib/constants/demo-tool-outputs';
 
 const PERSONA_LABELS: Record<string, string> = {
   mediator: 'Mediator',
@@ -106,7 +108,7 @@ export default function BrainstormingTablePage() {
   const [contextNotice, setContextNotice] = useState('');
   const queryContextAppliedRef = useRef(false);
 
-  const current: BrainstormingTable | null = generated ?? (hasData ? persisted : null);
+  const current: BrainstormingTable | null = isDemo ? DEMO_BRAINSTORMING_TABLE_OUTPUT : generated ?? (hasData ? persisted : null);
 
   useEffect(() => {
     if (!activeSituation?.id || isDemo) return;
@@ -343,16 +345,17 @@ export default function BrainstormingTablePage() {
       </section>
 
       {current && (
-        <>
+        <ToolOutputFrame
+          toolId="brainstorming-table"
+          confidence={rollupConfidence(current.turns.map((turn) => turn.confidence))}
+          generatedAt={current.generatedAt}
+          sourceCount={current.retrievalTrace?.itemCount}
+          retrievalQuery={current.question}
+          retrievalLayers={current.retrievalTrace?.layersSearched}
+          frameworks={['Multi-advisor deliberation', 'Red-team critique', 'Corpus retrieval', 'Decision options']}
+        >
           <BrainstormingTableView data={current} situationName={situation?.name ?? activeSituation?.name} />
-          <OutputProvenancePanel
-            toolId="brainstorming-table"
-            generatedAt={current.generatedAt}
-            sourceCount={current.retrievalTrace?.itemCount}
-            retrievalQuery={current.question}
-            retrievalLayers={current.retrievalTrace?.layersSearched}
-          />
-        </>
+        </ToolOutputFrame>
       )}
 
       {!current && !generating && (

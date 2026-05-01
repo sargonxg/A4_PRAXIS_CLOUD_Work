@@ -276,3 +276,77 @@ Known residual risk:
 8. Add graph diff review and analyst-approved graph mutation queue.
 9. Add workflow-specific Deep Search prompts generated from mission playbooks.
 10. Add Dialectica premium adapter interfaces behind a feature flag.
+
+## 2026-05-01 Wave - Evidence Summary And Demo Trust Layer
+
+Top 10 active execution queue:
+
+1. Standardize a compact evidence summary surface across every generated
+   output so users see confidence, source count, generation time, retrieval
+   layers, and calibration before reading conclusions.
+2. Finish `ToolOutputFrame` adoption on the demo-critical tools:
+   Brainstorming Table, Source Scout, Advisory, Policy Memo, Briefing, Reports,
+   Export Center, Risk Monitor, Negotiation Prep, and Daily Brief.
+3. Add `data-tour` anchors to the real UI scenes used by `/app/demo-guide` so
+   the guided walkthrough points at actual interface elements during a
+   recording.
+4. Keep demo and real app data separated: demo routes may use fixtures, but
+   authenticated `/app/*` routes should only show AI, uploaded, or user-created
+   content unless explicitly marked as sample data.
+5. Replace mock report source panels with persisted source receipts or an
+   explicit "no receipts yet" state.
+6. Persist boardroom/deliberation artifacts with advisor turns, dissent,
+   synthesis, receipts, retrieval trace, and user decision.
+7. Add a returning-user case digest showing new sources, new graph mutations,
+   stale outputs, unresolved questions, and recommended next actions.
+8. Add source-receipt appendices to exports so promo/video outputs demonstrate
+   auditability, not only polished prose.
+9. Create a Dialectica-ready graph backend interface and capability errors for
+   premium graph features without tying the app to one database.
+10. Add production-facing onboarding copy for classified-data boundaries,
+    source provenance, and analyst review expectations.
+
+Implemented in this wave:
+
+- Added `src/components/praxis/evidence-summary-bar.tsx`, a reusable compact
+  trust bar for generated outputs.
+- Updated `ToolOutputFrame` so the evidence summary appears consistently above
+  the tool body while the expandable provenance panel still carries the full
+  audit trail and source receipts.
+- Wrapped Brainstorming Table output in `ToolOutputFrame`, with aggregate
+  deliberation confidence computed from persona confidence votes.
+- Wrapped Source Scout output in `ToolOutputFrame`, preserving source receipt
+  details while adding the shared evidence summary at the top.
+- Added deterministic Nordalia demo outputs for Source Scout and Brainstorming
+  Table so promo recordings show receipts, retrieval layers, dissent, and
+  decision options without live generation.
+- Added `src/lib/tools/evidence-summary.ts` plus unit tests for confidence
+  rollups.
+
+Why it matters:
+
+- A demo viewer can immediately see whether an output is grounded, fresh, and
+  source-backed.
+- The same trust pattern now works for live source discovery, expert
+  deliberation, advisory output, and memo generation.
+- Future tools can adopt one wrapper instead of rebuilding confidence,
+  receipts, and provenance UI independently.
+
+How to test:
+
+1. Open Source Scout, run or load a saved scout, and confirm the evidence
+   summary appears above the search plan.
+2. Open Brainstorming Table, load a saved deliberation or generate one, and
+   confirm aggregate confidence and retrieval layers appear above the table.
+3. Expand "Why this output?" under each tool and confirm the detailed
+   provenance panel is still present.
+4. Run `npx vitest run tests/unit/lib/tools/evidence-summary.test.ts`.
+5. Run `npx tsc --noEmit --pretty false`, `npm run lint`, and `npm run build`.
+
+Future improvements:
+
+- Add source-receipt appendices to export flows.
+- Thread model, profile version, and tool run id through every custom tool
+  page.
+- Move reports and briefing onto the same evidence-summary contract.
+- Add a visual recording mode highlight for the evidence summary bars.

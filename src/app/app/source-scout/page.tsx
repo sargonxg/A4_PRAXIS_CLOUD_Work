@@ -15,11 +15,12 @@ import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { OnboardingRequiredState } from '@/components/praxis/onboarding-required-state';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { ConfidenceBadge } from '@/components/praxis/confidence-badge';
-import { OutputProvenancePanel } from '@/components/praxis/output-provenance-panel';
 import { SourceReceiptList } from '@/components/praxis/source-receipt-list';
+import { ToolOutputFrame } from '@/components/praxis/tool-output-frame';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils/cn';
 import type { CanonicalSourceReceipt } from '@/types/source-receipt';
+import { DEMO_SOURCE_SCOUT_OUTPUT } from '@/lib/constants/demo-tool-outputs';
 
 const RELIABILITY_LABEL: Record<string, string> = {
   tier_a: 'A · primary',
@@ -86,7 +87,7 @@ export default function SourceScoutPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [generated, setGenerated] = useState<SourceScoutOutput | null>(null);
 
-  const current: SourceScoutOutput | null = generated ?? (hasData ? persisted : null);
+  const current: SourceScoutOutput | null = isDemo ? DEMO_SOURCE_SCOUT_OUTPUT : generated ?? (hasData ? persisted : null);
 
   const generate = useCallback(async () => {
     if (!question.trim() || !activeSituation) return;
@@ -124,6 +125,12 @@ export default function SourceScoutPage() {
     <div className="space-y-6">
       <RegistryToolInfo toolId="source-scout" />
 
+      {isDemo && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          Demo mode - showing a deterministic Nordalia source-scout fixture with checkable receipt structure.
+        </div>
+      )}
+
       <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <label htmlFor="ss-question" className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-800">
           <Compass className="h-4 w-4" />
@@ -157,14 +164,14 @@ export default function SourceScoutPage() {
           </div>
           <button
             onClick={generate}
-            disabled={generating || !question.trim()}
+            disabled={generating || isDemo || !question.trim()}
             className={cn(
               'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-white shadow-sm transition',
-              generating || !question.trim() ? 'cursor-not-allowed bg-slate-400' : 'bg-emerald-600 hover:bg-emerald-700'
+              generating || isDemo || !question.trim() ? 'cursor-not-allowed bg-slate-400' : 'bg-emerald-600 hover:bg-emerald-700'
             )}
           >
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {generating ? 'Scouting…' : current ? 'Re-scout' : 'Find sources'}
+            {generating ? 'Scouting...' : current ? 'Re-scout' : 'Find sources'}
           </button>
         </div>
         {errorMsg && (
@@ -176,7 +183,16 @@ export default function SourceScoutPage() {
       </section>
 
       {current && (
-        <>
+        <ToolOutputFrame
+          toolId="source-scout"
+          confidence={current.sourceAudit?.confidence}
+          generatedAt={current.generatedAt}
+          sourceCount={current.sourceAudit?.sourceCount ?? current.retrievalTrace?.itemCount}
+          sourceReceipts={current.sourceReceipts}
+          retrievalQuery={current.question}
+          retrievalLayers={current.retrievalTrace?.layersSearched}
+          frameworks={['Source reliability tiers', 'Freshness audit', 'Corroboration checks', 'Live-source receipts']}
+        >
           <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <header className="mb-3 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-slate-900">Search plan</h2>
@@ -287,16 +303,7 @@ export default function SourceScoutPage() {
             </section>
           )}
 
-          <OutputProvenancePanel
-            toolId="source-scout"
-            generatedAt={current.generatedAt}
-            confidence={current.sourceAudit?.confidence}
-            sourceCount={current.sourceAudit?.sourceCount ?? current.retrievalTrace?.itemCount}
-            sourceReceipts={current.sourceReceipts}
-            retrievalQuery={current.question}
-            retrievalLayers={current.retrievalTrace?.layersSearched}
-          />
-        </>
+        </ToolOutputFrame>
       )}
 
       {!current && !generating && (
