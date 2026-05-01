@@ -93,7 +93,10 @@ The GraphOps surface normalizes this into a maintenance contract:
 - Pure summary builder: `src/lib/graph/graphops.ts`.
 - Firestore admin reader: `src/lib/graph/graphops-service.ts`.
 - API: `GET /api/graph/ops?situationId=...`.
+- API: `GET /api/graph/context?situationId=...`.
 - Dashboard UI: Situation Launchpad GraphOps panel.
+- Workspace UI: `/app/graphops`.
+- Canonical schema: `src/lib/graph/canonical-graph.ts`.
 
 GraphOps reports approved vs proposed items, provenance coverage, temporal
 coverage, low-confidence items, orphan nodes, node/edge type distribution, and

@@ -1,9 +1,6 @@
-import { generateText, Output } from 'ai';
-import { getProModel } from '@/lib/ai/providers';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
-import { z } from 'zod';
 import {
   extractEntities,
   mergeExtractions,
@@ -12,7 +9,7 @@ import {
 } from '@/lib/services/entity-extraction';
 import { scrapeUrl, searchWeb, isFirecrawlConfigured } from '@/lib/ai/firecrawl';
 import { saveToolData } from '@/lib/firebase/tool-data-service';
-import { getGraph, saveGraph } from '@/lib/firebase/graph-service';
+import { createGraphUpdateProposalsFromGraphData } from '@/lib/firebase/graph-updates-service';
 
 export const maxDuration = 120;
 
@@ -145,47 +142,36 @@ export const POST = withCalibration('conflict_graph', 'ai_analysis', {
       }
     }
 
-    // ── Optional: Merge into situation graph ───────────────────────────────
+    // ── Optional: propose changes for the situation graph ─────────────────
     if (mergeIntoGraph && situationId && user.uid) {
       try {
-        const existingGraph = await getGraph(user.uid, situationId);
         const firestoreData = toFirestoreGraph(result);
         const now = new Date().toISOString();
-
-        // Convert extraction output to GraphNode format
-        const newNodes = firestoreData.nodes.map((n) => ({
-          id: n.id,
-          type: n.type,
-          label: n.label,
-          properties: {} as Record<string, string | number>,
-          createdAt: now,
-          source: 'web-research' as const,
-          metadata: n.metadata,
-        }));
-        const newEdges = firestoreData.edges.map((e, i) => ({
-          id: `${e.source}-${e.type}-${e.target}-${i}`,
-          source: e.source,
-          target: e.target,
-          type: e.type,
-          weight: e.weight,
-          metadata: e.metadata,
-        }));
-
-        const existingNodeIds = new Set((existingGraph?.nodes || []).map((n) => n.id));
-        const existingEdgeKeys = new Set((existingGraph?.edges || []).map((e) => `${e.source}|${e.type}|${e.target}`));
-
-        const mergedNodes = [
-          ...(existingGraph?.nodes || []),
-          ...newNodes.filter((n) => !existingNodeIds.has(n.id)),
-        ];
-        const mergedEdges = [
-          ...(existingGraph?.edges || []),
-          ...newEdges.filter((e) => !existingEdgeKeys.has(`${e.source}|${e.type}|${e.target}`)),
-        ];
-
-        await saveGraph(user.uid, situationId, {
-          nodes: mergedNodes,
-          edges: mergedEdges,
+        const proposed = await createGraphUpdateProposalsFromGraphData({
+          uid: user.uid,
+          situationId,
+          extractor: 'api/ai/extract',
+          sourceUrl: result.sourceUrl,
+          sourceName: result.sourceName,
+          graph: {
+            nodes: firestoreData.nodes.map((n) => ({
+              id: n.id,
+              type: n.type,
+              label: n.label,
+              properties: {},
+              createdAt: now,
+              source: 'web-research' as const,
+              metadata: n.metadata,
+            })),
+            edges: firestoreData.edges.map((e, i) => ({
+              id: `${e.source}-${e.type}-${e.target}-${i}`,
+              source: e.source,
+              target: e.target,
+              type: e.type,
+              weight: e.weight,
+              metadata: e.metadata,
+            })),
+          },
         });
 
         // Save extraction metadata
@@ -196,9 +182,13 @@ export const POST = withCalibration('conflict_graph', 'ai_analysis', {
           edgeCount: result.edges.length,
           extractedAt: result.extractedAt,
           summary: result.summary,
+          graphWriteMode: 'proposal-first',
+          graphProposalIds: proposed.proposalIds,
+          graphNodesProposed: proposed.nodesProposed,
+          graphEdgesProposed: proposed.edgesProposed,
         });
       } catch (err) {
-        console.error('[extract] Failed to merge into graph:', err);
+        console.error('[extract] Failed to propose graph updates:', err);
       }
     }
 

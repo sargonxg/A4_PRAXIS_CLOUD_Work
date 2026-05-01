@@ -8,7 +8,7 @@ import {
   toFirestoreGraph,
   type ExtractionResult,
 } from '@/lib/services/entity-extraction';
-import { getGraph, saveGraph, saveSnapshot } from '@/lib/firebase/graph-service';
+import { createGraphUpdateProposalsFromGraphData } from '@/lib/firebase/graph-updates-service';
 import { saveToolData } from '@/lib/firebase/tool-data-service';
 import { runCanonicalPreCheck, formatPreCheckContext } from '@/lib/services/canonical-precheck';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
@@ -34,15 +34,15 @@ const ResearchExtractRequestSchema = z.object({
  * Research-Extract Pipeline
  *
  * Active intelligence gathering: searches the web for a conflict situation,
- * scrapes relevant sources, extracts ACO v2.0 entities, and merges them
- * into the situation's knowledge graph — all in one call.
+ * scrapes relevant sources, extracts ACO v2.0 entities, and proposes updates
+ * for the situation's knowledge graph — all in one call.
  *
  * Steps:
  *   1. Canonical pre-check (validate current facts via Google Search grounding)
  *   2. Web search for the situation across multiple source categories
  *   3. Scrape top results
  *   4. Extract ACO entities from each source (with cross-source deduplication)
- *   5. Merge into situation graph (with snapshot for evolution tracking)
+ *   5. Propose graph updates for analyst review
  *   6. Return consolidated results
  *
  * Request body:
@@ -264,46 +264,35 @@ export const POST = withCalibration('research-extract', 'ai_research', {
       }
     }
 
-    // ── Step 4: Merge into situation graph ──────────────────────────
+    // ── Step 4: Propose updates to situation graph ──────────────────
     const now = new Date().toISOString();
     const firestoreData = toFirestoreGraph(consolidated);
+    let proposalSummary = { proposalIds: [] as string[], nodesProposed: 0, edgesProposed: 0 };
 
     try {
-      // Save snapshot before merging for evolution tracking
-      await saveSnapshot(user.uid, situationId, 'research-extract');
-
-      const existingGraph = await getGraph(user.uid, situationId);
-      const existingNodeIds = new Set((existingGraph?.nodes || []).map((n) => n.id));
-      const existingEdgeKeys = new Set(
-        (existingGraph?.edges || []).map((e) => `${e.source}|${e.type}|${e.target}`),
-      );
-
-      const newNodes = firestoreData.nodes
-        .filter((n) => !existingNodeIds.has(n.id))
-        .map((n) => ({
-          id: n.id,
-          type: n.type,
-          label: n.label,
-          properties: {} as Record<string, string | number>,
-          createdAt: now,
-          source: 'web-research' as const,
-          metadata: n.metadata,
-        }));
-
-      const newEdges = firestoreData.edges
-        .filter((e) => !existingEdgeKeys.has(`${e.source}|${e.type}|${e.target}`))
-        .map((e, i) => ({
-          id: `${e.source}-${e.type}-${e.target}-${i}`,
-          source: e.source,
-          target: e.target,
-          type: e.type,
-          weight: e.weight,
-          metadata: e.metadata,
-        }));
-
-      await saveGraph(user.uid, situationId, {
-        nodes: [...(existingGraph?.nodes || []), ...newNodes],
-        edges: [...(existingGraph?.edges || []), ...newEdges],
+      proposalSummary = await createGraphUpdateProposalsFromGraphData({
+        uid: user.uid,
+        situationId,
+        extractor: 'api/ai/research-extract',
+        graph: {
+          nodes: firestoreData.nodes.map((n) => ({
+            id: n.id,
+            type: n.type,
+            label: n.label,
+            properties: {},
+            createdAt: now,
+            source: 'web-research' as const,
+            metadata: n.metadata,
+          })),
+          edges: firestoreData.edges.map((e, i) => ({
+            id: `${e.source}-${e.type}-${e.target}-${i}`,
+            source: e.source,
+            target: e.target,
+            type: e.type,
+            weight: e.weight,
+            metadata: e.metadata,
+          })),
+        },
       });
 
       // Save extraction metadata
@@ -312,8 +301,12 @@ export const POST = withCalibration('research-extract', 'ai_research', {
         sourcesExtracted: sourceResults.length,
         totalNodes: consolidated.nodes.length,
         totalEdges: consolidated.edges.length,
-        newNodesAdded: newNodes.length,
-        newEdgesAdded: newEdges.length,
+        graphWriteMode: 'proposal-first',
+        graphProposalIds: proposalSummary.proposalIds,
+        newNodesAdded: 0,
+        newEdgesAdded: 0,
+        nodesProposed: proposalSummary.nodesProposed,
+        edgesProposed: proposalSummary.edgesProposed,
         categories,
         extractedAt: now,
         summary: consolidated.summary,
@@ -328,6 +321,8 @@ export const POST = withCalibration('research-extract', 'ai_research', {
           edgeCount: consolidated.edges.length,
           sourcesSearched: sources.length,
           sourcesExtracted: sourceResults.length,
+          graphWriteMode: 'proposal-first',
+          graphProposalsCreated: proposalSummary.proposalIds.length,
           summary: consolidated.summary,
           extractedAt: now,
         },
@@ -337,7 +332,7 @@ export const POST = withCalibration('research-extract', 'ai_research', {
         },
       }).catch((err) => console.warn('[research-extract] saveToolOutput failed:', err));
     } catch (err) {
-      console.error('[research-extract] Failed to merge into graph:', err);
+      console.error('[research-extract] Failed to propose graph updates:', err);
     }
 
     // ── Step 5: Return results ─────────────────────────────────────
@@ -357,6 +352,10 @@ export const POST = withCalibration('research-extract', 'ai_research', {
       summary: consolidated.summary,
       nodes: consolidated.nodes,
       edges: consolidated.edges,
+      graphWriteMode: 'proposal-first',
+      graphProposalsCreated: proposalSummary.proposalIds.length,
+      nodesProposed: proposalSummary.nodesProposed,
+      edgesProposed: proposalSummary.edgesProposed,
       extractedAt: now,
     });
   } catch (err) {

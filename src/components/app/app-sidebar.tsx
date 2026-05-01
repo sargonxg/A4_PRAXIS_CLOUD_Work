@@ -45,6 +45,7 @@ import {
   Globe2,
   TrendingDown,
   Activity,
+  Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -222,6 +223,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
       { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
+      { label: 'GraphOps', icon: Wrench, href: '/graphops' },
       { label: 'Timeline', icon: Clock, href: '/timeline' },
     ],
   },
@@ -363,6 +365,7 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   '/risk-monitor': 'risk-monitor',
   '/early-warning': 'early-warning',
   '/conflict-graph': 'conflict-graph',
+  '/graphops': 'conflict-graph',
   '/stakeholder-map': 'stakeholder-map',
   '/power-map': 'power-map',
   '/compare': 'compare',

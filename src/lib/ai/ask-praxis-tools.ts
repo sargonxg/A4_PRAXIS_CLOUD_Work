@@ -13,6 +13,7 @@ import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { gateTier, type SubscriptionTier } from '@/lib/api/tier';
 import { resolveEffectiveApiKey, getUserKeyStatus } from '@/lib/providers/user-keys';
 import { scrapeUrl } from '@/lib/ai/firecrawl';
+import { createGraphUpdateProposal, type GraphUpdateKind } from '@/lib/firebase/graph-updates-service';
 
 export interface AskPraxisToolBindings {
   uid: string;
@@ -225,6 +226,61 @@ export function makeRunDeepResearch(b: AskPraxisToolBindings) {
   });
 }
 
+export function makeProposeGraphDelta(b: AskPraxisToolBindings) {
+  return tool({
+    description:
+      'Create a reviewable PRAXIS graph proposal for the active situation. Use when the user asks to add, correct, remove, or clarify an actor, claim, interest, constraint, event, commitment, risk, or relationship. Never directly mutate the canonical graph.',
+    inputSchema: z.object({
+      kind: z.enum(['node.add', 'node.edit', 'edge.add', 'edge.edit']),
+      summary: z.string().min(8).max(300),
+      confidence: z.number().min(0).max(1).default(0.65),
+      payload: z.record(z.string(), z.any()).describe('For node changes include {node:{id,type,label,metadata}}. For edge changes include {edge:{source,target,type,label,metadata}}.'),
+      provenance: z.object({
+        sourceUrl: z.string().url().optional(),
+        documentId: z.string().optional(),
+        chunkId: z.string().optional(),
+        rationale: z.string().max(800).optional(),
+      }).optional(),
+    }),
+    execute: async ({ kind, summary, confidence, payload, provenance }) => {
+      if (!b.situationId) {
+        return {
+          ok: false,
+          error: 'no_active_situation',
+          message: 'Open a situation before proposing graph changes.',
+        };
+      }
+      try {
+        const id = await createGraphUpdateProposal(b.uid, b.situationId, {
+          kind: kind as GraphUpdateKind,
+          confidence,
+          summary,
+          provenance: {
+            sourceUrl: provenance?.sourceUrl,
+            documentId: provenance?.documentId,
+            chunkId: provenance?.chunkId,
+            extractor: 'ask-praxis',
+          },
+          payload: {
+            ...payload,
+            rationale: provenance?.rationale,
+            proposedBy: 'ask-praxis',
+          },
+        });
+        return {
+          ok: Boolean(id),
+          proposalId: id,
+          summary,
+          message: id ? 'Graph proposal created for analyst review.' : 'Graph proposal could not be created.',
+          _generatedAt: new Date().toISOString(),
+        };
+      } catch (err) {
+        return { ok: false, error: 'graph_proposal_failed', message: err instanceof Error ? err.message : String(err) };
+      }
+    },
+  });
+}
+
 /**
  * Build the four-tool bundle in one call.
  */
@@ -234,6 +290,7 @@ export function buildAskPraxisExtensions(b: AskPraxisToolBindings) {
   const sessionKey = {};
   return {
     writeToTool: makeWriteToTool(b),
+    proposeGraphDelta: makeProposeGraphDelta(b),
     firecrawlFetch: makeFirecrawlFetch(b, sessionKey),
     parallelResearch: makeParallelResearch(b),
     runDeepResearch: makeRunDeepResearch(b),

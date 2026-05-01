@@ -14,6 +14,7 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './config';
 import { computeCorePrimitiveCoverage, type CorePrimitiveCoverage } from '@/lib/graph/core-primitives';
+import { normalizeCanonicalGraph } from '@/lib/graph/canonical-graph';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -62,8 +63,10 @@ export interface GraphEdge {
 export interface GraphData {
   nodes: GraphNode[];
   edges: GraphEdge[];
+  assertions?: Array<Record<string, unknown>>;
   // v2.0 metadata
   version?: string;
+  schemaVersion?: string;
   lastUpdated?: string;
   nodeCount?: number;
   edgeCount?: number;
@@ -96,19 +99,20 @@ export async function getGraph(uid: string, situationId: string): Promise<GraphD
 }
 
 export async function saveGraph(uid: string, situationId: string, graph: GraphData): Promise<void> {
+  const normalized = normalizeCanonicalGraph(graph);
   const entityTypeCounts: Record<string, number> = {};
-  for (const node of graph.nodes) {
+  for (const node of normalized.nodes) {
     entityTypeCounts[node.type] = (entityTypeCounts[node.type] || 0) + 1;
   }
 
   await setDoc(graphDoc(uid, situationId), {
-    ...graph,
+    ...normalized,
     version: '2.0',
     lastUpdated: new Date().toISOString(),
-    nodeCount: graph.nodes.length,
-    edgeCount: graph.edges.length,
+    nodeCount: normalized.nodes.length,
+    edgeCount: normalized.edges.length,
     entityTypeCounts,
-    corePrimitiveCoverage: computeCorePrimitiveCoverage(graph.nodes),
+    corePrimitiveCoverage: computeCorePrimitiveCoverage(normalized.nodes),
   });
 }
 

@@ -18,6 +18,7 @@ import { adminDb } from './admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { computeCorePrimitiveCoverage } from '@/lib/graph/core-primitives';
 import type { GraphData, GraphEdge, GraphNode } from '@/lib/firebase/graph-service';
+import { normalizeCanonicalGraph, normalizeGraphEdge, normalizeGraphNode } from '@/lib/graph/canonical-graph';
 
 export type GraphUpdateKind = 'node.add' | 'node.edit' | 'edge.add' | 'edge.edit';
 export type GraphUpdateStatus = 'proposed' | 'approved' | 'rejected' | 'edited';
@@ -156,6 +157,86 @@ export async function approveProposal(
   }
 }
 
+export async function createGraphUpdateProposal(
+  uid: string,
+  situationId: string,
+  proposal: Omit<GraphUpdateProposal, 'id' | 'proposedAt' | 'status'>
+): Promise<string | null> {
+  if (!adminDb) return null;
+  const ref = collectionRef(uid, situationId).doc();
+  await ref.set({
+    ...proposal,
+    proposedAt: new Date().toISOString(),
+    status: 'proposed',
+  });
+  return ref.id;
+}
+
+export async function createGraphUpdateProposalsFromGraphData(opts: {
+  uid: string;
+  situationId: string;
+  graph: GraphData;
+  extractor: string;
+  sourceUrl?: string;
+  sourceName?: string;
+  maxProposals?: number;
+}): Promise<{ proposalIds: string[]; nodesProposed: number; edgesProposed: number }> {
+  if (!adminDb) return { proposalIds: [], nodesProposed: 0, edgesProposed: 0 };
+  const maxProposals = Math.max(1, Math.min(opts.maxProposals ?? 120, 250));
+  const graphRef = adminDb
+    .collection('users')
+    .doc(opts.uid)
+    .collection('situations')
+    .doc(opts.situationId)
+    .collection('graph')
+    .doc('main');
+  const existingSnap = await graphRef.get();
+  const existing = normalizeCanonicalGraph(existingSnap.exists ? (existingSnap.data() as GraphData) : null);
+  const incoming = normalizeCanonicalGraph(opts.graph);
+  const existingNodeIds = new Set(existing.nodes.map((node) => node.id));
+  const existingEdgeKeys = new Set(existing.edges.map((edge) => `${edge.source}|${edge.type}|${edge.target}`));
+  const proposalIds: string[] = [];
+
+  for (const node of incoming.nodes) {
+    if (proposalIds.length >= maxProposals) break;
+    const existingNode = existingNodeIds.has(node.id);
+    const id = await createGraphUpdateProposal(opts.uid, opts.situationId, {
+      kind: existingNode ? 'node.edit' : 'node.add',
+      confidence: confidenceNumber(node.metadata?.confidence),
+      summary: `${existingNode ? 'Update' : 'Add'} ${node.type} node: ${node.label}`,
+      provenance: {
+        sourceUrl: opts.sourceUrl ?? (typeof node.metadata?.source_url === 'string' ? node.metadata.source_url : undefined),
+        extractor: opts.extractor,
+      },
+      payload: { node },
+    });
+    if (id) proposalIds.push(id);
+  }
+
+  const nodesProposed = proposalIds.length;
+  for (const edge of incoming.edges) {
+    if (proposalIds.length >= maxProposals) break;
+    if (existingEdgeKeys.has(`${edge.source}|${edge.type}|${edge.target}`)) continue;
+    const id = await createGraphUpdateProposal(opts.uid, opts.situationId, {
+      kind: 'edge.add',
+      confidence: confidenceNumber(edge.metadata?.confidence),
+      summary: `Add ${edge.type} relationship: ${edge.source} → ${edge.target}`,
+      provenance: {
+        sourceUrl: opts.sourceUrl ?? (typeof edge.metadata?.source_url === 'string' ? edge.metadata.source_url : undefined),
+        extractor: opts.extractor,
+      },
+      payload: { edge },
+    });
+    if (id) proposalIds.push(id);
+  }
+
+  return {
+    proposalIds,
+    nodesProposed,
+    edgesProposed: proposalIds.length - nodesProposed,
+  };
+}
+
 /**
  * Helper a route uses after approveProposal returns true to write the
  * canonical-graph mutation. The operation is intentionally narrow and
@@ -191,7 +272,7 @@ export async function applyApprovedProposal(
 
   await adminDb.runTransaction(async (tx) => {
     const snap = await tx.get(graphRef);
-    const current: GraphData = snap.exists ? (snap.data() as GraphData) : { nodes: [], edges: [] };
+    const current = normalizeCanonicalGraph(snap.exists ? (snap.data() as GraphData) : null);
     const updated = applyMutationToGraph(current, mutation, now);
     const entityTypeCounts: Record<string, number> = {};
     for (const node of updated.nodes) entityTypeCounts[node.type] = (entityTypeCounts[node.type] ?? 0) + 1;
@@ -245,7 +326,7 @@ function normalizeProposalMutation(proposal: GraphUpdateProposal): NormalizedMut
     return {
       ok: true,
       kind: proposal.kind === 'node.edit' ? 'node.edit' : 'node.add',
-      node: {
+      node: normalizeGraphNode({
         id,
         type,
         label,
@@ -259,7 +340,7 @@ function normalizeProposalMutation(proposal: GraphUpdateProposal): NormalizedMut
           source_name: stringField(provenance, 'extractor') ?? stringField(metadata ?? {}, 'source_name') ?? undefined,
           graphUpdateId: proposal.id,
         },
-      },
+      }),
     };
   }
 
@@ -273,7 +354,7 @@ function normalizeProposalMutation(proposal: GraphUpdateProposal): NormalizedMut
   return {
     ok: true,
     kind: proposal.kind === 'edge.edit' ? 'edge.edit' : 'edge.add',
-    edge: {
+    edge: normalizeGraphEdge({
       id,
       source,
       target,
@@ -288,7 +369,7 @@ function normalizeProposalMutation(proposal: GraphUpdateProposal): NormalizedMut
         source_name: stringField(provenance, 'extractor') ?? stringField(metadata ?? {}, 'source_name') ?? undefined,
         graphUpdateId: proposal.id,
       },
-    },
+    }),
   };
 }
 
@@ -356,4 +437,15 @@ function rawConfidence(raw: Record<string, unknown>, proposal: GraphUpdatePropos
   if (typeof confidence === 'string') return confidence;
   if (typeof confidence === 'number') return String(confidence);
   return String(proposal.confidence);
+}
+
+function confidenceNumber(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return Math.max(0, Math.min(value, 1));
+  if (typeof value === 'string') {
+    const numeric = Number.parseFloat(value);
+    if (Number.isFinite(numeric)) return Math.max(0, Math.min(numeric, 1));
+    if (value.toLowerCase().includes('extracted')) return 0.82;
+    if (value.toLowerCase().includes('ambiguous')) return 0.42;
+  }
+  return 0.65;
 }

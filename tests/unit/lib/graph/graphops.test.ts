@@ -64,6 +64,7 @@ describe('buildGraphOpsSummary', () => {
     expect(summary.provenance.coveragePct).toBe(100);
     expect(summary.latestSnapshotAt).toBe('2026-01-04T00:00:00.000Z');
     expect(summary.maintenanceActions.some((action) => action.includes('Review 1 pending'))).toBe(true);
+    expect(summary.repairSuggestions).toEqual(expect.any(Array));
   });
 
   it('returns an explicit seed action for empty graphs', () => {

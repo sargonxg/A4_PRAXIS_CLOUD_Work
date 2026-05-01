@@ -1,6 +1,6 @@
 # PRAXIS Graph Backbone Sprint A
 
-Status: active proposal.
+Status: active implementation.
 Created: 2026-04-30.
 Short name: **Graph Backbone Sprint A**.
 Reference alias: **GB-A**.
@@ -35,6 +35,21 @@ visualization. Every graph fact should be:
 
 ### GB-A-01 — Canonical Graph v1 Contract
 
+Implementation status: **started**.
+
+Current files:
+
+- `src/lib/graph/canonical-graph.ts`
+- `src/lib/firebase/graph-service.ts`
+
+Current implementation:
+
+- `CANONICAL_GRAPH_SCHEMA_VERSION = canonical-graph-v1`
+- canonical node/edge normalizers
+- evidence envelope schema
+- temporal assertion schema
+- `saveGraph()` normalizes graph writes before persisting
+
 Define and enforce one canonical Firestore graph shape for
 `users/{uid}/situations/{situationId}/graph/main`.
 
@@ -58,6 +73,20 @@ Acceptance checks:
 
 ### GB-A-02 — Proposal Apply Hardening
 
+Implementation status: **started**.
+
+Current files:
+
+- `src/lib/firebase/graph-updates-service.ts`
+- `tests/unit/lib/graph/canonical-graph.test.ts`
+- `tests/unit/lib/graph/graphops.test.ts`
+
+Current implementation:
+
+- approve/apply path writes `graph/main` and a snapshot in one transaction
+- proposal creation helpers for graph-producing AI routes
+- canonical normalization is applied to proposal payloads before mutation
+
 Harden the graph proposal apply path added in GraphOps v0.1.
 
 Acceptance checks:
@@ -70,6 +99,21 @@ Acceptance checks:
 
 ### GB-A-03 — Stop Direct Canonical Writes
 
+Implementation status: **started**.
+
+Current files:
+
+- `src/app/api/ai/extract/route.ts`
+- `src/app/api/ai/research-extract/route.ts`
+- `src/app/api/graph/populate/route.ts`
+
+Current implementation:
+
+- extraction routes now create `graph_updates` proposals instead of direct
+  `graph/main` merges when graph writeback is requested
+- graph population defaults to `staged`
+- dashboard copy describes graph seeding as review preparation
+
 Move graph-producing AI/extraction routes to proposal-first or staged-first
 mode by default.
 
@@ -81,6 +125,14 @@ Acceptance checks:
 - UI copy explains staged/proposed graph data before approval.
 
 ### GB-A-04 — GraphOps Workspace Page
+
+Implementation status: **started**.
+
+Current files:
+
+- `src/app/app/graphops/page.tsx`
+- `src/components/app/app-sidebar.tsx`
+- `src/app/api/graph/ops/route.ts`
 
 Build a real GraphOps workspace for each situation.
 
@@ -105,6 +157,13 @@ Acceptance checks:
 
 ### GB-A-05 — Evidence Envelope for Graph Items
 
+Implementation status: **started**.
+
+Current files:
+
+- `src/lib/graph/canonical-graph.ts`
+- `src/lib/ai/source-receipts.ts`
+
 Every graph node and edge should explain why PRAXIS believes it exists.
 
 Evidence envelope fields:
@@ -126,6 +185,12 @@ Acceptance checks:
   evidence envelopes.
 
 ### GB-A-06 — Temporal Assertion Layer
+
+Implementation status: **started**.
+
+Current files:
+
+- `src/lib/graph/canonical-graph.ts`
 
 Add Firestore-backed temporal assertions.
 
@@ -156,6 +221,16 @@ Acceptance checks:
 
 ### GB-A-07 — Ask PRAXIS Graph Patch Tool
 
+Implementation status: **started**.
+
+Current files:
+
+- `src/lib/ai/ask-praxis-tools.ts`
+
+Current tool name:
+
+- `proposeGraphDelta`
+
 Give Ask PRAXIS a safe graph writeback capability through proposals only.
 
 Tool name:
@@ -170,6 +245,14 @@ Acceptance checks:
 - Proposal includes evidence and a confidence note.
 
 ### GB-A-08 — Central Graph Query Service
+
+Implementation status: **started**.
+
+Current files:
+
+- `src/lib/graph/graph-query-service.ts`
+- `src/lib/graph/graphops-service.ts`
+- `src/app/api/graph/context/route.ts`
 
 Create one graph query/read service used by all graph-aware tools.
 
@@ -195,6 +278,13 @@ Acceptance checks:
 
 ### GB-A-09 — Graph Repair and Maintenance Jobs
 
+Implementation status: **started**.
+
+Current files:
+
+- `src/lib/graph/graph-repair.ts`
+- `src/lib/graph/graphops.ts`
+
 Add deterministic graph maintenance jobs.
 
 Repair actions:
@@ -214,6 +304,20 @@ Acceptance checks:
 - Repairs are auditable and reversible.
 
 ### GB-A-10 — Derived Graph Index Sync
+
+Implementation status: **planned**.
+
+Current files:
+
+- `src/lib/knowledge/graph-layer.ts`
+- `backend/services/graph_adapter.py`
+
+Current implementation:
+
+- Neo4j/Falkor/Spanner adapters exist.
+- GraphOps reports whether the active index mode is Firestore canonical or
+  Neo4j-derived based on runtime config.
+- Full rebuildable sync worker remains pending.
 
 After Firestore canonical graph is stable, mirror approved graph state to a
 derived graph database.
@@ -281,4 +385,3 @@ Decision:
 Good idea as **GB-A-FALKOR pilot** after GB-A-01 through GB-A-05 are underway.
 Not a good idea as an immediate replacement for Firestore canonical graph
 storage.
-

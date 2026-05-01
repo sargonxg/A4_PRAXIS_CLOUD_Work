@@ -10,12 +10,11 @@ export const maxDuration = 300;
  *
  * Body: { situationId: string, mode?: 'commit' | 'staged' }
  *
- * mode='commit' (default) — legacy: writes directly into graph/main and
- * snapshots. Use this when the caller is OK with an immediate merge.
+ * mode='staged' (default) — writes the merged graph into graph/staged so the
+ * user can review a diff before approving.
  *
- * mode='staged' — writes the merged graph into graph/staged so the user can
- * review a diff before approving. Approval flows through
- * /api/graph/approve-staged.
+ * mode='commit' — legacy/admin direct write into graph/main. Avoid for normal
+ * user workflows; GraphOps expects review before canonical mutation.
  *
  * Rebuilds or extends the ACO knowledge graph for the given situation. Reads
  * the caller's uploaded documents, the situation description, and — when no
@@ -32,7 +31,7 @@ export const POST = withAuth(async (req, user) => {
     if (!body.situationId) {
       return NextResponse.json({ error: 'situationId required' }, { status: 400 });
     }
-    const mode = body.mode === 'staged' ? 'staged' : 'commit';
+    const mode = body.mode === 'commit' ? 'commit' : 'staged';
     const result = await populateSituationGraph({
       uid: user.uid,
       situationId: body.situationId,

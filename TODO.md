@@ -159,10 +159,16 @@ contracts, path taxonomy, or context blueprints.
 - [x] Save the next graph backbone roadmap as Graph Backbone Sprint A / GB-A,
   including stable item codes GB-A-01 through GB-A-10 and the GB-A-FALKOR
   derived GraphRAG pilot.
+- [x] Start GB-A implementation: canonical graph v1 normalizer, evidence
+  envelope schema, temporal assertion schema, graph context-pack service,
+  deterministic repair suggestions, proposal-first extraction writes, Ask
+  PRAXIS `proposeGraphDelta`, and `/app/graphops`.
 - [ ] Audit prompts for duplicated contract text now that `withCalibration()`
   injects the shared backbone automatically.
-- [ ] Add the graph approval mutator so approved `graph_updates` payloads are
-  applied to `graph/main` and mirrored to the derived Neo4j index when enabled.
+- [x] Add the graph approval mutator so approved `graph_updates` payloads are
+  applied to `graph/main` transactionally with snapshots.
+- [ ] Mirror approved graph updates to the derived Neo4j/Falkor/Spanner index
+  when enabled, with rebuild-from-Firestore guarantees.
 - [ ] Add a GraphOps workspace page with proposal review, temporal diff,
   canonical-name merge suggestions, source-fragment evidence drawers, and
   Neo4j connectivity diagnostics.

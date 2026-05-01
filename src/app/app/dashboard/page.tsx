@@ -235,8 +235,8 @@ function EmptySituationHint({ situationId }: { situationId: string }) {
         body: JSON.stringify({ situationId }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as { nodesAfter?: number; edgesAfter?: number; actorsEnriched?: number };
-      setResult(`Seeded ${data.nodesAfter ?? 0} nodes, ${data.edgesAfter ?? 0} edges. ${data.actorsEnriched ?? 0} actors enriched.`);
+      const data = (await res.json()) as { nodesAfter?: number; edgesAfter?: number; actorsEnriched?: number; mode?: string };
+      setResult(`Prepared ${data.nodesAfter ?? 0} nodes and ${data.edgesAfter ?? 0} edges for review. ${data.actorsEnriched ?? 0} actors enriched. Mode: ${data.mode ?? 'staged'}.`);
     } catch (e) {
       setResult(e instanceof Error ? e.message : 'Graph seeding failed');
     } finally {

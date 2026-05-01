@@ -1,5 +1,7 @@
 import type { GraphData, GraphEdge, GraphNode } from '@/lib/firebase/graph-service';
 import type { GraphUpdateProposal } from '@/lib/firebase/graph-updates-service';
+import { normalizeCanonicalGraph } from '@/lib/graph/canonical-graph';
+import { generateGraphRepairSuggestions, type GraphRepairSuggestion } from '@/lib/graph/graph-repair';
 
 export const GRAPHOPS_SCHEMA_VERSION = 'graphops-v0.1';
 
@@ -64,6 +66,7 @@ export interface GraphOpsSummary {
   snapshotCount: number;
   latestSnapshotAt: string | null;
   maintenanceActions: string[];
+  repairSuggestions: GraphRepairSuggestion[];
   generatedAt: string;
 }
 
@@ -149,8 +152,9 @@ function latestSnapshot(snapshotIds: string[]): string | null {
 }
 
 export function buildGraphOpsSummary(input: BuildGraphOpsSummaryInput): GraphOpsSummary {
-  const nodes = input.graph?.nodes ?? [];
-  const edges = input.graph?.edges ?? [];
+  const graph = normalizeCanonicalGraph(input.graph);
+  const nodes = graph.nodes;
+  const edges = graph.edges;
   const proposals = input.proposals ?? [];
   const totalItems = nodes.length + edges.length;
   const citedNodeCount = nodes.filter(hasProvenance).length;
@@ -173,6 +177,10 @@ export function buildGraphOpsSummary(input: BuildGraphOpsSummaryInput): GraphOps
   }
   if (lowConfidenceCount > 0) maintenanceActions.push(`Resolve ${lowConfidenceCount} low-confidence or ambiguous graph item${lowConfidenceCount === 1 ? '' : 's'}.`);
   if (orphanNodeCount > 0 && nodes.length > 3) maintenanceActions.push(`Connect or archive ${orphanNodeCount} orphan node${orphanNodeCount === 1 ? '' : 's'} so visual analytics remain meaningful.`);
+  const repairSuggestions = generateGraphRepairSuggestions(graph).slice(0, 12);
+  if (repairSuggestions.some((suggestion) => suggestion.severity === 'critical')) {
+    maintenanceActions.unshift('Run graph repair: at least one critical structural issue is present.');
+  }
   if (maintenanceActions.length === 0) maintenanceActions.push('Graph is ready for Ask PRAXIS, timeline review, and stakeholder analysis.');
 
   return {
@@ -204,6 +212,7 @@ export function buildGraphOpsSummary(input: BuildGraphOpsSummaryInput): GraphOps
     snapshotCount: input.snapshotIds?.length ?? 0,
     latestSnapshotAt: latestSnapshot(input.snapshotIds ?? []),
     maintenanceActions,
+    repairSuggestions,
     generatedAt: input.now ?? new Date().toISOString(),
   };
 }
