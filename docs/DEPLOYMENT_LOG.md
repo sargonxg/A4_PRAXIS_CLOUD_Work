@@ -6,7 +6,7 @@ Use this file to keep daily deployment status visible to Codex, Claude Code, and
 
 Source:
 
-- Commit: `f5e132b`
+- Commit: `c873dd7`
 - Branch: `main`
 - Remote: `origin/main`
 
@@ -48,14 +48,14 @@ Validation before deploy:
 
 Cloud Build:
 
-- Build: `0a77dbba-3786-4395-a869-52621c3541ec`
+- Build: `e9c94507-6130-47e3-8dbd-4b64b035b716`
 - Status: `SUCCESS`
-- Duration: `5M54S`
-- Logs: <https://console.cloud.google.com/cloud-build/builds/0a77dbba-3786-4395-a869-52621c3541ec?project=852128226674>
+- Duration: `5M51S`
+- Logs: <https://console.cloud.google.com/cloud-build/builds/e9c94507-6130-47e3-8dbd-4b64b035b716?project=852128226674>
 
 Cloud Run:
 
-- Frontend revision: `praxis-frontend-00170-mw9`
+- Frontend revision: `praxis-frontend-00172-b5n`
 - Frontend URL: `https://praxis-frontend-pgoyqovcza-uc.a.run.app`
 
 Production verification:
