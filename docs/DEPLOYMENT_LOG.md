@@ -2,6 +2,75 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-05-01 - Tools Workspace + Context Creation Release
+
+Source:
+
+- Commit: `f5e132b`
+- Branch: `main`
+- Remote: `origin/main`
+
+What changed:
+
+- Added `/app/tools` as a tools workspace for package readiness, missing
+  context, and next actions.
+- Added deterministic package action planning shared by dashboard cards and
+  the tools workspace.
+- Expanded package readiness warnings for graph, source, document, stale
+  output, route, and context gaps.
+- Enriched calibrated situation prompt blocks with situation id/status/type,
+  region, actors, risk/Glasl trend, domain confidence, workflow path,
+  inventory counts, analyst notes, source URLs, custom sources, and date or
+  language overrides.
+- Added default SKC retrieval query construction for calibrated AI routes
+  that do not provide their own retrieval query.
+- Hardened situation creation context intake with URL normalization,
+  protocol validation, dedupe, caps, context-note trimming, and custom-source
+  filtering.
+- Added an AI context quality readout to the situation creation review step.
+- Updated changelog, TODO, tools usability docs, and context creation release
+  notes.
+
+Validation before deploy:
+
+- `npx vitest run` passed: 86 files, 432 tests.
+- `npx tsc --noEmit --pretty false` passed.
+- `npm run lint` passed with the existing warning backlog and no errors.
+- `npm run audit:routes` passed: 62 calibrated AI routes and 5 exempt.
+- `npm run audit:tool-contracts` passed: 54/54 tools at >=6/7 checks.
+- `npm run audit:gcp` passed with zero hard failures and zero soft warnings.
+- `npm run build` passed.
+- Local browser smoke passed for `/login`, `/onboarding` unauth redirect, and
+  `/app/tools` unauth redirect preservation.
+- `npx playwright test tests/e2e/golden-path.spec.ts tests/e2e/onboarding.spec.ts`
+  skipped both authenticated specs because `TEST_FIREBASE_EMAIL` is not
+  configured on this machine.
+
+Cloud Build:
+
+- Build: `0a77dbba-3786-4395-a869-52621c3541ec`
+- Status: `SUCCESS`
+- Duration: `5M54S`
+- Logs: <https://console.cloud.google.com/cloud-build/builds/0a77dbba-3786-4395-a869-52621c3541ec?project=852128226674>
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00170-mw9`
+- Frontend URL: `https://praxis-frontend-pgoyqovcza-uc.a.run.app`
+
+Production verification:
+
+- `GET https://praxis.tacitus.me/` -> `200`.
+- `GET https://praxis.tacitus.me/login` -> `200`.
+- `GET https://praxis.tacitus.me/onboarding` -> `307 /login`.
+- `GET https://praxis.tacitus.me/api/health` -> `status:"ok"`,
+  `firestore:"ok"`, `ai_provider:"ok"`, `vertex_adk:"ok"`,
+  `firecrawl:"ok"`.
+- `GET https://praxis.tacitus.me/api/auth/test-firebase` confirmed Firebase
+  is reachable and Email/Password auth is enabled.
+- Production browser smoke passed for `/login` and `/app/tools` unauth
+  redirect to `/login?redirect=%2Fapp%2Ftools`.
+
 ## 2026-04-29 — Tool Provenance Hardening + Enforced GCP Audit
 
 Source:
