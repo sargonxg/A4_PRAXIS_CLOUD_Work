@@ -40,7 +40,7 @@ The current all-tools operating-system architecture pass is
 `docs/PRAXIS_TOOL_OPERATING_SYSTEM_2026-04-30.md`.
 
 The current generated tool-by-tool sprint backlog is
-`docs/PRAXIS_TOOL_BY_TOOL_SPRINT_BACKLOG_2026-04-30.md`. Regenerate it with
+`docs/PRAXIS_TOOL_BY_TOOL_SPRINT_BACKLOG_2026-05-01.md`. Regenerate it with
 `npm run generate:tool-backlog` after tool/page/route changes.
 
 The current subagent synthesis for the tool sprint is
@@ -66,6 +66,10 @@ The current dashboard/tool-package wave is
 `docs/PRAXIS_TOOL_PACKAGES_DASHBOARD_WAVE_2026-05-01.md`. It records the
 generic-core plus conflict/political dashboard package surface and the next 10
 tool-workspace improvements.
+
+The current ranked next-10 improvement wave is
+`docs/PRAXIS_NEXT_10_IMPROVEMENTS_2026-05-01.md`. It records the package
+readiness, GraphOps registry, status coverage, and next AI/tool wiring work.
 
 Generated per-tool specifications live under `docs/tools/generated/`. Refresh
 them with `npm run generate:tool-docs` after changing the registry, operating
@@ -174,6 +178,12 @@ contracts, path taxonomy, or context blueprints.
   canonical workflow taxonomy.
 - [x] Promote GraphOps into the generic core workspace so graph maintenance is
   treated as a baseline context capability, not an operator-only afterthought.
+- [x] Register GraphOps as a first-class PRAXIS tool with method, schema,
+  evidence policy, generated documentation, and contract-audit coverage.
+- [x] Replace the static `/api/tool-status` tool inventory with the live
+  registry so readiness/status coverage cannot drift from registered tools.
+- [x] Add package readiness scoring to the dashboard based on saved outputs,
+  stale outputs, required context readiness, and AI/data route wiring.
 - [ ] Audit prompts for duplicated contract text now that `withCalibration()`
   injects the shared backbone automatically.
 - [x] Add the graph approval mutator so approved `graph_updates` payloads are

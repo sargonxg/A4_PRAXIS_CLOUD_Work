@@ -1,9 +1,11 @@
 'use client';
 
-import { ArrowRight, CheckCircle2, Layers3, PackageOpen } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Gauge, Layers3, PackageOpen } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
+import { useAllToolStatuses } from '@/hooks/use-tool-status';
 import { getToolById } from '@/lib/constants/tool-registry';
 import { CUSTOMIZABLE_SIDEBAR_TOOLS } from '@/lib/navigation/tool-preferences';
+import { computeToolPackageReadiness, type ToolPackageReadiness } from '@/lib/tools/tool-package-readiness';
 import {
   getDashboardToolPackageSummaries,
   type ToolPathPackageSummary,
@@ -31,12 +33,16 @@ const STAGE_CLASS: Record<ToolPathStage, string> = {
 };
 
 export function ToolPackagesPanel({ situation }: ToolPackagesPanelProps) {
+  const statuses = useAllToolStatuses(situation.id);
   const packages = getDashboardToolPackageSummaries(situation.workflowPath);
   const corePackage = packages.find((pkg) => pkg.id === 'generic-core');
   const activeSpecialist =
     packages.find((pkg) => pkg.id === situation.workflowPath && pkg.id !== 'generic-core') ??
     packages.find((pkg) => pkg.id === 'political-officer');
   const visiblePackages = packages.filter((pkg) => pkg.id !== corePackage?.id && pkg.id !== activeSpecialist?.id);
+  const readinessByPackage = new Map(
+    packages.map((pkg) => [pkg.id, computeToolPackageReadiness(pkg, situation, statuses)]),
+  );
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
@@ -60,8 +66,12 @@ export function ToolPackagesPanel({ situation }: ToolPackagesPanelProps) {
       </header>
 
       <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
-        {corePackage ? <PackageCard pkg={corePackage} emphasis="Core workspace" /> : null}
-        {activeSpecialist ? <PackageCard pkg={activeSpecialist} emphasis="Active specialist path" /> : null}
+        {corePackage ? (
+          <PackageCard pkg={corePackage} emphasis="Core workspace" readiness={readinessByPackage.get(corePackage.id)} />
+        ) : null}
+        {activeSpecialist ? (
+          <PackageCard pkg={activeSpecialist} emphasis="Active specialist path" readiness={readinessByPackage.get(activeSpecialist.id)} />
+        ) : null}
       </div>
 
       <div className="mt-4">
@@ -71,7 +81,7 @@ export function ToolPackagesPanel({ situation }: ToolPackagesPanelProps) {
         </div>
         <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
           {visiblePackages.slice(0, 9).map((pkg) => (
-            <CompactPackage key={pkg.id} pkg={pkg} />
+            <CompactPackage key={pkg.id} pkg={pkg} readiness={readinessByPackage.get(pkg.id)} />
           ))}
         </div>
       </div>
@@ -79,7 +89,7 @@ export function ToolPackagesPanel({ situation }: ToolPackagesPanelProps) {
   );
 }
 
-function PackageCard({ pkg, emphasis }: { pkg: ToolPathPackageSummary; emphasis: string }) {
+function PackageCard({ pkg, emphasis, readiness }: { pkg: ToolPathPackageSummary; emphasis: string; readiness?: ToolPackageReadiness }) {
   const primaryTools = pkg.primaryToolIds.slice(0, 6);
 
   return (
@@ -92,6 +102,8 @@ function PackageCard({ pkg, emphasis }: { pkg: ToolPathPackageSummary; emphasis:
         <StageBadge stage={pkg.stage} label={pkg.statusLabel} />
       </div>
       <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-navy-600">{pkg.productPromise}</p>
+
+      {readiness ? <ReadinessStrip readiness={readiness} /> : null}
 
       <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_190px]">
         <div>
@@ -119,7 +131,7 @@ function PackageCard({ pkg, emphasis }: { pkg: ToolPathPackageSummary; emphasis:
   );
 }
 
-function CompactPackage({ pkg }: { pkg: ToolPathPackageSummary }) {
+function CompactPackage({ pkg, readiness }: { pkg: ToolPathPackageSummary; readiness?: ToolPackageReadiness }) {
   const tools = pkg.primaryToolIds.slice(0, 3).map((toolId) => getToolById(toolId)?.name ?? prettyToolName(toolId));
 
   return (
@@ -132,8 +144,41 @@ function CompactPackage({ pkg }: { pkg: ToolPathPackageSummary }) {
         <StageBadge stage={pkg.stage} label={pkg.statusLabel} />
       </div>
       <p className="mt-2 line-clamp-2 text-[11px] leading-snug text-navy-600">{pkg.purpose}</p>
-      <p className="mt-2 truncate text-[11px] text-navy-500">{tools.join(' + ')}</p>
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <p className="truncate text-[11px] text-navy-500">{tools.join(' + ')}</p>
+        {readiness ? (
+          <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold', readinessClass(readiness.state))}>
+            {readiness.score}%
+          </span>
+        ) : null}
+      </div>
     </article>
+  );
+}
+
+function ReadinessStrip({ readiness }: { readiness: ToolPackageReadiness }) {
+  return (
+    <div className="mt-3 rounded border border-slate-200 bg-white p-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          <Gauge className="h-3.5 w-3.5 text-diplomatic-blue" />
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-500">Package readiness</p>
+        </div>
+        <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold', readinessClass(readiness.state))}>
+          {readiness.score}%
+        </span>
+      </div>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+        <div className={cn('h-full rounded-full', readinessBarClass(readiness.state))} style={{ width: `${readiness.score}%` }} />
+      </div>
+      <div className="mt-2 grid grid-cols-2 gap-1.5 text-[10px] text-navy-500 sm:grid-cols-4">
+        <span>{readiness.counts.generated}/{readiness.assessedToolIds.length} saved</span>
+        <span>{readiness.counts.contextReady}/{readiness.counts.contextTotal} context-ready</span>
+        <span>{readiness.counts.aiWired}/{readiness.counts.aiTotal} wired</span>
+        <span>{readiness.counts.stale} stale</span>
+      </div>
+      <p className="mt-1.5 text-[11px] leading-snug text-amber-700">{readiness.nextAction}</p>
+    </div>
   );
 }
 
@@ -164,6 +209,20 @@ function StageBadge({ stage, label }: { stage: ToolPathStage; label: string }) {
       {label}
     </span>
   );
+}
+
+function readinessClass(state: ToolPackageReadiness['state']): string {
+  if (state === 'green') return 'bg-emerald-100 text-emerald-700';
+  if (state === 'yellow') return 'bg-amber-100 text-amber-700';
+  if (state === 'red') return 'bg-red-100 text-red-700';
+  return 'bg-slate-100 text-navy-500';
+}
+
+function readinessBarClass(state: ToolPackageReadiness['state']): string {
+  if (state === 'green') return 'bg-emerald-500';
+  if (state === 'yellow') return 'bg-amber-500';
+  if (state === 'red') return 'bg-red-500';
+  return 'bg-slate-400';
 }
 
 function hrefForTool(toolId: string): string {

@@ -1,6 +1,6 @@
 # PRAXIS Tool Operating Contract Audit - 2026-05-01
 
-Audited 53 registered tools. Passing threshold: 6/7 checks. Current passing: 53/53.
+Audited 54 registered tools. Passing threshold: 6/7 checks. Current passing: 54/54.
 
 | Tool | Score | Route | Page | Objective | Questions | Outputs | Ask PRAXIS | Quality |
 |---|---:|---|---|---|---|---|---|---|
@@ -32,6 +32,7 @@ Audited 53 registered tools. Passing threshold: 6/7 checks. Current passing: 53/
 | external-actors | 7/7 | yes | yes | yes | yes | yes | yes | yes |
 | game-theory | 7/7 | yes | yes | yes | yes | yes | yes | yes |
 | geospatial-monitor | 7/7 | yes | yes | yes | yes | yes | yes | yes |
+| graphops | 7/7 | yes | yes | yes | yes | yes | yes | yes |
 | human-rights | 7/7 | yes | yes | yes | yes | yes | yes | yes |
 | humanitarian | 7/7 | yes | yes | yes | yes | yes | yes | yes |
 | info-environment | 7/7 | yes | yes | yes | yes | yes | yes | yes |

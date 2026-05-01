@@ -2,7 +2,7 @@
 
 This directory is generated from live PRAXIS code. It gives every registered tool a stable product, context, database, graph, document-production, and verification contract.
 
-Generated at: 2026-04-30T15:18:48.839Z
+Generated at: 2026-05-01T04:27:00.762Z
 
 | Tool | Category | Active path focus | AI route |
 |---|---:|---:|---|
@@ -14,6 +14,7 @@ Generated at: 2026-04-30T15:18:48.839Z
 | [Humanitarian](./humanitarian.md) | context | yes | `/api/ai/humanitarian` |
 | [Calendar Monitor](./calendar.md) | context | no | `/api/ai/chat` |
 | [Conflict Graph](./conflict-graph.md) | context | yes | `/api/ai/extract` |
+| [GraphOps](./graphops.md) | context | yes | `/api/graph/ops` |
 | [Risk Monitor](./risk-monitor.md) | analysis | yes | `/api/ai/risk-assessment` |
 | [Early Warning](./early-warning.md) | analysis | yes | `/api/ai/escalation-scan` |
 | [Actor Profiles](./actor-profiles.md) | analysis | yes | `/api/ai/actor-profiles` |

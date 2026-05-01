@@ -22,6 +22,10 @@ This wave focuses on the active product scope:
 - Updated `CoreToolsWidget` to read the generic core package instead of the old
   hardcoded MVP list.
 - Added unit coverage for dashboard package summaries.
+- Added package readiness scoring from saved outputs, stale output flags,
+  required context readiness, and AI/data route wiring.
+- Registered GraphOps as a first-class tool and made `/api/tool-status` derive
+  bulk coverage from `TOOL_REGISTRY` instead of a static list.
 
 ## Dashboard Behavior
 
@@ -46,8 +50,10 @@ The dashboard now shows:
    graph tools.
 3. Make the sidebar visually distinguish core, active specialist, and future
    specialist tools without hiding advanced tools from power users.
-4. Add package readiness scoring: context completeness, evidence coverage,
-   graph health, source coverage, and saved-output coverage.
+4. Add deeper package readiness scoring: context completeness, evidence
+   coverage, graph health, source coverage, and saved-output coverage.
+   - First pass: shipped. It now scores saved outputs, stale outputs, required
+     context readiness, and AI/data route wiring.
 5. Add package-level "generate first useful output" actions: Daily Read, Risk
    Scan, Actor Map, Policy Memo, and Talking Points.
 6. Add Ask PRAXIS package awareness so the assistant can say which tool should

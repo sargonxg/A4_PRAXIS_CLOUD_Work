@@ -2,43 +2,9 @@ import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
 import { getToolData } from '@/lib/firebase/tool-data-service';
 import { adminDb } from '@/lib/firebase/admin';
+import { TOOL_REGISTRY } from '@/lib/constants/tool-registry';
 
-// Map of all known tool IDs (mirrors HREF_TO_TOOL_ID values in app-sidebar)
-const ALL_TOOL_IDS = [
-  'documents',
-  'sources-library',
-  'timeline',
-  'humanitarian',
-  'calendar',
-  'actor-profiles',
-  'risk-monitor',
-  'early-warning',
-  'conflict-graph',
-  'stakeholder-map',
-  'power-map',
-  'compare',
-  'dossier',
-  'talking-points',
-  'briefing',
-  'auto-briefing',
-  'policy-memo',
-  'un-toolkit',
-  'scenarios',
-  'negotiation-prep',
-  'game-theory',
-  'mediation-design',
-  'argus',
-  'media-compass',
-  'media-roundup',
-  'info-environment',
-  'sanctions',
-  'commitments',
-  'treaty-analyzer',
-  'geospatial-monitor',
-  'alert-center',
-  'source-monitor',
-  'export-center',
-] as const;
+const ALL_TOOL_IDS = TOOL_REGISTRY.map((tool) => tool.id);
 
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 

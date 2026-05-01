@@ -156,6 +156,25 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     relatedTools: ['actor-profiles', 'stakeholder-map', 'dashboard'],
     methodology: 'The conflict graph represents the situation as a directed property graph where nodes are ACO entities (14 types) and edges are typed relationships (ally/adversary, claims/contests, leverages/constrains, commits/violates). Graph metrics (degree centrality, betweenness centrality, clustering coefficient) identify structural properties: high-betweenness actors are likely brokers; isolated clusters indicate sub-conflict dynamics. The graph is built via NLP extraction from source documents and structured AI generation using gemini-2.5-pro with the ConflictGraphSchema.',
   },
+  {
+    id: 'graphops',
+    name: 'GraphOps',
+    category: 'context',
+    description: 'Graph operations workspace for maintaining the canonical situation graph. Reviews proposed graph changes, evidence coverage, temporal assertions, orphan nodes, low-confidence items, and derived-index health before graph-dependent tools rely on the backbone.',
+    shortDescription: 'Canonical graph health, proposals, evidence, and temporal coverage',
+    credits: 0,
+    icon: 'Wrench',
+    aiRoute: '/api/graph/ops',
+    dataSchema: 'GraphOpsSummary',
+    requiredSituationFields: ['id'],
+    outputType: 'structured',
+    frameworks: ['ACO Conflict Grammar v2.0', 'Evidence Envelope', 'Temporal Assertion Layer'],
+    dataSources: ['Firestore canonical graph', 'Graph update proposals', 'Document/source fragments'],
+    relatedTools: ['conflict-graph', 'timeline', 'sources-library', 'documents', 'assistant'],
+    methodology: 'GraphOps treats the canonical graph as an auditable production asset. It summarizes nodes, edges, pending proposals, provenance coverage, temporal coverage, low-confidence entities, orphan nodes, snapshots, and backend/index mode. Maintenance guidance is deterministic: evidence gaps, temporal gaps, proposal pressure, and structural anomalies are surfaced before AI tools consume the graph as context.',
+    staleAfterHours: 24,
+    modelTier: 'flash',
+  },
 
   // ── ANALYSIS ──────────────────────────────────────────────────────────────
   {
