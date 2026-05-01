@@ -2,6 +2,65 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-05-01 - Boardroom Capability + Context/Search Audit
+
+Source:
+
+- App commit deployed: `6aaa531`
+- Branch: `main`
+- Remote: `origin/main`
+
+What changed:
+
+- Added a public four-advisor capability registry covering each flagship
+  expert's method, boardroom role, visible tool access, source/data diet, and
+  Dialectica-ready graph layer.
+- Updated the landing Advisory Council so users see the four experts as
+  differentiated working agents, not generic personas.
+- Updated the authenticated Strategic Advisory picker to show each advisor's
+  boardroom role, source categories, server-allowed tools, model tier, and
+  graph layer.
+- Added `docs/PRAXIS_BOARDROOM_CONTEXT_SEARCH_AUDIT_2026-05-01.md`, a
+  researched audit and next-work queue for new/returning users, context
+  creation, search/data grounding, boardroom runs, and future Dialectica graph
+  integration.
+- Added regression coverage for the four-advisor capability registry.
+
+Validation before deploy:
+
+- `npx vitest run tests/unit/lib/constants/advisors.test.ts tests/types/advisor.test.ts`
+  passed: 2 files, 6 tests.
+- `npx tsc --noEmit --pretty false` passed.
+- `npm run lint` passed with the existing warning backlog and no errors.
+- `npx vitest run` passed: 88 files, 437 tests.
+- `npm run build` passed.
+
+Cloud Build:
+
+- Build: `fce22196-ce9b-43af-af10-6c6c07e2c493`
+- Status: `SUCCESS`
+- Duration: `6M13S`
+- Logs: <https://console.cloud.google.com/cloud-build/builds/fce22196-ce9b-43af-af10-6c6c07e2c493?project=852128226674>
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00180-fkk`
+- Frontend URL: `https://praxis-frontend-pgoyqovcza-uc.a.run.app`
+- Traffic: `100%`
+
+Production verification:
+
+- `GET https://praxis.tacitus.me/login` -> `200`.
+- `GET https://praxis.tacitus.me/api/health` -> `status:"ok"`,
+  `firestore:"ok"`, `ai_provider:"ok"`, `vertex_adk:"ok"`,
+  `firecrawl:"ok"`.
+- `GET https://praxis.tacitus.me/api/auth/test-firebase` confirmed Firebase
+  is reachable and Email/Password auth is enabled.
+- Production browser smoke passed for `/#advisory`; the new four-expert
+  boardroom roles and Dialectica graph callout render on the live landing page.
+- Production browser smoke passed for `/app/tools` unauth redirect to
+  `/login?redirect=%2Fapp%2Ftools`.
+
 ## 2026-05-01 - Real App Prompt Isolation + Dialectica Backbone Docs
 
 Source:
