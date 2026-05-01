@@ -2,6 +2,76 @@
 
 Use this file to keep daily deployment status visible to Codex, Claude Code, and humans.
 
+## 2026-05-01 - Evidence Summary Trust Layer
+
+Source:
+
+- App commit deployed: `791747a`
+- Branch: `main`
+- Remote: `origin/main`
+
+What changed:
+
+- Added `<EvidenceSummaryBar />`, a reusable top-of-output trust surface for
+  confidence, source count, generation time, retrieval layers, model/profile
+  metadata, and calibration.
+- Updated `<ToolOutputFrame />` to render the evidence summary consistently
+  while preserving the expandable "Why this output?" provenance panel.
+- Wrapped Brainstorming Table output in `ToolOutputFrame`, including aggregate
+  deliberation confidence derived from persona confidence votes.
+- Wrapped Source Scout output in `ToolOutputFrame`, preserving source receipts
+  while adding the shared evidence summary.
+- Added deterministic Nordalia demo outputs for Source Scout and Brainstorming
+  Table so promo recordings show receipts, retrieval layers, dissent, and
+  decision options without live generation.
+- Updated `docs/PRAXIS_AUTONOMOUS_IMPROVEMENT_PLAN.md` with the active top-10
+  execution queue and this wave's testing/future-work notes.
+- Refreshed the tracked Graphify graph after code changes.
+
+Validation before deploy:
+
+- `npx vitest run tests/unit/lib/tools/evidence-summary.test.ts tests/unit/lib/constants/demo-tool-outputs.test.ts`
+  passed: 2 files, 6 tests.
+- `npx tsc --noEmit --pretty false` passed.
+- `npx vitest run` passed: 93 files, 449 tests.
+- `npm run lint` passed with existing warning backlog and no errors
+  (`204 warnings`).
+- `npm run build` passed and included `/app/source-scout` and
+  `/app/brainstorming-table` in the compiled route manifest.
+- Local browser smoke confirmed `/demo/source-scout?recording=1` and
+  `/demo/brainstorming-table?recording=1` render deterministic outputs with
+  evidence summary bars.
+
+Cloud Build:
+
+- Build: `707090ea-5b23-4461-8ecb-85e27a6c4b68`
+- Status: `SUCCESS`
+- Duration: `5M46S`
+- Logs: <https://console.cloud.google.com/cloud-build/builds/707090ea-5b23-4461-8ecb-85e27a6c4b68?project=852128226674>
+
+Cloud Run:
+
+- Frontend revision: `praxis-frontend-00196-gvq`
+- Frontend URL: `https://praxis-frontend-pgoyqovcza-uc.a.run.app`
+- Traffic: `100%`
+
+Production verification:
+
+- `GET https://praxis.tacitus.me/login` -> `200`.
+- `GET https://praxis.tacitus.me/demo/source-scout?recording=1` -> `307` to
+  `/login?mode=demo` without a demo cookie.
+- `GET https://praxis.tacitus.me/api/health` -> `status:"ok"`,
+  `firestore:"ok"`, `ai_provider:"ok"`, `cookie_secret:"ok"`,
+  `firecrawl:"ok"`, `vertex_adk:"ok"`.
+- Browser smoke confirmed `/login?mode=demo` enters `/demo/dashboard`.
+- Browser smoke confirmed `/demo/source-scout?recording=1` shows the
+  deterministic Nordalia source fixture, `Confidence: High`, `3 sources`,
+  `4 layers`, source receipt audit, and "Why this output?".
+- Browser smoke confirmed `/demo/brainstorming-table?recording=1` shows the
+  deterministic boardroom fixture, `Confidence: Medium`, `14 sources`,
+  `4 layers`, red-team disagreement, decision options, next actions, and
+  "Why this output?".
+
 ## 2026-05-01 - Source Receipts + Demo Director
 
 Source:
