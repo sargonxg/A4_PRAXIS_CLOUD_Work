@@ -6,6 +6,7 @@
  */
 
 import { useCallback, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Loader2, Compass, Sparkles, AlertTriangle, ExternalLink, BookmarkPlus, ShieldCheck } from 'lucide-react';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
@@ -21,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils/cn';
 import type { CanonicalSourceReceipt } from '@/types/source-receipt';
 import { DEMO_SOURCE_SCOUT_OUTPUT } from '@/lib/constants/demo-tool-outputs';
+import { isSyriaDemoCase, SYRIA_DEMO_SOURCE_SCOUT_OUTPUT } from '@/lib/constants/syria-demo-case';
 
 const RELIABILITY_LABEL: Record<string, string> = {
   tier_a: 'A · primary',
@@ -78,6 +80,8 @@ const TIMEFRAMES: Array<SourceScoutOutput['searchPlan']['timeframe']> = ['24h', 
 
 export default function SourceScoutPage() {
   const { isDemo, showGuard, needsOnboarding, situation } = useSituationGuard();
+  const searchParams = useSearchParams();
+  const isSyriaCase = isSyriaDemoCase(searchParams.get('case'));
   const activeSituation = useSituationStore((s) => s.activeSituation);
   const { data: persisted, hasData } = useToolData<SourceScoutOutput>('source-scout');
 
@@ -87,7 +91,9 @@ export default function SourceScoutPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [generated, setGenerated] = useState<SourceScoutOutput | null>(null);
 
-  const current: SourceScoutOutput | null = isDemo ? DEMO_SOURCE_SCOUT_OUTPUT : generated ?? (hasData ? persisted : null);
+  const current: SourceScoutOutput | null = isDemo
+    ? (isSyriaCase ? SYRIA_DEMO_SOURCE_SCOUT_OUTPUT : DEMO_SOURCE_SCOUT_OUTPUT)
+    : generated ?? (hasData ? persisted : null);
 
   const generate = useCallback(async () => {
     if (!question.trim() || !activeSituation) return;
@@ -127,7 +133,7 @@ export default function SourceScoutPage() {
 
       {isDemo && (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Demo mode - showing a deterministic Nordalia source-scout fixture with checkable receipt structure.
+          Demo mode - showing a deterministic {isSyriaCase ? 'Syria public-source' : 'Nordalia'} Source Scout fixture with checkable receipt structure.
         </div>
       )}
 
@@ -141,7 +147,7 @@ export default function SourceScoutPage() {
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           rows={3}
-          placeholder={'e.g. "What primary sources cover the Kessara corridor closure this week, beyond OCHA?"'}
+          placeholder={isSyriaCase ? 'e.g. "What sources show whether the northeast agreement is stabilizing or fraying?"' : 'e.g. "What primary sources cover the Kessara corridor closure this week, beyond OCHA?"'}
           className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
         />
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">

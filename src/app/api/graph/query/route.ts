@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getConflict } from '@/lib/services/conflict-service';
 import { ENTITY_COLORS } from '@/lib/constants/entity-colors';
 import { ensureNordaliaData } from '@/lib/services/nordalia-initializer';
+import { SYRIA_DEMO_CASE_ID } from '@/lib/constants/syria-demo-case';
+import { ensureSyriaDemoData } from '@/lib/services/syria-demo-initializer';
 import { getToolData } from '@/lib/firebase/tool-data-service';
 import { verifyIdToken } from '@/lib/firebase/admin';
 import { cookies } from 'next/headers';
@@ -82,8 +84,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Ensure the conflict exists, populating from demo data if needed
-    ensureNordaliaData(conflictId);
+    // Ensure demo conflicts exist, populating from deterministic public-source fixtures if needed.
+    if (conflictId === SYRIA_DEMO_CASE_ID) {
+      ensureSyriaDemoData(conflictId);
+    } else {
+      ensureNordaliaData(conflictId);
+    }
 
     const conflict = getConflict(conflictId);
     if (!conflict) {

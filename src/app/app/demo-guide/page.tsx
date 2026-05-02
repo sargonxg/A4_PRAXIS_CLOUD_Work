@@ -15,9 +15,10 @@ import {
 import { useSearchParams } from 'next/navigation';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { useAuth } from '@/lib/auth/auth-context';
+import { isSyriaDemoCase, SYRIA_RECORDING_STORY } from '@/lib/constants/syria-demo-case';
 import { cn } from '@/lib/utils/cn';
 
-const STORYBOARD = [
+const DEFAULT_STORYBOARD = [
   {
     step: '01',
     title: 'Open the situation room',
@@ -74,9 +75,75 @@ const STORYBOARD = [
   },
 ];
 
+const SYRIA_STORYBOARD = [
+  {
+    step: '01',
+    title: 'Open Syria situation room',
+    href: '/dashboard',
+    icon: Presentation,
+    cameraCue: 'Start on risk, source count, actor roster, and next actions. Say: this is a public-source Syria snapshot.',
+    narration: 'PRAXIS starts with a persistent case file: current transition context, actors, graph state, sources, risks, and outputs stay together.',
+    proof: 'Show Syria transition case, 78/100 volatile risk, 46 graph entities, and high-reliability public sources.',
+  },
+  {
+    step: '02',
+    title: 'Show context gap discipline',
+    href: '/context-builder',
+    icon: ClipboardList,
+    cameraCue: 'Pause on missing local governance and field-verification gaps.',
+    narration: 'Before generating answers, PRAXIS shows what the system knows, what is thin, and what evidence would change confidence.',
+    proof: 'Show checklist, source priorities, deep research prompt, and first boardroom question.',
+  },
+  {
+    step: '03',
+    title: 'Prove receipts',
+    href: '/source-scout',
+    icon: Search,
+    cameraCue: 'Show five checkable UN/humanitarian sources and the receipt audit.',
+    narration: 'Source Scout turns a decision question into defensible sources, reliability tiers, gaps, and traceable receipts.',
+    proof: 'Show UN Geneva, OCHA, UN Syria CCA, UNFPA, UNHCR receipts and the high-reliability audit.',
+  },
+  {
+    step: '04',
+    title: 'Reveal graph backbone',
+    href: '/graphops',
+    icon: GitBranch,
+    cameraCue: 'Show GraphOps health, then click through to the visual graph.',
+    narration: 'The core asset is not a chat transcript. It is a provenance-backed Firestore graph that AI tools can reuse.',
+    proof: 'Show node/edge counts, provenance, temporal coverage, and the link to Conflict Graph.',
+  },
+  {
+    step: '05',
+    title: 'Click the live graph',
+    href: '/conflict-graph',
+    icon: Sparkles,
+    cameraCue: 'Click 30 January agreement, SDF, displacement, and regional spillover.',
+    narration: 'The graph explains why the Syria case is both hopeful and fragile: one agreement connects to rights, returns, aid, and regional escalation.',
+    proof: 'Show the force graph and connected entity panel.',
+  },
+  {
+    step: '06',
+    title: 'Convene expert disagreement',
+    href: '/brainstorming-table',
+    icon: UsersRound,
+    cameraCue: 'Focus on BLUF, divergences, and the red-team warning against overclaiming public data.',
+    narration: 'PRAXIS preserves structured disagreement so a principal sees options, tradeoffs, confidence, and collection gaps.',
+    proof: 'Show mediator, humanitarian, legal, security, media, and red-team rows.',
+  },
+  {
+    step: '07',
+    title: 'End on decision brief',
+    href: '/briefing',
+    icon: FileText,
+    cameraCue: 'End on slide two or the graph readout slide.',
+    narration: 'The final product is a briefable decision frame: what is known, what is assessed, what can break, and what to do next.',
+    proof: 'Show BLUF, graph readout, risk board, decision actions, and sources.',
+  },
+];
+
 const PROMISES = [
   'Real app content is created by the user, imported documents, approved sources, and AI/tool runs.',
-  'Demo mode is a synthetic Nordalia sample workspace and should be labelled as such in recordings.',
+  'Syria recording mode is a public-source demo snapshot and should be labelled as such in recordings.',
   'AI outputs should show source basis, uncertainty, and missing context instead of pretending completeness.',
   'The future premium backbone can connect these same typed primitives to Dialectica graph reasoning.',
   'Dialectica is shown as a staged premium adapter target, not as an already-active backend in default workspaces.',
@@ -87,7 +154,14 @@ export default function DemoGuidePage() {
   const searchParams = useSearchParams();
   const isDemo = user?.isDemo === true;
   const recordingMode = isDemo && searchParams.get('recording') === '1';
-  const withRecording = (href: string) => (recordingMode ? `${href}?recording=1` : href);
+  const isSyriaCase = isSyriaDemoCase(searchParams.get('case'));
+  const storyboard = isSyriaCase ? SYRIA_STORYBOARD : DEFAULT_STORYBOARD;
+  const withRecording = (href: string) => {
+    if (!recordingMode) return href;
+    const params = new URLSearchParams({ recording: '1' });
+    if (isSyriaCase) params.set('case', 'syria');
+    return `${href}?${params.toString()}`;
+  };
 
   return (
     <div className="flex flex-col gap-5 p-6">
@@ -95,10 +169,13 @@ export default function DemoGuidePage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Demo and recording guide</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-navy-950">Record PRAXIS as a decision-support workflow</h1>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-navy-950">
+              {isSyriaCase ? 'Record the Syria investor walkthrough' : 'Record PRAXIS as a decision-support workflow'}
+            </h1>
             <p className="mt-2 text-sm leading-6 text-navy-600">
-              Use this guide to record a tight product walkthrough: situation setup, context creation, source receipts,
-              graph backbone, expert boardroom, and exportable decision product.
+              {isSyriaCase
+                ? 'Use this 45-second path to show Syria as a real public-source case: situation room, context gaps, source receipts, graph, expert disagreement, and decision brief.'
+                : 'Use this guide to record a tight product walkthrough: situation setup, context creation, source receipts, graph backbone, expert boardroom, and exportable decision product.'}
             </p>
           </div>
           <div className={cn(
@@ -111,7 +188,9 @@ export default function DemoGuidePage() {
             </div>
             <p className="mt-1 max-w-xs text-xs leading-snug">
               {isDemo
-                ? 'You are in the synthetic sample workspace. Keep the demo label visible when recording.'
+                ? isSyriaCase
+                  ? 'You are in the Syria public-source demo. Keep the demo label visible when recording.'
+                  : 'You are in the synthetic sample workspace. Keep the demo label visible when recording.'
                 : 'You are in the real app. Use only user-approved or non-sensitive content for recordings.'}
             </p>
           </div>
@@ -122,16 +201,20 @@ export default function DemoGuidePage() {
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Six-scene promo path</p>
-              <h2 className="mt-1 text-base font-semibold text-navy-900">Show the workflow, not isolated tools</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">
+                {isSyriaCase ? '45-second investor path' : 'Six-scene promo path'}
+              </p>
+              <h2 className="mt-1 text-base font-semibold text-navy-900">
+                {isSyriaCase ? 'Syria: sources to graph to decision' : 'Show the workflow, not isolated tools'}
+              </h2>
             </div>
             <span className="rounded-full bg-diplomatic-blue/10 px-3 py-1 text-[11px] font-semibold text-diplomatic-blue">
-              5-7 minute recording
+              {isSyriaCase ? '45 seconds' : '5-7 minute recording'}
             </span>
           </div>
 
           <div className="mt-4 space-y-3">
-            {STORYBOARD.map((scene) => {
+            {storyboard.map((scene) => {
               const Icon = scene.icon;
               return (
                 <PraxisLink
@@ -193,13 +276,34 @@ export default function DemoGuidePage() {
 
           {isDemo && !recordingMode ? (
             <PraxisLink
-              href="/demo-guide?recording=1"
+              href={isSyriaCase ? '/demo-guide?recording=1&case=syria' : '/demo-guide?recording=1'}
               className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-diplomatic-blue/30 bg-diplomatic-blue/5 px-4 py-3 text-sm font-semibold text-diplomatic-blue transition hover:border-diplomatic-blue/50 hover:bg-diplomatic-blue/10"
             >
               Enable recording mode
               <Presentation className="h-4 w-4" />
             </PraxisLink>
           ) : null}
+
+          {!isSyriaCase ? (
+            <PraxisLink
+              href="/demo-guide?recording=1&case=syria"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100"
+            >
+              Open Syria 45-second demo
+              <Sparkles className="h-4 w-4" />
+            </PraxisLink>
+          ) : (
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Voiceover beats</p>
+              <div className="mt-3 space-y-2">
+                {SYRIA_RECORDING_STORY.slice(0, 5).map((beat) => (
+                  <p key={beat} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] leading-snug text-navy-600">
+                    {beat}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Do not claim</p>

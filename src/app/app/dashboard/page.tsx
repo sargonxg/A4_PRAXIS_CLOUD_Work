@@ -14,6 +14,7 @@
 
 import { useEffect, useState } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { OnboardingRequiredState } from '@/components/praxis/onboarding-required-state';
 import { SituationDashboard, WelcomeState } from '@/components/praxis/situation-dashboard';
@@ -36,6 +37,7 @@ import { ExecutiveIntelligencePanel } from '@/components/dashboard/executive-int
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { ActivityFeed } from '@/components/app/activity-feed';
 import { useAuth } from '@/lib/auth/auth-context';
+import { isSyriaDemoCase, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
 import type { Situation } from '@/types/situation';
 
 interface DailyRead {
@@ -53,6 +55,8 @@ function greeting(): string {
 
 export default function DashboardPage() {
   const { isDemo, needsOnboarding, showGuard, situation, loading } = useSituationGuard();
+  const searchParams = useSearchParams();
+  const demoSituation = isSyriaDemoCase(searchParams.get('case')) ? SYRIA_DEMO_SITUATION : DEMO_SITUATION;
 
   if (needsOnboarding) return <OnboardingRequiredState />;
 
@@ -60,7 +64,7 @@ export default function DashboardPage() {
   if (isDemo) {
     return (
       <div className="p-6">
-        <SituationDashboard situation={DEMO_SITUATION} />
+        <SituationDashboard situation={demoSituation} />
       </div>
     );
   }

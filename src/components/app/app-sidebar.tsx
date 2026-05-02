@@ -237,6 +237,7 @@ const RECORDING_NAV_HREFS = new Set([
   '/context-builder',
   '/source-scout',
   '/graphops',
+  '/conflict-graph',
   '/dialectica',
   '/brainstorming-table',
   '/briefing',
@@ -374,6 +375,7 @@ export function AppSidebar() {
   const { sidebarOpen, toggleSidebar } = useAppStore();
   const { activeSituationId, setActiveSituation, activeSituation } = useSituationStore();
   const recordingMode = user?.isDemo === true && searchParams.get('recording') === '1';
+  const recordingCase = searchParams.get('case');
   const allToolStatuses = useAllToolStatuses(activeSituationId);
   const { preferences } = useUserPreferences({ enabled: Boolean(user && !user.isDemo) });
   const sidebarOrder = orderedToolIds(preferences);
@@ -604,7 +606,12 @@ export function AppSidebar() {
               const isActive =
                 barePath === item.href || barePath.startsWith(item.href + '/');
               const Icon = item.icon;
-              const href = recordingMode ? `${item.href}?recording=1` : item.href;
+              const href = (() => {
+                if (!recordingMode) return item.href;
+                const params = new URLSearchParams({ recording: '1' });
+                if (recordingCase) params.set('case', recordingCase);
+                return `${item.href}?${params.toString()}`;
+              })();
 
               const linkContent = (
                 <PraxisLink

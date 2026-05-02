@@ -14,6 +14,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Loader2, Users, Sparkles, AlertTriangle, ShieldAlert, MessageSquare, ListChecks, Download, FileText, ClipboardList } from 'lucide-react';
 import { brainstormingTableToMarkdown, brainstormingTableFilename } from '@/lib/exports/brainstorming-markdown';
 
@@ -29,6 +30,7 @@ import { ConfidenceBadge } from '@/components/praxis/confidence-badge';
 import { ToolOutputFrame } from '@/components/praxis/tool-output-frame';
 import { rollupConfidence } from '@/lib/tools/evidence-summary';
 import { DEMO_BRAINSTORMING_TABLE_OUTPUT } from '@/lib/constants/demo-tool-outputs';
+import { isSyriaDemoCase, SYRIA_DEMO_BRAINSTORMING_TABLE_OUTPUT, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
 
 const PERSONA_LABELS: Record<string, string> = {
   mediator: 'Mediator',
@@ -93,6 +95,8 @@ interface BrainstormingDocument {
 
 export default function BrainstormingTablePage() {
   const { isDemo, showGuard, needsOnboarding, situation } = useSituationGuard();
+  const searchParams = useSearchParams();
+  const isSyriaCase = isSyriaDemoCase(searchParams.get('case'));
   const activeSituation = useSituationStore((s) => s.activeSituation);
   const { data: persisted, hasData } = useToolData<BrainstormingTable>('brainstorming-table');
 
@@ -108,7 +112,9 @@ export default function BrainstormingTablePage() {
   const [contextNotice, setContextNotice] = useState('');
   const queryContextAppliedRef = useRef(false);
 
-  const current: BrainstormingTable | null = isDemo ? DEMO_BRAINSTORMING_TABLE_OUTPUT : generated ?? (hasData ? persisted : null);
+  const current: BrainstormingTable | null = isDemo
+    ? (isSyriaCase ? SYRIA_DEMO_BRAINSTORMING_TABLE_OUTPUT : DEMO_BRAINSTORMING_TABLE_OUTPUT)
+    : generated ?? (hasData ? persisted : null);
 
   useEffect(() => {
     if (!activeSituation?.id || isDemo) return;
@@ -215,7 +221,7 @@ export default function BrainstormingTablePage() {
 
       {isDemo && (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Demo mode — generation calls are disabled. The table below is fixture content.
+          Demo mode - generation calls are disabled. The table below is {isSyriaCase ? 'a Syria public-source advisor debate' : 'fixture content'}.
         </div>
       )}
 
@@ -234,7 +240,7 @@ export default function BrainstormingTablePage() {
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           rows={3}
-          placeholder={'e.g. "Should the mission publicly attribute the corridor closure or pursue a quiet 72-hour pause first?"'}
+          placeholder={isSyriaCase ? 'e.g. "Should we lead with the northeast agreement, or with spillover risk?"' : 'e.g. "Should the mission publicly attribute the corridor closure or pursue a quiet 72-hour pause first?"'}
           className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
         />
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
@@ -354,7 +360,7 @@ export default function BrainstormingTablePage() {
           retrievalLayers={current.retrievalTrace?.layersSearched}
           frameworks={['Multi-advisor deliberation', 'Red-team critique', 'Corpus retrieval', 'Decision options']}
         >
-          <BrainstormingTableView data={current} situationName={situation?.name ?? activeSituation?.name} />
+          <BrainstormingTableView data={current} situationName={isSyriaCase ? SYRIA_DEMO_SITUATION.name : situation?.name ?? activeSituation?.name} />
         </ToolOutputFrame>
       )}
 

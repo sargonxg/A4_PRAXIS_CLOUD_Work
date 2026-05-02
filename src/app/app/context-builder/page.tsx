@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
   CheckCircle2,
@@ -21,11 +22,23 @@ import {
   type ContextBuilderPriority,
   type ContextBuilderStatus,
 } from '@/lib/context/context-builder-plan';
+import { isSyriaDemoCase, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
 import { cn } from '@/lib/utils/cn';
 
 export default function ContextBuilderPage() {
-  const { needsOnboarding, showGuard, situation, loading } = useSituationGuard();
-  const plan = useMemo(() => (situation ? buildContextBuilderPlan(situation) : null), [situation]);
+  const { isDemo, needsOnboarding, showGuard, situation, loading } = useSituationGuard();
+  const searchParams = useSearchParams();
+  const recordingMode = searchParams.get('recording') === '1';
+  const activeSituation = isDemo && isSyriaDemoCase(searchParams.get('case')) ? SYRIA_DEMO_SITUATION : situation;
+  const plan = useMemo(() => (activeSituation ? buildContextBuilderPlan(activeSituation) : null), [activeSituation]);
+  const preserveDemoQuery = (href: string) => {
+    if (!isDemo) return href;
+    const params = new URLSearchParams();
+    if (recordingMode) params.set('recording', '1');
+    if (isSyriaDemoCase(searchParams.get('case'))) params.set('case', 'syria');
+    const query = params.toString();
+    return query ? `${href}?${query}` : href;
+  };
 
   if (needsOnboarding) return <OnboardingRequiredState />;
 
@@ -37,7 +50,7 @@ export default function ContextBuilderPage() {
     );
   }
 
-  if (showGuard || !situation || !plan) return <NoSituationState />;
+  if (showGuard || !activeSituation || !plan) return <NoSituationState />;
 
   return (
     <div className="flex flex-col gap-5 p-6">
@@ -45,7 +58,7 @@ export default function ContextBuilderPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Context Builder</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-navy-950">{situation.name}</h1>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-navy-950">{activeSituation.name}</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-navy-600">{plan.workflowObjective}</p>
           </div>
           <div className="grid min-w-[220px] grid-cols-2 gap-2">
@@ -76,7 +89,7 @@ export default function ContextBuilderPage() {
               {plan.checklist.map((item) => (
                 <PraxisLink
                   key={item.id}
-                  href={item.actionHref}
+                  href={preserveDemoQuery(item.actionHref)}
                   className={cn(
                     'group rounded-md border px-3 py-3 transition hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5',
                     statusClass(item.status),
@@ -112,7 +125,7 @@ export default function ContextBuilderPage() {
               {plan.runSequence.map((step, index) => (
                 <PraxisLink
                   key={step.label}
-                  href={step.href}
+                  href={preserveDemoQuery(step.href)}
                   className="rounded-md border border-slate-200 px-3 py-3 transition hover:border-gold-500/40 hover:bg-gold-500/5"
                 >
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-700">Step {index + 1}</p>
@@ -148,7 +161,7 @@ export default function ContextBuilderPage() {
               {plan.nextActions.map((action) => (
                 <PraxisLink
                   key={`${action.href}-${action.label}`}
-                  href={action.href}
+                  href={preserveDemoQuery(action.href)}
                   className="block rounded-md border border-slate-200 px-3 py-3 transition hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -170,7 +183,7 @@ export default function ContextBuilderPage() {
             <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">First boardroom question</p>
             <p className="mt-2 text-sm leading-6 text-navy-800">{plan.firstQuestion}</p>
             <PraxisLink
-              href="/brainstorming-table"
+              href={preserveDemoQuery('/brainstorming-table')}
               className="mt-3 inline-flex items-center gap-2 rounded-md bg-navy-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-navy-800"
             >
               Open advisors

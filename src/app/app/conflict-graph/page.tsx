@@ -1,6 +1,7 @@
 "use client";
 
 import { useSituationGuard } from "@/hooks/use-situation-guard";
+import { useSearchParams } from "next/navigation";
 import { NoSituationState } from "@/components/praxis/no-situation-state";
 import { useSituationStore } from "@/stores/situation-store";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -42,6 +43,7 @@ import { ACO_COLORS } from '@/lib/constants/aco-colors';
 
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { AutoPopulatePanel } from '@/components/conflict-graph/auto-populate-panel';
+import { isSyriaDemoCase, SYRIA_DEMO_CASE_ID } from '@/lib/constants/syria-demo-case';
 const COLOR_BY_TYPE: Record<string, string> = { ...ACO_COLORS };
 
 // ── Entity type toggle config ───────────────────────────────────
@@ -52,6 +54,7 @@ const ENTITY_TYPE_TOGGLES = ENTITY_TYPES.map((t) => ({
 }));
 
 const CONFLICTS = [
+  { id: SYRIA_DEMO_CASE_ID, label: "Syria Transition (Public-Source Demo)" },
   { id: "nordalia-crisis", label: "The Nordalia Crisis" },
   { id: "example2", label: "Cascadia Dispute (Demo)" },
   { id: "example3", label: "Sahel Security Corridor (Demo)" },
@@ -183,7 +186,9 @@ function SelectedEntityPanel({
 }
 
 function DemoConflictGraphPage() {
-  const [selectedConflict, setSelectedConflict] = useState("nordalia-crisis");
+  const searchParams = useSearchParams();
+  const isSyriaCase = isSyriaDemoCase(searchParams.get('case'));
+  const [selectedConflict, setSelectedConflict] = useState(isSyriaCase ? SYRIA_DEMO_CASE_ID : "nordalia-crisis");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeTypes, setActiveTypes] = useState<Set<string>>(
     new Set(ENTITY_TYPE_TOGGLES.map((t) => t.key))
@@ -271,6 +276,10 @@ function DemoConflictGraphPage() {
     fetchGraph();
     return () => { cancelled = true; };
   }, [selectedConflict]);
+
+  useEffect(() => {
+    if (isSyriaCase) setSelectedConflict(SYRIA_DEMO_CASE_ID);
+  }, [isSyriaCase]);
 
   const handleExtract = useCallback(async () => {
     if (!extractText.trim() || isExtracting) return;
@@ -436,7 +445,9 @@ function DemoConflictGraphPage() {
                   Conflict Intelligence Graph
                 </h1>
                 <p className="text-sm text-navy-400">
-                  Visual actor network — interactive force-directed exploration
+                  {isSyriaCase
+                    ? 'Syria public-source network - actors, agreement, displacement, and spillover risk'
+                    : 'Visual actor network — interactive force-directed exploration'}
                 </p>
               </div>
             </div>

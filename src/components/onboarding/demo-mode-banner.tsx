@@ -1,12 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ChevronDown, ChevronUp, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useConflictStore } from '@/stores/conflict-store';
 import { useAppStore } from '@/stores/app-store';
+import { isSyriaDemoCase, SYRIA_DEMO_CASE_ID } from '@/lib/constants/syria-demo-case';
 
 const SCENARIO_OPTIONS = [
+  { id: SYRIA_DEMO_CASE_ID, label: 'Syria Transition' },
   { id: 'nordalia-crisis', label: 'Nordalia Crisis' },
   { id: 'sahel-corridor', label: 'Sahel Security Crisis' },
   { id: 'south-china-sea', label: 'South China Sea Tensions' },
@@ -25,13 +28,15 @@ export function DemoModeBanner() {
   const conflicts = useConflictStore((s) => s.conflicts);
   const activeConflictId = useConflictStore((s) => s.activeConflictId);
   const setActiveConflict = useConflictStore((s) => s.setActiveConflict);
+  const searchParams = useSearchParams();
+  const isSyriaCase = isSyriaDemoCase(searchParams.get('case'));
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   if (!demoMode) return null;
 
   const activeConflict = conflicts.find((c) => c.id === activeConflictId);
   const activeLabel =
-    SCENARIO_OPTIONS.find((s) => s.id === activeConflictId)?.label ?? activeConflict?.name ?? '—';
+    isSyriaCase ? 'Syria Transition' : SCENARIO_OPTIONS.find((s) => s.id === activeConflictId)?.label ?? activeConflict?.name ?? '-';
 
   function handleSelect(id: string) {
     setActiveConflict(id);
@@ -119,7 +124,9 @@ export function DemoModeBanner() {
 
       {/* Center: description text */}
       <p className="hidden text-[11px] text-blue-100/70 lg:block">
-        You are exploring the PRAXIS sample workspace. Demo mode uses synthetic Nordalia data; production workspaces run on Vertex AI / Gemini with grounded Google Search and private sources.
+        {isSyriaCase
+          ? 'You are exploring a Syria public-source demo snapshot; production workspaces run on user-approved sources, private documents, and grounded AI.'
+          : 'You are exploring the PRAXIS sample workspace. Demo mode uses synthetic Nordalia data; production workspaces run on Vertex AI / Gemini with grounded Google Search and private sources.'}
       </p>
 
       {/* Right: ecosystem buttons + collapse */}

@@ -8,6 +8,7 @@ import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { BriefBlocksPanel } from '@/components/briefing/brief-blocks-panel';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   ChevronLeft,
   ChevronRight,
@@ -22,6 +23,7 @@ import { cn } from '@/lib/utils/cn';
 import { PoweredByTacitus } from '@/components/shared/powered-by-tacitus';
 import { CASE_REGISTRY } from '@/lib/constants/case-registry';
 import { DEMO_MORNING_BRIEF, type BriefingSlide } from '@/lib/constants/briefing-data';
+import { isSyriaDemoCase, SYRIA_DEMO_MORNING_BRIEF } from '@/lib/constants/syria-demo-case';
 import type { Situation } from '@/types/situation';
 
 const BRIEFING_TYPES = [
@@ -142,8 +144,11 @@ function DemoBriefingPage({ situationName, situation, preloadedSlides }: {
   // If preloaded slides arrive after mount (AiPopulate completes), pick them up
   useEffect(() => {
     if (preloadedSlides && !slides) {
-      setSlides(preloadedSlides);
-      setView('presentation');
+      const timer = window.setTimeout(() => {
+        setSlides(preloadedSlides);
+        setView('presentation');
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
   }, [preloadedSlides, slides]);
 
@@ -487,11 +492,16 @@ function RealBriefingPage({ situation }: { situation: Situation }) {
 
 export default function BriefingPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const searchParams = useSearchParams();
   const { hasData, loading: firestoreLoading } = useToolData('briefing');
   const [regenerating, setRegenerating] = useState(false);
 
   // Demo mode — render with hardcoded demo data
-  if (isDemo) return <DemoBriefingPage />;
+  if (isDemo) {
+    return isSyriaDemoCase(searchParams.get('case'))
+      ? <DemoBriefingPage preloadedSlides={SYRIA_DEMO_MORNING_BRIEF} />
+      : <DemoBriefingPage />;
+  }
 
   // No situation selected
   if (showGuard || !situation) return <NoSituationState />;
