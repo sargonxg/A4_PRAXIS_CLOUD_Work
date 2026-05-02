@@ -8,6 +8,7 @@ import { OnboardingRequiredState } from '@/components/praxis/onboarding-required
 import { WelcomeState } from '@/components/praxis/situation-dashboard';
 import { GraphProposalsPanel } from '@/components/situations/graph-proposals-panel';
 import { PraxisLink } from '@/components/shared/praxis-link';
+import { SyriaRecordingRunway } from '@/components/demo/recording-signal-runway';
 import { buildGraphOpsSummary, type GraphOpsSummary } from '@/lib/graph/graphops';
 import { isSyriaDemoCase, SYRIA_DEMO_CANONICAL_GRAPH, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
 
@@ -160,6 +161,8 @@ function SyriaDemoGraphOpsPage() {
           Open live graph
         </PraxisLink>
       </header>
+
+      <SyriaRecordingRunway density="compact" focus="graph" />
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard icon={<GitBranch className="h-4 w-4" />} label="Canonical nodes" value={String(summary.nodeCount)} />

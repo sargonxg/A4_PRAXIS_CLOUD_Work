@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { ENTITY_COLORS, ENTITY_TYPES } from "@/lib/constants/entity-colors";
 import { PraxisLink } from "@/components/shared/praxis-link";
+import { SyriaRecordingRunway } from "@/components/demo/recording-signal-runway";
 import {
   computeCorePrimitiveCoverage,
   TACITUS_CORE_PRIMITIVES,
@@ -461,6 +462,10 @@ function DemoConflictGraphPage() {
               {isAnalyzing ? 'Analyzing...' : 'AI Analyze Graph'}
             </button>
           </div>
+
+          {isSyriaCase ? (
+            <SyriaRecordingRunway density="compact" focus="graph" className="mt-4" />
+          ) : null}
 
           {/* ── Disambiguation banner ────────────────────────── */}
           <div className="mt-3 flex items-start gap-2 rounded-lg border border-diplomatic-blue/15 bg-diplomatic-blue/4 px-4 py-2.5 text-xs text-navy-600">

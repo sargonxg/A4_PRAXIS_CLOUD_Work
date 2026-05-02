@@ -15,6 +15,7 @@ import { useSituationStore } from '@/stores/situation-store';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { OnboardingRequiredState } from '@/components/praxis/onboarding-required-state';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
+import { SyriaRecordingRunway } from '@/components/demo/recording-signal-runway';
 import { ConfidenceBadge } from '@/components/praxis/confidence-badge';
 import { SourceReceiptList } from '@/components/praxis/source-receipt-list';
 import { ToolOutputFrame } from '@/components/praxis/tool-output-frame';
@@ -130,6 +131,8 @@ export default function SourceScoutPage() {
   return (
     <div className="space-y-6">
       <RegistryToolInfo toolId="source-scout" />
+
+      {isDemo && isSyriaCase ? <SyriaRecordingRunway density="compact" focus="sources" /> : null}
 
       {isDemo && (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">

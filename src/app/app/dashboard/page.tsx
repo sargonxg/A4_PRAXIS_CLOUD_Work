@@ -36,6 +36,7 @@ import { ToolPackagesPanel } from '@/components/dashboard/tool-packages-panel';
 import { ExecutiveIntelligencePanel } from '@/components/dashboard/executive-intelligence-panel';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { ActivityFeed } from '@/components/app/activity-feed';
+import { SyriaRecordingRunway } from '@/components/demo/recording-signal-runway';
 import { useAuth } from '@/lib/auth/auth-context';
 import { isSyriaDemoCase, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
 import type { Situation } from '@/types/situation';
@@ -56,14 +57,16 @@ function greeting(): string {
 export default function DashboardPage() {
   const { isDemo, needsOnboarding, showGuard, situation, loading } = useSituationGuard();
   const searchParams = useSearchParams();
-  const demoSituation = isSyriaDemoCase(searchParams.get('case')) ? SYRIA_DEMO_SITUATION : DEMO_SITUATION;
+  const isSyriaCase = isSyriaDemoCase(searchParams.get('case'));
+  const demoSituation = isSyriaCase ? SYRIA_DEMO_SITUATION : DEMO_SITUATION;
 
   if (needsOnboarding) return <OnboardingRequiredState />;
 
   // Demo mode retains the rich prospect dashboard.
   if (isDemo) {
     return (
-      <div className="p-6">
+      <div className="space-y-4 p-6">
+        {isSyriaCase ? <SyriaRecordingRunway density="full" focus="overview" /> : null}
         <SituationDashboard situation={demoSituation} />
       </div>
     );

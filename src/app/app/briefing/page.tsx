@@ -6,6 +6,7 @@ import { AiPopulate } from '@/components/praxis/ai-populate';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { BriefBlocksPanel } from '@/components/briefing/brief-blocks-panel';
+import { SyriaMiniSignalStrip } from '@/components/demo/recording-signal-runway';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -123,10 +124,11 @@ function toBriefingSlides(data: BriefingData): BriefingSlide[] {
   }));
 }
 
-function DemoBriefingPage({ situationName, situation, preloadedSlides }: {
+function DemoBriefingPage({ situationName, situation, preloadedSlides, showSyriaCue = false }: {
   situationName?: string;
   situation?: Situation;
   preloadedSlides?: BriefingSlide[];
+  showSyriaCue?: boolean;
 }) {
   const isRealMode = !!situationName;
 
@@ -348,6 +350,7 @@ function DemoBriefingPage({ situationName, situation, preloadedSlides }: {
     <div className="relative flex min-h-[calc(100vh-80px)] flex-col">
       {/* Top bar */}
       <div className="flex items-center justify-end gap-2 px-4 py-2">
+        {showSyriaCue ? <SyriaMiniSignalStrip className="mr-auto max-w-xl" /> : null}
         <button
           onClick={handleFullscreen}
           className="rounded-lg border border-[var(--color-app-border)] p-2 text-navy-400 hover:text-navy-700 transition-colors"
@@ -499,7 +502,7 @@ export default function BriefingPage() {
   // Demo mode — render with hardcoded demo data
   if (isDemo) {
     return isSyriaDemoCase(searchParams.get('case'))
-      ? <DemoBriefingPage preloadedSlides={SYRIA_DEMO_MORNING_BRIEF} />
+      ? <DemoBriefingPage preloadedSlides={SYRIA_DEMO_MORNING_BRIEF} showSyriaCue />
       : <DemoBriefingPage />;
   }
 

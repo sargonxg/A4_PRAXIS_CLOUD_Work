@@ -1,12 +1,14 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 import {
   Shield, Zap, Map, FileText, MessageSquare,
   GitBranch, BarChart3, Scale, Newspaper, Search, Upload,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useRoutePrefix } from '@/lib/utils/routes';
+import { isSyriaDemoCase } from '@/lib/constants/syria-demo-case';
 
 interface WelcomeModalProps {
   onStartTour: () => void;
@@ -31,10 +33,19 @@ const DEMO_FEATURES = [
   { icon: Shield, label: 'Early Warning System', description: 'Glasl 9-stage escalation model' },
 ];
 
+const SYRIA_DEMO_FEATURES = [
+  { icon: Search, label: 'Source Receipts', description: 'UN and humanitarian public-source audit' },
+  { icon: GitBranch, label: 'Syria Graph', description: 'Agreement, actors, displacement, and spillover' },
+  { icon: Shield, label: 'GraphOps Health', description: 'Provenance and temporal readiness' },
+  { icon: FileText, label: 'Decision Brief', description: '7-slide investor recording endpoint' },
+];
+
 export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) {
   const prefix = useRoutePrefix();
+  const searchParams = useSearchParams();
   const isDemo = prefix === '/demo';
-  const features = isDemo ? DEMO_FEATURES : REAL_FEATURES;
+  const isSyriaCase = isDemo && isSyriaDemoCase(searchParams.get('case'));
+  const features = isSyriaCase ? SYRIA_DEMO_FEATURES : isDemo ? DEMO_FEATURES : REAL_FEATURES;
 
   return (
     <AnimatePresence>
@@ -69,10 +80,17 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
 
             <p className="mt-4 text-sm leading-relaxed text-navy-600 max-w-sm mx-auto">
               {isDemo ? (
-                <>
-                  Explore the <span className="font-semibold text-navy-800">Nordalia — Contested Border Arrangement</span> sample workspace —
-                  a synthetic sovereignty dispute built to show how PRAXIS organizes actors, sources, risks, and briefings.
-                </>
+                isSyriaCase ? (
+                  <>
+                    Explore the <span className="font-semibold text-navy-800">Syria Transition</span> public-source demo -
+                    built to show how PRAXIS turns receipts, graph context, expert disagreement, and briefings into a recordable workflow.
+                  </>
+                ) : (
+                  <>
+                    Explore the <span className="font-semibold text-navy-800">Nordalia - Contested Border Arrangement</span> sample workspace -
+                    a synthetic sovereignty dispute built to show how PRAXIS organizes actors, sources, risks, and briefings.
+                  </>
+                )
               ) : (
                 <>
                   Your AI-powered conflict intelligence workspace. Create situations, upload documents,
@@ -139,7 +157,11 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
             </button>
 
             <p className="text-center text-[11px] text-navy-400 mt-1">
-              {isDemo ? 'Demo environment — synthetic sample data only' : "You can revisit this from Settings anytime"}
+              {isDemo
+                ? isSyriaCase
+                  ? 'Demo environment - public-source snapshot, not live or classified intelligence'
+                  : 'Demo environment - synthetic sample data only'
+                : "You can revisit this from Settings anytime"}
             </p>
           </div>
         </motion.div>

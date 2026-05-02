@@ -13,6 +13,7 @@ import {
   UsersRound,
 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import { SyriaRecordingRunway } from '@/components/demo/recording-signal-runway';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { useAuth } from '@/lib/auth/auth-context';
 import { isSyriaDemoCase, SYRIA_RECORDING_STORY } from '@/lib/constants/syria-demo-case';
@@ -196,6 +197,8 @@ export default function DemoGuidePage() {
           </div>
         </div>
       </header>
+
+      {isSyriaCase ? <SyriaRecordingRunway density="full" focus="overview" /> : null}
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.6fr)]">
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">

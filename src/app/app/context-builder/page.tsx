@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { OnboardingRequiredState } from '@/components/praxis/onboarding-required-state';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
+import { SyriaRecordingRunway } from '@/components/demo/recording-signal-runway';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import {
@@ -29,13 +30,14 @@ export default function ContextBuilderPage() {
   const { isDemo, needsOnboarding, showGuard, situation, loading } = useSituationGuard();
   const searchParams = useSearchParams();
   const recordingMode = searchParams.get('recording') === '1';
-  const activeSituation = isDemo && isSyriaDemoCase(searchParams.get('case')) ? SYRIA_DEMO_SITUATION : situation;
+  const isSyriaCase = isSyriaDemoCase(searchParams.get('case'));
+  const activeSituation = isDemo && isSyriaCase ? SYRIA_DEMO_SITUATION : situation;
   const plan = useMemo(() => (activeSituation ? buildContextBuilderPlan(activeSituation) : null), [activeSituation]);
   const preserveDemoQuery = (href: string) => {
     if (!isDemo) return href;
     const params = new URLSearchParams();
     if (recordingMode) params.set('recording', '1');
-    if (isSyriaDemoCase(searchParams.get('case'))) params.set('case', 'syria');
+    if (isSyriaCase) params.set('case', 'syria');
     const query = params.toString();
     return query ? `${href}?${query}` : href;
   };
@@ -54,6 +56,7 @@ export default function ContextBuilderPage() {
 
   return (
     <div className="flex flex-col gap-5 p-6">
+      {isDemo && isSyriaCase ? <SyriaRecordingRunway density="compact" focus="overview" /> : null}
       <header className="border-b border-slate-200 pb-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">

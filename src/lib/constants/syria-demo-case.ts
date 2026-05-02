@@ -41,7 +41,7 @@ export const SYRIA_DEMO_SITUATION: Situation = {
   ],
   userRole: 'analyst',
   status: 'active',
-  riskScore: 78,
+  riskScore: 7.8,
   glaslStage: 5,
   escalationTrend: 'volatile',
   actorCount: 9,
