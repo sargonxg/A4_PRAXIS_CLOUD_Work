@@ -7,6 +7,8 @@ import {
   SYRIA_NEUROSYMBOLIC_POLICY_PAYOFFS,
   SYRIA_ONTOLOGY_REASONING_TRACKS,
 } from '@/lib/constants/syria-demo-workspace';
+import { SYRIA_CACHED_RECIPE_RESULTS } from '@/lib/syria/cached-recipe-results';
+import { SyriaRecipeCard } from './recipe-card';
 
 const RECIPES = [
   {
@@ -52,25 +54,8 @@ export function SyriaChapterDialectica() {
       <div className="grid gap-3 md:grid-cols-2">
         {RECIPES.map((recipe) => {
           const Icon = recipe.icon;
-          return (
-            <article key={recipe.code} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="flex items-center justify-between gap-3">
-                <span className="rounded-md bg-navy-950 px-2 py-1 font-mono text-[10px] font-semibold text-gold-200">
-                  {recipe.code}
-                </span>
-                <Icon className="h-4 w-4 text-diplomatic-blue" />
-              </div>
-              <h3 className="mt-3 text-base font-semibold text-navy-950">{recipe.title}</h3>
-              <div className="mt-3 rounded-md bg-slate-50 p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Input</p>
-                <p className="mt-1 text-xs leading-5 text-slate-700">{recipe.input}</p>
-              </div>
-              <div className="mt-2 rounded-md bg-emerald-50 p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Output</p>
-                <p className="mt-1 text-xs leading-5 text-emerald-950">{recipe.output}</p>
-              </div>
-            </article>
-          );
+          const cached = SYRIA_CACHED_RECIPE_RESULTS.find((item) => item.code === recipe.code);
+          return cached ? <SyriaRecipeCard key={recipe.code} recipe={cached} icon={Icon} /> : null;
         })}
       </div>
 

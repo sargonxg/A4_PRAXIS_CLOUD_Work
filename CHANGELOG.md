@@ -31,6 +31,9 @@
   Added Syria extract/promote endpoints that turn ingested documents into
   provenance-bearing hypotheses first, then require calibrated GraphOps
   promotion before mutating the canonical graph.
+- feat(syria): wire DIALECTICA recipe cards into the Syria workspace (#A9).
+  Added five runnable recipe cards with live calls to `/api/dialectica/reason/*`
+  and visibly labeled cached fallback answers for the recording flow.
 
 ## 2026-05-03 — Syria graph-grounded research handoff
 
