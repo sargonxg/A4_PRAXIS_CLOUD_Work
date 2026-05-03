@@ -154,8 +154,9 @@ async def agents_health(_service: dict = Depends(verify_service_token)) -> dict:
 
 
 # Router registration
-from routers import pipeline, graph, analyze  # noqa: E402
+from routers import pipeline, graph, analyze, reason  # noqa: E402
 
 app.include_router(pipeline.router, prefix="/api/v1/pipeline", tags=["pipeline"])
 app.include_router(graph.router, prefix="/api/v1/graph", tags=["graph"])
 app.include_router(analyze.router, prefix="/api/v1/analyze", tags=["analyze"])
+app.include_router(reason.router, prefix="/api/v1/reason", tags=["reason"])

@@ -17,6 +17,9 @@
 - feat(dialectica): add canonical graph views and fork helpers (#A4).
   Added Episodic, Semantic, and Stance graph view functions, Conflict Graph
   view selectors, hypothesis storage helpers, and scenario-fork mutation logs.
+- feat(dialectica): add deterministic reasoning recipe runner (#A5).
+  Added the five named DIALECTICA recipe modules, `/api/v1/reason/{recipe}`,
+  a calibrated Next.js proxy, typed frontend client, and deterministic tests.
 
 ## 2026-05-03 — Syria graph-grounded research handoff
 
