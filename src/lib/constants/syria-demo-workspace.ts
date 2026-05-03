@@ -442,6 +442,108 @@ export const SYRIA_ONTOLOGY_REASONING_TRACKS = [
   },
 ];
 
+export const SYRIA_NEUROSYMBOLIC_RESEARCH_BASE = [
+  {
+    title: 'Microsoft GraphRAG: local-to-global sensemaking',
+    source: 'Microsoft Research',
+    year: '2024',
+    url: 'https://www.microsoft.com/en-us/research/publication/from-local-to-global-a-graph-rag-approach-to-query-focused-summarization/',
+    finding:
+      'GraphRAG builds entity graphs and community summaries so an LLM can answer broad sensemaking questions across large document collections, not only retrieve isolated chunks.',
+    praxisUse:
+      'PRAXIS uses the same pattern for policy questions like "what changed in Syria this week?" by clustering actors, commitments, narratives, risks, and evidence communities before drafting.',
+  },
+  {
+    title: 'Graph Retrieval-Augmented Generation survey',
+    source: 'arXiv 2408.08921',
+    year: '2024',
+    url: 'https://arxiv.org/abs/2408.08921',
+    finding:
+      'GraphRAG formalizes graph-based indexing, graph-guided retrieval, and graph-enhanced generation to improve relational and context-aware answers.',
+    praxisUse:
+      'This maps directly to the PRAXIS pipeline: ingest sources, create typed edges, retrieve by policy track, then generate with provenance and gaps attached.',
+  },
+  {
+    title: 'GraphRAG for customized domain LLMs',
+    source: 'arXiv 2501.13958',
+    year: '2025',
+    url: 'https://arxiv.org/abs/2501.13958',
+    finding:
+      'Domain-specific GraphRAG addresses complex query understanding, distributed knowledge integration, and scale bottlenecks using graph-structured domain hierarchies.',
+    praxisUse:
+      'Conflict policy is exactly this kind of domain: the system needs hierarchy, source discipline, temporal context, and multi-hop reasoning across actors, events, and commitments.',
+  },
+  {
+    title: 'Neuro-symbolic AI for LLM reasoning',
+    source: 'IJCAI 2025 survey',
+    year: '2025',
+    url: 'https://www.ijcai.org/proceedings/2025/1195',
+    finding:
+      'Neuro-symbolic methods combine LLMs with symbolic structures from three directions: symbols guiding LLMs, LLMs producing symbolic artifacts, and hybrid LLM-plus-symbolic reasoning.',
+    praxisUse:
+      'Dialectica is this hybrid layer: LLMs read messy language, graphs hold durable structure, and rules check contradiction, omission, temporal drift, and source confidence.',
+  },
+  {
+    title: 'Unifying large language models and knowledge graphs',
+    source: 'IEEE TKDE roadmap / arXiv',
+    year: '2024',
+    url: 'https://arxiv.org/abs/2306.08302',
+    finding:
+      'LLMs and KGs are complementary: KGs improve factual inference and interpretability, while LLMs help construct, complete, and query evolving graphs.',
+    praxisUse:
+      'PRAXIS can let agents extract candidate graph facts from UN documents and media, then route those facts through GraphOps review before they become reusable institutional memory.',
+  },
+  {
+    title: 'Ontologies for explanations in neuro-symbolic AI',
+    source: 'Neurosymbolic Artificial Intelligence journal',
+    year: '2025',
+    url: 'https://journals.sagepub.com/doi/10.3233/NAI-240754',
+    finding:
+      'Ontologies and knowledge graphs support human-understandable explanations, consistency checks, abstraction, refinement, and repair of hallucination-prone model output.',
+    praxisUse:
+      'This is the reason PRAXIS shows why an answer is supported: the graph can expose source basis, missing evidence, contradictory wording, and the policy ontology behind the conclusion.',
+  },
+];
+
+export const SYRIA_NEUROSYMBOLIC_POLICY_PAYOFFS = [
+  {
+    label: 'Grounded sensemaking',
+    problem: 'Analysts are buried in UN records, local media, think-tank articles, and official statements.',
+    capability:
+      'Graph communities summarize the Syria file by actor, geography, commitment, and narrative so the LLM drafts from structured context instead of a flat search dump.',
+  },
+  {
+    label: 'Discrepancy detection',
+    problem: 'Diplomatic meaning often changes through small wording shifts, omissions, dates, and qualifier language.',
+    capability:
+      'Symbolic statement nodes preserve exact claims, dates, speakers, citations, modality, and confidence, then LLMs explain why the difference matters.',
+  },
+  {
+    label: 'Commitment monitoring',
+    problem: 'Agreements and communiques are easy to announce and hard to verify.',
+    capability:
+      'Commitment nodes are decomposed into parties, obligations, evidence requirements, implementation events, blockers, and compliance deltas.',
+  },
+  {
+    label: 'Scenario simulation',
+    problem: 'Policy options fail when models ignore constraints across humanitarian, legal, security, and economic tracks.',
+    capability:
+      'Typed graph edges let PRAXIS run multi-hop "if this changes, what else moves?" reasoning before the LLM writes scenario narratives.',
+  },
+  {
+    label: 'Explainable drafting',
+    problem: 'A polished memo is not useful if leadership cannot audit why it says what it says.',
+    capability:
+      'Each recommendation can carry source receipts, graph paths, dissent notes, assumptions, and gaps into the memo or briefing.',
+  },
+  {
+    label: 'Cost-aware live AI',
+    problem: 'Always-on cloud agents can become expensive and noisy.',
+    capability:
+      'Seeded graph state renders locally; live agents refresh only targeted gaps, propose bounded graph updates, and avoid re-processing the whole corpus.',
+  },
+];
+
 export const SYRIA_INVESTOR_WALKTHROUGH_ITEMS = [
   {
     label: 'Login-gated Syria case entry',

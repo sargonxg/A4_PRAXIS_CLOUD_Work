@@ -4,6 +4,8 @@ import {
   SYRIA_COMMITMENT_MONITOR_DEMO,
   SYRIA_CURRENT_RESEARCH_SOURCES,
   SYRIA_DISCREPANCY_WORKFLOWS,
+  SYRIA_NEUROSYMBOLIC_POLICY_PAYOFFS,
+  SYRIA_NEUROSYMBOLIC_RESEARCH_BASE,
   SYRIA_ONTOLOGY_REASONING_TRACKS,
 } from '@/lib/constants/syria-demo-workspace';
 
@@ -73,6 +75,29 @@ export function GroundingBackbone() {
                     <p className="mt-1 text-[11px] leading-snug text-blue-100/65">{workflow.output}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+              <div className="rounded-lg border border-white/10 bg-white/[0.06] p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-100/55">Neuro-symbolic moat</p>
+                <h3 className="mt-1 text-lg font-semibold text-white">LLMs draft. The graph remembers and checks.</h3>
+                <div className="mt-3 grid gap-2 md:grid-cols-2">
+                  {SYRIA_NEUROSYMBOLIC_POLICY_PAYOFFS.slice(0, 4).map((payoff) => (
+                    <div key={payoff.label} className="rounded-md border border-white/10 bg-navy-900/70 px-3 py-2">
+                      <p className="text-xs font-semibold text-white">{payoff.label}</p>
+                      <p className="mt-1 text-[11px] leading-snug text-blue-100/65">{payoff.capability}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-gold-300/20 bg-gold-300/10 p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-100">Research base</p>
+                <p className="mt-2 font-mono text-3xl font-bold text-white">{SYRIA_NEUROSYMBOLIC_RESEARCH_BASE.length}</p>
+                <p className="mt-1 text-xs leading-snug text-gold-50/75">
+                  GraphRAG, LLM/KG, ontology explanation, and neuro-symbolic reasoning papers are wired into the product story.
+                </p>
               </div>
             </div>
           </div>
