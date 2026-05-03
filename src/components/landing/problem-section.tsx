@@ -20,24 +20,24 @@ const chaosTools = [
 const praxisCards = [
   {
     title: "AI Brief",
-    subtitle: "Sahel Security Update",
+    subtitle: "Syria Transition Update",
     badge: "Ready",
     badgeColor: "text-sage bg-sage/10 border-sage/20",
-    preview: "3 active fronts · 12 sources · UN-formatted",
+    preview: "9 real app surfaces · source-audited · UN-formatted",
   },
   {
     title: "Risk Score",
-    subtitle: "Northern Mali",
+    subtitle: "Syria northeast track",
     badge: "High",
     badgeColor: "text-crimson bg-crimson/10 border-crimson/20",
-    preview: "Escalation probability: 74%",
+    preview: "Transition risk: 78/100",
   },
   {
     title: "Active Conflicts",
     subtitle: "Monitored Situations",
     badge: "12 live",
     badgeColor: "text-diplomatic-blue bg-diplomatic-blue/10 border-diplomatic-blue/20",
-    preview: "Mali · Sudan · DRC · Myanmar +8",
+    preview: "Syria shared case · add your own workspaces",
   },
 ];
 

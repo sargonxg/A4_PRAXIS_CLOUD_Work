@@ -16,7 +16,7 @@ interface AnnotatedSegment {
 
 const segments: AnnotatedSegment[] = [
   {
-    text: "The Government of Nordalia",
+    text: "The Syrian transitional authorities",
     label: "Actor",
     bgColor: "bg-[#1A2332]",
     textColor: "text-white",
@@ -24,7 +24,7 @@ const segments: AnnotatedSegment[] = [
   },
   { text: " " },
   {
-    text: "rejected",
+    text: "announced",
     label: "Event (Escalatory)",
     bgColor: "bg-[#A63D40]",
     textColor: "text-white",
@@ -32,15 +32,15 @@ const segments: AnnotatedSegment[] = [
   },
   { text: " " },
   {
-    text: "the DRM's demand for provincial elections",
+    text: "a northeast integration track with the SDF",
     label: "Claim",
     bgColor: "bg-[#C8961E]",
     textColor: "text-white",
     legendColor: "#C8961E",
   },
-  { text: ", citing " },
+  { text: ", conditioned by " },
   {
-    text: "a 2019 constitutional amendment",
+    text: "rights guarantees and security sequencing",
     label: "Constraint",
     bgColor: "bg-[#6B7280]",
     textColor: "text-white",
@@ -48,29 +48,29 @@ const segments: AnnotatedSegment[] = [
   },
   { text: ". " },
   {
-    text: "Commander Asante warned",
+    text: "Local civil society warned",
     label: "Narrative",
     bgColor: "bg-[#4B92DB]",
     textColor: "text-white",
     legendColor: "#4B92DB",
   },
-  { text: " that 'all options remain on the table' if " },
+  { text: " that trust will erode if " },
   {
-    text: "the Framework Agreement",
+    text: "the 30 January agreement",
     label: "Commitment",
     bgColor: "bg-[#5B8C5A]",
     textColor: "text-white",
     legendColor: "#5B8C5A",
   },
-  { text: " is not restored by March 15. Meanwhile, Karovia announced " },
+  { text: " is not implemented rights-protectively. Meanwhile, regional actors retain " },
   {
-    text: "a new $50M military aid package",
+    text: "border, sanctions, and reconstruction leverage",
     label: "Leverage",
     bgColor: "bg-[#2563EB]",
     textColor: "text-white",
     legendColor: "#2563EB",
   },
-  { text: ", drawing condemnation from Westmark." },
+  { text: ", shaping the recovery window." },
 ];
 
 const legendItems = [
@@ -200,11 +200,12 @@ export function ConflictGrammarHighlight() {
             Original Text
           </p>
           <div className="rounded-xl border border-cream-300/60 bg-white/70 px-6 py-5 text-sm leading-relaxed text-navy-600">
-            The Government of Nordalia rejected the DRM&apos;s demand for provincial
-            elections, citing a 2019 constitutional amendment. Commander Asante warned
-            that &apos;all options remain on the table&apos; if the Framework Agreement is not
-            restored by March 15. Meanwhile, Karovia announced a new $50M military aid
-            package, drawing condemnation from Westmark.
+            The Syrian transitional authorities announced a northeast integration
+            track with the SDF, conditioned by rights guarantees and security
+            sequencing. Local civil society warned that trust will erode if the
+            30 January agreement is not implemented rights-protectively. Meanwhile,
+            regional actors retain border, sanctions, and reconstruction leverage,
+            shaping the recovery window.
           </div>
         </motion.div>
 

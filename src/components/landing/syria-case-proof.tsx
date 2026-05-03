@@ -2,17 +2,19 @@
 
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowRight, FileText, GitBranch, Gauge, Search, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, FileText, GitBranch, Gauge, Newspaper, Search, ShieldCheck, Sparkles } from 'lucide-react';
 import { SYRIA_DEMO_SITUATION, SYRIA_RECORDING_SCENES } from '@/lib/constants/syria-demo-case';
+import { SYRIA_INVESTOR_WALKTHROUGH_ITEMS, SYRIA_LOCAL_MEDIA_SOURCES } from '@/lib/constants/syria-demo-workspace';
 import { cn } from '@/lib/utils/cn';
 
 const CASE_URL = '/login?mode=demo&redirect=/app/syria-case%3Frecording%3D1%26case%3Dsyria';
 
 const PROOF_POINTS = [
   { label: 'Risk frame', value: '78/100', icon: Gauge, tone: 'text-red-700', detail: 'Volatile, trigger-based transition risk' },
-  { label: 'Receipts', value: '5', icon: Search, tone: 'text-emerald-700', detail: 'UN and humanitarian public sources' },
+  { label: 'Receipts', value: '8', icon: Search, tone: 'text-emerald-700', detail: 'UN, humanitarian, local, and economic sources' },
+  { label: 'Local media', value: `${SYRIA_LOCAL_MEDIA_SOURCES.length}`, icon: Newspaper, tone: 'text-teal-300', detail: 'Syrian source profiles and narrative lanes' },
   { label: 'Graph', value: `${SYRIA_DEMO_SITUATION.graphEntities}`, icon: GitBranch, tone: 'text-diplomatic-blue', detail: 'Typed actors, claims, events, constraints' },
-  { label: 'Brief', value: '7 slides', icon: FileText, tone: 'text-gold-700', detail: 'Decision product with source basis' },
+  { label: 'Wow path', value: `${SYRIA_INVESTOR_WALKTHROUGH_ITEMS.length}`, icon: FileText, tone: 'text-gold-700', detail: 'Clickable investor walkthrough moments' },
 ];
 
 export function SyriaCaseProof() {
@@ -41,8 +43,9 @@ export function SyriaCaseProof() {
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-blue-100/75">
             Open a populated public-source Syria transition workspace, then move through the real app:
-            context discipline, source receipts, Firestore graph health, interactive conflict graph,
-            expert disagreement, and a briefable decision product.
+            context discipline, source receipts, local Syria media, narrative divergence,
+            Firestore graph health, interactive conflict graph, expert disagreement,
+            editable memo, and a briefable decision product.
           </p>
           <div className="mt-6 flex flex-col gap-2 sm:flex-row">
             <Link
@@ -62,7 +65,7 @@ export function SyriaCaseProof() {
         </div>
 
         <div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {PROOF_POINTS.map((point, index) => {
               const Icon = point.icon;
               return (

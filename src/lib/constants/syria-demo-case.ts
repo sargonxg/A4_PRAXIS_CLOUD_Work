@@ -85,6 +85,10 @@ export const SYRIA_DEMO_SITUATION: Situation = {
     { id: 'syria-un-envoy', url: SYRIA_DEMO_SOURCES.unGenevaFebruary, name: 'UN Syria Security Council update', categoryId: 'un-official' },
     { id: 'syria-ocha-march', url: SYRIA_DEMO_SOURCES.unGenevaMarch, name: 'OCHA / Security Council humanitarian update', categoryId: 'humanitarian' },
     { id: 'syria-cca', url: SYRIA_DEMO_SOURCES.unCommonCountryAnalysis, name: 'UN Syria Common Country Analysis', categoryId: 'un-official' },
+    { id: 'syria-enab-baladi', url: 'https://en.enabbaladi.org/', name: 'Enab Baladi local Syria reporting', categoryId: 'local-media' },
+    { id: 'syria-direct', url: 'https://syriadirect.org/', name: 'Syria Direct independent reporting', categoryId: 'local-media' },
+    { id: 'syria-north-press', url: 'https://npasyria.com/en/', name: 'North Press Agency northeast Syria reporting', categoryId: 'local-media' },
+    { id: 'syria-report-economy', url: 'https://syria-report.com/', name: 'The Syria Report economy and HLP coverage', categoryId: 'think-tank' },
   ],
 };
 
@@ -207,6 +211,9 @@ export const SYRIA_DEMO_SOURCE_SCOUT_OUTPUT: DemoSourceScoutOutput = {
       'Aleppo northeast Syria displacement February 2026',
       'Syria Common Country Analysis 2026 trust-building',
       'UNHCR Syria returns since December 2024',
+      'Enab Baladi Syria transition local governance returns rights',
+      'North Press Agency northeast Syria SDF integration local reporting',
+      'The Syria Report reconstruction HLP sanctions Syria transition',
     ],
     excludedDomains: ['unsourced social media', 'advocacy posts without primary links', 'stale pre-transition explainers'],
     timeframe: '90d',
@@ -263,6 +270,36 @@ export const SYRIA_DEMO_SOURCE_SCOUT_OUTPUT: DemoSourceScoutOutput = {
       corroborated: true,
       format: 'article',
     },
+    {
+      name: 'Enab Baladi - Local Syria reporting and investigations',
+      url: 'https://en.enabbaladi.org/',
+      reason:
+        'Adds Syrian-origin local coverage, investigations, social impact, governance, rights, and service-delivery signals that UN sources cannot provide alone.',
+      reliability: 'tier_b',
+      publishedAt: 'continuous',
+      corroborated: false,
+      format: 'article',
+    },
+    {
+      name: 'North Press Agency - Northeast Syria reporting',
+      url: 'https://npasyria.com/en/',
+      reason:
+        'Adds high-proximity northeast reporting for SDF-administered areas, border dynamics, community stress, and local implementation indicators.',
+      reliability: 'tier_b',
+      publishedAt: 'continuous',
+      corroborated: false,
+      format: 'article',
+    },
+    {
+      name: 'The Syria Report - Economy, HLP, and recovery constraints',
+      url: 'https://syria-report.com/',
+      reason:
+        'Adds specialist economic, business, reconstruction, sanctions, procurement, and housing-land-property coverage to the recovery risk frame.',
+      reliability: 'tier_b',
+      publishedAt: 'continuous',
+      corroborated: false,
+      format: 'article',
+    },
   ],
   duplicatesAvoided: [
     'Generic Syria civil-war explainers that predate the December 2024 political transition.',
@@ -272,7 +309,7 @@ export const SYRIA_DEMO_SOURCE_SCOUT_OUTPUT: DemoSourceScoutOutput = {
   intelligenceGaps: [
     'Local governance details of the northeast implementation plan remain incomplete in public reporting.',
     'Independent field verification of detention-facility security and transfers is limited in the public-source corpus.',
-    'Reliable local reporting from Sweida and southern Syria should be added before briefing narrow local dynamics.',
+    'Reliable local reporting from Sweida, northeast Syria, returns corridors, and economic/HLP channels should be added before briefing narrow local dynamics.',
   ],
   retrievalTrace: {
     layersSearched: ['official UN reporting', 'humanitarian reports', 'returns data', 'graph primitives', 'tool-output cache'],
@@ -296,6 +333,7 @@ export const SYRIA_DEMO_SOURCE_SCOUT_OUTPUT: DemoSourceScoutOutput = {
     notes: [
       'This case uses official and humanitarian sources first to avoid unnecessary cloud/provider calls during recording.',
       'All proposed sources have checkable URLs and are suitable for public attribution.',
+      'Local Syria media sources are proposed for source diversity but should be triangulated before high-impact factual claims.',
     ],
   },
 };
@@ -1165,6 +1203,8 @@ export const SYRIA_RECORDING_STORY = [
   'Dashboard: show PRAXIS as a situation room anchored in a real Syria transition snapshot.',
   'Context Builder: show missing local governance and field-verification gaps before any AI answer.',
   'Source Scout: show five checkable UN/humanitarian receipts and the audit panel.',
+  'Media Compass: show local Syrian media, state messaging, economic reporting, and monitoring sources on one reliability map.',
+  'Media Roundup: show narrative divergence lanes and watch items without spending live cloud calls.',
   'GraphOps: show provenance, temporal coverage, repair suggestions, and Firestore-first graph readiness.',
   'Conflict Graph: click 30 January agreement, SDF, displacement, regional spillover.',
   'Boardroom: show expert disagreement and the red-team warning against overclaiming public data.',
@@ -1182,7 +1222,7 @@ export const SYRIA_RECORDING_SCENES = [
   },
   {
     id: 'context-builder',
-    seconds: '06-12',
+    seconds: '06-11',
     title: 'Context discipline',
     href: '/context-builder?recording=1&case=syria',
     voiceover:
@@ -1190,15 +1230,31 @@ export const SYRIA_RECORDING_SCENES = [
   },
   {
     id: 'source-scout',
-    seconds: '12-18',
+    seconds: '11-16',
     title: 'Source receipts',
     href: '/source-scout?recording=1&case=syria',
     voiceover:
       'Source Scout turns the Syria question into checkable UN and humanitarian receipts with reliability tiers and explicit gaps.',
   },
   {
+    id: 'media-compass',
+    seconds: '16-21',
+    title: 'Media compass',
+    href: '/media-compass?recording=1&case=syria',
+    voiceover:
+      'Media Compass adds local Syrian outlets, official messaging, economic reporting, and monitoring sources to one explainable map.',
+  },
+  {
+    id: 'media-roundup',
+    seconds: '21-26',
+    title: 'Narrative lanes',
+    href: '/media-roundup?recording=1&case=syria',
+    voiceover:
+      'The roundup separates northeast integration, humanitarian access, rights, recovery, and regional-spillover narratives.',
+  },
+  {
     id: 'graphops',
-    seconds: '18-24',
+    seconds: '26-31',
     title: 'GraphOps',
     href: '/graphops?recording=1&case=syria',
     voiceover:
@@ -1206,7 +1262,7 @@ export const SYRIA_RECORDING_SCENES = [
   },
   {
     id: 'conflict-graph',
-    seconds: '24-31',
+    seconds: '31-36',
     title: 'Live graph',
     href: '/conflict-graph?recording=1&case=syria',
     voiceover:
@@ -1214,15 +1270,15 @@ export const SYRIA_RECORDING_SCENES = [
   },
   {
     id: 'brainstorming-table',
-    seconds: '31-38',
+    seconds: '36-41',
     title: 'Expert disagreement',
     href: '/brainstorming-table?recording=1&case=syria',
     voiceover:
-      'The advisor table keeps mediator, humanitarian, legal, security, media, and red-team disagreement visible for the principal.',
+      'The advisor table keeps mediator, humanitarian, legal, security, media, and red-team disagreement visible.',
   },
   {
     id: 'briefing',
-    seconds: '38-45',
+    seconds: '41-45',
     title: 'Decision brief',
     href: '/briefing?recording=1&case=syria',
     voiceover:
@@ -1234,6 +1290,8 @@ export const SYRIA_RECORDING_AUDIO_SCRIPT = [
   'PRAXIS opens a real Syria public-source case file: risk, actors, sources, graph health, and next actions in one operating room.',
   'Before any model answer, Context Builder shows what is known, what is thin, and which evidence gaps block confidence.',
   'Source Scout turns the Syria question into checkable UN and humanitarian receipts with reliability tiers and explicit gaps.',
+  'Media Compass adds local Syrian media, official messaging, economic reporting, and monitoring sources to one reliability map.',
+  'The roundup separates northeast integration, humanitarian access, rights, recovery, and regional-spillover narratives.',
   'GraphOps shows the Firestore graph as a production asset: provenance, temporal anchors, repair suggestions, and review gates.',
   'The visual graph makes the case legible: the January agreement links to the SDF, Kurdish rights, displacement, aid, and regional spillover.',
   'Then the advisor table preserves structured disagreement: mediator, humanitarian, legal, security, media, and red-team views stay separate.',

@@ -111,54 +111,48 @@ export function HeroQuadrantTour() {
 
 function PanelGraph() {
   const shouldReduceMotion = useReducedMotion() ?? false;
-  // Real Sahel actor map — Northern Mali post-MINUSMA
+  // Syria transition case map, aligned with the shared app workspace.
   const nodes = [
-    { id: 'mali', cx: 50, cy: 50, r: 8, fill: '#4E79A7', label: 'Mali (Junta)', type: 'state' },
-    { id: 'jnim', cx: 78, cy: 28, r: 7, fill: '#E15759', label: 'JNIM', type: 'armed' },
-    { id: 'isgs', cx: 86, cy: 56, r: 6, fill: '#E15759', label: 'IS-Sahel', type: 'armed' },
-    { id: 'cma', cx: 22, cy: 22, r: 6, fill: '#E15759', label: 'CMA / FLA', type: 'armed' },
-    { id: 'wagner', cx: 60, cy: 78, r: 6, fill: '#9C755F', label: 'Africa Corps', type: 'pmc' },
-    { id: 'aes', cx: 35, cy: 78, r: 7, fill: '#4E79A7', label: 'AES', type: 'state' },
-    { id: 'ecowas', cx: 14, cy: 50, r: 6, fill: '#76B7B2', label: 'ECOWAS', type: 'institution' },
-    { id: 'minusma', cx: 86, cy: 80, r: 5, fill: '#BAB0AC', label: 'MINUSMA †', type: 'institution' },
-    { id: 'algeria', cx: 50, cy: 12, r: 5, fill: '#4E79A7', label: 'Algeria', type: 'state' },
-    { id: 'france', cx: 22, cy: 92, r: 5, fill: '#4E79A7', label: 'France', type: 'state' },
-    { id: 'algiers', cx: 32, cy: 38, r: 4, fill: '#76B7B2', label: 'Algiers Accord', type: 'commitment' },
-    { id: 'idps', cx: 70, cy: 92, r: 5, fill: '#F28E2B', label: 'IDPs · 354k', type: 'population' },
-    { id: 'ipi', cx: 92, cy: 38, r: 4, fill: '#EDC948', label: 'Uranium', type: 'leverage' },
-    { id: 'narr', cx: 8, cy: 30, r: 4, fill: '#FF9DA7', label: 'Sovereignty', type: 'narrative' },
+    { id: 'damascus', cx: 50, cy: 48, r: 8, fill: '#4E79A7', label: 'Damascus', type: 'state' },
+    { id: 'sdf', cx: 78, cy: 30, r: 7, fill: '#E15759', label: 'SDF', type: 'armed' },
+    { id: 'kurdish', cx: 83, cy: 58, r: 6, fill: '#FF9DA7', label: 'Kurdish rights', type: 'claim' },
+    { id: 'un', cx: 20, cy: 26, r: 6, fill: '#76B7B2', label: 'UN Envoy', type: 'institution' },
+    { id: 'ocha', cx: 18, cy: 68, r: 6, fill: '#F28E2B', label: 'OCHA', type: 'institution' },
+    { id: 'agreement', cx: 50, cy: 18, r: 6, fill: '#59A14F', label: '30 Jan deal', type: 'commitment' },
+    { id: 'returns', cx: 55, cy: 82, r: 6, fill: '#F28E2B', label: 'Returns', type: 'population' },
+    { id: 'spillover', cx: 84, cy: 84, r: 5, fill: '#E15759', label: 'Spillover', type: 'risk' },
+    { id: 'south', cx: 13, cy: 48, r: 5, fill: '#E15759', label: 'South', type: 'risk' },
+    { id: 'media', cx: 91, cy: 42, r: 4, fill: '#EDC948', label: 'Media', type: 'narrative' },
+    { id: 'hlp', cx: 35, cy: 90, r: 4, fill: '#9C755F', label: 'HLP', type: 'constraint' },
+    { id: 'aid', cx: 35, cy: 66, r: 5, fill: '#F28E2B', label: 'Aid strain', type: 'constraint' },
   ];
   const edges = [
-    { from: 'mali', to: 'jnim', color: '#E15759', kind: 'antagonistic' },
-    { from: 'mali', to: 'isgs', color: '#E15759', kind: 'antagonistic' },
-    { from: 'mali', to: 'cma', color: '#E15759', kind: 'antagonistic' },
-    { from: 'mali', to: 'wagner', color: '#59A14F', kind: 'cooperative' },
-    { from: 'mali', to: 'aes', color: '#59A14F', kind: 'cooperative' },
-    { from: 'aes', to: 'ecowas', color: '#E15759', kind: 'antagonistic' },
-    { from: 'jnim', to: 'isgs', color: '#E15759', kind: 'antagonistic' },
-    { from: 'cma', to: 'algiers', color: '#76B7B2', kind: 'commitment' },
-    { from: 'mali', to: 'algiers', color: '#76B7B2', kind: 'commitment' },
-    { from: 'algeria', to: 'algiers', color: '#76B7B2', kind: 'commitment' },
-    { from: 'minusma', to: 'mali', color: '#BAB0AC', kind: 'historical' },
-    { from: 'france', to: 'mali', color: '#BAB0AC', kind: 'historical' },
-    { from: 'jnim', to: 'idps', color: '#EDC948', kind: 'causal' },
-    { from: 'isgs', to: 'idps', color: '#EDC948', kind: 'causal' },
-    { from: 'mali', to: 'narr', color: '#FF9DA7', kind: 'structural' },
-    { from: 'mali', to: 'ipi', color: '#EDC948', kind: 'leverage' },
+    { from: 'damascus', to: 'agreement', color: '#59A14F', kind: 'commitment' },
+    { from: 'sdf', to: 'agreement', color: '#59A14F', kind: 'commitment' },
+    { from: 'un', to: 'agreement', color: '#76B7B2', kind: 'cooperative' },
+    { from: 'agreement', to: 'kurdish', color: '#76B7B2', kind: 'commitment' },
+    { from: 'agreement', to: 'returns', color: '#EDC948', kind: 'causal' },
+    { from: 'ocha', to: 'aid', color: '#F28E2B', kind: 'causal' },
+    { from: 'aid', to: 'returns', color: '#EDC948', kind: 'causal' },
+    { from: 'spillover', to: 'returns', color: '#E15759', kind: 'antagonistic' },
+    { from: 'south', to: 'spillover', color: '#E15759', kind: 'antagonistic' },
+    { from: 'media', to: 'kurdish', color: '#FF9DA7', kind: 'structural' },
+    { from: 'hlp', to: 'returns', color: '#9C755F', kind: 'constraint' },
+    { from: 'damascus', to: 'media', color: '#EDC948', kind: 'structural' },
   ];
   function nodeById(id: string) {
     return nodes.find((n) => n.id === id)!;
   }
   return (
-    <Card title="ACO v2.0 · Conflict Graph" subtitle="praxis.tacitus.me · Northern Mali · 14 entities · 16 edges">
+    <Card title="ACO v2.0 · Conflict Graph" subtitle="praxis.tacitus.me · Syria case · 30 entities · 42 edges">
       <div className="grid h-full grid-cols-[1.4fr_1fr] gap-3 p-3">
         <div className="relative overflow-hidden rounded-lg border border-cream-200/60 bg-gradient-to-br from-white/85 via-white/60 to-cream-50/60 p-2">
           <div className="flex items-center justify-between">
             <span className="text-[9px] font-semibold uppercase tracking-wider text-navy-500">
-              Glasl 7 · Critical
+              Transition risk · High
             </span>
             <span className="font-mono text-[8.5px] text-navy-500">
-              risk 78 · density 0.18
+              risk 78 · provenance 91%
             </span>
           </div>
           <svg viewBox="0 0 100 100" className="mt-1 h-full w-full" aria-hidden="true">
@@ -241,7 +235,7 @@ function PanelGraph() {
               Pivot actors
             </div>
             <div className="mt-0.5 text-[10px] font-semibold text-navy-800 leading-tight">
-              JNIM · Africa Corps · CMA-FLA
+              Damascus · SDF · UN Envoy
             </div>
           </div>
           <div className="rounded-md border border-cream-200/60 bg-white/70 px-2 py-1">
@@ -249,17 +243,17 @@ function PanelGraph() {
               Hidden linkage
             </div>
             <div className="mt-0.5 text-[9.5px] text-navy-700 leading-snug">
-              JNIM ↔ Algiers Accord (broken)
+              Agreement → returns → aid access
             </div>
           </div>
-          <Pill color="#4E79A7" label="States · AES" count={4} />
-          <Pill color="#E15759" label="Armed · jihadi+CMA" count={3} />
-          <Pill color="#9C755F" label="PMC · Africa Corps" count={1} />
-          <Pill color="#76B7B2" label="Commitments" count={1} />
-          <Pill color="#F28E2B" label="Civ · IDPs 354k" count={1} />
+          <Pill color="#4E79A7" label="State actors" count={4} />
+          <Pill color="#E15759" label="Security risks" count={5} />
+          <Pill color="#9C755F" label="HLP constraints" count={3} />
+          <Pill color="#76B7B2" label="Commitments" count={6} />
+          <Pill color="#F28E2B" label="Humanitarian" count={7} />
           <div className="mt-auto rounded-md border border-emerald-200 bg-emerald-50/80 px-2 py-1">
             <span className="text-[8.5px] font-semibold uppercase tracking-wider text-emerald-700">
-              GDELT/UCDP 7d · 142 signals
+              GraphOps · 18 repairs cleared
             </span>
           </div>
         </div>
@@ -273,9 +267,8 @@ function PanelGraph() {
 // ---------------------------------------------------------------------------
 
 function PanelMedia() {
-  // Realistic frame divergence on Sahel coverage — Western mainstream (A)
-  // versus state/affiliated outlets (B). Scores are illustrative but
-  // mirror what frame-divergence audits actually surface.
+  // Syria media layer from the real app: local, official, monitoring,
+  // economic, and global frames are intentionally separated.
   const frames = [
     { label: 'Problem', a: 78, b: 92 },
     { label: 'Cause', a: 64, b: 88 },
@@ -285,26 +278,26 @@ function PanelMedia() {
     { label: 'Remedy', a: 55, b: 70 },
   ];
   const sources = [
-    { name: 'Reuters', dot: '#4E79A7', tone: 'neutral', signals: 14, drift: '+2σ' },
-    { name: 'AFP', dot: '#4E79A7', tone: 'neutral', signals: 11, drift: '+1σ' },
-    { name: 'Le Monde', dot: '#F28E2B', tone: 'analytical', signals: 9, drift: '−' },
-    { name: 'Al Jazeera', dot: '#76B7B2', tone: 'critical', signals: 8, drift: '+1σ' },
-    { name: 'RFI', dot: '#F28E2B', tone: 'analytical', signals: 7, drift: '−' },
-    { name: 'Crisis Group', dot: '#59A14F', tone: 'expert', signals: 4, drift: '−' },
-    { name: 'UCDP', dot: '#59A14F', tone: 'data', signals: 6, drift: '−' },
-    { name: 'TASS', dot: '#E15759', tone: 'state · RU', signals: 5, drift: '+3σ' },
-    { name: 'Anadolu', dot: '#E15759', tone: 'state · TR', signals: 4, drift: '+2σ' },
-    { name: 'Africa Confid.', dot: '#9C755F', tone: 'expert', signals: 3, drift: '−' },
+    { name: 'Enab Baladi', dot: '#0F766E', tone: 'local', signals: 18, drift: '+2σ' },
+    { name: 'Syria Direct', dot: '#7C3AED', tone: 'diaspora', signals: 9, drift: '+1σ' },
+    { name: 'North Press', dot: '#0F766E', tone: 'northeast', signals: 16, drift: '+3σ' },
+    { name: 'Syria Report', dot: '#B45309', tone: 'economy', signals: 7, drift: '−' },
+    { name: 'SyriaUntold', dot: '#7C3AED', tone: 'civic', signals: 5, drift: '−' },
+    { name: 'SANA', dot: '#E15759', tone: 'official', signals: 14, drift: '+2σ' },
+    { name: 'SOHR', dot: '#DC2626', tone: 'monitoring', signals: 11, drift: '+1σ' },
+    { name: 'Reuters', dot: '#4E79A7', tone: 'wire', signals: 12, drift: '−' },
+    { name: 'UN News', dot: '#59A14F', tone: 'UN', signals: 6, drift: '−' },
+    { name: 'ReliefWeb', dot: '#59A14F', tone: 'humanitarian', signals: 8, drift: '+1σ' },
   ];
   return (
-    <Card title="Media Monitor · 24h" subtitle="praxis.tacitus.me · Sahel · narrative diff · 71 articles">
+    <Card title="Media Compass · Syria" subtitle="praxis.tacitus.me · local media · narrative lanes · 8 source profiles">
       <div className="flex h-full flex-col gap-2 p-3">
         <div className="flex items-center justify-between">
           <span className="text-[9px] font-semibold uppercase tracking-wider text-navy-500">
             Entman frame divergence
           </span>
           <span className="font-mono text-[8.5px] text-navy-500">
-            Δ frame = 0.42 · GDELT-grounded
+            Δ frame = 0.39 · local + UN receipts
           </span>
         </div>
         <div className="grid flex-1 grid-cols-[1.3fr_1fr] gap-2">
@@ -334,18 +327,18 @@ function PanelMedia() {
           <div className="grid grid-rows-2 gap-1.5">
             <div className="rounded-md border border-diplomatic-blue/15 bg-diplomatic-blue/5 px-2 py-1">
               <div className="text-[8.5px] font-semibold uppercase tracking-wider text-diplomatic-blue">
-                Western frame
+                Local / civil frame
               </div>
               <div className="mt-0.5 text-[9px] leading-snug text-navy-700">
-                JNIM advance · MINUSMA gap · civilian deaths cited
+                Rights, returns, services, checkpoints, implementation gaps
               </div>
             </div>
             <div className="rounded-md border border-crimson/20 bg-crimson/5 px-2 py-1">
               <div className="text-[8.5px] font-semibold uppercase tracking-wider text-crimson">
-                State-aligned frame
+                Official / regional frame
               </div>
               <div className="mt-0.5 text-[9px] leading-snug text-navy-700">
-                Sovereignty · &ldquo;neo-colonial&rdquo; framing · Wagner success
+                Transition stability, territorial integrity, external pressure
               </div>
             </div>
           </div>
@@ -384,8 +377,8 @@ function PanelAssistant() {
       role: 'user',
       text: (
         <>
-          Compare the post-MINUSMA security gap in Gao vs Kidal — civilian
-          protection and humanitarian access. Use my saved corpus.
+          Is the Syria northeast integration track still the stabilizing
+          center of gravity? Separate facts, assessment, and gaps.
         </>
       ),
     },
@@ -393,34 +386,32 @@ function PanelAssistant() {
       role: 'praxis',
       text: (
         <>
-          Reasoning over 142 GDELT/UCDP signals (last 7d), 9 OCHA situation
-          reports and 3 Crisis Group briefings.
+          Reasoning over the Syria source pack: UN Geneva, OCHA, UNFPA,
+          UNHCR, local media profiles, and the current conflict graph.
           <br />
-          <span className="font-semibold text-navy-900">Gao</span>:
-          authority is split between FAMa, Africa Corps and JNIM-aligned
-          cells; source triangulation flags 38 violence-against-civilians signals in
-          7d, OCHA flags &ldquo;severe&rdquo; access on 4 of 6 cercles
-          <span className="text-diplomatic-blue/80"> [OCHA · 2026-04-22]</span>.
+          <span className="font-semibold text-navy-900">Fact</span>:
+          public UN reporting frames the 30 January agreement as potentially
+          transformative, but not self-implementing
+          <span className="text-diplomatic-blue/80"> [UN Geneva · 2026-02-13]</span>.
           <br />
-          <span className="font-semibold text-navy-900">Kidal</span>:
-          since the Nov-2023 takeover, FAMa holds the town but the CMA-FLA
-          coalition contests the periphery; Crisis Group assesses the
-          Algiers Accord as &ldquo;de facto void&rdquo;
-          <span className="text-diplomatic-blue/80"> [ICG · Briefing 198]</span>.
+          <span className="font-semibold text-navy-900">Assessment</span>:
+          humanitarian access, rights implementation, southern incidents,
+          and regional spillover are the red triggers
+          <span className="text-diplomatic-blue/80"> [OCHA/UNFPA]</span>.
           <br />
-          Glasl stage 7 in both, but driver mix differs. Want a 2-page
-          comparative brief calibrated to your humanitarian-lead profile?
+          I recommend an implementation-first brief with visible evidence
+          limits and a local media/source refresh. Open the memo studio?
         </>
       ),
     },
     {
       role: 'user',
-      text: <>Yes — neutral tone, IHL framing, no targeting language.</>,
+      text: <>Yes — neutral tone, rights-protective language, no overclaiming.</>,
     },
   ];
 
   return (
-    <Card title="Ask PRAXIS · Calibrated" subtitle="agent · profile v3 · Sahel situation · 14 sources cited">
+    <Card title="Ask PRAXIS · Calibrated" subtitle="agent · Syria case · graph + sources cited">
       <div className="grid h-full grid-rows-[1fr_auto] gap-2 p-3">
         <div className="space-y-1.5 overflow-hidden">
           {messages.map((msg, i) => (
@@ -437,7 +428,7 @@ function PanelAssistant() {
               )}
             >
               <span className="mb-0.5 block text-[7.5px] font-semibold uppercase tracking-wider text-navy-400">
-                {msg.role === 'praxis' ? 'PRAXIS · senior-analyst tone' : 'Sara K. · Humanitarian Lead'}
+                {msg.role === 'praxis' ? 'PRAXIS · senior-analyst tone' : 'Maya R. · Envoy Team'}
               </span>
               {msg.text}
             </motion.div>
@@ -464,7 +455,7 @@ function PanelAssistant() {
               Sources used
             </div>
             <div className="mt-1 flex flex-wrap gap-1">
-              {['GDELT', 'OCHA', 'ICG', 'UCDP', 'ReliefWeb'].map((s) => (
+              {['UN Geneva', 'OCHA', 'UNFPA', 'Enab Baladi', 'North Press'].map((s) => (
                 <span
                   key={s}
                   className="rounded px-1.5 py-[1px] text-[7.5px] font-semibold uppercase tracking-wide text-diplomatic-blue bg-diplomatic-blue/8 border border-diplomatic-blue/15"
@@ -485,42 +476,41 @@ function PanelAssistant() {
 // ---------------------------------------------------------------------------
 
 function PanelDrafting() {
-  // Real-looking EU FAC briefing section structure with one-line abstracts.
   const sections = [
     {
       label: 'Executive summary',
-      body: 'Sahel security has deteriorated in Q1; AES exit from ECOWAS now structural.',
+      body: 'The northeast agreement is the opportunity; implementation evidence remains the risk.',
     },
     {
       label: 'Situation · 7d',
-      body: '142 GDELT/UCDP signals · 354k IDPs · 4/6 Gao cercles severe access (OCHA).',
+      body: 'UN receipts, local media lanes, humanitarian indicators, and graph health reviewed.',
     },
     {
       label: 'Stakeholder map',
-      body: 'Mali junta · AES · Africa Corps · JNIM · IS-Sahel · CMA-FLA · ECOWAS.',
+      body: 'Damascus · SDF · UN Envoy · OCHA · Kurdish civil authorities · regional actors.',
     },
     {
       label: 'Risk assessment',
-      body: 'Glasl 7 · INFORM 7.8 · escalation index +0.34 vs 30d baseline.',
+      body: 'Risk 78/100 · humanitarian, rights, southern, and spillover triggers.',
     },
     {
       label: 'Options',
-      body: 'Track 1: humanitarian corridor via Algeria · Track 2: ICRC IHL training.',
+      body: 'Implementation-first brief · risk-first brief · hold for local verification.',
     },
     {
       label: 'Recommendation',
-      body: 'Decouple humanitarian dialogue from sanctions track; protect Algiers backchannel.',
+      body: 'Protect the track, but brief red triggers and collection gaps visibly.',
     },
   ];
   return (
-    <Card title="Drafting Studio · Brief 04-26" subtitle="EU FAC · Sahel · v4 locked · 23 inline citations">
+    <Card title="Document Studio · Syria memo" subtitle="policy memo · DOCX-ready · 18 inline citations">
       <div className="flex h-full flex-col gap-2 p-3">
         <div className="grid grid-cols-[1fr_auto] gap-1.5">
           <div className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1">
             <span className="text-[9px] font-semibold uppercase tracking-wider text-emerald-700">
-              v4 · locked · IHL-clean · diff +18/−6
+              v4 · source-audited · diff +22/−8
             </span>
-            <span className="font-mono text-[8.5px] text-emerald-600">2026-04-26 11:42</span>
+            <span className="font-mono text-[8.5px] text-emerald-600">2026-05-03 09:00</span>
           </div>
           <div className="rounded-md border border-diplomatic-blue/20 bg-diplomatic-blue/6 px-2 py-1 text-[8.5px] font-semibold uppercase tracking-wider text-diplomatic-blue">
             ICD-203 ✓
@@ -548,7 +538,7 @@ function PanelDrafting() {
           <span className="text-[8.5px] font-semibold uppercase tracking-wider text-navy-500">
             Sources
           </span>
-          {['UCDP', 'GDELT', 'OCHA', 'ReliefWeb', 'ICG', 'World Bank', 'UN News', 'Google Search'].map((s) => (
+          {['UN Geneva', 'OCHA', 'UNFPA', 'UNHCR', 'Enab Baladi', 'North Press', 'Syria Report', 'Google Search'].map((s) => (
             <span
               key={s}
               className="rounded px-1.5 py-[1px] text-[8px] font-semibold uppercase tracking-wide text-diplomatic-blue bg-diplomatic-blue/8 border border-diplomatic-blue/15"
@@ -557,7 +547,7 @@ function PanelDrafting() {
             </span>
           ))}
           <span className="ml-auto font-mono text-[8.5px] text-navy-500">
-            export → DOCX · PDF · UNDP-template
+            export → DOCX · PDF · briefing deck
           </span>
         </div>
       </div>
@@ -581,14 +571,14 @@ function PanelContext() {
             </span>
             <pre className="mt-1 whitespace-pre-wrap font-mono text-[8.5px] leading-snug text-navy-700">
 {`role:        humanitarian_lead
-org:         OCHA · West Africa
+org:         Syria Transition Cell
 seniority:   senior · 12y
-audience:    cluster leads · donors · ERC
-language:    en · fr backup
-lenses:      protection > IPC >
-             displacement > IHL
-domains:     humanitarian + sec
-red-lines:   no targeting advice
+audience:    envoy · principals
+language:    en · ar sources
+lenses:      diplomatic > rights >
+             humanitarian > media
+domains:     peace-security + gov
+red-lines:   no classified claims
              no off-record sources`}
             </pre>
           </div>
@@ -597,10 +587,10 @@ red-lines:   no targeting advice
               &lt;situation-frame&gt;
             </span>
             <pre className="mt-1 whitespace-pre-wrap font-mono text-[8.5px] leading-snug text-navy-700">
-{`name:    Sahel · Northern Mali
-phase:   Glasl 7 · INFORM 7.8
-actors:  14 · edges 16
-since:   2024-09-12 · update 12m`}
+{`name:    Syria transition
+phase:   monitoring · risk 78
+actors:  30 · edges 42
+since:   2026-01-30 · live case`}
             </pre>
           </div>
         </div>
@@ -610,7 +600,7 @@ since:   2024-09-12 · update 12m`}
               Frameworks active
             </div>
             <div className="mt-1 flex flex-wrap gap-1">
-              {['Glasl', 'INFORM', 'Fisher-Ury', 'Lederach', 'OCHA', 'IPC', 'IHL'].map((f) => (
+              {['ACO v2', 'ICD-203', 'INFORM', 'OCHA', 'IHL', 'Media', 'GraphOps'].map((f) => (
                 <span
                   key={f}
                   className="rounded px-1.5 py-[1px] text-[7.5px] font-semibold uppercase tracking-wide text-diplomatic-blue bg-diplomatic-blue/8 border border-diplomatic-blue/15"
@@ -621,13 +611,13 @@ since:   2024-09-12 · update 12m`}
             </div>
           </div>
           <ContextChip label="Profile" value="v3 · 12 edits" />
-          <ContextChip label="Corpus" value="217 sources" />
-          <ContextChip label="Memory" value="48 facts · 9 trace" />
+          <ContextChip label="Corpus" value="8 local + 5 UN" />
+          <ContextChip label="Memory" value="62 facts · 14 trace" />
           <ContextChip label="SKC vector" value="768d · KNN" />
           <div className="mt-auto flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1">
             <span className={cn('h-1.5 w-1.5 rounded-full bg-emerald-500', !shouldReduceMotion && 'animate-pulse')} />
             <span className="text-[8.5px] font-semibold leading-tight text-emerald-700">
-              Calibration injected · 38 tools live
+              Calibration injected · 10 core tools live
             </span>
           </div>
         </div>

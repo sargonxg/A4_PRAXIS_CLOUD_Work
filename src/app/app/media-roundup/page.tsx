@@ -5,15 +5,27 @@ import { useToolData } from '@/hooks/useToolData';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { ToolInfoPanel } from '@/components/praxis/tool-info-panel';
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Newspaper, Loader2, Clock, Sparkles, RefreshCw,
   AlertTriangle, ChevronDown, ChevronUp, Plus, X, Tag,
+  Radio, ShieldCheck, BarChart3, ExternalLink, GitCompareArrows, Landmark,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { useAuth } from '@/lib/auth/auth-context';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 import type { Situation } from '@/types/situation';
+import { isSyriaWorkspaceCase } from '@/lib/constants/syria-demo-case';
+import {
+  SYRIA_LOCAL_MEDIA_SOURCES,
+  SYRIA_COMMITMENT_MONITOR_DEMO,
+  SYRIA_CURRENT_RESEARCH_SOURCES,
+  SYRIA_DISCREPANCY_WORKFLOWS,
+  SYRIA_MEDIA_NARRATIVE_LANES,
+  SYRIA_MEDIA_ROUNDUP_DEMO,
+  SYRIA_MEDIA_VISUAL_METRICS,
+} from '@/lib/constants/syria-demo-workspace';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const TIME_RANGES = [
@@ -522,11 +534,203 @@ function MediaRoundupTool({ situation }: { situation: Situation }) {
   );
 }
 
+function SyriaMediaRoundupDemo({ situationName }: { situationName: string }) {
+  return (
+    <div className="space-y-6">
+      <div className="overflow-hidden rounded-xl border border-navy-200 bg-white shadow-sm shadow-navy-950/5">
+        <div className="border-b border-navy-100 bg-navy-950 px-6 py-5 text-white">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Newspaper className="h-5 w-5 text-gold-300" />
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-200">Media Intelligence Roundup</p>
+              </div>
+              <h1 className="mt-2 max-w-3xl text-2xl font-semibold tracking-tight">{SYRIA_MEDIA_ROUNDUP_DEMO.headline}</h1>
+              <p className="mt-2 max-w-4xl text-sm leading-6 text-blue-100/80">{SYRIA_MEDIA_ROUNDUP_DEMO.brief}</p>
+            </div>
+            <div className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-right">
+              <p className="text-[10px] uppercase tracking-wider text-blue-100/50">Workspace</p>
+              <p className="text-sm font-semibold text-white">{situationName}</p>
+              <p className="mt-1 text-[10px] text-blue-100/50">Seeded, no cloud call</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-4 p-5 xl:grid-cols-[0.85fr_1.15fr]">
+          <div className="space-y-4">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">What PRAXIS sees first</p>
+              </div>
+              <div className="mt-3 space-y-2">
+                {SYRIA_MEDIA_ROUNDUP_DEMO.highlights.map((item) => (
+                  <div key={item} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-navy-700">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-diplomatic-blue" />
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Source mix scores</p>
+              </div>
+              <div className="mt-3 grid gap-2">
+                {SYRIA_MEDIA_VISUAL_METRICS.map((metric) => (
+                  <div key={metric.label}>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium text-navy-700">{metric.label}</span>
+                      <span className="font-mono font-semibold text-navy-950">{metric.score}</span>
+                    </div>
+                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-diplomatic-blue" style={{ width: `${metric.score}%` }} />
+                    </div>
+                    <p className="mt-1 text-[10px] leading-snug text-navy-500">{metric.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Narrative divergence board</p>
+                  <h2 className="mt-1 text-base font-semibold text-navy-950">Five Syria frames that must stay separate</h2>
+                </div>
+                <span className="rounded-full bg-gold-50 px-3 py-1 text-[11px] font-semibold text-gold-700">recording-ready</span>
+              </div>
+              <div className="mt-3 grid gap-2">
+                {SYRIA_MEDIA_NARRATIVE_LANES.map((lane) => (
+                  <div key={lane.lane} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-navy-900">{lane.lane}</p>
+                      <span className="rounded-md bg-terracotta/10 px-2 py-1 font-mono text-xs font-semibold text-terracotta">{lane.risk}</span>
+                    </div>
+                    <div className="mt-2 grid gap-2 md:grid-cols-2">
+                      <p className="rounded border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-navy-600">{lane.localSignals}</p>
+                      <p className="rounded border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-navy-600">{lane.globalSignals}</p>
+                    </div>
+                    <p className="mt-2 text-[11px] font-medium text-amber-700">Gap: {lane.gap}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="flex items-center gap-2">
+                <GitCompareArrows className="h-4 w-4 text-gold-700" />
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Discrepancy queue</p>
+              </div>
+              <div className="mt-3 grid gap-2">
+                {SYRIA_DISCREPANCY_WORKFLOWS.map((workflow) => (
+                  <div key={workflow.question} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-xs font-semibold text-navy-950">{workflow.question}</p>
+                      <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-diplomatic-blue">{workflow.graphLens}</span>
+                    </div>
+                    <p className="mt-2 text-[11px] leading-snug text-navy-600">{workflow.output}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="flex items-center gap-2">
+                <Landmark className="h-4 w-4 text-diplomatic-blue" />
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Research captured for live search</p>
+              </div>
+              <div className="mt-3 grid gap-2 md:grid-cols-2">
+                {SYRIA_CURRENT_RESEARCH_SOURCES.slice(0, 6).map((source) => (
+                  <a
+                    key={source.title}
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-md border border-slate-200 bg-slate-50 p-3 transition hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-semibold text-navy-900">{source.name}</p>
+                      <ExternalLink className="h-3.5 w-3.5 text-navy-400" />
+                    </div>
+                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-navy-400">{source.type} / {source.date}</p>
+                    <p className="mt-2 text-[11px] leading-snug text-navy-600">{source.extraction}</p>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="flex items-center gap-2">
+                <Radio className="h-4 w-4 text-teal" />
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Local Syria source library</p>
+              </div>
+              <div className="mt-3 grid gap-2 md:grid-cols-2">
+                {SYRIA_LOCAL_MEDIA_SOURCES.map((source) => (
+                  <a
+                    key={source.name}
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-md border border-slate-200 bg-slate-50 p-3 transition hover:border-teal/40 hover:bg-teal/5"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-semibold text-navy-900">{source.name}</p>
+                      <ExternalLink className="h-3.5 w-3.5 text-navy-400" />
+                    </div>
+                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-navy-400">{source.sourceType} / reliability {source.reliability}</p>
+                    <p className="mt-2 text-[11px] leading-snug text-navy-600">{source.useCase}</p>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-slate-200 bg-slate-50 px-5 py-4">
+          <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Watch items for the live app</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {SYRIA_MEDIA_ROUNDUP_DEMO.watchItems.map((item) => (
+                  <span key={item} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-navy-600">
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Commitment monitor hooks</p>
+              <div className="mt-3 grid gap-2">
+                {SYRIA_COMMITMENT_MONITOR_DEMO.map((item) => (
+                  <div key={item.commitment} className="rounded-md border border-slate-200 bg-white px-3 py-2">
+                    <p className="text-[11px] font-semibold text-navy-900">{item.commitment}</p>
+                    <p className="mt-1 text-[10px] leading-snug text-navy-500">{item.nextAction}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Page export ───────────────────────────────────────────────────────────────
 export default function MediaRoundupPage() {
+  const searchParams = useSearchParams();
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), isDemo);
   const { hasData, loading: firestoreLoading } = useToolData('media_roundup');
   const [regenerating, setRegenerating] = useState(false);
+
+  if (isSyriaCase) {
+    return <SyriaMediaRoundupDemo situationName={situation?.name ?? 'Syria Transition Monitoring'} />;
+  }
 
   if (isDemo) {
     return (

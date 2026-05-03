@@ -136,6 +136,11 @@ const TYPE_LABELS: Record<string, string> = {
   private: "Private Media",
   state: "State-Affiliated",
   international_org: "International Organization",
+  local: "Local Syrian Media",
+  diaspora: "Diaspora / Exile Media",
+  economic: "Economic Specialist",
+  monitoring: "Monitoring Network",
+  situation_specific: "Situation-Specific",
 };
 
 interface AiAnalysis {
@@ -187,6 +192,14 @@ export function SourceCard({ source, onClose, className }: SourceCardProps) {
 
   // Reset analysis when source changes
   const currentAnalysis = analyzedSource === source?.name ? aiAnalysis : null;
+  const extendedInfo = source ? getExtendedInfo(source.name) : null;
+  const sourceDescription = source?.description || extendedInfo?.description || "";
+  const sourceBiases = source?.knownBiases?.length ? source.knownBiases : extendedInfo?.knownBiases ?? [];
+  const sourceStrengths = source?.coverageStrengths?.length
+    ? source.coverageStrengths
+    : extendedInfo?.coverageStrengths ?? [];
+  const sourceLanguages = source?.languages?.length ? source.languages : extendedInfo?.languages ?? [];
+  const sourceCountry = source?.country || extendedInfo?.country || "—";
 
   return (
     <AnimatePresence mode="wait">
@@ -233,7 +246,7 @@ export function SourceCard({ source, onClose, className }: SourceCardProps) {
 
           {/* Description */}
           <p className="mb-4 text-sm leading-relaxed text-navy-600">
-            {getExtendedInfo(source.name).description}
+            {sourceDescription}
           </p>
 
           {/* Stats Row */}
@@ -241,7 +254,7 @@ export function SourceCard({ source, onClose, className }: SourceCardProps) {
             <InfoItem
               icon={MapPin}
               label="Country"
-              value={getExtendedInfo(source.name).country}
+              value={sourceCountry}
             />
             <InfoItem
               icon={Building2}
@@ -277,7 +290,7 @@ export function SourceCard({ source, onClose, className }: SourceCardProps) {
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {getExtendedInfo(source.name).knownBiases.map((bias) => (
+              {sourceBiases.map((bias) => (
                 <span
                   key={bias}
                   className="inline-flex rounded-md border border-terracotta/20 bg-terracotta/10 px-2 py-0.5 text-xs text-terracotta"
@@ -297,7 +310,7 @@ export function SourceCard({ source, onClose, className }: SourceCardProps) {
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {getExtendedInfo(source.name).coverageStrengths.map((str) => (
+              {sourceStrengths.map((str) => (
                 <span
                   key={str}
                   className="inline-flex rounded-md border border-sage/20 bg-sage/10 px-2 py-0.5 text-xs text-sage"
@@ -317,7 +330,7 @@ export function SourceCard({ source, onClose, className }: SourceCardProps) {
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {getExtendedInfo(source.name).languages.map((lang) => (
+              {sourceLanguages.map((lang) => (
                 <span
                   key={lang}
                   className="inline-flex rounded-md border border-teal/20 bg-teal/10 px-2 py-0.5 text-xs text-teal"

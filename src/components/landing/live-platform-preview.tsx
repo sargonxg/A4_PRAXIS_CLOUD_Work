@@ -41,9 +41,9 @@ const TOOL_ICON: Record<string, typeof Gauge> = {
 
 const DEMO_EVENTS = [
   { label: 'Context score raised', detail: 'Missing actors and mandate gaps flagged before model spend.', tone: 'emerald' },
-  { label: 'Source receipts attached', detail: 'Grounded search, document fragments, and provenance are bundled.', tone: 'blue' },
-  { label: 'Graph proposal staged', detail: 'Actors, claims, interests, constraints, and events are ready for review.', tone: 'gold' },
-  { label: 'Briefing generated', detail: 'Decision brief inherits citations, graph signals, and drafting constraints.', tone: 'red' },
+  { label: 'Local media mapped', detail: 'Enab Baladi, Syria Direct, North Press, SANA, SOHR, and Syria Report separated by posture.', tone: 'blue' },
+  { label: 'Graph proposal staged', detail: 'Agreement, rights, aid strain, returns, spillover, and media frames are ready for review.', tone: 'gold' },
+  { label: 'Briefing generated', detail: 'Decision brief inherits citations, narrative lanes, graph signals, and drafting constraints.', tone: 'red' },
 ];
 
 export function LivePlatformPreview() {
@@ -62,14 +62,14 @@ export function LivePlatformPreview() {
               Ten tools that feel like one operating room.
             </h2>
             <p className="mt-4 text-base leading-relaxed text-navy-600">
-              PRAXIS now opens on a focused ten-tool workspace. Every surface reads the same situation file, context health, source receipts, document corpus, Firestore graph, and saved outputs, so a demo can move from intake to brief without tool sprawl.
+              PRAXIS now opens on a focused real-app workspace. Every surface reads the same Syria situation file, context health, source receipts, local media profiles, document corpus, Firestore graph, and saved outputs, so the demo can move from login to brief without tool sprawl.
             </p>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
-              <Metric value="10" label="primary surfaces" />
-              <Metric value="55" label="registered tools audited" />
-              <Metric value="62" label="calibrated AI routes" />
-              <Metric value="0" label="GCP audit warnings" />
+              <Metric value="12" label="recording moments" />
+              <Metric value="8" label="Syria media sources" />
+              <Metric value="30" label="graph entities" />
+              <Metric value="0" label="cloud calls to render demo" />
             </div>
 
             <div className="mt-7 flex flex-col gap-2 sm:flex-row">
@@ -114,7 +114,7 @@ export function LivePlatformPreview() {
               <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
                 <div className="border-b border-slate-200 p-4 lg:border-b-0 lg:border-r">
                   <div className="flex items-center justify-between">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-500">Primary tool runway</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-500">Core app runway</p>
                     <span className="rounded-full bg-gold-500/10 px-2 py-0.5 text-[10px] font-semibold text-gold-700">
                       10/10
                     </span>

@@ -16,6 +16,9 @@ const DomainCatalogue = dynamic(() =>
 const DataSubstrate = dynamic(() =>
   import("@/components/landing/data-substrate").then((m) => m.DataSubstrate),
 );
+const GroundingBackbone = dynamic(() =>
+  import("@/components/landing/grounding-backbone").then((m) => m.GroundingBackbone),
+);
 const LivePlatformPreview = dynamic(() =>
   import("@/components/landing/live-platform-preview").then((m) => m.LivePlatformPreview),
 );
@@ -66,7 +69,7 @@ const softwareJsonLd = {
       name: "Demo",
       price: "0",
       priceCurrency: "USD",
-      description: "Free Nordalia demo for evaluating PRAXIS workflows with synthetic data",
+      description: "Guest-session Syria public-source case for evaluating the real PRAXIS workspace, media intelligence, graph workflows, and briefing exports",
     },
     {
       "@type": "Offer",
@@ -108,6 +111,8 @@ const softwareJsonLd = {
     "ACO v2.0 — 14-entity conflict ontology with 72 typed relationships",
     "Glasl 9-stage escalation, Fisher-Ury, INFORM Risk Index, OCHA, IPC",
     "Conflict graph extraction with cited evidence and version history",
+    "Syria public-source workspace with local media compass, narrative divergence board, GraphOps, and editable work products",
+    "Dialectica-style discrepancy analysis across UN documents, think tanks, official statements, local media, and graph commitments",
     "Drafting Studio with ICD-203 analytic standards and source tracing",
     "Open-data feeds: Google Search, GDELT BigQuery, UCDP, ReliefWeb, OCHA, HDX, UNHCR, World Bank, UN News, and user-approved private corpus sources",
     "Source-grounded research via Google Cloud and approved user corpora with citation discipline",
@@ -178,6 +183,7 @@ export default async function LandingPage() {
       <ConflictGrammarHighlight />
       <DomainCatalogue />
       <DataSubstrate />
+      <GroundingBackbone />
       <LivePlatformPreview />
       <UseCaseCards />
       <AdvisoryCouncil />

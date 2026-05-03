@@ -44,7 +44,7 @@ const trustSignals = [
   "Source-grounded research",
   "Mandate-aware analysis",
   "Conflict ontology + versioned graph",
-  "Private GCP workspace per tenant",
+  "Shared Syria case after login",
   "Citations, exports, and audit trail",
 ];
 
@@ -160,10 +160,10 @@ function ConflictGraphSVG({ shouldReduceMotion }: { shouldReduceMotion: boolean 
 
 function AnimatedTicker({ shouldReduceMotion }: { shouldReduceMotion: boolean }) {
   const events = [
-    { time: "08:14", text: "Ceasefire violation reported — Northern Mali", color: "#E15759" },
-    { time: "09:02", text: "GDELT: 3 new media signals flagged in Sahel", color: "#EDC948" },
-    { time: "09:47", text: "GDELT: Escalatory rhetoric detected — media", color: "#F28E2B" },
-    { time: "10:30", text: "PRAXIS: Risk score updated — Glasl Stage 7", color: "#E15759" },
+    { time: "08:14", text: "Syria source receipt added — UN Geneva", color: "#59A14F" },
+    { time: "09:02", text: "Local media signal flagged — North Press", color: "#EDC948" },
+    { time: "09:47", text: "Narrative divergence detected — SANA / local outlets", color: "#F28E2B" },
+    { time: "10:30", text: "PRAXIS: Syria risk score updated — 78/100", color: "#E15759" },
   ];
 
   const tickerRef = useRef<HTMLDivElement>(null);
@@ -215,7 +215,7 @@ export function ProductGlimpse() {
           <span className="h-2.5 w-2.5 rounded-full bg-gold-400/60" />
           <span className="h-2.5 w-2.5 rounded-full bg-sage/40" />
           <span className="ml-3 font-mono text-[9px] text-navy-400 truncate">
-            praxis.tacitus.me · Northern Mali Situation
+            praxis.tacitus.me · Syria Transition Situation
           </span>
         </div>
 
@@ -368,11 +368,11 @@ export function Hero() {
             transition={{ delay: 1.2, duration: 0.7 }}
             className="mb-6 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
           >
-            Open a situation, build the context file, attach evidence, and move
-            through ten focused tools that feel like one live operating room.
-            PRAXIS gives diplomats, conflict analysts, mediators, and policy
-            officers a mandate-aware workspace for graph-backed analysis,
-            risk signals, actor mapping, Ask PRAXIS, and exportable briefings.
+            Log in, open the shared Syria public-source case, build the
+            context file, inspect local media and source receipts, review the
+            Firestore graph, preserve expert disagreement, and export a
+            briefing or memo. PRAXIS turns the real app into one live operating
+            room for diplomats, conflict analysts, mediators, and policy teams.
           </motion.p>
 
           {/* Data sources tagline */}
@@ -382,9 +382,9 @@ export function Hero() {
             transition={{ delay: 1.4, duration: 0.6 }}
             className="mb-10 text-sm text-navy-400 italic"
           >
-            Uses Google-grounded search, GDELT BigQuery, UCDP, ReliefWeb,
-            OCHA, HDX, UNHCR, UN News, World Bank, and your approved corpus,
-            with provenance preserved in the output.
+            Uses Google-grounded search, GDELT, UCDP, ReliefWeb, OCHA, HDX,
+            UNHCR, UN News, World Bank, local media sources, and your approved
+            corpus, with provenance preserved in the output.
           </motion.p>
 
           <motion.div
@@ -426,7 +426,7 @@ export function Hero() {
               </Link>
             </div>
             <p className="text-xs text-navy-400">
-              Sign in for your private workspace · no-account access opens a populated Syria public-source case
+              Sign in for your private workspace · the Syria case opens through a guest session in the real app
             </p>
           </motion.div>
 

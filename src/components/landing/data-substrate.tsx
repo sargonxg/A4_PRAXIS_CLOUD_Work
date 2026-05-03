@@ -23,6 +23,7 @@ const FREE_SOURCES: Source[] = [
   { name: "UCDP GED", role: "Uppsala georeferenced conflict dataset (CC-BY)", tier: "free" },
   { name: "World Bank WDI + WGI", role: "Economic + governance indicators", tier: "free" },
   { name: "UN News RSS", role: "Secretary-General + agency statements", tier: "free" },
+  { name: "Local Syria media", role: "Enab Baladi, Syria Direct, North Press, SyriaUntold, SANA, SOHR", tier: "free" },
   { name: "BigQuery public datasets", role: "GHCN climate, NOAA, WHO, Census, IMF", tier: "free" },
 ];
 

@@ -7,11 +7,15 @@ const PUBLIC_SYRIA_APP_ROUTES = new Set([
   '/app/syria-case',
   '/app/context-builder',
   '/app/source-scout',
+  '/app/media-compass',
+  '/app/media-roundup',
   '/app/graphops',
   '/app/conflict-graph',
   '/app/brainstorming-table',
   '/app/policy-memo',
   '/app/briefing',
+  '/app/documents',
+  '/app/tools',
 ]);
 
 /**

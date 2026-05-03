@@ -494,7 +494,7 @@ function LoginForm() {
           >
             <div className="h-px flex-1 bg-navy-700/50" />
             <span className="text-xs tracking-wider text-navy-500 uppercase">
-              or explore without an account
+              or open shared case session
             </span>
             <div className="h-px flex-1 bg-navy-700/50" />
           </motion.div>
@@ -523,12 +523,12 @@ function LoginForm() {
               ) : (
                 <>
                   <Shield className="h-4 w-4" />
-                  Open Syria Case — No Account Needed
+                  Open Syria Case Workspace
                 </>
               )}
             </button>
             <p className="mt-2 text-center text-[11px] text-navy-500">
-              Pre-loaded public-source Syria case file inside the real PRAXIS workspace.
+              Creates a guest session for the pre-loaded public-source Syria case inside the real PRAXIS app.
             </p>
           </motion.div>
 

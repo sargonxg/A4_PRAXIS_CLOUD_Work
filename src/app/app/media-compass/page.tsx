@@ -6,6 +6,7 @@ import { NoSituationState } from "@/components/praxis/no-situation-state";
 import { RegistryToolInfo } from "@/components/praxis/tool-info-from-registry";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { usePersistedToolData } from "@/hooks/use-persisted-tool-data";
 import { cn } from "@/lib/utils/cn";
 import { motion } from "framer-motion";
@@ -25,8 +26,21 @@ import {
   Sparkles,
   Loader2,
   Globe,
+  Radio,
+  ShieldCheck,
+  Activity,
+  ExternalLink,
+  Landmark,
 } from "lucide-react";
 import { buildToolContext } from "@/lib/ai/build-context-pure";
+import { isSyriaWorkspaceCase } from "@/lib/constants/syria-demo-case";
+import {
+  SYRIA_LOCAL_MEDIA_SOURCES,
+  SYRIA_CURRENT_RESEARCH_SOURCES,
+  SYRIA_DISCREPANCY_WORKFLOWS,
+  SYRIA_MEDIA_NARRATIVE_LANES,
+  SYRIA_MEDIA_VISUAL_METRICS,
+} from "@/lib/constants/syria-demo-workspace";
 
 type MediaTab = "source-map" | "coverage" | "sentiment";
 
@@ -76,6 +90,7 @@ const REGIONS = [
   "South Asia",
   "Africa",
   "Russia/CIS",
+  "Syria / local",
 ];
 
 const TYPES = [
@@ -85,6 +100,10 @@ const TYPES = [
   "private",
   "state",
   "international_org",
+  "local",
+  "diaspora",
+  "economic",
+  "monitoring",
 ];
 
 const TYPE_LABELS: Record<string, string> = {
@@ -94,6 +113,10 @@ const TYPE_LABELS: Record<string, string> = {
   private: "Private Media",
   state: "State-Affiliated",
   international_org: "International Org",
+  local: "Local Syrian Media",
+  diaspora: "Diaspora / Exile Media",
+  economic: "Economic Specialist",
+  monitoring: "Monitoring Network",
 };
 
 const COLOR_BY_OPTIONS = ["Region", "Type"];
@@ -107,6 +130,7 @@ const REGION_COLORS: Record<string, string> = {
   "South Asia": "#7B6D8D",
   Africa: "#D4A373",
   "Russia/CIS": "#A63D40",
+  "Syria / local": "#0F766E",
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -115,7 +139,164 @@ const TYPE_COLORS: Record<string, string> = {
   private: "#5B8C5A",
   state: "#C75B39",
   international_org: "#E8B931",
+  local: "#0F766E",
+  diaspora: "#7C3AED",
+  economic: "#B45309",
+  monitoring: "#DC2626",
 };
+
+const SYRIA_COMPASS_SOURCES: MediaSource[] = SYRIA_LOCAL_MEDIA_SOURCES.map((source) => ({
+  name: source.name,
+  x: source.orientationScore,
+  y: source.reliability / 100,
+  type: source.sourceType,
+  region: "Syria / local",
+  color: TYPE_COLORS[source.sourceType] ?? "#0F766E",
+  country: source.geography,
+  languages: source.language.split(" / "),
+  description: `${source.access} ${source.useCase}`,
+  knownBiases: [source.posture, source.risks],
+  coverageStrengths: [source.geography, source.useCase],
+}));
+
+function SyriaMediaCommandCenter({
+  onSelectSource,
+}: {
+  onSelectSource: (source: MediaSource) => void;
+}) {
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45 }}
+      className="mb-6 overflow-hidden rounded-xl border border-teal/20 bg-white shadow-sm shadow-navy-950/5"
+    >
+      <div className="border-b border-teal/10 bg-teal/5 px-5 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-teal-700">Syria media intelligence layer</p>
+            <h2 className="mt-1 text-base font-semibold text-navy-950">Local, official, economic, monitoring, and global frames in one map</h2>
+            <p className="mt-1 max-w-3xl text-xs leading-5 text-navy-600">
+              This Syria workspace renders without live cloud calls. Live AI search remains available for real users, but the seeded case already explains source posture, proximity, reliability, and narrative divergence.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 rounded-md border border-teal/20 bg-white px-3 py-2 text-xs font-semibold text-teal-700">
+            <ShieldCheck className="h-4 w-4" />
+            demo-safe, production schema
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 p-5 xl:grid-cols-[0.95fr_1.25fr]">
+        <div className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-2">
+            {SYRIA_MEDIA_VISUAL_METRICS.map((metric) => (
+              <div key={metric.label} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[11px] font-semibold text-navy-700">{metric.label}</span>
+                  <span className="font-mono text-sm font-semibold text-navy-950">{metric.score}</span>
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white">
+                  <div className="h-full rounded-full bg-teal" style={{ width: `${metric.score}%` }} />
+                </div>
+                <p className="mt-2 text-[11px] leading-snug text-navy-500">{metric.detail}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-navy-950 p-4 text-white">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-gold-300" />
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-200">Demo recording beat</p>
+            </div>
+            <p className="mt-2 text-sm leading-6 text-blue-100/85">
+              Click Enab Baladi or North Press, then switch color-by type. The visual point is simple: PRAXIS does not flatten Syria into a generic news scan; it shows who is local, who is official, what is reliable, and where the story is contested.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-2">
+            {SYRIA_LOCAL_MEDIA_SOURCES.map((source) => {
+              const compassSource = SYRIA_COMPASS_SOURCES.find((item) => item.name === source.name);
+              return (
+                <button
+                  key={source.name}
+                  type="button"
+                  onClick={() => compassSource && onSelectSource(compassSource)}
+                  className="group rounded-lg border border-slate-200 bg-white p-3 text-left transition hover:border-teal/40 hover:bg-teal/5"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold text-navy-950">{source.name}</p>
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-navy-400">{source.sourceType.replace('_', ' ')} / {source.language}</p>
+                    </div>
+                    <Radio className="h-4 w-4 text-teal group-hover:text-teal-700" />
+                  </div>
+                  <p className="mt-2 text-[11px] leading-snug text-navy-600">{source.useCase}</p>
+                  <div className="mt-3 flex items-center gap-2 text-[10px] text-navy-500">
+                    <span>Reliability {source.reliability}</span>
+                    <span>Proximity {source.proximity}</span>
+                    <a href={source.url} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-teal-700 hover:underline" onClick={(event) => event.stopPropagation()}>
+                      Source <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Narrative lanes</p>
+            <div className="mt-3 grid gap-2">
+              {SYRIA_MEDIA_NARRATIVE_LANES.map((lane) => (
+                <div key={lane.lane} className="grid gap-2 rounded-md border border-slate-200 bg-white p-3 md:grid-cols-[140px_1fr_72px]">
+                  <p className="text-xs font-semibold text-navy-900">{lane.lane}</p>
+                  <p className="text-[11px] leading-snug text-navy-600">{lane.gap}</p>
+                  <div className="text-right">
+                    <p className="font-mono text-sm font-semibold text-terracotta">{lane.risk}</p>
+                    <p className="text-[9px] uppercase tracking-wider text-navy-400">risk</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-2">
+            <div className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="flex items-center gap-2">
+                <GitCompareArrows className="h-4 w-4 text-gold-700" />
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Briefing handoff</p>
+              </div>
+              <div className="mt-3 space-y-2">
+                {SYRIA_DISCREPANCY_WORKFLOWS.slice(0, 3).map((workflow) => (
+                  <div key={workflow.question} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                    <p className="text-[11px] font-semibold text-navy-900">{workflow.question}</p>
+                    <p className="mt-1 text-[10px] leading-snug text-navy-600">{workflow.output}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="flex items-center gap-2">
+                <Landmark className="h-4 w-4 text-diplomatic-blue" />
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Grounded search seeds</p>
+              </div>
+              <div className="mt-3 space-y-2">
+                {SYRIA_CURRENT_RESEARCH_SOURCES.slice(0, 3).map((source) => (
+                  <a key={source.title} href={source.url} target="_blank" rel="noopener noreferrer" className="block rounded-md border border-slate-200 bg-slate-50 px-3 py-2 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5">
+                    <p className="text-[11px] font-semibold text-navy-900">{source.name}</p>
+                    <p className="mt-1 text-[10px] leading-snug text-navy-600">{source.track}: {source.extraction}</p>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.section>
+  );
+}
 
 // ── AI Media Scan state for real users ──────────────────────────────
 interface MediaScanResult {
@@ -383,7 +564,9 @@ function RealMediaPanel({ situation, onSituationSources }: {
 
 export default function MediaCompassPage() {
 
+  const searchParams = useSearchParams();
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get("case"), isDemo);
   const { hasData, loading: firestoreLoading } = useToolData("media_analysis");
   const [regenerating, setRegenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<MediaTab>("source-map");
@@ -397,10 +580,14 @@ export default function MediaCompassPage() {
   const [situationSources, setSituationSources] = useState<MediaSource[]>([]);
   const [showSituationSources, setShowSituationSources] = useState(true);
 
-  const allSources = useMemo(() => [
-    ...MEDIA_SOURCES,
-    ...(showSituationSources ? situationSources : []),
-  ], [situationSources, showSituationSources]);
+  const allSources = useMemo(() => {
+    const sourceList = [
+      ...MEDIA_SOURCES,
+      ...(isSyriaCase ? SYRIA_COMPASS_SOURCES : []),
+      ...(showSituationSources ? situationSources : []),
+    ];
+    return Array.from(new Map(sourceList.map((source) => [source.name, source])).values());
+  }, [isSyriaCase, situationSources, showSituationSources]);
 
   const filteredSources = useMemo(() => {
     let result = allSources;
@@ -529,6 +716,17 @@ export default function MediaCompassPage() {
             )}
           </div>
         </motion.div>
+
+        {isSyriaCase && (
+          <SyriaMediaCommandCenter
+            onSelectSource={(source) => {
+              setSelectedSource(source);
+              setActiveTab("source-map");
+              setRegionFilter("All Regions");
+              setTypeFilter("All Types");
+            }}
+          />
+        )}
 
         {/* ── AI Media Scan (real users only) ──────────────────── */}
         {!isDemo && situation && (
@@ -796,7 +994,7 @@ export default function MediaCompassPage() {
                 </button>
                 {compareSourcesOpen && (
                   <div className="absolute top-full z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-[var(--color-app-border)] bg-white shadow-xl">
-                    {MEDIA_SOURCES.map((s) => (
+                    {allSources.map((s) => (
                       <button
                         key={s.name}
                         onClick={() => toggleCompareSource(s.name)}
@@ -856,7 +1054,7 @@ export default function MediaCompassPage() {
           {selectedCompare.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
               {selectedCompare.map((name) => {
-                const source = MEDIA_SOURCES.find((s) => s.name === name);
+                const source = allSources.find((s) => s.name === name);
                 return (
                   <span
                     key={name}
