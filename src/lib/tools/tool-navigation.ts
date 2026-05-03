@@ -2,6 +2,7 @@ import { CUSTOMIZABLE_SIDEBAR_TOOLS } from '@/lib/navigation/tool-preferences';
 
 const TOOL_HREF_OVERRIDES: Record<string, string> = {
   assistant: '/assistant',
+  'brainstorming-table': '/advisory',
   'context-builder': '/context-builder',
   graphops: '/graphops',
   'report-studio': '/reports',

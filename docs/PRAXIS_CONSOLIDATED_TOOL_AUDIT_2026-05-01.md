@@ -6,20 +6,22 @@ Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`
 
 ## Decision
 
-PRAXIS now uses ten primary user-facing tool surfaces. The older specialized
+PRAXIS now uses twelve primary user-facing tool surfaces. The older specialized
 pages are preserved as supporting pages, but they no longer dominate primary
 navigation or first-run recommendations.
 
 1. Situation Dashboard
 2. Context Builder
-3. Ask PRAXIS
+3. Executive Intelligence
 4. Research & Sources
-5. Documents
+5. Conflict Graph
 6. GraphOps
-7. Conflict Graph
-8. Timeline & Signals
-9. Actors & Stakeholders
-10. Briefing Studio
+7. Boardroom / Brainstorming Table
+8. Briefing
+9. Policy Memo
+10. Scenarios
+11. Negotiation Prep
+12. Treaty Analyzer
 
 ## Audit Findings
 
@@ -37,14 +39,14 @@ navigation or first-run recommendations.
 
 ## Implemented
 
-- Added `src/lib/constants/consolidated-tools.ts` as the canonical ten-surface
+- Added `src/lib/constants/consolidated-tools.ts` as the canonical operating-loop
   map, including legacy-tool absorption and cost posture.
-- Registered Context Builder as a first-class operational tool, so all ten
-  primary surfaces now have registry anchors, app pages, API/data routes,
-  context blueprints, readiness checks, and sidebar status ids.
+- Registered Context Builder as a first-class operational tool, and aligned
+  hero registry anchors, app pages, API/data routes, context blueprints,
+  readiness checks, and sidebar status ids with the 12-tool policy.
 - Added specialized development groups for research, graph/ontology,
   mediation, signals, and briefing/legal tools. These preserve specialist
-  pages while clearly marking them outside the primary ten-tool workspace.
+  pages while clearly marking them outside the primary 12-hero workspace.
 - Rebuilt the sidebar around the consolidated workflow while preserving direct
   routes to legacy pages.
 - Surfaced the specialized development groups in `/app/tools` and the
@@ -56,7 +58,7 @@ navigation or first-run recommendations.
 - Simplified the no-situation state to emphasize the real workspace backbone.
 - Reduced default grounded-search fanout and required explicit opt-in before
   server-level Parallel/Firecrawl keys are used for all users.
-- Added regression tests enforcing ten-or-fewer primary surfaces, registered
+- Added regression tests enforcing the 12-hero surface policy, registered
   anchors, legacy mapping, and active package focus.
 
 ## Cost Guardrail
@@ -86,4 +88,4 @@ Default research depth is now light:
 - `graphify update .`: passed, 3253 nodes and 3998 edges.
 - Browser smoke on `http://localhost:3100/demo/tools`: passed; consolidated
   sidebar rendered, Context Builder appeared as a primary tool, and the
-  specialized development groups rendered under the primary ten.
+  specialized development groups rendered behind the primary heroes.

@@ -30,7 +30,7 @@ export function Cta() {
             Start Building Smarter Diplomatic Intelligence
           </h2>
           <p className="mb-10 text-lg text-navy-500">
-            Sign in for the focused ten-tool workspace, or explore the live
+            Sign in for the focused 12-tool workspace, or explore the live
             demo with specialist labs instantly — no account needed.
           </p>
         </motion.div>

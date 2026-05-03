@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+- feat(consolidation): collapse public tool surface to 12 hero tools (#A1).
+  The registry, default sidebar, and Tools workspace now agree on the hero
+  surface while archived specialist routes remain available through
+  `/app/tools?show_archive=1` and `/app/tools/archive`.
+
 ## 2026-05-03 — Syria graph-grounded research handoff
 
 - Added `docs/codex-prompts/PRAXIS_MAY_1_CHANGES.md` and

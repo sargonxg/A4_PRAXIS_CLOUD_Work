@@ -50,7 +50,7 @@ export function NoSituationState() {
           className="rounded-lg border border-dashed border-cream-400 bg-cream-100/60 p-4 text-left transition hover:border-gold-500/50 hover:bg-gold-500/5"
         >
           <p className="text-xs font-semibold text-navy-900">Start from scratch</p>
-          <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-navy-500">Use the generic ten-tool workspace and tune details in Context Builder.</p>
+          <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-navy-500">Use the generic 12-tool workspace and tune details in Context Builder.</p>
           <p className="mt-3 text-[11px] font-semibold text-gold-700">Open context builder</p>
         </button>
       </div>

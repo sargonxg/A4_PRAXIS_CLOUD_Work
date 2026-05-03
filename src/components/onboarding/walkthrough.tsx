@@ -89,7 +89,7 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     id: 'step-8',
     title: 'Tour Complete!',
     description:
-      "You've seen the core workflow. PRAXIS now keeps ten primary tools up front, with specialist labs behind them; live outputs use Vertex AI / Gemini, grounded search, and your situation context when configured.",
+      "You've seen the core workflow. PRAXIS now keeps 12 hero tools up front, with specialist labs behind them; live outputs use Vertex AI / Gemini, grounded search, and your situation context when configured.",
     page: '/scenarios',
     position: 'center',
     isLast: true,

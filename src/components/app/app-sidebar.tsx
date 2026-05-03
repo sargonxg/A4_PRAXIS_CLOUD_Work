@@ -102,7 +102,7 @@ const CHANGELOG = [
       'Full data layer: GDELT, ReliefWeb, HDX, World Bank, UNHCR, UCDP, UN News, grounded Google Search, and private corpus sources',
       'INFORM Risk Index: geometric mean (H×V×C)^(1/3) — rigorous multi-dimensional risk scoring',
       'DBSCAN geospatial clustering, movement detection, geographic spread index',
-      'Tool Registry: single source of truth for the ten-tool workspace plus specialist labs',
+      'Tool Registry: single source of truth for the 12-tool workspace plus specialist archive',
       '15 fully documented analytical frameworks with academic citations',
     ],
   },
@@ -195,19 +195,18 @@ const navSections: NavSection[] = [
   {
     label: 'Policy Workspace',
     items: [
-      { label: 'Desk', icon: LayoutDashboard, href: '/dashboard' },
+      { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
       { label: 'Context', icon: Target, href: '/context-builder' },
-      { label: 'Library', icon: BookOpen, href: '/documents' },
+      { label: 'Executive Intel', icon: Sparkles, href: '/dashboard#executive-intelligence' },
       { label: 'Research', icon: Telescope, href: '/source-scout' },
-      { label: 'Graph', icon: GitBranch, href: '/graphops' },
+      { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
+      { label: 'GraphOps', icon: Wrench, href: '/graphops' },
       { label: 'Boardroom', icon: MessagesSquare, href: '/advisory' },
-      { label: 'Draft', icon: FileText, href: '/policy-memo' },
-    ],
-  },
-  {
-    label: 'Specialist',
-    items: [
-      { label: 'Specialist Tools', icon: Wrench, href: '/tools' },
+      { label: 'Briefing', icon: BookOpen, href: '/briefing' },
+      { label: 'Policy Memo', icon: FileText, href: '/policy-memo' },
+      { label: 'Scenarios', icon: GitBranch, href: '/scenarios' },
+      { label: 'Negotiation', icon: MessagesSquare, href: '/negotiation-prep' },
+      { label: 'Treaty', icon: FileText, href: '/treaty-analyzer' },
     ],
   },
 ];
@@ -224,7 +223,9 @@ const RECORDING_NAV_HREFS = new Set([
   '/brainstorming-table',
   '/briefing',
   '/policy-memo',
-  '/tools',
+  '/scenarios',
+  '/negotiation-prep',
+  '/treaty-analyzer',
 ]);
 
 function ChangelogButton() {
@@ -288,7 +289,7 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   '/calendar': 'calendar',
   '/requirements': 'pir',
   '/assistant': 'assistant',
-  '/advisory': 'advisory',
+  '/advisory': 'brainstorming-table',
   '/reports': 'report-studio',
   '/cases': 'cases',
   '/team': 'team',

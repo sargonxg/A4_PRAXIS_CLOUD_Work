@@ -107,7 +107,7 @@ export function ToolPackagesPanel({ situation }: ToolPackagesPanelProps) {
             <Wrench className="h-3.5 w-3.5 text-diplomatic-blue" />
             <h3 className="text-xs font-semibold uppercase tracking-wider text-navy-500">Specialized tools in development</h3>
           </div>
-          <span className="text-[11px] text-navy-500">Grouped behind the primary 10</span>
+          <span className="text-[11px] text-navy-500">Grouped behind the 12 heroes</span>
         </div>
         <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
           {developmentGroups.map((group) => (
