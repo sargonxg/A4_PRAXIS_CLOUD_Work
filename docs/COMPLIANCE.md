@@ -52,6 +52,24 @@ and removes per-customer license negotiation as a launch blocker.
   not redistribution; full attribution links are kept on the actor
   detail page.
 
+### 1.4 Syria source library
+
+The Syria workspace source library is defined in
+`src/lib/syria/source-library.ts`. Production ingest is deliberately
+cost-gated:
+
+- `SYRIA_LIVE_INGEST_ENABLED=false` returns the cached fallback packet
+  for recording-safe demos and does not call paid providers.
+- `SYRIA_LIVE_INGEST_ENABLED=true` currently enables free ReliefWeb and
+  GDELT pulls for the last seven days, then merges with labeled cached
+  fallback material.
+- Local, wire, and think-tank sources are catalogued for provenance and
+  grounded-search workflows, but PRAXIS stores only metadata and short
+  excerpts. It does not reproduce full copyrighted articles.
+- Every normalized document carries source id, tier, URL, retrieval
+  method, retrieved-at timestamp, and whether it came from live ingest
+  or the cached fallback.
+
 ---
 
 ## 2. Certifications

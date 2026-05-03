@@ -23,6 +23,10 @@
 - feat(dialectica): add adapter boundary for Firestore and premium HTTP modes (#A6).
   Added the TypeScript `DialecticaAdapter`, default Firestore implementation,
   feature-flagged HTTP scaffold, and routed graph context through the adapter.
+- feat(syria): add cost-gated source ingest library and endpoint (#A7).
+  Added the locked Syria source library, cached fallback packet, free ReliefWeb
+  and GDELT live collectors behind `SYRIA_LIVE_INGEST_ENABLED`, and
+  `/api/situations/[id]/syria-ingest`.
 
 ## 2026-05-03 — Syria graph-grounded research handoff
 
