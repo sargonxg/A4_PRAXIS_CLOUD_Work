@@ -107,7 +107,7 @@ export function RecordingSignalRunway({
           <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-right">
             <div className="flex items-center justify-end gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              Demo-ready
+              Case-ready
             </div>
             <p className="mt-1 max-w-[220px] text-[11px] leading-snug text-emerald-900">{FOCUS_COPY[focus]}</p>
           </div>
@@ -166,7 +166,7 @@ export function RecordingSignalRunway({
           <div className="rounded-lg border border-slate-200 bg-navy-950 p-4 text-white">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-gold-400" />
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-300">Live demo narration</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-300">Recording narration</p>
             </div>
             <div className="mt-3 space-y-2">
               {visibleBeats.map((beat, index) => (
@@ -281,7 +281,7 @@ export function SyriaRecordingRunway({
 
   return (
     <RecordingSignalRunway
-      title="Syria transition demo spine"
+      title="Syria transition case spine"
       subtitle="A reusable PRAXIS pattern for real workspaces: source receipts become graph primitives, graph context feeds expert disagreement, and the final brief shows uncertainty and next actions."
       steps={steps}
       metrics={metrics}

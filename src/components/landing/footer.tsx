@@ -2,26 +2,28 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { APP_RELEASE_LABEL } from "@/lib/constants/app-version";
 
+const SYRIA_CASE_HREF = "/login?mode=demo&redirect=/app/syria-case%3Frecording%3D1%26case%3Dsyria";
+
 const footerSections = [
   {
     title: "Platform",
     links: [
-      { label: "Demo", href: "/demo/dashboard" },
+      { label: "Syria Case", href: SYRIA_CASE_HREF },
       { label: "Pricing", href: "/pricing" },
-      { label: "Report Studio", href: "/demo/reports" },
-      { label: "Ask PRAXIS", href: "/demo/assistant" },
-      { label: "Conflict Graph", href: "/demo/conflict-graph" },
-      { label: "Deep Search Agent", href: "/demo/deep-search-agent" },
+      { label: "Briefing Studio", href: "/login?mode=demo&redirect=/app/briefing%3Frecording%3D1%26case%3Dsyria" },
+      { label: "Ask PRAXIS", href: "/login?mode=demo&redirect=/app/assistant%3Fcase%3Dsyria" },
+      { label: "Conflict Graph", href: "/login?mode=demo&redirect=/app/conflict-graph%3Frecording%3D1%26case%3Dsyria" },
+      { label: "Source Scout", href: "/login?mode=demo&redirect=/app/source-scout%3Frecording%3D1%26case%3Dsyria" },
     ],
   },
   {
     title: "Tools",
     links: [
-      { label: "Talking Points", href: "/demo/talking-points" },
-      { label: "Stakeholder Mapper", href: "/demo/stakeholder-map" },
-      { label: "Risk Monitor", href: "/demo/risk-monitor" },
-      { label: "Scenarios", href: "/demo/scenarios" },
-      { label: "Document Vault", href: "/demo/documents" },
+      { label: "Context Builder", href: "/login?mode=demo&redirect=/app/context-builder%3Frecording%3D1%26case%3Dsyria" },
+      { label: "GraphOps", href: "/login?mode=demo&redirect=/app/graphops%3Frecording%3D1%26case%3Dsyria" },
+      { label: "Advisor Table", href: "/login?mode=demo&redirect=/app/brainstorming-table%3Frecording%3D1%26case%3Dsyria" },
+      { label: "Documents", href: "/login?mode=demo&redirect=/app/documents%3Fcase%3Dsyria" },
+      { label: "Tools Workspace", href: "/login?mode=demo&redirect=/app/tools%3Fcase%3Dsyria" },
     ],
   },
   {
@@ -68,7 +70,7 @@ export function Footer() {
             <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-gold-600/30 bg-gold-600/5 px-3 py-1">
               <span className="h-1.5 w-1.5 rounded-full bg-gold-500 animate-pulse" />
               <span className="text-[10px] font-semibold uppercase tracking-wider text-gold-700">
-                Early Demo
+              Public Case File
               </span>
             </div>
             <p className="mt-3 text-xs text-navy-400">
@@ -134,7 +136,7 @@ export function Footer() {
               Ready to upgrade your analytical workflow?
             </p>
             <p className="mt-1 text-sm text-navy-500">
-              Free Plan · Full PRAXIS workspace · Demo available instantly
+              Free Plan · Full PRAXIS workspace · Syria case available instantly
             </p>
           </div>
           <a

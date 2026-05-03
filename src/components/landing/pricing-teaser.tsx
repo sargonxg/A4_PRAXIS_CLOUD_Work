@@ -98,7 +98,7 @@ export function PricingTeaser() {
                   tier.id === "enterprise"
                     ? "mailto:hello@tacitus.me"
                     : tier.id === "free"
-                    ? "/login?mode=demo"
+                    ? "/login?mode=demo&redirect=/app/syria-case%3Frecording%3D1%26case%3Dsyria"
                     : `/login?plan=${tier.id}`
                 }
                 className={cn(

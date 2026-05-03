@@ -57,7 +57,7 @@ export function LivePlatformPreview() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-600">Live Demo Flow</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-600">Live Case Flow</p>
             <h2 className="mt-3 font-serif text-3xl font-semibold leading-tight text-navy-950 sm:text-5xl">
               Ten tools that feel like one operating room.
             </h2>
@@ -74,10 +74,10 @@ export function LivePlatformPreview() {
 
             <div className="mt-7 flex flex-col gap-2 sm:flex-row">
               <Link
-                href="/login?mode=demo"
+                href="/login?mode=demo&redirect=/app/syria-case%3Frecording%3D1%26case%3Dsyria"
                 className="group inline-flex items-center justify-center gap-2 rounded-md bg-navy-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-navy-950/10 transition hover:bg-navy-800"
               >
-                Open the live demo
+                Open the Syria case
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
@@ -103,7 +103,7 @@ export function LivePlatformPreview() {
                   <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
                   <span className="h-2.5 w-2.5 rounded-full bg-gold-500/80" />
                   <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/70" />
-                  <span className="ml-2 font-mono text-[10px] text-navy-500">demo/tools - consolidated workspace</span>
+                  <span className="ml-2 font-mono text-[10px] text-navy-500">app/syria-case - consolidated workspace</span>
                 </div>
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
                   <ShieldCheck className="h-3 w-3" />

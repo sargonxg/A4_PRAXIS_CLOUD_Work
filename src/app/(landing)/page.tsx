@@ -5,6 +5,7 @@ import { HowItWorks } from "@/components/landing/how-it-works";
 import { ProblemSection } from "@/components/landing/problem-section";
 import { ConflictGrammarHighlight } from "@/components/landing/conflict-grammar-highlight";
 import { AiCompanionSection } from "@/components/landing/ai-companion-section";
+import { SyriaCaseProof } from "@/components/landing/syria-case-proof";
 
 // Below-fold sections: server-render on demand but keep them out of the
 // initial synchronous bundle so Hero + HowItWorks + ProblemSection dominate
@@ -170,6 +171,7 @@ export default async function LandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
       />
       <Hero />
+      <SyriaCaseProof />
       <HowItWorks />
       <AiCompanionSection />
       <ProblemSection />

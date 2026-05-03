@@ -6,7 +6,7 @@ import { ChevronDown, ChevronUp, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useConflictStore } from '@/stores/conflict-store';
 import { useAppStore } from '@/stores/app-store';
-import { isSyriaDemoCase, SYRIA_DEMO_CASE_ID } from '@/lib/constants/syria-demo-case';
+import { isSyriaWorkspaceCase, SYRIA_DEMO_CASE_ID } from '@/lib/constants/syria-demo-case';
 
 const SCENARIO_OPTIONS = [
   { id: SYRIA_DEMO_CASE_ID, label: 'Syria Transition' },
@@ -29,7 +29,7 @@ export function DemoModeBanner() {
   const activeConflictId = useConflictStore((s) => s.activeConflictId);
   const setActiveConflict = useConflictStore((s) => s.setActiveConflict);
   const searchParams = useSearchParams();
-  const isSyriaCase = isSyriaDemoCase(searchParams.get('case'));
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), demoMode);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   if (!demoMode) return null;
@@ -61,17 +61,17 @@ export function DemoModeBanner() {
   // Expanded state
   return (
     <div className="relative flex h-[52px] w-full shrink-0 items-center justify-between bg-gradient-to-r from-[#0a1628] via-[#1B3A5C] to-[#0a1628] px-4">
-      {/* Left: Shield + PRAXIS DEMO + scenario switcher */}
+      {/* Left: Shield + case file status + scenario switcher */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5">
           <Shield className="h-3.5 w-3.5 text-gold-500" />
           <span className="text-[11px] font-semibold tracking-widest text-gold-500 uppercase">
-            PRAXIS DEMO
+            {isSyriaCase ? 'PRAXIS CASE FILE' : 'PRAXIS SAMPLE'}
           </span>
         </div>
 
         {/* Scenario switcher */}
-        <div className="relative">
+        {!isSyriaCase ? <div className="relative">
           <button
             onClick={() => setDropdownOpen((v) => !v)}
             className={cn(
@@ -119,13 +119,17 @@ export function DemoModeBanner() {
               </div>
             </>
           )}
-        </div>
+        </div> : (
+          <span className="rounded-md bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white">
+            Syria Transition
+          </span>
+        )}
       </div>
 
       {/* Center: description text */}
       <p className="hidden text-[11px] text-blue-100/70 lg:block">
         {isSyriaCase
-          ? 'You are exploring a Syria public-source demo snapshot; production workspaces run on user-approved sources, private documents, and grounded AI.'
+          ? 'You are viewing the populated Syria public-source case file inside the real app; private workspaces use approved sources, documents, and grounded AI.'
           : 'You are exploring the PRAXIS sample workspace. Demo mode uses synthetic Nordalia data; production workspaces run on Vertex AI / Gemini with grounded Google Search and private sources.'}
       </p>
 

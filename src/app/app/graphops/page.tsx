@@ -10,7 +10,7 @@ import { GraphProposalsPanel } from '@/components/situations/graph-proposals-pan
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { SyriaRecordingRunway } from '@/components/demo/recording-signal-runway';
 import { buildGraphOpsSummary, type GraphOpsSummary } from '@/lib/graph/graphops';
-import { isSyriaDemoCase, SYRIA_DEMO_CANONICAL_GRAPH, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
+import { isSyriaWorkspaceCase, SYRIA_DEMO_CANONICAL_GRAPH, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
 
 export default function GraphOpsPage() {
   const { isDemo, needsOnboarding, showGuard, situation, loading } = useSituationGuard();
@@ -41,7 +41,7 @@ export default function GraphOpsPage() {
 
   if (needsOnboarding) return <OnboardingRequiredState />;
   if (loading) return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-slate-500" /></div>;
-  if (isDemo && isSyriaDemoCase(searchParams.get('case'))) return <SyriaDemoGraphOpsPage />;
+  if (isDemo && isSyriaWorkspaceCase(searchParams.get('case'), isDemo)) return <SyriaDemoGraphOpsPage />;
   if (showGuard || !situation) return <WelcomeState />;
 
   return (
@@ -147,10 +147,10 @@ function SyriaDemoGraphOpsPage() {
     <div className="flex flex-col gap-4 p-6">
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-500">GraphOps - public-source demo</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-500">GraphOps - Syria public-source case</p>
           <h1 className="text-2xl font-semibold text-navy-900">{SYRIA_DEMO_SITUATION.name}</h1>
           <p className="mt-1 max-w-3xl text-sm leading-relaxed text-navy-600">
-            Syria demo graph health: Firestore-first canonical graph, source receipts, temporal anchors,
+            Syria graph health: Firestore-first canonical graph, source receipts, temporal anchors,
             and analyst-visible repair suggestions before any AI product uses the graph as context.
           </p>
         </div>
@@ -179,7 +179,7 @@ function SyriaDemoGraphOpsPage() {
           </div>
           <ul className="space-y-2">
             {[
-              'Graph is demo-populated from five high-reliability public-source receipts.',
+              'Graph is pre-populated from five high-reliability public-source receipts.',
               'Use Conflict Graph to click: 30 January agreement -> SDF -> displacement -> regional spillover.',
               ...summary.maintenanceActions,
             ].slice(0, 6).map((action) => (

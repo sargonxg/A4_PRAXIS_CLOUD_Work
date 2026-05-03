@@ -32,7 +32,10 @@ function LoginForm() {
   const appRedirect = planParam
     ? `/app/settings?upgrade=${planParam}` // Send to settings with upgrade prompt
     : rawRedirect?.startsWith('/app') ? rawRedirect : '/app/dashboard';
-  const demoRedirect = rawRedirect?.startsWith('/demo') ? rawRedirect : '/demo/dashboard';
+  const caseRedirect =
+    rawRedirect?.startsWith('/app') || rawRedirect?.startsWith('/demo')
+      ? rawRedirect.replace(/^\/demo/, '/app')
+      : '/app/dashboard?case=syria';
   const {
     user,
     loading,
@@ -61,13 +64,13 @@ function LoginForm() {
       return;
     }
 
-    // Already logged-in demo user → redirect to demo
+    // Already logged-in no-account user → redirect to the populated app case
     if (user && user.isDemo) {
       didNavigate.current = true;
-      router.push(demoRedirect);
+      router.push(caseRedirect);
       return;
     }
-  }, [user, loading, router, appRedirect, demoRedirect]);
+  }, [user, loading, router, appRedirect, caseRedirect]);
 
   const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>(
     queryMode === 'signup' ? 'signup' : 'signin',
@@ -184,7 +187,7 @@ function LoginForm() {
     await signInAsDemo();
     // Small delay to ensure cookie is set before navigation
     await new Promise((r) => setTimeout(r, 100));
-    router.push(demoRedirect);
+    router.push(caseRedirect);
   }
 
   // Auto-enter demo mode when redirected from middleware with ?mode=demo
@@ -520,12 +523,12 @@ function LoginForm() {
               ) : (
                 <>
                   <Shield className="h-4 w-4" />
-                  Try the Demo — No Account Needed
+                  Open Syria Case — No Account Needed
                 </>
               )}
             </button>
             <p className="mt-2 text-center text-[11px] text-navy-500">
-              Pre-loaded Nordalia crisis data. Explore the ten-tool operating loop plus clearly marked specialist labs.
+              Pre-loaded public-source Syria case file inside the real PRAXIS workspace.
             </p>
           </motion.div>
 
@@ -537,7 +540,7 @@ function LoginForm() {
             className="mt-5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3"
           >
             <p className="text-center text-xs text-emerald-400">
-              <span className="font-semibold">Free Plan</span> includes the full PRAXIS workspace, demo data, and AI analysis to evaluate the platform.
+              <span className="font-semibold">Free Plan</span> includes the full PRAXIS workspace, AI analysis, source receipts, and briefing tools.
             </p>
           </motion.div>
         </div>

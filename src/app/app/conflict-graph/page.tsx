@@ -44,7 +44,7 @@ import { ACO_COLORS } from '@/lib/constants/aco-colors';
 
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { AutoPopulatePanel } from '@/components/conflict-graph/auto-populate-panel';
-import { isSyriaDemoCase, SYRIA_DEMO_CASE_ID } from '@/lib/constants/syria-demo-case';
+import { isSyriaWorkspaceCase, SYRIA_DEMO_CASE_ID } from '@/lib/constants/syria-demo-case';
 const COLOR_BY_TYPE: Record<string, string> = { ...ACO_COLORS };
 
 // ── Entity type toggle config ───────────────────────────────────
@@ -55,7 +55,7 @@ const ENTITY_TYPE_TOGGLES = ENTITY_TYPES.map((t) => ({
 }));
 
 const CONFLICTS = [
-  { id: SYRIA_DEMO_CASE_ID, label: "Syria Transition (Public-Source Demo)" },
+  { id: SYRIA_DEMO_CASE_ID, label: "Syria Transition" },
   { id: "nordalia-crisis", label: "The Nordalia Crisis" },
   { id: "example2", label: "Cascadia Dispute (Demo)" },
   { id: "example3", label: "Sahel Security Corridor (Demo)" },
@@ -188,7 +188,8 @@ function SelectedEntityPanel({
 
 function DemoConflictGraphPage() {
   const searchParams = useSearchParams();
-  const isSyriaCase = isSyriaDemoCase(searchParams.get('case'));
+  const { user } = useAuth();
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), user?.isDemo === true);
   const [selectedConflict, setSelectedConflict] = useState(isSyriaCase ? SYRIA_DEMO_CASE_ID : "nordalia-crisis");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeTypes, setActiveTypes] = useState<Set<string>>(
@@ -486,6 +487,11 @@ function DemoConflictGraphPage() {
           className="mb-4 flex flex-wrap items-center gap-3"
         >
           {/* Conflict selector */}
+          {isSyriaCase ? (
+            <div className="rounded-lg border border-diplomatic-blue/20 bg-diplomatic-blue/5 px-3.5 py-2 text-sm font-medium text-diplomatic-blue">
+              Syria Transition
+            </div>
+          ) : (
           <div className="relative">
             <select
               value={selectedConflict}
@@ -500,6 +506,7 @@ function DemoConflictGraphPage() {
             </select>
             <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-navy-500" />
           </div>
+          )}
 
           {/* Search filter */}
           <div className="relative flex items-center">

@@ -142,10 +142,10 @@ export function DataSubstrate() {
               panel.
             </p>
             <Link
-              href="/login?mode=demo"
+              href="/login?mode=demo&redirect=/app/syria-case%3Frecording%3D1%26case%3Dsyria"
               className="inline-flex items-center gap-1 rounded-md bg-diplomatic-blue px-4 py-2 text-xs font-semibold text-white hover:bg-diplomatic-blue/90"
             >
-              Open the sample workspace →
+              Open the Syria case file →
             </Link>
           </div>
         </motion.div>

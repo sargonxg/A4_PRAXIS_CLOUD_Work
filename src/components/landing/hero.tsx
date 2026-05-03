@@ -419,14 +419,14 @@ export function Hero() {
                 <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
               </Link>
               <Link
-                href="/login?mode=demo"
+                href="/login?mode=demo&redirect=/app/syria-case%3Frecording%3D1%26case%3Dsyria"
                 className="inline-flex items-center justify-center rounded-md border border-diplomatic-blue/20 px-8 py-4 text-base font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40"
               >
-                Explore Sample Workspace
+                Open Syria Case File
               </Link>
             </div>
             <p className="text-xs text-navy-400">
-              Sign in for your private workspace · demo runs PRAXIS on the Nordalia sample crisis
+              Sign in for your private workspace · no-account access opens a populated Syria public-source case
             </p>
           </motion.div>
 

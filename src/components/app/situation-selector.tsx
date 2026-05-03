@@ -7,11 +7,27 @@ import { usePraxisRoute } from '@/lib/utils/routes';
 import { useSituationStore } from '@/stores/situation-store';
 import { cn } from '@/lib/utils/cn';
 import { ChevronDown, Plus, Globe, Loader2, Trash2, Settings as SettingsIcon } from 'lucide-react';
+import { SYRIA_DEMO_CASE_ID } from '@/lib/constants/syria-demo-case';
+import type { Situation } from '@/types/situation';
 
 interface SituationSelectorProps {
   collapsed?: boolean;
   activeSituationId: string | null;
   onSelect: (id: string) => void;
+}
+
+function dedupeSyriaSituations(list: Situation[]) {
+  const seen = new Set<string>();
+  return list.filter((s) => {
+    const isSyria =
+      s.id === SYRIA_DEMO_CASE_ID ||
+      /syria/i.test(s.name) ||
+      /syrian arab republic/i.test(s.region ?? '');
+    const key = isSyria ? 'canonical-syria-case' : s.id;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export function SituationSelector({ collapsed, activeSituationId, onSelect }: SituationSelectorProps) {
@@ -27,7 +43,6 @@ export function SituationSelector({ collapsed, activeSituationId, onSelect }: Si
 
   useEffect(() => {
     if (user?.isDemo) {
-      setLoading(false);
       return;
     }
 
@@ -37,7 +52,7 @@ export function SituationSelector({ collapsed, activeSituationId, onSelect }: Si
         return res.json();
       })
       .then((data) => {
-        const list = data.situations || [];
+        const list = dedupeSyriaSituations(data.situations || []);
         setSituations(list);
         if (!activeSituationId && list.length > 0) {
           onSelect(list[0].id);
@@ -49,7 +64,8 @@ export function SituationSelector({ collapsed, activeSituationId, onSelect }: Si
 
   if (user?.isDemo) return null;
 
-  const activeSituation = situations.find((s) => s.id === activeSituationId);
+  const visibleSituations = dedupeSyriaSituations(situations);
+  const activeSituation = visibleSituations.find((s) => s.id === activeSituationId) ?? visibleSituations[0];
 
   if (loading) {
     return (
@@ -62,7 +78,7 @@ export function SituationSelector({ collapsed, activeSituationId, onSelect }: Si
     );
   }
 
-  if (situations.length === 0) {
+  if (visibleSituations.length === 0) {
     return (
       <div className="mx-2 mb-3">
         <button
@@ -115,7 +131,7 @@ export function SituationSelector({ collapsed, activeSituationId, onSelect }: Si
       {open && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-[var(--color-app-border)] bg-white shadow-lg">
           <div className="max-h-48 overflow-y-auto py-1">
-            {situations.map((sit) => (
+            {visibleSituations.map((sit) => (
               <div key={sit.id} className="flex items-center">
                 <button
                   onClick={() => { onSelect(sit.id); setOpen(false); }}

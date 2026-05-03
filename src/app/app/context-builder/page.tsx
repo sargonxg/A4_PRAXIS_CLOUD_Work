@@ -23,14 +23,14 @@ import {
   type ContextBuilderPriority,
   type ContextBuilderStatus,
 } from '@/lib/context/context-builder-plan';
-import { isSyriaDemoCase, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
+import { isSyriaWorkspaceCase, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
 import { cn } from '@/lib/utils/cn';
 
 export default function ContextBuilderPage() {
   const { isDemo, needsOnboarding, showGuard, situation, loading } = useSituationGuard();
   const searchParams = useSearchParams();
   const recordingMode = searchParams.get('recording') === '1';
-  const isSyriaCase = isSyriaDemoCase(searchParams.get('case'));
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), isDemo);
   const activeSituation = isDemo && isSyriaCase ? SYRIA_DEMO_SITUATION : situation;
   const plan = useMemo(() => (activeSituation ? buildContextBuilderPlan(activeSituation) : null), [activeSituation]);
   const preserveDemoQuery = (href: string) => {

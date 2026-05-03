@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils/cn';
 import { PoweredByTacitus } from '@/components/shared/powered-by-tacitus';
 import { CASE_REGISTRY } from '@/lib/constants/case-registry';
 import { DEMO_MORNING_BRIEF, type BriefingSlide } from '@/lib/constants/briefing-data';
-import { isSyriaDemoCase, SYRIA_DEMO_MORNING_BRIEF } from '@/lib/constants/syria-demo-case';
+import { isSyriaWorkspaceCase, SYRIA_DEMO_MORNING_BRIEF } from '@/lib/constants/syria-demo-case';
 import type { Situation } from '@/types/situation';
 
 const BRIEFING_TYPES = [
@@ -501,7 +501,7 @@ export default function BriefingPage() {
 
   // Demo mode — render with hardcoded demo data
   if (isDemo) {
-    return isSyriaDemoCase(searchParams.get('case'))
+    return isSyriaWorkspaceCase(searchParams.get('case'), isDemo)
       ? <DemoBriefingPage preloadedSlides={SYRIA_DEMO_MORNING_BRIEF} showSyriaCue />
       : <DemoBriefingPage />;
   }

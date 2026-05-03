@@ -795,7 +795,7 @@ export function AppSidebar() {
               <div className="flex items-center gap-1.5">
                 <Crown className="h-3.5 w-3.5 text-emerald-600" />
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
-                  {user?.isDemo ? 'Demo Mode' : (PLAN_LABELS[user?.subscription || 'free'] || 'Free Plan')}
+                  {user?.isDemo ? 'Case Access' : (PLAN_LABELS[user?.subscription || 'free'] || 'Free Plan')}
                 </span>
               </div>
               {!user?.isDemo && user?.subscription === 'free' && (
@@ -816,7 +816,7 @@ export function AppSidebar() {
               </PraxisLink>
             </TooltipTrigger>
             <TooltipContent side="right">
-              {user?.isDemo ? 'Demo Mode' : (PLAN_LABELS[user?.subscription || 'free'] || 'Free Plan')}
+              {user?.isDemo ? 'Case Access' : (PLAN_LABELS[user?.subscription || 'free'] || 'Free Plan')}
             </TooltipContent>
           </Tooltip>
         )}

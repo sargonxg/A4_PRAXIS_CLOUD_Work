@@ -54,13 +54,6 @@ function nextWithNonce(request: NextRequest, nonce: string): NextResponse {
   return addSecurityHeaders(response, nonce);
 }
 
-function rewriteWithNonce(request: NextRequest, url: URL, nonce: string): NextResponse {
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-nonce', nonce);
-  const response = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
-  return addSecurityHeaders(response, nonce);
-}
-
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const session = request.cookies.get(SESSION_COOKIE);
@@ -82,23 +75,19 @@ export function proxy(request: NextRequest) {
     if (!sessionData) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('mode', 'demo');
+      loginUrl.searchParams.set('redirect', '/app/syria-case?recording=1&case=syria');
       return addSecurityHeaders(NextResponse.redirect(loginUrl), nonce);
     }
 
-    const demoSpecificRoutes = new Set(['/demo', '/demo/deep-search-agent']);
-    if (!demoSpecificRoutes.has(pathname)) {
-      const appPath = pathname.replace(/^\/demo/, '/app');
-      const url = request.nextUrl.clone();
-      url.pathname = appPath;
-      return rewriteWithNonce(request, url, nonce);
-    }
-
-    return nextWithNonce(request, nonce);
+    const url = request.nextUrl.clone();
+    url.pathname = pathname === '/demo' ? '/app/dashboard' : pathname.replace(/^\/demo/, '/app');
+    if (!url.searchParams.has('case')) url.searchParams.set('case', 'syria');
+    return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }
 
   // --- /onboarding routes ---
   if (pathname.startsWith('/onboarding')) {
-    if (isDemo) return addSecurityHeaders(NextResponse.redirect(new URL('/demo/dashboard', request.url)), nonce);
+    if (isDemo) return addSecurityHeaders(NextResponse.redirect(new URL('/app/syria-case?recording=1&case=syria', request.url)), nonce);
     if (!hasFirebaseToken) return addSecurityHeaders(NextResponse.redirect(new URL('/login', request.url)), nonce);
     return nextWithNonce(request, nonce);
   }
@@ -110,12 +99,7 @@ export function proxy(request: NextRequest) {
 
   // --- /app/* routes ---
   if (pathname.startsWith('/app')) {
-    if (isDemo) {
-      return addSecurityHeaders(
-        NextResponse.redirect(new URL('/demo/dashboard', request.url)),
-        nonce,
-      );
-    }
+    if (isDemo) return nextWithNonce(request, nonce);
     if (!hasFirebaseToken) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);

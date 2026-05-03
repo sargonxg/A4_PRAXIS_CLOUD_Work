@@ -157,10 +157,10 @@ function AdvisorModal({ advisor, onClose }: { advisor: Advisor; onClose: () => v
             <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
-            href="/demo/advisory"
+            href="/login?mode=demo&redirect=/app/brainstorming-table%3Frecording%3D1%26case%3Dsyria"
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-diplomatic-blue/20 px-5 py-3 text-sm font-semibold text-diplomatic-blue transition-all hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
           >
-            Try in the demo
+            Open Syria advisor table
           </Link>
         </div>
       </motion.div>

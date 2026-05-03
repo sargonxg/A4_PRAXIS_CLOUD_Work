@@ -23,7 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils/cn';
 import type { CanonicalSourceReceipt } from '@/types/source-receipt';
 import { DEMO_SOURCE_SCOUT_OUTPUT } from '@/lib/constants/demo-tool-outputs';
-import { isSyriaDemoCase, SYRIA_DEMO_SOURCE_SCOUT_OUTPUT } from '@/lib/constants/syria-demo-case';
+import { isSyriaWorkspaceCase, SYRIA_DEMO_SOURCE_SCOUT_OUTPUT } from '@/lib/constants/syria-demo-case';
 
 const RELIABILITY_LABEL: Record<string, string> = {
   tier_a: 'A · primary',
@@ -82,7 +82,7 @@ const TIMEFRAMES: Array<SourceScoutOutput['searchPlan']['timeframe']> = ['24h', 
 export default function SourceScoutPage() {
   const { isDemo, showGuard, needsOnboarding, situation } = useSituationGuard();
   const searchParams = useSearchParams();
-  const isSyriaCase = isSyriaDemoCase(searchParams.get('case'));
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), isDemo);
   const activeSituation = useSituationStore((s) => s.activeSituation);
   const { data: persisted, hasData } = useToolData<SourceScoutOutput>('source-scout');
 
@@ -136,7 +136,7 @@ export default function SourceScoutPage() {
 
       {isDemo && (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Demo mode - showing a deterministic {isSyriaCase ? 'Syria public-source' : 'Nordalia'} Source Scout fixture with checkable receipt structure.
+          Public-source case file - showing a deterministic {isSyriaCase ? 'Syria' : 'Nordalia'} Source Scout fixture with checkable receipt structure.
         </div>
       )}
 

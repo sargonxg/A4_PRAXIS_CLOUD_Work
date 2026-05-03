@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useRoutePrefix } from '@/lib/utils/routes';
-import { isSyriaDemoCase } from '@/lib/constants/syria-demo-case';
+import { useAuth } from '@/lib/auth/auth-context';
+import { isSyriaWorkspaceCase } from '@/lib/constants/syria-demo-case';
 
 interface WelcomeModalProps {
   onStartTour: () => void;
@@ -43,8 +44,9 @@ const SYRIA_DEMO_FEATURES = [
 export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) {
   const prefix = useRoutePrefix();
   const searchParams = useSearchParams();
-  const isDemo = prefix === '/demo';
-  const isSyriaCase = isDemo && isSyriaDemoCase(searchParams.get('case'));
+  const { user } = useAuth();
+  const isDemo = prefix === '/demo' || user?.isDemo === true;
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), user?.isDemo === true);
   const features = isSyriaCase ? SYRIA_DEMO_FEATURES : isDemo ? DEMO_FEATURES : REAL_FEATURES;
 
   return (
@@ -82,8 +84,8 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
               {isDemo ? (
                 isSyriaCase ? (
                   <>
-                    Explore the <span className="font-semibold text-navy-800">Syria Transition</span> public-source demo -
-                    built to show how PRAXIS turns receipts, graph context, expert disagreement, and briefings into a recordable workflow.
+                    Explore the <span className="font-semibold text-navy-800">Syria Transition</span> public-source case file -
+                    built to show how PRAXIS turns receipts, graph context, expert disagreement, and briefings into a real workflow.
                   </>
                 ) : (
                   <>
@@ -159,7 +161,7 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
             <p className="text-center text-[11px] text-navy-400 mt-1">
               {isDemo
                 ? isSyriaCase
-                  ? 'Demo environment - public-source snapshot, not live or classified intelligence'
+                  ? 'Public-source case file - not live or classified intelligence'
                   : 'Demo environment - synthetic sample data only'
                 : "You can revisit this from Settings anytime"}
             </p>

@@ -21,6 +21,7 @@ import { ActivityPanel } from '@/components/app/activity-panel';
 import { ErrorBoundary } from '@/components/shared/error-boundary';
 import { ToolErrorBoundary } from '@/components/praxis/tool-error-boundary';
 import { AiErrorToast } from '@/components/praxis/ai-error-toast';
+import { SyriaRecordingDirector } from '@/components/demo/syria-recording-director';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -157,6 +158,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <DebugPanel />
       {/* Activity panel — real-time operation tracking, bottom-right corner */}
       <ActivityPanel />
+      {/* Syria recording director — appears only on ?recording=1&case=syria */}
+      <SyriaRecordingDirector />
       {/* Cross-tool AI error toast — consumes the publish channel from
           src/stores/ai-error-store. Every tool's failed fetch can publish
           a structured error and show a consistent retry-able toast here. */}

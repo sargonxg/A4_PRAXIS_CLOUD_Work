@@ -38,7 +38,7 @@ import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { ActivityFeed } from '@/components/app/activity-feed';
 import { SyriaRecordingRunway } from '@/components/demo/recording-signal-runway';
 import { useAuth } from '@/lib/auth/auth-context';
-import { isSyriaDemoCase, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
+import { isSyriaWorkspaceCase, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
 import type { Situation } from '@/types/situation';
 
 interface DailyRead {
@@ -57,7 +57,7 @@ function greeting(): string {
 export default function DashboardPage() {
   const { isDemo, needsOnboarding, showGuard, situation, loading } = useSituationGuard();
   const searchParams = useSearchParams();
-  const isSyriaCase = isSyriaDemoCase(searchParams.get('case'));
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), isDemo);
   const demoSituation = isSyriaCase ? SYRIA_DEMO_SITUATION : DEMO_SITUATION;
 
   if (needsOnboarding) return <OnboardingRequiredState />;

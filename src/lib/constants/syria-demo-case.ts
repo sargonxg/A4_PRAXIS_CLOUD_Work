@@ -26,7 +26,7 @@ export const SYRIA_DEMO_SITUATION: Situation = {
   name: 'Syria Transition - Northeast Integration & Regional Spillover',
   type: 'civil',
   description:
-    'Public-source demo snapshot of Syria in early 2026: a post-Assad political transition, a January 2026 Damascus-SDF ceasefire and integration agreement, persistent humanitarian strain, renewed displacement in Aleppo and northeast Syria, southern flashpoints, Israeli incursions, and regional war spillover risks. The case is designed to show how PRAXIS turns real sources into graph-ready actors, claims, events, risks, and decision products.',
+    'Public-source Syria case file for early 2026: a post-Assad political transition, a January 2026 Damascus-SDF ceasefire and integration agreement, persistent humanitarian strain, renewed displacement in Aleppo and northeast Syria, southern flashpoints, Israeli incursions, and regional war spillover risks. The case is designed to show how PRAXIS turns real sources into graph-ready actors, claims, events, risks, and decision products.',
   region: 'Syrian Arab Republic',
   actors: [
     'Syrian Government / transitional authorities',
@@ -49,7 +49,7 @@ export const SYRIA_DEMO_SITUATION: Situation = {
   documentCount: 5,
   sourceUrls: Object.values(SYRIA_DEMO_SOURCES),
   contextNotes:
-    'Demo recording stance: treat all analysis as public-source and source-grounded. Distinguish observed reporting from PRAXIS assessment. Priority decisions: protect the northeast agreement, sustain humanitarian access, reduce regional spillover, and identify what evidence would change confidence.',
+    'Recording stance: treat all analysis as public-source and source-grounded. Distinguish observed reporting from PRAXIS assessment. Priority decisions: protect the northeast agreement, sustain humanitarian access, reduce regional spillover, and identify what evidence would change confidence.',
   createdAt: '2026-05-02T09:00:00.000Z',
   updatedAt: '2026-05-02T09:00:00.000Z',
   conflictClassification: 'internationalized_intrastate',
@@ -271,7 +271,7 @@ export const SYRIA_DEMO_SOURCE_SCOUT_OUTPUT: DemoSourceScoutOutput = {
   ],
   intelligenceGaps: [
     'Local governance details of the northeast implementation plan remain incomplete in public reporting.',
-    'Independent field verification of detention-facility security and transfers is limited in the demo corpus.',
+    'Independent field verification of detention-facility security and transfers is limited in the public-source corpus.',
     'Reliable local reporting from Sweida and southern Syria should be added before briefing narrow local dynamics.',
   ],
   retrievalTrace: {
@@ -294,8 +294,8 @@ export const SYRIA_DEMO_SOURCE_SCOUT_OUTPUT: DemoSourceScoutOutput = {
       'Need independent detention-facility security verification before strong operational claims.',
     ],
     notes: [
-      'The demo uses official and humanitarian sources first to avoid expensive cloud/provider calls during recording.',
-      'All proposed sources have checkable URLs and are suitable for public demo attribution.',
+      'This case uses official and humanitarian sources first to avoid unnecessary cloud/provider calls during recording.',
+      'All proposed sources have checkable URLs and are suitable for public attribution.',
     ],
   },
 };
@@ -354,7 +354,7 @@ export const SYRIA_DEMO_BRAINSTORMING_TABLE_OUTPUT: DemoBrainstormingOutput = {
       turnId: 'syria-bt-4',
       persona: 'media',
       claim:
-        'Investors and principals will understand PRAXIS fastest if the demo shows the graph catching the tension between optimism and fragility.',
+        'Investors and principals will understand PRAXIS fastest if the recording shows the graph catching the tension between optimism and fragility.',
       evidence: [
         { sourceType: 'graph', sourceId: 'risk-regional-spillover', excerpt: 'Regional escalation connects to recovery fragility, airspace restrictions, and aid constraints.' },
       ],
@@ -380,14 +380,14 @@ export const SYRIA_DEMO_BRAINSTORMING_TABLE_OUTPUT: DemoBrainstormingOutput = {
       turnId: 'syria-bt-6',
       persona: 'red-team',
       claim:
-        'The demo must say "public-source snapshot" out loud. Otherwise the sophistication of the graph may invite overclaiming.',
+        'The recording must say "public-source case file" out loud. Otherwise the sophistication of the graph may invite overclaiming.',
       evidence: [
         { sourceType: 'source-audit', sourceId: 'syria-demo-source-scout-2026-05-02', excerpt: 'Source Scout found high-reliability UN and humanitarian sources but local reporting gaps remain.' },
       ],
       critique:
         'Do not claim live intelligence or classified awareness. Show how PRAXIS would update when new receipts arrive.',
       recommendation:
-        'End the demo with the evidence gap and the next collection task, not with false certainty.',
+        'End the recording with the evidence gap and the next collection task, not with false certainty.',
       confidence: 'high',
       status: 'challenged',
     },
@@ -438,11 +438,11 @@ export const SYRIA_DEMO_MORNING_BRIEF: BriefingSlide[] = [
     title: 'SYRIA TRANSITION - Decision Brief',
     content: `2 May 2026
 
-Public-source PRAXIS demo snapshot
+Public-source PRAXIS case file
 
-UNCLASSIFIED / DEMO`,
+UNCLASSIFIED / PUBLIC SOURCES`,
     speakerNotes:
-      'Open by saying this is a public-source demonstration: PRAXIS converts current reporting into a structured graph, advisor debate, and briefable decision product.',
+      'Open by saying this is a public-source Syria case file: PRAXIS converts current reporting into a structured graph, advisor debate, and briefable decision product.',
     sources: ['UN Geneva', 'OCHA', 'UN Syria CCA', 'UNFPA', 'UNHCR'],
   },
   {
@@ -472,7 +472,7 @@ UNCLASSIFIED / DEMO`,
 The value is causal adjacency: one click shows how a ceasefire implementation milestone connects to displacement, protection, governance, and spillover risk.`,
     speakerNotes:
       'On the conflict graph page, click the 30 January agreement node, then SDF, then displacement. Say: PRAXIS turns a case file into a queryable operating picture.',
-    sources: ['PRAXIS Syria demo graph built from public receipts'],
+    sources: ['PRAXIS Syria graph built from public receipts'],
   },
   {
     id: 'syria-slide-4-timeline',
@@ -1034,6 +1034,79 @@ export const SYRIA_RECORDING_STORY = [
   'Briefing: end on a slide-ready decision brief with sources, risk triggers, and next actions.',
 ];
 
+export const SYRIA_RECORDING_SCENES = [
+  {
+    id: 'dashboard',
+    seconds: '00-06',
+    title: 'Situation room',
+    href: '/dashboard?recording=1&case=syria',
+    voiceover:
+      'PRAXIS opens a real Syria public-source case file: risk, actors, sources, graph health, and next actions in one operating room.',
+  },
+  {
+    id: 'context-builder',
+    seconds: '06-12',
+    title: 'Context discipline',
+    href: '/context-builder?recording=1&case=syria',
+    voiceover:
+      'Before any model answer, Context Builder shows what is known, what is thin, and which evidence gaps block confidence.',
+  },
+  {
+    id: 'source-scout',
+    seconds: '12-18',
+    title: 'Source receipts',
+    href: '/source-scout?recording=1&case=syria',
+    voiceover:
+      'Source Scout turns the Syria question into checkable UN and humanitarian receipts with reliability tiers and explicit gaps.',
+  },
+  {
+    id: 'graphops',
+    seconds: '18-24',
+    title: 'GraphOps',
+    href: '/graphops?recording=1&case=syria',
+    voiceover:
+      'GraphOps shows the Firestore graph as a production asset: provenance, temporal anchors, repair suggestions, and review gates.',
+  },
+  {
+    id: 'conflict-graph',
+    seconds: '24-31',
+    title: 'Live graph',
+    href: '/conflict-graph?recording=1&case=syria',
+    voiceover:
+      'The graph makes the case legible: the January agreement links to the SDF, Kurdish rights, displacement, aid, and regional spillover.',
+  },
+  {
+    id: 'brainstorming-table',
+    seconds: '31-38',
+    title: 'Expert disagreement',
+    href: '/brainstorming-table?recording=1&case=syria',
+    voiceover:
+      'The advisor table keeps mediator, humanitarian, legal, security, media, and red-team disagreement visible for the principal.',
+  },
+  {
+    id: 'briefing',
+    seconds: '38-45',
+    title: 'Decision brief',
+    href: '/briefing?recording=1&case=syria',
+    voiceover:
+      'The output is not a chat. It is a briefable decision product: facts, assessment, triggers, sources, and next actions.',
+  },
+];
+
+export const SYRIA_RECORDING_AUDIO_SCRIPT = [
+  'PRAXIS opens a real Syria public-source case file: risk, actors, sources, graph health, and next actions in one operating room.',
+  'Before any model answer, Context Builder shows what is known, what is thin, and which evidence gaps block confidence.',
+  'Source Scout turns the Syria question into checkable UN and humanitarian receipts with reliability tiers and explicit gaps.',
+  'GraphOps shows the Firestore graph as a production asset: provenance, temporal anchors, repair suggestions, and review gates.',
+  'The visual graph makes the case legible: the January agreement links to the SDF, Kurdish rights, displacement, aid, and regional spillover.',
+  'Then the advisor table preserves structured disagreement: mediator, humanitarian, legal, security, media, and red-team views stay separate.',
+  'The final output is not a chat. It is a briefable decision product: facts, assessment, triggers, source basis, and next actions.',
+].join(' ');
+
 export function isSyriaDemoCase(caseParam: string | null | undefined): boolean {
   return caseParam === SYRIA_DEMO_QUERY_PARAM || caseParam === SYRIA_DEMO_CASE_ID;
+}
+
+export function isSyriaWorkspaceCase(caseParam: string | null | undefined, isNoAccountWorkspace = false): boolean {
+  return isSyriaDemoCase(caseParam) || isNoAccountWorkspace;
 }

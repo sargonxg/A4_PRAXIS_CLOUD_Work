@@ -31,7 +31,7 @@ import { ConfidenceBadge } from '@/components/praxis/confidence-badge';
 import { ToolOutputFrame } from '@/components/praxis/tool-output-frame';
 import { rollupConfidence } from '@/lib/tools/evidence-summary';
 import { DEMO_BRAINSTORMING_TABLE_OUTPUT } from '@/lib/constants/demo-tool-outputs';
-import { isSyriaDemoCase, SYRIA_DEMO_BRAINSTORMING_TABLE_OUTPUT, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
+import { isSyriaWorkspaceCase, SYRIA_DEMO_BRAINSTORMING_TABLE_OUTPUT, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
 
 const PERSONA_LABELS: Record<string, string> = {
   mediator: 'Mediator',
@@ -97,7 +97,7 @@ interface BrainstormingDocument {
 export default function BrainstormingTablePage() {
   const { isDemo, showGuard, needsOnboarding, situation } = useSituationGuard();
   const searchParams = useSearchParams();
-  const isSyriaCase = isSyriaDemoCase(searchParams.get('case'));
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), isDemo);
   const activeSituation = useSituationStore((s) => s.activeSituation);
   const { data: persisted, hasData } = useToolData<BrainstormingTable>('brainstorming-table');
 
@@ -224,7 +224,7 @@ export default function BrainstormingTablePage() {
 
       {isDemo && (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Demo mode - generation calls are disabled. The table below is {isSyriaCase ? 'a Syria public-source advisor debate' : 'fixture content'}.
+          Public-source case file - the table below is {isSyriaCase ? 'a Syria advisor debate' : 'fixture content'}. Live workspaces can regenerate this from approved context and documents.
         </div>
       )}
 
