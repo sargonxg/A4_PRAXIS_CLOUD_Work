@@ -38,6 +38,7 @@ import {
   TACITUS_CORE_PRIMITIVES,
   type CorePrimitiveCoverage,
 } from "@/lib/graph/core-primitives";
+import type { GraphViewId } from '@/lib/knowledge/graph-views';
 
 // ── ForceGraph color mapping by entity type (ACO standard palette) ─────
 import { ACO_COLORS } from '@/lib/constants/aco-colors';
@@ -60,6 +61,47 @@ const CONFLICTS = [
   { id: "example2", label: "Cascadia Dispute (Demo)" },
   { id: "example3", label: "Sahel Security Corridor (Demo)" },
 ];
+
+const GRAPH_VIEW_OPTIONS: Array<{ id: GraphViewId; label: string }> = [
+  { id: 'all', label: 'All' },
+  { id: 'episodic', label: 'Episodic' },
+  { id: 'semantic', label: 'Semantic' },
+  { id: 'stance', label: 'Stance' },
+];
+
+const SEMANTIC_VIEW_TYPES = new Set(['actor', 'claim', 'interest', 'constraint', 'commitment', 'leverage']);
+const STANCE_VIEW_TYPES = new Set(['actor', 'claim', 'narrative']);
+
+function nodeIdsForGraphView(view: GraphViewId, nodes: GraphNode[], edges: GraphEdge[]): Set<string> {
+  if (view === 'all') return new Set(nodes.map((node) => node.id));
+
+  const eventIds = new Set(nodes.filter((node) => node.type === 'event').map((node) => node.id));
+  const narrativeIds = new Set(nodes.filter((node) => node.type === 'narrative').map((node) => node.id));
+
+  if (view === 'episodic') {
+    const ids = new Set<string>(eventIds);
+    edges.forEach((edge) => {
+      if (eventIds.has(edge.source) || eventIds.has(edge.target)) {
+        ids.add(edge.source);
+        ids.add(edge.target);
+      }
+    });
+    return ids;
+  }
+
+  if (view === 'semantic') {
+    return new Set(nodes.filter((node) => SEMANTIC_VIEW_TYPES.has(node.type)).map((node) => node.id));
+  }
+
+  const ids = new Set(nodes.filter((node) => STANCE_VIEW_TYPES.has(node.type)).map((node) => node.id));
+  edges.forEach((edge) => {
+    if (narrativeIds.has(edge.source) || narrativeIds.has(edge.target)) {
+      ids.add(edge.source);
+      ids.add(edge.target);
+    }
+  });
+  return ids;
+}
 
 // ── Page Component ──────────────────────────────────────────────
 interface ExtractedResult {
@@ -195,6 +237,7 @@ function DemoConflictGraphPage() {
   const [activeTypes, setActiveTypes] = useState<Set<string>>(
     new Set(ENTITY_TYPE_TOGGLES.map((t) => t.key))
   );
+  const [graphView, setGraphView] = useState<GraphViewId>('all');
   const [dateRange, setDateRange] = useState<[Date, Date]>([
     new Date("2024-03-01"),
     new Date("2026-03-18"),
@@ -348,13 +391,17 @@ function DemoConflictGraphPage() {
     setActiveTypes(new Set(ENTITY_TYPE_TOGGLES.map((t) => t.key)));
   }, []);
 
+  const viewNodeIds = useMemo(() => {
+    return nodeIdsForGraphView(graphView, allNodes, allEdges);
+  }, [allNodes, allEdges, graphView]);
+
   const filteredByType = useMemo(() => {
     return allNodes.filter(
       (n) =>
-        activeTypes.has(n.type) ||
+        (viewNodeIds.has(n.id) && activeTypes.has(n.type)) ||
         n.id === selectedNodeId
     );
-  }, [allNodes, activeTypes, selectedNodeId]);
+  }, [allNodes, activeTypes, selectedNodeId, viewNodeIds]);
 
   // Apply search filter on top of type filter
   const filteredNodes = useMemo(() => {
@@ -508,6 +555,23 @@ function DemoConflictGraphPage() {
           </div>
           )}
 
+          <div className="flex rounded-lg border border-[var(--color-app-border)] bg-white p-1">
+            {GRAPH_VIEW_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => setGraphView(option.id)}
+                className={cn(
+                  'rounded-md px-2.5 py-1 text-xs font-semibold transition',
+                  graphView === option.id ? 'bg-diplomatic-blue text-white' : 'text-navy-500 hover:bg-navy-50'
+                )}
+                aria-pressed={graphView === option.id}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
           {/* Search filter */}
           <div className="relative flex items-center">
             <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-navy-400" />
@@ -545,6 +609,7 @@ function DemoConflictGraphPage() {
                 setSelectedNodeId(null);
                 showAllTypes();
                 setGraphSearch('');
+                setGraphView('all');
               }}
               className="rounded-md px-2 py-1 text-navy-600 transition-colors hover:bg-navy-100 hover:text-navy-800"
             >
@@ -647,7 +712,7 @@ function DemoConflictGraphPage() {
                     {graphSearch ? `No entities match "${graphSearch}"` : 'No entities in current filter'}
                   </h3>
                   <button
-                    onClick={() => { setGraphSearch(''); showAllTypes(); }}
+                    onClick={() => { setGraphSearch(''); showAllTypes(); setGraphView('all'); }}
                     className="text-xs text-gold-600 hover:text-gold-700 font-medium"
                   >
                     Reset filters
@@ -1095,6 +1160,7 @@ function RealConflictGraphPage() {
   const [activeTypes, setActiveTypes] = useState<Set<string>>(
     new Set(ENTITY_TYPE_TOGGLES.map((t) => t.key))
   );
+  const [graphView, setGraphView] = useState<GraphViewId>('all');
   const [dateRange, setDateRange] = useState<[Date, Date]>([
     new Date("2024-03-01"),
     new Date("2026-03-18"),
@@ -1344,11 +1410,17 @@ function RealConflictGraphPage() {
     setActiveTypes(new Set(ENTITY_TYPE_TOGGLES.map((t) => t.key)));
   }, []);
 
+  const viewNodeIds = useMemo(() => {
+    return nodeIdsForGraphView(graphView, allNodes, allEdges);
+  }, [graphView, allNodes, allEdges]);
+
   const filteredByType = useMemo(() => {
     return allNodes.filter(
-      (n) => activeTypes.has(n.type) || n.id === selectedNodeId
+      (n) =>
+        (viewNodeIds.has(n.id) && activeTypes.has(n.type)) ||
+        n.id === selectedNodeId
     );
-  }, [allNodes, activeTypes, selectedNodeId]);
+  }, [allNodes, activeTypes, selectedNodeId, viewNodeIds]);
 
   // Apply search on top of type filter
   const filteredNodes = useMemo(() => {
@@ -1483,6 +1555,23 @@ function RealConflictGraphPage() {
               loading={isLoading || persisted.isLoading}
             />
           </div>
+
+          <div className="flex rounded-lg border border-[var(--color-app-border)] bg-white p-1">
+            {GRAPH_VIEW_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => setGraphView(option.id)}
+                className={cn(
+                  'rounded-md px-2.5 py-1 text-xs font-semibold transition',
+                  graphView === option.id ? 'bg-diplomatic-blue text-white' : 'text-navy-500 hover:bg-navy-50'
+                )}
+                aria-pressed={graphView === option.id}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </motion.div>
 
         {/* ── Controls Bar ───────────────────────────────────── */}
@@ -1529,6 +1618,7 @@ function RealConflictGraphPage() {
                 setSelectedNodeId(null);
                 showAllTypes();
                 setGraphSearch('');
+                setGraphView('all');
               }}
               className="rounded-md px-2 py-1 text-navy-600 transition-colors hover:bg-navy-100 hover:text-navy-800"
             >
@@ -1675,7 +1765,7 @@ function RealConflictGraphPage() {
                   </p>
                   {(graphSearch || allNodes.length > 0) && (
                     <button
-                      onClick={() => { setGraphSearch(''); showAllTypes(); }}
+                      onClick={() => { setGraphSearch(''); showAllTypes(); setGraphView('all'); }}
                       className="text-xs text-gold-600 hover:text-gold-700 font-medium"
                     >
                       Reset filters

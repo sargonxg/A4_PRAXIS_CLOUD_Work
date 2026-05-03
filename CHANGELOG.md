@@ -14,6 +14,9 @@
   Added typed provenance-step CRUD, conservative path-confidence math, Firestore
   provenance indexes/rules, source-span extraction fallbacks, and shared UI
   rendering for numeric confidence, source spans, and reasoning rule chains.
+- feat(dialectica): add canonical graph views and fork helpers (#A4).
+  Added Episodic, Semantic, and Stance graph view functions, Conflict Graph
+  view selectors, hypothesis storage helpers, and scenario-fork mutation logs.
 
 ## 2026-05-03 — Syria graph-grounded research handoff
 
