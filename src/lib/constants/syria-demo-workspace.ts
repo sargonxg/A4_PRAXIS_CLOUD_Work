@@ -544,6 +544,121 @@ export const SYRIA_NEUROSYMBOLIC_POLICY_PAYOFFS = [
   },
 ];
 
+export const SYRIA_LIVE_RESEARCH_MODES = [
+  {
+    mode: 'Latest-source sweep',
+    prompt:
+      'Find the latest UN, humanitarian, local Syrian, and think-tank sources on Syria northeast integration and regional spillover. Separate facts, claims, and gaps.',
+    sources: ['UN Geneva', 'Security Council Report', 'ReliefWeb/OCHA', 'local Syrian media', 'think tanks'],
+    graphWrites: ['event', 'source_receipt', 'claim', 'actor_position', 'confidence_note'],
+    output:
+      'A dated source pack with reliability tiers, checkable URLs, what changed, what is still thin, and graph update candidates.',
+  },
+  {
+    mode: 'Think-tank discrepancy review',
+    prompt:
+      'Compare Brookings, ECFR, Carnegie, Atlantic Council, HRW, and local Syrian reporting on Syria recovery, rights, and SDF integration. Identify substantive disagreements and exact wording differences.',
+    sources: ['Brookings', 'ECFR', 'Carnegie Europe', 'Atlantic Council', 'HRW', 'Syrian local media'],
+    graphWrites: ['statement', 'claim', 'frame', 'contradiction', 'omission'],
+    output:
+      'A discrepancy matrix showing aligned claims, contested claims, hidden assumptions, missing evidence, and wording that matters diplomatically.',
+  },
+  {
+    mode: 'Commitment and communique monitor',
+    prompt:
+      'Extract commitments from Syria-related agreements, communiques, UN briefings, and Arab/European statements, then evaluate what evidence would show compliance or non-compliance.',
+    sources: ['official statements', 'UN briefings', 'EU/Arab communiques', 'local implementation reporting'],
+    graphWrites: ['commitment', 'obligation', 'party_to', 'implementation_event', 'blocker'],
+    output:
+      'A compliance board with parties, obligations, evidence needed, implementation signals, open questions, and next monitoring searches.',
+  },
+  {
+    mode: 'Local media and narrative divergence',
+    prompt:
+      'Search Syrian local, diaspora, state, monitoring, and economic sources for divergence on humanitarian access, Kurdish rights, HLP, security integration, and regional spillover.',
+    sources: ['Enab Baladi', 'Syria Direct', 'North Press', 'Syria Report', 'SyriaUntold', 'SANA', 'SOHR'],
+    graphWrites: ['narrative', 'source_posture', 'local_signal', 'frame', 'temporal_signal'],
+    output:
+      'A media compass update with source posture, local proximity, framing deltas, reliability notes, and briefing implications.',
+  },
+  {
+    mode: 'Graph-grounded policy question',
+    prompt:
+      'Use the Syria graph first, then live search only the missing edges: is the January agreement still the stabilizing center of gravity, and which triggers should change the policy line?',
+    sources: ['Firestore graph', 'saved documents', 'source receipts', 'targeted live search'],
+    graphWrites: ['risk_trigger', 'edge_confidence', 'source_gap', 'scenario_driver'],
+    output:
+      'A graph-path answer with evidence trails, uncertainty, contradiction checks, trigger board, and recommended briefing language.',
+  },
+  {
+    mode: 'Economic and HLP scenario research',
+    prompt:
+      'Research Syria recovery, sanctions relief, HLP/property risk, procurement, banking, and donor constraints, then generate three plausible policy scenarios.',
+    sources: ['The Syria Report', 'Carnegie', 'World Bank/IMF where available', 'donor statements', 'rights reports'],
+    graphWrites: ['constraint', 'policy_option', 'property_claim', 'funding_gap', 'investment_signal'],
+    output:
+      'A scenario table linking recovery optimism to legal, humanitarian, financing, and property-rights constraints.',
+  },
+];
+
+export const SYRIA_STRUCTURED_RESEARCH_RESPONSE_CONTRACT = [
+  {
+    section: '1. Question and scope',
+    requirement: 'Restate the precise policy question, geography, time window, source languages, and decision audience.',
+  },
+  {
+    section: '2. Source receipts',
+    requirement: 'List checkable sources with URL, date, source class, reliability tier, and why each source matters.',
+  },
+  {
+    section: '3. Findings by confidence',
+    requirement: 'Separate observed facts, analytical assessments, assumptions, and unresolved intelligence gaps.',
+  },
+  {
+    section: '4. Discrepancy table',
+    requirement: 'Compare exact wording, omissions, date drift, actor framing, and contradictions across source families.',
+  },
+  {
+    section: '5. Graph grounding',
+    requirement: 'Show relevant nodes, edges, graph paths, missing edges, proposed graph updates, and provenance status.',
+  },
+  {
+    section: '6. Policy implications',
+    requirement: 'Translate evidence into options, risks, triggers, confidence notes, and brief-ready language.',
+  },
+  {
+    section: '7. Next searches',
+    requirement: 'Return targeted follow-up searches with cost level, expected source class, and the gap each search would close.',
+  },
+];
+
+export const SYRIA_GRAPH_GROUNDING_PIPELINE = [
+  {
+    step: 'Search',
+    detail: 'Use Google-grounded search, saved source libraries, documents, and local media profiles to find current evidence.',
+  },
+  {
+    step: 'Extract',
+    detail: 'Turn text into typed graph candidates: actors, claims, events, commitments, constraints, sources, and dates.',
+  },
+  {
+    step: 'Validate',
+    detail: 'Compare against existing graph paths, source tiers, temporal anchors, and contradiction/omission rules.',
+  },
+  {
+    step: 'Stage',
+    detail: 'Put graph changes in GraphOps with provenance, confidence, and review notes before they become durable memory.',
+  },
+  {
+    step: 'Reason',
+    detail: 'Retrieve by graph path and ontology track so the LLM sees relationships, not isolated paragraphs.',
+  },
+  {
+    step: 'Draft',
+    detail: 'Generate memos and briefings that carry graph paths, citations, assumptions, dissent, and next collection tasks.',
+  },
+];
+
 export const SYRIA_INVESTOR_WALKTHROUGH_ITEMS = [
   {
     label: 'Login-gated Syria case entry',

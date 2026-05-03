@@ -7,7 +7,7 @@
 
 import { useCallback, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Loader2, Compass, Sparkles, AlertTriangle, ExternalLink, BookmarkPlus, ShieldCheck } from 'lucide-react';
+import { Loader2, Compass, Sparkles, AlertTriangle, ExternalLink, BookmarkPlus, ShieldCheck, GitBranch, Layers3 } from 'lucide-react';
 
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { useToolData } from '@/hooks/useToolData';
@@ -24,6 +24,11 @@ import { cn } from '@/lib/utils/cn';
 import type { CanonicalSourceReceipt } from '@/types/source-receipt';
 import { DEMO_SOURCE_SCOUT_OUTPUT } from '@/lib/constants/demo-tool-outputs';
 import { isSyriaWorkspaceCase, SYRIA_DEMO_SOURCE_SCOUT_OUTPUT } from '@/lib/constants/syria-demo-case';
+import {
+  SYRIA_GRAPH_GROUNDING_PIPELINE,
+  SYRIA_LIVE_RESEARCH_MODES,
+  SYRIA_STRUCTURED_RESEARCH_RESPONSE_CONTRACT,
+} from '@/lib/constants/syria-demo-workspace';
 
 const RELIABILITY_LABEL: Record<string, string> = {
   tier_a: 'A · primary',
@@ -83,10 +88,11 @@ export default function SourceScoutPage() {
   const { isDemo, showGuard, needsOnboarding, situation } = useSituationGuard();
   const searchParams = useSearchParams();
   const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), isDemo);
+  const initialPrompt = searchParams.get('prompt') ?? '';
   const activeSituation = useSituationStore((s) => s.activeSituation);
   const { data: persisted, hasData } = useToolData<SourceScoutOutput>('source-scout');
 
-  const [question, setQuestion] = useState('');
+  const [question, setQuestion] = useState(initialPrompt);
   const [timeframe, setTimeframe] = useState<SourceScoutOutput['searchPlan']['timeframe']>('7d');
   const [generating, setGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -190,6 +196,82 @@ export default function SourceScoutPage() {
           </div>
         )}
       </section>
+
+      {isSyriaCase && (
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Live research modes</p>
+                <h2 className="text-sm font-semibold text-slate-950">The app can run the same research loops used to build this case</h2>
+              </div>
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">
+                graph-ready
+              </span>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {SYRIA_LIVE_RESEARCH_MODES.map((mode) => (
+                <button
+                  type="button"
+                  key={mode.mode}
+                  onClick={() => setQuestion(mode.prompt)}
+                  className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-left transition hover:border-emerald-300 hover:bg-emerald-50"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-950">{mode.mode}</p>
+                      <p className="mt-1 text-[11px] leading-snug text-slate-600">{mode.output}</p>
+                    </div>
+                    <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {mode.graphWrites.slice(0, 4).map((node) => (
+                      <span key={node} className="rounded border border-white bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
+                        {node}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            <div className="rounded-lg border border-slate-200 bg-navy-950 p-4 text-white shadow-sm">
+              <div className="flex items-center gap-2">
+                <GitBranch className="h-4 w-4 text-gold-300" />
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-200">Graph grounding pipeline</p>
+                  <h2 className="text-sm font-semibold text-white">Search becomes reusable institutional memory</h2>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-2">
+                {SYRIA_GRAPH_GROUNDING_PIPELINE.map((step, index) => (
+                  <div key={step.step} className="rounded-md border border-white/10 bg-white/[0.05] px-3 py-2">
+                    <p className="font-mono text-[10px] font-semibold text-gold-200">{String(index + 1).padStart(2, '0')} / {step.step}</p>
+                    <p className="mt-1 text-[11px] leading-snug text-blue-100/75">{step.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2">
+                <Layers3 className="h-4 w-4 text-emerald-700" />
+                <h2 className="text-sm font-semibold text-slate-950">Structured answer contract</h2>
+              </div>
+              <div className="mt-3 grid gap-2">
+                {SYRIA_STRUCTURED_RESEARCH_RESPONSE_CONTRACT.map((item) => (
+                  <div key={item.section} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                    <p className="text-[11px] font-semibold text-slate-900">{item.section}</p>
+                    <p className="mt-1 text-[10px] leading-snug text-slate-600">{item.requirement}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {current && (
         <ToolOutputFrame

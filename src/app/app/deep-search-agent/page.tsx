@@ -3,6 +3,7 @@
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Search,
   Brain,
@@ -18,6 +19,7 @@ import {
   Copy,
   Check,
   Telescope,
+  GitBranch,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
@@ -25,6 +27,12 @@ import { useSituationStore } from '@/stores/situation-store';
 import { useDebugStore } from '@/stores/debug-store';
 
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
+import { isSyriaWorkspaceCase, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
+import {
+  SYRIA_GRAPH_GROUNDING_PIPELINE,
+  SYRIA_LIVE_RESEARCH_MODES,
+  SYRIA_STRUCTURED_RESEARCH_RESPONSE_CONTRACT,
+} from '@/lib/constants/syria-demo-workspace';
 interface AgentEvent {
   type: 'status' | 'session' | 'planning' | 'research' | 'synthesis' | 'text' | 'error' | 'done';
   phase?: 'planning' | 'research' | 'synthesis';
@@ -147,6 +155,7 @@ function EventFeed({ events }: { events: ResearchEvent[] }) {
 
 export default function DeepSearchAgentPage() {
   const { situation } = useSituationGuard();
+  const searchParams = useSearchParams();
   const { activeSituationId } = useSituationStore();
   const { log: debugLog } = useDebugStore();
 
@@ -160,6 +169,12 @@ export default function DeepSearchAgentPage() {
   const [copied, setCopied] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const reportAccumulator = useRef('');
+  const isSyriaCase = isSyriaWorkspaceCase(
+    searchParams.get('case'),
+    situation?.name?.toLowerCase().includes('syria') ?? false
+  );
+  const displaySituation = situation ?? (isSyriaCase ? SYRIA_DEMO_SITUATION : null);
+  const effectiveSituationId = activeSituationId ?? (isSyriaCase ? SYRIA_DEMO_SITUATION.id : null);
 
   const addEvent = useCallback((ev: Omit<ResearchEvent, 'id' | 'ts'>) => {
     setEventCounter((c) => {
@@ -171,6 +186,10 @@ export default function DeepSearchAgentPage() {
 
   const runResearch = useCallback(async () => {
     if (!query.trim() || phase === 'planning' || phase === 'research' || phase === 'synthesis') return;
+    if (!effectiveSituationId) {
+      setError('Select a situation before running live research.');
+      return;
+    }
 
     setPhase('planning');
     setEvents([]);
@@ -188,7 +207,7 @@ export default function DeepSearchAgentPage() {
       type: 'request',
       tool: 'deep-search-agent',
       endpoint: '/api/ai/deep-search-agent',
-      situation: situation?.name,
+      situation: displaySituation?.name,
       message: query.slice(0, 80),
       ts: new Date().toISOString(),
     });
@@ -199,7 +218,7 @@ export default function DeepSearchAgentPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query,
-          situationId: activeSituationId,
+          situationId: effectiveSituationId,
           sessionId,
         }),
         signal: controller.signal,
@@ -315,7 +334,7 @@ export default function DeepSearchAgentPage() {
         ts: new Date().toISOString(),
       });
     }
-  }, [query, phase, situation, activeSituationId, sessionId, addEvent, debugLog]);
+  }, [query, phase, effectiveSituationId, displaySituation, sessionId, addEvent, debugLog]);
 
   const reset = () => {
     abortRef.current?.abort();
@@ -334,10 +353,11 @@ export default function DeepSearchAgentPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (!situation) return <NoSituationState />;
+  if (!displaySituation) return <NoSituationState />;
 
   const isRunning = phase === 'planning' || phase === 'research' || phase === 'synthesis';
   const PhaseIcon = PHASE_ICONS[phase];
+  const suggestedQueries = isSyriaCase ? SYRIA_LIVE_RESEARCH_MODES.map((mode) => mode.prompt) : SUGGESTED_QUERIES;
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -375,14 +395,14 @@ export default function DeepSearchAgentPage() {
         {/* Situation context pill */}
         <div className="mt-3 flex items-center gap-1.5 text-xs text-navy-500">
           <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          <span>Active: <strong className="text-navy-700">{situation.name}</strong></span>
-          {situation.region && (
+          <span>Active: <strong className="text-navy-700">{displaySituation.name}</strong></span>
+          {displaySituation.region && (
             <>
               <ChevronRight className="h-3 w-3 text-navy-300" />
-              <span>{situation.region}</span>
+              <span>{displaySituation.region}</span>
             </>
           )}
-          {situation.riskScore >= 7 && (
+          {displaySituation.riskScore >= 7 && (
             <>
               <ChevronRight className="h-3 w-3 text-navy-300" />
               <span className="font-medium text-red-600">HIGH RISK</span>
@@ -436,13 +456,33 @@ export default function DeepSearchAgentPage() {
                   Start Deep Research
                 </button>
 
+                {isSyriaCase && (
+                  <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                    <div className="flex items-center gap-2">
+                      <GitBranch className="h-4 w-4 text-emerald-700" />
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Graph-grounded research contract</p>
+                        <p className="text-xs font-semibold text-emerald-950">Every live research run should produce source receipts and graph candidates.</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid gap-2">
+                      {SYRIA_STRUCTURED_RESEARCH_RESPONSE_CONTRACT.slice(0, 5).map((item) => (
+                        <div key={item.section} className="rounded-md border border-emerald-200 bg-white/70 px-3 py-2">
+                          <p className="text-[11px] font-semibold text-emerald-950">{item.section}</p>
+                          <p className="mt-1 text-[10px] leading-snug text-emerald-800">{item.requirement}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Suggested queries */}
                 <div className="mt-6">
                   <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-navy-400">
-                    Suggested Research Topics
+                    {isSyriaCase ? 'Syria Research Modes' : 'Suggested Research Topics'}
                   </p>
                   <div className="space-y-2">
-                    {SUGGESTED_QUERIES.map((sq) => (
+                    {suggestedQueries.map((sq) => (
                       <button
                         key={sq}
                         onClick={() => setQuery(sq)}
@@ -454,6 +494,22 @@ export default function DeepSearchAgentPage() {
                     ))}
                   </div>
                 </div>
+
+                {isSyriaCase && (
+                  <div className="mt-6 rounded-xl border border-[var(--color-app-border)] bg-white p-4">
+                    <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-navy-400">
+                      How the research becomes graph memory
+                    </p>
+                    <div className="grid gap-2">
+                      {SYRIA_GRAPH_GROUNDING_PIPELINE.map((step, index) => (
+                        <div key={step.step} className="rounded-lg border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-3 py-2">
+                          <p className="font-mono text-[10px] font-semibold text-diplomatic-blue">{String(index + 1).padStart(2, '0')} / {step.step}</p>
+                          <p className="mt-1 text-[11px] leading-snug text-navy-600">{step.detail}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
 

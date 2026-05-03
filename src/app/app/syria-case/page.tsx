@@ -38,9 +38,12 @@ import {
   SYRIA_COMMITMENT_MONITOR_DEMO,
   SYRIA_CURRENT_RESEARCH_SOURCES,
   SYRIA_DISCREPANCY_WORKFLOWS,
+  SYRIA_GRAPH_GROUNDING_PIPELINE,
+  SYRIA_LIVE_RESEARCH_MODES,
   SYRIA_NEUROSYMBOLIC_POLICY_PAYOFFS,
   SYRIA_NEUROSYMBOLIC_RESEARCH_BASE,
   SYRIA_ONTOLOGY_REASONING_TRACKS,
+  SYRIA_STRUCTURED_RESEARCH_RESPONSE_CONTRACT,
   SYRIA_SITUATION_CONTEXT_CARDS,
 } from '@/lib/constants/syria-demo-workspace';
 import { cn } from '@/lib/utils/cn';
@@ -360,6 +363,90 @@ export default function SyriaCasePage() {
                 <p className="mt-2 text-[11px] leading-snug text-gold-700">{item.praxisUse}</p>
               </a>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Live research available in the app</p>
+              <h2 className="mt-1 text-base font-semibold text-navy-900">Research modes for very specific policy questions</h2>
+            </div>
+            <PraxisLink
+              href="/source-scout?recording=1&case=syria"
+              className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
+            >
+              Open Source Scout
+              <ArrowRight className="h-3.5 w-3.5" />
+            </PraxisLink>
+          </div>
+          <p className="mt-3 text-xs leading-5 text-navy-600">
+            The point of PRAXIS is that these searches can be conducted live at the same depth:
+            the analyst chooses a research mode, PRAXIS searches targeted source classes,
+            extracts graph candidates, checks discrepancies, and returns a structured answer that
+            can feed the graph, briefing, memo, or commitment monitor.
+          </p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {SYRIA_LIVE_RESEARCH_MODES.map((mode) => (
+              <PraxisLink
+                key={mode.mode}
+                href={`/source-scout?recording=1&case=syria&prompt=${encodeURIComponent(mode.prompt)}`}
+                className="rounded-lg border border-slate-200 bg-slate-50 p-4 transition hover:border-emerald-300 hover:bg-emerald-50"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-navy-950">{mode.mode}</p>
+                    <p className="mt-1 text-[11px] leading-snug text-navy-600">{mode.output}</p>
+                  </div>
+                  <Search className="h-4 w-4 shrink-0 text-emerald-700" />
+                </div>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {mode.sources.slice(0, 4).map((source) => (
+                    <span key={source} className="rounded border border-white bg-white px-2 py-0.5 text-[10px] font-semibold text-navy-500">
+                      {source}
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-3 font-mono text-[10px] leading-snug text-diplomatic-blue">
+                  Writes: {mode.graphWrites.join(' / ')}
+                </p>
+              </PraxisLink>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-4">
+          <div className="rounded-lg border border-slate-200 bg-navy-950 p-4 text-white shadow-sm shadow-navy-950/5">
+            <div className="flex items-center gap-2">
+              <GitBranch className="h-4 w-4 text-gold-300" />
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-200">Why the graph matters</p>
+                <h2 className="text-base font-semibold text-white">Grounding is a resource discipline</h2>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-2">
+              {SYRIA_GRAPH_GROUNDING_PIPELINE.map((step, index) => (
+                <div key={step.step} className="rounded-md border border-white/10 bg-white/[0.05] px-3 py-2">
+                  <p className="font-mono text-[10px] font-semibold text-gold-200">{String(index + 1).padStart(2, '0')} / {step.step}</p>
+                  <p className="mt-1 text-[11px] leading-snug text-blue-100/75">{step.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Structured response contract</p>
+            <h2 className="mt-1 text-base font-semibold text-navy-900">Deep answers must return reusable structure</h2>
+            <div className="mt-3 grid gap-2">
+              {SYRIA_STRUCTURED_RESEARCH_RESPONSE_CONTRACT.map((item) => (
+                <div key={item.section} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                  <p className="text-[11px] font-semibold text-navy-950">{item.section}</p>
+                  <p className="mt-1 text-[10px] leading-snug text-navy-600">{item.requirement}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
