@@ -20,6 +20,9 @@
 - feat(dialectica): add deterministic reasoning recipe runner (#A5).
   Added the five named DIALECTICA recipe modules, `/api/v1/reason/{recipe}`,
   a calibrated Next.js proxy, typed frontend client, and deterministic tests.
+- feat(dialectica): add adapter boundary for Firestore and premium HTTP modes (#A6).
+  Added the TypeScript `DialecticaAdapter`, default Firestore implementation,
+  feature-flagged HTTP scaffold, and routed graph context through the adapter.
 
 ## 2026-05-03 — Syria graph-grounded research handoff
 

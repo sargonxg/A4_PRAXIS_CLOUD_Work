@@ -106,15 +106,15 @@ export const DIALECTICA_NAMED_GRAPHS: DialecticaNamedGraph[] = [
     id: 'hypotheses',
     label: 'Hypotheses',
     purpose: 'Competing explanations and pending analyst assumptions before promotion to facts.',
-    currentState: 'Planned as a dedicated assumptions and hypotheses panel.',
-    readiness: 'planned',
+    currentState: 'Available as owner-scoped Firestore hypotheses with analyst promotion into facts.',
+    readiness: 'standard',
   },
   {
     id: 'contradictions',
     label: 'Contradictions',
     purpose: 'Detected conflict among claims, commitments, interests, and narratives.',
-    currentState: 'Pairwise/manual today; Datalog-backed contradiction detection is premium target behavior.',
-    readiness: 'premium',
+    currentState: 'Available through named recipe checks and stance/citation divergence; broader link prediction remains premium.',
+    readiness: 'standard',
   },
   {
     id: 'advisor_reasoning',
@@ -127,8 +127,8 @@ export const DIALECTICA_NAMED_GRAPHS: DialecticaNamedGraph[] = [
     id: 'scenario_forks',
     label: 'Scenario Forks',
     purpose: 'Time-travel branches for red-team/blue-team counterfactual planning.',
-    currentState: 'Scenario tools exist; graph branch/merge is a Dialectica premium roadmap item.',
-    readiness: 'planned',
+    currentState: 'Available as copy-on-write mutation logs over the canonical graph.',
+    readiness: 'standard',
   },
 ];
 
@@ -148,8 +148,8 @@ export const DIALECTICA_CAPABILITIES: DialecticaCapability[] = [
   {
     label: 'Recursive reasoning',
     firestore: 'Materialized summaries and shallow graph queries.',
-    dialectica: 'Datalog traversal over commitments, leverage chains, and contradictions.',
-    readiness: 'premium',
+    dialectica: 'Five deterministic NetworkX recipe traversals over commitments, leverage chains, stance divergence, ZOPA openings, and action paths.',
+    readiness: 'standard',
   },
   {
     label: 'Analyst-approved mutations',
@@ -161,7 +161,7 @@ export const DIALECTICA_CAPABILITIES: DialecticaCapability[] = [
     label: 'Time-validity and scenario forks',
     firestore: 'Temporal metadata and scenario outputs.',
     dialectica: 'Time-travel graph branches, diffs, and mergeable scenario states.',
-    readiness: 'planned',
+    readiness: 'standard',
   },
   {
     label: 'Inductive graph inference',
@@ -175,7 +175,7 @@ export const DIALECTICA_DEMO_SCENARIO: DialecticaDemoScenario = {
   question:
     'If the envoy chooses a quiet 72-hour pause, which commitments and leverage paths become contradictory if corridor access does not resume?',
   datalogRule:
-    'conflict(A, B, X, Y) :- committed_to(A, X), committed_to(B, Y), contradicts(X, Y), valid_during(X, window), valid_during(Y, window).',
+    'COMMITMENT-CHECK + LEVERAGE-TRACE over the Episodic/Semantic views, with analyst approval before graph mutation.',
   expectedOutput: [
     'Government access guarantees conflict with continued AFN movement restrictions if UNMN monitors are blocked.',
     'DRM acceptance of AU sequencing conflicts with revenue-control escalation if Belara levies continue during the pause.',
