@@ -12,18 +12,13 @@ const LEGACY_TOOL_ID_ALIASES: Record<string, string> = {
 };
 
 export const CUSTOMIZABLE_SIDEBAR_TOOLS: CustomizableToolItem[] = [
-  { section: 'Core', label: 'Dashboard', href: '/dashboard', toolId: 'dashboard' },
-  { section: 'Core', label: 'Context Builder', href: '/context-builder', toolId: 'context-builder' },
-  { section: 'Core', label: 'Executive Intelligence', href: '/dashboard#executive-intelligence', toolId: 'situation-intelligence' },
-  { section: 'Evidence', label: 'Research & Sources', href: '/source-scout', toolId: 'source-scout' },
-  { section: 'Graph', label: 'Conflict Graph', href: '/conflict-graph', toolId: 'conflict-graph' },
-  { section: 'Graph', label: 'GraphOps', href: '/graphops', toolId: 'graphops' },
-  { section: 'Analysis', label: 'Advisor Table', href: '/brainstorming-table', toolId: 'brainstorming-table' },
-  { section: 'Analysis', label: 'Briefing Studio', href: '/briefing', toolId: 'briefing' },
-  { section: 'Analysis', label: 'Policy Memo', href: '/policy-memo', toolId: 'policy-memo' },
-  { section: 'Diplomacy', label: 'Scenarios', href: '/scenarios', toolId: 'scenarios' },
-  { section: 'Diplomacy', label: 'Negotiation Prep', href: '/negotiation-prep', toolId: 'negotiation-prep' },
-  { section: 'Diplomacy', label: 'Treaty Analyzer', href: '/treaty-analyzer', toolId: 'treaty-analyzer' },
+  { section: 'Policy Workspace', label: 'Desk', href: '/dashboard', toolId: 'dashboard' },
+  { section: 'Policy Workspace', label: 'Context', href: '/context-builder', toolId: 'context-builder' },
+  { section: 'Policy Workspace', label: 'Library', href: '/documents', toolId: 'documents' },
+  { section: 'Policy Workspace', label: 'Research', href: '/source-scout', toolId: 'source-scout' },
+  { section: 'Policy Workspace', label: 'Graph', href: '/graphops', toolId: 'graphops' },
+  { section: 'Policy Workspace', label: 'Draft', href: '/policy-memo', toolId: 'policy-memo' },
+  { section: 'Specialist', label: 'Specialist Tools', href: '/tools', toolId: 'tools' },
 ];
 
 export function normalizeToolPreferenceId(toolId: string): string {

@@ -6,13 +6,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
   FileText,
-  MessageSquare,
   GitBranch,
   Settings,
   LogOut,
   ChevronsLeft,
   ChevronsRight,
-  Users,
   Sparkles,
   BookOpen,
   Telescope,
@@ -29,11 +27,10 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { SituationSelector } from '@/components/app/situation-selector';
 import { useAppStore } from '@/stores/app-store';
 import { useSituationStore } from '@/stores/situation-store';
-import { recommendToolsForRole, roleLabel } from '@/lib/dashboard/role-recommendations';
+import { roleLabel } from '@/lib/dashboard/role-recommendations';
 import { isToolHiddenByPreference, orderedToolIds } from '@/lib/navigation/tool-preferences';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { APP_BUILD_LABEL } from '@/lib/constants/app-version';
-import type { AnalystDomainId } from '@/types/analyst-profile';
 import {
   Tooltip,
   TooltipContent,
@@ -195,40 +192,20 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    label: 'Core',
+    label: 'Policy Workspace',
     items: [
-      { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-      { label: 'Context Builder', icon: Target, href: '/context-builder' },
-      { label: 'Executive Intelligence', icon: Sparkles, href: '/dashboard#executive-intelligence' },
+      { label: 'Desk', icon: LayoutDashboard, href: '/dashboard' },
+      { label: 'Context', icon: Target, href: '/context-builder' },
+      { label: 'Library', icon: BookOpen, href: '/documents' },
+      { label: 'Research', icon: Telescope, href: '/source-scout' },
+      { label: 'Graph', icon: GitBranch, href: '/graphops' },
+      { label: 'Draft', icon: FileText, href: '/policy-memo' },
     ],
   },
   {
-    label: 'Evidence',
+    label: 'Specialist',
     items: [
-      { label: 'Research & Sources', icon: Telescope, href: '/source-scout' },
-    ],
-  },
-  {
-    label: 'Graph',
-    items: [
-      { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
-      { label: 'GraphOps', icon: Wrench, href: '/graphops' },
-    ],
-  },
-  {
-    label: 'Analysis',
-    items: [
-      { label: 'Advisor Table', icon: Users, href: '/brainstorming-table' },
-      { label: 'Briefing Studio', icon: FileText, href: '/briefing' },
-      { label: 'Policy Memo', icon: FileText, href: '/policy-memo' },
-    ],
-  },
-  {
-    label: 'Diplomacy',
-    items: [
-      { label: 'Scenarios', icon: Sparkles, href: '/scenarios' },
-      { label: 'Negotiation Prep', icon: MessageSquare, href: '/negotiation-prep' },
-      { label: 'Treaty Analyzer', icon: BookOpen, href: '/treaty-analyzer' },
+      { label: 'Specialist Tools', icon: Wrench, href: '/tools' },
     ],
   },
 ];
@@ -244,9 +221,7 @@ const RECORDING_NAV_HREFS = new Set([
   '/brainstorming-table',
   '/briefing',
   '/policy-memo',
-  '/scenarios',
-  '/negotiation-prep',
-  '/treaty-analyzer',
+  '/tools',
 ]);
 
 function ChangelogButton() {
@@ -313,6 +288,7 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   '/reports': 'report-studio',
   '/cases': 'cases',
   '/team': 'team',
+  '/tools': 'tools',
   // Analysis
   '/actors': 'actor-profiles',
   '/risk-monitor': 'risk-monitor',
@@ -380,7 +356,7 @@ export function AppSidebar() {
   const router = useRouter();
   const { user, logout, analystProfile } = useAuth();
   const { sidebarOpen, toggleSidebar } = useAppStore();
-  const { activeSituationId, setActiveSituation, activeSituation } = useSituationStore();
+  const { activeSituationId, setActiveSituation } = useSituationStore();
   const recordingMode = user?.isDemo === true && searchParams.get('recording') === '1';
   const recordingCase = searchParams.get('case');
   const allToolStatuses = useAllToolStatuses(activeSituationId);
@@ -389,19 +365,10 @@ export function AppSidebar() {
   const orderIndex = new Map(sidebarOrder.map((toolId, index) => [toolId, index]));
   const isToolHidden = (toolId?: string) => Boolean(toolId && isToolHiddenByPreference(preferences, toolId));
 
-  // Role-aware "For you" anchor — same module the dashboard widget uses, so
-  // the sidebar and the dashboard agree on what the user should look at first.
-  // Only renders when an AnalystProfile is loaded; falls back gracefully on
-  // demo / unauthenticated / pre-onboarding states.
-  const forYou = (() => {
-    const role = analystProfile?.identity.role;
-    if (!role) return [];
-    const profileDomain = analystProfile?.perspective.primaryDomain;
-    const domain = (activeSituation?.domain as AnalystDomainId | undefined) || profileDomain;
-    return recommendToolsForRole(role, domain, 6, activeSituation?.workflowPath)
-      .filter((rec) => !isToolHidden(rec.toolId))
-      .slice(0, 3);
-  })();
+  // Keep the default shell intentionally quiet. Role-specific tools still exist
+  // in the specialist workspace and dashboard actions, but the sidebar should
+  // read like one policy-document workflow.
+  const forYou: Array<{ toolId: string; href: string }> = [];
   const visibleNavSections = navSections
     .map((section) => ({
       ...section,

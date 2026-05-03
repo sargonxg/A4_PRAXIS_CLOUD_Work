@@ -13,7 +13,12 @@ import { PraxisLink } from '@/components/shared/praxis-link';
 import { useAuth } from '@/lib/auth/auth-context';
 import { SYRIA_RECORDING_AUDIO_SCRIPT } from '@/lib/constants/syria-demo-case';
 import { SYRIA_DEMO_ANALYST_PROFILE, SYRIA_DEMO_ENTRY_PATH } from '@/lib/constants/syria-demo-workspace';
-import { SYRIA_CHAPTER_FLOW, type SyriaChapterDescriptor, type SyriaChapterId } from '@/lib/syria/chapter-flow';
+import {
+  SYRIA_CHAPTER_FLOW,
+  isSyriaChapterId,
+  type SyriaChapterDescriptor,
+  type SyriaChapterId,
+} from '@/lib/syria/chapter-flow';
 import { cn } from '@/lib/utils/cn';
 
 const CHAPTER_COMPONENTS: Record<SyriaChapterId, ReactNode> = {
@@ -27,7 +32,7 @@ const CHAPTER_COMPONENTS: Record<SyriaChapterId, ReactNode> = {
 export default function SyriaCasePage() {
   const { analystProfile, user } = useAuth();
   const profile = analystProfile ?? SYRIA_DEMO_ANALYST_PROFILE;
-  const [activeChapter, setActiveChapter] = useState<SyriaChapterId>('situation-frame');
+  const [activeChapter, setActiveChapter] = useState<SyriaChapterId>(() => getHashChapter() ?? 'situation-frame');
   const [copied, setCopied] = useState<'script' | 'link' | null>(null);
   const productionLink = `https://praxis.tacitus.me${SYRIA_DEMO_ENTRY_PATH}`;
 
@@ -38,6 +43,11 @@ export default function SyriaCasePage() {
   }, [profile, user?.orgName]);
 
   useEffect(() => {
+    const initialHashChapter = getHashChapter();
+    if (initialHashChapter) {
+      openChapter(initialHashChapter);
+    }
+
     function handleKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
       if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
@@ -47,8 +57,17 @@ export default function SyriaCasePage() {
       openChapter(chapter.id);
     }
 
+    function handleHashChange() {
+      const hashChapter = getHashChapter();
+      if (hashChapter) openChapter(hashChapter);
+    }
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('hashchange', handleHashChange);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('hashchange', handleHashChange);
+    };
   }, []);
 
   function openChapter(id: SyriaChapterId) {
@@ -169,6 +188,12 @@ export default function SyriaCasePage() {
       <MobileChapterBar activeChapter={activeChapter} onOpen={openChapter} />
     </main>
   );
+}
+
+function getHashChapter(): SyriaChapterId | null {
+  if (typeof window === 'undefined') return null;
+  const id = window.location.hash.replace('#', '');
+  return isSyriaChapterId(id) ? id : null;
 }
 
 function HeaderMetric({ label, value }: { label: string; value: string }) {

@@ -13,32 +13,30 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Sparkles, Loader2 } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  Loader2,
+  Network,
+  PenLine,
+  Search,
+  ShieldCheck,
+  Sparkles,
+} from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { OnboardingRequiredState } from '@/components/praxis/onboarding-required-state';
-import { SituationDashboard, WelcomeState } from '@/components/praxis/situation-dashboard';
+import { WelcomeState } from '@/components/praxis/situation-dashboard';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
-import { RiskGaugeWidget } from '@/components/dashboard/risk-gauge-widget';
-import { EscalationWidget } from '@/components/dashboard/escalation-widget';
-import { AdvisorsWidget } from '@/components/dashboard/advisors-widget';
-import { RecentToolsWidget } from '@/components/dashboard/recent-tools-widget';
-import { FeedAlertsWidget } from '@/components/dashboard/feed-alerts-widget';
-import { RecommendedToolsWidget } from '@/components/dashboard/recommended-tools-widget';
-import { CoreToolsWidget } from '@/components/dashboard/core-tools-widget';
-import { SourceCoverageBanner } from '@/components/dashboard/source-coverage-banner';
-import { OperationalStatusPanel } from '@/components/dashboard/operational-status-panel';
-import { OnboardingRecapWidget } from '@/components/dashboard/onboarding-recap-widget';
 import { SituationStatusStrip } from '@/components/dashboard/situation-status-strip';
-import { AccountStatusCard } from '@/components/dashboard/account-status-card';
-import { SituationLaunchpad } from '@/components/dashboard/situation-launchpad';
-import { ToolPackagesPanel } from '@/components/dashboard/tool-packages-panel';
 import { ExecutiveIntelligencePanel } from '@/components/dashboard/executive-intelligence-panel';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { ActivityFeed } from '@/components/app/activity-feed';
 import { SyriaRecordingRunway } from '@/components/demo/recording-signal-runway';
+import { PraxisLink } from '@/components/shared/praxis-link';
 import { useAuth } from '@/lib/auth/auth-context';
 import { isSyriaWorkspaceCase, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
+import { computeSituationContextHealth } from '@/lib/context/situation-context-health';
 import type { Situation } from '@/types/situation';
 
 interface DailyRead {
@@ -62,12 +60,11 @@ export default function DashboardPage() {
 
   if (needsOnboarding) return <OnboardingRequiredState />;
 
-  // Demo mode retains the rich prospect dashboard.
   if (isDemo) {
     return (
       <div className="space-y-4 p-6">
         {isSyriaCase ? <SyriaRecordingRunway density="full" focus="overview" /> : null}
-        <SituationDashboard situation={demoSituation} />
+        <RealDashboard situation={demoSituation} />
       </div>
     );
   }
@@ -119,32 +116,46 @@ function RealDashboard({ situation }: { situation: Situation }) {
     }
   }
 
+  const contextHealth = computeSituationContextHealth({
+    situation,
+    expectedToolIds: ['documents', 'source-scout', 'graphops', 'policy-memo', 'briefing'],
+    profileRequired: false,
+  });
+
   return (
     <div className="flex flex-col gap-5 p-6">
-      {/* Header — situation title + Daily Read CTA */}
-      <header className="flex flex-col gap-3 border-b border-slate-200 pb-4">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
+      <header className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-navy-950/5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-wider text-navy-500">{greeting()}</p>
-            <h1 className="truncate text-2xl font-semibold text-navy-900">{situation.name}</h1>
-            <p className="truncate text-xs text-navy-500">
-              {situation.region}
-              {situation.domain && situation.domain !== 'generic' ? ` · ${situation.domain}` : ''}
+            <p className="text-[11px] uppercase tracking-wider text-navy-500">{greeting()} · Policy document workspace</p>
+            <h1 className="mt-1 text-2xl font-semibold text-navy-900">{situation.name}</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-navy-600">
+              Write a defensible policy product from a structured case file. Sources, documents, graph primitives, and AI
+              outputs stay attached to the paragraph they support.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={runDailyRead}
-            disabled={reading}
-            className="inline-flex items-center gap-1.5 rounded-md border border-gold-500/40 bg-gold-500/10 px-3 py-1.5 text-xs font-medium text-gold-700 hover:bg-gold-500/20 disabled:opacity-60"
-          >
-            {reading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-            {dailyRead ? 'Refresh daily read' : 'Generate daily read'}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <PraxisLink
+              href="/policy-memo"
+              className="inline-flex items-center gap-1.5 rounded-md bg-navy-950 px-3 py-2 text-xs font-semibold text-white hover:bg-navy-800"
+            >
+              <PenLine className="h-3.5 w-3.5" />
+              Open draft
+            </PraxisLink>
+            <button
+              type="button"
+              onClick={runDailyRead}
+              disabled={reading}
+              className="inline-flex items-center gap-1.5 rounded-md border border-gold-500/40 bg-gold-500/10 px-3 py-2 text-xs font-medium text-gold-700 hover:bg-gold-500/20 disabled:opacity-60"
+            >
+              {reading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {dailyRead ? 'Refresh what changed' : 'What changed?'}
+            </button>
+          </div>
         </div>
 
         {dailyRead ? (
-          <div className="rounded-md border border-gold-500/30 bg-gold-50 p-3">
+          <div className="mt-4 rounded-md border border-gold-500/30 bg-gold-50 p-3">
             <h2 className="text-sm font-semibold text-navy-900">{dailyRead.headline}</h2>
             <div className="prose prose-sm mt-1 max-w-none text-navy-700">
               <MarkdownRenderer content={dailyRead.body} />
@@ -152,22 +163,18 @@ function RealDashboard({ situation }: { situation: Situation }) {
           </div>
         ) : null}
 
-        {readError ? (
-          <p className="text-xs text-amber-700">Daily read failed: {readError}</p>
-        ) : null}
+        {readError ? <p className="mt-3 text-xs text-amber-700">Daily read failed: {readError}</p> : null}
       </header>
 
-      {/* Status strip — at-a-glance situation telemetry */}
       <SituationStatusStrip situation={situation} />
 
-      {/* Operating sequence — readiness, deliverables, and next best actions */}
       {showCreatedBanner ? (
         <section className="rounded-lg border border-gold-500/30 bg-gold-500/10 px-4 py-3 shadow-sm shadow-navy-950/5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-navy-900">Building your situation</p>
+              <p className="text-sm font-semibold text-navy-900">Building your case file</p>
               <p className="mt-1 text-xs leading-relaxed text-navy-600">
-                PRAXIS is starting background extraction, source research, timeline seeding, and graph preparation. Counts will update as jobs complete.
+                PRAXIS is preparing source extraction, document structure, graph proposals, and first drafting context.
               </p>
             </div>
             <button
@@ -180,40 +187,22 @@ function RealDashboard({ situation }: { situation: Situation }) {
           </div>
         </section>
       ) : null}
-      <SituationLaunchpad situation={situation} />
-      <ToolPackagesPanel situation={situation} />
 
-      {/* Executive intelligence — real AI, structured output, provenance, export */}
-      <ExecutiveIntelligencePanel situation={situation} />
-
-      {/* Calibration recap + account state — who you are, what you have */}
-      <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <OnboardingRecapWidget />
-        <AccountStatusCard />
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <DocumentWorkbench situation={situation} />
+        <TrustBackbone situation={situation} contextScore={contextHealth.score} contextState={contextHealth.state} />
       </section>
 
-      {/* Source coverage banner — honest surface of tier state */}
-      <SourceCoverageBanner />
+      <WorkflowSpine />
 
-      {/* Core grid — role-tuned recommendations plus reusable context tools. */}
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <RiskGaugeWidget situation={situation} />
-        <EscalationWidget situation={situation} />
-        <RecommendedToolsWidget situation={situation} />
-        <CoreToolsWidget situationId={situation.id} />
-        <AdvisorsWidget situationId={situation.id} />
-        <RecentToolsWidget situationId={situation.id} />
-        <FeedAlertsWidget situationId={situation.id} region={situation.region} />
-      </section>
-
-      <section className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <OperationalStatusPanel situationId={situation.id} />
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <ExecutiveIntelligencePanel situation={situation} />
         <div>
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-navy-500">Latest activity</h2>
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-navy-500">Activity and saved work</h2>
           <ActivityFeed
             uid={user?.id ?? null}
             situationId={situation.id}
-            emptyHint="No activity for this situation yet. Tool runs and background jobs will appear here."
+            emptyHint="No saved work yet. Document edits, research runs, graph proposals, and exports will appear here."
           />
         </div>
       </section>
@@ -226,6 +215,179 @@ function RealDashboard({ situation }: { situation: Situation }) {
 
       {/* Tool methodology — frameworks, data sources, related tools */}
       <RegistryToolInfo toolId="dashboard" />
+    </div>
+  );
+}
+
+function DocumentWorkbench({ situation }: { situation: Situation }) {
+  const docs = situation.documentCount ?? 0;
+  const graph = situation.graphEntities ?? 0;
+  const actors = situation.actorCount ?? situation.actors.length;
+
+  const actions = [
+    {
+      title: 'Policy memo',
+      detail: 'Draft, improve, save, and export the main written product.',
+      href: '/policy-memo',
+      icon: <PenLine className="h-4 w-4" />,
+    },
+    {
+      title: 'Document library',
+      detail: 'Keep source documents separate from the work product.',
+      href: '/documents',
+      icon: <BookOpen className="h-4 w-4" />,
+    },
+    {
+      title: 'Source research',
+      detail: 'Ask what changed and attach receipts before editing.',
+      href: '/source-scout',
+      icon: <Search className="h-4 w-4" />,
+    },
+  ];
+
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Working document</p>
+          <h2 className="mt-1 text-lg font-semibold text-navy-900">Build the brief from the case file</h2>
+          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-navy-600">
+            PRAXIS keeps the drafting surface, evidence library, and graph model in one loop: select context, ask a policy
+            question, verify source spans, then update the paragraph.
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <Metric label="Docs" value={String(docs)} />
+          <Metric label="Graph" value={String(graph)} />
+          <Metric label="Actors" value={String(actors)} />
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        {actions.map((action) => (
+          <PraxisLink
+            key={action.href}
+            href={action.href}
+            className="group rounded-lg border border-slate-200 bg-slate-50 p-3 transition hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="rounded-md bg-white p-2 text-diplomatic-blue">{action.icon}</span>
+              <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-diplomatic-blue" />
+            </div>
+            <p className="mt-3 text-sm font-semibold text-navy-900">{action.title}</p>
+            <p className="mt-1 text-xs leading-5 text-navy-600">{action.detail}</p>
+          </PraxisLink>
+        ))}
+      </div>
+
+      <div className="mt-4 rounded-lg border border-diplomatic-blue/15 bg-diplomatic-blue/5 p-3">
+        <p className="text-xs font-semibold text-navy-900">Document-first questions</p>
+        <div className="mt-2 grid gap-2 md:grid-cols-2">
+          {[
+            'Did this paragraph change after the latest media or corpus refresh?',
+            'Where did this factual claim come from?',
+            'Which source span supports this recommendation?',
+            'What graph path explains this actor commitment?',
+          ].map((question) => (
+            <p key={question} className="rounded-md bg-white/80 px-3 py-2 text-[11px] leading-4 text-navy-600">
+              {question}
+            </p>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TrustBackbone({
+  situation,
+  contextScore,
+  contextState,
+}: {
+  situation: Situation;
+  contextScore: number;
+  contextState: string;
+}) {
+  return (
+    <aside className="grid gap-3">
+      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+        <div className="flex items-center gap-2 text-emerald-800">
+          <ShieldCheck className="h-4 w-4" />
+          <p className="text-[10px] font-semibold uppercase tracking-wider">Trust backbone</p>
+        </div>
+        <p className="mt-2 text-sm font-semibold text-emerald-950">Every answer must defend itself.</p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <Metric label="Context" value={`${contextScore}%`} />
+          <Metric label="State" value={contextState} />
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-4">
+        <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-navy-500">
+          <Network className="h-3.5 w-3.5" />
+          Graph moat
+        </p>
+        <p className="mt-2 text-xs leading-5 text-navy-600">
+          The graph stores actors, claims, interests, constraints, leverage, commitments, events, narratives, dates, and
+          provenance. AI can draft, but the graph decides what is reusable institutional memory.
+        </p>
+        <PraxisLink
+          href="/graphops"
+          className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-diplomatic-blue hover:text-navy-900"
+        >
+          Review graph health
+          <ArrowRight className="h-3.5 w-3.5" />
+        </PraxisLink>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-500">Current scope</p>
+        <p className="mt-2 text-sm font-semibold text-navy-900">{situation.region}</p>
+        <p className="mt-1 text-xs leading-5 text-navy-600">{situation.description}</p>
+      </div>
+    </aside>
+  );
+}
+
+function WorkflowSpine() {
+  const steps = [
+    ['Ingest', 'Upload prose, URLs, notes, transcripts, and reports.'],
+    ['Structure', 'Extract typed primitives and bind claims to source spans.'],
+    ['Query', 'Ask policy questions over documents, graph, and saved work.'],
+    ['Compare', 'Find contradiction, wording drift, and temporal change.'],
+    ['Brief', 'Write cited memos, briefs, talking points, and exports.'],
+    ['Inherit', 'Leave the next analyst a graph, not a folder.'],
+  ];
+
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Analyst workflow</p>
+          <h2 className="mt-1 text-base font-semibold text-navy-900">Ingest → Structure → Query → Compare → Brief → Inherit</h2>
+        </div>
+        <PraxisLink href="/tools" className="inline-flex items-center gap-1 text-xs font-semibold text-diplomatic-blue">
+          Specialist tools
+          <ArrowRight className="h-3.5 w-3.5" />
+        </PraxisLink>
+      </div>
+      <div className="mt-4 grid gap-2 md:grid-cols-3 xl:grid-cols-6">
+        {steps.map(([title, detail]) => (
+          <div key={title} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs font-semibold text-navy-900">{title}</p>
+            <p className="mt-1 text-[11px] leading-4 text-navy-600">{detail}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">{label}</p>
+      <p className="mt-1 truncate text-sm font-semibold text-navy-900">{value}</p>
     </div>
   );
 }

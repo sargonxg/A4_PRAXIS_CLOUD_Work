@@ -20,6 +20,7 @@
 | Doc | Purpose |
 |---|---|
 | [`PRAXIS_SYRIA_GRAPH_GROUNDED_RESEARCH_HANDOFF_2026-05-03.md`](./PRAXIS_SYRIA_GRAPH_GROUNDED_RESEARCH_HANDOFF_2026-05-03.md) | **Current Syria case handoff: graph-grounded live research modes, structured response contract, GraphOps staging pattern, and next-session priorities.** |
+| [`PRAXIS_PRODUCT_SIMPLIFICATION_2026-05-03.md`](./PRAXIS_PRODUCT_SIMPLIFICATION_2026-05-03.md) | **Pitch-deck-aligned simplification: PRAXIS as a policy-document workspace, reduced sidebar, document-first dashboard, graph/provenance moat.** |
 | [`SYRIA_CASE_RECORDING_RUNBOOK.md`](./SYRIA_CASE_RECORDING_RUNBOOK.md) | **Canonical Syria real-app recording path, source basis, graph-grounded research modes, and 45-second walkthrough script.** |
 | [`PRAXIS_DIALECTICA_BACKBONE_ARCHITECTURE_2026-05-01.md`](./PRAXIS_DIALECTICA_BACKBONE_ARCHITECTURE_2026-05-01.md) | **Dialectica graph/ontology backbone plan for premium context packs, graph reasoning, and graph-grounded live research.** |
 | [`STRATEGY.md`](./STRATEGY.md) | **Current product and technical strategy for policy/diplomacy users; defines source-of-truth decisions and the high-impact coding queue.** |

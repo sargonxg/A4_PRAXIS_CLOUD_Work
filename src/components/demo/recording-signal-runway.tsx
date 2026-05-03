@@ -52,7 +52,7 @@ interface RecordingSignalRunwayProps {
 }
 
 const FOCUS_COPY: Record<RunwayFocus, string> = {
-  overview: 'Case file is primed for a 45-second recording path.',
+  overview: 'Case file is ready for document-grounded policy work.',
   sources: 'Source receipts are checkable before the graph or AI output is trusted.',
   graph: 'Graph primitives are ready for visual exploration and downstream AI context.',
   advisors: 'Advisor disagreement is preserved for the principal instead of flattened.',
@@ -98,7 +98,7 @@ export function RecordingSignalRunway({
                 <Radio className="h-4 w-4" />
               </span>
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Recording signal runway</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Case-file runway</p>
                 <h2 className="text-base font-semibold text-navy-950">{title}</h2>
               </div>
             </div>
@@ -166,7 +166,7 @@ export function RecordingSignalRunway({
           <div className="rounded-lg border border-slate-200 bg-navy-950 p-4 text-white">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-gold-400" />
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-300">Recording narration</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-300">Policy workflow</p>
             </div>
             <div className="mt-3 space-y-2">
               {visibleBeats.map((beat, index) => (
@@ -238,8 +238,8 @@ export function SyriaRecordingRunway({
       },
       {
         label: 'Output',
-        value: '7 slides',
-        detail: 'Decision brief, risk board, actions, and gaps.',
+        value: 'DOCX',
+        detail: 'Memo, brief, sources, actions, and gaps.',
       },
     ],
     [riskDisplay],
@@ -263,15 +263,15 @@ export function SyriaRecordingRunway({
       },
       {
         label: 'Expert disagreement',
-        detail: 'Mediator, humanitarian, legal, security, media, and red-team views stay separate.',
+        detail: 'Expert views stay separate until the draft decides what to use.',
         href: '/brainstorming-table?recording=1&case=syria',
         icon: Brain,
         tone: 'bg-navy-800',
       },
       {
         label: 'Decision brief',
-        detail: 'The recording ends on a briefable product with triggers and source basis.',
-        href: '/briefing?recording=1&case=syria',
+        detail: 'The work product carries facts, assessment, triggers, source basis, and export.',
+        href: '/policy-memo?recording=1&case=syria',
         icon: FileText,
         tone: 'bg-gold-600',
       },
@@ -282,7 +282,7 @@ export function SyriaRecordingRunway({
   return (
     <RecordingSignalRunway
       title="Syria transition case spine"
-      subtitle="A reusable PRAXIS pattern for real workspaces: source receipts become graph primitives, graph context feeds expert disagreement, and the final brief shows uncertainty and next actions."
+      subtitle="A real PRAXIS workspace pattern: source receipts become graph primitives, graph context grounds policy drafting, and the document shows uncertainty, provenance, and next actions."
       steps={steps}
       metrics={metrics}
       beats={SYRIA_RECORDING_STORY}
@@ -299,7 +299,7 @@ export function SyriaMiniSignalStrip({ className }: { className?: string }) {
       {[
         { label: 'Public receipts verified', icon: ShieldCheck, tone: 'text-emerald-600' },
         { label: 'Graph links active', icon: GitBranch, tone: 'text-diplomatic-blue' },
-        { label: 'Brief ready to record', icon: Activity, tone: 'text-gold-700' },
+        { label: 'Document ready to brief', icon: Activity, tone: 'text-gold-700' },
       ].map((item) => {
         const Icon = item.icon;
         return (

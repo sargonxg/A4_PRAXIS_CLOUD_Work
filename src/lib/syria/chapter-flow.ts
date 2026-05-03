@@ -70,3 +70,7 @@ export const SYRIA_CHAPTER_FLOW: SyriaChapterDescriptor[] = [
 ];
 
 export const SYRIA_CHAPTER_IDS = SYRIA_CHAPTER_FLOW.map((chapter) => chapter.id);
+
+export function isSyriaChapterId(value: string | null | undefined): value is SyriaChapterId {
+  return SYRIA_CHAPTER_IDS.includes(value as SyriaChapterId);
+}

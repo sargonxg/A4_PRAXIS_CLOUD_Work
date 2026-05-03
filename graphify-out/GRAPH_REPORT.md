@@ -1,11 +1,11 @@
 # Graph Report - praxiscodexworking  (2026-05-03)
 
 ## Corpus Check
-- 957 files · ~1,080,345 words
+- 961 files · ~1,082,936 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3315 nodes · 4049 edges · 119 communities detected
+- 3327 nodes · 4064 edges · 119 communities detected
 - Extraction: 82% EXTRACTED · 18% INFERRED · 0% AMBIGUOUS · INFERRED: 721 edges (avg confidence: 0.72)
 - Token cost: 0 input · 0 output
 
@@ -58,7 +58,7 @@
 - [[_COMMUNITY_Community 45|Community 45]]
 - [[_COMMUNITY_Community 46|Community 46]]
 - [[_COMMUNITY_Community 47|Community 47]]
-- [[_COMMUNITY_Community 48|Community 48]]
+- [[_COMMUNITY_Community 51|Community 51]]
 - [[_COMMUNITY_Community 52|Community 52]]
 - [[_COMMUNITY_Community 53|Community 53]]
 - [[_COMMUNITY_Community 54|Community 54]]
@@ -83,25 +83,25 @@
 - [[_COMMUNITY_Community 79|Community 79]]
 - [[_COMMUNITY_Community 80|Community 80]]
 - [[_COMMUNITY_Community 81|Community 81]]
-- [[_COMMUNITY_Community 87|Community 87]]
-- [[_COMMUNITY_Community 91|Community 91]]
-- [[_COMMUNITY_Community 92|Community 92]]
+- [[_COMMUNITY_Community 84|Community 84]]
+- [[_COMMUNITY_Community 88|Community 88]]
+- [[_COMMUNITY_Community 89|Community 89]]
 - [[_COMMUNITY_Community 93|Community 93]]
-- [[_COMMUNITY_Community 95|Community 95]]
+- [[_COMMUNITY_Community 94|Community 94]]
 - [[_COMMUNITY_Community 96|Community 96]]
-- [[_COMMUNITY_Community 98|Community 98]]
+- [[_COMMUNITY_Community 97|Community 97]]
+- [[_COMMUNITY_Community 99|Community 99]]
 - [[_COMMUNITY_Community 102|Community 102]]
 - [[_COMMUNITY_Community 106|Community 106]]
 - [[_COMMUNITY_Community 107|Community 107]]
-- [[_COMMUNITY_Community 108|Community 108]]
-- [[_COMMUNITY_Community 109|Community 109]]
+- [[_COMMUNITY_Community 113|Community 113]]
 - [[_COMMUNITY_Community 115|Community 115]]
-- [[_COMMUNITY_Community 117|Community 117]]
+- [[_COMMUNITY_Community 116|Community 116]]
 - [[_COMMUNITY_Community 118|Community 118]]
+- [[_COMMUNITY_Community 119|Community 119]]
 - [[_COMMUNITY_Community 120|Community 120]]
 - [[_COMMUNITY_Community 121|Community 121]]
-- [[_COMMUNITY_Community 122|Community 122]]
-- [[_COMMUNITY_Community 124|Community 124]]
+- [[_COMMUNITY_Community 123|Community 123]]
 - [[_COMMUNITY_Community 136|Community 136]]
 - [[_COMMUNITY_Community 141|Community 141]]
 - [[_COMMUNITY_Community 142|Community 142]]
@@ -123,12 +123,12 @@
 - [[_COMMUNITY_Community 212|Community 212]]
 - [[_COMMUNITY_Community 218|Community 218]]
 - [[_COMMUNITY_Community 220|Community 220]]
-- [[_COMMUNITY_Community 780|Community 780]]
-- [[_COMMUNITY_Community 781|Community 781]]
-- [[_COMMUNITY_Community 782|Community 782]]
 - [[_COMMUNITY_Community 783|Community 783]]
 - [[_COMMUNITY_Community 784|Community 784]]
 - [[_COMMUNITY_Community 785|Community 785]]
+- [[_COMMUNITY_Community 786|Community 786]]
+- [[_COMMUNITY_Community 787|Community 787]]
+- [[_COMMUNITY_Community 788|Community 788]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `FirestoreSync` - 55 edges
@@ -162,7 +162,7 @@ Nodes (95): ACOExtractionOutput, PRAXIS AI Flows — structured Genkit flows for
 
 ### Community 1 - "Community 1"
 Cohesion: 0.03
-Nodes (74): GET(), PUT(), createSession(), getAccessToken(), getAuth(), inferPhase(), parseAgentEvent(), streamAgentQuery() (+66 more)
+Nodes (86): AdminLayout(), GET(), PUT(), createSession(), getAccessToken(), getAuth(), inferPhase(), parseAgentEvent() (+78 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.05
@@ -170,19 +170,19 @@ Nodes (81): gdelt_poller(), _get_id_token(), Cloud Function: gdelt_poller  HTTP-
 
 ### Community 3 - "Community 3"
 Cohesion: 0.04
-Nodes (62): buildAdvisorBriefing(), pickModelForTier(), renderHistoryBlock(), runFirestoreAdvisor(), resolveAdvisorModel(), formatResultsAsContext(), getCached(), getClient() (+54 more)
+Nodes (61): buildAdvisorBriefing(), pickModelForTier(), renderHistoryBlock(), runFirestoreAdvisor(), resolveAdvisorModel(), formatResultsAsContext(), getCached(), getClient() (+53 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.03
 Nodes (60): withAuth(), _init_firebase(), Firebase ID token verification for FastAPI.  Every protected endpoint uses Dep, FastAPI dependency: verify a trusted Google service-account OIDC token.      Use, Initialize firebase-admin once. Subsequent calls are no-ops.      Credential r, FastAPI dependency: verify Firebase ID token OR Google OIDC token.      Token, verify_firebase_token(), verify_service_token() (+52 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.04
-Nodes (34): ABC, create_adapter_from_settings(), create_graph_adapter(), FalkorDBAdapter, GraphAdapter, Neo4jAdapter, Graph database adapter — supports Neo4j, FalkorDB, and Cloud Spanner Graph.  U, FalkorDB graph backend — Redis-compatible, sub-millisecond latency. (+26 more)
-
-### Community 6 - "Community 6"
 Cohesion: 0.06
 Nodes (69): Graph builder — adapted from Graphify's build.py.  Takes extraction dicts (or, extract_conflict_text(), extract_from_document(), extract_from_url(), _make_id(), _parse_llm_response(), Conflict entity extractor — reads source text, produces ACO entities via Gemini., Parse LLM JSON response into ExtractionResult. (+61 more)
+
+### Community 6 - "Community 6"
+Cohesion: 0.04
+Nodes (34): ABC, create_adapter_from_settings(), create_graph_adapter(), FalkorDBAdapter, GraphAdapter, Neo4jAdapter, Graph database adapter — supports Neo4j, FalkorDB, and Cloud Spanner Graph.  U, FalkorDB graph backend — Redis-compatible, sub-millisecond latency. (+26 more)
 
 ### Community 7 - "Community 7"
 Cohesion: 0.05
@@ -194,15 +194,15 @@ Nodes (49): checkAiRequestLimits(), enrichCalibrationWithToolBackbone(), estimat
 
 ### Community 9 - "Community 9"
 Cohesion: 0.04
-Nodes (24): AppShell(), AssistantPage(), AuthProvider(), DomainPicker(), DossierPage(), useNotifications(), useKeyboardShortcuts(), fromFirestore() (+16 more)
+Nodes (42): areSameFact(), computeFactConfidence(), computeTrustworthiness(), crossSourceCorroborate(), detectContradictions(), getSourceReliability(), groupFacts(), jaccardSimilarity() (+34 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.06
-Nodes (40): getPersona(), AgentRunnerError, clamp(), formatCalibrationBlock(), formatCorpusBlock(), formatPersonaBlock(), runAgent(), buildCrossToolContext() (+32 more)
+Cohesion: 0.04
+Nodes (24): AppShell(), AssistantPage(), AuthProvider(), DomainPicker(), DossierPage(), useNotifications(), useKeyboardShortcuts(), fromFirestore() (+16 more)
 
 ### Community 11 - "Community 11"
 Cohesion: 0.06
-Nodes (30): GET(), getConflictProfile(), getSituationIntelligence(), glaslFromRatio(), iso3ToIso2(), timed(), computeStats(), detectVolumeSpike() (+22 more)
+Nodes (40): getPersona(), AgentRunnerError, clamp(), formatCalibrationBlock(), formatCorpusBlock(), formatPersonaBlock(), runAgent(), buildCrossToolContext() (+32 more)
 
 ### Community 12 - "Community 12"
 Cohesion: 0.07
@@ -213,40 +213,40 @@ Cohesion: 0.08
 Nodes (41): applyApprovedProposal(), applyMutationToGraph(), approveProposal(), asRecord(), asStringNumberRecord(), collectionRef(), confidenceNumber(), countOpenProposals() (+33 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.08
-Nodes (34): areSameFact(), computeFactConfidence(), computeTrustworthiness(), crossSourceCorroborate(), detectContradictions(), getSourceReliability(), groupFacts(), jaccardSimilarity() (+26 more)
-
-### Community 15 - "Community 15"
 Cohesion: 0.06
 Nodes (11): POST(), POST(), addEntity(), createConflict(), createConflictWithId(), emptyGraph(), generateId(), getConflict() (+3 more)
 
-### Community 16 - "Community 16"
+### Community 15 - "Community 15"
 Cohesion: 0.08
 Nodes (24): delegateToAskPraxis(), buildAnnotationContext(), buildGraphContext(), buildLegacyGraphContext(), buildMemoryContext(), buildSKCContext(), graphContextToPrompt(), buildDiplomaticDraftingContext() (+16 more)
 
-### Community 17 - "Community 17"
+### Community 16 - "Community 16"
 Cohesion: 0.15
 Nodes (34): Enum, _age(), AnalystProfileHealthInput, _as_utc(), compute_situation_health(), _corpus_health(), CorpusCoverageHealthInput, DegradationKind (+26 more)
 
-### Community 18 - "Community 18"
+### Community 17 - "Community 17"
 Cohesion: 0.1
 Nodes (28): addActor(), addEvent(), adminSituationsCol(), archiveSituation(), createSituation(), createSituationAdmin(), deleteSituation(), deleteSituationAdmin() (+20 more)
 
-### Community 19 - "Community 19"
+### Community 18 - "Community 18"
 Cohesion: 0.11
 Nodes (9): buildAdjacency(), computeBetweennessCentrality(), computeDensity(), detectCommunities(), findShortestPath(), getMostCentralNode(), FirestoreGraphLayer, Neo4jGraphLayer (+1 more)
 
-### Community 20 - "Community 20"
+### Community 19 - "Community 19"
 Cohesion: 0.11
 Nodes (25): _get_id_token(), main(), poll_once(), GDELT poller — Cloud Run Worker Pool variant.  Runs continuously. Polls every, One pass: list active situations, ingest GDELT for each.      Returns a result, Run a cheap probe of the collection_group("situations").where("status",...), verify_required_indexes(), _get_id_token() (+17 more)
 
-### Community 21 - "Community 21"
+### Community 20 - "Community 20"
 Cohesion: 0.1
 Nodes (18): handleRouteError(), emitMeterEvent(), emitToolRunMetered(), getSecret(), isDisabled(), situationToCaseData(), GET(), isVerified() (+10 more)
 
-### Community 22 - "Community 22"
+### Community 21 - "Community 21"
 Cohesion: 0.11
 Nodes (16): consolidatedToolForLegacyId(), CoreToolsWidget(), recommendToolsForRole(), computeFreshness(), isResearchActive(), parseToolStatusResponse(), useAllToolStatuses(), buildPathFromPolicy() (+8 more)
+
+### Community 22 - "Community 22"
+Cohesion: 0.14
+Nodes (22): buildAad(), decrypt(), encrypt(), getMasterKey(), maskSecret(), bustCapabilitiesCache(), cacheKey(), resolveFeedCapabilities() (+14 more)
 
 ### Community 23 - "Community 23"
 Cohesion: 0.09
@@ -281,52 +281,52 @@ Cohesion: 0.22
 Nodes (9): countWords(), exportDocx(), importFile(), persist(), polishDraft(), safeFileName(), sharpenDraft(), splitImportedText() (+1 more)
 
 ### Community 31 - "Community 31"
-Cohesion: 0.26
-Nodes (11): AdminLayout(), getAdminEmailAllowlist(), getAdminGateStatus(), getAdminPrincipalAccess(), getAdminUidAllowlist(), isAdmin(), isAdminEmail(), isAdminPrincipal() (+3 more)
-
-### Community 32 - "Community 32"
 Cohesion: 0.22
 Nodes (12): make_test_graph(), Tests for graph export endpoint helpers., Verify MERGE (not CREATE) is used for both nodes and edges., Relation labels must be uppercased in Cypher., Edges without a relation get RELATED_TO as default., test_gexf_roundtrip(), test_graphml_roundtrip(), test_json_roundtrip() (+4 more)
 
-### Community 33 - "Community 33"
+### Community 32 - "Community 32"
 Cohesion: 0.15
 Nodes (3): DebugErrorBoundary, handler(), toggle()
 
-### Community 34 - "Community 34"
+### Community 33 - "Community 33"
 Cohesion: 0.26
 Nodes (9): fetchActors(), fetchEvents(), fetchEventTrend(), fetchPage(), fetchWithRetry(), getCredentials(), isACLEDConfigured(), normalizeActor() (+1 more)
 
-### Community 35 - "Community 35"
+### Community 34 - "Community 34"
 Cohesion: 0.32
 Nodes (9): clusterEvents(), computeCentroid(), computeRadius(), computeTrend(), daysBefore(), detectMovement(), haversineDistance(), mostFrequent() (+1 more)
 
-### Community 36 - "Community 36"
+### Community 35 - "Community 35"
 Cohesion: 0.32
 Nodes (11): getEconomicSnapshot(), getFragilityIndicators(), getGDP(), getGovernanceIndicators(), getIndicator(), getInflation(), getLatest(), getMilitaryExpenditure() (+3 more)
 
-### Community 37 - "Community 37"
+### Community 36 - "Community 36"
 Cohesion: 0.21
 Nodes (5): deductCredits(), ensureUserProfile(), getCreditBalance(), getUserProfile(), recordCreditTransaction()
 
-### Community 38 - "Community 38"
+### Community 37 - "Community 37"
 Cohesion: 0.33
 Nodes (10): hostFromUrl(), isRecord(), normalizeConfidence(), normalizeKind(), normalizeReliability(), normalizeRetrievalMethod(), normalizeSourceReceipt(), normalizeSpan() (+2 more)
 
-### Community 39 - "Community 39"
-Cohesion: 0.25
-Nodes (7): GET(), getAdvisor(), HISTORY(), listAdvisors(), PATH(), saveAdvisor(), main()
-
-### Community 40 - "Community 40"
+### Community 38 - "Community 38"
 Cohesion: 0.22
 Nodes (3): buildMarkdown(), handleCopyToClipboard(), handleDownloadMarkdown()
 
-### Community 41 - "Community 41"
+### Community 39 - "Community 39"
+Cohesion: 0.27
+Nodes (6): isToolHidden(), applyToolPreferences(), hiddenToolSet(), isToolHiddenByPreference(), normalizeToolPreferenceId(), orderedToolIds()
+
+### Community 40 - "Community 40"
 Cohesion: 0.22
 Nodes (4): SpecialisedBadge(), ToolInvocation(), tryParseJson(), useCountdown()
 
-### Community 42 - "Community 42"
+### Community 41 - "Community 41"
 Cohesion: 0.29
 Nodes (7): buildCaseContextString(), getActorClaims(), getActorFromCase(), getActorInterests(), getActorRelationships(), getCaseEventsSorted(), getCaseOntology()
+
+### Community 42 - "Community 42"
+Cohesion: 0.25
+Nodes (7): GET(), getAdvisor(), HISTORY(), listAdvisors(), PATH(), saveAdvisor(), main()
 
 ### Community 43 - "Community 43"
 Cohesion: 0.4
@@ -337,32 +337,32 @@ Cohesion: 0.2
 Nodes (1): SituationKnowledgeCore
 
 ### Community 45 - "Community 45"
-Cohesion: 0.27
-Nodes (6): isToolHidden(), applyToolPreferences(), hiddenToolSet(), isToolHiddenByPreference(), normalizeToolPreferenceId(), orderedToolIds()
-
-### Community 46 - "Community 46"
 Cohesion: 0.35
 Nodes (8): bodyParagraph(), divider(), generateBriefingDOCX(), generateDossierDOCX(), generateSituationReportDOCX(), headerParagraph(), metaParagraph(), normalizeSources()
 
-### Community 47 - "Community 47"
+### Community 46 - "Community 46"
 Cohesion: 0.2
 Nodes (8): Deep Research Agent for PRAXIS.  Three-phase pipeline: search → extract → synt, document_retrieval_tool(), graph_query_tool(), Tool implementations for the Deep Research Agent., Search the web for current information about conflict topics., Retrieve relevant document excerpts from the user's uploaded documents., Query the conflict knowledge graph for entities and relationships., web_search_tool()
 
-### Community 48 - "Community 48"
+### Community 47 - "Community 47"
 Cohesion: 0.42
 Nodes (8): buildAad(), deleteLegacy(), encrypt(), getMasterKey(), initFirestore(), main(), maskSecret(), migrateUser()
 
-### Community 52 - "Community 52"
+### Community 51 - "Community 51"
 Cohesion: 0.25
 Nodes (2): genId(), submit()
 
-### Community 53 - "Community 53"
+### Community 52 - "Community 52"
 Cohesion: 0.39
 Nodes (7): getWikipediaRelated(), getWikipediaSummary(), RELATED_URL(), safeFetch(), SEARCH_URL(), searchWikipedia(), SUMMARY_URL()
 
-### Community 54 - "Community 54"
+### Community 53 - "Community 53"
 Cohesion: 0.33
 Nodes (1): FeedLayer
+
+### Community 54 - "Community 54"
+Cohesion: 0.39
+Nodes (8): buildSyriaPatternReference(), clamp01(), getMatchedPatterns(), jaccard(), normalizeCounts(), rankSyriaComparisonCases(), round2(), scoreComparisonCase()
 
 ### Community 55 - "Community 55"
 Cohesion: 0.42
@@ -448,31 +448,35 @@ Nodes (5): _map_event_type(), query_acled(), ACLED API client — queries confli
 Cohesion: 0.67
 Nodes (5): addSecurityHeaders(), generateNonce(), nextWithNonce(), parseSessionForRouting(), proxy()
 
-### Community 87 - "Community 87"
-Cohesion: 0.33
-Nodes (1): ToolErrorBoundary
-
-### Community 91 - "Community 91"
-Cohesion: 0.6
-Nodes (5): clamp(), computeINFORM(), computeRiskScore(), getStageTransitionRisk(), wgiToRiskScore()
-
-### Community 92 - "Community 92"
+### Community 84 - "Community 84"
 Cohesion: 0.4
 Nodes (3): callBackend(), getBackendIdToken(), proxyBackendRequest()
 
+### Community 88 - "Community 88"
+Cohesion: 0.47
+Nodes (3): handleHashChange(), handleKeyDown(), openChapter()
+
+### Community 89 - "Community 89"
+Cohesion: 0.33
+Nodes (1): ToolErrorBoundary
+
 ### Community 93 - "Community 93"
+Cohesion: 0.6
+Nodes (5): clamp(), computeINFORM(), computeRiskScore(), getStageTransitionRisk(), wgiToRiskScore()
+
+### Community 94 - "Community 94"
 Cohesion: 0.6
 Nodes (5): createScenario(), deleteScenario(), getScenario(), listScenarios(), scenariosRef()
 
-### Community 95 - "Community 95"
+### Community 96 - "Community 96"
 Cohesion: 0.7
 Nodes (3): colorize(), main(), statusColor()
 
-### Community 96 - "Community 96"
+### Community 97 - "Community 97"
 Cohesion: 0.5
 Nodes (2): parseEditor(), saveDomain()
 
-### Community 98 - "Community 98"
+### Community 99 - "Community 99"
 Cohesion: 0.6
 Nodes (3): BRIEF_HISTORY_KEY(), loadBriefHistory(), saveBriefToHistory()
 
@@ -482,45 +486,41 @@ Nodes (2): formatMoney(), formatNumber()
 
 ### Community 106 - "Community 106"
 Cohesion: 0.5
-Nodes (2): handleKeyDown(), openChapter()
-
-### Community 107 - "Community 107"
-Cohesion: 0.5
 Nodes (2): setWorkingStyle(), toggleSource()
 
-### Community 108 - "Community 108"
-Cohesion: 0.4
-Nodes (2): CitationIndex(), cn()
-
-### Community 109 - "Community 109"
+### Community 107 - "Community 107"
 Cohesion: 0.6
 Nodes (4): buildExportPayload(), generate(), isIntelligenceResult(), saveJsonExport()
 
-### Community 115 - "Community 115"
+### Community 113 - "Community 113"
 Cohesion: 0.6
 Nodes (3): getACOBorderColor(), getACOColor(), getACOFillColor()
 
-### Community 117 - "Community 117"
+### Community 115 - "Community 115"
 Cohesion: 0.8
 Nodes (4): initAnalystProfileIfMissing(), loadAnalystProfile(), PROFILE_PATH(), saveProfilePatch()
 
-### Community 118 - "Community 118"
+### Community 116 - "Community 116"
 Cohesion: 0.6
 Nodes (3): buildAdvancedMediaSearchQuery(), cleanToken(), quote()
 
-### Community 120 - "Community 120"
+### Community 118 - "Community 118"
 Cohesion: 0.7
 Nodes (4): readToolData(), subscribeToolData(), toolRef(), writeToolData()
 
-### Community 121 - "Community 121"
+### Community 119 - "Community 119"
+Cohesion: 0.4
+Nodes (2): CitationIndex(), cn()
+
+### Community 120 - "Community 120"
 Cohesion: 0.67
 Nodes (3): build_agent(), main(), Deploy the PRAXIS Deep Research Agent to Vertex AI Agent Engine.  Usage (from
 
-### Community 122 - "Community 122"
+### Community 121 - "Community 121"
 Cohesion: 0.5
 Nodes (2): GET(), getCaseById()
 
-### Community 124 - "Community 124"
+### Community 123 - "Community 123"
 Cohesion: 0.83
 Nodes (3): getResearchStatus(), researchStatusRef(), saveResearchStatus()
 
@@ -608,27 +608,27 @@ Nodes (1): PubSub
 Cohesion: 1.0
 Nodes (1): graphify_tacitus — Graphify fork adapted for the TACITUS Agentic Conflict Ontolo
 
-### Community 780 - "Community 780"
+### Community 783 - "Community 783"
 Cohesion: 1.0
 Nodes (1): Abstract graph database adapter.
 
-### Community 781 - "Community 781"
+### Community 784 - "Community 784"
 Cohesion: 1.0
 Nodes (1): Neo4j graph backend using the async driver.
 
-### Community 782 - "Community 782"
+### Community 785 - "Community 785"
 Cohesion: 1.0
 Nodes (1): FalkorDB graph backend — Redis-compatible, sub-millisecond latency.
 
-### Community 783 - "Community 783"
+### Community 786 - "Community 786"
 Cohesion: 1.0
 Nodes (1): Cloud Spanner Graph backend — managed, multi-region, ISO GQL.      Schema must
 
-### Community 784 - "Community 784"
+### Community 787 - "Community 787"
 Cohesion: 1.0
 Nodes (1): Factory: create the right adapter based on user preference.
 
-### Community 785 - "Community 785"
+### Community 788 - "Community 788"
 Cohesion: 1.0
 Nodes (1): Create a graph adapter from the user's Firestore settings.
 
@@ -639,25 +639,23 @@ Nodes (1): Create a graph adapter from the user's Firestore settings.
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 44`** (11 nodes): `SituationKnowledgeCore`, `.constructor()`, `.getHealth()`, `.getToolContext()`, `.ingestDocument()`, `.ingestToolOutput()`, `.retrieve()`, `.saveFeedData()`, `.upsertGraphEdge()`, `.upsertGraphNode()`, `situation-knowledge-core.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 52`** (9 nodes): `addCustom()`, `genId()`, `handleDragEnd()`, `removeCustom()`, `resolveOrder()`, `submit()`, `toggleCat()`, `toggleExpand()`, `source-picker.tsx`
+- **Thin community `Community 51`** (9 nodes): `addCustom()`, `genId()`, `handleDragEnd()`, `removeCustom()`, `resolveOrder()`, `submit()`, `toggleCat()`, `toggleExpand()`, `source-picker.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 54`** (9 nodes): `FeedLayer`, `.constructor()`, `.feedCacheRef()`, `.getFeedData()`, `.getMultipleFeedData()`, `.getToolRelevantFeeds()`, `.isHealthy()`, `.saveFeedData()`, `feed-layer.ts`
+- **Thin community `Community 53`** (9 nodes): `FeedLayer`, `.constructor()`, `.feedCacheRef()`, `.getFeedData()`, `.getMultipleFeedData()`, `.getToolRelevantFeeds()`, `.isHealthy()`, `.saveFeedData()`, `feed-layer.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 56`** (9 nodes): `circuit-breaker.ts`, `CircuitBreaker`, `.constructor()`, `.execute()`, `.getDetails()`, `.getName()`, `.getState()`, `getAllBreakerDetails()`, `getAllBreakerStates()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 87`** (6 nodes): `ToolErrorBoundary`, `.componentDidCatch()`, `.constructor()`, `.getDerivedStateFromError()`, `.render()`, `tool-error-boundary.tsx`
+- **Thin community `Community 89`** (6 nodes): `ToolErrorBoundary`, `.componentDidCatch()`, `.constructor()`, `.getDerivedStateFromError()`, `.render()`, `tool-error-boundary.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 96`** (5 nodes): `domainToEditor()`, `iconFor()`, `parseEditor()`, `saveDomain()`, `page.tsx`
+- **Thin community `Community 97`** (5 nodes): `domainToEditor()`, `iconFor()`, `parseEditor()`, `saveDomain()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 102`** (5 nodes): `formatMoney()`, `formatNumber()`, `StatCard()`, `TrendArrow()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 106`** (5 nodes): `page.tsx`, `cn()`, `copyToClipboard()`, `handleKeyDown()`, `openChapter()`
+- **Thin community `Community 106`** (5 nodes): `cn()`, `requestMoreRedLines()`, `setWorkingStyle()`, `toggleSource()`, `step-working-style.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 107`** (5 nodes): `cn()`, `requestMoreRedLines()`, `setWorkingStyle()`, `toggleSource()`, `step-working-style.tsx`
+- **Thin community `Community 119`** (5 nodes): `CitationIndex()`, `CitationLayer()`, `citation-chip.tsx`, `cn.ts`, `cn()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 108`** (5 nodes): `CitationIndex()`, `CitationLayer()`, `citation-chip.tsx`, `cn.ts`, `cn()`
-  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 122`** (4 nodes): `GET()`, `getCaseById()`, `route.ts`, `demo-cases.ts`
+- **Thin community `Community 121`** (4 nodes): `GET()`, `getCaseById()`, `route.ts`, `demo-cases.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 141`** (4 nodes): `calculateZOPA()`, `PartyBar()`, `pct()`, `zopa-visualizer.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -695,28 +693,28 @@ Nodes (1): Create a graph adapter from the user's Firestore settings.
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 220`** (2 nodes): `__init__.py`, `graphify_tacitus — Graphify fork adapted for the TACITUS Agentic Conflict Ontolo`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 780`** (1 nodes): `Abstract graph database adapter.`
+- **Thin community `Community 783`** (1 nodes): `Abstract graph database adapter.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 781`** (1 nodes): `Neo4j graph backend using the async driver.`
+- **Thin community `Community 784`** (1 nodes): `Neo4j graph backend using the async driver.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 782`** (1 nodes): `FalkorDB graph backend — Redis-compatible, sub-millisecond latency.`
+- **Thin community `Community 785`** (1 nodes): `FalkorDB graph backend — Redis-compatible, sub-millisecond latency.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 783`** (1 nodes): `Cloud Spanner Graph backend — managed, multi-region, ISO GQL.      Schema must`
+- **Thin community `Community 786`** (1 nodes): `Cloud Spanner Graph backend — managed, multi-region, ISO GQL.      Schema must`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 784`** (1 nodes): `Factory: create the right adapter based on user preference.`
+- **Thin community `Community 787`** (1 nodes): `Factory: create the right adapter based on user preference.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 785`** (1 nodes): `Create a graph adapter from the user's Firestore settings.`
+- **Thin community `Community 788`** (1 nodes): `Create a graph adapter from the user's Firestore settings.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `buildCalibratedContext()` connect `Community 7` to `Community 3`, `Community 1`, `Community 26`, `Community 18`?**
-  _High betweenness centrality (0.106) - this node is a cross-community bridge._
+- **Why does `buildCalibratedContext()` connect `Community 7` to `Community 1`, `Community 26`, `Community 3`, `Community 17`?**
+  _High betweenness centrality (0.105) - this node is a cross-community bridge._
 - **Why does `PATH()` connect `Community 26` to `Community 0`?**
   _High betweenness centrality (0.094) - this node is a cross-community bridge._
 - **Why does `getPreferences()` connect `Community 26` to `Community 7`?**
-  _High betweenness centrality (0.094) - this node is a cross-community bridge._
+  _High betweenness centrality (0.093) - this node is a cross-community bridge._
 - **Are the 40 inferred relationships involving `FirestoreSync` (e.g. with `DiffRequest` and `Analyze router — /api/v1/analyze/*  Exposes individual analysis results from t`) actually correct?**
   _`FirestoreSync` has 40 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 26 inferred relationships involving `ConflictMemory` (e.g. with `GraphBackendConfig` and `GraphQueryRequest`) actually correct?**

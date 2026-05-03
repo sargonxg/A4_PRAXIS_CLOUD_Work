@@ -32,6 +32,7 @@ The Syria case proves the PRAXIS loop:
 8. Advisor Table: structured disagreement across mediator, humanitarian, legal, security, media, and red-team views.
 9. Briefing Studio: decision-ready slides with BLUF, risk triggers, sources, and next actions.
 10. Work Products: editable policy memo and decision brief screens with local library save, DOCX import, and LibreOffice-compatible DOCX export.
+11. Pattern Detector: Chapter 5 surfaces historical analogs such as Taif, Dayton, South Sudan R-ARCSS, Iraq/Kurdish referendum aftermath, Mozambique RENAMO, and Colombia FARC by comparing primitive density and edge vocabulary against the active Syria graph.
 
 ## Methodologies To Show
 
@@ -103,8 +104,10 @@ not just text. It becomes graph-ready institutional memory.
 7. `35-40` `/app/brainstorming-table?recording=1&case=syria`
    Show the expert disagreement table and red-team warning.
 
-8. `40-45` `/app/briefing?recording=1&case=syria`
-   End on the decision brief. Show BLUF, graph readout, risk triggers, and sources.
+8. `40-45` `/app/syria-case?recording=1&case=syria#decision-product`
+   End on Chapter 5. Show "Cases like this one", the brief-ready line, provenance carried forward, and the decision-product links.
+
+Optional product close: open `/app/briefing?recording=1&case=syria` and show BLUF, graph readout, risk triggers, and sources.
 
 Optional product-save insert: open `/app/policy-memo?recording=1&case=syria`, show the Work Document panel, click `Improve`, `Save`, and `Export DOCX`. This proves PRAXIS is producing office-ready work products, not only screen visualizations.
 
@@ -140,6 +143,15 @@ The graph is the difference: actors, claims, commitments, dates, exact wording,
 and source provenance become reusable memory, not one-off chat text. GraphOps
 then stages updates for analyst review, and the final output becomes a brief or
 memo with facts, assessment, gaps, triggers, and source basis.
+
+Alternative pattern-detector close:
+
+PRAXIS does not stop at summarizing Syria. It compares the active graph against
+settlement patterns like Taif, Dayton, South Sudan, Iraq-Kurdish bargaining,
+Mozambique RENAMO, and Colombia FARC. The analog is not a metaphor. It is scored
+against actors, claims, interests, constraints, leverage, commitments, events,
+narratives, and graph edges, so the analyst can borrow lessons while seeing the
+limits of the comparison.
 
 ## Source Basis
 
