@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
   Bot,
@@ -28,7 +29,7 @@ import {
   type SpecializedToolDevelopmentGroup,
   type SpecializedToolDevelopmentStatus,
 } from '@/lib/constants/consolidated-tools';
-import { getToolById, TOOL_REGISTRY } from '@/lib/constants/tool-registry';
+import { getToolById, HERO_TOOLS, TOOL_REGISTRY } from '@/lib/constants/tool-registry';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { useAllToolStatuses, type ToolStatusInfo } from '@/hooks/use-tool-status';
 import { getToolContextReadiness } from '@/lib/tools/tool-context-blueprints';
@@ -94,9 +95,12 @@ export default function ToolsWorkspacePage() {
 }
 
 function ToolsWorkspace({ situation }: { situation: Situation | null }) {
+  const searchParams = useSearchParams();
   const statuses = useAllToolStatuses(situation?.id ?? null);
   const packages = getDashboardToolPackageSummaries(situation?.workflowPath ?? 'political-officer');
-  const [packageFilter, setPackageFilter] = useState<PraxisToolPathId | 'all' | 'active'>('active');
+  const showArchive = searchParams.get('show_archive') === '1';
+  const registrySurface = showArchive ? TOOL_REGISTRY : HERO_TOOLS;
+  const [packageFilter, setPackageFilter] = useState<PraxisToolPathId | 'all' | 'active'>('all');
   const [stageFilter, setStageFilter] = useState<StageFilter>('all');
   const [healthFilter, setHealthFilter] = useState<HealthFilter>('all');
   const [query, setQuery] = useState('');
@@ -121,7 +125,7 @@ function ToolsWorkspace({ situation }: { situation: Situation | null }) {
   );
 
   const packageToolIds = useMemo(() => {
-    if (packageFilter === 'all') return new Set(TOOL_REGISTRY.map((tool) => tool.id));
+    if (packageFilter === 'all') return new Set(registrySurface.map((tool) => tool.id));
     if (packageFilter === 'active') {
       return new Set(
         packages
@@ -130,11 +134,11 @@ function ToolsWorkspace({ situation }: { situation: Situation | null }) {
       );
     }
     return new Set(getToolIdsForPath(packageFilter, ['core', 'primary', 'secondary', 'specialized', 'premium-future', 'hidden-default']));
-  }, [packageFilter, packages]);
+  }, [packageFilter, packages, registrySurface]);
 
   const rows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    return TOOL_REGISTRY.map((tool) => buildWorkspaceRow(tool, packages, statuses[tool.id], situation))
+    return registrySurface.map((tool) => buildWorkspaceRow(tool, packages, statuses[tool.id], situation))
       .filter((row) => packageToolIds.has(row.tool.id))
       .filter((row) => stageFilter === 'all' || row.packageIds.some((id) => packages.find((pkg) => pkg.id === id)?.stage === stageFilter))
       .filter((row) => matchesHealthFilter(row, healthFilter))
@@ -159,7 +163,7 @@ function ToolsWorkspace({ situation }: { situation: Situation | null }) {
         if (tierDelta !== 0) return tierDelta;
         return a.tool.name.localeCompare(b.tool.name);
       });
-  }, [activePackageIds, healthFilter, packageToolIds, packages, query, situation, stageFilter, statuses]);
+  }, [activePackageIds, healthFilter, packageToolIds, packages, query, registrySurface, situation, stageFilter, statuses]);
 
   const activePackages = packages.filter((pkg) => pkg.stage === 'active');
   const visiblePackages = packages.filter((pkg) => stageFilter === 'all' || pkg.stage === stageFilter);
@@ -180,9 +184,22 @@ function ToolsWorkspace({ situation }: { situation: Situation | null }) {
           <div className="grid grid-cols-3 gap-2 text-right">
             <Metric label="Visible" value={rows.length.toString()} />
             <Metric label="Ready" value={readyCount.toString()} />
-            <Metric label="Packages" value={visiblePackages.length.toString()} />
+            <Metric label={showArchive ? 'Archive' : 'Surface'} value={showArchive ? '55 tools' : '12 hero'} />
           </div>
         </div>
+        {!showArchive ? (
+          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-navy-600">
+            Showing the opinionated 12-tool PRAXIS surface. Archived specialist tools stay routable and can be reviewed with{' '}
+            <PraxisLink href="/tools?show_archive=1" className="font-semibold text-diplomatic-blue hover:underline">
+              show_archive=1
+            </PraxisLink>
+            .
+          </div>
+        ) : (
+          <div className="rounded-md border border-gold-200 bg-gold-50 px-3 py-2 text-xs text-gold-800">
+            Archive view enabled. These tools are preserved for specialist development and route compatibility, but hidden from default navigation.
+          </div>
+        )}
       </header>
 
       <DemoRunway rows={rows} />

@@ -8,7 +8,6 @@ import {
   FileText,
   MessageSquare,
   GitBranch,
-  FolderOpen,
   Settings,
   LogOut,
   ChevronsLeft,
@@ -16,10 +15,8 @@ import {
   Users,
   Sparkles,
   BookOpen,
-  Clock,
   Telescope,
   Target,
-  Package,
   Wrench,
   X,
   ChevronRight,
@@ -202,31 +199,36 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
       { label: 'Context Builder', icon: Target, href: '/context-builder' },
-      { label: 'Ask PRAXIS', icon: MessageSquare, href: '/assistant' },
-      { label: 'Tools Workspace', icon: Package, href: '/tools' },
+      { label: 'Executive Intelligence', icon: Sparkles, href: '/dashboard#executive-intelligence' },
     ],
   },
   {
     label: 'Evidence',
     items: [
       { label: 'Research & Sources', icon: Telescope, href: '/source-scout' },
-      { label: 'Sources Library', icon: BookOpen, href: '/sources' },
-      { label: 'Documents', icon: FolderOpen, href: '/documents' },
     ],
   },
   {
     label: 'Graph',
     items: [
-      { label: 'GraphOps', icon: Wrench, href: '/graphops' },
       { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
-      { label: 'Timeline', icon: Clock, href: '/timeline' },
+      { label: 'GraphOps', icon: Wrench, href: '/graphops' },
     ],
   },
   {
     label: 'Analysis',
     items: [
-      { label: 'Actors & Stakeholders', icon: Users, href: '/stakeholder-map' },
+      { label: 'Advisor Table', icon: Users, href: '/brainstorming-table' },
       { label: 'Briefing Studio', icon: FileText, href: '/briefing' },
+      { label: 'Policy Memo', icon: FileText, href: '/policy-memo' },
+    ],
+  },
+  {
+    label: 'Diplomacy',
+    items: [
+      { label: 'Scenarios', icon: Sparkles, href: '/scenarios' },
+      { label: 'Negotiation Prep', icon: MessageSquare, href: '/negotiation-prep' },
+      { label: 'Treaty Analyzer', icon: BookOpen, href: '/treaty-analyzer' },
     ],
   },
 ];
@@ -234,13 +236,17 @@ const navSections: NavSection[] = [
 const RECORDING_NAV_HREFS = new Set([
   '/demo-guide',
   '/dashboard',
+  '/dashboard#executive-intelligence',
   '/context-builder',
   '/source-scout',
   '/graphops',
   '/conflict-graph',
-  '/dialectica',
   '/brainstorming-table',
   '/briefing',
+  '/policy-memo',
+  '/scenarios',
+  '/negotiation-prep',
+  '/treaty-analyzer',
 ]);
 
 function ChangelogButton() {
@@ -294,6 +300,7 @@ function ChangelogButton() {
 const HREF_TO_TOOL_ID: Record<string, string> = {
   // Context
   '/dashboard': 'dashboard',
+  '/dashboard#executive-intelligence': 'situation-intelligence',
   '/context-builder': 'context-builder',
   '/documents': 'documents',
   '/sources': 'sources-library',
@@ -603,14 +610,16 @@ export function AppSidebar() {
                 >
             {section.items.map((item) => {
               const itemKey = `${section.label}:${item.href}:${item.label}`;
+              const itemPath = item.href.split('#')[0] || item.href;
               const isActive =
-                barePath === item.href || barePath.startsWith(item.href + '/');
+                barePath === itemPath || barePath.startsWith(itemPath + '/');
               const Icon = item.icon;
               const href = (() => {
                 if (!recordingMode) return item.href;
+                const [path, hash] = item.href.split('#');
                 const params = new URLSearchParams({ recording: '1' });
                 if (recordingCase) params.set('case', recordingCase);
-                return `${item.href}?${params.toString()}`;
+                return `${path}?${params.toString()}${hash ? `#${hash}` : ''}`;
               })();
 
               const linkContent = (

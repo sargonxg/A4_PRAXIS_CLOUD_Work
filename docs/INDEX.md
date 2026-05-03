@@ -89,6 +89,8 @@
 
 | Doc | Purpose |
 |---|---|
+| [`codex-prompts/PRAXIS_MAY_1_CHANGES.md`](./codex-prompts/PRAXIS_MAY_1_CHANGES.md) | PRAXIS May 1 Codex prompt pack: architecture consolidation, Dialectica dyad, live Syria wiring, ACO schema/provenance, and audit gate. |
+| [`codex-prompts/PRAXIS_MAY_2_CHANGES.md`](./codex-prompts/PRAXIS_MAY_2_CHANGES.md) | PRAXIS May 2 Codex prompt pack: frontend Syria showcase, guided tour, wow interactions, provenance outputs, and persona testing. |
 | [`CODEX_HANDOFF_2026-04-27.md`](./CODEX_HANDOFF_2026-04-27.md) | **Active** Codex drop-in prompt |
 | [`CONTINUATION.md`](./CONTINUATION.md) | Cumulative session-by-session handoff history |
 | [`HANDOFF_PROMPTS.md`](./HANDOFF_PROMPTS.md) | Drop-in prompts to start a fresh session |

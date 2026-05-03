@@ -2,6 +2,14 @@
 
 ## 2026-05-03 — Syria graph-grounded research handoff
 
+- Added `docs/codex-prompts/PRAXIS_MAY_1_CHANGES.md` and
+  `docs/codex-prompts/PRAXIS_MAY_2_CHANGES.md` from the supplied Codex prompt
+  packs.
+- Started PRAXIS May 1 Prompt A1 by adding `surface` and `visible` metadata to
+  all 55 tool-registry entries, locking the public app to 12 hero tools while
+  preserving archived specialist routes behind `/app/tools?show_archive=1`.
+- Updated sidebar preferences, the app sidebar, `/app/tools`, and
+  `npm run verify-tools` so the hero/archive split is enforced by UI and tests.
 - Added the Syria graph-grounded research handoff doc:
   `docs/PRAXIS_SYRIA_GRAPH_GROUNDED_RESEARCH_HANDOFF_2026-05-03.md`.
 - Updated the Syria recording runbook so the canonical walkthrough now includes

@@ -13,11 +13,16 @@ export type ToolCategory =
   | 'workspace';
 
 export type ToolOutputType = 'structured' | 'streaming' | 'hybrid';
+export type ToolSurface = 'hero' | 'archive' | 'admin';
 
 export interface ToolDefinition {
   id: string;
   name: string;
   category: ToolCategory;
+  /** Public navigation surface. Hero tools are the opinionated default app. */
+  surface: ToolSurface;
+  /** False keeps a tool routable but hidden from default user navigation. */
+  visible: boolean;
   description: string;
   shortDescription: string;
   credits: number;

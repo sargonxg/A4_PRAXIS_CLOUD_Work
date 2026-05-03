@@ -2,6 +2,16 @@
 
 > **2026-05-03 Codex continuation — Syria graph-grounded research handoff**
 >
+> User supplied two prompt packs. They are now copied into:
+> - `docs/codex-prompts/PRAXIS_MAY_1_CHANGES.md`
+> - `docs/codex-prompts/PRAXIS_MAY_2_CHANGES.md`
+>
+> Work started on May 1 Prompt A1 (`consolidation/registry-collapse`):
+> tool-registry entries now carry `surface` and `visible`; public navigation
+> is constrained to 12 hero tools; archived tools remain routable and visible
+> through `/app/tools?show_archive=1`; `verify-tools` and unit coverage enforce
+> the 12-tool policy.
+>
 > Current product direction: the Syria case is the canonical real-app demo
 > workspace. It should show PRAXIS conducting specific live policy research
 > inside the app: targeted searches, source receipts, discrepancy analysis,

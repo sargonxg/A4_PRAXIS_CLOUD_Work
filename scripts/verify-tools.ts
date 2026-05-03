@@ -10,6 +10,22 @@
 
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 const SESSION_COOKIE = process.env.SESSION_COOKIE ?? '';
+const { TOOL_REGISTRY, HERO_TOOLS } = require('../src/lib/constants/tool-registry.ts') as typeof import('../src/lib/constants/tool-registry');
+
+const EXPECTED_HERO_TOOL_IDS = [
+  'dashboard',
+  'context-builder',
+  'situation-intelligence',
+  'source-scout',
+  'conflict-graph',
+  'graphops',
+  'brainstorming-table',
+  'briefing',
+  'policy-memo',
+  'scenarios',
+  'negotiation-prep',
+  'treaty-analyzer',
+] as const;
 
 // Minimal test situation payload (Sudan Conflict 2023)
 const TEST_SITUATION = {
@@ -161,6 +177,23 @@ const ROUTES: Array<{ route: string; method: 'GET' | 'POST'; body?: Record<strin
 async function main() {
   console.log(`\n${colorize('PRAXIS Tool Verification', 'bold')} — ${colorize(BASE_URL, 'cyan')}`);
   console.log(colorize('─'.repeat(60), 'gray'));
+
+  const missingSurface = TOOL_REGISTRY.filter((tool) => !tool.surface || typeof tool.visible !== 'boolean');
+  const heroIds = HERO_TOOLS.map((tool) => tool.id);
+  const expected = new Set(EXPECTED_HERO_TOOL_IDS);
+  const unexpectedHeroes = heroIds.filter((id) => !expected.has(id as (typeof EXPECTED_HERO_TOOL_IDS)[number]));
+  const missingHeroes = EXPECTED_HERO_TOOL_IDS.filter((id) => !heroIds.includes(id));
+
+  if (missingSurface.length || HERO_TOOLS.length !== EXPECTED_HERO_TOOL_IDS.length || unexpectedHeroes.length || missingHeroes.length) {
+    console.log(colorize('✗ Tool surface verification failed', 'red'));
+    if (missingSurface.length) console.log(`  Missing surface/visible: ${missingSurface.map((tool) => tool.id).join(', ')}`);
+    if (missingHeroes.length) console.log(`  Missing heroes: ${missingHeroes.join(', ')}`);
+    if (unexpectedHeroes.length) console.log(`  Unexpected heroes: ${unexpectedHeroes.join(', ')}`);
+    console.log(`  Expected ${EXPECTED_HERO_TOOL_IDS.length} hero tools, found ${HERO_TOOLS.length}.`);
+    process.exit(1);
+  }
+
+  console.log(colorize(`✓ Tool surface policy: ${HERO_TOOLS.length} hero tools, ${TOOL_REGISTRY.length - HERO_TOOLS.length} archived`, 'green'));
 
   if (!SESSION_COOKIE) {
     console.log(colorize('⚠  No SESSION_COOKIE set — auth-protected routes will show AUTH', 'yellow'));
