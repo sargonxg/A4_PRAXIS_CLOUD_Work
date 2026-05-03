@@ -8,13 +8,21 @@ import {
   Eye,
   FileText,
   FileUp,
+  GitBranch,
   Library,
+  Link2,
   Save,
+  SearchCheck,
   SlidersHorizontal,
   Sparkles,
   Upload,
   Wand2,
 } from 'lucide-react';
+import {
+  buildEvidenceReviews,
+  summarizeEvidenceCoverage,
+  type SectionEvidenceReview,
+} from '@/lib/documents/evidence-review';
 import { cn } from '@/lib/utils/cn';
 
 export interface WorkDocumentSection {
@@ -127,7 +135,7 @@ export function WorkProductEditor({
   const [importing, setImporting] = useState(false);
   const [selectedDraftId, setSelectedDraftId] = useState(storageKey);
   const [hydrated, setHydrated] = useState(false);
-  const [viewMode, setViewMode] = useState<'edit' | 'preview' | 'audit'>('edit');
+  const [viewMode, setViewMode] = useState<'edit' | 'evidence' | 'preview' | 'audit'>('edit');
   const initialSignature = useMemo(
     () => initialSections.map((section) => `${section.heading}:${section.body}`).join('|'),
     [initialSections],
@@ -171,12 +179,15 @@ export function WorkProductEditor({
   }, [hydrated, initialSignature]);
 
   const wordCount = useMemo(() => countWords(sections), [sections]);
+  const evidenceReviews = useMemo(() => buildEvidenceReviews(sections, sources), [sections, sources]);
+  const evidenceSummary = useMemo(() => summarizeEvidenceCoverage(evidenceReviews), [evidenceReviews]);
   const completenessScore = useMemo(() => {
     const sourceScore = sources.length ? 18 : 0;
     const sectionScore = Math.min(46, sections.length * 7);
     const depthScore = Math.min(36, Math.floor(wordCount / 22));
-    return Math.max(12, Math.min(100, sourceScore + sectionScore + depthScore));
-  }, [sections.length, sources.length, wordCount]);
+    const evidenceScore = Math.min(18, Math.round(evidenceSummary.score * 0.18));
+    return Math.max(12, Math.min(100, sourceScore + sectionScore + depthScore + evidenceScore));
+  }, [evidenceSummary.score, sections.length, sources.length, wordCount]);
 
   function persist(nextSections = sections, draftId = selectedDraftId) {
     const updatedAt = new Date().toISOString();
@@ -355,6 +366,7 @@ export function WorkProductEditor({
             <div className="inline-flex rounded-md border border-navy-200 bg-white p-1">
               {[
                 { id: 'edit', label: 'Edit', icon: FileText },
+                { id: 'evidence', label: 'Evidence', icon: SearchCheck },
                 { id: 'preview', label: 'Preview', icon: Eye },
                 { id: 'audit', label: 'Audit', icon: SlidersHorizontal },
               ].map((mode) => {
@@ -432,6 +444,7 @@ export function WorkProductEditor({
                       className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-navy-900 outline-none"
                       aria-label={`Heading for section ${index + 1}`}
                     />
+                    <EvidencePill review={evidenceReviews[index]} />
                   </div>
                   <textarea
                     value={section.body}
@@ -440,9 +453,26 @@ export function WorkProductEditor({
                     className="w-full resize-y rounded-b-lg border-0 bg-white px-3 py-3 text-sm leading-6 text-navy-700 outline-none focus:ring-2 focus:ring-diplomatic-blue/15"
                     aria-label={`Body for section ${index + 1}`}
                   />
+                  <div className="grid gap-2 border-t border-navy-100 bg-slate-50 px-3 py-2 md:grid-cols-[minmax(0,1fr)_auto]">
+                    <p className="text-[11px] leading-4 text-navy-500">
+                      {evidenceReviews[index]?.sectionQuestions[0] ?? 'Where did this paragraph come from?'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('evidence')}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-diplomatic-blue hover:text-navy-900"
+                    >
+                      Review evidence
+                      <SearchCheck className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
+          ) : null}
+
+          {viewMode === 'evidence' ? (
+            <EvidenceReviewPanel reviews={evidenceReviews} />
           ) : null}
 
           {viewMode === 'preview' ? (
@@ -474,6 +504,21 @@ export function WorkProductEditor({
         </div>
 
         <aside className="border-t border-navy-100 bg-navy-50/50 p-4 lg:border-l lg:border-t-0">
+          <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Evidence coverage</p>
+                <p className="mt-1 text-sm font-semibold text-emerald-950">{evidenceSummary.score}% document-linked</p>
+              </div>
+              <SearchCheck className="h-5 w-5 text-emerald-700" />
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
+              <MiniMetric label="Ready" value={String(evidenceSummary.ready)} />
+              <MiniMetric label="Thin" value={String(evidenceSummary.thin)} />
+              <MiniMetric label="Missing" value={String(evidenceSummary.missing)} />
+            </div>
+          </div>
+
           {contextCards.length ? (
             <div className="mb-4 rounded-lg border border-diplomatic-blue/15 bg-diplomatic-blue/5 p-3">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-diplomatic-blue">Situation Context</p>
@@ -547,6 +592,85 @@ export function WorkProductEditor({
         </aside>
       </div>
     </section>
+  );
+}
+
+function EvidencePill({ review }: { review?: SectionEvidenceReview }) {
+  if (!review) return null;
+  const classes = {
+    ready: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    thin: 'border-amber-200 bg-amber-50 text-amber-700',
+    missing: 'border-red-200 bg-red-50 text-red-700',
+  };
+  return (
+    <span className={cn('hidden shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase md:inline-flex', classes[review.coverageState])}>
+      {review.coverageState}
+    </span>
+  );
+}
+
+function EvidenceReviewPanel({ reviews }: { reviews: SectionEvidenceReview[] }) {
+  return (
+    <div className="space-y-3">
+      {reviews.map((review, index) => (
+        <article key={review.sectionId} className="rounded-lg border border-navy-200 bg-white p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Section {index + 1}</p>
+              <h3 className="mt-1 text-sm font-semibold text-navy-950">{review.heading}</h3>
+              <p className="mt-1 text-[11px] text-navy-500">
+                {review.wordCount} words · {review.sentenceCount} sentence checks · {review.coverageState} evidence
+              </p>
+            </div>
+            <EvidencePill review={review} />
+          </div>
+
+          <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_240px]">
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-center gap-2 text-navy-800">
+                <GitBranch className="h-3.5 w-3.5 text-diplomatic-blue" />
+                <p className="text-xs font-semibold">Graph and paragraph checks</p>
+              </div>
+              <div className="mt-2 grid gap-1.5">
+                {review.sectionQuestions.map((question) => (
+                  <p key={question} className="rounded bg-white px-2 py-1.5 text-[11px] leading-4 text-navy-600">
+                    {question}
+                  </p>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-md border border-slate-200 bg-white p-3">
+              <div className="flex items-center gap-2 text-navy-800">
+                <Link2 className="h-3.5 w-3.5 text-emerald-600" />
+                <p className="text-xs font-semibold">Suggested source basis</p>
+              </div>
+              <div className="mt-2 space-y-1.5">
+                {review.suggestedSources.length ? review.suggestedSources.map((source) => (
+                  <div key={source.id} className="rounded bg-emerald-50 px-2 py-1.5 text-[11px] leading-4 text-emerald-900">
+                    <p className="font-semibold">{source.label}</p>
+                    {source.url ? <p className="truncate text-emerald-700">{source.url}</p> : null}
+                  </div>
+                )) : (
+                  <p className="rounded border border-dashed border-amber-200 bg-amber-50 px-2 py-1.5 text-[11px] leading-4 text-amber-800">
+                    Attach a source span before this paragraph becomes brief-ready.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md bg-white/80 px-2 py-1.5">
+      <p className="text-sm font-semibold text-navy-900">{value}</p>
+      <p className="text-[9px] font-semibold uppercase tracking-wider text-navy-400">{label}</p>
+    </div>
   );
 }
 

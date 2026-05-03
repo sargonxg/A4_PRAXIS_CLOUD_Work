@@ -53,7 +53,7 @@ The dashboard removes the crowded widget/tool-package first impression and cente
 
 ## Next Passes
 
-- Move paragraph-level provenance into the WorkProductEditor.
+- Move paragraph-level provenance into the WorkProductEditor. First pass shipped: section-level evidence review, suggested source basis, change-check questions, graph-grounding questions, and evidence coverage rollup.
 - Make "what changed?" compare the active paragraph against source and corpus updates.
 - Make Document Library explicitly separate source documents from work products.
 - Convert Specialist Tools into applied actions inside Draft, Research, Graph, and Library.
