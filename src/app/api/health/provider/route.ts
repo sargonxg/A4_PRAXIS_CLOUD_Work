@@ -45,6 +45,7 @@ export const GET = withAuth(async () => {
     anthropic: providers.anthropic.configured,
     providerMode: providers.vertex.configured ? 'vertex' : providers.google.configured ? 'google' : 'offline',
     model:     MODEL_NAMES.flash,
+    proModel:  MODEL_NAMES.pro,
     note:      providers.vertex.configured
       ? providers.vertex.note
       : providers.google.configured

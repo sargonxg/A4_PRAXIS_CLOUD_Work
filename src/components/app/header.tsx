@@ -8,7 +8,7 @@ import { Search, ChevronRight, User, Settings, LogOut, Sparkles, Coins, Menu, Ey
 import { useAppStore } from '@/stores/app-store';
 import { NotificationBell } from '@/components/shared/notifications';
 import { GlobalSearch } from '@/components/shared/global-search';
-import { cn } from '@/lib/utils/cn';
+import { TrustShield } from '@/components/app/trust-shield';
 import { useAuth } from '@/lib/auth/auth-context';
 import {
   DropdownMenu,
@@ -155,6 +155,7 @@ export function Header({ isMobile }: { isMobile?: boolean }) {
           </button>
 
           {/* Notifications */}
+          <TrustShield />
           <NotificationBell />
 
           {/* User dropdown */}

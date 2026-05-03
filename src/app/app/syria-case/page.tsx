@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ArrowRight, Clipboard, Clock3, FileText, Keyboard, Layers3, ShieldCheck } from 'lucide-react';
 import { SyriaChapterSituationFrame } from '@/components/syria/chapter-1-situation-frame';
@@ -10,6 +10,7 @@ import { SyriaChapterDialectica } from '@/components/syria/chapter-4-dialectica'
 import { SyriaChapterDecisionProduct } from '@/components/syria/chapter-5-decision-product';
 import { ChapterFrame } from '@/components/syria/chapter-frame';
 import { PraxisLink } from '@/components/shared/praxis-link';
+import { GuidedTour } from '@/components/tour/guided-tour';
 import { useAuth } from '@/lib/auth/auth-context';
 import { SYRIA_RECORDING_AUDIO_SCRIPT } from '@/lib/constants/syria-demo-case';
 import { SYRIA_DEMO_ANALYST_PROFILE, SYRIA_DEMO_ENTRY_PATH } from '@/lib/constants/syria-demo-workspace';
@@ -19,6 +20,7 @@ import {
   type SyriaChapterDescriptor,
   type SyriaChapterId,
 } from '@/lib/syria/chapter-flow';
+import { SYRIA_TOUR_FLOW } from '@/lib/tour/syria-flow';
 import { cn } from '@/lib/utils/cn';
 
 const CHAPTER_COMPONENTS: Record<SyriaChapterId, ReactNode> = {
@@ -42,12 +44,18 @@ export default function SyriaCasePage() {
     return `Calibrated for a ${profile.identity.seniority} ${role} at ${org}: ${profile.perspective.mandate}`;
   }, [profile, user?.orgName]);
 
-  useEffect(() => {
-    const initialHashChapter = getHashChapter();
-    if (initialHashChapter) {
-      openChapter(initialHashChapter);
-    }
+  const openChapter = useCallback((id: SyriaChapterId) => {
+    setActiveChapter(id);
+    window.setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 40);
+  }, []);
 
+  const openTourChapter = useCallback((id: string) => {
+    if (isSyriaChapterId(id)) openChapter(id);
+  }, [openChapter]);
+
+  useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
       if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
@@ -68,14 +76,7 @@ export default function SyriaCasePage() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('hashchange', handleHashChange);
     };
-  }, []);
-
-  function openChapter(id: SyriaChapterId) {
-    setActiveChapter(id);
-    window.setTimeout(() => {
-      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 40);
-  }
+  }, [openChapter]);
 
   async function copyToClipboard(kind: 'script' | 'link') {
     const text = kind === 'script' ? SYRIA_RECORDING_AUDIO_SCRIPT : productionLink;
@@ -186,6 +187,7 @@ export default function SyriaCasePage() {
       </div>
 
       <MobileChapterBar activeChapter={activeChapter} onOpen={openChapter} />
+      <GuidedTour flow={SYRIA_TOUR_FLOW} activeChapter={activeChapter} onOpen={openTourChapter} />
     </main>
   );
 }

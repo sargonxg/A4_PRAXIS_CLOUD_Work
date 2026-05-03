@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react';
 import { GitBranch, Network, RadioTower, ShieldAlert } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { SYRIA_DEMO_CONFLICT_GRAPH } from '@/lib/constants/syria-demo-case';
+import { summarizeCounterfactuals } from '@/lib/syria/counterfactuals';
+import { SyriaCounterfactualControls } from '@/components/syria/counterfactual-controls';
 import { cn } from '@/lib/utils/cn';
 
 const VIEWS = [
@@ -16,6 +18,8 @@ type GraphView = (typeof VIEWS)[number]['id'];
 
 export function SyriaChapterConflictGraph() {
   const [view, setView] = useState<GraphView>('episodic');
+  const [activeCounterfactuals, setActiveCounterfactuals] = useState<string[]>([]);
+  const counterfactualSummary = useMemo(() => summarizeCounterfactuals(activeCounterfactuals), [activeCounterfactuals]);
 
   const nodes = useMemo(() => {
     if (view === 'episodic') return SYRIA_DEMO_CONFLICT_GRAPH.events;
@@ -64,12 +68,12 @@ export function SyriaChapterConflictGraph() {
               <line x1="380" y1="180" x2="585" y2="282" stroke="url(#syriaGraphLine)" strokeWidth="2" />
               <line x1="380" y1="180" x2="380" y2="56" stroke="url(#syriaGraphLine)" strokeWidth="2" />
 
-              <GraphNode x={380} y={180} label="30 Jan agreement" tone="gold" />
-              <GraphNode x={175} y={80} label="Damascus" tone="blue" />
-              <GraphNode x={585} y={92} label="SDF/AANES" tone="teal" />
-              <GraphNode x={200} y={285} label="Humanitarian access" tone="red" />
-              <GraphNode x={585} y={282} label="Regional spillover" tone="red" />
-              <GraphNode x={380} y={56} label="UN good offices" tone="blue" />
+              <GraphNode x={380} y={180} label="30 Jan agreement" tone="gold" counterfactual={counterfactualSummary.affectedNodes.includes('30 Jan agreement')} />
+              <GraphNode x={175} y={80} label="Damascus" tone="blue" counterfactual={counterfactualSummary.affectedNodes.includes('Damascus')} />
+              <GraphNode x={585} y={92} label="SDF/AANES" tone="teal" counterfactual={counterfactualSummary.affectedNodes.includes('SDF/AANES')} />
+              <GraphNode x={200} y={285} label="Humanitarian access" tone="red" counterfactual={counterfactualSummary.affectedNodes.includes('Humanitarian access')} />
+              <GraphNode x={585} y={282} label="Regional spillover" tone="red" counterfactual={counterfactualSummary.affectedNodes.includes('Regional spillover')} />
+              <GraphNode x={380} y={56} label="UN good offices" tone="blue" counterfactual={counterfactualSummary.affectedNodes.includes('UN good offices')} />
             </svg>
             <div className="absolute bottom-3 left-3 right-3 rounded-md border border-white/10 bg-navy-950/80 p-3 backdrop-blur">
               <p className="text-xs font-semibold text-gold-200">{VIEWS.find((item) => item.id === view)?.label} mode</p>
@@ -86,6 +90,9 @@ export function SyriaChapterConflictGraph() {
             <GraphStat label="Completeness" value={`${SYRIA_DEMO_CONFLICT_GRAPH.dataCompleteness}%`} icon={GitBranch} />
           </div>
         </div>
+        <div className="mt-4">
+          <SyriaCounterfactualControls activeIds={activeCounterfactuals} onChange={setActiveCounterfactuals} />
+        </div>
       </div>
 
       <aside className="rounded-lg border border-slate-200 bg-white p-4">
@@ -101,6 +108,14 @@ export function SyriaChapterConflictGraph() {
             Open
           </PraxisLink>
         </div>
+        {activeCounterfactuals.length > 0 ? (
+          <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-800">Affected by active counterfactuals</p>
+            <p className="mt-1 text-xs leading-5 text-amber-950">
+              {counterfactualSummary.affectedNodes.join(', ')}. New synthetic edges: {counterfactualSummary.addedEdges.join('; ')}.
+            </p>
+          </div>
+        ) : null}
         <div className="mt-4 grid gap-2">
           {nodes.slice(0, 7).map((node) => (
             <div key={node.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
@@ -114,11 +129,11 @@ export function SyriaChapterConflictGraph() {
   );
 }
 
-function GraphNode({ x, y, label, tone }: { x: number; y: number; label: string; tone: 'gold' | 'blue' | 'teal' | 'red' }) {
+function GraphNode({ x, y, label, tone, counterfactual = false }: { x: number; y: number; label: string; tone: 'gold' | 'blue' | 'teal' | 'red'; counterfactual?: boolean }) {
   const fill = tone === 'gold' ? '#d4af37' : tone === 'blue' ? '#60a5fa' : tone === 'teal' ? '#2dd4bf' : '#f87171';
   return (
     <g>
-      <circle cx={x} cy={y} r="34" fill={fill} fillOpacity="0.18" stroke={fill} strokeWidth="2" />
+      <circle cx={x} cy={y} r={counterfactual ? '40' : '34'} fill={fill} fillOpacity="0.18" stroke={fill} strokeWidth={counterfactual ? '3' : '2'} strokeDasharray={counterfactual ? '6 4' : undefined} />
       <text x={x} y={y + 4} textAnchor="middle" fill="#f8fafc" fontSize="12" fontWeight="700">
         {label}
       </text>

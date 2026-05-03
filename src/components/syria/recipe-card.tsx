@@ -5,18 +5,24 @@ import type { LucideIcon } from 'lucide-react';
 import { Loader2, Play, ShieldCheck } from 'lucide-react';
 import { runDialecticaRecipe, type RecipeId } from '@/lib/dialectica/client';
 import type { SyriaCachedRecipe } from '@/lib/syria/cached-recipe-results';
+import { SyriaCounterfactualControls } from '@/components/syria/counterfactual-controls';
+import { ErrorState } from '@/components/praxis/error-state';
 import { cn } from '@/lib/utils/cn';
 
 export function SyriaRecipeCard({ recipe, icon: Icon }: { recipe: SyriaCachedRecipe; icon: LucideIcon }) {
   const [status, setStatus] = useState<'idle' | 'running' | 'live' | 'cached'>('idle');
   const [answer, setAnswer] = useState(recipe.result);
+  const [counterfactualSet, setCounterfactualSet] = useState<string[]>([]);
 
   async function runRecipe() {
     setStatus('running');
     try {
       const result = await runDialecticaRecipe(recipe.recipe, {
         situationId: 'syria-transition-2026',
-        params: recipe.params as never,
+        params: {
+          ...recipe.params,
+          ...(recipe.recipe === 'path-search' && counterfactualSet.length > 0 ? { counterfactual_set: counterfactualSet } : {}),
+        } as never,
       });
       setAnswer(formatLiveResult(recipe.recipe, result) || recipe.result);
       setStatus('live');
@@ -66,6 +72,20 @@ export function SyriaRecipeCard({ recipe, icon: Icon }: { recipe: SyriaCachedRec
           Run
         </button>
       </div>
+      {status === 'cached' ? (
+        <div className="mt-3">
+          <ErrorState
+            headline={`${recipe.code} used cached result`}
+            subtext="The live recipe endpoint was unavailable or timed out. The card is showing the last recording-safe result, visibly labeled rather than silently mixing fallback data."
+            onRetry={runRecipe}
+          />
+        </div>
+      ) : null}
+      {recipe.recipe === 'path-search' ? (
+        <div className="mt-3">
+          <SyriaCounterfactualControls activeIds={counterfactualSet} onChange={setCounterfactualSet} compact />
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -87,8 +107,11 @@ function formatLiveResult(recipe: RecipeId, result: Record<string, unknown>): st
     return `Found ${result.narratives.length} narrative frame(s) with citation divergence.`;
   }
   if (recipe === 'path-search' && Array.isArray(result.paths) && result.paths.length > 0) {
-    const first = result.paths[0] as { rationale?: string };
-    return first.rationale ?? 'Ranked intervention path found.';
+    const first = result.paths[0] as { rationale?: string; counterfactual_penalty?: number };
+    const penalty = typeof first.counterfactual_penalty === 'number' && first.counterfactual_penalty < 1
+      ? ` Confidence adjusted by counterfactual x${first.counterfactual_penalty.toFixed(2)}.`
+      : '';
+    return `${first.rationale ?? 'Ranked intervention path found.'}${penalty}`;
   }
   return '';
 }

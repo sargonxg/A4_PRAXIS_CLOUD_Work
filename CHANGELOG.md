@@ -34,6 +34,11 @@
 - feat(syria): wire DIALECTICA recipe cards into the Syria workspace (#A9).
   Added five runnable recipe cards with live calls to `/api/dialectica/reason/*`
   and visibly labeled cached fallback answers for the recording flow.
+- feat(showcase): add Syria counterfactual controls, tour shell, and trust drawer (#B4/#B8/#B12/#B14/#B15).
+  Added deterministic Syria counterfactual toggles with PATH-SEARCH confidence
+  decay, a reusable guided-tour shell for the five-chapter workspace, a
+  persistent Trust drawer, shared useful empty/error states, and the public
+  readiness checklist that gates the showcase before release.
 
 ## 2026-05-03 — Syria graph-grounded research handoff
 
