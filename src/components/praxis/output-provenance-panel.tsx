@@ -19,6 +19,8 @@ import { ConfidenceBadge, type Confidence } from './confidence-badge';
 import { Citation } from './citation';
 import { SourceReceiptList } from './source-receipt-list';
 import { cn } from '@/lib/utils/cn';
+import type { ProvenanceStep } from '@/lib/knowledge/provenance-graph';
+import type { SourceSpan } from '@/lib/ai/schemas/conflict-grammar';
 
 export interface OutputProvenancePanelProps {
   /** Tool registry id (e.g. "humanitarian"). */
@@ -32,7 +34,13 @@ export interface OutputProvenancePanelProps {
   /** Model identifier (e.g. "gemini-2.5-pro"). */
   model?: string;
   /** Aggregated confidence asserted by the tool. */
-  confidence?: Confidence | string;
+  confidence?: Confidence | string | number;
+  /** Provenance graph run id if this output was produced by a reasoning recipe. */
+  runId?: string;
+  /** Rule/model steps recorded for this output. */
+  provenanceSteps?: ProvenanceStep[];
+  /** Direct source spans supporting the output. */
+  sourceSpans?: SourceSpan[];
   /** Number of corpus / live-feed sources actually used. */
   sourceCount?: number;
   /** Optional: list a few primary source names as chips. */
@@ -61,6 +69,9 @@ export function OutputProvenancePanel({
   domainVersion,
   model,
   confidence,
+  runId,
+  provenanceSteps,
+  sourceSpans,
   sourceCount,
   primarySources,
   sourceReceipts,
@@ -80,6 +91,9 @@ export function OutputProvenancePanel({
     typeof domainVersion === 'number' ||
     !!model ||
     !!confidence ||
+    !!runId ||
+    (provenanceSteps && provenanceSteps.length > 0) ||
+    (sourceSpans && sourceSpans.length > 0) ||
     typeof sourceCount === 'number' ||
     (primarySources && primarySources.length > 0) ||
     (sourceReceipts && sourceReceipts.length > 0) ||
@@ -115,6 +129,7 @@ export function OutputProvenancePanel({
         ) : null}
         {calibratedTo ? <ProvRow label="Calibrated to">{calibratedTo}</ProvRow> : null}
         {model ? <ProvRow label="Model">{model}</ProvRow> : null}
+        {runId ? <ProvRow label="Run id"><code className="rounded bg-slate-200/70 px-1 py-0.5 text-[11px]">{runId}</code></ProvRow> : null}
         {typeof sourceCount === 'number' ? <ProvRow label="Sources used">{sourceCount}</ProvRow> : null}
         {retrievalQuery ? (
           <ProvRow label="Retrieval query">
@@ -130,6 +145,36 @@ export function OutputProvenancePanel({
           {primarySources.map((s) => (
             <Citation key={s} name={s} sourceType="primary" variant="chip" />
           ))}
+        </div>
+      ) : null}
+      {sourceSpans && sourceSpans.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {sourceSpans.slice(0, 8).map((span, index) => (
+            <Citation
+              key={`${span.documentId}-${span.charStart}-${index}`}
+              name={span.documentId}
+              sourceType={span.retrievalMethod}
+              publishedAt={span.retrievedAt}
+              sourceSpan={span}
+              variant="chip"
+            />
+          ))}
+        </div>
+      ) : null}
+      {provenanceSteps && provenanceSteps.length > 0 ? (
+        <div className="mt-2 rounded-md border border-slate-200 bg-white p-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Reasoning rule chain</p>
+          <ol className="mt-1 space-y-1">
+            {provenanceSteps.slice(0, 8).map((step) => (
+              <li key={step.id ?? `${step.ruleId}-${step.ts}`} className="flex flex-wrap items-center gap-2 text-[11px] text-slate-700">
+                <code className="rounded bg-slate-100 px-1 py-0.5 font-semibold">{step.ruleId}</code>
+                <ConfidenceBadge confidence={step.confidence} />
+                {step.modelVersion ? <span className="text-slate-500">{step.modelVersion}</span> : null}
+                <span className="text-slate-500">{formatTimestamp(step.ts)}</span>
+                {step.inputNodeIds.length > 0 ? <span className="text-slate-500">{step.inputNodeIds.length} nodes</span> : null}
+              </li>
+            ))}
+          </ol>
         </div>
       ) : null}
       {frameworks && frameworks.length > 0 ? (

@@ -150,6 +150,22 @@
       ]
     },
     {
+      "collectionGroup": "provenance",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "ruleId", "order": "ASCENDING" },
+        { "fieldPath": "ts", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "provenance",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "confidence", "order": "ASCENDING" },
+        { "fieldPath": "ts", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "agent_runs",
       "queryScope": "COLLECTION_GROUP",
       "fields": [

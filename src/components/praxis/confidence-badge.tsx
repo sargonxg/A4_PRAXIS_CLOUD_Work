@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils/cn';
 export type Confidence = 'high' | 'medium' | 'low' | 'unknown';
 
 export interface ConfidenceBadgeProps {
-  confidence: Confidence | string;
+  confidence: Confidence | string | number;
   /** Show a leading "Confidence:" label. Default false (compact). */
   withLabel?: boolean;
   /** Visual size. Default "sm". */
@@ -53,9 +53,20 @@ const DEFAULT_TITLE: Record<Confidence, string> = {
   unknown: 'Confidence not asserted by the tool; treat as low.',
 };
 
-export function normalizeConfidence(value: string | undefined | null): Confidence {
-  const v = (value ?? '').toLowerCase();
+export function normalizeConfidence(value: string | number | undefined | null): Confidence {
+  if (typeof value === 'number') {
+    if (value >= 0.75) return 'high';
+    if (value >= 0.45) return 'medium';
+    return 'low';
+  }
+  const v = (value ?? '').toLowerCase().trim();
+  if (!v) return 'unknown';
   if (v === 'high' || v === 'medium' || v === 'low') return v;
+  if (v === 'extracted') return 'high';
+  if (v === 'inferred' || v === 'assessed') return 'medium';
+  if (v === 'ambiguous') return 'low';
+  const numeric = Number(v);
+  if (Number.isFinite(numeric)) return normalizeConfidence(numeric);
   return 'unknown';
 }
 
@@ -66,9 +77,10 @@ export function ConfidenceBadge({
   title,
   className,
 }: ConfidenceBadgeProps) {
-  const c = normalizeConfidence(typeof confidence === 'string' ? confidence : '');
+  const c = normalizeConfidence(confidence);
   const Icon = ICON[c];
-  const aria = title ?? DEFAULT_TITLE[c];
+  const numericLabel = typeof confidence === 'number' ? ` (${Math.round(confidence * 100)}%)` : '';
+  const aria = title ?? `${DEFAULT_TITLE[c]}${numericLabel}`;
 
   return (
     <span
@@ -83,7 +95,7 @@ export function ConfidenceBadge({
     >
       <Icon className={cn(size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5')} aria-hidden="true" />
       {withLabel ? <span className="text-slate-500">Confidence:</span> : null}
-      <span className="capitalize">{c}</span>
+      <span className="capitalize">{c}{numericLabel}</span>
     </span>
   );
 }

@@ -18,6 +18,7 @@
 import { ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils/cn';
+import type { SourceSpan } from '@/lib/ai/schemas/conflict-grammar';
 
 export interface CitationProps {
   /** Human-readable source label, e.g. "OCHA FTS", "ReliefWeb", "Doc#42:p3". */
@@ -30,6 +31,7 @@ export interface CitationProps {
   publishedAt?: string;
   /** Layer/source type — surfaces as a small badge in `chip` variant. */
   sourceType?: string;
+  sourceSpan?: SourceSpan;
   variant?: 'inline' | 'chip';
   className?: string;
 }
@@ -47,11 +49,14 @@ export function Citation({
   url,
   publishedAt,
   sourceType,
+  sourceSpan,
   variant = 'inline',
   className,
 }: CitationProps) {
-  const formattedDate = formatDate(publishedAt);
-  const target = url || citation;
+  const formattedDate = formatDate(publishedAt ?? sourceSpan?.retrievedAt);
+  const title = sourceSpan?.excerpt
+    ? `${sourceSpan.documentId} · chars ${sourceSpan.charStart}-${sourceSpan.charEnd}\n${sourceSpan.excerpt}`
+    : citation || url || name;
 
   if (variant === 'chip') {
     return (
@@ -60,11 +65,11 @@ export function Citation({
           'inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700 shadow-sm',
           className
         )}
-        title={citation || url || name}
+        title={title}
       >
-        {sourceType ? (
+        {sourceType || sourceSpan?.retrievalMethod ? (
           <Badge variant="outline" className="px-1 py-0 text-[10px] uppercase tracking-wide">
-            {sourceType}
+            {sourceType ?? sourceSpan?.retrievalMethod}
           </Badge>
         ) : null}
         <span className="font-medium">{name}</span>
@@ -88,17 +93,18 @@ export function Citation({
   return (
     <span className={cn('inline text-xs text-slate-600', className)}>
       <span className="text-slate-500">Source:</span>{' '}
-      {target ? (
+      {url ? (
         <a
-          href={target}
+          href={url}
           target="_blank"
           rel="noopener noreferrer"
           className="font-medium text-emerald-700 hover:text-emerald-800"
+          title={title}
         >
           {name}
         </a>
       ) : (
-        <span className="font-medium text-slate-700">{name}</span>
+        <span className="font-medium text-slate-700" title={title}>{name}</span>
       )}
       {formattedDate ? <span className="text-slate-500"> · {formattedDate}</span> : null}
       {url ? <ExternalLink className="ml-0.5 inline h-3 w-3 align-text-top" aria-hidden="true" /> : null}

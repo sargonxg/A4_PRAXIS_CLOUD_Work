@@ -20,8 +20,10 @@ import {
   CONFIDENCE_LEVELS,
   PRIMITIVE_SUBTYPES,
   RELATIONSHIP_VOCABULARY,
+  SourceSpanSchema,
   type ACOEntityType,
   type ConfidenceLevel,
+  type SourceSpan,
 } from '@/lib/ai/schemas/conflict-grammar';
 import { computeTrustworthiness, type TrustworthinessScore } from '@/lib/analytics/trustworthiness-engine';
 
@@ -32,6 +34,8 @@ const ExtractedNodeSchema = z.object({
   label: z.string().describe('Human-readable name'),
   primitive_type: z.enum(ACO_ENTITY_TYPES),
   confidence: z.enum(CONFIDENCE_LEVELS),
+  confidence_score: z.number().min(0).max(1).optional(),
+  source_span: SourceSpanSchema.optional(),
   description: z.string().describe('Brief description of this entity in context'),
   // Type-specific fields (optional, depends on primitive_type)
   subtype: z.string().optional().describe('Type-specific subtype (e.g., actor_type, claim_type, event_type)'),
@@ -48,6 +52,8 @@ const ExtractedEdgeSchema = z.object({
   target: z.string().describe('Target node ID'),
   relation: z.string().describe('Relationship type from ACO vocabulary (e.g., "claims", "opposes", "triggered_by")'),
   confidence: z.enum(CONFIDENCE_LEVELS),
+  confidence_score: z.number().min(0).max(1).optional(),
+  source_span: SourceSpanSchema.optional(),
   description: z.string().optional().describe('Brief description of this relationship'),
   valid_from: z.string().optional(),
   valid_until: z.string().optional(),
@@ -72,6 +78,8 @@ export interface ExtractedNode {
   label: string;
   primitive_type: ACOEntityType;
   confidence: ConfidenceLevel;
+  confidence_score?: number;
+  source_span?: SourceSpan;
   description: string;
   subtype?: string;
   date?: string;
@@ -89,6 +97,8 @@ export interface ExtractedEdge {
   target: string;
   relation: string;
   confidence: ConfidenceLevel;
+  confidence_score?: number;
+  source_span?: SourceSpan;
   description?: string;
   valid_from?: string;
   valid_until?: string;
@@ -196,6 +206,7 @@ Focus on quality over quantity. Every node and edge should be defensible from th
   });
 
   const extractedAt = new Date().toISOString();
+  const fallbackSpan = makeFallbackSourceSpan(text, sourceUrl ?? sourceName, extractedAt);
   const output = result.output;
   if (!output) {
     return {
@@ -208,6 +219,8 @@ Focus on quality over quantity. Every node and edge should be defensible from th
   const daysSinceSource = 0; // Assumed current for live extraction
   const nodes: ExtractedNode[] = output.nodes.map((n) => ({
     ...n,
+    confidence_score: n.confidence_score ?? confidenceLevelToScore(n.confidence),
+    source_span: n.source_span ?? fallbackSpan,
     source_url: sourceUrl,
     source_name: sourceName,
     trustScore: computeTrustworthiness({
@@ -218,7 +231,11 @@ Focus on quality over quantity. Every node and edge should be defensible from th
 
   return {
     nodes,
-    edges: output.edges,
+    edges: output.edges.map((edge) => ({
+      ...edge,
+      confidence_score: edge.confidence_score ?? confidenceLevelToScore(edge.confidence),
+      source_span: edge.source_span ?? fallbackSpan,
+    })),
     timeline: output.timeline,
     summary: output.summary,
     sourceUrl,
@@ -353,6 +370,10 @@ export function toFirestoreGraph(result: ExtractionResult): {
         description: n.description,
         subtype: n.subtype,
         confidence: n.confidence,
+        confidence_score: n.confidence_score,
+        confidence_level: n.confidence,
+        source_span: n.source_span,
+        extractor_version: 'conflict-grammar-v1',
         date: n.date,
         location: n.location,
         status: n.status,
@@ -376,10 +397,34 @@ export function toFirestoreGraph(result: ExtractionResult): {
         : 0.6,
       metadata: {
         confidence: e.confidence,
+        confidence_score: e.confidence_score,
+        confidence_level: e.confidence,
+        source_span: e.source_span,
+        extractor_version: 'conflict-grammar-v1',
         description: e.description,
         valid_from: e.valid_from,
         valid_until: e.valid_until,
       },
     })),
+  };
+}
+
+function confidenceLevelToScore(level: ConfidenceLevel): number {
+  if (level === 'EXTRACTED') return 0.9;
+  if (level === 'INFERRED') return 0.7;
+  if (level === 'ASSESSED') return 0.6;
+  if (level === 'AMBIGUOUS') return 0.4;
+  return 0.5;
+}
+
+function makeFallbackSourceSpan(text: string, documentId: string | undefined, retrievedAt: string): SourceSpan {
+  const excerpt = text.slice(0, 500);
+  return {
+    documentId: documentId || 'unknown-source',
+    charStart: 0,
+    charEnd: excerpt.length,
+    excerpt,
+    retrievedAt,
+    retrievalMethod: 'grounded_search',
   };
 }

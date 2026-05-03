@@ -1,7 +1,7 @@
 /**
  * Graph Service — Firestore-backed conflict knowledge graph
  *
- * Stores ACO v2.0 entities (14 types) and relationships (72 types) with:
+ * Stores ACO v1 entities (8 primitives) and relationships (42 types) with:
  * - Temporal metadata (valid_from, valid_until, last_verified)
  * - Provenance tracking (source_url, source_name, confidence)
  * - Graph versioning (snapshots for evolution tracking)
@@ -15,6 +15,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './config';
 import { computeCorePrimitiveCoverage, type CorePrimitiveCoverage } from '@/lib/graph/core-primitives';
 import { normalizeCanonicalGraph } from '@/lib/graph/canonical-graph';
+import type { SourceSpan } from '@/lib/ai/schemas/conflict-grammar';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -29,7 +30,9 @@ export interface GraphNode {
   metadata?: {
     description?: string;
     subtype?: string;
-    confidence?: string;
+    confidence?: string | number;
+    confidence_score?: number;
+    confidence_level?: string;
     date?: string;
     location?: string;
     status?: string;
@@ -37,6 +40,9 @@ export interface GraphNode {
     valid_until?: string;
     source_url?: string;
     source_name?: string;
+    source_span?: SourceSpan;
+    sourceSpan?: SourceSpan;
+    extractor_version?: string;
     trustScore?: { level: string; score: number };
     [key: string]: unknown;
   };
@@ -51,11 +57,16 @@ export interface GraphEdge {
   label?: string;
   // ACO v2.0 fields
   metadata?: {
-    confidence?: string;
+    confidence?: string | number;
+    confidence_score?: number;
+    confidence_level?: string;
     description?: string;
     valid_from?: string;
     valid_until?: string;
     category?: string; // causal, structural, antagonistic, cooperative, foundational
+    source_span?: SourceSpan;
+    sourceSpan?: SourceSpan;
+    extractor_version?: string;
     [key: string]: unknown;
   };
 }

@@ -10,6 +10,10 @@
   Added the JSON Schema, generated Zod/Pydantic outputs, the 42-edge
   relationship vocabulary, and schema tests/fixtures to prevent frontend/backend
   ontology drift.
+- feat(dialectica): add provenance graph and numeric confidence propagation (#A3).
+  Added typed provenance-step CRUD, conservative path-confidence math, Firestore
+  provenance indexes/rules, source-span extraction fallbacks, and shared UI
+  rendering for numeric confidence, source spans, and reasoning rule chains.
 
 ## 2026-05-03 — Syria graph-grounded research handoff
 
