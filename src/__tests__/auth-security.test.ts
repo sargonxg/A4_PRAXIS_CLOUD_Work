@@ -74,6 +74,31 @@ describe('Auth Security Contracts', () => {
     }
   });
 
+  it('admin email env extends built-in Giulio admins instead of replacing them', async () => {
+    const original = process.env.ADMIN_EMAIL_ALLOWLIST;
+    process.env.ADMIN_EMAIL_ALLOWLIST = 'ops@example.com; security@example.com\nadmin@example.com';
+    const { getAdminGateStatus, isAdminPrincipal } = await import('../lib/auth/admin-gate');
+
+    expect(getAdminGateStatus().configuredEmailAllowlist).toEqual(expect.arrayContaining([
+      'giulio@tacitus.me',
+      'giuliocatanzariti@gmail.com',
+      'ops@example.com',
+      'security@example.com',
+      'admin@example.com',
+    ]));
+    expect(isAdminPrincipal({
+      uid: 'not-allowlisted',
+      email: 'giulio@tacitus.me',
+      emailVerified: true,
+    })).toBe(true);
+
+    if (original === undefined) {
+      delete process.env.ADMIN_EMAIL_ALLOWLIST;
+    } else {
+      process.env.ADMIN_EMAIL_ALLOWLIST = original;
+    }
+  });
+
   it('CSP keeps strict-dynamic and nonce off script-src-elem so auth redirect scripts can run', () => {
     const proxySource = readFileSync(join(process.cwd(), 'src', 'proxy.ts'), 'utf8');
     const scriptSrcElemInitializer = proxySource.match(/const scriptSrcElem = nonce[\s\S]*?: scriptSrc;/)?.[0] ?? '';

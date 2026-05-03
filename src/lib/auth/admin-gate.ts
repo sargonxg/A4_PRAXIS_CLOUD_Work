@@ -9,21 +9,26 @@
 
 const DEFAULT_ADMIN_EMAILS = ['giulio@tacitus.me', 'giuliocatanzariti@gmail.com'];
 
-function parseCsv(raw: string): string[] {
+function unique(values: string[]): string[] {
+  return Array.from(new Set(values));
+}
+
+function parseAllowlist(raw: string): string[] {
   return raw
-    .split(',')
+    .replace(/^\^.\^/, '')
+    .split(/[,\n;\s]+/)
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 }
 
 export function getAdminUidAllowlist(): string[] {
   const raw = process.env.ADMIN_ALLOWLIST ?? '';
-  return parseCsv(raw);
+  return unique(parseAllowlist(raw));
 }
 
 export function getAdminEmailAllowlist(): string[] {
-  const raw = process.env.ADMIN_EMAIL_ALLOWLIST ?? DEFAULT_ADMIN_EMAILS.join(',');
-  return parseCsv(raw).map((email) => email.toLowerCase());
+  const configured = parseAllowlist(process.env.ADMIN_EMAIL_ALLOWLIST ?? '');
+  return unique([...DEFAULT_ADMIN_EMAILS, ...configured].map((email) => email.toLowerCase()));
 }
 
 export function isAdmin(uid: string | null | undefined): boolean {

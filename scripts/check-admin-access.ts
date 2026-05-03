@@ -18,7 +18,7 @@ console.log(JSON.stringify({
     configuredEmailAllowlist: gate.configuredEmailAllowlist,
     usingDefaultEmailAllowlist: gate.usingDefaultEmailAllowlist,
   },
-  productionNote: 'Production cloudbuild.yaml sets ADMIN_EMAIL_ALLOWLIST=giulio@tacitus.me,giuliocatanzariti@gmail.com.',
+  productionNote: 'giulio@tacitus.me and giuliocatanzariti@gmail.com are built-in verified-email admins; ADMIN_EMAIL_ALLOWLIST only adds more emails.',
 }, null, 2));
 
 if (!access.admin) process.exitCode = 1;

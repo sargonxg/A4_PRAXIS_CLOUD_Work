@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { verifyIdToken } from '@/lib/firebase/admin';
 import { isUserOnboarded } from '@/lib/firebase/analyst-profile-admin';
 import { signCookie, verifyCookie } from '@/lib/auth/cookie-signer';
+import { getAdminPrincipalAccess } from '@/lib/auth/admin-gate';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
 
@@ -53,15 +54,15 @@ export async function POST(request: Request) {
 
     if (body.token && typeof body.token === 'string') {
       // Verify the Firebase ID token before storing it
-      let verifiedUid: string;
+      let verifiedUser: Awaited<ReturnType<typeof verifyIdToken>>;
       try {
         const verified = await verifyIdToken(body.token);
         if (!verified.uid) {
           console.error('[auth/session] verifyIdToken returned no uid');
           return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
         }
-        verifiedUid = verified.uid;
-        console.log('[auth/session] Token verified for uid:', verifiedUid);
+        verifiedUser = verified;
+        console.log('[auth/session] Token verified for uid:', verifiedUser.uid);
       } catch (err) {
         console.error('[auth/session] Token verification failed:', err instanceof Error ? err.message : String(err));
         return NextResponse.json({ error: 'Token verification failed' }, { status: 401 });
@@ -73,15 +74,29 @@ export async function POST(request: Request) {
       // mirroring from users/{uid}.onboardingCompletedAt for pre-merge users).
       let onboarded = false;
       try {
-        onboarded = await isUserOnboarded(verifiedUid);
+        onboarded = await isUserOnboarded(verifiedUser.uid);
       } catch (err) {
-        console.warn('[auth/session] Could not resolve onboarded flag for uid:', verifiedUid, err instanceof Error ? err.message : String(err));
+        console.warn('[auth/session] Could not resolve onboarded flag for uid:', verifiedUser.uid, err instanceof Error ? err.message : String(err));
       }
+
+      const adminAccess = getAdminPrincipalAccess(verifiedUser);
 
       // Token is valid — store in cookie for subsequent requests (includes onboarded flag for middleware)
       cookieStore.set(
         SESSION_COOKIE,
-        signCookie(JSON.stringify({ token: body.token, onboarded })),
+        signCookie(JSON.stringify({
+          token: body.token,
+          onboarded,
+          issuedAt: Date.now(),
+          user: {
+            uid: verifiedUser.uid,
+            email: verifiedUser.email,
+            name: verifiedUser.name,
+            emailVerified: verifiedUser.emailVerified,
+          },
+          admin: adminAccess.admin,
+          adminReason: adminAccess.reason,
+        })),
         COOKIE_OPTIONS,
       );
       return NextResponse.json({ success: true });
@@ -124,8 +139,19 @@ export async function GET() {
         },
       });
     }
-    // For Firebase sessions, the client manages the user state.
-    // We just confirm a session exists.
+    if (data.user) {
+      return NextResponse.json({
+        authenticated: true,
+        user: {
+          id: data.user.uid,
+          email: data.user.email,
+          name: data.user.name,
+          emailVerified: data.user.emailVerified === true,
+          isDemo: false,
+          admin: data.admin === true,
+        },
+      });
+    }
     return NextResponse.json({ authenticated: true });
   } catch {
     return NextResponse.json({ user: null });
