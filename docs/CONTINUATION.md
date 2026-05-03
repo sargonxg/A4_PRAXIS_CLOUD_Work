@@ -1,5 +1,34 @@
 # PRAXIS — Continuation Prompt For Future Agents
 
+> **2026-05-03 Codex continuation — Syria graph-grounded research handoff**
+>
+> Current product direction: the Syria case is the canonical real-app demo
+> workspace. It should show PRAXIS conducting specific live policy research
+> inside the app: targeted searches, source receipts, discrepancy analysis,
+> graph proposal staging, and brief-ready synthesis.
+>
+> New handoff doc:
+> `docs/PRAXIS_SYRIA_GRAPH_GROUNDED_RESEARCH_HANDOFF_2026-05-03.md`.
+>
+> Key shipped surfaces:
+> - `/app/syria-case?recording=1&case=syria`: research modes,
+>   neuro-symbolic architecture, graph grounding, media, commitments, and
+>   recording path.
+> - `/app/source-scout?recording=1&case=syria`: live research modes,
+>   prompt-prefilled links, graph-write candidates, structured answer contract.
+> - `/app/deep-search-agent?case=syria`: Syria case fallback context,
+>   graph-grounded research contract, and graph-memory pipeline.
+>
+> Research modes now modeled: latest-source sweep, think-tank discrepancy
+> review, commitment and communique monitor, local media divergence,
+> graph-grounded policy question, and economic/HLP scenario research.
+>
+> Next massive session should convert these modeled modes into a reusable
+> `ResearchMode` registry and wire selected modes through Source Scout, Deep
+> Research Agent, Ask PRAXIS Live Research, GraphOps proposals, Policy Memo,
+> and Briefing Studio. Keep cloud spend gated: local fixtures render without
+> provider calls; live search runs only on explicit user action.
+>
 > **2026-04-29 Codex continuation — grounded-search intelligence spine**
 >
 > Current product direction: grounded Google Search is the primary live

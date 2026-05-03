@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-05-03 — Syria graph-grounded research handoff
+
+- Added the Syria graph-grounded research handoff doc:
+  `docs/PRAXIS_SYRIA_GRAPH_GROUNDED_RESEARCH_HANDOFF_2026-05-03.md`.
+- Updated the Syria recording runbook so the canonical walkthrough now includes
+  Source Scout research modes, Media Compass, Deep Research Agent, graph
+  grounding, structured research answers, and the research-heavy voiceover.
+- Updated the Dialectica backbone architecture doc with the live research
+  pattern: Search -> Extract -> Validate -> Stage -> Reason -> Draft.
+- Updated the documentation index and continuation prompt so the next large
+  update session starts from the Syria real-app workspace, graph-grounded live
+  research modes, GraphOps staging, and cost-gated provider posture.
+
 ## 2026-05-01 — Tools workspace continuation
 
 - Added a demo-ready ten-tool command center to the landing page, replacing

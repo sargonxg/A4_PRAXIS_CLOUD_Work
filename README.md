@@ -96,6 +96,26 @@ causal timeline, actor dossiers, scenarios, derived risk score, concrete
 actions, graph primitives, provenance, confidence, persisted memory, and JSON
 export. Shared schema: `src/lib/ai/schemas/situation-intelligence.ts`.
 
+### Graph-Grounded Research Modes
+
+The Syria workspace now documents the intended live research pattern for
+PRAXIS tools:
+
+```
+Search -> Extract -> Validate -> Stage -> Reason -> Draft
+```
+
+Searches produce source receipts and typed graph candidates, not only prose.
+GraphOps stages candidate updates with provenance before they become durable
+memory. Downstream tools then retrieve by graph path, ontology track, source
+confidence, and discrepancy state so memos and briefings can explain their
+evidence basis.
+
+The current modeled research modes are latest-source sweep, think-tank
+discrepancy review, commitment/communique monitor, local media divergence,
+graph-grounded policy question, and economic/HLP scenario research. See
+[`docs/PRAXIS_SYRIA_GRAPH_GROUNDED_RESEARCH_HANDOFF_2026-05-03.md`](./docs/PRAXIS_SYRIA_GRAPH_GROUNDED_RESEARCH_HANDOFF_2026-05-03.md).
+
 ---
 
 ## Tech Stack

@@ -19,6 +19,9 @@
 
 | Doc | Purpose |
 |---|---|
+| [`PRAXIS_SYRIA_GRAPH_GROUNDED_RESEARCH_HANDOFF_2026-05-03.md`](./PRAXIS_SYRIA_GRAPH_GROUNDED_RESEARCH_HANDOFF_2026-05-03.md) | **Current Syria case handoff: graph-grounded live research modes, structured response contract, GraphOps staging pattern, and next-session priorities.** |
+| [`SYRIA_CASE_RECORDING_RUNBOOK.md`](./SYRIA_CASE_RECORDING_RUNBOOK.md) | **Canonical Syria real-app recording path, source basis, graph-grounded research modes, and 45-second walkthrough script.** |
+| [`PRAXIS_DIALECTICA_BACKBONE_ARCHITECTURE_2026-05-01.md`](./PRAXIS_DIALECTICA_BACKBONE_ARCHITECTURE_2026-05-01.md) | **Dialectica graph/ontology backbone plan for premium context packs, graph reasoning, and graph-grounded live research.** |
 | [`STRATEGY.md`](./STRATEGY.md) | **Current product and technical strategy for policy/diplomacy users; defines source-of-truth decisions and the high-impact coding queue.** |
 | [`MONSTER_TODO_2026-04-27.md`](./MONSTER_TODO_2026-04-27.md) | **Current execution queue aligned to Strategy: durable agents, data quality, trust, async ops, observability, billing, and close-out.** |
 | [`ROUND_6_READINESS_2026-04-27.md`](./ROUND_6_READINESS_2026-04-27.md) | **Current short plan: deep-research memo distilled, LangGraph readiness, required human decisions.** |

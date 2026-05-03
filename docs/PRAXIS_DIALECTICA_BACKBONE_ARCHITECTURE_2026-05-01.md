@@ -32,6 +32,11 @@ Research basis for the design:
 - OG-RAG research argues that plain retrieval misses structured domain
   knowledge; ontology-grounded retrieval is better suited when type systems and
   relationships matter.
+- The May 3 Syria workspace pass adds a concrete PRAXIS product pattern:
+  graph-grounded live research modes. The app should let analysts run targeted
+  searches, extract candidate graph updates, compare discrepancies, stage
+  changes through GraphOps, and draft outputs from graph paths rather than
+  isolated chunks.
 
 Sources:
 
@@ -39,6 +44,35 @@ Sources:
 - https://arxiv.org/abs/2306.08302
 - https://doi.org/10.1109/TNNLS.2021.3070843
 - https://arxiv.org/abs/2412.15235
+
+## PRAXIS Live Research Pattern
+
+The graph-grounded research loop is:
+
+1. Search targeted source families.
+2. Extract typed candidates.
+3. Validate against ontology, source tier, temporal anchor, and graph context.
+4. Stage graph updates in GraphOps.
+5. Reason from graph paths and source receipts.
+6. Draft memo, briefing, scenario, or commitment-monitor output.
+
+The first modeled Syria research modes are:
+
+- latest-source sweep;
+- think-tank discrepancy review;
+- commitment and communique monitor;
+- local media and narrative divergence;
+- graph-grounded policy question;
+- economic and HLP scenario research.
+
+Dialectica should eventually make this stronger by resolving ontology layers,
+checking typed edge constraints, computing deterministic rule outputs, and
+returning context packs that PRAXIS tools can use without re-processing the
+entire source corpus.
+
+See
+[`docs/PRAXIS_SYRIA_GRAPH_GROUNDED_RESEARCH_HANDOFF_2026-05-03.md`](./PRAXIS_SYRIA_GRAPH_GROUNDED_RESEARCH_HANDOFF_2026-05-03.md)
+for the current app-facing implementation notes.
 
 ## Product Boundary
 
