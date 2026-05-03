@@ -94,7 +94,7 @@ User clicks "Enter Demo Mode"
     │       credits: 999 (unlimited display)
     │       isDemo: true
     │
-    └─→ router.push('/demo/dashboard')
+    └─→ router.push('/app/syria-case?recording=1&case=syria')
 ```
 
 Demo sessions are completely isolated from Firebase. The middleware reads the cookie and routes to `/demo/*`. Demo data never touches production Firestore.
@@ -178,13 +178,13 @@ matcher: ['/demo/:path*', '/app/:path*', '/login', '/pricing']
 1. Read `tacitus-auth-session` cookie
 2. Parse JSON value
 3. If `sessionData?.token` → allow through
-4. If `sessionData?.demo` → redirect to `/demo/dashboard` (wrong app)
+4. If `sessionData?.demo` → allow `/app/*`; Syria case routes render inside the real app shell
 5. Otherwise → redirect to `/login?redirect={pathname}`
 
 **Decision tree for `/demo/*`:**
 1. Read cookie
 2. If `sessionData?.demo` → allow through
-3. If `sessionData?.token` → redirect to `/app/dashboard` (wrong app)
+3. If `sessionData?.token` → rewrite legacy `/demo/*` paths into the matching `/app/*` path
 4. Otherwise → redirect to `/login` (with demo hint)
 
 **Important:** The middleware does NOT verify the Firebase token cryptographically — it only checks for presence. Full `verifyIdToken` happens in each API route via `withAuth()`. The middleware is a UX guard (redirects unauthenticated users); the API routes enforce actual security.

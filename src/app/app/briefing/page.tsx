@@ -554,12 +554,15 @@ export default function BriefingPage() {
   const searchParams = useSearchParams();
   const { hasData, loading: firestoreLoading } = useToolData('briefing');
   const [regenerating, setRegenerating] = useState(false);
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), isDemo);
+
+  if (isSyriaCase) {
+    return <DemoBriefingPage preloadedSlides={SYRIA_DEMO_MORNING_BRIEF} showSyriaCue />;
+  }
 
   // Demo mode — render with hardcoded demo data
   if (isDemo) {
-    return isSyriaWorkspaceCase(searchParams.get('case'), isDemo)
-      ? <DemoBriefingPage preloadedSlides={SYRIA_DEMO_MORNING_BRIEF} showSyriaCue />
-      : <DemoBriefingPage />;
+    return <DemoBriefingPage />;
   }
 
   // No situation selected

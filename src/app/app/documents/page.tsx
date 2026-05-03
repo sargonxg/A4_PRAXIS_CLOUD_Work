@@ -5,6 +5,7 @@ import { NoSituationState } from "@/components/praxis/no-situation-state";
 import { RegistryToolInfo } from "@/components/praxis/tool-info-from-registry";
 import { DocumentWorkspaceSpine } from "@/components/documents/document-workspace-spine";
 import { usePraxisRoute } from "@/lib/utils/routes";
+import { useSearchParams } from "next/navigation";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -67,6 +68,12 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { isSyriaWorkspaceCase } from "@/lib/constants/syria-demo-case";
+import {
+  SYRIA_CURRENT_RESEARCH_SOURCES,
+  SYRIA_LOCAL_MEDIA_SOURCES,
+  SYRIA_STRUCTURED_RESEARCH_RESPONSE_CONTRACT,
+} from "@/lib/constants/syria-demo-workspace";
 
 /* ====================================================================
    TYPES
@@ -2078,6 +2085,127 @@ const DEMO_DOCUMENTS: DocumentItem[] = [
   },
 ];
 
+const SYRIA_DOCUMENTS: DocumentItem[] = [
+  {
+    id: "syria-unsc-april-briefing",
+    title: "UNSC Syria Transition Briefing - Regional Spillover - Apr 2026.pdf",
+    fileType: "pdf",
+    size: 1240000,
+    status: "extracted",
+    uploadedAt: "2026-05-02T09:10:00.000Z",
+    entityCount: 22,
+    chunkCount: 16,
+    entities: {
+      actors: [
+        { id: "syria-un-envoy", name: "UN Special Envoy for Syria", actorType: "international_organization", description: "Good offices actor framing transition, inclusion, and implementation risk.", confidence: 0.92 },
+        { id: "syria-ocha", name: "OCHA and UN humanitarian agencies", actorType: "international_organization", description: "Humanitarian coordination layer tracking access, displacement, funding, and protection needs.", confidence: 0.9 },
+      ],
+      claims: [
+        { id: "claim-fragile-transition", actorId: "syria-un-envoy", title: "Transition opportunity remains fragile", description: "UN framing treats the transition as real but vulnerable to violence, weak implementation, and regional escalation.", claimType: "assessment", status: "active", confidence: 0.86 },
+      ],
+      interests: [],
+      constraints: [
+        { id: "constraint-spillover", actorId: "syria-un-envoy", title: "Regional escalation spillover", description: "Wider Middle East escalation can undermine Syria recovery and humanitarian access.", constraintType: "regional", severity: "significant", confidence: 0.84 },
+      ],
+      leverage: [],
+      commitments: [],
+      events: [
+        { id: "event-april-council", title: "Security Council reviews Syria transition risk", description: "Council reporting links fragile transition, regional war risk, humanitarian stress, and political implementation.", eventType: "diplomatic", date: "2026-04-22", impact: "high", confidence: 0.88 },
+      ],
+      narratives: [],
+    },
+  },
+  {
+    id: "syria-jan30-integration-agreement",
+    title: "Damascus-SDF Integration Track - Commitment Extraction.docx",
+    fileType: "docx",
+    size: 386000,
+    status: "extracted",
+    uploadedAt: "2026-05-02T09:18:00.000Z",
+    entityCount: 19,
+    chunkCount: 11,
+    entities: {
+      actors: [
+        { id: "syria-government", name: "Syrian transitional authorities", actorType: "state", description: "Post-Assad authorities managing territorial integration, security sequencing, and recovery diplomacy.", confidence: 0.87 },
+        { id: "syria-sdf", name: "Syrian Democratic Forces / AANES", actorType: "non_state_armed_group", description: "Northeast security and governance actor party to integration commitments.", confidence: 0.86 },
+      ],
+      claims: [
+        { id: "claim-kurdish-rights", actorId: "syria-sdf", title: "Rights-protective integration is required", description: "Kurdish civil, cultural, educational, and citizenship rights remain key implementation tests.", claimType: "rights", status: "active", confidence: 0.8 },
+      ],
+      interests: [
+        { id: "interest-security-sequencing", actorId: "syria-government", title: "Avoid security vacuum while consolidating authority", description: "Damascus needs sequencing that preserves order without triggering renewed fragmentation.", interestType: "security", priority: "vital", confidence: 0.76 },
+      ],
+      constraints: [],
+      leverage: [
+        { id: "lev-integration", actorId: "syria-government", targetActorId: "syria-sdf", title: "Administrative and security integration sequence", description: "Institutional sequencing is the main leverage lane, but it carries rights and legitimacy risk.", leverageType: "institutional", confidence: 0.78 },
+      ],
+      commitments: [
+        { id: "commitment-jan30", actorId: "syria-government", title: "30 January ceasefire and northeast integration agreement", description: "Agreement requires implementation plan, rights safeguards, return arrangements, and monitoring evidence.", commitmentType: "ceasefire", status: "monitoring", confidence: 0.84 },
+      ],
+      events: [],
+      narratives: [],
+    },
+  },
+  {
+    id: "syria-local-media-receipts",
+    title: "Local Syria Media Receipt Pack - Source Posture and Narrative Lanes.md",
+    fileType: "md",
+    size: 156000,
+    status: "extracted",
+    uploadedAt: "2026-05-02T09:25:00.000Z",
+    entityCount: 31,
+    chunkCount: 14,
+    entities: {
+      actors: SYRIA_LOCAL_MEDIA_SOURCES.slice(0, 4).map((source, index) => ({
+        id: `local-source-${index}`,
+        name: source.name,
+        actorType: "media",
+        description: source.posture,
+        confidence: source.reliability / 100,
+      })),
+      claims: [],
+      interests: [],
+      constraints: [
+        { id: "constraint-local-triangulation", actorId: "local-source-0", title: "Local reporting requires triangulation", description: "Fast claims from local, monitoring, state, and diaspora sources should be checked against UN or multiple independent receipts.", constraintType: "source-confidence", severity: "moderate", confidence: 0.82 },
+      ],
+      leverage: [],
+      commitments: [],
+      events: [],
+      narratives: [
+        { id: "narrative-northeast", actorId: "local-source-2", title: "Northeast implementation remains uneven", description: "Local reporting adds district-level service, rights, security, and trust signals that diplomatic reporting often abstracts.", narrativeType: "local-implementation", confidence: 0.78 },
+      ],
+    },
+  },
+  {
+    id: "syria-research-response-contract",
+    title: "PRAXIS Syria Research Contract - Receipts Graph Grounding Memo.txt",
+    fileType: "txt",
+    size: 82000,
+    status: "extracted",
+    uploadedAt: "2026-05-02T09:32:00.000Z",
+    entityCount: 12,
+    chunkCount: 7,
+    entities: {
+      actors: [],
+      claims: [
+        { id: "claim-research-contract", actorId: "praxis", title: "Every answer must preserve receipts, graph paths, and gaps", description: SYRIA_STRUCTURED_RESEARCH_RESPONSE_CONTRACT[4]?.requirement ?? "Graph grounding is required.", claimType: "methodology", status: "active", confidence: 0.95 },
+      ],
+      interests: [],
+      constraints: [],
+      leverage: [],
+      commitments: [],
+      events: [],
+      narratives: [],
+    },
+  },
+];
+
+const SYRIA_DOCUMENT_SUMMARY = {
+  count: SYRIA_DOCUMENTS.length + SYRIA_CURRENT_RESEARCH_SOURCES.length,
+  processed: SYRIA_DOCUMENTS.filter((doc) => doc.status === "extracted").length,
+  totalEntities: SYRIA_DOCUMENTS.reduce((sum, doc) => sum + doc.entityCount, 0),
+};
+
 function DemoVaultPlaceholder() {
   const route = usePraxisRoute();
 
@@ -2115,13 +2243,137 @@ function DemoVaultPlaceholder() {
   );
 }
 
+function SyriaVaultPlaceholder() {
+  const route = usePraxisRoute();
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-diplomatic-blue">
+              Syria public-source case file
+            </p>
+            <h1 className="mt-1 font-serif text-2xl font-bold tracking-wide text-navy-900">
+              Syria Document Workspace
+            </h1>
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-navy-500">
+              Public receipts, local source packs, commitment extracts, and research contracts are already structured so
+              analysts can move from source audit to graph grounding to editable work products.
+            </p>
+          </div>
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-right">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Ready for drafting</p>
+            <p className="mt-1 font-mono text-xl font-semibold text-emerald-950">{SYRIA_DOCUMENT_SUMMARY.totalEntities}</p>
+            <p className="text-xs text-emerald-800">structured entities</p>
+          </div>
+        </div>
+      </div>
+
+      <DocumentWorkspaceSpine
+        documents={SYRIA_DOCUMENTS}
+        mode="demo"
+        route={(path) => `${route(path)}?case=syria`}
+      />
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Seeded Syria source library</CardTitle>
+            <CardDescription>
+              These are demo-safe public documents that represent what the real app stores after upload, extraction,
+              chunking, and GraphOps review.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            {SYRIA_DOCUMENTS.map((doc) => (
+              <div key={doc.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    {getDocIcon(doc.fileType)}
+                    <p className="truncate text-sm font-semibold text-navy-900">{doc.title}</p>
+                  </div>
+                  {getStatusBadge(doc.status)}
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  <MetricPill label="Type" value={formatFileType(doc.fileType)} />
+                  <MetricPill label="Entities" value={String(doc.entityCount)} />
+                  <MetricPill label="RAG chunks" value={String(doc.chunkCount)} />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <aside className="grid gap-4">
+          <Card className="border-gold-200 bg-gold-50">
+            <CardHeader>
+              <CardTitle className="text-base">LibreOffice-ready workflow</CardTitle>
+              <CardDescription>
+                Briefings and policy memos export DOCX, can be edited offline, then imported back into the work-product editor.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {[
+                "Draft from Syria graph context",
+                "Save to browser work-product library",
+                "Export DOCX for LibreOffice or Word review",
+                "Import revised DOCX back into editable sections",
+              ].map((item) => (
+                <div key={item} className="flex gap-2 rounded-md bg-white/80 p-2">
+                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                  <p className="text-xs leading-5 text-navy-700">{item}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Next document actions</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-2">
+              {[
+                { label: "Open policy memo", href: "/policy-memo?case=syria" },
+                { label: "Open decision briefing", href: "/briefing?case=syria" },
+                { label: "Inspect graph", href: "/conflict-graph?case=syria" },
+              ].map((action) => (
+                <button
+                  key={action.label}
+                  type="button"
+                  onClick={() => window.location.assign(route(action.href))}
+                  className="rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-navy-800 transition hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
+                >
+                  {action.label}
+                </button>
+              ))}
+            </CardContent>
+          </Card>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+function MetricPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md bg-white px-3 py-2">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">{label}</p>
+      <p className="mt-0.5 text-sm font-semibold text-navy-900">{value}</p>
+    </div>
+  );
+}
+
 /* ====================================================================
    PAGE EXPORT
    ==================================================================== */
 
 export default function DocumentVaultPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const searchParams = useSearchParams();
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get("case"), isDemo);
 
+  if (isSyriaCase) return <SyriaVaultPlaceholder />;
   if (isDemo) return <DemoVaultPlaceholder />;
   if (showGuard || !situation) return <NoSituationState />;
 

@@ -167,22 +167,22 @@ export default function PolicyMemoPage() {
   const [question, setQuestion] = useState('');
   const [generating, setGenerating] = useState(false);
   const [memo, setMemo] = useState<PolicyMemoData | null>(
-    savedMemo || (isDemo && isSyriaCase ? (SYRIA_DEMO_POLICY_MEMO as PolicyMemoData) : null)
+    savedMemo || (isSyriaCase ? (SYRIA_DEMO_POLICY_MEMO as PolicyMemoData) : null)
   );
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (savedMemo && !memo && !generating) setMemo(savedMemo);
-    if (!savedMemo && !memo && !generating && isDemo && isSyriaCase) {
+    if (!savedMemo && !memo && !generating && isSyriaCase) {
       setMemo(SYRIA_DEMO_POLICY_MEMO as PolicyMemoData);
       setQuestion('What posture should leadership adopt on the northeast integration agreement under humanitarian and spillover pressure?');
     }
-  }, [savedMemo, memo, generating, isDemo, isSyriaCase]);
+  }, [savedMemo, memo, generating, isSyriaCase]);
 
-  if (showGuard) return <NoSituationState />;
+  if (showGuard && !isSyriaCase) return <NoSituationState />;
 
   async function handleGenerate() {
-    if (isDemo && isSyriaCase) {
+    if (isSyriaCase) {
       setMemo(SYRIA_DEMO_POLICY_MEMO as PolicyMemoData);
       setQuestion((current) => current || 'What posture should leadership adopt on the northeast integration agreement under humanitarian and spillover pressure?');
       return;

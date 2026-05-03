@@ -38,7 +38,7 @@ const SYRIA_DEMO_FEATURES = [
   { icon: Search, label: 'Source Receipts', description: 'UN and humanitarian public-source audit' },
   { icon: GitBranch, label: 'Syria Graph', description: 'Agreement, actors, displacement, and spillover' },
   { icon: Shield, label: 'GraphOps Health', description: 'Provenance and temporal readiness' },
-  { icon: FileText, label: 'Decision Brief', description: '7-slide investor recording endpoint' },
+  { icon: FileText, label: 'Decision Brief', description: 'Editable briefing with DOCX-ready provenance' },
 ];
 
 export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) {
