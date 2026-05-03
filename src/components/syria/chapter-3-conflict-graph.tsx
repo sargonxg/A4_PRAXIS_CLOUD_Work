@@ -126,10 +126,10 @@ function GraphNode({ x, y, label, tone }: { x: number; y: number; label: string;
   );
 }
 
-function getNodeLabel(node: (typeof SYRIA_DEMO_CONFLICT_GRAPH.events)[number] | (typeof SYRIA_DEMO_CONFLICT_GRAPH.actors)[number] | (typeof SYRIA_DEMO_CONFLICT_GRAPH.claims)[number] | (typeof SYRIA_DEMO_CONFLICT_GRAPH.constraints)[number] | (typeof SYRIA_DEMO_CONFLICT_GRAPH.narratives)[number]) {
-  if ('shortName' in node && node.shortName) return node.shortName;
-  if ('title' in node) return node.title;
-  return node.name;
+function getNodeLabel(node: (typeof SYRIA_DEMO_CONFLICT_GRAPH.events)[number] | (typeof SYRIA_DEMO_CONFLICT_GRAPH.actors)[number] | (typeof SYRIA_DEMO_CONFLICT_GRAPH.claims)[number] | (typeof SYRIA_DEMO_CONFLICT_GRAPH.constraints)[number] | (typeof SYRIA_DEMO_CONFLICT_GRAPH.narratives)[number]): string {
+  if ('shortName' in node && node.shortName) return String(node.shortName);
+  if ('title' in node) return String(node.title);
+  return String(node.name);
 }
 
 function GraphStat({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Network }) {

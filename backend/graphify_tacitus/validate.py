@@ -3,8 +3,8 @@
 Validates extraction dicts before graph construction.
 Warnings are returned as strings; errors raise ValueError.
 
-Validates both node schemas (14 ACO entity types) and relationship types
-(72 typed edges) with automatic normalization of LLM output inconsistencies.
+Validates both node schemas (8 ACO primitives) and relationship types
+(42 typed edges) with automatic normalization of LLM output inconsistencies.
 """
 from .schemas.aco import PrimitiveType
 from .schemas.relationships import ACO_RELATIONSHIPS, normalize_relation
@@ -88,14 +88,16 @@ def validate_extraction(data: dict, *, normalize: bool = True) -> list[str]:
                 )
             else:
                 # Check source/target type compatibility
-                expected_src, expected_tgt = ACO_RELATIONSHIPS[normalized]
+                rel_def = ACO_RELATIONSHIPS[normalized]
+                expected_src = rel_def["source_types"]
+                expected_tgt = rel_def["target_types"]
                 src_type = node_types.get(src, "")
                 tgt_type = node_types.get(tgt, "")
-                if expected_src != "*" and src_type and src_type != expected_src:
+                if "*" not in expected_src and src_type and src_type not in expected_src:
                     warnings.append(
                         f"Edge[{i}] '{normalized}' expects source type '{expected_src}' but got '{src_type}'"
                     )
-                if expected_tgt != "*" and tgt_type and tgt_type != expected_tgt:
+                if "*" not in expected_tgt and tgt_type and tgt_type not in expected_tgt:
                     warnings.append(
                         f"Edge[{i}] '{normalized}' expects target type '{expected_tgt}' but got '{tgt_type}'"
                     )

@@ -6,6 +6,10 @@
   The registry, default sidebar, and Tools workspace now agree on the hero
   surface while archived specialist routes remain available through
   `/app/tools?show_archive=1` and `/app/tools/archive`.
+- feat(dialectica): publish conflict-grammar-v1 as the 8-primitive schema source (#A2).
+  Added the JSON Schema, generated Zod/Pydantic outputs, the 42-edge
+  relationship vocabulary, and schema tests/fixtures to prevent frontend/backend
+  ontology drift.
 
 ## 2026-05-03 — Syria graph-grounded research handoff
 

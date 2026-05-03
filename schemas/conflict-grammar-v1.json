@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://praxis.tacitus.me/schemas/conflict-grammar-v1.json",
+  "title": "PRAXIS Conflict Grammar v1",
+  "description": "Versioned TACITUS Agentic Conflict Ontology grammar for PRAXIS DIALECTICA v1. The canonical node vocabulary is locked to 8 primitives; former extended concepts are represented as typed metadata.",
+  "$comment": "version: 1.0.0",
+  "oneOf": [
+    { "$ref": "#/$defs/grammarSource" },
+    { "$ref": "#/$defs/extractionResult" }
+  ],
+  "$defs": {
+    "grammarSource": {
+      "type": "object",
+      "required": ["version", "primitives", "relationships", "confidenceLevels"],
+      "properties": {
+        "version": { "const": "1.0.0" },
+        "primitives": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/primitive" },
+          "minItems": 8,
+          "maxItems": 8
+        },
+        "relationships": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/relationship" },
+          "minItems": 42,
+          "maxItems": 42
+        },
+        "confidenceLevels": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/confidenceLevel" },
+          "minItems": 4,
+          "maxItems": 4
+        }
+      },
+      "additionalProperties": true
+    },
+    "primitiveName": {
+      "type": "string",
+      "enum": ["Actor", "Claim", "Interest", "Constraint", "Leverage", "Commitment", "Event", "Narrative"]
+    },
+    "primitive": {
+      "type": "object",
+      "required": ["name", "jsonType", "description", "subtypes"],
+      "properties": {
+        "name": { "$ref": "#/$defs/primitiveName" },
+        "jsonType": {
+          "type": "string",
+          "enum": ["actor", "claim", "interest", "constraint", "leverage", "commitment", "event", "narrative"]
+        },
+        "description": { "type": "string" },
+        "subtypes": { "type": "array", "items": { "type": "string" } },
+        "metadataMapping": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "relationship": {
+      "type": "object",
+      "required": ["name", "canonical", "sourceTypes", "targetTypes", "description"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+        "canonical": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "sourceTypes": {
+          "type": "array",
+          "items": { "oneOf": [{ "$ref": "#/$defs/primitiveName" }, { "const": "*" }] },
+          "minItems": 1
+        },
+        "targetTypes": {
+          "type": "array",
+          "items": { "oneOf": [{ "$ref": "#/$defs/primitiveName" }, { "const": "*" }] },
+          "minItems": 1
+        },
+        "description": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "confidenceLevel": {
+      "type": "object",
+      "required": ["name", "description"],
+      "properties": {
+        "name": { "type": "string", "enum": ["EXTRACTED", "INFERRED", "AMBIGUOUS", "ASSESSED"] },
+        "description": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "sourceSpan": {
+      "type": "object",
+      "required": ["documentId", "charStart", "charEnd", "excerpt", "retrievedAt", "retrievalMethod"],
+      "properties": {
+        "documentId": { "type": "string" },
+        "charStart": { "type": "integer", "minimum": 0 },
+        "charEnd": { "type": "integer", "minimum": 0 },
+        "excerpt": { "type": "string", "maxLength": 500 },
+        "retrievedAt": { "type": "string" },
+        "retrievalMethod": {
+          "type": "string",
+          "enum": ["grounded_search", "firecrawl", "feed", "upload", "manual"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "label", "primitive_type", "confidence", "confidence_level"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "description": { "type": "string" },
+        "primitive_type": { "$ref": "#/$defs/primitiveName" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "confidence_level": { "type": "string", "enum": ["EXTRACTED", "INFERRED", "AMBIGUOUS", "ASSESSED"] },
+        "extractor_version": { "type": "string" },
+        "source_span": { "$ref": "#/$defs/sourceSpan" },
+        "metadata": { "type": "object", "additionalProperties": true }
+      },
+      "additionalProperties": true
+    },
+    "edge": {
+      "type": "object",
+      "required": ["source", "target", "relation", "confidence", "confidence_level"],
+      "properties": {
+        "source": { "type": "string" },
+        "target": { "type": "string" },
+        "relation": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "confidence_level": { "type": "string", "enum": ["EXTRACTED", "INFERRED", "AMBIGUOUS", "ASSESSED"] },
+        "extractor_version": { "type": "string" },
+        "source_span": { "$ref": "#/$defs/sourceSpan" },
+        "metadata": { "type": "object", "additionalProperties": true }
+      },
+      "additionalProperties": true
+    },
+    "extractionResult": {
+      "type": "object",
+      "required": ["nodes", "edges"],
+      "properties": {
+        "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+        "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
+        "timeline": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "summary": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "examples": [{
+    "version": "1.0.0",
+    "primitives": [
+      { "name": "Actor", "jsonType": "actor", "description": "Any entity with agency in a conflict: state, organization, group, individual, coalition, or institution.", "subtypes": ["state", "non_state_armed_group", "international_organization", "regional_organization", "civil_society", "private_sector", "individual", "coalition", "diaspora", "media", "institution"] },
+      { "name": "Claim", "jsonType": "claim", "description": "A formal or informal assertion of rights, status, territory, harm, grievance, or policy position.", "subtypes": ["territorial", "sovereignty", "self_determination", "resource", "historical", "legal", "political", "economic", "security", "humanitarian", "cultural", "religious", "grievance"] },
+      { "name": "Interest", "jsonType": "interest", "description": "Underlying motivations, needs, or objectives that drive an actor's behavior.", "subtypes": ["security", "economic", "political", "ideological", "territorial", "resource", "prestige", "survival", "domestic_legitimacy", "regional_influence", "global_influence", "humanitarian", "cultural", "religious"] },
+      { "name": "Constraint", "jsonType": "constraint", "description": "Factors that limit an actor's freedom of action, including institutions, norms, resources, geography, law, or domestic politics.", "subtypes": ["legal", "institutional", "military", "economic", "political", "social", "geographic", "normative", "resource", "alliance", "domestic", "international", "norm"] },
+      { "name": "Leverage", "jsonType": "leverage", "description": "Sources of power or influence one actor holds over another.", "subtypes": ["military", "economic", "diplomatic", "informational", "institutional", "normative", "energy", "trade", "financial", "technological", "demographic", "moral"] },
+      { "name": "Commitment", "jsonType": "commitment", "description": "Promises, obligations, treaties, policies, or pledges made by actors.", "subtypes": ["treaty", "ceasefire", "agreement", "declaration", "resolution", "unilateral", "bilateral", "multilateral", "conditional", "unconditional", "policy_commitment"] },
+      { "name": "Event", "jsonType": "event", "description": "A significant occurrence that affects conflict dynamics or validates/undermines claims and commitments.", "subtypes": ["military", "political", "diplomatic", "economic", "humanitarian", "legal", "social", "environmental", "election", "protest", "negotiation", "ceasefire", "violation", "escalation", "de_escalation"] },
+      { "name": "Narrative", "jsonType": "narrative", "description": "A framing, discourse, or interpretation of the conflict propagated by actors or media ecosystems.", "subtypes": ["official", "media", "propaganda", "historical", "identity", "victimhood", "liberation", "security", "humanitarian"] }
+    ],
+    "confidenceLevels": [
+      { "name": "EXTRACTED", "description": "Directly stated in the source text." },
+      { "name": "INFERRED", "description": "Reasonable deduction from explicit text." },
+      { "name": "AMBIGUOUS", "description": "Multiple interpretations possible; flag for analyst review." },
+      { "name": "ASSESSED", "description": "Analyst or AI judgment based on pattern recognition." }
+    ],
+    "relationships": [
+      { "name": "CLAIMS", "canonical": "claims", "sourceTypes": ["Actor"], "targetTypes": ["Claim"], "description": "Actor asserts a claim." },
+      { "name": "HAS_INTEREST", "canonical": "has_interest", "sourceTypes": ["Actor"], "targetTypes": ["Interest"], "description": "Actor has an underlying interest." },
+      { "name": "FACES_CONSTRAINT", "canonical": "faces_constraint", "sourceTypes": ["Actor"], "targetTypes": ["Constraint"], "description": "Actor is limited by a constraint." },
+      { "name": "HOLDS_LEVERAGE", "canonical": "holds_leverage", "sourceTypes": ["Actor"], "targetTypes": ["Leverage"], "description": "Actor holds a leverage source." },
+      { "name": "MADE_COMMITMENT", "canonical": "made_commitment", "sourceTypes": ["Actor"], "targetTypes": ["Commitment"], "description": "Actor made or joined a commitment." },
+      { "name": "PARTICIPATED_IN", "canonical": "participated_in", "sourceTypes": ["Actor"], "targetTypes": ["Event"], "description": "Actor participated in an event." },
+      { "name": "PROPAGATES_NARRATIVE", "canonical": "propagates_narrative", "sourceTypes": ["Actor"], "targetTypes": ["Narrative"], "description": "Actor propagates a narrative." },
+      { "name": "ALLIED_WITH", "canonical": "allied_with", "sourceTypes": ["Actor"], "targetTypes": ["Actor"], "description": "Actor is allied with another actor." },
+      { "name": "OPPOSES", "canonical": "opposes", "sourceTypes": ["Actor"], "targetTypes": ["Actor"], "description": "Actor opposes another actor." },
+      { "name": "MEDIATES_BETWEEN", "canonical": "mediates_between", "sourceTypes": ["Actor"], "targetTypes": ["Actor"], "description": "Actor mediates between actors." },
+      { "name": "SPONSORS", "canonical": "sponsors", "sourceTypes": ["Actor"], "targetTypes": ["Actor"], "description": "Actor sponsors another actor." },
+      { "name": "SUBORDINATE_TO", "canonical": "subordinate_to", "sourceTypes": ["Actor"], "targetTypes": ["Actor"], "description": "Actor is subordinate to another actor." },
+      { "name": "CONTRADICTS", "canonical": "contradicts", "sourceTypes": ["Claim"], "targetTypes": ["Claim"], "description": "Claim contradicts another claim." },
+      { "name": "SUPPORTS_CLAIM", "canonical": "supports_claim", "sourceTypes": ["Claim"], "targetTypes": ["Claim"], "description": "Claim supports another claim." },
+      { "name": "BASED_ON_INTEREST", "canonical": "based_on_interest", "sourceTypes": ["Claim"], "targetTypes": ["Interest"], "description": "Claim is based on an underlying interest." },
+      { "name": "JUSTIFIED_BY_NARRATIVE", "canonical": "justified_by_narrative", "sourceTypes": ["Claim"], "targetTypes": ["Narrative"], "description": "Claim is justified by a narrative." },
+      { "name": "CONSTRAINED_BY", "canonical": "constrained_by", "sourceTypes": ["Claim"], "targetTypes": ["Constraint"], "description": "Claim is limited by a constraint." },
+      { "name": "CONFLICTS_WITH", "canonical": "conflicts_with", "sourceTypes": ["Interest"], "targetTypes": ["Interest"], "description": "Interest conflicts with another interest." },
+      { "name": "ALIGNS_WITH", "canonical": "aligns_with", "sourceTypes": ["Interest"], "targetTypes": ["Interest"], "description": "Interest aligns with another interest." },
+      { "name": "UNDERLYING_INTEREST_OF", "canonical": "underlying_interest_of", "sourceTypes": ["Interest"], "targetTypes": ["Claim"], "description": "Interest underlies a claim." },
+      { "name": "LIMITS_LEVERAGE", "canonical": "limits_leverage", "sourceTypes": ["Constraint"], "targetTypes": ["Leverage"], "description": "Constraint limits leverage." },
+      { "name": "BLOCKS_COMMITMENT", "canonical": "blocks_commitment", "sourceTypes": ["Constraint"], "targetTypes": ["Commitment"], "description": "Constraint blocks a commitment." },
+      { "name": "IMPOSED_BY_EVENT", "canonical": "imposed_by_event", "sourceTypes": ["Constraint"], "targetTypes": ["Event"], "description": "Constraint is imposed by an event." },
+      { "name": "TARGETS", "canonical": "targets", "sourceTypes": ["Leverage"], "targetTypes": ["Actor"], "description": "Leverage targets an actor." },
+      { "name": "DERIVED_FROM_EVENT", "canonical": "derived_from_event", "sourceTypes": ["Leverage"], "targetTypes": ["Event"], "description": "Leverage derives from an event." },
+      { "name": "UNDERMINED_BY", "canonical": "undermined_by", "sourceTypes": ["Leverage"], "targetTypes": ["Constraint"], "description": "Leverage is undermined by a constraint." },
+      { "name": "ADDRESSES_CLAIM", "canonical": "addresses_claim", "sourceTypes": ["Commitment"], "targetTypes": ["Claim"], "description": "Commitment addresses a claim." },
+      { "name": "VIOLATED_BY_EVENT", "canonical": "violated_by_event", "sourceTypes": ["Commitment"], "targetTypes": ["Event"], "description": "Commitment is violated or stressed by an event." },
+      { "name": "SUPERSEDES", "canonical": "supersedes", "sourceTypes": ["Commitment"], "targetTypes": ["Commitment"], "description": "Commitment supersedes another commitment." },
+      { "name": "TRIGGERED_BY", "canonical": "triggered_by", "sourceTypes": ["Event"], "targetTypes": ["Event"], "description": "Event is triggered by another event." },
+      { "name": "ESCALATES", "canonical": "escalates", "sourceTypes": ["Event"], "targetTypes": ["Event"], "description": "Event escalates another event or sequence." },
+      { "name": "DE_ESCALATES", "canonical": "de_escalates", "sourceTypes": ["Event"], "targetTypes": ["Event"], "description": "Event de-escalates another event or sequence." },
+      { "name": "INVOLVES_ACTOR", "canonical": "involves_actor", "sourceTypes": ["Event"], "targetTypes": ["Actor"], "description": "Event involves an actor." },
+      { "name": "AFFECTS_LEVERAGE", "canonical": "affects_leverage", "sourceTypes": ["Event"], "targetTypes": ["Leverage"], "description": "Event affects leverage." },
+      { "name": "VALIDATES_NARRATIVE", "canonical": "validates_narrative", "sourceTypes": ["Event"], "targetTypes": ["Narrative"], "description": "Event validates a narrative." },
+      { "name": "CONTRADICTS_NARRATIVE", "canonical": "contradicts_narrative", "sourceTypes": ["Event"], "targetTypes": ["Narrative"], "description": "Event contradicts a narrative." },
+      { "name": "FRAMES_EVENT", "canonical": "frames_event", "sourceTypes": ["Narrative"], "targetTypes": ["Event"], "description": "Narrative frames an event." },
+      { "name": "JUSTIFIES_CLAIM", "canonical": "justifies_claim", "sourceTypes": ["Narrative"], "targetTypes": ["Claim"], "description": "Narrative justifies a claim." },
+      { "name": "UNDERMINES_CLAIM", "canonical": "undermines_claim", "sourceTypes": ["Narrative"], "targetTypes": ["Claim"], "description": "Narrative undermines a claim." },
+      { "name": "COMPETES_WITH", "canonical": "competes_with", "sourceTypes": ["Narrative"], "targetTypes": ["Narrative"], "description": "Narrative competes with another narrative." },
+      { "name": "REINFORCES", "canonical": "reinforces", "sourceTypes": ["Narrative"], "targetTypes": ["Narrative"], "description": "Narrative reinforces another narrative." },
+      { "name": "SEMANTICALLY_SIMILAR_TO", "canonical": "semantically_similar_to", "sourceTypes": ["*"], "targetTypes": ["*"], "description": "Nodes are semantically similar or likely duplicate references." }
+    ]
+  }]
+}

@@ -1,13 +1,9 @@
-"""ACO v2.0 — Agentic Conflict Ontology schema package.
-
-14 entity types (8 core + 6 extended), 72 typed relationships, and extraction schemas
-with temporal metadata, provenance tracking, and confidence levels.
-
-Theoretical grounding: Fisher-Ury, Glasl, Burton, Zartman, Stedman, Lederach,
-Galtung, CAMEO, INFORM Risk Index, Putnam.
-"""
+# GENERATED FILE - DO NOT EDIT.
+# Source: schemas/conflict-grammar-v1.json
+# Regenerate with: npm run schema:gen
 
 from .aco import (
+    ACOEdge,
     ACONode,
     ACO_TYPE_MAP,
     Actor,
@@ -16,25 +12,22 @@ from .aco import (
     ConfidenceLevel,
     Constraint,
     Event,
-    Grievance,
-    Institution,
     Interest,
     Leverage,
     Narrative,
-    Norm,
-    Policy,
     PrimitiveType,
-    Resource,
-    Risk,
+    SourceSpan,
     CORE_PRIMITIVES,
     EXTENDED_PRIMITIVES,
     make_aco_node,
 )
 
 from .relationships import (
-    ACOEdge,
     ACO_RELATIONSHIPS,
     RELATIONSHIP_CATEGORIES,
+    canonical_relation,
+    normalize_relation,
+    validate_relation,
 )
 
 from .extraction import (
@@ -45,13 +38,11 @@ from .extraction import (
 )
 
 __all__ = [
-    # ACO nodes
-    "ACONode", "ACO_TYPE_MAP", "Actor", "Claim", "Commitment", "ConfidenceLevel",
-    "Constraint", "Event", "Grievance", "Institution", "Interest", "Leverage",
-    "Narrative", "Norm", "Policy", "PrimitiveType", "Resource", "Risk",
-    "CORE_PRIMITIVES", "EXTENDED_PRIMITIVES", "make_aco_node",
-    # Relationships
-    "ACOEdge", "ACO_RELATIONSHIPS", "RELATIONSHIP_CATEGORIES",
-    # Extraction
-    "ExtractionEdge", "ExtractionNode", "ExtractionResult", "TimelineEntry",
+    "ACOEdge", "ACONode", "ACO_TYPE_MAP", "Actor", "Claim", "Commitment",
+    "ConfidenceLevel", "Constraint", "Event", "Interest", "Leverage",
+    "Narrative", "PrimitiveType", "SourceSpan", "CORE_PRIMITIVES",
+    "EXTENDED_PRIMITIVES", "make_aco_node", "ACO_RELATIONSHIPS",
+    "RELATIONSHIP_CATEGORIES", "canonical_relation", "normalize_relation",
+    "validate_relation", "ExtractionEdge", "ExtractionNode",
+    "ExtractionResult", "TimelineEntry",
 ]

@@ -1,6 +1,6 @@
-"""ACO v2.0 extraction result schemas — intermediate format between LLM output and ACONode models.
+"""ACO v1 extraction result schemas — intermediate format between LLM output and ACONode models.
 
-Supports all 14 entity types and 72 relationship types with temporal metadata and provenance.
+Supports the 8 primitive types and 42 relationship types with temporal metadata and provenance.
 """
 from pydantic import BaseModel, Field
 

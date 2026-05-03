@@ -1,501 +1,220 @@
+/* GENERATED FILE - DO NOT EDIT.
+ * Source: schemas/conflict-grammar-v1.json
+ * Regenerate with: npm run schema:gen
+ */
+
 import { z } from 'zod';
 
-// ============================================================================
-// Conflict Grammar Primitives
-// The 8 fundamental building blocks for structured conflict analysis
-// ============================================================================
+export const CONFLICT_GRAMMAR_VERSION = "1.0.0";
 
-/**
- * Actor - Any entity with agency in a conflict
- * States, organizations, individuals, or groups that can take action
- */
-export const ActorSchema = z.object({
-  type: z.literal('actor'),
-  id: z.string(),
-  name: z.string(),
-  shortName: z.string().optional(),
-  actorType: z.enum([
-    'state',
-    'non_state_armed_group',
-    'international_organization',
-    'regional_organization',
-    'civil_society',
-    'private_sector',
-    'individual',
-    'coalition',
-    'diaspora',
-    'media',
-  ]),
-  description: z.string(),
-  capabilities: z.array(z.string()).optional(),
-  relationships: z
-    .array(
-      z.object({
-        targetActorId: z.string(),
-        type: z.enum([
-          'ally',
-          'adversary',
-          'neutral',
-          'patron',
-          'proxy',
-          'mediator',
-          'competitor',
-          'dependent',
-        ]),
-        description: z.string().optional(),
-        strength: z.number().min(0).max(1).optional(),
-      })
-    )
-    .optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
+export const ACO_ENTITY_TYPES = ["Actor", "Claim", "Interest", "Constraint", "Leverage", "Commitment", "Event", "Narrative"] as const;
+export type ACOEntityType = (typeof ACO_ENTITY_TYPES)[number];
+
+export const CONFLICT_ENTITY_TYPES = ["actor", "claim", "interest", "constraint", "leverage", "commitment", "event", "narrative"] as const;
+export type ConflictEntityType = (typeof CONFLICT_ENTITY_TYPES)[number];
+
+export const CONFIDENCE_LEVELS = ["EXTRACTED", "INFERRED", "AMBIGUOUS", "ASSESSED"] as const;
+export type ConfidenceLevel = (typeof CONFIDENCE_LEVELS)[number];
+
+export const RELATIONSHIP_TYPES = ["CLAIMS", "HAS_INTEREST", "FACES_CONSTRAINT", "HOLDS_LEVERAGE", "MADE_COMMITMENT", "PARTICIPATED_IN", "PROPAGATES_NARRATIVE", "ALLIED_WITH", "OPPOSES", "MEDIATES_BETWEEN", "SPONSORS", "SUBORDINATE_TO", "CONTRADICTS", "SUPPORTS_CLAIM", "BASED_ON_INTEREST", "JUSTIFIED_BY_NARRATIVE", "CONSTRAINED_BY", "CONFLICTS_WITH", "ALIGNS_WITH", "UNDERLYING_INTEREST_OF", "LIMITS_LEVERAGE", "BLOCKS_COMMITMENT", "IMPOSED_BY_EVENT", "TARGETS", "DERIVED_FROM_EVENT", "UNDERMINED_BY", "ADDRESSES_CLAIM", "VIOLATED_BY_EVENT", "SUPERSEDES", "TRIGGERED_BY", "ESCALATES", "DE_ESCALATES", "INVOLVES_ACTOR", "AFFECTS_LEVERAGE", "VALIDATES_NARRATIVE", "CONTRADICTS_NARRATIVE", "FRAMES_EVENT", "JUSTIFIES_CLAIM", "UNDERMINES_CLAIM", "COMPETES_WITH", "REINFORCES", "SEMANTICALLY_SIMILAR_TO"] as const;
+export type RelationshipType = (typeof RELATIONSHIP_TYPES)[number];
+
+export const RELATIONSHIP_CANONICAL_TYPES = ["claims", "has_interest", "faces_constraint", "holds_leverage", "made_commitment", "participated_in", "propagates_narrative", "allied_with", "opposes", "mediates_between", "sponsors", "subordinate_to", "contradicts", "supports_claim", "based_on_interest", "justified_by_narrative", "constrained_by", "conflicts_with", "aligns_with", "underlying_interest_of", "limits_leverage", "blocks_commitment", "imposed_by_event", "targets", "derived_from_event", "undermined_by", "addresses_claim", "violated_by_event", "supersedes", "triggered_by", "escalates", "de_escalates", "involves_actor", "affects_leverage", "validates_narrative", "contradicts_narrative", "frames_event", "justifies_claim", "undermines_claim", "competes_with", "reinforces", "semantically_similar_to"] as const;
+export type RelationshipCanonicalType = (typeof RELATIONSHIP_CANONICAL_TYPES)[number];
+
+export const PRIMITIVE_DESCRIPTIONS: Record<ACOEntityType, string> = {
+  "Actor": "Any entity with agency in a conflict: state, organization, group, individual, coalition, or institution.",
+  "Claim": "A formal or informal assertion of rights, status, territory, harm, grievance, or policy position.",
+  "Interest": "Underlying motivations, needs, or objectives that drive an actor's behavior.",
+  "Constraint": "Factors that limit an actor's freedom of action, including institutions, norms, resources, geography, law, or domestic politics.",
+  "Leverage": "Sources of power or influence one actor holds over another.",
+  "Commitment": "Promises, obligations, treaties, policies, or pledges made by actors.",
+  "Event": "A significant occurrence that affects conflict dynamics or validates/undermines claims and commitments.",
+  "Narrative": "A framing, discourse, or interpretation of the conflict propagated by actors or media ecosystems.",
+};
+
+export const PRIMITIVE_SUBTYPES: Record<ACOEntityType, readonly string[]> = {
+  "Actor": ["state", "non_state_armed_group", "international_organization", "regional_organization", "civil_society", "private_sector", "individual", "coalition", "diaspora", "media", "institution"],
+  "Claim": ["territorial", "sovereignty", "self_determination", "resource", "historical", "legal", "political", "economic", "security", "humanitarian", "cultural", "religious", "grievance"],
+  "Interest": ["security", "economic", "political", "ideological", "territorial", "resource", "prestige", "survival", "domestic_legitimacy", "regional_influence", "global_influence", "humanitarian", "cultural", "religious"],
+  "Constraint": ["legal", "institutional", "military", "economic", "political", "social", "geographic", "normative", "resource", "alliance", "domestic", "international", "norm"],
+  "Leverage": ["military", "economic", "diplomatic", "informational", "institutional", "normative", "energy", "trade", "financial", "technological", "demographic", "moral"],
+  "Commitment": ["treaty", "ceasefire", "agreement", "declaration", "resolution", "unilateral", "bilateral", "multilateral", "conditional", "unconditional", "policy_commitment"],
+  "Event": ["military", "political", "diplomatic", "economic", "humanitarian", "legal", "social", "environmental", "election", "protest", "negotiation", "ceasefire", "violation", "escalation", "de_escalation"],
+  "Narrative": ["official", "media", "propaganda", "historical", "identity", "victimhood", "liberation", "security", "humanitarian"],
+};
+
+export const RELATIONSHIP_VOCABULARY: Record<RelationshipType, { canonical: RelationshipCanonicalType; sourceTypes: readonly string[]; targetTypes: readonly string[]; description: string }> = {
+  "CLAIMS": { canonical: "claims" as RelationshipCanonicalType, sourceTypes: ["Actor"], targetTypes: ["Claim"], description: "Actor asserts a claim." },
+  "HAS_INTEREST": { canonical: "has_interest" as RelationshipCanonicalType, sourceTypes: ["Actor"], targetTypes: ["Interest"], description: "Actor has an underlying interest." },
+  "FACES_CONSTRAINT": { canonical: "faces_constraint" as RelationshipCanonicalType, sourceTypes: ["Actor"], targetTypes: ["Constraint"], description: "Actor is limited by a constraint." },
+  "HOLDS_LEVERAGE": { canonical: "holds_leverage" as RelationshipCanonicalType, sourceTypes: ["Actor"], targetTypes: ["Leverage"], description: "Actor holds a leverage source." },
+  "MADE_COMMITMENT": { canonical: "made_commitment" as RelationshipCanonicalType, sourceTypes: ["Actor"], targetTypes: ["Commitment"], description: "Actor made or joined a commitment." },
+  "PARTICIPATED_IN": { canonical: "participated_in" as RelationshipCanonicalType, sourceTypes: ["Actor"], targetTypes: ["Event"], description: "Actor participated in an event." },
+  "PROPAGATES_NARRATIVE": { canonical: "propagates_narrative" as RelationshipCanonicalType, sourceTypes: ["Actor"], targetTypes: ["Narrative"], description: "Actor propagates a narrative." },
+  "ALLIED_WITH": { canonical: "allied_with" as RelationshipCanonicalType, sourceTypes: ["Actor"], targetTypes: ["Actor"], description: "Actor is allied with another actor." },
+  "OPPOSES": { canonical: "opposes" as RelationshipCanonicalType, sourceTypes: ["Actor"], targetTypes: ["Actor"], description: "Actor opposes another actor." },
+  "MEDIATES_BETWEEN": { canonical: "mediates_between" as RelationshipCanonicalType, sourceTypes: ["Actor"], targetTypes: ["Actor"], description: "Actor mediates between actors." },
+  "SPONSORS": { canonical: "sponsors" as RelationshipCanonicalType, sourceTypes: ["Actor"], targetTypes: ["Actor"], description: "Actor sponsors another actor." },
+  "SUBORDINATE_TO": { canonical: "subordinate_to" as RelationshipCanonicalType, sourceTypes: ["Actor"], targetTypes: ["Actor"], description: "Actor is subordinate to another actor." },
+  "CONTRADICTS": { canonical: "contradicts" as RelationshipCanonicalType, sourceTypes: ["Claim"], targetTypes: ["Claim"], description: "Claim contradicts another claim." },
+  "SUPPORTS_CLAIM": { canonical: "supports_claim" as RelationshipCanonicalType, sourceTypes: ["Claim"], targetTypes: ["Claim"], description: "Claim supports another claim." },
+  "BASED_ON_INTEREST": { canonical: "based_on_interest" as RelationshipCanonicalType, sourceTypes: ["Claim"], targetTypes: ["Interest"], description: "Claim is based on an underlying interest." },
+  "JUSTIFIED_BY_NARRATIVE": { canonical: "justified_by_narrative" as RelationshipCanonicalType, sourceTypes: ["Claim"], targetTypes: ["Narrative"], description: "Claim is justified by a narrative." },
+  "CONSTRAINED_BY": { canonical: "constrained_by" as RelationshipCanonicalType, sourceTypes: ["Claim"], targetTypes: ["Constraint"], description: "Claim is limited by a constraint." },
+  "CONFLICTS_WITH": { canonical: "conflicts_with" as RelationshipCanonicalType, sourceTypes: ["Interest"], targetTypes: ["Interest"], description: "Interest conflicts with another interest." },
+  "ALIGNS_WITH": { canonical: "aligns_with" as RelationshipCanonicalType, sourceTypes: ["Interest"], targetTypes: ["Interest"], description: "Interest aligns with another interest." },
+  "UNDERLYING_INTEREST_OF": { canonical: "underlying_interest_of" as RelationshipCanonicalType, sourceTypes: ["Interest"], targetTypes: ["Claim"], description: "Interest underlies a claim." },
+  "LIMITS_LEVERAGE": { canonical: "limits_leverage" as RelationshipCanonicalType, sourceTypes: ["Constraint"], targetTypes: ["Leverage"], description: "Constraint limits leverage." },
+  "BLOCKS_COMMITMENT": { canonical: "blocks_commitment" as RelationshipCanonicalType, sourceTypes: ["Constraint"], targetTypes: ["Commitment"], description: "Constraint blocks a commitment." },
+  "IMPOSED_BY_EVENT": { canonical: "imposed_by_event" as RelationshipCanonicalType, sourceTypes: ["Constraint"], targetTypes: ["Event"], description: "Constraint is imposed by an event." },
+  "TARGETS": { canonical: "targets" as RelationshipCanonicalType, sourceTypes: ["Leverage"], targetTypes: ["Actor"], description: "Leverage targets an actor." },
+  "DERIVED_FROM_EVENT": { canonical: "derived_from_event" as RelationshipCanonicalType, sourceTypes: ["Leverage"], targetTypes: ["Event"], description: "Leverage derives from an event." },
+  "UNDERMINED_BY": { canonical: "undermined_by" as RelationshipCanonicalType, sourceTypes: ["Leverage"], targetTypes: ["Constraint"], description: "Leverage is undermined by a constraint." },
+  "ADDRESSES_CLAIM": { canonical: "addresses_claim" as RelationshipCanonicalType, sourceTypes: ["Commitment"], targetTypes: ["Claim"], description: "Commitment addresses a claim." },
+  "VIOLATED_BY_EVENT": { canonical: "violated_by_event" as RelationshipCanonicalType, sourceTypes: ["Commitment"], targetTypes: ["Event"], description: "Commitment is violated or stressed by an event." },
+  "SUPERSEDES": { canonical: "supersedes" as RelationshipCanonicalType, sourceTypes: ["Commitment"], targetTypes: ["Commitment"], description: "Commitment supersedes another commitment." },
+  "TRIGGERED_BY": { canonical: "triggered_by" as RelationshipCanonicalType, sourceTypes: ["Event"], targetTypes: ["Event"], description: "Event is triggered by another event." },
+  "ESCALATES": { canonical: "escalates" as RelationshipCanonicalType, sourceTypes: ["Event"], targetTypes: ["Event"], description: "Event escalates another event or sequence." },
+  "DE_ESCALATES": { canonical: "de_escalates" as RelationshipCanonicalType, sourceTypes: ["Event"], targetTypes: ["Event"], description: "Event de-escalates another event or sequence." },
+  "INVOLVES_ACTOR": { canonical: "involves_actor" as RelationshipCanonicalType, sourceTypes: ["Event"], targetTypes: ["Actor"], description: "Event involves an actor." },
+  "AFFECTS_LEVERAGE": { canonical: "affects_leverage" as RelationshipCanonicalType, sourceTypes: ["Event"], targetTypes: ["Leverage"], description: "Event affects leverage." },
+  "VALIDATES_NARRATIVE": { canonical: "validates_narrative" as RelationshipCanonicalType, sourceTypes: ["Event"], targetTypes: ["Narrative"], description: "Event validates a narrative." },
+  "CONTRADICTS_NARRATIVE": { canonical: "contradicts_narrative" as RelationshipCanonicalType, sourceTypes: ["Event"], targetTypes: ["Narrative"], description: "Event contradicts a narrative." },
+  "FRAMES_EVENT": { canonical: "frames_event" as RelationshipCanonicalType, sourceTypes: ["Narrative"], targetTypes: ["Event"], description: "Narrative frames an event." },
+  "JUSTIFIES_CLAIM": { canonical: "justifies_claim" as RelationshipCanonicalType, sourceTypes: ["Narrative"], targetTypes: ["Claim"], description: "Narrative justifies a claim." },
+  "UNDERMINES_CLAIM": { canonical: "undermines_claim" as RelationshipCanonicalType, sourceTypes: ["Narrative"], targetTypes: ["Claim"], description: "Narrative undermines a claim." },
+  "COMPETES_WITH": { canonical: "competes_with" as RelationshipCanonicalType, sourceTypes: ["Narrative"], targetTypes: ["Narrative"], description: "Narrative competes with another narrative." },
+  "REINFORCES": { canonical: "reinforces" as RelationshipCanonicalType, sourceTypes: ["Narrative"], targetTypes: ["Narrative"], description: "Narrative reinforces another narrative." },
+  "SEMANTICALLY_SIMILAR_TO": { canonical: "semantically_similar_to" as RelationshipCanonicalType, sourceTypes: ["*"], targetTypes: ["*"], description: "Nodes are semantically similar or likely duplicate references." },
+};
+
+const ConfidenceLevelSchema = z.enum(CONFIDENCE_LEVELS);
+const NumericConfidenceSchema = z.number().min(0).max(1);
+
+export const SourceSpanSchema = z.object({
+  documentId: z.string(),
+  charStart: z.number().int().min(0),
+  charEnd: z.number().int().min(0),
+  excerpt: z.string().max(500),
+  retrievedAt: z.string(),
+  retrievalMethod: z.enum(['grounded_search', 'firecrawl', 'feed', 'upload', 'manual']),
 });
 
-/**
- * Claim - A formal or informal assertion of rights, territory, or status
- */
-export const ClaimSchema = z.object({
-  type: z.literal('claim'),
+const BaseEntitySchema = z.object({
   id: z.string(),
+  type: z.enum(CONFLICT_ENTITY_TYPES),
+  description: z.string().optional(),
+  confidence: NumericConfidenceSchema.optional(),
+  confidenceLevel: ConfidenceLevelSchema.optional(),
+  sourceSpan: SourceSpanSchema.optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+}).passthrough();
+
+export const ActorSchema = BaseEntitySchema.extend({
+  type: z.literal('actor'),
+  name: z.string(),
+  description: z.string(),
+  shortName: z.string().optional(),
+  actorType: z.string(),
+  relationships: z.array(z.object({
+    targetActorId: z.string(),
+    type: z.string(),
+    description: z.string().optional(),
+    strength: z.number().min(0).max(1).optional(),
+  }).passthrough()).optional(),
+}).passthrough();
+
+export const ClaimSchema = BaseEntitySchema.extend({
+  type: z.literal('claim'),
   actorId: z.string(),
-  claimType: z.enum([
-    'territorial',
-    'sovereignty',
-    'self_determination',
-    'resource',
-    'historical',
-    'legal',
-    'political',
-    'economic',
-    'security',
-    'humanitarian',
-    'cultural',
-    'religious',
-  ]),
+  claimType: z.string(),
   title: z.string(),
   description: z.string(),
   basis: z.string(),
-  status: z.enum([
-    'active',
-    'dormant',
-    'resolved',
-    'escalating',
-    'de_escalating',
-    'contested',
-  ]),
+  status: z.string(),
   legitimacyScore: z.number().min(0).max(1).optional(),
-  internationalRecognition: z.enum(['broad', 'limited', 'none', 'disputed']).optional(),
+  internationalRecognition: z.string().optional(),
   competingClaimIds: z.array(z.string()).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
+}).passthrough();
 
-/**
- * Interest - The underlying motivations driving an actor's behavior
- */
-export const InterestSchema = z.object({
+export const InterestSchema = BaseEntitySchema.extend({
   type: z.literal('interest'),
-  id: z.string(),
   actorId: z.string(),
-  interestType: z.enum([
-    'security',
-    'economic',
-    'political',
-    'ideological',
-    'territorial',
-    'resource',
-    'prestige',
-    'survival',
-    'domestic_legitimacy',
-    'regional_influence',
-    'global_influence',
-    'humanitarian',
-    'cultural',
-    'religious',
-  ]),
+  interestType: z.string(),
   title: z.string(),
   description: z.string(),
-  priority: z.enum(['vital', 'important', 'significant', 'minor']),
-  visibility: z.enum(['stated', 'unstated', 'inferred']),
+  priority: z.string(),
+  visibility: z.string(),
   alignedActorIds: z.array(z.string()).optional(),
   conflictingInterestIds: z.array(z.string()).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
+}).passthrough();
 
-/**
- * Constraint - Factors limiting an actor's freedom of action
- */
-export const ConstraintSchema = z.object({
+export const ConstraintSchema = BaseEntitySchema.extend({
   type: z.literal('constraint'),
-  id: z.string(),
   actorId: z.string(),
-  constraintType: z.enum([
-    'legal',
-    'institutional',
-    'military',
-    'economic',
-    'political',
-    'social',
-    'geographic',
-    'normative',
-    'resource',
-    'alliance',
-    'domestic',
-    'international',
-  ]),
+  constraintType: z.string(),
   title: z.string(),
   description: z.string(),
-  severity: z.enum(['binding', 'significant', 'moderate', 'minor']),
+  severity: z.string(),
   source: z.string(),
   isRemovable: z.boolean().optional(),
   expiryCondition: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
+}).passthrough();
 
-/**
- * Leverage - Sources of power or influence one actor holds over another
- */
-export const LeverageSchema = z.object({
+export const LeverageSchema = BaseEntitySchema.extend({
   type: z.literal('leverage'),
-  id: z.string(),
   actorId: z.string(),
   targetActorId: z.string(),
-  leverageType: z.enum([
-    'military',
-    'economic',
-    'diplomatic',
-    'informational',
-    'institutional',
-    'normative',
-    'energy',
-    'trade',
-    'financial',
-    'technological',
-    'demographic',
-  ]),
+  leverageType: z.string(),
   title: z.string(),
   description: z.string(),
   effectiveness: z.number().min(0).max(1),
-  sustainability: z.enum(['short_term', 'medium_term', 'long_term', 'permanent']),
+  sustainability: z.string(),
   isActive: z.boolean(),
-  cost: z.enum(['low', 'medium', 'high', 'prohibitive']).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
+  cost: z.string().optional(),
+}).passthrough();
 
-/**
- * Commitment - Promises, obligations, or pledges made by actors
- */
-export const CommitmentSchema = z.object({
+export const CommitmentSchema = BaseEntitySchema.extend({
   type: z.literal('commitment'),
-  id: z.string(),
   actorId: z.string(),
-  commitmentType: z.enum([
-    'treaty',
-    'ceasefire',
-    'agreement',
-    'declaration',
-    'resolution',
-    'unilateral',
-    'bilateral',
-    'multilateral',
-    'conditional',
-    'unconditional',
-  ]),
+  commitmentType: z.string(),
   title: z.string(),
   description: z.string(),
-  status: z.enum([
-    'proposed',
-    'active',
-    'suspended',
-    'violated',
-    'expired',
-    'withdrawn',
-    'fulfilled',
-  ]),
+  status: z.string(),
   counterpartyIds: z.array(z.string()).optional(),
   conditions: z.array(z.string()).optional(),
   verificationMechanism: z.string().optional(),
   dateCommitted: z.string().optional(),
   dateExpires: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
+}).passthrough();
 
-/**
- * Event - A significant occurrence that affects the conflict dynamics
- */
-export const EventSchema = z.object({
+export const EventSchema = BaseEntitySchema.extend({
   type: z.literal('event'),
-  id: z.string(),
   title: z.string(),
   description: z.string(),
-  eventType: z.enum([
-    'military',
-    'political',
-    'diplomatic',
-    'economic',
-    'humanitarian',
-    'legal',
-    'social',
-    'environmental',
-    'election',
-    'protest',
-    'negotiation',
-    'ceasefire',
-    'violation',
-    'escalation',
-    'de_escalation',
-  ]),
+  eventType: z.string(),
   date: z.string(),
   location: z.string().optional(),
   actorIds: z.array(z.string()),
-  impact: z.enum(['critical', 'major', 'moderate', 'minor']),
-  escalatoryDirection: z.enum(['escalatory', 'de_escalatory', 'neutral', 'ambiguous']),
+  impact: z.string(),
+  escalatoryDirection: z.string(),
   relatedEventIds: z.array(z.string()).optional(),
   sources: z.array(z.string()).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
+}).passthrough();
 
-/**
- * Narrative - A framing or interpretation of the conflict by an actor
- */
-export const NarrativeSchema = z.object({
+export const NarrativeSchema = BaseEntitySchema.extend({
   type: z.literal('narrative'),
-  id: z.string(),
   actorId: z.string(),
   title: z.string(),
   description: z.string(),
-  narrativeType: z.enum([
-    'justification',
-    'victimhood',
-    'historical',
-    'legal',
-    'moral',
-    'security',
-    'economic',
-    'religious',
-    'nationalist',
-    'humanitarian',
-    'counter_narrative',
-    'propaganda',
-  ]),
-  keyMessages: z.array(z.string()),
-  targetAudience: z.enum([
-    'domestic',
-    'international',
-    'regional',
-    'specific_actor',
-    'diaspora',
-    'media',
-  ]),
+  narrativeType: z.string(),
+  keyMessages: z.array(z.string()).optional(),
+  targetAudience: z.union([z.string(), z.array(z.string())]).optional(),
   effectiveness: z.number().min(0).max(1).optional(),
-  reach: z.enum(['local', 'national', 'regional', 'global']).optional(),
   counterNarrativeIds: z.array(z.string()).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
+}).passthrough();
 
-// ============================================================================
-// Extended Primitives — Policy, Development, Human Rights, Governance
-// ============================================================================
-
-/**
- * Institution - Formal or informal structures that shape conflict dynamics
- * Courts, councils, peace processes, governance bodies, customary authorities
- */
-export const InstitutionSchema = z.object({
-  type: z.literal('institution'),
-  id: z.string(),
-  name: z.string(),
-  institutionType: z.enum([
-    'court', 'legislature', 'executive', 'military_body', 'peace_process',
-    'mediation_mechanism', 'monitoring_body', 'sanctions_committee',
-    'truth_commission', 'customary_authority', 'religious_authority',
-    'regulatory_body', 'development_agency', 'humanitarian_cluster',
-  ]),
-  description: z.string(),
-  mandate: z.string().optional(),
-  legitimacy: z.enum(['high', 'contested', 'low', 'collapsed']).optional(),
-  effectiveControl: z.string().optional(),
-  relatedActorIds: z.array(z.string()).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
-
-/**
- * Norm - Legal, customary, or moral standards relevant to the situation
- * IHL, IHRL, UNSC resolutions, treaties, customary law, R2P
- */
-export const NormSchema = z.object({
-  type: z.literal('norm'),
-  id: z.string(),
-  title: z.string(),
-  normType: z.enum([
-    'ihl', 'ihrl', 'unsc_resolution', 'treaty', 'customary_law',
-    'jus_cogens', 'soft_law', 'regional_instrument', 'bilateral_agreement',
-    'ceasefire_terms', 'peace_accord', 'r2p', 'sanctions_regime',
-    'arms_embargo', 'development_standard', 'environmental_law',
-  ]),
-  description: z.string(),
-  legalBasis: z.string().optional(),
-  complianceStatus: z.enum(['complied', 'partially_complied', 'violated', 'disputed', 'unknown']).optional(),
-  violatingActorIds: z.array(z.string()).optional(),
-  enforcementMechanism: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
-
-/**
- * Resource - Natural, financial, or strategic assets at stake
- * Oil, water, minerals, territory, trade routes, aid flows, remittances
- */
-export const ResourceSchema = z.object({
-  type: z.literal('resource'),
-  id: z.string(),
-  name: z.string(),
-  resourceType: z.enum([
-    'hydrocarbon', 'mineral', 'water', 'agricultural_land', 'territory',
-    'trade_route', 'port', 'financial', 'aid_flow', 'remittance',
-    'arms', 'technology', 'labor', 'cultural_heritage', 'data',
-  ]),
-  description: z.string(),
-  controlledByActorId: z.string().optional(),
-  contestedByActorIds: z.array(z.string()).optional(),
-  strategicValue: z.enum(['critical', 'high', 'medium', 'low']).optional(),
-  location: z.string().optional(),
-  estimatedValue: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
-
-/**
- * Risk - Identified threats, vulnerabilities, and early warning indicators
- * Escalation risks, humanitarian crises, protection concerns, spoiler threats
- */
-export const RiskSchema = z.object({
-  type: z.literal('risk'),
-  id: z.string(),
-  title: z.string(),
-  riskType: z.enum([
-    'escalation', 'violence', 'humanitarian', 'displacement',
-    'famine', 'epidemic', 'economic_collapse', 'state_failure',
-    'spoiler', 'external_intervention', 'election_violence',
-    'hate_speech', 'environmental', 'cyber', 'wmd_proliferation',
-  ]),
-  description: z.string(),
-  likelihood: z.enum(['very_high', 'high', 'medium', 'low', 'very_low']),
-  impact: z.enum(['catastrophic', 'severe', 'significant', 'moderate', 'minor']),
-  timeframe: z.enum(['imminent', 'short_term', 'medium_term', 'long_term']).optional(),
-  indicators: z.array(z.string()).optional(),
-  mitigationOptions: z.array(z.string()).optional(),
-  relatedActorIds: z.array(z.string()).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
-
-/**
- * Policy - Policy positions, options, or interventions proposed or enacted
- * Sanctions, aid conditions, diplomatic initiatives, military options
- */
-export const PolicySchema = z.object({
-  type: z.literal('policy'),
-  id: z.string(),
-  actorId: z.string(),
-  title: z.string(),
-  policyType: z.enum([
-    'sanctions', 'aid_conditionality', 'diplomatic_initiative', 'military_intervention',
-    'peacekeeping', 'mediation_offer', 'trade_restriction', 'arms_embargo',
-    'travel_ban', 'asset_freeze', 'development_program', 'capacity_building',
-    'election_support', 'ssr', 'ddr', 'transitional_justice', 'humanitarian_access',
-  ]),
-  description: z.string(),
-  status: z.enum(['proposed', 'adopted', 'implemented', 'suspended', 'terminated', 'under_review']),
-  objectives: z.array(z.string()).optional(),
-  effectiveness: z.enum(['effective', 'partially_effective', 'ineffective', 'counterproductive', 'unknown']).optional(),
-  targetActorIds: z.array(z.string()).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
-
-/**
- * Grievance - Underlying causes of conflict: injustice, inequality, exclusion
- * Human rights violations, marginalization, historical wrongs, structural violence
- */
-export const GrievanceSchema = z.object({
-  type: z.literal('grievance'),
-  id: z.string(),
-  title: z.string(),
-  grievanceType: z.enum([
-    'political_exclusion', 'economic_inequality', 'land_dispossession',
-    'ethnic_discrimination', 'religious_persecution', 'gender_violence',
-    'historical_injustice', 'forced_displacement', 'extrajudicial_killing',
-    'torture', 'enforced_disappearance', 'child_recruitment',
-    'sexual_violence', 'cultural_destruction', 'environmental_injustice',
-    'labor_exploitation', 'corruption', 'election_fraud',
-  ]),
-  description: z.string(),
-  affectedGroupId: z.string().optional(),
-  perpetratorActorId: z.string().optional(),
-  scale: z.enum(['systematic', 'widespread', 'isolated', 'structural']).optional(),
-  documented: z.boolean().optional(),
-  documentedBy: z.array(z.string()).optional(),
-  redressMechanism: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
-
-// ============================================================================
-// Entity Enrichment — v4.0
-// Optional metadata added to any entity for confidence, provenance, and time.
-// ============================================================================
-
-/**
- * EntityEnrichment — attached to individual entities to track extraction quality.
- * Stored separately in ConflictGraph.enrichments keyed by entity ID.
- */
-export const EntityEnrichmentSchema = z.object({
-  entityId: z.string().describe('ID of the entity this enrichment belongs to'),
-  confidence: z
-    .number()
-    .min(0)
-    .max(1)
-    .optional()
-    .describe('Extraction confidence 0–1. 1 = explicitly stated in source text; 0 = highly speculative inference'),
-  sourcePassage: z
-    .string()
-    .optional()
-    .describe('Verbatim text passage from source document that supports this entity'),
-  sourceDocument: z
-    .string()
-    .optional()
-    .describe('Document ID or URL from which this entity was extracted'),
-  retrievalMethod: z
-    .enum(['extraction', 'inference', 'manual', 'lookup'])
-    .optional()
-    .describe(
-      'How this entity was identified: extraction (NLP from text), inference (reasoned from context), manual (human entry), lookup (registry/database)'
-    ),
-  validFrom: z
-    .string()
-    .optional()
-    .describe('ISO 8601 date from which this entity/fact is valid'),
-  validUntil: z
-    .string()
-    .optional()
-    .describe('ISO 8601 date after which this entity/fact may no longer hold'),
-  lastVerified: z
-    .string()
-    .optional()
-    .describe('ISO 8601 timestamp of last independent verification'),
-  qualityScore: z
-    .number()
-    .min(0)
-    .max(100)
-    .optional()
-    .describe('Overall data quality score 0–100 computed from confidence, recency, and source reliability'),
-});
-
-// ============================================================================
-// Discriminated Union
-// ============================================================================
-
-/**
- * ConflictEntitySchema - Discriminated union of all 14 conflict grammar primitives
- * Uses the `type` field as the discriminator
- *
- * Original 8: Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, Narrative
- * Extended 6: Institution, Norm, Resource, Risk, Policy, Grievance
- */
 export const ConflictEntitySchema = z.discriminatedUnion('type', [
   ActorSchema,
   ClaimSchema,
@@ -505,29 +224,28 @@ export const ConflictEntitySchema = z.discriminatedUnion('type', [
   CommitmentSchema,
   EventSchema,
   NarrativeSchema,
-  InstitutionSchema,
-  NormSchema,
-  ResourceSchema,
-  RiskSchema,
-  PolicySchema,
-  GrievanceSchema,
 ]);
 
-// ============================================================================
-// Conflict Graph Container
-// ============================================================================
+export const EntityEnrichmentSchema = z.object({
+  entityId: z.string(),
+  confidence: NumericConfidenceSchema.optional(),
+  confidenceLevel: ConfidenceLevelSchema.optional(),
+  sourcePassage: z.string().optional(),
+  sourceDocument: z.string().optional(),
+  sourceSpan: SourceSpanSchema.optional(),
+  retrievalMethod: z.enum(['extraction', 'inference', 'manual', 'lookup']).optional(),
+  validFrom: z.string().optional(),
+  validUntil: z.string().optional(),
+  lastVerified: z.string().optional(),
+  qualityScore: z.number().min(0).max(100).optional(),
+}).passthrough();
 
-/**
- * ConflictGraphSchema - The full conflict knowledge graph
- * Contains all entities organized by type plus top-level metadata
- */
 export const ConflictGraphSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().optional(),
   region: z.string().optional(),
   status: z.enum(['active', 'frozen', 'resolved', 'emerging', 'escalating']),
-  // Original 8 primitives
   actors: z.array(ActorSchema),
   claims: z.array(ClaimSchema),
   interests: z.array(InterestSchema),
@@ -536,30 +254,11 @@ export const ConflictGraphSchema = z.object({
   commitments: z.array(CommitmentSchema),
   events: z.array(EventSchema),
   narratives: z.array(NarrativeSchema),
-  // Extended 6 primitives
-  institutions: z.array(InstitutionSchema).optional(),
-  norms: z.array(NormSchema).optional(),
-  resources: z.array(ResourceSchema).optional(),
-  risks: z.array(RiskSchema).optional(),
-  policies: z.array(PolicySchema).optional(),
-  grievances: z.array(GrievanceSchema).optional(),
   lastUpdated: z.string(),
   metadata: z.record(z.string(), z.unknown()).optional(),
-  // v4.0 enrichment — keyed by entity ID, optional for backwards compatibility
-  enrichments: z.record(z.string(), EntityEnrichmentSchema).optional().describe(
-    'Per-entity enrichment metadata (confidence, provenance, temporal validity). Keys are entity IDs.'
-  ),
-  dataCompleteness: z
-    .number()
-    .min(0)
-    .max(100)
-    .optional()
-    .describe('Percentage of expected entity fields populated across all entities in this graph'),
-});
-
-// ============================================================================
-// Type Exports
-// ============================================================================
+  enrichments: z.record(z.string(), EntityEnrichmentSchema).optional(),
+  dataCompleteness: z.number().min(0).max(100).optional(),
+}).passthrough();
 
 export type Actor = z.infer<typeof ActorSchema>;
 export type Claim = z.infer<typeof ClaimSchema>;
@@ -569,19 +268,11 @@ export type Leverage = z.infer<typeof LeverageSchema>;
 export type Commitment = z.infer<typeof CommitmentSchema>;
 export type Event = z.infer<typeof EventSchema>;
 export type Narrative = z.infer<typeof NarrativeSchema>;
-export type Institution = z.infer<typeof InstitutionSchema>;
-export type Norm = z.infer<typeof NormSchema>;
-export type Resource = z.infer<typeof ResourceSchema>;
-export type Risk = z.infer<typeof RiskSchema>;
-export type Policy = z.infer<typeof PolicySchema>;
-export type Grievance = z.infer<typeof GrievanceSchema>;
 export type ConflictEntity = z.infer<typeof ConflictEntitySchema>;
 export type ConflictGraph = z.infer<typeof ConflictGraphSchema>;
 export type EntityEnrichment = z.infer<typeof EntityEnrichmentSchema>;
+export type SourceSpan = z.infer<typeof SourceSpanSchema>;
 
-export type ConflictEntityType = ConflictEntity['type'];
-
-/** All 14 entity type labels for UI */
 export const ENTITY_TYPE_LABELS: Record<ConflictEntityType, string> = {
   actor: 'Actor',
   claim: 'Claim',
@@ -591,15 +282,8 @@ export const ENTITY_TYPE_LABELS: Record<ConflictEntityType, string> = {
   commitment: 'Commitment',
   event: 'Event',
   narrative: 'Narrative',
-  institution: 'Institution',
-  norm: 'Norm / Legal Framework',
-  resource: 'Resource',
-  risk: 'Risk / Early Warning',
-  policy: 'Policy / Intervention',
-  grievance: 'Grievance / Root Cause',
 };
 
-/** Entity type colors for visualization */
 export const ENTITY_TYPE_COLORS: Record<ConflictEntityType, string> = {
   actor: '#4B92DB',
   claim: '#E8B931',
@@ -609,10 +293,4 @@ export const ENTITY_TYPE_COLORS: Record<ConflictEntityType, string> = {
   commitment: '#3B82F6',
   event: '#F97316',
   narrative: '#EC4899',
-  institution: '#6366F1',
-  norm: '#14B8A6',
-  resource: '#D97706',
-  risk: '#EF4444',
-  policy: '#0EA5E9',
-  grievance: '#DC2626',
 };

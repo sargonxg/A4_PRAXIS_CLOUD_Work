@@ -15,20 +15,15 @@
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getProModel } from '@/lib/ai/providers';
+import {
+  ACO_ENTITY_TYPES,
+  CONFIDENCE_LEVELS,
+  PRIMITIVE_SUBTYPES,
+  RELATIONSHIP_VOCABULARY,
+  type ACOEntityType,
+  type ConfidenceLevel,
+} from '@/lib/ai/schemas/conflict-grammar';
 import { computeTrustworthiness, type TrustworthinessScore } from '@/lib/analytics/trustworthiness-engine';
-
-// ─── ACO v2.0 Entity Schema (matches backend/graphify_tacitus/schemas/aco.py) ──
-
-export const ACO_ENTITY_TYPES = [
-  'Actor', 'Claim', 'Interest', 'Constraint', 'Leverage',
-  'Commitment', 'Event', 'Narrative',
-  'Institution', 'Norm', 'Resource', 'Risk', 'Policy', 'Grievance',
-] as const;
-
-export type ACOEntityType = (typeof ACO_ENTITY_TYPES)[number];
-
-export const CONFIDENCE_LEVELS = ['EXTRACTED', 'INFERRED', 'AMBIGUOUS', 'ASSESSED'] as const;
-export type ConfidenceLevel = (typeof CONFIDENCE_LEVELS)[number];
 
 // ─── Zod schemas for AI structured output ──────────────────────────────────
 
@@ -119,24 +114,13 @@ export interface ExtractionResult {
 
 // ─── Relationship vocabulary for the AI prompt ──────────────────────────────
 
-const RELATIONSHIP_VOCABULARY = `
-VALID RELATIONSHIP TYPES (use these exact names):
-Actor→*: claims, has_interest, faces_constraint, holds_leverage, made_commitment, participated_in, propagates_narrative, allied_with, opposes, mediates_between, sponsors, subordinate_to, member_of, controls_resource, subject_to_norm, expresses_grievance, implements_policy, exposed_to_risk
-Claim→*: contradicts, supports_claim, based_on_interest, justified_by_narrative, constrained_by, rooted_in_grievance, demands_resource
-Interest→*: conflicts_with, aligns_with, underlying_interest_of, driven_by_grievance, requires_resource
-Constraint→*: limits_leverage, blocks_commitment, imposed_by_event, imposed_by_institution, derived_from_norm
-Leverage→*: targets, derived_from_event, undermined_by, based_on_resource
-Commitment→*: addresses_claim, violated_by_event, supersedes, codified_in_norm, brokered_by_institution
-Event→*: triggered_by, escalates, de_escalates, involves_actor, affects_leverage, validates_narrative, contradicts_narrative, damages_resource, triggers_risk, violates_norm
-Narrative→*: frames_event, justifies_claim, undermines_claim, competes_with, reinforces
-Institution→*: governs, enforces_norm, manages_resource, enacts_policy, parent_of, competes_with_institution
-Norm→*: regulates, protects_resource, mitigates_risk, conflicts_with_norm
-Resource→*: contested_by, fuels_grievance, enables_leverage
-Risk→*: threatens_actor, threatens_commitment, exacerbated_by
-Policy→*: addresses_grievance, addresses_risk, allocates_resource
-Grievance→*: motivates_actor, generates_claim, escalated_by_event
-Any→Any: semantically_similar_to
-`;
+const RELATIONSHIP_VOCABULARY_TEXT = Object.entries(RELATIONSHIP_VOCABULARY)
+  .map(([, rel]) => `${rel.sourceTypes.join('|')}→${rel.targetTypes.join('|')}: ${rel.canonical}`)
+  .join('\n');
+
+const ENTITY_SUBTYPE_GUIDELINES = Object.entries(PRIMITIVE_SUBTYPES)
+  .map(([primitive, subtypes]) => `- ${primitive} subtypes: ${subtypes.join(', ')}`)
+  .join('\n');
 
 // ─── Main extraction function ───────────────────────────────────────────────
 
@@ -182,7 +166,7 @@ TEXT TO ANALYZE:
 ${text.slice(0, 15000)}
 
 INSTRUCTIONS:
-1. Extract up to ${maxNodes} entities of these types: Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, Narrative, Institution, Norm, Resource, Risk, Policy, Grievance
+1. Extract up to ${maxNodes} entities of these types: ${ACO_ENTITY_TYPES.join(', ')}
 2. For each entity, assign a confidence level:
    - EXTRACTED: Directly and explicitly stated in the text
    - INFERRED: Reasonable deduction from what is stated
@@ -195,23 +179,18 @@ INSTRUCTIONS:
 7. Be specific and grounded — every entity should trace back to the source text
 ${existingContext}
 
-${RELATIONSHIP_VOCABULARY}
+${RELATIONSHIP_VOCABULARY_TEXT}
 
 ENTITY SUBTYPE GUIDELINES:
-- Actor subtypes: state, armed_group, non_state, individual, international_org, civil_society
-- Claim subtypes: territorial, legal, political, economic, identity, self_determination
-- Interest subtypes: stated, unstated, security, economic, identity, survival, political
-- Event subtypes: military, diplomatic, humanitarian, political, protest, election, ceasefire
-- Constraint subtypes: legal, political, resource, temporal, normative, geographic
-- Leverage subtypes: military, economic, diplomatic, informational, moral, territorial
-- Commitment subtypes: ceasefire, treaty, verbal, written, binding, conditional
-- Narrative subtypes: media, propaganda, historical, identity, victimhood, liberation
-- Institution subtypes: government, judiciary, military, international_org, traditional, religious
-- Norm subtypes: legal, customary, religious, ethical, political, IHL
-- Resource subtypes: natural, financial, human, strategic, informational, territory
-- Risk subtypes: security, humanitarian, political, economic, environmental, social
-- Policy subtypes: sanctions, peace_plan, military, humanitarian, governance, economic
-- Grievance subtypes: identity, economic, political, historical, territorial, security
+${ENTITY_SUBTYPE_GUIDELINES}
+
+MAPPING RULES FOR FORMER EXTENDED TYPES:
+- Institution -> Actor subtype "institution" or Constraint subtype "institutional"
+- Norm -> Constraint subtype "norm"
+- Resource -> Interest or Leverage metadata/subtype
+- Risk -> status/metadata on relevant Event, Constraint, or Commitment; do not create Risk nodes
+- Policy -> Commitment subtype "policy_commitment"
+- Grievance -> Claim subtype "grievance"
 
 Focus on quality over quantity. Every node and edge should be defensible from the source text.`,
   });

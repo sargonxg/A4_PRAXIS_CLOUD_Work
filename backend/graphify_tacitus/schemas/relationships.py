@@ -1,228 +1,97 @@
-"""ACO v2.0 relationship vocabulary — 72 typed edges between conflict primitives.
+# GENERATED FILE - DO NOT EDIT.
+# Source: schemas/conflict-grammar-v1.json
+# Regenerate with: npm run schema:gen
+from __future__ import annotations
 
-ACO_RELATIONSHIPS maps relationship name → (source_primitive, target_primitive).
-Used for validation, Neo4j/FalkorDB label generation, and relationship type checking.
-
-Covers all 14 entity types:
-  Core 8:    Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, Narrative
-  Extended 6: Institution, Norm, Resource, Risk, Policy, Grievance
-
-Theoretical grounding for relationship types:
-  - Fisher-Ury: Claim→Interest→Need/Grievance hierarchy
-  - Glasl: Event→Event escalation/de-escalation chains
-  - Lederach: Actor→Institution multi-level mapping
-  - Galtung: Resource/Institution/Norm structural violence triad
-  - Stedman: Actor spoiler dynamics via Leverage/Commitment
-  - CAMEO: Event classification and actor-event relationships
-"""
-from pydantic import BaseModel, Field
-
-from .aco import ConfidenceLevel
+from .aco import ACOEdge
 
 
-class ACOEdge(BaseModel):
-    source: str
-    target: str
-    relation: str
-    confidence: ConfidenceLevel = ConfidenceLevel.EXTRACTED
-    source_file: str = ""
-    source_location: str = ""
-    weight: float = 1.0
-    tenant_id: str = ""
-    situation_id: str = ""
-    metadata: dict = Field(default_factory=dict)
-    # Temporal fields for edge evolution
-    valid_from: str = ""
-    valid_until: str = ""
-
-
-# 72 typed relationships: (source_primitive, target_primitive)
-ACO_RELATIONSHIPS: dict[str, tuple[str, str]] = {
-
-    # ── Actor → * (12 original + 6 new) ──────────────────────────────────────
-    "claims":                    ("Actor", "Claim"),
-    "has_interest":              ("Actor", "Interest"),
-    "faces_constraint":          ("Actor", "Constraint"),
-    "holds_leverage":            ("Actor", "Leverage"),
-    "made_commitment":           ("Actor", "Commitment"),
-    "participated_in":           ("Actor", "Event"),
-    "propagates_narrative":      ("Actor", "Narrative"),
-    "allied_with":               ("Actor", "Actor"),
-    "opposes":                   ("Actor", "Actor"),
-    "mediates_between":          ("Actor", "Actor"),
-    "sponsors":                  ("Actor", "Actor"),
-    "subordinate_to":            ("Actor", "Actor"),
-    # New: Actor → Extended types
-    "member_of":                 ("Actor", "Institution"),
-    "controls_resource":         ("Actor", "Resource"),
-    "subject_to_norm":           ("Actor", "Norm"),
-    "expresses_grievance":       ("Actor", "Grievance"),
-    "implements_policy":         ("Actor", "Policy"),
-    "exposed_to_risk":           ("Actor", "Risk"),
-
-    # ── Claim → * (5 original + 2 new) ──────────────────────────────────────
-    "contradicts":               ("Claim", "Claim"),
-    "supports_claim":            ("Claim", "Claim"),
-    "based_on_interest":         ("Claim", "Interest"),
-    "justified_by_narrative":    ("Claim", "Narrative"),
-    "constrained_by":            ("Claim", "Constraint"),
-    # New
-    "rooted_in_grievance":       ("Claim", "Grievance"),
-    "demands_resource":          ("Claim", "Resource"),
-
-    # ── Interest → * (3 original + 2 new) ───────────────────────────────────
-    "conflicts_with":            ("Interest", "Interest"),
-    "aligns_with":               ("Interest", "Interest"),
-    "underlying_interest_of":    ("Interest", "Claim"),
-    # New
-    "driven_by_grievance":       ("Interest", "Grievance"),
-    "requires_resource":         ("Interest", "Resource"),
-
-    # ── Constraint → * (3 original + 2 new) ─────────────────────────────────
-    "limits_leverage":           ("Constraint", "Leverage"),
-    "blocks_commitment":         ("Constraint", "Commitment"),
-    "imposed_by_event":          ("Constraint", "Event"),
-    # New
-    "imposed_by_institution":    ("Constraint", "Institution"),
-    "derived_from_norm":         ("Constraint", "Norm"),
-
-    # ── Leverage → * (3 original + 1 new) ───────────────────────────────────
-    "targets":                   ("Leverage", "Actor"),
-    "derived_from_event":        ("Leverage", "Event"),
-    "undermined_by":             ("Leverage", "Constraint"),
-    # New
-    "based_on_resource":         ("Leverage", "Resource"),
-
-    # ── Commitment → * (3 original + 2 new) ─────────────────────────────────
-    "addresses_claim":           ("Commitment", "Claim"),
-    "violated_by_event":         ("Commitment", "Event"),
-    "supersedes":                ("Commitment", "Commitment"),
-    # New
-    "codified_in_norm":          ("Commitment", "Norm"),
-    "brokered_by_institution":   ("Commitment", "Institution"),
-
-    # ── Event → * (7 original + 3 new) ──────────────────────────────────────
-    "triggered_by":              ("Event", "Event"),
-    "escalates":                 ("Event", "Event"),
-    "de_escalates":              ("Event", "Event"),
-    "involves_actor":            ("Event", "Actor"),
-    "affects_leverage":          ("Event", "Leverage"),
-    "validates_narrative":       ("Event", "Narrative"),
-    "contradicts_narrative":     ("Event", "Narrative"),
-    # New
-    "damages_resource":          ("Event", "Resource"),
-    "triggers_risk":             ("Event", "Risk"),
-    "violates_norm":             ("Event", "Norm"),
-
-    # ── Narrative → * (5 original) ──────────────────────────────────────────
-    "frames_event":              ("Narrative", "Event"),
-    "justifies_claim":           ("Narrative", "Claim"),
-    "undermines_claim":          ("Narrative", "Claim"),
-    "competes_with":             ("Narrative", "Narrative"),
-    "reinforces":                ("Narrative", "Narrative"),
-
-    # ── Institution → * (new) ───────────────────────────────────────────────
-    "governs":                   ("Institution", "Actor"),
-    "enforces_norm":             ("Institution", "Norm"),
-    "manages_resource":          ("Institution", "Resource"),
-    "enacts_policy":             ("Institution", "Policy"),
-    "parent_of":                 ("Institution", "Institution"),
-    "competes_with_institution": ("Institution", "Institution"),
-
-    # ── Norm → * (new) ──────────────────────────────────────────────────────
-    "regulates":                 ("Norm", "Actor"),
-    "protects_resource":         ("Norm", "Resource"),
-    "mitigates_risk":            ("Norm", "Risk"),
-    "conflicts_with_norm":       ("Norm", "Norm"),
-
-    # ── Resource → * (new) ──────────────────────────────────────────────────
-    "contested_by":              ("Resource", "Actor"),
-    "fuels_grievance":           ("Resource", "Grievance"),
-    "enables_leverage":          ("Resource", "Leverage"),
-
-    # ── Risk → * (new) ─────────────────────────────────────────────────────
-    "threatens_actor":           ("Risk", "Actor"),
-    "threatens_commitment":      ("Risk", "Commitment"),
-    "exacerbated_by":            ("Risk", "Event"),
-
-    # ── Policy → * (new) ───────────────────────────────────────────────────
-    "addresses_grievance":       ("Policy", "Grievance"),
-    "addresses_risk":            ("Policy", "Risk"),
-    "allocates_resource":        ("Policy", "Resource"),
-
-    # ── Grievance → * (new) ────────────────────────────────────────────────
-    "motivates_actor":           ("Grievance", "Actor"),
-    "generates_claim":           ("Grievance", "Claim"),
-    "escalated_by_event":        ("Grievance", "Event"),
-
-    # ── Cross-type ──────────────────────────────────────────────────────────
-    "semantically_similar_to":   ("*", "*"),
+ACO_RELATIONSHIPS: dict[str, dict[str, list[str] | str]] = {
+    "CLAIMS": {"canonical": "claims", "source_types": ["Actor"], "target_types": ["Claim"], "description": "Actor asserts a claim."},
+    "HAS_INTEREST": {"canonical": "has_interest", "source_types": ["Actor"], "target_types": ["Interest"], "description": "Actor has an underlying interest."},
+    "FACES_CONSTRAINT": {"canonical": "faces_constraint", "source_types": ["Actor"], "target_types": ["Constraint"], "description": "Actor is limited by a constraint."},
+    "HOLDS_LEVERAGE": {"canonical": "holds_leverage", "source_types": ["Actor"], "target_types": ["Leverage"], "description": "Actor holds a leverage source."},
+    "MADE_COMMITMENT": {"canonical": "made_commitment", "source_types": ["Actor"], "target_types": ["Commitment"], "description": "Actor made or joined a commitment."},
+    "PARTICIPATED_IN": {"canonical": "participated_in", "source_types": ["Actor"], "target_types": ["Event"], "description": "Actor participated in an event."},
+    "PROPAGATES_NARRATIVE": {"canonical": "propagates_narrative", "source_types": ["Actor"], "target_types": ["Narrative"], "description": "Actor propagates a narrative."},
+    "ALLIED_WITH": {"canonical": "allied_with", "source_types": ["Actor"], "target_types": ["Actor"], "description": "Actor is allied with another actor."},
+    "OPPOSES": {"canonical": "opposes", "source_types": ["Actor"], "target_types": ["Actor"], "description": "Actor opposes another actor."},
+    "MEDIATES_BETWEEN": {"canonical": "mediates_between", "source_types": ["Actor"], "target_types": ["Actor"], "description": "Actor mediates between actors."},
+    "SPONSORS": {"canonical": "sponsors", "source_types": ["Actor"], "target_types": ["Actor"], "description": "Actor sponsors another actor."},
+    "SUBORDINATE_TO": {"canonical": "subordinate_to", "source_types": ["Actor"], "target_types": ["Actor"], "description": "Actor is subordinate to another actor."},
+    "CONTRADICTS": {"canonical": "contradicts", "source_types": ["Claim"], "target_types": ["Claim"], "description": "Claim contradicts another claim."},
+    "SUPPORTS_CLAIM": {"canonical": "supports_claim", "source_types": ["Claim"], "target_types": ["Claim"], "description": "Claim supports another claim."},
+    "BASED_ON_INTEREST": {"canonical": "based_on_interest", "source_types": ["Claim"], "target_types": ["Interest"], "description": "Claim is based on an underlying interest."},
+    "JUSTIFIED_BY_NARRATIVE": {"canonical": "justified_by_narrative", "source_types": ["Claim"], "target_types": ["Narrative"], "description": "Claim is justified by a narrative."},
+    "CONSTRAINED_BY": {"canonical": "constrained_by", "source_types": ["Claim"], "target_types": ["Constraint"], "description": "Claim is limited by a constraint."},
+    "CONFLICTS_WITH": {"canonical": "conflicts_with", "source_types": ["Interest"], "target_types": ["Interest"], "description": "Interest conflicts with another interest."},
+    "ALIGNS_WITH": {"canonical": "aligns_with", "source_types": ["Interest"], "target_types": ["Interest"], "description": "Interest aligns with another interest."},
+    "UNDERLYING_INTEREST_OF": {"canonical": "underlying_interest_of", "source_types": ["Interest"], "target_types": ["Claim"], "description": "Interest underlies a claim."},
+    "LIMITS_LEVERAGE": {"canonical": "limits_leverage", "source_types": ["Constraint"], "target_types": ["Leverage"], "description": "Constraint limits leverage."},
+    "BLOCKS_COMMITMENT": {"canonical": "blocks_commitment", "source_types": ["Constraint"], "target_types": ["Commitment"], "description": "Constraint blocks a commitment."},
+    "IMPOSED_BY_EVENT": {"canonical": "imposed_by_event", "source_types": ["Constraint"], "target_types": ["Event"], "description": "Constraint is imposed by an event."},
+    "TARGETS": {"canonical": "targets", "source_types": ["Leverage"], "target_types": ["Actor"], "description": "Leverage targets an actor."},
+    "DERIVED_FROM_EVENT": {"canonical": "derived_from_event", "source_types": ["Leverage"], "target_types": ["Event"], "description": "Leverage derives from an event."},
+    "UNDERMINED_BY": {"canonical": "undermined_by", "source_types": ["Leverage"], "target_types": ["Constraint"], "description": "Leverage is undermined by a constraint."},
+    "ADDRESSES_CLAIM": {"canonical": "addresses_claim", "source_types": ["Commitment"], "target_types": ["Claim"], "description": "Commitment addresses a claim."},
+    "VIOLATED_BY_EVENT": {"canonical": "violated_by_event", "source_types": ["Commitment"], "target_types": ["Event"], "description": "Commitment is violated or stressed by an event."},
+    "SUPERSEDES": {"canonical": "supersedes", "source_types": ["Commitment"], "target_types": ["Commitment"], "description": "Commitment supersedes another commitment."},
+    "TRIGGERED_BY": {"canonical": "triggered_by", "source_types": ["Event"], "target_types": ["Event"], "description": "Event is triggered by another event."},
+    "ESCALATES": {"canonical": "escalates", "source_types": ["Event"], "target_types": ["Event"], "description": "Event escalates another event or sequence."},
+    "DE_ESCALATES": {"canonical": "de_escalates", "source_types": ["Event"], "target_types": ["Event"], "description": "Event de-escalates another event or sequence."},
+    "INVOLVES_ACTOR": {"canonical": "involves_actor", "source_types": ["Event"], "target_types": ["Actor"], "description": "Event involves an actor."},
+    "AFFECTS_LEVERAGE": {"canonical": "affects_leverage", "source_types": ["Event"], "target_types": ["Leverage"], "description": "Event affects leverage."},
+    "VALIDATES_NARRATIVE": {"canonical": "validates_narrative", "source_types": ["Event"], "target_types": ["Narrative"], "description": "Event validates a narrative."},
+    "CONTRADICTS_NARRATIVE": {"canonical": "contradicts_narrative", "source_types": ["Event"], "target_types": ["Narrative"], "description": "Event contradicts a narrative."},
+    "FRAMES_EVENT": {"canonical": "frames_event", "source_types": ["Narrative"], "target_types": ["Event"], "description": "Narrative frames an event."},
+    "JUSTIFIES_CLAIM": {"canonical": "justifies_claim", "source_types": ["Narrative"], "target_types": ["Claim"], "description": "Narrative justifies a claim."},
+    "UNDERMINES_CLAIM": {"canonical": "undermines_claim", "source_types": ["Narrative"], "target_types": ["Claim"], "description": "Narrative undermines a claim."},
+    "COMPETES_WITH": {"canonical": "competes_with", "source_types": ["Narrative"], "target_types": ["Narrative"], "description": "Narrative competes with another narrative."},
+    "REINFORCES": {"canonical": "reinforces", "source_types": ["Narrative"], "target_types": ["Narrative"], "description": "Narrative reinforces another narrative."},
+    "SEMANTICALLY_SIMILAR_TO": {"canonical": "semantically_similar_to", "source_types": ["*"], "target_types": ["*"], "description": "Nodes are semantically similar or likely duplicate references."},
 }
+
+_CANONICAL_TO_NAME = {v["canonical"]: k for k, v in ACO_RELATIONSHIPS.items()}
 
 
 def normalize_relation(relation: str) -> str:
-    """Normalize a relationship type to the canonical snake_case form.
+    """Normalize a relationship type to the canonical uppercase enum key."""
+    raw = relation.strip()
+    if raw in ACO_RELATIONSHIPS:
+        return raw
+    normalized = raw.lower().replace(" ", "_").replace("-", "_").strip("_")
+    if normalized in _CANONICAL_TO_NAME:
+        return _CANONICAL_TO_NAME[normalized]
+    upper = normalized.upper()
+    if upper in ACO_RELATIONSHIPS:
+        return upper
+    return upper
 
-    Handles common extraction issues:
-    - UPPERCASE → lowercase (CLAIMS → claims)
-    - Spaces → underscores (has interest → has_interest)
-    - Hyphens → underscores (allied-with → allied_with)
-    - Close matches via fuzzy lookup
-    """
-    normalized = relation.strip().lower().replace(" ", "_").replace("-", "_")
-    if normalized in ACO_RELATIONSHIPS:
-        return normalized
-    # Try without leading/trailing underscores
-    stripped = normalized.strip("_")
-    if stripped in ACO_RELATIONSHIPS:
-        return stripped
-    return normalized
+
+def canonical_relation(relation: str) -> str:
+    """Return the snake-case relation label used by LLM prompts and UI edges."""
+    key = normalize_relation(relation)
+    rel = ACO_RELATIONSHIPS.get(key)
+    return str(rel["canonical"]) if rel else relation.strip().lower()
 
 
 def validate_relation(relation: str, source_type: str, target_type: str) -> tuple[bool, str]:
-    """Validate a relationship against the ACO vocabulary.
-
-    Returns (is_valid, normalized_relation).
-    Wildcards (*,*) always match via semantically_similar_to.
-    """
-    norm = normalize_relation(relation)
-    if norm not in ACO_RELATIONSHIPS:
-        return False, norm
-
-    expected_source, expected_target = ACO_RELATIONSHIPS[norm]
-    if expected_source == "*" and expected_target == "*":
-        return True, norm
-    if expected_source != "*" and expected_source != source_type:
-        return False, norm
-    if expected_target != "*" and expected_target != target_type:
-        return False, norm
-    return True, norm
+    """Validate a relationship against the 42-edge ACO vocabulary."""
+    key = normalize_relation(relation)
+    rel = ACO_RELATIONSHIPS.get(key)
+    if rel is None:
+        return False, key
+    source_types = rel["source_types"]
+    target_types = rel["target_types"]
+    source_ok = "*" in source_types or source_type in source_types
+    target_ok = "*" in target_types or target_type in target_types
+    return source_ok and target_ok, key
 
 
-# Relationship categories for UI grouping and analysis
 RELATIONSHIP_CATEGORIES: dict[str, list[str]] = {
-    "causal": [
-        "triggered_by", "escalates", "de_escalates", "derived_from_event",
-        "imposed_by_event", "generates_claim", "motivates_actor",
-        "fuels_grievance", "escalated_by_event", "triggers_risk",
-    ],
-    "structural": [
-        "member_of", "subordinate_to", "parent_of", "governs",
-        "controls_resource", "manages_resource", "enforces_norm",
-    ],
-    "antagonistic": [
-        "opposes", "contradicts", "conflicts_with", "undermines_claim",
-        "undermined_by", "violated_by_event", "violates_norm",
-        "competes_with", "competes_with_institution", "conflicts_with_norm",
-    ],
-    "cooperative": [
-        "allied_with", "supports_claim", "aligns_with", "made_commitment",
-        "addresses_claim", "brokered_by_institution", "reinforces",
-        "addresses_grievance", "addresses_risk", "mitigates_risk",
-    ],
-    "foundational": [
-        "has_interest", "claims", "based_on_interest", "underlying_interest_of",
-        "rooted_in_grievance", "driven_by_grievance", "expresses_grievance",
-        "requires_resource", "demands_resource",
-    ],
+    "causal": ["TRIGGERED_BY", "ESCALATES", "DE_ESCALATES", "DERIVED_FROM_EVENT", "IMPOSED_BY_EVENT"],
+    "structural": ["SUBORDINATE_TO", "FACES_CONSTRAINT", "CONSTRAINED_BY"],
+    "antagonistic": ["OPPOSES", "CONTRADICTS", "CONFLICTS_WITH", "UNDERMINES_CLAIM", "UNDERMINED_BY", "VIOLATED_BY_EVENT"],
+    "cooperative": ["ALLIED_WITH", "SUPPORTS_CLAIM", "ALIGNS_WITH", "MADE_COMMITMENT", "ADDRESSES_CLAIM", "REINFORCES"],
+    "foundational": ["HAS_INTEREST", "CLAIMS", "BASED_ON_INTEREST", "UNDERLYING_INTEREST_OF"],
 }

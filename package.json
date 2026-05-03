@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "schema:gen": "tsx scripts/codegen-schema.ts",
     "verify-tools": "npx tsx scripts/verify-tools.ts",
     "seed:onboarding": "tsx scripts/seed-onboarding-config.ts",
     "audit:tools": "tsx scripts/audit-tools.ts",

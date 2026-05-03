@@ -1,0 +1,93 @@
+{
+  "nodes": [
+    {
+      "id": "actor-syrian-government",
+      "label": "Syrian Government",
+      "description": "Transitional authorities in Damascus.",
+      "primitive_type": "Actor",
+      "confidence": 0.92,
+      "confidence_level": "EXTRACTED",
+      "extractor_version": "1.0.0",
+      "source_span": {
+        "documentId": "doc-un-geneva-syria-2026-02-13",
+        "charStart": 0,
+        "charEnd": 180,
+        "excerpt": "UN reporting describes the Syrian transition and the Damascus-SDF agreement.",
+        "retrievedAt": "2026-05-01T00:00:00Z",
+        "retrievalMethod": "grounded_search"
+      },
+      "metadata": { "subtype": "state" }
+    },
+    {
+      "id": "actor-sdf",
+      "label": "Syrian Democratic Forces",
+      "description": "Northeast Syria actor party to integration talks.",
+      "primitive_type": "Actor",
+      "confidence": 0.9,
+      "confidence_level": "EXTRACTED",
+      "extractor_version": "1.0.0",
+      "source_span": {
+        "documentId": "doc-un-geneva-syria-2026-02-13",
+        "charStart": 181,
+        "charEnd": 320,
+        "excerpt": "The agreement concerns integration between Damascus and the SDF.",
+        "retrievedAt": "2026-05-01T00:00:00Z",
+        "retrievalMethod": "grounded_search"
+      },
+      "metadata": { "subtype": "non_state_armed_group" }
+    },
+    {
+      "id": "commitment-jan-30-integration",
+      "label": "30 January integration agreement",
+      "description": "Commitment to advance Damascus-SDF integration arrangements.",
+      "primitive_type": "Commitment",
+      "confidence": 0.86,
+      "confidence_level": "EXTRACTED",
+      "extractor_version": "1.0.0",
+      "source_span": {
+        "documentId": "doc-un-geneva-syria-2026-02-13",
+        "charStart": 321,
+        "charEnd": 520,
+        "excerpt": "UN officials welcomed the 30 January agreement while noting implementation risks.",
+        "retrievedAt": "2026-05-01T00:00:00Z",
+        "retrievalMethod": "grounded_search"
+      },
+      "metadata": { "subtype": "agreement", "status": "active" }
+    }
+  ],
+  "edges": [
+    {
+      "source": "actor-syrian-government",
+      "target": "commitment-jan-30-integration",
+      "relation": "MADE_COMMITMENT",
+      "confidence": 0.82,
+      "confidence_level": "EXTRACTED",
+      "extractor_version": "1.0.0",
+      "source_span": {
+        "documentId": "doc-un-geneva-syria-2026-02-13",
+        "charStart": 321,
+        "charEnd": 520,
+        "excerpt": "Damascus is identified as a party to the integration agreement.",
+        "retrievedAt": "2026-05-01T00:00:00Z",
+        "retrievalMethod": "grounded_search"
+      }
+    },
+    {
+      "source": "actor-sdf",
+      "target": "commitment-jan-30-integration",
+      "relation": "MADE_COMMITMENT",
+      "confidence": 0.82,
+      "confidence_level": "EXTRACTED",
+      "extractor_version": "1.0.0",
+      "source_span": {
+        "documentId": "doc-un-geneva-syria-2026-02-13",
+        "charStart": 321,
+        "charEnd": 520,
+        "excerpt": "The SDF is identified as a party to the integration agreement.",
+        "retrievedAt": "2026-05-01T00:00:00Z",
+        "retrievalMethod": "grounded_search"
+      }
+    }
+  ],
+  "summary": "Minimal Syria ACO v1 sample for schema validation."
+}
