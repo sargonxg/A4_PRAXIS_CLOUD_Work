@@ -17,7 +17,8 @@ The real app should lead with one surface:
 2. The document is grounded in a separated source library.
 3. The context builder and graph create typed, source-bound structure.
 4. AI runs inside the document workflow: what changed, where did this come from, what contradicts this paragraph, what graph path supports this recommendation.
-5. Specialist tools remain available, but they are applied to the policy workspace instead of competing as primary navigation.
+5. The Boardroom sits between graph inspection and drafting: advisors can be summoned to deliberate, challenge assumptions, and synthesize a decision-ready view before the analyst edits the document.
+6. Specialist tools remain available, but they are applied to the policy workspace instead of competing as primary navigation.
 
 ## App Shell Change
 
@@ -28,8 +29,9 @@ Default sidebar is consolidated to:
 3. Library
 4. Research
 5. Graph
-6. Draft
-7. Specialist Tools
+6. Boardroom
+7. Draft
+8. Specialist Tools
 
 The old default sidebar categories were too tool-centric: Core, Evidence, Graph, Analysis, Diplomacy. Those pages remain routable, but the user now sees a policy-document workflow.
 
@@ -47,6 +49,7 @@ The dashboard removes the crowded widget/tool-package first impression and cente
 - working document actions;
 - document library and research actions;
 - graph/trust backbone;
+- boardroom deliberation and challenge before drafting;
 - Ingest -> Structure -> Query -> Compare -> Brief -> Inherit workflow;
 - executive intelligence as an optional generated layer;
 - recent saved work/activity.

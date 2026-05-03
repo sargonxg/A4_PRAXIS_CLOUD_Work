@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { advisors, advisorCapabilityById } from '@/lib/constants/advisors';
+import { FALLBACK_ADVISOR_CONFIGS } from '@/lib/constants/advisor-configs';
 import { ADVISOR_IDS } from '@/types/advisor';
 
 describe('flagship advisor capability registry', () => {
@@ -15,6 +16,15 @@ describe('flagship advisor capability registry', () => {
       expect(advisor.dataAccess.length).toBeGreaterThanOrEqual(4);
       expect(advisor.dialecticaLayer.length).toBeGreaterThan(70);
       expect(advisorCapabilityById[advisor.id]).toBe(advisor);
+    }
+  });
+
+  it('keeps fallback runtime configs available for the boardroom', () => {
+    expect(FALLBACK_ADVISOR_CONFIGS.map((advisor) => advisor.id)).toEqual(ADVISOR_IDS);
+    for (const advisor of FALLBACK_ADVISOR_CONFIGS) {
+      expect(advisor.persona.length).toBeGreaterThan(300);
+      expect(advisor.allowedTools).toContain('knowledgeCore');
+      expect(advisor.greeting.length).toBeGreaterThan(40);
     }
   });
 });

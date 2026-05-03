@@ -183,6 +183,37 @@ Be specific. Reference advisors by name when attributing views.`,
 
     // --- Devil's Advocacy handler ---
     if (action === 'devilsAdvocacy' && advisorId) {
+      if (isAdvisorConfigId(advisorId)) {
+        const cfg = await getAdvisor(advisorId);
+        if (cfg) {
+          const sitCtx = situation ? buildToolContext(situation as Situation) : '';
+          const briefing = await buildAdvisorBriefing(cfg, situation ?? null).catch(() => '');
+          const result = streamText({
+            model: pickModelForTier(cfg.modelTier),
+            system: `${cfg.persona}${briefing}
+
+You are operating in PRAXIS BOARDROOM CHALLENGE mode. Your job is to pressure-test the user's working judgement, draft, or proposed course of action from your specialist perspective. Do not merely agree. Identify hidden assumptions, weak evidence, implementation failure modes, second-order consequences, and the strongest counterargument. Stay constructive: end with concrete amendments that would make the proposal more robust. ${sitCtx}${calibrationSuffix}`,
+            messages: (messages ?? []) as ModelMessage[],
+            tools: cfg.allowedTools.includes('webSearch') ? { webSearch } : undefined,
+            stopWhen: stepCountIs(1),
+            onFinish: async ({ text }) => {
+              if (situationId && ctx.uid) {
+                await saveToolOutput({
+                  uid: ctx.uid,
+                  situationId,
+                  toolId: 'advisory',
+                  profileVersion: provenance.profileVersion,
+                  output: { action: 'devilsAdvocacy', advisorId: cfg.id, response: text },
+                  metadata: { action: 'devilsAdvocacy', advisorId: cfg.id, modelTier: cfg.modelTier },
+                }).catch((err) => console.warn('[advisory/v2-devils] saveToolOutput failed:', err));
+              }
+            },
+          });
+
+          return result.toTextStreamResponse();
+        }
+      }
+
       const persona = ADVISOR_PERSONAS[advisorId];
       if (!persona) return new Response(JSON.stringify({ error: 'Unknown advisor' }), { status: 400 });
 

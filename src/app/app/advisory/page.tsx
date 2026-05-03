@@ -7,6 +7,7 @@ import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { ToolOutputFrame } from '@/components/praxis/tool-output-frame';
 import { AdvisorPicker } from '@/components/advisory/advisor-picker';
 import { AdvisorChatPane } from '@/components/advisory/advisor-chat-pane';
+import { AdvisorBoardroomPanel } from '@/components/advisory/advisor-boardroom-panel';
 import type { AdvisorConfig } from '@/types/advisor';
 
 import { useState, useCallback, useEffect } from 'react';
@@ -298,23 +299,25 @@ export default function AdvisoryPage() {
             <Target size={20} className="text-diplomatic-blue" />
           </div>
           <div>
-            <h1 className="text-xl font-serif font-semibold text-navy-900">Strategic Advisory</h1>
+            <h1 className="text-xl font-serif font-semibold text-navy-900">Boardroom Advisory</h1>
             <p className="text-sm text-navy-500">
               {situation
-                ? `AI-generated strategic recommendations for ${situation.name}`
-                : 'Prioritized recommendations grounded in PRAXIS analytical frameworks'}
+                ? `Summon specialist agents and generate strategic recommendations for ${situation.name}`
+                : 'Advisor deliberation, challenge, and recommendations grounded in PRAXIS analytical frameworks'}
             </p>
           </div>
         </div>
         <RegistryToolInfo toolId="advisory" />
       </div>
 
-      {/* Advisor Council v2 — 4 flagship advisors, Firestore-backed */}
+      <AdvisorBoardroomPanel situation={situation ?? null} />
+
+      {/* Advisor Council v2 — 4 flagship advisors, Firestore-backed with built-in fallbacks */}
       <section className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm font-semibold text-navy-900">Advisor Council</h2>
-            <p className="text-[11px] text-navy-500">Pick a specialist to chat with. Each one brings a distinct method, source diet, and model tier.</p>
+            <h2 className="text-sm font-semibold text-navy-900">Private Advisor Room</h2>
+            <p className="text-[11px] text-navy-500">Pick one specialist for a focused follow-up. Each one brings a distinct method, source diet, memory, and model tier.</p>
           </div>
           {activeAdvisor && (
             <button
