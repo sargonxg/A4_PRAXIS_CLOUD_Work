@@ -27,6 +27,10 @@
   Added the locked Syria source library, cached fallback packet, free ReliefWeb
   and GDELT live collectors behind `SYRIA_LIVE_INGEST_ENABLED`, and
   `/api/situations/[id]/syria-ingest`.
+- feat(syria): stage document-derived graph hypotheses and gated promotion (#A8).
+  Added Syria extract/promote endpoints that turn ingested documents into
+  provenance-bearing hypotheses first, then require calibrated GraphOps
+  promotion before mutating the canonical graph.
 
 ## 2026-05-03 — Syria graph-grounded research handoff
 
