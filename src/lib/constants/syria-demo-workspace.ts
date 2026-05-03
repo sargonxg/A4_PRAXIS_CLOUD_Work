@@ -1,4 +1,7 @@
 import type { AnalystProfile } from '@/types/analyst-profile';
+import { SYRIA_CHAPTER_FLOW } from '@/lib/syria/chapter-flow';
+
+export { SYRIA_CHAPTER_FLOW };
 
 export const SYRIA_DEMO_ANALYST_PROFILE: AnalystProfile = {
   identity: {
@@ -656,81 +659,6 @@ export const SYRIA_GRAPH_GROUNDING_PIPELINE = [
   {
     step: 'Draft',
     detail: 'Generate memos and briefings that carry graph paths, citations, assumptions, dissent, and next collection tasks.',
-  },
-];
-
-export const SYRIA_INVESTOR_WALKTHROUGH_ITEMS = [
-  {
-    label: 'Login-gated Syria case entry',
-    href: '/login?mode=demo&redirect=/app/syria-case%3Frecording%3D1%26case%3Dsyria',
-    visual: 'Session entry',
-    detail: 'Every viewer enters through the real login/session page, then lands in a shared Syria workspace.',
-  },
-  {
-    label: 'Situation room telemetry',
-    href: '/dashboard?recording=1&case=syria',
-    visual: 'Risk stack',
-    detail: 'Risk, source coverage, graph health, actor roster, and next actions are visible immediately.',
-  },
-  {
-    label: 'Context discipline',
-    href: '/context-builder?recording=1&case=syria',
-    visual: 'Known/thin/gap grid',
-    detail: 'The system shows what is known, what is assumed, and which evidence gaps block confidence.',
-  },
-  {
-    label: 'Source receipts',
-    href: '/source-scout?recording=1&case=syria',
-    visual: 'Reliability tiers',
-    detail: 'UN, humanitarian, and local receipts are ranked before any analysis is treated as usable.',
-  },
-  {
-    label: 'Local media compass',
-    href: '/media-compass?recording=1&case=syria',
-    visual: 'Source map',
-    detail: 'Syrian local, diaspora, state, monitoring, economic, and global outlets appear on one explainable map.',
-  },
-  {
-    label: 'Narrative divergence',
-    href: '/media-roundup?recording=1&case=syria',
-    visual: 'Narrative lanes',
-    detail: 'Official, humanitarian, northeast, economic, rights, and regional frames are compared side by side.',
-  },
-  {
-    label: 'GraphOps provenance',
-    href: '/graphops?recording=1&case=syria',
-    visual: 'Firestore audit',
-    detail: 'The graph is treated as a product asset with temporal anchors, provenance, and repair queues.',
-  },
-  {
-    label: 'Interactive conflict graph',
-    href: '/conflict-graph?recording=1&case=syria',
-    visual: 'Actor/event network',
-    detail: 'Actors, commitments, risks, claims, and events connect into a clickable Syria operating picture.',
-  },
-  {
-    label: 'Advisor disagreement',
-    href: '/brainstorming-table?recording=1&case=syria',
-    visual: 'Expert table',
-    detail: 'Mediator, humanitarian, legal, security, media, and red-team views stay separate and reviewable.',
-  },
-  {
-    label: 'Policy memo studio',
-    href: '/policy-memo?recording=1&case=syria',
-    visual: 'Editable work product',
-    detail: 'Analysts can edit, improve, audit, save, and export an office-ready memo grounded in the case context.',
-  },
-  {
-    label: 'Decision briefing',
-    href: '/briefing?recording=1&case=syria',
-    visual: 'Principal product',
-    detail: 'The final output is briefable: BLUF, facts, assessment, triggers, sources, and next actions.',
-  },
-  {
-    label: 'Reusable library',
-    href: '/documents?case=syria',
-    visual: 'Saved products',
-    detail: 'Work products move into a reusable document library instead of disappearing as one-off chat output.',
   },
 ];
 

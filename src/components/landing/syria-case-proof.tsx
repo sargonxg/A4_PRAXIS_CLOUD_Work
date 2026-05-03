@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, FileText, GitBranch, Gauge, Newspaper, Search, ShieldCheck, Sparkles } from 'lucide-react';
 import { SYRIA_DEMO_SITUATION, SYRIA_RECORDING_SCENES } from '@/lib/constants/syria-demo-case';
-import { SYRIA_INVESTOR_WALKTHROUGH_ITEMS, SYRIA_LOCAL_MEDIA_SOURCES } from '@/lib/constants/syria-demo-workspace';
+import { SYRIA_CHAPTER_FLOW, SYRIA_LOCAL_MEDIA_SOURCES } from '@/lib/constants/syria-demo-workspace';
 import { cn } from '@/lib/utils/cn';
 
 const CASE_URL = '/login?mode=demo&redirect=/app/syria-case%3Frecording%3D1%26case%3Dsyria';
@@ -14,7 +14,7 @@ const PROOF_POINTS = [
   { label: 'Receipts', value: '8', icon: Search, tone: 'text-emerald-700', detail: 'UN, humanitarian, local, and economic sources' },
   { label: 'Local media', value: `${SYRIA_LOCAL_MEDIA_SOURCES.length}`, icon: Newspaper, tone: 'text-teal-300', detail: 'Syrian source profiles and narrative lanes' },
   { label: 'Graph', value: `${SYRIA_DEMO_SITUATION.graphEntities}`, icon: GitBranch, tone: 'text-diplomatic-blue', detail: 'Typed actors, claims, events, constraints' },
-  { label: 'Wow path', value: `${SYRIA_INVESTOR_WALKTHROUGH_ITEMS.length}`, icon: FileText, tone: 'text-gold-700', detail: 'Clickable investor walkthrough moments' },
+  { label: 'Chapters', value: `${SYRIA_CHAPTER_FLOW.length}`, icon: FileText, tone: 'text-gold-700', detail: 'Five-part analyst workspace flow' },
 ];
 
 export function SyriaCaseProof() {
@@ -36,7 +36,7 @@ export function SyriaCaseProof() {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-gold-400/25 bg-gold-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-gold-200">
             <Sparkles className="h-3.5 w-3.5" />
-            Record this in 45 seconds
+            Syria case workspace
           </div>
           <h2 className="mt-5 max-w-3xl font-serif text-3xl font-semibold leading-tight sm:text-5xl">
             One Syria case file shows the full PRAXIS operating loop.

@@ -12,6 +12,13 @@
 > through `/app/tools?show_archive=1`; `verify-tools` and unit coverage enforce
 > the 12-tool policy.
 >
+> Work started on May 2 Prompt B1 (`showcase/syria-page-redesign`):
+> `/app/syria-case` is now a five-chapter analyst workspace instead of a
+> standalone investor recording page. The route uses `SYRIA_CHAPTER_FLOW` and
+> chapter components for Situation Frame, Source Receipts, Conflict Graph,
+> DIALECTICA Reasoning, and Decision Product. The recording copy is retained
+> only in a small press-kit footer.
+>
 > Current product direction: the Syria case is the canonical real-app demo
 > workspace. It should show PRAXIS conducting specific live policy research
 > inside the app: targeted searches, source receipts, discrepancy analysis,

@@ -1,0 +1,85 @@
+import { Activity, AlertTriangle, CalendarClock, Gauge, Network, UsersRound } from 'lucide-react';
+import { SYRIA_DEMO_CONFLICT_GRAPH, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
+import {
+  SYRIA_DEMO_ANALYST_PROFILE,
+  SYRIA_MEDIA_VISUAL_METRICS,
+  SYRIA_SITUATION_CONTEXT_CARDS,
+} from '@/lib/constants/syria-demo-workspace';
+
+const SITUATION_METRICS = [
+  { label: 'Escalation stage', value: 'Glasl 5', detail: 'Polarization with reversible de-escalation space.', icon: Activity },
+  { label: 'Actor set', value: `${SYRIA_DEMO_CONFLICT_GRAPH.actors.length}`, detail: 'State, UN, humanitarian, local, and regional actors.', icon: UsersRound },
+  { label: 'Source coverage', value: `${SYRIA_MEDIA_VISUAL_METRICS[1]?.score ?? 88}%`, detail: 'UN, local, economic, rights, and monitoring lanes.', icon: Network },
+  { label: 'Freshness', value: 'May 2026', detail: 'Seeded public-source case refreshed for the current demo cycle.', icon: CalendarClock },
+];
+
+export function SyriaChapterSituationFrame() {
+  return (
+    <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Analyst line</p>
+            <h3 className="mt-1 text-xl font-semibold text-navy-950">{SYRIA_DEMO_SITUATION.name}</h3>
+          </div>
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-right">
+            <div className="flex items-center gap-2 text-red-700">
+              <Gauge className="h-4 w-4" />
+              <span className="font-mono text-xl font-bold">78/100</span>
+            </div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-red-700/70">Volatile</p>
+          </div>
+        </div>
+        <p className="mt-3 text-sm leading-6 text-slate-700">
+          The January Damascus-SDF integration track is the stabilizing center of gravity. PRAXIS keeps it in the
+          same frame as humanitarian access, Kurdish rights implementation, southern flashpoints, HLP risk, and
+          regional spillover so a leadership line can change when evidence changes.
+        </p>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {SITUATION_METRICS.map((metric) => {
+            const Icon = metric.icon;
+            return (
+              <div key={metric.label} className="rounded-lg border border-white bg-white p-3 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{metric.label}</p>
+                  <Icon className="h-4 w-4 text-diplomatic-blue" />
+                </div>
+                <p className="mt-2 font-mono text-xl font-semibold text-navy-950">{metric.value}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-600">{metric.detail}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid gap-3">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-center gap-2 text-amber-800">
+            <AlertTriangle className="h-4 w-4" />
+            <p className="text-[10px] font-semibold uppercase tracking-wider">Breakpoints to monitor</p>
+          </div>
+          <div className="mt-3 grid gap-2">
+            {SYRIA_SITUATION_CONTEXT_CARDS.map((card) => (
+              <div key={card.label} className="rounded-md bg-white/70 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-semibold text-navy-900">{card.label}</span>
+                  <span className="text-xs font-semibold text-amber-800">{card.value}</span>
+                </div>
+                <p className="mt-1 text-xs leading-5 text-slate-700">{card.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-white p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Profile calibration</p>
+          <p className="mt-2 text-sm leading-6 text-slate-700">
+            Default lens: {SYRIA_DEMO_ANALYST_PROFILE.perspective.lenses.join(', ')}. The workspace keeps sources,
+            uncertainty, and red lines visible before drafting.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
