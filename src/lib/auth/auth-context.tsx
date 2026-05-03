@@ -18,6 +18,7 @@ import { auth, db } from '@/lib/firebase/config';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { AnalystProfileSchema, type AnalystProfile } from '@/types/analyst-profile';
 import type { SubscriptionTier } from '@/lib/firebase/firestore';
+import { SYRIA_DEMO_ANALYST_PROFILE } from '@/lib/constants/syria-demo-workspace';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -148,6 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(DEMO_USER);
           setCredits(999);
           setIsDemoMode(true);
+          setAnalystProfile(SYRIA_DEMO_ANALYST_PROFILE);
         }
       })
       .catch(() => {})
@@ -393,6 +395,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Stays null on logout / demo mode — banner and card check this field.
   // ---------------------------------------------------------------------------
   useEffect(() => {
+    if (isDemoMode) {
+      setAnalystProfile(SYRIA_DEMO_ANALYST_PROFILE);
+      return;
+    }
     if (!firebaseUser?.uid) { setAnalystProfile(null); return; }
     const profileRef = doc(db, 'users', firebaseUser.uid, 'profile', 'analyst');
     const unsubscribe = onSnapshot(
@@ -411,7 +417,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     );
     return () => unsubscribe();
-  }, [firebaseUser?.uid]);
+  }, [firebaseUser?.uid, isDemoMode]);
 
   // Email/password sign in
   const signInWithEmail = useCallback(async (email: string, password: string) => {
@@ -525,6 +531,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setFirebaseUser(null);
     setCredits(999);
     setIsDemoMode(true);
+    setAnalystProfile(SYRIA_DEMO_ANALYST_PROFILE);
     setLoading(false);
   }, []);
 

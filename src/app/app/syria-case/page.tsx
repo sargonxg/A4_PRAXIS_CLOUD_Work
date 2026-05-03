@@ -3,13 +3,17 @@
 import { useState } from 'react';
 import {
   ArrowRight,
+  BookOpenCheck,
   Clipboard,
   FileText,
   GitBranch,
   Gauge,
+  Layers3,
   Network,
   Play,
+  Route,
   Search,
+  Settings2,
   ShieldCheck,
   Sparkles,
   Target,
@@ -22,6 +26,12 @@ import {
   SYRIA_RECORDING_AUDIO_SCRIPT,
   SYRIA_RECORDING_SCENES,
 } from '@/lib/constants/syria-demo-case';
+import {
+  SYRIA_DEMO_ANALYST_PROFILE,
+  SYRIA_DEMO_ENTRY_PATH,
+  SYRIA_DEMO_PREFERENCES,
+  SYRIA_SITUATION_CONTEXT_CARDS,
+} from '@/lib/constants/syria-demo-workspace';
 import { cn } from '@/lib/utils/cn';
 
 const TOOL_PATH = [
@@ -80,11 +90,19 @@ const METHODS = [
 
 export default function SyriaCasePage() {
   const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const productionDemoLink = `https://praxis.tacitus.me${SYRIA_DEMO_ENTRY_PATH}`;
 
   async function copyScript() {
     await navigator.clipboard?.writeText(SYRIA_RECORDING_AUDIO_SCRIPT);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
+  }
+
+  async function copyDemoLink() {
+    await navigator.clipboard?.writeText(productionDemoLink);
+    setCopiedLink(true);
+    window.setTimeout(() => setCopiedLink(false), 1600);
   }
 
   return (
@@ -106,7 +124,8 @@ export default function SyriaCasePage() {
             <p className="mt-3 max-w-4xl text-sm leading-6 text-blue-100/80">
               A fully populated PRAXIS workspace showing what an analyst can do with a live situation:
               build disciplined context, prove sources, convert evidence into a reusable graph, preserve expert
-              disagreement, and ship a decision brief. The recording path runs inside the real app surfaces.
+              disagreement, and ship editable DOCX-ready work products. The recording path runs inside the real app surfaces,
+              with a calibrated analyst profile and preferences already loaded.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <PraxisLink
@@ -123,6 +142,14 @@ export default function SyriaCasePage() {
               >
                 <Clipboard className="h-4 w-4" />
                 {copied ? 'Script copied' : 'Copy voiceover'}
+              </button>
+              <button
+                type="button"
+                onClick={copyDemoLink}
+                className="inline-flex items-center gap-2 rounded-md border border-emerald-300/30 bg-emerald-300/10 px-4 py-2.5 text-sm font-semibold text-emerald-50 transition hover:bg-emerald-300/15"
+              >
+                <Route className="h-4 w-4" />
+                {copiedLink ? 'Link copied' : 'Copy demo link'}
               </button>
             </div>
           </div>
@@ -145,6 +172,64 @@ export default function SyriaCasePage() {
       </header>
 
       <SyriaRecordingRunway density="full" focus="overview" />
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.8fr)]">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Situation context inside the app</p>
+              <h2 className="mt-1 text-base font-semibold text-navy-900">The case file is already structured for work</h2>
+            </div>
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">
+              live-app state
+            </span>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {SYRIA_SITUATION_CONTEXT_CARDS.map((card) => (
+              <div key={card.label} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">{card.label}</p>
+                  <BookOpenCheck className="h-4 w-4 text-diplomatic-blue" />
+                </div>
+                <p className="mt-2 text-lg font-semibold text-navy-950">{card.value}</p>
+                <p className="mt-1 text-xs leading-5 text-navy-600">{card.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <aside className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
+          <div className="flex items-center gap-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-navy-900 text-white">
+              <Settings2 className="h-4 w-4" />
+            </span>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Analyst calibration</p>
+              <h2 className="text-base font-semibold text-navy-900">Preferences loaded for the demo user</h2>
+            </div>
+          </div>
+          <div className="mt-4 rounded-md border border-gold-200 bg-gold-50 px-3 py-2">
+            <p className="text-xs font-semibold text-navy-900">
+              {SYRIA_DEMO_ANALYST_PROFILE.identity.seniority} {SYRIA_DEMO_ANALYST_PROFILE.identity.role.replace('_', ' ')}
+            </p>
+            <p className="mt-1 text-[11px] leading-snug text-navy-600">{SYRIA_DEMO_ANALYST_PROFILE.perspective.mandate}</p>
+          </div>
+          <div className="mt-3 space-y-2">
+            {[SYRIA_DEMO_PREFERENCES.sourceMode, SYRIA_DEMO_PREFERENCES.defaultFramework, SYRIA_DEMO_PREFERENCES.outputStyle].map((preference) => (
+              <div key={preference} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] leading-snug text-navy-700">
+                {preference}
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {SYRIA_DEMO_ANALYST_PROFILE.perspective.lenses.map((lens) => (
+              <span key={lens} className="rounded-full border border-diplomatic-blue/20 bg-diplomatic-blue/5 px-2 py-1 text-[10px] font-semibold text-diplomatic-blue">
+                {lens.replace('_', ' ')}
+              </span>
+            ))}
+          </div>
+        </aside>
+      </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)]">
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
@@ -190,6 +275,24 @@ export default function SyriaCasePage() {
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">45-second audio</p>
             <p className="mt-2 text-sm leading-6 text-navy-800">{SYRIA_RECORDING_AUDIO_SCRIPT}</p>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
+            <div className="flex items-center gap-2">
+              <Layers3 className="h-4 w-4 text-diplomatic-blue" />
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">Work products to show</p>
+            </div>
+            <div className="mt-3 grid gap-2">
+              {[
+                { label: 'Policy Memo', href: '/policy-memo?recording=1&case=syria', detail: 'Editable memo, context cards, analyst preferences, save library, DOCX export.' },
+                { label: 'Decision Brief', href: '/briefing?recording=1&case=syria', detail: 'Slide brief plus editable office-ready document product.' },
+              ].map((item) => (
+                <PraxisLink key={item.label} href={item.href} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 transition hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5">
+                  <p className="text-xs font-semibold text-navy-900">{item.label}</p>
+                  <p className="mt-1 text-[11px] leading-snug text-navy-500">{item.detail}</p>
+                </PraxisLink>
+              ))}
+            </div>
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">

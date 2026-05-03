@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { WelcomeModal } from './welcome-modal';
 import { GuidedWalkthrough } from './walkthrough';
 
@@ -10,26 +10,30 @@ const VISITED_PAGES_KEY = 'praxis-visited-pages';
 
 export function OnboardingWrapper() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [showWelcome, setShowWelcome] = useState(false);
   const [tourActive, setTourActive] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   // Only run after hydration to avoid SSR mismatch
   useEffect(() => {
-    setMounted(true);
+    let shouldShow = false;
     try {
-      const seen = localStorage.getItem(TOUR_SEEN_KEY);
-      if (!seen) {
-        setShowWelcome(true);
+      if (searchParams.get('recording') === '1' && searchParams.get('case') === 'syria') {
+        localStorage.setItem(TOUR_SEEN_KEY, 'true');
+        shouldShow = false;
+      } else {
+        const seen = localStorage.getItem(TOUR_SEEN_KEY);
+        shouldShow = !seen;
       }
     } catch {
       // localStorage unavailable (e.g. private browsing restrictions)
     }
-  }, []);
+    const timer = window.setTimeout(() => setShowWelcome(shouldShow), 0);
+    return () => window.clearTimeout(timer);
+  }, [searchParams]);
 
   // Track visited pages
   useEffect(() => {
-    if (!mounted) return;
     try {
       const raw = localStorage.getItem(VISITED_PAGES_KEY);
       const visited: string[] = raw ? JSON.parse(raw) : [];
@@ -39,7 +43,7 @@ export function OnboardingWrapper() {
     } catch {
       // ignore
     }
-  }, [pathname, mounted]);
+  }, [pathname]);
 
   function handleStartTour() {
     setShowWelcome(false);
@@ -63,9 +67,6 @@ export function OnboardingWrapper() {
   function handleTourComplete() {
     setTourActive(false);
   }
-
-  // Don't render anything until after client hydration
-  if (!mounted) return null;
 
   return (
     <>

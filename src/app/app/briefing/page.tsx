@@ -26,6 +26,11 @@ import { PoweredByTacitus } from '@/components/shared/powered-by-tacitus';
 import { CASE_REGISTRY } from '@/lib/constants/case-registry';
 import { DEMO_MORNING_BRIEF, type BriefingSlide } from '@/lib/constants/briefing-data';
 import { isSyriaWorkspaceCase, SYRIA_DEMO_MORNING_BRIEF } from '@/lib/constants/syria-demo-case';
+import {
+  SYRIA_DEMO_PREFERENCES,
+  SYRIA_DOCUMENT_REVIEW_CHECKLIST,
+  SYRIA_SITUATION_CONTEXT_CARDS,
+} from '@/lib/constants/syria-demo-workspace';
 import type { Situation } from '@/types/situation';
 
 const BRIEFING_TYPES = [
@@ -472,6 +477,14 @@ function DemoBriefingPage({ situationName, situation, preloadedSlides, showSyria
           initialSections={slidesToWorkSections(slides)}
           sources={slideSources(slides)}
           classification="UNCLASSIFIED / PUBLIC SOURCES"
+          contextCards={SYRIA_SITUATION_CONTEXT_CARDS}
+          analystPreferences={[
+            SYRIA_DEMO_PREFERENCES.sourceMode,
+            SYRIA_DEMO_PREFERENCES.defaultFramework,
+            SYRIA_DEMO_PREFERENCES.outputStyle,
+            ...SYRIA_DEMO_PREFERENCES.toolOverrides.slice(1, 4),
+          ]}
+          reviewChecklist={SYRIA_DOCUMENT_REVIEW_CHECKLIST}
         />
       </div>
     ) : null}

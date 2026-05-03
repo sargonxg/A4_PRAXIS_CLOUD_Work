@@ -14,6 +14,8 @@ Use one Syria case inside the real app:
 
 The no-account mode is only access plumbing. User-facing copy should describe this as a populated public-source Syria case file in the real PRAXIS app, not as a separate demo product.
 
+For the cleanest recording, use the canonical production entry above. It opens the real app, loads the calibrated Syria analyst profile, suppresses the first-time welcome tour for `recording=1&case=syria`, and shows the floating 45-second director.
+
 ## Product Structure
 
 The Syria case proves the PRAXIS loop:
@@ -67,6 +69,9 @@ Policy Memo and Briefing now include a PRAXIS Work Document panel:
 
 - `Save` stores the structured product in the browser work-product library for the current session.
 - `Improve` performs a local structure polish without spending cloud or model credits.
+- `Preview` shows the office-style memo or brief as a readable product before export.
+- `Audit` shows review checklist, source basis, situation context, and analyst calibration.
+- `Sharpen Draft` adds local review prompts to each section so the analyst can quickly turn a draft into a decision-ready product.
 - `Import DOCX` parses uploaded DOCX files through the server-side Mammoth route and converts them into editable sections.
 - `Export DOCX` generates a LibreOffice Writer / Microsoft Word compatible DOCX through the server-side `docx` route.
 

@@ -16,6 +16,11 @@ import {
   SYRIA_DEMO_POLICY_MEMO,
   SYRIA_DEMO_SITUATION,
 } from '@/lib/constants/syria-demo-case';
+import {
+  SYRIA_DEMO_PREFERENCES,
+  SYRIA_DOCUMENT_REVIEW_CHECKLIST,
+  SYRIA_SITUATION_CONTEXT_CARDS,
+} from '@/lib/constants/syria-demo-workspace';
 
 interface PolicyOption {
   option: string;
@@ -254,6 +259,14 @@ export default function PolicyMemoPage() {
             initialSections={memoToWorkSections(memo)}
             sources={memoSources(memo)}
             classification={memo.classification}
+            contextCards={isSyriaCase ? SYRIA_SITUATION_CONTEXT_CARDS : undefined}
+            analystPreferences={isSyriaCase ? [
+              SYRIA_DEMO_PREFERENCES.sourceMode,
+              SYRIA_DEMO_PREFERENCES.defaultFramework,
+              SYRIA_DEMO_PREFERENCES.outputStyle,
+              ...SYRIA_DEMO_PREFERENCES.toolOverrides.slice(0, 2),
+            ] : undefined}
+            reviewChecklist={isSyriaCase ? SYRIA_DOCUMENT_REVIEW_CHECKLIST : undefined}
           />
           <ToolOutputFrame
             toolId="policy-memo"

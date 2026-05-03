@@ -5,12 +5,15 @@ import {
   CheckCircle2,
   Database,
   Download,
+  Eye,
   FileText,
   FileUp,
   Library,
   Save,
+  SlidersHorizontal,
   Sparkles,
   Upload,
+  Wand2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
@@ -40,6 +43,9 @@ interface WorkProductEditorProps {
   initialSections: WorkDocumentSection[];
   sources?: string[];
   classification?: string;
+  contextCards?: Array<{ label: string; value: string; detail: string }>;
+  analystPreferences?: string[];
+  reviewChecklist?: string[];
   className?: string;
 }
 
@@ -105,6 +111,9 @@ export function WorkProductEditor({
   initialSections,
   sources = [],
   classification = 'Working draft',
+  contextCards = [],
+  analystPreferences = [],
+  reviewChecklist = [],
   className,
 }: WorkProductEditorProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -118,6 +127,7 @@ export function WorkProductEditor({
   const [importing, setImporting] = useState(false);
   const [selectedDraftId, setSelectedDraftId] = useState(storageKey);
   const [hydrated, setHydrated] = useState(false);
+  const [viewMode, setViewMode] = useState<'edit' | 'preview' | 'audit'>('edit');
   const initialSignature = useMemo(
     () => initialSections.map((section) => `${section.heading}:${section.body}`).join('|'),
     [initialSections],
@@ -204,6 +214,19 @@ export function WorkProductEditor({
       { id: stableId(), heading: 'New Section', body: 'Add analysis, evidence, assumptions, and decision implications.' },
     ]);
     setStatus('Unsaved edits');
+  }
+
+  function sharpenDraft() {
+    const enhanced = sections.map((section) => {
+      if (section.body.includes('PRAXIS action:')) return section;
+      const suffix = section.heading.toLowerCase().includes('recommendation')
+        ? '\n\nPRAXIS action: convert this recommendation into owner, trigger, timeline, and evidence-refresh cadence before external distribution.'
+        : '\n\nPRAXIS check: verify source basis, confidence, assumptions, and decision implication for this section.';
+      return { ...section, body: `${section.body.trim()}${suffix}` };
+    });
+    setSections(enhanced);
+    persist(enhanced);
+    setStatus('Draft sharpened with review prompts');
   }
 
   function polishDraft() {
@@ -306,7 +329,7 @@ export function WorkProductEditor({
             </div>
             <h2 className="mt-3 text-xl font-semibold tracking-tight">{title}</h2>
             <p className="mt-1 max-w-3xl text-sm text-white/70">
-              Editable PRAXIS product library for {situationName}. Import DOCX, improve the structure, save drafts, and export a LibreOffice-compatible file.
+              Editable PRAXIS product library for {situationName}. It carries situation context, analyst preferences, source basis, saved drafts, DOCX import, and LibreOffice-compatible export in one screen.
             </p>
           </div>
           <div className="grid min-w-[220px] grid-cols-3 gap-2 text-center">
@@ -328,6 +351,32 @@ export function WorkProductEditor({
 
       <div className="grid gap-0 lg:grid-cols-[1fr_280px]">
         <div className="space-y-4 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex rounded-md border border-navy-200 bg-white p-1">
+              {[
+                { id: 'edit', label: 'Edit', icon: FileText },
+                { id: 'preview', label: 'Preview', icon: Eye },
+                { id: 'audit', label: 'Audit', icon: SlidersHorizontal },
+              ].map((mode) => {
+                const Icon = mode.icon;
+                return (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    onClick={() => setViewMode(mode.id as typeof viewMode)}
+                    className={cn(
+                      'inline-flex h-8 items-center gap-1.5 rounded px-2.5 text-xs font-semibold transition',
+                      viewMode === mode.id ? 'bg-navy-900 text-white' : 'text-navy-500 hover:bg-navy-50 hover:text-navy-900',
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {mode.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             <button onClick={() => persist()} className="inline-flex h-9 items-center gap-2 rounded-md bg-diplomatic-blue px-3 text-sm font-semibold text-white hover:bg-diplomatic-blue/90">
               <Save className="h-4 w-4" />
@@ -344,6 +393,10 @@ export function WorkProductEditor({
             <button onClick={() => fileInputRef.current?.click()} disabled={importing} className="inline-flex h-9 items-center gap-2 rounded-md border border-navy-200 bg-white px-3 text-sm font-semibold text-navy-800 hover:bg-navy-50 disabled:opacity-50">
               <Upload className="h-4 w-4" />
               {importing ? 'Importing...' : 'Import DOCX'}
+            </button>
+            <button onClick={sharpenDraft} className="inline-flex h-9 items-center gap-2 rounded-md border border-gold-300 bg-gold-50 px-3 text-sm font-semibold text-gold-800 hover:bg-gold-100">
+              <Wand2 className="h-4 w-4" />
+              Sharpen Draft
             </button>
             <button onClick={addSection} className="inline-flex h-9 items-center gap-2 rounded-md border border-navy-200 bg-white px-3 text-sm font-semibold text-navy-800 hover:bg-navy-50">
               Add Section
@@ -365,33 +418,92 @@ export function WorkProductEditor({
             {savedAt ? <span className="ml-2 text-navy-400">Last saved {new Date(savedAt).toLocaleString()}</span> : null}
           </div>
 
-          <div className="space-y-3">
-            {sections.map((section, index) => (
-              <div key={section.id} className="rounded-lg border border-navy-200 bg-white">
-                <div className="flex items-center gap-2 border-b border-navy-100 bg-navy-50 px-3 py-2">
-                  <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white text-[11px] font-bold text-navy-500 ring-1 ring-navy-100">
-                    {index + 1}
-                  </span>
-                  <input
-                    value={section.heading}
-                    onChange={(event) => updateSection(section.id, { heading: event.target.value })}
-                    className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-navy-900 outline-none"
-                    aria-label={`Heading for section ${index + 1}`}
+          {viewMode === 'edit' ? (
+            <div className="space-y-3">
+              {sections.map((section, index) => (
+                <div key={section.id} className="rounded-lg border border-navy-200 bg-white">
+                  <div className="flex items-center gap-2 border-b border-navy-100 bg-navy-50 px-3 py-2">
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white text-[11px] font-bold text-navy-500 ring-1 ring-navy-100">
+                      {index + 1}
+                    </span>
+                    <input
+                      value={section.heading}
+                      onChange={(event) => updateSection(section.id, { heading: event.target.value })}
+                      className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-navy-900 outline-none"
+                      aria-label={`Heading for section ${index + 1}`}
+                    />
+                  </div>
+                  <textarea
+                    value={section.body}
+                    onChange={(event) => updateSection(section.id, { body: event.target.value })}
+                    rows={Math.max(4, Math.min(10, Math.ceil(section.body.length / 140)))}
+                    className="w-full resize-y rounded-b-lg border-0 bg-white px-3 py-3 text-sm leading-6 text-navy-700 outline-none focus:ring-2 focus:ring-diplomatic-blue/15"
+                    aria-label={`Body for section ${index + 1}`}
                   />
                 </div>
-                <textarea
-                  value={section.body}
-                  onChange={(event) => updateSection(section.id, { body: event.target.value })}
-                  rows={Math.max(4, Math.min(10, Math.ceil(section.body.length / 140)))}
-                  className="w-full resize-y rounded-b-lg border-0 bg-white px-3 py-3 text-sm leading-6 text-navy-700 outline-none focus:ring-2 focus:ring-diplomatic-blue/15"
-                  aria-label={`Body for section ${index + 1}`}
-                />
+              ))}
+            </div>
+          ) : null}
+
+          {viewMode === 'preview' ? (
+            <div className="rounded-lg border border-navy-200 bg-white p-6">
+              <div className="border-b border-navy-100 pb-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-red-600">{classification}</p>
+                <h3 className="mt-2 text-2xl font-semibold text-navy-950">{title}</h3>
+                <p className="mt-1 text-sm text-navy-500">{productType} · {situationName}</p>
               </div>
-            ))}
-          </div>
+              <div className="mt-5 space-y-5">
+                {sections.map((section) => (
+                  <section key={section.id}>
+                    <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-navy-900">{section.heading}</h4>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-navy-700">{section.body}</p>
+                  </section>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {viewMode === 'audit' ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              <AuditPanel title="Review Checklist" items={reviewChecklist} fallback="Add a checklist to show product review gates." />
+              <AuditPanel title="Source Basis" items={sources} fallback="No source list attached yet." />
+              <AuditPanel title="Situation Context" items={contextCards.map((card) => `${card.label}: ${card.value} - ${card.detail}`)} fallback="No context cards attached yet." />
+              <AuditPanel title="Analyst Calibration" items={analystPreferences} fallback="No analyst preferences attached yet." />
+            </div>
+          ) : null}
         </div>
 
         <aside className="border-t border-navy-100 bg-navy-50/50 p-4 lg:border-l lg:border-t-0">
+          {contextCards.length ? (
+            <div className="mb-4 rounded-lg border border-diplomatic-blue/15 bg-diplomatic-blue/5 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-diplomatic-blue">Situation Context</p>
+              <div className="mt-2 space-y-2">
+                {contextCards.map((card) => (
+                  <div key={`${card.label}-${card.value}`} className="rounded-md bg-white px-3 py-2 ring-1 ring-diplomatic-blue/10">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">{card.label}</p>
+                      <p className="text-xs font-semibold text-navy-900">{card.value}</p>
+                    </div>
+                    <p className="mt-1 text-[11px] leading-snug text-navy-600">{card.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {analystPreferences.length ? (
+            <div className="mb-4 rounded-lg border border-gold-200 bg-gold-50 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-700">Analyst Preferences</p>
+              <div className="mt-2 space-y-1.5">
+                {analystPreferences.slice(0, 5).map((preference) => (
+                  <div key={preference} className="rounded bg-white/80 px-2 py-1.5 text-[11px] leading-snug text-navy-700">
+                    {preference}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-navy-900">
             <Library className="h-4 w-4 text-diplomatic-blue" />
             Product Library
@@ -435,5 +547,23 @@ export function WorkProductEditor({
         </aside>
       </div>
     </section>
+  );
+}
+
+function AuditPanel({ title, items, fallback }: { title: string; items: string[]; fallback: string }) {
+  return (
+    <div className="rounded-lg border border-navy-200 bg-white p-4">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-400">{title}</p>
+      <div className="mt-3 space-y-2">
+        {items.length ? items.map((item) => (
+          <div key={item} className="flex gap-2 rounded-md border border-navy-100 bg-navy-50 px-3 py-2 text-xs leading-snug text-navy-700">
+            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+            <span>{item}</span>
+          </div>
+        )) : (
+          <p className="rounded-md border border-dashed border-navy-200 bg-navy-50 px-3 py-2 text-xs text-navy-500">{fallback}</p>
+        )}
+      </div>
+    </div>
   );
 }
