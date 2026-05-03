@@ -431,6 +431,143 @@ export const SYRIA_DEMO_BRAINSTORMING_TABLE_OUTPUT: DemoBrainstormingOutput = {
   },
 };
 
+export const SYRIA_DEMO_POLICY_MEMO = {
+  classification: 'UNCLASSIFIED / PUBLIC SOURCES',
+  to: 'Special Envoy and Senior Transition Team',
+  from: 'PRAXIS Syria Case Cell',
+  subject: 'Protecting the Northeast Integration Track While Managing Humanitarian and Regional Spillover Risk',
+  executiveSummary:
+    'The 30 January 2026 Damascus-SDF ceasefire and integration agreement remains the clearest stabilizing pathway in the public-source Syria file, but it should not be briefed as self-executing progress. PRAXIS recommends an implementation-first posture with a visible risk dashboard: humanitarian access, return conditions, rights protections, southern flashpoints, Israeli incursions, detention-facility concerns, and regional escalation should be treated as decision triggers that can change the policy line within days.',
+  problemStatement:
+    'Leadership needs a position that protects a rare de-escalatory opening without overclaiming what public reporting can prove. The policy question is whether to organize diplomatic energy around the northeast integration agreement, or shift principal attention toward humanitarian strain and regional spillover as the dominant risks.',
+  contextAndBackground:
+    'UN reporting in February 2026 described the northeast agreement as potentially transformative while also highlighting violence, Israeli incursions, humanitarian needs, and rights-protection concerns. In March 2026, UN and OCHA reporting warned that wider Middle East escalation could undermine Syria fragile recovery. The UN Common Country Analysis frames trust-building, recovery, and inclusive transition as central for the 2027-2030 planning cycle. UNFPA reporting added a concrete displacement layer across Aleppo and northeast Syria, and UNHCR reporting emphasized large-scale returns alongside urgent shelter, services, and protection constraints.',
+  policyOptions: [
+    {
+      option: 'Implementation-first posture with explicit red triggers',
+      pros: [
+        'Keeps the most concrete de-escalatory track at the center of diplomacy.',
+        'Creates measurable benchmarks for governance, rights, returns, aid access, and security integration.',
+        'Allows leadership to show optimism while retaining analytic discipline.',
+      ],
+      cons: [
+        'Can look too optimistic if humanitarian or regional indicators worsen quickly.',
+        'Requires disciplined monitoring and repeated source refreshes.',
+      ],
+      riskLevel: 'medium',
+      resourceImplications:
+        'Requires a small analytic cell to maintain the trigger board, update source receipts, and brief changes twice weekly.',
+      levelOneAnalysis:
+        'Internationally, the UN can support implementation benchmarks while preserving Syrian ownership and territorial-integrity language.',
+      levelTwoAnalysis:
+        'Domestically, the posture depends on rights-protective implementation that does not alienate Kurdish civil authorities or communities affected by displacement.',
+      winSet:
+        'Largest win-set if the brief links implementation progress to humanitarian and rights indicators rather than treating them as separate files.',
+    },
+    {
+      option: 'Risk-first posture centered on humanitarian and spillover pressure',
+      pros: [
+        'Reduces the risk of surprise if regional escalation or aid constraints dominate the next reporting cycle.',
+        'Gives operational teams clearer warning thresholds for displacement, access, and protection stress.',
+      ],
+      cons: [
+        'May underuse the diplomatic opening created by the northeast agreement.',
+        'Can make the transition appear less governable to external supporters.',
+      ],
+      riskLevel: 'medium',
+      resourceImplications:
+        'Requires deeper humanitarian data refresh and local civil-society sourcing before narrow geographic recommendations.',
+      levelOneAnalysis:
+        'Internationally, it aligns with OCHA and UN warnings on recovery fragility and spillover risk.',
+      levelTwoAnalysis:
+        'Domestically, it may be received as skepticism toward transition authorities unless paired with practical support.',
+      winSet:
+        'Works if framed as protecting the recovery window, not downgrading the agreement.',
+    },
+    {
+      option: 'Hold posture until local verification improves',
+      pros: [
+        'Avoids overclaiming public-source data on detention facilities, local governance, and field implementation.',
+        'Protects credibility if public reporting is thin or contradictory.',
+      ],
+      cons: [
+        'Misses the moment to shape implementation metrics while the agreement is still politically salient.',
+        'Can leave principals without a usable line for engagements this week.',
+      ],
+      riskLevel: 'high',
+      resourceImplications:
+        'Lower immediate cost but higher opportunity cost; still requires a collection plan for local sources.',
+      levelOneAnalysis:
+        'Internationally cautious, but it weakens the UN ability to shape the agreement terms through public and private benchmarks.',
+      levelTwoAnalysis:
+        'Domestic stakeholders may interpret silence as disengagement or lack of confidence.',
+      winSet:
+        'Narrow. Use only if new reporting contradicts the public-source baseline.',
+    },
+  ],
+  recommendation:
+    'Adopt Option 1: an implementation-first posture with explicit red triggers. The memo should say the northeast agreement is the organizing opportunity, not the guaranteed outcome. PRAXIS should brief three immediate asks: a rights-protective implementation benchmark set, a humanitarian-access and return-support dashboard, and a regional-spillover warning board connected to the graph.',
+  implementationSteps: [
+    'Create a 14-day trigger board covering governance sequencing, Kurdish civil and educational rights, security integration, detention-facility handling, displacement, aid access, and regional escalation.',
+    'Use Source Scout to add local civil society, northeast governance, and southern flashpoint reporting before any narrow operational recommendation.',
+    'Run GraphOps review on the Syria Firestore graph so each claim, event, and trigger retains source receipts and confidence labels.',
+    'Prepare a principal one-pager that separates observed facts, PRAXIS assessment, assumptions, and collection gaps.',
+    'Schedule a twice-weekly refresh cadence that updates graph edges when new source receipts arrive.',
+  ],
+  monitoringIndicators: [
+    'Public evidence of joint implementation mechanisms after the 30 January agreement.',
+    'Reports on returns, shelter access, protection services, and aid delivery in Aleppo and northeast Syria.',
+    'Southern violence, Israeli incursions, airspace restrictions, or regional incidents that constrain recovery.',
+    'Statements or reporting on Kurdish civil rights, education, governance, and security integration.',
+    'Funding, banking, and liquidity constraints affecting humanitarian and early recovery operations.',
+  ],
+  risks:
+    'The main analytic risk is conflating a promising agreement with verified implementation. The main policy risk is briefing optimism without visible triggers. PRAXIS mitigates both by tying every recommendation to source receipts, graph provenance, confidence levels, and explicit follow-up research gaps.',
+  citations: [
+    SYRIA_DEMO_SOURCES.unGenevaFebruary,
+    SYRIA_DEMO_SOURCES.unGenevaMarch,
+    SYRIA_DEMO_SOURCES.unCommonCountryAnalysis,
+    SYRIA_DEMO_SOURCES.unfpaNorthEast,
+    SYRIA_DEMO_SOURCES.unhcrReturns,
+  ],
+  draftingAudit: {
+    confidenceNote:
+      'Confidence is medium-high for the strategic frame because it is anchored in UN and humanitarian sources. Confidence is medium for local implementation details because public reporting remains incomplete.',
+    limits: [
+      'Public sources do not fully verify local governance implementation or detention-facility security arrangements.',
+      'Local civil society and Arabic-language reporting should be added before operational recommendations by district.',
+      'Regional spillover indicators require frequent refresh because they can change faster than formal UN reporting.',
+    ],
+    followUpResearch: [
+      'Add local northeast and Sweida reporting to test the graph against field-level dynamics.',
+      'Collect implementation statements from transitional authorities, SDF-linked civil authorities, and humanitarian actors.',
+      'Refresh displacement, returns, and service-restoration data before external distribution.',
+    ],
+    sourceUse: [
+      {
+        source: 'UN Geneva, 13 February 2026',
+        claim: 'Frames the January agreement alongside violence, Israeli incursions, rights concerns, and humanitarian strain.',
+        confidence: 'high',
+      },
+      {
+        source: 'UN Geneva / OCHA, 18 March 2026',
+        claim: 'Supports the spillover-risk and fragile-recovery warning line.',
+        confidence: 'high',
+      },
+      {
+        source: 'UN Syria Common Country Analysis',
+        claim: 'Supports trust-building, recovery, and inclusive transition as strategic requirements.',
+        confidence: 'high',
+      },
+      {
+        source: 'UNFPA and UNHCR public reporting',
+        claim: 'Supports displacement, returns, shelter, services, and protection constraints.',
+        confidence: 'medium',
+      },
+    ],
+  },
+};
+
 export const SYRIA_DEMO_MORNING_BRIEF: BriefingSlide[] = [
   {
     id: 'syria-slide-1-title',

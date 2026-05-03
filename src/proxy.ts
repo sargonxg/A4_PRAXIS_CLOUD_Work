@@ -2,6 +2,17 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
+const PUBLIC_SYRIA_APP_ROUTES = new Set([
+  '/app/dashboard',
+  '/app/syria-case',
+  '/app/context-builder',
+  '/app/source-scout',
+  '/app/graphops',
+  '/app/conflict-graph',
+  '/app/brainstorming-table',
+  '/app/policy-memo',
+  '/app/briefing',
+]);
 
 /**
  * Edge-compatible session parser for routing decisions only.
@@ -102,7 +113,12 @@ export function proxy(request: NextRequest) {
     if (isDemo) return nextWithNonce(request, nonce);
     if (!hasFirebaseToken) {
       const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
+      const redirectUrl = request.nextUrl.clone();
+      if (PUBLIC_SYRIA_APP_ROUTES.has(pathname)) {
+        loginUrl.searchParams.set('mode', 'demo');
+        if (!redirectUrl.searchParams.has('case')) redirectUrl.searchParams.set('case', 'syria');
+      }
+      loginUrl.searchParams.set('redirect', `${redirectUrl.pathname}${redirectUrl.search}`);
       return addSecurityHeaders(NextResponse.redirect(loginUrl), nonce);
     }
     return nextWithNonce(request, nonce);

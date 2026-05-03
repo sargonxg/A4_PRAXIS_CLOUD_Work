@@ -1,14 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { useToolData } from '@/hooks/useToolData';
 import { DEMO_CONFLICT } from '@/lib/constants/demo-conflict';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { ToolOutputFrame } from '@/components/praxis/tool-output-frame';
+import { WorkProductEditor, type WorkDocumentSection } from '@/components/documents/work-product-editor';
 import { FileText, Loader2, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, List } from 'lucide-react';
 import type { Situation } from '@/types/situation';
+import {
+  isSyriaWorkspaceCase,
+  SYRIA_DEMO_POLICY_MEMO,
+  SYRIA_DEMO_SITUATION,
+} from '@/lib/constants/syria-demo-case';
 
 interface PolicyOption {
   option: string;
@@ -111,22 +118,71 @@ function memoSources(memo: PolicyMemoData): string[] {
   ].filter(Boolean)));
 }
 
+function memoToWorkSections(memo: PolicyMemoData): WorkDocumentSection[] {
+  const options = (memo.policyOptions || [])
+    .map((opt, index) => [
+      `Option ${index + 1}: ${opt.option}`,
+      `Risk: ${opt.riskLevel.toUpperCase()}`,
+      `Pros: ${(opt.pros || []).join('; ')}`,
+      `Cons: ${(opt.cons || []).join('; ')}`,
+      `Resource implications: ${opt.resourceImplications}`,
+      opt.levelOneAnalysis ? `Level I: ${opt.levelOneAnalysis}` : '',
+      opt.levelTwoAnalysis ? `Level II: ${opt.levelTwoAnalysis}` : '',
+      opt.winSet ? `Win-set: ${opt.winSet}` : '',
+    ].filter(Boolean).join('\n'))
+    .join('\n\n');
+
+  return [
+    { id: 'memo-executive-summary', heading: 'Executive Summary', body: memo.executiveSummary },
+    { id: 'memo-problem', heading: 'Problem Statement', body: memo.problemStatement },
+    { id: 'memo-context', heading: 'Context and Background', body: memo.contextAndBackground },
+    { id: 'memo-options', heading: 'Policy Options', body: options },
+    { id: 'memo-recommendation', heading: 'Recommendation', body: memo.recommendation },
+    { id: 'memo-implementation', heading: 'Implementation Steps', body: (memo.implementationSteps || []).map((step) => `- ${step}`).join('\n') },
+    { id: 'memo-monitoring', heading: 'Monitoring Indicators', body: (memo.monitoringIndicators || []).map((indicator) => `- ${indicator}`).join('\n') },
+    { id: 'memo-risks', heading: 'Risk Assessment', body: memo.risks },
+    {
+      id: 'memo-source-audit',
+      heading: 'Sources, Confidence, and Follow-up',
+      body: [
+        memo.draftingAudit?.confidenceNote,
+        ...(memo.draftingAudit?.limits ?? []).map((item) => `Limit: ${item}`),
+        ...(memo.draftingAudit?.followUpResearch ?? []).map((item) => `Follow-up: ${item}`),
+      ].filter(Boolean).join('\n'),
+    },
+  ].filter((section) => section.body?.trim());
+}
+
 export default function PolicyMemoPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const searchParams = useSearchParams();
   const { data: savedMemo } = useToolData<PolicyMemoData>('policy_memo');
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), isDemo);
 
   const [question, setQuestion] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [memo, setMemo] = useState<PolicyMemoData | null>(savedMemo || null);
+  const [memo, setMemo] = useState<PolicyMemoData | null>(
+    savedMemo || (isDemo && isSyriaCase ? (SYRIA_DEMO_POLICY_MEMO as PolicyMemoData) : null)
+  );
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (savedMemo && !memo && !generating) setMemo(savedMemo);
-  }, [savedMemo, memo, generating]);
+    if (!savedMemo && !memo && !generating && isDemo && isSyriaCase) {
+      setMemo(SYRIA_DEMO_POLICY_MEMO as PolicyMemoData);
+      setQuestion('What posture should leadership adopt on the northeast integration agreement under humanitarian and spillover pressure?');
+    }
+  }, [savedMemo, memo, generating, isDemo, isSyriaCase]);
 
   if (showGuard) return <NoSituationState />;
 
   async function handleGenerate() {
+    if (isDemo && isSyriaCase) {
+      setMemo(SYRIA_DEMO_POLICY_MEMO as PolicyMemoData);
+      setQuestion((current) => current || 'What posture should leadership adopt on the northeast integration agreement under humanitarian and spillover pressure?');
+      return;
+    }
+
     const requestSituation = situation ?? (isDemo ? DEMO_POLICY_SITUATION : null);
     if (!requestSituation) {
       setError('Create or select a situation before drafting a policy memo.');
@@ -151,14 +207,14 @@ export default function PolicyMemoPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl space-y-6">
+    <div className="p-6 max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-navy-900 flex items-center gap-2">
           <FileText className="h-6 w-6 text-diplomatic-blue" />
           Policy Memorandum
         </h1>
         <p className="mt-1 text-sm text-navy-500">
-          AI-drafted UN DPPA-format policy memos with options analysis and implementation roadmap.
+          AI-drafted UN DPPA-format policy memos with editable DOCX-ready work products and implementation roadmap.
         </p>
       </div>
 
@@ -189,15 +245,25 @@ export default function PolicyMemoPage() {
 
       {/* Memo output */}
       {memo && (
-        <ToolOutputFrame
-          toolId="policy-memo"
-          confidence={deriveMemoConfidence(memo)}
-          primarySources={memoSources(memo)}
-          sourceCount={memoSources(memo).length}
-          frameworks={['Putnam Two-Level Games', 'UN DPPA Report Standards', 'Diplomatic Drafting Contract']}
-          calibratedTo={memo.to || 'Policy audience'}
-        >
-        <div className="space-y-4">
+        <div className="space-y-5">
+          <WorkProductEditor
+            productType="Policy Memo"
+            title={`Policy Memo: ${memo.subject}`}
+            situationName={(isSyriaCase ? SYRIA_DEMO_SITUATION : situation ?? DEMO_POLICY_SITUATION).name}
+            storageKey={`praxis-policy-memo-${isSyriaCase ? 'syria' : situation?.id ?? DEMO_POLICY_SITUATION.id}`}
+            initialSections={memoToWorkSections(memo)}
+            sources={memoSources(memo)}
+            classification={memo.classification}
+          />
+          <ToolOutputFrame
+            toolId="policy-memo"
+            confidence={deriveMemoConfidence(memo)}
+            primarySources={memoSources(memo)}
+            sourceCount={memoSources(memo).length}
+            frameworks={['Putnam Two-Level Games', 'UN DPPA Report Standards', 'Diplomatic Drafting Contract']}
+            calibratedTo={memo.to || 'Policy audience'}
+          >
+          <div className="space-y-4">
           {/* Header */}
           <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
             <div className="flex items-start justify-between mb-3">
@@ -351,8 +417,9 @@ export default function PolicyMemoPage() {
               ) : null}
             </Section>
           )}
+          </div>
+          </ToolOutputFrame>
         </div>
-        </ToolOutputFrame>
       )}
     </div>
   );

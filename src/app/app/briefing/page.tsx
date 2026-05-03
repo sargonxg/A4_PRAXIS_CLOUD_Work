@@ -7,6 +7,7 @@ import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { BriefBlocksPanel } from '@/components/briefing/brief-blocks-panel';
 import { SyriaMiniSignalStrip } from '@/components/demo/recording-signal-runway';
+import { WorkProductEditor, type WorkDocumentSection } from '@/components/documents/work-product-editor';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -122,6 +123,22 @@ function toBriefingSlides(data: BriefingData): BriefingSlide[] {
     speakerNotes: s.speakerNotes ?? '',
     sources: s.sources,
   }));
+}
+
+function slidesToWorkSections(slides: BriefingSlide[]): WorkDocumentSection[] {
+  return slides.map((slide, index) => ({
+    id: `briefing-slide-${index + 1}`,
+    heading: slide.title,
+    body: [
+      slide.content,
+      slide.speakerNotes ? `Speaker notes: ${slide.speakerNotes}` : '',
+      slide.sources?.length ? `Sources: ${slide.sources.join('; ')}` : '',
+    ].filter(Boolean).join('\n\n'),
+  }));
+}
+
+function slideSources(slides: BriefingSlide[]): string[] {
+  return Array.from(new Set(slides.flatMap((slide) => slide.sources ?? []).filter(Boolean)));
 }
 
 function DemoBriefingPage({ situationName, situation, preloadedSlides, showSyriaCue = false }: {
@@ -347,6 +364,7 @@ function DemoBriefingPage({ situationName, situation, preloadedSlides, showSyria
   const slide = slides[currentSlide];
 
   return (
+    <>
     <div className="relative flex min-h-[calc(100vh-80px)] flex-col">
       {/* Top bar */}
       <div className="flex items-center justify-end gap-2 px-4 py-2">
@@ -444,6 +462,20 @@ function DemoBriefingPage({ situationName, situation, preloadedSlides, showSyria
       </div>
       <PoweredByTacitus />
     </div>
+    {showSyriaCue ? (
+      <div className="px-4 pb-8">
+        <WorkProductEditor
+          productType="Decision Brief"
+          title="Syria Transition Decision Brief"
+          situationName="Syria Transition - Northeast Integration & Regional Spillover"
+          storageKey="praxis-briefing-syria"
+          initialSections={slidesToWorkSections(slides)}
+          sources={slideSources(slides)}
+          classification="UNCLASSIFIED / PUBLIC SOURCES"
+        />
+      </div>
+    ) : null}
+    </>
   );
 }
 
@@ -489,6 +521,17 @@ function RealBriefingPage({ situation }: { situation: Situation }) {
         preloadedSlides={preloadedSlides}
       />
     </AiPopulate>
+    {preloadedSlides?.length ? (
+      <WorkProductEditor
+        productType="Decision Brief"
+        title={`${situation.name} Decision Brief`}
+        situationName={situation.name}
+        storageKey={`praxis-briefing-${situation.id}`}
+        initialSections={slidesToWorkSections(preloadedSlides)}
+        sources={slideSources(preloadedSlides)}
+        classification="Working draft"
+      />
+    ) : null}
     </>
   );
 }

@@ -7,6 +7,10 @@ Use one Syria case inside the real app:
 - Local: `http://localhost:3100/login?mode=demo&redirect=/app/syria-case%3Frecording%3D1%26case%3Dsyria`
 - Production: `https://praxis.tacitus.me/login?mode=demo&redirect=/app/syria-case%3Frecording%3D1%26case%3Dsyria`
 - Direct app desk after sign-in: `/app/syria-case?recording=1&case=syria`
+- Direct tool links also enter the populated Syria case in no-account mode:
+  - `https://praxis.tacitus.me/app/brainstorming-table`
+  - `https://praxis.tacitus.me/app/policy-memo`
+  - `https://praxis.tacitus.me/app/briefing`
 
 The no-account mode is only access plumbing. User-facing copy should describe this as a populated public-source Syria case file in the real PRAXIS app, not as a separate demo product.
 
@@ -21,6 +25,7 @@ The Syria case proves the PRAXIS loop:
 5. Conflict Graph: visual actor/event/claim network for human exploration.
 6. Advisor Table: structured disagreement across mediator, humanitarian, legal, security, media, and red-team views.
 7. Briefing Studio: decision-ready slides with BLUF, risk triggers, sources, and next actions.
+8. Work Products: editable policy memo and decision brief screens with local library save, DOCX import, and LibreOffice-compatible DOCX export.
 
 ## Methodologies To Show
 
@@ -53,6 +58,19 @@ The Syria case proves the PRAXIS loop:
 
 7. `38-45` `/app/briefing?recording=1&case=syria`
    End on the decision brief. Show BLUF, graph readout, risk triggers, and sources.
+
+Optional product-save insert: open `/app/policy-memo?recording=1&case=syria`, show the Work Document panel, click `Improve`, `Save`, and `Export DOCX`. This proves PRAXIS is producing office-ready work products, not only screen visualizations.
+
+## Editable Work Products
+
+Policy Memo and Briefing now include a PRAXIS Work Document panel:
+
+- `Save` stores the structured product in the browser work-product library for the current session.
+- `Improve` performs a local structure polish without spending cloud or model credits.
+- `Import DOCX` parses uploaded DOCX files through the server-side Mammoth route and converts them into editable sections.
+- `Export DOCX` generates a LibreOffice Writer / Microsoft Word compatible DOCX through the server-side `docx` route.
+
+The official LibreOffice GitHub `core` repository is the full desktop suite source, not a lightweight browser editor. A future collaborative editor should use a Collabora Online / WOPI deployment. The current PRAXIS implementation is intentionally lighter: structured in-app editing plus DOCX import/export now, with no always-on office server cost.
 
 ## Voiceover Prompt
 
