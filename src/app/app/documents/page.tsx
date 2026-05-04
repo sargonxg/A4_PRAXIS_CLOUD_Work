@@ -2270,6 +2270,33 @@ function SyriaVaultPlaceholder() {
         </div>
       </div>
 
+      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-md border border-diplomatic-blue/20 bg-diplomatic-blue/5 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-diplomatic-blue">Source documents</p>
+          <p className="mt-1 text-2xl font-bold text-navy-900">{SYRIA_DOCUMENTS.length}</p>
+          <p className="text-[10px] text-navy-500">UN, OCHA, UNHCR, UNFPA + local Syria sources</p>
+        </div>
+        <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Generated artifacts</p>
+          <p className="mt-1 text-2xl font-bold text-navy-900">6</p>
+          <p className="text-[10px] text-navy-500">Memo · brief · stakeholder · commitments · humanitarian · sources</p>
+        </div>
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-700">Bucket</p>
+          <p className="mt-1 break-all text-xs font-bold text-navy-900">praxisbytacitus.appspot.com</p>
+          <p className="text-[10px] text-navy-500">Every artifact mirrors here on save</p>
+        </div>
+        <div className="rounded-md border border-indigo-200 bg-indigo-50 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-indigo-700">Editor</p>
+          <p className="mt-1 text-xs font-bold text-navy-900">TipTap · DOCX/PDF export</p>
+          <p className="text-[10px] text-navy-500">
+            <button onClick={() => window.location.assign(route('/editor?case=syria'))} className="text-diplomatic-blue underline">Open editor</button>
+            {' · '}
+            <button onClick={() => window.location.assign(route('/library?case=syria'))} className="text-diplomatic-blue underline">Browse library</button>
+          </p>
+        </div>
+      </div>
+
       <DocumentWorkspaceSpine
         documents={SYRIA_DOCUMENTS}
         mode="demo"
