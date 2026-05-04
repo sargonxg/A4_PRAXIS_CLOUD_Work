@@ -23,28 +23,28 @@ import { cn } from '@/lib/utils/cn';
 const CHAPTER_NARRATION: Record<SyriaChapterId, { lead: string; durationMs: number }> = {
   'situation-frame': {
     lead:
-      'Chapter one. Situation frame. Risk score seventy-eight. The Damascus to SDF integration agreement is the stabilizing center of gravity, but minorities, southern flashpoints, and humanitarian access remain fragile.',
-    durationMs: 18_000,
+      'Chapter one. Situation frame. You are a UN-NY analyst on the Syria desk. PRAXIS opens with risk seventy-eight, the Damascus to SDF integration agreement at the center of gravity, a live geographic map of twelve flashpoint towns from Damascus to Hasakah, a cinematic timeline of the seventeen events that reshaped the file, and the NYC stakeholder map showing every Council member, UN agency, think tank, and civil-society network you can lean on.',
+    durationMs: 26_000,
   },
   'source-receipts': {
     lead:
-      'Chapter two. Source receipts. Tier one through tier four sources, with a grounded reference layer of Wikipedia, UN documents, OHCHR, academic centres, and data portals — every claim has an anchor a reader can open.',
-    durationMs: 18_000,
+      'Chapter two. Source receipts. Four tiers of evidence, plus thirty-three grounded reference anchors across Wikipedia, UN resolutions, OHCHR, IIIM, academic centres, data portals, and testimony archives. Watch the Source Scout agent run live: it finds five fresh sources outside the analyst library, ranks them by reliability tier, and pins each one to the corpus.',
+    durationMs: 22_000,
   },
   'conflict-graph': {
     lead:
-      'Chapter three. Conflict graph. Actors, claims, constraints, leverage, commitments, events, and narratives, on the same canvas. Toggle the episodic, semantic, and stance views without losing context.',
-    durationMs: 18_000,
+      'Chapter three. Conflict graph. The PRAXIS ontology — actors, claims, interests, constraints, leverage, commitments, events, narratives — on a single canvas with episodic, semantic, and stance views. Counterfactual edges reveal what would falsify each claim. This is the backbone other apps will reuse: mediation, scenarios, negotiation prep all sit on top.',
+    durationMs: 22_000,
   },
   'dialectica-reasoning': {
     lead:
-      'Chapter four. Dialectica reasoning. Five recipes turn graph evidence into policy judgment. The case archive shows Lebanon, Bosnia, Tunisia, and Iraq twenty-oh-three as named analogs, each labeled with the role it plays.',
-    durationMs: 22_000,
+      'Chapter four. Dialectica reasoning. Five reasoning recipes. Four named comparators: Lebanon Taif, Bosnia Dayton, Tunisia twenty-thirteen as positive analog, Iraq twenty-oh-three as cautionary inverse. The Red Team agent surfaces three falsification paths. The advisory council debates whether to bundle EU sanctions with civil-society benchmarks. The sanctions board shows what was lifted, what was retained, and the August benchmark review.',
+    durationMs: 28_000,
   },
   'decision-product': {
     lead:
-      'Chapter five. Decision product. Briefing, policy memo, and talking points, all carrying provenance, confidence, and the graph path that backs the line. Close the loop in twenty-seven minutes.',
-    durationMs: 18_000,
+      'Chapter five. Decision product. Ask PRAXIS: a domain AI calibrated by your profile and the active situation. The Brief Builder agent composes a one-page principal briefing with BLUF, risk board, commitment table, and footnotes. The document generator streams a Word-style memo block by block, ready to export to DOCX. Twenty-seven minutes from open question to defended brief.',
+    durationMs: 24_000,
   },
 };
 

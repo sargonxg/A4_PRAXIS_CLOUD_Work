@@ -14,6 +14,8 @@ import { SYRIA_CACHED_RECIPE_RESULTS } from '@/lib/syria/cached-recipe-results';
 import { SYRIA_COMPARISON_CASES } from '@/lib/syria/comparison-cases';
 import { SYRIA_AGENT_PRESETS } from '@/lib/syria/agent-presets';
 import { SyriaAgentConsole } from '@/components/syria/agent-console';
+import { SyriaAdvisoryDebate } from '@/components/syria/advisory-debate';
+import { SyriaSanctionsBoard } from '@/components/syria/sanctions-board';
 import { SyriaRecipeCard } from './recipe-card';
 
 const RECIPES = [
@@ -204,6 +206,9 @@ export function SyriaChapterDialectica() {
           })}
         </div>
       </section>
+
+      <SyriaAdvisoryDebate />
+      <SyriaSanctionsBoard />
     </div>
   );
 }

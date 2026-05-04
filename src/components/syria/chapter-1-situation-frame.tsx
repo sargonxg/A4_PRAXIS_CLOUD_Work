@@ -9,6 +9,9 @@ import {
   SYRIA_MEDIA_VISUAL_METRICS,
   SYRIA_SITUATION_CONTEXT_CARDS,
 } from '@/lib/constants/syria-demo-workspace';
+import { SyriaGeographicMap } from '@/components/syria/geographic-map';
+import { SyriaCinematicTimeline } from '@/components/syria/cinematic-timeline';
+import { SyriaNYCStakeholderMap } from '@/components/syria/nyc-stakeholder-map';
 
 const SITUATION_METRICS = [
   { label: 'Escalation stage', value: 'Glasl 5', detail: 'Polarization with reversible de-escalation space.', icon: Activity },
@@ -129,6 +132,12 @@ export function SyriaChapterSituationFrame() {
             uncertainty, and red lines visible before drafting.
           </p>
         </div>
+      </div>
+
+      <div className="xl:col-span-2 grid gap-4">
+        <SyriaGeographicMap />
+        <SyriaCinematicTimeline />
+        <SyriaNYCStakeholderMap />
       </div>
     </div>
   );

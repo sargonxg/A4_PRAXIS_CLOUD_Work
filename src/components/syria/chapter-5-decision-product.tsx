@@ -2,6 +2,8 @@ import { ClipboardCheck, FileText, MessageSquareText, Save, ShieldCheck } from '
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { ComparisonCaseCard } from '@/components/syria/comparison-case-card';
 import { SyriaAgentConsole } from '@/components/syria/agent-console';
+import { SyriaAskPraxis } from '@/components/syria/ask-praxis';
+import { SyriaDocumentGenerator } from '@/components/syria/document-generator';
 import { SYRIA_DEMO_CONFLICT_GRAPH } from '@/lib/constants/syria-demo-case';
 import {
   SYRIA_COMMITMENT_MONITOR_DEMO,
@@ -160,6 +162,9 @@ export function SyriaChapterDecisionProduct() {
           </div>
         </aside>
       </div>
+
+      <SyriaAskPraxis />
+      <SyriaDocumentGenerator />
     </div>
   );
 }
