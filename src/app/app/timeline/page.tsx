@@ -4,6 +4,9 @@ import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { LiveEventsPanel } from '@/components/timeline/live-events-panel';
+import { useSearchParams } from 'next/navigation';
+import { isSyriaWorkspaceCase, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
+import { SYRIA_TIMELINE_EVENTS } from '@/lib/constants/syria-tool-demos';
 import { useState, useMemo, useCallback } from 'react';
 import {
   Clock,
@@ -827,8 +830,25 @@ function TimelineView({ data }: { data: { events: TimelineEvent[] } }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function TimelinePage() {
-  const { showGuard, situation } = useSituationGuard();
+  const { isDemo, showGuard, situation } = useSituationGuard();
+  const searchParams = useSearchParams();
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), isDemo);
   const [timelineData, setTimelineData] = useState<{ events: TimelineEvent[] } | null>(null);
+
+  // Demo / Syria-recording path: render with seeded events without requiring a Firestore situation
+  if (isDemo) {
+    const demoEvents = isSyriaCase ? SYRIA_TIMELINE_EVENTS : DEMO_EVENTS;
+    const demoSituation = isSyriaCase ? SYRIA_DEMO_SITUATION : null;
+    return (
+      <>
+        <RegistryToolInfo toolId="timeline" />
+        <div className="space-y-4">
+          {demoSituation ? <LiveEventsPanel situation={demoSituation} /> : null}
+          <TimelineView data={{ events: demoEvents }} />
+        </div>
+      </>
+    );
+  }
 
   if (showGuard || !situation) return <NoSituationState />;
 

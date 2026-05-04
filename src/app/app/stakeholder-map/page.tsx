@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Users, Sparkles, Loader2, X, Target } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { OnboardingRequiredState } from '@/components/praxis/onboarding-required-state';
@@ -22,6 +23,8 @@ import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { cn } from '@/lib/utils/cn';
 import type { Situation } from '@/types/situation';
 import type { Salience, SalienceQuadrant } from '@/lib/analytics/salience-engine';
+import { isSyriaWorkspaceCase, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
+import { SYRIA_STAKEHOLDERS } from '@/lib/constants/syria-tool-demos';
 
 type AxisKey = 'power' | 'legitimacy' | 'urgency';
 type AxisPair = { x: AxisKey; y: AxisKey };
@@ -74,15 +77,17 @@ interface RouteResponse {
 
 export default function StakeholderMapPage() {
   const { isDemo, needsOnboarding, showGuard, situation } = useSituationGuard();
+  const searchParams = useSearchParams();
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), isDemo);
 
   if (needsOnboarding) return <OnboardingRequiredState />;
   if (!isDemo && (showGuard || !situation)) return <NoSituationState />;
 
-  const activeSituation: Situation = situation ?? DEMO_SITUATION;
-  return <StakeholderMap situation={activeSituation} isDemo={isDemo} />;
+  const activeSituation: Situation = situation ?? (isSyriaCase ? SYRIA_DEMO_SITUATION : DEMO_SITUATION);
+  return <StakeholderMap situation={activeSituation} isDemo={isDemo} isSyriaCase={isSyriaCase} />;
 }
 
-function StakeholderMap({ situation, isDemo }: { situation: Situation; isDemo: boolean }) {
+function StakeholderMap({ situation, isDemo, isSyriaCase }: { situation: Situation; isDemo: boolean; isSyriaCase: boolean }) {
   const [salience, setSalience] = useState<Salience[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,6 +105,22 @@ function StakeholderMap({ situation, isDemo }: { situation: Situation; isDemo: b
     setLoading(true);
     setError(null);
     try {
+      // Syria demo: render the seeded post-Assad stakeholder set without a backend roundtrip.
+      if (isDemo && isSyriaCase) {
+        setSalience(
+          SYRIA_STAKEHOLDERS.map((s) => ({
+            actorId: s.id,
+            actorLabel: s.shortName ?? s.name,
+            power: s.power,
+            legitimacy: s.legitimacy,
+            urgency: s.urgency,
+            quadrant: s.quadrant as SalienceQuadrant,
+          })),
+        );
+        setGraphLoaded(true);
+        return;
+      }
+
       const res = await fetch('/api/ai/stakeholder-map', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -114,7 +135,7 @@ function StakeholderMap({ situation, isDemo }: { situation: Situation; isDemo: b
     } finally {
       setLoading(false);
     }
-  }, [situation]);
+  }, [situation, isDemo, isSyriaCase]);
 
   useEffect(() => {
     void runScore();
@@ -134,6 +155,26 @@ function StakeholderMap({ situation, isDemo }: { situation: Situation; isDemo: b
     setExplainLoading(true);
     setExplainError(null);
     try {
+      // Syria demo path: synthesize explain output from local stakeholder data.
+      if (isDemo && isSyriaCase) {
+        const stk = SYRIA_STAKEHOLDERS.find((s) => s.id === actorId);
+        if (stk) {
+          setExplainById((prev) => ({
+            ...prev,
+            [actorId]: {
+              actorId,
+              actorLabel: stk.shortName ?? stk.name,
+              rationale: `${stk.name} — ${stk.position}. PRAXIS scores them as ${stk.quadrant} given Power ${(stk.power * 100).toFixed(0)} · Legitimacy ${(stk.legitimacy * 100).toFixed(0)} · Urgency ${(stk.urgency * 100).toFixed(0)}.`,
+              keyInterests: stk.interests,
+              leverage: stk.leverage,
+              constraints: stk.constraints,
+              linkedEntities: SYRIA_STAKEHOLDERS.filter((other) => other.id !== stk.id).slice(0, 4).map((o) => o.shortName ?? o.name),
+            },
+          }));
+        }
+        return;
+      }
+
       const res = await fetch('/api/ai/stakeholder-map', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

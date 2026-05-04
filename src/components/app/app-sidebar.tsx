@@ -22,6 +22,11 @@ import {
   ChevronDown,
   Loader2,
   Crown,
+  HeartHandshake,
+  Users,
+  Clock,
+  Library,
+  PanelsTopLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -193,20 +198,37 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    label: 'Policy Workspace',
+    label: 'Situation',
     items: [
       { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
       { label: 'Context', icon: Target, href: '/context-builder' },
-      { label: 'Executive Intel', icon: Sparkles, href: '/dashboard#executive-intelligence' },
-      { label: 'Research', icon: Telescope, href: '/source-scout' },
+      { label: 'Documents', icon: BookOpen, href: '/documents' },
+      { label: 'Sources & Research', icon: Telescope, href: '/source-scout' },
+    ],
+  },
+  {
+    label: 'Analysis',
+    items: [
       { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
       { label: 'GraphOps', icon: Wrench, href: '/graphops' },
-      { label: 'Boardroom', icon: MessagesSquare, href: '/advisory' },
-      { label: 'Briefing', icon: BookOpen, href: '/briefing' },
-      { label: 'Policy Memo', icon: FileText, href: '/policy-memo' },
-      { label: 'Scenarios', icon: GitBranch, href: '/scenarios' },
-      { label: 'Negotiation', icon: MessagesSquare, href: '/negotiation-prep' },
-      { label: 'Treaty', icon: FileText, href: '/treaty-analyzer' },
+      { label: 'Timeline', icon: Clock, href: '/timeline' },
+      { label: 'Stakeholders', icon: Users, href: '/stakeholder-map' },
+      { label: 'Humanitarian', icon: HeartHandshake, href: '/humanitarian' },
+    ],
+  },
+  {
+    label: 'Decision',
+    items: [
+      { label: 'Briefing Studio', icon: FileText, href: '/briefing' },
+      { label: 'Advisory Council', icon: MessagesSquare, href: '/advisory' },
+      { label: 'Ask PRAXIS', icon: Sparkles, href: '/assistant' },
+    ],
+  },
+  {
+    label: 'Workspace',
+    items: [
+      { label: 'All tools', icon: PanelsTopLeft, href: '/tools' },
+      { label: 'Sources Library', icon: Library, href: '/sources' },
     ],
   },
 ];
@@ -214,18 +236,19 @@ const navSections: NavSection[] = [
 const RECORDING_NAV_HREFS = new Set([
   '/demo-guide',
   '/dashboard',
-  '/dashboard#executive-intelligence',
   '/context-builder',
+  '/documents',
   '/source-scout',
-  '/graphops',
-  '/advisory',
   '/conflict-graph',
-  '/brainstorming-table',
+  '/graphops',
+  '/timeline',
+  '/stakeholder-map',
+  '/humanitarian',
   '/briefing',
-  '/policy-memo',
-  '/scenarios',
-  '/negotiation-prep',
-  '/treaty-analyzer',
+  '/advisory',
+  '/assistant',
+  '/sources',
+  '/tools',
 ]);
 
 function ChangelogButton() {

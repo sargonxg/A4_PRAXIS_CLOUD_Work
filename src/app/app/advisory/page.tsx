@@ -9,6 +9,9 @@ import { AdvisorPicker } from '@/components/advisory/advisor-picker';
 import { AdvisorChatPane } from '@/components/advisory/advisor-chat-pane';
 import { AdvisorBoardroomPanel } from '@/components/advisory/advisor-boardroom-panel';
 import type { AdvisorConfig } from '@/types/advisor';
+import { useSearchParams } from 'next/navigation';
+import { isSyriaWorkspaceCase } from '@/lib/constants/syria-demo-case';
+import { SYRIA_ADVISORY_COUNCIL } from '@/lib/constants/syria-tool-demos';
 
 import { useState, useCallback, useEffect } from 'react';
 import {
@@ -224,6 +227,8 @@ function RecommendationCard({ rec, index }: { rec: Recommendation; index: number
 
 export default function AdvisoryPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const searchParams = useSearchParams();
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), isDemo);
   const persisted = usePersistedToolData('advisory', situation?.id);
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -231,6 +236,7 @@ export default function AdvisoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [analystRole, setAnalystRole] = useState('');
   const [activeAdvisor, setActiveAdvisor] = useState<AdvisorConfig | null>(null);
+  const [expandedExpertId, setExpandedExpertId] = useState<string | null>(null);
 
   // Restore from persisted data
   useEffect(() => {
@@ -309,6 +315,62 @@ export default function AdvisoryPage() {
         </div>
         <RegistryToolInfo toolId="advisory" />
       </div>
+
+      {/* Syria expert circle (post-Assad transition) */}
+      {isSyriaCase && (
+        <section className="rounded-xl border border-diplomatic-blue/20 bg-diplomatic-blue/5 p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <Users size={14} className="text-diplomatic-blue" />
+            <h2 className="text-sm font-semibold text-navy-900">Syria Expert Council — public-source advisor briefs</h2>
+          </div>
+          <p className="mb-4 text-[11px] text-navy-500">
+            Eight published Syria specialists. Each card shows lens, current position, watch signals, and red lines so the boardroom synthesis can preserve disagreement instead of flattening it.
+          </p>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {SYRIA_ADVISORY_COUNCIL.map((expert) => {
+              const open = expandedExpertId === expert.id;
+              return (
+                <button
+                  key={expert.id}
+                  type="button"
+                  onClick={() => setExpandedExpertId(open ? null : expert.id)}
+                  className={cn(
+                    'rounded-lg border bg-white p-3 text-left transition',
+                    open
+                      ? 'border-diplomatic-blue ring-2 ring-diplomatic-blue/20'
+                      : 'border-navy-200 hover:border-diplomatic-blue/40'
+                  )}
+                >
+                  <p className="text-sm font-semibold text-navy-900">{expert.name}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-diplomatic-blue">{expert.affiliation}</p>
+                  <p className="mt-1 text-[11px] font-medium text-navy-600">Lens: {expert.lens}</p>
+                  <p className="mt-2 text-[11px] leading-snug text-navy-700">{expert.position}</p>
+                  {open && (
+                    <div className="mt-3 space-y-2">
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Watch signals</p>
+                        <ul className="mt-1 space-y-0.5">
+                          {expert.signals.map((s) => (
+                            <li key={s} className="text-[11px] text-navy-700">• {s}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-red-600">Red lines</p>
+                        <ul className="mt-1 space-y-0.5">
+                          {expert.redLines.map((s) => (
+                            <li key={s} className="text-[11px] text-navy-700">• {s}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <AdvisorBoardroomPanel situation={situation ?? null} />
 

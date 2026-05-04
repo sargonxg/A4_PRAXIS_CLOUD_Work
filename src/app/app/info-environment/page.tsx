@@ -5,6 +5,8 @@ import { useToolData } from '@/hooks/useToolData';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
+import { useSearchParams } from 'next/navigation';
+import { isSyriaWorkspaceCase } from '@/lib/constants/syria-demo-case';
 
 import { useState, useEffect } from 'react';
 import {
@@ -467,10 +469,148 @@ function InfoEnvironmentContent({ data }: { data: InfoEnvironmentData }) {
   );
 }
 
+// ─── Syria info-environment fixture ─────────────────────────────────────────
+
+const SYRIA_INFO_ENV_DATA: InfoEnvironmentData = {
+  dominantNarratives: [
+    {
+      id: 'syr-n1',
+      title: 'Sovereignty + national unity',
+      framing: 'Damascus official messaging frames the transition as a single unified national project; emphasises sovereignty and territorial integrity over decentralisation language.',
+      amplifiers: ['SANA (state)', 'Presidential office', 'Aligned regional outlets'],
+      platform: 'state_media',
+      trend: 'stable',
+      reachScore: 74,
+      isHostile: false,
+      counterNarrative: 'Inclusive transition language that names minorities, regions, and civil society without ceding sovereignty rhetoric.',
+    },
+    {
+      id: 'syr-n2',
+      title: 'Northeast integration as Kurdish rights story',
+      framing: 'Local Kurdish-aligned outlets (North Press, Enab Baladi) frame the 30 January agreement around civil, educational, and citizenship rights — and warn against ceremonial implementation.',
+      amplifiers: ['North Press', 'Enab Baladi', 'Kurdish diaspora networks'],
+      platform: 'independent_media',
+      trend: 'rising',
+      reachScore: 62,
+      isHostile: false,
+    },
+    {
+      id: 'syr-n3',
+      title: 'Minority threat narratives',
+      framing: 'Coastal and southern incidents are amplified by both rights monitors and Israeli-aligned voices to question whether transition authorities can protect Alawites and Druze communities.',
+      amplifiers: ['SOHR', 'Israeli press', 'Regional Druze media'],
+      platform: 'international',
+      trend: 'rising',
+      reachScore: 68,
+      isHostile: false,
+      counterNarrative: 'Track record + accountability commitments paired with named protection programs and independent observers.',
+    },
+    {
+      id: 'syr-n4',
+      title: 'Reconstruction gold rush',
+      framing: 'Türkiye-aligned and Gulf reconstruction commentary frames Syria as an open opportunity for first-mover contracts, with limited engagement on HLP or procurement transparency.',
+      amplifiers: ['Türkiye business press', 'Gulf finance media', 'Reconstruction lobbyists'],
+      platform: 'international',
+      trend: 'rising',
+      reachScore: 71,
+      isHostile: false,
+      counterNarrative: 'Donor frameworks tied to HLP registries, legal aid, returnee protection, and procurement disclosure.',
+    },
+    {
+      id: 'syr-n5',
+      title: 'Regional spillover alarm',
+      framing: 'UN, OCHA, and EU sources elevate spillover risk (Israeli operations, Lebanon border, airspace constraints) as the principal threat to recovery.',
+      amplifiers: ['UN Geneva', 'OCHA', 'EU member-state press'],
+      platform: 'international',
+      trend: 'rising',
+      reachScore: 76,
+      isHostile: false,
+    },
+    {
+      id: 'syr-n6',
+      title: 'Iran-leaning revisionism',
+      framing: 'Hezbollah- and Iran-aligned outlets reframe the transition as a Western-engineered project, casting doubt on transitional authorities and on UN engagement.',
+      amplifiers: ['Al Mayadeen', 'IRNA', 'Tehran Times'],
+      platform: 'state_media',
+      trend: 'stable',
+      reachScore: 54,
+      isHostile: true,
+      counterNarrative: 'Source-grounded record of UN, civil society, and minority engagement; refuse to treat as merely a Western project.',
+    },
+  ],
+  infoOperations: [
+    {
+      name: 'Coordinated coastal-violence framing campaigns',
+      type: 'coordinated_inauthentic',
+      attribution: 'Mixed: Iran-aligned and former-regime networks; some criminal opportunism.',
+      indicators: [
+        'Synchronous posting bursts after each coastal incident',
+        'Recycled imagery from prior Syrian war contexts',
+        'Use of new accounts created Q1 2026 with limited posting history',
+      ],
+      threatLevel: 'high',
+      platforms: ['Telegram', 'X / Twitter', 'TikTok comment swarms'],
+    },
+    {
+      name: 'Reconstruction astroturf endorsement clusters',
+      type: 'astroturfing',
+      attribution: 'Reconstruction firms + politically aligned PR networks.',
+      indicators: [
+        'Artificial endorsement of specific procurement contracts',
+        'LinkedIn-driven claims of "first-mover advantage"',
+        'Volume amplification of single-source MoUs without HLP context',
+      ],
+      threatLevel: 'medium',
+      platforms: ['LinkedIn', 'Telegram business channels', 'Türkiye business press'],
+    },
+    {
+      name: 'Detention-facility doubt operations',
+      type: 'disinformation',
+      attribution: 'Iran/Hezbollah-aligned outlets + ad hoc speculation channels.',
+      indicators: [
+        'Unverified claims about ISIL detention transfers',
+        'Cherry-picked imagery from older detention coverage',
+        'Conflation of HTS-era and post-transition security narratives',
+      ],
+      threatLevel: 'high',
+      platforms: ['Telegram', 'X / Twitter', 'YouTube'],
+    },
+  ],
+  platformDynamics: [
+    { platform: 'X / Twitter',  dominantTone: 'Polarised',     keyActors: ['SOHR', 'Israeli press', 'Diaspora analysts', 'UN officials'], riskLevel: 'high'   },
+    { platform: 'Telegram',     dominantTone: 'Tactical / monitoring', keyActors: ['Local activists', 'Faction channels', 'Aid workers'],            riskLevel: 'critical' },
+    { platform: 'LinkedIn',     dominantTone: 'Reconstruction boosterism', keyActors: ['Türkiye firms', 'Gulf investors', 'Diaspora professionals'], riskLevel: 'medium' },
+    { platform: 'Local Arabic press', dominantTone: 'Pluralist', keyActors: ['Enab Baladi', 'Syria Direct', 'North Press', 'SyriaUntold'], riskLevel: 'low'    },
+    { platform: 'State media',  dominantTone: 'Sovereignty-first', keyActors: ['SANA', 'Aligned outlets'], riskLevel: 'medium' },
+  ],
+  overallAssessment:
+    'The Syrian information environment is fragmented but legible: state, local, humanitarian, monitoring, and regional voices each occupy distinct lanes. The most consequential dynamics are (1) the gap between official sovereignty messaging and local rights reporting on northeast integration, (2) the Iran/Hezbollah-aligned counter-narrative that recasts the transition as Western-engineered, and (3) the reconstruction astroturf that risks anchoring early policy decisions to thin evidence. PRAXIS recommends keeping local media and humanitarian receipts in the same view as official messaging, and tagging unverified detention or coastal claims explicitly.',
+  counterMessagingRecommendations: [
+    'Publish a transparent SDF-integration implementation timeline so the local rights narrative cannot be dismissed as ceremonial.',
+    'Tie EU sanctions-relief communications to named benchmarks (HLP, accountability, civil-society participation) rather than political optics.',
+    'Pre-bunk detention-facility disinformation with ICRC-verified updates and a named oversight contact.',
+    'Pair reconstruction announcements with HLP registry status, beneficiary criteria, and grievance-channel publication.',
+    'Coordinate UN, OCHA, and donor messaging on regional spillover so a single incident does not generate divergent signals.',
+  ],
+  keyAmplifiers: [
+    { name: 'UN Geneva',      platform: 'official',  alignment: 'neutral'  },
+    { name: 'OCHA',           platform: 'official',  alignment: 'neutral'  },
+    { name: 'Enab Baladi',    platform: 'local',     alignment: 'neutral'  },
+    { name: 'North Press',    platform: 'local',     alignment: 'neutral'  },
+    { name: 'SOHR',           platform: 'monitoring',alignment: 'neutral'  },
+    { name: 'SANA',           platform: 'state',     alignment: 'friendly' },
+    { name: 'Al Jazeera EN',  platform: 'pan-Arab',  alignment: 'neutral'  },
+    { name: 'Al Mayadeen',    platform: 'state',     alignment: 'hostile'  },
+    { name: 'Reuters',        platform: 'wire',      alignment: 'neutral'  },
+  ],
+};
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function InfoEnvironmentPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const searchParams = useSearchParams();
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), isDemo);
   const [data, setData] = useState<InfoEnvironmentData | null>(null);
   const { hasData, loading: firestoreLoading } = useToolData('info_environment');
   const [regenerating, setRegenerating] = useState(false);
@@ -483,6 +623,10 @@ export default function InfoEnvironmentPage() {
   }, [isDemo, situation?.id]);
 
   if (isDemo) {
+    const demoData = isSyriaCase ? SYRIA_INFO_ENV_DATA : DEMO_DATA;
+    const subtitle = isSyriaCase
+      ? 'Narrative lanes, info operations, and counter-messaging — Syria Transition (Demo)'
+      : 'Narrative tracking, information operations detection, and counter-messaging — Nordalia Crisis (Demo)';
     return (
       <div className="space-y-6">
         <div>
@@ -490,11 +634,9 @@ export default function InfoEnvironmentPage() {
             <Radio className="h-5 w-5 text-navy-400" />
             <h1 className="font-serif text-2xl font-normal text-navy-900">Information Environment Monitor</h1>
           </div>
-          <p className="mt-1 text-sm text-navy-500">
-            Narrative tracking, information operations detection, and counter-messaging — Nordalia Crisis (Demo)
-          </p>
+          <p className="mt-1 text-sm text-navy-500">{subtitle}</p>
         </div>
-        <InfoEnvironmentContent data={DEMO_DATA} />
+        <InfoEnvironmentContent data={demoData} />
       </div>
     );
   }

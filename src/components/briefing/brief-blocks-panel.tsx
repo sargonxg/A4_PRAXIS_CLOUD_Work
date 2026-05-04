@@ -17,6 +17,9 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { isSyriaWorkspaceCase, SYRIA_DEMO_CASE_ID } from '@/lib/constants/syria-demo-case';
+import { SYRIA_BRIEFING_BLOCKS } from '@/lib/constants/syria-tool-demos';
 import {
   DndContext,
   closestCenter,
@@ -203,11 +206,44 @@ function SortableBlock({
 
 export function BriefBlocksPanel({ situation }: { situation: Situation }) {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), user?.isDemo === true)
+    || situation.id === SYRIA_DEMO_CASE_ID;
   const [audience, setAudience] = useState('UNSC informal consultations');
   const [busy, setBusy] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [brief, setBrief] = useState<BriefPayload | null>(null);
+  const [brief, setBrief] = useState<BriefPayload | null>(() => {
+    if (!isSyriaCase) return null;
+    return {
+      briefId: 'syr-seed',
+      bluf: SYRIA_BRIEFING_BLOCKS[0]?.body ?? '',
+      audience: 'UNSC informal consultations',
+      generatedAt: new Date().toISOString(),
+      sections: SYRIA_BRIEFING_BLOCKS.map((b) => ({
+        id: b.id,
+        heading: b.title,
+        body: b.body,
+        provenance: ['UN Geneva', 'OCHA', 'UN Syria CCA', 'UNFPA', 'UNHCR'],
+      })),
+      decisionPoints: [
+        {
+          question: 'Posture on the 30 January Damascus-SDF agreement',
+          options: ['Implementation-first with explicit triggers', 'Risk-first centered on humanitarian/spillover', 'Hold posture until verification'],
+          recommendation: 'Implementation-first with explicit red triggers',
+          preferredBy: 'mediator + media advisors',
+        },
+      ],
+      intelligenceGaps: [
+        'Field reporting from Sweida and northeast Syria',
+        'ICRC detention-facility access updates',
+        'Türkiye–US northeast working-group readouts',
+      ],
+      recommendedSources: ['UN Geneva', 'OCHA', 'UNFPA', 'UNHCR', 'Enab Baladi', 'North Press', 'ICG'],
+      version: 1,
+      locked: false,
+    };
+  });
   const [keys, setKeys] = useState<KeyMap | null>(null);
   const tier = user?.subscription ?? 'free';
 

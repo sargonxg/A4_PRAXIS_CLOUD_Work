@@ -5,6 +5,9 @@ import { useToolData } from '@/hooks/useToolData';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { AiPopulate } from '@/components/praxis/ai-populate';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
+import { useSearchParams } from 'next/navigation';
+import { isSyriaWorkspaceCase } from '@/lib/constants/syria-demo-case';
+import { SYRIA_COMMITMENTS_DEMO } from '@/lib/constants/syria-tool-demos';
 
 import { useState, useEffect } from 'react';
 import {
@@ -319,6 +322,8 @@ function CommitmentsContent({ data }: { data: CommitmentsData }) {
 
 export default function CommitmentsPage() {
   const { isDemo, showGuard, situation } = useSituationGuard();
+  const searchParams = useSearchParams();
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), isDemo);
   const [data, setData] = useState<CommitmentsData | null>(null);
   const { hasData, loading: firestoreLoading } = useToolData('commitment_scan');
   const [regenerating, setRegenerating] = useState(false);
@@ -331,6 +336,12 @@ export default function CommitmentsPage() {
   }, [isDemo, situation?.id]);
 
   if (isDemo) {
+    const demoData = isSyriaCase
+      ? (SYRIA_COMMITMENTS_DEMO as unknown as CommitmentsData)
+      : DEMO_DATA;
+    const subtitle = isSyriaCase
+      ? 'Monitor compliance with the 30 January Damascus-SDF agreement, EU sanctions delisting conditions, returns framework, Israel southern understanding, and constitutional commitments — Syria Transition (Demo)'
+      : 'Monitor agreement compliance, ceasefire violations, and deadline tracking — Nordalia Crisis (Demo)';
     return (
       <div className="space-y-6">
         <div>
@@ -338,11 +349,9 @@ export default function CommitmentsPage() {
             <FileCheck className="h-5 w-5 text-navy-400" />
             <h1 className="font-serif text-2xl font-normal text-navy-900">Commitment Tracker</h1>
           </div>
-          <p className="mt-1 text-sm text-navy-500">
-            Monitor agreement compliance, ceasefire violations, and deadline tracking — Nordalia Crisis (Demo)
-          </p>
+          <p className="mt-1 text-sm text-navy-500">{subtitle}</p>
         </div>
-        <CommitmentsContent data={DEMO_DATA} />
+        <CommitmentsContent data={demoData} />
       </div>
     );
   }

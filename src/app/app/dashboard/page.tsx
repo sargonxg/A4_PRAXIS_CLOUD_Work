@@ -14,14 +14,21 @@
 
 import { useEffect, useState } from 'react';
 import {
+  Activity,
+  AlertTriangle,
   ArrowRight,
   BookOpen,
+  Clock,
+  GitBranch,
+  HeartHandshake,
   Loader2,
+  MessagesSquare,
   Network,
   PenLine,
   Search,
   ShieldCheck,
   Sparkles,
+  Users,
 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
@@ -36,6 +43,7 @@ import { SyriaRecordingRunway } from '@/components/demo/recording-signal-runway'
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { useAuth } from '@/lib/auth/auth-context';
 import { isSyriaWorkspaceCase, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
+import { SYRIA_HUMANITARIAN_DEMO, SYRIA_TIMELINE_EVENTS } from '@/lib/constants/syria-tool-demos';
 import { computeSituationContextHealth } from '@/lib/context/situation-context-health';
 import type { Situation } from '@/types/situation';
 
@@ -63,6 +71,7 @@ export default function DashboardPage() {
   if (isDemo) {
     return (
       <div className="space-y-4 p-6">
+        {isSyriaCase ? <SyriaHeroPanel /> : null}
         {isSyriaCase ? <SyriaRecordingRunway density="full" focus="overview" /> : null}
         <RealDashboard situation={demoSituation} />
       </div>
@@ -435,6 +444,117 @@ function EmptySituationHint({ situationId }: { situationId: string }) {
         {result && <span className="text-xs text-navy-500">{result}</span>}
       </div>
     </section>
+  );
+}
+
+function SyriaHeroPanel() {
+  const upcomingEvents = SYRIA_TIMELINE_EVENTS.slice(0, 4).reverse();
+  return (
+    <section className="overflow-hidden rounded-xl border border-diplomatic-blue/30 bg-gradient-to-br from-navy-950 via-navy-900 to-diplomatic-blue/80 text-white shadow-lg shadow-navy-900/20">
+      <div className="grid gap-4 p-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-gold-400/30 bg-gold-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-gold-300">
+              Live case file
+            </span>
+            <span className="rounded-full border border-emerald-300/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-emerald-200">
+              Public-source
+            </span>
+            <span className="rounded-full border border-rose-300/30 bg-rose-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-rose-200">
+              Volatile
+            </span>
+          </div>
+          <h2 className="mt-3 font-serif text-3xl font-semibold leading-tight text-white">
+            Syria — Post-Assad Transition
+          </h2>
+          <p className="mt-1 text-sm text-blue-50/80">
+            al-Sharaa transitional government · 30 January Damascus-SDF agreement · regional spillover risk
+          </p>
+          <p className="mt-4 max-w-3xl text-[13px] leading-relaxed text-blue-50/80">
+            One week of work compressed into a structured, source-grounded operating picture. PRAXIS holds the
+            agreement opportunity, the humanitarian and rights costs, the southern flashpoints, and the regional
+            spillover triggers in the same decision frame — with provenance attached.
+          </p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <SyriaKpi label="Composite risk" value="78/100" tone="rose" sub="INFORM Hazard 7.9 · Vuln 8.3" />
+            <SyriaKpi label="People in need" value="16.5M" tone="amber" sub="OCHA HRP 2026" />
+            <SyriaKpi label="Returnees since Dec 2024" value="1.2M" tone="emerald" sub="UNHCR" />
+            <SyriaKpi label="Funding gap" value="71%" tone="indigo" sub={`$${(SYRIA_HUMANITARIAN_DEMO.funding.required / 1_000_000_000).toFixed(2)}B requested`} />
+          </div>
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            <PraxisLink href="/timeline?recording=1&case=syria" className="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/15">
+              <Clock className="h-3.5 w-3.5" /> Open timeline
+            </PraxisLink>
+            <PraxisLink href="/conflict-graph?recording=1&case=syria" className="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/15">
+              <GitBranch className="h-3.5 w-3.5" /> Show graph
+            </PraxisLink>
+            <PraxisLink href="/stakeholder-map?recording=1&case=syria" className="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/15">
+              <Users className="h-3.5 w-3.5" /> Stakeholders
+            </PraxisLink>
+            <PraxisLink href="/humanitarian?recording=1&case=syria" className="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/15">
+              <HeartHandshake className="h-3.5 w-3.5" /> Humanitarian
+            </PraxisLink>
+            <PraxisLink href="/advisory?recording=1&case=syria" className="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/15">
+              <MessagesSquare className="h-3.5 w-3.5" /> Advisory
+            </PraxisLink>
+            <PraxisLink href="/briefing?recording=1&case=syria" className="inline-flex items-center gap-1.5 rounded-md bg-gold-500/90 px-3 py-1.5 text-xs font-semibold text-navy-950 hover:bg-gold-400">
+              <Sparkles className="h-3.5 w-3.5" /> Brief leadership
+            </PraxisLink>
+          </div>
+        </div>
+        <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+          <div className="flex items-center gap-2 text-gold-300">
+            <Activity className="h-4 w-4" />
+            <p className="text-[10px] font-semibold uppercase tracking-wider">Decision triggers</p>
+          </div>
+          <ul className="mt-3 space-y-2">
+            <li className="flex gap-2 text-[12px] text-blue-50/85">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-300" />
+              Regional escalation pressure on recovery — Israeli operations + airspace constraints.
+            </li>
+            <li className="flex gap-2 text-[12px] text-blue-50/85">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300" />
+              SDF integration plan still unpublished 90+ days after the 30 Jan agreement.
+            </li>
+            <li className="flex gap-2 text-[12px] text-blue-50/85">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300" />
+              Coastal accountability commitment unfulfilled — minority protection at risk.
+            </li>
+            <li className="flex gap-2 text-[12px] text-blue-50/85">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-300" />
+              Cholera outbreak in northeast clusters — WASH cluster funded at 22%.
+            </li>
+          </ul>
+          <div className="mt-4 border-t border-white/10 pt-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-300">Recent timeline</p>
+            <ul className="mt-2 space-y-1.5">
+              {upcomingEvents.map((e) => (
+                <li key={e.id} className="flex items-start gap-2 text-[11px] text-blue-50/85">
+                  <span className="mt-0.5 inline-flex w-16 shrink-0 font-mono text-blue-200/70">{e.date.slice(0, 10)}</span>
+                  <span className="flex-1">{e.title}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SyriaKpi({ label, value, sub, tone }: { label: string; value: string; sub: string; tone: 'rose' | 'amber' | 'emerald' | 'indigo' }) {
+  const toneClass: Record<string, string> = {
+    rose: 'border-rose-300/30 bg-rose-500/10 text-rose-200',
+    amber: 'border-amber-300/30 bg-amber-500/10 text-amber-200',
+    emerald: 'border-emerald-300/30 bg-emerald-500/10 text-emerald-200',
+    indigo: 'border-indigo-300/30 bg-indigo-500/10 text-indigo-200',
+  };
+  return (
+    <div className={`rounded-lg border px-3 py-2.5 ${toneClass[tone]}`}>
+      <p className="text-[10px] font-semibold uppercase tracking-wider opacity-80">{label}</p>
+      <p className="mt-1 text-2xl font-bold text-white">{value}</p>
+      <p className="text-[10px] opacity-80">{sub}</p>
+    </div>
   );
 }
 

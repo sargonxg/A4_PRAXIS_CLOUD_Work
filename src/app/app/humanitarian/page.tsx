@@ -3,6 +3,9 @@
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { ToolInfoPanel } from '@/components/praxis/tool-info-panel';
+import { useSearchParams } from 'next/navigation';
+import { isSyriaWorkspaceCase, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
+import { SYRIA_HUMANITARIAN_DEMO } from '@/lib/constants/syria-tool-demos';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Heart, Users, Utensils, DollarSign, AlertTriangle,
@@ -450,6 +453,9 @@ function AiHumanitarianBrief({ situation }: { situation: Situation }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function HumanitarianPage() {
   const { showGuard, situation, isDemo } = useSituationGuard();
+  const searchParams = useSearchParams();
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), isDemo);
+  const effectiveSituation = situation ?? (isDemo && isSyriaCase ? SYRIA_DEMO_SITUATION : null);
   const [data, setData] = useState<HumanitarianData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -493,25 +499,37 @@ export default function HumanitarianPage() {
     }
   }, [situation]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    if (situation) fetchData();
+    else setLoading(false);
+  }, [fetchData, situation]);
 
-  if (showGuard || !situation) return <NoSituationState />;
+  if (!effectiveSituation) return <NoSituationState />;
+  if (showGuard && !isDemo) return <NoSituationState />;
 
-  // Resolve data: prefer live API. Demo mode (cookie-auth /demo/* routes) renders
-  // the Nordalia fallback constants; live mode renders nulls so the UI shows an
-  // honest empty/degraded state instead of inventing figures (Brick #29 P0).
+  // Resolve data. Live API first; Syria demo uses post-Assad seeded figures;
+  // generic demo falls back to Nordalia constants. Live mode without data
+  // renders an honest degraded state instead of inventing figures.
+  const demoFoodPhases   = isSyriaCase ? SYRIA_HUMANITARIAN_DEMO.foodSecurity : DEMO_FOOD_PHASES;
+  const demoDisplacement = isSyriaCase ? SYRIA_HUMANITARIAN_DEMO.displacement : DEMO_DISPLACEMENT;
+  const demoFunding      = isSyriaCase ? SYRIA_HUMANITARIAN_DEMO.funding      : DEMO_FUNDING;
+
   const displayFoodPhases =
     data?.foodSecurity?.phases && data.foodSecurity.phases.length > 0
       ? data.foodSecurity.phases
-      : isDemo ? DEMO_FOOD_PHASES : null;
+      : isDemo ? demoFoodPhases : null;
 
   const displayDisplacement = data?.displacement
-    ? { ...DEMO_DISPLACEMENT, idps: data.displacement.idps, refugees: data.displacement.refugees }
-    : isDemo ? DEMO_DISPLACEMENT : null;
+    ? { ...demoDisplacement, idps: data.displacement.idps, refugees: data.displacement.refugees }
+    : isDemo ? demoDisplacement : null;
 
   const displayFunding = data?.funding
-    ? { ...DEMO_FUNDING, required: data.funding.required, funded: data.funding.funded, percentage: data.funding.percentage }
-    : isDemo ? DEMO_FUNDING : null;
+    ? { ...demoFunding, required: data.funding.required, funded: data.funding.funded, percentage: data.funding.percentage }
+    : isDemo ? demoFunding : null;
+
+  const displayReports = data?.reports?.length ? data.reports
+    : isSyriaCase ? SYRIA_HUMANITARIAN_DEMO.reports
+    : [];
 
   const liveDataMissing = !isDemo && !data?.displacement && !data?.funding && !data?.foodSecurity?.phases?.length;
 
@@ -530,7 +548,7 @@ export default function HumanitarianPage() {
           <div>
             <h1 className="text-2xl font-semibold text-navy-900">Humanitarian Dashboard</h1>
             <p className="text-sm text-navy-500">
-              Live humanitarian data for {situation.region || situation.name}
+              Live humanitarian data for {effectiveSituation.region || effectiveSituation.name}
             </p>
             <div className="mt-2">
               <DegradedDataChip
@@ -642,15 +660,127 @@ export default function HumanitarianPage() {
             />
           )}
 
-          {/* AI Humanitarian Brief */}
-          <AiHumanitarianBrief situation={situation} />
+          {/* Syria PRAXIS read */}
+          {isSyriaCase && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-5">
+              <div className="flex items-center gap-2 text-emerald-800">
+                <Sparkles className="h-4 w-4" />
+                <h2 className="text-sm font-semibold uppercase tracking-wider">PRAXIS read</h2>
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-emerald-900">{SYRIA_HUMANITARIAN_DEMO.briefingNote}</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                <div className="rounded-md bg-white px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase text-emerald-700">People in Need</p>
+                  <p className="text-base font-bold text-emerald-900">{formatNumber(SYRIA_HUMANITARIAN_DEMO.peopleInNeed)}</p>
+                </div>
+                <div className="rounded-md bg-white px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase text-emerald-700">Population Affected</p>
+                  <p className="text-base font-bold text-emerald-900">{formatNumber(SYRIA_HUMANITARIAN_DEMO.populationAffected)}</p>
+                </div>
+                <div className="rounded-md bg-white px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase text-emerald-700">Returnees (since Dec 2024)</p>
+                  <p className="text-base font-bold text-emerald-900">{formatNumber(SYRIA_HUMANITARIAN_DEMO.displacement.returnees)}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
-          {/* ReliefWeb reports */}
-          {data?.reports && data.reports.length > 0 && (
+          {/* Syria hotspots */}
+          {isSyriaCase && (
+            <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+              <h2 className="mb-3 text-sm font-semibold text-navy-700">Geographic hotspots</h2>
+              <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                {SYRIA_HUMANITARIAN_DEMO.hotspots.map((h) => (
+                  <div key={h.name} className="rounded-md border border-navy-100 bg-navy-50/40 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-semibold text-navy-900">{h.name}</p>
+                      <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                        h.risk === 'Critical' ? 'bg-red-100 text-red-700' :
+                        h.risk === 'High' ? 'bg-amber-100 text-amber-700' :
+                        h.risk === 'Elevated' ? 'bg-orange-100 text-orange-700' :
+                        'bg-emerald-100 text-emerald-700'
+                      )}>{h.risk}</span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-navy-500">PIN {formatNumber(h.pin)} · IDPs {formatNumber(h.idp)}</p>
+                    <ul className="mt-2 space-y-0.5">
+                      {h.drivers.map((d) => (
+                        <li key={d} className="text-[11px] text-navy-600">• {d}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Cluster table */}
+          {isSyriaCase && (
+            <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+              <h2 className="mb-3 text-sm font-semibold text-navy-700">IASC cluster status</h2>
+              <div className="overflow-hidden rounded-md border border-navy-100">
+                <table className="w-full text-[12px]">
+                  <thead className="bg-navy-50 text-navy-500">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-semibold uppercase tracking-wider">Cluster</th>
+                      <th className="px-3 py-2 text-left font-semibold uppercase tracking-wider">Lead</th>
+                      <th className="px-3 py-2 text-right font-semibold uppercase tracking-wider">Funded</th>
+                      <th className="px-3 py-2 text-left font-semibold uppercase tracking-wider">Top gap</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {SYRIA_HUMANITARIAN_DEMO.clusters.map((c) => (
+                      <tr key={c.cluster} className="border-t border-navy-100">
+                        <td className="px-3 py-2 font-medium text-navy-900">{c.cluster}</td>
+                        <td className="px-3 py-2 text-navy-600">{c.lead}</td>
+                        <td className="px-3 py-2 text-right">
+                          <span className={cn('rounded-md px-2 py-0.5 text-[11px] font-semibold',
+                            c.funded >= 35 ? 'bg-emerald-100 text-emerald-700' :
+                            c.funded >= 20 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                          )}>{c.funded}%</span>
+                        </td>
+                        <td className="px-3 py-2 text-navy-600">{c.gap}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Responder partners */}
+          {isSyriaCase && (
+            <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
+              <h2 className="mb-3 text-sm font-semibold text-navy-700">Active humanitarian partners</h2>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {SYRIA_HUMANITARIAN_DEMO.partners.map((p) => (
+                  <a
+                    key={p.name}
+                    href={p.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-md border border-navy-100 bg-navy-50/40 p-3 transition hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-semibold text-navy-900">{p.name}</p>
+                      <ExternalLink className="h-3 w-3 shrink-0 text-navy-400" />
+                    </div>
+                    <p className="text-[10px] uppercase tracking-wider text-diplomatic-blue">{p.type}</p>
+                    <p className="mt-1 text-[11px] leading-snug text-navy-600">{p.role}</p>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* AI Humanitarian Brief */}
+          <AiHumanitarianBrief situation={effectiveSituation} />
+
+          {/* Reports */}
+          {displayReports && displayReports.length > 0 && (
             <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-5">
               <h2 className="mb-3 text-sm font-semibold text-navy-700">Latest Humanitarian Reports</h2>
               <div className="space-y-2">
-                {data.reports.map((report) => (
+                {displayReports.map((report) => (
                   <a
                     key={report.id}
                     href={report.url}
@@ -670,7 +800,7 @@ export default function HumanitarianPage() {
           )}
 
           {/* No data fallback */}
-          {!displayDisplacement && !displayFoodPhases && !displayFunding && (!data?.reports || data.reports.length === 0) && (
+          {!displayDisplacement && !displayFoodPhases && !displayFunding && (!displayReports || displayReports.length === 0) && (
             <div className="rounded-xl border border-dashed border-navy-200 p-12 text-center">
               <Heart className="mx-auto h-8 w-8 text-navy-300" />
               <p className="mt-3 text-sm font-medium text-navy-600">No humanitarian data available for this region</p>

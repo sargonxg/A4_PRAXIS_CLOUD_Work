@@ -48,6 +48,14 @@ function getContextGreeting(pathname: string, situationName?: string): string {
     'mediation-design': `You're designing a mediation process. Want help with process architecture, CBM sequencing, or spoiler management strategy?`,
     'geospatial-monitor': `I see you're on the Geospatial Monitor. I can interpret hotspot patterns, explain event clusters, or correlate spatial data with political dynamics.`,
     'reports': `In the Report Studio. I can draft sections, check diplomatic language, or help structure the full document.`,
+    'timeline': `You're on the Timeline. I can compress events into a decision narrative, flag escalation triggers, or trace a specific date.`,
+    'humanitarian': `Humanitarian dashboard. I can pull a PIN/IDP read, surface protection risks, or compare cluster funding gaps.`,
+    'commitments': `You're tracking commitments. I can score compliance, flag verification gaps, or sequence the next decision asks.`,
+    'sources': `Sources Library. I can audit reliability, suggest local NGO and humanitarian sources, or flag gap categories.`,
+    'briefing': `Briefing Studio. I can draft a BLUF, source-grounded risk board, decision asks, and visible gaps.`,
+    'advisory': `Boardroom Advisory. I can convene mediator, humanitarian, security, legal, and red-team voices and preserve disagreement.`,
+    'graphops': `GraphOps. I can summarise graph health, propose repairs, or audit confidence on key edges.`,
+    'context-builder': `Context Builder. I can identify missing context, propose a gap-fill sequence, and route the right workflow path.`,
     'assistant': ``,
   };
 
@@ -124,6 +132,54 @@ function getQuickActions(pathname: string, situationName?: string): QuickAction[
       { label: 'Key findings', prompt: `What should be the key findings in this report?` },
       { label: 'Language check', prompt: `What diplomatic language considerations apply to this report?` },
       { label: 'Structure', prompt: `Suggest a structure for a UN DPPA-format report on ${name}` },
+    ],
+    'timeline': [
+      { label: 'Last 30 days', prompt: `What changed in ${name} in the last 30 days?` },
+      { label: 'Trigger events', prompt: `Which events in the timeline are decision triggers I should brief?` },
+      { label: 'Compress story', prompt: `Compress the timeline of ${name} into a five-line decision narrative.` },
+      { label: 'Glasl shifts', prompt: `Which timeline events shifted Glasl escalation stage and why?` },
+    ],
+    'humanitarian': [
+      { label: 'PIN summary', prompt: `Summarise the People-in-Need picture for ${name}, by hotspot.` },
+      { label: 'Funding gap', prompt: `Where are the largest cluster funding gaps and what is the operational impact?` },
+      { label: 'Protection risks', prompt: `What protection risks should appear in the next humanitarian brief?` },
+      { label: 'Returns view', prompt: `Give a returns and reintegration read with HLP and civil-documentation cues.` },
+    ],
+    'commitments': [
+      { label: 'Compliance check', prompt: `Which commitments are slipping and what is the evidence basis?` },
+      { label: 'Damascus-SDF deal', prompt: `Walk me through the 30 January Damascus-SDF agreement compliance scorecard.` },
+      { label: 'Critical gaps', prompt: `What three commitments matter most for the next principal decision?` },
+      { label: 'Verification ask', prompt: `What independent verification would change confidence on these commitments?` },
+    ],
+    'sources': [
+      { label: 'Reliability map', prompt: `Show me the reliability landscape for current sources on ${name}.` },
+      { label: 'Add NGO sources', prompt: `Suggest NGO and humanitarian sources I should add for ${name}.` },
+      { label: 'Local angle', prompt: `Which Syrian local-language outlets give the best ground truth for ${name}?` },
+      { label: 'Source gaps', prompt: `Where do my sources have gaps that block confidence?` },
+    ],
+    'briefing': [
+      { label: 'BLUF first', prompt: `Draft a BLUF + risk board for the briefing on ${name}.` },
+      { label: 'Decision asks', prompt: `Suggest decision asks the briefing should put to leadership.` },
+      { label: 'Source basis', prompt: `Audit the briefing for source basis, confidence, and visible gaps.` },
+      { label: 'Speaker notes', prompt: `Write speaker notes that preserve assessment vs assumption discipline.` },
+    ],
+    'advisory': [
+      { label: 'Boardroom call', prompt: `Run a boardroom call: mediator, humanitarian, security, legal, red-team.` },
+      { label: 'Disagreements', prompt: `Where do my advisors disagree on ${name} and why?` },
+      { label: 'Red-team check', prompt: `Red-team the dominant assessment for ${name}.` },
+      { label: 'Lina Khatib lens', prompt: `What would Lina Khatib emphasise on the current ${name} posture?` },
+    ],
+    'graphops': [
+      { label: 'Graph health', prompt: `Summarise the graph health: provenance, temporal coverage, orphan nodes.` },
+      { label: 'Repair queue', prompt: `What graph repair actions should I run before the next briefing?` },
+      { label: 'Pending proposals', prompt: `Walk me through the pending graph proposals and their evidence.` },
+      { label: 'Confidence audit', prompt: `Audit confidence levels on edges connected to the Damascus-SDF agreement.` },
+    ],
+    'context-builder': [
+      { label: 'Missing context', prompt: `What context is missing before I run expensive AI on ${name}?` },
+      { label: 'Mission routing', prompt: `Which PRAXIS workflow path matches this situation?` },
+      { label: 'Domain check', prompt: `Confirm the domain classification and explain it.` },
+      { label: 'Gap-fill plan', prompt: `Propose a low-cost gap-fill sequence to bring context to green.` },
     ],
   };
 

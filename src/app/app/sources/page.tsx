@@ -3,7 +3,10 @@
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { NoSituationState } from '@/components/praxis/no-situation-state';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { isSyriaWorkspaceCase } from '@/lib/constants/syria-demo-case';
+import { SYRIA_SOURCES_LIBRARY } from '@/lib/constants/syria-tool-demos';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Library, Plus, Sparkles, Globe, Star, Trash2, ExternalLink, Languages, Radio,
   MessageSquare, Loader2, Search, ChevronDown, ChevronUp, Edit3, Save,
@@ -580,8 +583,33 @@ function AddCustomDialog({
 
 export default function SourcesLibraryPage() {
   const guard = useSituationGuard();
+  const searchParams = useSearchParams();
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), guard.isDemo);
 
-  const [sources, setSources] = useState<Source[]>([]);
+  const seededSyriaSources = useMemo<Source[]>(() => {
+    if (!isSyriaCase) return [];
+    return SYRIA_SOURCES_LIBRARY.map((s) => ({
+      id: s.id,
+      name: s.name,
+      url: s.url,
+      type: s.type as SourceType,
+      platform: 'web',
+      language: s.language,
+      region: s.region,
+      reliability: s.reliability / 100,
+      orientation: 0,
+      description: `${s.category} — ${s.region}.`,
+      relevanceToSituation: 'Public-source coverage relevant to Syria post-Assad transition tracking.',
+      coverageStrengths: [s.category],
+      knownBiases: [],
+      updateFrequency: 'continuous',
+      audienceProfile: 'analyst',
+      notes: '',
+      priority: s.priority as Priority,
+    }));
+  }, [isSyriaCase]);
+
+  const [sources, setSources] = useState<Source[]>(seededSyriaSources);
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -604,7 +632,12 @@ export default function SourcesLibraryPage() {
   const situationId = guard.situation?.id;
 
   const loadSources = useCallback(async () => {
-    if (!situationId) { setIsLoading(false); return; }
+    if (!situationId) {
+      // Demo (no situation id): keep the seeded Syria sources if available.
+      if (seededSyriaSources.length > 0) setSources(seededSyriaSources);
+      setIsLoading(false);
+      return;
+    }
     try {
       const res = await fetch(`/api/sources?situationId=${situationId}`);
       if (res.ok) {
@@ -627,7 +660,7 @@ export default function SourcesLibraryPage() {
       }
     } catch { /* silent */ }
     setIsLoading(false);
-  }, [situationId]);
+  }, [situationId, seededSyriaSources]);
 
   useEffect(() => { loadSources(); }, [loadSources]);
 
