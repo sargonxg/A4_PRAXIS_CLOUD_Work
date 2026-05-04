@@ -85,16 +85,18 @@ export function SyriaChapterSourceReceipts() {
           </div>
         </div>
 
-        <SyriaLayerOfTruth />
-        <SyriaDailyMediaWorkflow />
+        <div id="syria-layer-of-truth" className="scroll-mt-24"><SyriaLayerOfTruth /></div>
+        <div id="syria-daily-media" className="scroll-mt-24"><SyriaDailyMediaWorkflow /></div>
 
-        <SyriaAgentConsole
-          persona={SYRIA_AGENT_PRESETS['source-scout']!.persona}
-          toolId={SYRIA_AGENT_PRESETS['source-scout']!.toolId}
-          question={SYRIA_AGENT_PRESETS['source-scout']!.question}
-          trace={SYRIA_AGENT_PRESETS['source-scout']!.trace}
-          answer={SYRIA_AGENT_PRESETS['source-scout']!.answer}
-        />
+        <div id="syria-source-scout" className="scroll-mt-24">
+          <SyriaAgentConsole
+            persona={SYRIA_AGENT_PRESETS['source-scout']!.persona}
+            toolId={SYRIA_AGENT_PRESETS['source-scout']!.toolId}
+            question={SYRIA_AGENT_PRESETS['source-scout']!.question}
+            trace={SYRIA_AGENT_PRESETS['source-scout']!.trace}
+            answer={SYRIA_AGENT_PRESETS['source-scout']!.answer}
+          />
+        </div>
 
         <div className="rounded-lg border border-navy-200 bg-white p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">

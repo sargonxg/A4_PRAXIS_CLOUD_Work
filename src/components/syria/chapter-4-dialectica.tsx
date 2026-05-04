@@ -142,15 +142,17 @@ export function SyriaChapterDialectica() {
         </aside>
       </div>
 
-      <SyriaAgentConsole
-        persona={SYRIA_AGENT_PRESETS['red-team-review']!.persona}
-        toolId={SYRIA_AGENT_PRESETS['red-team-review']!.toolId}
-        question={SYRIA_AGENT_PRESETS['red-team-review']!.question}
-        trace={SYRIA_AGENT_PRESETS['red-team-review']!.trace}
-        answer={SYRIA_AGENT_PRESETS['red-team-review']!.answer}
-      />
+      <div id="syria-red-team" className="scroll-mt-24">
+        <SyriaAgentConsole
+          persona={SYRIA_AGENT_PRESETS['red-team-review']!.persona}
+          toolId={SYRIA_AGENT_PRESETS['red-team-review']!.toolId}
+          question={SYRIA_AGENT_PRESETS['red-team-review']!.question}
+          trace={SYRIA_AGENT_PRESETS['red-team-review']!.trace}
+          answer={SYRIA_AGENT_PRESETS['red-team-review']!.answer}
+        />
+      </div>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4">
+      <section id="syria-comparator-strip" className="scroll-mt-24 rounded-lg border border-slate-200 bg-white p-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-diplomatic-blue">
@@ -207,8 +209,8 @@ export function SyriaChapterDialectica() {
         </div>
       </section>
 
-      <SyriaAdvisoryDebate />
-      <SyriaSanctionsBoard />
+      <div id="syria-advisory-debate" className="scroll-mt-24"><SyriaAdvisoryDebate /></div>
+      <div id="syria-sanctions" className="scroll-mt-24"><SyriaSanctionsBoard /></div>
     </div>
   );
 }

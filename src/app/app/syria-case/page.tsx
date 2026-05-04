@@ -2,24 +2,22 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowRight, Clipboard, Clock3, FileText, Keyboard, Layers3, ShieldCheck } from 'lucide-react';
+import { Gauge, Keyboard, MapPin, ShieldCheck, Sparkles } from 'lucide-react';
 import { SyriaChapterSituationFrame } from '@/components/syria/chapter-1-situation-frame';
 import { SyriaChapterSourceReceipts } from '@/components/syria/chapter-2-source-receipts';
 import { SyriaChapterConflictGraph } from '@/components/syria/chapter-3-conflict-graph';
 import { SyriaChapterDialectica } from '@/components/syria/chapter-4-dialectica';
 import { SyriaChapterDecisionProduct } from '@/components/syria/chapter-5-decision-product';
 import { ChapterFrame } from '@/components/syria/chapter-frame';
+import { SyriaCategoryNav, SYRIA_CATEGORIES } from '@/components/syria/category-nav';
 import { SyriaScrollPilot } from '@/components/syria/scroll-pilot';
 import { SyriaExplainerPopups } from '@/components/syria/explainer-popups';
-import { PraxisLink } from '@/components/shared/praxis-link';
 import { GuidedTour } from '@/components/tour/guided-tour';
 import { useAuth } from '@/lib/auth/auth-context';
-import { SYRIA_RECORDING_AUDIO_SCRIPT } from '@/lib/constants/syria-demo-case';
-import { SYRIA_DEMO_ANALYST_PROFILE, SYRIA_DEMO_ENTRY_PATH } from '@/lib/constants/syria-demo-workspace';
+import { SYRIA_DEMO_ANALYST_PROFILE } from '@/lib/constants/syria-demo-workspace';
 import {
   SYRIA_CHAPTER_FLOW,
   isSyriaChapterId,
-  type SyriaChapterDescriptor,
   type SyriaChapterId,
 } from '@/lib/syria/chapter-flow';
 import { SYRIA_TOUR_FLOW } from '@/lib/tour/syria-flow';
@@ -37,8 +35,7 @@ export default function SyriaCasePage() {
   const { analystProfile, user } = useAuth();
   const profile = analystProfile ?? SYRIA_DEMO_ANALYST_PROFILE;
   const [activeChapter, setActiveChapter] = useState<SyriaChapterId>(() => getHashChapter() ?? 'situation-frame');
-  const [copied, setCopied] = useState<'script' | 'link' | null>(null);
-  const productionLink = `https://praxis.tacitus.me${SYRIA_DEMO_ENTRY_PATH}`;
+  const [openSet, setOpenSet] = useState<Set<SyriaChapterId>>(() => new Set(SYRIA_CHAPTER_FLOW.map((c) => c.id)));
 
   const profileLine = useMemo(() => {
     const role = profile.identity.role.replaceAll('_', ' ');
@@ -48,9 +45,27 @@ export default function SyriaCasePage() {
 
   const openChapter = useCallback((id: SyriaChapterId) => {
     setActiveChapter(id);
+    setOpenSet((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
     window.setTimeout(() => {
       document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 40);
+  }, []);
+
+  const toggleChapter = useCallback((id: SyriaChapterId) => {
+    setOpenSet((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+    setActiveChapter(id);
   }, []);
 
   const openTourChapter = useCallback((id: string) => {
@@ -80,112 +95,91 @@ export default function SyriaCasePage() {
     };
   }, [openChapter]);
 
-  async function copyToClipboard(kind: 'script' | 'link') {
-    const text = kind === 'script' ? SYRIA_RECORDING_AUDIO_SCRIPT : productionLink;
-    await navigator.clipboard?.writeText(text);
-    setCopied(kind);
-    window.setTimeout(() => setCopied(null), 1600);
-  }
-
   return (
     <main className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+      {/* HERO — tight, three lines, three stats */}
+      <header className="border-b border-slate-200 bg-gradient-to-b from-white to-slate-50">
+        <div className="mx-auto max-w-[1400px] px-4 py-5 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+              Live walkthrough
+            </span>
             <span className="rounded-full border border-navy-200 bg-navy-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-navy-700">
               Public-source case file
             </span>
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
-              Login workspace
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-800">
+              <MapPin className="mr-1 inline-block h-3 w-3 align-text-bottom" />
+              UN · New York perspective
             </span>
           </div>
-          <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-end">
+          <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-navy-950 sm:text-4xl">
-                Syria Transition · Northeast Integration & Regional Spillover · Public-source case file
+              <h1 className="text-2xl font-semibold tracking-tight text-navy-950 sm:text-3xl lg:text-[34px]">
+                Syria Transition <span className="text-slate-500">·</span> the analyst&apos;s walkthrough
               </h1>
-              <p className="mt-3 max-w-5xl text-sm leading-6 text-slate-650">{profileLine}</p>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-650">{profileLine}</p>
+              <p className="mt-1 text-[12px] leading-5 text-slate-500">
+                <Sparkles className="mr-1 inline-block h-3 w-3 align-text-bottom text-gold-500" />
+                Click any item in the left rail to jump · or press Play on the bottom-right pilot for a guided 2-minute scroll.
+              </p>
             </div>
-            <div className="grid grid-cols-3 gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
-              <HeaderMetric label="Risk" value="78" />
-              <HeaderMetric label="Chapters" value="5" />
-              <HeaderMetric label="Time" value="27m" />
+            <div className="grid grid-cols-3 gap-2">
+              <HeroStat label="Risk" value="78" tone="rose" />
+              <HeroStat label="Sources" value="72" tone="emerald" />
+              <HeroStat label="Time" value="2 min" tone="navy" />
             </div>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:px-8">
-        <div className="space-y-4">
-          <section className="rounded-lg border border-navy-200 bg-navy-950 p-4 text-white">
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center">
-              <div>
-                <div className="flex items-center gap-2 text-gold-200">
-                  <Layers3 className="h-4 w-4" />
-                  <p className="text-[10px] font-semibold uppercase tracking-wider">Analyst operating loop</p>
-                </div>
-                <p className="mt-3 text-sm leading-6 text-blue-100/80">
-                  This page is the real app workspace for the Syria case. It starts with the situation frame, proves the
-                  sources, opens the conflict graph, runs DIALECTICA recipes, and ends in editable decision products.
-                </p>
+      {/* MAIN — left rail + content */}
+      <div className="mx-auto grid max-w-[1400px] gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:px-8">
+        <SyriaCategoryNav />
+
+        <div className="space-y-6">
+          {SYRIA_CHAPTER_FLOW.map((chapter, idx) => {
+            const isOpen = openSet.has(chapter.id);
+            const cat = SYRIA_CATEGORIES.find((c) => c.items.some((i) => i.id === chapter.id));
+            return (
+              <div key={chapter.id} className="space-y-2">
+                {cat ? (
+                  <div className="flex items-center gap-2 px-1">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-navy-950 font-mono text-[11px] font-semibold text-white">
+                      {cat.number}
+                    </span>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-700">
+                      {cat.title}
+                    </p>
+                    <span className="text-[11px] text-slate-500">· {cat.tagline}</span>
+                  </div>
+                ) : null}
+                <ChapterFrame
+                  chapter={chapter}
+                  active={isOpen}
+                  onOpen={toggleChapter}
+                >
+                  {CHAPTER_COMPONENTS[chapter.id]}
+                </ChapterFrame>
               </div>
-              <div className="rounded-lg border border-white/10 bg-white/[0.06] p-3">
-                <div className="flex items-center gap-2">
-                  <Keyboard className="h-4 w-4 text-gold-200" />
-                  <p className="text-xs font-semibold text-white">Keyboard navigation</p>
-                </div>
-                <p className="mt-2 text-xs leading-5 text-blue-100/70">
-                  Press 1-5 to jump between chapters. On mobile, use the sticky progress bar.
-                </p>
-              </div>
+            );
+          })}
+
+          {/* Closing line */}
+          <section className="rounded-lg border border-navy-200 bg-gradient-to-br from-navy-950 to-slate-900 p-5 text-white">
+            <div className="flex items-center gap-2 text-gold-200">
+              <ShieldCheck className="h-4 w-4" />
+              <p className="text-[10px] font-semibold uppercase tracking-wider">DIALECTICA · the standalone product</p>
+            </div>
+            <p className="mt-2 text-base leading-6 text-blue-100/85">
+              The conflict graph and DIALECTICA reasoning are the backbone every other PRAXIS module reuses — mediation,
+              scenarios, negotiation, analysis. <span className="font-semibold text-white">Ontologies for policy, finally portable.</span>
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-blue-100/55">
+              <Keyboard className="h-3.5 w-3.5 text-gold-200" />
+              <span>Tip · press 1-5 to jump chapters · click the bottom-right pilot to play the 2-minute walkthrough</span>
             </div>
           </section>
-
-          {SYRIA_CHAPTER_FLOW.map((chapter) => (
-            <ChapterFrame
-              key={chapter.id}
-              chapter={chapter}
-              active={activeChapter === chapter.id}
-              onOpen={openChapter}
-            >
-              {CHAPTER_COMPONENTS[chapter.id]}
-              <ChapterNext chapter={chapter} onOpen={openChapter} />
-            </ChapterFrame>
-          ))}
-
-          <PressKitFooter copied={copied} onCopy={copyToClipboard} />
         </div>
-
-        <aside className="hidden lg:block">
-          <div className="sticky top-20 rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Chapter index</p>
-                <p className="mt-1 text-sm font-semibold text-navy-950">Syria case flow</p>
-              </div>
-              <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">27 min</span>
-            </div>
-            <nav className="mt-4 space-y-2" aria-label="Syria chapter index">
-              {SYRIA_CHAPTER_FLOW.map((chapter) => (
-                <ChapterIndexButton
-                  key={chapter.id}
-                  chapter={chapter}
-                  active={activeChapter === chapter.id}
-                  onOpen={openChapter}
-                />
-              ))}
-            </nav>
-            <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-              <div className="flex items-center gap-2 text-emerald-800">
-                <ShieldCheck className="h-4 w-4" />
-                <p className="text-[10px] font-semibold uppercase tracking-wider">Working app</p>
-              </div>
-              <p className="mt-2 text-xs leading-5 text-emerald-950">
-                The case is seeded so every logged-in user can inspect the same Syria workspace and then add private cases.
-              </p>
-            </div>
-          </div>
-        </aside>
       </div>
 
       <MobileChapterBar activeChapter={activeChapter} onOpen={openChapter} />
@@ -202,129 +196,23 @@ function getHashChapter(): SyriaChapterId | null {
   return isSyriaChapterId(id) ? id : null;
 }
 
-function HeaderMetric({ label, value }: { label: string; value: string }) {
+const HERO_TONES = {
+  rose:    { wrap: 'border-rose-200 bg-rose-50',       value: 'text-rose-700',    label: 'text-rose-600',    icon: Gauge },
+  emerald: { wrap: 'border-emerald-200 bg-emerald-50', value: 'text-emerald-700', label: 'text-emerald-600', icon: ShieldCheck },
+  navy:    { wrap: 'border-slate-200 bg-white',         value: 'text-navy-950',    label: 'text-slate-500',   icon: Sparkles },
+} as const;
+
+function HeroStat({ label, value, tone }: { label: string; value: string; tone: keyof typeof HERO_TONES }) {
+  const conf = HERO_TONES[tone];
+  const Icon = conf.icon;
   return (
-    <div className="rounded-md bg-white p-3 text-center">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{label}</p>
-      <p className="mt-1 font-mono text-lg font-semibold text-navy-950">{value}</p>
-    </div>
-  );
-}
-
-function ChapterIndexButton({
-  chapter,
-  active,
-  onOpen,
-}: {
-  chapter: SyriaChapterDescriptor;
-  active: boolean;
-  onOpen: (id: SyriaChapterId) => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => onOpen(chapter.id)}
-      className={cn(
-        'grid w-full grid-cols-[28px_minmax(0,1fr)] gap-3 rounded-md border p-3 text-left transition',
-        active ? 'border-gold-300 bg-gold-50' : 'border-slate-200 bg-white hover:bg-slate-50',
-      )}
-    >
-      <span
-        className={cn(
-          'flex h-7 w-7 items-center justify-center rounded font-mono text-xs font-semibold',
-          active ? 'bg-gold-500 text-navy-950' : 'bg-slate-100 text-slate-600',
-        )}
-      >
-        {chapter.number}
-      </span>
-      <span className="min-w-0">
-        <span className="block truncate text-sm font-semibold text-navy-950">{chapter.navLabel}</span>
-        <span className="mt-1 block text-[11px] text-slate-500">{chapter.metric}</span>
-      </span>
-    </button>
-  );
-}
-
-function ChapterNext({
-  chapter,
-  onOpen,
-}: {
-  chapter: SyriaChapterDescriptor;
-  onOpen: (id: SyriaChapterId) => void;
-}) {
-  const next = SYRIA_CHAPTER_FLOW.find((item) => item.number === chapter.number + 1);
-
-  if (!next) {
-    return (
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-        <div>
-          <p className="text-xs font-semibold text-navy-950">Ready for product drafting</p>
-          <p className="mt-1 text-xs text-slate-600">Open the briefing or memo surfaces with the same Syria context attached.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <PraxisLink href="/briefing?recording=1&case=syria" className="rounded-md bg-navy-950 px-3 py-2 text-xs font-semibold text-white">
-            Briefing
-          </PraxisLink>
-          <PraxisLink href="/policy-memo?recording=1&case=syria" className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-navy-800">
-            Policy memo
-          </PraxisLink>
-        </div>
+    <div className={cn('rounded-lg border p-3 text-center', conf.wrap)}>
+      <div className="flex items-center justify-center gap-1">
+        <Icon className={cn('h-3 w-3', conf.value)} />
+        <p className={cn('text-[9px] font-semibold uppercase tracking-wider', conf.label)}>{label}</p>
       </div>
-    );
-  }
-
-  return (
-    <div className="mt-5 flex justify-end">
-      <button
-        type="button"
-        onClick={() => onOpen(next.id)}
-        className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-navy-800 transition hover:bg-slate-50"
-      >
-        Continue to {next.navLabel}
-        <ArrowRight className="h-4 w-4" />
-      </button>
+      <p className={cn('mt-1 font-mono text-2xl font-semibold', conf.value)}>{value}</p>
     </div>
-  );
-}
-
-function PressKitFooter({
-  copied,
-  onCopy,
-}: {
-  copied: 'script' | 'link' | null;
-  onCopy: (kind: 'script' | 'link') => void;
-}) {
-  return (
-    <footer className="rounded-lg border border-slate-200 bg-white p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-diplomatic-blue" />
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Press kit</p>
-            <p className="text-sm font-semibold text-navy-950">Recording helper, kept outside the analyst flow</p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => onCopy('script')}
-            className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-navy-800 transition hover:bg-white"
-          >
-            <Clipboard className="h-4 w-4" />
-            {copied === 'script' ? 'Script copied' : 'Copy narration'}
-          </button>
-          <button
-            type="button"
-            onClick={() => onCopy('link')}
-            className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-navy-800 transition hover:bg-white"
-          >
-            <Clipboard className="h-4 w-4" />
-            {copied === 'link' ? 'Link copied' : 'Copy app link'}
-          </button>
-        </div>
-      </div>
-      <p className="mt-3 text-xs leading-5 text-slate-600">{SYRIA_RECORDING_AUDIO_SCRIPT}</p>
-    </footer>
   );
 }
 
@@ -338,10 +226,7 @@ function MobileChapterBar({
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-3 py-2 shadow-lg backdrop-blur lg:hidden">
       <div className="mx-auto flex max-w-md items-center justify-between gap-2">
-        <div className="flex items-center gap-1 text-slate-500">
-          <Clock3 className="h-4 w-4" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider">27m</span>
-        </div>
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Jump to chapter</span>
         <div className="flex gap-1">
           {SYRIA_CHAPTER_FLOW.map((chapter) => (
             <button

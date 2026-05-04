@@ -136,10 +136,10 @@ export function SyriaChapterSituationFrame() {
       </div>
 
       <div className="xl:col-span-2 grid gap-4">
-        <SyriaContextGenerationFlow />
-        <SyriaGeographicMap />
-        <SyriaCinematicTimeline />
-        <SyriaNYCStakeholderMap />
+        <div id="syria-context-generation" className="scroll-mt-24"><SyriaContextGenerationFlow /></div>
+        <div id="syria-geo-map" className="scroll-mt-24"><SyriaGeographicMap /></div>
+        <div id="syria-cinematic-timeline" className="scroll-mt-24"><SyriaCinematicTimeline /></div>
+        <div id="syria-nyc-stakeholders" className="scroll-mt-24"><SyriaNYCStakeholderMap /></div>
       </div>
     </div>
   );

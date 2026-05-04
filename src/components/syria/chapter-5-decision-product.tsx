@@ -165,10 +165,10 @@ export function SyriaChapterDecisionProduct() {
         </aside>
       </div>
 
-      <SyriaWorkflowsBoard />
-      <SyriaAskPraxis />
-      <SyriaDocumentGenerator />
-      <SyriaKnowledgeLibrary />
+      <div id="syria-workflows" className="scroll-mt-24"><SyriaWorkflowsBoard /></div>
+      <div id="syria-ask-praxis" className="scroll-mt-24"><SyriaAskPraxis /></div>
+      <div id="syria-brief-builder" className="scroll-mt-24"><SyriaDocumentGenerator /></div>
+      <div id="syria-library" className="scroll-mt-24"><SyriaKnowledgeLibrary /></div>
     </div>
   );
 }
