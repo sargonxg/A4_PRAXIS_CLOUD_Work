@@ -636,9 +636,156 @@ function SanctionsImpactAssessment({
 }
 
 // ============================================================================
+// Syria post-Assad sanctions demo (replaces Nordalia content when ?case=syria)
+// ============================================================================
+import { isSyriaWorkspaceCase } from '@/lib/constants/syria-demo-case';
+import { useSearchParams } from 'next/navigation';
+
+const SYRIA_DEMO_SANCTIONS: Sanction[] = [
+  {
+    id: 'syr-s1',
+    entity: 'Syrian Central Bank',
+    entityType: 'entity',
+    type: 'financial_sanctions',
+    imposingBody: 'EU (lifted Feb 2026)',
+    date: '2026-02-25',
+    legalBasis: 'Council Regulation (EU) 36/2012 (delisted by Decision 2026/355)',
+    status: 'modified',
+    description: 'EU sanctions lifted on the Syrian Central Bank in Feb 2026 to enable conditional re-engagement; targeted measures retained on individuals tied to the former regime.',
+  },
+  {
+    id: 'syr-s2',
+    entity: 'Bashar al-Assad (former president)',
+    entityType: 'individual',
+    type: 'asset_freeze+travel_ban',
+    imposingBody: 'US OFAC + EU + UK OFSI',
+    date: '2011-04-29',
+    legalBasis: 'E.O. 13573 / EU Reg 36/2012 / UK SAMLA 2018',
+    status: 'active',
+    description: 'Comprehensive personal sanctions on the deposed leader; remain in force across US, EU, and UK regimes after the December 2024 transition.',
+  },
+  {
+    id: 'syr-s3',
+    entity: 'Coastal violence perpetrators (10 named)',
+    entityType: 'individual',
+    type: 'asset_freeze+travel_ban',
+    imposingBody: 'US OFAC',
+    date: '2025-08-12',
+    legalBasis: 'E.O. 13818 (Global Magnitsky)',
+    status: 'active',
+    description: 'Magnitsky-style designations of ten named perpetrators of the March 2025 coastal violence in Latakia and Tartus.',
+  },
+  {
+    id: 'syr-s4',
+    entity: 'Rami Makhlouf',
+    entityType: 'individual',
+    type: 'asset_freeze',
+    imposingBody: 'US OFAC + EU',
+    date: '2008-02-21',
+    legalBasis: 'E.O. 13460 / EU Reg 36/2012',
+    status: 'active',
+    description: 'Former Assad-regime financial figure; designations retained despite transition due to historical asset-flight concerns.',
+  },
+  {
+    id: 'syr-s5',
+    entity: 'Hayat Tahrir al-Sham (HTS) — historical listing',
+    entityType: 'entity',
+    type: 'asset_freeze',
+    imposingBody: 'UN 1267 Sanctions Committee',
+    date: '2014-05-14',
+    legalBasis: 'UNSCR 2253 (Al-Qaida sanctions list)',
+    status: 'modified',
+    description: 'UN delisting under review at April 2026 Security Council session; transitional figures associated with the prior HTS organisation remain individually listed.',
+  },
+  {
+    id: 'syr-s6',
+    entity: 'Syrian transitional authorities — energy/water/sanitation',
+    entityType: 'entity',
+    type: 'financial_sanctions',
+    imposingBody: 'US OFAC General License 24',
+    date: '2025-01-06',
+    legalBasis: 'OFAC GL-24 (Caesar Syria Sanctions Regulations §542.504)',
+    status: 'modified',
+    description: 'Six-month GL authorising US transactions with new transitional government entities for essential services. Renewed and expanded through 2026.',
+  },
+  {
+    id: 'syr-s7',
+    entity: 'Iranian Quds Force facilitators (Syria operations)',
+    entityType: 'entity',
+    type: 'asset_freeze',
+    imposingBody: 'US OFAC + UK OFSI',
+    date: '2024-11-03',
+    legalBasis: 'E.O. 13224 (counter-terrorism)',
+    status: 'active',
+    description: 'Designations on networks supporting Iranian operations in Syria; central to ongoing secondary-sanctions enforcement on regional facilitators.',
+  },
+  {
+    id: 'syr-s8',
+    entity: 'Tartus port facility (Russia leasehold)',
+    entityType: 'entity',
+    type: 'financial_sanctions',
+    imposingBody: 'EU sectoral measures (review pending)',
+    date: '2026-04-22',
+    legalBasis: 'Council Decision 2014/512/CFSP (Russia regime applied to Tartus operations)',
+    status: 'modified',
+    description: 'Status of EU sectoral measures on Tartus operations under Council review pending Russia–Syria base agreement renegotiation.',
+  },
+];
+
+const SYRIA_DEMO_UPDATES: SanctionsUpdate[] = [
+  {
+    entity: 'EU consolidated list',
+    changeType: 'delisting',
+    source: 'Council Decision (CFSP) 2026/355',
+    date: '2026-02-25',
+    details: 'EU lifts core sanctions on Syrian Central Bank, energy, transport, and sectoral entities; retains targeted measures on prior-regime individuals.',
+  },
+  {
+    entity: 'OFAC Caesar guidance',
+    changeType: 'modification',
+    source: 'US Treasury OFAC',
+    date: '2026-03-11',
+    details: 'OFAC publishes forward-looking Caesar Act guidance clarifying that good-faith transitional-government dealings will not trigger secondary sanctions.',
+  },
+  {
+    entity: 'Syria reconstruction networks',
+    changeType: 'investigation',
+    source: 'EEAS sanctions cell',
+    date: '2026-04-08',
+    details: 'EEAS opens investigation into reconstruction-related procurement networks pending HLP and beneficiary-disclosure rules.',
+  },
+  {
+    entity: 'UN 1267 listings',
+    changeType: 'no_change',
+    source: 'UN Security Council',
+    date: '2026-04-22',
+    details: 'Security Council debate on broader 1267 review blocked; transitional figures remain individually listed pending evidentiary review.',
+  },
+  {
+    entity: 'Coastal violence perpetrators',
+    changeType: 'new_designation',
+    source: 'US OFAC',
+    date: '2025-08-12',
+    details: 'Ten named individuals designated under Global Magnitsky for documented role in March 2025 coastal violence.',
+  },
+  {
+    entity: 'Russia–Tartus arrangements',
+    changeType: 'evasion_detected',
+    source: 'EEAS / OFAC monitoring',
+    date: '2026-03-30',
+    details: 'Reports of dual-use cargo movement routed through Tartus by Russia-aligned shipping; EU sectoral measures under review.',
+  },
+];
+
+// ============================================================================
 // Main Demo Component
 // ============================================================================
 function DemoSanctionsPage() {
+  const searchParams = useSearchParams();
+  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), true);
+  const ACTIVE_SANCTIONS = isSyriaCase ? SYRIA_DEMO_SANCTIONS : NORDALIA_SANCTIONS;
+  const ACTIVE_UPDATES = isSyriaCase ? SYRIA_DEMO_UPDATES : null;
+  const ACTIVE_LABEL = isSyriaCase ? 'Syria post-Assad' : 'Nordalia';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
@@ -708,12 +855,12 @@ Be direct, analytically specific, and practically oriented.`;
     if (impactLoading) return;
     setImpactLoading(true);
     setImpactText('');
-    const sanctionList = NORDALIA_SANCTIONS.map(s =>
+    const sanctionList = ACTIVE_SANCTIONS.map(s =>
       `- ${s.entity} (${s.entityType}): ${TYPE_META[s.type]?.label ?? s.type} by ${s.imposingBody} [${s.legalBasis}]`
     ).join('\n');
 
     try {
-      const prompt = `Analyze the effectiveness of the complete Nordalia sanctions regime:
+      const prompt = `Analyze the effectiveness of the complete ${ACTIVE_LABEL} sanctions regime:
 
 Current sanctions:
 ${sanctionList}
@@ -725,7 +872,7 @@ Analyze:
 4. **Gaps & Recommendations** — what additional designations or measures would most effectively increase pressure?
 5. **Enforcement Challenges** — which imposing bodies have the least capacity for enforcement?
 
-Format with clear headers. Be specific about Nordalia context.`;
+Format with clear headers. Be specific about ${ACTIVE_LABEL} context.`;
 
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
@@ -849,7 +996,7 @@ Format as a policy analysis document.`;
     }
   }, [impactAssessmentLoading]);
 
-  const filtered = useMemo(() => NORDALIA_SANCTIONS.filter((s) => {
+  const filtered = useMemo(() => ACTIVE_SANCTIONS.filter((s) => {
     const q = searchQuery.toLowerCase();
     const matchSearch = !searchQuery ||
       s.entity.toLowerCase().includes(q) ||
@@ -865,9 +1012,9 @@ Format as a policy analysis document.`;
       (activeFilter === 'modified' && s.status === 'modified');
     const matchRegime = regimeFilter === 'all' || s.imposingBody === regimeFilter;
     return matchSearch && matchFilter && matchRegime;
-  }), [searchQuery, activeFilter, regimeFilter]);
+  }), [searchQuery, activeFilter, regimeFilter, ACTIVE_SANCTIONS]);
 
-  const sortedTimeline = [...NORDALIA_SANCTIONS].sort((a, b) => a.date.localeCompare(b.date));
+  const sortedTimeline = [...ACTIVE_SANCTIONS].sort((a, b) => a.date.localeCompare(b.date));
 
   return (
     <div className="space-y-6">
@@ -880,7 +1027,8 @@ Format as a policy analysis document.`;
           <div>
             <h1 className="text-2xl font-semibold text-navy-900">Sanctions Tracker</h1>
             <p className="text-sm text-navy-500">
-              Nordalia conflict sanctions regime — {NORDALIA_SANCTIONS.filter(s => s.status === 'active').length} active measures across {new Set(NORDALIA_SANCTIONS.map(s => s.imposingBody)).size} bodies
+              {ACTIVE_LABEL} sanctions regime — {ACTIVE_SANCTIONS.filter(s => s.status === 'active').length} active measures across {new Set(ACTIVE_SANCTIONS.map(s => s.imposingBody)).size} bodies
+              {isSyriaCase ? ' · post-Assad delisting track' : ''}
             </p>
           </div>
         </div>
@@ -908,6 +1056,37 @@ Format as a policy analysis document.`;
         </div>
       </div>
 
+      {/* Syria recent updates banner */}
+      {isSyriaCase && ACTIVE_UPDATES && (
+        <div className="rounded-xl border border-diplomatic-blue/30 bg-diplomatic-blue/5 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-diplomatic-blue">Recent Syria sanctions updates</p>
+              <h2 className="mt-1 text-sm font-semibold text-navy-900">Six tracked regime moves since the December 2024 transition</h2>
+            </div>
+            <a
+              href="/app/sanctions-explorer?case=syria"
+              className="rounded-md bg-diplomatic-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-diplomatic-blue/90"
+            >
+              Open sanctions explorer
+            </a>
+          </div>
+          <ul className="mt-3 space-y-2">
+            {ACTIVE_UPDATES.map((u) => (
+              <li key={u.entity + u.date} className="flex flex-wrap items-center gap-2 rounded-md bg-white px-3 py-2">
+                <span className="font-mono text-[11px] text-navy-500">{u.date}</span>
+                <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider', CHANGE_TYPE_META[u.changeType]?.bg, CHANGE_TYPE_META[u.changeType]?.color, CHANGE_TYPE_META[u.changeType]?.border, 'border')}>
+                  {CHANGE_TYPE_META[u.changeType]?.label ?? u.changeType}
+                </span>
+                <span className="text-[12px] font-semibold text-navy-900">{u.entity}</span>
+                <span className="basis-full text-[11px] text-navy-600">{u.details}</span>
+                <span className="text-[10px] text-navy-400">Source: {u.source}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* ------------------------------------------------------------------ */}
       {/* NEW: Regime Overview Cards */}
       {/* ------------------------------------------------------------------ */}
@@ -921,10 +1100,10 @@ Format as a policy analysis document.`;
       {/* Stats row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Total Measures', value: NORDALIA_SANCTIONS.length, icon: Shield, color: 'text-crimson' },
-          { label: 'Individuals', value: NORDALIA_SANCTIONS.filter(s => s.entityType === 'individual').length, icon: Users, color: 'text-diplomatic-blue' },
-          { label: 'Entities', value: NORDALIA_SANCTIONS.filter(s => s.entityType === 'entity').length, icon: Building2, color: 'text-purple' },
-          { label: 'Imposing Bodies', value: new Set(NORDALIA_SANCTIONS.map(s => s.imposingBody)).size, icon: TrendingUp, color: 'text-teal' },
+          { label: 'Total Measures', value: ACTIVE_SANCTIONS.length, icon: Shield, color: 'text-crimson' },
+          { label: 'Individuals', value: ACTIVE_SANCTIONS.filter(s => s.entityType === 'individual').length, icon: Users, color: 'text-diplomatic-blue' },
+          { label: 'Entities', value: ACTIVE_SANCTIONS.filter(s => s.entityType === 'entity').length, icon: Building2, color: 'text-purple' },
+          { label: 'Imposing Bodies', value: new Set(ACTIVE_SANCTIONS.map(s => s.imposingBody)).size, icon: TrendingUp, color: 'text-teal' },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="rounded-xl border border-[var(--color-app-border)] bg-white p-4">
             <div className="flex items-center gap-2 mb-1">

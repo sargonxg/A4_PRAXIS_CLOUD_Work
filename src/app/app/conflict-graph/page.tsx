@@ -45,6 +45,7 @@ import { ACO_COLORS } from '@/lib/constants/aco-colors';
 
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { AutoPopulatePanel } from '@/components/conflict-graph/auto-populate-panel';
+import { SyriaForceGraph } from '@/components/visualizations/syria-force-graph';
 import { isSyriaWorkspaceCase, SYRIA_DEMO_CASE_ID } from '@/lib/constants/syria-demo-case';
 const COLOR_BY_TYPE: Record<string, string> = { ...ACO_COLORS };
 
@@ -476,6 +477,11 @@ function DemoConflictGraphPage() {
   return (
     <div className="space-y-6">
       <RegistryToolInfo toolId="conflict-graph" />
+      {isSyriaCase ? (
+        <div className="mx-auto max-w-[1400px] px-4">
+          <SyriaForceGraph height={520} />
+        </div>
+      ) : null}
       <div className="mx-auto max-w-[1400px]">
         {/* ── Header ─────────────────────────────────────────── */}
         <motion.div

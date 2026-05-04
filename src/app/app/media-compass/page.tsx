@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { buildToolContext } from "@/lib/ai/build-context-pure";
 import { isSyriaWorkspaceCase } from "@/lib/constants/syria-demo-case";
+import { SyriaMediaScatter } from "@/components/visualizations/syria-media-scatter";
 import {
   SYRIA_LOCAL_MEDIA_SOURCES,
   SYRIA_CURRENT_RESEARCH_SOURCES,
@@ -667,6 +668,11 @@ export default function MediaCompassPage() {
   return (
     <div className="space-y-6">
       <RegistryToolInfo toolId="media-compass" />
+      {isSyriaCase ? (
+        <div className="mx-auto max-w-[1400px] px-4">
+          <SyriaMediaScatter />
+        </div>
+      ) : null}
       <div className="mx-auto max-w-[1400px]">
         {/* ── Header ─────────────────────────────────────────── */}
         <motion.div

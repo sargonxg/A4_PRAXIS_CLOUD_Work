@@ -10,7 +10,7 @@
  * fixture so the recording walkthrough has real substance.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
@@ -22,8 +22,10 @@ import {
   FileSearch,
   FileText,
   Library as LibraryIcon,
+  Loader2,
   RefreshCw,
   Sparkles,
+  Upload,
 } from 'lucide-react';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { OnboardingRequiredState } from '@/components/praxis/onboarding-required-state';
@@ -90,6 +92,8 @@ export default function LibraryPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [search, setSearch] = useState<string>('');
+  const [uploadStatus, setUploadStatus] = useState<{ state: 'idle' | 'uploading' | 'success' | 'error'; message?: string }>({ state: 'idle' });
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -112,6 +116,37 @@ export default function LibraryPage() {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guard.situation?.id]);
+
+  const handleUpload = async (file: File) => {
+    if (!file) return;
+    if (guard.isDemo) {
+      setUploadStatus({ state: 'error', message: 'Demo mode: uploads simulated. Sign in to push to the bucket.' });
+      setTimeout(() => setUploadStatus({ state: 'idle' }), 4000);
+      return;
+    }
+    if (!guard.situation?.id) {
+      setUploadStatus({ state: 'error', message: 'Pick an active situation before uploading.' });
+      return;
+    }
+    setUploadStatus({ state: 'uploading' });
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('situationId', guard.situation.id);
+      const res = await fetch('/api/documents/upload', { method: 'POST', body: form });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error || `HTTP ${res.status}`);
+      }
+      setUploadStatus({ state: 'success', message: `${file.name} uploaded and synced to bucket.` });
+      void load();
+    } catch (e) {
+      setUploadStatus({ state: 'error', message: e instanceof Error ? e.message : 'Upload failed' });
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setTimeout(() => setUploadStatus({ state: 'idle' }), 4000);
+    }
+  };
 
   const artifacts = data?.artifacts ?? [];
   const filtered = useMemo(() => {
@@ -150,6 +185,25 @@ export default function LibraryPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept=".pdf,.docx,.txt,.md,.html"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void handleUpload(file);
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadStatus.state === 'uploading'}
+            className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60"
+          >
+            {uploadStatus.state === 'uploading' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+            Upload to bucket
+          </button>
           <button
             type="button"
             onClick={load}
@@ -166,6 +220,19 @@ export default function LibraryPage() {
           </PraxisLink>
         </div>
       </header>
+
+      {uploadStatus.state !== 'idle' && uploadStatus.message && (
+        <div
+          className={cn(
+            'rounded-md border px-3 py-2 text-xs',
+            uploadStatus.state === 'success' && 'border-emerald-200 bg-emerald-50 text-emerald-800',
+            uploadStatus.state === 'error' && 'border-rose-200 bg-rose-50 text-rose-700',
+            uploadStatus.state === 'uploading' && 'border-amber-200 bg-amber-50 text-amber-800',
+          )}
+        >
+          {uploadStatus.message}
+        </div>
+      )}
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile label="Artifacts" value={String(stats.total)} icon={FileText} tone="blue" />

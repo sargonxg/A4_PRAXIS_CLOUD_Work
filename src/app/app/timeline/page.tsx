@@ -7,6 +7,7 @@ import { LiveEventsPanel } from '@/components/timeline/live-events-panel';
 import { useSearchParams } from 'next/navigation';
 import { isSyriaWorkspaceCase, SYRIA_DEMO_SITUATION } from '@/lib/constants/syria-demo-case';
 import { SYRIA_TIMELINE_EVENTS } from '@/lib/constants/syria-tool-demos';
+import { SyriaTimelineChart } from '@/components/visualizations/syria-timeline-chart';
 import { useState, useMemo, useCallback } from 'react';
 import {
   Clock,
@@ -843,6 +844,7 @@ export default function TimelinePage() {
       <>
         <RegistryToolInfo toolId="timeline" />
         <div className="space-y-4">
+          {isSyriaCase ? <SyriaTimelineChart /> : null}
           {demoSituation ? <LiveEventsPanel situation={demoSituation} /> : null}
           <TimelineView data={{ events: demoEvents }} />
         </div>
