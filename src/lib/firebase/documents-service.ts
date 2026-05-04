@@ -32,6 +32,7 @@ export interface StoredDocument {
   entities?: Record<string, unknown>;
   entityCount: number;
   chunkCount?: number;
+  bucketUri?: string;
 }
 
 export interface DocumentChunk {

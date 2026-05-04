@@ -27,6 +27,9 @@ import {
   Clock,
   Library,
   PanelsTopLeft,
+  PenSquare,
+  GraduationCap,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -220,15 +223,24 @@ const navSections: NavSection[] = [
     label: 'Decision',
     items: [
       { label: 'Briefing Studio', icon: FileText, href: '/briefing' },
+      { label: 'Editor', icon: PenSquare, href: '/editor' },
       { label: 'Advisory Council', icon: MessagesSquare, href: '/advisory' },
       { label: 'Ask PRAXIS', icon: Sparkles, href: '/assistant' },
     ],
   },
   {
+    label: 'Specialist',
+    items: [
+      { label: 'Sanctions Monitor', icon: Shield, href: '/sanctions-explorer' },
+    ],
+  },
+  {
     label: 'Workspace',
     items: [
-      { label: 'All tools', icon: PanelsTopLeft, href: '/tools' },
+      { label: 'Library', icon: Library, href: '/library' },
+      { label: 'Methodology', icon: GraduationCap, href: '/methodology' },
       { label: 'Sources Library', icon: Library, href: '/sources' },
+      { label: 'All tools', icon: PanelsTopLeft, href: '/tools' },
     ],
   },
 ];
@@ -245,10 +257,14 @@ const RECORDING_NAV_HREFS = new Set([
   '/stakeholder-map',
   '/humanitarian',
   '/briefing',
+  '/editor',
   '/advisory',
   '/assistant',
   '/sources',
   '/tools',
+  '/library',
+  '/methodology',
+  '/sanctions-explorer',
 ]);
 
 function ChangelogButton() {

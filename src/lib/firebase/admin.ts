@@ -1,6 +1,7 @@
 import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { getStorage, type Storage } from 'firebase-admin/storage';
 
 let _app: App | null = null;
 let _auth: Auth | null = null;
@@ -78,6 +79,26 @@ export function getAdminDbOrThrow(): Firestore {
     throw new Error(`[firebase-admin] Firestore unavailable. ${hint}`);
   }
   return _db;
+}
+
+/**
+ * Firebase Admin Storage handle. Uses the default GCS bucket associated with
+ * the Firebase project (praxisbytacitus.appspot.com unless overridden via
+ * FIREBASE_STORAGE_BUCKET).
+ */
+export function getAdminStorage(): Storage {
+  if (!_app) {
+    throw new Error('[firebase-admin] App not initialized; cannot return Storage.');
+  }
+  return getStorage(_app);
+}
+
+export function getDefaultBucketName(): string {
+  return (
+    process.env.FIREBASE_STORAGE_BUCKET ||
+    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
+    'praxisbytacitus.appspot.com'
+  );
 }
 
 export async function verifyIdToken(token: string): Promise<{

@@ -4,12 +4,121 @@ import {
   saveDocument,
   chunkAndSaveDocument,
 } from '@/lib/firebase/documents-service';
+import {
+  getAdminStorage,
+  getDefaultBucketName,
+  getAdminDbOrThrow,
+} from '@/lib/firebase/admin';
 
 export const maxDuration = 300;
 
-const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'txt', 'md'];
+const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'txt', 'md', 'html'];
+
+interface JsonUploadBody {
+  documentId?: string;
+  title: string;
+  html: string;
+  situationId: string;
+  contentType?: string;
+  toolId?: string;
+}
 
 export const POST = withAuth(async (request, user) => {
+  const contentTypeHeader = request.headers.get('content-type') || '';
+
+  // ── JSON body path: artifacts generated inside the app (briefs, memos,
+  //    tool outputs) are pushed to the GCS bucket so they appear in the
+  //    document dashboard alongside user uploads.
+  if (contentTypeHeader.includes('application/json')) {
+    if (user.isDemo) {
+      return NextResponse.json(
+        {
+          success: true,
+          mode: 'demo-noop',
+          message: 'Demo session — bucket sync was simulated. Artifact stays local.',
+          uri: 'demo://praxis-artifacts/' + Math.random().toString(36).slice(2, 10),
+        },
+        { status: 200 },
+      );
+    }
+    let body: JsonUploadBody;
+    try {
+      body = (await request.json()) as JsonUploadBody;
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+    if (!body.title || !body.html || !body.situationId) {
+      return NextResponse.json(
+        { error: 'title, html, and situationId are required for JSON uploads' },
+        { status: 400 },
+      );
+    }
+    try {
+      const bucketName = getDefaultBucketName();
+      const bucket = getAdminStorage().bucket(bucketName);
+      const docId = body.documentId || `doc-${Date.now().toString(36)}`;
+      const objectPath = `users/${user.uid}/situations/${body.situationId}/artifacts/${docId}.html`;
+      const file = bucket.file(objectPath);
+
+      await file.save(body.html, {
+        contentType: body.contentType || 'text/html; charset=utf-8',
+        resumable: false,
+        metadata: {
+          metadata: {
+            title: body.title,
+            situationId: body.situationId,
+            toolId: body.toolId || 'editor',
+            uploadedBy: user.uid,
+            uploadedAt: new Date().toISOString(),
+          },
+        },
+      });
+
+      // Mirror metadata into Firestore so the dashboard can query without a bucket scan.
+      try {
+        const db = getAdminDbOrThrow();
+        await db
+          .collection('users')
+          .doc(user.uid)
+          .collection('situations')
+          .doc(body.situationId)
+          .collection('artifacts')
+          .doc(docId)
+          .set(
+            {
+              id: docId,
+              title: body.title,
+              toolId: body.toolId || 'editor',
+              bucketUri: `gs://${bucketName}/${objectPath}`,
+              objectPath,
+              size: Buffer.byteLength(body.html, 'utf8'),
+              contentType: body.contentType || 'text/html; charset=utf-8',
+              updatedAt: new Date().toISOString(),
+              createdAt: new Date().toISOString(),
+            },
+            { merge: true },
+          );
+      } catch (metaErr) {
+        console.warn('[documents/upload] Firestore mirror failed:', metaErr);
+      }
+
+      return NextResponse.json({
+        success: true,
+        mode: 'json',
+        documentId: docId,
+        uri: `gs://${bucketName}/${objectPath}`,
+        message: 'Artifact synced to bucket and indexed for the document dashboard.',
+      });
+    } catch (err) {
+      console.error('[documents/upload] JSON path failed:', err);
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : 'Bucket upload failed' },
+        { status: 500 },
+      );
+    }
+  }
+
+  // ── Multipart path (existing behaviour): user-uploaded source documents.
   if (user.isDemo) {
     return NextResponse.json({ error: 'Document upload is not available in demo mode' }, { status: 403 });
   }
@@ -37,7 +146,7 @@ export const POST = withAuth(async (request, user) => {
     }
 
     let text = '';
-    if (fileType === 'txt' || fileType === 'md') {
+    if (fileType === 'txt' || fileType === 'md' || fileType === 'html') {
       text = await file.text();
     } else if (fileType === 'pdf') {
       try {
@@ -60,6 +169,31 @@ export const POST = withAuth(async (request, user) => {
       }
     }
 
+    // Best-effort: also push the raw bytes to the GCS bucket so the document
+    // dashboard can preview/download the original.
+    let bucketUri: string | null = null;
+    try {
+      const bucketName = getDefaultBucketName();
+      const bucket = getAdminStorage().bucket(bucketName);
+      const objectPath = `users/${user.uid}/situations/${situationId}/uploads/${Date.now()}-${file.name}`;
+      const arrayBuffer = await file.arrayBuffer();
+      await bucket.file(objectPath).save(Buffer.from(arrayBuffer), {
+        contentType: file.type || 'application/octet-stream',
+        resumable: false,
+        metadata: {
+          metadata: {
+            title: file.name,
+            situationId,
+            uploadedBy: user.uid,
+            uploadedAt: new Date().toISOString(),
+          },
+        },
+      });
+      bucketUri = `gs://${bucketName}/${objectPath}`;
+    } catch (uploadErr) {
+      console.warn('[documents/upload] bucket write skipped:', uploadErr);
+    }
+
     const stored = await saveDocument(user.uid, situationId, {
       title: file.name,
       fileType,
@@ -68,6 +202,7 @@ export const POST = withAuth(async (request, user) => {
       status: text.startsWith('[') ? 'error' : 'uploaded',
       uploadedAt: new Date().toISOString(),
       entityCount: 0,
+      bucketUri: bucketUri ?? undefined,
     });
 
     if (text.length > 0 && !text.startsWith('[')) {
@@ -86,6 +221,7 @@ export const POST = withAuth(async (request, user) => {
         status: stored.status,
         uploadedAt: stored.uploadedAt,
         entityCount: 0,
+        bucketUri,
       },
       message: 'Document uploaded and saved to your situation. Chunking for AI retrieval in progress.',
     });
