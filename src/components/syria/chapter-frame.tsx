@@ -2,6 +2,7 @@
 
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { type ReactNode } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import type { SyriaChapterDescriptor } from '@/lib/syria/chapter-flow';
 import { cn } from '@/lib/utils/cn';
 
@@ -14,13 +15,18 @@ interface ChapterFrameProps {
 
 export function ChapterFrame({ chapter, active, children, onOpen }: ChapterFrameProps) {
   const Icon = active ? ChevronDown : ChevronRight;
+  const reduceMotion = useReducedMotion();
 
   return (
-    <section
+    <motion.section
       id={chapter.id}
+      initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+      whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
       className={cn(
-        'scroll-mt-24 rounded-lg border bg-white shadow-sm shadow-navy-950/5 transition',
-        active ? 'border-navy-300' : 'border-slate-200 hover:border-navy-200',
+        'scroll-mt-24 rounded-lg border bg-white shadow-sm shadow-navy-950/5 transition-colors',
+        active ? 'border-navy-300 shadow-md' : 'border-slate-200 hover:border-navy-200',
       )}
     >
       <button
@@ -30,14 +36,16 @@ export function ChapterFrame({ chapter, active, children, onOpen }: ChapterFrame
         aria-expanded={active}
         aria-controls={`${chapter.id}-panel`}
       >
-        <span
+        <motion.span
+          animate={reduceMotion ? undefined : { scale: active ? 1.05 : 1 }}
+          transition={{ type: 'spring', stiffness: 320, damping: 22 }}
           className={cn(
             'flex h-9 w-9 items-center justify-center rounded-md border font-mono text-sm font-semibold',
             active ? 'border-gold-400 bg-gold-50 text-navy-950' : 'border-slate-200 bg-slate-50 text-slate-500',
           )}
         >
           {chapter.number}
-        </span>
+        </motion.span>
         <span className="min-w-0">
           <span className="flex flex-wrap items-center gap-2">
             <span className="text-base font-semibold text-navy-950">{chapter.title}</span>
@@ -47,15 +55,30 @@ export function ChapterFrame({ chapter, active, children, onOpen }: ChapterFrame
           </span>
           <span className="mt-1 block text-sm leading-5 text-slate-600">{chapter.question}</span>
         </span>
-        <Icon className="h-5 w-5 text-slate-400" />
+        <motion.span
+          animate={reduceMotion ? undefined : { rotate: active ? 0 : -90 }}
+          transition={{ duration: 0.2 }}
+          className="text-slate-400"
+        >
+          <Icon className="h-5 w-5" />
+        </motion.span>
       </button>
 
-      <div
-        id={`${chapter.id}-panel`}
-        className={cn('border-t border-slate-100 px-4 pb-5 pt-4 sm:px-5', active ? 'block' : 'hidden')}
-      >
-        {children}
-      </div>
-    </section>
+      <AnimatePresence initial={false}>
+        {active ? (
+          <motion.div
+            key="panel"
+            id={`${chapter.id}-panel`}
+            initial={reduceMotion ? false : { height: 0, opacity: 0 }}
+            animate={reduceMotion ? undefined : { height: 'auto', opacity: 1 }}
+            exit={reduceMotion ? undefined : { height: 0, opacity: 0 }}
+            transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
+            className="overflow-hidden border-t border-slate-100"
+          >
+            <div className="px-4 pb-5 pt-4 sm:px-5">{children}</div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </motion.section>
   );
 }

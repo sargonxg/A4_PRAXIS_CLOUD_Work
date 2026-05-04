@@ -1,4 +1,8 @@
-import { ExternalLink, Library, Newspaper, SearchCheck, ShieldCheck } from 'lucide-react';
+'use client';
+
+import { useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { ChevronDown, ChevronRight, ExternalLink, Library, Newspaper, SearchCheck, ShieldCheck } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import {
   SYRIA_CURRENT_RESEARCH_SOURCES,
@@ -6,6 +10,14 @@ import {
   SYRIA_LOCAL_MEDIA_SOURCES,
   SYRIA_STRUCTURED_RESEARCH_RESPONSE_CONTRACT,
 } from '@/lib/constants/syria-demo-workspace';
+import {
+  SYRIA_REFERENCE_CATEGORIES,
+  syriaReferencesByCategory,
+  type SyriaReferenceCategory,
+} from '@/lib/constants/syria-grounded-references';
+import { SyriaAgentConsole } from '@/components/syria/agent-console';
+import { SYRIA_AGENT_PRESETS } from '@/lib/syria/agent-presets';
+import { cn } from '@/lib/utils/cn';
 
 const RECEIPT_TIERS = [
   { tier: 'Tier 1', label: 'UN and official public records', count: 2, confidence: 'highest' },
@@ -17,6 +29,9 @@ const RECEIPT_TIERS = [
 export function SyriaChapterSourceReceipts() {
   const topSources = SYRIA_CURRENT_RESEARCH_SOURCES.slice(0, 6);
   const localSources = SYRIA_LOCAL_MEDIA_SOURCES.slice(0, 6);
+  const refsByCategory = syriaReferencesByCategory();
+  const reduceMotion = useReducedMotion();
+  const [openCategory, setOpenCategory] = useState<SyriaReferenceCategory | null>('un_doc');
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -65,6 +80,86 @@ export function SyriaChapterSourceReceipts() {
                 <p className="mt-1 text-xs leading-5 text-slate-600">{source.graphUse}</p>
               </a>
             ))}
+          </div>
+        </div>
+
+        <SyriaAgentConsole
+          persona={SYRIA_AGENT_PRESETS['source-scout']!.persona}
+          toolId={SYRIA_AGENT_PRESETS['source-scout']!.toolId}
+          question={SYRIA_AGENT_PRESETS['source-scout']!.question}
+          trace={SYRIA_AGENT_PRESETS['source-scout']!.trace}
+          answer={SYRIA_AGENT_PRESETS['source-scout']!.answer}
+        />
+
+        <div className="rounded-lg border border-navy-200 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-500">Grounded reference layer</p>
+              <h3 className="mt-1 text-base font-semibold text-navy-950">
+                Wikipedia, UN documents, OHCHR, academic centres, data portals
+              </h3>
+              <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-600">
+                One click below the tier-ranked receipts: every claim has an encyclopedic, treaty, or dataset anchor a
+                reader can open without leaving the case file.
+              </p>
+            </div>
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+              {Object.values(refsByCategory).reduce((sum, list) => sum + list.length, 0)} anchors
+            </span>
+          </div>
+
+          <div className="mt-4 space-y-2">
+            {SYRIA_REFERENCE_CATEGORIES.map((cat) => {
+              const list = refsByCategory[cat.id];
+              if (list.length === 0) return null;
+              const open = openCategory === cat.id;
+              return (
+                <div key={cat.id} className="rounded-md border border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setOpenCategory(open ? null : cat.id)}
+                    className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition hover:bg-slate-50"
+                    aria-expanded={open}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider', cat.tone)}>
+                        {cat.label}
+                      </span>
+                      <span className="text-xs font-semibold text-navy-900">{list.length} anchors</span>
+                    </span>
+                    {open ? <ChevronDown className="h-4 w-4 text-slate-400" /> : <ChevronRight className="h-4 w-4 text-slate-400" />}
+                  </button>
+                  {open ? (
+                    <motion.ul
+                      initial={reduceMotion ? false : { opacity: 0, height: 0 }}
+                      animate={reduceMotion ? undefined : { opacity: 1, height: 'auto' }}
+                      transition={{ duration: 0.22 }}
+                      className="overflow-hidden border-t border-slate-100 bg-slate-50/60"
+                    >
+                      {list.map((ref) => (
+                        <li key={ref.id} className="border-t border-slate-100 first:border-0">
+                          <a
+                            href={ref.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block px-3 py-2 transition hover:bg-white"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-xs font-semibold text-navy-900">{ref.title}</p>
+                              <ExternalLink className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                            </div>
+                            <p className="mt-0.5 text-[11px] text-slate-500">
+                              {ref.publisher} <span className="text-slate-400">·</span> retrieved {ref.retrievedAt}
+                            </p>
+                            <p className="mt-1 text-[11px] leading-4 text-slate-600">{ref.graphUse}</p>
+                          </a>
+                        </li>
+                      ))}
+                    </motion.ul>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

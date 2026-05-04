@@ -1,6 +1,7 @@
 import { ClipboardCheck, FileText, MessageSquareText, Save, ShieldCheck } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { ComparisonCaseCard } from '@/components/syria/comparison-case-card';
+import { SyriaAgentConsole } from '@/components/syria/agent-console';
 import { SYRIA_DEMO_CONFLICT_GRAPH } from '@/lib/constants/syria-demo-case';
 import {
   SYRIA_COMMITMENT_MONITOR_DEMO,
@@ -9,6 +10,7 @@ import {
   SYRIA_STRUCTURED_RESEARCH_RESPONSE_CONTRACT,
 } from '@/lib/constants/syria-demo-workspace';
 import { rankSyriaComparisonCases } from '@/lib/syria/pattern-similarity';
+import { SYRIA_AGENT_PRESETS } from '@/lib/syria/agent-presets';
 
 const PRODUCTS = [
   {
@@ -36,6 +38,14 @@ export function SyriaChapterDecisionProduct() {
 
   return (
     <div className="grid gap-4">
+      <SyriaAgentConsole
+        persona={SYRIA_AGENT_PRESETS['brief-builder']!.persona}
+        toolId={SYRIA_AGENT_PRESETS['brief-builder']!.toolId}
+        question={SYRIA_AGENT_PRESETS['brief-builder']!.question}
+        trace={SYRIA_AGENT_PRESETS['brief-builder']!.trace}
+        answer={SYRIA_AGENT_PRESETS['brief-builder']!.answer}
+      />
+
       <section className="rounded-lg border border-diplomatic-blue/20 bg-white p-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>

@@ -148,4 +148,42 @@ export const SYRIA_COMPARISON_CASES: SyriaComparisonCase[] = [
     limitations:
       'Colombia was not a post-regime-collapse transition and did not share Syria regional-war spillover risk.',
   },
+  {
+    id: 'tunisia-national-dialogue-2013',
+    name: 'Tunisia National Dialogue Quartet',
+    era: '2013-2014',
+    geography: 'Tunisia',
+    summary:
+      'Civil-society-led dialogue that brought parties to a constitutional consensus, transitional governance handover, and 2014 presidential election; awarded the 2015 Nobel Peace Prize.',
+    whyComparable:
+      'Sharpest positive analog for a constitutional drafting committee that survives political polarisation by giving civil society procedural standing alongside parties.',
+    primitiveCounts: { actors: 7, claims: 3, interests: 4, constraints: 3, leverage: 3, commitments: 2, events: 5, narratives: 3 },
+    edgeVocabulary: ['mediates', 'contains', 'supports', 'asserts', 'constrains', 'reviews', 'verifies'],
+    lessonsForSyria: [
+      'Give civil society procedural standing in constitutional drafting, not consultation only.',
+      'Sequence handover of executive power so that no faction owns the transitional cabinet during drafting.',
+      'Publish dialogue minutes and timelines so citizens can audit deadlines.',
+    ],
+    limitations:
+      'Tunisia had a single national army, weaker armed-faction landscape, and far less regional spillover than Syria.',
+  },
+  {
+    id: 'iraq-de-baathification-2003',
+    name: 'Iraq de-Ba\'athification (CPA Order 1 / Order 2)',
+    era: '2003-2006',
+    geography: 'Iraq',
+    summary:
+      'Inverse case: dissolution of the Ba\'ath party and Iraqi army by occupation authority created a security vacuum, fed insurgency recruitment, and entangled minority protection with sectarian retribution.',
+    whyComparable:
+      'Cautionary mirror for transitional security-sector reform when prior army and party structures are dissolved without an absorption plan; central to evaluating Syrian army re-formation choices.',
+    primitiveCounts: { actors: 8, claims: 3, interests: 4, constraints: 4, leverage: 3, commitments: 1, events: 6, narratives: 4 },
+    edgeVocabulary: ['triggers', 'constrains', 'asserts', 'rooted_in_grievance', 'escalates', 'opposes'],
+    lessonsForSyria: [
+      'Disbanding security forces without absorption pathways tends to convert former personnel into insurgent capacity.',
+      'Minority protection and accountability files cannot be sequenced after security collapse — they must run in parallel.',
+      'External authority over de-Ba\'athification-style policies generates legitimacy debt that lasts a decade.',
+    ],
+    limitations:
+      'Iraq 2003 was a foreign-imposed transition under occupation, not an indigenous overthrow; PRAXIS uses it as a counter-example, not a template.',
+  },
 ];

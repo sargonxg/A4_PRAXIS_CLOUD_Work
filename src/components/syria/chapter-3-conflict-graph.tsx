@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { GitBranch, Network, RadioTower, ShieldAlert } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { SYRIA_DEMO_CONFLICT_GRAPH } from '@/lib/constants/syria-demo-case';
@@ -16,9 +17,20 @@ const VIEWS = [
 
 type GraphView = (typeof VIEWS)[number]['id'];
 
+type EdgeDef = { x1: number; y1: number; x2: number; y2: number; key: string };
+const EDGES: EdgeDef[] = [
+  { x1: 175, y1: 80, x2: 380, y2: 180, key: 'damascus-agreement' },
+  { x1: 585, y1: 92, x2: 380, y2: 180, key: 'sdf-agreement' },
+  { x1: 380, y1: 180, x2: 200, y2: 285, key: 'agreement-humanitarian' },
+  { x1: 380, y1: 180, x2: 585, y2: 282, key: 'agreement-spillover' },
+  { x1: 380, y1: 180, x2: 380, y2: 56, key: 'agreement-un' },
+];
+
 export function SyriaChapterConflictGraph() {
   const [view, setView] = useState<GraphView>('episodic');
   const [activeCounterfactuals, setActiveCounterfactuals] = useState<string[]>([]);
+  const [hoverNode, setHoverNode] = useState<string | null>(null);
+  const reduceMotion = useReducedMotion();
   const counterfactualSummary = useMemo(() => summarizeCounterfactuals(activeCounterfactuals), [activeCounterfactuals]);
 
   const nodes = useMemo(() => {
@@ -61,25 +73,98 @@ export function SyriaChapterConflictGraph() {
                   <stop offset="0%" stopColor="#d4af37" stopOpacity="0.85" />
                   <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0.75" />
                 </linearGradient>
+                <radialGradient id="syriaNodeGlow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#facc15" stopOpacity="0.55" />
+                  <stop offset="100%" stopColor="#facc15" stopOpacity="0" />
+                </radialGradient>
               </defs>
-              <line x1="175" y1="80" x2="380" y2="180" stroke="url(#syriaGraphLine)" strokeWidth="2" />
-              <line x1="585" y1="92" x2="380" y2="180" stroke="url(#syriaGraphLine)" strokeWidth="2" />
-              <line x1="380" y1="180" x2="200" y2="285" stroke="url(#syriaGraphLine)" strokeWidth="2" />
-              <line x1="380" y1="180" x2="585" y2="282" stroke="url(#syriaGraphLine)" strokeWidth="2" />
-              <line x1="380" y1="180" x2="380" y2="56" stroke="url(#syriaGraphLine)" strokeWidth="2" />
 
-              <GraphNode x={380} y={180} label="30 Jan agreement" tone="gold" counterfactual={counterfactualSummary.affectedNodes.includes('30 Jan agreement')} />
-              <GraphNode x={175} y={80} label="Damascus" tone="blue" counterfactual={counterfactualSummary.affectedNodes.includes('Damascus')} />
-              <GraphNode x={585} y={92} label="SDF/AANES" tone="teal" counterfactual={counterfactualSummary.affectedNodes.includes('SDF/AANES')} />
-              <GraphNode x={200} y={285} label="Humanitarian access" tone="red" counterfactual={counterfactualSummary.affectedNodes.includes('Humanitarian access')} />
-              <GraphNode x={585} y={282} label="Regional spillover" tone="red" counterfactual={counterfactualSummary.affectedNodes.includes('Regional spillover')} />
-              <GraphNode x={380} y={56} label="UN good offices" tone="blue" counterfactual={counterfactualSummary.affectedNodes.includes('UN good offices')} />
+              {EDGES.map((edge, idx) => (
+                <g key={edge.key}>
+                  <line
+                    x1={edge.x1}
+                    y1={edge.y1}
+                    x2={edge.x2}
+                    y2={edge.y2}
+                    stroke="url(#syriaGraphLine)"
+                    strokeWidth="2"
+                  />
+                  {!reduceMotion ? (
+                    <line
+                      x1={edge.x1}
+                      y1={edge.y1}
+                      x2={edge.x2}
+                      y2={edge.y2}
+                      stroke="#facc15"
+                      strokeWidth="2"
+                      strokeOpacity="0.9"
+                      strokeDasharray="6 220"
+                    >
+                      <animate
+                        attributeName="stroke-dashoffset"
+                        from="0"
+                        to="-260"
+                        dur="3.6s"
+                        begin={`${idx * 0.6}s`}
+                        repeatCount="indefinite"
+                      />
+                    </line>
+                  ) : null}
+                </g>
+              ))}
+
+              <GraphNode
+                x={380} y={180} label="30 Jan agreement" tone="gold"
+                hovered={hoverNode === '30 Jan agreement'} onHover={setHoverNode}
+                counterfactual={counterfactualSummary.affectedNodes.includes('30 Jan agreement')}
+                reduceMotion={reduceMotion}
+              />
+              <GraphNode
+                x={175} y={80} label="Damascus" tone="blue"
+                hovered={hoverNode === 'Damascus'} onHover={setHoverNode}
+                counterfactual={counterfactualSummary.affectedNodes.includes('Damascus')}
+                reduceMotion={reduceMotion}
+              />
+              <GraphNode
+                x={585} y={92} label="SDF/AANES" tone="teal"
+                hovered={hoverNode === 'SDF/AANES'} onHover={setHoverNode}
+                counterfactual={counterfactualSummary.affectedNodes.includes('SDF/AANES')}
+                reduceMotion={reduceMotion}
+              />
+              <GraphNode
+                x={200} y={285} label="Humanitarian access" tone="red"
+                hovered={hoverNode === 'Humanitarian access'} onHover={setHoverNode}
+                counterfactual={counterfactualSummary.affectedNodes.includes('Humanitarian access')}
+                reduceMotion={reduceMotion}
+              />
+              <GraphNode
+                x={585} y={282} label="Regional spillover" tone="red"
+                hovered={hoverNode === 'Regional spillover'} onHover={setHoverNode}
+                counterfactual={counterfactualSummary.affectedNodes.includes('Regional spillover')}
+                reduceMotion={reduceMotion}
+              />
+              <GraphNode
+                x={380} y={56} label="UN good offices" tone="blue"
+                hovered={hoverNode === 'UN good offices'} onHover={setHoverNode}
+                counterfactual={counterfactualSummary.affectedNodes.includes('UN good offices')}
+                reduceMotion={reduceMotion}
+              />
             </svg>
             <div className="absolute bottom-3 left-3 right-3 rounded-md border border-white/10 bg-navy-950/80 p-3 backdrop-blur">
-              <p className="text-xs font-semibold text-gold-200">{VIEWS.find((item) => item.id === view)?.label} mode</p>
-              <p className="mt-1 text-xs leading-5 text-blue-100/70">
-                The UI toggles the same graph by event chronology, semantic ontology, or stance/narrative relationships.
-              </p>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={view}
+                  initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                  animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                  exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <p className="text-xs font-semibold text-gold-200">{VIEWS.find((item) => item.id === view)?.label} mode</p>
+                  <p className="mt-1 text-xs leading-5 text-blue-100/70">
+                    The UI toggles the same graph by event chronology, semantic ontology, or stance/narrative relationships.
+                  </p>
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
 
@@ -116,25 +201,73 @@ export function SyriaChapterConflictGraph() {
             </p>
           </div>
         ) : null}
-        <div className="mt-4 grid gap-2">
-          {nodes.slice(0, 7).map((node) => (
-            <div key={node.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs font-semibold text-navy-950">{getNodeLabel(node)}</p>
-              <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-slate-600">{node.description}</p>
-            </div>
-          ))}
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={view}
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={reduceMotion ? undefined : { opacity: 1 }}
+            exit={reduceMotion ? undefined : { opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            className="mt-4 grid gap-2"
+          >
+            {nodes.slice(0, 7).map((node) => (
+              <div key={node.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs font-semibold text-navy-950">{getNodeLabel(node)}</p>
+                <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-slate-600">{node.description}</p>
+              </div>
+            ))}
+          </motion.div>
+        </AnimatePresence>
       </aside>
     </div>
   );
 }
 
-function GraphNode({ x, y, label, tone, counterfactual = false }: { x: number; y: number; label: string; tone: 'gold' | 'blue' | 'teal' | 'red'; counterfactual?: boolean }) {
+function GraphNode({
+  x,
+  y,
+  label,
+  tone,
+  counterfactual = false,
+  hovered = false,
+  onHover,
+  reduceMotion,
+}: {
+  x: number;
+  y: number;
+  label: string;
+  tone: 'gold' | 'blue' | 'teal' | 'red';
+  counterfactual?: boolean;
+  hovered?: boolean;
+  onHover?: (label: string | null) => void;
+  reduceMotion?: boolean | null;
+}) {
   const fill = tone === 'gold' ? '#d4af37' : tone === 'blue' ? '#60a5fa' : tone === 'teal' ? '#2dd4bf' : '#f87171';
+  const baseR = counterfactual ? 40 : 34;
   return (
-    <g>
-      <circle cx={x} cy={y} r={counterfactual ? '40' : '34'} fill={fill} fillOpacity="0.18" stroke={fill} strokeWidth={counterfactual ? '3' : '2'} strokeDasharray={counterfactual ? '6 4' : undefined} />
-      <text x={x} y={y + 4} textAnchor="middle" fill="#f8fafc" fontSize="12" fontWeight="700">
+    <g
+      onMouseEnter={() => onHover?.(label)}
+      onMouseLeave={() => onHover?.(null)}
+      style={{ cursor: 'pointer' }}
+    >
+      {hovered && !reduceMotion ? (
+        <circle cx={x} cy={y} r={baseR + 14} fill="url(#syriaNodeGlow)">
+          <animate attributeName="r" from={baseR + 8} to={baseR + 22} dur="1.4s" repeatCount="indefinite" />
+          <animate attributeName="opacity" from="0.7" to="0" dur="1.4s" repeatCount="indefinite" />
+        </circle>
+      ) : null}
+      <circle
+        cx={x}
+        cy={y}
+        r={hovered ? baseR + 3 : baseR}
+        fill={fill}
+        fillOpacity={hovered ? '0.32' : '0.18'}
+        stroke={fill}
+        strokeWidth={counterfactual ? '3' : '2'}
+        strokeDasharray={counterfactual ? '6 4' : undefined}
+        style={{ transition: 'r 0.2s ease, fill-opacity 0.2s ease' }}
+      />
+      <text x={x} y={y + 4} textAnchor="middle" fill="#f8fafc" fontSize="12" fontWeight="700" pointerEvents="none">
         {label}
       </text>
     </g>

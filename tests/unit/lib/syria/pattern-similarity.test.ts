@@ -30,6 +30,8 @@ describe('Syria pattern similarity', () => {
       'iraq-kurdish-referendum-2017',
       'mozambique-renamo-2014-2019',
       'colombia-farc-2016',
+      'tunisia-national-dialogue-2013',
+      'iraq-de-baathification-2003',
     ]);
   });
 });

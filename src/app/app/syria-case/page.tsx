@@ -9,6 +9,7 @@ import { SyriaChapterConflictGraph } from '@/components/syria/chapter-3-conflict
 import { SyriaChapterDialectica } from '@/components/syria/chapter-4-dialectica';
 import { SyriaChapterDecisionProduct } from '@/components/syria/chapter-5-decision-product';
 import { ChapterFrame } from '@/components/syria/chapter-frame';
+import { SyriaAutoplayTour } from '@/components/syria/autoplay-tour';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { GuidedTour } from '@/components/tour/guided-tour';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -188,6 +189,7 @@ export default function SyriaCasePage() {
 
       <MobileChapterBar activeChapter={activeChapter} onOpen={openChapter} />
       <GuidedTour flow={SYRIA_TOUR_FLOW} activeChapter={activeChapter} onOpen={openTourChapter} />
+      <SyriaAutoplayTour activeChapter={activeChapter} openChapter={openChapter} />
     </main>
   );
 }
