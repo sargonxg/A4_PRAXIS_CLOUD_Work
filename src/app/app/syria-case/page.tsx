@@ -12,6 +12,7 @@ import { ChapterFrame } from '@/components/syria/chapter-frame';
 import { SyriaCategoryNav, SYRIA_CATEGORIES } from '@/components/syria/category-nav';
 import { SyriaScrollPilot } from '@/components/syria/scroll-pilot';
 import { SyriaExplainerPopups } from '@/components/syria/explainer-popups';
+import { SyriaWalkthroughNav } from '@/components/syria/walkthrough-nav';
 import { GuidedTour } from '@/components/tour/guided-tour';
 import { useAuth } from '@/lib/auth/auth-context';
 import { SYRIA_DEMO_ANALYST_PROFILE } from '@/lib/constants/syria-demo-workspace';
@@ -97,6 +98,7 @@ export default function SyriaCasePage() {
 
   return (
     <main className="min-h-screen bg-slate-50">
+      <SyriaWalkthroughNav />
       {/* HERO — tight, three lines, three stats */}
       <header className="border-b border-slate-200 bg-gradient-to-b from-white to-slate-50">
         <div className="mx-auto max-w-[1400px] px-4 py-5 sm:px-6 lg:px-8">
