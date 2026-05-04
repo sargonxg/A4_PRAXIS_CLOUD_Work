@@ -4,6 +4,8 @@ import { ComparisonCaseCard } from '@/components/syria/comparison-case-card';
 import { SyriaAgentConsole } from '@/components/syria/agent-console';
 import { SyriaAskPraxis } from '@/components/syria/ask-praxis';
 import { SyriaDocumentGenerator } from '@/components/syria/document-generator';
+import { SyriaWorkflowsBoard } from '@/components/syria/workflows-board';
+import { SyriaKnowledgeLibrary } from '@/components/syria/knowledge-library';
 import { SYRIA_DEMO_CONFLICT_GRAPH } from '@/lib/constants/syria-demo-case';
 import {
   SYRIA_COMMITMENT_MONITOR_DEMO,
@@ -163,8 +165,10 @@ export function SyriaChapterDecisionProduct() {
         </aside>
       </div>
 
+      <SyriaWorkflowsBoard />
       <SyriaAskPraxis />
       <SyriaDocumentGenerator />
+      <SyriaKnowledgeLibrary />
     </div>
   );
 }

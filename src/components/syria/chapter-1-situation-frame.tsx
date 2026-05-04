@@ -12,6 +12,7 @@ import {
 import { SyriaGeographicMap } from '@/components/syria/geographic-map';
 import { SyriaCinematicTimeline } from '@/components/syria/cinematic-timeline';
 import { SyriaNYCStakeholderMap } from '@/components/syria/nyc-stakeholder-map';
+import { SyriaContextGenerationFlow } from '@/components/syria/context-generation-flow';
 
 const SITUATION_METRICS = [
   { label: 'Escalation stage', value: 'Glasl 5', detail: 'Polarization with reversible de-escalation space.', icon: Activity },
@@ -135,6 +136,7 @@ export function SyriaChapterSituationFrame() {
       </div>
 
       <div className="xl:col-span-2 grid gap-4">
+        <SyriaContextGenerationFlow />
         <SyriaGeographicMap />
         <SyriaCinematicTimeline />
         <SyriaNYCStakeholderMap />

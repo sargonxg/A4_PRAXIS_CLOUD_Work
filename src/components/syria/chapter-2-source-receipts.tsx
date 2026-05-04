@@ -16,6 +16,8 @@ import {
   type SyriaReferenceCategory,
 } from '@/lib/constants/syria-grounded-references';
 import { SyriaAgentConsole } from '@/components/syria/agent-console';
+import { SyriaLayerOfTruth } from '@/components/syria/layer-of-truth';
+import { SyriaDailyMediaWorkflow } from '@/components/syria/daily-media-workflow';
 import { SYRIA_AGENT_PRESETS } from '@/lib/syria/agent-presets';
 import { cn } from '@/lib/utils/cn';
 
@@ -82,6 +84,9 @@ export function SyriaChapterSourceReceipts() {
             ))}
           </div>
         </div>
+
+        <SyriaLayerOfTruth />
+        <SyriaDailyMediaWorkflow />
 
         <SyriaAgentConsole
           persona={SYRIA_AGENT_PRESETS['source-scout']!.persona}
