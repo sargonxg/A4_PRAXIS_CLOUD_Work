@@ -30,7 +30,11 @@ import { TipTapEditor } from '@/components/editor/tiptap-editor';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { OnboardingRequiredState } from '@/components/praxis/onboarding-required-state';
 import { isSyriaWorkspaceCase, SYRIA_DEMO_POLICY_MEMO } from '@/lib/constants/syria-demo-case';
+import { resolveCaseTemplate } from '@/lib/constants/cases';
+import { getDemoTemplate } from '@/lib/constants/demo-templates';
+import type { CaseTemplateData, CaseDocument } from '@/lib/constants/cases/case-types';
 import { cn } from '@/lib/utils/cn';
+import { Library, Quote as QuoteIcon } from 'lucide-react';
 
 interface EditorDoc {
   id: string;
@@ -100,13 +104,74 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;');
 }
 
-const RESEARCH_PROMPTS = [
+const SYRIA_RESEARCH_PROMPTS = [
   'Find UN Security Council updates on the 30 January Damascus-SDF agreement.',
   'List EU Council legal instruments lifting sanctions on Syrian state institutions.',
   'Summarise OCHA and UNHCR reports on Syria returns since December 2024.',
   'Cross-check coastal accountability commitments against HRW and Amnesty reporting.',
   'Identify Türkiye–US northeast working-group readouts for the last 30 days.',
 ];
+
+const PAKISTAN_RESEARCH_PROMPTS = [
+  'Find IMF Pakistan EFF programme reviews and staff statements since January 2026.',
+  'List ICG and Crisis24 analyses on the TTP resurgence in KP since the 2023 negotiations collapse.',
+  'Summarise the State Bank of Pakistan Monetary Policy Committee statements over the last 6 months.',
+  'Cross-check ECP delimitation orders against PTI petitions before the Lahore High Court.',
+  'Identify Saudi PIF and PRC public statements on Reko Diq, CPEC, and FX deposit rollovers.',
+];
+
+const US_HOUSING_RESEARCH_PROMPTS = [
+  'Pull HUD PRO-Housing FY26 NOFO award announcements and scoring criteria.',
+  'List California HCD enforcement actions on SB 35 / SB 423 in the last 12 months.',
+  'Summarise the FHFA Tenant Bill of Rights year-one compliance report.',
+  'Cross-check NYC City of Yes final EIS estimates against HPD 2025 production data.',
+  'Identify litigation in TX, FL, and MN testing the limits of state preemption of local housing rules.',
+];
+
+const DEFAULT_RESEARCH_PROMPTS = SYRIA_RESEARCH_PROMPTS;
+
+function buildTemplateSeedHtml(template: CaseTemplateData): string {
+  const stakeholderList = template.situationStakeholders
+    .slice(0, 6)
+    .map((s) => `<li><strong>${escapeHtml(s.shortName ?? s.name)}</strong> — ${escapeHtml(s.position)}</li>`)
+    .join('');
+  const eventsList = template.timeline
+    .slice(-5)
+    .reverse()
+    .map((e) => `<li><strong>${escapeHtml(e.date)}</strong> · ${escapeHtml(e.title)} — ${escapeHtml(e.description)}</li>`)
+    .join('');
+  const sourcesList = template.sources
+    .slice(0, 8)
+    .map((s) => `<li><a href="${escapeHtml(s.url)}" target="_blank" rel="noreferrer">${escapeHtml(s.name)}</a></li>`)
+    .join('');
+  return `
+    <h1>${escapeHtml(template.briefingTitle)}</h1>
+    <p><strong>Workspace:</strong> ${escapeHtml(template.contextLabel)}<br>
+    <strong>Subtitle:</strong> ${escapeHtml(template.subtitle)}<br>
+    <strong>Risk:</strong> ${template.risk.score} · ${escapeHtml(template.risk.label)}</p>
+    <h2>Bottom line up front</h2>
+    <p>Replace this paragraph with the assessment. PRAXIS will keep a running &lt;source-receipt&gt; for every paragraph as you draft.</p>
+    <h2>Key actors and stance</h2>
+    <ul>${stakeholderList}</ul>
+    <h2>Recent timeline</h2>
+    <ul>${eventsList}</ul>
+    <h2>Outlook</h2>
+    <p>Articulate the base / bull / bear scenarios with specific triggers and probabilities.</p>
+    <h2>Recommendation</h2>
+    <p>State the recommendation and required actions.</p>
+    <h2>Sources</h2>
+    <ul>${sourcesList}</ul>
+  `;
+}
+
+function buildTemplateSeedDoc(template: CaseTemplateData): EditorDoc {
+  return {
+    id: `${template.templateId}-seed`,
+    title: template.briefingTitle,
+    html: buildTemplateSeedHtml(template),
+    updatedAt: new Date().toISOString(),
+  };
+}
 
 const FRAMEWORK_REFERENCE = [
   { id: 'glasl',     label: 'Glasl 9-stage escalation', description: 'Stages 1–3 win-win; 4–6 win-lose; 7–9 lose-lose. Used by Risk Monitor + Timeline.' },
@@ -124,8 +189,17 @@ const FRAMEWORK_REFERENCE = [
 export default function EditorPage() {
   const guard = useSituationGuard();
   const searchParams = useSearchParams();
-  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), guard.isDemo);
+  const caseParam = searchParams.get('case');
+  const isSyriaCase = isSyriaWorkspaceCase(caseParam, guard.isDemo);
+  const genericTemplate = resolveCaseTemplate(caseParam);
+  const templateMeta = getDemoTemplate(caseParam);
   const initialDocId = searchParams.get('doc') ?? null;
+
+  const researchPrompts = useMemo(() => {
+    if (templateMeta?.id === 'pakistan-political-risk') return PAKISTAN_RESEARCH_PROMPTS;
+    if (templateMeta?.id === 'us-housing') return US_HOUSING_RESEARCH_PROMPTS;
+    return DEFAULT_RESEARCH_PROMPTS;
+  }, [templateMeta]);
 
   const [docs, setDocs] = useState<EditorDoc[]>(() => {
     if (typeof window === 'undefined') return [SYRIA_SEED_DOC];
@@ -156,6 +230,30 @@ export default function EditorPage() {
       prev.some((d) => d.id === SYRIA_SEED_DOC.id) ? prev : [SYRIA_SEED_DOC, ...prev],
     );
   }, [isSyriaCase]);
+
+  // Seed generic template document on first visit if missing
+  useEffect(() => {
+    if (!genericTemplate) return;
+    const seed = buildTemplateSeedDoc(genericTemplate);
+    setDocs((prev) => {
+      if (prev.some((d) => d.id === seed.id)) return prev;
+      return [seed, ...prev];
+    });
+    setActiveId((prev) => prev || seed.id);
+  }, [genericTemplate]);
+
+  // Helper: insert a citation marker into the active document at the end.
+  const insertCitation = useCallback((doc: CaseDocument) => {
+    setDocs((prev) =>
+      prev.map((d) => {
+        if (d.id !== activeId) return d;
+        const cite = `<p><em>Citation:</em> <a href="${escapeHtml(doc.url ?? '#')}" target="_blank" rel="noreferrer">${escapeHtml(doc.title)}</a> · ${escapeHtml(doc.publisher)} · ${escapeHtml(doc.publishedAt)}.</p>`;
+        return { ...d, html: `${d.html}\n${cite}`, updatedAt: new Date().toISOString() };
+      }),
+    );
+    setSavingState('saving');
+    setTimeout(() => setSavingState('saved'), 400);
+  }, [activeId]);
 
   // Persist to localStorage
   useEffect(() => {
@@ -343,6 +441,38 @@ export default function EditorPage() {
             ))}
           </ul>
         </div>
+        {/* Case-aware Library — shows when a generic template is active. */}
+        {genericTemplate && (
+          <div className="rounded-md border border-gold-200 bg-gold-50/40 p-3">
+            <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-gold-700">
+              <Library className="h-3 w-3" /> Library · {templateMeta?.shortName}
+            </p>
+            <p className="mt-1 text-[10px] text-navy-500">
+              Case documents. Click to insert a citation into the active draft.
+            </p>
+            <ul className="mt-2 space-y-1">
+              {genericTemplate.documents.map((doc) => (
+                <li key={doc.id}>
+                  <button
+                    type="button"
+                    onClick={() => insertCitation(doc)}
+                    className="w-full rounded-md border border-slate-200 bg-white p-2 text-left transition hover:border-gold-300 hover:bg-gold-50/40"
+                  >
+                    <div className="flex items-center gap-1">
+                      <FileText className="h-3 w-3 shrink-0 text-navy-500" />
+                      <span className="truncate text-[11px] font-semibold text-navy-800">{doc.title}</span>
+                    </div>
+                    <p className="mt-0.5 text-[10px] text-navy-500">{doc.publisher} · {doc.publishedAt}</p>
+                    <p className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold text-gold-700">
+                      <QuoteIcon className="h-2.5 w-2.5" /> Insert citation
+                    </p>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="rounded-md border border-slate-200 bg-white p-3">
           <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-navy-500">
             <BookOpenCheck className="h-3 w-3" /> Frameworks reference
@@ -427,7 +557,7 @@ export default function EditorPage() {
             className="mt-2 h-20 w-full resize-none rounded-md border border-slate-200 bg-slate-50 p-2 text-[12px] text-navy-800 focus:border-diplomatic-blue focus:outline-none"
           />
           <ul className="mt-2 space-y-1">
-            {RESEARCH_PROMPTS.map((prompt) => (
+            {researchPrompts.map((prompt) => (
               <li key={prompt}>
                 <button
                   type="button"

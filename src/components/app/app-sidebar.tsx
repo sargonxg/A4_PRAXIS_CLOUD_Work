@@ -30,6 +30,13 @@ import {
   PenSquare,
   GraduationCap,
   Shield,
+  Compass,
+  Newspaper,
+  Network,
+  Search,
+  Layers,
+  Gavel,
+  Briefcase,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -201,70 +208,102 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    label: 'Situation',
+    label: 'Desk',
     items: [
+      { label: 'Cockpit', icon: Compass, href: '/cockpit' },
       { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-      { label: 'Context', icon: Target, href: '/context-builder' },
-      { label: 'Documents', icon: BookOpen, href: '/documents' },
-      { label: 'Sources & Research', icon: Telescope, href: '/source-scout' },
     ],
   },
   {
-    label: 'Analysis',
+    label: 'Context',
+    items: [
+      { label: 'Context Builder', icon: Target, href: '/context-builder' },
+      { label: 'Documents', icon: BookOpen, href: '/documents' },
+      { label: 'Timeline', icon: Clock, href: '/timeline' },
+    ],
+  },
+  {
+    label: 'Library',
+    items: [
+      { label: 'Document Library', icon: Library, href: '/library' },
+      { label: 'Sources Library', icon: Layers, href: '/sources' },
+      { label: 'Methodology', icon: GraduationCap, href: '/methodology' },
+    ],
+  },
+  {
+    label: 'Research',
+    items: [
+      { label: 'Source Scout', icon: Telescope, href: '/source-scout' },
+      { label: 'Deep Research', icon: Search, href: '/deep-search-agent' },
+      { label: 'Media Compass', icon: Newspaper, href: '/media-compass' },
+    ],
+  },
+  {
+    label: 'Graph',
     items: [
       { label: 'Conflict Graph', icon: GitBranch, href: '/conflict-graph' },
       { label: 'GraphOps', icon: Wrench, href: '/graphops' },
-      { label: 'Timeline', icon: Clock, href: '/timeline' },
-      { label: 'Stakeholders', icon: Users, href: '/stakeholder-map' },
-      { label: 'Humanitarian', icon: HeartHandshake, href: '/humanitarian' },
+      { label: 'Stakeholder Map', icon: Users, href: '/stakeholder-map' },
+      { label: 'Power Map', icon: Network, href: '/power-map' },
     ],
   },
   {
-    label: 'Decision',
+    label: 'Boardroom',
     items: [
-      { label: 'Briefing Studio', icon: FileText, href: '/briefing' },
-      { label: 'Editor', icon: PenSquare, href: '/editor' },
       { label: 'Advisory Council', icon: MessagesSquare, href: '/advisory' },
+      { label: 'Brainstorming Table', icon: Sparkles, href: '/brainstorming-table' },
       { label: 'Ask PRAXIS', icon: Sparkles, href: '/assistant' },
     ],
   },
   {
-    label: 'Specialist',
+    label: 'Draft',
     items: [
-      { label: 'Sanctions Monitor', icon: Shield, href: '/sanctions-explorer' },
+      { label: 'Editor', icon: PenSquare, href: '/editor' },
+      { label: 'Briefing Studio', icon: FileText, href: '/briefing' },
+      { label: 'Policy Memo', icon: FileText, href: '/policy-memo' },
+      { label: 'Talking Points', icon: FileText, href: '/talking-points' },
     ],
   },
   {
-    label: 'Workspace',
+    label: 'Specialist Tools',
     items: [
-      { label: 'Library', icon: Library, href: '/library' },
-      { label: 'Methodology', icon: GraduationCap, href: '/methodology' },
-      { label: 'Sources Library', icon: Library, href: '/sources' },
+      { label: 'Humanitarian', icon: HeartHandshake, href: '/humanitarian' },
+      { label: 'Sanctions Monitor', icon: Shield, href: '/sanctions-explorer' },
+      { label: 'Policy Desks', icon: Briefcase, href: '/desks/political-risk' },
       { label: 'All tools', icon: PanelsTopLeft, href: '/tools' },
     ],
   },
 ];
 
 const RECORDING_NAV_HREFS = new Set([
+  '/cockpit',
   '/demo-guide',
   '/dashboard',
   '/context-builder',
   '/documents',
+  '/timeline',
+  '/library',
+  '/sources',
+  '/methodology',
   '/source-scout',
+  '/deep-search-agent',
+  '/media-compass',
   '/conflict-graph',
   '/graphops',
-  '/timeline',
   '/stakeholder-map',
-  '/humanitarian',
-  '/briefing',
-  '/editor',
+  '/power-map',
   '/advisory',
+  '/brainstorming-table',
   '/assistant',
-  '/sources',
-  '/tools',
-  '/library',
-  '/methodology',
+  '/editor',
+  '/briefing',
+  '/policy-memo',
+  '/talking-points',
+  '/humanitarian',
   '/sanctions-explorer',
+  '/desks/political-risk',
+  '/desks/us-housing',
+  '/tools',
 ]);
 
 function ChangelogButton() {
@@ -316,13 +355,21 @@ function ChangelogButton() {
 
 // Map sidebar hrefs to tool-data IDs for status indicators
 const HREF_TO_TOOL_ID: Record<string, string> = {
-  // Context
+  // Desk
+  '/cockpit': 'cockpit',
   '/dashboard': 'dashboard',
   '/dashboard#executive-intelligence': 'situation-intelligence',
+  // Context
   '/context-builder': 'context-builder',
   '/documents': 'documents',
+  '/library': 'library',
   '/sources': 'sources-library',
+  '/methodology': 'methodology',
+  // Research
   '/source-scout': 'source-scout',
+  '/deep-search-agent': 'deep-search-agent',
+  '/media-compass': 'media-compass',
+  // Other
   '/timeline': 'timeline',
   '/humanitarian': 'humanitarian',
   '/calendar': 'calendar',
@@ -358,7 +405,6 @@ const HREF_TO_TOOL_ID: Record<string, string> = {
   // Intelligence
   '/argus': 'argus',
   '/brainstorming-table': 'brainstorming-table',
-  '/media-compass': 'media-compass',
   '/media-roundup': 'media-roundup',
   '/info-environment': 'info-environment',
   '/sanctions': 'sanctions',
@@ -403,6 +449,9 @@ export function AppSidebar() {
   const { activeSituationId, setActiveSituation } = useSituationStore();
   const recordingMode = user?.isDemo === true && searchParams.get('recording') === '1';
   const recordingCase = searchParams.get('case');
+  // Sticky case selection — when the user has chosen a demo template (case=...)
+  // every sidebar link preserves it so navigation stays inside that template.
+  const stickyCase = searchParams.get('case');
   const allToolStatuses = useAllToolStatuses(activeSituationId);
   const { preferences } = useUserPreferences({ enabled: Boolean(user && !user.isDemo) });
   const sidebarOrder = orderedToolIds(preferences);
@@ -477,7 +526,7 @@ export function AppSidebar() {
     >
       {/* Logo */}
       <div className="flex h-16 items-center px-4 border-b border-[var(--color-app-border)]">
-        <PraxisLink href="/dashboard" className="flex items-center gap-2 overflow-hidden">
+        <PraxisLink href="/cockpit" className="flex items-center gap-2 overflow-hidden">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-diplomatic-blue">
             <span className="font-serif text-sm font-bold text-white">P</span>
           </div>
@@ -626,11 +675,13 @@ export function AppSidebar() {
                 barePath === itemPath || barePath.startsWith(itemPath + '/');
               const Icon = item.icon;
               const href = (() => {
-                if (!recordingMode) return item.href;
                 const [path, hash] = item.href.split('#');
-                const params = new URLSearchParams({ recording: '1' });
+                const params = new URLSearchParams();
+                if (recordingMode) params.set('recording', '1');
                 if (recordingCase) params.set('case', recordingCase);
-                return `${path}?${params.toString()}${hash ? `#${hash}` : ''}`;
+                else if (stickyCase) params.set('case', stickyCase);
+                const qs = params.toString();
+                return `${path}${qs ? `?${qs}` : ''}${hash ? `#${hash}` : ''}`;
               })();
 
               const linkContent = (

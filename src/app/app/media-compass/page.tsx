@@ -34,6 +34,9 @@ import {
 } from "lucide-react";
 import { buildToolContext } from "@/lib/ai/build-context-pure";
 import { isSyriaWorkspaceCase } from "@/lib/constants/syria-demo-case";
+import { resolveCaseTemplate } from "@/lib/constants/cases";
+import { getDemoTemplate } from "@/lib/constants/demo-templates";
+import type { CaseTemplateData } from "@/lib/constants/cases/case-types";
 import { SyriaMediaScatter } from "@/components/visualizations/syria-media-scatter";
 import {
   SYRIA_LOCAL_MEDIA_SOURCES,
@@ -44,6 +47,30 @@ import {
 } from "@/lib/constants/syria-demo-workspace";
 
 type MediaTab = "source-map" | "coverage" | "sentiment";
+
+/**
+ * Convert a generic case template's media outlets into the MediaSource shape
+ * the source-map renderer uses. Pulls reliability from the case's source list
+ * when names match; otherwise normalises the canvas y back into a 0..1 band.
+ */
+function caseTemplateToMediaSources(template: CaseTemplateData): MediaSource[] {
+  return template.mediaOutlets.map((m) => {
+    const matchedSource = template.sources.find(
+      (s) => s.url === m.url || s.name.toLowerCase() === m.name.toLowerCase(),
+    );
+    const y = matchedSource ? matchedSource.reliability : Math.max(0, Math.min(1, (m.y + 1) / 2));
+    return {
+      name: m.name,
+      x: m.x,
+      y,
+      type: m.bias === 'state' ? 'state' : m.bias === 'industry' ? 'industry' : 'private',
+      region: 'Situation',
+      color: '#E8B931',
+      languages: m.language ? [m.language] : undefined,
+      description: m.notes,
+    };
+  });
+}
 
 // ── Media Source Data ────────────────────────────────────────────
 const MEDIA_SOURCES: MediaSource[] = [
@@ -567,7 +594,11 @@ export default function MediaCompassPage() {
 
   const searchParams = useSearchParams();
   const { isDemo, showGuard, situation } = useSituationGuard();
-  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get("case"), isDemo);
+  const caseParam = searchParams.get("case");
+  const isSyriaCase = isSyriaWorkspaceCase(caseParam, isDemo);
+  const genericTemplate = resolveCaseTemplate(caseParam);
+  const templateMeta = getDemoTemplate(caseParam);
+  const isGenericTemplate = Boolean(genericTemplate);
   const { hasData, loading: firestoreLoading } = useToolData("media_analysis");
   const [regenerating, setRegenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<MediaTab>("source-map");
@@ -582,13 +613,15 @@ export default function MediaCompassPage() {
   const [showSituationSources, setShowSituationSources] = useState(true);
 
   const allSources = useMemo(() => {
+    const templateSources = genericTemplate ? caseTemplateToMediaSources(genericTemplate) : [];
     const sourceList = [
       ...MEDIA_SOURCES,
       ...(isSyriaCase ? SYRIA_COMPASS_SOURCES : []),
+      ...templateSources,
       ...(showSituationSources ? situationSources : []),
     ];
     return Array.from(new Map(sourceList.map((source) => [source.name, source])).values());
-  }, [isSyriaCase, situationSources, showSituationSources]);
+  }, [isSyriaCase, genericTemplate, situationSources, showSituationSources]);
 
   const filteredSources = useMemo(() => {
     let result = allSources;
@@ -639,7 +672,7 @@ export default function MediaCompassPage() {
     return items;
   }, [colorBy, filteredSources]);
 
-  if (showGuard) return <NoSituationState />;
+  if (showGuard && !isGenericTemplate) return <NoSituationState />;
 
   const toggleCompareSource = (name: string) => {
     setSelectedCompare((prev) =>
@@ -722,6 +755,34 @@ export default function MediaCompassPage() {
             )}
           </div>
         </motion.div>
+
+        {/* Generic template banner — shows when Pakistan / US-Housing / future templates are active. */}
+        {genericTemplate && templateMeta && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="mb-6 rounded-xl border border-gold-200 bg-gold-50/60 p-4"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xl leading-none" aria-hidden>{templateMeta.flag}</span>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gold-700">
+                Demo template · {templateMeta.shortName}
+              </p>
+              <span className="text-[11px] text-navy-700">{genericTemplate.subtitle}</span>
+            </div>
+            <p className="mt-2 text-xs text-navy-700">
+              The map below adds <strong>{genericTemplate.mediaOutlets.length}</strong> case-specific outlets in gold next to PRAXIS&apos;s 32-outlet baseline. Click any gold dot to see country, language, bias, and reliability.
+            </p>
+            <ul className="mt-2 flex flex-wrap gap-1.5">
+              {genericTemplate.mediaOutlets.map((m) => (
+                <li key={m.id} className="rounded border border-gold-200 bg-white px-2 py-0.5 text-[10px] text-navy-700">
+                  {m.name}<span className="ml-1 text-navy-400">· {m.bias}</span>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        )}
 
         {isSyriaCase && (
           <SyriaMediaCommandCenter

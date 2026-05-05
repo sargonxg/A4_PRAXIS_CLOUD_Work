@@ -31,6 +31,8 @@ import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { OnboardingRequiredState } from '@/components/praxis/onboarding-required-state';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { isSyriaWorkspaceCase } from '@/lib/constants/syria-demo-case';
+import { resolveCaseTemplate } from '@/lib/constants/cases';
+import { getDemoTemplate } from '@/lib/constants/demo-templates';
 import { cn } from '@/lib/utils/cn';
 
 interface ArtifactEntry {
@@ -85,7 +87,10 @@ const TOOL_HREF: Record<string, string> = {
 export default function LibraryPage() {
   const guard = useSituationGuard();
   const searchParams = useSearchParams();
-  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), guard.isDemo);
+  const caseParam = searchParams.get('case');
+  const isSyriaCase = isSyriaWorkspaceCase(caseParam, guard.isDemo);
+  const genericTemplate = resolveCaseTemplate(caseParam);
+  const templateMeta = getDemoTemplate(caseParam);
 
   const [data, setData] = useState<LibraryResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -232,6 +237,50 @@ export default function LibraryPage() {
         >
           {uploadStatus.message}
         </div>
+      )}
+
+      {/* Case-aware document set — shown when a generic template is active. */}
+      {genericTemplate && templateMeta && (
+        <section className="rounded-lg border border-gold-200 bg-gold-50/40 p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xl leading-none" aria-hidden>{templateMeta.flag}</span>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-700">
+              Case documents · {templateMeta.shortName}
+            </p>
+            <span className="text-[11px] text-navy-700">{genericTemplate.documents.length} document{genericTemplate.documents.length === 1 ? '' : 's'}</span>
+          </div>
+          <p className="mt-1 text-[12px] text-navy-700">{genericTemplate.subtitle}</p>
+          <ul className="mt-3 grid gap-2 lg:grid-cols-2">
+            {genericTemplate.documents.map((doc) => (
+              <li key={doc.id} className="rounded-md border border-slate-200 bg-white p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-[12px] font-semibold text-navy-900">{doc.title}</p>
+                    <p className="text-[10px] text-navy-500">{doc.publisher} · {doc.publishedAt} · {doc.type}</p>
+                  </div>
+                  {doc.url && (
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex shrink-0 items-center gap-1 rounded border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-navy-700 hover:border-navy-400 hover:text-navy-900"
+                    >
+                      Open <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                  )}
+                </div>
+                <p className="mt-2 text-[11px] leading-4 text-navy-600">{doc.summary}</p>
+                {doc.tags && doc.tags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {doc.tags.map((t) => (
+                      <span key={t} className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-slate-600">{t}</span>
+                    ))}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

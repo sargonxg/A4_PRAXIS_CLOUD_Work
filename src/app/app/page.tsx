@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function AppIndexPage() {
-  redirect('/app/dashboard');
+  redirect('/app/cockpit');
 }
-// triggered 1774237216
