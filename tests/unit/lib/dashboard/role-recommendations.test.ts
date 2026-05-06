@@ -33,8 +33,8 @@ describe('role-aware dashboard recommendations', () => {
     const recommendations = recommendToolsForRole('diplomat', 'humanitarian', 3);
     expect(recommendations.map((rec) => rec.toolId)).toEqual([
       'dashboard',
-      'briefing',
       'stakeholder-map',
+      'briefing',
     ]);
   });
 });

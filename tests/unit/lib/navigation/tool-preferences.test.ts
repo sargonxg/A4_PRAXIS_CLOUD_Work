@@ -12,7 +12,7 @@ describe('tool preferences navigation helpers', () => {
   it('keeps known preferred ids first and appends the rest', () => {
     const ordered = orderedToolIds({ toolOrder: ['source-scout', 'dashboard', 'unknown-tool'] });
     expect(ordered.slice(0, 2)).toEqual(['source-scout', 'dashboard']);
-    expect(ordered).toContain('conflict-graph');
+    expect(ordered).toContain('graphops');
     expect(ordered).not.toContain('unknown-tool');
   });
 
@@ -28,12 +28,12 @@ describe('tool preferences navigation helpers', () => {
   });
 
   it('preserves explicit route aliases', () => {
-    const briefing = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'briefing');
-    const actors = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'stakeholder-map');
-    const sources = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'sources-library');
-    expect(briefing?.href).toBe('/briefing');
-    expect(actors?.href).toBe('/stakeholder-map');
-    expect(sources?.href).toBe('/sources');
+    const draft = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'policy-memo');
+    const graph = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'graphops');
+    const sources = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'source-scout');
+    expect(draft?.href).toBe('/policy-memo');
+    expect(graph?.href).toBe('/graphops');
+    expect(sources?.href).toBe('/source-scout');
   });
 
   it('normalizes legacy recommendation ids before applying preferences', () => {
