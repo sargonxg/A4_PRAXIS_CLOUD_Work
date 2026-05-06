@@ -6,6 +6,10 @@
   Added the model matrix, typed matrix loader, backend model constants,
   provider-isolation audits, Vertex-default audit gate, and rewired document
   embeddings through the shared provider boundary using `text-embedding-005`.
+- prod(ops): add Pack 14 production-excellence scaffolding.
+  Added UX polish and observability coverage audits, canary monitor, load-test
+  scaffold, capacity plan, canary log template, Codex orchestration playbook,
+  and accessibility hooks for shared loading, empty, and error states.
 - test(app): add usability smoke for landing and Workbench.
   Added Playwright coverage for the landing hero visual, static fallback,
   DIALECTICA 3D graph, demo Workbench context/ontology/graph/tools/memo

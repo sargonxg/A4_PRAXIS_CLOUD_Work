@@ -200,16 +200,22 @@ documented. A partial item must keep its named gap visible.
 - [x] Add provider isolation audit for Google AI fallback and user BYO keys.
 - [x] Add embeddings v2 plan using GCP-native embeddings.
 - [x] Decide local architecture posture: pgvector remains primary; Vertex AI Vector Search 2 is the secondary at-scale path.
+- [x] Add local observability coverage audit for trace/logger/health/diagnostics wiring.
+- [x] Add local UX polish audit for loading, empty, error, retry, and core Workbench smoke affordances.
+- [x] Add load-test scaffold and capacity plan for 10 / 100 / 1k / 10k DAU tiers.
+- [x] Add canary monitor script for phases 5, 25, and 100.
+- [x] Add `docs/launch/CANARY_LOG.md` phase template.
+- [x] Add `docs/contributing/CODEX_ORCHESTRATION.md`.
 - [ ] Obtain owner sign-off on Vertex AI region and model defaults.
 - [ ] Terraform-manage Cloud Run, Cloud SQL, Firestore indexes/rules, Scheduler, Tasks, Pub/Sub, Secret Manager, IAM, budgets, and alerts.
 - [ ] Add Terraform drift audit.
-- [ ] Add observability coverage audit for logs, traces, metrics, and Sentry.
-- [ ] Add load test script and capacity plan.
+- [x] Add observability coverage audit for logs, traces, metrics, and Sentry.
+- [x] Add load test script and capacity plan.
 - [ ] Add cost projections doc and owner approval.
 - [ ] Add public read-only demo/wow flow with 60-second route.
 - [ ] Add waitlist/magic-link posture decision and implementation.
-- [ ] Add canary monitor script for phases 5, 25, and 100.
-- [ ] Add `docs/launch/CANARY_LOG.md` with phase metrics and sign-offs.
+- [x] Add canary monitor script for phases 5, 25, and 100.
+- [x] Add `docs/launch/CANARY_LOG.md` with phase metrics and sign-offs.
 - [ ] Add rollback runbook and prove rollback command path.
 - [ ] Add final `docs/audits/2026-05-06-LAUNCH_GATE.md`.
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /* eslint-disable @typescript-eslint/no-require-imports */
+export {};
 /**
  * PRAXIS Tool Verification Script
  * Tests all major AI routes to ensure they are reachable and return structured output.

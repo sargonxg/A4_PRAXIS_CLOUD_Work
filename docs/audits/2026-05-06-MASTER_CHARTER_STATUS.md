@@ -36,7 +36,7 @@ The master charter is now preserved in-repo and its high-level support structure
 | 11 Memo Studio & Launch | DONE foundation, launch sign-off pending | Memo Studio DONE; v1.0 tag/signature pending | Server-backed memo versions now exist; owner signature and v1.0 tag are not complete. |
 | 12 Context Architecture | DONE TS/runtime foundation, agent orchestration pending | DONE with LangGraph orchestration deferred | Signed conversation context and runtime ContextProvider are present. |
 | 13 Tool-Context Interop | DONE contract foundation, subagent runtime pending | DONE with runtime orchestration deferred | Contract v2, skills, projection, and suggestions are live. |
-| Pack 14 Production Excellence | PARTIAL provider/posture pass | Gemini Enterprise/Vertex posture, model matrix, shared embedding provider, backend model constants, and provider audits DONE; production infra deferred | Requires owner decisions on final region/cost, Terraform/canary plan, public demo, and signup posture. |
+| Pack 14 Production Excellence | PARTIAL local production-excellence foundation | Gemini Enterprise/Vertex posture, model matrix, shared embedding provider, backend model constants, provider audits, UX/observability audits, load-test scaffold, capacity plan, canary monitor, canary log template, and orchestration playbook DONE; production infra deferred | Requires owner decisions on final region/cost, Terraform/canary execution, public demo, and signup posture. |
 
 ## No open S0/S1
 

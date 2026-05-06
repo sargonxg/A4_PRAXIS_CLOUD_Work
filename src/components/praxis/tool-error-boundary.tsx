@@ -40,7 +40,7 @@ export class ToolErrorBoundary extends Component<Props, State> {
                          this.state.error?.message?.includes('model');
 
       return (
-        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-crimson/20 bg-crimson/5 p-8 text-center">
+        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-crimson/20 bg-crimson/5 p-8 text-center" role="alert" data-testid="tool-error-state">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-crimson/10">
             <AlertTriangle className="h-6 w-6 text-crimson" />
           </div>
