@@ -182,7 +182,7 @@ export function ToolMarketplace() {
   }
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-navy-950/5">
+    <section data-testid="tool-marketplace" className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-navy-950/5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-navy-950">

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- test(app): add usability smoke for landing and Workbench.
+  Added Playwright coverage for the landing hero visual, static fallback,
+  DIALECTICA 3D graph, demo Workbench context/ontology/graph/tools/memo
+  surfaces, and refreshed persona graph assertions against the current UI.
 - feat(tools): add marketplace cancel and retry controls.
   Marketplace runs now use abortable fetches with visible cancel and retry
   controls so the UI path is ready for longer specialist handlers.

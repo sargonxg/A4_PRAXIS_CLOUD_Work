@@ -60,6 +60,7 @@ export function HeroVisual({ narrativeMotion = true }: { narrativeMotion?: boole
 
   return (
     <div
+      data-testid="landing-hero-visual"
       ref={wrapperRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}

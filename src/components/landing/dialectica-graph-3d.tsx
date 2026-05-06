@@ -57,7 +57,10 @@ export function DialecticaGraph3D({ narrativeMotion }: { narrativeMotion: boolea
   }, [shouldReduceMotion]);
 
   return (
-    <div className="relative min-h-[460px] overflow-hidden rounded-2xl border border-white/10 bg-navy-950 p-4 shadow-2xl shadow-navy-950/20">
+    <div
+      data-testid="dialectica-graph-3d"
+      className="relative min-h-[460px] overflow-hidden rounded-2xl border border-white/10 bg-navy-950 p-4 shadow-2xl shadow-navy-950/20"
+    >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_35%_20%,rgba(76,201,240,0.14),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_42%)]" />
       <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(148,163,184,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.12)_1px,transparent_1px)] [background-size:34px_34px]" />
       <div className="absolute left-5 top-5 z-10 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-100/80">

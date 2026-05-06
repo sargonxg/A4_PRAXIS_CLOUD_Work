@@ -17,6 +17,7 @@ documented. A partial item must keep its named gap visible.
 - [x] Keep Graphify outputs refreshed after code changes.
 - [x] Keep repo identity visible in charter docs and handoff docs.
 - [x] Keep no open S0/S1 launch blockers in the current reality check.
+- [x] Add local app-usability smoke for landing visuals, demo Workbench, context, ontology, graph, tools, memos, and persona flows.
 - [ ] Run persona Playwright suites 10 consecutive times in CI and record run ids.
 - [ ] Add a machine-readable persona streak ledger under `docs/audits/`.
 - [ ] Add CI artifact upload for persona screenshots, traces, and console logs.
@@ -31,6 +32,7 @@ documented. A partial item must keep its named gap visible.
 - [x] Keep one canonical Workbench route for active case work.
 - [x] Keep Syria/Nordalia as examples, not the app architecture.
 - [x] Keep route/sidebar audits green.
+- [x] Add local browser assertion for Workbench tab usability across context, ontology, graph, tools, and memos.
 - [ ] Add browser assertion that default sidebar exposes the intended primary surfaces only.
 - [ ] Confirm every legacy route redirects or archives with clear user copy.
 - [ ] Remove stale route language from old docs or mark as historical.
@@ -41,6 +43,7 @@ documented. A partial item must keep its named gap visible.
 
 - [x] Keep landing Workbench-first and not Syria-only.
 - [x] Keep current section anchors audited.
+- [x] Add local smoke for landing hero animation, static fallback, and DIALECTICA 3D graph visibility.
 - [ ] Add live public-domain smoke with screenshot evidence after every deploy.
 - [ ] Add landing CTA journey test through demo/session creation.
 - [ ] Add pricing/waitlist copy audit against the current signup posture.
@@ -232,5 +235,5 @@ documented. A partial item must keep its named gap visible.
 - [ ] Add Firestore rules/index deployment drift gate.
 - [ ] Add Storage rules smoke tests for document ownership.
 - [ ] Add BigQuery marts for tool runs, background jobs, provider failures, user activation, and cost.
-- [ ] Add browser smoke for all recently uplifted flagship tools.
+- [x] Add browser smoke for recently uplifted marketplace and Workbench flagship surfaces.
 - [ ] Keep `README.md`, `ARCHITECTURE.md`, `CLAUDE.md`, `AGENTS.md`, `DESIGN.md`, `DEPLOYMENT.md`, `SECURITY.md`, `TESTING.md`, `TODO.md`, and `CHANGELOG.md` synced with this checklist.

@@ -25,8 +25,8 @@ The master charter is now preserved in-repo and its high-level support structure
 
 | Pack | Charter Status | Current Reality | Notes |
 |---|---|---|---|
-| 03 Workbench Architecture | DONE foundation | DONE | Unified Workbench and route/sidebar audit are green. |
-| 04 Landing & Entry Rebuild | DONE foundation | DONE | Landing is Workbench-first and Syria is only an example. |
+| 03 Workbench Architecture | DONE foundation | DONE | Unified Workbench, route/sidebar audit, persona flows, and local Workbench usability smoke are green. |
+| 04 Landing & Entry Rebuild | DONE foundation | DONE | Landing is Workbench-first and Syria is only an example; local smoke verifies anchors, hero visual, static fallback, and DIALECTICA 3D graph. |
 | 05 Context vs Tools | DONE foundation | DONE | Context health, firewall, Trust Score persistence, and persona files are present. |
 | 06 Ontology System | PARTIAL backend depth | Frontend DONE, backend classifier deferred | Four ontologies are mapped; LangGraph classifier remains v1.1/Pack 14 depth. |
 | 07 Graph Visualization | PARTIAL edit depth | Viewer DONE, edit round-trip deferred | Canonical graph tab works; advanced edit UX remains backlog. |
@@ -41,6 +41,12 @@ The master charter is now preserved in-repo and its high-level support structure
 ## No open S0/S1
 
 The current reality check records no open S0/S1 launch blockers. Existing open items are S2/S3 and are tracked in `docs/backlog/2026-05-06-from-reality-check.md` plus `docs/roadmap/v1.1-and-beyond.md`.
+
+## Latest Usability Smoke
+
+`docs/audits/2026-05-06-USABILITY_SMOKE.md` records the current local browser
+evidence: landing smoke passed, app-usability smoke passed, and all four
+persona flows passed against `http://localhost:3107`.
 
 ## Remaining Work
 

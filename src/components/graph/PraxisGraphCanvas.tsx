@@ -42,7 +42,7 @@ export function PraxisGraphCanvas({ graph, className }: { graph: WorkbenchGraph;
   const selected = layout.find((node) => node.id === selectedId) ?? layout[0];
 
   return (
-    <section className={cn('rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-navy-950/5', className)}>
+    <section data-testid="praxis-graph-canvas" className={cn('rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-navy-950/5', className)}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-navy-950">
@@ -57,6 +57,13 @@ export function PraxisGraphCanvas({ graph, className }: { graph: WorkbenchGraph;
           <ShieldCheck className="h-4 w-4" />
           {Math.round(graph.provenanceCoverage * 100)}% provenance
         </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Metric label="Graph nodes" value={String(graph.nodes.length)} />
+        <Metric label="Graph edges" value={String(graph.edges.length)} />
+        <Metric label="Truth layers" value="3" />
+        <Metric label="Provenance coverage" value={`${Math.round(graph.provenanceCoverage * 100)}%`} />
       </div>
 
       <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">

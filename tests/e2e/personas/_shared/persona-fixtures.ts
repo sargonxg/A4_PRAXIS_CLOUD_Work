@@ -20,7 +20,24 @@ export async function openExampleWorkbench(page: Page, caseId: string, tab = 'ch
 }
 
 export async function expectWorkbenchTab(page: Page, heading: string) {
-  await expect(page.locator('h2').filter({ hasText: new RegExp(`^${heading}$`, 'i') })).toBeVisible();
+  const headingPattern = heading === 'Graph'
+    ? /^(Graph|Graph Visualization)$/i
+    : heading === 'Ontology'
+      ? /^(Ontology|Ontology System)$/i
+      : heading === 'Tools'
+        ? /^(Tools|Tools Marketplace)$/i
+        : new RegExp(`^${heading}$`, 'i');
+
+  await expect(page.getByRole('heading', { name: headingPattern }).first()).toBeVisible();
+  await expect(page.getByText('Context health').first()).toBeVisible();
+
+  if (heading === 'Graph') {
+    await expect(page.getByTestId('praxis-graph-canvas')).toBeVisible();
+    await expect(page.getByText('Graph nodes').first()).toBeVisible();
+    await expect(page.getByText(/truth layers/i).first()).toBeVisible();
+    return;
+  }
+
   await expect(page.getByText('Risk').first()).toBeVisible();
   await expect(page.getByText('Graph nodes').first()).toBeVisible();
 }

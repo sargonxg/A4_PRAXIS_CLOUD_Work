@@ -11,7 +11,7 @@ export function OntologySchemaViewer() {
   const mapping = summarizeOntologyMapping(ontology);
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-navy-950/5">
+    <section data-testid="ontology-schema-viewer" className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-navy-950/5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-3xl">
           <OntologyBadge ontology={ontology} />
