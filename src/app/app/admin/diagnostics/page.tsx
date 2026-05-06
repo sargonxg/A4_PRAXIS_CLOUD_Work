@@ -31,6 +31,12 @@ interface OperationalPanel {
 interface Diagnostics {
   computedAt: string;
   panels: OperationalPanel[];
+  operationalMetrics?: {
+    schemaVersion: string;
+    computedAt: string;
+    windowHours: number;
+    queryErrors?: Record<string, string | null>;
+  } | null;
   probes: { storage: Probe[]; ai: Probe[]; secrets: Probe[] };
   feeds: { feeds: Record<string, FeedCapability>; availableProviders: string[]; coverageScore: number };
   counters: {
@@ -114,6 +120,11 @@ export default function DiagnosticsPage() {
         <div className="space-y-6">
           <section>
             <h2 className="mb-2 text-sm font-semibold text-slate-200">Charter Operations</h2>
+            <p className="mb-3 text-xs text-slate-500">
+              {data.operationalMetrics
+                ? `Scheduler-backed snapshot from ${new Date(data.operationalMetrics.computedAt).toLocaleString()} (${data.operationalMetrics.windowHours}h window).`
+                : 'Live fallback probes are shown until the operational metrics cron writes its first snapshot.'}
+            </p>
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-7">
               {data.panels.map((panel) => (
                 <OperationalPanelCard key={panel.id} panel={panel} />

@@ -31,7 +31,7 @@ The master charter is now preserved in-repo and its high-level support structure
 | 06 Ontology System | PARTIAL backend depth | Frontend DONE, backend classifier deferred | Four ontologies are mapped; LangGraph classifier remains v1.1/Pack 14 depth. |
 | 07 Graph Visualization | PARTIAL edit depth | Viewer DONE, edit round-trip deferred | Canonical graph tab works; advanced edit UX remains backlog. |
 | 08 Tools Marketplace | PARTIAL specialist depth | Registry/UI/foundation execution DONE, specialist handlers deferred | 16 curated tools, skills, ContextProvider run route, and tolerant artifact persistence pass audits; per-tool model handlers remain v1.1. |
-| 09 Verification & Admin | PARTIAL metrics depth | Admin consolidation and seven-panel diagnostics shell DONE | Canonical admin route exists; seven panels use live foundation metrics, with scheduler-backed aggregates still backlog. |
+| 09 Verification & Admin | PARTIAL metrics depth | Admin consolidation and scheduler-backed seven-panel diagnostics DONE | Canonical admin route exists; seven panels consume persisted operational snapshots when cron has run; Postgres parity and provider-level cost remain backlog. |
 | 10 Postgres KG | PARTIAL production cutover | Schema/repositories DONE, live cutover deferred | Postgres is default in contract; production migration/cutover remains open. |
 | 11 Memo Studio & Launch | DONE foundation, launch sign-off pending | Memo Studio DONE; v1.0 tag/signature pending | Server-backed memo versions now exist; owner signature and v1.0 tag are not complete. |
 | 12 Context Architecture | DONE TS/runtime foundation, agent orchestration pending | DONE with LangGraph orchestration deferred | Signed conversation context and runtime ContextProvider are present. |
@@ -47,7 +47,7 @@ The current reality check records no open S0/S1 launch blockers. Existing open i
 - Run and maintain the four persona suites until the charter's 10-green-run bar is genuinely satisfied in CI.
 - Complete Postgres KG production cutover and migration verification.
 - Implement specialist model-backed marketplace handlers for all 16 tools on top of the ContextProvider foundation run route.
-- Replace the seven-panel diagnostics shell's foundation signals with scheduler-backed operational metrics where noted.
+- Enrich scheduler-backed diagnostics with Postgres parity, provider-level cost, and streaming firewall event distributions.
 - Implement LangGraph subagent orchestration/telemetry for Context Preparer, Source Augmenter, Output Refiner, and Memo Drafter.
 - Decide and execute Pack 14: Vertex AI default, Terraform-managed infrastructure, public read-only demo, waitlist/magic-link posture, observability, load testing, cost dashboard, and canary deploy.
 - Obtain owner production-readiness signature, complete staging/production signed smoke records, and only then tag `v1.0.0`.

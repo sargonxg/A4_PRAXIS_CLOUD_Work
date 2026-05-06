@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(admin): add scheduler-backed operational metrics snapshots.
+  Added `/api/cron/operational-metrics`, the persisted
+  `operational_metrics/latest` snapshot contract, Cloud Scheduler config,
+  admin diagnostics consumption, audit coverage, and unit tests for the seven
+  charter panels.
 - feat(tools): add ContextProvider-backed marketplace foundation runs.
   Added `/api/tools/marketplace/run`, a deterministic foundation runner, tolerant
   run artifact persistence, marketplace run controls, and audit coverage so the

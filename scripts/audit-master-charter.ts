@@ -42,6 +42,7 @@ const requiredDocs = [
   'docs/audits/2026-05-06-COMPREHENSIVE.md',
   'docs/audits/2026-05-06-REALITY_CHECK.md',
   'docs/roadmap/v1.1-and-beyond.md',
+  'docs/backlog/2026-05-06-master-charter-completion-todo.md',
   'docs/launch/PRODUCTION_READINESS.signed.md',
   'docs/launch/ANNOUNCEMENT.md',
   'graphify-out/GRAPH_REPORT.md',
@@ -66,6 +67,11 @@ for (const marker of ['Pack 14', 'Not v1.0.0 complete', 'No open S0/S1', 'Graphi
 const announcement = readIfExists('docs/launch/ANNOUNCEMENT.md');
 if (/Known v1\.1 priorities are memo persistence\/export, Postgres KG repositories, full marketplace execution, admin consolidation/i.test(announcement)) {
   failures.push('launch announcement still contains stale v1.1 priorities');
+}
+
+const completionTodo = readIfExists('docs/backlog/2026-05-06-master-charter-completion-todo.md');
+for (const marker of ['Pack 14 - Production Excellence', 'specialist model-backed handler', 'scheduler-backed operational metrics', 'Postgres Knowledge Graph', 'Run persona Playwright']) {
+  if (!completionTodo.includes(marker)) failures.push(`master completion todo missing marker: ${marker}`);
 }
 
 const graphReport = readIfExists('graphify-out/GRAPH_REPORT.md');

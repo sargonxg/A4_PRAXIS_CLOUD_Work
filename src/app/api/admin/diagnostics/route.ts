@@ -3,6 +3,7 @@ import { withAuth } from '@/lib/api/with-auth';
 import { isAdminPrincipal } from '@/lib/auth/admin-gate';
 import { adminDb } from '@/lib/firebase/admin';
 import { resolveFeedCapabilities } from '@/lib/data-feeds/capabilities';
+import { readLatestOperationalMetrics, type OperationalMetricsSnapshot, type OperationalPanelMetric } from '@/lib/admin/operational-metrics';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -13,15 +14,6 @@ interface Probe {
   status: 'ok' | 'degraded' | 'error' | 'unconfigured';
   detail?: string;
   latencyMs?: number;
-}
-
-interface OperationalPanel {
-  id: string;
-  label: string;
-  status: Probe['status'];
-  metric: string;
-  detail: string;
-  nextAction?: string;
 }
 
 async function probeFirestore(): Promise<Probe> {
@@ -112,7 +104,7 @@ function buildOperationalPanels(input: {
   credits24h: { burn: number; count: number };
   credits7d: { burn: number; count: number };
   usersCount: number;
-}): OperationalPanel[] {
+}): OperationalPanelMetric[] {
   const aiStatus = worstStatus(input.providerProbes.map((probe) => probe.status));
   const secretStatus = worstStatus(input.secretProbes.map((probe) => probe.status));
   const authStatus = input.usersCount >= 0 && secretStatus !== 'error' ? 'ok' : 'error';
@@ -200,7 +192,10 @@ export const GET = withAuth(async (_req, user) => {
 
   const providerProbes = probeAIProviders();
   const secretProbes = probeSecretsEnv();
-  const panels = buildOperationalPanels({
+  const operationalMetrics: OperationalMetricsSnapshot | null = adminDb
+    ? await readLatestOperationalMetrics(adminDb).catch(() => null)
+    : null;
+  const panels = operationalMetrics?.panels ?? buildOperationalPanels({
     firestoreProbe,
     providerProbes,
     secretProbes,
@@ -214,6 +209,7 @@ export const GET = withAuth(async (_req, user) => {
   return NextResponse.json({
     computedAt: new Date().toISOString(),
     panels,
+    operationalMetrics,
     probes: {
       storage: [firestoreProbe],
       ai: providerProbes,

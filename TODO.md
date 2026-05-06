@@ -1,7 +1,7 @@
 # PRAXIS Production TODO
 
 Status: active continuation roadmap.
-Last updated: 2026-05-01.
+Last updated: 2026-05-06.
 Workspace: `C:\Users\giuli\praxiscodexworking`.
 Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`.
 Branch: `main`.
@@ -14,6 +14,11 @@ checklist for the next implementation passes.
 The hyper-detailed multi-agent execution plan is
 `docs/PRAXIS_SUPERPLAN_2026-04-29.md`. Use that document for subagent lanes,
 file-level work scopes, acceptance criteria, and verification evidence.
+
+The current master-charter completion checklist is
+`docs/backlog/2026-05-06-master-charter-completion-todo.md`. It is the active
+source for remaining Pack 03-14, phase-spec, launch, and production-excellence
+tasks until PRAXIS reaches the strict `v1.0.0` gate.
 
 The current 15-initiative app-wide improvement plan is
 `docs/PRAXIS_15_APP_WIDE_IMPROVEMENTS_2026-04-29.md`.
