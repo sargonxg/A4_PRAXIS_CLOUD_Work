@@ -3,7 +3,9 @@
 **Date:** 2026-05-06  
 **Repository:** https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work  
 **Production:** https://praxis.tacitus.me  
-**Current shipping branch:** `phase/3-product-surface`
+**Current production commit:** `8f6eac0` plus this post-deploy doc update  
+**Phase 3 Cloud Build:** `37553a36-ba50-4d06-8358-7828ab1a7d5d`  
+**Cloud Run revisions:** frontend `praxis-frontend-00228-qth`, backend `praxis-backend-00101-mpr`, worker `gdelt-poller-00005-xg2`
 
 ## Executive State
 
@@ -17,7 +19,7 @@ The app shell now matches the Phase 3 product surface: the default sidebar rende
 |---|---:|---|---|---|
 | Phase 1 Foundation | Shipped | Cloud SQL private path, Neo4j secrets/IAM, GCP audit, model/provider cleanup, route calibration, health checks, production deploy. | `phase-1-foundation-shipped`; Cloud Build `463da685-707e-434d-a4fe-316dfb421ae4`; production `/api/health` green at ship time. | None currently blocking. |
 | Phase 2 Agentic Spine | Shipped | LangGraph/checkpointer scaffold, five agent registrations, deterministic DIALECTICA recipes, symbolic-firewall helpers, `/api/ai/dialectica`, backend recipe tests, production deploy. | `phase-2-agentic-spine-shipped`; Cloud Build `7673e615-ad2b-441b-b77c-aa194ccc092f`; full backend and frontend tests green at ship time. | The original "62 routes collapse to 20 verbs" remains policy/scaffold rather than a literal route-count collapse; route audit now reports 66 calibrated AI route files. |
-| Phase 3 Product Surface | Implemented in branch | Eight-surface sidebar, archive exposure, `/app/desk`, `/app/context`, `/app/research`, `/app/graph`, `/app/boardroom`, `/app/draft`, Library split routes, Draft provenance editor, Boardroom room, read-only Cypher validator/API, graph diff/SSE stubs, AI Act ack routes, cost-cap API/UI, landing copy refresh. | `npx tsc --noEmit`; `npm run build`; `npm run lint` zero errors; `npx vitest run` 114 files/502 tests; `npm run audit:routes`; `scripts/audit-phase3-product-surface.ts`; `scripts/audit-verb-hookup.ts`. | Streaming Boardroom, live Neo4j execution, DOCX footer embedding, and production cost-cap persistence are functional scaffolds, not full live provider flows. |
+| Phase 3 Product Surface | Shipped | Eight-surface sidebar, archive exposure, `/app/desk`, `/app/context`, `/app/research`, `/app/graph`, `/app/boardroom`, `/app/draft`, Library split routes, Draft provenance editor, Boardroom room, read-only Cypher validator/API, graph diff/SSE stubs, AI Act ack routes, cost-cap API/UI, landing copy refresh. | `npx tsc --noEmit`; `npm run build`; `npm run lint` zero errors; `npx vitest run` 114 files/502 tests; `npm run audit:routes`; `scripts/audit-phase3-product-surface.ts`; `scripts/audit-verb-hookup.ts`; production Cloud Build `37553a36-ba50-4d06-8358-7828ab1a7d5d`; production Playwright public smoke 4/4. | Streaming Boardroom, live Neo4j execution, DOCX footer embedding, and production cost-cap persistence are functional scaffolds, not full live provider flows. |
 
 ## Runtime Architecture
 
@@ -93,3 +95,12 @@ curl -i -X POST https://praxis.tacitus.me/api/ai/forecast -H "Content-Type: appl
 ```
 
 Expected unauthenticated protected routes return `401`. With a valid authenticated session, high-risk AI routes without `X-AI-Act-Ack` return `428`.
+
+## Production Verification on 2026-05-06
+
+| Check | Result |
+|---|---|
+| `https://praxis.tacitus.me` | `200`, landing includes "Eight surfaces" and the eight-surface app copy. |
+| `https://praxis.tacitus.me/api/health` | `200`, status `ok`; Firestore, AI provider, cookie secret, and Vertex ADK green; Polar unconfigured. |
+| `POST /api/ai/forecast` unauthenticated | `401`, confirming the calibrated AI route is auth-protected before the AI Act acknowledgement gate. |
+| Playwright public smoke | 4 passed against production. |
