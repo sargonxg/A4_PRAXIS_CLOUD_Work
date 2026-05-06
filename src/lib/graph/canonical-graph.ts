@@ -36,6 +36,14 @@ export const TemporalAssertionSchema = z.object({
 export type GraphEvidenceEnvelope = z.infer<typeof GraphEvidenceEnvelopeSchema>;
 export type TemporalAssertion = z.infer<typeof TemporalAssertionSchema>;
 
+export const BiTemporalFieldsSchema = z.object({
+  validFrom: z.string().nullable().optional(),
+  validTo: z.string().nullable().optional(),
+  assertedFrom: z.string().nullable().optional(),
+  assertedTo: z.string().nullable().optional(),
+});
+export type BiTemporalFields = z.infer<typeof BiTemporalFieldsSchema>;
+
 const NODE_SOURCE_VALUES = ['extraction', 'manual', 'ai-chat', 'pipeline', 'web-research'] as const;
 type NodeSource = (typeof NODE_SOURCE_VALUES)[number];
 
@@ -77,7 +85,7 @@ function evidenceFromMetadata(metadata: Record<string, unknown> | undefined, sou
   return envelope.success && Object.values(envelope.data).some(Boolean) ? [envelope.data] : [];
 }
 
-export function normalizeGraphNode(node: GraphNode): GraphNode {
+export function normalizeGraphNode(node: GraphNode): GraphNode & BiTemporalFields {
   const id = normalizeId(node.id || node.label);
   const metadata = node.metadata ?? {};
   const source = normalizeSource(node.source);
@@ -88,6 +96,10 @@ export function normalizeGraphNode(node: GraphNode): GraphNode {
     label: node.label?.trim() || id,
     properties: node.properties ?? {},
     createdAt: node.createdAt || new Date().toISOString(),
+    validFrom: (node as GraphNode & { validFrom?: string | null }).validFrom ?? stringValue(metadata.validFrom) ?? null,
+    validTo: (node as GraphNode & { validTo?: string | null }).validTo ?? stringValue(metadata.validTo) ?? null,
+    assertedFrom: (node as GraphNode & { assertedFrom?: string | null }).assertedFrom ?? node.createdAt ?? new Date().toISOString(),
+    assertedTo: (node as GraphNode & { assertedTo?: string | null }).assertedTo ?? null,
     source,
     metadata: {
       ...metadata,
@@ -98,7 +110,7 @@ export function normalizeGraphNode(node: GraphNode): GraphNode {
   };
 }
 
-export function normalizeGraphEdge(edge: GraphEdge, index = 0): GraphEdge {
+export function normalizeGraphEdge(edge: GraphEdge, index = 0): GraphEdge & BiTemporalFields {
   const source = normalizeId(edge.source);
   const target = normalizeId(edge.target);
   const type = normalizeType(edge.type || 'related_to');
@@ -111,6 +123,10 @@ export function normalizeGraphEdge(edge: GraphEdge, index = 0): GraphEdge {
     type,
     weight: Number.isFinite(edge.weight) ? edge.weight : 1,
     label: edge.label?.trim() || type,
+    validFrom: (edge as GraphEdge & { validFrom?: string | null }).validFrom ?? stringValue(metadata.validFrom) ?? null,
+    validTo: (edge as GraphEdge & { validTo?: string | null }).validTo ?? stringValue(metadata.validTo) ?? null,
+    assertedFrom: (edge as GraphEdge & { assertedFrom?: string | null }).assertedFrom ?? stringValue(metadata.createdAt) ?? new Date().toISOString(),
+    assertedTo: (edge as GraphEdge & { assertedTo?: string | null }).assertedTo ?? null,
     metadata: {
       ...metadata,
       evidence: evidenceFromMetadata(metadata),

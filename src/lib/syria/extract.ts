@@ -18,7 +18,7 @@ interface SourceDocument {
       sourceId?: string;
       sourceUrl?: string;
       retrievedAt?: string;
-      retrievalMethod?: 'grounded_search' | 'firecrawl' | 'feed' | 'upload' | 'manual';
+      retrievalMethod?: 'grounded_search' | 'Grounded Search' | 'feed' | 'upload' | 'manual';
       live?: boolean;
     };
     sourceName?: string;

@@ -1,6 +1,6 @@
 import { withCalibration } from '@/lib/api/with-calibration';
 import { z } from 'zod';
-import { scrapeUrl } from '@/lib/ai/firecrawl';
+import { scrapeUrl } from '@/lib/ai/grounded-research';
 import { buildLiveSourcePack } from '@/lib/ai/live-source-pack';
 import {
   extractEntities,
@@ -131,7 +131,7 @@ export const POST = withCalibration('research-extract', 'ai_research', {
 
     // Search web per category. Live Source Pack gives us grounded Google
     // Search first, optional scrape excerpts, and UCDP corroboration without
-    // requiring Firecrawl to be configured.
+    // requiring Grounded Search to be configured.
     const searchPromises = categories
       .filter((cat: string) => CATEGORY_TERMS[cat])
       .slice(0, 6)

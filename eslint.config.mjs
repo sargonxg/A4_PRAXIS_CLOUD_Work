@@ -1,12 +1,24 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const noForbiddenModels = require("./.eslintrc-rules/no-forbidden-models.js");
 
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
+    plugins: {
+      praxis: {
+        rules: {
+          "no-forbidden-models": noForbiddenModels,
+        },
+      },
+    },
     rules: {
+      "praxis/no-forbidden-models": "error",
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {

@@ -7,11 +7,11 @@ export const ADVISOR_MODEL_TIERS = [
   'gemini-3-flash',
   'gemini-3-pro',
   'gemini-3-pro-deepthink',
-  'claude-sonnet-4',
+  'gemini-analysis',
 ] as const;
 export type AdvisorModelTier = typeof ADVISOR_MODEL_TIERS[number];
 
-export const ADVISOR_TOOLS = ['webSearch', 'firecrawlScrape', 'knowledgeCore'] as const;
+export const ADVISOR_TOOLS = ['webSearch', 'groundedSearchFetch', 'knowledgeCore'] as const;
 
 export const AdvisorConfigSchema = z.object({
   id: z.enum(ADVISOR_IDS),

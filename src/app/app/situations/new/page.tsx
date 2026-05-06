@@ -628,7 +628,7 @@ function StepSources({ context, setContext, onNext, onBack, situationName, situa
     }
   };
 
-  const liveSearchCount = SOURCE_CATEGORIES.filter((c) => selectedSources.includes(c.id) && c.useFirecrawl).length;
+  const liveSearchCount = SOURCE_CATEGORIES.filter((c) => selectedSources.includes(c.id) && c.useGroundedSearch).length;
 
   return (
     <div className="space-y-5">

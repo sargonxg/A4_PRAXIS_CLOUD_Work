@@ -25,13 +25,13 @@ const adminTools = [
   {
     href: '/app/settings/system-health',
     title: 'Billing & Provider Health',
-    description: 'Check Polar, Firecrawl, Parallel, Vertex, Google AI, Secret Manager, and runtime configuration.',
+    description: 'Check Polar, Google Grounding, Google Search, Vertex, Google AI, Secret Manager, and runtime configuration.',
     icon: CreditCard,
   },
   {
     href: '/app/settings/api-keys',
     title: 'Provider Key Registry',
-    description: 'Validate user/platform provider coverage for Google AI, Firecrawl, Parallel, Tavily, and model keys.',
+    description: 'Validate user/platform provider coverage for Google AI, Google Grounding, Google Search, Google Search, and model keys.',
     icon: KeyRound,
   },
   {

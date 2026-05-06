@@ -10,7 +10,7 @@ import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { audienceTonePreset, audienceTuningEnabled } from '@/lib/ai/audience-presets';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
-import { searchWeb, isFirecrawlConfigured } from '@/lib/ai/firecrawl';
+import { searchWeb, isGroundedSearchConfigured } from '@/lib/ai/grounded-research';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -106,21 +106,21 @@ export const POST = withCalibration('daily_brief', 'ai_report', {
       }
     }
 
-    // ── 2. Deep research: Firecrawl + Google-grounded web search ──
+    // ── 2. Deep research: Grounded Search + Google-grounded web search ──
     let webResearchContext = '';
     const sourcesUsed: string[] = [];
     if (deepResearch && situation) {
       const searchQuery = `${situation.name} latest news ${new Date().getFullYear()} conflict situation`;
 
-      // 2a. Firecrawl web search
-      if (isFirecrawlConfigured()) {
+      // 2a. Grounded Search web search
+      if (isGroundedSearchConfigured()) {
         const fcResults = await withTimeout(
           searchWeb(searchQuery, { numResults: 5 }),
           12000
         );
         if (fcResults && fcResults.length > 0) {
-          sourcesUsed.push(`Firecrawl (${fcResults.length} sources)`);
-          webResearchContext += '\n\nFIRECRAWL WEB RESEARCH (live):\n' +
+          sourcesUsed.push(`Grounded Search (${fcResults.length} sources)`);
+          webResearchContext += '\n\nGrounded Search WEB RESEARCH (live):\n' +
             fcResults.map(r =>
               `SOURCE: ${r.title} | ${r.url}\n${r.content.slice(0, 1200)}`
             ).join('\n\n---\n');

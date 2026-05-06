@@ -81,11 +81,6 @@ function maskSecret(s) {
 // ───────────────────────────────────────────────────────────────────────────
 const LEGACY_MAP = {
   google_ai_key: { provider: 'google_ai', shape: (v) => ({ key: v }) },
-  anthropic_key: { provider: 'anthropic', shape: (v) => ({ key: v }) },
-  openai_key: { provider: 'openai', shape: (v) => ({ key: v }) },
-  tavily_key: { provider: 'tavily', shape: (v) => ({ key: v }) },
-  parallel_key: { provider: 'parallel', shape: (v) => ({ key: v }) },
-  firecrawl_key: { provider: 'firecrawl', shape: (v) => ({ key: v }) },
 };
 
 const NON_SECRET_FIELDS = { acled: ['email'] };

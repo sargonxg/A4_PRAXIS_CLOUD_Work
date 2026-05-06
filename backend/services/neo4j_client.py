@@ -9,6 +9,78 @@ import networkx as nx
 from neo4j import AsyncGraphDatabase
 
 
+class Neo4jClient:
+    """Tenant-scoped Neo4j Aura client used by Phase 1 sync and Phase 2 reads."""
+
+    def __init__(self, uri: str | None = None, user: str | None = None, password: str | None = None, database: str = "neo4j") -> None:
+        from config import get_settings
+
+        settings = get_settings()
+        self.database = database or settings.neo4j_database
+        self.driver = AsyncGraphDatabase.driver(
+            uri or settings.neo4j_uri,
+            auth=(user or settings.neo4j_user, password or settings.neo4j_password),
+        )
+
+    async def merge_node(self, label: str, props: dict, tenant_id: str) -> None:
+        safe_label = _safe_label(label)
+        payload = _with_bitemporal({**props, "tenantId": tenant_id, "tenant_id": tenant_id})
+        async with self.driver.session(database=self.database) as session:
+            await session.run(
+                f"MERGE (n:{safe_label} {{id: $id, tenantId: $tenantId}}) SET n += $props",
+                {"id": payload["id"], "tenantId": tenant_id, "props": payload},
+            )
+
+    async def merge_edge(self, from_id: str, to_id: str, relation_type: str, props: dict, tenant_id: str) -> None:
+        safe_type = _safe_label(relation_type.upper(), fallback="RELATED_TO")
+        payload = _with_bitemporal({**props, "tenantId": tenant_id, "tenant_id": tenant_id})
+        async with self.driver.session(database=self.database) as session:
+            await session.run(
+                f"MATCH (a {{id: $fromId, tenantId: $tenantId}}), (b {{id: $toId, tenantId: $tenantId}}) "
+                f"MERGE (a)-[r:{safe_type}]->(b) SET r += $props",
+                {"fromId": from_id, "toId": to_id, "tenantId": tenant_id, "props": payload},
+            )
+
+    async def query(self, cypher: str, params: dict | None, tenant_id: str) -> list[dict]:
+        if not _is_read_only_cypher(cypher):
+            raise ValueError("Only read-only tenant-scoped Cypher is allowed")
+        scoped = (
+            "MATCH (n) WHERE n.tenantId = $tenantId "
+            "WITH n "
+            + cypher
+        ) if "tenantId" not in cypher else cypher
+        async with self.driver.session(database=self.database, default_access_mode="READ") as session:
+            result = await session.run(scoped, {**(params or {}), "tenantId": tenant_id})
+            return [dict(record) async for record in result]
+
+    async def close(self) -> None:
+        await self.driver.close()
+
+
+def _with_bitemporal(props: dict) -> dict:
+    created = props.get("createdAt") or props.get("created_at")
+    return {
+        **props,
+        "assertedFrom": props.get("assertedFrom") or created,
+        "assertedTo": props.get("assertedTo"),
+        "validFrom": props.get("validFrom"),
+        "validTo": props.get("validTo"),
+    }
+
+
+def _safe_label(value: str | None, fallback: str = "Entity") -> str:
+    raw = (value or fallback).strip().replace("-", "_")
+    if not raw or raw[0].isdigit() or not raw.replace("_", "").isalnum():
+        return fallback
+    return raw
+
+
+def _is_read_only_cypher(cypher: str) -> bool:
+    forbidden = {"DELETE", "CREATE", "MERGE", "SET", "REMOVE", "DETACH", "DROP", "CALL"}
+    tokens = {token.upper() for token in cypher.replace("(", " ").replace(")", " ").split()}
+    return not (tokens & forbidden)
+
+
 class DialecticaClient:
     """Async Neo4j client for the DIALECTICA conflict knowledge graph."""
 

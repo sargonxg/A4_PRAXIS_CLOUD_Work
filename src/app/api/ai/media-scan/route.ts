@@ -7,8 +7,8 @@ import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { searchWeb } from '@/lib/ai/firecrawl';
-import type { WebSearchResult } from '@/lib/ai/firecrawl';
+import { searchWeb } from '@/lib/ai/grounded-research';
+import type { WebSearchResult } from '@/lib/ai/grounded-research';
 import type { Situation } from '@/types/situation';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 

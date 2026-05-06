@@ -466,7 +466,7 @@ interface ArgusData {
 }
 
 // ============================================================================
-// Live Web Research — Grounded search + deep research using Firecrawl
+// Live Web Research — Grounded search + deep research using Google Grounding
 // ============================================================================
 
 function LiveWebResearchPanel({ situation }: { situation: import('@/types/situation').Situation }) {
@@ -500,7 +500,7 @@ function LiveWebResearchPanel({ situation }: { situation: import('@/types/situat
         setResult(acc);
       }
     } catch {
-      setResult('_Research failed. Check your AI service configuration and FIRECRAWL_API_KEY._');
+      setResult('_Research failed. Check your AI service configuration and GOOGLE_AI_API_KEY._');
     } finally {
       setLoading(false);
     }

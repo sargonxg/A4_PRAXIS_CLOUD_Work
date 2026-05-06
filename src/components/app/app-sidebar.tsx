@@ -150,7 +150,7 @@ const CHANGELOG = [
     date: '2026.03.26',
     notes: [
       'Sources Library: AI-managed trusted source database with nomenclature tracking, reliability scoring, and priority management',
-      'Unified Web Crawlers: Firecrawl + Parallel.ai as optional research boosters for all intelligence tools',
+      'Unified Web Crawlers: Google Grounding + Google Search grounding as optional research boosters for all intelligence tools',
       'Compare tool: real situation comparison with Glasl stage, escalation trend, AI-generated analysis',
       'Team Hub: Situation Activity Log showing tool population status, expanded Quick Analysis cards',
       'Alerts: severity-based styling, manual "Check for Updates" with streaming AI response',
@@ -175,7 +175,7 @@ const CHANGELOG = [
     date: '2026.03.24',
     notes: [
       'Onboarding research now saved to situation context (all tools benefit immediately)',
-      'ARGUS: Live Web Research tab with Firecrawl-powered deep research',
+      'ARGUS: Live Web Research tab with Google-grounded deep research',
       'Media Compass: Live News Search powered by grounded web search',
       'Situation-driven context propagated to all 35+ tool pages',
     ],

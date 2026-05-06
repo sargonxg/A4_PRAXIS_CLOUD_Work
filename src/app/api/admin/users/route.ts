@@ -50,7 +50,7 @@ export const GET = withAuth(async (request, user) => {
       const doc = entry?.profile ?? null;
       const premiumKeys = entry?.keys
         ? Object.fromEntries(
-            ['google_ai', 'firecrawl', 'parallel', 'tavily', 'anthropic'].map((id) => {
+            ['google_ai', 'ucdp'].map((id) => {
               const key = entry.keys?.[id as keyof typeof entry.keys];
               return [id, key ? { present: key.present, effective: key.effective, platformFallbackAvailable: key.platformFallbackAvailable } : null];
             })

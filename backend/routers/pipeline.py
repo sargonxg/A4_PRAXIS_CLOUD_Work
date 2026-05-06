@@ -113,33 +113,19 @@ async def run_pipeline(
         # 1. Extract from all sources
         extractions = []
         from graphify_tacitus.extract import extract_conflict_text, extract_from_url
-        from services.graphiti_client import ConflictMemory
-        memory = ConflictMemory(uid, req.situation_id)
 
         for source in req.sources:
             if source.type == "url":
                 result = await extract_from_url(source.content, gemini, uid, req.situation_id)
-                episode_content = source.content
             else:
                 result = await extract_conflict_text(
                     source.content, source.filename or source.type, gemini, uid, req.situation_id
                 )
-                episode_content = source.content[:8000]  # Graphiti episode limit
 
             extractions.append({
                 "nodes": [n.model_dump() for n in result.nodes],
                 "edges": [e.model_dump() for e in result.edges],
             })
-
-            # Add to Graphiti temporal memory (non-blocking, best-effort)
-            try:
-                import asyncio
-                asyncio.ensure_future(memory.add_episode(
-                    content=episode_content,
-                    source_description=source.filename or source.type,
-                ))
-            except Exception:
-                pass
 
         if not extractions:
             raise HTTPException(status_code=400, detail="No sources provided or extraction failed")

@@ -1,8 +1,7 @@
 /**
  * SIPRI Arms Transfers Database Client
  * https://armstrade.sipri.org/
- * Uses Firecrawl to extract from public SIPRI database pages.
- * Returns empty arrays if Firecrawl is not configured.
+ * Uses direct public SIPRI pages.
  */
 
 export interface SIPRITransfer {
@@ -30,35 +29,18 @@ const cache = new Map<string, { data: SIPRIArmsSnapshot | null; ts: number }>();
 
 /**
  * Scrape SIPRI arms transfer data for a country.
- * Requires FIRECRAWL_API_KEY. Returns null if unavailable.
+ * Returns null if the public page is unavailable.
  */
 export async function getArmsTransfers(country: string): Promise<SIPRIArmsSnapshot | null> {
   const cacheKey = `sipri:${country.toLowerCase()}`;
   const hit = cache.get(cacheKey);
   if (hit && Date.now() - hit.ts < CACHE_TTL) return hit.data;
 
-  const firecrawlKey = process.env.FIRECRAWL_API_KEY;
-  if (!firecrawlKey) {
-    cache.set(cacheKey, { data: null, ts: Date.now() });
-    return null;
-  }
-
   try {
     const currentYear = new Date().getFullYear();
     const url = `https://armstrade.sipri.org/armstrade/page/values.php?lang=en&submit=show&yearfrom=${currentYear - 5}&yearto=${currentYear - 1}&selcountries=${encodeURIComponent(country)}&format=stat`;
 
-    const res = await fetch('https://api.firecrawl.dev/v1/scrape', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${firecrawlKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url,
-        formats: ['markdown'],
-        onlyMainContent: true,
-        timeout: 15000,
-      }),
+    const res = await fetch(url, {
       signal: AbortSignal.timeout(20000),
     });
 
@@ -67,8 +49,7 @@ export async function getArmsTransfers(country: string): Promise<SIPRIArmsSnapsh
       return null;
     }
 
-    const data = await res.json() as Record<string, unknown>;
-    const markdown = (data.data as Record<string, unknown>)?.markdown as string ?? '';
+    const markdown = await res.text();
 
     // Parse table data from markdown (SIPRI renders as HTML tables → markdown tables)
     const transfers: SIPRITransfer[] = [];
@@ -115,5 +96,5 @@ export async function getArmsTransfers(country: string): Promise<SIPRIArmsSnapsh
 }
 
 export function isSIPRIConfigured(): boolean {
-  return !!process.env.FIRECRAWL_API_KEY;
+  return true;
 }

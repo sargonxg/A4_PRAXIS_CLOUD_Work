@@ -18,7 +18,7 @@ export async function GET() {
     sipri:       'ok',  // Always available
     crisisgroup: 'ok',  // Always available
     google_search: process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_VERTEX_PROJECT ? 'ok' : 'not_configured',
-    web_crawler: process.env.FIRECRAWL_API_KEY ? 'ok' : 'degraded',
+    web_crawler: process.env.GOOGLE_AI_API_KEY ? 'ok' : 'degraded',
   };
 
   const configured = Object.values(status).filter((s) => s === 'ok').length;

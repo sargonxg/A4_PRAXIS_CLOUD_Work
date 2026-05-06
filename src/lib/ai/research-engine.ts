@@ -1,13 +1,13 @@
 /**
  * PRAXIS Research Engine
  *
- * Uses free/open web search fallbacks plus optional Firecrawl-powered web
+ * Uses free/open web search fallbacks plus optional Grounded Search-powered web
  * intelligence. Searches the web, scrapes full page content, and feeds it as
  * context to the AI model for synthesis and analysis.
  */
 
 import { streamText, type LanguageModel } from 'ai';
-import { searchWeb, scrapeMultiple, formatResultsAsContext, type WebSearchResult } from './firecrawl';
+import { searchWeb, scrapeMultiple, formatResultsAsContext, type WebSearchResult } from './grounded-research';
 import { getModel, getProModel } from './providers';
 import { getGroundedSearchEvents } from '@/lib/data-feeds/grounded-search-client';
 
@@ -118,7 +118,7 @@ Cite all sources used with reliability assessment.`,
 // ---------------------------------------------------------------------------
 
 /**
- * Conducts web research using Firecrawl and returns a streaming AI response.
+ * Conducts web research using Grounded Search and returns a streaming AI response.
  *
  * Flow:
  * 1. Search the web (or scrape provided URLs)
@@ -153,6 +153,8 @@ export async function conductResearch(params: ResearchParams) {
     content: item.description,
     publishedDate: item.date,
     description: `Google Search grounded result; severity ${item.severity}; actors: ${item.actors.join(', ') || 'not extracted'}`,
+    provider: 'google-search',
+    success: true,
   })));
 
   if (sources && sources.length > 0) {
@@ -165,11 +167,13 @@ export async function conductResearch(params: ResearchParams) {
         url: r.url,
         content: r.content,
         description: r.description,
+        provider: r.provider,
+        success: true,
       }));
   }
 
   // Search the web for additional sources. `searchWeb` falls back to free
-  // Wikipedia/GDELT/native-fetch sources when Firecrawl is not configured, so
+  // Wikipedia/GDELT/native-fetch sources when Grounded Search is not configured, so
   // free-tier users still receive live, cited research context.
   const searchResults = await searchWeb(query, { numResults });
   webContent = [...webContent, ...searchResults];

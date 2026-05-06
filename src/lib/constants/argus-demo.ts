@@ -95,7 +95,7 @@ export const ARGUS_DEMO_QUERIES: ArgusQuery[] = [
         'The current Nordalia escalation pattern most closely parallels three historical cases: (1) Ethiopia-Eritrea 1998-2000 — border demarcation disputes escalating despite international arbitration (similarity: 0.84); (2) Sri Lanka 2006 ceasefire collapse — spoiler dynamics from hardline factions within the LTTE undermining Norwegian-mediated process (similarity: 0.78); (3) Mozambique 1992-94 — successful de-escalation through inclusive power-sharing that addressed root grievances (similarity: 0.71, as a counter-example pathway).',
       confidence: 82,
       sources: [
-        'TACITUS Historical Parallel Engine v2.1',
+        'TACITUS Historical Google Search Engine v2.1',
         'Glasl Escalation Model Database',
         'Uppsala Conflict Data Program',
         'Kriesberg & Dayton, Constructive Conflicts (2017)',
@@ -262,7 +262,7 @@ export const ARGUS_CROSS_CASE_MATRIX: Record<
       confidence: 71,
     },
   ],
-  'Historical Parallel': [
+  'Historical Google Search': [
     {
       nordalia: 'Mozambique (RENAMO) 1992 + Northern Ireland (GFA) 1998 — power-sharing models',
       ethiopia: 'Ethiopia-Eritrea 2000 (Algiers Agreement) + Colombia (FARC) 2016',

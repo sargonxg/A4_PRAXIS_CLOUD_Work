@@ -25,8 +25,6 @@ export async function GET() {
   // --- AI Provider ---
   const hasGoogle = !!process.env.GOOGLE_AI_API_KEY;
   const hasVertex = !!process.env.GOOGLE_VERTEX_PROJECT;
-  const hasAnthropic = !!process.env.ANTHROPIC_API_KEY;
-
   if (hasGoogle || hasVertex) {
     checks.ai_provider = 'ok';
   } else {
@@ -40,8 +38,6 @@ export async function GET() {
   if (!hasCookieSecret) healthy = false;
 
   // --- Optional integrations (warn but don't fail) ---
-  checks.anthropic = hasAnthropic ? 'ok' : 'unconfigured';
-  checks.firecrawl = process.env.FIRECRAWL_API_KEY ? 'ok' : 'unconfigured';
   checks.vertex_adk = process.env.VERTEX_AGENT_ENGINE_ID ? 'ok' : 'unconfigured';
   checks.polar = (process.env.POLAR_ACCESS_TOKEN && process.env.POLAR_WEBHOOK_SECRET) ? 'ok' : 'unconfigured';
 

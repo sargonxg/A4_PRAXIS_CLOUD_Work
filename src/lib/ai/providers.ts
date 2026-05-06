@@ -4,17 +4,15 @@
  * Auth priority on Cloud Run:
  *   1. Vertex AI via Application Default Credentials (ADC) — zero config on Cloud Run
  *   2. Google AI Studio via GOOGLE_AI_API_KEY — dev fallback
- *   3. Anthropic via ANTHROPIC_API_KEY — deep analysis
  *
  * Models:
  *   - gemini-2.5-flash          : Standard tasks — chat, lightweight analysis, terminology
  *   - gemini-2.5-pro            : Pro + Deep Think — structured generation, analysis, 65K output
  *   - text-embedding-005        : Embeddings — 768-dim text vectors
- *   - claude-sonnet-4-20250514 : Deep analysis — nuanced conflict analysis, diplomatic language
  *
  * Zero-Config Fallback Chain (Part 3):
  *   getProModel():       Vertex Gemini 2.5 Pro → Google AI Gemini 2.5 Pro → Flash
- *   getAnalysisModel():  Claude Sonnet 4 → Gemini 2.5 Pro
+ *   getAnalysisModel():  Gemini 2.5 Pro
  *   getEmbeddingModel(): text-embedding-005 → null (vector disabled)
  *
  * All routes import from here — never hardcode model strings in route files.
@@ -84,16 +82,6 @@ export function hasServerAiProvider(): boolean {
   return Boolean(process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_VERTEX_PROJECT);
 }
 
-function createAnthropicModel(): LanguageModel | null {
-  if (!process.env.ANTHROPIC_API_KEY) return null;
-  try {
-    const { createAnthropic } = require('@ai-sdk/anthropic') as typeof import('@ai-sdk/anthropic');
-    return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })('claude-sonnet-4-20250514');
-  } catch {
-    return null;
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -122,13 +110,10 @@ export function getProModel(): LanguageModel {
 }
 
 /**
- * Analysis model — Claude Sonnet 4 if configured, else Gemini Pro.
- * Best for nuanced conflict analysis, diplomatic language, creative scenarios.
+ * Analysis model — Gemini Deep Think high.
  */
 export function getAnalysisModel(): LanguageModel {
-  const claude = createAnthropicModel();
-  if (claude) return claude;
-  return getProModel();
+  return getDeepThinkModel('high');
 }
 
 /**
@@ -140,7 +125,10 @@ export function getAnalysisModel(): LanguageModel {
  * Callers pass it per-request: { providerOptions: { google: { thinking_level: 'high' } } }
  */
 export function getDeepThinkModel(_level: 'low' | 'medium' | 'high' = 'medium'): LanguageModel {
-  return getProModel();
+  if (process.env.PRAXIS_USE_GEMINI_31 === 'true') {
+    try { return createModel('gemini-3.1-pro-preview'); } catch { /* fall through */ }
+  }
+  return createModel(MODEL_PRO);
 }
 
 /**
@@ -223,13 +211,8 @@ export function getGroundedModel(_modelId?: string): LanguageModel {
 /** User-preference model — routes to the model the user selected in settings. */
 export function getModelForUser(settings?: { preferredModel?: string; model?: string }): LanguageModel {
   switch (settings?.preferredModel ?? settings?.model) {
-    case 'gemini-2.5-pro':
     case 'gemini-2.5-pro':   return getProModel();
-    case 'claude-sonnet-4':
-    case 'claude-sonnet-4-20250514': return getAnalysisModel();
     case 'gemini-2.5-flash':
-    case 'gemini-2.5-flash':
-    case 'gemini-3-flash':
     default:                         return getModel();
   }
 }
@@ -283,15 +266,6 @@ export function getAvailableProviders() {
       capabilities: ['VPC-SC', 'IAM', 'Audit Logs', 'Enterprise SLA', 'ADC Auth', 'Gemini 2.5'],
       note:         'Optional — set AI_PROVIDER=vertex + GOOGLE_VERTEX_PROJECT',
     },
-    anthropic: {
-      name:         'Anthropic Claude',
-      configured:   !!process.env.ANTHROPIC_API_KEY,
-      model:        'claude-sonnet-4-20250514',
-      capabilities: ['Deep Analysis', 'Diplomatic Language', 'Complex Reasoning', 'Extended Thinking'],
-      note:         process.env.ANTHROPIC_API_KEY
-        ? 'Active — used for deep analysis (getAnalysisModel)'
-        : 'Optional — set ANTHROPIC_API_KEY to enable Claude for deep analysis',
-    },
   };
 }
 
@@ -303,7 +277,6 @@ export const MODEL_NAMES = {
   flash:  MODEL_FLASH,
   pro:    MODEL_PRO,
   embed:  MODEL_EMBED,
-  claude: 'claude-sonnet-4-20250514',
 } as const;
 
 // ---------------------------------------------------------------------------

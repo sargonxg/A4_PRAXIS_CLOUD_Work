@@ -48,7 +48,19 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     logger.info("PRAXIS Backend v6.2.0 starting — project=%s region=%s",
                 settings.gcp_project_id, settings.gcp_region)
+    try:
+        from services.postgres import open_pool
+        await open_pool()
+        app.state.postgres_ready = True
+    except Exception as exc:
+        app.state.postgres_ready = False
+        logger.warning("Postgres pool open failed: %s", exc)
     yield
+    try:
+        from services.postgres import close_pool
+        await close_pool()
+    except Exception as exc:
+        logger.warning("Postgres pool close failed: %s", exc)
     try:
         from agents.langgraph import close_checkpointer
         close_checkpointer()

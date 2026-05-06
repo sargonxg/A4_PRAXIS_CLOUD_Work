@@ -15,15 +15,8 @@ class Settings(BaseSettings):
     neo4j_password: str = ""
     neo4j_database: str = "neo4j"
 
-    # FalkorDB (alternative graph backend)
-    falkordb_host: str = "localhost"
-    falkordb_port: int = 6379
-
-    # Cloud Spanner Graph (production multi-region backend)
-    graph_backend: str = "firestore"  # options: firestore, neo4j, falkordb, spanner
-    spanner_project_id: str = ""
-    spanner_instance_id: str = "praxis-graph"
-    spanner_database_id: str = "praxis-graph-db"
+    # Graph index. Firestore remains canonical; Neo4j Aura is the only index.
+    graph_backend: str = "neo4j"
 
     # LangGraph checkpointing (Cloud SQL Postgres; see docs/LANGGRAPH_CLOUDSQL_CHECKPOINTING.md)
     langgraph_checkpoint_backend: str = "postgres"
@@ -35,14 +28,26 @@ class Settings(BaseSettings):
     langgraph_db_password_secret: str = "praxis-langgraph-db-password"
     langgraph_db_password: str = ""
 
+    # Phase 1 application Postgres (all backend SQL goes through PgBouncer).
+    database_url: str = Field(
+        default="",
+        validation_alias=AliasChoices("DATABASE_URL", "database_url"),
+    )
+    pgbouncer_host: str = Field(
+        default="localhost",
+        validation_alias=AliasChoices("PGBOUNCER_HOST", "pgbouncer_host"),
+    )
+    pgbouncer_port: int = Field(
+        default=6432,
+        validation_alias=AliasChoices("PGBOUNCER_PORT", "pgbouncer_port"),
+    )
+
     # BigQuery
     bigquery_dataset: str = "praxis_analytics"
 
     # AI Models
     gemini_model: str = "gemini-2.5-flash"
     gemini_deep_model: str = "gemini-2.5-pro"
-    graphiti_llm_model: str = "gemini-2.5-flash"
-    graphiti_embedder_model: str = "gemini-embedding-2-preview"
 
     # CORS — comma-separated origins. Cloud Run URLs auto-allowed via regex in main.py.
     cors_origins_str: str = "http://localhost:3000,http://localhost:3001,https://praxis.tacitus.me"
@@ -58,7 +63,6 @@ class Settings(BaseSettings):
 
     # AI API Keys (optional — falls back to ADC / Workload Identity on Cloud Run)
     google_ai_api_key: str = ""
-    anthropic_api_key: str = ""
 
     # Backend service-to-service auth.
     # OIDC audience defaults to the request origin when unset. The allowlist is

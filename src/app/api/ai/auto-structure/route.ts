@@ -4,7 +4,7 @@ import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { tacitusTools } from '@/lib/ai/tools';
-import { scrapeUrl, scrapeMultiple, searchWeb, isFirecrawlConfigured } from '@/lib/ai/firecrawl';
+import { scrapeUrl, scrapeMultiple, searchWeb, isGroundedSearchConfigured } from '@/lib/ai/grounded-research';
 import { updateSituationAdmin, getSituationAdmin } from '@/lib/firebase/situations';
 import { getAllDocumentText } from '@/lib/firebase/documents-service';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
@@ -67,7 +67,7 @@ export const POST = withCalibration('auto_structure', 'ai_analysis', {
 
     const actorList = (actors || []).join(', ') || 'not yet identified';
     const searchQuery = `${situationName}${region ? ` ${region}` : ''}`;
-    const firecrawlAvailable = isFirecrawlConfigured();
+    const groundedSearchAvailable = isGroundedSearchConfigured();
 
     // --- Gather supplementary context ---
     const contextSections: string[] = [];
@@ -127,8 +127,8 @@ export const POST = withCalibration('auto_structure', 'ai_analysis', {
       })()
     );
 
-    // Phase 2: Firecrawl searches per selected source category (cap total at ~12,000 chars)
-    if (firecrawlAvailable && Array.isArray(selectedSources) && selectedSources.length > 0) {
+    // Phase 2: Grounded Search searches per selected source category (cap total at ~12,000 chars)
+    if (groundedSearchAvailable && Array.isArray(selectedSources) && selectedSources.length > 0) {
       const categoriesToSearch = selectedSources
         .filter((id: string) => id !== 'foundational' && CATEGORY_SEARCH_TERMS[id])
         .slice(0, 5); // max 5 categories to stay within limits

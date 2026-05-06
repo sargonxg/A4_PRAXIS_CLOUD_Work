@@ -5,8 +5,8 @@ import { webSearch } from '@/lib/ai/tools';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
-import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
-import type { WebSearchResult } from '@/lib/ai/firecrawl';
+import { searchWeb, formatResultsAsContext } from '@/lib/ai/grounded-research';
+import type { WebSearchResult } from '@/lib/ai/grounded-research';
 import type { Situation } from '@/types/situation';
 import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 import { getAdvisor } from '@/lib/firebase/advisor-service';
@@ -62,7 +62,7 @@ You are operating in DEEP ANALYSIS mode. Provide an in-depth, multi-paragraph an
 
 function pickModelForTier(tier: AdvisorModelTier): LanguageModel {
   switch (tier) {
-    case 'claude-sonnet-4':
+    case 'gemini-analysis':
       return getAnalysisModel();
     case 'gemini-3-pro-deepthink':
       return getDeepThinkModel('high');

@@ -30,7 +30,6 @@ function probeAIProviders(): Probe[] {
   const probes: Probe[] = [];
   const vertex = !!process.env.GOOGLE_VERTEX_PROJECT && (process.env.AI_PROVIDER ?? '').toLowerCase() === 'vertex';
   const google = !!process.env.GOOGLE_AI_API_KEY;
-  const anthropic = !!process.env.ANTHROPIC_API_KEY;
 
   probes.push({
     id: 'vertex',
@@ -43,12 +42,6 @@ function probeAIProviders(): Probe[] {
     label: 'Google AI (Gemini Studio)',
     status: google ? 'ok' : 'unconfigured',
     detail: google ? 'GOOGLE_AI_API_KEY set' : 'Fallback key not configured — relies on Vertex or user BYO',
-  });
-  probes.push({
-    id: 'anthropic',
-    label: 'Anthropic (Claude)',
-    status: anthropic ? 'ok' : 'unconfigured',
-    detail: anthropic ? 'ANTHROPIC_API_KEY set' : 'Claude deep-analysis unavailable; Gemini Pro will be used instead',
   });
   return probes;
 }

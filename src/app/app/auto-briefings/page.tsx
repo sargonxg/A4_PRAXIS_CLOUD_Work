@@ -346,7 +346,7 @@ function GenerateControls({
             </p>
             <p className="flex items-center gap-1.5 text-[11px] text-navy-400">
               <Globe className="h-3 w-3 text-diplomatic-blue/50" />
-              <span><strong>Deep Research</strong> — Standard + live Firecrawl web search + Google-grounded real-time data (2 credits, ~45s)</span>
+              <span><strong>Deep Research</strong> — Standard + live Google-grounded search + Google-grounded real-time data (2 credits, ~45s)</span>
             </p>
           </div>
         </div>
@@ -361,7 +361,7 @@ function GeneratingState({ deep, situationName }: { deep: boolean; situationName
   const steps = deep
     ? [
         { label: 'Fetching live data feeds (GDELT, ReliefWeb, UN News)', delay: 0 },
-        { label: 'Running Firecrawl web search for latest news', delay: 4000 },
+        { label: 'Running Google-grounded search for latest news', delay: 4000 },
         { label: 'Google-grounded real-time research', delay: 8000 },
         { label: 'Synthesizing intelligence with Gemini Pro', delay: 14000 },
       ]

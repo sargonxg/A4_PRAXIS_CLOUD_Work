@@ -13,7 +13,7 @@ import { PraxisLink } from '@/components/shared/praxis-link';
 import { WidgetShell } from './widget-shell';
 
 interface KeyStatus {
-  provider: 'firecrawl' | 'parallel' | 'tavily' | 'anthropic' | 'openai';
+  provider: 'google_ai' | 'ucdp';
   present: boolean;
   effective: boolean;
 }
@@ -45,7 +45,7 @@ export function AccountStatusCard() {
         }
         const data = (await res.json()) as { statuses?: Record<string, { present: boolean; effective: boolean }> };
         const items: KeyStatus[] = (Object.entries(data.statuses ?? {}) as Array<[KeyStatus['provider'], { present: boolean; effective: boolean }]>)
-          .filter(([k]) => k === 'firecrawl' || k === 'parallel')
+          .filter(([k]) => k === 'google_ai' || k === 'ucdp')
           .map(([k, v]) => ({ provider: k, present: v.present, effective: v.effective }));
         if (!cancelled) setKeys(items);
       } catch {
@@ -88,7 +88,7 @@ export function AccountStatusCard() {
           ) : keys.length === 0 ? (
             <p className="text-xs text-navy-500">
               <KeyRound className="mr-1 inline h-3 w-3" />
-              Firecrawl + Parallel are available as platform premium research boosters.
+              Google AI and UCDP can be configured from API keys.
             </p>
           ) : (
             <ul className="flex flex-col gap-0.5">

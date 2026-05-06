@@ -1,5 +1,5 @@
 export type SyriaSourceTier = 'primary-un' | 'humanitarian' | 'conflict-data' | 'local-independent' | 'regional-analysis' | 'wire' | 'think-tank';
-export type SyriaRetrievalMethod = 'grounded_search' | 'firecrawl' | 'feed' | 'upload' | 'manual';
+export type SyriaRetrievalMethod = 'grounded_search' | 'Grounded Search' | 'feed' | 'upload' | 'manual';
 
 export interface SyriaSourceDefinition {
   id: string;

@@ -7,7 +7,7 @@ import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
-import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
+import { searchWeb, formatResultsAsContext } from '@/lib/ai/grounded-research';
 import { writeToolDataServer } from '@/lib/ai/context-builder-server';
 import type { Situation } from '@/types/situation';
 

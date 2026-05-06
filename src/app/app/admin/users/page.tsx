@@ -25,7 +25,7 @@ interface AdminUser {
   premiumKeys: Record<string, { present: boolean; effective: boolean; platformFallbackAvailable: boolean } | null> | null;
 }
 
-const KEY_LABELS = ['google_ai', 'firecrawl', 'parallel', 'tavily', 'anthropic'];
+const KEY_LABELS = ['google_ai', 'ucdp'];
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);

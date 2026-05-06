@@ -6,52 +6,26 @@ import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/lib/auth/auth-context';
 import { PraxisLink } from '@/components/shared/praxis-link';
 
-type GraphProvider = 'spanner' | 'neo4j' | 'neo4j_self' | 'falkordb_cloud' | 'falkordb_self';
+type GraphProvider = 'neo4j' | 'neo4j_self';
 
 interface GraphBackendConfig {
   provider: GraphProvider;
   uri: string;
-  host: string;
-  port: string;
   user: string;
   password: string;
-  // Spanner-specific
-  project_id: string;
-  instance_id: string;
-  database_id: string;
 }
 
 const DEFAULT_CONFIG: GraphBackendConfig = {
   provider: 'neo4j',
   uri: '',
-  host: 'localhost',
-  port: '6379',
   user: 'neo4j',
   password: '',
-  project_id: '',
-  instance_id: 'praxis-graph',
-  database_id: 'praxis-graph-db',
 };
 
 const PROVIDERS: Array<{ value: GraphProvider; label: string; description: string }> = [
-  {
-    value: 'spanner',
-    label: 'Cloud Spanner Graph',
-    description: 'Production multi-region — managed, ZeroETL with BigQuery, ISO GQL. Recommended for production deployments.',
-  },
   { value: 'neo4j', label: 'Neo4j AuraDB (Cloud)', description: 'Managed Neo4j cloud database.' },
   { value: 'neo4j_self', label: 'Self-hosted Neo4j', description: 'Your own Neo4j instance.' },
-  { value: 'falkordb_cloud', label: 'FalkorDB Cloud', description: 'Managed FalkorDB — Redis-compatible, sub-millisecond graph queries.' },
-  { value: 'falkordb_self', label: 'Self-hosted FalkorDB (ephemeral)', description: 'Your own FalkorDB / Redis instance. Not recommended for production.' },
 ];
-
-function isNeo4j(provider: GraphProvider) {
-  return provider === 'neo4j' || provider === 'neo4j_self';
-}
-
-function isSpanner(provider: GraphProvider) {
-  return provider === 'spanner';
-}
 
 export default function GraphBackendPage() {
   const { user } = useAuth();
@@ -64,7 +38,14 @@ export default function GraphBackendPage() {
   useEffect(() => {
     if (!user?.id) return;
     getDoc(doc(db, 'users', user.id, 'settings', 'graph_backend')).then((snap) => {
-      if (snap.exists()) setConfig({ ...DEFAULT_CONFIG, ...(snap.data() as Partial<GraphBackendConfig>) });
+      if (snap.exists()) {
+        const saved = snap.data() as Partial<GraphBackendConfig>;
+        setConfig({
+          ...DEFAULT_CONFIG,
+          ...saved,
+          provider: saved.provider === 'neo4j_self' ? 'neo4j_self' : 'neo4j',
+        });
+      }
       setLoading(false);
     });
   }, [user?.id]);
@@ -99,16 +80,12 @@ export default function GraphBackendPage() {
 
   if (loading) return <div className="p-8 text-muted-foreground">Loading...</div>;
 
-  const neo4j = isNeo4j(config.provider);
-  const spanner = isSpanner(config.provider);
-
   return (
     <div className="p-8 max-w-2xl">
       <h1 className="text-2xl font-semibold text-foreground mb-2">Graph Backend</h1>
       <p className="text-muted-foreground mb-3 text-sm">
         Choose where PRAXIS stores the conflict knowledge graph.
-        Cloud Spanner Graph is recommended for production (managed, multi-region, ISO GQL, ZeroETL with BigQuery).
-        Neo4j AuraDB is a solid managed alternative; FalkorDB offers Redis-compatible sub-millisecond performance.
+        Phase 1 standardizes the graph foundation on Neo4j so temporal facts, evidence edges, and cross-situation traversals share one Cypher contract.
       </p>
       <div className="mb-6 rounded-md border border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
         <p>
@@ -164,118 +141,40 @@ export default function GraphBackendPage() {
       <div className="space-y-4 border border-border rounded-md p-4 mb-6">
         <h2 className="text-sm font-medium text-foreground">Connection Settings</h2>
 
-        {spanner ? (
-          <>
-            <p className="text-xs text-muted-foreground">
-              Cloud Spanner Graph uses Workload Identity on Cloud Run — no password required.
-              Run <code className="font-mono bg-muted px-1 rounded">infrastructure/setup-spanner.sh</code> once to provision the instance.
-            </p>
-            <div>
-              <label className="block text-xs text-muted-foreground mb-1">GCP Project ID</label>
-              <input
-                type="text"
-                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm font-mono"
-                placeholder="praxisbytacitus"
-                value={config.project_id}
-                onChange={(e) => set('project_id', e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">Instance ID</label>
-                <input
-                  type="text"
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm font-mono"
-                  placeholder="praxis-graph"
-                  value={config.instance_id}
-                  onChange={(e) => set('instance_id', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">Database ID</label>
-                <input
-                  type="text"
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm font-mono"
-                  placeholder="praxis-graph-db"
-                  value={config.database_id}
-                  onChange={(e) => set('database_id', e.target.value)}
-                />
-              </div>
-            </div>
-          </>
-        ) : neo4j ? (
-          <>
-            <div>
-              <label className="block text-xs text-muted-foreground mb-1">
-                {config.provider === 'neo4j' ? 'AuraDB Connection URI' : 'Bolt URI'}
-              </label>
-              <input
-                type="text"
-                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm font-mono"
-                placeholder="neo4j+s://xxxx.databases.neo4j.io"
-                value={config.uri}
-                onChange={(e) => set('uri', e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">Username</label>
-                <input
-                  type="text"
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm"
-                  placeholder="neo4j"
-                  value={config.user}
-                  onChange={(e) => set('user', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">Password</label>
-                <input
-                  type="password"
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm"
-                  placeholder="••••••••"
-                  value={config.password}
-                  onChange={(e) => set('password', e.target.value)}
-                />
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-2">
-                <label className="block text-xs text-muted-foreground mb-1">Host</label>
-                <input
-                  type="text"
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm font-mono"
-                  placeholder="localhost"
-                  value={config.host}
-                  onChange={(e) => set('host', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">Port</label>
-                <input
-                  type="text"
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm font-mono"
-                  placeholder="6379"
-                  value={config.port}
-                  onChange={(e) => set('port', e.target.value)}
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs text-muted-foreground mb-1">Password (if required)</label>
-              <input
-                type="password"
-                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm"
-                placeholder="Leave blank if none"
-                value={config.password}
-                onChange={(e) => set('password', e.target.value)}
-              />
-            </div>
-          </>
-        )}
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1">
+            {config.provider === 'neo4j' ? 'AuraDB Connection URI' : 'Bolt URI'}
+          </label>
+          <input
+            type="text"
+            className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm font-mono"
+            placeholder="neo4j+s://xxxx.databases.neo4j.io"
+            value={config.uri}
+            onChange={(e) => set('uri', e.target.value)}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-muted-foreground mb-1">Username</label>
+            <input
+              type="text"
+              className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm"
+              placeholder="neo4j"
+              value={config.user}
+              onChange={(e) => set('user', e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-muted-foreground mb-1">Password</label>
+            <input
+              type="password"
+              className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm"
+              placeholder="••••••••"
+              value={config.password}
+              onChange={(e) => set('password', e.target.value)}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Test result */}

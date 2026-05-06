@@ -4,8 +4,7 @@ import { getProviderIntegrationStatus } from '@/app/api/health/provider/route';
 describe('getProviderIntegrationStatus', () => {
   it('marks optional integrations live when their env vars are present', () => {
     const status = getProviderIntegrationStatus({
-      FIRECRAWL_API_KEY: 'fc-key',
-      PARALLEL_API_KEY: 'parallel-key',
+      GOOGLE_AI_API_KEY: 'google-key',
       VERTEX_AGENT_ENGINE_ID: '123456789',
       POLAR_ACCESS_TOKEN: 'polar-token',
       POLAR_WEBHOOK_SECRET: 'whsec',
@@ -14,8 +13,7 @@ describe('getProviderIntegrationStatus', () => {
     });
 
     expect(status).toEqual({
-      firecrawl: true,
-      parallel: true,
+      groundedSearch: true,
       vertexAdk: true,
       polar: true,
       polarMissing: [],
@@ -24,13 +22,12 @@ describe('getProviderIntegrationStatus', () => {
 
   it('reports missing optional integration env vars without exposing values', () => {
     const status = getProviderIntegrationStatus({
-      FIRECRAWL_API_KEY: 'fc-key',
+      GOOGLE_AI_API_KEY: 'google-key',
       POLAR_ACCESS_TOKEN: 'polar-token',
       POLAR_PRODUCT_ANALYST: 'prod-analyst',
     });
 
-    expect(status.firecrawl).toBe(true);
-    expect(status.parallel).toBe(false);
+    expect(status.groundedSearch).toBe(true);
     expect(status.vertexAdk).toBe(false);
     expect(status.polar).toBe(false);
     expect(status.polarMissing).toEqual([

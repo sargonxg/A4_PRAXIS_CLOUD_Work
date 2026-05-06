@@ -7,10 +7,7 @@ import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 export const maxDuration = 120;
 
 /**
- * Claude-powered deep analysis endpoint.
- * Falls back to Gemini if ANTHROPIC_API_KEY is not configured.
- * Claude is used for nuanced diplomatic analysis, bias detection,
- * and complex geopolitical reasoning.
+ * Gemini-powered deep analysis endpoint.
  */
 export const POST = withCalibration('advisory', 'ai_deep_think', {
   retrievalQuery: (_req, body) => {
@@ -24,14 +21,13 @@ export const POST = withCalibration('advisory', 'ai_deep_think', {
   }
 
   const providers = getAvailableProviders();
-  const hasAnthropic = providers.anthropic.configured;
   const hasGoogle = providers.google.configured;
 
-  if (!hasAnthropic && !hasGoogle) {
+  if (!hasGoogle) {
     return new Response(
       JSON.stringify({
-        error: 'No AI provider configured. Set ANTHROPIC_API_KEY or GOOGLE_AI_API_KEY.',
-        providers: { anthropic: false, google: false },
+        error: 'No AI provider configured. Set GOOGLE_AI_API_KEY or GOOGLE_VERTEX_PROJECT.',
+        providers: { google: false },
       }),
       { status: 503, headers: { 'Content-Type': 'application/json' } }
     );
@@ -103,7 +99,6 @@ ${systemPromptBlock}
 
 Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`;
 
-    // Use Claude if available, otherwise Gemini Pro (via centralized provider)
     const model = getAnalysisModel();
 
     const result = streamText({
@@ -118,8 +113,8 @@ Calibrate framing, tone, and recommendations to the analyst profile above. Honou
             toolId: 'advisory',
             profileVersion: provenance.profileVersion,
             output: { query, analysisType, analysis: text },
-            metadata: { variant: 'claude-analyze', analysisType },
-          }).catch((err) => console.warn('[claude_analyze] saveToolOutput failed:', err));
+            metadata: { variant: 'deep-analyze', analysisType },
+          }).catch((err) => console.warn('[deep_analyze] saveToolOutput failed:', err));
         }
       },
     });
@@ -128,12 +123,12 @@ Calibrate framing, tone, and recommendations to the analyst profile above. Honou
     return new Response((await result).textStream, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
-        'X-AI-Provider': hasAnthropic ? 'anthropic' : 'google',
-        'X-AI-Model': hasAnthropic ? 'claude-sonnet-4-20250514' : 'gemini-2.5-flash',
+        'X-AI-Provider': 'google',
+        'X-AI-Model': 'gemini-2.5-flash',
       },
     });
   } catch (err) {
-    console.error('Claude analyze route error:', err);
+    console.error('Deep analyze route error:', err);
     return new Response(JSON.stringify({ error: 'Analysis request failed' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },

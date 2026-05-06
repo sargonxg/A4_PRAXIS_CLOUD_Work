@@ -165,8 +165,28 @@ def render_situation_brief_json(
         pt = data.get("primitive_type", "Unknown")
         type_counts[pt] = type_counts.get(pt, 0) + 1
 
+    escalation = analysis.get("escalationAssessment", {})
+    negotiation = analysis.get("negotiationSpace", {})
+    situation_name = situation_metadata.get("name", "Unknown Situation")
+
     return {
+        "situationName": situation_name,
         "situation": situation_metadata,
+        "executive_summary": {
+            "graph": {
+                "nodes": node_count,
+                "edges": edge_count,
+                "communities": len(communities),
+            },
+            "escalation": {
+                "glaslStage": escalation.get("glaslStage"),
+                "trajectory": escalation.get("trajectory"),
+            },
+            "negotiation": {
+                "zopa_count": len(negotiation.get("zopa", [])),
+                "hard_constraint_count": len(negotiation.get("hardConstraints", [])),
+            },
+        },
         "stats": {
             "node_count": node_count,
             "edge_count": edge_count,

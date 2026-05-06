@@ -21,18 +21,14 @@ interface ApiResponse {
   statuses: Record<ProviderId, ProviderKeyStatus>;
 }
 
-const CATEGORY_ORDER: ProviderCategory[] = ['ai', 'feed', 'research', 'scraping'];
+const CATEGORY_ORDER: ProviderCategory[] = ['ai', 'feed'];
 const CATEGORY_LABELS: Record<ProviderCategory, string> = {
   ai: 'AI Models',
   feed: 'Conflict & Humanitarian Feeds',
-  research: 'Web Research',
-  scraping: 'Scraping & Ingestion',
 };
 const CATEGORY_BLURBS: Record<ProviderCategory, string> = {
   ai: 'The reasoning engines that drive every PRAXIS tool. The platform ships with a default Gemini path via Vertex ADC — your own keys take precedence.',
   feed: 'Structured real-time feeds. Add credentials where required; public feeds (GDELT, ReliefWeb, HDX, UNHCR, UCDP, World Bank, SIPRI, Crisis Group, UN News) are always on.',
-  research: 'Parallel web-research providers that augment grounded Google Search with a second lens for citation and fact-checking.',
-  scraping: 'Full-page ingestion — JS-rendered sites, documents, and source monitors.',
 };
 
 const TIER_STYLES: Record<string, string> = {
@@ -67,7 +63,7 @@ export default function ApiKeysPage() {
 
   const grouped = useMemo(() => {
     if (!data) return null;
-    const out: Record<ProviderCategory, ProviderSpec[]> = { ai: [], feed: [], research: [], scraping: [] };
+    const out: Record<ProviderCategory, ProviderSpec[]> = { ai: [], feed: [] };
     for (const spec of Object.values(data.providers)) out[spec.category].push(spec);
     return out;
   }, [data]);
