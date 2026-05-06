@@ -1,6 +1,13 @@
 import pytest
 
+from config import get_settings
 from services.postgres import tenant_session, verify_extensions
+
+
+pytestmark = pytest.mark.skipif(
+    not get_settings().database_url,
+    reason="Phase 1 Postgres smoke tests require DATABASE_URL",
+)
 
 
 @pytest.mark.asyncio

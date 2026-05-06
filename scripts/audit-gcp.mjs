@@ -41,7 +41,7 @@ function gcloudList(cmd) {
     return execSync(`gcloud ${cmd} --project ${PROJECT} --format="value(name)"`, {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
-    }).trim().split('\n').filter(Boolean);
+    }).trim().split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   } catch {
     return [];
   }
@@ -73,6 +73,8 @@ const checks = [
   { name: 'Secret: praxis-cron-secret',                    category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-cron-secret') },
   { name: 'Secret: praxis-cookie-secret',                  category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-cookie-secret') },
   { name: 'Secret: praxis-user-key-master',                category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-user-key-master') },
+  { name: 'Secret: praxis-db-password',                    category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-db-password') },
+  { name: 'Secret: NEO4J_URI',                             category: 'secret',  run: () => gcloudDescribe('secrets describe NEO4J_URI') },
   { name: 'Secret: praxis-langgraph-db-password',           category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-langgraph-db-password') },
   { name: 'Secret: praxis-ucdp-api-token',                 category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-ucdp-api-token') },
   { name: 'Secret: praxis-vertex-adk-engine-id',           category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-vertex-adk-engine-id') },
@@ -90,8 +92,11 @@ const checks = [
   { name: 'Cloud Run: praxis-backend',                     category: 'runtime', run: () => gcloudDescribe('run services describe praxis-backend --region=us-central1') },
   { name: 'Cloud Run worker pool: gdelt-poller',            category: 'runtime', soft: true, run: () => gcloudDescribe('beta run worker-pools describe gdelt-poller --region=us-central1') },
 
-  // LangGraph checkpoint database
+  // Phase 1 application database, reusing the existing private Cloud SQL
+  // instance to avoid provisioning a second paid Postgres instance.
   { name: 'Cloud SQL: praxisbytacitus-instance',            category: 'sql',     run: () => gcloudDescribe('sql instances describe praxisbytacitus-instance') },
+  { name: 'Cloud SQL database: praxis',                     category: 'sql',     run: () => gcloudList('sql databases list --instance=praxisbytacitus-instance').includes('praxis') },
+  { name: 'Cloud SQL user: praxis_app',                     category: 'sql',     run: () => gcloudList('sql users list --instance=praxisbytacitus-instance').includes('praxis_app') },
   { name: 'Cloud SQL database: praxis_langgraph',           category: 'sql',     run: () => gcloudList('sql databases list --instance=praxisbytacitus-instance').includes('praxis_langgraph') },
   { name: 'Service account: praxis-agents-sa',              category: 'iam',     run: () => gcloudDescribe('iam service-accounts describe praxis-agents-sa@praxisbytacitus.iam.gserviceaccount.com') },
 

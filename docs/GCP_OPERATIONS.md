@@ -15,10 +15,13 @@ can. Every command is scoped to project `praxisbytacitus` and region
 The order below is the same as `docs/SPRINT_2026-04-25.md` Stream C — fastest
 user value first.
 
-Current production note (2026-04-29): core Gemini/Vertex provider health,
-Firecrawl, and Vertex AI Agent Engine are active in production. Polar remains
-optional until its Secret Manager values are mounted; `/app/settings/system-health`
-now shows the live status for each integration.
+Current production note (2026-05-06): core Gemini/Vertex provider health and
+Vertex AI Agent Engine are active in production. Firecrawl and Parallel are
+retired from the deployed app surface; grounded Google Search, GDELT, UCDP,
+ReliefWeb, HDX, UN News, World Bank, uploaded sources, Cloud SQL, and Neo4j are
+the supported foundation. Polar remains optional until its Secret Manager values
+are mounted; `/app/settings/system-health` shows the live status for each
+integration.
 
 ### 1a. ~~ACLED~~ — **withdrawn 2026-04-25**
 
@@ -133,25 +136,27 @@ Subscribe to subscription lifecycle events and `order.paid`. The app mirrors
 entitlements into `users/{uid}` and reads them from Firestore through
 `src/lib/api/tier.ts`.
 
-### 1e. Premium research providers
+### 1e. Research providers
 
 Secrets now created in project `praxisbytacitus`:
 
-- `praxis-firecrawl-api-key` -> `FIRECRAWL_API_KEY`
-- `praxis-parallel-api-key` -> `PARALLEL_API_KEY`
+- `praxis-db-password` -> `DATABASE_PASSWORD` / `LANGGRAPH_DB_PASSWORD`
+- `NEO4J_URI` -> `NEO4J_URI` (alias of the active Dialectica Neo4j URI)
+- `dialectica-neo4j-user` -> `NEO4J_USER`
+- `dialectica-neo4j-password` -> `NEO4J_PASSWORD`
+- `dialectica-neo4j-database` -> `NEO4J_DATABASE`
 
-`cloudbuild.yaml` mounts both on frontend and backend Cloud Run services.
-Firecrawl is used for premium search/scrape/crawl/map/extract workflows with
-free fallbacks. Parallel is used for LLM-optimized second-lens search and is
-also configured as Codex MCP server `parallel-search`.
+Retired provider secrets such as Firecrawl and Parallel are not mounted by the
+current Cloud Build configs. Reintroducing those vendors requires a new phase
+decision and an updated model/provider audit.
 
 Recommended use:
 
 - Free users: Google/Vertex + open fallbacks.
-- Promo/Analyst/Team/Enterprise: Firecrawl + Parallel enabled by platform key,
-  with user keys overriding in `/app/settings/api-keys`.
-- Heavy crawls, maps, structured extraction, and advanced Parallel/deep tasks:
-  paid/trial only or support-approved.
+- Promo/Analyst/Team/Enterprise: Google/Vertex with grounded Google Search,
+  corpus retrieval, source uploads, and governed data feeds.
+- Heavy research, extraction, and graph-backed tasks: credit-costed in the route
+  layer and audited by `/api/health`.
 
 ### 1f. Stripe (legacy)
 
@@ -226,7 +231,8 @@ curl -s  https://praxis.tacitus.me/api/auth/test-firebase | jq
 
 ## 2a. LangGraph Cloud SQL Checkpoint Store
 
-Authoritative playbook: `docs/LANGGRAPH_CLOUDSQL_CHECKPOINTING.md`.
+Authoritative playbook: this section plus
+`docs/specs/2026-04-27-langgraph-runtime/README.md`.
 
 Use this for durable PRAXIS agents. Do not use the Firebase console flow that
 tries to create a public-IP Cloud SQL instance; the project correctly blocks
@@ -255,12 +261,28 @@ gcloud sql databases list \
   --instance=praxisbytacitus-instance \
   --project=praxisbytacitus
 
+gcloud sql users list \
+  --instance=praxisbytacitus-instance \
+  --project=praxisbytacitus
+
 gcloud secrets versions list praxis-langgraph-db-password \
   --project=praxisbytacitus
 ```
 
-Expected: Postgres 16 instance is `RUNNABLE`, has only a PRIVATE IP, database
-`praxis_langgraph` exists, and the password secret has an enabled version.
+Expected: Postgres 16 instance is `RUNNABLE`, has only a PRIVATE IP, databases
+`praxis` and `praxis_langgraph` exist, users `praxis_app` and
+`praxis_langgraph` exist, and password secrets have enabled versions.
+
+Production database layout on the existing private-IP instance:
+
+- Instance: `praxisbytacitus:us-east4:praxisbytacitus-instance`
+- Phase 1 app database: `praxis`
+- Phase 1 app user: `praxis_app`
+- Phase 1 app password secret: `praxis-db-password`
+- Legacy LangGraph database retained for compatibility: `praxis_langgraph`
+
+Cloud Run mounts the Cloud SQL socket for the existing instance and PgBouncer
+points at `/cloudsql/praxisbytacitus:us-east4:praxisbytacitus-instance`.
 
 Firebase SQL Connect / Data Connect:
 
@@ -448,7 +470,7 @@ The following steps cannot be automated by an agent:
   one-time IAM consent)
 - Domain DNS records (Squarespace / Cloudflare / etc.)
 - Firebase Auth provider toggles (Console UI)
-- Anthropic / Firecrawl signups (vendor UI)
+- Optional vendor signups (vendor UI) only after a scoped product decision
 - ACLED key request (vendor approves manually)
 
 For everything else, an agent (Codex or Claude Code) should be able to

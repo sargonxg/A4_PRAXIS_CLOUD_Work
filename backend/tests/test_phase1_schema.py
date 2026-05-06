@@ -1,6 +1,13 @@
 import pytest
 
+from config import get_settings
 from services.postgres import tenant_session
+
+
+pytestmark = pytest.mark.skipif(
+    not get_settings().database_url,
+    reason="Phase 1 schema tests require DATABASE_URL",
+)
 
 
 ZERO_VECTOR = "[" + ",".join(["0"] * 768) + "]"

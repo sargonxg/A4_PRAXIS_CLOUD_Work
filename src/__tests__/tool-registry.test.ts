@@ -15,7 +15,7 @@ const EXPECTED_TOOLS = [
   'escalationAssessment',
   'negotiationSpaceAnalysis',
   'narrativeEcosystemMap',
-  'historicalParallelAnalysis',
+  'historicalParallelsAnalysis',
   'generateTimeline',
   'sanctionsCheck',
   'humanitarianSnapshot',
