@@ -11,7 +11,7 @@
 
 PRAXIS is a Next.js App Router product deployed to Google Cloud Run with Firebase/Firestore as canonical user state, Cloud SQL Postgres for relational/vector/agent memory, Neo4j Aura as the graph index, Vertex AI Gemini as the only model provider, and a Python backend for agentic reasoning flows.
 
-The app shell now matches the Phase 3 product surface: the default sidebar renders eight surfaces only: Desk, Context, Library, Research, Graph, Boardroom, Draft, Tools. The unified Workbench has expanded tabs for Chapters, Desk, Context, Library, Research, Ontology, Graph, Tools, Boardroom, and Draft. Legacy and specialist `/app/*` routes remain live and are exposed through Tools or the `?show_archive=1` sidebar switch.
+The app shell now matches the Phase 3 product surface: the default sidebar renders eight surfaces only: Desk, Context, Library, Research, Graph, Boardroom, Draft, Tools. The unified Workbench has expanded tabs for Chapters, Desk, Context, Library, Research, Ontology, Graph, Tools, Memos, Boardroom, and Draft. Legacy and specialist `/app/*` routes remain live and are exposed through Tools or the `?show_archive=1` sidebar switch.
 
 For the detailed line-by-line phase-spec audit, known red flags, missing work, and next iteration order, read `docs/PRAXIS_PHASE_SPEC_AUDIT_2026-05-06.md`.
 
@@ -65,6 +65,9 @@ Important files:
 - `src/components/ontology/OntologySchemaViewer.tsx` renders the Workbench Ontology tab.
 - `src/lib/graph/workbench-case-graph.ts` and `src/components/graph/PraxisGraphCanvas.tsx` provide the canonical Workbench graph view.
 - `src/lib/tools/marketplace/registry.ts`, `src/components/tools/ToolMarketplace.tsx`, and `src/lib/tools/marketplace/run-artifact.ts` provide the 16-tool marketplace and permissive artifact persistence contract.
+- `src/types/memo.ts`, `src/lib/memo/templates/registry.ts`, and `src/components/memo/MemoStudio.tsx` provide the Memo Studio foundation with six launch templates and graph/source citation-ready blocks.
+- `src/lib/kg/backend.ts`, `backend/migrations/versions/0011_postgres_kg_contract.py`, and `docs/architecture/KG_BACKEND.md` document the Postgres-first KG direction while retaining Neo4j as an optional legacy/reflective mode.
+- `docs/codex-prompts/PRAXIS_CODEX_09_VERIFICATION_AND_ADMIN.md`, `docs/codex-prompts/PRAXIS_CODEX_10_POSTGRES_KNOWLEDGE_GRAPH.md`, and `docs/codex-prompts/PRAXIS_CODEX_11_MEMO_STUDIO_AND_LAUNCH.md` preserve the next-pack prompts for Codex/subagent continuation.
 - `src/lib/graph/neo4j-drift-verifier.ts`, `scripts/verify-neo4j-sync.ts`, `/api/cron/verify-neo4j-sync`, and `infrastructure/scheduler/neo4j-drift-verifier-cron.yaml` form the Firestore-to-Neo4j drift verification path.
 - `tests/e2e/personas/` contains the diplomat, mediator, analyst, and researcher Playwright workbench flows.
 
@@ -84,6 +87,10 @@ npm run audit:context-vs-tools
 npm run audit:ontology
 npm run audit:tool-marketplace
 npm run audit:graph-viewer
+npm run audit:codex-prompts
+npm run audit:reality-check
+npm run audit:kg-backend
+npm run audit:memo-studio
 npm run verify:neo4j-sync
 npx tsx scripts/audit-spine.ts
 npx tsx scripts/audit-phase3-product-surface.ts

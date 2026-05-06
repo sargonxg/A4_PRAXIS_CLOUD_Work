@@ -7,6 +7,7 @@ export type WorkbenchTabId =
   | 'ontology'
   | 'graph'
   | 'tools'
+  | 'memos'
   | 'boardroom'
   | 'draft';
 

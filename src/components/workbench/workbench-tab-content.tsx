@@ -2,6 +2,7 @@
 
 import { Activity, BookOpen, Boxes, FileText, GitBranch, Library, Search, Store, Users } from 'lucide-react';
 import { PraxisGraphCanvas } from '@/components/graph/PraxisGraphCanvas';
+import { MemoStudio } from '@/components/memo/MemoStudio';
 import { OntologySchemaViewer } from '@/components/ontology/OntologySchemaViewer';
 import { ToolMarketplace } from '@/components/tools/ToolMarketplace';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
@@ -16,6 +17,7 @@ export function WorkbenchTabContent({ activeTab }: { activeTab: WorkbenchTabId }
   if (activeTab === 'ontology') return <OntologySchemaViewer />;
   if (activeTab === 'graph') return <WorkbenchGraphPanel />;
   if (activeTab === 'tools') return <ToolMarketplace />;
+  if (activeTab === 'memos') return <MemoStudio />;
   if (activeTab === 'boardroom' || activeTab === 'draft') {
     return (
       <ToolGate>
@@ -77,6 +79,7 @@ const TAB_TITLES: Record<WorkbenchTabId, string> = {
   ontology: 'Ontology',
   graph: 'Graph',
   tools: 'Tools',
+  memos: 'Memos',
   boardroom: 'Boardroom',
   draft: 'Draft',
 };
@@ -90,6 +93,7 @@ const TAB_BODY: Record<WorkbenchTabId, string> = {
   ontology: 'Inspect the active case ontology, primitive mapping, validators, and tool requirements.',
   graph: 'Inspect graph primitives, truth layers, provenance coverage, and graph projection health.',
   tools: 'Browse the curated ontology-aware tool marketplace for the active case.',
+  memos: 'Create cited memos, talking points, sit-reps, and policy notes from the active case graph.',
   boardroom: 'Use advisor deliberation on top of the locked context.',
   draft: 'Create decision-ready products with paragraph-level provenance.',
 };
@@ -102,6 +106,7 @@ const TAB_ICONS: Partial<Record<WorkbenchTabId, typeof Activity>> = {
   ontology: Boxes,
   graph: GitBranch,
   tools: Store,
+  memos: FileText,
   boardroom: Users,
   draft: FileText,
 };

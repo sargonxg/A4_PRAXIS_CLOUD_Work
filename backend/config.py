@@ -15,8 +15,12 @@ class Settings(BaseSettings):
     neo4j_password: str = ""
     neo4j_database: str = "neo4j"
 
-    # Graph index. Firestore remains canonical; Neo4j Aura is the only index.
-    graph_backend: str = "neo4j"
+    # Knowledge graph backend. Postgres is the v1 primary; Neo4j is optional
+    # for legacy reads or reflective indexing during migration validation.
+    graph_backend: str = Field(
+        default="postgres",
+        validation_alias=AliasChoices("KG_BACKEND", "GRAPH_BACKEND", "graph_backend"),
+    )
 
     # LangGraph checkpointing (Cloud SQL Postgres; see docs/GCP_OPERATIONS.md)
     langgraph_checkpoint_backend: str = "postgres"

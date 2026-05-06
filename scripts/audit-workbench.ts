@@ -20,7 +20,7 @@ for (const file of requiredFiles) {
   }
 }
 
-const expectedTabs = ['chapters', 'desk', 'context', 'library', 'research', 'ontology', 'graph', 'tools', 'boardroom', 'draft'];
+const expectedTabs = ['chapters', 'desk', 'context', 'library', 'research', 'ontology', 'graph', 'tools', 'memos', 'boardroom', 'draft'];
 const actualTabs = WORKBENCH_TABS.map((tab) => tab.id);
 if (actualTabs.join(',') !== expectedTabs.join(',')) {
   throw new Error(`Workbench tabs mismatch: ${actualTabs.join(',')}`);

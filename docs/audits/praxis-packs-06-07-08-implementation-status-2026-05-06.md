@@ -46,6 +46,7 @@ Implemented in this branch:
 - `src/lib/tools/marketplace/run-artifact.ts` adds a tolerant Firestore-ready artifact record under `toolRunArtifacts`.
 - Workbench now includes a Tools tab that filters marketplace tools by active ontology, context health, category, and max cost class.
 - `npm run audit:tool-marketplace` checks the 16-tool cap, schemas, ontology references, canary coverage, and runtime budget.
+- Packs 09-11 prompts are now preserved in `docs/codex-prompts/`, and the next launch pass adds a Workbench Memos tab plus Postgres KG contract scaffolding without weakening this marketplace boundary.
 
 Still not complete from the full pack:
 

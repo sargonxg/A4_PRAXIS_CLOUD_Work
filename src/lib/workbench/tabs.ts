@@ -9,6 +9,7 @@ export const WORKBENCH_TABS: WorkbenchTabDescriptor[] = [
   { id: 'ontology', label: 'Ontology', summary: 'Case ontology, primitives, validators, and recommended tool mappings.', group: 'context' },
   { id: 'graph', label: 'Graph', summary: 'GraphOps, conflict graph, paths, and projection checks.', group: 'context' },
   { id: 'tools', label: 'Tools', summary: 'Curated marketplace for ontology-aware analysis tools.', group: 'tools' },
+  { id: 'memos', label: 'Memos', summary: 'Template-based memo studio with graph citations and export preparation.', group: 'tools' },
   { id: 'boardroom', label: 'Boardroom', summary: 'Advisor deliberation and option synthesis.', group: 'tools' },
   { id: 'draft', label: 'Draft', summary: 'Briefing, memo, talking points, and export workspace.', group: 'tools' },
 ];

@@ -37,6 +37,7 @@ const TAB_ICONS = {
   ontology: Boxes,
   graph: GitBranch,
   tools: Store,
+  memos: FileText,
   boardroom: Users,
   draft: FileText,
 } as const;
