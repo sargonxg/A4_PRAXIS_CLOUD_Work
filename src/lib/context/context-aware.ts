@@ -1,5 +1,6 @@
 import type { AuthenticatedUser } from '@/lib/api/with-auth';
 import { computeContextHealthScore } from '@/lib/context/context-health-score';
+import { sanitizeConversationContext, verifyConversationContextToken } from '@/lib/context/conversation-token';
 import { getSituationAdmin } from '@/lib/firebase/situations';
 import type { ContextAdvisory, ContextSnapshot, ContextSpec, ConversationContext, UserContext, WorkspaceContext } from '@/types/context';
 import type { Situation } from '@/types/situation';
@@ -120,18 +121,35 @@ function parseConversationContext(req: Request, spec: ContextSpec | undefined): 
     focusedToolId: spec?.conversation?.focusedToolRequired ? 'unknown-tool' : undefined,
     recentActions: [],
   };
+  const signed = req.headers.get('X-Praxis-Conversation-Token');
+  if (signed) {
+    const verified = verifyConversationContextToken(signed);
+    if (verified.ok) {
+      return {
+        ...fallback,
+        ...verified.conversation,
+        recentActions: verified.conversation.recentActions.slice(-10),
+      };
+    }
+  }
+
   const raw = req.headers.get('X-Praxis-Conversation');
   if (!raw) return fallback;
+  if (!allowUnsignedConversationHeader()) return fallback;
   try {
-    const parsed = JSON.parse(raw) as Partial<ConversationContext>;
+    const parsed = sanitizeConversationContext(JSON.parse(raw) as Partial<ConversationContext>);
     return {
       ...fallback,
       ...parsed,
-      recentActions: Array.isArray(parsed.recentActions) ? parsed.recentActions.slice(-10) as ConversationContext['recentActions'] : [],
+      recentActions: Array.isArray(parsed.recentActions) ? parsed.recentActions.slice(-10) : [],
     };
   } catch {
     return fallback;
   }
+}
+
+function allowUnsignedConversationHeader(): boolean {
+  return process.env.NODE_ENV !== 'production' || process.env.PRAXIS_ALLOW_UNSIGNED_CONTEXT === 'true';
 }
 
 function buildContextAdvisories(

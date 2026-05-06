@@ -6,6 +6,8 @@ const failures: string[] = [];
 if (listMemoTemplates().length !== 6) failures.push('Memo Studio must expose six launch templates');
 if (!existsSync(join(process.cwd(), 'src/components/memo/MemoStudio.tsx'))) failures.push('missing MemoStudio component');
 if (!existsSync(join(process.cwd(), 'src/lib/memo/export.ts'))) failures.push('missing memo export helpers');
+if (!existsSync(join(process.cwd(), 'src/lib/firebase/memo-service.ts'))) failures.push('missing Firestore memo service');
+if (!existsSync(join(process.cwd(), 'src/app/api/memos/route.ts'))) failures.push('missing memo persistence API route');
 
 const tabs = readFileSync(join(process.cwd(), 'src/lib/workbench/tabs.ts'), 'utf8');
 if (!tabs.includes("id: 'memos'")) failures.push('Workbench tabs must include memos');
@@ -21,8 +23,13 @@ for (const file of docs) {
 }
 
 const studio = readFileSync(join(process.cwd(), 'src/components/memo/MemoStudio.tsx'), 'utf8');
-for (const token of ['exportMarkdown', 'exportDocx', 'exportPdf', 'Version history', 'localStorage']) {
+for (const token of ['exportMarkdown', 'exportDocx', 'exportPdf', 'Version history', 'localStorage', '/api/memos']) {
   if (!studio.includes(token)) failures.push(`Memo Studio missing ${token}`);
+}
+
+const memoService = readFileSync(join(process.cwd(), 'src/lib/firebase/memo-service.ts'), 'utf8');
+for (const token of ['loadMemoDraft', 'saveMemoDraft', 'versions', 'users']) {
+  if (!memoService.includes(token)) failures.push(`memo service missing ${token}`);
 }
 
 if (failures.length > 0) {

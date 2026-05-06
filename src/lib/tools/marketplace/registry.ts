@@ -63,7 +63,7 @@ function tool(
     composition: {
       canChainInto: input.category === 'cross' ? [] : ['cross.brief-exporter', 'cross.contradiction-finder'],
       canChainFrom: [],
-      contextProjection: `src/lib/tools/marketplace/projections/${input.id}.ts`,
+      contextProjection: 'src/lib/tools/marketplace/projections/default.ts',
     },
     sideEffects: {
       proposesGraphChanges: false,

@@ -5,7 +5,9 @@ const failures: string[] = [];
 const requiredFiles = [
   'src/types/context.ts',
   'src/lib/context/context-aware.ts',
+  'src/lib/context/conversation-token.ts',
   'src/lib/api/with-context-aware.ts',
+  'src/lib/tools/context-provider.ts',
   'backend/services/context_layers.py',
   'docs/audits/2026-05-06-CONTEXT_INVENTORY.md',
 ];
@@ -28,8 +30,18 @@ for (const symbol of ['UserContext', 'WorkspaceContext', 'CaseContext', 'Convers
 }
 
 const contextAware = readFileSync(join(process.cwd(), 'src/lib/context/context-aware.ts'), 'utf8');
-for (const marker of ['X-Praxis-Context-Health', 'advisories', 'minHealthScore', 'graceful']) {
+for (const marker of ['X-Praxis-Context-Health', 'X-Praxis-Conversation-Token', 'advisories', 'minHealthScore', 'graceful']) {
   if (!contextAware.includes(marker)) failures.push(`context-aware implementation missing ${marker}`);
+}
+
+const token = readFileSync(join(process.cwd(), 'src/lib/context/conversation-token.ts'), 'utf8');
+for (const marker of ['createHmac', 'timingSafeEqual', 'verifyConversationContextToken']) {
+  if (!token.includes(marker)) failures.push(`conversation token implementation missing ${marker}`);
+}
+
+const provider = readFileSync(join(process.cwd(), 'src/lib/tools/context-provider.ts'), 'utf8');
+for (const marker of ['ContextProvider', 'prepare(', 'forTool(', 'subagent(']) {
+  if (!provider.includes(marker)) failures.push(`ContextProvider missing ${marker}`);
 }
 
 if (failures.length > 0) {

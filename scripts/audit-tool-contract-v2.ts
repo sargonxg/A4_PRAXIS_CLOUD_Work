@@ -12,6 +12,10 @@ for (const tool of MARKETPLACE_TOOLS) {
   if (tool.contextSpec.minHealthScore && tool.contextSpec.minHealthScore > 100) failures.push(`${tool.id} invalid minHealthScore`);
   if (tool.contextSpec.graceful !== true) failures.push(`${tool.id} must run gracefully with partial context`);
   if (!tool.composition || !Array.isArray(tool.composition.canChainInto)) failures.push(`${tool.id} missing composition`);
+  if (!tool.composition.contextProjection) failures.push(`${tool.id} missing context projection`);
+  if (tool.composition.contextProjection && !existsSync(join(process.cwd(), tool.composition.contextProjection))) {
+    failures.push(`${tool.id} missing ${tool.composition.contextProjection}`);
+  }
   if (!tool.sideEffects || tool.sideEffects.writesAuditLogs !== true) failures.push(`${tool.id} must write audit logs`);
   if (!tool.subagentDeps?.includes('context-preparer')) failures.push(`${tool.id} must declare context-preparer`);
   if (!tool.skill?.file) failures.push(`${tool.id} missing skill file pointer`);

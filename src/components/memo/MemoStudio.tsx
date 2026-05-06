@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Download, FileText, RefreshCw, Save } from 'lucide-react';
+import { useAuth } from '@/lib/auth/auth-context';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { createMemoVersion, memoBlocksToMarkdown, memoBlocksToPlainText } from '@/lib/memo/export';
 import { buildMemoBlocksForCase, listMemoTemplates } from '@/lib/memo/templates/registry';
@@ -10,6 +11,7 @@ import { cn } from '@/lib/utils/cn';
 
 export function MemoStudio() {
   const { caseModule } = useWorkbenchScope();
+  const { user } = useAuth();
   const templates = listMemoTemplates();
   const [selectedTemplateId, setSelectedTemplateId] = useState<MemoTemplateId>('policy-memo');
   const generatedBlocks = useMemo(
@@ -21,8 +23,10 @@ export function MemoStudio() {
   const [status, setStatus] = useState('Draft ready');
   const title = `${templates.find((template) => template.id === selectedTemplateId)?.label ?? 'Memo'}: ${caseModule.manifest.name}`;
   const storageKey = `praxis:memo:${caseModule.id}:${selectedTemplateId}`;
+  const graphSnapshotId = `${caseModule.id}:${caseModule.truthLayers.claim.lastUpdated}`;
 
   useEffect(() => {
+    let cancelled = false;
     try {
       const saved = window.localStorage.getItem(storageKey);
       if (saved) {
@@ -30,20 +34,77 @@ export function MemoStudio() {
         setBlocks(parsed.blocks?.length ? parsed.blocks : generatedBlocks);
         setVersions(parsed.versions ?? []);
         setStatus(parsed.blocks?.length ? 'Draft restored' : 'Draft ready');
-        return;
       }
     } catch {
       setStatus('Draft ready');
     }
-    setBlocks(generatedBlocks);
-    setVersions([]);
-  }, [generatedBlocks, storageKey]);
+    fetch(`/api/memos?caseId=${encodeURIComponent(caseModule.id)}&templateId=${encodeURIComponent(selectedTemplateId)}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { versions?: MemoVersion[] } | null) => {
+        if (cancelled || !data?.versions?.length) return;
+        const latest = data.versions.at(-1);
+        if (!latest?.blocks?.length) return;
+        setBlocks(latest.blocks);
+        setVersions(data.versions);
+        setStatus('Server draft restored');
+        saveLocalDraft(storageKey, latest.blocks, data.versions);
+      })
+      .catch(() => {
+        if (!cancelled && !hasLocalDraft(storageKey)) {
+          setBlocks(generatedBlocks);
+          setVersions([]);
+        }
+      });
+    if (!hasLocalDraft(storageKey)) {
+      setBlocks(generatedBlocks);
+      setVersions([]);
+    }
+    return () => { cancelled = true; };
+  }, [caseModule.id, generatedBlocks, selectedTemplateId, storageKey]);
 
-  function persist(nextBlocks: MemoBlock[], nextVersions = versions, nextStatus = 'Draft saved') {
+  function persist(nextBlocks: MemoBlock[], nextVersions = versions, nextStatus = 'Draft saved', changeNote?: string) {
     setBlocks(nextBlocks);
     setVersions(nextVersions);
     setStatus(nextStatus);
-    window.localStorage.setItem(storageKey, JSON.stringify({ blocks: nextBlocks, versions: nextVersions }));
+    saveLocalDraft(storageKey, nextBlocks, nextVersions);
+    if (user && !user.isDemo && changeNote) {
+      fetch('/api/memos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          caseId: caseModule.id,
+          templateId: selectedTemplateId,
+          title,
+          blocks: nextBlocks,
+          graphSnapshotId,
+          changeNote,
+        }),
+      })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((data: { versions?: MemoVersion[] } | null) => {
+          if (!data?.versions?.length) return;
+          setVersions(data.versions);
+          saveLocalDraft(storageKey, nextBlocks, data.versions);
+          setStatus(`Server version ${data.versions.at(-1)?.versionNumber ?? data.versions.length} saved`);
+        })
+        .catch(() => setStatus(`${nextStatus} locally`));
+    }
+  }
+
+  function saveLocalDraft(key: string, nextBlocks: MemoBlock[], nextVersions: MemoVersion[]) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify({ blocks: nextBlocks, versions: nextVersions }));
+    } catch {
+      setStatus('Draft held in this tab');
+    }
+  }
+
+  function hasLocalDraft(key: string): boolean {
+    try {
+      return window.localStorage.getItem(key) !== null;
+    } catch {
+      return false;
+    }
   }
 
   function updateBlock(blockId: string, value: string) {
@@ -78,7 +139,7 @@ export function MemoStudio() {
       previousVersions: versions,
       changeNote: note,
     });
-    persist(blocks, [...versions, version], `Version ${version.versionNumber} saved`);
+    persist(blocks, [...versions, version], `Version ${version.versionNumber} saved`, note);
   }
 
   function refreshFromGraph() {
@@ -88,12 +149,12 @@ export function MemoStudio() {
       templateId: selectedTemplateId,
       title,
       authorUid: 'local-draft',
-      graphSnapshotId: `${caseModule.id}:${caseModule.truthLayers.claim.lastUpdated}`,
+      graphSnapshotId,
       blocks: refreshed,
       previousVersions: versions,
       changeNote: 'Refreshed from active case graph',
     });
-    persist(refreshed, [...versions, version], `Graph refresh saved as v${version.versionNumber}`);
+    persist(refreshed, [...versions, version], `Graph refresh saved as v${version.versionNumber}`, 'Refreshed from active case graph');
   }
 
   function download(name: string, type: string, content: BlobPart) {
@@ -163,7 +224,7 @@ export function MemoStudio() {
             <h2 className="text-lg font-semibold">Memo Studio</h2>
           </div>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-650">
-            Create cited work products from the active case graph, edit the generated blocks, keep local versions, and export Markdown, DOCX, or PDF drafts.
+            Create cited work products from the active case graph, edit the generated blocks, keep local and server-backed versions, and export Markdown, DOCX, or PDF drafts.
           </p>
           <p className="mt-1 text-xs font-medium text-slate-500">{status} · {versions.length} saved versions</p>
         </div>

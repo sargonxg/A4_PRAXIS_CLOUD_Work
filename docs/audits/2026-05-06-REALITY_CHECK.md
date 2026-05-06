@@ -7,7 +7,7 @@ Production target: `https://praxis.tacitus.me`
 
 ## Executive Summary
 
-Packs 03-08 are implemented as a unified Workbench foundation: case modules, landing-entry rebuild, context-vs-tools separation, ontology registry, canonical graph view, and the 16-tool marketplace are present and covered by `audit:gate`. Packs 09-11 now have their saved Codex prompts, launch-readiness reports, a canonical tabbed admin surface, Postgres KG contract and repository scaffolding, and a Memo Studio that supports block editing, local version history, and Markdown/DOCX/PDF draft export. The remaining honest gap is deploy-stage backend depth: live Cloud SQL migration execution, full graph ingestion cutover, and server-side memo persistence remain v1.1 hardening work rather than hidden claims.
+Packs 03-08 are implemented as a unified Workbench foundation: case modules, landing-entry rebuild, context-vs-tools separation, ontology registry, canonical graph view, and the 16-tool marketplace are present and covered by `audit:gate`. Packs 09-13 now have saved Codex prompts, launch-readiness reports, a canonical tabbed admin surface, Postgres KG contract and repository scaffolding, Memo Studio block editing with local and server-backed versioning, signed conversation context, and Tool Contract v2 context projection. The remaining honest gap is deploy-stage backend depth: live Cloud SQL migration execution, full graph ingestion cutover, full marketplace handlers, operational dashboards, and LangGraph subagent orchestration remain v1.1 hardening work rather than hidden claims.
 
 ## Pack 03
 
@@ -80,14 +80,16 @@ Packs 03-08 are implemented as a unified Workbench foundation: case modules, lan
 |---|---|---|---|---|
 | Saved launch prompt | SHIPPED | `docs/codex-prompts/PRAXIS_CODEX_11_MEMO_STUDIO_AND_LAUNCH.md` | none | Full prompt saved. |
 | Memo Studio foundation | SHIPPED | `src/components/memo/MemoStudio.tsx` | none | Workbench Memos tab with six templates and cited generated blocks. |
-| Draft export and versioning | SHIPPED | `src/lib/memo/export.ts`, `src/components/memo/MemoStudio.tsx` | none | Local versions plus Markdown, DOCX, and PDF draft exports are implemented. Server-side memo persistence remains backlog. |
+| Draft export and versioning | SHIPPED | `src/lib/memo/export.ts`, `src/components/memo/MemoStudio.tsx` | none | Local versions plus Markdown, DOCX, and PDF draft exports are implemented. |
+| Server-side memo persistence | SHIPPED | `src/lib/firebase/memo-service.ts`, `src/app/api/memos/route.ts` | none | Owner/case/template-scoped memo drafts persist immutable versions when a real session is present; demo remains local. |
 | Comprehensive audit/roadmap/launch docs | SHIPPED | `docs/audits/2026-05-06-COMPREHENSIVE.md`, `docs/roadmap/v1.1-and-beyond.md` | none | Honest launch docs now exist. |
 
 ## Cross-Cutting Findings
 
 - The product Workbench is converging, and admin is now collapsed to one canonical tabbed route.
 - The graph stack now has a clearer v1 direction: Postgres primary, Neo4j optional.
-- Memo Studio is now visible, typed, editable, locally versioned, and export-capable; server persistence is the largest remaining product gap.
+- Memo Studio is now visible, typed, editable, locally versioned, server-backed for signed-in users, and export-capable.
+- Packs 12-13 now have signed conversation context and a concrete ContextProvider/projection path while keeping partial context advisory rather than blocking.
 - The verification gates are useful because they block docs drift and prompt loss, not only code regressions.
 
 ## Remediation Log
@@ -95,7 +97,8 @@ Packs 03-08 are implemented as a unified Workbench foundation: case modules, lan
 - Saved pack 09-11 prompts into `docs/codex-prompts/`.
 - Added `audit:reality-check`, `audit:codex-prompts`, `audit:kg-backend`, and `audit:memo-studio`.
 - Added Postgres KG contract migration, repository layer, and default `KG_BACKEND=postgres` configuration.
-- Added Workbench Memos tab, six-template Memo Studio foundation, block editing, local version history, and draft exports.
+- Added Workbench Memos tab, six-template Memo Studio foundation, block editing, local/server version history, and draft exports.
+- Added signed conversation tokens, runtime ContextProvider, and a default tool context projection enforced by audits.
 - Consolidated admin into `/app/admin` tabs with permanent redirects from old admin subroutes.
 - Added backlog and launch documentation.
 
@@ -117,7 +120,8 @@ Packs 03-08 are implemented as a unified Workbench foundation: case modules, lan
 | Saved context architecture prompt | SHIPPED | `docs/codex-prompts/PRAXIS_CODEX_12_CONTEXT_ARCHITECTURE.md` | none | Full prompt saved. |
 | Four-layer context model | SHIPPED | `src/types/context.ts`, `backend/services/context_layers.py` | none | TS and backend mirrors exist. |
 | Advisory context wrapper | SHIPPED | `src/lib/context/context-aware.ts`, `src/lib/api/with-context-aware.ts` | none | Shared calibration now receives snapshots instead of 412 blockers. |
-| Context Preparer runtime | PARTIAL | `skills/subagents/context-preparer/SKILL.md` | S2 | Skill/contract present; LangGraph subagent runtime remains v1.1 work. |
+| Signed conversation context | SHIPPED | `src/lib/context/conversation-token.ts`, `src/lib/context/context-aware.ts` | none | Production prefers `X-Praxis-Conversation-Token`; unsigned conversation JSON is dev/demo fallback. |
+| ContextProvider runtime | SHIPPED | `src/lib/tools/context-provider.ts` | none | Prepares snapshots, projection context, advisories, and subagent packets. LangGraph subagent orchestration remains v1.1 work. |
 
 ## Pack 13
 
@@ -127,6 +131,7 @@ Packs 03-08 are implemented as a unified Workbench foundation: case modules, lan
 | Tool Contract v2 | SHIPPED | `src/lib/tools/marketplace/types.ts`, `src/lib/tools/marketplace/registry.ts` | none | All 16 marketplace tools expose v2 fields. |
 | Tool skills | SHIPPED | `skills/tools/*/SKILL.md`, `skills/subagents/*/SKILL.md` | none | Audited by `audit:tool-skills-present`. |
 | Suggestion engine | SHIPPED | `src/lib/tools/marketplace/suggestions.ts` | none | Workbench Tools tab shows top recommendations. |
-| Full runtime ContextProvider DI | PARTIAL | `withCalibration` context snapshot | S2 | Full executable handler DI and context projection files remain backlog. |
+| Runtime ContextProvider DI | SHIPPED | `src/lib/tools/context-provider.ts` | none | Executable handlers can consume prepared context through a single provider. |
+| Context projection files | SHIPPED | `src/lib/tools/marketplace/projections/default.ts`, `scripts/audit-tool-contract-v2.ts` | none | Every tool points to a real projection module and the audit enforces it. |
 
 No open S0 or S1 launch blockers are recorded in this report. Remaining S2/S3 items are filed in `docs/backlog/2026-05-06-from-reality-check.md`.

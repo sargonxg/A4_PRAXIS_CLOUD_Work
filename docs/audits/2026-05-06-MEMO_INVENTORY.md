@@ -15,10 +15,11 @@ New Memo Studio foundation:
 - `src/lib/memo/templates/registry.ts` defines six launch templates.
 - `src/components/memo/MemoStudio.tsx` renders the Workbench Memos tab.
 - `src/lib/memo/export.ts` provides deterministic Markdown/plain-text export helpers and local version creation.
-- The Memo Studio client now supports editable generated blocks, local version history, and Markdown/DOCX/PDF draft export. Server-side persistence remains a v1.1 backend item.
+- `src/lib/firebase/memo-service.ts` persists owner/case/template-scoped memo drafts and immutable versions.
+- `src/app/api/memos/route.ts` exposes authenticated memo load/save; demo mode stays local.
+- The Memo Studio client now supports editable generated blocks, local and server-backed version history, and Markdown/DOCX/PDF draft export.
 
 Remaining implementation:
 
-- Firestore-backed memo create/save/version APIs.
 - Citation side panel and graph-node resolution.
 - Server-side DOCX/PDF/Markdown exports with footnotes.
