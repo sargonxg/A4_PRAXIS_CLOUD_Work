@@ -55,6 +55,21 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         app.state.postgres_ready = False
         logger.warning("Postgres pool open failed: %s", exc)
+    try:
+        from agents.checkpointer import init_checkpointer
+        from agents.registry import build_registry
+
+        conn_str = settings.database_url
+        if not conn_str and not _os.environ.get("K_SERVICE"):
+            conn_str = "memory://startup"
+        checkpointer = await init_checkpointer(conn_str)
+        app.state.checkpointer = checkpointer
+        app.state.flows = build_registry(checkpointer)
+        logger.info("Phase 2 agent registry initialized with %s flows", len(app.state.flows))
+    except Exception as exc:
+        app.state.checkpointer = None
+        app.state.flows = {}
+        logger.warning("Phase 2 agent registry init failed: %s", exc)
     yield
     try:
         from services.postgres import close_pool
@@ -62,8 +77,8 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning("Postgres pool close failed: %s", exc)
     try:
-        from agents.langgraph import close_checkpointer
-        close_checkpointer()
+        from agents.checkpointer import close_checkpointer
+        await close_checkpointer()
     except Exception as exc:
         logger.warning("LangGraph checkpointer close failed: %s", exc)
     logger.info("PRAXIS Backend shutting down")
