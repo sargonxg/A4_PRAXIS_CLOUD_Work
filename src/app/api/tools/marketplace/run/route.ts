@@ -64,6 +64,8 @@ export const GET = withAuth(async (req, user) => {
 
 export const POST = withAuth(async (req, user) => {
   try {
+    const startedAt = new Date();
+    const startedMs = Date.now();
     const parsed = RunBodySchema.safeParse(await req.json().catch(() => ({})));
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid marketplace run request', details: parsed.error.flatten() }, { status: 400 });
@@ -88,6 +90,16 @@ export const POST = withAuth(async (req, user) => {
       prompt: parsed.data.prompt,
       analystContext: parsed.data.context,
     });
+    const completedAt = new Date();
+    const runTelemetry = {
+      startedAt: startedAt.toISOString(),
+      completedAt: completedAt.toISOString(),
+      durationMs: Date.now() - startedMs,
+      costClass: tool.costClass,
+      estimatedRuntimeMs: tool.estimatedRuntimeMs,
+      providerCostUsd: null,
+      telemetryStage: 'deterministic-unmetered',
+    };
     const artifactInput = {
       uid: user.uid,
       situationId,
@@ -97,7 +109,10 @@ export const POST = withAuth(async (req, user) => {
       rawText: result.rawText,
       structuredOutput: result.structuredOutput,
       contextDump: result.contextDump,
-      metadata: result.metadata,
+      metadata: {
+        ...result.metadata,
+        runTelemetry,
+      },
     };
     const artifact = buildToolRunArtifact(artifactInput);
     const persistence = user.isDemo
@@ -109,6 +124,7 @@ export const POST = withAuth(async (req, user) => {
       tool,
       artifact,
       persistence,
+      telemetry: runTelemetry,
       runContext: {
         health: snapshot.composite.health,
         weakestLayer: snapshot.composite.weakestLayer,

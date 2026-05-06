@@ -23,6 +23,8 @@ interface MarketplaceRunState {
   health: number;
   advisoryCount: number;
   generatedAt?: string;
+  durationMs?: number;
+  costClass?: string;
 }
 
 interface MarketplaceRunHistoryItem {
@@ -36,6 +38,9 @@ interface MarketplaceRunHistoryItem {
   handlerStage: string | null;
   contextHealth: number | null;
   advisoryCount: number | null;
+  durationMs: number | null;
+  costClass: string | null;
+  providerCostUsd: number | null;
 }
 
 export function ToolMarketplace() {
@@ -105,6 +110,8 @@ export function ToolMarketplace() {
       health: item.contextHealth ?? 0,
       advisoryCount: item.advisoryCount ?? 0,
       generatedAt: item.createdAt,
+      durationMs: item.durationMs ?? undefined,
+      costClass: item.costClass ?? undefined,
     });
   }
 
@@ -145,6 +152,8 @@ export function ToolMarketplace() {
         health: payload.runContext.health,
         advisoryCount: payload.runContext.advisories?.length ?? 0,
         generatedAt: payload.artifact.createdAt,
+        durationMs: payload.telemetry?.durationMs,
+        costClass: payload.telemetry?.costClass,
       });
       void loadRunHistory();
     } catch (err) {
@@ -252,6 +261,7 @@ export function ToolMarketplace() {
               <div className="grid gap-2 text-right text-[10px] font-semibold uppercase tracking-wider text-emerald-900 sm:grid-cols-3">
                 <span>Health {lastRun.health}/100</span>
                 <span>{lastRun.advisoryCount} advisories</span>
+                <span>{lastRun.durationMs != null ? `${lastRun.durationMs}ms` : lastRun.costClass ?? 'Telemetry pending'}</span>
                 <span>{lastRun.persisted ? 'Persisted' : lastRun.persistenceReason ?? 'Not persisted'}</span>
               </div>
             )}
@@ -312,6 +322,8 @@ export function ToolMarketplace() {
                   <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                     <span>{item.contextHealth ?? 0}/100 health</span>
                     <span>{item.advisoryCount ?? 0} advisories</span>
+                    <span>{item.durationMs != null ? `${item.durationMs}ms` : 'latency pending'}</span>
+                    <span>{item.costClass ?? 'cost pending'}</span>
                     <span>{new Date(item.createdAt).toLocaleString()}</span>
                   </div>
                 </button>

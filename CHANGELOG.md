@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- feat(tools): add marketplace run telemetry.
+  Marketplace run artifacts now store measured duration, cost class, estimated
+  runtime, and an explicit unmetered-provider-cost posture until model-backed
+  handlers add provider billing.
 - feat(tools): add marketplace run history reload.
   Added a persisted-artifact history reader to `/api/tools/marketplace/run`, a
   compact artifact summary contract, UI reload controls in Tools Marketplace,

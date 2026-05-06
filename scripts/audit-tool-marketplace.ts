@@ -49,7 +49,7 @@ if (!existsSync(uiPath)) failures.push('marketplace UI is missing');
 
 if (existsSync(runRoutePath)) {
   const route = readFileSync(runRoutePath, 'utf8');
-  for (const required of ['withAuth', 'buildContextSnapshot', 'createContextProvider', 'persistToolRunArtifact', 'export const GET', 'summarizeToolRunArtifact']) {
+  for (const required of ['withAuth', 'buildContextSnapshot', 'createContextProvider', 'persistToolRunArtifact', 'export const GET', 'summarizeToolRunArtifact', 'runTelemetry', 'durationMs']) {
     if (!route.includes(required)) failures.push(`marketplace run route must use ${required}`);
   }
 }
@@ -63,7 +63,7 @@ if (existsSync(runnerPath)) {
 
 if (existsSync(uiPath)) {
   const ui = readFileSync(uiPath, 'utf8');
-  for (const required of ['/api/tools/marketplace/run', 'Run', 'artifact', 'Run history', 'loadRunHistory']) {
+  for (const required of ['/api/tools/marketplace/run', 'Run', 'artifact', 'Run history', 'loadRunHistory', 'durationMs', 'costClass']) {
     if (!ui.includes(required)) failures.push(`marketplace UI must expose executable runs: ${required}`);
   }
 }

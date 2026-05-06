@@ -42,6 +42,9 @@ export interface ToolRunArtifactSummary {
   handlerStage: string | null;
   contextHealth: number | null;
   advisoryCount: number | null;
+  durationMs: number | null;
+  costClass: string | null;
+  providerCostUsd: number | null;
 }
 
 export interface ToolRunArtifactWriter {
@@ -86,6 +89,8 @@ function numberField(value: unknown): number | null {
 
 export function summarizeToolRunArtifact(record: ToolRunArtifactRecord): ToolRunArtifactSummary {
   const structured = record.structuredOutput ?? {};
+  const metadata = record.metadata ?? {};
+  const runTelemetry = metadata.runTelemetry as Record<string, unknown> | undefined;
   const caseOutput = structured.case as { contextHealth?: { score?: unknown } } | undefined;
   const advisories = Array.isArray(structured.advisories) ? structured.advisories : null;
   return {
@@ -99,6 +104,9 @@ export function summarizeToolRunArtifact(record: ToolRunArtifactRecord): ToolRun
     handlerStage: stringField(record.metadata?.handlerStage),
     contextHealth: numberField(caseOutput?.contextHealth?.score),
     advisoryCount: advisories ? advisories.length : null,
+    durationMs: numberField(runTelemetry?.durationMs),
+    costClass: stringField(runTelemetry?.costClass),
+    providerCostUsd: numberField(runTelemetry?.providerCostUsd),
   };
 }
 

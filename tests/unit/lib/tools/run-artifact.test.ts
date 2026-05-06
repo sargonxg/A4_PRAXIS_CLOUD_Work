@@ -66,7 +66,14 @@ describe('tool run artifacts', () => {
         case: { contextHealth: { score: 72 } },
         advisories: [{ severity: 'warn' }, { severity: 'info' }],
       },
-      metadata: { handlerStage: 'prompt-contract' },
+      metadata: {
+        handlerStage: 'prompt-contract',
+        runTelemetry: {
+          durationMs: 142,
+          costClass: 'medium',
+          providerCostUsd: null,
+        },
+      },
     });
 
     expect(summarizeToolRunArtifact(artifact)).toMatchObject({
@@ -77,6 +84,9 @@ describe('tool run artifacts', () => {
       handlerStage: 'prompt-contract',
       contextHealth: 72,
       advisoryCount: 2,
+      durationMs: 142,
+      costClass: 'medium',
+      providerCostUsd: null,
     });
   });
 });
