@@ -17,7 +17,6 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   'ai_analysis': 3,
   'ai_research': 3,
   'ai_resolution': 3,
-  'ai_claude_analyze': 4,
   'ai_dossier': 4,
   'ai_report': 5,
   'ai_deep_research': 5,

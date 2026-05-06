@@ -26,7 +26,8 @@ No user-facing change. The shipped value is *trust* — every later change can r
 
 - [ ] Working tree is clean: `git status` is empty.
 - [ ] Branch `phase/1-foundation` is created from `main` and pushed.
-- [ ] Cloud SQL Postgres instance exists in the `praxisbytacitus` project. Confirm: `gcloud sql instances describe praxis-pg`.
+- [ ] Cloud SQL Postgres instance exists in the `praxisbytacitus` project. Confirm: `gcloud sql instances describe praxisbytacitus-instance`.
+  - Production uses the existing private-IP instance `praxisbytacitus:us-east4:praxisbytacitus-instance` to avoid provisioning a second paid Postgres instance. The Phase 1 application database is `praxis`, user is `praxis_app`, and password secret is `praxis-db-password`.
 - [ ] Neo4j Aura instance exists, connection URI in Secret Manager as `NEO4J_URI`. Confirm: `gcloud secrets versions access latest --secret=NEO4J_URI`.
 - [ ] Codex has read this file fully. No other doc is loaded into context yet.
 
@@ -567,7 +568,7 @@ gcloud run services proxy praxis-backend --region us-central1 &
 curl -fsSL http://localhost:8080/health
 
 # Verify Postgres extensions in production
-gcloud sql connect praxis-pg --user=praxis_app --database=praxis -- \
+gcloud sql connect praxisbytacitus-instance --user=praxis_app --database=praxis -- \
   -c "SELECT extname FROM pg_extension WHERE extname IN ('vector','pg_trgm','pgcrypto');"
 
 # Verify Neo4j sync

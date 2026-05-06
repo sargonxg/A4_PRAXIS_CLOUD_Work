@@ -84,9 +84,9 @@ npm install
 
 - **Frontend**: Next.js 16.1.6, TypeScript 5.9, React 19, Tailwind CSS 4, Radix UI, Zustand 5, D3.js 7, Framer Motion 12
 - **Backend**: Python 3.11, FastAPI, NetworkX, Graspologic, Pydantic v2
-- **AI**: AI SDK v6 (`@ai-sdk/google`, `@ai-sdk/anthropic`), Google Genkit (backend), Vertex AI ADK
-- **Database**: Firebase Auth + Firestore, Neo4j/FalkorDB (graph), BigQuery (analytics)
-- **Data Feeds**: GDELT, UCDP, HDX, ReliefWeb, UN News, World Bank, UNHCR, grounded Google Search; Firecrawl and Parallel are optional accelerators. ACLED is withdrawn for SaaS redistribution/licensing reasons.
+- **AI**: AI SDK v6 with Google/Vertex Gemini only, Google Genkit-compatible backend calls, Vertex AI ADK
+- **Database**: Firebase Auth + Firestore, Cloud SQL Postgres, Neo4j Aura derived graph index, BigQuery analytics
+- **Data Feeds**: GDELT, UCDP, HDX, ReliefWeb, UN News, World Bank, UNHCR, grounded Google Search, and user-uploaded sources. ACLED is withdrawn for SaaS redistribution/licensing reasons.
 
 ## Current Executive Intelligence Slice
 
@@ -169,7 +169,7 @@ npm install
 users/{uid}/
   (profile)            { credits, email, name, role, subscription }
   settings/
-    api_keys           { google_ai_key, anthropic_key, openai_key, firecrawl_key }
+    api_keys           { google_ai_key }
     model_preferences  { fast_analysis, deep_analysis, creative_drafting, research }
     graph_backend      { provider, uri, host, port, user, password }
   situations/{sitId}/
@@ -353,7 +353,7 @@ These files are security-critical. If a task seems to require changing them, **s
 ## Situation Knowledge Core (SKC)
 
 4-layer hybrid GraphRAG system powering all 48 tools:
-- **Graph Layer**: Firestore canonical graph + optional Neo4j/Falkor/Spanner derived indexes. `src/lib/knowledge/graph-layer.ts` provides the adapter; `src/lib/graph/graphops.ts` and `src/lib/graph/graphops-service.ts` provide the maintenance/readiness contract.
+- **Graph Layer**: Firestore canonical graph + Neo4j Aura derived index. `src/lib/graph/graphops.ts` and `src/lib/graph/graphops-service.ts` provide the maintenance/readiness contract.
 - **Vector Layer**: `src/lib/knowledge/vector-layer.ts` — Firestore native KNN (768-dim, COSINE distance)
 - **Feed Layer**: `src/lib/knowledge/feed-layer.ts` — TTL-cached data feeds (ACLED, GDELT, HDX, etc.)
 - **Tool Output Layer**: `src/lib/knowledge/tool-output-layer.ts` — cross-referenced versioned tool outputs
@@ -389,7 +389,7 @@ Deducted atomically via Firestore transactions. Real-time sync via onSnapshot.
 | Pub/Sub | Async event messaging | 5 topics (pipeline, extract, ingest, alert, profile.events) |
 | Cloud Functions | Event triggers | 3 functions (situation, document, GDELT) |
 | Cloud Scheduler | Cron jobs | GDELT (15min), alerts (6am), briefing (5am) |
-| Secret Manager | Sensitive config | Runtime secrets for Firebase Admin, AI, Firecrawl, Parallel, UCDP, cron/session signing, and user-key encryption; `ADMIN_ALLOWLIST` / `ADMIN_EMAIL_ALLOWLIST` gate admin access |
+| Secret Manager | Sensitive config | Runtime secrets for Firebase Admin, Gemini/Vertex, Cloud SQL, Neo4j, UCDP, cron/session signing, and user-key encryption; `ADMIN_ALLOWLIST` / `ADMIN_EMAIL_ALLOWLIST` gate admin access |
 
 ## Tool Categories (40 tools)
 

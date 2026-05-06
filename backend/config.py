@@ -18,14 +18,14 @@ class Settings(BaseSettings):
     # Graph index. Firestore remains canonical; Neo4j Aura is the only index.
     graph_backend: str = "neo4j"
 
-    # LangGraph checkpointing (Cloud SQL Postgres; see docs/LANGGRAPH_CLOUDSQL_CHECKPOINTING.md)
+    # LangGraph checkpointing (Cloud SQL Postgres; see docs/GCP_OPERATIONS.md)
     langgraph_checkpoint_backend: str = "postgres"
     langgraph_db_instance_connection_name: str = "praxisbytacitus:us-east4:praxisbytacitus-instance"
-    langgraph_db_host: str = "10.101.0.3"
-    langgraph_db_port: int = 5432
-    langgraph_db_name: str = "praxis_langgraph"
-    langgraph_db_user: str = "praxis_langgraph"
-    langgraph_db_password_secret: str = "praxis-langgraph-db-password"
+    langgraph_db_host: str = "localhost"
+    langgraph_db_port: int = 6432
+    langgraph_db_name: str = "praxis"
+    langgraph_db_user: str = "praxis_app"
+    langgraph_db_password_secret: str = "praxis-db-password"
     langgraph_db_password: str = ""
 
     # Phase 1 application Postgres (all backend SQL goes through PgBouncer).
