@@ -10,7 +10,16 @@ for (const file of [
   'src/lib/context/context-health-gate.ts',
   'src/lib/api/with-context-health-gate.ts',
   'src/lib/api/with-firewall.ts',
+  'src/lib/firebase/claims-service.ts',
+  'src/lib/graph/neo4j-drift-verifier.ts',
   'src/app/api/situations/[id]/context-health/route.ts',
+  'src/app/api/cron/verify-neo4j-sync/route.ts',
+  'scripts/verify-neo4j-sync.ts',
+  'infrastructure/scheduler/neo4j-drift-verifier-cron.yaml',
+  'tests/e2e/personas/diplomat.spec.ts',
+  'tests/e2e/personas/mediator.spec.ts',
+  'tests/e2e/personas/analyst.spec.ts',
+  'tests/e2e/personas/researcher.spec.ts',
 ]) {
   if (!existsSync(file)) {
     throw new Error(`Missing context/truth-layer contract file: ${file}`);
@@ -45,8 +54,46 @@ const calibration = readFileSync('src/lib/api/with-calibration.ts', 'utf8');
 if (!calibration.includes('withContextHealthGate')) {
   throw new Error('Shared AI calibration boundary must enforce context-health gate.');
 }
-if (!calibration.includes('withFirewallHeaders')) {
-  throw new Error('Shared AI calibration boundary must attach firewall enforcement headers.');
+if (!calibration.includes('withFirewall({')) {
+  throw new Error('Shared AI calibration boundary must run the firewall verifier, not only attach headers.');
+}
+
+const firewall = readFileSync('src/lib/api/with-firewall.ts', 'utf8');
+for (const marker of ['extractFirewallClaims', 'verifyFirewallClaim', 'persistClaimTrust', 'X-Praxis-Firewall-Claims']) {
+  if (!firewall.includes(marker)) throw new Error(`Firewall verifier missing marker: ${marker}`);
+}
+
+const claimsService = readFileSync('src/lib/firebase/claims-service.ts', 'utf8');
+for (const marker of ['collection(\'claims\')', 'computeClaimTrustScore', 'claimTrustId']) {
+  if (!claimsService.includes(marker)) throw new Error(`Claim Trust Score persistence missing marker: ${marker}`);
+}
+
+const indexes = readFileSync('firestore.indexes.json', 'utf8');
+if (!indexes.includes('"collectionGroup": "claims"')) {
+  throw new Error('Firestore indexes must include collection-group support for claim Trust Scores.');
+}
+
+const neo4jVerifier = readFileSync('scripts/verify-neo4j-sync.ts', 'utf8');
+if (neo4jVerifier.includes('requires production Neo4j credentials') || !neo4jVerifier.includes('verifyNeo4jSync')) {
+  throw new Error('Neo4j verifier must be implemented as a real drift report, not a placeholder.');
+}
+
+const neo4jCron = readFileSync('src/app/api/cron/verify-neo4j-sync/route.ts', 'utf8');
+if (!neo4jCron.includes('verifyNeo4jSync') || !neo4jCron.includes('CRON_SECRET')) {
+  throw new Error('Neo4j drift verifier must have a protected cron route.');
+}
+
+const personaFiles = [
+  'tests/e2e/personas/diplomat.spec.ts',
+  'tests/e2e/personas/mediator.spec.ts',
+  'tests/e2e/personas/analyst.spec.ts',
+  'tests/e2e/personas/researcher.spec.ts',
+];
+for (const file of personaFiles) {
+  const contents = readFileSync(file, 'utf8');
+  if (!contents.includes('openExampleWorkbench')) {
+    throw new Error(`Persona Playwright flow must open the unified workbench: ${file}`);
+  }
 }
 
 console.log('audit-context-vs-tools: ok');

@@ -221,6 +221,23 @@
         { "fieldPath": "actor", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "claims",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "situationId", "order": "ASCENDING" },
+        { "fieldPath": "trustScore", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "claims",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "emittedBy", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [

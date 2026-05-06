@@ -16,7 +16,7 @@ import { canonicalToolId } from '@/lib/knowledge/evidence-envelope';
 import { buildToolPromptContract } from '@/lib/tools/tool-operating-contracts';
 import { buildToolContextBlueprintPrompt } from '@/lib/tools/tool-context-blueprints';
 import { withContextHealthGate } from '@/lib/api/with-context-health-gate';
-import { withFirewallHeaders } from '@/lib/api/with-firewall';
+import { withFirewall } from '@/lib/api/with-firewall';
 
 export interface CalibrationCtx extends AuthenticatedUser {
   calibration: ContextBlock;
@@ -302,6 +302,13 @@ export function withCalibration(
         }
       }
 
-      return withFirewallHeaders(response);
+      return withFirewall({
+        req,
+        response,
+        user,
+        situationId,
+        toolId,
+        toolRunId,
+      });
     });
 }

@@ -3,7 +3,7 @@
 Date: 2026-05-06
 Repo: `C:\Users\giuli\praxiscodexworking`
 Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`
-Branch: `main` (`a4eff80`)
+Branch: `main` (local worktree, latest PRAXIS workbench/firewall pass)
 
 ## Pack 03 - Workbench Architecture
 
@@ -56,16 +56,18 @@ Implemented in this branch:
 - Four truth layers (`source`, `claim`, `evidence`, `verdict`) added in TypeScript, Python/Pydantic, JSON Schema, and human-readable schema docs.
 - Dry-run truth-layer migration preview script added.
 - Context-vs-tools audit script tightened and wired as `npm run audit:context-vs-tools`.
-- Shared calibrated AI route boundary now invokes `withContextHealthGate` before credit execution and adds `withFirewallHeaders` on responses. Low-health non-demo requests receive a 412 with `X-Praxis-Safeguard: context_health_gate` unless a saved override hash is provided.
+- Shared calibrated AI route boundary now invokes `withContextHealthGate` before credit execution and then runs `withFirewall` on successful JSON responses. Low-health non-demo requests receive a 412 with `X-Praxis-Safeguard: context_health_gate` unless a saved override hash is provided.
 - Tool-gate UI requires a typed override justification and records the returned override hash for subsequent tool calls.
 - Backend truth-layer service and dry-run migration scaffold are present for Source / Claim / Evidence / Verdict parity.
+- `src/lib/api/with-firewall.ts` now extracts claim-like output fields, classifies sourced/inferred/unverified claims, attaches a firewall report to JSON responses, and emits `X-Praxis-Firewall-*` headers.
+- Claim-level Trust Score persistence is implemented at `users/{uid}/situations/{situationId}/claims/{claimId}` through `src/lib/firebase/claims-service.ts`, with collection-group Firestore indexes and unit tests.
+- Neo4j drift verification is implemented in `src/lib/graph/neo4j-drift-verifier.ts`, exposed through `scripts/verify-neo4j-sync.ts`, protected by `/api/cron/verify-neo4j-sync`, scheduled by `infrastructure/scheduler/neo4j-drift-verifier-cron.yaml`, and included in `audit:gate`.
+- Four persona Playwright flows now cover diplomat, mediator, analyst, and researcher paths through the unified example workbench.
+- `audit:context-vs-tools` now checks the firewall verifier, claim persistence, claim indexes, drift verifier, drift cron route/scheduler, and persona specs.
 
-Still not complete from the full pack:
+Known operating boundary:
 
-- The current Symbolic Firewall work is a shared response-header and audit boundary, not full claim-by-claim streaming verification against the graph.
-- Claim-level Trust Score persistence across DIALECTICA, Boardroom, Draft, and briefings is not yet complete.
-- Firestore-to-Neo4j drift verifier scheduling and Cloud Monitoring alerts are not yet implemented.
-- Four persona Playwright flows are not yet implemented; local smoke currently covers the landing/modal and example workbench entry points.
+- Streamed responses are still routed through the shared firewall boundary and receive firewall headers, but claim extraction is applied to JSON responses where claims are inspectable before the response body is returned. Inline token-by-token claim annotation remains a later product enhancement, not a missing route wrapper.
 
 ## Validation Used
 
@@ -77,7 +79,11 @@ Still not complete from the full pack:
 - `npm run audit:workbench`
 - `npm run audit:landing`
 - `npm run audit:context-vs-tools`
+- `npm run verify:neo4j-sync`
 - `npx vitest run`
+- `npx vitest run tests/unit/lib/api/with-firewall.test.ts tests/unit/lib/firebase/claims-service.test.ts tests/unit/lib/graph/neo4j-drift-verifier.test.ts`
+- `PLAYWRIGHT_BASE_URL=http://localhost:3011 npx playwright test tests/e2e/landing.spec.ts`
+- `PLAYWRIGHT_BASE_URL=http://localhost:3011 npx playwright test tests/e2e/personas`
 - Browser smoke of `/`, `/app`, `/app/workbench/syria-2026?tab=chapters`, and `/app/workbench/nordalia-2026?tab=chapters`
 
-This document is intentionally explicit about remaining work so the branch does not overstate completion of the three prompt packs.
+This document is intentionally explicit about the current operating boundary so the branch does not overstate token-level streaming annotation while still confirming the shared route wrapper, claim persistence, drift verifier, and persona flows are coded and audited.

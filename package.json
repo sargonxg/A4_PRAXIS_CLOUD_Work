@@ -27,7 +27,9 @@
     "audit:workbench": "tsx scripts/audit-workbench.ts",
     "audit:landing": "tsx scripts/audit-landing.ts",
     "audit:context-vs-tools": "tsx scripts/audit-context-vs-tools.ts",
-    "audit:gate": "npx tsc --noEmit && npm run build && npm run audit:routes && npm run audit:gcp && npm run audit:workbench && npm run audit:landing && npm run audit:context-vs-tools && npx vitest run",
+    "verify:neo4j-sync": "tsx scripts/verify-neo4j-sync.ts --all",
+    "smoke:personas": "playwright test tests/e2e/personas",
+    "audit:gate": "npx tsc --noEmit && npm run build && npm run audit:routes && npm run audit:gcp && npm run audit:workbench && npm run audit:landing && npm run audit:context-vs-tools && npm run verify:neo4j-sync && npx vitest run",
     "smoke:public": "playwright test tests/e2e/capabilities-api.spec.ts",
     "smoke:golden-path": "playwright test tests/e2e/golden-path.spec.ts",
     "migrate:user-api-keys": "node scripts/migrate-user-api-keys.mjs"

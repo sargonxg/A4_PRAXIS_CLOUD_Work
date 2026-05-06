@@ -1,0 +1,34 @@
+# Cloud Scheduler - Neo4j drift verifier.
+#
+# Triggers the production Firestore-to-Neo4j count verifier once per day.
+# Apply via Cloud Build / gcloud:
+#
+#   gcloud scheduler jobs create http praxis-neo4j-drift-verifier \
+#     --location=us-central1 \
+#     --project=praxisbytacitus \
+#     --schedule="25 5 * * *" \
+#     --time-zone="UTC" \
+#     --uri="https://praxis.tacitus.me/api/cron/verify-neo4j-sync?production=1&sampleSize=10" \
+#     --http-method=GET \
+#     --oidc-service-account-email=praxis-frontend-sa@praxisbytacitus.iam.gserviceaccount.com \
+#     --headers="X-Cron-Secret=$(gcloud secrets versions access latest --secret=praxis-cron-secret)"
+#
+# Verify with:
+#
+#   gcloud scheduler jobs describe praxis-neo4j-drift-verifier --location=us-central1
+#   gcloud scheduler jobs run praxis-neo4j-drift-verifier --location=us-central1
+
+name: praxis-neo4j-drift-verifier
+description: Daily Firestore-to-Neo4j graph drift verifier for PRAXIS situations.
+schedule: "25 5 * * *"
+timeZone: UTC
+httpTarget:
+  uri: https://praxis.tacitus.me/api/cron/verify-neo4j-sync?production=1&sampleSize=10
+  method: GET
+  headers:
+    X-Cron-Secret: ${CRON_SECRET}
+retryConfig:
+  retryCount: 1
+  minBackoffDuration: 60s
+  maxBackoffDuration: 300s
+attemptDeadline: 300s

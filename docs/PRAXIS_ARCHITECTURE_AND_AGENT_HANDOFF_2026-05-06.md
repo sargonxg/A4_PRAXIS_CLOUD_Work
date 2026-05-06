@@ -59,6 +59,10 @@ Important files:
 - `src/components/graph/cypher-console.tsx` plus `src/lib/graph/cypher.ts` enforce read-only Cypher before API execution.
 - `src/lib/graph/diff-engine.ts` powers the Desk "what changed" panel and `/api/graph/changes`.
 - `src/lib/api/with-ai-act-ack.ts` gates high-risk verbs with `X-AI-Act-Ack`.
+- `src/lib/api/with-firewall.ts` is the shared calibrated AI response firewall: JSON outputs are claim-extracted, scored, annotated with firewall metadata, and routed to claim-level Trust Score persistence.
+- `src/lib/firebase/claims-service.ts` persists claim Trust Score records under `users/{uid}/situations/{situationId}/claims/{claimId}`.
+- `src/lib/graph/neo4j-drift-verifier.ts`, `scripts/verify-neo4j-sync.ts`, `/api/cron/verify-neo4j-sync`, and `infrastructure/scheduler/neo4j-drift-verifier-cron.yaml` form the Firestore-to-Neo4j drift verification path.
+- `tests/e2e/personas/` contains the diplomat, mediator, analyst, and researcher Playwright workbench flows.
 
 ## Validation Commands
 
@@ -70,6 +74,10 @@ npm run lint
 npm run build
 npx vitest run
 npm run audit:routes
+npm run audit:workbench
+npm run audit:landing
+npm run audit:context-vs-tools
+npm run verify:neo4j-sync
 npx tsx scripts/audit-spine.ts
 npx tsx scripts/audit-phase3-product-surface.ts
 npx tsx scripts/audit-verb-hookup.ts
