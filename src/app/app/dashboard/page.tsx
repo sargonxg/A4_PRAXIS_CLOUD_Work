@@ -37,6 +37,8 @@ import { WelcomeState } from '@/components/praxis/situation-dashboard';
 import { MarkdownRenderer } from '@/components/shared/markdown-renderer';
 import { SituationStatusStrip } from '@/components/dashboard/situation-status-strip';
 import { ExecutiveIntelligencePanel } from '@/components/dashboard/executive-intelligence-panel';
+import { CostCapPanel } from '@/components/desk/cost-cap-panel';
+import { WhatChangedPanel } from '@/components/desk/what-changed-panel';
 import { RegistryToolInfo } from '@/components/praxis/tool-info-from-registry';
 import { ActivityFeed } from '@/components/app/activity-feed';
 import { SyriaRecordingRunway } from '@/components/demo/recording-signal-runway';
@@ -176,6 +178,11 @@ function RealDashboard({ situation }: { situation: Situation }) {
       </header>
 
       <SituationStatusStrip situation={situation} />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <WhatChangedPanel />
+        <CostCapPanel />
+      </div>
 
       {showCreatedBanner ? (
         <section className="rounded-lg border border-gold-500/30 bg-gold-500/10 px-4 py-3 shadow-sm shadow-navy-950/5">

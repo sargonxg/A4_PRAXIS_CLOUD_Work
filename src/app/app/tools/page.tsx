@@ -186,12 +186,12 @@ function ToolsWorkspace({ situation }: { situation: Situation | null }) {
           <div className="grid grid-cols-3 gap-2 text-right">
             <Metric label="Visible" value={rows.length.toString()} />
             <Metric label="Ready" value={readyCount.toString()} />
-            <Metric label={showArchive ? 'Archive' : 'Surface'} value={showArchive ? '55 tools' : '12 hero'} />
+            <Metric label={showArchive ? 'Archive' : 'Surface'} value={showArchive ? '55 tools' : '8 surfaces'} />
           </div>
         </div>
         {!showArchive ? (
           <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-navy-600">
-            Showing the opinionated 12-tool PRAXIS surface. Archived specialist tools stay routable and can be reviewed with{' '}
+            Showing the opinionated 8-surface PRAXIS shell. Archived specialist tools stay routable and can be reviewed with{' '}
             <PraxisLink href="/tools?show_archive=1" className="font-semibold text-diplomatic-blue hover:underline">
               show_archive=1
             </PraxisLink>
@@ -330,7 +330,7 @@ function DemoRunway({ rows }: { rows: WorkspaceToolRow[] }) {
                 <h2 className="text-sm font-semibold text-navy-900">Live demo runway</h2>
               </div>
               <p className="mt-1 max-w-xl text-xs leading-relaxed text-navy-600">
-                Open the 12-hero operating loop in order: build context, collect evidence, maintain the graph, summon the boardroom, and generate decision-ready policy products.
+                Open the operating loop in order: Desk, Context, Library, Research, Graph, Boardroom, Draft, and Tools.
               </p>
             </div>
             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
@@ -407,11 +407,11 @@ function SpecializedDevelopmentSection({ groups }: { groups: SpecializedToolDeve
             <h2 className="text-sm font-semibold text-navy-900">Specialized tools in development</h2>
           </div>
           <p className="mt-1 max-w-3xl text-xs leading-relaxed text-navy-600">
-            These specialist pages stay available, but they sit behind the 12 hero tools so users start from a reliable workflow and graduate into narrower capabilities when the case calls for it.
+            These specialist pages stay available, but they sit behind the 8-surface shell so users start from a reliable workflow and graduate into narrower capabilities when the case calls for it.
           </p>
         </div>
         <span className="rounded-full border border-gold-500/30 bg-gold-500/10 px-2.5 py-1 text-[11px] font-semibold text-gold-700">
-          Marked outside the 12 heroes
+          Marked outside the 8 surfaces
         </span>
       </div>
 

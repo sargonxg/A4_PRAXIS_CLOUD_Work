@@ -59,14 +59,14 @@ export function LivePlatformPreview() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-600">Live Case Flow</p>
             <h2 className="mt-3 font-serif text-3xl font-semibold leading-tight text-navy-950 sm:text-5xl">
-              Ten tools that feel like one operating room.
+              Eight surfaces that feel like one operating room.
             </h2>
             <p className="mt-4 text-base leading-relaxed text-navy-600">
-              PRAXIS now opens on a focused real-app workspace. Every surface reads the same Syria situation file, context health, source receipts, local media profiles, document corpus, Firestore graph, and saved outputs, so the demo can move from login to brief without tool sprawl.
+              PRAXIS now opens on Desk, Context, Library, Research, Graph, Boardroom, Draft, and Tools. Every surface reads the same situation file, source receipts, document corpus, graph, and saved outputs, so the demo can move from login to cited brief without tool sprawl.
             </p>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
-              <Metric value="12" label="recording moments" />
+              <Metric value="8" label="product surfaces" />
               <Metric value="8" label="Syria media sources" />
               <Metric value="30" label="graph entities" />
               <Metric value="0" label="cloud calls to render demo" />
@@ -116,7 +116,7 @@ export function LivePlatformPreview() {
                   <div className="flex items-center justify-between">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-500">Core app runway</p>
                     <span className="rounded-full bg-gold-500/10 px-2 py-0.5 text-[10px] font-semibold text-gold-700">
-                      10/10
+                      8/8
                     </span>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2">
