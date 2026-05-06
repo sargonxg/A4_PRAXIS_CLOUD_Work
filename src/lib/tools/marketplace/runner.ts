@@ -15,6 +15,11 @@ export interface MarketplaceToolRunResult {
   metadata: Record<string, unknown>;
 }
 
+function stringContextValue(context: Record<string, unknown> | undefined, key: string): string | undefined {
+  const value = context?.[key];
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+}
+
 function advisorySummary(runContext: ToolRunContext): string[] {
   return runContext.advisories.map((advisory) => [
     advisory.severity.toUpperCase(),
@@ -40,11 +45,15 @@ export function buildMarketplaceToolRun(input: MarketplaceToolRunInput): Marketp
   const { tool, runContext } = input;
   const prompt = input.prompt?.trim() || `Run ${tool.name} against the active PRAXIS context.`;
   const caseFrame = runContext.snapshot.case.frame;
+  const displayCaseName = caseFrame.name === 'No active case'
+    ? stringContextValue(input.analystContext, 'caseName') ?? caseFrame.name
+    : caseFrame.name;
+  const displayRegion = caseFrame.region ?? stringContextValue(input.analystContext, 'region') ?? null;
   const health = runContext.snapshot.composite.health;
   const advisoryLines = advisorySummary(runContext);
   const contextSummaries = runContext.prepared.prepared.summaries.map((summary) => `${summary.layer}: ${summary.summary}`);
   const rawText = [
-    `${tool.name} foundation run completed for ${caseFrame.name}.`,
+    `${tool.name} foundation run completed for ${displayCaseName}.`,
     `Prompt: ${prompt}`,
     `Context health: ${health}/100. Weakest layer: ${runContext.snapshot.composite.weakestLayer}.`,
     contextSummaries.length > 0 ? `Context used: ${contextSummaries.join(' | ')}` : null,
@@ -57,7 +66,7 @@ export function buildMarketplaceToolRun(input: MarketplaceToolRunInput): Marketp
   return {
     rawText,
     structuredOutput: {
-      summary: `${tool.name} ran with advisory context for ${caseFrame.name}.`,
+      summary: `${tool.name} ran with advisory context for ${displayCaseName}.`,
       tool: {
         id: tool.id,
         version: tool.version,
@@ -68,8 +77,8 @@ export function buildMarketplaceToolRun(input: MarketplaceToolRunInput): Marketp
       },
       case: {
         id: runContext.snapshot.case.caseId,
-        name: caseFrame.name,
-        region: caseFrame.region ?? null,
+        name: displayCaseName,
+        region: displayRegion,
         ontologyId: runContext.snapshot.case.ontologyId,
         contextHealth: runContext.snapshot.case.contextHealth,
       },

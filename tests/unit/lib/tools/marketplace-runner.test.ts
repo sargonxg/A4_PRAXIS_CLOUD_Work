@@ -66,4 +66,26 @@ describe('marketplace runner', () => {
     ]));
     expect(result.contextDump).toMatchObject({ analystContext: { note: 'free-form context stays allowed' } });
   });
+
+  it('uses workbench-provided case display context when demo snapshots are sparse', () => {
+    const tool = MARKETPLACE_TOOLS[0];
+    const sparseSnapshot = {
+      ...snapshot,
+      case: {
+        ...snapshot.case,
+        frame: { name: 'No active case' },
+        contextHealth: { ...snapshot.case.contextHealth, score: 0, ready: false },
+      },
+      composite: { ...snapshot.composite, health: 0 },
+    };
+    const runContext = createContextProvider({ snapshot: sparseSnapshot }).forTool(tool);
+    const result = buildMarketplaceToolRun({
+      tool,
+      runContext,
+      analystContext: { caseName: 'Syria 2026', region: 'Levant' },
+    });
+
+    expect(result.rawText).toContain('Syria 2026');
+    expect(result.structuredOutput.case).toMatchObject({ name: 'Syria 2026', region: 'Levant' });
+  });
 });
