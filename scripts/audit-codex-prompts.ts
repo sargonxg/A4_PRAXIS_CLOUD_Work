@@ -2,6 +2,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const required = [
+  'docs/codex-prompts/PRAXIS_CODEX_00_MASTER_CHARTER.md',
+  'docs/codex-prompts/PRAXIS_CODEX_03_WORKBENCH_ARCHITECTURE.md',
+  'docs/codex-prompts/PRAXIS_CODEX_04_LANDING_AND_ENTRY_REBUILD.md',
+  'docs/codex-prompts/PRAXIS_CODEX_05_CONTEXT_VS_TOOLS_SEPARATION.md',
   'docs/codex-prompts/PRAXIS_CODEX_06_ONTOLOGY_SYSTEM.md',
   'docs/codex-prompts/PRAXIS_CODEX_07_GRAPH_VISUALIZATION.md',
   'docs/codex-prompts/PRAXIS_CODEX_08_TOOLS_MARKETPLACE.md',
@@ -10,6 +14,7 @@ const required = [
   'docs/codex-prompts/PRAXIS_CODEX_11_MEMO_STUDIO_AND_LAUNCH.md',
   'docs/codex-prompts/PRAXIS_CODEX_12_CONTEXT_ARCHITECTURE.md',
   'docs/codex-prompts/PRAXIS_CODEX_13_TOOL_CONTEXT_INTEROP.md',
+  'docs/codex-prompts/PRAXIS_CODEX_14_PRODUCTION_EXCELLENCE.md',
 ];
 
 const failures: string[] = [];
@@ -29,4 +34,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Codex prompt pack audit passed for packs 06-13.');
+console.log('Codex prompt pack audit passed for master charter and packs 03-14.');

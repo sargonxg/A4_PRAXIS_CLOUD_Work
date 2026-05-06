@@ -13,4 +13,4 @@ This launch foundation includes:
 - A curated 16-tool marketplace.
 - A Memo Studio foundation for mandate briefs, mediation summaries, policy memos, sit-reps, frame analysis, and talking points.
 
-Known v1.1 priorities are memo persistence/export, Postgres KG repositories, full marketplace execution, admin consolidation, and operational diagnostics.
+Known v1.1 priorities are memo citation/export polish, Postgres KG production cutover, full marketplace execution, operational diagnostics, graph edit round-trips, and LangGraph subagent orchestration. Pack 14 adds the production-excellence layer: Vertex AI defaults, Terraform-managed infrastructure, public read-only demo, waitlist/magic-link posture, observability, load testing, cost dashboard, and canary launch.
