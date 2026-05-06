@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils/cn';
 import { Shield, ArrowRight, Loader2, Mail, Chrome } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
+import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
   if (!password) return { score: 0, label: '', color: '' };
@@ -27,15 +28,11 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryMode = searchParams.get('mode');
-  const rawRedirect = searchParams.get('redirect');
   const planParam = searchParams.get('plan'); // e.g. ?plan=analyst from pricing page
   const appRedirect = planParam
     ? `/app/settings?upgrade=${planParam}` // Send to settings with upgrade prompt
-    : rawRedirect?.startsWith('/app') ? rawRedirect : '/app/dashboard';
-  const caseRedirect =
-    rawRedirect?.startsWith('/app') || rawRedirect?.startsWith('/demo')
-      ? rawRedirect.replace(/^\/demo/, '/app')
-      : '/app/dashboard?case=syria';
+    : resolvePostLoginRedirect(searchParams, false);
+  const caseRedirect = resolvePostLoginRedirect(searchParams, true);
   const {
     user,
     loading,
@@ -523,12 +520,12 @@ function LoginForm() {
               ) : (
                 <>
                   <Shield className="h-4 w-4" />
-                  Open Syria Case Workspace
+                  Open example case workspace
                 </>
               )}
             </button>
             <p className="mt-2 text-center text-[11px] text-navy-500">
-              Creates a guest session for the pre-loaded public-source Syria case inside the real PRAXIS app.
+              Creates a guest session for a pre-loaded example case inside the real PRAXIS app.
             </p>
           </motion.div>
 

@@ -2,7 +2,7 @@
 
 This directory is generated from live PRAXIS code. It gives every registered tool a stable product, context, database, graph, document-production, and verification contract.
 
-Generated at: 2026-05-01T21:02:01.622Z
+Generated at: 2026-05-06T04:09:02.015Z
 
 | Tool | Category | Active path focus | AI route |
 |---|---:|---:|---|

@@ -663,4 +663,4 @@ export const SYRIA_GRAPH_GROUNDING_PIPELINE = [
 ];
 
 export const SYRIA_DEMO_ENTRY_PATH =
-  '/login?mode=demo&redirect=/app/syria-case%3Frecording%3D1%26case%3Dsyria';
+  '/login?mode=demo&example=syria-2026';

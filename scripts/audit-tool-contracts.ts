@@ -10,6 +10,7 @@ import { join } from 'node:path';
 
 const { TOOL_REGISTRY } = require('../src/lib/constants/tool-registry.ts') as typeof import('../src/lib/constants/tool-registry');
 const { getToolOperatingContract } = require('../src/lib/tools/tool-operating-contracts.ts') as typeof import('../src/lib/tools/tool-operating-contracts');
+const { hrefForTool } = require('../src/lib/tools/tool-navigation.ts') as typeof import('../src/lib/tools/tool-navigation');
 
 interface ContractAuditRow {
   toolId: string;
@@ -24,23 +25,17 @@ interface ContractAuditRow {
   score: number;
 }
 
-const PAGE_ALIASES: Record<string, string> = {
-  'actor-profiles': 'actors',
-  'report-studio': 'reports',
-  'sources-library': 'sources',
-  'pir': 'requirements',
-};
-
 function routeExists(aiRoute: string): boolean {
-  if (!aiRoute.startsWith('/api/ai/')) return true;
-  const parts = aiRoute.split('/').filter(Boolean);
-  const routeName = parts[2];
-  return existsSync(join(process.cwd(), 'src', 'app', 'api', 'ai', routeName, 'route.ts'));
+  if (!aiRoute) return true;
+  if (!aiRoute.startsWith('/api/')) return true;
+  const parts = aiRoute.split('/').filter(Boolean).slice(1);
+  return existsSync(join(process.cwd(), 'src', 'app', 'api', ...parts, 'route.ts'));
 }
 
 function pageExists(toolId: string): boolean {
-  const page = PAGE_ALIASES[toolId] ?? toolId;
-  return existsSync(join(process.cwd(), 'src', 'app', 'app', page, 'page.tsx'));
+  const href = hrefForTool(toolId).split(/[?#]/)[0].replace(/^\//, '');
+  const pageDir = join(process.cwd(), 'src', 'app', 'app', href);
+  return existsSync(join(pageDir, 'page.tsx')) || existsSync(join(pageDir, 'layout.tsx'));
 }
 
 function scoreTool(tool: (typeof TOOL_REGISTRY)[number]): ContractAuditRow {

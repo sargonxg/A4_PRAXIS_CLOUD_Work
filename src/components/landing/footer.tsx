@@ -2,28 +2,28 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { APP_RELEASE_LABEL } from "@/lib/constants/app-version";
 
-const SYRIA_CASE_HREF = "/login?mode=demo&redirect=/app/syria-case%3Frecording%3D1%26case%3Dsyria";
+const EXAMPLE_CASE_HREF = "/login?mode=demo&example=syria-2026";
 
 const footerSections = [
   {
     title: "Platform",
     links: [
-      { label: "Syria Case", href: SYRIA_CASE_HREF },
+      { label: "Example Case", href: EXAMPLE_CASE_HREF },
       { label: "Pricing", href: "/pricing" },
-      { label: "Briefing Studio", href: "/login?mode=demo&redirect=/app/briefing%3Frecording%3D1%26case%3Dsyria" },
-      { label: "Ask PRAXIS", href: "/login?mode=demo&redirect=/app/assistant%3Fcase%3Dsyria" },
-      { label: "Conflict Graph", href: "/login?mode=demo&redirect=/app/conflict-graph%3Frecording%3D1%26case%3Dsyria" },
-      { label: "Source Scout", href: "/login?mode=demo&redirect=/app/source-scout%3Frecording%3D1%26case%3Dsyria" },
+      { label: "Briefing Studio", href: "/login?mode=demo&example=syria-2026" },
+      { label: "Ask PRAXIS", href: "/login?mode=demo&example=syria-2026" },
+      { label: "Conflict Graph", href: "/login?mode=demo&example=syria-2026" },
+      { label: "Source Scout", href: "/login?mode=demo&example=syria-2026" },
     ],
   },
   {
     title: "Tools",
     links: [
-      { label: "Context Builder", href: "/login?mode=demo&redirect=/app/context-builder%3Frecording%3D1%26case%3Dsyria" },
-      { label: "GraphOps", href: "/login?mode=demo&redirect=/app/graphops%3Frecording%3D1%26case%3Dsyria" },
-      { label: "Advisor Table", href: "/login?mode=demo&redirect=/app/brainstorming-table%3Frecording%3D1%26case%3Dsyria" },
-      { label: "Documents", href: "/login?mode=demo&redirect=/app/documents%3Fcase%3Dsyria" },
-      { label: "Tools Workspace", href: "/login?mode=demo&redirect=/app/tools%3Fcase%3Dsyria" },
+      { label: "Context Builder", href: "/login?mode=demo&example=syria-2026" },
+      { label: "GraphOps", href: "/login?mode=demo&example=syria-2026" },
+      { label: "Advisor Table", href: "/login?mode=demo&example=syria-2026" },
+      { label: "Documents", href: "/login?mode=demo&example=syria-2026" },
+      { label: "Tools Workspace", href: "/login?mode=demo&example=syria-2026" },
     ],
   },
   {
@@ -31,8 +31,8 @@ const footerSections = [
     links: [
       { label: "TACITUS", href: "https://tacitus.me" },
       { label: "Concordia Discors", href: "https://concordiadiscors.org" },
-      { label: "Advisory Council", href: "#advisory" },
-      { label: "Security", href: "#security" },
+      { label: "DIALECTICA", href: "#dialectica" },
+      { label: "Trust", href: "#trust" },
       { label: "Contact Us", href: "mailto:hello@tacitus.me" },
     ],
   },
@@ -70,7 +70,7 @@ export function Footer() {
             <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-gold-600/30 bg-gold-600/5 px-3 py-1">
               <span className="h-1.5 w-1.5 rounded-full bg-gold-500 animate-pulse" />
               <span className="text-[10px] font-semibold uppercase tracking-wider text-gold-700">
-              Public Case File
+              Example Case Files
               </span>
             </div>
             <p className="mt-3 text-xs text-navy-400">
@@ -136,7 +136,7 @@ export function Footer() {
               Ready to upgrade your analytical workflow?
             </p>
             <p className="mt-1 text-sm text-navy-500">
-              Free Plan · Full PRAXIS workspace · Syria case available instantly
+              Free Plan · Full PRAXIS workspace · example cases available instantly
             </p>
           </div>
           <a
@@ -172,7 +172,7 @@ export function Footer() {
               2026 TACITUS. All rights reserved. Built in New York.
             </p>
             <p className="text-xs text-navy-400/70">
-              Built by a former UN Political Affairs Officer with 8 years on the Syria desk.
+              Built by a former UN Political Affairs Officer with desk-level field practice.
             </p>
           </div>
 

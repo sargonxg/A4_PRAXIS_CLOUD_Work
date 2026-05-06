@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt = 'PRAXIS by TACITUS — AI Built for Statecraft. Agentic AI for diplomats, conflict analysts, mediators, and policy officers.';
+export const alt = 'PRAXIS by TACITUS — The policy workbench for grounded statecraft.';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -180,7 +180,7 @@ export default async function Image() {
                 fontWeight: 700,
               }}
             >
-              AI-native stack for statecraft
+              Policy workbench for grounded statecraft
             </div>
           </div>
 
@@ -197,8 +197,8 @@ export default async function Image() {
               flexDirection: 'column',
             }}
           >
-            <span>AI Built for <span style={{ color: GOLD_400 }}>Statecraft</span>.</span>
-            <span>Calibrated to <span style={{ color: GOLD_400 }}>You</span>.</span>
+            <span>The policy workbench</span>
+            <span>for <span style={{ color: GOLD_400 }}>grounded statecraft</span>.</span>
           </div>
 
           {/* Subhead */}
@@ -213,46 +213,33 @@ export default async function Image() {
               display: 'flex',
             }}
           >
-            Agentic AI for diplomats, conflict analysts, mediators, and policy officers — grounded in your sources, calibrated to your mandate.
+            Frame the situation, collect receipts, build the graph, run DIALECTICA, and export decision-ready work products with cited provenance.
           </div>
         </div>
 
-        {/* Bottom strip */}
+        {/* Chapter strip */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 12,
+            gap: 14,
             padding: '0 64px 48px 64px',
             flexWrap: 'wrap',
           }}
         >
-          <div
-            style={{
-              fontSize: 13,
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-              color: NAVY_400,
-              fontFamily: 'system-ui, sans-serif',
-              fontWeight: 600,
-              marginRight: 6,
-            }}
-          >
-            Grounded in
-          </div>
-          {['Google Search', 'UCDP', 'GDELT', 'OCHA', 'ReliefWeb', 'World Bank', 'UN News'].map((s) => (
+          {['Frame', 'Receipts', 'Graph', 'DIALECTICA', 'Decision Product'].map((s, index) => (
             <div
               key={s}
               style={{
-                fontSize: 14,
+                fontSize: 20,
                 color: '#FFFFFF',
                 border: `1px solid rgba(75, 146, 219, 0.45)`,
                 background: 'rgba(75, 146, 219, 0.10)',
-                borderRadius: 8,
-                padding: '6px 12px',
+                borderRadius: 10,
+                padding: '12px 18px',
                 fontFamily: 'system-ui, sans-serif',
-                fontWeight: 600,
-                letterSpacing: '0.06em',
+                fontWeight: 700,
+                letterSpacing: '0.03em',
                 display: 'flex',
               }}
             >
@@ -273,9 +260,9 @@ export default async function Image() {
               gap: 8,
             }}
           >
-            <span style={{ color: DIPLOMATIC }}>10-tool workspace</span>
+            <span style={{ color: DIPLOMATIC }}>praxis.tacitus.me</span>
             <span style={{ color: NAVY_400 }}>·</span>
-            <span>Glasl · INFORM · ICD-203</span>
+            <span>Source · Claim · Evidence · Verdict</span>
           </div>
         </div>
       </div>

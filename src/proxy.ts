@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
 const PUBLIC_SYRIA_APP_ROUTES = new Set([
+  '/app/workbench',
   '/app/dashboard',
   '/app/syria-case',
   '/app/context-builder',
@@ -17,6 +18,67 @@ const PUBLIC_SYRIA_APP_ROUTES = new Set([
   '/app/documents',
   '/app/tools',
 ]);
+
+const LEGACY_WORKBENCH_ROUTE_ALIASES: Record<string, string> = {
+  '/app/desk': 'desk',
+  '/app/cockpit': 'desk',
+  '/app/context': 'context',
+  '/app/context-builder': 'context',
+  '/app/actors': 'context',
+  '/app/requirements': 'context',
+  '/app/sources': 'library',
+  '/app/library': 'library',
+  '/app/documents': 'library',
+  '/app/reports': 'draft',
+  '/app/draft': 'draft',
+  '/app/source-scout': 'research',
+  '/app/research': 'research',
+  '/app/source-monitor': 'research',
+  '/app/deep-search-agent': 'research',
+  '/app/argus': 'research',
+  '/app/global-search': 'research',
+  '/app/compare': 'research',
+  '/app/graphops': 'graph',
+  '/app/graph': 'graph',
+  '/app/conflict-graph': 'graph',
+  '/app/power-map': 'graph',
+  '/app/external-actors': 'graph',
+  '/app/dialectica': 'graph',
+  '/app/brainstorming-table': 'boardroom',
+  '/app/boardroom': 'boardroom',
+  '/app/auto-briefings': 'draft',
+  '/app/advisory': 'boardroom',
+  '/app/concordia': 'boardroom',
+  '/app/scenarios': 'boardroom',
+  '/app/game-theory': 'boardroom',
+  '/app/briefing': 'draft',
+  '/app/policy-memo': 'draft',
+  '/app/talking-points': 'draft',
+  '/app/dossier': 'draft',
+  '/app/export-center': 'draft',
+  '/app/editor': 'draft',
+  '/app/risk-monitor': 'desk',
+  '/app/early-warning': 'desk',
+  '/app/humanitarian': 'desk',
+  '/app/human-rights': 'desk',
+  '/app/economic-impact': 'desk',
+  '/app/electoral-risk': 'desk',
+  '/app/peacebuilding-index': 'desk',
+  '/app/geospatial-monitor': 'desk',
+  '/app/media-compass': 'research',
+  '/app/media-roundup': 'research',
+  '/app/info-environment': 'research',
+  '/app/sanctions': 'draft',
+  '/app/sanctions-explorer': 'draft',
+  '/app/legal-tracker': 'draft',
+  '/app/treaty-analyzer': 'draft',
+  '/app/un-toolkit': 'draft',
+  '/app/mediation-design': 'boardroom',
+  '/app/negotiation-prep': 'boardroom',
+  '/app/commitments': 'graph',
+  '/app/timeline': 'graph',
+  '/app/team': 'desk',
+};
 
 /**
  * Edge-compatible session parser for routing decisions only.
@@ -85,24 +147,38 @@ export function proxy(request: NextRequest) {
     return addSecurityHeaders(NextResponse.redirect(new URL('/pricing', request.url)), nonce);
   }
 
+  const legacyWorkbenchTab = LEGACY_WORKBENCH_ROUTE_ALIASES[pathname];
+  const legacyWorkbenchPrefixTab =
+    pathname.startsWith('/app/boardroom/') ? 'boardroom'
+    : pathname.startsWith('/app/draft/') ? 'draft'
+    : pathname.startsWith('/app/library/') ? 'library'
+    : null;
+  const workbenchTab = legacyWorkbenchTab ?? legacyWorkbenchPrefixTab;
+  if (workbenchTab) {
+    const url = new URL('/app/workbench', request.url);
+    request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
+    url.searchParams.set('tab', workbenchTab);
+    return addSecurityHeaders(NextResponse.redirect(url), nonce);
+  }
+
   // --- /demo/* routes: require demo session cookie ---
   if (pathname.startsWith('/demo')) {
     if (!sessionData) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('mode', 'demo');
-      loginUrl.searchParams.set('redirect', '/app/syria-case?recording=1&case=syria');
+      loginUrl.searchParams.set('example', 'syria-2026');
       return addSecurityHeaders(NextResponse.redirect(loginUrl), nonce);
     }
 
     const url = request.nextUrl.clone();
-    url.pathname = pathname === '/demo' ? '/app/dashboard' : pathname.replace(/^\/demo/, '/app');
-    if (!url.searchParams.has('case')) url.searchParams.set('case', 'syria');
+    url.pathname = pathname === '/demo' ? '/app/workbench/syria-2026' : pathname.replace(/^\/demo/, '/app');
+    if (pathname === '/demo') url.searchParams.set('tab', 'chapters');
     return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }
 
   // --- /onboarding routes ---
   if (pathname.startsWith('/onboarding')) {
-    if (isDemo) return addSecurityHeaders(NextResponse.redirect(new URL('/app/syria-case?recording=1&case=syria', request.url)), nonce);
+    if (isDemo) return addSecurityHeaders(NextResponse.redirect(new URL('/app/workbench/syria-2026?tab=chapters', request.url)), nonce);
     if (!hasFirebaseToken) return addSecurityHeaders(NextResponse.redirect(new URL('/login', request.url)), nonce);
     return nextWithNonce(request, nonce);
   }
@@ -120,7 +196,7 @@ export function proxy(request: NextRequest) {
       const redirectUrl = request.nextUrl.clone();
       if (PUBLIC_SYRIA_APP_ROUTES.has(pathname)) {
         loginUrl.searchParams.set('mode', 'demo');
-        if (!redirectUrl.searchParams.has('case')) redirectUrl.searchParams.set('case', 'syria');
+        loginUrl.searchParams.set('example', 'syria-2026');
       }
       loginUrl.searchParams.set('redirect', `${redirectUrl.pathname}${redirectUrl.search}`);
       return addSecurityHeaders(NextResponse.redirect(loginUrl), nonce);

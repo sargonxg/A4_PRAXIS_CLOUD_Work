@@ -18,17 +18,13 @@ Documents exists so the user does not have to start from a blank chat prompt. It
 ## Workflow Paths
 
 - Generic core / core / active
-- Generic core / primary / active
 - Conflict analyst / core / active
-- Conflict analyst / primary / active
 - Country desk / core / next
 - Mediator / core / next
 - Humanitarian / core / future
 - Legal / sanctions / core / future
-- Legal / sanctions / secondary / future
 - Political risk / core / future
 - Policy research / core / future
-- Policy research / secondary / future
 - Media analyst / core / future
 - Stabilization / core / future
 - Election / governance / core / future

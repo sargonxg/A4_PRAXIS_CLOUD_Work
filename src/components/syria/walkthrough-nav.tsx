@@ -25,9 +25,9 @@ interface WalkthroughStep {
 }
 
 export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
-  { id: 'cockpit',     href: '/app/cockpit',     number: 1, title: 'Cockpit',           blurb: 'Mission control · what is happening today',          icon: Compass      },
-  { id: 'projects',    href: '/app/projects',    number: 2, title: 'Projects',          blurb: 'Five active policy files · Syria is the seed',       icon: FolderKanban },
-  { id: 'syria-case',  href: '/app/syria-case',  number: 3, title: 'Case walkthrough',  blurb: 'Deep dive · 7 categories · 14 anchors',              icon: BookOpenText },
+  { id: 'workbench',   href: '/app/workbench/syria-2026?tab=chapters', number: 1, title: 'Workbench', blurb: 'One case operating room', icon: Compass      },
+  { id: 'projects',    href: '/app/projects',    number: 2, title: 'Projects',          blurb: 'Active policy files and examples',                  icon: FolderKanban },
+  { id: 'syria-case',  href: '/app/workbench/syria-2026?tab=chapters', number: 3, title: 'Example walkthrough', blurb: 'Deep dive · 7 categories · 14 anchors', icon: BookOpenText },
   { id: 'workflows',   href: '/app/workflows',   number: 4, title: 'Workflows',         blurb: 'Three rhythms of the policy desk',                   icon: Workflow     },
 ];
 

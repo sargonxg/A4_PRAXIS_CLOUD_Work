@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports */
 /**
  * PRAXIS Tool Verification Script
  * Tests all major AI routes to ensure they are reachable and return structured output.
@@ -10,6 +11,8 @@
 
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 const SESSION_COOKIE = process.env.SESSION_COOKIE ?? '';
+const { existsSync } = require('node:fs') as typeof import('node:fs');
+const { join } = require('node:path') as typeof import('node:path');
 const { TOOL_REGISTRY, HERO_TOOLS } = require('../src/lib/constants/tool-registry.ts') as typeof import('../src/lib/constants/tool-registry');
 
 const EXPECTED_HERO_TOOL_IDS = [
@@ -77,6 +80,13 @@ function statusColor(status: ResultStatus): string {
   }
 }
 
+function localRouteExists(route: string): boolean {
+  if (!route) return true;
+  if (!route.startsWith('/api/')) return true;
+  const parts = route.split('/').filter(Boolean).slice(1);
+  return existsSync(join(process.cwd(), 'src', 'app', 'api', ...parts, 'route.ts'));
+}
+
 async function testRoute(
   route: string,
   method: 'GET' | 'POST',
@@ -133,16 +143,18 @@ const ROUTES: Array<{ route: string; method: 'GET' | 'POST'; body?: Record<strin
 
   // Context + Analysis tools
   { route: '/api/ai/risk-assessment', method: 'POST', body: { situation: TEST_SITUATION } },
-  { route: '/api/ai/risk-indicators', method: 'POST', body: { situation: TEST_SITUATION } },
+  { route: '/api/ai/escalation-scan', method: 'POST', body: { situation: TEST_SITUATION } },
   { route: '/api/ai/actor-profiles', method: 'POST', body: { situation: TEST_SITUATION } },
   { route: '/api/ai/power-map', method: 'POST', body: { situation: TEST_SITUATION } },
   { route: '/api/ai/stakeholder-map', method: 'POST', body: { situation: TEST_SITUATION } },
   { route: '/api/ai/info-environment', method: 'POST', body: { situation: TEST_SITUATION } },
+  { route: '/api/ai/situation-intelligence', method: 'POST', body: { situation: TEST_SITUATION } },
 
   // Drafting tools
   { route: '/api/ai/briefing-generate', method: 'POST', body: { situation: TEST_SITUATION, action: 'generate' } },
   { route: '/api/ai/talking-points', method: 'POST', body: { situation: TEST_SITUATION } },
   { route: '/api/ai/dossier-generate', method: 'POST', body: { situation: TEST_SITUATION } },
+  { route: '/api/ai/policy-memo', method: 'POST', body: { situation: TEST_SITUATION } },
 
   // Simulation tools
   { route: '/api/ai/scenario', method: 'POST', body: { situation: TEST_SITUATION } },
@@ -164,8 +176,8 @@ const ROUTES: Array<{ route: string; method: 'GET' | 'POST'; body?: Record<strin
 
   // Intelligence tools
   { route: '/api/ai/deep-research', method: 'POST', body: { situation: TEST_SITUATION, query: 'Sudan conflict dynamics' } },
+  { route: '/api/ai/source-scout', method: 'POST', body: { situation: TEST_SITUATION, query: 'Sudan conflict sources' } },
   { route: '/api/ai/media-scan', method: 'POST', body: { situation: TEST_SITUATION, action: 'scan' } },
-  { route: '/api/ai/discover-sources', method: 'POST', body: { situation: TEST_SITUATION } },
   { route: '/api/ai/geospatial', method: 'POST', body: { situation: TEST_SITUATION } },
   { route: '/api/ai/sanctions-scan', method: 'POST', body: { situation: TEST_SITUATION } },
   { route: '/api/ai/commitment-scan', method: 'POST', body: { situation: TEST_SITUATION } },
@@ -194,6 +206,24 @@ async function main() {
   }
 
   console.log(colorize(`✓ Tool surface policy: ${HERO_TOOLS.length} hero tools, ${TOOL_REGISTRY.length - HERO_TOOLS.length} archived`, 'green'));
+
+  const missingRegistryRoutes = TOOL_REGISTRY
+    .filter((tool) => tool.aiRoute)
+    .filter((tool) => !localRouteExists(tool.aiRoute));
+  const missingScriptRoutes = ROUTES.filter((route) => !localRouteExists(route.route));
+
+  if (missingRegistryRoutes.length || missingScriptRoutes.length) {
+    console.log(colorize('✗ Static route verification failed', 'red'));
+    for (const tool of missingRegistryRoutes) {
+      console.log(`  Missing registry route: ${tool.id} -> ${tool.aiRoute}`);
+    }
+    for (const route of missingScriptRoutes) {
+      console.log(`  Missing verification route: ${route.route}`);
+    }
+    process.exit(1);
+  }
+
+  console.log(colorize(`✓ Static route verification: ${TOOL_REGISTRY.filter((tool) => tool.aiRoute).length} registry routes exist`, 'green'));
 
   if (!SESSION_COOKIE) {
     console.log(colorize('⚠  No SESSION_COOKIE set — auth-protected routes will show AUTH', 'yellow'));

@@ -18,7 +18,6 @@ Context Builder exists so the user does not have to start from a blank chat prom
 ## Workflow Paths
 
 - Generic core / core / active
-- Generic core / primary / active
 - Conflict analyst / core / active
 - Country desk / core / next
 - Mediator / core / next

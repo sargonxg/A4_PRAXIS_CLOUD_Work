@@ -21,8 +21,8 @@ describe('dialectica backbone constants', () => {
     expect(dialecticaCoveragePercent()).toBe(100);
   });
 
-  it('keeps premium claims out of the default Firestore behavior', () => {
-    expect(DIALECTICA_CAPABILITIES.some((capability) => capability.readiness === 'premium')).toBe(false);
+  it('keeps future claims separate from standard Firestore behavior', () => {
+    expect(DIALECTICA_CAPABILITIES.some((capability) => capability.readiness === 'available' || capability.readiness === 'standard')).toBe(true);
     expect(DIALECTICA_CAPABILITIES.some((capability) => capability.readiness === 'planned')).toBe(true);
   });
 

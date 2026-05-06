@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function DemoIndexPage() {
-  redirect('/demo/dashboard');
+  redirect('/app/workbench/syria-2026?tab=chapters');
 }

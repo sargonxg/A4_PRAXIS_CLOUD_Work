@@ -18,26 +18,16 @@ Briefing Room exists so the user does not have to start from a blank chat prompt
 ## Workflow Paths
 
 - Generic core / core / active
-- Generic core / primary / active
 - Conflict analyst / core / active
-- Conflict analyst / primary / active
 - Country desk / core / next
-- Country desk / primary / next
 - Mediator / core / next
 - Humanitarian / core / future
-- Humanitarian / primary / future
 - Legal / sanctions / core / future
-- Legal / sanctions / primary / future
 - Political risk / core / future
-- Political risk / primary / future
 - Policy research / core / future
-- Policy research / primary / future
 - Media analyst / core / future
-- Media analyst / secondary / future
 - Stabilization / core / future
-- Stabilization / primary / future
 - Election / governance / core / future
-- Election / governance / primary / future
 
 ## Required Context
 

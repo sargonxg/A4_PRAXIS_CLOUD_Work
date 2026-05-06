@@ -210,6 +210,7 @@ export function getToolPathMembership(toolId: string): ToolPathMembership[] {
     for (const [tier, ids] of tiers) {
       if (ids.includes(toolId)) {
         memberships.push({ pathId: path.id, tier, label: path.shortLabel, stage: path.stage });
+        break;
       }
     }
   }

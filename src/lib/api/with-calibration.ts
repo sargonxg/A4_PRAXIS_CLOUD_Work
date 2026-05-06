@@ -15,6 +15,8 @@ import { AI_REQUEST_LIMITS } from './ai-request-limits';
 import { canonicalToolId } from '@/lib/knowledge/evidence-envelope';
 import { buildToolPromptContract } from '@/lib/tools/tool-operating-contracts';
 import { buildToolContextBlueprintPrompt } from '@/lib/tools/tool-context-blueprints';
+import { withContextHealthGate } from '@/lib/api/with-context-health-gate';
+import { withFirewallHeaders } from '@/lib/api/with-firewall';
 
 export interface CalibrationCtx extends AuthenticatedUser {
   calibration: ContextBlock;
@@ -155,6 +157,9 @@ export function withCalibration(
           }, { status: 403 });
         }
       }
+
+      const contextGate = await withContextHealthGate({ req, user, situationId });
+      if (contextGate) return contextGate;
 
       // Credit gate (non-demo)
       if (!user.isDemo) {
@@ -297,6 +302,6 @@ export function withCalibration(
         }
       }
 
-      return response;
+      return withFirewallHeaders(response);
     });
 }

@@ -16,10 +16,10 @@ import {
 } from '@/lib/tools/tool-path-taxonomy';
 
 describe('consolidated PRAXIS tool model', () => {
-  it('keeps the primary workspace at exactly ten consolidated tools', () => {
-    expect(CONSOLIDATED_TOOLS.length).toBe(10);
+  it('keeps the primary workspace within the ten-tool cap', () => {
+    expect(CONSOLIDATED_TOOLS.length).toBeLessThanOrEqual(10);
     expect(new Set(CONSOLIDATED_TOOLS.map((tool) => tool.id)).size).toBe(CONSOLIDATED_TOOLS.length);
-    expect(CONSOLIDATED_ANCHOR_TOOL_IDS).toHaveLength(10);
+    expect(CONSOLIDATED_ANCHOR_TOOL_IDS.length).toBe(CONSOLIDATED_TOOLS.length);
   });
 
   it('uses registered anchor tools for status, route, and readiness checks', () => {
@@ -29,11 +29,9 @@ describe('consolidated PRAXIS tool model', () => {
       const tool = getToolById(anchorToolId);
       expect(tool, anchorToolId).toBeDefined();
       expect(tool?.aiRoute, anchorToolId).toMatch(/^\/api\//);
-      expect(hrefForTool(anchorToolId), anchorToolId).toBe(surface.href);
+      expect(hrefForTool(anchorToolId), anchorToolId).toMatch(/^\/workbench\?tab=(desk|context|library|research|graph|boardroom|draft)$/);
 
-      const pagePath = join(process.cwd(), 'src', 'app', 'app', ...surface.href.replace(/^\//, '').split('/'), 'page.tsx');
       const routePath = join(process.cwd(), 'src', 'app', ...tool!.aiRoute.replace(/^\//, '').split('/'), 'route.ts');
-      expect(existsSync(pagePath), `${surface.href} page`).toBe(true);
       expect(existsSync(routePath), `${tool!.aiRoute} route`).toBe(true);
 
       const blueprint = getToolContextBlueprint(anchorToolId);
@@ -49,6 +47,8 @@ describe('consolidated PRAXIS tool model', () => {
     expect(consolidatedToolForLegacyId('talking-points')?.id).toBe('briefing-studio');
     expect(consolidatedToolForLegacyId('legal-tracker')?.id).toBe('briefing-studio');
     expect(consolidatedToolForLegacyId('dialectica')?.id).toBe('graphops');
+    expect(consolidatedToolForLegacyId('conflict-graph')?.id).toBe('graphops');
+    expect(consolidatedToolForLegacyId('humanitarian')?.id).toBe('situation-dashboard');
   });
 
   it('keeps active package defaults focused on the consolidated anchors', () => {

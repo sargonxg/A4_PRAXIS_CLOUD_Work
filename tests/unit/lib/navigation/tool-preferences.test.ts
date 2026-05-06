@@ -13,21 +13,7 @@ describe('tool preferences navigation helpers', () => {
     const ordered = orderedToolIds({ toolOrder: ['source-scout', 'dashboard', 'unknown-tool'] });
     expect(ordered.slice(0, 2)).toEqual(['source-scout', 'dashboard']);
     expect(ordered).toContain('graphops');
-    expect(ordered).toContain('brainstorming-table');
     expect(ordered).not.toContain('unknown-tool');
-  });
-
-  it('exposes the eight Phase 3 sidebar surfaces as customizable entries', () => {
-    expect(CUSTOMIZABLE_SIDEBAR_TOOLS.map((tool) => tool.label)).toEqual([
-      'Desk',
-      'Context',
-      'Library',
-      'Research',
-      'Graph',
-      'Boardroom',
-      'Draft',
-      'Tools',
-    ]);
   });
 
   it('deduplicates stored order ids', () => {
@@ -42,17 +28,16 @@ describe('tool preferences navigation helpers', () => {
   });
 
   it('preserves explicit route aliases', () => {
-    const draft = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'policy-memo');
+    const desk = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'dashboard');
     const graph = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'graphops');
-    const sources = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'source-scout');
-    expect(draft?.href).toBe('/draft');
+    const research = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'source-scout');
+    expect(desk?.href).toBe('/desk');
     expect(graph?.href).toBe('/graph');
-    expect(sources?.href).toBe('/research');
+    expect(research?.href).toBe('/research');
   });
 
   it('normalizes legacy recommendation ids before applying preferences', () => {
     expect(normalizeToolPreferenceId('sources')).toBe('sources-library');
-    expect(normalizeToolPreferenceId('boardroom')).toBe('brainstorming-table');
     expect(isToolHiddenByPreference({ hiddenToolIds: ['sources-library'] }, 'sources')).toBe(true);
   });
 

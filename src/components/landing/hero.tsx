@@ -2,10 +2,12 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
-import { ChevronDown, Shield, ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { useNarrativeMotion } from "./landing-motion-context";
 import { HeroVisual } from "./hero-visual";
+import { ExampleCasesModal } from "./example-cases-modal";
 
 // --- Word-by-word reveal ---
 
@@ -13,40 +15,21 @@ const containerVariants = {
   hidden: {},
   visible: {
     transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.3,
+      staggerChildren: 0.055,
+      delayChildren: 0.12,
     },
   },
 };
 
 const wordVariants = {
-  hidden: { opacity: 0, y: 20, filter: "blur(8px)" },
+  hidden: { opacity: 0, y: 12, filter: "blur(2px)" },
   visible: {
     opacity: 1,
     y: 0,
     filter: "blur(0px)",
-    transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] as const },
+    transition: { duration: 0.34, ease: [0.25, 0.46, 0.45, 0.94] as const },
   },
 };
-
-// --- Practitioner backgrounds (aspirational fit, not endorsements) ---
-const practitionerBackgrounds = [
-  "Diplomats",
-  "Conflict Analysts",
-  "Mediators",
-  "Humanitarian Leads",
-  "Policy Officers",
-  "Foreign-Policy Researchers",
-  "Sanctions & Compliance Teams",
-];
-
-const trustSignals = [
-  "Source-grounded research",
-  "Mandate-aware analysis",
-  "Conflict ontology + versioned graph",
-  "Shared Syria case after login",
-  "Citations, exports, and audit trail",
-];
 
 // ---- Animated Conflict Graph SVG ----
 // 7 nodes: 3 state actors, 2 armed groups, 1 institution, 1 norm
@@ -149,7 +132,8 @@ function ConflictGraphSVG({ shouldReduceMotion }: { shouldReduceMotion: boolean 
 
       <style>{`
         @keyframes pulse-ring {
-          0% { opacity: 0.6; r: ${0}; transform-origin: center; }
+          0% { opacity: 0.6; transform: scale(0.75); transform-origin: center; }
+          70% { transform: scale(1.25); }
           70% { opacity: 0; }
           100% { opacity: 0; }
         }
@@ -160,10 +144,10 @@ function ConflictGraphSVG({ shouldReduceMotion }: { shouldReduceMotion: boolean 
 
 function AnimatedTicker({ shouldReduceMotion }: { shouldReduceMotion: boolean }) {
   const events = [
-    { time: "08:14", text: "Syria source receipt added — UN Geneva", color: "#59A14F" },
-    { time: "09:02", text: "Local media signal flagged — North Press", color: "#EDC948" },
-    { time: "09:47", text: "Narrative divergence detected — SANA / local outlets", color: "#F28E2B" },
-    { time: "10:30", text: "PRAXIS: Syria risk score updated — 78/100", color: "#E15759" },
+    { time: "08:14", text: "Source receipt added — official briefing", color: "#59A14F" },
+    { time: "09:02", text: "Local media signal flagged — implementation gap", color: "#EDC948" },
+    { time: "09:47", text: "Narrative divergence detected — official / local outlets", color: "#F28E2B" },
+    { time: "10:30", text: "PRAXIS: case risk score updated — 78/100", color: "#E15759" },
   ];
 
   const tickerRef = useRef<HTMLDivElement>(null);
@@ -196,7 +180,7 @@ function AnimatedTicker({ shouldReduceMotion }: { shouldReduceMotion: boolean })
 }
 
 export function ProductGlimpse() {
-  const shouldReduceMotion = useReducedMotion() ?? false;
+  const shouldReduceMotion = !useNarrativeMotion();
 
   return (
     <motion.div
@@ -215,7 +199,7 @@ export function ProductGlimpse() {
           <span className="h-2.5 w-2.5 rounded-full bg-gold-400/60" />
           <span className="h-2.5 w-2.5 rounded-full bg-sage/40" />
           <span className="ml-3 font-mono text-[9px] text-navy-400 truncate">
-            praxis.tacitus.me · Syria Transition Situation
+            praxis.tacitus.me · Active policy workbench
           </span>
         </div>
 
@@ -302,7 +286,9 @@ export function ProductGlimpse() {
 }
 
 export function Hero() {
-  const shouldReduceMotion = useReducedMotion() ?? false;
+  const narrativeMotion = useNarrativeMotion();
+  const animateText = narrativeMotion;
+  const headline = "The policy workbench for grounded statecraft.";
 
   return (
     <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-24">
@@ -329,166 +315,96 @@ export function Hero() {
       <div className="relative z-10 mx-auto flex max-w-6xl w-full flex-col items-center gap-16 lg:flex-row lg:items-center lg:gap-12">
         {/* LEFT: headline + CTAs */}
         <div className="flex flex-col items-center text-center lg:items-start lg:text-left lg:flex-1">
-          {/* Trust badge */}
+          {/* Eyebrow */}
           <motion.div
-            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
+            initial={animateText ? { opacity: 0, y: -10 } : { opacity: 1, y: 0 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.6 }}
-            className="mb-10 inline-flex items-center gap-2 rounded-full border border-diplomatic-blue/10 bg-white/60 px-4 py-2 shadow-sm backdrop-blur-sm"
+            className="mb-8 inline-flex max-w-xl items-center rounded-full border border-diplomatic-blue/10 bg-white/60 px-4 py-2 shadow-sm backdrop-blur-sm"
           >
-            <Shield className="h-3.5 w-3.5 text-gold-600" />
             <span className="text-xs font-medium tracking-wide text-navy-700">
-              Built by practitioners with careers in multilateral and bilateral diplomacy · GCP-native · private workspace
+              PRAXIS by TACITUS · Built on the practice of UN Political Affairs.
             </span>
           </motion.div>
 
           {/* Animated headline */}
           <motion.h1
-            variants={shouldReduceMotion ? {} : containerVariants}
+            variants={animateText ? containerVariants : {}}
             initial="hidden"
             animate="visible"
             className="mb-8 font-serif text-5xl leading-[1.08] font-normal tracking-tight text-navy-950 sm:text-6xl lg:text-[68px]"
           >
-            <motion.span variants={shouldReduceMotion ? {} : wordVariants}>
-              Operational Intelligence for
-            </motion.span>
-            {' '}
-            <motion.span
-              variants={shouldReduceMotion ? {} : wordVariants}
-              className="text-gold-600"
-            >
-              Statecraft.
-            </motion.span>
+            {headline.split(" ").map((word, index) => (
+              <motion.span
+                key={`${word}-${index}`}
+                variants={animateText ? wordVariants : {}}
+                className={word === "source." ? "text-gold-600" : undefined}
+              >
+                {word}
+                {index === 4 && <br />}
+                {index < headline.split(" ").length - 1 ? " " : ""}
+              </motion.span>
+            ))}
           </motion.h1>
 
           {/* Subheadline */}
           <motion.p
-            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.2, duration: 0.7 }}
+            initial={false}
             className="mb-6 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
           >
-            Log in, open the shared Syria public-source case, build the
-            context file, inspect local media and source receipts, review the
-            Firestore graph, preserve expert disagreement, and export a
-            briefing or memo. PRAXIS turns the real app into one live operating
-            room for diplomats, conflict analysts, mediators, and policy teams.
+            Build live cases, anchor them in a graph that carries provenance, confidence, and time, then export
+            decision-ready briefings with every claim cited.
           </motion.p>
-
-          {/* Data sources tagline */}
-          <motion.p
-            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.4, duration: 0.6 }}
-            className="mb-10 text-sm text-navy-400 italic"
-          >
-            Uses Google-grounded search, GDELT, UCDP, ReliefWeb, OCHA, HDX,
-            UNHCR, UN News, World Bank, local media sources, and your approved
-            corpus, with provenance preserved in the output.
-          </motion.p>
-
-          <motion.div
-            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.45, duration: 0.6 }}
-            className="mb-8 flex flex-wrap justify-center gap-2 lg:justify-start"
-          >
-            {trustSignals.map((signal) => (
-              <span
-                key={signal}
-                className="rounded-md border border-diplomatic-blue/12 bg-white/70 px-3 py-1.5 text-xs font-semibold text-navy-600 shadow-sm"
-              >
-                {signal}
-              </span>
-            ))}
-          </motion.div>
 
           {/* Single CTA — all paths go through /login */}
           <motion.div
-            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
+            initial={animateText ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.5, duration: 0.6 }}
+            transition={{ delay: 0.85, duration: 0.5 }}
             className="flex flex-col items-center gap-3 lg:items-start"
           >
             <div className="flex flex-col gap-2 sm:flex-row">
               <Link
                 href="/login"
+                prefetch={false}
                 className="group inline-flex items-center justify-center gap-2 rounded-md bg-gold-600 px-10 py-4 text-base font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-xl hover:shadow-gold-600/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500/60"
               >
                 Start Your Workspace
                 <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
               </Link>
-              <Link
-                href="/login?mode=demo&redirect=/app/syria-case%3Frecording%3D1%26case%3Dsyria"
-                className="inline-flex items-center justify-center rounded-md border border-diplomatic-blue/20 px-8 py-4 text-base font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40"
-              >
-                Open Syria Case File
-              </Link>
+              <ExampleCasesModal
+                triggerClassName="inline-flex items-center justify-center rounded-md border border-diplomatic-blue/20 px-8 py-4 text-base font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40"
+              />
             </div>
             <p className="text-xs text-navy-400">
-              Sign in for your private workspace · the Syria case opens through a guest session in the real app
+              Sign in for your private workspace, or open a guest session of an example case file.
             </p>
-          </motion.div>
-
-          {/* Demo notice */}
-          <motion.div
-            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.8, duration: 0.7 }}
-            className="mt-8 inline-flex items-center gap-2 rounded-full border border-gold-600/20 bg-gold-600/5 px-5 py-2"
-          >
-            <span className={cn("h-1.5 w-1.5 rounded-full bg-gold-500", !shouldReduceMotion && "animate-pulse")} />
-            <span className="text-xs font-medium text-gold-700">
-              Context Builder · Research · Documents · Firestore graph · Ask PRAXIS · Briefing Studio — every step traceable
-            </span>
           </motion.div>
         </div>
 
         {/* RIGHT: hero visual (video loop with ProductGlimpse fallback) */}
         <div className="w-full max-w-md lg:flex-1 lg:max-w-none">
-          <HeroVisual />
+          <HeroVisual narrativeMotion={narrativeMotion} />
         </div>
       </div>
 
-      {/* Social proof strip */}
-      <motion.div
-        initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 2.2, duration: 0.8 }}
-        className="relative z-10 mt-16 w-full max-w-6xl"
-      >
-        <p className="mb-4 text-center text-xs font-medium uppercase tracking-[0.12em] text-navy-400">
-          Built for the people who practice statecraft
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-          {practitionerBackgrounds.map((name) => (
-            <span
-              key={name}
-              className="text-xs font-semibold uppercase tracking-wider text-navy-300/60"
-            >
-              {name}
-            </span>
-          ))}
-        </div>
-      </motion.div>
-
       {/* Scroll indicator */}
       <motion.div
-        initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+        initial={animateText ? { opacity: 0 } : { opacity: 1 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 2.8, duration: 0.8 }}
+        transition={{ delay: 1.8, duration: 0.8 }}
         className="relative z-10 mt-12 mb-8"
       >
         <a
-          href="#how-it-works"
+          href="#six-steps"
           className="flex flex-col items-center gap-2 text-navy-400 transition-colors hover:text-navy-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40 rounded"
-          aria-label="Scroll to How PRAXIS Works"
+          aria-label="Scroll to the six steps"
         >
           <span className="text-[10px] font-medium uppercase tracking-widest text-navy-400">
             Discover
           </span>
           <motion.div
-            animate={shouldReduceMotion ? {} : { y: [0, 6, 0] }}
+            animate={narrativeMotion ? { y: [0, 6, 0] } : {}}
             transition={{
               duration: 2,
               repeat: Infinity,

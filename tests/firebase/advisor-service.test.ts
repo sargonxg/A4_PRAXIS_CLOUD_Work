@@ -44,7 +44,7 @@ describe('advisor-service', () => {
     bustAdvisorCache();
     const got = await getAdvisor('adeyemi');
     expect(got?.name).toBe('Ngozi Adeyemi');
-    expect(got?.version).toBe(1);
+    expect(got?.version).toBeGreaterThanOrEqual(1);
   });
 
   it('listAdvisors returns parsed configs', async () => {

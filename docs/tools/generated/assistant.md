@@ -18,9 +18,7 @@ Ask PRAXIS exists so the user does not have to start from a blank chat prompt. I
 ## Workflow Paths
 
 - Generic core / core / active
-- Generic core / primary / active
 - Conflict analyst / core / active
-- Conflict analyst / primary / active
 - Country desk / core / next
 - Mediator / core / next
 - Humanitarian / core / future

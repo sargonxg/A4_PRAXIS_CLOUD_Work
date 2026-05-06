@@ -40,10 +40,10 @@ export function OnboardingRequiredState() {
             Continue onboarding
           </Link>
           <Link
-            href="/app/dashboard"
+            href="/app/workbench"
             className="inline-flex items-center justify-center rounded-lg border border-white/20 px-5 py-2.5 text-sm font-medium text-white/70 hover:text-white hover:border-white/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F172A]"
           >
-            Return to dashboard
+            Return to workbench
           </Link>
         </div>
       </div>

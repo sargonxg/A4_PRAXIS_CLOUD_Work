@@ -195,11 +195,12 @@ function PanelGraph() {
                     cy={n.cy}
                     r={n.r}
                     fill="none"
-                    stroke={n.fill}
-                    strokeWidth={0.5}
-                    initial={{ r: n.r, opacity: 0.45 }}
-                    animate={{ r: [n.r, n.r + 4, n.r], opacity: [0.55, 0, 0.55] }}
-                    transition={{ duration: 2.4 + (i % 4) * 0.4, repeat: Infinity, ease: 'easeInOut', delay: (i % 5) * 0.2 }}
+                  stroke={n.fill}
+                  strokeWidth={0.5}
+                    initial={{ scale: 1, opacity: 0.45 }}
+                    animate={{ scale: [1, 1.55, 1], opacity: [0.55, 0, 0.55] }}
+                  transition={{ duration: 2.4 + (i % 4) * 0.4, repeat: Infinity, ease: 'easeInOut', delay: (i % 5) * 0.2 }}
+                  style={{ transformOrigin: `${n.cx}px ${n.cy}px` }}
                   />
                 )}
                 <motion.circle

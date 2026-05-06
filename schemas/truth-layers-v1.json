@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://praxis.tacitus.me/schemas/truth-layers-v1.json",
+  "title": "PRAXIS Truth Layers v1",
+  "type": "object",
+  "required": ["id", "caseId", "ownerUid", "layer", "confidence", "provenance", "validFrom", "assertedFrom"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "caseId": { "type": "string", "minLength": 1 },
+    "ownerUid": { "type": "string", "minLength": 1 },
+    "layer": { "type": "string", "enum": ["source", "claim", "evidence", "verdict"] },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "provenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sourceId", "retrievedAt"],
+        "properties": {
+          "sourceId": { "type": "string", "minLength": 1 },
+          "span": {
+            "type": "object",
+            "required": ["start", "end"],
+            "properties": {
+              "start": { "type": "integer", "minimum": 0 },
+              "end": { "type": "integer", "minimum": 0 }
+            }
+          },
+          "retrievedAt": { "type": "string", "format": "date-time" },
+          "retriever": {
+            "type": "string",
+            "enum": ["analyst", "gdelt", "ucdp", "reliefweb", "hdx", "unhcr", "un-news", "world-bank", "google-grounded", "private-corpus"]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "validFrom": { "type": "string", "format": "date-time" },
+    "validTo": { "type": ["string", "null"], "format": "date-time" },
+    "assertedFrom": { "type": "string", "format": "date-time" },
+    "assertedTo": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "additionalProperties": true
+}

@@ -6,7 +6,7 @@
 
 PRAXIS turns sources, documents, open feeds, and graph context into cited assessments, briefings, reports, and decision support for policy officers, diplomats, mediators, humanitarian coordinators, legal/sanctions analysts, and conflict researchers. It is designed as a **system of record for conflict**: a governed data layer for human friction where claims, actors, interests, constraints, leverage, commitments, events, and narratives can be extracted, reasoned over, challenged, and reused.
 
-It ships **40+ tool pages**, a large calibrated Next.js API surface, a **Python FastAPI graph backend** (ACO conflict intelligence pipeline), and a Google-native open-data stack centered on GDELT, UCDP, ReliefWeb, HDX, UN News, World Bank, UNHCR, and grounded Google Search.
+It now presents **one canonical workbench** with 10 consolidated primary tools and an explicit archive for the older specialist registry. The codebase still keeps the broader registered tool/catalogue metadata for compatibility and planning, but the authenticated app surface is intentionally narrow: case picker, active workbench, settings/profile, situations/new, tools archive, and admin. The backend remains a large calibrated Next.js API surface plus a **Python FastAPI graph backend** (ACO conflict intelligence pipeline), and a Google-native open-data stack centered on GDELT, UCDP, ReliefWeb, HDX, UN News, World Bank, UNHCR, and grounded Google Search.
 
 This README is a **reference document for both human developers and AI agents** (Claude Code + Codex). For agent-specific conventions, model-string discipline, security boundaries, and anti-patterns, see [`CLAUDE.md`](./CLAUDE.md) (Codex agents: see [`AGENTS.md`](./AGENTS.md)).
 
@@ -36,7 +36,7 @@ This README is a **reference document for both human developers and AI agents** 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  Frontend (Next.js 16 App Router) → Cloud Run praxis-frontend   │
-│    src/app/app/*       40+ tool pages (auth required)           │
+│    src/app/app/*       one workbench + narrow app shell          │
 │    src/app/demo/*      Demo mirror pages (cookie auth)          │
 │    src/app/onboarding  3-screen wizard                          │
 │    src/app/api/*       calibrated routes for AI, data, auth      │
@@ -145,7 +145,7 @@ graph-grounded policy question, and economic/HLP scenario research. See
 ```
 /                            Next.js frontend (root)
 ├── src/app/
-│   ├── app/                 38+ authenticated tool pages (/app/*)
+│   ├── app/                 workbench, cases, settings, tools archive, admin
 │   ├── demo/                Demo mirror (/demo/*)
 │   ├── onboarding/          3-screen wizard
 │   ├── (auth)/login/        Sign-in (Google OAuth + email/password + demo)
@@ -168,7 +168,7 @@ graph-grounded policy question, and economic/HLP scenario research. See
 │   ├── graph/               D3 conflict knowledge graph
 │   └── landing/             Landing sections
 ├── src/lib/
-│   ├── ai/                  providers.ts (single source of model strings), tools.ts (27 chat tools), prompts/, schemas/, vertex-agent.ts
+│   ├── ai/                  providers.ts (single source of model strings), tools.ts (chat tool definitions), prompts/, schemas/, vertex-agent.ts
 │   ├── api/                 with-auth, with-credits, with-calibration, save-tool-output, standard-error
 │   ├── auth/                auth-context.tsx, cookie-signer.ts (HMAC)
 │   ├── firebase/            config.ts, admin.ts, situations-service.ts, analyst-profile-service.ts
@@ -179,7 +179,7 @@ graph-grounded policy question, and economic/HLP scenario research. See
 │   ├── knowledge/           Situation Knowledge Core (4 layers: graph, vector, feed, tool-output)
 │   ├── domain/              11-domain taxonomy (seeds, classifier, resolve)
 │   ├── services/            entity-extraction, canonical-precheck, feedback, graphify-client
-│   └── constants/           tool-registry (40), frameworks (15), entity-colors, lens-catalog
+│   └── constants/           consolidated tools, tool registry metadata, frameworks, entity colors, lens catalog
 ├── src/stores/              Zustand: situation, app, conflict, report, debug, notification, preferences
 ├── src/hooks/               useSituationGuard, usePraxisApi, usePersistedToolData, useKeyboardShortcuts
 ├── src/types/               Situation v2, AnalystProfile, ConflictGraph, ACO, API
@@ -313,7 +313,7 @@ npm run lint                   # ESLint
 # Verification
 npx tsc --noEmit               # Type check
 npm run verify-tools           # Tool registry sanity
-npm run audit:tools            # Per-tool calibration scoring (11 dimensions)
+npm run audit:tools            # Per-tool calibration scoring (12 dimensions)
 npm run audit:routes           # AI route compliance (auth, credits, error handling)
 npm run audit:calibration      # Alias of audit:routes
 npm run audit:verify           # Confirm latest audit is fresh
@@ -407,18 +407,19 @@ For 5xx triage, see [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md).
 
 ## Tools, Frameworks, Data Feeds
 
-### Tool Categories (40 pages)
+### Consolidated Tool Surface
 
-| Category | Pages |
+| Workbench surface | Absorbs |
 |---|---|
-| **Context (7)** | Dashboard, Documents, Sources, Timeline, Humanitarian, Calendar, Conflict Graph |
-| **Analysis (7)** | Risk Monitor, Early Warning, Actor Profiles, Stakeholder Map, Power Map, Info Environment, Compare |
-| **Drafting (7)** | Assistant, Report Studio, Dossier, Talking Points, Briefing Room, Daily Brief, UN Toolkit |
-| **Simulation (5)** | Scenarios, Negotiation Prep, Game Theory, CONCORDIA, Mediation Designer |
-| **Intelligence (10)** | Deep Research Agent, ARGUS, ARGUS Grounded, Media Compass, Media Roundup, Geospatial, Sanctions, Commitments, Treaty Analyzer, Alert Center |
-| **Workspace (4)** | Cases, Team, Advisory Council, Settings |
+| **Dashboard / Desk** | Situation Intelligence, risk, early warning, humanitarian, human-rights, economic-impact, electoral-risk, peacebuilding views |
+| **Context Studio** | Context Builder, actors, requirements, case frame, stakeholder inputs |
+| **Library** | Sources, documents, saved claims, work products |
+| **Research** | Source Scout, ARGUS, Deep Search, media/information environment, compare |
+| **Graph** | GraphOps, conflict graph, power map, external actors, commitments, timeline |
+| **Boardroom** | Advisory Council, Brainstorming Table, CONCORDIA, scenarios, mediation/negotiation tools |
+| **Draft** | Briefing, policy memo, talking points, dossier, reports, exports, legal/sanctions/treaty work |
 
-Tool registry: `src/lib/constants/tool-registry.ts` (single source of truth for route metadata, schemas, methodology, and demo data).
+Tool registry metadata is retained in `src/lib/constants/tool-registry.ts` for schemas, methodology, and compatibility. The buyer/user surface is the workbench; specialist archive tools remain discoverable from `/app/tools?show_archive=1`, and legacy URLs are redirected or aliased into the appropriate workbench tab.
 
 ### Analytical Frameworks (15)
 
@@ -528,6 +529,9 @@ Current high-impact lanes:
 | [`docs/CUSTOM_DOMAIN_SETUP.md`](./docs/CUSTOM_DOMAIN_SETUP.md) | DNS + Firebase Auth + OAuth setup for praxis.tacitus.me |
 | [`docs/golden-path.md`](./docs/golden-path.md) | Free-tier walkthrough (manual QA + Playwright spec) |
 | [`docs/DOC_IMPROVEMENTS.md`](./docs/DOC_IMPROVEMENTS.md) | Documentation backlog |
+| [`docs/audits/praxis-packs-03-04-05-implementation-status-2026-05-06.md`](./docs/audits/praxis-packs-03-04-05-implementation-status-2026-05-06.md) | Current implementation status for the one-workbench consolidation, landing rebuild, and context/tool gate |
+| [`docs/audits/tool-contracts-2026-05-06.md`](./docs/audits/tool-contracts-2026-05-06.md) | Registry metadata audit retained for compatibility planning |
+| [`docs/audits/tools-2026-05-06.md`](./docs/audits/tools-2026-05-06.md) | Current AI route calibration audit: 62 audited routes |
 | [`docs/superpowers/specs/`](./docs/superpowers/specs/) | Active design specs (calibration, domain taxonomy, generic-route hardening, master plan) |
 
 ---

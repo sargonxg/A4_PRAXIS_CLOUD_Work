@@ -32,8 +32,8 @@ describe('tool package readiness', () => {
 
     const readiness = computeToolPackageReadiness(core!, situation, {
       dashboard: { health: 'green', generatedAt: new Date().toISOString() },
+      'source-scout': { health: 'green', generatedAt: new Date().toISOString() },
       graphops: { health: 'green', generatedAt: new Date().toISOString() },
-      'conflict-graph': { health: 'yellow', generatedAt: new Date().toISOString(), isStale: true },
     });
 
     expect(readiness.assessedToolIds).toContain('graphops');

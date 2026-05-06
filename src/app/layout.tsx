@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { EB_Garamond, Inter, JetBrains_Mono } from "next/font/google";
-import { AuthProvider } from "@/lib/auth/auth-context";
 import "./globals.css";
 
 const ebGaramond = EB_Garamond({
@@ -148,9 +147,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${ebGaramond.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        {children}
       </body>
     </html>
   );

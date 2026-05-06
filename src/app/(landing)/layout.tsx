@@ -6,12 +6,12 @@ import { cn } from "@/lib/utils/cn";
 import { Menu, X } from "lucide-react";
 
 const navLinks = [
-  { label: "How it Works", href: "#how-it-works" },
-  { label: "Platform", href: "#capabilities" },
-  { label: "Tools", href: "#tools" },
-  { label: "Advisory Council", href: "#advisory" },
-  { label: "Security", href: "#security" },
-  { label: "Pricing", href: "/pricing" },
+  { label: "Six Steps", href: "#six-steps" },
+  { label: "DIALECTICA", href: "#dialectica" },
+  { label: "Live Demo", href: "#live-demo" },
+  { label: "Built For", href: "#built-for" },
+  { label: "Trust", href: "#trust" },
+  { label: "Pricing", href: "#pricing" },
 ];
 
 export default function LandingLayout({
@@ -90,15 +90,17 @@ export default function LandingLayout({
           <div className="hidden items-center gap-4 lg:flex">
             <Link
               href="/login"
+              prefetch={false}
               className="text-sm font-medium text-navy-600 transition-colors hover:text-navy-900"
             >
               Sign In
             </Link>
             <Link
-              href="/login"
+              href="/login?mode=demo&example=syria-2026"
+              prefetch={false}
               className="inline-flex items-center justify-center rounded-md bg-gold-600 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-lg hover:shadow-gold-600/20 active:bg-gold-700"
             >
-              Start Using PRAXIS
+              Try an example
             </Link>
           </div>
 
@@ -136,17 +138,19 @@ export default function LandingLayout({
             ))}
             <Link
               href="/login"
+              prefetch={false}
               onClick={() => setMobileMenuOpen(false)}
               className="block py-3 text-sm font-medium text-navy-600 transition-colors hover:text-navy-900"
             >
               Sign In
             </Link>
             <Link
-              href="/login"
+              href="/login?mode=demo&example=syria-2026"
+              prefetch={false}
               onClick={() => setMobileMenuOpen(false)}
               className="mt-2 block w-full rounded-md bg-gold-600 px-5 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-gold-500"
             >
-              Start Using PRAXIS
+              Try an example
             </Link>
           </div>
         </div>

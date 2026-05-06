@@ -1,4 +1,4 @@
-# PRAXIS Documentation Index — 2026-04-26
+# PRAXIS Documentation Index — 2026-05-06
 
 > Single-pane navigation for every doc in the repo. Every agent should
 > open this first. Outdated docs go to `docs/archive/` (Codex / Claude
@@ -65,6 +65,12 @@
 | Doc | Purpose |
 |---|---|
 | [`tools/INDEX.md`](./tools/INDEX.md) | Per-tool micro-app spec catalogue |
+| [`tools/generated/INDEX.md`](./tools/generated/INDEX.md) | Generated specs for retained tool-registry metadata; default app entry is now the consolidated workbench plus archive. |
+| [`audits/praxis-packs-03-04-05-implementation-status-2026-05-06.md`](./audits/praxis-packs-03-04-05-implementation-status-2026-05-06.md) | Current implementation status for Workbench Architecture, Landing/Entry rebuild, and Context-vs-Tools separation. |
+| [`audits/codebase-app-docs-audit-2026-05-06.md`](./audits/codebase-app-docs-audit-2026-05-06.md) | Current app/docs drift audit and cleanup summary. |
+| [`audits/structure-plan-2026-05-06.md`](./audits/structure-plan-2026-05-06.md) | Current structure plan for cockpit/tools/app IA, database ownership, SQL cost decisions, and validation gates. |
+| [`audits/tool-contracts-2026-05-06.md`](./audits/tool-contracts-2026-05-06.md) | Registry metadata audit retained for compatibility planning. |
+| [`audits/tools-2026-05-06.md`](./audits/tools-2026-05-06.md) | Current AI route calibration audit: 62 audited routes. |
 | [`tools/UX_AUDIT_2026-04-26.md`](./tools/UX_AUDIT_2026-04-26.md) | Tool-by-tool UX audit (13 priority tools) |
 | [`TOOL_RELIABILITY_AUDIT_2026-04-26.md`](./TOOL_RELIABILITY_AUDIT_2026-04-26.md) | Top-10 tools failure-mode walk + per-tool TODOs |
 | [`USER_RESEARCH_SYNTHESIS_2026-04-26.md`](./USER_RESEARCH_SYNTHESIS_2026-04-26.md) | Persona-based survey synthesis |

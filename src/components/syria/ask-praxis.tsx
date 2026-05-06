@@ -113,7 +113,7 @@ export function SyriaAskPraxis({ className }: { className?: string }) {
       setMessages((prev) => {
         const next = [...prev];
         const last = next[next.length - 1];
-        if (last && last.role === 'praxis') next[next.length - 1] = { ...last, thinkingSteps: stepCopy };
+        if (last && last.role === 'praxis') last.thinkingSteps = stepCopy;
         return next;
       });
     }
@@ -126,10 +126,9 @@ export function SyriaAskPraxis({ className }: { className?: string }) {
       await wait(reduceMotion ? 0 : 24);
       const content = tokens.slice(0, i + 1).join('');
       setMessages((prev) => {
-        const next = [...prev];
-        const last = next[next.length - 1];
-        if (last && last.role === 'praxis') next[next.length - 1] = { ...last, content };
-        return next;
+        const last = prev[prev.length - 1];
+        if (!last || last.role !== 'praxis') return prev;
+        return [...prev.slice(0, -1), { ...last, content }];
       });
     }
 
@@ -137,7 +136,7 @@ export function SyriaAskPraxis({ className }: { className?: string }) {
     setMessages((prev) => {
       const next = [...prev];
       const last = next[next.length - 1];
-      if (last && last.role === 'praxis') next[next.length - 1] = { ...last, provenance: query.provenance };
+      if (last && last.role === 'praxis') last.provenance = query.provenance;
       return next;
     });
 

@@ -1254,7 +1254,7 @@ export default function NewSituationPage() {
         } catch { /* non-critical */ }
       }
 
-      router.push(`${route('/dashboard')}?created=1`);
+      router.push(`${route('/workbench')}?created=1`);
     } catch (err) {
       console.error('[situations/new] create failed:', err);
       setError('Network error. Please check your connection and try again.');
@@ -1274,7 +1274,7 @@ export default function NewSituationPage() {
           </div>
           <h2 className="text-lg font-semibold text-navy-900">Sign in to Create Situations</h2>
           <p className="mt-2 text-sm text-navy-500">Creating real situations requires a TACITUS account. Demo mode uses the pre-built Nordalia Crisis scenario.</p>
-          <button onClick={() => router.push(route('/dashboard'))} className="mt-6 rounded-lg bg-gold-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-gold-600 shadow-md shadow-gold-500/20">
+          <button onClick={() => router.push(route('/workbench'))} className="mt-6 rounded-lg bg-gold-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-gold-600 shadow-md shadow-gold-500/20">
             Back to Dashboard
           </button>
         </div>

@@ -1,41 +1,20 @@
 import { headers } from 'next/headers';
 import dynamic from 'next/dynamic';
 import { Hero } from "@/components/landing/hero";
-import { HowItWorks } from "@/components/landing/how-it-works";
-import { ProblemSection } from "@/components/landing/problem-section";
-import { ConflictGrammarHighlight } from "@/components/landing/conflict-grammar-highlight";
-import { AiCompanionSection } from "@/components/landing/ai-companion-section";
-import { SyriaCaseProof } from "@/components/landing/syria-case-proof";
+import { SixSteps } from "@/components/landing/six-steps";
+import { ExampleCasesGallery } from "@/components/landing/example-cases-gallery";
+import { Dialectica } from "@/components/landing/dialectica";
+import { LiveDemo } from "@/components/landing/live-demo";
 
-// Below-fold sections: server-render on demand but keep them out of the
-// initial synchronous bundle so Hero + HowItWorks + ProblemSection dominate
-// the LCP path. `ssr: true` (default) so crawlers still see the content.
-const DomainCatalogue = dynamic(() =>
-  import("@/components/landing/domain-catalogue").then((m) => m.DomainCatalogue),
+// Below-fold sections stay split while remaining crawler-visible through SSR.
+const BuiltFor = dynamic(() =>
+  import("@/components/landing/built-for").then((m) => m.BuiltFor),
 );
-const DataSubstrate = dynamic(() =>
-  import("@/components/landing/data-substrate").then((m) => m.DataSubstrate),
+const Trust = dynamic(() =>
+  import("@/components/landing/trust").then((m) => m.Trust),
 );
-const GroundingBackbone = dynamic(() =>
-  import("@/components/landing/grounding-backbone").then((m) => m.GroundingBackbone),
-);
-const LivePlatformPreview = dynamic(() =>
-  import("@/components/landing/live-platform-preview").then((m) => m.LivePlatformPreview),
-);
-const UseCaseCards = dynamic(() =>
-  import("@/components/landing/use-case-cards").then((m) => m.UseCaseCards),
-);
-const AdvisoryCouncil = dynamic(() =>
-  import("@/components/landing/advisory-council").then((m) => m.AdvisoryCouncil),
-);
-const SecuritySection = dynamic(() =>
-  import("@/components/landing/security-section").then((m) => m.SecuritySection),
-);
-const PricingTeaser = dynamic(() =>
-  import("@/components/landing/pricing-teaser").then((m) => m.PricingTeaser),
-);
-const Testimonials = dynamic(() =>
-  import("@/components/landing/testimonials").then((m) => m.Testimonials),
+const PricingCTA = dynamic(() =>
+  import("@/components/landing/pricing-cta").then((m) => m.PricingCTA),
 );
 const WaitlistForm = dynamic(() =>
   import("@/components/landing/waitlist-form").then((m) => m.WaitlistForm),
@@ -51,10 +30,10 @@ const softwareJsonLd = {
   "@type": "SoftwareApplication",
   name: "PRAXIS by TACITUS",
   applicationCategory: "BusinessApplication",
-  applicationSubCategory: "Policy & Statecraft AI",
+  applicationSubCategory: "Policy Workbench & Conflict Intelligence",
   operatingSystem: "Web",
   description:
-    "PRAXIS by TACITUS is a policy and conflict-intelligence workspace for diplomats, conflict analysts, mediators, and policy officers. It connects mandate calibration, source intake, conflict-graph extraction, risk assessment, drafting, and exportable briefings with citations and methodology notes.",
+    "PRAXIS is a policy workbench: every user builds live cases, anchors them in a graph that carries provenance, confidence, and time, and progresses through a five-chapter flow from Situation Frame to Decision Product. Example cases including Syria, Nordalia, Sahel, US housing, workplace mediation, and sanctions are available as guest sessions before login.",
   url: siteUrl,
   image: `${siteUrl}/opengraph-image`,
   inLanguage: "en",
@@ -69,7 +48,7 @@ const softwareJsonLd = {
       name: "Demo",
       price: "0",
       priceCurrency: "USD",
-      description: "Guest-session Syria public-source case for evaluating the real PRAXIS workspace, media intelligence, graph workflows, and briefing exports",
+      description: "Guest-session example cases (Syria, Nordalia, Sahel, US housing, workplace mediation, sanctions) for evaluating the real PRAXIS workspace, graph workflows, DIALECTICA reasoning, and briefing exports",
     },
     {
       "@type": "Offer",
@@ -107,19 +86,14 @@ const softwareJsonLd = {
     url: "https://tacitus.me",
   },
   featureList: [
-    "Mandate-aware tools calibrated to your role and active situation",
-    "ACO v2.0 — 14-entity conflict ontology with 72 typed relationships",
-    "Glasl 9-stage escalation, Fisher-Ury, INFORM Risk Index, OCHA, IPC",
-    "Conflict graph extraction with cited evidence and version history",
-    "Syria public-source workspace with local media compass, narrative divergence board, GraphOps, and editable work products",
-    "Dialectica-style discrepancy analysis across UN documents, think tanks, official statements, local media, and graph commitments",
-    "Drafting Studio with ICD-203 analytic standards and source tracing",
-    "Open-data feeds: Google Search, GDELT BigQuery, UCDP, ReliefWeb, OCHA, HDX, UNHCR, World Bank, UN News, and user-approved private corpus sources",
-    "Source-grounded research via Google Cloud and approved user corpora with citation discipline",
-    "Advisor Council simulation (six expert personas, ICD-203-aligned)",
-    "Game-theory and scenario analysis with deep-think reasoning",
-    "Geospatial monitoring and risk scoring",
-    "Private GCP workspace per tenant; Firebase Auth; isolated Firestore",
+    "One workbench per user with cases scoped to authenticated user state",
+    "Five-chapter flow: Situation Frame, Source Receipts, Conflict Graph, DIALECTICA Reasoning, Decision Product",
+    "ACO Conflict Grammar entities mapped onto truth layers and provenance",
+    "Source receipts and provenance manifests on exported work products",
+    "Example cases as guest sessions before login: Syria, Nordalia, Sahel, US housing, workplace mediation, and sanctions",
+    "Boardroom-deliberated policy options with human review",
+    "Trust posture for graph support, source quality, reliability, and consensus",
+    "Google Cloud, Firebase, and graph projection architecture",
   ],
 };
 
@@ -176,20 +150,13 @@ export default async function LandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
       />
       <Hero />
-      <SyriaCaseProof />
-      <HowItWorks />
-      <AiCompanionSection />
-      <ProblemSection />
-      <ConflictGrammarHighlight />
-      <DomainCatalogue />
-      <DataSubstrate />
-      <GroundingBackbone />
-      <LivePlatformPreview />
-      <UseCaseCards />
-      <AdvisoryCouncil />
-      <SecuritySection />
-      <Testimonials />
-      <PricingTeaser />
+      <SixSteps />
+      <ExampleCasesGallery />
+      <Dialectica />
+      <LiveDemo />
+      <BuiltFor />
+      <Trust />
+      <PricingCTA />
       <WaitlistForm />
       <Footer />
     </>

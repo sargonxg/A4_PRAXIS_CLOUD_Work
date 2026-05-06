@@ -28,26 +28,56 @@ on GCP Cloud Run.
 
 ## Agent Handoff
 
-Before changing code, future Claude Code / Codex sessions must read the
-canonical short list in order. Older planning documents live under
-`docs/_archive/` and should be opened only when a canonical document points
-there for historical context.
+Before changing code, future Claude Code / Codex sessions must read these
+in order. Skipping any of items 5–11 will produce duplicate work or break
+the architectural contract.
 
 1. `README.md`
 2. `CLAUDE.md` (this file)
 3. `AGENTS.md` — hard rules, validation gate, deploy procedure
-4. `ARCHITECTURE.md`
-5. `TODO.md`
+4. `TODO.md` — current production continuation roadmap
+5. `docs/PRAXIS_SUPERPLAN_2026-04-29.md` — current multi-agent execution plan
 6. `CHANGELOG.md`
-7. `docs/CONTEXT_INJECTION.md`
-8. `docs/OPERATIONAL_SPINE.md`
-9. `docs/CORPUS_ARCHITECTURE.md`
-10. `docs/GCP_OPERATIONS.md`
-11. `docs/COMPLIANCE.md`
-12. `docs/PRAXIS_TECHNICAL_SPECIFICATION.md`
-13. `docs/phases/PRAXIS_PHASE_1_FOUNDATION.md`
-14. `docs/phases/PRAXIS_PHASE_2_AGENTIC_SPINE.md`
-15. `docs/phases/PRAXIS_PHASE_3_PRODUCT_SURFACE.md`
+7. `docs/ROUND_6_READINESS_2026-04-27.md` — current short plan, LangGraph
+   readiness, and human decisions
+8. `docs/DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md` — 12-lane execution plan
+   distilled from the deep-research memo
+9. `docs/LANGGRAPH_CLOUDSQL_CHECKPOINTING.md` — Cloud SQL/Postgres
+   checkpoint store, cleanup, and verification
+10. `docs/CODEX_HANDOFF_2026-04-27.md` — active Codex drop-in prompt
+11. `docs/CONTINUATION.md` — last "do this next" note from previous agent
+12. `docs/STRATEGY.md` — six-week roadmap
+13. `docs/SPRINT_2026-04-25.md` — current week-long sprint plan
+14. **`docs/SPRINT_BACKLOG.md`** — canonical actionable list. Pick your
+    task from here; mark `In progress` before starting.
+15. **`docs/CONTEXT_INJECTION.md`** — the architectural contract every AI
+    route must honour. This is the most important doc in the repo.
+16. **`docs/OPERATIONAL_SPINE.md`** — the second-most important doc.
+    Defines tool_runs, background_jobs, system_events, notifications,
+    semaphore states, idempotency, retention. Every async unit of work
+    in PRAXIS lives in this layer. Read this BEFORE adding new
+    triggers, agents, or tools.
+17. `docs/tools/INDEX.md` — per-tool micro-app specs catalogue
+18. `docs/GCP_OPERATIONS.md` — every gcloud / Secret Manager command
+19. `docs/RESEARCH_PROMPTS.md` — prompts to give the user when you need
+    info you don't have access to (vendor docs, current API limits, etc.)
+20. `docs/HANDOFF_PROMPTS.md` — drop-in prompts to start a fresh session
+21. `docs/DEPLOYMENT_LOG.md` — last successful production deploy
+22. **`docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`**
+    — deep-research artifact (789 lines, 2026-04-25) answering all 10
+    research prompts: Vertex ADK deployment recipe (with working
+    `deploy.py`), ACLED licensing risk (CRITICAL — see G-2), GDELT
+    BigQuery migration, Firecrawl pricing, BigQuery public datasets,
+    Stripe v2 Meters API recipe, vector index recommendations, Vertex
+    AI vs. AI Studio decision, GraphRAG architecture extension, UN
+    procurement / SOC 2 / DPA path. **Read this before doing any
+    Stream C / Stream G work.**
+23. `docs/USER_ACTION_LIST.md` — exact playbook for things only Giulio
+    (CEO/CTO) can do.
+24. `docs/VISION_2026.md` — strategic north-star objective. Every
+    backlog item ladders up to one of the priorities here.
+25. `docs/COMPLIANCE.md` — licensing, certs, sub-processors, audit log.
+26. `docs/TEAM_OPS.md` — multi-agent operations playbook.
 
 Fresh-clone start command:
 
@@ -64,7 +94,7 @@ npm install
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  Frontend (Next.js 16 App Router)  →  Cloud Run         │
-│    src/app/app/*   (38+ tool pages, auth required)      │
+│    src/app/app/*   (55 registered tool surfaces)        │
 │    src/app/demo/*  (demo mode, cookie auth)             │
 │    src/app/api/*   (73 API routes: AI, data, auth)      │
 ├─────────────────────────────────────────────────────────┤
@@ -84,9 +114,9 @@ npm install
 
 - **Frontend**: Next.js 16.1.6, TypeScript 5.9, React 19, Tailwind CSS 4, Radix UI, Zustand 5, D3.js 7, Framer Motion 12
 - **Backend**: Python 3.11, FastAPI, NetworkX, Graspologic, Pydantic v2
-- **AI**: AI SDK v6 with Google/Vertex Gemini only, Google Genkit-compatible backend calls, Vertex AI ADK
-- **Database**: Firebase Auth + Firestore, Cloud SQL Postgres, Neo4j Aura derived graph index, BigQuery analytics
-- **Data Feeds**: GDELT, UCDP, HDX, ReliefWeb, UN News, World Bank, UNHCR, grounded Google Search, and user-uploaded sources. ACLED is withdrawn for SaaS redistribution/licensing reasons.
+- **AI**: AI SDK v6 (`@ai-sdk/google`, `@ai-sdk/anthropic`), Google Genkit (backend), Vertex AI ADK
+- **Database**: Firebase Auth + Firestore, Neo4j/FalkorDB (graph), BigQuery (analytics)
+- **Data Feeds**: GDELT, UCDP, HDX, ReliefWeb, UN News, World Bank, UNHCR, grounded Google Search; Firecrawl and Parallel are optional accelerators. ACLED is withdrawn for SaaS redistribution/licensing reasons.
 
 ## Current Executive Intelligence Slice
 
@@ -115,7 +145,7 @@ npm install
 
 ```
 /                            Next.js frontend (root)
-├── src/app/app/             Tool pages (38+ authenticated)
+├── src/app/app/             55 registered tool surfaces
 ├── src/app/demo/            Demo mirror pages
 ├── src/app/onboarding/      3-screen wizard + layout (identity, perspective, working style)
 ├── src/app/api/             API routes (73 total)
@@ -169,7 +199,7 @@ npm install
 users/{uid}/
   (profile)            { credits, email, name, role, subscription }
   settings/
-    api_keys           { google_ai_key }
+    api_keys           { google_ai_key, anthropic_key, openai_key, firecrawl_key }
     model_preferences  { fast_analysis, deep_analysis, creative_drafting, research }
     graph_backend      { provider, uri, host, port, user, password }
   situations/{sitId}/
@@ -352,8 +382,8 @@ These files are security-critical. If a task seems to require changing them, **s
 
 ## Situation Knowledge Core (SKC)
 
-4-layer hybrid GraphRAG system powering all 48 tools:
-- **Graph Layer**: Firestore canonical graph + Neo4j Aura derived index. `src/lib/graph/graphops.ts` and `src/lib/graph/graphops-service.ts` provide the maintenance/readiness contract.
+4-layer hybrid GraphRAG system backing the 55 registered tool surfaces:
+- **Graph Layer**: Firestore canonical graph + optional Neo4j/Falkor/Spanner derived indexes. `src/lib/knowledge/graph-layer.ts` provides the adapter; `src/lib/graph/graphops.ts` and `src/lib/graph/graphops-service.ts` provide the maintenance/readiness contract.
 - **Vector Layer**: `src/lib/knowledge/vector-layer.ts` — Firestore native KNN (768-dim, COSINE distance)
 - **Feed Layer**: `src/lib/knowledge/feed-layer.ts` — TTL-cached data feeds (ACLED, GDELT, HDX, etc.)
 - **Tool Output Layer**: `src/lib/knowledge/tool-output-layer.ts` — cross-referenced versioned tool outputs
@@ -389,18 +419,15 @@ Deducted atomically via Firestore transactions. Real-time sync via onSnapshot.
 | Pub/Sub | Async event messaging | 5 topics (pipeline, extract, ingest, alert, profile.events) |
 | Cloud Functions | Event triggers | 3 functions (situation, document, GDELT) |
 | Cloud Scheduler | Cron jobs | GDELT (15min), alerts (6am), briefing (5am) |
-| Secret Manager | Sensitive config | Runtime secrets for Firebase Admin, Gemini/Vertex, Cloud SQL, Neo4j, UCDP, cron/session signing, and user-key encryption; `ADMIN_ALLOWLIST` / `ADMIN_EMAIL_ALLOWLIST` gate admin access |
+| Secret Manager | Sensitive config | Runtime secrets for Firebase Admin, AI, Firecrawl, Parallel, UCDP, cron/session signing, and user-key encryption; `ADMIN_ALLOWLIST` / `ADMIN_EMAIL_ALLOWLIST` gate admin access |
 
-## Tool Categories (40 tools)
+## Tool Categories (55 registered surfaces)
 
 | Category | Tools |
 |---|---|
-| **Context** | Dashboard, Documents, Sources Library, Timeline, Humanitarian, Calendar, Conflict Graph |
-| **Analysis** | Risk Monitor, Early Warning, Actor Profiles, Stakeholder Map, Power Map, Info Environment, Compare |
-| **Drafting** | Assistant, Report Studio, Dossier, Talking Points, Briefing Room, Daily Brief, UN Toolkit |
-| **Simulation** | Scenarios, Negotiation Prep, Game Theory, CONCORDIA, Mediation Designer |
-| **Intelligence** | Deep Research Agent, ARGUS, Media Compass, Media Roundup, Geospatial, Sanctions, Commitments, Treaty, Alert Center, Deep Research |
-| **Workspace** | Cases, Team, Advisory, Settings |
+| **Hero loop** | The 12 primary working surfaces in `src/lib/tools/tool-path-taxonomy.ts`, shown first in `/app/tools`. |
+| **Archive / specialist** | The remaining 43 registry surfaces remain linked, auditable, and available behind `show_archive=1`. |
+| **Source of truth** | `src/lib/constants/tool-registry.ts`, `src/lib/tools/tool-navigation.ts`, and `src/lib/tools/tool-path-taxonomy.ts`. Generated specs live in `docs/tools/generated/`. |
 
 ## Analytical Frameworks (15)
 
