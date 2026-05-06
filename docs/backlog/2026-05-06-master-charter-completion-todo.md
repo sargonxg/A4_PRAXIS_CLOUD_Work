@@ -88,6 +88,8 @@ documented. A partial item must keep its named gap visible.
 - [x] Tool skills and contract v2 audits are green.
 - [x] Marketplace foundation run route exists and uses `ContextProvider`.
 - [x] Tool run artifacts store raw text, structured output, and context dumps.
+- [x] Add per-tool handler audit so foundation fallback cannot be mistaken for specialist completion.
+- [x] Add prompt contracts for all 16 marketplace handlers.
 - [ ] Implement specialist model-backed handler for `conflict.leverage-trace`.
 - [ ] Implement specialist model-backed handler for `conflict.commitment-check`.
 - [ ] Implement specialist model-backed handler for `conflict.escalation-timeline`.
@@ -104,7 +106,6 @@ documented. A partial item must keep its named gap visible.
 - [ ] Implement specialist model-backed handler for `cross.context-health-explainer`.
 - [ ] Implement specialist model-backed handler for `cross.brief-exporter`.
 - [ ] Implement specialist model-backed handler for `cross.scenario-projector`.
-- [ ] Add per-tool handler audit so foundation fallback cannot be mistaken for specialist completion.
 - [ ] Add marketplace run history UI and reload from persisted artifacts.
 - [ ] Add marketplace cost and latency telemetry per run.
 - [ ] Add tool chaining from selected artifact to next recommended tool.

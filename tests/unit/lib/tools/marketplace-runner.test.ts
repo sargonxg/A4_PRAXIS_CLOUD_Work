@@ -60,10 +60,16 @@ describe('marketplace runner', () => {
     });
 
     expect(result.rawText).toContain(tool.name);
+    expect(result.rawText).toContain('Specialist contract:');
     expect(result.structuredOutput.posture).toMatchObject({ strictBlocking: false });
+    expect(result.structuredOutput.handlerContract).toMatchObject({
+      stage: 'prompt-contract',
+      objective: expect.any(String),
+    });
     expect(result.structuredOutput.claims).toEqual(expect.arrayContaining([
       expect.objectContaining({ trustScore: 0.68 }),
     ]));
+    expect(result.metadata).toMatchObject({ handlerStage: 'prompt-contract' });
     expect(result.contextDump).toMatchObject({ analystContext: { note: 'free-form context stays allowed' } });
   });
 

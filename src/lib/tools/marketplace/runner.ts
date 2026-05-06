@@ -1,4 +1,5 @@
 import type { ToolRunContext } from '@/lib/tools/context-provider';
+import { getMarketplaceHandlerContract } from '@/lib/tools/marketplace/handler-contracts';
 import type { MarketplaceToolDefinition } from '@/lib/tools/marketplace/types';
 
 export interface MarketplaceToolRunInput {
@@ -43,6 +44,7 @@ function nextActions(tool: MarketplaceToolDefinition, runContext: ToolRunContext
 
 export function buildMarketplaceToolRun(input: MarketplaceToolRunInput): MarketplaceToolRunResult {
   const { tool, runContext } = input;
+  const handlerContract = getMarketplaceHandlerContract(tool.id);
   const prompt = input.prompt?.trim() || `Run ${tool.name} against the active PRAXIS context.`;
   const caseFrame = runContext.snapshot.case.frame;
   const displayCaseName = caseFrame.name === 'No active case'
@@ -60,7 +62,11 @@ export function buildMarketplaceToolRun(input: MarketplaceToolRunInput): Marketp
     advisoryLines.length > 0
       ? `Advisories: ${advisoryLines.join(' | ')}`
       : 'Advisories: none recorded.',
-    'This run records tolerant raw text, structured output, and context dumps for later specialist handlers.',
+    handlerContract ? `Specialist contract: ${handlerContract.objective}` : 'Specialist contract: missing.',
+    handlerContract ? `Analysis moves: ${handlerContract.analysisMoves.join(' | ')}` : null,
+    handlerContract ? `Expected sections: ${handlerContract.outputSections.join(' | ')}` : null,
+    handlerContract ? `Quality checks: ${handlerContract.qualityChecks.join(' | ')}` : null,
+    'This run records tolerant raw text, structured output, context dumps, and the handler prompt contract for later model-backed handlers.',
   ].filter(Boolean).join('\n');
 
   return {
@@ -98,8 +104,15 @@ export function buildMarketplaceToolRun(input: MarketplaceToolRunInput): Marketp
       ],
       advisories: runContext.advisories,
       nextActions: nextActions(tool, runContext),
+      handlerContract: handlerContract ? {
+        stage: handlerContract.executionStage,
+        objective: handlerContract.objective,
+        requiredContext: handlerContract.requiredContext,
+        outputSections: handlerContract.outputSections,
+        qualityChecks: handlerContract.qualityChecks,
+      } : null,
       posture: {
-        mode: 'deterministic-foundation',
+        mode: handlerContract ? 'deterministic-foundation-with-handler-contract' : 'deterministic-foundation',
         strictBlocking: false,
         storesRawText: tool.persistence.storesRawText,
         storesContextDump: tool.persistence.storesContextDump,
@@ -117,6 +130,7 @@ export function buildMarketplaceToolRun(input: MarketplaceToolRunInput): Marketp
       generatedAt: new Date().toISOString(),
       canaryCaseIds: tool.canaryCaseIds,
       subagentDeps: tool.subagentDeps,
+      handlerStage: handlerContract?.executionStage ?? 'missing',
     },
   };
 }

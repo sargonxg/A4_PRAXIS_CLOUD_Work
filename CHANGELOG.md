@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(tools): add marketplace handler prompt contracts.
+  Added explicit prompt contracts for all 16 curated marketplace tools, included
+  the contract objective, sections, and quality checks in foundation run
+  artifacts, and made the marketplace audit fail if any registry tool lacks
+  handler coverage.
 - feat(admin): add scheduler-backed operational metrics snapshots.
   Added `/api/cron/operational-metrics`, the persisted
   `operational_metrics/latest` snapshot contract, Cloud Scheduler config,
