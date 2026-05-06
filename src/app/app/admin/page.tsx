@@ -1,23 +1,32 @@
-import Link from 'next/link';
 import { Activity, Brain, CheckCircle2, CreditCard, Database, FileText, KeyRound, ShieldCheck, Users } from 'lucide-react';
+import AdvisorFeedPage from '@/app/app/admin/advisor-feed/page';
+import AdvisorsPage from '@/app/app/admin/advisors/page';
+import DiagnosticsPage from '@/app/app/admin/diagnostics/page';
+import DomainsPage from '@/app/app/admin/domains/page';
+import OperatorConsolePage from '@/app/app/admin/operator-console/page';
+import UsersPage from '@/app/app/admin/users/page';
 import { getAdminGateStatus } from '@/lib/auth/admin-gate';
 import { getAdminSession } from '@/lib/auth/admin-session';
+import { cn } from '@/lib/utils/cn';
 
 const adminTools = [
   {
-    href: '/app/admin/operator-console',
+    id: 'operator',
+    href: '/app/admin?tab=operator',
     title: 'Operator Console',
     description: 'Live jobs, tool runs, incidents, and platform events.',
     icon: Activity,
   },
   {
-    href: '/app/admin/diagnostics',
+    id: 'diagnostics',
+    href: '/app/admin?tab=diagnostics',
     title: 'Diagnostics',
     description: 'Firebase, AI provider, feed, secret, and runtime health checks.',
     icon: ShieldCheck,
   },
   {
-    href: '/app/admin/users',
+    id: 'users',
+    href: '/app/admin?tab=users',
     title: 'Users',
     description: 'Review authenticated users, Polar status, promo expiry, provider keys, and credits.',
     icon: Users,
@@ -35,26 +44,86 @@ const adminTools = [
     icon: KeyRound,
   },
   {
-    href: '/app/admin/advisors',
+    id: 'advisors',
+    href: '/app/admin?tab=advisors',
     title: 'Advisor Council',
     description: 'Edit advisor personas, source categories, tools, model tier, and memory policy.',
     icon: Brain,
   },
   {
-    href: '/app/admin/advisor-feed',
+    id: 'advisor-feed',
+    href: '/app/admin?tab=advisor-feed',
     title: 'Advisor Feed',
     description: 'Curate methodology notes, source guidance, warnings, and playbooks for advisor retrieval.',
     icon: FileText,
   },
   {
-    href: '/app/admin/domains',
+    id: 'domains',
+    href: '/app/admin?tab=domains',
     title: 'Domain Taxonomy',
     description: 'Tune lens weights, source preferences, frameworks, and prompt overrides.',
     icon: Database,
   },
 ];
 
-export default async function AdminHomePage() {
+type AdminTab = 'overview' | 'operator' | 'diagnostics' | 'users' | 'advisors' | 'advisor-feed' | 'domains';
+
+const canonicalTabs: Array<{ id: AdminTab; label: string; href: string }> = [
+  { id: 'overview', label: 'Overview', href: '/app/admin' },
+  { id: 'operator', label: 'Operator', href: '/app/admin?tab=operator' },
+  { id: 'diagnostics', label: 'Diagnostics', href: '/app/admin?tab=diagnostics' },
+  { id: 'users', label: 'Users', href: '/app/admin?tab=users' },
+  { id: 'advisors', label: 'Advisors', href: '/app/admin?tab=advisors' },
+  { id: 'advisor-feed', label: 'Advisor Feed', href: '/app/admin?tab=advisor-feed' },
+  { id: 'domains', label: 'Domains', href: '/app/admin?tab=domains' },
+];
+
+function normalizeAdminTab(tab: string | string[] | undefined): AdminTab {
+  const value = Array.isArray(tab) ? tab[0] : tab;
+  if (canonicalTabs.some((item) => item.id === value)) return value as AdminTab;
+  return 'overview';
+}
+
+function AdminTabContent({ tab }: { tab: AdminTab }) {
+  if (tab === 'operator') return <OperatorConsolePage />;
+  if (tab === 'diagnostics') return <DiagnosticsPage />;
+  if (tab === 'users') return <UsersPage />;
+  if (tab === 'advisors') return <AdvisorsPage />;
+  if (tab === 'advisor-feed') return <AdvisorFeedPage />;
+  if (tab === 'domains') return <DomainsPage />;
+  return (
+    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {adminTools.map((tool) => {
+        const Icon = tool.icon;
+        return (
+          <a
+            key={tool.href}
+            href={tool.href}
+            className="rounded-lg border border-navy-200 bg-white p-5 shadow-sm transition hover:border-diplomatic-blue/40 hover:shadow-md"
+          >
+            <div className="flex items-start gap-3">
+              <span className="rounded-md bg-diplomatic-blue/10 p-2 text-diplomatic-blue">
+                <Icon className="h-5 w-5" />
+              </span>
+              <div>
+                <h2 className="text-sm font-semibold text-navy-900">{tool.title}</h2>
+                <p className="mt-1 text-xs leading-relaxed text-navy-500">{tool.description}</p>
+              </div>
+            </div>
+          </a>
+        );
+      })}
+    </section>
+  );
+}
+
+export default async function AdminHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string | string[] }>;
+}) {
+  const query = await searchParams;
+  const activeTab = normalizeAdminTab(query.tab);
   const [admin, gate] = await Promise.all([
     getAdminSession(),
     Promise.resolve(getAdminGateStatus()),
@@ -90,7 +159,24 @@ export default async function AdminHomePage() {
         changes; this panel focuses on auditable diagnostics and configuration controls.
       </div>
 
-      <section className="grid gap-3 md:grid-cols-3">
+      <nav className="flex flex-wrap gap-2 rounded-lg border border-navy-200 bg-white p-2 shadow-sm" aria-label="Admin sections">
+        {canonicalTabs.map((tab) => (
+          <a
+            key={tab.id}
+            href={tab.href}
+            className={cn(
+              'rounded-md px-3 py-2 text-xs font-semibold transition',
+              activeTab === tab.id
+                ? 'bg-navy-950 text-white'
+                : 'text-navy-600 hover:bg-navy-50 hover:text-navy-950',
+            )}
+          >
+            {tab.label}
+          </a>
+        ))}
+      </nav>
+
+      {activeTab === 'overview' ? <section className="grid gap-3 md:grid-cols-3">
         <div className="rounded-lg border border-navy-200 bg-white p-4 shadow-sm">
           <div className="text-xs font-semibold uppercase tracking-wider text-navy-500">Admin allowlist</div>
           <div className="mt-2 text-sm text-navy-700">
@@ -107,30 +193,9 @@ export default async function AdminHomePage() {
           <div className="text-xs font-semibold uppercase tracking-wider text-navy-500">UID entries</div>
           <div className="mt-2 text-2xl font-semibold text-navy-900">{gate.configuredUidCount}</div>
         </div>
-      </section>
+      </section> : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {adminTools.map((tool) => {
-          const Icon = tool.icon;
-          return (
-            <Link
-              key={tool.href}
-              href={tool.href}
-              className="rounded-lg border border-navy-200 bg-white p-5 shadow-sm transition hover:border-diplomatic-blue/40 hover:shadow-md"
-            >
-              <div className="flex items-start gap-3">
-                <span className="rounded-md bg-diplomatic-blue/10 p-2 text-diplomatic-blue">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <div>
-                  <h2 className="text-sm font-semibold text-navy-900">{tool.title}</h2>
-                  <p className="mt-1 text-xs leading-relaxed text-navy-500">{tool.description}</p>
-                </div>
-              </div>
-            </Link>
-          );
-        })}
-      </section>
+      <AdminTabContent tab={activeTab} />
     </div>
   );
 }

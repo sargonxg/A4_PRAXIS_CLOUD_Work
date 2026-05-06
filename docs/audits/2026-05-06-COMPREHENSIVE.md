@@ -6,7 +6,7 @@ Date: 2026-05-06
 
 PRAXIS is now a unified case workbench for diplomatic, mediation, policy, and research users. The product centers on cases, source receipts, ontology-backed graph structure, context health, curated tools, and memo production.
 
-The current codebase is launch-foundation ready, not finished in every pack-11 sense. The Workbench, ontology, graph, tool marketplace, permissive firewall, and Memo Studio foundation are real and verified. The remaining launch gaps are backend depth: Postgres repository traversal, full marketplace handlers, memo persistence/export, admin consolidation, and operational dashboards.
+The current codebase is launch-foundation ready, not finished in every pack-11 sense. The Workbench, ontology, graph, tool marketplace, permissive firewall, tabbed admin, Postgres KG repository foundation, and Memo Studio draft workflow are real and verified. The remaining launch gaps are backend depth: live Cloud SQL migration execution, ingestion cutover, full marketplace handlers, server-side memo persistence, and operational dashboards.
 
 ## What's Done
 
@@ -19,16 +19,16 @@ The current codebase is launch-foundation ready, not finished in every pack-11 s
 | Graph view | DONE | B | Canonical case graph scaffold is visible. |
 | Tools marketplace | DONE | B | 16-tool registry and UI, execution deferred. |
 | Verification docs | DONE | B | Reality check, backlog, prompt preservation. |
-| Postgres KG direction | PARTIAL | B | Schema contract and default flag present; repos deferred. |
-| Memo Studio | PARTIAL | B | Templates and Workbench UI present; persistence/export deferred. |
+| Admin consolidation | DONE | B | `/app/admin` now owns tabs; old admin subroutes redirect. |
+| Postgres KG direction | PARTIAL | B+ | Schema contract, default flag, and owner/case-scoped repositories present; deploy cutover deferred. |
+| Memo Studio | PARTIAL | B+ | Templates, block editing, local version history, and Markdown/DOCX/PDF draft export present; server persistence deferred. |
 
 ## What's Broken
 
 | Gap | Severity | Owner | Timeline |
 |---|---|---|---|
-| Full memo export and versioning is not live | S2 | Product/backend | v1.1 |
-| Postgres graph repository layer is not complete | S2 | Backend | v1.1 |
-| Admin consolidation remains route-spread | S2 | Frontend/admin | v1.1 |
+| Server-side memo persistence is not live | S2 | Product/backend | v1.1 |
+| Postgres graph production cutover is not complete | S2 | Backend | v1.1 |
 | Tool marketplace cards are not all executable | S2 | AI/tools | v1.1 |
 | Seven-panel diagnostics dashboard is incomplete | S2 | Ops/admin | v1.1 |
 

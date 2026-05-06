@@ -5,6 +5,7 @@ import { listMemoTemplates } from '@/lib/memo/templates/registry';
 const failures: string[] = [];
 if (listMemoTemplates().length !== 6) failures.push('Memo Studio must expose six launch templates');
 if (!existsSync(join(process.cwd(), 'src/components/memo/MemoStudio.tsx'))) failures.push('missing MemoStudio component');
+if (!existsSync(join(process.cwd(), 'src/lib/memo/export.ts'))) failures.push('missing memo export helpers');
 
 const tabs = readFileSync(join(process.cwd(), 'src/lib/workbench/tabs.ts'), 'utf8');
 if (!tabs.includes("id: 'memos'")) failures.push('Workbench tabs must include memos');
@@ -17,6 +18,11 @@ const docs = [
 ];
 for (const file of docs) {
   if (!existsSync(join(process.cwd(), file))) failures.push(`missing ${file}`);
+}
+
+const studio = readFileSync(join(process.cwd(), 'src/components/memo/MemoStudio.tsx'), 'utf8');
+for (const token of ['exportMarkdown', 'exportDocx', 'exportPdf', 'Version history', 'localStorage']) {
+  if (!studio.includes(token)) failures.push(`Memo Studio missing ${token}`);
 }
 
 if (failures.length > 0) {

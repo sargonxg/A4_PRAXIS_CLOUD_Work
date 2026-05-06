@@ -15,6 +15,15 @@ const bareRoutes = [
   'global-search', 'requirements',
 ];
 
+const adminTabRedirects = [
+  ['diagnostics', 'diagnostics'],
+  ['users', 'users'],
+  ['domains', 'domains'],
+  ['operator-console', 'operator'],
+  ['advisors', 'advisors'],
+  ['advisor-feed', 'advisor-feed'],
+];
+
 const nextConfig: NextConfig = {
   // Cloud Run: standalone output bundles only what's needed for Docker
   output: 'standalone',
@@ -55,11 +64,18 @@ const nextConfig: NextConfig = {
     ],
   },
   async redirects() {
-    return bareRoutes.map((route) => ({
-      source: `/${route}/:path*`,
-      destination: `/app/${route}/:path*`,
-      permanent: false,
-    }));
+    return [
+      ...adminTabRedirects.map(([route, tab]) => ({
+        source: `/app/admin/${route}`,
+        destination: `/app/admin?tab=${tab}`,
+        permanent: true,
+      })),
+      ...bareRoutes.map((route) => ({
+        source: `/${route}/:path*`,
+        destination: `/app/${route}/:path*`,
+        permanent: false,
+      })),
+    ];
   },
 };
 

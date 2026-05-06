@@ -12,6 +12,14 @@ Date: 2026-05-06
 
 Backend config reads `KG_BACKEND`, `GRAPH_BACKEND`, or `graph_backend`, defaulting to `postgres`.
 
+The v1 repository layer lives in `backend/services/kg_repositories.py`:
+
+- `NodeRepo` and `EdgeRepo` own parameterized writes to `graph_nodes` and `graph_edges`.
+- `GraphTraversalRepo` exposes owner/case-scoped n-hop and shortest-path queries via recursive CTEs.
+- `EmbeddingRepo` exposes pgvector semantic search while preserving owner and case predicates.
+
+Every repository method requires `owner_uid` and `case_id`; there is no unscoped graph read API.
+
 Rollback procedure:
 
 1. Set `KG_BACKEND=neo4j` on the backend service.

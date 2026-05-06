@@ -5,6 +5,7 @@ import { DEFAULT_KG_BACKEND, KG_BACKEND_MODES } from '@/lib/kg/backend';
 const failures: string[] = [];
 const requiredFiles = [
   'backend/migrations/versions/0011_postgres_kg_contract.py',
+  'backend/services/kg_repositories.py',
   'docs/architecture/POSTGRES_SCHEMA.md',
   'docs/architecture/KG_BACKEND.md',
   'docs/architecture/COST_NOTES.md',
@@ -28,6 +29,11 @@ if (!backendConfig.includes('KG_BACKEND') || !backendConfig.includes('default="p
 const migration = readFileSync(join(process.cwd(), 'backend/migrations/versions/0011_postgres_kg_contract.py'), 'utf8');
 for (const table of ['graph_nodes', 'graph_edges', 'graph_embeddings', 'graph_audit']) {
   if (!migration.includes(table)) failures.push(`migration missing ${table}`);
+}
+
+const repos = readFileSync(join(process.cwd(), 'backend/services/kg_repositories.py'), 'utf8');
+for (const symbol of ['NodeRepo', 'EdgeRepo', 'GraphTraversalRepo', 'EmbeddingRepo', 'owner_uid', 'case_id']) {
+  if (!repos.includes(symbol)) failures.push(`KG repository layer missing ${symbol}`);
 }
 
 if (failures.length > 0) {

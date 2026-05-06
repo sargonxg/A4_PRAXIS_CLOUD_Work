@@ -7,7 +7,7 @@ Production target: `https://praxis.tacitus.me`
 
 ## Executive Summary
 
-Packs 03-08 are implemented as a unified Workbench foundation: case modules, landing-entry rebuild, context-vs-tools separation, ontology registry, canonical graph view, and the 16-tool marketplace are present and covered by `audit:gate`. Packs 09-11 are now represented by saved Codex prompts, launch-readiness reports, Postgres KG contract scaffolding, and a Memo Studio workbench foundation. The new work is intentionally honest: Postgres KG and Memo Studio are not being claimed as fully live backend/editor/export systems yet; they are now codified, audited, and visible enough for the next Codex or subagent pass to continue without losing scope.
+Packs 03-08 are implemented as a unified Workbench foundation: case modules, landing-entry rebuild, context-vs-tools separation, ontology registry, canonical graph view, and the 16-tool marketplace are present and covered by `audit:gate`. Packs 09-11 now have their saved Codex prompts, launch-readiness reports, a canonical tabbed admin surface, Postgres KG contract and repository scaffolding, and a Memo Studio that supports block editing, local version history, and Markdown/DOCX/PDF draft export. The remaining honest gap is deploy-stage backend depth: live Cloud SQL migration execution, full graph ingestion cutover, and server-side memo persistence remain v1.1 hardening work rather than hidden claims.
 
 ## Pack 03
 
@@ -61,7 +61,7 @@ Packs 03-08 are implemented as a unified Workbench foundation: case modules, lan
 |---|---|---|---|---|
 | Saved verification prompt | SHIPPED | `docs/codex-prompts/PRAXIS_CODEX_09_VERIFICATION_AND_ADMIN.md` | none | Full prompt saved for Codex/subagent continuation. |
 | Reality Check audit | SHIPPED | `scripts/audit-reality-check.ts` | none | Enforces report and backlog presence. |
-| Admin consolidation | PARTIAL | `src/app/app/admin/page.tsx` remains canonical index | S2 | Route tabs/redirect collapse remains backlog; no production blocker for user Workbench. |
+| Admin consolidation | SHIPPED | `src/app/app/admin/page.tsx`, `next.config.ts` | none | `/app/admin` is the canonical tabbed surface; old admin URLs redirect to matching tabs. |
 | Diagnostics completion | PARTIAL | `src/app/app/admin/diagnostics/page.tsx` | S2 | Existing probes are real; seven-pack panel spec not fully implemented. |
 
 ## Pack 10
@@ -71,7 +71,8 @@ Packs 03-08 are implemented as a unified Workbench foundation: case modules, lan
 | Saved Postgres KG prompt | SHIPPED | `docs/codex-prompts/PRAXIS_CODEX_10_POSTGRES_KNOWLEDGE_GRAPH.md` | none | Full prompt saved. |
 | KG backend contract | SHIPPED | `src/lib/kg/backend.ts`, `backend/config.py` | none | Default is now `postgres`, with `neo4j` and `both` retained. |
 | Postgres graph schema migration | SHIPPED | `backend/migrations/versions/0011_postgres_kg_contract.py` | S1_FIXED | Contract tables added; live migration execution is deploy-stage work. |
-| Full repository layer and migration from Neo4j | DEFERRED | not implemented | S2 | Filed in backlog. |
+| Repository layer | SHIPPED | `backend/services/kg_repositories.py`, `backend/tests/test_kg_repositories.py` | none | Owner/case-scoped node, edge, traversal, and semantic-search repositories are coded and tested. |
+| Migration from Neo4j | DEFERRED | no production migration run yet | S2 | Filed in backlog as deploy-stage cutover. |
 
 ## Pack 11
 
@@ -79,22 +80,23 @@ Packs 03-08 are implemented as a unified Workbench foundation: case modules, lan
 |---|---|---|---|---|
 | Saved launch prompt | SHIPPED | `docs/codex-prompts/PRAXIS_CODEX_11_MEMO_STUDIO_AND_LAUNCH.md` | none | Full prompt saved. |
 | Memo Studio foundation | SHIPPED | `src/components/memo/MemoStudio.tsx` | none | Workbench Memos tab with six templates and cited generated blocks. |
-| DOCX/PDF/Markdown export and version API | DEFERRED | existing export engine only | S2 | Memo-specific export/versioning remains next implementation slice. |
+| Draft export and versioning | SHIPPED | `src/lib/memo/export.ts`, `src/components/memo/MemoStudio.tsx` | none | Local versions plus Markdown, DOCX, and PDF draft exports are implemented. Server-side memo persistence remains backlog. |
 | Comprehensive audit/roadmap/launch docs | SHIPPED | `docs/audits/2026-05-06-COMPREHENSIVE.md`, `docs/roadmap/v1.1-and-beyond.md` | none | Honest launch docs now exist. |
 
 ## Cross-Cutting Findings
 
-- The product Workbench is converging, but route sprawl remains in admin and legacy areas.
+- The product Workbench is converging, and admin is now collapsed to one canonical tabbed route.
 - The graph stack now has a clearer v1 direction: Postgres primary, Neo4j optional.
-- Memo Studio is now visible and typed, but the backend persistence/export layer is the largest remaining product gap.
+- Memo Studio is now visible, typed, editable, locally versioned, and export-capable; server persistence is the largest remaining product gap.
 - The verification gates are useful because they block docs drift and prompt loss, not only code regressions.
 
 ## Remediation Log
 
 - Saved pack 09-11 prompts into `docs/codex-prompts/`.
 - Added `audit:reality-check`, `audit:codex-prompts`, `audit:kg-backend`, and `audit:memo-studio`.
-- Added Postgres KG contract migration and default `KG_BACKEND=postgres` configuration.
-- Added Workbench Memos tab and six-template Memo Studio foundation.
+- Added Postgres KG contract migration, repository layer, and default `KG_BACKEND=postgres` configuration.
+- Added Workbench Memos tab, six-template Memo Studio foundation, block editing, local version history, and draft exports.
+- Consolidated admin into `/app/admin` tabs with permanent redirects from old admin subroutes.
 - Added backlog and launch documentation.
 
 ## Quality State

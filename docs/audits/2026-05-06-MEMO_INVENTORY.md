@@ -14,6 +14,8 @@ New Memo Studio foundation:
 - `src/types/memo.ts` defines typed memo metadata, versions, blocks, templates, and citations.
 - `src/lib/memo/templates/registry.ts` defines six launch templates.
 - `src/components/memo/MemoStudio.tsx` renders the Workbench Memos tab.
+- `src/lib/memo/export.ts` provides deterministic Markdown/plain-text export helpers and local version creation.
+- The Memo Studio client now supports editable generated blocks, local version history, and Markdown/DOCX/PDF draft export. Server-side persistence remains a v1.1 backend item.
 
 Remaining implementation:
 
