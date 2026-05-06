@@ -19,8 +19,18 @@ interface FeedCapability {
   tier: string;
 }
 
+interface OperationalPanel {
+  id: string;
+  label: string;
+  status: Probe['status'];
+  metric: string;
+  detail: string;
+  nextAction?: string;
+}
+
 interface Diagnostics {
   computedAt: string;
+  panels: OperationalPanel[];
   probes: { storage: Probe[]; ai: Probe[]; secrets: Probe[] };
   feeds: { feeds: Record<string, FeedCapability>; availableProviders: string[]; coverageScore: number };
   counters: {
@@ -102,6 +112,15 @@ export default function DiagnosticsPage() {
 
       {data && (
         <div className="space-y-6">
+          <section>
+            <h2 className="mb-2 text-sm font-semibold text-slate-200">Charter Operations</h2>
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-7">
+              {data.panels.map((panel) => (
+                <OperationalPanelCard key={panel.id} panel={panel} />
+              ))}
+            </div>
+          </section>
+
           <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <CounterCard icon={<Database className="h-4 w-4" />} label="Users sampled" value={String(data.counters.users_sampled)} hint="First 500 Firestore user docs" />
             <CounterCard icon={<Zap className="h-4 w-4" />} label="Credits burned 24h" value={data.counters.credits_burn_24h.burn.toLocaleString()} hint={`${data.counters.credits_burn_24h.count} transactions`} />
@@ -146,6 +165,20 @@ export default function DiagnosticsPage() {
           </section>
         </div>
       )}
+    </div>
+  );
+}
+
+function OperationalPanelCard({ panel }: { panel: OperationalPanel }) {
+  return (
+    <div className={cn('rounded-md border border-slate-800 bg-slate-900/50 p-3 ring-1', STATUS_RING[panel.status])}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 text-xs font-semibold text-slate-100">{panel.label}</p>
+        {STATUS_ICON[panel.status]}
+      </div>
+      <p className="mt-2 font-mono text-sm font-semibold text-slate-100">{panel.metric}</p>
+      <p className="mt-2 text-[11px] leading-5 text-slate-500">{panel.detail}</p>
+      {panel.nextAction && <p className="mt-2 text-[10px] leading-4 text-amber-300">{panel.nextAction}</p>}
     </div>
   );
 }

@@ -6,7 +6,7 @@ Date: 2026-05-06
 
 PRAXIS is now a unified case workbench for diplomatic, mediation, policy, and research users. The product centers on cases, source receipts, ontology-backed graph structure, context health, curated tools, and memo production.
 
-The current codebase is launch-foundation ready, not finished in every pack-13 sense. The Workbench, ontology, graph, context-aware advisory substrate, signed conversation context, Tool Contract v2, tool skills, tool recommendations, permissive firewall, tabbed admin, Postgres KG repository foundation, and Memo Studio draft workflow with owner-scoped server persistence are real and verified. The remaining launch gaps are backend depth: live Cloud SQL migration execution, ingestion cutover, full marketplace handlers, LangGraph subagent runtimes, and operational dashboards.
+The current codebase is launch-foundation ready, not finished in every pack-13 sense. The Workbench, ontology, graph, context-aware advisory substrate, signed conversation context, Tool Contract v2, tool skills, tool recommendations, permissive firewall, ContextProvider-backed marketplace foundation runs, tabbed admin, seven-panel diagnostics shell, Postgres KG repository foundation, and Memo Studio draft workflow with owner-scoped server persistence are real and verified. The remaining launch gaps are backend depth: live Cloud SQL migration execution, ingestion cutover, specialist model-backed marketplace handlers, LangGraph subagent runtimes, and scheduler-backed operational dashboards.
 
 ## What's Done
 

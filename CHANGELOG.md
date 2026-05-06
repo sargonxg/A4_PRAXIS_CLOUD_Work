@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+- feat(tools): add ContextProvider-backed marketplace foundation runs.
+  Added `/api/tools/marketplace/run`, a deterministic foundation runner, tolerant
+  run artifact persistence, marketplace run controls, and audit coverage so the
+  16-tool registry has a real execution surface while specialist handlers remain
+  explicitly tracked as v1.1 work.
+- feat(admin): add seven-panel charter diagnostics shell.
+  The admin diagnostics API and page now surface Tool Health, Ingestion
+  Pipeline, Drift Verifier, Context Health, Symbolic Firewall, Auth and Abuse,
+  and Cost Dashboard panels with live foundation signals and documented
+  scheduler-backed metric follow-ups.
 - feat(consolidation): collapse public tool surface to 12 hero tools (#A1).
   The registry, default sidebar, and Tools workspace now agree on the hero
   surface while archived specialist routes remain available through

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Search, SlidersHorizontal, Wrench } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2, Play, Search, SlidersHorizontal, Wrench } from 'lucide-react';
 import { getOntologyForDomain } from '@/lib/ontology/registry';
 import { filterMarketplaceTools, sortMarketplaceTools } from '@/lib/tools/marketplace/filter-engine';
 import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
@@ -13,12 +13,27 @@ import { cn } from '@/lib/utils/cn';
 const CATEGORIES: Array<MarketplaceToolCategory | 'all'> = ['all', 'conflict', 'mediation', 'governance', 'narrative', 'cross'];
 const COSTS: MarketplaceCostClass[] = ['low', 'medium', 'high'];
 
+interface MarketplaceRunState {
+  toolName: string;
+  artifactId: string;
+  persisted: boolean;
+  persistenceReason?: string;
+  summary: string;
+  rawText: string;
+  health: number;
+  advisoryCount: number;
+  generatedAt?: string;
+}
+
 export function ToolMarketplace() {
-  const { caseModule } = useWorkbenchScope();
+  const { caseId, caseModule, activeTab } = useWorkbenchScope();
   const ontology = getOntologyForDomain(caseModule.manifest.domain);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<MarketplaceToolCategory | 'all'>('all');
   const [maxCostClass, setMaxCostClass] = useState<MarketplaceCostClass>('high');
+  const [runningToolId, setRunningToolId] = useState<string | null>(null);
+  const [lastRun, setLastRun] = useState<MarketplaceRunState | null>(null);
+  const [runError, setRunError] = useState<string | null>(null);
   const contextHealth =
     (caseModule.truthLayers.source.provenanceCoverage +
       caseModule.truthLayers.claim.provenanceCoverage +
@@ -42,6 +57,51 @@ export function ToolMarketplace() {
     () => rankMarketplaceToolsForCase(MARKETPLACE_TOOLS, caseModule).slice(0, 3),
     [caseModule],
   );
+
+  async function runTool(toolId: string) {
+    const tool = MARKETPLACE_TOOLS.find((item) => item.id === toolId);
+    if (!tool) return;
+
+    setRunningToolId(toolId);
+    setRunError(null);
+
+    try {
+      const response = await fetch('/api/tools/marketplace/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          toolId,
+          caseId,
+          prompt: `Run ${tool.name} for ${caseModule.manifest.name}.`,
+          context: {
+            activeTab,
+            caseName: caseModule.manifest.name,
+            domain: caseModule.manifest.domain,
+            truthLayers: caseModule.truthLayers,
+          },
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error ?? 'Marketplace run failed');
+      }
+      setLastRun({
+        toolName: payload.tool.name,
+        artifactId: payload.artifact.id,
+        persisted: payload.persistence.persisted,
+        persistenceReason: payload.persistence.reason,
+        summary: payload.artifact.structuredOutput?.summary ?? `${payload.tool.name} completed.`,
+        rawText: payload.artifact.rawText ?? '',
+        health: payload.runContext.health,
+        advisoryCount: payload.runContext.advisories?.length ?? 0,
+        generatedAt: payload.artifact.createdAt,
+      });
+    } catch (err) {
+      setRunError(err instanceof Error ? err.message : 'Marketplace run failed');
+    } finally {
+      setRunningToolId(null);
+    }
+  }
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-navy-950/5">
@@ -116,6 +176,43 @@ export function ToolMarketplace() {
         </div>
       </div>
 
+      {(lastRun || runError) && (
+        <div className={cn(
+          'mt-5 rounded-md border p-4',
+          runError ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50',
+        )}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 items-start gap-2">
+              {runError ? (
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+              ) : (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />
+              )}
+              <div className="min-w-0">
+                <p className={cn('text-sm font-semibold', runError ? 'text-red-900' : 'text-emerald-950')}>
+                  {runError ? 'Run failed' : `${lastRun?.toolName} completed`}
+                </p>
+                <p className={cn('mt-1 text-sm leading-6', runError ? 'text-red-800' : 'text-emerald-900')}>
+                  {runError ?? lastRun?.summary}
+                </p>
+              </div>
+            </div>
+            {lastRun && (
+              <div className="grid gap-2 text-right text-[10px] font-semibold uppercase tracking-wider text-emerald-900 sm:grid-cols-3">
+                <span>Health {lastRun.health}/100</span>
+                <span>{lastRun.advisoryCount} advisories</span>
+                <span>{lastRun.persisted ? 'Persisted' : lastRun.persistenceReason ?? 'Not persisted'}</span>
+              </div>
+            )}
+          </div>
+          {lastRun && (
+            <pre className="mt-3 max-h-40 overflow-auto rounded border border-emerald-200 bg-white p-3 text-xs leading-5 text-slate-700">
+              {lastRun.rawText}
+            </pre>
+          )}
+        </div>
+      )}
+
       <div className="mt-5 grid gap-3 lg:grid-cols-2">
         {visibleTools.map((tool) => (
           <article key={tool.id} className="rounded-md border border-slate-200 bg-slate-50 p-4">
@@ -124,7 +221,22 @@ export function ToolMarketplace() {
                 <p className="text-sm font-semibold text-navy-950">{tool.name}</p>
                 <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{tool.id}</p>
               </div>
-              <span className="rounded bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">{tool.costClass}</span>
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">{tool.costClass}</span>
+                <button
+                  type="button"
+                  onClick={() => runTool(tool.id)}
+                  disabled={runningToolId !== null}
+                  className="inline-flex h-8 items-center gap-1 rounded-md bg-navy-950 px-3 text-xs font-semibold text-white transition-colors hover:bg-navy-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                >
+                  {runningToolId === tool.id ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Play className="h-3.5 w-3.5" />
+                  )}
+                  Run
+                </button>
+              </div>
             </div>
             <p className="mt-3 text-sm leading-6 text-slate-650">{tool.description}</p>
             <div className="mt-4 grid gap-2 sm:grid-cols-3">
