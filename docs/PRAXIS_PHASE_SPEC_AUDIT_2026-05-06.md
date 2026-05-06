@@ -1,7 +1,9 @@
 # PRAXIS Phase 1-3 Spec Audit
 
 **Date:** 2026-05-06  
-**Audited commit:** `5da77c2` before this audit pass; hardening changes applied after audit in this branch.  
+**Audited base commit:** `5da77c2`
+**Audit hardening commit:** `08b6b1c`
+**Production build:** `58275fce-bcfe-48f6-861a-753bf8be05a4`
 **Specs audited:**  
 - `C:\Users\giuli\Downloads\PRAXIS_PHASE_1_FOUNDATION.md`
 - `C:\Users\giuli\Downloads\PRAXIS_PHASE_2_AGENTIC_SPINE.md`
@@ -13,6 +15,20 @@
 The three phases are reflected on `main` as shipped checkpoints and `praxis.tacitus.me` is live, but the literal phase specs are more ambitious than the current implementation. Phase 1 is mostly infrastructure-complete with a documentation-tree exception and a weak Neo4j sync verification story. Phase 2 is partially implemented: the DIALECTICA recipe layer and calibrated route wrapper exist, but full LangGraph runtime enforcement, universal symbolic-firewall streaming enforcement, and the literal 20-verb route collapse are not complete. Phase 3 has the visible eight-surface product shell and several functional surfaces, but multiple lanes are scaffolded rather than full production behavior.
 
 This document is the active backlog for the remaining work. Do not delete it when adding fixes; update the tables and evidence.
+
+## Production Reflection
+
+The audit hardening patch is pushed to GitHub `main` and deployed to `praxis.tacitus.me`.
+
+| Surface | Current value |
+|---|---|
+| GitHub repository | `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work` |
+| Main commit carrying the audit fixes | `08b6b1c` |
+| Cloud Build | `58275fce-bcfe-48f6-861a-753bf8be05a4` |
+| Frontend revision | `praxis-frontend-00232-9gf` |
+| Backend revision | `praxis-backend-00103-zmq` |
+| Worker revision | `gdelt-poller-00005-xg2` |
+| Public URL | `https://praxis.tacitus.me` |
 
 ## Document Drift
 
@@ -72,13 +88,24 @@ This document is the active backlog for the remaining work. Do not delete it whe
 
 | Command | Result |
 |---|---|
-| `git rev-parse HEAD` vs `origin/main` | Both `5da77c2` before this audit pass. |
+| `git rev-parse HEAD` vs `origin/main` | Both `5da77c2` before this audit pass; audit fixes pushed as `08b6b1c`. |
 | `npm run audit:routes` | Passed: 66 calibrated AI route files, 5 exempt. |
 | Forbidden provider scan in source/backend | Only matched Cloud Build's guard pattern. |
 | `rg "MemorySaver|InMemorySaver" backend/agents --type py` | No live matches. |
-| `npm run audit:gcp` | Passed before this audit request in the Phase 3 ship pass; rerun if changing infrastructure. |
+| `npm run audit:gcp` | Passed after the audit fixes: 0 hard failures, 0 soft warnings. |
 | `npx tsc --noEmit` after audit fixes | Passed after installing dependencies in the shipping worktree. |
 | Targeted Vitest after audit fixes | Passed: 3 files, 7 tests. |
+| Full Vitest after audit fixes | Passed: 114 files, 502 tests. |
+| `npm run lint` | Passed with 0 errors and 238 existing warnings. |
+| `npm run build` | Passed; generated 255 static pages. |
+| `npx tsx scripts/audit-phase3-product-surface.ts` | Passed. |
+| `npx tsx scripts/audit-verb-hookup.ts` | Passed. |
+| `npx tsx scripts/audit-spine.ts` | Passed. |
+| Cloud Build deploy | Passed: `58275fce-bcfe-48f6-861a-753bf8be05a4`. |
+| `https://praxis.tacitus.me/` | HTTP 200; landing contains `Eight surfaces` and `PRAXIS`. |
+| `https://praxis.tacitus.me/api/health` | HTTP 200; `status: ok`, Firestore ok, AI provider ok, cookie secret ok, Vertex ADK ok. |
+| Unauthenticated `/api/graph/cypher` POST | HTTP 401 as expected after auth hardening. |
+| Production Playwright smoke | Passed: 5 tests against `https://praxis.tacitus.me`. |
 
 ## Next Iteration Order
 
