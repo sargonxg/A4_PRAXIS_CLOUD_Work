@@ -8,6 +8,8 @@ const required = [
   'docs/codex-prompts/PRAXIS_CODEX_09_VERIFICATION_AND_ADMIN.md',
   'docs/codex-prompts/PRAXIS_CODEX_10_POSTGRES_KNOWLEDGE_GRAPH.md',
   'docs/codex-prompts/PRAXIS_CODEX_11_MEMO_STUDIO_AND_LAUNCH.md',
+  'docs/codex-prompts/PRAXIS_CODEX_12_CONTEXT_ARCHITECTURE.md',
+  'docs/codex-prompts/PRAXIS_CODEX_13_TOOL_CONTEXT_INTEROP.md',
 ];
 
 const failures: string[] = [];
@@ -27,4 +29,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Codex prompt pack audit passed for packs 06-11.');
+console.log('Codex prompt pack audit passed for packs 06-13.');

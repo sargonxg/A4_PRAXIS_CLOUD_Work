@@ -5,6 +5,7 @@ import { Search, SlidersHorizontal, Wrench } from 'lucide-react';
 import { getOntologyForDomain } from '@/lib/ontology/registry';
 import { filterMarketplaceTools, sortMarketplaceTools } from '@/lib/tools/marketplace/filter-engine';
 import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
+import { rankMarketplaceToolsForCase } from '@/lib/tools/marketplace/suggestions';
 import type { MarketplaceToolCategory, MarketplaceCostClass } from '@/lib/tools/marketplace/types';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { cn } from '@/lib/utils/cn';
@@ -37,6 +38,10 @@ export function ToolMarketplace() {
       : filtered;
     return sortMarketplaceTools(searched);
   }, [category, contextHealth, maxCostClass, ontology.id, query]);
+  const suggestions = useMemo(
+    () => rankMarketplaceToolsForCase(MARKETPLACE_TOOLS, caseModule).slice(0, 3),
+    [caseModule],
+  );
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-navy-950/5">
@@ -96,6 +101,21 @@ export function ToolMarketplace() {
         </label>
       </div>
 
+      <div className="mt-5 rounded-md border border-gold-200 bg-gold-50 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-gold-800">Recommended for this case</p>
+        <div className="mt-3 grid gap-2 lg:grid-cols-3">
+          {suggestions.map((suggestion) => (
+            <div key={suggestion.tool.id} className="rounded border border-gold-200 bg-white p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-navy-950">{suggestion.tool.name}</p>
+                <span className="font-mono text-xs font-semibold text-gold-800">{suggestion.score}</span>
+              </div>
+              <p className="mt-1 text-xs leading-5 text-slate-600">{suggestion.rationale}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="mt-5 grid gap-3 lg:grid-cols-2">
         {visibleTools.map((tool) => (
           <article key={tool.id} className="rounded-md border border-slate-200 bg-slate-50 p-4">
@@ -111,6 +131,13 @@ export function ToolMarketplace() {
               <Chip label="Runtime" value={`${Math.round(tool.estimatedRuntimeMs / 1000)}s`} />
               <Chip label="Context" value={`${Math.round(tool.minContextHealth * 100)}%`} />
               <Chip label="Mode" value={tool.streaming ? 'stream' : 'batch'} />
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="rounded bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">v{tool.version}</span>
+              <span className="rounded bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">context-aware</span>
+              {tool.subagentDeps.map((subagent) => (
+                <span key={subagent} className="rounded bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">{subagent}</span>
+              ))}
             </div>
           </article>
         ))}

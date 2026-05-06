@@ -6,7 +6,7 @@ Date: 2026-05-06
 
 PRAXIS is now a unified case workbench for diplomatic, mediation, policy, and research users. The product centers on cases, source receipts, ontology-backed graph structure, context health, curated tools, and memo production.
 
-The current codebase is launch-foundation ready, not finished in every pack-11 sense. The Workbench, ontology, graph, tool marketplace, permissive firewall, tabbed admin, Postgres KG repository foundation, and Memo Studio draft workflow are real and verified. The remaining launch gaps are backend depth: live Cloud SQL migration execution, ingestion cutover, full marketplace handlers, server-side memo persistence, and operational dashboards.
+The current codebase is launch-foundation ready, not finished in every pack-13 sense. The Workbench, ontology, graph, context-aware advisory substrate, Tool Contract v2, tool skills, tool recommendations, permissive firewall, tabbed admin, Postgres KG repository foundation, and Memo Studio draft workflow are real and verified. The remaining launch gaps are backend depth: live Cloud SQL migration execution, ingestion cutover, full marketplace handlers, LangGraph subagent runtimes, server-side memo persistence, and operational dashboards.
 
 ## What's Done
 
@@ -22,6 +22,8 @@ The current codebase is launch-foundation ready, not finished in every pack-11 s
 | Admin consolidation | DONE | B | `/app/admin` now owns tabs; old admin subroutes redirect. |
 | Postgres KG direction | PARTIAL | B+ | Schema contract, default flag, and owner/case-scoped repositories present; deploy cutover deferred. |
 | Memo Studio | PARTIAL | B+ | Templates, block editing, local version history, and Markdown/DOCX/PDF draft export present; server persistence deferred. |
+| Context architecture v2 | PARTIAL | B+ | Four-layer model and advisory middleware present; full persistence and LangGraph preparer deferred. |
+| Tool-context interop | PARTIAL | B+ | Tool Contract v2, skills, and suggestions present; full executable ContextProvider DI deferred. |
 
 ## What's Broken
 
@@ -31,6 +33,8 @@ The current codebase is launch-foundation ready, not finished in every pack-11 s
 | Postgres graph production cutover is not complete | S2 | Backend | v1.1 |
 | Tool marketplace cards are not all executable | S2 | AI/tools | v1.1 |
 | Seven-panel diagnostics dashboard is incomplete | S2 | Ops/admin | v1.1 |
+| Context Preparer and new subagent runtimes are not live | S2 | Backend/agents | v1.1 |
+| Tool context projection files are not complete | S2 | AI/tools | v1.1 |
 
 ## What's Next
 

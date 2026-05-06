@@ -1,7 +1,10 @@
 import type { OntologyId } from '@/lib/ontology/types';
+import type { ContextSpec } from '@/types/context';
 
 export type MarketplaceToolCategory = 'conflict' | 'mediation' | 'governance' | 'narrative' | 'cross';
 export type MarketplaceCostClass = 'low' | 'medium' | 'high';
+export type ToolContractCategory = 'analysis' | 'synthesis' | 'export' | 'utility' | 'meta';
+export type SubagentId = 'context-preparer' | 'source-augmenter' | 'output-refiner' | 'memo-drafter';
 
 export interface LooseObjectSchema {
   type: 'object';
@@ -13,8 +16,11 @@ export interface LooseObjectSchema {
 
 export interface MarketplaceToolDefinition {
   id: string;
+  version: string;
   name: string;
+  title: string;
   category: MarketplaceToolCategory;
+  contractCategory: ToolContractCategory;
   description: string;
   ontologyRequirements: OntologyId[];
   minContextHealth: number;
@@ -24,6 +30,22 @@ export interface MarketplaceToolDefinition {
   canaryCaseIds: string[];
   inputSchema: LooseObjectSchema;
   outputSchema: LooseObjectSchema;
+  contextSpec: ContextSpec;
+  contextHints?: ContextSpec;
+  composition: {
+    canChainInto: string[];
+    canChainFrom: string[];
+    contextProjection?: string;
+  };
+  sideEffects: {
+    proposesGraphChanges: boolean;
+    writesMemoBlocks: boolean;
+    writesAuditLogs: boolean;
+  };
+  subagentDeps: SubagentId[];
+  skill: {
+    file: string;
+  };
   persistence: {
     storesRawText: boolean;
     storesContextDump: boolean;

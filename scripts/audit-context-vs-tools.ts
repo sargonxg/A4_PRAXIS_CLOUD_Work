@@ -8,6 +8,9 @@ for (const file of [
   'schemas/truth-layers-v1.md',
   'src/lib/context/context-health-score.ts',
   'src/lib/context/context-health-gate.ts',
+  'src/types/context.ts',
+  'src/lib/context/context-aware.ts',
+  'src/lib/api/with-context-aware.ts',
   'src/lib/api/with-context-health-gate.ts',
   'src/lib/api/with-firewall.ts',
   'src/lib/firebase/claims-service.ts',
@@ -44,6 +47,9 @@ const toolGate = readFileSync('src/components/workbench/tool-gate.tsx', 'utf8');
 if (!toolGate.includes('justification.length < 50') && !toolGate.includes('overrideText.trim().length < 50')) {
   throw new Error('Tool gate must require a typed override justification of at least 50 characters.');
 }
+if (!toolGate.includes('{children}')) {
+  throw new Error('Tool gate must render child tools even when context health is low.');
+}
 
 const contextHealthRoute = readFileSync('src/app/api/situations/[id]/context-health/route.ts', 'utf8');
 if (!contextHealthRoute.includes("action: 'context_health_override'")) {
@@ -51,8 +57,8 @@ if (!contextHealthRoute.includes("action: 'context_health_override'")) {
 }
 
 const calibration = readFileSync('src/lib/api/with-calibration.ts', 'utf8');
-if (!calibration.includes('withContextHealthGate')) {
-  throw new Error('Shared AI calibration boundary must enforce context-health gate.');
+if (!calibration.includes('withContextAware') || !calibration.includes('contextSnapshot')) {
+  throw new Error('Shared AI calibration boundary must attach advisory context snapshots.');
 }
 if (!calibration.includes('withFirewall({')) {
   throw new Error('Shared AI calibration boundary must run the firewall verifier, not only attach headers.');

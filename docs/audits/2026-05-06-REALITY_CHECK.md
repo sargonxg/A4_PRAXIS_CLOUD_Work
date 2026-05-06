@@ -110,4 +110,23 @@ Packs 03-08 are implemented as a unified Workbench foundation: case modules, lan
 | Ontology/tool/graph audits | green after verification |
 | Reality/KG/Memo/prompt audits | green after verification |
 
+## Pack 12
+
+| Deliverable | Status | Evidence | Severity | Notes |
+|---|---|---|---|---|
+| Saved context architecture prompt | SHIPPED | `docs/codex-prompts/PRAXIS_CODEX_12_CONTEXT_ARCHITECTURE.md` | none | Full prompt saved. |
+| Four-layer context model | SHIPPED | `src/types/context.ts`, `backend/services/context_layers.py` | none | TS and backend mirrors exist. |
+| Advisory context wrapper | SHIPPED | `src/lib/context/context-aware.ts`, `src/lib/api/with-context-aware.ts` | none | Shared calibration now receives snapshots instead of 412 blockers. |
+| Context Preparer runtime | PARTIAL | `skills/subagents/context-preparer/SKILL.md` | S2 | Skill/contract present; LangGraph subagent runtime remains v1.1 work. |
+
+## Pack 13
+
+| Deliverable | Status | Evidence | Severity | Notes |
+|---|---|---|---|---|
+| Saved tool-context prompt | SHIPPED | `docs/codex-prompts/PRAXIS_CODEX_13_TOOL_CONTEXT_INTEROP.md` | none | Full prompt saved. |
+| Tool Contract v2 | SHIPPED | `src/lib/tools/marketplace/types.ts`, `src/lib/tools/marketplace/registry.ts` | none | All 16 marketplace tools expose v2 fields. |
+| Tool skills | SHIPPED | `skills/tools/*/SKILL.md`, `skills/subagents/*/SKILL.md` | none | Audited by `audit:tool-skills-present`. |
+| Suggestion engine | SHIPPED | `src/lib/tools/marketplace/suggestions.ts` | none | Workbench Tools tab shows top recommendations. |
+| Full runtime ContextProvider DI | PARTIAL | `withCalibration` context snapshot | S2 | Full executable handler DI and context projection files remain backlog. |
+
 No open S0 or S1 launch blockers are recorded in this report. Remaining S2/S3 items are filed in `docs/backlog/2026-05-06-from-reality-check.md`.

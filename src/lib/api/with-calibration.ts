@@ -15,11 +15,13 @@ import { AI_REQUEST_LIMITS } from './ai-request-limits';
 import { canonicalToolId } from '@/lib/knowledge/evidence-envelope';
 import { buildToolPromptContract } from '@/lib/tools/tool-operating-contracts';
 import { buildToolContextBlueprintPrompt } from '@/lib/tools/tool-context-blueprints';
-import { withContextHealthGate } from '@/lib/api/with-context-health-gate';
+import { withContextAware } from '@/lib/api/with-context-aware';
 import { withFirewall } from '@/lib/api/with-firewall';
+import type { ContextSnapshot } from '@/types/context';
 
 export interface CalibrationCtx extends AuthenticatedUser {
   calibration: ContextBlock;
+  contextSnapshot: ContextSnapshot;
   toolRunId: string | null;
 }
 
@@ -158,8 +160,18 @@ export function withCalibration(
         }
       }
 
-      const contextGate = await withContextHealthGate({ req, user, situationId });
-      if (contextGate) return contextGate;
+      const contextAware = await withContextAware({
+        req,
+        user,
+        situationId,
+        spec: {
+          user: { role: true, preferences: true },
+          workspace: { methodologyDocs: true },
+          caseGraph: { minNodeCount: 1 },
+          minHealthScore: 60,
+          graceful: true,
+        },
+      });
 
       // Credit gate (non-demo)
       if (!user.isDemo) {
@@ -216,7 +228,12 @@ export function withCalibration(
       // Invoke the actual handler
       let response: Response;
       try {
-        response = await handler(req, { ...user, calibration: enrichedCalibration, toolRunId });
+        response = await handler(req, {
+          ...user,
+          calibration: enrichedCalibration,
+          contextSnapshot: contextAware.snapshot,
+          toolRunId,
+        });
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         if (toolRunId) {
@@ -301,6 +318,8 @@ export function withCalibration(
           }
         }
       }
+
+      contextAware.headers.forEach((value, key) => response.headers.set(key, value));
 
       return withFirewall({
         req,

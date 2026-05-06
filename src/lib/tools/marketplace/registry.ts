@@ -1,4 +1,5 @@
-import type { MarketplaceToolDefinition } from '@/lib/tools/marketplace/types';
+import type { MarketplaceToolDefinition, SubagentId, ToolContractCategory } from '@/lib/tools/marketplace/types';
+import type { ContextSpec } from '@/types/context';
 
 const looseInput = (description: string) => ({
   type: 'object' as const,
@@ -21,11 +22,59 @@ const looseOutput = (description: string) => ({
   additionalProperties: true,
 });
 
-function tool(input: Omit<MarketplaceToolDefinition, 'inputSchema' | 'outputSchema' | 'persistence'>): MarketplaceToolDefinition {
+function contractCategory(category: MarketplaceToolDefinition['category']): ToolContractCategory {
+  if (category === 'cross') return 'synthesis';
+  return 'analysis';
+}
+
+function defaultSubagents(category: MarketplaceToolDefinition['category']): SubagentId[] {
+  if (category === 'cross') return ['context-preparer', 'output-refiner'];
+  return ['context-preparer'];
+}
+
+function defaultContextSpec(input: Pick<MarketplaceToolDefinition, 'ontologyRequirements' | 'minContextHealth'>): ContextSpec {
+  return {
+    user: { role: true, preferences: true },
+    workspace: { methodologyDocs: true },
+    caseGraph: {
+      minNodeCount: Math.max(1, Math.round(input.minContextHealth * 20)),
+      requiredOntology: input.ontologyRequirements[0],
+    },
+    conversation: { focusedNodeRequired: false },
+    minHealthScore: Math.round(input.minContextHealth * 100),
+    graceful: true,
+  };
+}
+
+function tool(
+  input: Omit<
+    MarketplaceToolDefinition,
+    'inputSchema' | 'outputSchema' | 'persistence' | 'version' | 'title' | 'contractCategory' | 'contextSpec' | 'composition' | 'sideEffects' | 'subagentDeps' | 'skill'
+  > & Partial<Pick<MarketplaceToolDefinition, 'contextHints' | 'subagentDeps' | 'sideEffects'>>
+): MarketplaceToolDefinition {
   return {
     ...input,
+    version: '2.0.0',
+    title: input.name,
+    contractCategory: contractCategory(input.category),
     inputSchema: looseInput(`${input.name} accepts structured context plus free-form analyst text.`),
     outputSchema: looseOutput(`${input.name} returns structured artifacts but permits raw generated text and nested context.`),
+    contextSpec: defaultContextSpec(input),
+    composition: {
+      canChainInto: input.category === 'cross' ? [] : ['cross.brief-exporter', 'cross.contradiction-finder'],
+      canChainFrom: [],
+      contextProjection: `src/lib/tools/marketplace/projections/${input.id}.ts`,
+    },
+    sideEffects: {
+      proposesGraphChanges: false,
+      writesMemoBlocks: input.id === 'cross.brief-exporter',
+      writesAuditLogs: true,
+      ...input.sideEffects,
+    },
+    subagentDeps: input.subagentDeps ?? defaultSubagents(input.category),
+    skill: {
+      file: `skills/tools/${input.id}/SKILL.md`,
+    },
     persistence: {
       storesRawText: true,
       storesContextDump: true,

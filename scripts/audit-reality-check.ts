@@ -10,7 +10,7 @@ if (!existsSync(backlogPath)) failures.push('missing docs/backlog/2026-05-06-fro
 
 if (existsSync(reportPath)) {
   const report = readFileSync(reportPath, 'utf8');
-  for (const section of ['Pack 03', 'Pack 04', 'Pack 05', 'Pack 06', 'Pack 07', 'Pack 08', 'Pack 09', 'Pack 10', 'Pack 11']) {
+  for (const section of ['Pack 03', 'Pack 04', 'Pack 05', 'Pack 06', 'Pack 07', 'Pack 08', 'Pack 09', 'Pack 10', 'Pack 11', 'Pack 12', 'Pack 13']) {
     if (!report.includes(section)) failures.push(`missing report section ${section}`);
   }
   if (!report.includes('Quality State')) failures.push('missing Quality State section');
