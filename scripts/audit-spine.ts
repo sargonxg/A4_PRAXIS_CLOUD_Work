@@ -21,7 +21,7 @@ try {
   changed = execSync(`git diff --name-only ${base}...HEAD`, { encoding: 'utf8' })
     .split(/\r?\n/)
     .filter((file) => file.startsWith('src/app/api/') && file.endsWith('.ts') && existsSync(file));
-} catch (err) {
+} catch (_err) {
   if (process.env.AUDIT_SPINE_SCAN_ALL === '1') {
     console.warn(`[audit-spine] git diff unavailable for ${base}...HEAD; scanning all API files.`);
     changed = listApiFiles();

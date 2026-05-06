@@ -25,6 +25,7 @@ dependencies = [
     # Durable LangGraph checkpointing
     "langgraph>=1.1,<2.0",
     "langgraph-checkpoint-postgres>=3.0,<4.0",
+    "langchain-google-vertexai>=2.0,<3.0",
     "psycopg[binary,pool]>=3.2,<4.0",
     "pgvector>=0.3,<1.0",
     "alembic>=1.13,<2.0",
