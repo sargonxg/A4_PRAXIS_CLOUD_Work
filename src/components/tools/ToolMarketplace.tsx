@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertCircle, CheckCircle2, History, Loader2, Play, RefreshCw, Search, SlidersHorizontal, Wrench } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AlertCircle, CheckCircle2, History, Loader2, Play, RefreshCw, RotateCcw, Search, SlidersHorizontal, Square, Wrench } from 'lucide-react';
 import { getOntologyForDomain } from '@/lib/ontology/registry';
 import { filterMarketplaceTools, sortMarketplaceTools } from '@/lib/tools/marketplace/filter-engine';
 import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
@@ -56,6 +56,8 @@ export function ToolMarketplace() {
   const [runHistory, setRunHistory] = useState<MarketplaceRunHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [lastRunRequest, setLastRunRequest] = useState<string | null>(null);
+  const runAbortController = useRef<AbortController | null>(null);
   const contextHealth =
     (caseModule.truthLayers.source.provenanceCoverage +
       caseModule.truthLayers.claim.provenanceCoverage +
@@ -120,14 +122,18 @@ export function ToolMarketplace() {
   async function runTool(toolId: string) {
     const tool = MARKETPLACE_TOOLS.find((item) => item.id === toolId);
     if (!tool) return;
+    const controller = new AbortController();
 
+    runAbortController.current = controller;
     setRunningToolId(toolId);
     setRunError(null);
+    setLastRunRequest(toolId);
 
     try {
       const response = await fetch('/api/tools/marketplace/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           toolId,
           caseId,
@@ -160,10 +166,19 @@ export function ToolMarketplace() {
       });
       void loadRunHistory();
     } catch (err) {
-      setRunError(err instanceof Error ? err.message : 'Marketplace run failed');
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setRunError('Run cancelled before completion.');
+      } else {
+        setRunError(err instanceof Error ? err.message : 'Marketplace run failed');
+      }
     } finally {
+      if (runAbortController.current === controller) runAbortController.current = null;
       setRunningToolId(null);
     }
+  }
+
+  function cancelRunningTool() {
+    runAbortController.current?.abort();
   }
 
   return (
@@ -268,6 +283,29 @@ export function ToolMarketplace() {
                 <span>{lastRun.persisted ? 'Persisted' : lastRun.persistenceReason ?? 'Not persisted'}</span>
               </div>
             )}
+            <div className="flex gap-2">
+              {runningToolId && (
+                <button
+                  type="button"
+                  onClick={cancelRunningTool}
+                  className="inline-flex h-8 items-center gap-1 rounded-md border border-red-200 bg-white px-3 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50"
+                >
+                  <Square className="h-3.5 w-3.5" />
+                  Cancel
+                </button>
+              )}
+              {runError && lastRunRequest && (
+                <button
+                  type="button"
+                  onClick={() => void runTool(lastRunRequest)}
+                  disabled={runningToolId !== null}
+                  className="inline-flex h-8 items-center gap-1 rounded-md border border-red-200 bg-white px-3 text-xs font-semibold text-red-800 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:text-slate-400"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Retry
+                </button>
+              )}
+            </div>
           </div>
           {lastRun && (
             <pre className="mt-3 max-h-40 overflow-auto rounded border border-emerald-200 bg-white p-3 text-xs leading-5 text-slate-700">

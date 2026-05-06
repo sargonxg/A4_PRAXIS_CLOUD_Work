@@ -93,6 +93,7 @@ documented. A partial item must keep its named gap visible.
 - [x] Add marketplace run history UI and reload from persisted artifacts.
 - [x] Add marketplace cost and latency telemetry per run.
 - [x] Add tool chaining from selected artifact to next recommended tool.
+- [x] Add tool run cancellation/retry state for long-running specialist handlers.
 - [ ] Implement specialist model-backed handler for `conflict.leverage-trace`.
 - [ ] Implement specialist model-backed handler for `conflict.commitment-check`.
 - [ ] Implement specialist model-backed handler for `conflict.escalation-timeline`.
@@ -109,7 +110,6 @@ documented. A partial item must keep its named gap visible.
 - [ ] Implement specialist model-backed handler for `cross.context-health-explainer`.
 - [ ] Implement specialist model-backed handler for `cross.brief-exporter`.
 - [ ] Implement specialist model-backed handler for `cross.scenario-projector`.
-- [ ] Add tool run cancellation/retry state for long-running specialist handlers.
 
 ## Pack 09 - Verification And Admin
 

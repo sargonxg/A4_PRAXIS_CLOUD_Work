@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- feat(tools): add marketplace cancel and retry controls.
+  Marketplace runs now use abortable fetches with visible cancel and retry
+  controls so the UI path is ready for longer specialist handlers.
 - feat(tools): add marketplace chain actions.
   Marketplace run results now expose next-tool buttons from the registry
   `canChainInto` contract so analysts can continue from a selected artifact.

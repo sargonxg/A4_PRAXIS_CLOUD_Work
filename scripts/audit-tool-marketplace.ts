@@ -63,7 +63,7 @@ if (existsSync(runnerPath)) {
 
 if (existsSync(uiPath)) {
   const ui = readFileSync(uiPath, 'utf8');
-  for (const required of ['/api/tools/marketplace/run', 'Run', 'artifact', 'Run history', 'loadRunHistory', 'durationMs', 'costClass', 'ToolChainActions', 'canChainInto']) {
+  for (const required of ['/api/tools/marketplace/run', 'Run', 'artifact', 'Run history', 'loadRunHistory', 'durationMs', 'costClass', 'ToolChainActions', 'canChainInto', 'AbortController', 'Cancel', 'Retry']) {
     if (!ui.includes(required)) failures.push(`marketplace UI must expose executable runs: ${required}`);
   }
 }
