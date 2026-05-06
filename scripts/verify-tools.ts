@@ -132,21 +132,21 @@ const ROUTES: Array<{ route: string; method: 'GET' | 'POST'; body?: Record<strin
   { route: '/api/health/skc', method: 'GET' },
 
   // Context + Analysis tools
-  { route: '/api/ai/risk', method: 'POST', body: { situation: TEST_SITUATION } },
-  { route: '/api/ai/early-warning', method: 'POST', body: { situation: TEST_SITUATION } },
+  { route: '/api/ai/risk-assessment', method: 'POST', body: { situation: TEST_SITUATION } },
+  { route: '/api/ai/risk-indicators', method: 'POST', body: { situation: TEST_SITUATION } },
   { route: '/api/ai/actor-profiles', method: 'POST', body: { situation: TEST_SITUATION } },
   { route: '/api/ai/power-map', method: 'POST', body: { situation: TEST_SITUATION } },
-  { route: '/api/ai/stakeholder', method: 'POST', body: { situation: TEST_SITUATION } },
+  { route: '/api/ai/stakeholder-map', method: 'POST', body: { situation: TEST_SITUATION } },
   { route: '/api/ai/info-environment', method: 'POST', body: { situation: TEST_SITUATION } },
 
   // Drafting tools
-  { route: '/api/ai/briefing', method: 'POST', body: { situation: TEST_SITUATION, action: 'generate' } },
+  { route: '/api/ai/briefing-generate', method: 'POST', body: { situation: TEST_SITUATION, action: 'generate' } },
   { route: '/api/ai/talking-points', method: 'POST', body: { situation: TEST_SITUATION } },
-  { route: '/api/ai/dossier', method: 'POST', body: { situation: TEST_SITUATION } },
+  { route: '/api/ai/dossier-generate', method: 'POST', body: { situation: TEST_SITUATION } },
 
   // Simulation tools
-  { route: '/api/ai/scenarios', method: 'POST', body: { situation: TEST_SITUATION } },
-  { route: '/api/ai/negotiation-prep', method: 'POST', body: { situation: TEST_SITUATION } },
+  { route: '/api/ai/scenario', method: 'POST', body: { situation: TEST_SITUATION } },
+  { route: '/api/ai/negotiation', method: 'POST', body: { situation: TEST_SITUATION } },
   { route: '/api/ai/game-theory', method: 'POST', body: {
     situation: TEST_SITUATION,
     actors: ['SAF', 'RSF'],
@@ -154,7 +154,7 @@ const ROUTES: Array<{ route: string; method: 'GET' | 'POST'; body?: Record<strin
     analysisType: 'strategic_form',
   }},
   { route: '/api/ai/concordia', method: 'POST', body: { situation: TEST_SITUATION } },
-  { route: '/api/ai/mediation', method: 'POST', body: {
+  { route: '/api/ai/mediation-design', method: 'POST', body: {
     action: 'plan',
     conflictContext: 'SAF vs RSF armed conflict in Sudan',
     parties: ['SAF', 'RSF'],
@@ -165,10 +165,10 @@ const ROUTES: Array<{ route: string; method: 'GET' | 'POST'; body?: Record<strin
   // Intelligence tools
   { route: '/api/ai/deep-research', method: 'POST', body: { situation: TEST_SITUATION, query: 'Sudan conflict dynamics' } },
   { route: '/api/ai/media-scan', method: 'POST', body: { situation: TEST_SITUATION, action: 'scan' } },
-  { route: '/api/ai/source-monitor', method: 'POST', body: { situation: TEST_SITUATION } },
+  { route: '/api/ai/discover-sources', method: 'POST', body: { situation: TEST_SITUATION } },
   { route: '/api/ai/geospatial', method: 'POST', body: { situation: TEST_SITUATION } },
-  { route: '/api/ai/sanctions', method: 'POST', body: { situation: TEST_SITUATION } },
-  { route: '/api/ai/commitments', method: 'POST', body: { situation: TEST_SITUATION } },
+  { route: '/api/ai/sanctions-scan', method: 'POST', body: { situation: TEST_SITUATION } },
+  { route: '/api/ai/commitment-scan', method: 'POST', body: { situation: TEST_SITUATION } },
 
   // Data feeds
   { route: '/api/data/intelligence', method: 'POST', body: { situation: TEST_SITUATION } },

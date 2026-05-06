@@ -11,8 +11,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { gateTier, type SubscriptionTier } from '@/lib/api/tier';
-import { resolveEffectiveApiKey, getUserKeyStatus } from '@/lib/providers/user-keys';
-import { scrapeUrl } from '@/lib/ai/firecrawl';
+import { scrapeUrl } from '@/lib/ai/grounded-research';
 import { createGraphUpdateProposal, type GraphUpdateKind } from '@/lib/firebase/graph-updates-service';
 
 export interface AskPraxisToolBindings {
@@ -66,13 +65,13 @@ export function makeWriteToTool(b: AskPraxisToolBindings) {
 }
 
 /**
- * firecrawlFetch — scrape one URL and return clean markdown.
+ * groundedSearchFetch — fetch one URL and return clean text.
  * Free tier: 5 fetches/session limit (best-effort, in-memory). Premium tier: unlimited.
  * Always returns structured payload — never throws.
  */
-const firecrawlFetchSessionCounters = new WeakMap<object, { count: number }>();
+const groundedSearchFetchSessionCounters = new WeakMap<object, { count: number }>();
 
-export function makeFirecrawlFetch(b: AskPraxisToolBindings, sessionKey: object) {
+export function makeGroundedSearchFetch(b: AskPraxisToolBindings, sessionKey: object) {
   return tool({
     description:
       'Fetch a URL and return clean markdown content. Use sparingly — prefer webSearch first. Free users limited to 5 fetches per session; premium users unlimited.',
@@ -86,9 +85,9 @@ export function makeFirecrawlFetch(b: AskPraxisToolBindings, sessionKey: object)
 
       // Per-session free-tier rate limit (best effort)
       if (b.tier === 'free') {
-        const counter = firecrawlFetchSessionCounters.get(sessionKey) ?? { count: 0 };
+        const counter = groundedSearchFetchSessionCounters.get(sessionKey) ?? { count: 0 };
         counter.count += 1;
-        firecrawlFetchSessionCounters.set(sessionKey, counter);
+        groundedSearchFetchSessionCounters.set(sessionKey, counter);
         if (counter.count > 5) {
           return {
             ok: false,
@@ -100,89 +99,22 @@ export function makeFirecrawlFetch(b: AskPraxisToolBindings, sessionKey: object)
         }
       }
 
-      // Resolve key (user-supplied or platform fallback). When no key is
-      // available, scrapeUrl gracefully degrades to free fetch + Wikipedia.
-      const key = await resolveEffectiveApiKey(b.uid, 'firecrawl');
-      const hasFirecrawl = !!key;
-
       try {
         const result = await Promise.race([
           scrapeUrl(url),
           new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), TOOL_TIMEOUT_MS)),
         ]) as Awaited<ReturnType<typeof scrapeUrl>>;
         return {
-          ok: result.success,
+          ok: true,
           url,
           title: result.title ?? '',
           markdown: result.content,
-          via: hasFirecrawl ? 'firecrawl' : 'free-fallback',
+          via: 'grounded-google-search',
           reason,
           _generatedAt: new Date().toISOString(),
         };
       } catch (err) {
         return { ok: false, error: 'fetch_failed', message: err instanceof Error ? err.message : String(err) };
-      }
-    },
-  });
-}
-
-/**
- * parallelResearch — agentic multi-step web research via Parallel.ai.
- * Premium-only AND requires user-supplied parallel key. Returns
- * `requiresKey: 'parallel'` when missing so the UI surfaces a settings chip.
- */
-export function makeParallelResearch(b: AskPraxisToolBindings) {
-  return tool({
-    description:
-      'Run a deep multi-step research task via Parallel.ai. Premium-tier feature, also requires a user-supplied Parallel API key in Settings → API Keys. Returns structured findings with citations.',
-    inputSchema: z.object({
-      objective: z.string().describe('Research objective in plain language. Be specific.'),
-      maxSteps: z.number().int().min(1).max(8).default(4),
-    }),
-    execute: async ({ objective, maxSteps }) => {
-      const gate = gateTier(b.tier, 'analyst');
-      if (!gate.ok) return { requiresTier: gate.requiredTier, currentTier: gate.currentTier };
-
-      const status = await getUserKeyStatus(b.uid, 'parallel');
-      if (!status.effective) {
-        return {
-          requiresKey: 'parallel',
-          settingsUrl: '/app/settings/api-keys',
-          currentTier: b.tier,
-          message: 'Add a Parallel.ai API key in Settings → API Keys to enable deep research.',
-        };
-      }
-
-      const payload = await resolveEffectiveApiKey(b.uid, 'parallel');
-      const apiKey = payload?.key;
-      if (!apiKey) {
-        return { requiresKey: 'parallel', settingsUrl: '/app/settings/api-keys', currentTier: b.tier };
-      }
-
-      // Lazy import — keep cold-start small
-      try {
-        const { Parallel } = await import('parallel-web');
-        const client = new Parallel({ apiKey });
-        const taskRun = await client.taskRun.create({
-          input: objective,
-          processor: 'lite',
-          metadata: { source: 'praxis-ask', situationId: b.situationId ?? '' },
-        });
-        if (!taskRun?.run_id) {
-          return { ok: false, error: 'parallel_no_run_id' };
-        }
-        const result = await client.taskRun.result(taskRun.run_id);
-        return {
-          ok: true,
-          objective,
-          maxSteps,
-          runId: taskRun.run_id,
-          // result shape varies — surface a stable subset
-          findings: (result as { output?: { content?: unknown } }).output?.content ?? result,
-          _generatedAt: new Date().toISOString(),
-        };
-      } catch (err) {
-        return { ok: false, error: 'parallel_failed', message: err instanceof Error ? err.message : String(err) };
       }
     },
   });
@@ -291,8 +223,7 @@ export function buildAskPraxisExtensions(b: AskPraxisToolBindings) {
   return {
     writeToTool: makeWriteToTool(b),
     proposeGraphDelta: makeProposeGraphDelta(b),
-    firecrawlFetch: makeFirecrawlFetch(b, sessionKey),
-    parallelResearch: makeParallelResearch(b),
+    groundedSearchFetch: makeGroundedSearchFetch(b, sessionKey),
     runDeepResearch: makeRunDeepResearch(b),
   };
 }

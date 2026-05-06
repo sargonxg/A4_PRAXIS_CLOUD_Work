@@ -1,13 +1,11 @@
 /**
  * Per-advisor model resolver.
  *
- * Each AdvisorConfig declares a `modelTier` (gemini-3-flash | gemini-3-pro |
- * gemini-3-pro-deepthink | claude-sonnet-4). This module translates the tier
+ * Each AdvisorConfig declares a Gemini model tier. This module translates the tier
  * into a ready-to-call LanguageModel, honouring the Vertex-ADC-first auth
  * priority of the rest of the platform.
  *
- * When a premium provider is unreachable (e.g. Claude without ANTHROPIC_API_KEY),
- * we fall back gracefully: claude-sonnet-4 → gemini-3-pro (analysis-equivalent).
+ * Gemini is the only provider; analysis tiers resolve through providers.ts.
  */
 
 import type { LanguageModel } from 'ai';
@@ -24,7 +22,7 @@ export function resolveAdvisorModel(tier: AdvisorModelTier): LanguageModel {
       // Deep Think is the Pro model with high thinking level — callers set
       // `providerOptions: { google: { thinkingLevel: 'high' } }` on the request.
       return getDeepThinkModel('high');
-    case 'claude-sonnet-4':
+    case 'gemini-analysis':
       return getAnalysisModel();
     default:
       return getProModel();

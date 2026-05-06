@@ -395,7 +395,7 @@ function RealMediaPanel({ situation, onSituationSources }: {
         setLiveResult(acc);
       }
     } catch {
-      setLiveResult('_Live search failed. Ensure FIRECRAWL_API_KEY and GOOGLE_AI_API_KEY are configured._');
+      setLiveResult('_Live search failed. Ensure GOOGLE_AI_API_KEY and GOOGLE_AI_API_KEY are configured._');
     } finally {
       setLiveLoading(false);
     }
@@ -560,7 +560,7 @@ function RealMediaPanel({ situation, onSituationSources }: {
         <div className="flex items-center gap-2 mb-3">
           <Globe className="h-4 w-4 text-blue-600" />
           <h3 className="text-sm font-semibold text-navy-900">Live News Search</h3>
-          <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">Firecrawl</span>
+          <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">Google Grounding</span>
         </div>
         <p className="mb-3 text-xs text-navy-500">Search current news and reporting on any aspect of &ldquo;{situation.name}&rdquo; using live web research.</p>
         <div className="flex gap-2">

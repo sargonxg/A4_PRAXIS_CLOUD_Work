@@ -1,4 +1,4 @@
-"""PRAXIS Genkit AI application — multi-provider, user-key-aware.
+"""PRAXIS Genkit AI application — Gemini-only, user-key-aware.
 
 Platform-level instance uses GOOGLE_API_KEY or Vertex AI ADC.
 get_ai_for_user() creates a user-specific instance with their own keys.
@@ -6,7 +6,7 @@ get_ai_for_user() creates a user-specific instance with their own keys.
 from __future__ import annotations
 
 
-def _build_genkit(google_key: str | None = None, anthropic_key: str | None = None, openai_key: str | None = None):
+def _build_genkit(google_key: str | None = None):
     """Build a Genkit instance with the given provider configurations."""
     try:
         from genkit import Genkit
@@ -18,20 +18,6 @@ def _build_genkit(google_key: str | None = None, anthropic_key: str | None = Non
             plugins.append(GoogleGenAI(api_key=google_key))
         else:
             plugins.append(GoogleGenAI())  # Falls back to GOOGLE_API_KEY env or Vertex AI ADC
-
-        if anthropic_key:
-            try:
-                from genkit_anthropic import Anthropic
-                plugins.append(Anthropic(api_key=anthropic_key))
-            except ImportError:
-                pass
-
-        if openai_key:
-            try:
-                from genkit_openai import OpenAI
-                plugins.append(OpenAI(api_key=openai_key))
-            except ImportError:
-                pass
 
         return Genkit(plugins=plugins)
     except ImportError:
@@ -55,8 +41,6 @@ def get_ai_for_user(user_settings: dict):
     api_keys = user_settings.get("api_keys", {})
     return _build_genkit(
         google_key=api_keys.get("google_ai_key") or None,
-        anthropic_key=api_keys.get("anthropic_key") or None,
-        openai_key=api_keys.get("openai_key") or None,
     )
 
 

@@ -73,6 +73,10 @@ class ACONode(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
     valid_from: str = ""
     valid_until: str = ""
+    validFrom: str | None = None
+    validTo: str | None = None
+    assertedFrom: str | None = None
+    assertedTo: str | None = None
     last_verified: str = ""
     provenance: list[str] = Field(default_factory=list)
 
@@ -157,6 +161,10 @@ class ACOEdge(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
     valid_from: str = ""
     valid_until: str = ""
+    validFrom: str | None = None
+    validTo: str | None = None
+    assertedFrom: str | None = None
+    assertedTo: str | None = None
 
 
 ACO_TYPE_MAP: dict[str, type[ACONode]] = {

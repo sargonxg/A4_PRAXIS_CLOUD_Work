@@ -219,7 +219,7 @@ export async function getUserApiKey(
 }
 
 /**
- * Effective credential resolver used by outbound clients (Tavily, Firecrawl, Parallel, etc.).
+ * Effective credential resolver used by outbound clients.
  * Tries user-configured first, falls back to platform ENV vars, returns null
  * when neither is available.
  */
@@ -245,10 +245,6 @@ export async function resolveEffectiveApiKey(
   const fallback: ProviderPayload = {};
   const envMap: Record<string, string> = {
     GOOGLE_AI_API_KEY: 'key',
-    ANTHROPIC_API_KEY: 'key',
-    TAVILY_API_KEY: 'key',
-    FIRECRAWL_API_KEY: 'key',
-    PARALLEL_API_KEY: 'key',
     UCDP_API_TOKEN: 'token',
   };
   for (const envVar of spec.platformFallbackEnvVars) {

@@ -40,7 +40,17 @@ export async function listAdvisors(): Promise<AdvisorConfig[]> {
 }
 
 export async function saveAdvisor(cfg: AdvisorConfig): Promise<AdvisorConfig> {
-  const prev = await getAdvisor(cfg.id);
+  let prev: AdvisorConfig | null = null;
+  try {
+    const snap = await adminDb.doc(PATH(cfg.id)).get();
+    if (snap.exists) {
+      const parsed = AdvisorConfigSchema.safeParse(snap.data());
+      if (parsed.success) prev = parsed.data;
+    }
+  } catch (err) {
+    console.warn(`[advisor-service] persisted lookup ${cfg.id} failed:`, err);
+  }
+
   if (prev) {
     try {
       await adminDb.doc(HISTORY(cfg.id, prev.version)).set(prev);

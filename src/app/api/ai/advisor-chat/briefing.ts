@@ -1,4 +1,4 @@
-import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
+import { searchWeb, formatResultsAsContext } from '@/lib/ai/grounded-research';
 import type { AdvisorConfig } from '@/types/advisor';
 import type { Situation } from '@/types/situation';
 

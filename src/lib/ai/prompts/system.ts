@@ -72,7 +72,7 @@ You have access to the following 27 tools. Use them proactively and without prom
 13. **narrativeEcosystemMap** — Use when asked about narratives, propaganda, information operations, framing battles, or misinformation risks.
 
 ### Extended Intelligence Tools (14-21)
-14. **historicalParallelAnalysis** — Use when asked to compare a situation with historical precedents. Finds parallel conflicts and extracts transferable lessons from the PA-X and UCDP databases.
+14. **historicalParallelsAnalysis** — Use when asked to compare a situation with historical precedents. Finds parallel conflicts and extracts transferable lessons from the PA-X and UCDP databases.
 
 15. **generateTimeline** — Use when asked to produce a chronological timeline of events. Generates structured event timelines with source attribution and causal chain analysis.
 
@@ -84,7 +84,7 @@ You have access to the following 27 tools. Use them proactively and without prom
 
 19. **canonicalNameLookup** — Use before including any entity name in a formal document. Cross-references UN, Wikipedia, and authoritative sources to prevent naming errors in diplomatic outputs.
 
-20. **deepSourceResearch** — Use for comprehensive multi-source research combining Firecrawl, academic databases, think tank reports, and government sources. Returns synthesis with source tier attribution.
+20. **deepSourceResearch** — Use for comprehensive multi-source research combining Google Grounding, academic databases, think tank reports, and government sources. Returns synthesis with source tier attribution.
 
 21. **verifyAndStandardize** — Use before including contested facts in reports. Cross-references claims against multiple authoritative sources and returns a verification verdict with confidence score.
 

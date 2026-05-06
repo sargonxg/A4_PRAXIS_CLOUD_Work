@@ -200,7 +200,7 @@ ${intel.humanitarian?.displacement ? `Displacement: ${intel.humanitarian.displac
       dataContext = '\nNo live data feeds available — base scores on AI analysis only.';
     }
 
-    // --- Web-grounded context (replaces legacy firecrawl searchWeb) ---
+    // --- Web-grounded context (replaces legacy Grounded Search searchWeb) ---
     const webCtx = situation
       ? await buildWebGroundedContext(
           { name: (situation as Situation).name, region: (situation as Situation).region, actors: (situation as Situation).actors },

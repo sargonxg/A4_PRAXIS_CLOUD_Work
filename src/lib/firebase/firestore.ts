@@ -22,11 +22,9 @@ export interface AISettings {
   preferredModel:
     | 'gemini-2.5-flash'
     | 'gemini-2.5-pro'
-    | 'claude-sonnet-4-20250514'
     // Legacy values — kept for backwards-compatibility, mapped to new models at runtime
     | 'gemini-3-flash'
     | 'gemini-2.5-flash'
-    | 'claude-sonnet-4';
   temperature: number;              // 0.0-1.0, default 0.4
   researchDepth: 'quick' | 'standard' | 'comprehensive';
   customInstructions: string;       // Additional system prompt text
@@ -193,11 +191,10 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   'ai_analysis': 3,
   'ai_research': 3,
   'ai_resolution': 3,
-  'ai_claude_analyze': 4,
   'ai_dossier': 4,
   'ai_report': 5,
   'ai_deep_research': 5,
-  // Phase 2: Intelligence tools (Firecrawl-powered)
+  // Phase 2: Intelligence tools (Google-grounded)
   'ai_web_crawl': 3,
   'ai_media_scan': 3,
   'ai_actor_enrichment': 3,

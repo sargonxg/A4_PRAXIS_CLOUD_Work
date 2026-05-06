@@ -8,7 +8,7 @@ import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
+import { searchWeb, formatResultsAsContext } from '@/lib/ai/grounded-research';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;

@@ -1,8 +1,7 @@
 /**
  * Crisis Group CrisisWatch Client
  * https://www.crisisgroup.org/crisiswatch
- * Uses Firecrawl to scrape monthly CrisisWatch bulletins.
- * Returns null if Firecrawl is not configured.
+ * Uses the public CrisisWatch page.
  */
 
 export type CrisisWatchStatus = 'deteriorated' | 'unchanged' | 'improved' | 'new_conflict' | 'resolved_situation' | 'unknown';
@@ -30,35 +29,18 @@ function classifyStatus(text: string): CrisisWatchStatus {
 
 /**
  * Fetch the latest CrisisWatch entry for a country.
- * Requires FIRECRAWL_API_KEY. Returns null if unavailable.
+ * Returns null if unavailable.
  */
 export async function getCrisisWatch(country: string): Promise<CrisisWatchEntry | null> {
   const cacheKey = `crisiswatch:${country.toLowerCase()}`;
   const hit = cache.get(cacheKey);
   if (hit && Date.now() - hit.ts < CACHE_TTL) return hit.data;
 
-  const firecrawlKey = process.env.FIRECRAWL_API_KEY;
-  if (!firecrawlKey) {
-    cache.set(cacheKey, { data: null, ts: Date.now() });
-    return null;
-  }
-
   try {
     const countrySlug = country.toLowerCase().replace(/\s+/g, '-');
     const url = `https://www.crisisgroup.org/crisiswatch/database#/?location=${countrySlug}`;
 
-    const res = await fetch('https://api.firecrawl.dev/v1/scrape', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${firecrawlKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url,
-        formats: ['markdown'],
-        onlyMainContent: true,
-        timeout: 15000,
-      }),
+    const res = await fetch(url, {
       signal: AbortSignal.timeout(20000),
     });
 
@@ -67,8 +49,7 @@ export async function getCrisisWatch(country: string): Promise<CrisisWatchEntry 
       return null;
     }
 
-    const data = await res.json() as Record<string, unknown>;
-    const markdown = (data.data as Record<string, unknown>)?.markdown as string ?? '';
+    const markdown = await res.text();
 
     if (!markdown || markdown.length < 100) {
       cache.set(cacheKey, { data: null, ts: Date.now() });
@@ -98,5 +79,5 @@ export async function getCrisisWatch(country: string): Promise<CrisisWatchEntry 
 }
 
 export function isCrisisGroupConfigured(): boolean {
-  return !!process.env.FIRECRAWL_API_KEY;
+  return true;
 }

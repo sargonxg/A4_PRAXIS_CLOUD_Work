@@ -98,7 +98,7 @@ const DATA_SOURCE_STATUS: Record<string, 'live' | 'offline' | 'estimated'> = {
   'UN News': 'live',
   'Crisis Group': 'live',
   'SIPRI': 'live',
-  'Firecrawl': 'live',
+  'Google Grounding': 'live',
   'Google Search': 'live',
   'Google Search (grounded)': 'live',
   'Vertex AI Agent Engine': 'live',

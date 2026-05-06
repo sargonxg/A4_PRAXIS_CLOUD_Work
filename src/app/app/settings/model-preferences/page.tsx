@@ -22,8 +22,6 @@ const DEFAULT_PREFS: ModelPreferences = {
 const MODEL_OPTIONS = [
   { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (fast, economical)' },
   { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (deep, comprehensive)' },
-  { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4 (requires Anthropic key)' },
-  { value: 'gpt-4o', label: 'GPT-4o (requires OpenAI key)' },
 ];
 
 export default function ModelPreferencesPage() {
@@ -61,7 +59,7 @@ export default function ModelPreferencesPage() {
       <h1 className="text-2xl font-semibold text-foreground mb-2">Model Preferences</h1>
       <p className="text-muted-foreground mb-6 text-sm">
         Choose which AI model PRAXIS uses for each type of operation.
-        Provider-specific models require the corresponding API key in Settings → API Keys.
+        Production uses Vertex AI Gemini; local development can use a Google AI key.
       </p>
 
       <div className="space-y-5">

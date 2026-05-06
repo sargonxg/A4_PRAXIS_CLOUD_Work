@@ -7,7 +7,7 @@ import {
   toFirestoreGraph,
   type ExtractionResult,
 } from '@/lib/services/entity-extraction';
-import { scrapeUrl, searchWeb, isFirecrawlConfigured } from '@/lib/ai/firecrawl';
+import { scrapeUrl, searchWeb, isGroundedSearchConfigured } from '@/lib/ai/grounded-research';
 import { saveToolData } from '@/lib/firebase/tool-data-service';
 import { createGraphUpdateProposalsFromGraphData } from '@/lib/firebase/graph-updates-service';
 
@@ -92,9 +92,9 @@ export const POST = withCalibration('conflict_graph', 'ai_analysis', {
     }
     // ── Mode 3: Web search + multi-source extraction ───────────────────────
     else {
-      if (!isFirecrawlConfigured()) {
+      if (!isGroundedSearchConfigured()) {
         return Response.json(
-          { error: 'Web search requires Firecrawl API key. Set FIRECRAWL_API_KEY.' },
+          { error: 'Web search requires Google AI or Vertex configuration.' },
           { status: 503 },
         );
       }

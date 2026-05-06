@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { DEMO_CONFLICT } from '@/lib/constants/demo-conflict';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
 import { findMediaOutlet } from '@/lib/constants/media-database';
-import { searchWeb } from '@/lib/ai/firecrawl';
 import { executeWebResearch, type WebResearchResult } from '@/lib/ai/web-research';
+import { searchWeb } from '@/lib/ai/grounded-research';
 import { getModel, getProModel } from '@/lib/ai/providers';
 
 // ---------------------------------------------------------------------------
@@ -24,15 +24,13 @@ function timeoutSignal(): AbortSignal {
 
 // ============================================================================
 // Tool 1: webSearch
-// Multi-provider web search: Google Search (default) + Tavily/Parallel.ai/Firecrawl
 // Google Search via Gemini grounding is always available.
-// Premium providers activated when user has API keys configured.
 // Falls back gracefully — never blocks on missing keys.
 // ============================================================================
 
 export const webSearch = tool({
   description:
-    'Search the web for current news and reports about a conflict topic. Uses Google Search by default, with optional Tavily and Parallel.ai for richer results. Returns results with titles, snippets, sources, and reliability scores.',
+    'Search the web for current news and reports about a conflict topic. Uses grounded Google Search and returns results with titles, snippets, sources, and reliability scores.',
   inputSchema: z.object({
     query: z.string().describe('The search query to execute'),
     region: z.string().optional().describe('Geographic region to focus the search on'),
@@ -59,39 +57,11 @@ export const webSearch = tool({
       );
 
       if (webResults.length === 0) {
-        // Fallback to legacy Firecrawl if unified client returned nothing
-        const fullQuery = region ? `${query} ${region}` : query;
-        let firecrawlResults: Awaited<ReturnType<typeof searchWeb>> = [];
-        try {
-          firecrawlResults = await searchWeb(fullQuery, { numResults: 5 });
-        } catch {
-          firecrawlResults = [];
-        }
-
-        if (firecrawlResults.length === 0) {
-          return {
-            results: [],
-            query,
-            providers: ['google-search'],
-            analysisNote: 'No web results returned. Google Search found no matches for this query.',
-            _generatedAt: new Date().toISOString(),
-          };
-        }
-
-        // Map legacy results
         return {
-          results: firecrawlResults.map((r) => ({
-            title: r.title || 'Untitled',
-            snippet: r.description || r.content?.slice(0, 300) || '',
-            source: extractHostname(r.url),
-            publishedDate: r.publishedDate || new Date().toISOString().split('T')[0],
-            url: r.url,
-            reliabilityScore: scoreUrlReliability(r.url),
-            provider: 'firecrawl',
-          })),
+          results: [],
           query,
-          providers: ['firecrawl'],
-          analysisNote: `Found ${firecrawlResults.length} results via Firecrawl fallback.`,
+          providers: ['google-search'],
+          analysisNote: 'No web results returned. Google Search found no matches for this query.',
           _generatedAt: new Date().toISOString(),
         };
       }
@@ -105,8 +75,8 @@ export const webSearch = tool({
         publishedDate: r.publishedDate || new Date().toISOString().split('T')[0],
         url: r.url,
         reliabilityScore: r.reliabilityScore,
-        provider: r.provider,
-      }));
+            provider: r.provider,
+          }));
 
       return {
         results,
@@ -123,7 +93,7 @@ export const webSearch = tool({
         results: [],
         query,
         providers: [],
-        analysisNote: 'Web search failed. Check API configuration.',
+        analysisNote: 'Web search failed. Check Gemini grounding configuration.',
         _generatedAt: new Date().toISOString(),
       };
     }
@@ -1336,11 +1306,11 @@ Conduct a comprehensive narrative ecosystem analysis:
 });
 
 // ============================================================================
-// Tool 14: historicalParallelAnalysis
+// Tool 14: historicalParallelsAnalysis
 // Identifies historical conflict parallels with similarity scoring
 // ============================================================================
 
-export const historicalParallelAnalysis = tool({
+export const historicalParallelsAnalysis = tool({
   description:
     'Identify historical conflict parallels for a given conflict. Returns 3-5 historical cases with similarity scores, lessons learned, and cautionary notes. Useful for contextualizing current dynamics and informing mediation strategy.',
   inputSchema: z.object({
@@ -1414,9 +1384,9 @@ Be intellectually rigorous — resist superficial parallels. Prioritize cases wh
     return { ...output, conflictId, _generatedAt: new Date().toISOString() };
     } catch (err) {
       if (err instanceof Error && err.name === 'TimeoutError') {
-        return { error: true, message: 'Tool timed out after 30s', toolName: 'historicalParallelAnalysis', conflictId, _generatedAt: new Date().toISOString() };
+        return { error: true, message: 'Tool timed out after 30s', toolName: 'historicalParallelsAnalysis', conflictId, _generatedAt: new Date().toISOString() };
       }
-      console.error('[historicalParallelAnalysis]', err instanceof Error ? err.message : err);
+      console.error('[historicalParallelsAnalysis]', err instanceof Error ? err.message : err);
       return { error: true, message: 'Tool failed: ' + (err instanceof Error ? err.message : String(err)), conflictId, _generatedAt: new Date().toISOString() };
     }
   },
@@ -1938,7 +1908,7 @@ export const canonicalNameLookup = tool({
   }),
   execute: async ({ entity, entityType, context }) => {
     try {
-    // Try Firecrawl web search for authoritative sources
+    // Try Google-grounded search for authoritative sources
     const sources = [
       `"${entity}" site:wikipedia.org ${entityType}`,
       `"${entity}" site:un.org official name`,
@@ -2029,7 +1999,7 @@ Identify:
 
 // ============================================================================
 // Tool 20: deepSourceResearch
-// Multi-source deep research combining Firecrawl, academic databases,
+// Multi-source deep research combining Google Grounding, academic databases,
 // think tank reports, and government sources
 // ============================================================================
 
@@ -2081,7 +2051,7 @@ export const deepSourceResearch = tool({
       return {
         topic,
         findings: [],
-        summary: 'No sources found. Firecrawl may not be configured.',
+        summary: 'No sources found. Google Grounding may not be configured.',
         sources: [],
         _generatedAt: new Date().toISOString(),
       };
@@ -2727,7 +2697,7 @@ export const tacitusTools = {
   escalationAssessment,
   negotiationSpaceAnalysis,
   narrativeEcosystemMap,
-  historicalParallelAnalysis,
+  historicalParallelsAnalysis,
   generateTimeline,
   sanctionsCheck,
   humanitarianSnapshot,
@@ -3080,14 +3050,14 @@ Map dominant narratives, counter-narratives, emerging narratives, narrative clas
     },
   });
 
-  // --- Bound: historicalParallelAnalysis ---
-  const boundHistoricalParallelAnalysis = tool({
-    description: historicalParallelAnalysis.description,
-    inputSchema: historicalParallelAnalysis.inputSchema,
+  // --- Bound: historicalParallelsAnalysis ---
+  const boundHistoricalParallelsAnalysis = tool({
+    description: historicalParallelsAnalysis.description,
+    inputSchema: historicalParallelsAnalysis.inputSchema,
     execute: async ({ conflictId, dimension, timeframe }) => {
       if (!isRealSituation) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (historicalParallelAnalysis.execute as any)({ conflictId, dimension, timeframe });
+        return (historicalParallelsAnalysis.execute as any)({ conflictId, dimension, timeframe });
       }
       try {
         const { output } = await generateText({
@@ -3115,7 +3085,7 @@ Identify 3-5 historical cases with meaningful structural parallels. For each: si
         });
         return { ...output, conflictId, _generatedAt: new Date().toISOString() };
       } catch (err) {
-        if (err instanceof Error && err.name === 'TimeoutError') return { error: true, message: 'Tool timed out after 30s', toolName: 'historicalParallelAnalysis', conflictId, _generatedAt: new Date().toISOString() };
+        if (err instanceof Error && err.name === 'TimeoutError') return { error: true, message: 'Tool timed out after 30s', toolName: 'historicalParallelsAnalysis', conflictId, _generatedAt: new Date().toISOString() };
         return { error: true, message: String(err), conflictId, _generatedAt: new Date().toISOString() };
       }
     },
@@ -3321,7 +3291,7 @@ For each dimension: assess both conflicts, identify key divergences and converge
     draftSection: boundDraftSection,
     negotiationSpaceAnalysis: boundNegotiationSpaceAnalysis,
     narrativeEcosystemMap: boundNarrativeEcosystemMap,
-    historicalParallelAnalysis: boundHistoricalParallelAnalysis,
+    historicalParallelsAnalysis: boundHistoricalParallelsAnalysis,
     generateTimeline: boundGenerateTimeline,
     sanctionsCheck: boundSanctionsCheck,
     humanitarianSnapshot: boundHumanitarianSnapshot,

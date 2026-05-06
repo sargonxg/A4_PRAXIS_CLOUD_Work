@@ -257,7 +257,8 @@ def escalation_assessment(G: nx.Graph) -> dict:
     for n in events:
         impact = G.nodes[n].get("escalation_impact", 0)
         if isinstance(impact, (int, float)):
-            impacts.append(float(impact))
+            inferred = _infer_event_escalation_impact(G.nodes[n])
+            impacts.append(max(float(impact), inferred))
 
     avg_impact = sum(impacts) / len(impacts) if impacts else 0.0
 
@@ -297,6 +298,18 @@ def escalation_assessment(G: nx.Graph) -> dict:
         "event_count": len(events),
         "average_impact": round(avg_impact, 3),
     }
+
+
+def _infer_event_escalation_impact(data: dict) -> float:
+    """Estimate escalation impact when extraction lacks an explicit score."""
+    text = f"{data.get('label', '')} {data.get('description', '')}".lower()
+    if any(term in text for term in ("bombard", "massacre", "offensive", "airstrike", "battle", "siege")):
+        return 0.65
+    if any(term in text for term in ("ceasefire breakdown", "collapse", "expelled", "sanction", "mobiliz")):
+        return 0.45
+    if any(term in text for term in ("ceasefire", "talk", "mediat", "agreement")):
+        return -0.2
+    return 0.25
 
 
 def faction_map(G: nx.Graph, communities: dict[str, int]) -> dict[int, dict]:

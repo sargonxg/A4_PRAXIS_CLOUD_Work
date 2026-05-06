@@ -247,7 +247,7 @@ You have access to the user's active situation data. When answering questions:
       }
     }
     const baseTools = createSituationBoundTools(situationCtx, graphSnapshot);
-    // Ask PRAXIS extensions — writeToTool / firecrawlFetch / parallelResearch /
+    // Ask PRAXIS extensions — writeToTool / groundedSearchFetch /
     // runDeepResearch. Tier-gated; safe to attach for all callers because each
     // tool returns a structured `requiresTier` / `requiresKey` payload when the
     // user lacks the necessary plan or credentials.

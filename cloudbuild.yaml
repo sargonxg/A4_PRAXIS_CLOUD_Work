@@ -5,7 +5,7 @@ steps:
     args:
       - '-c'
       - |
-        if grep -rE "gemini-2\.0|gemini-3-flash-preview|gemini-3\.1-pro-preview|gemini-3-pro-preview" src/ backend/ --include="*.ts" --include="*.tsx" --include="*.py" 2>/dev/null; then
+        if grep -rE "gemini-2\.0|gemini-3-flash-preview|gemini-3-pro-preview|claude-|gpt-|firecrawl|tavily|parallel-web|@ai-sdk/anthropic" src/ backend/ --include="*.ts" --include="*.tsx" --include="*.py" --exclude="providers.ts" 2>/dev/null; then
           echo "ERROR: Forbidden retired/unavailable model strings found. Use src/lib/ai/providers.ts (frontend) or backend/config.py (backend)."
           exit 1
         fi
@@ -35,6 +35,42 @@ steps:
     id: 'preflight-audit-gcp'
     waitFor: ['check-model-strings']
 
+  - name: 'node:20'
+    entrypoint: bash
+    args: ['-c', 'npm ci && npm run lint']
+    id: 'lint'
+    waitFor: ['preflight-audit-routes']
+
+  - name: 'node:20'
+    entrypoint: bash
+    args: ['-c', 'npm ci && npx tsc --noEmit']
+    id: 'typecheck'
+    waitFor: ['preflight-audit-routes']
+
+  - name: 'node:20'
+    entrypoint: bash
+    args: ['-c', 'npm ci && npm run audit:routes']
+    id: 'audit-routes'
+    waitFor: ['preflight-audit-routes']
+
+  - name: 'node:20'
+    entrypoint: bash
+    args: ['-c', 'npm ci && npx tsx scripts/audit-spine.ts']
+    id: 'audit-spine'
+    waitFor: ['preflight-audit-routes']
+
+  - name: 'node:20'
+    entrypoint: bash
+    args: ['-c', 'npm ci && npm run smoke:public']
+    id: 'smoke-public'
+    waitFor: ['typecheck']
+
+  - name: 'node:20'
+    entrypoint: bash
+    args: ['-c', 'npm ci && npm run build']
+    id: 'build-app-gate'
+    waitFor: ['lint', 'typecheck', 'audit-routes', 'audit-spine']
+
   # ── Firestore rules deploy — NOT automated via Cloud Build right now because
   # the Cloud Build service account lacks serviceusage.services.get permission.
   # Deploy rules manually after changes:
@@ -47,12 +83,22 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-backend', './backend']
     id: 'build-backend'
-    waitFor: ['check-model-strings']
+    waitFor: ['build-app-gate', 'preflight-audit-gcp']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-pgbouncer', './infrastructure/pgbouncer']
+    id: 'build-pgbouncer'
+    waitFor: ['build-app-gate', 'preflight-audit-gcp']
 
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-backend']
     id: 'push-backend'
     waitFor: ['build-backend']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-pgbouncer']
+    id: 'push-pgbouncer'
+    waitFor: ['build-pgbouncer']
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
@@ -83,13 +129,15 @@ steps:
       - 'default'
       - '--vpc-egress'
       - 'private-ranges-only'
+      - '--add-cloudsql-instances'
+      - '$PROJECT_ID:us-east4:praxisbytacitus-instance'
       - '--set-env-vars'
-      - '^|^GCP_PROJECT_ID=$PROJECT_ID|GCP_REGION=us-central1|LANGGRAPH_CHECKPOINT_BACKEND=postgres|LANGGRAPH_DB_INSTANCE_CONNECTION_NAME=$PROJECT_ID:us-east4:praxisbytacitus-instance|LANGGRAPH_DB_HOST=10.101.0.3|LANGGRAPH_DB_PORT=5432|LANGGRAPH_DB_NAME=praxis_langgraph|LANGGRAPH_DB_USER=praxis_langgraph|LANGGRAPH_DB_PASSWORD_SECRET=praxis-langgraph-db-password|BACKEND_TRUSTED_SERVICE_ACCOUNTS=praxis-frontend-sa@$PROJECT_ID.iam.gserviceaccount.com,praxis-functions-sa@$PROJECT_ID.iam.gserviceaccount.com,praxis-worker-sa@$PROJECT_ID.iam.gserviceaccount.com'
+      - '^|^GCP_PROJECT_ID=$PROJECT_ID|GCP_REGION=us-central1|DATABASE_URL=postgresql://praxis_app:$${DATABASE_PASSWORD}@localhost:6432/praxis|PGBOUNCER_HOST=localhost|PGBOUNCER_PORT=6432|LANGGRAPH_CHECKPOINT_BACKEND=postgres|LANGGRAPH_DB_INSTANCE_CONNECTION_NAME=$PROJECT_ID:us-east4:praxisbytacitus-instance|LANGGRAPH_DB_HOST=localhost|LANGGRAPH_DB_PORT=6432|LANGGRAPH_DB_NAME=praxis|LANGGRAPH_DB_USER=praxis_app|LANGGRAPH_DB_PASSWORD_SECRET=praxis-db-password|BACKEND_TRUSTED_SERVICE_ACCOUNTS=praxis-frontend-sa@$PROJECT_ID.iam.gserviceaccount.com,praxis-functions-sa@$PROJECT_ID.iam.gserviceaccount.com,praxis-worker-sa@$PROJECT_ID.iam.gserviceaccount.com'
       # Secrets from Secret Manager (must be created before first deploy — see setup-gcp.sh)
       - '--set-secrets'
-      - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,FIRECRAWL_API_KEY=praxis-firecrawl-api-key:latest,PARALLEL_API_KEY=praxis-parallel-api-key:latest,USER_KEY_MASTER=praxis-user-key-master:latest,LANGGRAPH_DB_PASSWORD=praxis-langgraph-db-password:latest'
+      - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,USER_KEY_MASTER=praxis-user-key-master:latest,LANGGRAPH_DB_PASSWORD=praxis-db-password:latest,DATABASE_PASSWORD=praxis-db-password:latest,NEO4J_URI=NEO4J_URI:latest,NEO4J_USER=dialectica-neo4j-user:latest,NEO4J_PASSWORD=dialectica-neo4j-password:latest,NEO4J_DATABASE=dialectica-neo4j-database:latest'
     id: 'deploy-backend'
-    waitFor: ['push-backend']
+    waitFor: ['push-backend', 'push-pgbouncer']
 
   # ── Get backend URL for frontend build arg ───────────────────────────────────
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -160,7 +208,7 @@ steps:
       - '--set-env-vars'
       - '^|^AI_PROVIDER=vertex|GOOGLE_VERTEX_PROJECT=praxisbytacitus|GOOGLE_VERTEX_LOCATION=us-central1|VERTEX_AGENT_LOCATION=us-central1|GOOGLE_CLOUD_PROJECT=praxisbytacitus|ADMIN_EMAIL_ALLOWLIST=giulio@tacitus.me,giuliocatanzariti@gmail.com'
       - '--set-secrets'
-      - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,FIRECRAWL_API_KEY=praxis-firecrawl-api-key:latest,PARALLEL_API_KEY=praxis-parallel-api-key:latest,UCDP_API_TOKEN=praxis-ucdp-api-token:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest,SESSION_SECRET=praxis-cookie-secret:latest,USER_KEY_MASTER=praxis-user-key-master:latest,VERTEX_AGENT_ENGINE_ID=praxis-vertex-adk-engine-id:latest'
+      - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,UCDP_API_TOKEN=praxis-ucdp-api-token:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest,SESSION_SECRET=praxis-cookie-secret:latest,USER_KEY_MASTER=praxis-user-key-master:latest,VERTEX_AGENT_ENGINE_ID=praxis-vertex-adk-engine-id:latest'
     id: 'deploy-frontend'
     waitFor: ['push-frontend']
 
@@ -225,6 +273,7 @@ steps:
 
 images:
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-backend'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-pgbouncer'
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend'
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/gdelt-poller'
 

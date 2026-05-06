@@ -53,9 +53,7 @@ interface BreakerState {
 interface ProviderHealth {
   google: boolean;
   vertex: boolean;
-  anthropic: boolean;
-  firecrawl: boolean;
-  parallel: boolean;
+  groundedSearch: boolean;
   vertexAdk: boolean;
   polar: boolean;
   polarMissing?: string[];
@@ -172,26 +170,6 @@ const ACTIVATION_STEPS: Array<{
   effort: string;
 }> = [
   {
-    id: 'firecrawl',
-    name: 'Firecrawl Web Intelligence',
-    status: 'paid-live',
-    why: 'Premium search, scrape, crawl, map, and structured extraction for hard-to-parse policy sites, PDFs, source monitors, and knowledge-base ingestion. Free PRAXIS research still works without it through Google/open-source fallbacks.',
-    envVars: ['FIRECRAWL_API_KEY'],
-    signupUrl: 'https://docs.firecrawl.dev/',
-    costNote: 'Credit-based. Keep broad crawls, maps, and structured extraction behind paid/trial workflows or support approval.',
-    effort: '~15 min',
-  },
-  {
-    id: 'parallel',
-    name: 'Parallel Search MCP + API',
-    status: 'paid-live',
-    why: 'LLM-optimized web search for contested claims, second-source checks, entity enrichment, and agent research. Codex MCP is configured as parallel-search with PARALLEL_API_KEY bearer auth.',
-    envVars: ['PARALLEL_API_KEY'],
-    signupUrl: 'https://docs.parallel.ai/getting-started/overview',
-    costNote: 'Usage-based. Use basic search for routine source discovery; reserve advanced/deep tasks for paid or trial users.',
-    effort: '~15 min',
-  },
-  {
     id: 'vertex-adk',
     name: 'Vertex AI Agent Engine (Deep Research Agent)',
     status: 'unconfigured-paid',
@@ -238,14 +216,6 @@ function getActivationState(
   const missingClass = 'border-amber-500/30 bg-amber-500/10 text-amber-700';
 
   switch (stepId) {
-    case 'firecrawl':
-      return providerHealth.firecrawl
-        ? { label: 'Live', className: activeClass }
-        : { label: 'Needs key', className: missingClass, detail: 'FIRECRAWL_API_KEY is not mounted' };
-    case 'parallel':
-      return providerHealth.parallel
-        ? { label: 'Live', className: activeClass }
-        : { label: 'Needs key', className: missingClass, detail: 'PARALLEL_API_KEY is not mounted' };
     case 'vertex-adk':
       return providerHealth.vertexAdk
         ? { label: 'Live', className: activeClass }
@@ -470,22 +440,10 @@ export default function SystemHealthPage() {
           detail={providerHealth?.vertex ? 'Active — enterprise tier' : 'Optional — set AI_PROVIDER=vertex + GOOGLE_VERTEX_PROJECT'}
         />
         <HealthRow
-          icon={Brain}
-          label="Anthropic Claude (Deep Analysis)"
-          status={{ status: loading ? 'loading' : providerHealth?.anthropic ? 'ok' : 'degraded' }}
-          detail={providerHealth?.anthropic ? 'Active — used for deep analysis' : 'Optional — set ANTHROPIC_API_KEY'}
-        />
-        <HealthRow
           icon={Globe}
-          label="Firecrawl Web Intelligence"
-          status={{ status: loading ? 'loading' : providerHealth?.firecrawl ? 'ok' : 'degraded' }}
-          detail={providerHealth?.firecrawl ? 'Active — premium web extraction enabled' : 'Optional — set FIRECRAWL_API_KEY'}
-        />
-        <HealthRow
-          icon={Zap}
-          label="Parallel Search API"
-          status={{ status: loading ? 'loading' : providerHealth?.parallel ? 'ok' : 'degraded' }}
-          detail={providerHealth?.parallel ? 'Active — LLM-optimized source discovery enabled' : 'Optional — set PARALLEL_API_KEY'}
+          label="Grounded Google Search"
+          status={{ status: loading ? 'loading' : providerHealth?.groundedSearch ? 'ok' : 'degraded' }}
+          detail={providerHealth?.groundedSearch ? 'Active — grounded search enabled' : 'Uses Gemini grounding when AI is configured'}
         />
         <HealthRow
           icon={Layers}
@@ -613,9 +571,8 @@ export default function SystemHealthPage() {
       <Card title="Activate paid / freemium data sources" icon={Plug}>
         <p className="mb-3 text-xs text-muted-foreground">
           PRAXIS works out-of-the-box on open-data feeds plus Vertex AI / Gemini and
-          grounded research fallbacks. Firecrawl and Parallel are premium accelerators:
-          use them for deeper source acquisition, not as a prerequisite for free value.
-          Each source degrades gracefully if its env var is missing.
+          grounded research fallbacks. Vertex Gemini is the only AI provider, and
+          optional data sources degrade gracefully if their env vars are missing.
         </p>
         <ol className="space-y-3">
           {ACTIVATION_STEPS.map((step, i) => {

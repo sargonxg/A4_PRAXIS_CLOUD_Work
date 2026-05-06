@@ -66,7 +66,7 @@ export const reliefwebBreaker= new CircuitBreaker({ name: 'ReliefWeb',failureThr
 export const unhcrBreaker    = new CircuitBreaker({ name: 'UNHCR',    failureThreshold: 3, resetTimeoutMs: 300_000 });
 export const worldbankBreaker= new CircuitBreaker({ name: 'WorldBank',failureThreshold: 3, resetTimeoutMs: 600_000 });
 export const geminiBreaker   = new CircuitBreaker({ name: 'Gemini',   failureThreshold: 5, resetTimeoutMs: 60_000 });
-export const firecrawlBreaker= new CircuitBreaker({ name: 'Firecrawl',failureThreshold: 3, resetTimeoutMs: 300_000 });
+export const groundedSearchBreaker = new CircuitBreaker({ name: 'Grounded Search', failureThreshold: 3, resetTimeoutMs: 300_000 });
 
 /** Returns simple state map — name → 'closed'|'open'|'half-open' */
 export function getAllBreakerStates(): Record<string, string> {
@@ -77,7 +77,7 @@ export function getAllBreakerStates(): Record<string, string> {
     UNHCR:     unhcrBreaker.getState(),
     WorldBank: worldbankBreaker.getState(),
     Gemini:    geminiBreaker.getState(),
-    Firecrawl: firecrawlBreaker.getState(),
+    GroundedSearch: groundedSearchBreaker.getState(),
   };
 }
 
@@ -90,6 +90,6 @@ export function getAllBreakerDetails() {
     unhcrBreaker,
     worldbankBreaker,
     geminiBreaker,
-    firecrawlBreaker,
+    groundedSearchBreaker,
   ].map((b) => b.getDetails());
 }

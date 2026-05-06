@@ -113,23 +113,22 @@ export function SyriaAskPraxis({ className }: { className?: string }) {
       setMessages((prev) => {
         const next = [...prev];
         const last = next[next.length - 1];
-        if (last && last.role === 'praxis') last.thinkingSteps = stepCopy;
+        if (last && last.role === 'praxis') next[next.length - 1] = { ...last, thinkingSteps: stepCopy };
         return next;
       });
     }
 
     // stream tokens
     const tokens = query.answer.split(/(\s+)/);
-    let buffer = '';
     for (let i = 0; i < tokens.length; i += 1) {
       if (cancelRef.current) return;
       // eslint-disable-next-line no-await-in-loop
       await wait(reduceMotion ? 0 : 24);
-      buffer += tokens[i];
+      const content = tokens.slice(0, i + 1).join('');
       setMessages((prev) => {
         const next = [...prev];
         const last = next[next.length - 1];
-        if (last && last.role === 'praxis') last.content = buffer;
+        if (last && last.role === 'praxis') next[next.length - 1] = { ...last, content };
         return next;
       });
     }
@@ -138,7 +137,7 @@ export function SyriaAskPraxis({ className }: { className?: string }) {
     setMessages((prev) => {
       const next = [...prev];
       const last = next[next.length - 1];
-      if (last && last.role === 'praxis') last.provenance = query.provenance;
+      if (last && last.role === 'praxis') next[next.length - 1] = { ...last, provenance: query.provenance };
       return next;
     });
 

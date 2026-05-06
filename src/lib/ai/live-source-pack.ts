@@ -1,5 +1,5 @@
 import { executeWebResearch, SEARCH_FAILURE_WARNING, type WebResearchResult } from '@/lib/ai/web-research';
-import { scrapeUrl } from '@/lib/ai/firecrawl';
+import { scrapeUrl } from '@/lib/ai/grounded-research';
 import { getBattleDeaths, getConflicts, type UCDPConflict } from '@/lib/data-feeds/ucdp-client';
 import {
   buildSourceReceipts,

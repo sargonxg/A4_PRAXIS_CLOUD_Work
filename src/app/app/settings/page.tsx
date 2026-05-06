@@ -533,48 +533,6 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Anthropic Claude Analysis */}
-          <div className="rounded-lg border border-navy-200 bg-navy-50 px-4 py-3">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-3">
-                <Cpu className="mt-0.5 h-4 w-4 shrink-0 text-diplomatic-blue" />
-                <div>
-                  <p className="text-sm font-semibold text-navy-900">
-                    Anthropic Claude Analysis
-                  </p>
-                  <span className="text-[10px] font-medium text-navy-500">optional</span>
-                  <p className="mt-0.5 text-xs text-navy-600">
-                    Deep analytical engine for nuanced diplomatic analysis, bias detection, and complex geopolitical reasoning. Optional enhancement.
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {['Bias detection', 'Diplomatic analysis', 'Complex reasoning', 'Nuanced language'].map((cap) => (
-                      <span key={cap} className="rounded-full border border-navy-200 bg-white px-2 py-0.5 text-[10px] text-navy-600">
-                        {cap}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="mt-1.5 text-[11px] text-navy-500">
-                    Env: <Code>ANTHROPIC_API_KEY</Code>
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-navy-400">
-                    Set ANTHROPIC_API_KEY or use TACITUS enhanced credits
-                  </p>
-                </div>
-              </div>
-              {process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY ? (
-                <div className="flex items-center gap-1.5 rounded-full bg-teal/15 px-2.5 py-1 text-[11px] font-semibold text-teal">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Available
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5 rounded-full bg-navy-100 px-2.5 py-1 text-[11px] font-semibold text-navy-400">
-                  <AlertCircle className="h-3 w-3" />
-                  Not configured
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Deep Research Pipeline */}
           <div className="flex items-start justify-between rounded-lg border border-teal/25 bg-teal/4 px-4 py-3">
             <div className="flex items-start gap-3">
@@ -612,7 +570,7 @@ export default function SettingsPage() {
                 <Globe className="mt-0.5 h-4 w-4 shrink-0 text-gold-600" />
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-navy-900">Firecrawl</p>
+                    <p className="text-sm font-semibold text-navy-900">Google Grounding</p>
                     <span className="rounded-full bg-gold-500/15 px-2 py-0.5 text-[10px] font-semibold text-gold-700">
                       Premium
                     </span>
@@ -631,7 +589,7 @@ export default function SettingsPage() {
                 <Globe className="mt-0.5 h-4 w-4 shrink-0 text-diplomatic-blue" />
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-navy-900">Parallel.ai</p>
+                    <p className="text-sm font-semibold text-navy-900">Google Search grounding</p>
                     <span className="rounded-full bg-diplomatic-blue/15 px-2 py-0.5 text-[10px] font-semibold text-diplomatic-blue">
                       MCP + API
                     </span>

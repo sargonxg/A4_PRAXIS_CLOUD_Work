@@ -51,7 +51,6 @@ export async function GET(request: Request) {
   // --- AI Provider ---
   diagnostics.aiProvider = {
     googleAiKeySet: !!process.env.GOOGLE_AI_API_KEY,
-    anthropicKeySet: !!process.env.ANTHROPIC_API_KEY,
     vertexProject: process.env.GOOGLE_VERTEX_PROJECT ?? null,
     aiProvider: process.env.AI_PROVIDER ?? 'google',
   };
@@ -90,7 +89,6 @@ export async function GET(request: Request) {
 
   // --- Optional integrations ---
   diagnostics.integrations = {
-    firecrawlSet: !!process.env.FIRECRAWL_API_KEY,
     vertexAgentEngineId: process.env.VERTEX_AGENT_ENGINE_ID ?? null,
     polarAccessTokenSet: !!process.env.POLAR_ACCESS_TOKEN,
     polarWebhookSecretSet: !!process.env.POLAR_WEBHOOK_SECRET,

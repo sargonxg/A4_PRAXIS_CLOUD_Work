@@ -20,17 +20,17 @@ from auth import verify_firebase_token, verify_service_token
 from graphify_tacitus.build import build_from_json
 from graphify_tacitus.cypher_export import to_cypher as _to_cypher
 from graphify_tacitus.export import to_html
+from config import get_settings
 from services.firestore_sync import FirestoreSync
 from services.graph_adapter import create_graph_adapter
 
 router = APIRouter()
+settings = get_settings()
 
 
 class GraphBackendConfig(BaseModel):
     provider: str = "neo4j"
     uri: str = ""
-    host: str = "localhost"
-    port: str = "6379"
     user: str = "neo4j"
     password: str = ""
 
@@ -45,8 +45,6 @@ async def test_connection(
         adapter = create_graph_adapter(
             provider=config.provider,
             uri=config.uri,
-            host=config.host,
-            port=int(config.port) if config.port else 6379,
             user=config.user,
             password=config.password,
         )
@@ -314,7 +312,7 @@ async def export_graph(
     )
 
 
-# ── Temporal / Graphiti endpoints ─────────────────────────────────────────────
+# ── Temporal graph endpoints ──────────────────────────────────────────────────
 
 class TemporalSearchRequest(BaseModel):
     query: str
@@ -328,24 +326,22 @@ async def temporal_search(
     req: TemporalSearchRequest,
     token: dict = Depends(verify_firebase_token),
 ):
-    """Search the temporal knowledge graph for facts matching a query.
-
-    Uses Graphiti bi-temporal search. Returns facts with valid/invalid timestamps.
-    """
-    from services.graphiti_client import ConflictMemory
-    from datetime import datetime
-
+    """Search temporal facts in the Neo4j-backed graph index."""
     uid = token["uid"]
-    valid_at = None
-    if req.valid_at:
-        try:
-            valid_at = datetime.fromisoformat(req.valid_at)
-        except ValueError:
-            pass
-
-    memory = ConflictMemory(uid, situation_id)
-    facts = await memory.search(req.query, num_results=req.num_results, valid_at=valid_at)
-    await memory.close()
+    adapter = create_graph_adapter(
+        "neo4j",
+        uri=settings.neo4j_uri,
+        user=settings.neo4j_user,
+        password=settings.neo4j_password,
+        database=settings.neo4j_database,
+    )
+    graph = await adapter.query_situation(uid, situation_id)
+    await adapter.close()
+    query = req.query.lower()
+    facts = [
+        node for node in graph.get("nodes", [])
+        if query in str(node.get("label", "")).lower() or query in str(node.get("description", "")).lower()
+    ][:req.num_results]
     return {"facts": facts, "query": req.query, "valid_at": req.valid_at}
 
 
@@ -357,10 +353,15 @@ async def entity_timeline(
     token: dict = Depends(verify_firebase_token),
 ):
     """Return the full temporal timeline of facts about a named entity."""
-    from services.graphiti_client import ConflictMemory
-
     uid = token["uid"]
-    memory = ConflictMemory(uid, situation_id)
-    timeline = await memory.get_entity_timeline(entity_name, limit=limit)
-    await memory.close()
+    adapter = create_graph_adapter(
+        "neo4j",
+        uri=settings.neo4j_uri,
+        user=settings.neo4j_user,
+        password=settings.neo4j_password,
+        database=settings.neo4j_database,
+    )
+    profile = await adapter.actor_profile(uid, entity_name)
+    await adapter.close()
+    timeline = profile.get("connections", [])[:limit] if profile else []
     return {"entity": entity_name, "timeline": timeline}

@@ -12,8 +12,7 @@
  *  - Add a freeform block.
  *  - Export the assembled markdown to PDF/DOCX (jspdf + docx).
  *
- * Surfaces a banner reminding the user to add Firecrawl / Parallel API
- * keys when those would unlock deeper research.
+ * Surfaces a banner when additional source setup is needed.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -74,15 +73,13 @@ interface BriefPayload {
 }
 
 interface KeyMap {
-  firecrawl: { present: boolean; effective: boolean };
-  parallel: { present: boolean; effective: boolean };
+  google_ai?: { present: boolean; effective: boolean };
 }
 
 function MissingKeysBanner({ keys }: { keys: KeyMap | null }) {
   if (!keys) return null;
   const missing: string[] = [];
-  if (!keys.firecrawl?.effective) missing.push('Firecrawl');
-  if (!keys.parallel?.effective) missing.push('Parallel.ai');
+  if (!keys.google_ai?.effective) missing.push('Google AI');
   if (missing.length === 0) return null;
   return (
     <div className="flex flex-wrap items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
@@ -90,7 +87,7 @@ function MissingKeysBanner({ keys }: { keys: KeyMap | null }) {
       <div>
         <p>
           Add <strong>{missing.join(' + ')}</strong> API keys to unlock
-          deep web research and richer block grounding.
+          grounded research and richer block grounding.
         </p>
         <PraxisLink href="/app/settings/api-keys" className="mt-1 inline-flex items-center gap-1 text-amber-900 underline">
           Settings → API Keys
@@ -256,8 +253,7 @@ export function BriefBlocksPanel({ situation }: { situation: Situation }) {
         const data = (await res.json()) as { statuses?: Record<string, { present: boolean; effective: boolean }> };
         if (cancelled) return;
         setKeys({
-          firecrawl: data.statuses?.firecrawl ?? { present: false, effective: false },
-          parallel: data.statuses?.parallel ?? { present: false, effective: false },
+          google_ai: data.statuses?.google_ai ?? { present: false, effective: false },
         });
       } catch {
         // non-fatal
@@ -391,7 +387,7 @@ export function BriefBlocksPanel({ situation }: { situation: Situation }) {
         <div className="mt-2 flex flex-wrap items-start gap-2 rounded-md border border-gold-500/30 bg-gold-50 p-3 text-xs text-gold-900">
           <Crown className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <div>
-            Free tier: limited to grounded Google Search. Upgrade to Analyst for deep research, Firecrawl, and Parallel.ai integrations.
+            Free tier: limited to grounded Google Search. Upgrade to Analyst for deep research, Grounded Search, and Google Search grounding integrations.
             <PraxisLink href="/pricing" className="ml-1 underline">See plans</PraxisLink>.
           </div>
         </div>

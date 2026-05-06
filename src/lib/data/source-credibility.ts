@@ -78,15 +78,15 @@ export const SOURCE_CREDIBILITY: Record<string, SourceProfile> = {
     unCitable: true,
     color: '#3D5A80',
   },
-  FIRECRAWL: {
-    name: 'Web Intelligence (Firecrawl)',
+  GOOGLE_GROUNDING: {
+    name: 'Web Intelligence (Google Grounding)',
     shortName: 'Web/Media',
     credibility: 0.60,
     coverageBias: 'Aggregated web sources; credibility varies by underlying outlet',
     lag: 'Real-time',
     suitableFor: ['Latest developments', 'Media monitoring', 'Narrative analysis'],
     notSuitableFor: ['UN citations without verification', 'Fatality counts', 'Legal proceedings'],
-    citationFormat: '{source_outlet}, via Firecrawl web intelligence, {date}',
+    citationFormat: '{source_outlet}, via Google-grounded web intelligence, {date}',
     unCitable: false,
     color: '#7B6D8D',
   },

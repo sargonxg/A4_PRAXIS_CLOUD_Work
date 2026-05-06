@@ -74,7 +74,7 @@ describe('source receipts', () => {
           url: 'https://apnews.com/example',
           content: 'AP content',
           source: 'apnews.com',
-          provider: 'parallel',
+          provider: 'google-search',
           reliabilityScore: 0.95,
         },
         {
@@ -82,7 +82,7 @@ describe('source receipts', () => {
           url: 'https://crisisgroup.org/example',
           content: 'Analysis content',
           source: 'crisisgroup.org',
-          provider: 'firecrawl',
+          provider: 'google-search',
           reliabilityScore: 0.9,
         },
         {

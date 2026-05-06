@@ -37,7 +37,7 @@ describe('AdvisorConfig', () => {
   it('rejects memoryPolicy.lastTurns above 32', () => {
     expect(() => AdvisorConfigSchema.parse({
       id: 'vanderberg', name: 'Dr. Vanderberg', title: 'PE', bio: 'Political economy advisor background.', headshotUrl: null,
-      persona: 'a'.repeat(120), modelTier: 'claude-sonnet-4',
+      persona: 'a'.repeat(120), modelTier: 'gemini-pro-standard',
       sourceCategories: ['x'], allowedTools: ['webSearch'], greeting: 'hi',
       memoryPolicy: { lastTurns: 99, rollingSummary: true }, version: 1, updatedAt: null,
     })).toThrow();

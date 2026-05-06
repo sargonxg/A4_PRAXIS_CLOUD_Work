@@ -70,8 +70,8 @@ export interface SourceCategory {
   premium: boolean;
   /** If true the toggle is fixed ON and cannot be disabled by the user. */
   alwaysOn?: boolean;
-  /** If true the category triggers a Firecrawl web-search run. */
-  useFirecrawl?: boolean;
+  /** If true the category triggers a Google-grounded web-search run. */
+  useGroundedSearch?: boolean;
 }
 
 /**
@@ -106,7 +106,7 @@ export const SOURCE_CATEGORIES: SourceCategory[] = [
     color: '#E15759',
     defaultEnabled: true,
     premium: false,
-    useFirecrawl: true,
+    useGroundedSearch: true,
   },
   {
     id: 'humanitarian',
@@ -128,7 +128,7 @@ export const SOURCE_CATEGORIES: SourceCategory[] = [
     color: '#F28E2B',
     defaultEnabled: true,
     premium: false,
-    useFirecrawl: true,
+    useGroundedSearch: true,
   },
   {
     id: 'diplomatic-official',
@@ -152,7 +152,7 @@ export const SOURCE_CATEGORIES: SourceCategory[] = [
     color: '#1B3A5C',
     defaultEnabled: true,
     premium: false,
-    useFirecrawl: true,
+    useGroundedSearch: true,
   },
   {
     id: 'news-media',
@@ -166,7 +166,7 @@ export const SOURCE_CATEGORIES: SourceCategory[] = [
     color: '#4E79A7',
     defaultEnabled: true,
     premium: false,
-    useFirecrawl: true,
+    useGroundedSearch: true,
   },
   {
     id: 'think-tanks',
@@ -187,7 +187,7 @@ export const SOURCE_CATEGORIES: SourceCategory[] = [
     color: '#B07AA1',
     defaultEnabled: false,
     premium: false,
-    useFirecrawl: true,
+    useGroundedSearch: true,
   },
   {
     id: 'military-intelligence',
@@ -207,7 +207,7 @@ export const SOURCE_CATEGORIES: SourceCategory[] = [
     color: '#9C755F',
     defaultEnabled: false,
     premium: true,
-    useFirecrawl: true,
+    useGroundedSearch: true,
   },
   {
     id: 'economic-development',
@@ -228,7 +228,7 @@ export const SOURCE_CATEGORIES: SourceCategory[] = [
     color: '#EDC948',
     defaultEnabled: false,
     premium: false,
-    useFirecrawl: true,
+    useGroundedSearch: true,
   },
 ];
 

@@ -27,7 +27,6 @@
     "migrate:user-api-keys": "node scripts/migrate-user-api-keys.mjs"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.50",
     "@ai-sdk/google": "^3.0.34",
     "@ai-sdk/google-vertex": "^4.0.102",
     "@ai-sdk/react": "^1.0.0",
@@ -38,7 +37,6 @@
     "@google-cloud/opentelemetry-cloud-trace-exporter": "^2.0.0",
     "@google-cloud/pubsub": "^4.11.0",
     "@google-cloud/tasks": "^5.5.2",
-    "@mendable/firecrawl-js": "^4.16.0",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-node": "^0.56.0",
     "@opentelemetry/sdk-node": "^0.57.2",
@@ -75,7 +73,6 @@
     "mammoth": "^1.12.0",
     "neo4j-driver": "^6.0.1",
     "next": "^16.2.4",
-    "parallel-web": "^0.3.2",
     "pdf-parse": "^2.4.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

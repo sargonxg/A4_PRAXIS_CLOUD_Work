@@ -27,7 +27,7 @@ export type MeterEventName =
   | 'praxis.output_tokens'   // model output tokens
   | 'praxis.thinking_tokens' // Pro/Deep-Think thinking tokens
   | 'praxis.gdelt_query'     // legacy — kept for old customers
-  | 'praxis.firecrawl_page'; // legacy — kept for old customers
+  | 'praxis.grounded_search_page'; // legacy meter label
 
 export interface MeterEvent {
   /** Stripe customer id — `cus_XXX`. Resolved by the caller (typically

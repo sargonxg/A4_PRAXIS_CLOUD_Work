@@ -229,20 +229,19 @@ def test_report_generation():
 
 
 def test_graph_adapter_mock():
-    """Test the graph adapter factory with mock providers."""
+    """Test the Neo4j-only graph adapter factory rejects removed providers."""
     import sys
-    from unittest.mock import MagicMock, AsyncMock, patch
+    from unittest.mock import MagicMock, patch
 
-    # FalkorDB adapter: mock the falkordb import
-    falkordb_mock = MagicMock()
-    falkordb_instance = MagicMock()
-    falkordb_mock.FalkorDB.return_value = falkordb_instance
-    falkordb_instance.select_graph.return_value = MagicMock()
+    neo4j_mock = MagicMock()
+    neo4j_mock.AsyncGraphDatabase.driver.return_value = MagicMock()
 
-    with patch.dict('sys.modules', {'falkordb': falkordb_mock}):
+    with patch.dict('sys.modules', {'neo4j': neo4j_mock}):
         from services.graph_adapter import create_graph_adapter
-        adapter = create_graph_adapter("falkordb", host="localhost", port=6379)
-        assert adapter is not None, "FalkorDB adapter should be created"
+        adapter = create_graph_adapter("neo4j", uri="bolt://localhost:7687", user="neo4j", password="pw")
+        assert adapter is not None, "Neo4j adapter should be created"
+        with pytest.raises(ValueError):
+            create_graph_adapter("legacy")
 
 
 def test_extraction_schema_validation():

@@ -10,8 +10,7 @@ const POLAR_REQUIRED_ENV = [
 ] as const;
 
 export interface ProviderIntegrationStatus {
-  firecrawl: boolean;
-  parallel: boolean;
+  groundedSearch: boolean;
   vertexAdk: boolean;
   polar: boolean;
   polarMissing: string[];
@@ -23,8 +22,7 @@ export function getProviderIntegrationStatus(
   const polarMissing = POLAR_REQUIRED_ENV.filter((name) => !env[name]);
 
   return {
-    firecrawl: Boolean(env.FIRECRAWL_API_KEY),
-    parallel: Boolean(env.PARALLEL_API_KEY),
+    groundedSearch: Boolean(env.GOOGLE_AI_API_KEY || env.GOOGLE_VERTEX_PROJECT),
     vertexAdk: Boolean(env.VERTEX_AGENT_ENGINE_ID),
     polar: polarMissing.length === 0,
     polarMissing,
@@ -42,7 +40,6 @@ export const GET = withAuth(async () => {
   return NextResponse.json({
     google:    providers.google.configured,
     vertex:    providers.vertex.configured,
-    anthropic: providers.anthropic.configured,
     providerMode: providers.vertex.configured ? 'vertex' : providers.google.configured ? 'google' : 'offline',
     model:     MODEL_NAMES.flash,
     proModel:  MODEL_NAMES.pro,

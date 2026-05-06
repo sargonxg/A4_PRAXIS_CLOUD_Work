@@ -72,7 +72,7 @@ const SOURCE_RELIABILITY: Record<string, number> = {
 
   // Tier 5: User-provided / unverified
   'user-document': 40,
-  'firecrawl': 45,
+  'Grounded Search': 45,
   'unknown': 30,
 };
 

@@ -92,7 +92,7 @@ export const SourceSpanSchema = z.object({
   charEnd: z.number().int().min(0),
   excerpt: z.string().max(500),
   retrievedAt: z.string(),
-  retrievalMethod: z.enum(['grounded_search', 'firecrawl', 'feed', 'upload', 'manual']),
+  retrievalMethod: z.enum(['grounded_search', 'feed', 'upload', 'manual']),
 });
 
 const BaseEntitySchema = z.object({

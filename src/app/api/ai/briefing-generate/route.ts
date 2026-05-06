@@ -9,7 +9,7 @@ import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
-import { searchWeb, formatResultsAsContext } from '@/lib/ai/firecrawl';
+import { searchWeb, formatResultsAsContext } from '@/lib/ai/grounded-research';
 import { audienceTonePreset, audienceTuningEnabled } from '@/lib/ai/audience-presets';
 import type { Situation } from '@/types/situation';
 
