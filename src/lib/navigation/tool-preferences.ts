@@ -1,4 +1,5 @@
 import type { UserPreferences } from '@/types/preferences';
+import { PRODUCT_SURFACES } from '@/lib/navigation/product-surfaces';
 
 export interface CustomizableToolItem {
   section: string;
@@ -8,18 +9,21 @@ export interface CustomizableToolItem {
 }
 
 const LEGACY_TOOL_ID_ALIASES: Record<string, string> = {
+  desk: 'dashboard',
+  context: 'context-builder',
+  research: 'source-scout',
+  graph: 'graphops',
+  boardroom: 'brainstorming-table',
+  draft: 'policy-memo',
   sources: 'sources-library',
 };
 
-export const CUSTOMIZABLE_SIDEBAR_TOOLS: CustomizableToolItem[] = [
-  { section: 'Policy Workspace', label: 'Desk', href: '/dashboard', toolId: 'dashboard' },
-  { section: 'Policy Workspace', label: 'Context', href: '/context-builder', toolId: 'context-builder' },
-  { section: 'Policy Workspace', label: 'Library', href: '/documents', toolId: 'documents' },
-  { section: 'Policy Workspace', label: 'Research', href: '/source-scout', toolId: 'source-scout' },
-  { section: 'Policy Workspace', label: 'Graph', href: '/graphops', toolId: 'graphops' },
-  { section: 'Policy Workspace', label: 'Draft', href: '/policy-memo', toolId: 'policy-memo' },
-  { section: 'Specialist', label: 'Specialist Tools', href: '/tools', toolId: 'tools' },
-];
+export const CUSTOMIZABLE_SIDEBAR_TOOLS: CustomizableToolItem[] = PRODUCT_SURFACES.map((surface) => ({
+  section: surface.id === 'tools' ? 'Archive' : 'Policy Workspace',
+  label: surface.label,
+  href: surface.href,
+  toolId: surface.toolId,
+}));
 
 export function normalizeToolPreferenceId(toolId: string): string {
   return LEGACY_TOOL_ID_ALIASES[toolId] ?? toolId;

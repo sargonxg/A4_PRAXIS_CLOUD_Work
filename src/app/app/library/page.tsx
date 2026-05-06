@@ -226,6 +226,15 @@ export default function LibraryPage() {
         </div>
       </header>
 
+      <nav className="flex flex-wrap gap-2">
+        <PraxisLink href="/library/sources" className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-navy-700 hover:bg-slate-50">
+          Sources
+        </PraxisLink>
+        <PraxisLink href="/library/work-products" className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-navy-700 hover:bg-slate-50">
+          Work products
+        </PraxisLink>
+      </nav>
+
       {uploadStatus.state !== 'idle' && uploadStatus.message && (
         <div
           className={cn(

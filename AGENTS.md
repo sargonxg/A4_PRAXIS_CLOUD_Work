@@ -2,8 +2,8 @@
 
 This repository is worked on by Codex, Claude Code, and occasional human
 operators. Keep this file short: the canonical engineering guide is
-[`CLAUDE.md`](./CLAUDE.md), and the current handoff is
-[`docs/CONTINUATION.md`](./docs/CONTINUATION.md).
+[`CLAUDE.md`](./CLAUDE.md), and the current phase architecture/handoff is
+[`docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md`](./docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md).
 
 ## Start Every Session
 
@@ -34,6 +34,7 @@ work unless Giulio explicitly asks.
 13. [`docs/phases/PRAXIS_PHASE_1_FOUNDATION.md`](./docs/phases/PRAXIS_PHASE_1_FOUNDATION.md)
 14. [`docs/phases/PRAXIS_PHASE_2_AGENTIC_SPINE.md`](./docs/phases/PRAXIS_PHASE_2_AGENTIC_SPINE.md)
 15. [`docs/phases/PRAXIS_PHASE_3_PRODUCT_SURFACE.md`](./docs/phases/PRAXIS_PHASE_3_PRODUCT_SURFACE.md)
+16. [`docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md`](./docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md)
 
 ## Validation
 
@@ -47,6 +48,8 @@ npm run lint
 npm run audit:gcp
 node scripts/audit-ai-routes.mjs
 npx vitest run
+npx tsx scripts/audit-phase3-product-surface.ts
+npx tsx scripts/audit-verb-hookup.ts
 ```
 
 Lint warnings are currently tracked technical debt; build, typecheck, route

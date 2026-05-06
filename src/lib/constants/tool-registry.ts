@@ -6,7 +6,9 @@ import type { ToolDefinition } from '@/types/situation';
 // Used by: sidebar, tool cards, "About" panels, AI prompt context.
 //
 // Public surface policy:
-// - 12 hero tools are the default buyer/user-facing app surface:
+// - Phase 3 renders 8 product surfaces from src/lib/navigation/product-surfaces.ts:
+//   Desk, Context, Library, Research, Graph, Boardroom, Draft, Tools.
+// - The 12 hero tools below remain the default tool contract set inside those surfaces:
 //   dashboard, context-builder, situation-intelligence, source-scout,
 //   conflict-graph, graphops, brainstorming-table, briefing, policy-memo,
 //   scenarios, negotiation-prep, treaty-analyzer.

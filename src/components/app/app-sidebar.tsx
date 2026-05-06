@@ -45,6 +45,8 @@ import { useAppStore } from '@/stores/app-store';
 import { useSituationStore } from '@/stores/situation-store';
 import { roleLabel } from '@/lib/dashboard/role-recommendations';
 import { isToolHiddenByPreference, orderedToolIds } from '@/lib/navigation/tool-preferences';
+import { PRODUCT_SURFACES } from '@/lib/navigation/product-surfaces';
+import { TOOL_REGISTRY } from '@/lib/constants/tool-registry';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { APP_BUILD_LABEL } from '@/lib/constants/app-version';
 import {
@@ -52,7 +54,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAllToolStatuses, type ToolHealth } from '@/hooks/use-tool-status';
 
 const CHANGELOG = [
@@ -203,8 +205,41 @@ const CHANGELOG = [
 
 interface NavSection {
   label: string;
-  items: { label: string; icon: React.ComponentType<{ className?: string }>; href: string; badge?: string }[];
+  items: NavItem[];
 }
+
+interface NavItem {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+  badge?: string;
+  toolId?: string;
+  surfaceId?: string;
+}
+
+const SURFACE_ICON_BY_NAME: Record<string, React.ComponentType<{ className?: string }>> = {
+  BookOpen,
+  Briefcase,
+  Clock,
+  Compass,
+  FileText,
+  GitBranch,
+  HeartHandshake,
+  LayoutDashboard,
+  Library,
+  Network,
+  Newspaper,
+  MessagesSquare,
+  PanelsTopLeft,
+  PenSquare,
+  Search,
+  Shield,
+  Sparkles,
+  Target,
+  Telescope,
+  Users,
+  Wrench,
+};
 
 const navSections: NavSection[] = [
   {
@@ -276,25 +311,31 @@ const navSections: NavSection[] = [
 ];
 
 const RECORDING_NAV_HREFS = new Set([
+  '/desk',
   '/cockpit',
   '/demo-guide',
+  '/context',
   '/dashboard',
   '/context-builder',
   '/documents',
   '/timeline',
   '/library',
+  '/research',
   '/sources',
   '/methodology',
   '/source-scout',
   '/deep-search-agent',
   '/media-compass',
+  '/graph',
   '/conflict-graph',
   '/graphops',
   '/stakeholder-map',
   '/power-map',
+  '/boardroom',
   '/advisory',
   '/brainstorming-table',
   '/assistant',
+  '/draft',
   '/editor',
   '/briefing',
   '/policy-memo',
@@ -305,6 +346,60 @@ const RECORDING_NAV_HREFS = new Set([
   '/desks/us-housing',
   '/tools',
 ]);
+
+const productSurfaceItems: NavItem[] = PRODUCT_SURFACES.map((surface) => ({
+  label: surface.label,
+  icon: SURFACE_ICON_BY_NAME[surface.icon] ?? PanelsTopLeft,
+  href: surface.href,
+  toolId: surface.toolId,
+  surfaceId: surface.id,
+}));
+
+const productSurfaceHrefs = new Set(productSurfaceItems.map((surface) => surface.href));
+
+const ARCHIVE_HREF_OVERRIDES: Record<string, string> = {
+  assistant: '/assistant',
+  'brainstorming-table': '/brainstorming-table',
+  'context-builder': '/context-builder',
+  dashboard: '/dashboard',
+  documents: '/documents',
+  graphops: '/graphops',
+  library: '/library',
+  'policy-memo': '/policy-memo',
+  'report-studio': '/reports',
+  reports: '/reports',
+  'situation-intelligence': '/dashboard#executive-intelligence',
+  'source-scout': '/source-scout',
+  'sources-library': '/sources',
+  tools: '/tools',
+};
+
+const registryArchiveItems: NavItem[] = TOOL_REGISTRY
+  .filter((tool) => tool.surface !== 'hero' || tool.visible === false)
+  .map((tool) => ({
+    label: tool.name,
+    icon: SURFACE_ICON_BY_NAME[tool.icon ?? ''] ?? PanelsTopLeft,
+    href: ARCHIVE_HREF_OVERRIDES[tool.id] ?? `/${tool.id}`,
+    toolId: tool.id,
+  }));
+
+const legacyArchiveItems: NavItem[] = navSections
+  .flatMap((section) => section.items)
+  .map((item) => ({
+    ...item,
+    toolId: ARCHIVE_HREF_OVERRIDES[item.href] ?? undefined,
+  }));
+
+const archivedSurfaceItems: NavItem[] = Array.from(
+  [...registryArchiveItems, ...legacyArchiveItems]
+    .filter((item) => !productSurfaceHrefs.has(item.href))
+    .reduce((items, item) => {
+      const key = item.toolId ?? item.href;
+      if (!items.has(key)) items.set(key, item);
+      return items;
+    }, new Map<string, NavItem>())
+    .values(),
+);
 
 function ChangelogButton() {
   const [open, setOpen] = useState(false);
@@ -356,20 +451,26 @@ function ChangelogButton() {
 // Map sidebar hrefs to tool-data IDs for status indicators
 const HREF_TO_TOOL_ID: Record<string, string> = {
   // Desk
+  '/desk': 'dashboard',
   '/cockpit': 'cockpit',
   '/dashboard': 'dashboard',
   '/dashboard#executive-intelligence': 'situation-intelligence',
   // Context
+  '/context': 'context-builder',
   '/context-builder': 'context-builder',
   '/documents': 'documents',
   '/library': 'library',
   '/sources': 'sources-library',
   '/methodology': 'methodology',
   // Research
+  '/research': 'source-scout',
   '/source-scout': 'source-scout',
   '/deep-search-agent': 'deep-search-agent',
   '/media-compass': 'media-compass',
   // Other
+  '/boardroom': 'brainstorming-table',
+  '/draft': 'policy-memo',
+  '/graph': 'graphops',
   '/timeline': 'timeline',
   '/humanitarian': 'humanitarian',
   '/calendar': 'calendar',
@@ -440,6 +541,11 @@ function formatDomainLabel(domain: string): string {
     .join(' ');
 }
 
+function sidebarTestId(item: NavItem): string {
+  const id = item.surfaceId ?? item.toolId ?? item.label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  return `sidebar-${id}`;
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -457,24 +563,51 @@ export function AppSidebar() {
   const sidebarOrder = orderedToolIds(preferences);
   const orderIndex = new Map(sidebarOrder.map((toolId, index) => [toolId, index]));
   const isToolHidden = (toolId?: string) => Boolean(toolId && isToolHiddenByPreference(preferences, toolId));
+  const [archivePinned, setArchivePinned] = useState(false);
+  const [showSimplifiedBanner, setShowSimplifiedBanner] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setArchivePinned(window.localStorage.getItem('praxis_show_archive') === '1');
+    setShowSimplifiedBanner(window.localStorage.getItem('praxis_sidebar_v7_seen') !== '1');
+  }, []);
+
+  function dismissSimplifiedBanner() {
+    setShowSimplifiedBanner(false);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('praxis_sidebar_v7_seen', '1');
+    }
+  }
 
   // Keep the default shell intentionally quiet. Role-specific tools still exist
   // in the specialist workspace and dashboard actions, but the sidebar should
   // read like one policy-document workflow.
   const forYou: Array<{ toolId: string; href: string }> = [];
-  const visibleNavSections = navSections
-    .map((section) => ({
-      ...section,
-      items: [...section.items]
-        .filter((item) => !recordingMode || RECORDING_NAV_HREFS.has(item.href))
-        .filter((item) => !isToolHidden(HREF_TO_TOOL_ID[item.href]))
-        .sort((a, b) => {
-          const aIndex = orderIndex.get(HREF_TO_TOOL_ID[a.href] ?? '') ?? Number.MAX_SAFE_INTEGER;
-          const bIndex = orderIndex.get(HREF_TO_TOOL_ID[b.href] ?? '') ?? Number.MAX_SAFE_INTEGER;
-          return aIndex - bIndex;
-        }),
-    }))
-    .filter((section) => section.items.length > 0);
+  const showArchive = searchParams.get('show_archive') === '1' || archivePinned;
+  const visibleSurfaceItems = [...productSurfaceItems]
+    .filter((item) => !recordingMode || RECORDING_NAV_HREFS.has(item.href))
+    .filter((item) => !isToolHidden(item.toolId))
+    .sort((a, b) => {
+      const aIndex = orderIndex.get(a.toolId ?? '') ?? Number.MAX_SAFE_INTEGER;
+      const bIndex = orderIndex.get(b.toolId ?? '') ?? Number.MAX_SAFE_INTEGER;
+      return aIndex - bIndex;
+    });
+  const visibleNavSections: NavSection[] = [
+    { label: 'Workspace', items: visibleSurfaceItems },
+    ...(showArchive
+      ? [{
+          label: 'Archived Tools',
+          items: archivedSurfaceItems
+            .filter((item) => !recordingMode || RECORDING_NAV_HREFS.has(item.href))
+            .filter((item) => !isToolHidden(HREF_TO_TOOL_ID[item.href]))
+            .sort((a, b) => {
+              const aIndex = orderIndex.get(HREF_TO_TOOL_ID[a.href] ?? '') ?? Number.MAX_SAFE_INTEGER;
+              const bIndex = orderIndex.get(HREF_TO_TOOL_ID[b.href] ?? '') ?? Number.MAX_SAFE_INTEGER;
+              return aIndex - bIndex;
+            }),
+        }]
+      : []),
+  ].filter((section) => section.items.length > 0);
   // Extract simple health map for backward compat with semaphore rendering
   const toolHealthMap: Record<string, ToolHealth> = {};
   for (const [id, info] of Object.entries(allToolStatuses)) {
@@ -483,7 +616,7 @@ export function AppSidebar() {
 
   // Collapsible sections — all open by default
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(
-    () => Object.fromEntries(navSections.map((s) => [s.label, true]))
+    () => Object.fromEntries(['Workspace', 'Archived Tools'].map((label) => [label, true]))
   );
   const toggleSection = (label: string) =>
     setOpenSections((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -635,6 +768,25 @@ export function AppSidebar() {
           </div>
         )}
 
+        {sidebarOpen && showSimplifiedBanner && (
+          <div className="mx-1 mb-3 rounded-lg border border-gold-500/30 bg-gold-50 px-3 py-2 text-[11px] leading-5 text-navy-700">
+            <div className="flex items-start justify-between gap-2">
+              <p>
+                Sidebar simplified. Old tools are still under Tools; add
+                <span className="font-mono"> ?show_archive=1</span> to expose them here.
+              </p>
+              <button
+                type="button"
+                onClick={dismissSimplifiedBanner}
+                className="shrink-0 rounded p-0.5 text-navy-400 hover:bg-white hover:text-navy-700"
+                aria-label="Dismiss sidebar simplification notice"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {visibleNavSections.map((section) => {
           const isSectionOpen = openSections[section.label] ?? true;
           return (
@@ -687,6 +839,7 @@ export function AppSidebar() {
               const linkContent = (
                 <PraxisLink
                   href={href}
+                  data-testid={sidebarTestId(item)}
                   className={cn(
                     'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
                     isActive
