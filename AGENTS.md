@@ -2,8 +2,9 @@
 
 This repository is worked on by Codex, Claude Code, and occasional human
 operators. Keep this file short: the canonical engineering guide is
-[`CLAUDE.md`](./CLAUDE.md), and the current phase architecture/handoff is
-[`docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md`](./docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md).
+[`CLAUDE.md`](./CLAUDE.md). The architecture entrypoint is
+[`ARCHITECTURE.md`](./ARCHITECTURE.md), which links the canonical architecture
+bible to the live-app alignment notes.
 
 ## Start Every Session
 
@@ -23,19 +24,21 @@ work unless Giulio explicitly asks.
 2. [`CLAUDE.md`](./CLAUDE.md)
 3. [`AGENTS.md`](./AGENTS.md)
 4. [`ARCHITECTURE.md`](./ARCHITECTURE.md)
-5. [`TODO.md`](./TODO.md)
-6. [`CHANGELOG.md`](./CHANGELOG.md)
-7. [`docs/CONTEXT_INJECTION.md`](./docs/CONTEXT_INJECTION.md)
-8. [`docs/OPERATIONAL_SPINE.md`](./docs/OPERATIONAL_SPINE.md)
-9. [`docs/CORPUS_ARCHITECTURE.md`](./docs/CORPUS_ARCHITECTURE.md)
-10. [`docs/GCP_OPERATIONS.md`](./docs/GCP_OPERATIONS.md)
-11. [`docs/COMPLIANCE.md`](./docs/COMPLIANCE.md)
-12. [`docs/PRAXIS_TECHNICAL_SPECIFICATION.md`](./docs/PRAXIS_TECHNICAL_SPECIFICATION.md)
-13. [`docs/phases/PRAXIS_PHASE_1_FOUNDATION.md`](./docs/phases/PRAXIS_PHASE_1_FOUNDATION.md)
-14. [`docs/phases/PRAXIS_PHASE_2_AGENTIC_SPINE.md`](./docs/phases/PRAXIS_PHASE_2_AGENTIC_SPINE.md)
-15. [`docs/phases/PRAXIS_PHASE_3_PRODUCT_SURFACE.md`](./docs/phases/PRAXIS_PHASE_3_PRODUCT_SURFACE.md)
-16. [`docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md`](./docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md)
-17. [`docs/PRAXIS_PHASE_SPEC_AUDIT_2026-05-06.md`](./docs/PRAXIS_PHASE_SPEC_AUDIT_2026-05-06.md)
+5. [`docs/architecture/PRAXIS_ARCHITECTURE.md`](./docs/architecture/PRAXIS_ARCHITECTURE.md)
+6. [`docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`](./docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md)
+7. [`TODO.md`](./TODO.md)
+8. [`CHANGELOG.md`](./CHANGELOG.md)
+9. [`docs/CONTEXT_INJECTION.md`](./docs/CONTEXT_INJECTION.md)
+10. [`docs/OPERATIONAL_SPINE.md`](./docs/OPERATIONAL_SPINE.md)
+11. [`docs/CORPUS_ARCHITECTURE.md`](./docs/CORPUS_ARCHITECTURE.md)
+12. [`docs/GCP_OPERATIONS.md`](./docs/GCP_OPERATIONS.md)
+13. [`docs/COMPLIANCE.md`](./docs/COMPLIANCE.md)
+14. [`docs/PRAXIS_TECHNICAL_SPECIFICATION.md`](./docs/PRAXIS_TECHNICAL_SPECIFICATION.md)
+15. [`docs/phases/PRAXIS_PHASE_1_FOUNDATION.md`](./docs/phases/PRAXIS_PHASE_1_FOUNDATION.md)
+16. [`docs/phases/PRAXIS_PHASE_2_AGENTIC_SPINE.md`](./docs/phases/PRAXIS_PHASE_2_AGENTIC_SPINE.md)
+17. [`docs/phases/PRAXIS_PHASE_3_PRODUCT_SURFACE.md`](./docs/phases/PRAXIS_PHASE_3_PRODUCT_SURFACE.md)
+18. [`docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md`](./docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md)
+19. [`docs/PRAXIS_PHASE_SPEC_AUDIT_2026-05-06.md`](./docs/PRAXIS_PHASE_SPEC_AUDIT_2026-05-06.md)
 
 ## Validation
 
@@ -46,6 +49,7 @@ run the full gate unless the user explicitly asks for a smaller checkpoint:
 npx tsc --noEmit
 npm run build
 npm run lint
+npm run audit:architecture-reference
 npm run audit:gcp
 node scripts/audit-ai-routes.mjs
 npx vitest run

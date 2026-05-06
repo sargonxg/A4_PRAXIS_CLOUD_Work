@@ -19,6 +19,7 @@ The master charter is now preserved in-repo and its high-level support structure
 | Pack 14 detected and preserved | DONE | `docs/codex-prompts/PRAXIS_CODEX_14_PRODUCTION_EXCELLENCE.md` |
 | Superseded pack 09 final consolidation excluded | DONE | Not part of `audit:codex-prompts`; replaced by Pack 09 Verification & Admin and Pack 11 |
 | Top-level onboarding docs present | DONE | `README.md`, `ARCHITECTURE.md`, `CLAUDE.md`, `AGENTS.md`, `DESIGN.md`, `DEPLOYMENT.md`, `SECURITY.md`, `TESTING.md`, `TODO.md`, `CHANGELOG.md` |
+| Architecture bible stored | DONE | `docs/architecture/PRAXIS_ARCHITECTURE.md`, `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`, `npm run audit:architecture-reference` |
 | Dedicated charter audit in gate | DONE | `scripts/audit-master-charter.ts`, `npm run audit:master-charter`, included in `audit:gate` |
 
 ## Pack Status Against Reality

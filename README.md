@@ -509,7 +509,9 @@ Current high-impact lanes:
 | [`TODO.md`](./TODO.md) | Current production continuation roadmap and long prioritized task list |
 | [`docs/PRAXIS_SUPERPLAN_2026-04-29.md`](./docs/PRAXIS_SUPERPLAN_2026-04-29.md) | Hyper-detailed multi-agent execution plan for identity, QA, AI, cloud, security, and docs |
 | [`docs/PRAXIS_15_APP_WIDE_IMPROVEMENTS_2026-04-29.md`](./docs/PRAXIS_15_APP_WIDE_IMPROVEMENTS_2026-04-29.md) | Fifteen top-level app-wide product, QA, AI, security, deploy, and trust initiatives |
-| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Compact system architecture summary with deeper links |
+| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Architecture entrypoint linking the canonical bible to live-app parity notes |
+| [`docs/architecture/PRAXIS_ARCHITECTURE.md`](./docs/architecture/PRAXIS_ARCHITECTURE.md) | Architecture bible: target architecture, invariants, audit chain, and decision tree |
+| [`docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`](./docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md) | Live-app alignment: shipped, partial, gated, and drift notes for the architecture bible |
 | [`docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md`](./docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md) | Current Phase 1-3 audit, architecture, production checklist, and future-agent handoff |
 | [`docs/PRAXIS_PHASE_SPEC_AUDIT_2026-05-06.md`](./docs/PRAXIS_PHASE_SPEC_AUDIT_2026-05-06.md) | Phase-spec audit ledger: coded, missing, red flags, fixes, and next iteration order |
 | [`DEPLOYMENT.md`](./DEPLOYMENT.md) | Deploy gate, Cloud Build path, smoke checks, and deploy references |
@@ -543,9 +545,11 @@ This codebase is actively worked on by **Claude Code** and **OpenAI Codex** agen
 **Before any agent makes a change:**
 
 1. Read [`CLAUDE.md`](./CLAUDE.md) — repository conventions
-2. Read [`docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md`](./docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md) — what just shipped, architecture, validation, and production checklist
-3. For code touching AI routes: see [`CLAUDE.md` § AI Model Tiers + Calibration Contract](./CLAUDE.md)
-4. For security-critical files (`firestore.rules`, `src/proxy.ts`, `with-auth.ts`, `cookie-signer.ts`, `admin.ts`, `storage.rules`): **stop and ask the human first**
+2. Read [`ARCHITECTURE.md`](./ARCHITECTURE.md) — architecture entrypoint and current canonical links
+3. Read [`docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`](./docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md) — what the real app already enforces versus what remains target-state
+4. Read [`docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md`](./docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md) — what just shipped, validation, and production checklist
+5. For code touching AI routes: see [`CLAUDE.md` § AI Model Tiers + Calibration Contract](./CLAUDE.md)
+6. For security-critical files (`firestore.rules`, `src/proxy.ts`, `with-auth.ts`, `cookie-signer.ts`, `admin.ts`, `storage.rules`): **stop and ask the human first**
 
 **Before declaring a change "done":**
 
@@ -553,6 +557,7 @@ This codebase is actively worked on by **Claude Code** and **OpenAI Codex** agen
 npx tsc --noEmit
 npm run build
 node scripts/audit-ai-routes.mjs
+npm run audit:architecture-reference
 npm run audit:gcp
 ```
 

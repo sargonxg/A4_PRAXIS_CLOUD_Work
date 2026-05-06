@@ -740,8 +740,12 @@ For each persona, record:
 - [ ] Keep `CLAUDE.md` as the agent operating guide.
 - [ ] Keep `AGENTS.md` as the Codex entrypoint.
 - [ ] Keep this `TODO.md` current after each completed task.
-- [ ] Keep `ARCHITECTURE.md`, `DEPLOYMENT.md`, `TESTING.md`, and
+- [ ] Keep `ARCHITECTURE.md`, `docs/architecture/PRAXIS_ARCHITECTURE.md`,
+  `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`,
+  `DEPLOYMENT.md`, `TESTING.md`, and
   `SECURITY.md` aligned with deeper docs.
+- [ ] Run `npm run audit:architecture-reference` whenever the architecture
+  bible, app architecture, or agent handoff docs change.
 - [ ] Update `CHANGELOG.md` for every code or runbook change.
 - [ ] Update `docs/TOOL_QUALITY_AUDIT_2026-04-28.md` during browser tool
   audits.

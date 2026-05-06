@@ -16,6 +16,7 @@ documented. A partial item must keep its named gap visible.
 - [x] Keep `npm run audit:gate` green on `main`.
 - [x] Keep Graphify outputs refreshed after code changes.
 - [x] Keep repo identity visible in charter docs and handoff docs.
+- [x] Store `PRAXIS_ARCHITECTURE.md` in-repo and connect it to the live app through an alignment doc and audit.
 - [x] Keep no open S0/S1 launch blockers in the current reality check.
 - [x] Add local app-usability smoke for landing visuals, demo Workbench, context, ontology, graph, tools, memos, and persona flows.
 - [ ] Run persona Playwright suites 10 consecutive times in CI and record run ids.
@@ -246,3 +247,4 @@ documented. A partial item must keep its named gap visible.
 - [ ] Add BigQuery marts for tool runs, background jobs, provider failures, user activation, and cost.
 - [x] Add browser smoke for recently uplifted marketplace and Workbench flagship surfaces.
 - [ ] Keep `README.md`, `ARCHITECTURE.md`, `CLAUDE.md`, `AGENTS.md`, `DESIGN.md`, `DEPLOYMENT.md`, `SECURITY.md`, `TESTING.md`, `TODO.md`, and `CHANGELOG.md` synced with this checklist.
+- [x] Add architecture-reference audit so the new architecture bible remains discoverable and paired with live-app parity notes.

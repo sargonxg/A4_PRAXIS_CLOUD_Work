@@ -21,6 +21,7 @@
     "audit:ai-provider-vertex-default": "tsx scripts/audit-ai-provider-vertex-default.ts",
     "audit:observability-coverage": "tsx scripts/audit-observability-coverage.ts",
     "audit:ux-polish": "tsx scripts/audit-ux-polish.ts",
+    "audit:architecture-reference": "tsx scripts/audit-architecture-reference.ts",
     "canary:monitor": "tsx scripts/canary-monitor.ts",
     "loadtest:smoke": "node infrastructure/loadtest/loadtest.mjs --mode=smoke --requests=24 --concurrency=4",
     "audit:calibration": "node scripts/audit-ai-routes.mjs",
@@ -48,7 +49,7 @@
     "verify:neo4j-sync": "tsx scripts/verify-neo4j-sync.ts --all",
     "smoke:personas": "playwright test tests/e2e/personas",
     "smoke:app-usability": "playwright test tests/e2e/app-usability-smoke.spec.ts",
-    "audit:gate": "npx tsc --noEmit && npm run build && npm run audit:routes && npm run audit:ai-provider-isolation && npm run audit:ai-provider-vertex-default && npm run audit:observability-coverage && npm run audit:ux-polish && npm run audit:gcp && npm run audit:workbench && npm run audit:landing && npm run audit:context-vs-tools && npm run audit:context-aware-coverage && npm run audit:ontology && npm run audit:tool-marketplace && npm run audit:tool-contract-v2 && npm run audit:tool-skills-present && npm run audit:graph-viewer && npm run audit:codex-prompts && npm run audit:master-charter && npm run audit:operational-metrics && npm run audit:reality-check && npm run audit:kg-backend && npm run audit:memo-studio && npm run verify:neo4j-sync && npx vitest run",
+    "audit:gate": "npx tsc --noEmit && npm run build && npm run audit:routes && npm run audit:architecture-reference && npm run audit:ai-provider-isolation && npm run audit:ai-provider-vertex-default && npm run audit:observability-coverage && npm run audit:ux-polish && npm run audit:gcp && npm run audit:workbench && npm run audit:landing && npm run audit:context-vs-tools && npm run audit:context-aware-coverage && npm run audit:ontology && npm run audit:tool-marketplace && npm run audit:tool-contract-v2 && npm run audit:tool-skills-present && npm run audit:graph-viewer && npm run audit:codex-prompts && npm run audit:master-charter && npm run audit:operational-metrics && npm run audit:reality-check && npm run audit:kg-backend && npm run audit:memo-studio && npm run verify:neo4j-sync && npx vitest run",
     "smoke:public": "playwright test tests/e2e/capabilities-api.spec.ts",
     "smoke:golden-path": "playwright test tests/e2e/golden-path.spec.ts",
     "migrate:user-api-keys": "node scripts/migrate-user-api-keys.mjs"
