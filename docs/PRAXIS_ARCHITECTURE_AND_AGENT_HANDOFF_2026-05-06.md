@@ -11,7 +11,7 @@
 
 PRAXIS is a Next.js App Router product deployed to Google Cloud Run with Firebase/Firestore as canonical user state, Cloud SQL Postgres for relational/vector/agent memory, Neo4j Aura as the graph index, Vertex AI Gemini as the only model provider, and a Python backend for agentic reasoning flows.
 
-The app shell now matches the Phase 3 product surface: the default sidebar renders eight surfaces only: Desk, Context, Library, Research, Graph, Boardroom, Draft, Tools. Legacy and specialist `/app/*` routes remain live and are exposed through Tools or the `?show_archive=1` sidebar switch.
+The app shell now matches the Phase 3 product surface: the default sidebar renders eight surfaces only: Desk, Context, Library, Research, Graph, Boardroom, Draft, Tools. The unified Workbench has expanded tabs for Chapters, Desk, Context, Library, Research, Ontology, Graph, Tools, Boardroom, and Draft. Legacy and specialist `/app/*` routes remain live and are exposed through Tools or the `?show_archive=1` sidebar switch.
 
 For the detailed line-by-line phase-spec audit, known red flags, missing work, and next iteration order, read `docs/PRAXIS_PHASE_SPEC_AUDIT_2026-05-06.md`.
 
@@ -61,6 +61,10 @@ Important files:
 - `src/lib/api/with-ai-act-ack.ts` gates high-risk verbs with `X-AI-Act-Ack`.
 - `src/lib/api/with-firewall.ts` is the shared calibrated AI response firewall: JSON outputs are claim-extracted, scored, annotated with firewall metadata, and routed to claim-level Trust Score persistence.
 - `src/lib/firebase/claims-service.ts` persists claim Trust Score records under `users/{uid}/situations/{situationId}/claims/{claimId}`.
+- `src/lib/ontology/registry.ts` maps active case domains to conflict, mediation, governance, and narrative ontologies over the ACO/TACITUS primitive substrate.
+- `src/components/ontology/OntologySchemaViewer.tsx` renders the Workbench Ontology tab.
+- `src/lib/graph/workbench-case-graph.ts` and `src/components/graph/PraxisGraphCanvas.tsx` provide the canonical Workbench graph view.
+- `src/lib/tools/marketplace/registry.ts`, `src/components/tools/ToolMarketplace.tsx`, and `src/lib/tools/marketplace/run-artifact.ts` provide the 16-tool marketplace and permissive artifact persistence contract.
 - `src/lib/graph/neo4j-drift-verifier.ts`, `scripts/verify-neo4j-sync.ts`, `/api/cron/verify-neo4j-sync`, and `infrastructure/scheduler/neo4j-drift-verifier-cron.yaml` form the Firestore-to-Neo4j drift verification path.
 - `tests/e2e/personas/` contains the diplomat, mediator, analyst, and researcher Playwright workbench flows.
 
@@ -77,6 +81,9 @@ npm run audit:routes
 npm run audit:workbench
 npm run audit:landing
 npm run audit:context-vs-tools
+npm run audit:ontology
+npm run audit:tool-marketplace
+npm run audit:graph-viewer
 npm run verify:neo4j-sync
 npx tsx scripts/audit-spine.ts
 npx tsx scripts/audit-phase3-product-surface.ts

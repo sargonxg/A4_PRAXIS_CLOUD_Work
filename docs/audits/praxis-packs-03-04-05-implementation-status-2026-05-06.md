@@ -10,7 +10,7 @@ Branch: `main` (local worktree, latest PRAXIS workbench/firewall pass)
 Implemented in this branch:
 
 - Canonical `/app/workbench` case picker and `/app/workbench/[caseId]` active case route.
-- Generic workbench tabs: `chapters`, `desk`, `context`, `library`, `research`, `graph`, `boardroom`, `draft`.
+- Generic workbench tabs: `chapters`, `desk`, `context`, `library`, `research`, `ontology`, `graph`, `tools`, `boardroom`, `draft`.
 - Generic five-chapter flow: Situation Frame, Source Receipts, Conflict Graph, DIALECTICA Reasoning, Decision Product.
 - `CaseModule` interface, registry, `syria-2026` example, `nordalia-2026` example, and server-side `loadUserCaseModule` scaffold.
 - Legacy entry redirects for `/app`, `/app/dashboard`, `/app/cockpit`, `/app/syria-case`, `/app/demo-guide`, and `/demo`.

@@ -11,6 +11,8 @@ export const TACITUS_CORE_PRIMITIVES = [
 
 export type TacitusCorePrimitive = (typeof TACITUS_CORE_PRIMITIVES)[number];
 
+export const ACO_PRIMITIVES = TACITUS_CORE_PRIMITIVES;
+
 export interface CorePrimitiveCoverage {
   counts: Record<TacitusCorePrimitive, number>;
   missing: TacitusCorePrimitive[];

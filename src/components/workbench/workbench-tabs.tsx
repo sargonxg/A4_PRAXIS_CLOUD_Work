@@ -21,7 +21,7 @@ export function WorkbenchTabs({ activeTab }: { activeTab: WorkbenchTabId }) {
       <div className="flex flex-wrap items-center gap-2 px-4 py-3">
         {WORKBENCH_TABS.map((tab, index) => (
           <div key={tab.id} className="flex items-center gap-2">
-            {index === 1 || index === 6 ? <span className="hidden h-7 w-px bg-slate-200 sm:inline-block" /> : null}
+            {index === 1 || index === 7 ? <span className="hidden h-7 w-px bg-slate-200 sm:inline-block" /> : null}
             <button
               type="button"
               onClick={() => setTab(tab.id)}

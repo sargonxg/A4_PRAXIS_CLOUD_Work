@@ -4,6 +4,7 @@ import type { ReactNode, ComponentType } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   BookOpen,
+  Boxes,
   Briefcase,
   ChevronsLeft,
   ChevronsRight,
@@ -15,6 +16,7 @@ import {
   Plus,
   Search,
   Settings,
+  Store,
   UserCircle,
   Users,
   Wrench,
@@ -32,7 +34,9 @@ const TAB_ICONS = {
   context: FileText,
   library: Library,
   research: Search,
+  ontology: Boxes,
   graph: GitBranch,
+  tools: Store,
   boardroom: Users,
   draft: FileText,
 } as const;

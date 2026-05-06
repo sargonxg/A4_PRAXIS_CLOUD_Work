@@ -6,7 +6,9 @@ export const WORKBENCH_TABS: WorkbenchTabDescriptor[] = [
   { id: 'context', label: 'Context', summary: 'Build the case frame, actors, sources, documents, and graph proposals.', group: 'context' },
   { id: 'library', label: 'Library', summary: 'Sources, documents, saved claims, and work products.', group: 'context' },
   { id: 'research', label: 'Research', summary: 'Source Scout, deep research, and staged collection plans.', group: 'context' },
+  { id: 'ontology', label: 'Ontology', summary: 'Case ontology, primitives, validators, and recommended tool mappings.', group: 'context' },
   { id: 'graph', label: 'Graph', summary: 'GraphOps, conflict graph, paths, and projection checks.', group: 'context' },
+  { id: 'tools', label: 'Tools', summary: 'Curated marketplace for ontology-aware analysis tools.', group: 'tools' },
   { id: 'boardroom', label: 'Boardroom', summary: 'Advisor deliberation and option synthesis.', group: 'tools' },
   { id: 'draft', label: 'Draft', summary: 'Briefing, memo, talking points, and export workspace.', group: 'tools' },
 ];

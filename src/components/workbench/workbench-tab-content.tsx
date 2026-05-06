@@ -1,14 +1,21 @@
 'use client';
 
-import { Activity, BookOpen, FileText, GitBranch, Library, Search, Users } from 'lucide-react';
+import { Activity, BookOpen, Boxes, FileText, GitBranch, Library, Search, Store, Users } from 'lucide-react';
+import { PraxisGraphCanvas } from '@/components/graph/PraxisGraphCanvas';
+import { OntologySchemaViewer } from '@/components/ontology/OntologySchemaViewer';
+import { ToolMarketplace } from '@/components/tools/ToolMarketplace';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { ToolGate } from '@/components/workbench/tool-gate';
 import { WorkbenchChapterRenderer } from '@/components/workbench/chapter-renderer';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
+import { buildWorkbenchCaseGraph } from '@/lib/graph/workbench-case-graph';
 import type { WorkbenchTabId } from '@/types/workbench';
 
 export function WorkbenchTabContent({ activeTab }: { activeTab: WorkbenchTabId }) {
   if (activeTab === 'chapters') return <WorkbenchChapterRenderer />;
+  if (activeTab === 'ontology') return <OntologySchemaViewer />;
+  if (activeTab === 'graph') return <WorkbenchGraphPanel />;
+  if (activeTab === 'tools') return <ToolMarketplace />;
   if (activeTab === 'boardroom' || activeTab === 'draft') {
     return (
       <ToolGate>
@@ -17,6 +24,11 @@ export function WorkbenchTabContent({ activeTab }: { activeTab: WorkbenchTabId }
     );
   }
   return <WorkbenchTabPanel tabId={activeTab} />;
+}
+
+function WorkbenchGraphPanel() {
+  const { caseModule } = useWorkbenchScope();
+  return <PraxisGraphCanvas graph={buildWorkbenchCaseGraph(caseModule)} />;
 }
 
 function WorkbenchTabPanel({ tabId }: { tabId: WorkbenchTabId }) {
@@ -62,7 +74,9 @@ const TAB_TITLES: Record<WorkbenchTabId, string> = {
   context: 'Context Studio',
   library: 'Library',
   research: 'Research',
+  ontology: 'Ontology',
   graph: 'Graph',
+  tools: 'Tools',
   boardroom: 'Boardroom',
   draft: 'Draft',
 };
@@ -73,7 +87,9 @@ const TAB_BODY: Record<WorkbenchTabId, string> = {
   context: 'Build the case before analysis: scope, sources, documents, actors, claims, and graph proposals.',
   library: 'Keep source receipts, documents, saved claims, and decision products tied to the active case.',
   research: 'Run source discovery and research collection against the active case context.',
+  ontology: 'Inspect the active case ontology, primitive mapping, validators, and tool requirements.',
   graph: 'Inspect graph primitives, truth layers, provenance coverage, and graph projection health.',
+  tools: 'Browse the curated ontology-aware tool marketplace for the active case.',
   boardroom: 'Use advisor deliberation on top of the locked context.',
   draft: 'Create decision-ready products with paragraph-level provenance.',
 };
@@ -83,7 +99,9 @@ const TAB_ICONS: Partial<Record<WorkbenchTabId, typeof Activity>> = {
   context: BookOpen,
   library: Library,
   research: Search,
+  ontology: Boxes,
   graph: GitBranch,
+  tools: Store,
   boardroom: Users,
   draft: FileText,
 };
