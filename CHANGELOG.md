@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- feat(tools): add marketplace chain actions.
+  Marketplace run results now expose next-tool buttons from the registry
+  `canChainInto` contract so analysts can continue from a selected artifact.
 - feat(tools): add marketplace run telemetry.
   Marketplace run artifacts now store measured duration, cost class, estimated
   runtime, and an explicit unmetered-provider-cost posture until model-backed

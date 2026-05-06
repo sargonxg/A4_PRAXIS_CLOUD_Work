@@ -14,6 +14,7 @@ const CATEGORIES: Array<MarketplaceToolCategory | 'all'> = ['all', 'conflict', '
 const COSTS: MarketplaceCostClass[] = ['low', 'medium', 'high'];
 
 interface MarketplaceRunState {
+  toolId: string;
   toolName: string;
   artifactId: string;
   persisted: boolean;
@@ -102,6 +103,7 @@ export function ToolMarketplace() {
     const tool = MARKETPLACE_TOOLS.find((candidate) => candidate.id === item.toolId);
     setRunError(null);
     setLastRun({
+      toolId: item.toolId,
       toolName: tool?.name ?? item.toolId,
       artifactId: item.id,
       persisted: true,
@@ -143,6 +145,7 @@ export function ToolMarketplace() {
         throw new Error(payload.error ?? 'Marketplace run failed');
       }
       setLastRun({
+        toolId: payload.tool.id,
         toolName: payload.tool.name,
         artifactId: payload.artifact.id,
         persisted: payload.persistence.persisted,
@@ -271,6 +274,13 @@ export function ToolMarketplace() {
               {lastRun.rawText}
             </pre>
           )}
+          {lastRun && (
+            <ToolChainActions
+              toolId={lastRun.toolId}
+              runningToolId={runningToolId}
+              onRun={runTool}
+            />
+          )}
         </div>
       )}
 
@@ -383,6 +393,44 @@ function Chip({ label, value }: { label: string; value: string }) {
     <div className="rounded border border-slate-200 bg-white px-2 py-2">
       <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{label}</p>
       <p className="mt-1 text-xs font-semibold text-navy-950">{value}</p>
+    </div>
+  );
+}
+
+function ToolChainActions({
+  toolId,
+  runningToolId,
+  onRun,
+}: {
+  toolId: string;
+  runningToolId: string | null;
+  onRun: (toolId: string) => void;
+}) {
+  const tool = MARKETPLACE_TOOLS.find((item) => item.id === toolId);
+  const chainTargets = tool?.composition.canChainInto
+    .map((targetId) => MARKETPLACE_TOOLS.find((item) => item.id === targetId))
+    .filter((item): item is (typeof MARKETPLACE_TOOLS)[number] => Boolean(item))
+    .slice(0, 3) ?? [];
+
+  if (chainTargets.length === 0) return null;
+
+  return (
+    <div className="mt-3 rounded border border-emerald-200 bg-white p-3">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-900">Chain into</p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {chainTargets.map((target) => (
+          <button
+            key={target.id}
+            type="button"
+            onClick={() => onRun(target.id)}
+            disabled={runningToolId !== null}
+            className="inline-flex h-8 items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-950 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:text-slate-400"
+          >
+            {runningToolId === target.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+            {target.name}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
