@@ -31,6 +31,19 @@ export interface ToolRunArtifactRecord {
   updatedAt: string;
 }
 
+export interface ToolRunArtifactSummary {
+  id: string;
+  toolId: string;
+  toolRunId: string;
+  prompt: string | null;
+  summary: string | null;
+  rawText: string | null;
+  createdAt: string;
+  handlerStage: string | null;
+  contextHealth: number | null;
+  advisoryCount: number | null;
+}
+
 export interface ToolRunArtifactWriter {
   setArtifact(uid: string, situationId: string, artifactId: string, record: ToolRunArtifactRecord): Promise<void>;
 }
@@ -60,6 +73,32 @@ export function buildToolRunArtifact(input: ToolRunArtifactInput): ToolRunArtifa
     schemaVersion: 'tool-run-artifact-v1',
     createdAt: now,
     updatedAt: now,
+  };
+}
+
+function stringField(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+function numberField(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+export function summarizeToolRunArtifact(record: ToolRunArtifactRecord): ToolRunArtifactSummary {
+  const structured = record.structuredOutput ?? {};
+  const caseOutput = structured.case as { contextHealth?: { score?: unknown } } | undefined;
+  const advisories = Array.isArray(structured.advisories) ? structured.advisories : null;
+  return {
+    id: record.id,
+    toolId: record.toolId,
+    toolRunId: record.toolRunId,
+    prompt: record.prompt,
+    summary: stringField(structured.summary),
+    rawText: record.rawText,
+    createdAt: record.createdAt,
+    handlerStage: stringField(record.metadata?.handlerStage),
+    contextHealth: numberField(caseOutput?.contextHealth?.score),
+    advisoryCount: advisories ? advisories.length : null,
   };
 }
 

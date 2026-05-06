@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { AlertCircle, CheckCircle2, Loader2, Play, Search, SlidersHorizontal, Wrench } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AlertCircle, CheckCircle2, History, Loader2, Play, RefreshCw, Search, SlidersHorizontal, Wrench } from 'lucide-react';
 import { getOntologyForDomain } from '@/lib/ontology/registry';
 import { filterMarketplaceTools, sortMarketplaceTools } from '@/lib/tools/marketplace/filter-engine';
 import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
@@ -25,6 +25,19 @@ interface MarketplaceRunState {
   generatedAt?: string;
 }
 
+interface MarketplaceRunHistoryItem {
+  id: string;
+  toolId: string;
+  toolRunId: string;
+  prompt: string | null;
+  summary: string | null;
+  rawText: string | null;
+  createdAt: string;
+  handlerStage: string | null;
+  contextHealth: number | null;
+  advisoryCount: number | null;
+}
+
 export function ToolMarketplace() {
   const { caseId, caseModule, activeTab } = useWorkbenchScope();
   const ontology = getOntologyForDomain(caseModule.manifest.domain);
@@ -34,6 +47,9 @@ export function ToolMarketplace() {
   const [runningToolId, setRunningToolId] = useState<string | null>(null);
   const [lastRun, setLastRun] = useState<MarketplaceRunState | null>(null);
   const [runError, setRunError] = useState<string | null>(null);
+  const [runHistory, setRunHistory] = useState<MarketplaceRunHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const contextHealth =
     (caseModule.truthLayers.source.provenanceCoverage +
       caseModule.truthLayers.claim.provenanceCoverage +
@@ -57,6 +73,40 @@ export function ToolMarketplace() {
     () => rankMarketplaceToolsForCase(MARKETPLACE_TOOLS, caseModule).slice(0, 3),
     [caseModule],
   );
+
+  const loadRunHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    setHistoryError(null);
+    try {
+      const response = await fetch(`/api/tools/marketplace/run?caseId=${encodeURIComponent(caseId)}&limit=8`);
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? 'Failed to load run history');
+      setRunHistory(payload.items ?? []);
+    } catch (err) {
+      setHistoryError(err instanceof Error ? err.message : 'Failed to load run history');
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [caseId]);
+
+  useEffect(() => {
+    void loadRunHistory();
+  }, [loadRunHistory]);
+
+  function loadHistoryItem(item: MarketplaceRunHistoryItem) {
+    const tool = MARKETPLACE_TOOLS.find((candidate) => candidate.id === item.toolId);
+    setRunError(null);
+    setLastRun({
+      toolName: tool?.name ?? item.toolId,
+      artifactId: item.id,
+      persisted: true,
+      summary: item.summary ?? `${tool?.name ?? item.toolId} completed.`,
+      rawText: item.rawText ?? '',
+      health: item.contextHealth ?? 0,
+      advisoryCount: item.advisoryCount ?? 0,
+      generatedAt: item.createdAt,
+    });
+  }
 
   async function runTool(toolId: string) {
     const tool = MARKETPLACE_TOOLS.find((item) => item.id === toolId);
@@ -96,6 +146,7 @@ export function ToolMarketplace() {
         advisoryCount: payload.runContext.advisories?.length ?? 0,
         generatedAt: payload.artifact.createdAt,
       });
+      void loadRunHistory();
     } catch (err) {
       setRunError(err instanceof Error ? err.message : 'Marketplace run failed');
     } finally {
@@ -212,6 +263,63 @@ export function ToolMarketplace() {
           )}
         </div>
       )}
+
+      <div className="mt-5 rounded-md border border-slate-200 bg-slate-50 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <History className="h-4 w-4 text-slate-600" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-navy-950">Run history</p>
+              <p className="text-xs text-slate-600">Reload persisted marketplace artifacts for this case.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => void loadRunHistory()}
+            disabled={historyLoading}
+            aria-label="Refresh run history"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300"
+          >
+            <RefreshCw className={cn('h-4 w-4', historyLoading && 'animate-spin')} />
+          </button>
+        </div>
+        {historyError ? (
+          <p className="mt-3 rounded border border-red-200 bg-white px-3 py-2 text-xs text-red-800">{historyError}</p>
+        ) : historyLoading && runHistory.length === 0 ? (
+          <p className="mt-3 text-xs text-slate-500">Loading run history...</p>
+        ) : runHistory.length === 0 ? (
+          <p className="mt-3 text-xs text-slate-500">No persisted marketplace artifacts for this case yet.</p>
+        ) : (
+          <div className="mt-3 grid gap-2 lg:grid-cols-2">
+            {runHistory.map((item) => {
+              const tool = MARKETPLACE_TOOLS.find((candidate) => candidate.id === item.toolId);
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => loadHistoryItem(item)}
+                  className="rounded-md border border-slate-200 bg-white p-3 text-left transition-colors hover:border-gold-300 hover:bg-gold-50"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-navy-950">{tool?.name ?? item.toolId}</p>
+                      <p className="mt-1 truncate text-xs text-slate-600">{item.summary ?? item.prompt ?? item.toolRunId}</p>
+                    </div>
+                    <span className="shrink-0 rounded bg-slate-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+                      {item.handlerStage ?? 'stored'}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                    <span>{item.contextHealth ?? 0}/100 health</span>
+                    <span>{item.advisoryCount ?? 0} advisories</span>
+                    <span>{new Date(item.createdAt).toLocaleString()}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       <div className="mt-5 grid gap-3 lg:grid-cols-2">
         {visibleTools.map((tool) => (

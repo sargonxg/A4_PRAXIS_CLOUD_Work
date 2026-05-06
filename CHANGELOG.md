@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- feat(tools): add marketplace run history reload.
+  Added a persisted-artifact history reader to `/api/tools/marketplace/run`, a
+  compact artifact summary contract, UI reload controls in Tools Marketplace,
+  and audit/test coverage for marketplace artifact history.
 - feat(tools): add marketplace handler prompt contracts.
   Added explicit prompt contracts for all 16 curated marketplace tools, included
   the contract objective, sections, and quality checks in foundation run

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { buildToolRunArtifact, persistToolRunArtifact, type ToolRunArtifactRecord } from '@/lib/tools/marketplace/run-artifact';
+import {
+  buildToolRunArtifact,
+  persistToolRunArtifact,
+  summarizeToolRunArtifact,
+  type ToolRunArtifactRecord,
+} from '@/lib/tools/marketplace/run-artifact';
 
 describe('tool run artifacts', () => {
   it('builds tolerant records for raw text, generated output, and context dumps', () => {
@@ -47,5 +52,31 @@ describe('tool run artifacts', () => {
     });
 
     expect(result).toMatchObject({ persisted: false, reason: 'empty_artifact' });
+  });
+
+  it('summarizes persisted artifacts for marketplace history reload', () => {
+    const artifact = buildToolRunArtifact({
+      uid: 'u1',
+      situationId: 's1',
+      toolId: 'conflict.leverage-trace',
+      prompt: 'trace leverage',
+      rawText: 'Leverage trace raw output',
+      structuredOutput: {
+        summary: 'Leverage trace completed.',
+        case: { contextHealth: { score: 72 } },
+        advisories: [{ severity: 'warn' }, { severity: 'info' }],
+      },
+      metadata: { handlerStage: 'prompt-contract' },
+    });
+
+    expect(summarizeToolRunArtifact(artifact)).toMatchObject({
+      id: artifact.id,
+      toolId: 'conflict.leverage-trace',
+      summary: 'Leverage trace completed.',
+      rawText: 'Leverage trace raw output',
+      handlerStage: 'prompt-contract',
+      contextHealth: 72,
+      advisoryCount: 2,
+    });
   });
 });

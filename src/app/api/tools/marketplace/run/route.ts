@@ -6,7 +6,13 @@ import { buildContextSnapshot } from '@/lib/context/context-aware';
 import { createContextProvider } from '@/lib/tools/context-provider';
 import { getMarketplaceTool } from '@/lib/tools/marketplace/registry';
 import { buildMarketplaceToolRun } from '@/lib/tools/marketplace/runner';
-import { buildToolRunArtifact, persistToolRunArtifact } from '@/lib/tools/marketplace/run-artifact';
+import {
+  buildToolRunArtifact,
+  persistToolRunArtifact,
+  summarizeToolRunArtifact,
+  type ToolRunArtifactRecord,
+} from '@/lib/tools/marketplace/run-artifact';
+import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +25,42 @@ const RunBodySchema = z.object({
   context: LooseObject.optional(),
   toolRunId: z.string().min(1).max(160).optional(),
 }).passthrough();
+
+export const GET = withAuth(async (req, user) => {
+  try {
+    const url = new URL(req.url);
+    const caseId = url.searchParams.get('caseId')?.trim();
+    const limit = Math.min(20, Math.max(1, Number(url.searchParams.get('limit') ?? '8') || 8));
+
+    if (!caseId) {
+      return NextResponse.json({ error: 'caseId required' }, { status: 400 });
+    }
+
+    if (user.isDemo) {
+      return NextResponse.json({ items: [] });
+    }
+
+    const db = getAdminDbOrThrow();
+    const snap = await db
+      .collection('users')
+      .doc(user.uid)
+      .collection('situations')
+      .doc(caseId)
+      .collection('toolRunArtifacts')
+      .orderBy('createdAt', 'desc')
+      .limit(limit)
+      .get();
+
+    const items = snap.docs.map((doc) => {
+      const record = { id: doc.id, ...doc.data() } as ToolRunArtifactRecord;
+      return summarizeToolRunArtifact(record);
+    });
+
+    return NextResponse.json({ items });
+  } catch (err) {
+    return handleRouteError(err, 'tools/marketplace/run/history');
+  }
+});
 
 export const POST = withAuth(async (req, user) => {
   try {
