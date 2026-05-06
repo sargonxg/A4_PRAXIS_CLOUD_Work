@@ -2,6 +2,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const required = [
+  'docs/codex-prompts/PRAXIS_CODEX_06_ONTOLOGY_SYSTEM.md',
+  'docs/codex-prompts/PRAXIS_CODEX_07_GRAPH_VISUALIZATION.md',
+  'docs/codex-prompts/PRAXIS_CODEX_08_TOOLS_MARKETPLACE.md',
   'docs/codex-prompts/PRAXIS_CODEX_09_VERIFICATION_AND_ADMIN.md',
   'docs/codex-prompts/PRAXIS_CODEX_10_POSTGRES_KNOWLEDGE_GRAPH.md',
   'docs/codex-prompts/PRAXIS_CODEX_11_MEMO_STUDIO_AND_LAUNCH.md',
@@ -24,4 +27,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Codex prompt pack audit passed for packs 09-11.');
+console.log('Codex prompt pack audit passed for packs 06-11.');
