@@ -1,21 +1,43 @@
 import { NextResponse } from 'next/server';
+import { FieldValue } from 'firebase-admin/firestore';
+import { withAuth } from '@/lib/api/with-auth';
+import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export const GET = withAuth(async (_req: Request, _user, { params }: { params: Promise<{ id: string }> }) => {
+  const { uid } = _user;
   const { id } = await params;
+  const snap = await getAdminDbOrThrow()
+    .collection('users')
+    .doc(uid)
+    .collection('situations')
+    .doc(id)
+    .get();
+  const data = snap.exists ? snap.data() as { monthlyCreditsUsed?: unknown; monthlyCreditCap?: unknown } : {};
   return NextResponse.json({
     situationId: id,
-    monthlyCreditsUsed: 312,
-    monthlyCreditCap: 500,
+    monthlyCreditsUsed: typeof data.monthlyCreditsUsed === 'number' ? data.monthlyCreditsUsed : 0,
+    monthlyCreditCap: typeof data.monthlyCreditCap === 'number' ? data.monthlyCreditCap : 500,
     status: 'ok',
   });
-}
+});
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export const PATCH = withAuth(async (req: Request, _user, { params }: { params: Promise<{ id: string }> }) => {
+  const { uid } = _user;
   const { id } = await params;
   const body = (await req.json().catch(() => ({}))) as { monthlyCreditCap?: number };
+  const monthlyCreditCap = Number.isFinite(body.monthlyCreditCap) ? Math.max(0, Math.floor(body.monthlyCreditCap as number)) : 500;
+  await getAdminDbOrThrow()
+    .collection('users')
+    .doc(uid)
+    .collection('situations')
+    .doc(id)
+    .set({
+      monthlyCreditCap,
+      monthlyCreditCapUpdatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
   return NextResponse.json({
     situationId: id,
-    monthlyCreditCap: body.monthlyCreditCap ?? 500,
+    monthlyCreditCap,
     status: 'updated',
   });
-}
+});

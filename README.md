@@ -510,6 +510,7 @@ Current high-impact lanes:
 | [`docs/PRAXIS_15_APP_WIDE_IMPROVEMENTS_2026-04-29.md`](./docs/PRAXIS_15_APP_WIDE_IMPROVEMENTS_2026-04-29.md) | Fifteen top-level app-wide product, QA, AI, security, deploy, and trust initiatives |
 | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Compact system architecture summary with deeper links |
 | [`docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md`](./docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md) | Current Phase 1-3 audit, architecture, production checklist, and future-agent handoff |
+| [`docs/PRAXIS_PHASE_SPEC_AUDIT_2026-05-06.md`](./docs/PRAXIS_PHASE_SPEC_AUDIT_2026-05-06.md) | Phase-spec audit ledger: coded, missing, red flags, fixes, and next iteration order |
 | [`DEPLOYMENT.md`](./DEPLOYMENT.md) | Deploy gate, Cloud Build path, smoke checks, and deploy references |
 | [`TESTING.md`](./TESTING.md) | Automated and persona testing strategy |
 | [`SECURITY.md`](./SECURITY.md) | Security posture, trust boundary, and review checklist |

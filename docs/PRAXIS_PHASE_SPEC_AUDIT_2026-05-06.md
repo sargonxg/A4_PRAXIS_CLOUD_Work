@@ -1,0 +1,90 @@
+# PRAXIS Phase 1-3 Spec Audit
+
+**Date:** 2026-05-06  
+**Audited commit:** `5da77c2` before this audit pass; hardening changes applied after audit in this branch.  
+**Specs audited:**  
+- `C:\Users\giuli\Downloads\PRAXIS_PHASE_1_FOUNDATION.md`
+- `C:\Users\giuli\Downloads\PRAXIS_PHASE_2_AGENTIC_SPINE.md`
+- `C:\Users\giuli\Downloads\PRAXIS_PHASE_3_PRODUCT_SURFACE.md`
+- Repository mirrors under `docs/phases/`
+
+## Summary
+
+The three phases are reflected on `main` as shipped checkpoints and `praxis.tacitus.me` is live, but the literal phase specs are more ambitious than the current implementation. Phase 1 is mostly infrastructure-complete with a documentation-tree exception and a weak Neo4j sync verification story. Phase 2 is partially implemented: the DIALECTICA recipe layer and calibrated route wrapper exist, but full LangGraph runtime enforcement, universal symbolic-firewall streaming enforcement, and the literal 20-verb route collapse are not complete. Phase 3 has the visible eight-surface product shell and several functional surfaces, but multiple lanes are scaffolded rather than full production behavior.
+
+This document is the active backlog for the remaining work. Do not delete it when adding fixes; update the tables and evidence.
+
+## Document Drift
+
+| Item | Finding | Impact |
+|---|---|---|
+| Phase 1 download vs repo copy | Not byte-identical. Repo copy changes Cloud SQL instance references from the spec's placeholder `praxis-pg` to the actual `praxisbytacitus-instance`. | Acceptable and useful; repo doc reflects the cost-aware production decision. |
+| Phase 2 download vs repo copy | No semantic diff found in the audited first-pass diff. | No action. |
+| Phase 3 download vs repo copy | No semantic diff found in the audited first-pass diff. | No action. |
+| Checkboxes in phase docs | All three phase specs still contain open checklist boxes; they are execution specs, not completion records. | Completion evidence must live here and in `docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md`. |
+
+## Phase Audit Table
+
+| Phase | Spec promise | Implemented on main | Status | Evidence | Follow-up |
+|---|---|---|---|---|---|
+| Phase 1 | Collapse docs to 12 canonical docs and archive the rest. | `docs/_archive` exists, but active docs still exceed 12 markdown files. | Partial | Active docs count audited at 103; archive count 81. | Decide whether to finish the doc collapse or amend the spec to match the current doc map. |
+| Phase 1 | Cloud SQL Postgres with pgvector, pg_trgm, pgcrypto, RLS, PgBouncer. | Cloud SQL resources exist and GCP audit passes. Schema/RLS verification is not fully encoded in an automated production check. | Mostly complete | `npm run audit:gcp` passes. | Add a non-interactive SQL extension/RLS smoke script using Secret Manager/IAM. |
+| Phase 1 | Neo4j Aura and one-way sync from Firestore graph to Neo4j. | Neo4j secret exists and app has graph sync-related code, but production drift verification is weak. | Partial | `NEO4J_URI` secret audited; previous `verify-neo4j-sync` behavior was mostly credential-presence messaging. | Implement a real sync verifier that compares Firestore sample graph records to Neo4j by situation. |
+| Phase 1 | Bi-temporal graph fields on every node/edge. | Canonical graph helpers include bi-temporal concepts; enforcement for every write path is not proven. | Partial | Code references exist in graph modules. | Add tests that fail graph writes missing `validFrom`, `validTo`, `assertedFrom`, `assertedTo`. |
+| Phase 1 | Remove Anthropic, Firecrawl, Tavily, Parallel, Falkor, Spanner from code. | Source/backend scan only found the forbidden terms inside the Cloud Build guard itself. | Complete | `rg` over `src`, `backend`, scripts, package and cloudbuild found no live provider use. | Keep Cloud Build forbidden-provider guard. |
+| Phase 1 | Calibration and spine audits wired into CI. | Cloud Build contains route/provider guardrails; local audits pass. | Complete | `npm run audit:routes`; `npx tsx scripts/audit-spine.ts`. | Keep route/spine audits mandatory. |
+| Phase 2 | Five LangGraph flows checkpointed to Cloud SQL. | Five flows are registered and checkpointer scaffolding exists; some flows are placeholders or not fully runtime-backed. | Partial | `backend/agents/registry.py`; `backend/agents/checkpointer.py`. | Replace placeholder flows with real LangGraph graphs and assert Cloud SQL checkpoint writes. |
+| Phase 2 | Symbolic firewall enforced on every streaming AI route. | Firewall helpers and tests exist, but universal enforcement on every streaming route is not proven. | Partial | `backend/agents/firewall`; `src/lib/ai/symbolic-firewall.ts`. | Add an audit that enumerates streaming routes and requires firewall verification before render. |
+| Phase 2 | Five DIALECTICA Cypher recipes. | Implemented and routed. | Complete | Backend recipe tests passed in Phase 2; `/api/ai/dialectica` exists and is calibrated/auth-gated. | Add authenticated production recipe smoke with a test account. |
+| Phase 2 | Context loader is the single entry point for AI verbs. | `withCalibration` wraps all non-exempt AI routes, but not every route is collapsed into a single verb client. | Mostly complete | `npm run audit:routes` reports 66 calibrated AI route files, 5 exempt. | Keep `withCalibration`; separately finish the 20-verb client contraction. |
+| Phase 2 | 62 AI routes collapse to 20 verbs; legacy routes return 410. | Not implemented literally. Current route count is 66 calibrated AI route files. | Not complete | `npm run audit:routes` output. | Build `/api/ai/{verb}` facade, migrate UI clients, then sunset legacy routes with 410 headers. |
+| Phase 2 | Trust Score persisted for every claim. | Trust-score service/schema exists, but every claim path is not proven to persist. | Partial | `backend/services/trust_scores.py`; trust UI helpers. | Add claim-level persistence tests across DIALECTICA, Boardroom, Draft, and streaming responses. |
+| Phase 3 | Sidebar collapses to 8 surfaces and legacy pages remain routable/archive. | Implemented. | Complete | `src/lib/navigation/product-surfaces.ts`; sidebar archive switch; build route manifest includes legacy routes. | Add browser-authenticated assertion that sidebar shows exactly 8 entries by default. |
+| Phase 3 | Library separates sources from work products in URL/data model. | Routes, Firestore services, rules, indexes, and migration script exist. UI remains partially composed from legacy Library page. | Mostly complete | `/app/library/sources`, `/app/library/work-products`, `sources-service`, `work-products-service`. | Finish source detail view, source upload to `sources/`, and legacy alias sync. |
+| Phase 3 | Draft is Tiptap with paragraph provenance, Trust Score, diff, JSON-LD manifest on every export. | Tiptap Draft and manifest preview exist. Export embedding and paragraph-level persistent Firestore provenance are not complete. | Partial | `src/components/editor/work-product-editor.tsx`; `json-ld-prov.ts`. | Extend DOCX/PDF/Markdown exporters and persist provenance maps per paragraph. |
+| Phase 3 | Boardroom UI over Phase 2 LangGraph with SSE, replay, Open in Draft. | Visible room and replay endpoint exist; live LangGraph SSE and real checkpoint replay are not complete. | Partial | `/app/boardroom`; `deliberation-room.tsx`; replay route. | Connect to actual backend Boardroom flow, stream turns, and create persisted work products. |
+| Phase 3 | Read-only Cypher console and saved queries. | Validator/API/UI exist and are now auth-gated; real Neo4j execution and saved query persistence are not complete. | Partial | `cypher.ts`, `/api/graph/cypher`, `cypher-console.tsx`. | Execute tenant-scoped read-only Neo4j queries and persist saved queries to Firestore/Postgres. |
+| Phase 3 | What-changed diff engine and streaming graph updates. | Pure diff engine, Desk panel, and SSE route exist; backend graph mutation feed is stubbed. | Partial | `diff-engine.ts`; `/api/graph/changes`; `/api/graph/staging-stream`. | Connect to graph proposal writes and source update timestamps. |
+| Phase 3 | AI Act ack and cost cap UI/enforcement. | AI Act routes exist; cost-cap API/UI existed. This audit pass added auth to graph/cost APIs and a 402 cost-cap path in `with-credits`. | Improved, still partial | `with-ai-act-ack.ts`; `with-credits.ts`; cost-cap route. | Add UI modal header flow and tests proving authenticated high-risk calls return 428 without ack and 200 with ack. |
+
+## Red Flags Fixed In This Audit Pass
+
+| Red flag | Fix |
+|---|---|
+| `/api/graph/cypher`, `/api/graph/changes`, and `/api/graph/staging-stream` were reachable without explicit route-level auth. | Wrapped them in `withAuth`; Cypher now binds `tenantId` to the authenticated user id. |
+| `/api/situations/[id]/cost-cap` was unauthenticated and returned fixture numbers. | Wrapped GET/PATCH in `withAuth` and read/write owner-scoped Firestore fields. |
+| Phase 3 cost cap had UI/API but no rejection path in the credit gate. | Added situation-level monthly cap check to `checkAndDeductCreditsForUid`; exceeded caps now return `402 Cost cap reached`. |
+
+## Current Red Flags Still Open
+
+| Severity | Area | Issue | Why it matters | Next action |
+|---|---|---|---|---|
+| High | Phase 2 route model | The app still has 66 calibrated AI route files, not 20 verbs with 410 legacy sunsets. | Spec mismatch and long-term maintenance drag. | Build verb facade and migrate UI surfaces route by route. |
+| High | Symbolic firewall | Universal streaming claim enforcement is not proven. | Trust promise can be overstated if a streaming route bypasses verification. | Add static/runtime audit for streaming routes and block render of unsupported claims. |
+| High | Neo4j sync | Production sync/drift verification is weak. | Graph-dependent features may silently read stale or missing graph data. | Implement Firestore-to-Neo4j sample drift check and schedule it. |
+| High | Draft export provenance | JSON-LD manifest is previewed but not embedded in every export. | Core trust/provenance pitch is incomplete for shipped documents. | Extend `src/lib/services/export-engine.ts` and DOCX/PDF/Markdown export APIs. |
+| Medium | Boardroom | UI is visible but not a full LangGraph/SSE room. | Product demo can show the surface, but not the promised live deliberation. | Wire backend flow events to SSE and checkpoint replay. |
+| Medium | Library | Split routes exist but source upload/detail workflow is not fully migrated. | Analysts may still land in legacy document behavior. | Make `sources/` canonical and keep `documents/` as one-release alias. |
+| Medium | Docs phase checkboxes | Phase docs still show open checklist items. | Future agents can confuse the execution spec with current state. | Keep this audit as state ledger; optionally convert phase docs to historical specs. |
+| Low | Lint warnings | Lint has zero errors but hundreds of warnings. | Noise hides new warnings. | Gradually ratchet warning budget by directory. |
+
+## Verification Run During Audit
+
+| Command | Result |
+|---|---|
+| `git rev-parse HEAD` vs `origin/main` | Both `5da77c2` before this audit pass. |
+| `npm run audit:routes` | Passed: 66 calibrated AI route files, 5 exempt. |
+| Forbidden provider scan in source/backend | Only matched Cloud Build's guard pattern. |
+| `rg "MemorySaver|InMemorySaver" backend/agents --type py` | No live matches. |
+| `npm run audit:gcp` | Passed before this audit request in the Phase 3 ship pass; rerun if changing infrastructure. |
+| `npx tsc --noEmit` after audit fixes | Passed after installing dependencies in the shipping worktree. |
+| Targeted Vitest after audit fixes | Passed: 3 files, 7 tests. |
+
+## Next Iteration Order
+
+1. Finish production-authenticated smoke coverage for `/app/desk`, `/app/graph`, `/app/draft`, and `/app/boardroom`.
+2. Implement a real Neo4j sync verifier and make it part of the audit gate.
+3. Make Draft export provenance real in DOCX/PDF/Markdown output.
+4. Wire Boardroom SSE to backend flow events and persist replay checkpoints.
+5. Build the 20-verb facade and migrate the eight surfaces to typed clients.
+6. Replace static Desk cost panel data with live `/api/situations/[id]/cost-cap` reads.

@@ -1,4 +1,6 @@
-export async function GET() {
+import { withAuth } from '@/lib/api/with-auth';
+
+export const GET = withAuth(async () => {
   const stream = new ReadableStream({
     start(controller) {
       const encoder = new TextEncoder();
@@ -14,4 +16,4 @@ export async function GET() {
       'Cache-Control': 'no-cache',
     },
   });
-}
+});

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
+import { withAuth } from '@/lib/api/with-auth';
 import { diffGraphSnapshots } from '@/lib/graph/diff-engine';
 
-export async function GET() {
+export const GET = withAuth(async () => {
   const diff = diffGraphSnapshots(
     { nodes: [], edges: [], sources: [] },
     {
@@ -11,4 +12,4 @@ export async function GET() {
     },
   );
   return NextResponse.json(diff);
-}
+});

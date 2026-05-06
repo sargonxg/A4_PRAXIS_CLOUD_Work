@@ -158,7 +158,7 @@ export function withCalibration(
 
       // Credit gate (non-demo)
       if (!user.isDemo) {
-        const gate = await checkAndDeductCreditsForUid(user.uid, creditOpType, `tool:${toolId}`);
+        const gate = await checkAndDeductCreditsForUid(user.uid, creditOpType, `tool:${toolId}`, situationId);
         if (!gate.allowed) return gate.response;
       }
 

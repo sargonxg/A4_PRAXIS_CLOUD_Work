@@ -13,6 +13,8 @@ PRAXIS is a Next.js App Router product deployed to Google Cloud Run with Firebas
 
 The app shell now matches the Phase 3 product surface: the default sidebar renders eight surfaces only: Desk, Context, Library, Research, Graph, Boardroom, Draft, Tools. Legacy and specialist `/app/*` routes remain live and are exposed through Tools or the `?show_archive=1` sidebar switch.
 
+For the detailed line-by-line phase-spec audit, known red flags, missing work, and next iteration order, read `docs/PRAXIS_PHASE_SPEC_AUDIT_2026-05-06.md`.
+
 ## Phase Audit
 
 | Phase | Status | What is complete | Validation evidence | Caveat |

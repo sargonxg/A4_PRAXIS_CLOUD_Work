@@ -202,6 +202,57 @@ async function deductCreditsAdmin(
   return result;
 }
 
+async function checkAndRecordSituationCostCap(
+  uid: string,
+  situationId: string | undefined,
+  cost: number,
+): Promise<{ allowed: true } | { allowed: false; response: Response }> {
+  if (!situationId) return { allowed: true };
+
+  const adminDb = getAdminDbOrThrow();
+  const sitRef = adminDb.collection('users').doc(uid).collection('situations').doc(situationId);
+
+  const result = await adminDb.runTransaction(async (tx) => {
+    const snap = await tx.get(sitRef);
+    if (!snap.exists) return { allowed: true as const };
+
+    const data = snap.data() as { monthlyCreditCap?: unknown; monthlyCreditsUsed?: unknown };
+    const cap = typeof data.monthlyCreditCap === 'number' ? data.monthlyCreditCap : null;
+    const used = typeof data.monthlyCreditsUsed === 'number' ? data.monthlyCreditsUsed : 0;
+
+    if (cap !== null && cap >= 0 && used + cost > cap) {
+      return {
+        allowed: false as const,
+        used,
+        cap,
+        cost,
+      };
+    }
+
+    tx.set(sitRef, {
+      monthlyCreditsUsed: FieldValue.increment(cost),
+      monthlyCreditUpdatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    return { allowed: true as const };
+  });
+
+  if (result.allowed) return { allowed: true };
+
+  return {
+    allowed: false,
+    response: new Response(
+      JSON.stringify({
+        error: 'Cost cap reached',
+        message: 'This situation has reached its monthly AI credit cap. Request a cap lift or reduce high-cost runs.',
+        monthlyCreditsUsed: result.used,
+        monthlyCreditCap: result.cap,
+        requestedCredits: result.cost,
+      }),
+      { status: 402, headers: { 'Content-Type': 'application/json' } },
+    ),
+  };
+}
+
 /**
  * Checks and deducts credits for an AI operation.
  * Demo users always pass. Live users are soft-metered: if credits are depleted,
@@ -266,9 +317,13 @@ export async function checkAndDeductCreditsForUid(
   uid: string,
   operationType: string,
   description: string,
+  situationId?: string,
 ): Promise<{ allowed: true } | { allowed: false; response: Response }> {
   const cost = AI_CREDIT_COSTS[operationType] ?? 1;
   try {
+    const capGate = await checkAndRecordSituationCostCap(uid, situationId, cost);
+    if (!capGate.allowed) return capGate;
+
     const result = await deductCreditsAdmin(uid, operationType, description);
     if (!result.success) {
       console.warn(
