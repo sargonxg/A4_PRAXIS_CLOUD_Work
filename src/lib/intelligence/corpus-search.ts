@@ -4,7 +4,7 @@
  * `/api/intelligence/corpus-search` endpoint.
  *
  * Strategy today: deterministic keyword + recency ranking across five layers.
- * Document layer also leverages Gemini text-embedding-004 vectors when the
+ * Document layer also leverages the shared provider embedding vectors when the
  * stored chunks have them (`retrieveRelevantChunks` hybrid scoring). Vector
  * search across other layers is a follow-up (Firestore vector indexes — see
  * docs/CORPUS_ARCHITECTURE.md).

@@ -1,0 +1,71 @@
+{
+  "version": "pack14-2026-05-06",
+  "platform": {
+    "enterpriseAgentPlatform": "gemini-enterprise",
+    "developerModelRuntime": "vertex-ai",
+    "agentRuntime": "gemini-enterprise-agent-platform-runtime",
+    "localDeveloperFallback": "google-ai-studio",
+    "defaultRegion": "us-central1",
+    "vectorSearchPosture": "pgvector-primary-vertex-vector-search-2-secondary"
+  },
+  "taskKinds": {
+    "balanced": {
+      "provider": "vertex",
+      "model": "gemini-2.5-flash",
+      "maxTokens": 4096,
+      "temperature": 0.3,
+      "costClass": "medium"
+    },
+    "complex_reasoning": {
+      "provider": "vertex",
+      "model": "gemini-2.5-pro",
+      "maxTokens": 8192,
+      "temperature": 0.2,
+      "costClass": "expensive"
+    },
+    "cheap_classify": {
+      "provider": "vertex",
+      "model": "gemini-2.5-flash",
+      "maxTokens": 1024,
+      "temperature": 0,
+      "costClass": "cheap"
+    },
+    "long_context": {
+      "provider": "vertex",
+      "model": "gemini-2.5-pro",
+      "maxTokens": 32768,
+      "temperature": 0.2,
+      "costClass": "expensive_long"
+    },
+    "writing_quality": {
+      "provider": "vertex",
+      "model": "gemini-2.5-pro",
+      "maxTokens": 4096,
+      "temperature": 0.4,
+      "costClass": "expensive"
+    },
+    "embeddings_text": {
+      "provider": "vertex",
+      "model": "text-embedding-005",
+      "dimensions": 768,
+      "costClass": "cheap"
+    },
+    "embeddings_long": {
+      "provider": "vertex",
+      "model": "text-embedding-005",
+      "dimensions": 768,
+      "costClass": "cheap"
+    }
+  },
+  "fallbackProvider": {
+    "google-ai-studio": {
+      "balanced": "gemini-2.5-flash",
+      "complex_reasoning": "gemini-2.5-pro",
+      "cheap_classify": "gemini-2.5-flash",
+      "long_context": "gemini-2.5-pro",
+      "writing_quality": "gemini-2.5-pro",
+      "embeddings_text": "text-embedding-005",
+      "embeddings_long": "text-embedding-005"
+    }
+  }
+}

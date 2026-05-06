@@ -8,6 +8,7 @@ import json
 from typing import Any
 
 from graphify_tacitus.extract import ACO_EXTRACTION_PROMPT
+from ai.providers import GENKIT_MODEL_FLASH, GENKIT_MODEL_PRO
 
 
 # ── Pydantic models for structured output ────────────────────────────────────
@@ -41,9 +42,9 @@ def _register_flows(ai: Any) -> None:
     try:
         @ai.flow()
         async def extract_aco_entities(text: str, source_file: str = "") -> dict:
-            """Extract ACO conflict entities from text using Gemini 2.5 Flash."""
+            """Extract ACO conflict entities from text using the balanced model."""
             response = await ai.generate(
-                model="googleai/gemini-2.5-flash",
+                model=GENKIT_MODEL_FLASH,
                 prompt=f"{ACO_EXTRACTION_PROMPT}\n\nSOURCE TEXT:\n{text[:30_000]}",
                 output=ACOExtractionOutput,
             )
@@ -51,9 +52,9 @@ def _register_flows(ai: Any) -> None:
 
         @ai.flow()
         async def deep_extract_aco(text: str, source_file: str = "") -> dict:
-            """Deep extraction with gemini-2.5-pro for complex or long sources."""
+            """Deep extraction for complex or long sources."""
             response = await ai.generate(
-                model="googleai/gemini-2.5-pro",
+                model=GENKIT_MODEL_PRO,
                 prompt=f"{ACO_EXTRACTION_PROMPT}\n\nSOURCE TEXT:\n{text[:60_000]}",
                 output=ACOExtractionOutput,
             )
@@ -63,7 +64,7 @@ def _register_flows(ai: Any) -> None:
         async def generate_situation_brief(situation_context: str, graph_analysis: dict) -> dict:
             """Generate comprehensive intelligence brief from graph analysis."""
             response = await ai.generate(
-                model="googleai/gemini-2.5-pro",
+                model=GENKIT_MODEL_PRO,
                 prompt=f"""You are PRAXIS, a conflict intelligence AI.
 
 {situation_context}
@@ -81,7 +82,7 @@ Generate a comprehensive intelligence brief.""",
             tool_name: str,
             tool_prompt: str,
             situation_context: str,
-            model: str = "googleai/gemini-2.5-flash",
+            model: str = GENKIT_MODEL_FLASH,
         ) -> dict:
             """Generic tool output generation with situation context."""
             response = await ai.generate(
@@ -101,7 +102,7 @@ Respond with structured JSON only.""",
         async def research_with_grounding(query: str, situation_context: str) -> dict:
             """Research using Vertex AI with Google Search grounding."""
             response = await ai.generate(
-                model="googleai/gemini-2.5-flash",
+                model=GENKIT_MODEL_FLASH,
                 prompt=f"""Research the following question about this conflict situation.
 
 {situation_context}

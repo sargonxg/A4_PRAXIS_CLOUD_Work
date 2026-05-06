@@ -5,6 +5,8 @@ get_ai_for_user() creates a user-specific instance with their own keys.
 """
 from __future__ import annotations
 
+from ai.providers import GENKIT_CATEGORY_MODEL_MAP, genkit_model_for_category
+
 
 def _build_genkit(google_key: str | None = None):
     """Build a Genkit instance with the given provider configurations."""
@@ -50,10 +52,4 @@ def get_model_for_category(user_settings: dict, category: str) -> str:
     Categories: fast_analysis, deep_analysis, creative_drafting, research
     """
     prefs = user_settings.get("model_preferences", {})
-    defaults = {
-        "fast_analysis": "googleai/gemini-2.5-flash",
-        "deep_analysis": "googleai/gemini-2.5-pro",
-        "creative_drafting": "googleai/gemini-2.5-pro",
-        "research": "googleai/gemini-2.5-flash",
-    }
-    return prefs.get(category, defaults.get(category, "googleai/gemini-2.5-flash"))
+    return prefs.get(category, GENKIT_CATEGORY_MODEL_MAP.get(category, genkit_model_for_category(category)))

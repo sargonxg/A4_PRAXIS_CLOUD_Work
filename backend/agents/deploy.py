@@ -27,10 +27,14 @@ from __future__ import annotations
 import os
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import vertexai
 from vertexai import agent_engines
 from google.adk.agents import LlmAgent, SequentialAgent
 from google.adk.tools import google_search
+
+from ai.providers import MODEL_FLASH, MODEL_PRO
 
 
 PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "praxisbytacitus")
@@ -75,14 +79,14 @@ SYNTHESIZER_INSTRUCTION = (
 def build_agent() -> SequentialAgent:
     planner = LlmAgent(
         name="planner",
-        model="gemini-2.5-flash",
+        model=MODEL_FLASH,
         instruction=PLANNER_INSTRUCTION,
         output_key="plan",
     )
 
     researcher = LlmAgent(
         name="researcher",
-        model="gemini-2.5-flash",
+        model=MODEL_FLASH,
         instruction=RESEARCHER_INSTRUCTION,
         tools=[google_search],
         output_key="findings",
@@ -90,7 +94,7 @@ def build_agent() -> SequentialAgent:
 
     synthesizer = LlmAgent(
         name="synthesizer",
-        model="gemini-2.5-pro",
+        model=MODEL_PRO,
         instruction=SYNTHESIZER_INSTRUCTION,
     )
 

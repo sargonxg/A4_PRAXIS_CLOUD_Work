@@ -6,11 +6,12 @@ Persists long-term memory per user via Vertex AI Memory Bank.
 from google.adk.agents import Agent
 from google.adk.tools import FunctionTool
 
+from ai.providers import MODEL_PRO
 from .tools import web_search_tool, document_retrieval_tool, graph_query_tool
 
 deep_research_agent = Agent(
     name="praxis_deep_research",
-    model="gemini-2.5-pro",
+    model=MODEL_PRO,
     instruction="""You are a research assistant for peace and security professionals using PRAXIS.
 
 Your three-phase pipeline:

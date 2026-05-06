@@ -5,10 +5,10 @@
  *   1. Vertex AI via Application Default Credentials (ADC) — zero config on Cloud Run
  *   2. Google AI Studio via GOOGLE_AI_API_KEY — dev fallback
  *
- * Models:
- *   - gemini-2.5-flash          : Standard tasks — chat, lightweight analysis, terminology
- *   - gemini-2.5-pro            : Pro + Deep Think — structured generation, analysis, 65K output
- *   - text-embedding-005        : Embeddings — 768-dim text vectors
+ * Models are selected from MODEL_MATRIX.json:
+ *   - balanced / cheap_classify : Gemini Flash
+ *   - complex_reasoning / writing_quality / long_context : Gemini Pro
+ *   - embeddings_text / embeddings_long : text-embedding-005
  *
  * Zero-Config Fallback Chain (Part 3):
  *   getProModel():       Vertex Gemini 2.5 Pro → Google AI Gemini 2.5 Pro → Flash
@@ -20,6 +20,7 @@
 
 import { generateText as aiGenerateText, type GenerateTextResult } from 'ai';
 import type { LanguageModel } from 'ai';
+import { AI_PLATFORM_POSTURE, getModelMatrixEntry } from './model-matrix';
 
 export type ProviderName = 'google' | 'vertex';
 
@@ -39,9 +40,9 @@ export interface ProviderInfo {
 // strings returned Vertex 404s in praxisbytacitus.
 // ---------------------------------------------------------------------------
 
-const MODEL_FLASH = 'gemini-2.5-flash';
-const MODEL_PRO   = 'gemini-2.5-pro';
-const MODEL_EMBED = 'text-embedding-005';
+const MODEL_FLASH = getModelMatrixEntry('balanced').model;
+const MODEL_PRO   = getModelMatrixEntry('complex_reasoning').model;
+const MODEL_EMBED = getModelMatrixEntry('embeddings_text').model;
 
 // ---------------------------------------------------------------------------
 // Internal factories
@@ -230,11 +231,11 @@ export function getProviderInfo(): ProviderInfo {
   if (isVertexProviderActive()) {
     return {
       name:            'vertex',
-      displayName:     'Google Vertex AI',
+      displayName:     'Google Vertex AI runtime',
       modelId:         MODEL_FLASH,
       groundedModelId: MODEL_FLASH,
       isConfigured:    true,
-      configNote:      `Project: ${process.env.GOOGLE_VERTEX_PROJECT} · Location: ${process.env.GOOGLE_VERTEX_LOCATION ?? 'us-central1'}`,
+      configNote:      `Project: ${process.env.GOOGLE_VERTEX_PROJECT} · Location: ${process.env.GOOGLE_VERTEX_LOCATION ?? AI_PLATFORM_POSTURE.defaultRegion} · Enterprise surface: ${AI_PLATFORM_POSTURE.enterpriseAgentPlatform}`,
     };
   }
   const apiKey = process.env.GOOGLE_AI_API_KEY;
@@ -257,14 +258,14 @@ export function getAvailableProviders() {
       configured:   !!process.env.GOOGLE_AI_API_KEY,
       model:        MODEL_FLASH,
       capabilities: ['Chat', 'Google Search Grounding', 'Tool Use', 'Streaming', 'Gemini 2.5', 'Embeddings (768-dim)'],
-      note:         'Primary provider — set GOOGLE_AI_API_KEY for local dev, or use Vertex on Cloud Run',
+      note:         'Local fallback — production should use Vertex AI ADC',
     },
     vertex: {
-      name:         'Google Vertex AI',
+      name:         'Google Vertex AI runtime',
       configured:   isVertexProviderActive(),
       model:        MODEL_FLASH,
-      capabilities: ['VPC-SC', 'IAM', 'Audit Logs', 'Enterprise SLA', 'ADC Auth', 'Gemini 2.5'],
-      note:         'Optional — set AI_PROVIDER=vertex + GOOGLE_VERTEX_PROJECT',
+      capabilities: ['VPC-SC', 'IAM', 'Audit Logs', 'Enterprise SLA', 'ADC Auth', 'Gemini Enterprise agent platform alignment'],
+      note:         'Production default — set AI_PROVIDER=vertex + GOOGLE_VERTEX_PROJECT',
     },
   };
 }

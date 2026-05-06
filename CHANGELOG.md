@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- prod(ai): add Pack 14 Gemini Enterprise / Vertex AI provider posture.
+  Added the model matrix, typed matrix loader, backend model constants,
+  provider-isolation audits, Vertex-default audit gate, and rewired document
+  embeddings through the shared provider boundary using `text-embedding-005`.
 - test(app): add usability smoke for landing and Workbench.
   Added Playwright coverage for the landing hero visual, static fallback,
   DIALECTICA 3D graph, demo Workbench context/ontology/graph/tools/memo

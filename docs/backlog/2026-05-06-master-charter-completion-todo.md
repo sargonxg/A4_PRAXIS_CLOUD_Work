@@ -193,11 +193,14 @@ documented. A partial item must keep its named gap visible.
 
 ## Pack 14 - Production Excellence
 
-- [ ] Decide and document Vertex AI region and model defaults.
-- [ ] Add audit proving Vertex AI is the default provider in production.
-- [ ] Add provider isolation audit for Google AI fallback and user BYO keys.
-- [ ] Add embeddings v2 plan using GCP-native embeddings.
-- [ ] Decide whether Vertex AI Vector Search is v1.1 or v2.
+- [x] Preserve and execute a first local Pack 14 provider/posture pass twice against the whole app.
+- [x] Document Gemini Enterprise versus Vertex AI runtime posture for PRAXIS.
+- [x] Document provisional Vertex AI region and model defaults pending owner sign-off.
+- [x] Add audit proving Vertex AI is the default provider in production.
+- [x] Add provider isolation audit for Google AI fallback and user BYO keys.
+- [x] Add embeddings v2 plan using GCP-native embeddings.
+- [x] Decide local architecture posture: pgvector remains primary; Vertex AI Vector Search 2 is the secondary at-scale path.
+- [ ] Obtain owner sign-off on Vertex AI region and model defaults.
 - [ ] Terraform-manage Cloud Run, Cloud SQL, Firestore indexes/rules, Scheduler, Tasks, Pub/Sub, Secret Manager, IAM, budgets, and alerts.
 - [ ] Add Terraform drift audit.
 - [ ] Add observability coverage audit for logs, traces, metrics, and Sentry.

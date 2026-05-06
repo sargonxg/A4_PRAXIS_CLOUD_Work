@@ -2,6 +2,7 @@
 from functools import lru_cache
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings
+from ai.providers import MODEL_FLASH, MODEL_PRO
 
 
 class Settings(BaseSettings):
@@ -50,8 +51,8 @@ class Settings(BaseSettings):
     bigquery_dataset: str = "praxis_analytics"
 
     # AI Models
-    gemini_model: str = "gemini-2.5-flash"
-    gemini_deep_model: str = "gemini-2.5-pro"
+    gemini_model: str = MODEL_FLASH
+    gemini_deep_model: str = MODEL_PRO
 
     # CORS — comma-separated origins. Cloud Run URLs auto-allowed via regex in main.py.
     cors_origins_str: str = "http://localhost:3000,http://localhost:3001,https://praxis.tacitus.me"

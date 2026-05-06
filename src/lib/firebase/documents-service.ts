@@ -19,7 +19,7 @@
 import { getAdminDbOrThrow } from './admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { embed, embedMany } from 'ai';
-import { google } from '@ai-sdk/google';
+import { getEmbeddingModel, hasServerAiProvider } from '@/lib/ai/providers';
 
 export interface StoredDocument {
   id: string;
@@ -43,11 +43,8 @@ export interface DocumentChunk {
   index: number;
   charStart: number;
   charEnd: number;
-  embedding?: number[]; // Gemini text-embedding-004 vector (768 dimensions)
+  embedding?: number[]; // Gemini text-embedding-005 vector (768 dimensions)
 }
-
-// Embedding model for semantic search
-const embeddingModel = google.textEmbeddingModel('text-embedding-004');
 
 function cosineSimilarity(a: number[], b: number[]): number {
   let dot = 0, normA = 0, normB = 0;
@@ -170,7 +167,7 @@ export function chunkText(
 
 /**
  * Chunk a document, generate embeddings, and save to Firestore.
- * Uses Gemini text-embedding-004 for semantic search.
+ * Uses the shared provider embedding model for semantic search.
  * Falls back gracefully if embedding generation fails.
  */
 export async function chunkAndSaveDocument(
@@ -186,7 +183,8 @@ export async function chunkAndSaveDocument(
   // Generate embeddings for all chunks in batch (if API key available)
   let embeddings: number[][] | null = null;
   try {
-    if (process.env.GOOGLE_AI_API_KEY) {
+    const embeddingModel = hasServerAiProvider() ? getEmbeddingModel() : null;
+    if (embeddingModel) {
       const result = await embedMany({
         model: embeddingModel,
         values: chunks.map((c) => c.text),
@@ -245,7 +243,8 @@ export async function retrieveRelevantChunks(
   // Generate query embedding if API key is available
   let queryEmbedding: number[] | null = null;
   try {
-    if (process.env.GOOGLE_AI_API_KEY) {
+    const embeddingModel = hasServerAiProvider() ? getEmbeddingModel() : null;
+    if (embeddingModel) {
       const result = await embed({ model: embeddingModel, value: query });
       queryEmbedding = result.embedding;
     }
