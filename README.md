@@ -557,6 +557,7 @@ This codebase is actively worked on by **Claude Code** and **OpenAI Codex** agen
 npx tsc --noEmit
 npm run build
 node scripts/audit-ai-routes.mjs
+npm run audit:architecture-chain
 npm run audit:architecture-reference
 npm run audit:gcp
 ```

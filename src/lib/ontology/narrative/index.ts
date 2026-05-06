@@ -2,6 +2,7 @@ import type { CaseOntologyDefinition } from '@/lib/ontology/types';
 
 export const NARRATIVE_ONTOLOGY: CaseOntologyDefinition = {
   id: 'narrative',
+  version: '1.0.0',
   label: 'Narrative Ontology',
   description: 'Frames, claims, counter-claims, messengers, audiences, and provenance for information-environment analysis.',
   domains: ['narrative', 'information', 'media', 'public-diplomacy'],

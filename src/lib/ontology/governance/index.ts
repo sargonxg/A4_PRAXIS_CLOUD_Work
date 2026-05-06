@@ -2,6 +2,7 @@ import type { CaseOntologyDefinition } from '@/lib/ontology/types';
 
 export const GOVERNANCE_ONTOLOGY: CaseOntologyDefinition = {
   id: 'governance',
+  version: '1.0.0',
   label: 'Governance Ontology',
   description: 'Mandates, veto points, coalitions, public claims, institutional constraints, and implementation commitments.',
   domains: ['governance', 'political', 'trade', 'international', 'legal'],

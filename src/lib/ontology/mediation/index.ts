@@ -2,6 +2,7 @@ import type { CaseOntologyDefinition } from '@/lib/ontology/types';
 
 export const MEDIATION_ONTOLOGY: CaseOntologyDefinition = {
   id: 'mediation',
+  version: '1.0.0',
   label: 'Mediation Ontology',
   description: 'Positions, interests, constraints, commitments, and bargaining-zone evidence for mediation preparation.',
   domains: ['mediation', 'peace-process', 'workplace', 'community', 'legal'],

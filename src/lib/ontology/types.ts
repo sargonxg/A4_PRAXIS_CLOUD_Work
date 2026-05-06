@@ -26,6 +26,7 @@ export interface OntologyValidator {
 
 export interface CaseOntologyDefinition {
   id: OntologyId;
+  version: string;
   label: string;
   description: string;
   domains: string[];

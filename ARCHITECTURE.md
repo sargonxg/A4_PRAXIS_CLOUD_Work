@@ -34,6 +34,8 @@ PRAXIS is a dual-service GCP application:
 The following architectural gates are active in the repo:
 
 - `npm run audit:routes`
+- `npm run audit:architecture-chain`
+- `npm run audit:architecture-reference`
 - `npm run audit:ai-provider-isolation`
 - `npm run audit:ai-provider-vertex-default`
 - `npm run audit:observability-coverage`
@@ -41,15 +43,28 @@ The following architectural gates are active in the repo:
 - `npm run audit:context-vs-tools`
 - `npm run audit:context-aware-coverage`
 - `npm run audit:ontology`
+- `npm run audit:ontology-mapping`
+- `npm run audit:ontology-versions`
+- `npm run audit:context-types-parity`
 - `npm run audit:tool-marketplace`
 - `npm run audit:tool-contract-v2`
 - `npm run audit:tool-skills-present`
+- `npm run audit:tool-skill-conforms`
+- `npm run audit:tool-context-isolation`
+- `npm run audit:firewall-coverage`
+- `npm run audit:owner-scoping`
+- `npm run audit:postgres-schema-current`
+- `npm run audit:kg-drift`
+- `npm run audit:legal-pages-present`
 - `npm run audit:kg-backend`
 - `npm run audit:memo-studio`
-- `npm run audit:architecture-reference`
 
-`npm run audit:gate` includes these checks, then reaches the known `audit:gcp`
-barrier when local `gcloud` credentials require interactive reauthentication.
+`npm run audit:architecture-chain` verifies that every `npm run ...` command
+listed in the architecture bible's §19 audit chain is either implemented in
+`package.json` or explicitly listed as owner/cloud-gated in the live alignment
+doc. `npm run audit:gate` includes these checks, then reaches the known
+`audit:gcp` barrier when local `gcloud` credentials require interactive
+reauthentication.
 
 ## Deeper References
 

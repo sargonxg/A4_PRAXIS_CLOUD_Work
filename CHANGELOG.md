@@ -14,6 +14,11 @@
   Stored `PRAXIS_ARCHITECTURE.md` under `docs/architecture/`, replaced the root
   architecture entrypoint with canonical links, and added an architecture
   reference audit so target-state claims stay tied to real app status.
+- chore(architecture): account for the architecture bible audit chain.
+  Added architecture-chain parity enforcement, local aliases for shipped
+  architecture audits, ontology version metadata, and focused static audits for
+  context parity, tool context isolation, firewall coverage, owner scoping, and
+  legal pages.
 - test(app): add usability smoke for landing and Workbench.
   Added Playwright coverage for the landing hero visual, static fallback,
   DIALECTICA 3D graph, demo Workbench context/ontology/graph/tools/memo

@@ -49,6 +49,7 @@ run the full gate unless the user explicitly asks for a smaller checkpoint:
 npx tsc --noEmit
 npm run build
 npm run lint
+npm run audit:architecture-chain
 npm run audit:architecture-reference
 npm run audit:gcp
 node scripts/audit-ai-routes.mjs

@@ -2,6 +2,7 @@ import type { CaseOntologyDefinition } from '@/lib/ontology/types';
 
 export const CONFLICT_ONTOLOGY: CaseOntologyDefinition = {
   id: 'conflict',
+  version: '1.0.0',
   label: 'Conflict Ontology',
   description: 'Actors, claims, leverage, commitments, escalation events, and narrative frames for political violence and crisis analysis.',
   domains: ['conflict-prevention', 'international-dispute', 'civil', 'political', 'custom'],

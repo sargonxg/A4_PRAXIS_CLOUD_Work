@@ -35,6 +35,43 @@ This matches `docs/architecture/MODEL_SELECTION.md`,
 | UX loading/empty/error states have local gate | Enforced | `npm run audit:ux-polish` |
 | Observability has local trace/logger/health gate | Enforced | `npm run audit:observability-coverage` |
 | Graphify stays refreshed | Enforced operationally | `graphify update .` output in Pack 14 audit docs |
+| Architecture §19 command chain is accounted | Enforced | `npm run audit:architecture-chain` |
+
+## Architecture Audit Chain Parity
+
+`docs/architecture/PRAXIS_ARCHITECTURE.md` §19 is the target production audit
+chain. The repo now enforces command parity in two ways:
+
+- Implemented local commands must exist in `package.json`.
+- Commands that depend on owner credentials, paid cloud state, or unfinished
+  production fixtures must be listed in the gated block below.
+
+Local aliases added for the real app include `typecheck`, `test`,
+`test:e2e:personas`, `audit:ontology-mapping`, `audit:ontology-versions`,
+`audit:context-types-parity`, `audit:tool-skill-conforms`,
+`audit:tool-context-isolation`, `audit:firewall-coverage`,
+`audit:owner-scoping`, `audit:postgres-schema-current`, `audit:kg-drift`,
+`audit:legal-pages-present`, `audit:type-safety`, and `audit:docs`.
+
+<!-- architecture-gated-audits:start -->
+
+- `audit:ontology-classifier-accuracy` — needs a labeled classifier eval set.
+- `audit:tool-composition-static` — needs static composition graph fixtures.
+- `audit:tool-suggestion-eval` — needs recall@3 suggestion eval corpus.
+- `audit:subagent-deployment-fresh` — needs live Agent Engine deployment metadata.
+- `audit:subagent-eval-fresh` — needs committed per-subagent eval runs.
+- `audit:bi-temporal-coverage` — needs full Postgres write-path cutover.
+- `audit:graph-query-perf` — needs 10k-node Postgres performance fixture.
+- `audit:embeddings-v2-coverage` — needs embeddings v2 production corpus cutover.
+- `audit:terraform-drift` — needs owner-approved Terraform state and gcloud auth.
+- `audit:dead-code` — needs a repo-wide dead-code policy to avoid false positives.
+- `audit:test-coverage` — needs coverage floor selection and CI artifact retention.
+- `audit:security` — needs dependency/security gate tuning for current accepted debt.
+- `lh:ci` — needs Lighthouse CI target deployment and budget config.
+- `audit:bundle-budgets` — needs bundle budget thresholds.
+- `audit:tool-perf-budgets` — needs per-tool latency fixtures.
+
+<!-- architecture-gated-audits:end -->
 
 ## Partially Implemented Target State
 
@@ -63,11 +100,17 @@ Use this local pre-commit slice for architecture-sensitive changes:
 
 ```bash
 npm run audit:architecture-reference
+npm run audit:architecture-chain
 npm run audit:ai-provider-isolation
 npm run audit:ai-provider-vertex-default
 npm run audit:context-vs-tools
 npm run audit:context-aware-coverage
+npm run audit:context-types-parity
 npm run audit:tool-marketplace
+npm run audit:tool-context-isolation
+npm run audit:firewall-coverage
+npm run audit:owner-scoping
+npm run audit:legal-pages-present
 npm run audit:ux-polish
 npm run audit:observability-coverage
 npx tsc --noEmit

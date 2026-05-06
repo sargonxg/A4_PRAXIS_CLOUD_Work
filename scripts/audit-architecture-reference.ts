@@ -9,6 +9,7 @@ const requiredFiles = [
   'docs/architecture/MODEL_SELECTION.md',
   'docs/backlog/2026-05-06-master-charter-completion-todo.md',
   'ARCHITECTURE.md',
+  'package.json',
   'README.md',
   'AGENTS.md',
   'CLAUDE.md',
@@ -54,7 +55,7 @@ if (failures.length === 0) {
     if (!alignment.includes(marker)) failures.push(`alignment doc missing marker: ${marker}`);
   }
 
-  for (const marker of ['PRAXIS_ARCHITECTURE.md', 'PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md', 'audit:architecture-reference']) {
+  for (const marker of ['PRAXIS_ARCHITECTURE.md', 'PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md', 'audit:architecture-reference', 'audit:architecture-chain']) {
     if (!rootArchitecture.includes(marker)) failures.push(`root ARCHITECTURE.md missing marker: ${marker}`);
   }
 
@@ -69,6 +70,12 @@ if (failures.length === 0) {
     if (!body(file).includes('audit:architecture-reference')) {
       failures.push(`${file} missing audit:architecture-reference`);
     }
+  }
+
+  const packageJson = JSON.parse(body('package.json')) as { scripts?: Record<string, string> };
+  if (!packageJson.scripts?.['audit:architecture-chain']) failures.push('package.json missing audit:architecture-chain');
+  if (!packageJson.scripts?.['audit:gate']?.includes('audit:architecture-chain')) {
+    failures.push('audit:gate must include audit:architecture-chain');
   }
 }
 

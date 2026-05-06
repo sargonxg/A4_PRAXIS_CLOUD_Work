@@ -746,6 +746,8 @@ For each persona, record:
   `SECURITY.md` aligned with deeper docs.
 - [ ] Run `npm run audit:architecture-reference` whenever the architecture
   bible, app architecture, or agent handoff docs change.
+- [ ] Run `npm run audit:architecture-chain` whenever the architecture bible's
+  §19 command list or `package.json` audit scripts change.
 - [ ] Update `CHANGELOG.md` for every code or runbook change.
 - [ ] Update `docs/TOOL_QUALITY_AUDIT_2026-04-28.md` during browser tool
   audits.
