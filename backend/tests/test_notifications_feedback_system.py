@@ -113,6 +113,15 @@ def test_notification_schema_and_feedback_persistence_contract():
     ]:
         assert marker in service
 
+    delivery = (ROOT / "services" / "notifications" / "delivery.py").read_text()
+    for marker in [
+        "dispatch_pending_deliveries",
+        "MAX_DELIVERY_ATTEMPTS",
+        "sign_webhook_payload",
+        "provider_unconfigured",
+    ]:
+        assert marker in delivery
+
 
 def test_notifications_router_and_frontend_wiring_contract():
     router = (ROOT / "routers" / "notifications.py").read_text()
@@ -122,6 +131,7 @@ def test_notifications_router_and_frontend_wiring_contract():
         '@router.get("/preferences")',
         '@router.put("/preferences")',
         '@router.post("/test")',
+        '@router.post("/dispatch")',
     ]:
         assert marker in router
 

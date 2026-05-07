@@ -59,8 +59,23 @@ for (const marker of ['async def notify', 'DEBOUNCE_WINDOW', 'dedup_key', 'quiet
   if (!service.includes(marker)) failures.push(`notification service missing ${marker}`);
 }
 
+const delivery = read('backend/services/notifications/delivery.py');
+for (const marker of [
+  'dispatch_pending_deliveries',
+  'MAX_DELIVERY_ATTEMPTS',
+  'sign_webhook_payload',
+  'HMAC_SHA256',
+  'provider_unconfigured',
+  'email-digest',
+  'email-immediate',
+  'browser-push',
+  'webhook',
+]) {
+  if (!delivery.includes(marker)) failures.push(`notification delivery missing ${marker}`);
+}
+
 const router = read('backend/routers/notifications.py');
-for (const marker of ['@router.get("/stream")', '@router.post("/{notification_id}/signal")', '@router.get("/preferences")', '@router.put("/preferences")', '@router.post("/test")', '@router.get("/registry")']) {
+for (const marker of ['@router.get("/stream")', '@router.post("/{notification_id}/signal")', '@router.get("/preferences")', '@router.put("/preferences")', '@router.post("/test")', '@router.post("/dispatch")', '@router.get("/registry")']) {
   if (!router.includes(marker)) failures.push(`notifications router missing ${marker}`);
 }
 
@@ -70,7 +85,7 @@ if (!main.includes('notifications.router') || !main.includes('/v1/notifications'
 }
 
 const proxy = read('src/app/api/backend/[...path]/route.ts');
-for (const marker of ['notifications/stream', 'notifications/registry', 'notifications/preferences', 'notifications/test', 'notifications\\/[^/]+\\/signal']) {
+for (const marker of ['notifications/stream', 'notifications/registry', 'notifications/preferences', 'notifications/test', 'notifications/dispatch', 'notifications\\/[^/]+\\/signal']) {
   if (!proxy.includes(marker)) failures.push(`backend proxy missing ${marker}`);
 }
 

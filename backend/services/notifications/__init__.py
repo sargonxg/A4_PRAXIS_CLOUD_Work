@@ -9,6 +9,7 @@ from uuid import UUID
 from services.cognee_memory import CogneeSearchMode, MemoryScope, SearchAudit, search
 from services.postgres import TenantConnection
 
+from .delivery import dispatch_pending_deliveries, initial_channel_status
 from .registry import NOTIFICATION_REGISTRY, NotificationChannel, NotificationUrgency, get_spec
 
 
@@ -133,7 +134,7 @@ async def notify(
     quiet = _quiet_hours_active(prefs, now)
     state = "dismissed" if muted else ("pending" if quiet else "delivered")
     channels = [
-        {"channel": channel.value, "status": "muted" if muted else ("queued" if quiet else "delivered")}
+        {"channel": channel.value, "status": initial_channel_status(channel.value, muted=muted, quiet=quiet)}
         for channel in spec.default_channels
     ]
     if preference_mode == "digest":
@@ -334,4 +335,5 @@ __all__ = [
     "notify",
     "list_notifications",
     "record_signal",
+    "dispatch_pending_deliveries",
 ]

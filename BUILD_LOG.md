@@ -1,5 +1,9 @@
 # PRAXIS Build Log
 
+## 2026-05-07 — Notification external delivery contract
+
+Continued `NOTIFICATIONS_FEEDBACK_SYSTEM.md` by fixing channel lifecycle semantics and adding the first safe external-delivery dispatcher. In-app notifications still deliver immediately, but email digest, immediate email, browser push, and webhook receipts now start queued and are advanced by a user-scoped dispatcher that records `provider_unconfigured` when credentials are absent instead of pretending the send succeeded. Added HMAC-SHA256 webhook signing, a three-attempt retry ceiling, a `/v1/notifications/dispatch` route plus Next proxy fallback, audit markers, and focused delivery tests. Provider-backed sends, Cloud Scheduler cadence, push subscriptions, and workspace webhook configuration remain live-ops blockers until secrets and staging are confirmed.
+
 ## 2026-05-07 — Deep pre-ship observability counters
 
 Continued `DEEP_PRESHIP_CHECKLIST.md` by adding a protected backend `/metrics` endpoint and a small dependency-free Prometheus text registry. Cognee wrapper calls now record operation/status/mode counters and latency summaries even in disabled-safe mode, and tenant sessions record reset counters when connections return to the pool. Extended `audit:deep-preship` to enforce the metrics surface and added backend tests for the metrics contract. This improves the static pre-ship observability gate without claiming live Cloud SQL, Vertex billing, or staging scrape coverage.

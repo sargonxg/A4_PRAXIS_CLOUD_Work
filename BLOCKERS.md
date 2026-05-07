@@ -1,10 +1,10 @@
 # PRAXIS Blockers
 
-## 2026-05-07 — Notification external channels need delivery workers
+## 2026-05-07 — Notification external channels need provider-backed sends
 
-Context: `NOTIFICATIONS_FEEDBACK_SYSTEM.md` is now implemented for in-app notifications, preferences, lifecycle state, feedback signals, bundling, SSE snapshot streaming, and Cognee acted/dismissed feedback. The registry and preferences include `email-digest`, `email-immediate`, `browser-push`, and `webhook`, but this pass does not deploy external channel workers or provider credentials.
+Context: `NOTIFICATIONS_FEEDBACK_SYSTEM.md` is now implemented for in-app notifications, preferences, lifecycle state, feedback signals, bundling, SSE snapshot streaming, Cognee acted/dismissed feedback, and a user-scoped external delivery dispatcher. The registry and preferences include `email-digest`, `email-immediate`, `browser-push`, and `webhook`; dispatcher receipts now stay queued or become `provider_unconfigured` instead of being marked as fake-delivered, but this pass does not deploy provider credentials, Cloud Scheduler jobs, browser push subscriptions, or outbound webhook workspace configuration.
 
-Options considered: mock external delivery and call it done, remove channels from the registry until workers exist, or keep the channel contract visible while marking delivery as a live operations slice. Recommendation: keep the channel contract and add the delivery worker after provider credentials and staging migration are confirmed. Smallest unblocking diff: add a notification dispatcher worker that drains pending channel rows, sends through the approved email/push/webhook providers, writes delivery receipts, and extends `audit:notifications-feedback` with provider-backed smoke tests.
+Options considered: mock provider delivery and call it done, remove channels from the registry until providers exist, or keep the channel contract visible while marking provider sends as a live operations slice. Recommendation: keep the dispatcher contract and add provider-backed sends only after Resend/web-push/webhook secrets and staging migration are confirmed. Smallest unblocking diff: add Cloud Scheduler or worker invocation for `/v1/notifications/dispatch`, wire approved email/push/webhook providers, store provider delivery receipts, and extend `audit:notifications-feedback` with provider-backed smoke tests.
 
 ## 2026-05-07 — Gemini 3-only prompt conflicts with current model guard
 

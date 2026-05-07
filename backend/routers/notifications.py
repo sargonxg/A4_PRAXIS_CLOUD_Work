@@ -9,7 +9,13 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from auth import verify_firebase_token
-from services.notifications import NOTIFICATION_REGISTRY, list_notifications, notify, record_signal
+from services.notifications import (
+    NOTIFICATION_REGISTRY,
+    dispatch_pending_deliveries,
+    list_notifications,
+    notify,
+    record_signal,
+)
 from services.postgres import tenant_session
 
 router = APIRouter()
@@ -32,6 +38,10 @@ class PreferencesRequest(BaseModel):
     timezone: str = Field(default="America/New_York", max_length=64)
     digest_time: str = Field(default="08:00", max_length=8)
     do_not_disturb: bool = False
+
+
+class DispatchRequest(BaseModel):
+    limit: int = Field(default=100, ge=1, le=500)
 
 
 def _serialize(row: dict[str, Any]) -> dict[str, Any]:
@@ -151,6 +161,16 @@ async def send_test_notification(
             case_id=req.case_id,
         )
     return {"notification": _serialize(row)}
+
+
+@router.post("/dispatch")
+async def dispatch_notification_deliveries(
+    req: DispatchRequest,
+    token: dict = Depends(verify_firebase_token),
+) -> dict[str, Any]:
+    async with tenant_session(token["uid"]) as conn:
+        result = await dispatch_pending_deliveries(conn, recipient_uid=token["uid"], limit=req.limit)
+    return {"dispatch": result}
 
 
 @router.get("/registry")

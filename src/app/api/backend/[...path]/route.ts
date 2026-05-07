@@ -24,7 +24,7 @@ const ALLOWED_BACKEND_PATHS: Array<{ method: string; pattern: RegExp }> = [
   { method: 'POST', pattern: /^workspace\/suggestions\/[^/]+\/(dismiss|confirm)$/ },
   { method: 'GET', pattern: /^notifications(\/stream|\/registry|\/preferences)?$/ },
   { method: 'PUT', pattern: /^notifications\/preferences$/ },
-  { method: 'POST', pattern: /^notifications\/(test|[^/]+\/signal)$/ },
+  { method: 'POST', pattern: /^notifications\/(test|dispatch|[^/]+\/signal)$/ },
   { method: 'GET', pattern: /^tabs\/(context\/situation-frame|library|library\/sources|ontology\/candidates|graph|graph\/timeline)$/ },
   { method: 'GET', pattern: /^tabs\/library\/[^/]+$/ },
   { method: 'GET', pattern: /^tabs\/graph\/node\/[^/]+$/ },
@@ -131,6 +131,16 @@ function localBackendFallback(method: string, path: string): Record<string, unkn
   }
   if (normalizedMethod === 'POST' && path === 'notifications/test') {
     return { notification: null, status: 'backend_unconfigured' };
+  }
+  if (normalizedMethod === 'POST' && path === 'notifications/dispatch') {
+    return {
+      dispatch: {
+        notificationsScanned: 0,
+        notificationsTouched: 0,
+        counts: { queued: 0, provider_unconfigured: 0, skipped: 0, exhausted: 0 },
+      },
+      status: 'backend_unconfigured',
+    };
   }
   if (normalizedMethod === 'POST' && path === 'chapters/drafts') {
     return {
