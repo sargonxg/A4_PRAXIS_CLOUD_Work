@@ -19,6 +19,7 @@ const required = [
   'docs/codex-prompts/PRAXIS_CODEX_16_AGENTIC_BOARDROOM.md',
   'docs/codex-prompts/PRAXIS_CODEX_18_PRODUCTION_REALITY_CLOSURE.md',
   'docs/codex-prompts/PRAXIS_CODEX_19_GENUINELY_USEFUL.md',
+  'docs/codex-prompts/PRAXIS_CODEX_20_DYNAMIC_ONTOLOGIES.md',
 ];
 
 const failures: string[] = [];
@@ -38,4 +39,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Codex prompt pack audit passed for master charter and packs 03-16 plus packs 18-19.');
+console.log('Codex prompt pack audit passed for master charter and packs 03-16 plus packs 18-20.');

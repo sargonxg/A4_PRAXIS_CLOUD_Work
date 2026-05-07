@@ -41,6 +41,7 @@ The master charter is now preserved in-repo and its high-level support structure
 | Pack 14 Production Excellence | PARTIAL local production-excellence foundation | Gemini Enterprise/Vertex posture, model matrix, shared embedding provider, backend model constants, provider audits, UX/observability audits, load-test scaffold, capacity plan, canary monitor, canary log template, and orchestration playbook DONE; production infra deferred | Requires owner decisions on final region/cost, Terraform/canary execution, public demo, and signup posture. |
 | Pack 18 Production Reality Closure | ACTIVE closure pass | Prompt preserved; canonical `/demo/syria-2024`, `/waitlist`, `/login/callback`, and `/legal/{privacy,terms,security,data-retention}` route gaps closed in code; `cross.memo-create` and `cross.memo-refresh` are now first-class marketplace foundation tools; route/tool audits expanded | Persona CI streak, production context/storage parity, review queue, specialist tool depth, Agent Engine runtime evidence, Lighthouse/axe, and canary proof remain open. |
 | Pack 19 Genuinely Useful | ACTIVE v1.1 foundation | Prompt preserved; transparency cards added to all 22 current marketplace tools; tool-run evidence drawer and run comparison foundation added; audit guards added | Pack 19 preconditions are not fully true yet: Pack 18 remaining gaps, v1.0.0 tag, 10-green persona CI streak, live Agent Engine runtime evidence, specialist handlers, claim challenge, and semantic diffing remain open. |
+| Pack 20 Dynamic Ontologies | ACTIVE v1.1 foundation | Prompt preserved; five new ontology lenses registered; registry now returns 9 ontologies; role-aware ontology suggestion helper, optional multi-ontology context fields, backend mirrors, audit coverage, and ADR 0030 added | Full multi-ontology write-path enforcement, ingestion-driven classifier, eval set, sample situations, visual snapshots, and Pack 21 specialist tools remain open. |
 
 ## Open S0/S1 From Self-Audit
 
@@ -102,6 +103,18 @@ revision `praxis-frontend-00262-vdn`. The tools tab was live-smoked with
 claims/provenance, context, raw output, and Memo Studio handoff with zero
 console/page errors.
 
+## Latest Pack 20 Dynamic Ontologies Pass
+
+`docs/audits/2026-05-07-PACK20_DYNAMIC_ONTOLOGIES.md` records the first Pack 20
+foundation slice. The prompt is preserved, and PRAXIS now has nine ontology
+lenses: Conflict, Mediation, Governance, Narrative, Human Rights, Economic /
+Sanctions, Humanitarian, Legal / Treaty, and Security / Defense. The new lenses
+map onto the existing eight ACO primitives without changing the substrate.
+`npm run audit:ontology-mapping` and `npm run audit:ontology-versions` now pass
+for nine ontologies. Role-aware ontology suggestions and optional
+multi-ontology case fields are present as foundation code; classifier routing,
+sample situations, and full multi-ontology write-path enforcement remain open.
+
 ## Remaining Work
 
 - Run and maintain the four persona suites until the charter's 10-green-run bar is genuinely satisfied in CI.
@@ -113,4 +126,5 @@ console/page errors.
 - Continue Pack 14 after the local provider/posture pass: Terraform-managed infrastructure, managed Agent Platform Runtime deployment, public read-only demo, waitlist/magic-link posture, observability, load testing, cost dashboard, and canary deploy.
 - Continue Pack 18 by closing the synthesized review queue, persona CI streak evidence, production storage parity evidence, marketplace specialist depth, Agent Engine runtime evidence, Lighthouse/axe evidence, and canary proof.
 - Continue Pack 19 only in slices that do not falsely depend on unresolved v1.0 evidence. Highest safe next slices: claim challenge/reasoning-step appeal, workspace preference propagation audit, and Situation Genesis baseline measurement.
+- Continue Pack 20 by wiring role-aware ontology suggestions into case creation, then adding classifier/eval/sample-case work after the review-queue and Situation Genesis prerequisites are ready.
 - Obtain owner production-readiness signature, complete staging/production signed smoke records, and only then tag `v1.0.0`.

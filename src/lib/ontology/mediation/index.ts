@@ -5,7 +5,7 @@ export const MEDIATION_ONTOLOGY: CaseOntologyDefinition = {
   version: '1.0.0',
   label: 'Mediation Ontology',
   description: 'Positions, interests, constraints, commitments, and bargaining-zone evidence for mediation preparation.',
-  domains: ['mediation', 'peace-process', 'workplace', 'community', 'legal'],
+  domains: ['mediation', 'peace-process', 'workplace', 'community'],
   nodeTypes: [
     { id: 'party', label: 'Party', primitive: 'Actor', description: 'Participant with a stake in the process.' },
     { id: 'stated_position', label: 'Stated Position', primitive: 'Claim', description: 'Public or negotiating demand.' },

@@ -33,6 +33,7 @@ Accepted ADRs are not edited for meaning. Supersede them with a later ADR.
 - `0026-agentic-boardroom-architecture.md`
 - `0027-parameterized-analyst-persona-subagent.md`
 - `0028-persona-corpus-retrieval.md`
+- `0030-dynamic-ontology-lenses.md`
 
 Active target-state gaps are tracked in:
 

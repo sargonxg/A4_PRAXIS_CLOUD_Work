@@ -61,7 +61,7 @@ Important files:
 - `src/lib/api/with-ai-act-ack.ts` gates high-risk verbs with `X-AI-Act-Ack`.
 - `src/lib/api/with-firewall.ts` is the shared calibrated AI response firewall: JSON outputs are claim-extracted, scored, annotated with firewall metadata, and routed to claim-level Trust Score persistence.
 - `src/lib/firebase/claims-service.ts` persists claim Trust Score records under `users/{uid}/situations/{situationId}/claims/{claimId}`.
-- `src/lib/ontology/registry.ts` maps active case domains to conflict, mediation, governance, and narrative ontologies over the ACO/TACITUS primitive substrate.
+- `src/lib/ontology/registry.ts` maps active case domains to the nine Pack 20 ontology lenses: conflict, mediation, governance, narrative, human-rights, economic, humanitarian, legal, and security over the ACO/TACITUS primitive substrate.
 - `src/components/ontology/OntologySchemaViewer.tsx` renders the Workbench Ontology tab.
 - `src/lib/graph/workbench-case-graph.ts` and `src/components/graph/PraxisGraphCanvas.tsx` provide the canonical Workbench graph view.
 - `src/lib/tools/marketplace/registry.ts`, `src/components/tools/ToolMarketplace.tsx`, and `src/lib/tools/marketplace/run-artifact.ts` provide the 16-tool marketplace and permissive artifact persistence contract.

@@ -80,6 +80,11 @@ const USER_ROLES: { value: UserRole; label: string; desc: string }[] = [
   { value: 'party', label: 'Party to conflict', desc: 'Directly involved in the situation' },
   { value: 'advisor', label: 'Advisor', desc: 'Providing counsel to stakeholders' },
   { value: 'researcher', label: 'Researcher', desc: 'Academic or policy research' },
+  { value: 'human_rights_officer', label: 'Human rights officer', desc: 'Monitoring rights, accountability, and protection patterns' },
+  { value: 'sanctions_analyst', label: 'Sanctions analyst', desc: 'Tracking designations, ownership, and financial exposure' },
+  { value: 'humanitarian_coordinator', label: 'Humanitarian coordinator', desc: 'Coordinating needs, access, response gaps, and protection' },
+  { value: 'treaty_lawyer', label: 'Treaty lawyer', desc: 'Interpreting obligations, reservations, jurisdiction, and remedies' },
+  { value: 'defense_analyst', label: 'Defense analyst', desc: 'Assessing posture, capabilities, deterrence, and security risks' },
 ];
 
 const REGION_SUGGESTIONS = [

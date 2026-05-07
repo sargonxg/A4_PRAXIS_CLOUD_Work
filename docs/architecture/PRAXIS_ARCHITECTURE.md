@@ -28,7 +28,7 @@ This document changes through one mechanism only: a PR that (a) edits the releva
 
 ## 1. The product in one paragraph
 
-PRAXIS is a workbench for **policy, conflict, mediation, and diplomacy professionals** to build and reason about complex situations. A user signs in via magic link, opens or creates a **situation** (a case — a dispute, a negotiation, a policy file, a conflict arena), and works inside a **workbench** with chapters for sources, ontology, graph, tools, memos, and runs. Every fact about the situation lives as a typed node in a **knowledge graph** governed by an **ontology** (Conflict, Mediation, Governance, or Narrative) which maps domain-specific subtypes onto eight universal **ACO primitives** (Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, Narrative). The user runs **tools** from a marketplace; tools read from a four-layer **context substrate** (User, Workspace, Situation, Conversation), invoke **subagents** when AI assistance is needed, and produce outputs that become tool-runs, graph augmentations (gated by a deterministic symbolic firewall), or memo blocks. **Memos** are the artifact the user takes out of PRAXIS into a meeting, a hearing, a publication. The whole product runs on Google Cloud, with **Gemini Enterprise Agent Platform** as the AI runtime, **Firestore** for owner-scoped metadata, **Postgres + pgvector** for the knowledge graph, and **Cloud Storage** for blobs.
+PRAXIS is a workbench for **policy, conflict, mediation, and diplomacy professionals** to build and reason about complex situations. A user signs in via magic link, opens or creates a **situation** (a case — a dispute, a negotiation, a policy file, a conflict arena), and works inside a **workbench** with chapters for sources, ontology, graph, tools, memos, and runs. Every fact about the situation lives as a typed node in a **knowledge graph** governed by one or more ontology lenses (Conflict, Mediation, Governance, Narrative, Human Rights, Economic, Humanitarian, Legal, or Security) which map domain-specific subtypes onto eight universal **ACO primitives** (Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, Narrative). The user runs **tools** from a marketplace; tools read from a four-layer **context substrate** (User, Workspace, Situation, Conversation), invoke **subagents** when AI assistance is needed, and produce outputs that become tool-runs, graph augmentations (gated by a deterministic symbolic firewall), or memo blocks. **Memos** are the artifact the user takes out of PRAXIS into a meeting, a hearing, a publication. The whole product runs on Google Cloud, with **Gemini Enterprise Agent Platform** as the AI runtime, **Firestore** for owner-scoped metadata, **Postgres + pgvector** for the knowledge graph, and **Cloud Storage** for blobs.
 
 ---
 
@@ -437,6 +437,8 @@ export interface CaseContext {
   caseId: string;
   ownerUid: string;
   ontologyId: OntologyId;
+  ontologyIds?: OntologyId[];
+  primaryOntologyId?: OntologyId;
   frame: CaseFrame;
   sourceCount: number;
   documentCount: number;
@@ -1326,7 +1328,7 @@ New domain concept? Map to one of 8 ACO primitives, declare a subtype in an onto
 
 ## 25. Closing note
 
-PRAXIS is structurally simple at its core. There are eight primitives, four context layers, three firewall tiers, two stores plus blob storage, one runtime (Gemini Enterprise Agent Platform), one workbench, one source of truth (this document). Every additional surface — sixteen tools, six memo templates, four ontologies, four subagents, four sample situations, ten infrastructure modules — fits inside that core without expanding it.
+PRAXIS is structurally simple at its core. There are eight primitives, four context layers, three firewall tiers, two stores plus blob storage, one runtime (Gemini Enterprise Agent Platform), one workbench, one source of truth (this document). Every additional surface — the curated tool marketplace, six memo templates, nine ontology lenses, four subagents, four sample situations, ten infrastructure modules — fits inside that core without expanding it.
 
 The discipline that keeps the architecture stable is not the rules in §3 in isolation. It is the practice of treating those rules as inviolable until an ADR explicitly retires them. Engineers work on PRAXIS for a long time before they need to retire one. When they do, they retire it deliberately, and they update this document.
 

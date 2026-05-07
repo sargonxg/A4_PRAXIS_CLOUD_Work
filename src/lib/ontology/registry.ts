@@ -1,8 +1,13 @@
 import { TACITUS_CORE_PRIMITIVES, type TacitusCorePrimitive } from '@/lib/graph/core-primitives';
 import { CONFLICT_ONTOLOGY } from '@/lib/ontology/conflict';
+import { ECONOMIC_ONTOLOGY } from '@/lib/ontology/economic';
 import { GOVERNANCE_ONTOLOGY } from '@/lib/ontology/governance';
+import { HUMAN_RIGHTS_ONTOLOGY } from '@/lib/ontology/human-rights';
+import { HUMANITARIAN_ONTOLOGY } from '@/lib/ontology/humanitarian';
+import { LEGAL_ONTOLOGY } from '@/lib/ontology/legal';
 import { MEDIATION_ONTOLOGY } from '@/lib/ontology/mediation';
 import { NARRATIVE_ONTOLOGY } from '@/lib/ontology/narrative';
+import { SECURITY_ONTOLOGY } from '@/lib/ontology/security';
 import type {
   CaseOntologyDefinition,
   OntologyId,
@@ -15,6 +20,11 @@ export const CASE_ONTOLOGIES: CaseOntologyDefinition[] = [
   MEDIATION_ONTOLOGY,
   GOVERNANCE_ONTOLOGY,
   NARRATIVE_ONTOLOGY,
+  HUMAN_RIGHTS_ONTOLOGY,
+  ECONOMIC_ONTOLOGY,
+  HUMANITARIAN_ONTOLOGY,
+  LEGAL_ONTOLOGY,
+  SECURITY_ONTOLOGY,
 ];
 
 export function getOntology(id: OntologyId): CaseOntologyDefinition {

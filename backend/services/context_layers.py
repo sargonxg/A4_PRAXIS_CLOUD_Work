@@ -6,7 +6,19 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 ContextLayer = Literal["user", "workspace", "case", "conversation"]
-UserRole = Literal["diplomat", "mediator", "analyst", "researcher", "policy_advisor", "other"]
+UserRole = Literal[
+    "diplomat",
+    "mediator",
+    "analyst",
+    "researcher",
+    "policy_advisor",
+    "human_rights_officer",
+    "sanctions_analyst",
+    "humanitarian_coordinator",
+    "treaty_lawyer",
+    "defense_analyst",
+    "other",
+]
 CommunicationStyle = Literal["concise", "thorough", "narrative"]
 ConfidenceTolerance = Literal["low", "medium", "high"]
 
@@ -44,6 +56,8 @@ class CaseContext(BaseModel):
     case_id: str = Field(alias="caseId")
     owner_uid: str = Field(alias="ownerUid")
     ontology_id: str = Field(alias="ontologyId")
+    ontology_ids: list[str] = Field(default_factory=list, alias="ontologyIds")
+    primary_ontology_id: str | None = Field(default=None, alias="primaryOntologyId")
     frame: dict
     source_count: int = Field(alias="sourceCount")
     document_count: int = Field(alias="documentCount")

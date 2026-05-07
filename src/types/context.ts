@@ -5,7 +5,19 @@ import type { MemoTemplateId } from '@/types/memo';
 import type { WorkbenchTabId } from '@/types/workbench';
 
 export const ContextLayerSchema = z.enum(['user', 'workspace', 'case', 'conversation']);
-export const UserRoleSchema = z.enum(['diplomat', 'mediator', 'analyst', 'researcher', 'policy_advisor', 'other']);
+export const UserRoleSchema = z.enum([
+  'diplomat',
+  'mediator',
+  'analyst',
+  'researcher',
+  'policy_advisor',
+  'human_rights_officer',
+  'sanctions_analyst',
+  'humanitarian_coordinator',
+  'treaty_lawyer',
+  'defense_analyst',
+  'other',
+]);
 export const CommunicationStyleSchema = z.enum(['concise', 'thorough', 'narrative']);
 export const ConfidenceToleranceSchema = z.enum(['low', 'medium', 'high']);
 
@@ -74,6 +86,8 @@ export interface CaseContext {
   caseId: string;
   ownerUid: string;
   ontologyId: OntologyId;
+  ontologyIds?: OntologyId[];
+  primaryOntologyId?: OntologyId;
   frame: {
     name: string;
     region?: string;

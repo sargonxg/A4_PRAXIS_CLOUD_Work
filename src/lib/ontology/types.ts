@@ -1,6 +1,15 @@
 import type { TacitusCorePrimitive } from '@/lib/graph/core-primitives';
 
-export type OntologyId = 'conflict' | 'mediation' | 'governance' | 'narrative';
+export type OntologyId =
+  | 'conflict'
+  | 'mediation'
+  | 'governance'
+  | 'narrative'
+  | 'human-rights'
+  | 'economic'
+  | 'humanitarian'
+  | 'legal'
+  | 'security';
 
 export interface OntologyNodeType {
   id: string;

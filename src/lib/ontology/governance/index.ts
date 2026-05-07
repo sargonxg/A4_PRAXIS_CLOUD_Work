@@ -5,7 +5,7 @@ export const GOVERNANCE_ONTOLOGY: CaseOntologyDefinition = {
   version: '1.0.0',
   label: 'Governance Ontology',
   description: 'Mandates, veto points, coalitions, public claims, institutional constraints, and implementation commitments.',
-  domains: ['governance', 'political', 'trade', 'international', 'legal'],
+  domains: ['governance', 'political', 'trade', 'international'],
   nodeTypes: [
     { id: 'institution', label: 'Institution', primitive: 'Actor', description: 'Formal body, agency, coalition, or sponsor.' },
     { id: 'mandate_claim', label: 'Mandate Claim', primitive: 'Claim', description: 'Claim about authority, authorization, or obligation.' },

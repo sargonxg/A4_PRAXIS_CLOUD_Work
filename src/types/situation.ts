@@ -59,7 +59,12 @@ export type UserRole =
   | 'mediator'
   | 'party'
   | 'advisor'
-  | 'researcher';
+  | 'researcher'
+  | 'human_rights_officer'
+  | 'sanctions_analyst'
+  | 'humanitarian_coordinator'
+  | 'treaty_lawyer'
+  | 'defense_analyst';
 
 export type SituationStatus = 'active' | 'archived' | 'resolved';
 export type EscalationTrend = 'stable' | 'escalating' | 'de-escalating' | 'volatile';
