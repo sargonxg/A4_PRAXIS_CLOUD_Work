@@ -10,4 +10,5 @@ test('Graph tab switches from oval to force layout', async ({ page }) => {
   await page.getByTestId('graph-layout-toggle').getByRole('button', { name: /Force/i }).click();
   await expect(page.getByTestId('praxis-force-graph')).toBeVisible();
   await expect(page.getByRole('heading', { name: /Force Graph/i })).toBeVisible();
+  await expect(page.getByTestId('graph-entity-panel')).toBeVisible();
 });

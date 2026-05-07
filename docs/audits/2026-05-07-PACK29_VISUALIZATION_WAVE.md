@@ -11,6 +11,11 @@ Date: 2026-05-07
 - Extended `WorkbenchGraphNode` with optional timeline and geospatial metadata.
 - Added license, bundle, and visualization contract audits.
 - Added ADR 0046 and the map tile hosting runbook.
+- Second-pass hardening: shared entity inspector now appears in Oval, Force, Timeline, and Map modes.
+- Second-pass hardening: Force Graph selection updates the inspector and sizes the canvas responsively.
+- Second-pass hardening: Timeline item selection updates the inspector.
+- Second-pass hardening: Desk > What changed includes the Pack 29 inline chronology panel, without adding a new top-level tab.
+- Second-pass hardening: visualization audit now enforces entity panel coverage, Desk timeline coverage, MapTiler fallback, and E2E file presence.
 
 ## Verification Targets
 

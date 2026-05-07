@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Clock3, ShieldCheck } from 'lucide-react';
+import { GraphEntityPanel } from '@/components/graph/GraphEntityPanel';
 import type { WorkbenchGraph } from '@/lib/graph/workbench-case-graph';
 import { toTimelineGroups, toTimelineItems } from '@/lib/graph/timeline-adapter';
 import { cn } from '@/lib/utils/cn';
@@ -9,12 +10,14 @@ import { cn } from '@/lib/utils/cn';
 export function PraxisTimeline({ graph, className }: { graph: WorkbenchGraph; className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const items = useMemo(() => toTimelineItems(graph), [graph]);
   const groups = useMemo(() => toTimelineGroups(graph), [graph]);
+  const selected = items.find((item) => item.id === selectedId)?.node ?? items[0]?.node ?? null;
 
   useEffect(() => {
     if (!containerRef.current) return;
-    let timeline: { destroy: () => void } | null = null;
+    let timeline: { destroy: () => void; on: (event: string, handler: (properties: { items?: string[] }) => void) => void } | null = null;
     let mounted = true;
 
     Promise.all([import('vis-timeline/standalone'), import('vis-data')])
@@ -36,6 +39,10 @@ export function PraxisTimeline({ graph, className }: { graph: WorkbenchGraph; cl
             selectable: true,
           },
         );
+        timeline.on('select', (properties) => {
+          const id = properties.items?.[0];
+          if (id) setSelectedId(id);
+        });
       })
       .catch(() => {
         if (mounted) setFailed(true);
@@ -65,9 +72,12 @@ export function PraxisTimeline({ graph, className }: { graph: WorkbenchGraph; cl
         </div>
       </div>
 
-      <div className="mt-5 overflow-hidden rounded-md border border-slate-200 bg-slate-50">
-        <div ref={containerRef} className="praxis-timeline min-h-[440px]" />
-        {failed ? <TimelineFallback items={items} /> : null}
+      <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="overflow-hidden rounded-md border border-slate-200 bg-slate-50">
+          <div ref={containerRef} className="praxis-timeline min-h-[440px]" />
+          {failed ? <TimelineFallback items={items} /> : null}
+        </div>
+        <GraphEntityPanel node={selected} compact />
       </div>
     </section>
   );

@@ -43,7 +43,7 @@ export function PraxisMap({ graph, className }: { graph: WorkbenchGraph; classNa
         </div>
       ) : null}
 
-      <div className="mt-5 overflow-hidden rounded-md border border-slate-200 bg-slate-100">
+      <div className="mt-5 rounded-md border border-slate-200 bg-slate-100 p-3">
         <PraxisMapReact graph={graph} />
       </div>
     </section>

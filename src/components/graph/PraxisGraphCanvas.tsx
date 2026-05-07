@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { GitBranch, ShieldCheck } from 'lucide-react';
+import { GraphEntityPanel } from '@/components/graph/GraphEntityPanel';
 import type { WorkbenchGraph, WorkbenchGraphNode } from '@/lib/graph/workbench-case-graph';
 import { cn } from '@/lib/utils/cn';
 
@@ -142,15 +143,7 @@ export function PraxisGraphCanvas({ graph, className }: { graph: WorkbenchGraph;
           </svg>
         </div>
 
-        <aside className="rounded-md border border-slate-200 bg-slate-50 p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{selected?.type}</p>
-          <h3 className="mt-1 text-base font-semibold text-navy-950">{selected?.label}</h3>
-          <p className="mt-2 text-sm leading-6 text-slate-650">{selected?.description}</p>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <Metric label="Confidence" value={`${Math.round((selected?.confidence ?? 0) * 100)}%`} />
-            <Metric label="Receipts" value={String(selected?.provenanceCount ?? 0)} />
-          </div>
-        </aside>
+        <GraphEntityPanel node={selected} compact />
       </div>
     </section>
   );

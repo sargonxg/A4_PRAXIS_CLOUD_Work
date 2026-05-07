@@ -8,4 +8,5 @@ test('Graph tab displays timeline projection', async ({ page }) => {
   await expect(page.getByTestId('praxis-timeline')).toBeVisible();
   await expect(page.getByRole('heading', { name: /Timeline Projection/i })).toBeVisible();
   await expect(page.getByText(/dated nodes/i)).toBeVisible();
+  await expect(page.getByTestId('graph-entity-panel')).toBeVisible();
 });

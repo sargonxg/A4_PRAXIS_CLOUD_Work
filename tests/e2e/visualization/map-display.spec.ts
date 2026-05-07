@@ -8,4 +8,5 @@ test('Graph tab displays map projection', async ({ page }) => {
   await expect(page.getByTestId('praxis-map')).toBeVisible();
   await expect(page.getByRole('heading', { name: /Map Projection/i })).toBeVisible();
   await expect(page.getByText(/mapped nodes/i)).toBeVisible();
+  await expect(page.getByTestId('graph-entity-panel')).toBeVisible();
 });

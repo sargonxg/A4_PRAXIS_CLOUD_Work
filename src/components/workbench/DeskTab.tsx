@@ -7,11 +7,15 @@ import { OpenQuestionsPanel } from '@/components/workbench/desk/OpenQuestionsPan
 import { StaleContextPanel } from '@/components/workbench/desk/StaleContextPanel';
 import { WhatChangedPanel } from '@/components/workbench/desk/WhatChangedPanel';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
+import { buildWorkbenchCaseGraph } from '@/lib/graph/workbench-case-graph';
+import { toTimelineItems } from '@/lib/graph/timeline-adapter';
 import { buildWorkbenchSurfaceState } from '@/lib/workbench/surface-state';
 
 export function DeskTab() {
   const { caseId, caseModule } = useWorkbenchScope();
   const surface = buildWorkbenchSurfaceState(caseModule, caseId);
+  const graph = buildWorkbenchCaseGraph(caseModule);
+  const timelineItems = toTimelineItems(graph).slice(0, 6);
 
   return (
     <div className="space-y-6" data-testid="workbench-desk-surface">
@@ -30,7 +34,7 @@ export function DeskTab() {
         </div>
       </section>
 
-      <WhatChangedPanel facts={surface.changedFacts} />
+      <WhatChangedPanel facts={surface.changedFacts} timelineItems={timelineItems} />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
         <NextBestActionsPanel actions={surface.nextActions} />

@@ -13,6 +13,7 @@ export function toMapPoints(graph: WorkbenchGraph) {
       longitude: node.geo?.longitude ?? 0,
       derived: node.geo?.derived ?? true,
       locationLabel: node.geo?.label ?? node.label,
+      node,
     }));
 }
 
