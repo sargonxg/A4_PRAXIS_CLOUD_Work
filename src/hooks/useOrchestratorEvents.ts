@@ -46,5 +46,23 @@ export function useOrchestratorEvents(surfaceKey: string) {
     return () => source.close();
   }, [url]);
 
-  return { events, status };
+  async function dismiss(id: string) {
+    await fetch(`/api/backend/workspace/suggestions/${encodeURIComponent(id)}/dismiss`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ case_id: caseId }),
+    }).catch(() => null);
+    setEvents((current) => current.filter((event) => event.id !== id));
+  }
+
+  async function confirm(id: string, payload: Record<string, unknown> = {}) {
+    const response = await fetch(`/api/backend/workspace/suggestions/${encodeURIComponent(id)}/confirm`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ case_id: caseId, payload }),
+    }).catch(() => null);
+    return response?.ok ?? false;
+  }
+
+  return { events, status, dismiss, confirm };
 }

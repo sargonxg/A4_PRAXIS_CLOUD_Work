@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ExternalLink, Loader2, Search, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
@@ -37,9 +37,18 @@ export function ResearchTab() {
   const fallbackPlan = useMemo(() => buildResearchPlan(caseModule, question), [caseModule, question]);
   const [plan, setPlan] = useState(fallbackPlan);
 
+  const refreshThreads = useCallback(async () => {
+    const response = await fetch(`/api/backend/chapters/research/threads?case_id=${encodeURIComponent(caseId)}`).catch(() => null);
+    const payload = await response?.json().catch(() => ({}));
+    if (response?.ok && Array.isArray(payload.threads)) {
+      setThreads(payload.threads);
+      setActiveThreadId((current) => current ?? payload.threads[0]?.id ?? null);
+    }
+  }, [caseId]);
+
   useEffect(() => {
     void refreshThreads();
-  }, [caseId]);
+  }, [refreshThreads]);
 
   function toggleSource(sourceId: string) {
     setSelectedSources((current) => current.includes(sourceId) ? current.filter((item) => item !== sourceId) : [...current, sourceId]);
@@ -70,15 +79,6 @@ export function ResearchTab() {
       }
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function refreshThreads() {
-    const response = await fetch(`/api/backend/chapters/research/threads?case_id=${encodeURIComponent(caseId)}`).catch(() => null);
-    const payload = await response?.json().catch(() => ({}));
-    if (response?.ok && Array.isArray(payload.threads)) {
-      setThreads(payload.threads);
-      setActiveThreadId((current) => current ?? payload.threads[0]?.id ?? null);
     }
   }
 
@@ -292,7 +292,7 @@ export function ResearchTab() {
               onClick={() => activeThreadId ? void closeThread(activeThreadId) : undefined}
               className="rounded-md border border-navy-300 px-3 py-2 text-xs font-semibold text-navy-900 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Close to memory
+              Close thread → improve memory
             </button>
           </div>
           {threadNote ? <p className="mt-3 text-sm font-semibold text-navy-900">{threadNote}</p> : null}

@@ -458,7 +458,23 @@ async def get_graph_node(node_id: str, token: dict = Depends(verify_firebase_tok
         )
     if not rows:
         raise HTTPException(status_code=404, detail="graph_node_not_found")
-    return {"node": rows[0]}
+    node = rows[0]
+    scope = MemoryScope(owner_uid=token["uid"], case_id=node["case_id"])
+    try:
+        provenance = await cognee_memory.recall_provenance(
+            scope=scope,
+            node_name=node.get("label") or str(node["id"]),
+            top_k=5,
+        )
+        cognee_status = {"ok": True, "status": "searched"}
+    except Exception as exc:
+        provenance = []
+        cognee_status = {"ok": False, "status": "provenance_unavailable", "error": str(exc)}
+    return {
+        "node": node,
+        "provenance": [hit.__dict__ for hit in provenance],
+        "cognee": cognee_status,
+    }
 
 
 @router.get("/graph/timeline")

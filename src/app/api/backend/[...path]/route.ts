@@ -21,6 +21,7 @@ const ALLOWED_BACKEND_PATHS: Array<{ method: string; pattern: RegExp }> = [
     pattern: /^analyze\/[^/]+\/(pivot-actors|hidden-linkages|escalation|factions|negotiation-space|intelligence-gaps|brief\.json)$/,
   },
   { method: 'GET', pattern: /^workspace\/events$/ },
+  { method: 'POST', pattern: /^workspace\/suggestions\/[^/]+\/(dismiss|confirm)$/ },
   { method: 'GET', pattern: /^tabs\/(context\/situation-frame|library|library\/sources|ontology\/candidates|graph|graph\/timeline)$/ },
   { method: 'GET', pattern: /^tabs\/library\/[^/]+$/ },
   { method: 'GET', pattern: /^tabs\/graph\/node\/[^/]+$/ },

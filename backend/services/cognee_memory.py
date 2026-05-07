@@ -246,8 +246,8 @@ async def recall_provenance(*, scope: MemoryScope, node_name: str, top_k: int = 
         scope=scope,
         query=node_name,
         limit=top_k,
-        mode=CogneeSearchMode.GRAPH_COMPLETION,
-        audit=SearchAudit(mode=CogneeSearchMode.GRAPH_COMPLETION, surface_key="graph.provenance"),
+        mode=CogneeSearchMode.CHUNKS,
+        audit=SearchAudit(mode=CogneeSearchMode.CHUNKS, surface_key="tab.graph.provenance"),
     )
 
 
