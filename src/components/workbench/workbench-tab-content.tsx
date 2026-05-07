@@ -6,6 +6,7 @@ import { PraxisGraphView } from '@/components/graph/PraxisGraphView';
 import { OntologySchemaViewer } from '@/components/ontology/OntologySchemaViewer';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { ContextTab } from '@/components/workbench/ContextTab';
+import { GraphIntelligencePanels } from '@/components/workbench/graph/GraphIntelligencePanels';
 import { LibraryTab } from '@/components/workbench/LibraryTab';
 import { EmptyStateGuidance } from '@/components/workbench/empty-state/EmptyStateGuidance';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
@@ -22,9 +23,11 @@ export function WorkbenchTabContent({ activeTab }: { activeTab: WorkspaceTabId }
 
 function WorkbenchGraphPanel() {
   const { caseModule } = useWorkbenchScope();
+  const graph = buildWorkbenchCaseGraph(caseModule);
   return (
     <GuidedSurface tabId="graph">
-      <PraxisGraphView graph={buildWorkbenchCaseGraph(caseModule)} />
+      <PraxisGraphView graph={graph} />
+      <GraphIntelligencePanels caseModule={caseModule} graph={graph} />
     </GuidedSurface>
   );
 }
@@ -87,7 +90,7 @@ const TAB_BODY: Record<WorkspaceTabId, string> = {
   context: 'Build the case before analysis: scope, sources, documents, actors, claims, and graph proposals.',
   library: 'Keep source receipts, documents, saved claims, and decision products tied to the active case.',
   ontology: 'Inspect the active case ontology, primitive mapping, validators, and tool requirements.',
-  graph: 'Inspect graph primitives, truth layers, provenance coverage, and graph projection health.',
+  graph: 'Inspect graph primitives, truth layers, provenance, map projection, timeline, stakeholder analysis, and case anatomy.',
 };
 
 const TAB_ICONS: Partial<Record<WorkspaceTabId, typeof Activity>> = {

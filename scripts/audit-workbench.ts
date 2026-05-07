@@ -12,6 +12,7 @@ const requiredFiles = [
   'src/app/app/workbench/[caseId]/ach/[achId]/page.tsx',
   'src/components/workbench/workbench-tabs.tsx',
   'src/components/workbench/workbench-tab-content.tsx',
+  'src/components/workbench/graph/GraphIntelligencePanels.tsx',
   'src/components/workbench/chapter-shell.tsx',
   'src/components/workbench/chapter-renderer.tsx',
   'src/tabs/registry.ts',
@@ -151,9 +152,27 @@ for (const path of ['src/components/workbench/chapter-shell.tsx', 'src/component
 }
 
 const tabContent = readFileSync('src/components/workbench/workbench-tab-content.tsx', 'utf8');
-for (const marker of ['<ContextTab />', '<LibraryTab />', '<OntologySchemaViewer />', '<WorkbenchGraphPanel />', '<EmptyStateGuidance']) {
+for (const marker of ['<ContextTab />', '<LibraryTab />', '<OntologySchemaViewer />', '<WorkbenchGraphPanel />', '<GraphIntelligencePanels', '<EmptyStateGuidance']) {
   if (!tabContent.includes(marker)) {
     throw new Error(`Workbench tab content missing surface dispatch: ${marker}`);
+  }
+}
+
+const graphIntelligence = readFileSync('src/components/workbench/graph/GraphIntelligencePanels.tsx', 'utf8');
+for (const marker of [
+  'Situation Intelligence',
+  'Policy / Conflict Anatomy',
+  'How The Map Should Work',
+  'How The Timeline Should Work',
+  'Stakeholder Analysis',
+  'Cognee, GraphRAG, And Marketplace Handoff',
+  'regional schematic anchors',
+  'toTimelineItems',
+  'toMapPoints',
+  'profileStakeholder',
+]) {
+  if (!graphIntelligence.includes(marker)) {
+    throw new Error(`Graph intelligence panel missing marker: ${marker}`);
   }
 }
 
@@ -247,6 +266,13 @@ const deskTab = readFileSync('src/components/workbench/DeskTab.tsx', 'utf8');
 for (const marker of ['WhatChangedPanel', 'NextBestActionsPanel', 'StaleContextPanel', 'OpenQuestionsPanel']) {
   if (!deskTab.includes(marker)) {
     throw new Error(`Pack 26 Desk command center missing panel: ${marker}`);
+  }
+}
+
+const dashboardCommandCenter = readFileSync('src/components/dashboard/dashboard-command-center.tsx', 'utf8');
+for (const marker of ['dashboard-case-readiness', 'Map posture', 'Timeline posture', 'Stakeholder posture', 'Marketplace posture', 'buildCaseReadiness']) {
+  if (!dashboardCommandCenter.includes(marker)) {
+    throw new Error(`Dashboard command center missing workbench readiness marker: ${marker}`);
   }
 }
 

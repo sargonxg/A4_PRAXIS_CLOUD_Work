@@ -9,7 +9,7 @@ PRAXIS is a workbench for policy, conflict, mediation, diplomacy, and analytic t
 - Create or open a situation, then work in one mounted workbench instead of jumping between many disconnected tools.
 - Use four substrate tabs: **Context**, **Library**, **Ontology**, and **Graph**.
 - Use seven work chapters: **Desk**, **Research**, **Memos**, **Draft**, **ACH**, **Tools**, and **Boardroom**.
-- Upload sources, save a four-field situation frame, open research threads, run graph-grounded recipes, draft memos and briefings, inspect graph structure, and keep generated work advisory until a user reviews it.
+- Upload sources, save a four-field situation frame, open research threads, run graph-grounded recipes, draft memos and briefings, inspect graph structure, read the case through map/timeline/stakeholder/anatomy views, and keep generated work advisory until a user reviews it.
 - Export Markdown/DOCX/PDF-style work products while retaining provenance, audit notes, and context snapshots.
 
 ## Architecture Shape
@@ -17,6 +17,8 @@ PRAXIS is a workbench for policy, conflict, mediation, diplomacy, and analytic t
 The Next.js app renders the landing page, authenticated workbench, settings, admin, and API proxy routes. The Python backend owns workspace tab/chapter contracts under `backend/routers/tabs.py`, `backend/routers/chapters.py`, and `backend/routers/workspace.py`. Postgres stores durable workspace objects such as situation frames, source receipts, research threads, memos, drafts, recipe runs, boardroom briefings, suggestions, and pending Cognee writes. Firebase/Auth gates user identity and app access. Cognee is the intended knowledge-graph and memory substrate behind `backend/services/cognee_memory.py`; today the routes are deliberately disabled-safe and queue work if the isolated live Cognee service is unavailable.
 
 The rule is simple: **tabs build and inspect the substrate; chapters create work products from it.** Tabs may write substrate tables such as frames and source receipts. Chapters write chapter products such as memos, drafts, research threads, ACH helpers, recipe runs, and briefings. Graph promotion and canonical fact changes remain review-gated.
+
+The app dashboard is the entry surface for this structure. It shows the active case, workbench links, graph orbit, and case-readiness signals for map posture, timeline posture, stakeholders, and marketplace context before the user moves into the workbench.
 
 ## How Context Works
 
@@ -32,7 +34,7 @@ The current workbench begins situation context in the **Context** tab with a fou
 - What would change the assessment?
 - What is the policy question?
 
-That frame is saved as a first-class situation record, queued for Cognee memory as a `Situation` data point, and used by downstream chapters. Research threads add conversation-level context. Library uploads add source context. Ontology and Graph add structured context. Memos, Draft, ACH, Tools, and Boardroom consume that context but should not silently rewrite canonical facts.
+That frame is saved as a first-class situation record, queued for Cognee memory as a `Situation` data point, and used by downstream chapters. Research threads add conversation-level context. Library uploads add source context. Ontology and Graph add structured context. The Graph tab explains the case with map projection, timeline, stakeholder analysis, policy/conflict anatomy, and a Cognee/GraphRAG/marketplace handoff. Memos, Draft, ACH, Tools, and Boardroom consume that context but should not silently rewrite canonical facts.
 
 ## From Data to Structured Pieces
 

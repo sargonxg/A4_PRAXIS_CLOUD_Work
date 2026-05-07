@@ -5,8 +5,10 @@ import {
   ArrowRight,
   BrainCircuit,
   CheckCircle2,
+  Clock3,
   FileText,
   GitBranch,
+  Globe2,
   LayoutDashboard,
   Network,
   Plus,
@@ -15,6 +17,7 @@ import {
   ShieldCheck,
   Store,
   Users,
+  UsersRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
@@ -76,6 +79,7 @@ export function DashboardCommandCenter({ exampleCases, marketplaceToolCount }: D
   const glaslStage = getGlaslStage(activeCase);
   const totalCases = userCases.length + exampleCases.length;
   const graphEntities = getGraphEntities(activeCase);
+  const readiness = buildCaseReadiness(activeCase, marketplaceToolCount);
 
   return (
     <div className="space-y-6" data-testid="praxis-dashboard-command-center">
@@ -87,7 +91,7 @@ export function DashboardCommandCenter({ exampleCases, marketplaceToolCount }: D
               <h1 className="mt-2 text-2xl font-semibold text-navy-950 sm:text-3xl">
                 Start from the case, then move through context, graph, tools, and memo.
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-650">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
                 This is the real app entry point for analysts, mediators, and policy teams. It keeps the current case visible
                 while routing every action through the workbench contract.
               </p>
@@ -127,7 +131,7 @@ export function DashboardCommandCenter({ exampleCases, marketplaceToolCount }: D
                       {surface.label}
                       <ArrowRight className="h-4 w-4 shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-navy-700" />
                     </span>
-                    <span className="mt-1 block text-xs leading-5 text-slate-600">{surface.detail}</span>
+                    <span className="mt-1 block text-xs leading-5 text-slate-700">{surface.detail}</span>
                   </span>
                 </Link>
               );
@@ -141,6 +145,45 @@ export function DashboardCommandCenter({ exampleCases, marketplaceToolCount }: D
           glaslStage={glaslStage}
           graphEntities={graphEntities}
         />
+      </section>
+
+      <section className="rounded-lg border border-[var(--color-app-border)] bg-white p-5 shadow-sm shadow-navy-950/5" data-testid="dashboard-case-readiness">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase text-gold-700">Case readiness</p>
+            <h2 className="mt-1 text-lg font-semibold text-navy-950">Map, timeline, stakeholders, and tools are checked before the next move.</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700">
+              The dashboard mirrors the graph tab: it tells the user whether the current case has enough geography, chronology, actors, and marketplace context to support useful analysis.
+            </p>
+          </div>
+          <Link
+            href={`/app/workbench/${activeCaseId}?tab=graph`}
+            className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-800 hover:border-navy-300 hover:bg-slate-50"
+          >
+            Open graph intelligence
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {readiness.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.label} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <Icon className="h-5 w-5 text-gold-700" />
+                  <span className={cn(
+                    'rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider',
+                    item.state === 'ready' ? 'bg-emerald-50 text-emerald-800' : item.state === 'partial' ? 'bg-amber-50 text-amber-900' : 'bg-slate-100 text-slate-800',
+                  )}>
+                    {item.state}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm font-semibold text-navy-950">{item.label}</p>
+                <p className="mt-2 text-xs leading-5 text-slate-700">{item.detail}</p>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,0.92fr)_minmax(380px,0.8fr)]">
@@ -165,7 +208,7 @@ export function DashboardCommandCenter({ exampleCases, marketplaceToolCount }: D
                 >
                   <Icon className="h-5 w-5 text-diplomatic-blue" />
                   <h3 className="mt-3 text-sm font-semibold text-navy-950">{item.label}</h3>
-                  <p className="mt-2 text-xs leading-5 text-slate-600">{item.detail}</p>
+                  <p className="mt-2 text-xs leading-5 text-slate-700">{item.detail}</p>
                 </Link>
               );
             })}
@@ -195,7 +238,7 @@ export function DashboardCommandCenter({ exampleCases, marketplaceToolCount }: D
             ].map((item) => (
               <div key={item} className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
-                <p className="text-xs leading-5 text-slate-650">{item}</p>
+                <p className="text-xs leading-5 text-slate-700">{item}</p>
               </div>
             ))}
           </div>
@@ -218,7 +261,7 @@ function Metric({
 }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-      <p className="text-xs font-semibold uppercase text-slate-500">{label}</p>
+      <p className="text-xs font-semibold uppercase text-slate-700">{label}</p>
       <p
         className={cn(
           'mt-2 truncate text-2xl font-semibold',
@@ -230,7 +273,7 @@ function Metric({
       >
         {value}
       </p>
-      <p className="mt-1 text-xs text-slate-500">{detail}</p>
+      <p className="mt-1 text-xs text-slate-700">{detail}</p>
     </div>
   );
 }
@@ -346,4 +389,52 @@ function getGraphEntities(activeCase: Situation | DashboardExampleCase | undefin
   if (!activeCase) return 0;
   if ('graphEntities' in activeCase) return activeCase.graphEntities || activeCase.actorCount || 0;
   return Math.max(8, activeCase.tags.length + 6);
+}
+
+function buildCaseReadiness(activeCase: Situation | DashboardExampleCase | undefined, marketplaceToolCount: number) {
+  const actorCount = getActorCount(activeCase);
+  const graphEntities = getGraphEntities(activeCase);
+  const hasDates = Boolean(activeCase && 'keyDates' in activeCase && activeCase.keyDates?.length);
+  const hasLatestEvent = Boolean(activeCase && 'latestEventDate' in activeCase && activeCase.latestEventDate);
+  const hasBounds = Boolean(activeCase && 'geoBoundingBox' in activeCase && activeCase.geoBoundingBox);
+  const sourceCount = activeCase && 'sourceUrls' in activeCase ? activeCase.sourceUrls?.length ?? 0 : 0;
+
+  return [
+    {
+      label: 'Map posture',
+      detail: hasBounds
+        ? 'Coordinates or bounds are available for the map projection.'
+        : 'Regional schematic map is ready; evidence-grade coordinates should be promoted from reviewed receipts.',
+      state: hasBounds ? 'ready' : 'partial',
+      icon: Globe2,
+    },
+    {
+      label: 'Timeline posture',
+      detail: hasDates || hasLatestEvent
+        ? 'Key dates or latest event metadata can drive the chronology.'
+        : 'Timeline can use truth-layer updates, but the case needs explicit milestones.',
+      state: hasDates ? 'ready' : hasLatestEvent ? 'partial' : 'needs work',
+      icon: Clock3,
+    },
+    {
+      label: 'Stakeholder posture',
+      detail: actorCount >= 4
+        ? `${actorCount} actors are framed for stakeholder analysis.`
+        : `${actorCount} actors framed; add parties, institutions, mediators, and external stakeholders.`,
+      state: actorCount >= 4 ? 'ready' : actorCount >= 2 ? 'partial' : 'needs work',
+      icon: UsersRound,
+    },
+    {
+      label: 'Marketplace posture',
+      detail: `${marketplaceToolCount} tools can consume the situation frame, graph context, sources, and user preferences.`,
+      state: graphEntities > 5 || sourceCount > 0 ? 'ready' : 'partial',
+      icon: Store,
+    },
+  ] as const;
+}
+
+function getActorCount(activeCase: Situation | DashboardExampleCase | undefined): number {
+  if (!activeCase) return 0;
+  if ('actors' in activeCase) return activeCase.actors.length;
+  return Math.max(2, Math.min(6, activeCase.tags.length + 1));
 }

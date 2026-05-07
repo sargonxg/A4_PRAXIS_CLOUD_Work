@@ -329,7 +329,7 @@ PRAXIS does not use Redux, Zustand, or any global state library. Every layer of 
 - **Conversation context**: client-side only. Tracks active tab, focused node, focused tool, focused memo block, last 10 actions. Serialized into a signed `X-Praxis-Conversation` header and shipped with every API call.
 - **Form state**: React Hook Form for tool inputs and settings forms.
 - **Editor state**: Lexical's internal editor state for memos.
-- **Graph state**: Cytoscape's internal state for the graph canvas.
+- **Graph state**: Cytoscape's internal state for the graph canvas. The adjacent graph-intelligence panels are derived from the case module, timeline adapter, map adapter, actor frame, and Cognee candidate posture; they explain the situation but do not mutate canonical graph facts.
 
 ### 7.3 Server vs client components
 

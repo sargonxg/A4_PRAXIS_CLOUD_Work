@@ -1180,8 +1180,8 @@
     "hash": "6a3f5bd86de3f7d029c88fe3f60f5741"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-workbench.ts": {
-    "mtime": 1778173613.022238,
-    "hash": "1dc6a7a8e5cbfb8779a8a80b7a90a4e3"
+    "mtime": 1778174327.86396,
+    "hash": "2c6626c2d87d9634413b95c966eb1d3b"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\auth-doctor.ts": {
     "mtime": 1778081604.8241844,
@@ -2648,8 +2648,8 @@
     "hash": "4b5819524bd6edb1cb392964fb707b91"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\dashboard\\dashboard-command-center.tsx": {
-    "mtime": 1778115031.70832,
-    "hash": "8b7c5dbb9c1da81ccc671186081ee5ae"
+    "mtime": 1778174314.5180438,
+    "hash": "ac2c818a58a1f2ffb0567edf00f14efb"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\dashboard\\escalation-widget.tsx": {
     "mtime": 1777260427.0038042,
@@ -3676,8 +3676,8 @@
     "hash": "1eefd234a6fb505ee0983cc1aa0c47fd"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\workbench\\workbench-tab-content.tsx": {
-    "mtime": 1778169743.7953322,
-    "hash": "6eb9a7b682c2f77583061c9e78e56f4c"
+    "mtime": 1778173996.8741877,
+    "hash": "19ea5c36b7a0e35dc756258ae351339c"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\workbench\\workbench-tabs.tsx": {
     "mtime": 1778169657.225804,
@@ -3746,6 +3746,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\workbench\\empty-state\\EmptyStateGuidance.tsx": {
     "mtime": 1778143610.3605096,
     "hash": "136912e22f7df00b4096b33b5225bd54"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\workbench\\graph\\GraphIntelligencePanels.tsx": {
+    "mtime": 1778173980.9496994,
+    "hash": "522292a532add15c1993fefa463e1169"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\hooks\\use-activity-feed.ts": {
     "mtime": 1777260427.0459867,
@@ -6276,20 +6280,20 @@
     "hash": "89c51585b82f1443637d8385164f13c5"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\architecture\\PRAXIS_ARCHITECTURE.md": {
-    "mtime": 1778138621.9116457,
-    "hash": "9a15e5caa2e1aa414454d5e43159a3f3"
+    "mtime": 1778174099.192548,
+    "hash": "dea4817e7064a5ed73b2940a798b04ff"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\architecture\\PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md": {
     "mtime": 1778138563.9023972,
     "hash": "535a9a1f13ddb734c1e2468093e86f85"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\architecture\\PRAXIS_ONE_PAGE.md": {
-    "mtime": 1778173578.2405102,
-    "hash": "99030c71f08c985276a08c75a66d8100"
+    "mtime": 1778174353.2333124,
+    "hash": "4ca01b71d5db8975f5ae00460e13adb3"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\architecture\\WORKBENCH_SURFACES.md": {
-    "mtime": 1778173578.2405102,
-    "hash": "4eca0d8755715548cdfa25a0d53575df"
+    "mtime": 1778174056.71119,
+    "hash": "1b9a10b86024bf6894ddd423110871ef"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-06-ADMIN_CONSOLIDATION_PLAN.md": {
     "mtime": 1778090486.7570882,
@@ -6427,6 +6431,10 @@
     "mtime": 1778162305.522719,
     "hash": "a7bc958b53852e41c6968bebe5140d66"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-07-PRAXIS_ONE_PAGE_DOCS_UPDATE.md": {
+    "mtime": 1778173754.5132623,
+    "hash": "0f46a6ad950dad9e765ed84c2f70bd3b"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-07-REPO_SHAPE_GRAPHIFY_PREP.md": {
     "mtime": 1778168183.9981828,
     "hash": "07beda4ebce19105f3f7619ba9a21368"
@@ -6434,6 +6442,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-07-TOOL_AUTHORING_SPIKE.md": {
     "mtime": 1778137178.0552294,
     "hash": "14562a85cd365582b94083ccc906c86a"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-07-WORKBENCH_MAP_TIMELINE_STAKEHOLDER_AUDIT.md": {
+    "mtime": 1778174343.6237495,
+    "hash": "5cc2710b50582d6e6a2cce27774d4969"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-07-WORKSPACE_TABS_CHAPTERS_SECOND_PASS.md": {
     "mtime": 1778173317.8054268,
