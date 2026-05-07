@@ -22,6 +22,17 @@ Date: 2026-05-07
 - The Draft export is still a client-side package using existing `docx`/`jspdf` libraries. Authenticated export manifests are now persisted, but server-rendered binary artifacts, signed C2PA chain generation, and durable binary storage remain follow-up.
 - `/api/cases/scaffold` uses a deterministic local scaffolder. The Vertex Agent Engine `case_scaffolder` deployment, eval harness, and runtime cost ceilings remain backend follow-up work.
 - Accepted scaffold candidates are treated as user-reviewed creation inputs in the existing situation payload and now emit a scaffold audit event. A full review-queue/firewall two-phase commit path for each proposed actor/claim is not yet implemented.
+- The new-user end-to-end browser spec is currently a demo-safe activation proxy. Full magic-link synthetic-user CI remains follow-up.
+
+## Implemented In Third Pass
+
+- Added prompt-numbered ADRs `0044-draft-as-briefing-assembly-contract.md` and `0045-ai-first-case-creation-pattern.md` alongside implementation ADRs 0037/0038.
+- Added dedicated Playwright specs:
+  - `tests/e2e/workbench/draft-briefing-assembly.spec.ts`
+  - `tests/e2e/onboarding/ai-first-case-creation.spec.ts`
+  - `tests/e2e/onboarding/new-user-end-to-end.spec.ts`
+- Expanded `src/lib/workbench/empty-state-actions.ts` into a role x ontology guided action matrix with explicit review coverage for 4 roles x 5 ontologies x 6 guided tabs.
+- Added `docs/architecture/WORKBENCH_SURFACES.md` as the canonical twelve-tab surface map.
 
 ## Verification Targets
 
@@ -29,4 +40,5 @@ Date: 2026-05-07
 - `npm run audit:codex-prompts`
 - `npm run typecheck`
 - `npm run build`
+- `npx playwright test tests/e2e/workbench/chapters-structured-content.spec.ts tests/e2e/workbench/desk-command-center.spec.ts tests/e2e/workbench/context-scope-studio.spec.ts tests/e2e/workbench/library-faceted-browse.spec.ts tests/e2e/workbench/research-source-scout.spec.ts tests/e2e/workbench/ontology-interactive.spec.ts tests/e2e/workbench/draft-briefing-assembly.spec.ts tests/e2e/onboarding/ai-first-case-creation.spec.ts tests/e2e/onboarding/new-user-end-to-end.spec.ts`
 - `PLAYWRIGHT_BASE_URL=<env> npx playwright test tests/e2e/app-usability-smoke.spec.ts`

@@ -27,8 +27,17 @@ Prompt source: `docs/codex-prompts/PRAXIS_CODEX_26_SURFACES_CHAPTERS_DESK_CONTEX
 - Agent Engine subagents for `chapter_suggester`, `desk_advisor`, and context re-genesis.
 - Non-destructive re-genesis job orchestration and owner-scoped audit trail.
 - Review-queue promotion API for graph proposals created from Context Studio.
-- Browser-backed user-case e2e that creates a brand-new case and verifies the three surfaces against user-owned data.
+- Browser-backed real synthetic-user e2e that creates a brand-new case and verifies the three surfaces against user-owned data.
+
+## Implemented In Third Pass
+
+- Added Pack 26 ADRs: `0040-chapters-layered-content-rendering.md` and `0041-desk-command-center-contract.md`.
+- Added dedicated Playwright specs for Chapters, Desk, and Context:
+  - `tests/e2e/workbench/chapters-structured-content.spec.ts`
+  - `tests/e2e/workbench/desk-command-center.spec.ts`
+  - `tests/e2e/workbench/context-scope-studio.spec.ts`
+- Added the canonical workbench surface reference at `docs/architecture/WORKBENCH_SURFACES.md`.
 
 ## Status
 
-Second app-facing pass complete. Context scope and open questions now have owner-scoped APIs; Agent Engine subagents, full re-genesis orchestration, and review-queue promotion remain explicitly tracked in the Pack 26 backlog.
+Third app-facing pass complete. Context scope and open questions now have owner-scoped APIs and dedicated browser specs; Agent Engine subagents, full re-genesis orchestration, and review-queue promotion remain explicitly tracked.

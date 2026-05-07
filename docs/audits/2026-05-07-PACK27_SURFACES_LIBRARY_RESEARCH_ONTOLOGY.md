@@ -33,8 +33,17 @@ Prompt source: `docs/codex-prompts/PRAXIS_CODEX_27_SURFACES_LIBRARY_RESEARCH_ONT
 - Full Context Genesis orchestrator support for applying staged Research ingest records after review.
 - `research_planner` deployment on Vertex Agent Engine and eval freshness checks; current route is deterministic and app-facing.
 - Full two-phase graph migration for ontology add/remove when existing nodes are typed against a removed secondary ontology.
-- Dedicated e2e suites for `library-faceted-browse`, `research-source-scout`, and `ontology-interactive` once backend mutation paths are live.
+- Real synthetic-user e2e suites for mutation persistence once backend graph mutation paths are live.
+
+## Implemented In Third Pass
+
+- Added Pack 27 ADRs: `0042-library-tab-as-artifact-faceted-view.md` and `0043-research-as-ingestion-front-door.md`.
+- Added dedicated Playwright specs for Library, Research, and Ontology:
+  - `tests/e2e/workbench/library-faceted-browse.spec.ts`
+  - `tests/e2e/workbench/research-source-scout.spec.ts`
+  - `tests/e2e/workbench/ontology-interactive.spec.ts`
+- Added the canonical workbench surface reference at `docs/architecture/WORKBENCH_SURFACES.md`.
 
 ## Status
 
-Second app slice complete. The three tabs now serve real user workflows with owner-scoped persistence/staging APIs while still avoiding silent graph writes.
+Third app slice complete. The three tabs now serve real user workflows with owner-scoped persistence/staging APIs and dedicated browser regression specs while still avoiding silent graph writes.

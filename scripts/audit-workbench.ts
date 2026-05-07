@@ -77,6 +77,23 @@ const requiredFiles = [
   'src/app/app/settings/personas/page.tsx',
   'src/app/app/settings/personas/new/page.tsx',
   'src/app/app/settings/personas/[personaId]/page.tsx',
+  'docs/architecture/WORKBENCH_SURFACES.md',
+  'docs/adr/0040-chapters-layered-content-rendering.md',
+  'docs/adr/0041-desk-command-center-contract.md',
+  'docs/adr/0042-library-tab-as-artifact-faceted-view.md',
+  'docs/adr/0043-research-as-ingestion-front-door.md',
+  'docs/adr/0044-draft-as-briefing-assembly-contract.md',
+  'docs/adr/0045-ai-first-case-creation-pattern.md',
+  'docs/audits/2026-05-07-PACK26_27_28_SURFACES_TRIPLE_CHECK.md',
+  'tests/e2e/workbench/chapters-structured-content.spec.ts',
+  'tests/e2e/workbench/desk-command-center.spec.ts',
+  'tests/e2e/workbench/context-scope-studio.spec.ts',
+  'tests/e2e/workbench/library-faceted-browse.spec.ts',
+  'tests/e2e/workbench/research-source-scout.spec.ts',
+  'tests/e2e/workbench/ontology-interactive.spec.ts',
+  'tests/e2e/workbench/draft-briefing-assembly.spec.ts',
+  'tests/e2e/onboarding/ai-first-case-creation.spec.ts',
+  'tests/e2e/onboarding/new-user-end-to-end.spec.ts',
   'src/app/api/boardroom/deliberations/route.ts',
   'src/app/api/boardroom/deliberations/[deliberationId]/route.ts',
   'src/app/api/boardroom/deliberations/[deliberationId]/start/route.ts',
@@ -273,6 +290,20 @@ const emptyGuidance = readFileSync('src/components/workbench/empty-state/EmptySt
 for (const marker of ['computeCaseDensity', 'getEmptyStateActions', 'data-testid={`empty-state-guidance-${tabId}`']) {
   if (!emptyGuidance.includes(marker)) {
     throw new Error(`Pack 28 empty-state guidance missing marker: ${marker}`);
+  }
+}
+
+const emptyStateActions = readFileSync('src/lib/workbench/empty-state-actions.ts', 'utf8');
+for (const marker of ['EMPTY_STATE_REVIEW_ROLES', 'EMPTY_STATE_REVIEW_ONTOLOGIES', 'EMPTY_STATE_GUIDED_TABS', 'EMPTY_STATE_ACTION_MATRIX_REVIEW_SET', 'ROLE_ACTION_PROFILES', 'ONTOLOGY_ACTION_PROFILES']) {
+  if (!emptyStateActions.includes(marker)) {
+    throw new Error(`Pack 28 empty-state matrix missing marker: ${marker}`);
+  }
+}
+
+const surfaceMap = readFileSync('docs/architecture/WORKBENCH_SURFACES.md', 'utf8');
+for (const marker of ['Chapters', 'Desk', 'Context', 'Library', 'Research', 'Ontology', 'Graph', 'ACH', 'Tools', 'Memos', 'Boardroom', 'Draft']) {
+  if (!surfaceMap.includes(`| ${marker} |`)) {
+    throw new Error(`Workbench surface map missing tab row: ${marker}`);
   }
 }
 

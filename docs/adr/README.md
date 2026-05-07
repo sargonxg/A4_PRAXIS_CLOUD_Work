@@ -40,6 +40,12 @@ Accepted ADRs are not edited for meaning. Supersede them with a later ADR.
 - `0036-gcp-production-verification-discipline.md`
 - `0037-draft-briefing-assembly-contract.md`
 - `0038-ai-first-case-creation-pattern.md`
+- `0040-chapters-layered-content-rendering.md`
+- `0041-desk-command-center-contract.md`
+- `0042-library-tab-as-artifact-faceted-view.md`
+- `0043-research-as-ingestion-front-door.md`
+- `0044-draft-as-briefing-assembly-contract.md`
+- `0045-ai-first-case-creation-pattern.md`
 
 Active target-state gaps are tracked in:
 
