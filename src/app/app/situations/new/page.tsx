@@ -28,6 +28,7 @@ import { DomainPicker } from '@/components/domain/domain-picker';
 import { DOMAIN_SEEDS } from '@/lib/domain/seeds';
 import { type DomainId, isDomainId } from '@/types/domain';
 import { SourcePicker } from '@/components/sources/source-picker';
+import { AiFirstCaseCreation } from '@/components/onboarding/ai-first-case-creation/AiFirstCaseCreation';
 import {
   SOURCE_CATEGORIES,
   defaultEnabledMap,
@@ -48,6 +49,7 @@ import {
   primaryOntologyId,
   suggestOntologiesForRole,
 } from '@/lib/ontology/suggestions';
+import type { CaseScaffoldProposal } from '@/lib/onboarding/case-scaffold';
 
 /* ---------- Types ---------- */
 
@@ -70,6 +72,7 @@ interface SituationForm {
 }
 
 type Step = 1 | 2 | 3 | 4;
+type CreationMode = 'choose' | 'ai' | 'manual';
 
 /* ---------- Constants ---------- */
 
@@ -1147,6 +1150,45 @@ function StepReview({
   );
 }
 
+function CreationModeChooser({
+  onAi,
+  onManual,
+}: {
+  onAi: () => void;
+  onManual: () => void;
+}) {
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      <button
+        type="button"
+        onClick={onAi}
+        className="rounded-xl border border-gold-500 bg-gold-50 p-5 text-left shadow-sm transition-colors hover:bg-gold-100"
+      >
+        <span className="inline-flex items-center gap-2 text-sm font-semibold text-navy-950">
+          <Sparkles className="h-4 w-4 text-gold-700" />
+          Create with AI assistance
+        </span>
+        <span className="mt-2 block text-sm leading-6 text-slate-700">
+          Type one objective and review a proposed frame, actors, claims, ontology lenses, and source categories before creation.
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={onManual}
+        className="rounded-xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-colors hover:border-diplomatic-blue/30 hover:bg-diplomatic-blue/5"
+      >
+        <span className="inline-flex items-center gap-2 text-sm font-semibold text-navy-950">
+          <FileText className="h-4 w-4 text-diplomatic-blue" />
+          Create manually
+        </span>
+        <span className="mt-2 block text-sm leading-6 text-slate-700">
+          Use the existing step-by-step wizard when you already know the case frame and want exact control.
+        </span>
+      </button>
+    </div>
+  );
+}
+
 /* ---------- Main Page ---------- */
 
 export default function NewSituationPage() {
@@ -1159,6 +1201,7 @@ export default function NewSituationPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
   const [fromOnboarding, setFromOnboarding] = useState(false);
+  const [creationMode, setCreationMode] = useState<CreationMode>('choose');
 
   const [form, setForm] = useState<SituationForm>(() => {
     const userRole = mapAnalystRoleToSituationRole(analystProfile?.identity.role);
@@ -1319,6 +1362,61 @@ export default function NewSituationPage() {
         selectedSources: enabledMapToIdArray(enabled),
       };
     });
+  }, []);
+
+  const handleApplyScaffold = useCallback((proposal: CaseScaffoldProposal) => {
+    const acceptedActors = proposal.initialActors
+      .filter((actor) => actor.accepted)
+      .map((actor) => actor.name);
+    const acceptedClaims = proposal.initialClaims
+      .filter((claim) => claim.accepted)
+      .map((claim) => `- ${claim.actorName}: ${claim.text}`)
+      .join('\n');
+    const ontologyIds = normalizeOntologySelection([
+      proposal.primaryOntologyId,
+      ...proposal.secondaryOntologyIds,
+    ]);
+
+    setForm((current) => ({
+      ...current,
+      name: proposal.suggestedCaseName,
+      description: proposal.suggestedDescription,
+      region: proposal.suggestedRegion,
+      type: proposal.primaryOntologyId === 'mediation' ? 'civil' : 'international',
+      actors: acceptedActors,
+      ontologyIds,
+      primaryOntologyId: proposal.primaryOntologyId,
+      ontologyOverriddenByUser: true,
+      riskScore: current.riskScore > 0 ? current.riskScore : 5,
+    }));
+    setContext((current) => ({
+      ...current,
+      selectedSources: proposal.suggestedSourceIds.length > 0 ? proposal.suggestedSourceIds : current.selectedSources,
+      sourceOrder: [
+        ...proposal.suggestedSourceIds,
+        ...current.sourceOrder.filter((id) => !proposal.suggestedSourceIds.includes(id)),
+      ],
+      notes: [
+        current.notes.trim(),
+        'Accepted AI-first case scaffold claims:',
+        acceptedClaims,
+        `Scaffold rationale: ${proposal.rationale}`,
+      ].filter(Boolean).join('\n\n'),
+    }));
+    setDomainPreview((current) => ({
+      ...current,
+      domainId: proposal.primaryOntologyId === 'narrative'
+        ? 'information-cyber'
+        : proposal.primaryOntologyId === 'conflict'
+          ? 'armed-conflict-security'
+          : current.domainId,
+      confidence: Math.max(current.confidence, 0.72),
+      rationale: proposal.rationale,
+      loading: false,
+    }));
+    setCreationMode('manual');
+    setDirection(1);
+    setStep(4);
   }, []);
 
   useEffect(() => {
@@ -1494,41 +1592,54 @@ export default function NewSituationPage() {
         ) : null}
       </div>
 
-      <StepIndicator current={step} />
+      {creationMode === 'manual' ? <StepIndicator current={step} /> : null}
 
       <div className="rounded-xl border border-[var(--color-app-border)] bg-white p-6 sm:p-8">
         {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
-        <AnimatePresence mode="wait" custom={direction}>
-          <motion.div key={step} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25, ease: 'easeInOut' }}>
-            {step === 1 && (
-              <StepDescribe
-                form={form}
-                setForm={setForm}
-                onWorkflowPathChange={handleWorkflowPathChange}
-                onNext={goNext}
-              />
-            )}
-            {step === 2 && <StepActors form={form} setForm={setForm} onNext={goNext} onBack={goBack} />}
-            {step === 3 && <StepSources context={context} setContext={setContext} onNext={goNext} onBack={goBack} situationName={form.name} situationRegion={form.region} />}
-            {step === 4 && (
-              <StepReview
-                form={form}
-                sourceUrls={context.urls.filter((u) => u.trim())}
-                contextSummary={{
-                  customSourceCount: context.customSources.length,
-                  fileCount: context.files.length,
-                  hasNotes: Boolean(context.notes.trim()),
-                  selectedSourceCount: context.selectedSources.length,
-                }}
-                onBack={goBack}
-                onCreate={handleCreate}
-                isCreating={isCreating}
-                domainPreview={domainPreview}
-                onDomainPick={handleDomainPick}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
+        {creationMode === 'choose' ? (
+          <CreationModeChooser
+            onAi={() => setCreationMode('ai')}
+            onManual={() => setCreationMode('manual')}
+          />
+        ) : creationMode === 'ai' ? (
+          <AiFirstCaseCreation
+            userRole={form.userRole}
+            onApply={handleApplyScaffold}
+            onManual={() => setCreationMode('manual')}
+          />
+        ) : (
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div key={step} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25, ease: 'easeInOut' }}>
+              {step === 1 && (
+                <StepDescribe
+                  form={form}
+                  setForm={setForm}
+                  onWorkflowPathChange={handleWorkflowPathChange}
+                  onNext={goNext}
+                />
+              )}
+              {step === 2 && <StepActors form={form} setForm={setForm} onNext={goNext} onBack={goBack} />}
+              {step === 3 && <StepSources context={context} setContext={setContext} onNext={goNext} onBack={goBack} situationName={form.name} situationRegion={form.region} />}
+              {step === 4 && (
+                <StepReview
+                  form={form}
+                  sourceUrls={context.urls.filter((u) => u.trim())}
+                  contextSummary={{
+                    customSourceCount: context.customSources.length,
+                    fileCount: context.files.length,
+                    hasNotes: Boolean(context.notes.trim()),
+                    selectedSourceCount: context.selectedSources.length,
+                  }}
+                  onBack={goBack}
+                  onCreate={handleCreate}
+                  isCreating={isCreating}
+                  domainPreview={domainPreview}
+                  onDomainPick={handleDomainPick}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        )}
       </div>
 
       <p className="text-center text-[11px] text-navy-400">

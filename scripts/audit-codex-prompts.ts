@@ -24,6 +24,7 @@ const required = [
   'docs/codex-prompts/PRAXIS_CODEX_22_GCP_GEMINI_VERIFICATION.md',
   'docs/codex-prompts/PRAXIS_CODEX_26_SURFACES_CHAPTERS_DESK_CONTEXT.md',
   'docs/codex-prompts/PRAXIS_CODEX_27_SURFACES_LIBRARY_RESEARCH_ONTOLOGY.md',
+  'docs/codex-prompts/PRAXIS_CODEX_28_SURFACES_DRAFT_NEW_USER_AND_HARDENING.md',
 ];
 
 const failures: string[] = [];
@@ -43,4 +44,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Codex prompt pack audit passed for master charter, packs 03-16, packs 18-22, and packs 26-27.');
+console.log('Codex prompt pack audit passed for master charter, packs 03-16, packs 18-22, and packs 26-28.');

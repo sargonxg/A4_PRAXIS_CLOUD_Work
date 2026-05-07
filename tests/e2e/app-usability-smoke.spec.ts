@@ -38,7 +38,7 @@ test('landing renders hero animation, static fallback, and 3D ontology graph', a
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });
 
-test('demo workbench exposes context, ontology, graph, tools, and memo surfaces', async ({ page }) => {
+test('demo workbench exposes context, ontology, graph, tools, memo, and draft surfaces', async ({ page }) => {
   const consoleErrors = collectConsoleErrors(page);
 
   await openExampleWorkbench(page, 'syria-2026');
@@ -90,6 +90,15 @@ test('demo workbench exposes context, ontology, graph, tools, and memo surfaces'
 
   await page.getByRole('button', { name: /^Memos$/i }).click();
   await expect(page.getByRole('heading', { name: /Memo Studio/i })).toBeVisible();
+
+  await page.getByRole('button', { name: /^Draft$/i }).click();
+  await expect(page.getByTestId('workbench-draft-surface')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Briefing Assembly$/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Memos Selection$/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Cover Page$/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Appendices$/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Redaction Settings$/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Export Controls$/i })).toBeVisible();
 
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });

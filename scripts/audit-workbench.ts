@@ -19,12 +19,25 @@ const requiredFiles = [
   'src/components/workbench/ContextTab.tsx',
   'src/components/workbench/LibraryTab.tsx',
   'src/components/workbench/ResearchTab.tsx',
+  'src/components/workbench/draft/DraftTab.tsx',
+  'src/components/workbench/draft/MemosSelection.tsx',
+  'src/components/workbench/draft/CoverPageEditor.tsx',
+  'src/components/workbench/draft/AppendixPicker.tsx',
+  'src/components/workbench/draft/RedactionSettings.tsx',
+  'src/components/workbench/draft/ExportControls.tsx',
+  'src/components/workbench/empty-state/EmptyStateGuidance.tsx',
   'src/components/workbench/workbench-surface-elements.tsx',
   'src/lib/workbench/library-state.ts',
   'src/lib/workbench/research-state.ts',
   'src/lib/workbench/surface-state.ts',
+  'src/lib/workbench/draft-assembly-state.ts',
+  'src/lib/workbench/case-density.ts',
+  'src/lib/workbench/empty-state-actions.ts',
   'src/lib/ontology/validator-pass-rate.ts',
+  'src/lib/onboarding/case-scaffold.ts',
   'src/app/api/cases/[caseId]/research/route.ts',
+  'src/app/api/cases/scaffold/route.ts',
+  'src/components/onboarding/ai-first-case-creation/AiFirstCaseCreation.tsx',
   'src/components/sats/ACHWorkbench.tsx',
   'src/components/sats/ACHMatrix.tsx',
   'src/app/api/sats/ach/route.ts',
@@ -82,7 +95,7 @@ for (const path of ['src/components/workbench/chapter-shell.tsx', 'src/component
 }
 
 const tabContent = readFileSync('src/components/workbench/workbench-tab-content.tsx', 'utf8');
-for (const marker of ['<DeskTab />', '<ContextTab />', '<LibraryTab />', '<ResearchTab />', '<WorkbenchChapterRenderer />']) {
+for (const marker of ['<DeskTab />', '<ContextTab />', '<LibraryTab />', '<ResearchTab />', '<DraftTab />', '<EmptyStateGuidance', '<WorkbenchChapterRenderer />']) {
   if (!tabContent.includes(marker)) {
     throw new Error(`Workbench tab content missing surface dispatch: ${marker}`);
   }
@@ -114,6 +127,41 @@ const researchState = readFileSync('src/lib/workbench/research-state.ts', 'utf8'
 for (const marker of ['RESEARCH_SOURCE_SETS', 'buildResearchPlan', 'buildResearchCandidates']) {
   if (!researchState.includes(marker)) {
     throw new Error(`Pack 27 research state helper missing marker: ${marker}`);
+  }
+}
+
+const draftState = readFileSync('src/lib/workbench/draft-assembly-state.ts', 'utf8');
+for (const marker of ['buildDraftMemoOptions', 'buildDraftAppendices', 'renderDraftMarkdown', 'DraftExportSettings']) {
+  if (!draftState.includes(marker)) {
+    throw new Error(`Pack 28 draft assembly helper missing marker: ${marker}`);
+  }
+}
+
+const draftTab = readFileSync('src/components/workbench/draft/DraftTab.tsx', 'utf8');
+for (const marker of ['Briefing Assembly', 'MemosSelection', 'CoverPageEditor', 'AppendixPicker', 'RedactionSettings', 'ExportControls']) {
+  if (!draftTab.includes(marker)) {
+    throw new Error(`Pack 28 DraftTab missing section marker: ${marker}`);
+  }
+}
+
+const caseScaffold = readFileSync('src/lib/onboarding/case-scaffold.ts', 'utf8');
+for (const marker of ['CaseScaffoldProposal', 'buildCaseScaffoldProposal', 'initialActors', 'initialClaims', 'suggestedSourceIds']) {
+  if (!caseScaffold.includes(marker)) {
+    throw new Error(`Pack 28 case scaffold helper missing marker: ${marker}`);
+  }
+}
+
+const newSituation = readFileSync('src/app/app/situations/new/page.tsx', 'utf8');
+for (const marker of ['AiFirstCaseCreation', 'Create with AI assistance', 'handleApplyScaffold', 'CreationModeChooser']) {
+  if (!newSituation.includes(marker)) {
+    throw new Error(`Pack 28 new-user case creation missing marker: ${marker}`);
+  }
+}
+
+const emptyGuidance = readFileSync('src/components/workbench/empty-state/EmptyStateGuidance.tsx', 'utf8');
+for (const marker of ['computeCaseDensity', 'getEmptyStateActions', 'data-testid={`empty-state-guidance-${tabId}`']) {
+  if (!emptyGuidance.includes(marker)) {
+    throw new Error(`Pack 28 empty-state guidance missing marker: ${marker}`);
   }
 }
 

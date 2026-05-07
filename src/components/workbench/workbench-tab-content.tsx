@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Activity, BookOpen, Boxes, FileText, GitBranch, GitBranchPlus, Library, Search, Store, Users } from 'lucide-react';
 import { BoardroomIndex } from '@/components/boardroom/BoardroomWorkspace';
 import { PraxisGraphCanvas } from '@/components/graph/PraxisGraphCanvas';
@@ -12,6 +13,8 @@ import { ContextTab } from '@/components/workbench/ContextTab';
 import { DeskTab } from '@/components/workbench/DeskTab';
 import { LibraryTab } from '@/components/workbench/LibraryTab';
 import { ResearchTab } from '@/components/workbench/ResearchTab';
+import { DraftTab } from '@/components/workbench/draft/DraftTab';
+import { EmptyStateGuidance } from '@/components/workbench/empty-state/EmptyStateGuidance';
 import { ToolGate } from '@/components/workbench/tool-gate';
 import { WorkbenchChapterRenderer } from '@/components/workbench/chapter-renderer';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
@@ -24,22 +27,24 @@ export function WorkbenchTabContent({ activeTab }: { activeTab: WorkbenchTabId }
   if (activeTab === 'context') return <ContextTab />;
   if (activeTab === 'library') return <LibraryTab />;
   if (activeTab === 'research') return <ResearchTab />;
-  if (activeTab === 'ontology') return <OntologySchemaViewer />;
+  if (activeTab === 'ontology') return <GuidedSurface tabId="ontology"><OntologySchemaViewer /></GuidedSurface>;
   if (activeTab === 'graph') return <WorkbenchGraphPanel />;
   if (activeTab === 'ach') return <WorkbenchACHPanel />;
-  if (activeTab === 'tools') return <ToolMarketplace />;
-  if (activeTab === 'memos') return <MemoStudio />;
+  if (activeTab === 'tools') return <GuidedSurface tabId="tools"><ToolMarketplace /></GuidedSurface>;
+  if (activeTab === 'memos') return <GuidedSurface tabId="memos"><MemoStudio /></GuidedSurface>;
   if (activeTab === 'boardroom') {
     return (
       <ToolGate>
-        <WorkbenchBoardroomPanel />
+        <GuidedSurface tabId="boardroom">
+          <WorkbenchBoardroomPanel />
+        </GuidedSurface>
       </ToolGate>
     );
   }
   if (activeTab === 'draft') {
     return (
       <ToolGate>
-        <WorkbenchTabPanel tabId={activeTab} />
+        <DraftTab />
       </ToolGate>
     );
   }
@@ -48,7 +53,11 @@ export function WorkbenchTabContent({ activeTab }: { activeTab: WorkbenchTabId }
 
 function WorkbenchACHPanel() {
   const { caseId } = useWorkbenchScope();
-  return <ACHIndex caseId={caseId} />;
+  return (
+    <GuidedSurface tabId="ach">
+      <ACHIndex caseId={caseId} />
+    </GuidedSurface>
+  );
 }
 
 function WorkbenchBoardroomPanel() {
@@ -58,7 +67,21 @@ function WorkbenchBoardroomPanel() {
 
 function WorkbenchGraphPanel() {
   const { caseModule } = useWorkbenchScope();
-  return <PraxisGraphCanvas graph={buildWorkbenchCaseGraph(caseModule)} />;
+  return (
+    <GuidedSurface tabId="graph">
+      <PraxisGraphCanvas graph={buildWorkbenchCaseGraph(caseModule)} />
+    </GuidedSurface>
+  );
+}
+
+function GuidedSurface({ tabId, children }: { tabId: WorkbenchTabId; children: ReactNode }) {
+  const { caseModule, situation } = useWorkbenchScope();
+  return (
+    <div className="space-y-4">
+      <EmptyStateGuidance tabId={tabId} caseModule={caseModule} userRole={situation.userRole} />
+      {children}
+    </div>
+  );
 }
 
 function WorkbenchTabPanel({ tabId }: { tabId: WorkbenchTabId }) {
