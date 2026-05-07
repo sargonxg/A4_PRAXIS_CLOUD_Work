@@ -1,11 +1,11 @@
 # Dashboard
 
-**Purpose.** First-touch situation overview — tells an analyst in ~10 seconds where a situation stands and what to do next.
+**Purpose.** First-touch app command center. It tells an analyst, mediator, or policy user which case is active and routes them into the real workbench surfaces: context, graph, tools, memo studio, boardroom, ACH, and settings.
 
-**Methodology.** Widget grid composed from cached SKC reads. No blocking AI call on mount. An optional **Daily read** button invokes `POST /api/ai/dashboard-summary`, a calibrated (withCalibration) route that produces a 2-4 sentence summary and up to 4 suggested next tools.
+**Methodology.** No blocking AI call on mount. The page uses the local case store plus example-case registry data, then links into case-scoped workbench routes so context and tool execution stay together.
 
-**Inputs.** Active situation, analyst profile, user preferences, cached tool outputs, recent advisor turns.
+**Inputs.** Active situation, example-case registry, marketplace tool registry, analyst profile, user preferences, cached tool outputs, recent advisor turns.
 
-**Outputs.** Widget render (client-side, real-time via onSnapshot). On-demand Daily read persisted at `users/{uid}/situations/{sid}/tools/dashboard`.
+**Outputs.** A real app landing surface with quick actions, active-case metrics, live-workbench graph visualization, and status notes that do not overstate backend readiness.
 
 **Frameworks used.** INFORM Risk Index (risk gauge widget), Glasl escalation scale (escalation widget), MAW salience (stakeholder widget).

@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+- feat(dashboard): replace legacy redirect with real app command center.
+  `/app/dashboard` now renders an active-case command surface with a larger
+  graph visualization, case/workbench metrics, direct links into graph, tools,
+  memos, ACH, boardroom, personas, and a dedicated dashboard audit included in
+  `audit:gate`.
+- fix(boardroom): stabilize deliberation synthesis route.
+  Added an explicit deliberation segment layout and dynamic route flags so the
+  boardroom synthesis e2e flow reaches `/app/workbench/[caseId]/boardroom/[id]/synthesis`.
 - feat(boardroom): add Pack 16 Agentic Boardroom foundation.
   Added boardroom schemas, ten canonical persona specs, deterministic citable
   deliberation orchestration, authenticated deliberation APIs, first-class

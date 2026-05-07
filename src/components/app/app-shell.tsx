@@ -83,7 +83,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     newReport: () => router.push(route('/reports/new')),
     openAssistant: () => router.push(route('/assistant')),
     openConflictGraph: () => router.push(route('/conflict-graph')),
-    openDashboard: () => router.push(route('/workbench')),
+    openDashboard: () => router.push(route('/dashboard')),
     closeModal: () => setSearchOpen(false),
   });
 

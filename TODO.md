@@ -20,6 +20,17 @@ The current master-charter completion checklist is
 source for remaining Pack 03-14, phase-spec, launch, and production-excellence
 tasks until PRAXIS reaches the strict `v1.0.0` gate.
 
+The latest real-app dashboard pass is
+`docs/audits/2026-05-07-DASHBOARD_REAL_APP_PASS.md`. It records the replacement
+of the redirect-only `/app/dashboard` with the current command-center route and
+the audit guard that keeps the route tied to real workbench surfaces.
+
+The latest Pack 16 boardroom gap pass is
+`docs/audits/2026-05-07-PACK16_AGENTIC_BOARDROOM_GAP_AUDIT.md`. It records the
+remaining Agentic Boardroom gaps after fixing the synthesis route e2e failure:
+Agent Engine deployment, real persona corpus indexing, custom corpus upload,
+eval depth, tool invocation, cost telemetry, and trace evidence.
+
 The current 15-initiative app-wide improvement plan is
 `docs/PRAXIS_15_APP_WIDE_IMPROVEMENTS_2026-04-29.md`.
 

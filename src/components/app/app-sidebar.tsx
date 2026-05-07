@@ -13,6 +13,7 @@ import {
   GitBranch,
   GitBranchPlus,
   Library,
+  LayoutDashboard,
   LogOut,
   Plus,
   Search,
@@ -86,7 +87,7 @@ export function AppSidebar() {
       aria-label="PRAXIS navigation"
     >
       <div className="flex h-16 items-center gap-3 border-b border-[var(--color-app-border)] px-3">
-        <PraxisLink href="/workbench" className="flex min-w-0 flex-1 items-center gap-3">
+        <PraxisLink href="/dashboard" className="flex min-w-0 flex-1 items-center gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-diplomatic-blue text-sm font-bold text-white">
             P
           </span>
@@ -109,6 +110,7 @@ export function AppSidebar() {
 
       <nav className="min-h-0 flex-1 space-y-5 overflow-y-auto px-2 py-4">
         <SectionLabel open={sidebarOpen}>Workbench</SectionLabel>
+        <NavItem open={sidebarOpen} href="/dashboard" label="Dashboard" icon={LayoutDashboard} active={pathname === '/app/dashboard'} />
         <NavItem open={sidebarOpen} href="/workbench" label="Workbench" icon={FolderKanban} active={pathname === '/app/workbench'} />
         <div className="space-y-1">
           {WORKBENCH_TABS.map((tab, index) => {

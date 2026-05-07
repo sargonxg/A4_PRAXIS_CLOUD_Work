@@ -50,6 +50,22 @@ The older `docs/audits/2026-05-06-REALITY_CHECK.md` records no open S0/S1 launch
 evidence: landing smoke passed, app-usability smoke passed, and all four
 persona flows passed against `http://localhost:3107`.
 
+## Latest Real-App Dashboard Pass
+
+`docs/audits/2026-05-07-DASHBOARD_REAL_APP_PASS.md` records the dashboard
+upgrade from legacy redirect to a real command-center route. `/app` and the
+sidebar now lead users into `/app/dashboard`, which routes directly to active
+case workbench, graph, tools, memos, ACH, boardroom, and persona settings.
+
+## Latest Pack 16 Gap Pass
+
+`docs/audits/2026-05-07-PACK16_AGENTIC_BOARDROOM_GAP_AUDIT.md` records the
+current Agentic Boardroom reality after rerunning Pack 16. Foundation checks
+pass and the synthesis route e2e failure is now fixed. Pack 16 remains
+incomplete until live Agent Engine deployments, real persona corpus indexing,
+custom corpus upload, eval depth, tool invocation, cost telemetry, and trace
+evidence are closed.
+
 ## Remaining Work
 
 - Run and maintain the four persona suites until the charter's 10-green-run bar is genuinely satisfied in CI.

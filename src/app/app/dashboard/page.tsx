@@ -1,5 +1,22 @@
-import { redirect } from 'next/navigation';
+import { DashboardCommandCenter } from '@/components/dashboard/dashboard-command-center';
+import { listExampleCases } from '@/lib/cases/registry';
+import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
 
-export default function DashboardLegacyRedirect() {
-  redirect('/app/workbench');
+export default function DashboardPage() {
+  const exampleCases = listExampleCases().map((caseModule) => ({
+    id: caseModule.id,
+    name: caseModule.manifest.name,
+    region: caseModule.manifest.region,
+    summary: caseModule.manifest.summary,
+    risk: caseModule.manifest.risk,
+    glaslStage: caseModule.manifest.glaslStage,
+    tags: caseModule.manifest.tags,
+  }));
+
+  return (
+    <DashboardCommandCenter
+      exampleCases={exampleCases}
+      marketplaceToolCount={MARKETPLACE_TOOLS.length}
+    />
+  );
 }
