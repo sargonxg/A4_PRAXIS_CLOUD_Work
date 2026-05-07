@@ -13,11 +13,13 @@ import { z } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
 import { classifyDomain } from '@/lib/domain/classifier';
+import { classifyOntologySignals } from '@/lib/ontology/classifier';
 
 const BodySchema = z.object({
   name: z.string().max(300),
   description: z.string().max(4000).default(''),
   sourceUrls: z.array(z.string().url().or(z.string().max(500))).max(16).default([]),
+  userRole: z.string().max(80).optional(),
 });
 
 export const POST = withAuth(async (req, user) => {
@@ -27,6 +29,11 @@ export const POST = withAuth(async (req, user) => {
       confidence: 0,
       rationale: 'Demo users do not persist situations.',
       alternatives: [],
+      ontologyId: 'conflict',
+      ontologyIds: ['conflict'],
+      primaryOntologyId: 'conflict',
+      ontologyConfidence: 0,
+      ontologyRationale: 'Demo users do not persist situations.',
     });
   }
   const body = await req.json().catch(() => ({}));
@@ -49,6 +56,19 @@ export const POST = withAuth(async (req, user) => {
     sourceUrls: parsed.data.sourceUrls,
     hints: userPrimaryDomain ? { userPrimaryDomain } : undefined,
   });
+  const ontology = classifyOntologySignals({
+    name: parsed.data.name,
+    description: parsed.data.description,
+    sourceUrls: parsed.data.sourceUrls,
+    role: parsed.data.userRole,
+  });
 
-  return NextResponse.json(result);
+  return NextResponse.json({
+    ...result,
+    ontologyId: ontology.ontologyId,
+    ontologyIds: ontology.ontologyIds,
+    primaryOntologyId: ontology.primaryOntologyId,
+    ontologyConfidence: ontology.confidence,
+    ontologyRationale: ontology.rationale,
+  });
 });

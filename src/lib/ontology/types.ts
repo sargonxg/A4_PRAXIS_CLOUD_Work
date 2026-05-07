@@ -11,6 +11,22 @@ export type OntologyId =
   | 'legal'
   | 'security';
 
+export const ONTOLOGY_IDS: OntologyId[] = [
+  'conflict',
+  'mediation',
+  'governance',
+  'narrative',
+  'human-rights',
+  'economic',
+  'humanitarian',
+  'legal',
+  'security',
+];
+
+export function isOntologyId(value: unknown): value is OntologyId {
+  return typeof value === 'string' && (ONTOLOGY_IDS as string[]).includes(value);
+}
+
 export interface OntologyNodeType {
   id: string;
   label: string;

@@ -40,6 +40,14 @@ import {
   getPolicyWorkflowPath,
   type PolicyWorkflowPathId,
 } from '@/lib/constants/policy-workflow-paths';
+import { CASE_ONTOLOGIES } from '@/lib/ontology/registry';
+import type { OntologyId } from '@/lib/ontology/types';
+import {
+  MAX_ACTIVE_ONTOLOGIES,
+  normalizeOntologySelection,
+  primaryOntologyId,
+  suggestOntologiesForRole,
+} from '@/lib/ontology/suggestions';
 
 /* ---------- Types ---------- */
 
@@ -56,6 +64,9 @@ interface SituationForm {
   glaslStage: number | null;
   escalationTrend: 'stable' | 'escalating' | 'de-escalating';
   workflowPath: PolicyWorkflowPathId | '';
+  ontologyIds: OntologyId[];
+  primaryOntologyId: OntologyId;
+  ontologyOverriddenByUser: boolean;
 }
 
 type Step = 1 | 2 | 3 | 4;
@@ -130,6 +141,15 @@ function mapAnalystRoleToSituationRole(role?: AnalystRole): UserRole {
     default:
       return 'analyst';
   }
+}
+
+const ONTOLOGY_BY_ID = Object.fromEntries(
+  CASE_ONTOLOGIES.map((ontology) => [ontology.id, ontology]),
+) as Record<OntologyId, (typeof CASE_ONTOLOGIES)[number]>;
+
+function ontologySelectionForRole(role: UserRole): { ontologyIds: OntologyId[]; primaryOntologyId: OntologyId } {
+  const ontologyIds = suggestOntologiesForRole(role);
+  return { ontologyIds, primaryOntologyId: primaryOntologyId(ontologyIds) };
 }
 
 function StepIndicator({ current }: { current: Step }) {
@@ -425,7 +445,18 @@ function StepActors({ form, setForm, onNext, onBack }: { form: SituationForm; se
         <label className="text-xs font-medium text-navy-700">Your Role</label>
         <div className="grid gap-2 sm:grid-cols-2">
           {USER_ROLES.map((r) => (
-            <button key={r.value} onClick={() => setForm((f) => ({ ...f, userRole: r.value }))}
+            <button
+              key={r.value}
+              onClick={() => setForm((f) => {
+                const nextSelection = f.ontologyOverriddenByUser
+                  ? { ontologyIds: f.ontologyIds, primaryOntologyId: f.primaryOntologyId }
+                  : ontologySelectionForRole(r.value);
+                return {
+                  ...f,
+                  userRole: r.value,
+                  ...nextSelection,
+                };
+              })}
               className={cn('rounded-lg border px-4 py-3 text-left transition-all',
                 form.userRole === r.value ? 'border-diplomatic-blue bg-diplomatic-blue/5 ring-1 ring-diplomatic-blue/20' : 'border-navy-200 hover:border-navy-300')}>
               <p className={cn('text-sm font-medium', form.userRole === r.value ? 'text-diplomatic-blue' : 'text-navy-700')}>{r.label}</p>
@@ -434,6 +465,8 @@ function StepActors({ form, setForm, onNext, onBack }: { form: SituationForm; se
           ))}
         </div>
       </div>
+
+      <OntologyLensSelector form={form} setForm={setForm} />
 
       {/* Optional Initial Assessment */}
       <InitialAssessment form={form} setForm={setForm} />
@@ -446,6 +479,97 @@ function StepActors({ form, setForm, onNext, onBack }: { form: SituationForm; se
           className="flex items-center gap-2 rounded-lg bg-gold-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-gold-600 shadow-md shadow-gold-500/20">
           Continue <ArrowRight className="h-4 w-4" />
         </button>
+      </div>
+    </div>
+  );
+}
+
+function OntologyLensSelector({
+  form,
+  setForm,
+}: {
+  form: SituationForm;
+  setForm: React.Dispatch<React.SetStateAction<SituationForm>>;
+}) {
+  const roleSuggestions = suggestOntologiesForRole(form.userRole);
+
+  const toggleOntology = (ontologyId: OntologyId) => {
+    setForm((f) => {
+      const currentlySelected = f.ontologyIds.includes(ontologyId);
+      const nextRaw = currentlySelected
+        ? f.ontologyIds.filter((id) => id !== ontologyId)
+        : [ontologyId, ...f.ontologyIds];
+      const ontologyIds = normalizeOntologySelection(nextRaw.length > 0 ? nextRaw : [ontologyId]);
+      return {
+        ...f,
+        ontologyIds,
+        primaryOntologyId: primaryOntologyId(ontologyIds),
+        ontologyOverriddenByUser: true,
+      };
+    });
+  };
+
+  const resetToRole = () => {
+    setForm((f) => {
+      const ontologyIds = suggestOntologiesForRole(f.userRole);
+      return {
+        ...f,
+        ontologyIds,
+        primaryOntologyId: primaryOntologyId(ontologyIds),
+        ontologyOverriddenByUser: false,
+      };
+    });
+  };
+
+  return (
+    <div className="rounded-xl border border-diplomatic-blue/15 bg-diplomatic-blue/5 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold text-navy-800">Ontology lenses</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-navy-500">
+            Pick up to {MAX_ACTIVE_ONTOLOGIES}. The first selected lens becomes the primary graph grammar.
+          </p>
+        </div>
+        {form.ontologyOverriddenByUser ? (
+          <button
+            type="button"
+            onClick={resetToRole}
+            className="rounded-md border border-diplomatic-blue/20 bg-white px-2.5 py-1 text-xs font-medium text-diplomatic-blue hover:bg-diplomatic-blue/5"
+          >
+            Use role default
+          </button>
+        ) : null}
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        {CASE_ONTOLOGIES.map((ontology) => {
+          const selected = form.ontologyIds.includes(ontology.id);
+          const suggested = roleSuggestions.includes(ontology.id);
+          const primary = form.primaryOntologyId === ontology.id;
+          return (
+            <button
+              key={ontology.id}
+              type="button"
+              onClick={() => toggleOntology(ontology.id)}
+              className={cn(
+                'min-h-[88px] rounded-lg border px-3 py-2.5 text-left transition-all',
+                selected
+                  ? 'border-diplomatic-blue bg-white shadow-sm ring-1 ring-diplomatic-blue/15'
+                  : 'border-navy-200 bg-white/60 hover:border-navy-300',
+              )}
+            >
+              <span className={cn('block text-xs font-semibold', selected ? 'text-diplomatic-blue' : 'text-navy-800')}>
+                {ontology.label.replace(' Ontology', '')}
+              </span>
+              <span className="mt-1 line-clamp-2 block text-[10px] leading-snug text-navy-500">
+                {ontology.domains.slice(0, 3).join(' / ')}
+              </span>
+              <span className="mt-2 flex flex-wrap gap-1">
+                {primary ? <span className="rounded-full bg-gold-100 px-1.5 py-0.5 text-[9px] font-semibold text-gold-700">Primary</span> : null}
+                {suggested ? <span className="rounded-full bg-teal/10 px-1.5 py-0.5 text-[9px] font-semibold text-teal">Suggested</span> : null}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -886,6 +1010,38 @@ function StepReview({
             <p className="text-sm text-navy-700">{roleLabel}</p>
           </div>
 
+          <div className="rounded-lg border border-diplomatic-blue/20 bg-white p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-400">Ontology lenses</p>
+                <p className="mt-1 text-sm font-semibold text-navy-900">
+                  {ONTOLOGY_BY_ID[form.primaryOntologyId]?.label ?? form.primaryOntologyId}
+                </p>
+              </div>
+              <span className="rounded-full bg-gold-100 px-2 py-0.5 text-[10px] font-semibold text-gold-700">
+                Primary
+              </span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {form.ontologyIds.map((ontologyId) => (
+                <span
+                  key={ontologyId}
+                  className={cn(
+                    'rounded-full px-2.5 py-1 text-xs font-medium',
+                    ontologyId === form.primaryOntologyId
+                      ? 'bg-diplomatic-blue/10 text-diplomatic-blue'
+                      : 'bg-navy-100 text-navy-600',
+                  )}
+                >
+                  {ONTOLOGY_BY_ID[ontologyId]?.label.replace(' Ontology', '') ?? ontologyId}
+                </span>
+              ))}
+            </div>
+            <p className="mt-2 text-[10px] text-navy-400">
+              These lenses control graph subtypes, tool ranking, and memo context for this situation.
+            </p>
+          </div>
+
           <DomainReviewCard
             form={form}
             preview={domainPreview}
@@ -938,7 +1094,7 @@ function StepReview({
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-diplomatic-blue">AI context quality</p>
                 <p className="mt-1 text-sm font-semibold text-navy-900">{aiContextScore}% ready for first tool runs</p>
                 <p className="mt-1 text-xs leading-relaxed text-navy-600">
-                  PRAXIS will attach this situation context, your analyst profile, selected workflow path, domain, sources, notes, and future saved outputs to calibrated AI calls.
+                  PRAXIS will attach this situation context, ontology lenses, analyst profile, selected workflow path, domain, sources, notes, and future saved outputs to calibrated AI calls.
                 </p>
               </div>
               <span className={cn(
@@ -1004,25 +1160,35 @@ export default function NewSituationPage() {
   const [error, setError] = useState('');
   const [fromOnboarding, setFromOnboarding] = useState(false);
 
-  const [form, setForm] = useState<SituationForm>({
-    name: '',
-    type: 'international',
-    description: '',
-    region: '',
-    status: 'active',
-    actors: [],
-    userRole: mapAnalystRoleToSituationRole(analystProfile?.identity.role),
-    riskScore: 0,
-    glaslStage: null,
-    escalationTrend: 'stable',
-    workflowPath: '',
+  const [form, setForm] = useState<SituationForm>(() => {
+    const userRole = mapAnalystRoleToSituationRole(analystProfile?.identity.role);
+    const ontologySelection = ontologySelectionForRole(userRole);
+    return {
+      name: '',
+      type: 'international',
+      description: '',
+      region: '',
+      status: 'active',
+      actors: [],
+      userRole,
+      riskScore: 0,
+      glaslStage: null,
+      escalationTrend: 'stable',
+      workflowPath: '',
+      ...ontologySelection,
+      ontologyOverriddenByUser: false,
+    };
   });
 
   useEffect(() => {
     if (!analystProfile?.identity.role) return;
     setForm((current) => {
       if (current.workflowPath || current.userRole !== 'analyst') return current;
-      return { ...current, userRole: mapAnalystRoleToSituationRole(analystProfile.identity.role) };
+      const userRole = mapAnalystRoleToSituationRole(analystProfile.identity.role);
+      const ontologySelection = current.ontologyOverriddenByUser
+        ? { ontologyIds: current.ontologyIds, primaryOntologyId: current.primaryOntologyId }
+        : ontologySelectionForRole(userRole);
+      return { ...current, userRole, ...ontologySelection };
     });
   }, [analystProfile?.identity.role]);
 
@@ -1075,10 +1241,17 @@ export default function NewSituationPage() {
         name: form.name,
         description: form.description,
         sourceUrls: filteredUrls,
+        userRole: form.userRole,
       }),
     })
       .then((r) => r.json())
-      .then((data: { domainId?: string; confidence?: number; rationale?: string }) => {
+      .then((data: {
+        domainId?: string;
+        confidence?: number;
+        rationale?: string;
+        ontologyIds?: OntologyId[];
+        primaryOntologyId?: OntologyId;
+      }) => {
         if (cancelled) return;
         const id = isDomainId(data.domainId ?? '') ? (data.domainId as DomainId) : 'generic';
         setDomainPreview({
@@ -1088,6 +1261,16 @@ export default function NewSituationPage() {
           overridden: false,
           loading: false,
         });
+        if (!form.ontologyOverriddenByUser && Array.isArray(data.ontologyIds)) {
+          const ontologyIds = normalizeOntologySelection(data.ontologyIds);
+          setForm((f) => ({
+            ...f,
+            ontologyIds,
+            primaryOntologyId: data.primaryOntologyId && ontologyIds.includes(data.primaryOntologyId)
+              ? data.primaryOntologyId
+              : primaryOntologyId(ontologyIds),
+          }));
+        }
       })
       .catch(() => {
         if (cancelled) return;
@@ -1102,7 +1285,7 @@ export default function NewSituationPage() {
     return () => {
       cancelled = true;
     };
-  }, [step, form.name, form.description, context.urls, domainPreview.overridden]);
+  }, [step, form.name, form.description, form.userRole, form.ontologyOverriddenByUser, context.urls, domainPreview.overridden]);
 
   const handleDomainPick = useCallback((id: DomainId, overridden: boolean) => {
     setDomainPreview({
@@ -1122,6 +1305,7 @@ export default function NewSituationPage() {
       workflowPath: path.id,
       type: path.situationType,
       userRole: path.userRole,
+      ...(f.ontologyOverriddenByUser ? {} : ontologySelectionForRole(path.userRole)),
     }));
     setContext((c) => {
       const enabled = Object.fromEntries(
@@ -1196,6 +1380,9 @@ export default function NewSituationPage() {
           customSources: context.customSources,
           domain: domainPreview.domainId,
           domainOverriddenByUser: domainPreview.overridden,
+          ontologyIds: form.ontologyIds,
+          primaryOntologyId: form.primaryOntologyId,
+          ontologyOverriddenByUser: form.ontologyOverriddenByUser,
         }),
       });
       if (!res.ok) {
@@ -1238,6 +1425,8 @@ export default function NewSituationPage() {
             description: form.description,
             actors: form.actors,
             userRole: form.userRole,
+            ontologyIds: form.ontologyIds,
+            primaryOntologyId: form.primaryOntologyId,
             situationId: situation.id,
             urls: filteredUrls.length ? filteredUrls : undefined,
             notes: context.notes.trim() || undefined,

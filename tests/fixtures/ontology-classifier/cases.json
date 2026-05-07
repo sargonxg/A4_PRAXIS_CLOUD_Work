@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Aleppo ceasefire escalation timeline",
+    "description": "Track armed group movements, ceasefire violations, frontline violence, and escalation risks.",
+    "role": "analyst",
+    "expectedPrimaryOntologyId": "conflict"
+  },
+  {
+    "name": "Northwind settlement options",
+    "description": "A mediator needs party interests, negotiation positions, ZOPA range, and settlement commitments.",
+    "role": "mediator",
+    "expectedPrimaryOntologyId": "mediation"
+  },
+  {
+    "name": "Coalition veto package",
+    "description": "Assess institutional mandate, parliamentary coalition options, veto players, and governance tradeoffs.",
+    "role": "advisor",
+    "expectedPrimaryOntologyId": "governance"
+  },
+  {
+    "name": "Nordalia disinformation cascade",
+    "description": "Map propaganda, framing, counter-narrative opportunities, media channels, and information operations.",
+    "role": "researcher",
+    "expectedPrimaryOntologyId": "narrative"
+  },
+  {
+    "name": "Detention accountability dossier",
+    "description": "Human rights officer reviewing torture allegations, victim statements, protected groups, and accountability routes.",
+    "role": "human_rights_officer",
+    "expectedPrimaryOntologyId": "human-rights"
+  },
+  {
+    "name": "OFAC ownership designation review",
+    "description": "Sanction designation, export control risk, beneficial owner network, payment channel exposure, and evasion patterns.",
+    "role": "sanctions_analyst",
+    "expectedPrimaryOntologyId": "economic"
+  },
+  {
+    "name": "OCHA access response plan",
+    "description": "Humanitarian needs assessment, IDP protection, access constraints, cluster coordination, and response commitments.",
+    "role": "humanitarian_coordinator",
+    "expectedPrimaryOntologyId": "humanitarian"
+  },
+  {
+    "name": "Treaty reservation effects memo",
+    "description": "Treaty lawyer analyzing jurisdiction, reservation validity, legal provisions, tribunal precedent, and asserted breach.",
+    "role": "treaty_lawyer",
+    "expectedPrimaryOntologyId": "legal"
+  },
+  {
+    "name": "NATO posture change watch",
+    "description": "Defense analyst tracks force posture, deterrence, capability claims, engagement rules, and doctrine.",
+    "role": "defense_analyst",
+    "expectedPrimaryOntologyId": "security"
+  },
+  {
+    "name": "Civilian protection and ceasefire window",
+    "description": "Assess ceasefire violence, humanitarian access, affected populations, protection needs, and response gaps.",
+    "role": "humanitarian_coordinator",
+    "expectedPrimaryOntologyId": "humanitarian"
+  }
+]

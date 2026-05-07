@@ -505,6 +505,16 @@ export async function createSituationAdmin(
     ...(data.contextNotes ? { contextNotes: data.contextNotes } : {}),
     ...(data.initialDocumentIds?.length ? { initialDocumentIds: data.initialDocumentIds } : {}),
     ...(data.ontology ? { ontology: data.ontology } : {}),
+    ...(data.ontologyId ? { ontologyId: data.ontologyId } : {}),
+    ...(data.ontologyIds?.length ? { ontologyIds: data.ontologyIds } : {}),
+    ...(data.primaryOntologyId ? { primaryOntologyId: data.primaryOntologyId } : {}),
+    ...(typeof data.ontologyConfidence === 'number'
+      ? { ontologyConfidence: data.ontologyConfidence }
+      : {}),
+    ...(data.ontologyRationale ? { ontologyRationale: data.ontologyRationale } : {}),
+    ...(typeof data.ontologyOverriddenByUser === 'boolean'
+      ? { ontologyOverriddenByUser: data.ontologyOverriddenByUser }
+      : {}),
     ...(data.sourceCategoriesEnabled ? { sourceCategoriesEnabled: data.sourceCategoriesEnabled } : {}),
     ...(data.sourceCategoryOrder?.length ? { sourceCategoryOrder: data.sourceCategoryOrder } : {}),
     ...(data.workflowPath ? { workflowPath: data.workflowPath } : {}),

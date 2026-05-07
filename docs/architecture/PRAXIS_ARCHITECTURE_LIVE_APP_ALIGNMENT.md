@@ -66,7 +66,7 @@ chain. The repo now enforces command parity in two ways:
 
 Local aliases added for the real app include `typecheck`, `test`,
 `test:e2e:personas`, `audit:ontology-mapping`, `audit:ontology-versions`,
-`audit:context-types-parity`, `audit:tool-skill-conforms`,
+`audit:ontology-classifier-accuracy`, `audit:context-types-parity`, `audit:tool-skill-conforms`,
 `audit:tool-canary-executable`, `audit:tool-composition-static`,
 `audit:tool-suggestion-eval`, `audit:tool-context-isolation`, `audit:firewall-coverage`,
 `audit:owner-scoping`, `audit:postgres-schema-current`, `audit:kg-drift`,
@@ -74,7 +74,6 @@ Local aliases added for the real app include `typecheck`, `test`,
 
 <!-- architecture-gated-audits:start -->
 
-- `audit:ontology-classifier-accuracy` — needs a labeled classifier eval set.
 - `audit:subagent-deployment-fresh` — needs live Agent Engine deployment metadata.
 - `audit:subagent-eval-fresh` — needs committed per-subagent eval runs.
 - `audit:bi-temporal-coverage` — needs full Postgres write-path cutover.

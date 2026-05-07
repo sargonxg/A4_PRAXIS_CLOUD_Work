@@ -1,9 +1,9 @@
 import type { OntologyId } from '@/lib/ontology/types';
-import type { UserRole } from '@/types/context';
+import type { UserRole as ContextUserRole } from '@/types/context';
 
 export const MAX_ACTIVE_ONTOLOGIES = 3;
 
-export const ROLE_ONTOLOGY_PRIORITIES: Record<UserRole, OntologyId[]> = {
+export const ROLE_ONTOLOGY_PRIORITIES: Record<ContextUserRole, OntologyId[]> = {
   diplomat: ['conflict', 'governance', 'narrative'],
   mediator: ['mediation', 'conflict'],
   analyst: ['conflict', 'narrative'],
@@ -17,8 +17,20 @@ export const ROLE_ONTOLOGY_PRIORITIES: Record<UserRole, OntologyId[]> = {
   other: ['conflict'],
 };
 
-export function suggestOntologiesForRole(role: UserRole | null | undefined, history: OntologyId[] = []): OntologyId[] {
-  const base = ROLE_ONTOLOGY_PRIORITIES[role ?? 'other'] ?? ROLE_ONTOLOGY_PRIORITIES.other;
+const ROLE_ALIASES: Record<string, ContextUserRole> = {
+  observer: 'analyst',
+  party: 'mediator',
+  advisor: 'policy_advisor',
+};
+
+function normalizeRole(role: string | null | undefined): ContextUserRole {
+  if (!role) return 'other';
+  if (role in ROLE_ONTOLOGY_PRIORITIES) return role as ContextUserRole;
+  return ROLE_ALIASES[role] ?? 'other';
+}
+
+export function suggestOntologiesForRole(role: string | null | undefined, history: OntologyId[] = []): OntologyId[] {
+  const base = ROLE_ONTOLOGY_PRIORITIES[normalizeRole(role)];
   return normalizeOntologySelection([...history, ...base]);
 }
 

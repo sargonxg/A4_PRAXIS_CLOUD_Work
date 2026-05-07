@@ -89,10 +89,14 @@ function buildWorkspaceContext(userContext: UserContext): WorkspaceContext {
 
 function buildCaseContext(ownerUid: string, situationId: string | undefined, situation: Situation | null, spec: ContextSpec | undefined): ContextSnapshot['case'] {
   const report = computeContextHealthScore({ situation, threshold: spec?.minHealthScore ?? 60 });
+  const ontologyId = situation?.primaryOntologyId ?? situation?.ontologyId ?? spec?.caseGraph?.requiredOntology ?? 'conflict';
+  const ontologyIds = situation?.ontologyIds?.length ? situation.ontologyIds : [ontologyId];
   return {
     caseId: situationId ?? situation?.id ?? 'no-active-case',
     ownerUid,
-    ontologyId: ((situation?.domain as string | undefined) ?? spec?.caseGraph?.requiredOntology ?? 'conflict') as never,
+    ontologyId,
+    ontologyIds,
+    primaryOntologyId: ontologyId,
     frame: {
       name: situation?.name ?? 'No active case',
       region: situation?.region,

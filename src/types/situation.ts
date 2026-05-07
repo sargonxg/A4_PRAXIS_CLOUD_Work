@@ -1,4 +1,5 @@
 import type { CaseOntology } from '@/lib/constants/case-registry';
+import type { OntologyId } from '@/lib/ontology/types';
 
 // ============================================================================
 // Tool Registry Types
@@ -124,6 +125,12 @@ export interface Situation {
   lastAiRefresh?: string | null;
   dataCompleteness?: number;
   ontology?: CaseOntology;
+  ontologyId?: OntologyId;
+  ontologyIds?: OntologyId[];
+  primaryOntologyId?: OntologyId;
+  ontologyConfidence?: number;
+  ontologyRationale?: string;
+  ontologyOverriddenByUser?: boolean;
   canonicalPreCheck?: {
     currentLeadership?: string;
     currentStatus?: string;
@@ -182,6 +189,12 @@ export interface CreateSituationInput {
   contextNotes?: string;
   initialDocumentIds?: string[];
   ontology?: CaseOntology;
+  ontologyId?: OntologyId;
+  ontologyIds?: OntologyId[];
+  primaryOntologyId?: OntologyId;
+  ontologyConfidence?: number;
+  ontologyRationale?: string;
+  ontologyOverriddenByUser?: boolean;
   /** Optional pre-classified domain from the wizard review step. */
   domain?: string;
   domainConfidence?: number;

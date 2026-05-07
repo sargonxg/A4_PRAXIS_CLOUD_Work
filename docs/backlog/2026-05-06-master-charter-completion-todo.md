@@ -66,7 +66,8 @@ documented. A partial item must keep its named gap visible.
 
 - [x] Four ontologies are registered and mapped.
 - [x] Frontend ontology selection and suggestions are present.
-- [ ] Implement backend ontology classifier with versioned migrations.
+- [x] Add advisory ontology classifier baseline with accuracy audit.
+- [ ] Replace advisory classifier baseline with Gemini-backed classifier, 50-case eval set, and versioned migrations.
 - [ ] Add ingestion validators per ontology before graph writes.
 - [ ] Add two-phase Firestore-to-Postgres commit for ontology ingestion.
 - [ ] Add crash-injection tests for pending/committed/failed ingestion recovery.

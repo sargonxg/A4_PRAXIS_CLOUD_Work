@@ -8,6 +8,9 @@ import { classifyDomain } from '@/lib/domain/classifier';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
 import { isDomainId } from '@/types/domain';
 import type { EscalationTrend } from '@/types/situation';
+import { classifyOntologySignals } from '@/lib/ontology/classifier';
+import { isOntologyId, type OntologyId } from '@/lib/ontology/types';
+import { normalizeOntologySelection } from '@/lib/ontology/suggestions';
 
 const ESCALATION_TRENDS: EscalationTrend[] = ['stable', 'escalating', 'de-escalating', 'volatile'];
 const MAX_CONTEXT_NOTES_CHARS = 12_000;
@@ -73,6 +76,9 @@ export const POST = withAuth(async (req, user) => {
       contextNotes,
       initialDocumentIds,
       ontology,
+      ontologyIds: clientOntologyIds,
+      primaryOntologyId: clientPrimaryOntologyId,
+      ontologyOverriddenByUser,
       domain: clientDomain,
       domainOverriddenByUser,
       riskScore,
@@ -140,6 +146,23 @@ export const POST = withAuth(async (req, user) => {
       domainConfidence = classification.confidence;
     }
 
+    const requestedOntologyIds = Array.isArray(clientOntologyIds)
+      ? clientOntologyIds.filter(isOntologyId)
+      : [];
+    const classifiedOntology = classifyOntologySignals({
+      name,
+      description: description ?? '',
+      sourceUrls: filteredUrls,
+      role: userRole,
+    });
+    const ontologyIds = normalizeOntologySelection(
+      requestedOntologyIds.length > 0 ? requestedOntologyIds : classifiedOntology.ontologyIds,
+    );
+    const primaryOntologyId: OntologyId =
+      isOntologyId(clientPrimaryOntologyId) && ontologyIds.includes(clientPrimaryOntologyId)
+        ? clientPrimaryOntologyId
+        : ontologyIds[0];
+
     const situation = await createSituationAdmin(user.uid, {
       name: name.trim(),
       type: type || 'custom',
@@ -152,6 +175,14 @@ export const POST = withAuth(async (req, user) => {
       ...(cleanedContextNotes ? { contextNotes: cleanedContextNotes } : {}),
       ...(initialDocumentIds?.length ? { initialDocumentIds } : {}),
       ...(ontology ? { ontology } : {}),
+      ontologyId: primaryOntologyId,
+      ontologyIds,
+      primaryOntologyId,
+      ontologyConfidence: requestedOntologyIds.length > 0 ? 1 : classifiedOntology.confidence,
+      ontologyRationale: requestedOntologyIds.length > 0
+        ? 'User confirmed ontology lenses during situation creation.'
+        : classifiedOntology.rationale,
+      ontologyOverriddenByUser: ontologyOverriddenByUser === true,
       ...(typeof riskScore === 'number' ? { riskScore } : {}),
       ...(typeof glaslStage === 'number' || glaslStage === null ? { glaslStage } : {}),
       ...(isEscalationTrend(escalationTrend) ? { escalationTrend } : {}),

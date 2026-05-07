@@ -33,4 +33,10 @@ describe('Pack 20 ontology suggestions', () => {
       'governance',
     ]);
   });
+
+  it('maps situation-wizard legacy roles onto Pack 20 role priorities', () => {
+    expect(suggestOntologiesForRole('observer')).toEqual(['conflict', 'narrative']);
+    expect(suggestOntologiesForRole('advisor')).toEqual(['governance', 'conflict']);
+    expect(suggestOntologiesForRole('party')).toEqual(['mediation', 'conflict']);
+  });
 });
