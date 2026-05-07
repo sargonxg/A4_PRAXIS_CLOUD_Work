@@ -11,13 +11,13 @@ function NordaliaPanel({ title, children }: { title: string; children: ReactNode
   );
 }
 
-export const nordalia2026Chapters: Record<WorkbenchChapterId, () => ReactNode> = {
-  'situation-frame': () => (
+export const nordalia2026Chapters: Partial<Record<WorkbenchChapterId, () => ReactNode>> = {
+  desk: () => (
     <NordaliaPanel title="Synthetic situation frame">
       <p>{DEMO_CONFLICT.description}</p>
     </NordaliaPanel>
   ),
-  'source-receipts': () => (
+  research: () => (
     <NordaliaPanel title="Source receipts">
       <p>
         This example is intentionally synthetic. It uses a structured fixture rather than public-source receipts, which keeps
@@ -25,7 +25,7 @@ export const nordalia2026Chapters: Record<WorkbenchChapterId, () => ReactNode> =
       </p>
     </NordaliaPanel>
   ),
-  'conflict-graph': () => (
+  ach: () => (
     <NordaliaPanel title="Conflict graph">
       <p>
         {DEMO_CONFLICT.actors.length} actors, {DEMO_CONFLICT.relationships.length} relationships, {DEMO_CONFLICT.events.length}
@@ -33,7 +33,7 @@ export const nordalia2026Chapters: Record<WorkbenchChapterId, () => ReactNode> =
       </p>
     </NordaliaPanel>
   ),
-  'dialectica-reasoning': () => (
+  tools: () => (
     <NordaliaPanel title="DIALECTICA reasoning">
       <p>
         Use this case to validate leverage tracing, commitment checks, and path search without binding the product story to a
@@ -41,7 +41,7 @@ export const nordalia2026Chapters: Record<WorkbenchChapterId, () => ReactNode> =
       </p>
     </NordaliaPanel>
   ),
-  'decision-product': () => (
+  memos: () => (
     <NordaliaPanel title="Decision product">
       <p>
         Draft a mediator-facing brief that separates contested claims, graph-supported evidence, and analyst judgments.

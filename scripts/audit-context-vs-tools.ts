@@ -38,9 +38,10 @@ for (const layer of ['source', 'claim', 'evidence', 'verdict']) {
   if (!truthLayerSchema.includes(`"${layer}"`)) throw new Error(`JSON schema missing truth layer: ${layer}`);
 }
 
-const dividerIndex = WORKBENCH_CHAPTER_FLOW.findIndex((chapter) => chapter.id === 'dialectica-reasoning');
-if (dividerIndex !== 3) {
-  throw new Error('Tools must begin at chapter 4 after the context chapters.');
+const toolsIndex = WORKBENCH_CHAPTER_FLOW.findIndex((chapter) => chapter.id === 'tools');
+const deskIndex = WORKBENCH_CHAPTER_FLOW.findIndex((chapter) => chapter.id === 'desk');
+if (deskIndex !== 0 || toolsIndex !== 5) {
+  throw new Error('Workspace chapters must keep Desk first and Tools sixth in the seven-chapter model.');
 }
 
 const toolGate = readFileSync('src/components/workbench/tool-gate.tsx', 'utf8');

@@ -7,12 +7,22 @@ service, database, and tenancy checks are live.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import StrEnum
 from typing import Any
 
 from config import get_settings
 
 SUPPORTED_MODES = {"postgres-kuzu", "neo4j", "postgres-only-vector", "disabled"}
 COGNEE_DATASET_SEPARATOR = "__"
+ACO_ONTOLOGY_FILE = "praxis_aco.owl"
+
+
+class CogneeSearchMode(StrEnum):
+    NATURAL_LANGUAGE = "NATURAL_LANGUAGE"
+    GRAPH_COMPLETION = "GRAPH_COMPLETION"
+    CODE = "CODE"
+    INSIGHTS = "INSIGHTS"
+    CHUNKS = "CHUNKS"
 
 
 @dataclass(frozen=True)
@@ -46,6 +56,13 @@ class MemoryHealth:
     embedding_dimensions: int
     ready: bool
     reason: str | None = None
+
+
+@dataclass(frozen=True)
+class SearchAudit:
+    mode: CogneeSearchMode
+    save_interaction: bool = True
+    surface_key: str | None = None
 
 
 def is_enabled() -> bool:
@@ -129,12 +146,80 @@ async def remember(
     raise NotImplementedError("Live Cognee remember is owned by the isolated praxis-cognee service")
 
 
-async def recall(*, scope: MemoryScope, query: str, limit: int = 10) -> list[MemoryHit]:
-    _ = (scope, query, limit)
+async def cognify(
+    *,
+    scope: MemoryScope,
+    content: str,
+    source_id: str,
+    metadata: dict[str, Any] | None = None,
+    ontology_file_path: str = ACO_ONTOLOGY_FILE,
+    temporal_cognify: bool = True,
+) -> dict[str, Any]:
+    """Run ontology-grounded extraction for a source payload.
+
+    The disabled path returns a queued shape so callers can keep their UX honest
+    without pretending extraction completed.
+    """
+    if not is_enabled():
+        return {
+            "ok": False,
+            "status": "queued_disabled",
+            "dataset": scope.dataset,
+            "sourceId": source_id,
+            "ontologyFilePath": ontology_file_path,
+            "temporalCognify": temporal_cognify,
+        }
+    _ = (content, metadata)
+    _load_cognee()
+    raise NotImplementedError("Live Cognee cognify is owned by the isolated praxis-cognee service")
+
+
+async def memify(
+    *,
+    scope: MemoryScope,
+    thread_id: str,
+    turns: list[dict[str, Any]],
+    metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Persist a closed research thread as long-lived memory coverage."""
+    if not is_enabled():
+        return {"ok": False, "status": "queued_disabled", "dataset": scope.dataset, "threadId": thread_id}
+    _ = (turns, metadata)
+    _load_cognee()
+    raise NotImplementedError("Live Cognee memify is owned by the isolated praxis-cognee service")
+
+
+async def search(
+    *,
+    scope: MemoryScope,
+    query: str,
+    mode: CogneeSearchMode = CogneeSearchMode.NATURAL_LANGUAGE,
+    limit: int = 10,
+    audit: SearchAudit | None = None,
+) -> list[MemoryHit]:
+    """Route Cognee search modes with save_interaction=True by default."""
+    interaction = audit or SearchAudit(mode=mode)
+    if not interaction.save_interaction:
+        raise ValueError("Cognee search calls in PRAXIS must use save_interaction=True")
     if not is_enabled():
         return []
+    _ = (scope, query, limit)
     _load_cognee()
-    raise NotImplementedError("Live Cognee recall is owned by the isolated praxis-cognee service")
+    raise NotImplementedError("Live Cognee search is owned by the isolated praxis-cognee service")
+
+
+async def recall(*, scope: MemoryScope, query: str, limit: int = 10) -> list[MemoryHit]:
+    return await search(scope=scope, query=query, limit=limit, mode=CogneeSearchMode.NATURAL_LANGUAGE)
+
+
+async def recall_provenance(*, scope: MemoryScope, node_name: str, top_k: int = 5) -> list[MemoryHit]:
+    return await search(
+        scope=scope,
+        query=node_name,
+        limit=top_k,
+        mode=CogneeSearchMode.GRAPH_COMPLETION,
+        audit=SearchAudit(mode=CogneeSearchMode.GRAPH_COMPLETION, surface_key="graph.provenance"),
+    )
 
 
 async def forget(*, scope: MemoryScope, memory_id: str) -> dict[str, Any]:

@@ -20,6 +20,22 @@ const ALLOWED_BACKEND_PATHS: Array<{ method: string; pattern: RegExp }> = [
     method: 'GET',
     pattern: /^analyze\/[^/]+\/(pivot-actors|hidden-linkages|escalation|factions|negotiation-space|intelligence-gaps|brief\.json)$/,
   },
+  { method: 'GET', pattern: /^workspace\/events$/ },
+  { method: 'GET', pattern: /^tabs\/(context\/situation-frame|library\/sources|ontology\/candidates|graph|graph\/timeline)$/ },
+  { method: 'GET', pattern: /^tabs\/graph\/node\/[^/]+$/ },
+  { method: 'PUT', pattern: /^tabs\/context\/situation-frame$/ },
+  { method: 'POST', pattern: /^tabs\/context\/coach$/ },
+  { method: 'POST', pattern: /^tabs\/ontology\/merge$/ },
+  { method: 'GET', pattern: /^chapters\/(desk\/summary|tools\/recipes|boardroom)$/ },
+  { method: 'POST', pattern: /^chapters\/desk\/ask$/ },
+  { method: 'POST', pattern: /^chapters\/desk\/dismiss-suggestion\/[^/]+$/ },
+  { method: 'POST', pattern: /^chapters\/tools\/run$/ },
+  { method: 'GET', pattern: /^chapters\/tools\/runs\/[^/]+$/ },
+  { method: 'POST', pattern: /^chapters\/tools\/runs\/[^/]+\/save-as-memo$/ },
+  { method: 'POST', pattern: /^chapters\/boardroom\/briefings$/ },
+  { method: 'PUT', pattern: /^chapters\/boardroom\/briefings\/[^/]+$/ },
+  { method: 'POST', pattern: /^chapters\/boardroom\/briefings\/[^/]+\/sections\/[0-9]+\/synth$/ },
+  { method: 'POST', pattern: /^chapters\/boardroom\/briefings\/[^/]+\/export$/ },
 ];
 
 export function isAllowedBackendPath(method: string, path: string): boolean {
@@ -66,6 +82,15 @@ export const POST = withAuth<RouteContext>(async (req, user, context) => {
   const { path: parts } = await context.params;
   const path = parts.join('/');
   if (!isAllowedBackendPath('POST', path)) {
+    return NextResponse.json({ error: 'Backend path not allowed' }, { status: 404 });
+  }
+  return proxyBackendRequest(req, user.uid, path);
+});
+
+export const PUT = withAuth<RouteContext>(async (req, user, context) => {
+  const { path: parts } = await context.params;
+  const path = parts.join('/');
+  if (!isAllowedBackendPath('PUT', path)) {
     return NextResponse.json({ error: 'Backend path not allowed' }, { status: 404 });
   }
   return proxyBackendRequest(req, user.uid, path);

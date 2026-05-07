@@ -104,16 +104,26 @@ export function buildWorkbenchSurfaceState(caseModule: CaseModule, caseId: strin
     openQuestions,
     nextActions,
     chapterFacts: {
-      'situation-frame': scopeFacts,
-      'source-receipts': sourceFacts,
-      'conflict-graph': graphFacts,
-      'dialectica-reasoning': [
+      desk: changedFacts,
+      research: sourceFacts,
+      memos: [
+        { label: 'Memo route', value: 'Memo Studio', detail: 'Draft products should cite receipts and graph claims.', tone: sourceCount > 0 ? 'good' : 'warn' },
+        { label: 'Template fit', value: caseModule.manifest.domain === 'mediation' ? 'Mediation brief' : 'Decision memo', detail: 'Use the active ontology to choose the template.' },
+        { label: 'Open questions', value: String(openQuestions.length), detail: 'Unresolved questions stay visible during drafting.' },
+      ],
+      draft: [
+        { label: 'Canvas', value: 'Active', detail: 'Paragraph-level provenance should travel with export-ready content.' },
+        { label: 'Export readiness', value: contextHealth >= 0.6 ? 'Ready' : 'Needs review', detail: 'DOCX export is strongest after source receipts and claim coverage improve.', tone: contextHealth >= 0.6 ? 'good' : 'warn' },
+        { label: 'Suggested output', value: caseModule.manifest.domain === 'mediation' ? 'Mediation brief' : 'Decision memo', detail: 'Use the active ontology to choose the template.' },
+      ],
+      ach: graphFacts,
+      tools: [
         { label: 'Run readiness', value: `${Math.round(contextHealth * 100)}%`, detail: contextHealth >= 0.6 ? 'Context is ready for normal tool runs.' : 'Runs remain available with visible advisories.', tone: contextHealth >= 0.6 ? 'good' : 'warn' },
         { label: 'Best first move', value: nextActions[0]?.label ?? 'Context review', detail: nextActions[0]?.detail ?? 'Review open questions before heavy generation.' },
         { label: 'Advisory queue', value: String(staleSignals.length + openQuestions.length), detail: 'Soft issues are surfaced to the user and do not block generation.' },
       ],
-      'decision-product': [
-        { label: 'Memo route', value: 'Memo Studio', detail: 'Draft products should cite receipts and graph claims.', tone: sourceCount > 0 ? 'good' : 'warn' },
+      boardroom: [
+        { label: 'Briefing path', value: 'Boardroom', detail: 'Cited synthesis should start from graph and memo products.', tone: sourceCount > 0 ? 'good' : 'warn' },
         { label: 'Export readiness', value: contextHealth >= 0.6 ? 'Ready' : 'Needs review', detail: 'DOCX export is strongest after source receipts and claim coverage improve.', tone: contextHealth >= 0.6 ? 'good' : 'warn' },
         { label: 'Suggested output', value: caseModule.manifest.domain === 'mediation' ? 'Mediation brief' : 'Decision memo', detail: 'Use the active ontology to choose the template.' },
       ],

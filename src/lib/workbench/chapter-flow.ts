@@ -1,77 +1,107 @@
 export type WorkbenchChapterId =
-  | 'situation-frame'
-  | 'source-receipts'
-  | 'conflict-graph'
-  | 'dialectica-reasoning'
-  | 'decision-product';
+  | 'desk'
+  | 'research'
+  | 'memos'
+  | 'draft'
+  | 'ach'
+  | 'tools'
+  | 'boardroom';
 
 export interface WorkbenchChapterDescriptor {
   id: WorkbenchChapterId;
-  number: 1 | 2 | 3 | 4 | 5;
+  number: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   title: string;
   navLabel: string;
   question: string;
   metric: string;
   timeBudget: string;
   href: string;
-  group: 'context' | 'tools';
+  group: 'desk' | 'analysis' | 'production' | 'tools';
+  alwaysOn?: boolean;
+  dependsOn?: WorkbenchChapterId[];
 }
 
 export const WORKBENCH_CHAPTER_FLOW: WorkbenchChapterDescriptor[] = [
   {
-    id: 'situation-frame',
+    id: 'desk',
+    number: 0,
+    title: 'Desk',
+    navLabel: 'Desk',
+    question: 'What changed, what is thin, and what should happen next?',
+    metric: 'Status',
+    timeBudget: 'Always on',
+    href: '#desk',
+    group: 'desk',
+    alwaysOn: true,
+  },
+  {
+    id: 'research',
     number: 1,
-    title: 'Situation Frame',
-    navLabel: 'Frame',
-    question: 'What is happening, why does it matter, and what would change the line?',
-    metric: 'Scope',
-    timeBudget: '4 min',
-    href: '#situation-frame',
-    group: 'context',
+    title: 'Research',
+    navLabel: 'Research',
+    question: 'Which source gaps need collection, memory coverage, or review?',
+    metric: 'Threads',
+    timeBudget: '4k tokens/turn',
+    href: '#research',
+    group: 'analysis',
   },
   {
-    id: 'source-receipts',
+    id: 'memos',
     number: 2,
-    title: 'Source Receipts',
-    navLabel: 'Receipts',
-    question: 'Which sources support the case file, where is evidence still thin?',
-    metric: 'Sources',
-    timeBudget: '5 min',
-    href: '#source-receipts',
-    group: 'context',
+    title: 'Memos',
+    navLabel: 'Memos',
+    question: 'Which saved analytical products should be drafted, refreshed, or versioned?',
+    metric: 'Products',
+    timeBudget: '1k assist',
+    href: '#memos',
+    group: 'production',
+    dependsOn: ['research'],
   },
   {
-    id: 'conflict-graph',
+    id: 'draft',
     number: 3,
-    title: 'Conflict Graph',
-    navLabel: 'Graph',
-    question: 'How do actors, events, claims, constraints, and commitments connect?',
-    metric: 'Graph',
-    timeBudget: '6 min',
-    href: '#conflict-graph',
-    group: 'context',
+    title: 'Draft',
+    navLabel: 'Draft',
+    question: 'What deliverable is actively being shaped with paragraph-level provenance?',
+    metric: 'Canvas',
+    timeBudget: '1k assist',
+    href: '#draft',
+    group: 'production',
+    dependsOn: ['memos'],
   },
   {
-    id: 'dialectica-reasoning',
+    id: 'ach',
     number: 4,
-    title: 'DIALECTICA Reasoning',
-    navLabel: 'DIALECTICA',
-    question: 'Which graph-grounded recipes turn evidence into policy judgment?',
+    title: 'ACH',
+    navLabel: 'ACH',
+    question: 'Which hypotheses survive the case graph and source receipts?',
+    metric: 'Matrices',
+    timeBudget: '8k recipe',
+    href: '#ach',
+    group: 'analysis',
+  },
+  {
+    id: 'tools',
+    number: 5,
+    title: 'Tools',
+    navLabel: 'Tools',
+    question: 'Which graph-grounded reasoning recipes should run against this case?',
     metric: 'Recipes',
-    timeBudget: '7 min',
-    href: '#dialectica-reasoning',
+    timeBudget: '8k recipe',
+    href: '#tools',
     group: 'tools',
   },
   {
-    id: 'decision-product',
-    number: 5,
-    title: 'Decision Product',
-    navLabel: 'Product',
-    question: 'What can the analyst brief, save, edit, and defend with provenance?',
-    metric: 'Outputs',
-    timeBudget: '5 min',
-    href: '#decision-product',
-    group: 'tools',
+    id: 'boardroom',
+    number: 6,
+    title: 'Boardroom',
+    navLabel: 'Boardroom',
+    question: 'Which briefing or deliberation needs graph-cited synthesis?',
+    metric: 'Briefings',
+    timeBudget: '8k recipe',
+    href: '#boardroom',
+    group: 'production',
+    dependsOn: ['memos', 'draft'],
   },
 ];
 

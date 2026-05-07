@@ -9,11 +9,12 @@ import { cn } from '@/lib/utils/cn';
 interface WorkbenchChapterShellProps {
   chapter: WorkbenchChapterDescriptor;
   active: boolean;
+  locked?: boolean;
   children: ReactNode;
   onOpen: (id: WorkbenchChapterDescriptor['id']) => void;
 }
 
-export function WorkbenchChapterShell({ chapter, active, children, onOpen }: WorkbenchChapterShellProps) {
+export function WorkbenchChapterShell({ chapter, active, locked = false, children, onOpen }: WorkbenchChapterShellProps) {
   const Icon = active ? ChevronDown : ChevronRight;
   const reduceMotion = useReducedMotion();
 
@@ -32,6 +33,7 @@ export function WorkbenchChapterShell({ chapter, active, children, onOpen }: Wor
       <button
         type="button"
         onClick={() => onOpen(chapter.id)}
+        disabled={locked}
         className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 text-left sm:px-5"
         aria-expanded={active}
         aria-controls={`${chapter.id}-panel`}
@@ -50,10 +52,15 @@ export function WorkbenchChapterShell({ chapter, active, children, onOpen }: Wor
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
               {chapter.group}
             </span>
+            {locked ? (
+              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+                always on
+              </span>
+            ) : null}
           </span>
           <span className="mt-1 block text-sm leading-5 text-slate-600">{chapter.question}</span>
         </span>
-        <span className="text-slate-400">
+        <span className={locked ? 'text-slate-300' : 'text-slate-500'}>
           <Icon className="h-5 w-5" />
         </span>
       </button>

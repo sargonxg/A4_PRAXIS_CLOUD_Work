@@ -13,20 +13,20 @@ export function StructuredChapterContent({ chapterId }: { chapterId: WorkbenchCh
   const { caseId, caseModule, situation } = useWorkbenchScope();
   const surface = buildWorkbenchSurfaceState(caseModule, caseId);
 
-  if (chapterId === 'dialectica-reasoning') {
+  if (chapterId === 'tools') {
     return (
       <div className="space-y-4">
-        <SurfaceFactGrid facts={surface.chapterFacts[chapterId]} />
+        <SurfaceFactGrid facts={surface.chapterFacts.tools} />
         <div className="grid gap-3 md:grid-cols-3">
-          <ChapterLink href={`/app/workbench/${caseId}?tab=tools`} icon={Sparkles} title="Recommended tools" detail="Run advisory tools against the current case graph." />
-          <ChapterLink href={`/app/workbench/${caseId}?tab=ach`} icon={GitBranch} title="ACH check" detail="Compare hypotheses before promoting a decision line." />
+          <ChapterLink href={`/app/workbench/${caseId}?tab=graph`} icon={GitBranch} title="Inspect graph" detail="Run recipes after checking the current graph backbone." />
           <ChapterLink href={`/app/workbench/${caseId}?tab=context`} icon={Library} title="Context gaps" detail="Resolve the questions that would change the output." />
+          <ChapterLink href={`/app/workbench/${caseId}#memos`} icon={Sparkles} title="Save as memo" detail="Promote useful outputs into editable products." />
         </div>
       </div>
     );
   }
 
-  if (chapterId === 'decision-product') {
+  if (chapterId === 'boardroom' || chapterId === 'draft' || chapterId === 'memos') {
     return (
       <div className="space-y-4">
         <SurfaceFactGrid facts={surface.chapterFacts[chapterId]} />
@@ -38,8 +38,8 @@ export function StructuredChapterContent({ chapterId }: { chapterId: WorkbenchCh
                 Start from the current graph and receipts, draft in Memo Studio, then export when provenance and open questions are acceptable for the audience.
               </p>
             </div>
-            <Link href={`/app/workbench/${caseId}?tab=memos`} className="inline-flex items-center gap-2 rounded-md bg-navy-900 px-3 py-2 text-sm font-semibold text-white">
-              Open Memo Studio
+            <Link href={`/app/workbench/${caseId}#memos`} className="inline-flex items-center gap-2 rounded-md bg-navy-900 px-3 py-2 text-sm font-semibold text-white">
+              Open product pane
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -48,20 +48,20 @@ export function StructuredChapterContent({ chapterId }: { chapterId: WorkbenchCh
     );
   }
 
-  if (chapterId === 'conflict-graph') {
+  if (chapterId === 'ach') {
     return (
       <div className="space-y-4">
-        <SurfaceFactGrid facts={surface.chapterFacts[chapterId]} />
+        <SurfaceFactGrid facts={surface.chapterFacts.ach} />
         <PraxisGraphView graph={buildWorkbenchCaseGraph(caseModule)} initialLayout="force" persistToUrl={false} />
         <SurfaceQuestionList questions={surface.openQuestions.filter((question) => question.id === 'graph' || question.id === 'health')} />
       </div>
     );
   }
 
-  if (chapterId === 'source-receipts') {
+  if (chapterId === 'research') {
     return (
       <div className="space-y-4">
-        <SurfaceFactGrid facts={surface.chapterFacts[chapterId]} />
+        <SurfaceFactGrid facts={surface.chapterFacts.research} />
         <div className="grid gap-3 md:grid-cols-2">
           {caseModule.sources.slice(0, 4).map((source) => (
             <a
@@ -78,7 +78,7 @@ export function StructuredChapterContent({ chapterId }: { chapterId: WorkbenchCh
           {caseModule.sources.length === 0 ? (
             <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
               <p className="text-sm font-semibold text-amber-950">No receipts accepted yet</p>
-              <p className="mt-1 text-sm leading-5 text-amber-900">Add sources in Context Studio so generated claims have visible provenance.</p>
+              <p className="mt-1 text-sm leading-5 text-amber-900">Add sources in Context so generated claims have visible provenance.</p>
             </div>
           ) : null}
         </div>
@@ -88,7 +88,7 @@ export function StructuredChapterContent({ chapterId }: { chapterId: WorkbenchCh
 
   return (
     <div className="space-y-4">
-      <SurfaceFactGrid facts={surface.chapterFacts['situation-frame']} />
+      <SurfaceFactGrid facts={surface.chapterFacts.desk} />
       <div className="rounded-md border border-slate-200 bg-white p-4">
         <div className="flex items-start gap-3">
           <FileText className="mt-0.5 h-4 w-4 text-gold-700" />

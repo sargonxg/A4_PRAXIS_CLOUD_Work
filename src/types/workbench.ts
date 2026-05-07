@@ -1,21 +1,30 @@
-export type WorkbenchTabId =
-  | 'chapters'
-  | 'desk'
+export type WorkspaceTabId =
   | 'context'
   | 'library'
+  | 'ontology'
+  | 'graph';
+
+export type WorkbenchLegacySurfaceId =
+  | 'chapters'
+  | 'desk'
   | 'research'
   | 'memory'
-  | 'ontology'
-  | 'graph'
   | 'ach'
   | 'tools'
   | 'memos'
   | 'boardroom'
   | 'draft';
 
+export type WorkbenchTabId = WorkspaceTabId | WorkbenchLegacySurfaceId;
+
 export interface WorkbenchTabDescriptor {
-  id: WorkbenchTabId;
+  id: WorkspaceTabId;
   label: string;
+  shortTitle: string;
   summary: string;
-  group: 'overview' | 'context' | 'tools';
+  icon: 'book-open' | 'library' | 'boxes' | 'git-branch';
+  position: 1 | 2 | 3 | 4;
+  requiredForHealth: boolean;
+  featureFlag: string;
+  group: 'substrate';
 }

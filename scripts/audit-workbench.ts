@@ -14,6 +14,16 @@ const requiredFiles = [
   'src/components/workbench/workbench-tab-content.tsx',
   'src/components/workbench/chapter-shell.tsx',
   'src/components/workbench/chapter-renderer.tsx',
+  'src/tabs/registry.ts',
+  'src/chapters/registry.ts',
+  'src/hooks/useOrchestratorEvents.ts',
+  'backend/routers/tabs.py',
+  'backend/routers/chapters.py',
+  'backend/routers/workspace.py',
+  'backend/services/workspace_orchestrator/log.py',
+  'backend/services/cognee_aco_models.py',
+  'backend/mcp/praxis_server.py',
+  'docs/implementation/WORKSPACE_TABS_CHAPTERS_FOUNDATION.md',
   'src/components/workbench/StructuredChapterContent.tsx',
   'src/components/workbench/DeskTab.tsx',
   'src/components/workbench/desk/WhatChangedPanel.tsx',
@@ -115,13 +125,13 @@ for (const file of requiredFiles) {
   }
 }
 
-const expectedTabs = ['chapters', 'desk', 'context', 'library', 'research', 'ontology', 'graph', 'ach', 'tools', 'memos', 'boardroom', 'draft'];
+const expectedTabs = ['context', 'library', 'ontology', 'graph'];
 const actualTabs = WORKBENCH_TABS.map((tab) => tab.id);
 if (actualTabs.join(',') !== expectedTabs.join(',')) {
   throw new Error(`Workbench tabs mismatch: ${actualTabs.join(',')}`);
 }
 
-const expectedChapters = ['situation-frame', 'source-receipts', 'conflict-graph', 'dialectica-reasoning', 'decision-product'];
+const expectedChapters = ['desk', 'research', 'memos', 'draft', 'ach', 'tools', 'boardroom'];
 const actualChapters = WORKBENCH_CHAPTER_FLOW.map((chapter) => chapter.id);
 if (actualChapters.join(',') !== expectedChapters.join(',')) {
   throw new Error(`Workbench chapters mismatch: ${actualChapters.join(',')}`);
@@ -139,18 +149,27 @@ for (const path of ['src/components/workbench/chapter-shell.tsx', 'src/component
 }
 
 const tabContent = readFileSync('src/components/workbench/workbench-tab-content.tsx', 'utf8');
-for (const marker of ['<DeskTab />', '<ContextTab />', '<LibraryTab />', '<ResearchTab />', '<DraftTab />', '<EmptyStateGuidance', '<WorkbenchChapterRenderer />']) {
+for (const marker of ['<ContextTab />', '<LibraryTab />', '<OntologySchemaViewer />', '<WorkbenchGraphPanel />', '<EmptyStateGuidance']) {
   if (!tabContent.includes(marker)) {
     throw new Error(`Workbench tab content missing surface dispatch: ${marker}`);
   }
 }
 
 const chapterRenderer = readFileSync('src/components/workbench/chapter-renderer.tsx', 'utf8');
-if (!chapterRenderer.includes('renderLayeredChapterContent')) {
-  throw new Error('Chapters must use the Pack 26 layered content dispatcher for user cases.');
+for (const marker of ['<DeskTab />', '<ResearchTab />', '<MemoStudio />', '<DraftTab />', '<ACHIndex', '<ToolMarketplace />', '<BoardroomIndex']) {
+  if (!chapterRenderer.includes(marker)) {
+    throw new Error(`Chapter renderer missing seven-chapter component: ${marker}`);
+  }
 }
 if (/GenericChapterContent|The default case flow/i.test(chapterRenderer)) {
   throw new Error('Chapter renderer still contains generic placeholder fallback copy.');
+}
+
+const foundationDoc = readFileSync('docs/implementation/WORKSPACE_TABS_CHAPTERS_FOUNDATION.md', 'utf8');
+for (const marker of ['Context', 'Library', 'Ontology', 'Graph', 'Desk, always on', 'Research', 'Boardroom']) {
+  if (!foundationDoc.includes(marker)) {
+    throw new Error(`Workspace foundation doc missing marker: ${marker}`);
+  }
 }
 
 const chapterLayers = readFileSync('src/lib/workbench/chapter-content-layer.ts', 'utf8');

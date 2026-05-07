@@ -6,10 +6,10 @@ import { SyriaChapterConflictGraph } from '@/components/syria/chapter-3-conflict
 import { SyriaChapterDialectica } from '@/components/syria/chapter-4-dialectica';
 import { SyriaChapterDecisionProduct } from '@/components/syria/chapter-5-decision-product';
 
-export const syria2026Chapters: Record<WorkbenchChapterId, () => ReactNode> = {
-  'situation-frame': () => <SyriaChapterSituationFrame />,
-  'source-receipts': () => <SyriaChapterSourceReceipts />,
-  'conflict-graph': () => <SyriaChapterConflictGraph />,
-  'dialectica-reasoning': () => <SyriaChapterDialectica />,
-  'decision-product': () => <SyriaChapterDecisionProduct />,
+export const syria2026Chapters: Partial<Record<WorkbenchChapterId, () => ReactNode>> = {
+  desk: () => <SyriaChapterSituationFrame />,
+  research: () => <SyriaChapterSourceReceipts />,
+  ach: () => <SyriaChapterConflictGraph />,
+  tools: () => <SyriaChapterDialectica />,
+  memos: () => <SyriaChapterDecisionProduct />,
 };

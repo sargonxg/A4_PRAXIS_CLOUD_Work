@@ -1,27 +1,58 @@
-import type { WorkbenchTabDescriptor, WorkbenchTabId } from '@/types/workbench';
+import type { WorkbenchTabDescriptor, WorkspaceTabId } from '@/types/workbench';
 
 export const WORKBENCH_TABS: WorkbenchTabDescriptor[] = [
-  { id: 'chapters', label: 'Chapters', summary: 'Frame, receipts, graph, reasoning, and decision product.', group: 'context' },
-  { id: 'desk', label: 'Desk', summary: 'Case status, what changed, activity, and next actions.', group: 'overview' },
-  { id: 'context', label: 'Context', summary: 'Build the case frame, actors, sources, documents, and graph proposals.', group: 'context' },
-  { id: 'library', label: 'Library', summary: 'Sources, documents, saved claims, and work products.', group: 'context' },
-  { id: 'research', label: 'Research', summary: 'Source Scout, deep research, and staged collection plans.', group: 'context' },
-  { id: 'memory', label: 'Memory', summary: 'Cognee recall, session memory, and candidate review queue.', group: 'context' },
-  { id: 'ontology', label: 'Ontology', summary: 'Case ontology, primitives, validators, and recommended tool mappings.', group: 'context' },
-  { id: 'graph', label: 'Graph', summary: 'GraphOps, conflict graph, paths, and projection checks.', group: 'context' },
-  { id: 'ach', label: 'ACH', summary: 'Analysis of Competing Hypotheses matrix and ranking.', group: 'tools' },
-  { id: 'tools', label: 'Tools', summary: 'Curated marketplace for ontology-aware analysis tools.', group: 'tools' },
-  { id: 'memos', label: 'Memos', summary: 'Template-based memo studio with graph citations and export preparation.', group: 'tools' },
-  { id: 'boardroom', label: 'Boardroom', summary: 'Advisor deliberation and option synthesis.', group: 'tools' },
-  { id: 'draft', label: 'Draft', summary: 'Briefing, memo, talking points, and export workspace.', group: 'tools' },
+  {
+    id: 'context',
+    label: 'Context',
+    shortTitle: 'Context',
+    summary: 'Situation frame, scope, actors, claims, and context advisories.',
+    icon: 'book-open',
+    position: 1,
+    requiredForHealth: true,
+    featureFlag: 'workspace.tabs.context',
+    group: 'substrate',
+  },
+  {
+    id: 'library',
+    label: 'Library',
+    shortTitle: 'Library',
+    summary: 'Source receipts, documents, saved claims, and exported products.',
+    icon: 'library',
+    position: 2,
+    requiredForHealth: true,
+    featureFlag: 'workspace.tabs.library',
+    group: 'substrate',
+  },
+  {
+    id: 'ontology',
+    label: 'Ontology',
+    shortTitle: 'Ontology',
+    summary: 'ACO primitives, validators, candidates, and promotion posture.',
+    icon: 'boxes',
+    position: 3,
+    requiredForHealth: true,
+    featureFlag: 'workspace.tabs.ontology',
+    group: 'substrate',
+  },
+  {
+    id: 'graph',
+    label: 'Graph',
+    shortTitle: 'Graph',
+    summary: 'Canonical graph, candidate overlay, timeline, and provenance.',
+    icon: 'git-branch',
+    position: 4,
+    requiredForHealth: true,
+    featureFlag: 'workspace.tabs.graph',
+    group: 'substrate',
+  },
 ];
 
 export const WORKBENCH_TAB_IDS = WORKBENCH_TABS.map((tab) => tab.id);
 
-export function isWorkbenchTabId(value: string | null | undefined): value is WorkbenchTabId {
-  return WORKBENCH_TAB_IDS.includes(value as WorkbenchTabId);
+export function isWorkbenchTabId(value: string | null | undefined): value is WorkspaceTabId {
+  return WORKBENCH_TAB_IDS.includes(value as WorkspaceTabId);
 }
 
-export function normalizeWorkbenchTab(value: string | null | undefined): WorkbenchTabId {
-  return isWorkbenchTabId(value) ? value : 'chapters';
+export function normalizeWorkbenchTab(value: string | null | undefined): WorkspaceTabId | null {
+  return isWorkbenchTabId(value) ? value : null;
 }

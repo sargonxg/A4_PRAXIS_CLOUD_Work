@@ -15,7 +15,7 @@ interface WorkbenchScopeValue {
   situation: Situation;
   user: ReturnType<typeof useAuth>['user'];
   analystProfile: ReturnType<typeof useAuth>['analystProfile'];
-  activeTab: WorkbenchTabId;
+  activeTab: WorkbenchTabId | null;
   isExampleCase: boolean;
 }
 
@@ -27,7 +27,7 @@ export function WorkbenchScopeProvider({
   children,
 }: {
   caseId: string;
-  activeTab: WorkbenchTabId;
+  activeTab: WorkbenchTabId | null;
   children: ReactNode;
 }) {
   const { user, analystProfile } = useAuth();

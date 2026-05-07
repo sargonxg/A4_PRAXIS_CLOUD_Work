@@ -29,11 +29,13 @@ const structuredLayer: ChapterContentLayer = {
 };
 
 export const CHAPTER_LAYERS: Record<WorkbenchChapterId, ChapterContentLayer[]> = {
-  'situation-frame': [structuredLayer],
-  'source-receipts': [structuredLayer],
-  'conflict-graph': [structuredLayer],
-  'dialectica-reasoning': [structuredLayer],
-  'decision-product': [structuredLayer],
+  desk: [structuredLayer],
+  research: [structuredLayer],
+  memos: [structuredLayer],
+  draft: [structuredLayer],
+  ach: [structuredLayer],
+  tools: [structuredLayer],
+  boardroom: [structuredLayer],
 };
 
 export function renderLayeredChapterContent(input: {
