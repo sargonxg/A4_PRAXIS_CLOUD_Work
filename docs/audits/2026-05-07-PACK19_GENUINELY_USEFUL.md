@@ -103,9 +103,9 @@ production builds:
 
 Deployment:
 
-- Commit deployed: `5d2bb3c`
+- Commit deployed: `eefcec8`
 - Command: `npm run deploy:frontend:cloud`
-- Cloud Build: `54d97487-ef2a-42d6-937d-59c0962bb97c`
+- Cloud Build: `907cbf0c-0135-4e38-a01c-c014217aeef5`
 - Status: `SUCCESS`
 
 Live smoke against `https://praxis.tacitus.me/app/workbench/syria-2026?tab=tools`
@@ -115,4 +115,6 @@ after demo-session entry:
 |---|---|
 | Tools marketplace | Rendered with `data-testid="tool-marketplace"` |
 | Transparency cards | 11 visible in the filtered default marketplace view |
+| Tool-run evidence drawer | Live demo session completed a marketplace run and verified claims/provenance, context snapshot, and raw output sections |
+| Run comparison | Live Compare control opened the run comparison panel |
 | Browser errors | 0 console errors, 0 page errors |

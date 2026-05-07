@@ -89,8 +89,9 @@ can open an evidence drawer with claims, provenance, context snapshot,
 advisories, raw output, handler posture, and metadata, and can compare raw
 output against the previous persisted run for the same tool. The transparency
 slice is deployed to `https://praxis.tacitus.me` via Cloud Build
-`54d97487-ef2a-42d6-937d-59c0962bb97c`; the evidence-drawer slice is pending
-fresh deployment evidence.
+`54d97487-ef2a-42d6-937d-59c0962bb97c`; the evidence-drawer slice is deployed
+via Cloud Build `907cbf0c-0135-4e38-a01c-c014217aeef5` and live-smoked on the
+tools tab with zero console/page errors.
 
 ## Remaining Work
 
