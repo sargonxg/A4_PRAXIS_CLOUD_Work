@@ -186,6 +186,8 @@ async def coach_context(req: CoachRequest, token: dict = Depends(verify_firebase
 @router.post("/library/ingest")
 async def ingest_library_source(
     case_id: str = Query(..., min_length=1, max_length=128),
+    case_type: str | None = Query(default=None, max_length=96),
+    case_type_secondary: str | None = Query(default=None, max_length=96),
     file: UploadFile = File(...),
     token: dict = Depends(verify_firebase_token),
 ) -> dict[str, Any]:
@@ -204,7 +206,12 @@ async def ingest_library_source(
             case_id,
             title,
             file.content_type or "document",
-            {"filename": title, "bytes": len(content)},
+            {
+                "filename": title,
+                "bytes": len(content),
+                "caseType": case_type,
+                "caseTypeSecondary": case_type_secondary,
+            },
         )
         source_id = str(rows[0]["id"])
 
@@ -224,7 +231,14 @@ async def ingest_library_source(
             scope=scope,
             content=content.decode("utf-8", errors="ignore")[:200_000],
             source_id=source_id,
-            metadata={"filename": title, "source": "library_upload"},
+            metadata={
+                "filename": title,
+                "source": "library_upload",
+                "caseType": case_type,
+                "caseTypeSecondary": case_type_secondary,
+            },
+            case_type=case_type,
+            case_type_secondary=case_type_secondary,
         )
     except Exception as exc:
         cognify_status = {"ok": False, "status": "queued_retry", "error": str(exc)}
@@ -309,6 +323,8 @@ async def get_source_detail(source_id: str, token: dict = Depends(verify_firebas
 async def reextract_source(
     source_id: str,
     case_id: str = Query(..., min_length=1, max_length=128),
+    case_type: str | None = Query(default=None, max_length=96),
+    case_type_secondary: str | None = Query(default=None, max_length=96),
     token: dict = Depends(verify_firebase_token),
 ) -> dict[str, Any]:
     scope = MemoryScope(owner_uid=token["uid"], case_id=case_id)
@@ -317,7 +333,13 @@ async def reextract_source(
             scope=scope,
             content=f"Re-extract source receipt {source_id}",
             source_id=source_id,
-            metadata={"source": "library_reextract"},
+            metadata={
+                "source": "library_reextract",
+                "caseType": case_type,
+                "caseTypeSecondary": case_type_secondary,
+            },
+            case_type=case_type,
+            case_type_secondary=case_type_secondary,
         )
     except Exception as exc:
         status = {"ok": False, "status": "queued_retry", "error": str(exc)}

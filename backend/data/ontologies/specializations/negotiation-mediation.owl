@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:base="https://tacitus.me/praxis/ontology/base#">
+  <owl:Ontology rdf:about="https://tacitus.me/praxis/ontology/specializations/negotiation-mediation"><owl:imports rdf:resource="https://tacitus.me/praxis/ontology/base"/><owl:versionInfo>2026.05.07</owl:versionInfo><base:caseType>negotiation-mediation</base:caseType></owl:Ontology>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/negotiation-mediation#Party"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Actor"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/negotiation-mediation#Mediator"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Actor"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/negotiation-mediation#Position"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Interest"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/negotiation-mediation#Interest"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Interest"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/negotiation-mediation#BATNA"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Constraint"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/negotiation-mediation#ZOPA"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Constraint"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/negotiation-mediation#AgendaItem"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Event"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/negotiation-mediation#ConfidenceBuildingMeasure"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Commitment"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/negotiation-mediation#MediationSession"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Event"/></owl:Class>
+  <owl:NamedIndividual rdf:about="https://tacitus.me/praxis/ontology/negotiation-mediation#RegionalMediationPanel"><rdf:type rdf:resource="https://tacitus.me/praxis/ontology/negotiation-mediation#Mediator"/></owl:NamedIndividual>
+</rdf:RDF>

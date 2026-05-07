@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:base="https://tacitus.me/praxis/ontology/base#">
+  <owl:Ontology rdf:about="https://tacitus.me/praxis/ontology/specializations/strategic-competition"><owl:imports rdf:resource="https://tacitus.me/praxis/ontology/base"/><owl:versionInfo>2026.05.07</owl:versionInfo><base:caseType>strategic-competition</base:caseType></owl:Ontology>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/strategic-competition#StrategicActor"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Actor"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/strategic-competition#InfluenceAsset"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Leverage"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/strategic-competition#RedLine"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Constraint"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/strategic-competition#DeterrenceClaim"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Claim"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/strategic-competition#AllianceCommitment"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Commitment"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/strategic-competition#SignalingEvent"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Event"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/strategic-competition#EscalationLadder"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Constraint"/></owl:Class>
+</rdf:RDF>

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:base="https://tacitus.me/praxis/ontology/base#">
+  <owl:Ontology rdf:about="https://tacitus.me/praxis/ontology/specializations/counter-terrorism"><owl:imports rdf:resource="https://tacitus.me/praxis/ontology/base"/><owl:versionInfo>2026.05.07</owl:versionInfo><base:caseType>counter-terrorism</base:caseType></owl:Ontology>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/counter-terrorism#Cell"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Actor"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/counter-terrorism#NetworkNode"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Actor"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/counter-terrorism#ThreatClaim"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Claim"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/counter-terrorism#FinancingChannel"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Leverage"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/counter-terrorism#OperationalCapability"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Constraint"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/counter-terrorism#DesignationEvent"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Event"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/counter-terrorism#DisruptionOperation"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Event"/></owl:Class>
+</rdf:RDF>

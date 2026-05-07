@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:base="https://tacitus.me/praxis/ontology/base#">
+  <owl:Ontology rdf:about="https://tacitus.me/praxis/ontology/specializations/active-conflict">
+    <owl:imports rdf:resource="https://tacitus.me/praxis/ontology/base"/>
+    <owl:versionInfo>2026.05.07</owl:versionInfo>
+    <base:caseType>active-conflict</base:caseType>
+  </owl:Ontology>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/active-conflict#State"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Actor"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/active-conflict#NonStateArmedGroup"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Actor"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/active-conflict#Frontline"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Constraint"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/active-conflict#TerritorialClaim"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Claim"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/active-conflict#CeasefireCommitment"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Commitment"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/active-conflict#EscalationEvent"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Event"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/active-conflict#HumanitarianAccessConstraint"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Constraint"/></owl:Class>
+  <owl:NamedIndividual rdf:about="https://tacitus.me/praxis/ontology/active-conflict#CeasefireMonitoringTeam"><rdf:type rdf:resource="https://tacitus.me/praxis/ontology/base#Actor"/></owl:NamedIndividual>
+</rdf:RDF>

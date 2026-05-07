@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:base="https://tacitus.me/praxis/ontology/base#">
+  <owl:Ontology rdf:about="https://tacitus.me/praxis/ontology/specializations/frozen-conflict"><owl:imports rdf:resource="https://tacitus.me/praxis/ontology/base"/><owl:versionInfo>2026.05.07</owl:versionInfo><base:caseType>frozen-conflict</base:caseType></owl:Ontology>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/frozen-conflict#DeFactoAuthority"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Actor"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/frozen-conflict#AdministrativeBoundary"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Constraint"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/frozen-conflict#FrozenLineOfContact"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Constraint"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/frozen-conflict#RecognitionClaim"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Claim"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/frozen-conflict#StatusNegotiation"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Event"/></owl:Class>
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/frozen-conflict#MonitoringMechanism"><rdfs:subClassOf rdf:resource="https://tacitus.me/praxis/ontology/base#Commitment"/></owl:Class>
+</rdf:RDF>

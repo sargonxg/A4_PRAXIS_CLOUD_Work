@@ -11,10 +11,17 @@ from enum import StrEnum
 from typing import Any
 
 from config import get_settings
+from services.ontology_system import (
+    BASE_ONTOLOGY_FILE,
+    data_point_class_names,
+    data_point_classes_for_case_types,
+    ontology_resolver_descriptor,
+    ontology_stack_for_case_types,
+)
 
 SUPPORTED_MODES = {"postgres-kuzu", "neo4j", "postgres-only-vector", "disabled"}
 COGNEE_DATASET_SEPARATOR = "__"
-ACO_ONTOLOGY_FILE = "praxis_aco.owl"
+ACO_ONTOLOGY_FILE = BASE_ONTOLOGY_FILE
 
 
 class CogneeSearchMode(StrEnum):
@@ -64,6 +71,44 @@ class SearchAudit:
     mode: CogneeSearchMode
     save_interaction: bool = True
     surface_key: str | None = None
+
+
+@dataclass(frozen=True)
+class OntologyRuntime:
+    ontology_file_paths: tuple[str, ...]
+    data_point_classes: tuple[type[Any], ...]
+    resolver: dict[str, Any]
+
+    @property
+    def data_point_class_names(self) -> tuple[str, ...]:
+        return tuple(cls.__name__ for cls in self.data_point_classes)
+
+
+def _ontology_stack(
+    *,
+    case_type: str | None,
+    case_type_secondary: str | None,
+    ontology_file_path: str,
+) -> tuple[str, ...]:
+    if case_type or case_type_secondary or ontology_file_path == ACO_ONTOLOGY_FILE:
+        return ontology_stack_for_case_types(case_type, case_type_secondary)
+    return (ontology_file_path,)
+
+
+def get_resolver(
+    *,
+    case_type: str | None = None,
+    case_type_secondary: str | None = None,
+) -> dict[str, Any]:
+    return ontology_resolver_descriptor(case_type, case_type_secondary)
+
+
+def get_data_points(
+    *,
+    case_type: str | None = None,
+    case_type_secondary: str | None = None,
+) -> tuple[type[Any], ...]:
+    return data_point_classes_for_case_types(case_type, case_type_secondary)
 
 
 def is_enabled() -> bool:
@@ -178,19 +223,34 @@ async def cognify(
     metadata: dict[str, Any] | None = None,
     ontology_file_path: str = ACO_ONTOLOGY_FILE,
     temporal_cognify: bool = True,
+    case_type: str | None = None,
+    case_type_secondary: str | None = None,
+    custom_data_points: list[type[Any]] | None = None,
 ) -> dict[str, Any]:
     """Run ontology-grounded extraction for a source payload.
 
     The disabled path returns a queued shape so callers can keep their UX honest
     without pretending extraction completed.
     """
+    ontology_file_paths = _ontology_stack(
+        case_type=case_type,
+        case_type_secondary=case_type_secondary,
+        ontology_file_path=ontology_file_path,
+    )
+    data_point_names = data_point_class_names(case_type, case_type_secondary)
+    if custom_data_points:
+        data_point_names = data_point_names + tuple(cls.__name__ for cls in custom_data_points)
+    resolver = get_resolver(case_type=case_type, case_type_secondary=case_type_secondary)
     if not is_enabled():
         return {
             "ok": False,
             "status": "queued_disabled",
             "dataset": scope.dataset,
             "sourceId": source_id,
-            "ontologyFilePath": ontology_file_path,
+            "ontologyFilePath": ontology_file_paths[0],
+            "ontologyFilePaths": list(ontology_file_paths),
+            "dataPointClasses": list(data_point_names),
+            "resolver": resolver,
             "temporalCognify": temporal_cognify,
         }
     _ = (content, metadata)

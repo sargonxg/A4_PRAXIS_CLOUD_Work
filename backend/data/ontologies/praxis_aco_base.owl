@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<rdf:RDF
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+  xmlns:owl="http://www.w3.org/2002/07/owl#"
+  xmlns:praxis="https://tacitus.me/praxis/ontology/base#">
+
+  <owl:Ontology rdf:about="https://tacitus.me/praxis/ontology/base">
+    <owl:versionInfo>2026.05.07</owl:versionInfo>
+    <rdfs:comment>PRAXIS base Analytical Concepts Ontology shared by every case-type specialization.</rdfs:comment>
+  </owl:Ontology>
+
+  <owl:AnnotationProperty rdf:about="https://tacitus.me/praxis/ontology/base#caseType"/>
+  <owl:AnnotationProperty rdf:about="https://tacitus.me/praxis/ontology/base#primitive"/>
+
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/base#Actor">
+    <rdfs:label>Actor</rdfs:label>
+    <rdfs:comment>A person, group, institution, platform, network, or coalition with agency in the situation.</rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/base#Claim">
+    <rdfs:label>Claim</rdfs:label>
+    <rdfs:comment>An asserted proposition, assessment, allegation, or interpretation grounded in source material.</rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/base#Interest">
+    <rdfs:label>Interest</rdfs:label>
+    <rdfs:comment>A need, priority, incentive, preference, or desired outcome attributed to an actor.</rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/base#Constraint">
+    <rdfs:label>Constraint</rdfs:label>
+    <rdfs:comment>A hard or soft limit on action, movement, bargaining space, resources, legitimacy, or time.</rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/base#Leverage">
+    <rdfs:label>Leverage</rdfs:label>
+    <rdfs:comment>A source of influence, pressure, inducement, access, dependency, or bargaining power.</rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/base#Commitment">
+    <rdfs:label>Commitment</rdfs:label>
+    <rdfs:comment>A promise, obligation, guarantee, pledge, undertaking, or agreed course of action.</rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/base#Event">
+    <rdfs:label>Event</rdfs:label>
+    <rdfs:comment>A temporally situated occurrence or episode, including valid_from and optional valid_to evidence.</rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="https://tacitus.me/praxis/ontology/base#Narrative">
+    <rdfs:label>Narrative</rdfs:label>
+    <rdfs:comment>A framing, story, message, or public account used to shape interpretation and audience response.</rdfs:comment>
+  </owl:Class>
+
+  <owl:NamedIndividual rdf:about="https://tacitus.me/praxis/ontology/base#InternationalContactGroup">
+    <rdf:type rdf:resource="https://tacitus.me/praxis/ontology/base#Actor"/>
+    <rdfs:label>International Contact Group</rdfs:label>
+  </owl:NamedIndividual>
+
+  <owl:NamedIndividual rdf:about="https://tacitus.me/praxis/ontology/base#RegionalMediationPanel">
+    <rdf:type rdf:resource="https://tacitus.me/praxis/ontology/base#Actor"/>
+    <rdfs:label>Regional Mediation Panel</rdfs:label>
+  </owl:NamedIndividual>
+</rdf:RDF>
