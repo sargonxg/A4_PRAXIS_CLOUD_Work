@@ -31,11 +31,12 @@ posture, prompt storage, and audit coverage.
   Gemini and text-embedding provider path explicit.
 - Second-pass hardening: `audit:extraction-wave` now checks these invariants and
   the regression tests that guard them.
-- Second-pass hardening: Docling and GLiNER Cloud Build configs now deploy the
 - Third-pass deployment reality check: the project has `praxis`, not
   `praxis-workers`, as the active Artifact Registry repository. All three worker
   deploy configs now target the existing `praxis` repository and deny public
   unauthenticated invocation.
+- Fourth-pass verification: Pack 29-31 audit gates, focused Pack 30 tests,
+  typecheck, build, full Vitest, and GCP hard checks passed on 2026-05-07.
 
 ## GLiNER cost reduction
 
@@ -74,3 +75,7 @@ metrics to Cloud Monitoring.
   contract.
 - Run a real corpus benchmark comparing baseline extraction cost against the
   GLiNER recall plus precision extraction path.
+
+On 2026-05-07, `gcloud run services list --region=us-central1
+--project=praxisbytacitus` showed the core PRAXIS services live, but not
+`extract-docling`, `extract-ner-gliner`, or `extract-graphrag`.

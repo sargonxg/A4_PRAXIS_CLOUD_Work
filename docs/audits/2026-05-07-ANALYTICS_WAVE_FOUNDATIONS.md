@@ -31,6 +31,8 @@ sanctions matching scaffolding, and policy simulation scaffolding.
 - Second-pass hardening: the ABM worker deploy config now targets the existing
   `praxis` Artifact Registry repository, not the nonexistent `praxis-workers`
   repository.
+- Third-pass verification: Pack 29-31 audit gates, focused Pack 31 tests,
+  typecheck, build, full Vitest, and GCP hard checks passed on 2026-05-07.
 
 ## Deployment Reality
 

@@ -16,6 +16,8 @@ Date: 2026-05-07
 - Second-pass hardening: Timeline item selection updates the inspector.
 - Second-pass hardening: Desk > What changed includes the Pack 29 inline chronology panel, without adding a new top-level tab.
 - Second-pass hardening: visualization audit now enforces entity panel coverage, Desk timeline coverage, MapTiler fallback, and E2E file presence.
+- Third-pass verification: Pack 29-31 audit gates, focused visualization E2E,
+  typecheck, build, full Vitest, and GCP hard checks passed on 2026-05-07.
 
 ## Verification Targets
 
