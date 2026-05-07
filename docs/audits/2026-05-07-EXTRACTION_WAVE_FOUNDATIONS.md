@@ -21,6 +21,16 @@ posture, prompt storage, and audit coverage.
   `cross.community-synthesizer` in the existing `cross` category.
 - ADR 0047 and conflict data source documentation.
 - Active ACLED code paths removed from `src`, `backend`, `scripts`, and `tests`.
+- Second-pass hardening: Docling chunking now handles Docling's top-level
+  `tables` collection, not only text items labelled as tables.
+- Second-pass hardening: GraphRAG relationship edges now survive external-id to
+  PRAXIS-id normalization.
+- Second-pass hardening: GraphRAG worker responses expose a runtime `$5`
+  ceiling and reject oversized runs before subprocess execution.
+- Second-pass hardening: committed Vertex/LiteLLM GraphRAG settings make the
+  Gemini and text-embedding provider path explicit.
+- Second-pass hardening: `audit:extraction-wave` now checks these invariants and
+  the regression tests that guard them.
 
 ## GLiNER cost reduction
 

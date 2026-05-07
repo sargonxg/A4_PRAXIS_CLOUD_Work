@@ -15,6 +15,30 @@ def test_graphrag_entities_map_to_aco_primitives():
     assert all(node["metadata"]["source"] == "graphrag" for node in output.nodes)
 
 
+def test_graphrag_relationships_preserve_edges_after_id_normalization():
+    output = graphrag_to_aco(
+        entities=[
+            {"id": "actor-1", "type": "organization", "name": "Mediation Team"},
+            {"id": "claim-1", "type": "proposition", "name": "Access is the central constraint"},
+        ],
+        relationships=[
+            {"source": "actor-1", "target": "claim-1", "type": "supports", "description": "Team reports access as central."}
+        ],
+        communities=[],
+    )
+
+    assert output.edges == [
+        {
+            "source": "mediation_team",
+            "target": "access_is_the_central_constraint",
+            "relation": "supports",
+            "confidence": "ASSESSED",
+            "description": "Team reports access as central.",
+            "source_file": "graphrag-community-synthesizer",
+        }
+    ]
+
+
 def test_graphrag_communities_are_synthesized_review_candidates():
     output = graphrag_to_aco(
         entities=[],

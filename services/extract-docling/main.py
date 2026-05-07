@@ -77,7 +77,7 @@ def _convert(path: Path) -> tuple[str, dict, int, int]:
     markdown = doc.export_to_markdown()
     doc_json = json.loads(doc.export_to_json())
     page_count = len(doc_json.get("pages", []))
-    table_count = len([item for item in doc_json.get("texts", []) if str(item.get("label", "")).lower() == "table"])
+    table_count = len(doc_json.get("tables", [])) + len([item for item in doc_json.get("texts", []) if str(item.get("label", "")).lower() == "table"])
     return markdown, doc_json, page_count, table_count
 
 

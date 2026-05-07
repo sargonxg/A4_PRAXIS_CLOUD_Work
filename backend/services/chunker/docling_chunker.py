@@ -63,11 +63,30 @@ def chunk_docling_document(doc: dict[str, Any], *, max_chars: int = 1800) -> lis
 
 
 def _extract_items(doc: dict[str, Any]) -> list[dict[str, Any]]:
-    for key in ("texts", "items", "body", "document_items"):
+    items: list[dict[str, Any]] = []
+    for key in ("texts", "items", "body", "document_items", "tables"):
         value = doc.get(key)
         if isinstance(value, list):
-            return [item for item in value if isinstance(item, dict)]
-    return []
+            items.extend(_tag_docling_items(value, fallback_label="table" if key == "tables" else "paragraph"))
+    return sorted(items, key=_order_key)
+
+
+def _tag_docling_items(items: list[Any], *, fallback_label: str) -> list[dict[str, Any]]:
+    tagged: list[dict[str, Any]] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        copy = dict(item)
+        copy.setdefault("label", fallback_label)
+        tagged.append(copy)
+    return tagged
+
+
+def _order_key(item: dict[str, Any]) -> tuple[int, int, str]:
+    page = _page(item) or 0
+    ref = str(item.get("self_ref") or item.get("id") or "")
+    order = item.get("order") or item.get("index")
+    return page, int(order) if isinstance(order, (int, float)) else 0, ref
 
 
 def _kind(item: dict[str, Any]) -> ChunkKind:

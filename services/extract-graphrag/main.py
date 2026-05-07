@@ -33,6 +33,7 @@ class SynthesizeRequest(BaseModel):
     chunks: list[Chunk]
     max_communities: int = 12
     dry_run: bool = False
+    cost_ceiling_usd: float = Field(default=5.0, gt=0, le=5.0)
 
 
 class CommunitySummary(BaseModel):
@@ -52,10 +53,18 @@ def healthz() -> dict[str, str]:
 def synthesize(req: SynthesizeRequest) -> dict[str, Any]:
     if not req.chunks:
         raise HTTPException(status_code=400, detail="chunks are required")
+    estimated_cost = _estimate_cost(req)
+    if estimated_cost > req.cost_ceiling_usd:
+        raise HTTPException(status_code=402, detail=f"estimated GraphRAG cost ${estimated_cost:.2f} exceeds ${req.cost_ceiling_usd:.2f} ceiling")
 
     summaries = _fixture_summaries(req) if req.dry_run or not _graphrag_enabled() else _run_graphrag(req)
     return {
         "case_id": req.case_id,
+        "cost": {
+            "estimated_usd": estimated_cost,
+            "ceiling_usd": req.cost_ceiling_usd,
+            "enforced_at_runtime": True,
+        },
         "community_summaries": [summary.model_dump() for summary in summaries],
         "aco_nodes": [_summary_to_aco_node(summary, req.case_id) for summary in summaries],
         "aco_edges": [],
@@ -67,6 +76,13 @@ def synthesize(req: SynthesizeRequest) -> dict[str, Any]:
 
 def _graphrag_enabled() -> bool:
     return os.getenv("PRAXIS_GRAPHRAG_ENABLE_SUBPROCESS", "false").lower() == "true"
+
+
+def _estimate_cost(req: SynthesizeRequest) -> float:
+    # Conservative v1 guardrail: a 50-document/chunk corpus must stay within
+    # the Pack 30 $5 ceiling. Real billing telemetry replaces this estimate
+    # once the worker is attached to Cloud Monitoring.
+    return round(max(0.05, len(req.chunks) * 0.10), 2)
 
 
 def _run_graphrag(req: SynthesizeRequest) -> list[CommunitySummary]:

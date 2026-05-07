@@ -1,0 +1,18 @@
+encoding_model: cl100k_base
+skip_workflows: []
+llm:
+  type: openai_chat
+  model: gemini-2.5-flash
+  api_base: https://us-central1-aiplatform.googleapis.com/v1beta1
+  litellm_params:
+    custom_llm_provider: vertex_ai
+    vertex_project: ${GCP_PROJECT_ID}
+    vertex_location: us-central1
+embeddings:
+  llm:
+    type: openai_embedding
+    model: text-embedding-005
+    litellm_params:
+      custom_llm_provider: vertex_ai
+      vertex_project: ${GCP_PROJECT_ID}
+      vertex_location: us-central1
