@@ -92,8 +92,25 @@ async def workspace_events(
                 surface_key,
                 surface_key,
             )
+            history = await conn.fetch(
+                """
+                SELECT id, case_id, surface_key, event_type, status, payload, created_at
+                FROM workspace_events_log
+                WHERE owner_uid = %s
+                  AND case_id = %s
+                  AND (%s = 'workspace' OR surface_key = %s)
+                ORDER BY created_at DESC
+                LIMIT 10
+                """,
+                token["uid"],
+                case_id,
+                surface_key,
+                surface_key,
+            )
         for row in suggestions:
             yield f"data: {json.dumps(_event_from_suggestion(dict(row)))}\n\n"
+        for row in history:
+            yield f"data: {json.dumps(_event_from_log(dict(row)))}\n\n"
         for row in logs:
             yield f"data: {json.dumps(_event_from_log(dict(row)))}\n\n"
         yield f"data: {json.dumps(orchestrator_heartbeat(case_id=case_id, surface_key=surface_key).to_api())}\n\n"
@@ -154,5 +171,17 @@ async def confirm_workspace_suggestion(
             req.case_id,
             rows[0]["surface_key"],
             {"suggestionId": suggestion_id, "request": req.payload, "suggestion": rows[0]["payload"] or {}},
+        )
+        await conn.execute(
+            """
+            INSERT INTO workspace_events_log (
+              owner_uid, case_id, surface_key, event_type, status, payload
+            )
+            VALUES (%s, %s, %s, 'suggestion_confirmed', 'complete', %s::jsonb)
+            """,
+            token["uid"],
+            req.case_id,
+            rows[0]["surface_key"],
+            {"suggestionId": suggestion_id},
         )
     return {"ok": True, "suggestionId": suggestion_id, "status": "confirmed"}

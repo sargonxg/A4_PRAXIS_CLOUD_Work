@@ -84,6 +84,7 @@
     "audit:license-sbom": "tsx scripts/audit-license-sbom.ts",
     "audit:route-bundle-budget": "tsx scripts/audit-route-bundle-budget.ts",
     "audit:codex-prompts": "tsx scripts/audit-codex-prompts.ts",
+    "audit:deep-preship": "tsx scripts/audit-deep-preship.ts",
     "audit:master-charter": "tsx scripts/audit-master-charter.ts",
     "audit:repo-shape": "tsx scripts/audit-repo-shape.ts",
     "audit:operational-metrics": "tsx scripts/audit-operational-metrics.ts",

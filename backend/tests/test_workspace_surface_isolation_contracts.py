@@ -38,6 +38,7 @@ def test_cognee_modes_match_surface_contracts():
 def test_workspace_events_stream_suggestions_and_logs():
     source = (ROOT / "routers" / "workspace.py").read_text(encoding="utf-8")
     assert "FROM workspace_suggestions" in source
+    assert "FROM workspace_events_log" in source
     assert "FROM workspace_orchestrator_log" in source
     assert "dismiss_workspace_suggestion" in source
     assert "confirm_workspace_suggestion" in source

@@ -187,3 +187,22 @@ def data_point_class_names(
     case_type_secondary: str | None = None,
 ) -> tuple[str, ...]:
     return tuple(cls.__name__ for cls in data_point_classes_for_case_types(case_type, case_type_secondary))
+
+
+def ontology_cache_snapshot() -> dict[str, Any]:
+    """Expose resolver/data-point cache state for admin diagnostics."""
+    return {
+        "resolver": ontology_resolver_descriptor.cache_info()._asdict(),
+        "dataPoints": data_point_classes_for_case_types.cache_info()._asdict(),
+        "caseTypes": [
+            {
+                "slug": spec.slug,
+                "label": spec.label,
+                "module": spec.module_name,
+                "ontologyPath": spec.ontology_path.as_posix(),
+                "classes": list(spec.classes),
+                "anchors": list(spec.anchors),
+            }
+            for spec in CASE_TYPES
+        ],
+    }

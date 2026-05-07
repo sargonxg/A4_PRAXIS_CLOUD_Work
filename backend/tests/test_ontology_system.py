@@ -15,6 +15,7 @@ from services.cognee_memory import MemoryScope
 from services.ontology_system import (
     CASE_TYPES,
     available_case_types,
+    ontology_cache_snapshot,
     data_point_class_names,
     ontology_resolver_descriptor,
     ontology_stack_for_case_types,
@@ -51,6 +52,9 @@ def test_runtime_composes_base_primary_and_secondary_stacks():
     resolver = ontology_resolver_descriptor("negotiation-mediation", "humanitarian-crisis")
     assert resolver["kind"] == "rdflib_ontology_resolver"
     assert resolver["ontologyFilePaths"] == list(stack)
+    snapshot = ontology_cache_snapshot()
+    assert snapshot["resolver"]["maxsize"] == 64
+    assert len(snapshot["caseTypes"]) == 10
 
 
 def test_data_point_classes_are_indexable_and_case_specific():

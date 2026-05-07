@@ -1,5 +1,9 @@
 # PRAXIS Build Log
 
+## 2026-05-07 — Deep pre-ship checklist gate
+
+Built the first enforceable pass for `DEEP_PRESHIP_CHECKLIST.md`: added `audit:deep-preship`, wrote the saved audit ledger at `docs/audits/2026-05-07-DEEP_PRESHIP_CHECKLIST.md`, centralized Cognee dataset construction through `dataset_for()`, added disabled-safe `improve()` feedback calls, added tenant-scoped ontology debug endpoints, added the missing Postgres pre-ship foundation tables/RLS/NOTIFY triggers, wired workspace SSE to event history, and exposed canonical `praxis.*` MCP tool registry names. Verified with the new audit, Cognee/orchestrator/workspace audits, focused backend pytest, TypeScript, Vitest, and production build. Live staging checks, Cloud SQL restore/load tests, browser-hour checks, and Vertex billing comparisons remain live-environment work and are tracked in `BLOCKERS.md`.
+
 ## 2026-05-07 — Ontology system foundation
 
 Built the first safe pass from `ONTOLOGY_SYSTEM_BUILD.md`: added the PRAXIS ACO base OWL, ten case-type specialization OWLs with changelogs, typed Cognee data-point modules, a runtime ontology stack/composition helper, and disabled-safe Cognee `cognify` reporting for ontology paths and data-point classes. The Library tab can now pass primary and secondary case types into extraction/re-extraction without touching firewall, RLS, migrations, or live Cognee imports. Acceptance verified locally through XML parsing, runtime stack tests, data-point metadata tests, and the new `audit:ontology-system`; measured Syria live latency/token cost remains unavailable until the isolated Cognee service is live in this environment.

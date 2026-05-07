@@ -41,9 +41,7 @@ class MemoryScope:
 
     @property
     def dataset(self) -> str:
-        if not self.owner_uid or not self.case_id:
-            raise ValueError("Cognee memory scope requires owner_uid and case_id")
-        return f"{self.owner_uid}{COGNEE_DATASET_SEPARATOR}{self.case_id}"
+        return dataset_for(self.owner_uid, self.case_id)
 
 
 @dataclass(frozen=True)
@@ -109,6 +107,13 @@ def get_data_points(
     case_type_secondary: str | None = None,
 ) -> tuple[type[Any], ...]:
     return data_point_classes_for_case_types(case_type, case_type_secondary)
+
+
+def dataset_for(owner_uid: str, case_id: str) -> str:
+    """Return the only allowed Cognee dataset name shape for PRAXIS."""
+    if not owner_uid or not case_id:
+        raise ValueError("Cognee memory scope requires owner_uid and case_id")
+    return f"{owner_uid}{COGNEE_DATASET_SEPARATOR}{case_id}"
 
 
 def is_enabled() -> bool:
@@ -271,6 +276,31 @@ async def memify(
     _ = (turns, metadata)
     _load_cognee()
     raise NotImplementedError("Live Cognee memify is owned by the isolated praxis-cognee service")
+
+
+async def improve(
+    *,
+    scope: MemoryScope,
+    target_id: str,
+    positive: bool,
+    metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Persist analyst feedback for interaction-level learning.
+
+    Disabled mode returns a stable shape so callers can keep the UI honest
+    without implying the live Cognee interaction log has been updated.
+    """
+    if not is_enabled():
+        return {
+            "ok": False,
+            "status": "queued_disabled",
+            "dataset": scope.dataset,
+            "targetId": target_id,
+            "positive": positive,
+        }
+    _ = metadata
+    _load_cognee()
+    raise NotImplementedError("Live Cognee improve is owned by the isolated praxis-cognee service")
 
 
 async def search(

@@ -18,7 +18,7 @@ from logging_config import configure_logging
 # Install structured JSON logging before anything else imports a logger.
 configure_logging()
 
-from auth import verify_service_token  # noqa: E402
+from auth import verify_firebase_token, verify_service_token  # noqa: E402
 
 # Observability — Sentry. No-op when SENTRY_DSN is not set in env.
 import os as _os
@@ -219,6 +219,54 @@ async def agents_health(_service: dict = Depends(verify_service_token)) -> dict:
         logger.exception("LangGraph health check failed")
         await _emit_agents_health_failure(exc)
         raise HTTPException(status_code=503, detail="LangGraph checkpoint store unavailable") from exc
+
+
+@app.get("/v1/debug/ontology/cache")
+async def ontology_cache_debug(_service: dict = Depends(verify_service_token)) -> dict:
+    from services.ontology_system import ontology_cache_snapshot
+
+    return ontology_cache_snapshot()
+
+
+@app.get("/v1/debug/case/{case_id}/ontology")
+async def case_ontology_debug(case_id: str, token: dict = Depends(verify_firebase_token)) -> dict:
+    from services.ontology_system import ontology_stack_for_case_types
+    from services.postgres import tenant_session
+
+    case_type = None
+    case_type_secondary = None
+    async with tenant_session(token["uid"]) as conn:
+        frame_rows = await conn.fetch(
+            "SELECT metadata FROM situation_frames WHERE owner_uid = %s AND case_id = %s LIMIT 1",
+            token["uid"],
+            case_id,
+        )
+        if frame_rows:
+            metadata = frame_rows[0].get("metadata") or {}
+            case_type = metadata.get("caseType") or metadata.get("case_type")
+            case_type_secondary = metadata.get("caseTypeSecondary") or metadata.get("case_type_secondary")
+        if not case_type:
+            source_rows = await conn.fetch(
+                """
+                SELECT metadata
+                FROM source_receipts
+                WHERE owner_uid = %s AND case_id = %s
+                ORDER BY updated_at DESC
+                LIMIT 1
+                """,
+                token["uid"],
+                case_id,
+            )
+            if source_rows:
+                metadata = source_rows[0].get("metadata") or {}
+                case_type = metadata.get("caseType") or metadata.get("case_type")
+                case_type_secondary = metadata.get("caseTypeSecondary") or metadata.get("case_type_secondary")
+    return {
+        "caseId": case_id,
+        "caseType": case_type,
+        "caseTypeSecondary": case_type_secondary,
+        "ontologyFilePaths": list(ontology_stack_for_case_types(case_type, case_type_secondary)),
+    }
 
 
 # Router registration

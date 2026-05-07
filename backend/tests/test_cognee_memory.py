@@ -18,10 +18,14 @@ def clear_settings_cache(monkeypatch):
 def test_cognee_disabled_returns_empty_shapes():
     scope = MemoryScope(owner_uid="user-1", case_id="case-1")
     assert scope.dataset == "user-1__case-1"
+    assert cognee_memory.dataset_for("user-1", "case-1") == "user-1__case-1"
     assert cognee_memory.is_enabled() is False
     assert asyncio.run(cognee_memory.recall(scope=scope, query="ceasefire")) == []
     result = asyncio.run(cognee_memory.remember(scope=scope, content="note"))
     assert result["status"] == "disabled"
+    improve = asyncio.run(cognee_memory.improve(scope=scope, target_id="turn-1", positive=True))
+    assert improve["status"] == "queued_disabled"
+    assert improve["dataset"] == "user-1__case-1"
 
 
 def test_cognee_rejects_non_vertex_provider(monkeypatch):

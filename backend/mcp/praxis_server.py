@@ -170,3 +170,50 @@ async def list_drafts(owner_uid: str, case_id: str) -> dict[str, Any]:
             case_id,
         )
     return {"drafts": rows}
+
+
+async def list_briefings(owner_uid: str, case_id: str) -> dict[str, Any]:
+    async with tenant_session(owner_uid) as conn:
+        rows = await conn.fetch(
+            """
+            SELECT id, title, audience, export_status, updated_at
+            FROM briefings
+            WHERE owner_uid = %s AND case_id = %s
+            ORDER BY updated_at DESC
+            LIMIT 100
+            """,
+            owner_uid,
+            case_id,
+        )
+    return {"briefings": rows}
+
+
+async def list_dialectica_runs(owner_uid: str, case_id: str) -> dict[str, Any]:
+    async with tenant_session(owner_uid) as conn:
+        rows = await conn.fetch(
+            """
+            SELECT id, recipe_id, status, created_at, updated_at
+            FROM dialectica_runs
+            WHERE owner_uid = %s AND case_id = %s
+            ORDER BY created_at DESC
+            LIMIT 100
+            """,
+            owner_uid,
+            case_id,
+        )
+    return {"runs": rows}
+
+
+TOOL_REGISTRY = {
+    "praxis.list_cases": list_cases,
+    "praxis.get_situation_frame": get_situation_frame,
+    "praxis.list_sources": list_sources,
+    "praxis.list_ontology_candidates": list_ontology_candidates,
+    "praxis.get_graph": get_graph,
+    "praxis.recall": recall,
+    "praxis.list_research_threads": list_research_threads,
+    "praxis.list_memos": list_memos,
+    "praxis.list_drafts": list_drafts,
+    "praxis.list_briefings": list_briefings,
+    "praxis.list_dialectica_runs": list_dialectica_runs,
+}
