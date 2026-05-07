@@ -8,6 +8,10 @@ Source prompts:
 - `docs/codex-prompts/TABS_BUILD_GUIDE.md`
 - `docs/codex-prompts/CHAPTERS_BUILD_GUIDE.md`
 
+One-page product/architecture reference:
+
+- `docs/architecture/PRAXIS_ONE_PAGE.md`
+
 ## Product Shape
 
 PRAXIS workbench now separates substrate tabs from desk chapters.

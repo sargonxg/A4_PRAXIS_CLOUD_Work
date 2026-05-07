@@ -2,11 +2,10 @@
 
 Last updated: 2026-05-07
 
-This is the canonical app-facing map for the twelve workbench tabs after Packs 26, 27, and 28.
+This is the canonical app-facing map for the current workbench. The product no longer exposes twelve peer tabs. It exposes four persistent substrate tabs - Context, Library, Ontology, Graph - and seven work chapters mounted on the desk - Desk, Research, Memos, Draft, ACH, Tools, Boardroom.
 
-| Tab | Surface Contract | Primary Data Sources | AI/Subagent Posture | Mutation Discipline | Verification |
+| Surface | Surface Contract | Primary Data Sources | AI/Subagent Posture | Mutation Discipline | Verification |
 |---|---|---|---|---|---|
-| Chapters | Five-chapter case walk: Situation Frame, Source Receipts, Conflict Graph, DIALECTICA Reasoning, Decision Product. | Case module, situation frame, sources, graph truth layers, tool/memo state. | `chapter_suggester` remains backend follow-up; current layer is deterministic and advisory. | Hand-coded chapters preserved; structured suggestions must route through review before state changes. | `tests/e2e/workbench/chapters-structured-content.spec.ts` |
 | Desk | Command center: What Changed, Next Best Actions, Open Questions, Stale Context. | `buildWorkbenchSurfaceState`, open questions API, case activity derivation. | `desk_advisor` remains backend follow-up; current actions are deterministic. | Context weakness is advisory, not blocking. Open questions are owner-scoped. | `tests/e2e/workbench/desk-command-center.spec.ts` |
 | Context | Editable scope studio for frame, sources, upload handoff, actors, claims, interests, and questions. | Situation fields, source preferences, local draft, owner-scoped context-scope API. | `policy_scope_reviewer` posture is advisory. | Scope saves use authenticated API and audit entries. Full re-genesis remains review/staging follow-up. | `tests/e2e/workbench/context-scope-studio.spec.ts` |
 | Library | Artifact-faceted browser for sources, documents, saved claims, memos, and exports. | Case artifacts, saved-claims API, export manifests. | No generative writes. | Saved claims and exports are owner-scoped; Library is browse/retrieve first. | `tests/e2e/workbench/library-faceted-browse.spec.ts` |

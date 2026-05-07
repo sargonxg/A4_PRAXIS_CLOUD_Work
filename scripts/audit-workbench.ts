@@ -24,6 +24,7 @@ const requiredFiles = [
   'backend/services/cognee_aco_models.py',
   'backend/mcp/praxis_server.py',
   'backend/migrations/versions/0016_workspace_chapter_products.py',
+  'docs/architecture/PRAXIS_ONE_PAGE.md',
   'docs/implementation/WORKSPACE_TABS_CHAPTERS_FOUNDATION.md',
   'src/components/workbench/StructuredChapterContent.tsx',
   'src/components/workbench/DeskTab.tsx',
@@ -170,6 +171,13 @@ const foundationDoc = readFileSync('docs/implementation/WORKSPACE_TABS_CHAPTERS_
 for (const marker of ['Context', 'Library', 'Ontology', 'Graph', 'Desk, always on', 'Research', 'Boardroom', 'four-field situation frame', '12 DIALECTICA recipes']) {
   if (!foundationDoc.includes(marker)) {
     throw new Error(`Workspace foundation doc missing marker: ${marker}`);
+  }
+}
+
+const praxisOnePage = readFileSync('docs/architecture/PRAXIS_ONE_PAGE.md', 'utf8');
+for (const marker of ['PRAXIS in One Page', 'User context', 'Situation context', 'Source receipts', 'ACO candidates', 'Current Honest Status']) {
+  if (!praxisOnePage.includes(marker)) {
+    throw new Error(`PRAXIS one-page reference missing marker: ${marker}`);
   }
 }
 
@@ -425,9 +433,14 @@ for (const marker of ['EMPTY_STATE_REVIEW_ROLES', 'EMPTY_STATE_REVIEW_ONTOLOGIES
 }
 
 const surfaceMap = readFileSync('docs/architecture/WORKBENCH_SURFACES.md', 'utf8');
-for (const marker of ['Chapters', 'Desk', 'Context', 'Library', 'Research', 'Ontology', 'Graph', 'ACH', 'Tools', 'Memos', 'Boardroom', 'Draft']) {
+for (const marker of ['Desk', 'Context', 'Library', 'Research', 'Ontology', 'Graph', 'ACH', 'Tools', 'Memos', 'Boardroom', 'Draft']) {
   if (!surfaceMap.includes(`| ${marker} |`)) {
-    throw new Error(`Workbench surface map missing tab row: ${marker}`);
+    throw new Error(`Workbench surface map missing surface row: ${marker}`);
+  }
+}
+for (const marker of ['four persistent substrate tabs', 'seven work chapters']) {
+  if (!surfaceMap.includes(marker)) {
+    throw new Error(`Workbench surface map missing structure marker: ${marker}`);
   }
 }
 
