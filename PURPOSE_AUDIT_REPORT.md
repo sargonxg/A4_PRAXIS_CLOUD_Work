@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-Audited 84 visible surface elements across the four substrate Tabs, seven Chapters, Settings, empty/loading/error states, menus, and copy. Current disposition: 7 Remove, 9 Simplify, 6 Consolidate, 12 Keep-after-review. The top recommendations are: remove implementation narration from analyst-facing surfaces, collapse duplicate source/claim actions into canonical Tabs, and reduce dense marketplaces/settings panels to the few actions an analyst actually needs first. PR 1 pure removals started in this pass and removed three low-risk elements.
+Audited 84 visible surface elements across the four substrate Tabs, seven Chapters, Settings, empty/loading/error states, menus, and copy. Current disposition after the 2026-05-07 continuation: 7 Remove implemented, 8 Simplify open, 6 Consolidate open, 12 Keep-after-review. The top recommendations are: remove implementation narration from analyst-facing surfaces, collapse duplicate source/claim actions into canonical Tabs, and reduce dense marketplaces/settings panels to the few actions an analyst actually needs first. PR 1 pure removals is now complete; the next pass should focus on high-density simplifications in Library, Research, Tools, Settings, and exports.
 
 ## Method
 
@@ -15,10 +15,10 @@ Every element was checked against the five-question test from `PURPOSE_AUDIT_PRO
 | R-01 | `src/components/workbench/ContextTab.tsx` | "Context storage contract" panel | Fails Q1/Q5: explains implementation and backend follow-up work to the analyst; no analyst job. Removed in this pass. | low | 1 file |
 | R-02 | `src/components/workbench/LibraryTab.tsx` | "Save case-frame claim" button | Fails Q3/Q4: duplicates Context/Ontology claim workflow and creates a claim from a frame, not a source. Removed in this pass. | low | 1 file |
 | R-03 | `src/components/workbench/draft/DraftTab.tsx` | Decorative badges: "Redaction aware", "Manifest embedded", "DOCX/PDF/Markdown" | Fails Q2/Q4: status decoration, not an action; export controls already communicate format. Removed in this pass. | low | 1 file |
-| R-04 | `src/components/app/debug-panel.tsx` | User-visible debug/credit controls in normal app shell | Fails Q1/Q5 for non-admin analysts; should be admin/operator-only. | medium | 2 files |
-| R-05 | `src/components/syria/ask-praxis.tsx` | Copy naming a specific practitioner identity in generic assistant explainer | Fails Q5 outside a case-specific demo; conflicts with recent no-institution-copy direction. | low | 1 file |
-| R-06 | `src/components/briefing/brief-blocks-panel.tsx` | Audience placeholder examples naming specific institutions | Fails Q5; should be neutral and case-owned unless source-specific. | low | 1 file |
-| R-07 | `src/app/app/tools/page.tsx` | Archived specialist-tool explanation shown before active work | Fails Q4 for first-time users; archived tools should stay behind disclosure. | low | 1 file |
+| R-04 | `src/components/app/debug-panel.tsx` | User-visible debug/credit controls in normal app shell | Fails Q1/Q5 for non-admin analysts; production shell is now gated behind `NEXT_PUBLIC_DEBUG_PANEL=1`. | medium | 2 files |
+| R-05 | `src/components/syria/ask-praxis.tsx` | Copy naming a specific practitioner identity in generic assistant explainer | Fails Q5 outside a case-specific demo; replaced generic institution/persona phrasing with neutral multilateral-practitioner language. | low | 1 file |
+| R-06 | `src/components/briefing/brief-blocks-panel.tsx` | Audience placeholder examples naming specific institutions | Fails Q5; audience defaults and placeholders are now neutral and case-owned. | low | 1 file |
+| R-07 | `src/app/app/tools/page.tsx` | Archived specialist-tool explanation shown before active work | Fails Q4 for first-time users; removed from the first view and kept archive access as a secondary filter action. | low | 1 file |
 
 ## Findings: Simplify (9)
 
@@ -32,7 +32,7 @@ Every element was checked against the five-question test from `PURPOSE_AUDIT_PRO
 | S-06 | `src/components/workbench/draft/ExportControls.tsx` | Export packaging controls | Advanced manifest/C2PA settings are visible by default | Collapse under "advanced packaging" | low |
 | S-07 | `src/components/tools/ToolMarketplace.tsx` | Twenty-two tools plus SAT banner plus 12 recipes | Dense mixed marketplace | Show recommended 3 + active recipes first; rest behind "more tools" | medium |
 | S-08 | `src/app/app/settings/page.tsx` | Large settings hub | Many equally weighted sections | Group into Profile, Workspace, AI/system, Notifications; hide advanced under system | medium |
-| S-09 | `src/app/app/settings/notifications/page.tsx` | 16 notification types displayed raw | Snake-case event names are visible | Render human labels from registry | low |
+| S-09 | `src/app/app/settings/notifications/page.tsx` | 16 notification types displayed raw | Snake-case event names were visible | Implemented local human labels; next step is returning `displayName` from the backend registry | low |
 
 ## Findings: Consolidate (6)
 
@@ -60,8 +60,8 @@ Every element was checked against the five-question test from `PURPOSE_AUDIT_PRO
 
 ## Recommended sequence
 
-1. **Phase 1: Pure removals.** Land low-risk deletions R-01 to R-03, then remove or gate R-04 to R-07 after one focused browser pass.
-2. **Phase 2: Simplify high-density surfaces.** Library filters, Research layout, Tools marketplace, Settings hub, and notification labels.
+1. **Phase 1: Pure removals.** Complete. R-01 to R-07 are now removed, neutralized, or production-gated, and `audit:purpose-surface` guards the regressions.
+2. **Phase 2: Simplify high-density surfaces.** Library filters, Research layout, Tools marketplace, Settings hub, and export controls.
 3. **Phase 3: Consolidate duplicate workflows.** Library/Research ingest boundary, Context/Desk open questions, Boardroom deliberate/brief/export, and unified run history.
 
 ## Things kept after consideration

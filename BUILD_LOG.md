@@ -1,5 +1,9 @@
 # PRAXIS Build Log
 
+## 2026-05-07 — Purpose audit continuation
+
+Continued `PURPOSE_AUDIT_PROMPT.md` by finishing the remaining pure-removal and first-view cleanup findings from `PURPOSE_AUDIT_REPORT.md`. Generic institution/persona phrasing was removed from the Syria Ask PRAXIS demo, briefing audience placeholders were made neutral, the default Tools page no longer foregrounds archive mechanics before the active workflow, notification settings now show human event labels, and the purpose audit gate now checks these regressions. Verified with the focused purpose audit, scoped ESLint on touched UI, TypeScript, and production build.
+
 ## 2026-05-07 — Notification external delivery contract
 
 Continued `NOTIFICATIONS_FEEDBACK_SYSTEM.md` by fixing channel lifecycle semantics and adding the first safe external-delivery dispatcher. In-app notifications still deliver immediately, but email digest, immediate email, browser push, and webhook receipts now start queued and are advanced by a user-scoped dispatcher that records `provider_unconfigured` when credentials are absent instead of pretending the send succeeded. Added HMAC-SHA256 webhook signing, a three-attempt retry ceiling, a `/v1/notifications/dispatch` route plus Next proxy fallback, audit markers, and focused delivery tests. Provider-backed sends, Cloud Scheduler cadence, push subscriptions, and workspace webhook configuration remain live-ops blockers until secrets and staging are confirmed.

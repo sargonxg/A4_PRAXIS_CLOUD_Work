@@ -206,7 +206,7 @@ export function BriefBlocksPanel({ situation }: { situation: Situation }) {
   const searchParams = useSearchParams();
   const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), user?.isDemo === true)
     || situation.id === SYRIA_DEMO_CASE_ID;
-  const [audience, setAudience] = useState('UNSC informal consultations');
+  const [audience, setAudience] = useState('Principal briefing');
   const [busy, setBusy] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -215,13 +215,13 @@ export function BriefBlocksPanel({ situation }: { situation: Situation }) {
     return {
       briefId: 'syr-seed',
       bluf: SYRIA_BRIEFING_BLOCKS[0]?.body ?? '',
-      audience: 'UNSC informal consultations',
+      audience: 'Principal briefing',
       generatedAt: new Date().toISOString(),
       sections: SYRIA_BRIEFING_BLOCKS.map((b) => ({
         id: b.id,
         heading: b.title,
         body: b.body,
-        provenance: ['UN Geneva', 'OCHA', 'UN Syria CCA', 'UNFPA', 'UNHCR'],
+        provenance: ['public diplomatic readout', 'humanitarian dashboard', 'field protection brief'],
       })),
       decisionPoints: [
         {
@@ -236,7 +236,7 @@ export function BriefBlocksPanel({ situation }: { situation: Situation }) {
         'ICRC detention-facility access updates',
         'Türkiye–US northeast working-group readouts',
       ],
-      recommendedSources: ['UN Geneva', 'OCHA', 'UNFPA', 'UNHCR', 'Enab Baladi', 'North Press', 'ICG'],
+      recommendedSources: ['public diplomatic readouts', 'humanitarian dashboards', 'Enab Baladi', 'North Press', 'ICG'],
       version: 1,
       locked: false,
     };
@@ -366,7 +366,7 @@ export function BriefBlocksPanel({ situation }: { situation: Situation }) {
           <input
             value={audience}
             onChange={(e) => setAudience(e.target.value)}
-            placeholder="Audience (e.g., UNSC, Cabinet)"
+            placeholder="Audience (e.g., principal, team)"
             className="w-56 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-navy-900"
           />
           <button

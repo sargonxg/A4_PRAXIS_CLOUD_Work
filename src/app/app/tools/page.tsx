@@ -189,19 +189,11 @@ function ToolsWorkspace({ situation }: { situation: Situation | null }) {
             <Metric label={showArchive ? 'Archive' : 'Surface'} value={showArchive ? '55 tools' : '8 surfaces'} />
           </div>
         </div>
-        {!showArchive ? (
-          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-navy-600">
-            Showing the opinionated 8-surface PRAXIS shell. Archived specialist tools stay routable and can be reviewed with{' '}
-            <PraxisLink href="/tools?show_archive=1" className="font-semibold text-diplomatic-blue hover:underline">
-              show_archive=1
-            </PraxisLink>
-            .
-          </div>
-        ) : (
+        {showArchive ? (
           <div className="rounded-md border border-gold-200 bg-gold-50 px-3 py-2 text-xs text-gold-800">
             Archive view enabled. These tools are preserved for specialist development and route compatibility, but hidden from default navigation.
           </div>
-        )}
+        ) : null}
       </header>
 
       <DemoRunway rows={rows} />
@@ -224,6 +216,11 @@ function ToolsWorkspace({ situation }: { situation: Situation | null }) {
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="h-4 w-4 text-diplomatic-blue" />
             <h2 className="text-sm font-semibold text-navy-900">Package filters</h2>
+            {!showArchive ? (
+              <PraxisLink href="/app/tools?show_archive=1" className="text-xs font-medium text-navy-500 hover:text-diplomatic-blue">
+                Review archived tools
+              </PraxisLink>
+            ) : null}
           </div>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(220px,1fr)_160px_180px] lg:w-[720px]">
             <label className="relative block">

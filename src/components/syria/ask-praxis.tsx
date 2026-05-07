@@ -4,9 +4,8 @@
  * Ask Praxis chat widget for the Syria case.
  *
  * Scripted, demo-safe chat that simulates the production Ask Praxis behaviour:
- * the model's answer is calibrated by both the user's profile (UN NY analyst,
- * Syria mandate) and the active situation graph (Syria post-Assad case file),
- * and every claim returns a provenance trail.
+ * the model's answer is calibrated by both the user's working profile and the
+ * active situation graph, and every claim returns a provenance trail.
  *
  * The chat does not call a live AI endpoint by default; the simulated
  * streaming reads as a real session and avoids credit cost during recording.
@@ -35,7 +34,7 @@ const QUERIES: SuggestedQuery[] = [
       'The integration plan timeline has not been published 90+ days after signing, which moves the agreement from "ceasefire announcement" toward "ceasefire announcement without annexes". Detention-facility security arrangements remain unverified by ICRC. Localised clashes in Deir-ez-Zor (4 incidents Mar–Apr 2026) erode the central narrative. PRAXIS scores the commitment at 56/100 partial compliance — the binding fragile claim is implementation transparency, with minority protection second.',
     provenance: ['UN Geneva 13 Feb 2026', 'Enab Baladi', 'North Press Agency', 'ICRC Syria page'],
     thinkingSteps: [
-      'Loading user profile (UN NY · Syria · senior analyst)',
+      'Loading user profile (multilateral diplomacy · Syria · senior analyst)',
       'Reading situation: SYRIA_TRANSITION_2026',
       'Fetching commitment subgraph (8 commitments, 56% mean compliance)',
       'Cross-referencing falsification edges (Deir-ez-Zor incidents)',
@@ -44,7 +43,7 @@ const QUERIES: SuggestedQuery[] = [
   },
   {
     id: 'q2',
-    text: 'How should I brief my P-Rep on EU sanctions sequencing for next week\'s informals?',
+    text: 'How should I brief a principal on EU sanctions sequencing for next week\'s informals?',
     answerHeadline: 'Bundle with named benchmarks, not blanket relief',
     answer:
       'Recommend bundling the next sanctions tranche with three benchmarks: (1) drafting-committee participation list with named civil-society networks, (2) HLP registry pilot in two governorates, and (3) ICRC detention access. The advisory council split 2-2-1 (bundle / sequence / mixed) — sequencing keeps sanctions credibility, bundling captures a real reform window. Benchmarks bridge the trade-off. Anchor your line in the EU 25 Feb partial delisting and the August 2026 review.',
@@ -59,16 +58,16 @@ const QUERIES: SuggestedQuery[] = [
   },
   {
     id: 'q3',
-    text: 'Which counterparts in NYC should I sequence on the Syrian civil-society participation question?',
-    answerHeadline: 'Switzerland → IPI → NGO Working Group → Sierra Leone',
+    text: 'Which counterparts should I sequence on the Syrian civil-society participation question?',
+    answerHeadline: 'Good-offices partner → policy institute → civil-society network → transition voice',
     answer:
-      'Run a three-step sequence: (1) brief Switzerland\'s mission as the IHL/good-offices E10 anchor; (2) co-host with IPI an Arria-formula readout that surfaces civil-society voices; (3) brief the NGO Working Group on the Security Council to channel a coordinated submission; (4) pivot to Sierra Leone as the post-conflict transition voice that lifts the line into the E10. Skip OFAC and Russia channels in this lane — sanctions and procedural blocking belong on a separate sequence.',
-    provenance: ['Switzerland mission · Mission of Sierra Leone', 'IPI Global Observatory', 'NGO WGSC'],
+      'Run a four-step sequence: (1) brief a credible good-offices partner on the protection rationale; (2) co-host a policy-institute readout that surfaces civil-society voices; (3) brief a civil-society coordination network to channel a joint submission; (4) pivot to a transition-experienced delegation that can lift the line in a wider multilateral setting. Keep sanctions and procedural-blocking channels in a separate lane.',
+    provenance: ['Swiss good offices profile', 'IPI Global Observatory', 'civil-society coordination network'],
     thinkingSteps: [
-      'Loading NYC stakeholder graph (35 counterparts, 7 layers)',
+      'Loading stakeholder graph (35 counterparts, 7 layers)',
       'Filtering by tone=aligned and lane=civil_society',
-      'Sequencing by Council seat + thematic anchor',
-      'Adding NGO WGSC as channelling node',
+      'Sequencing by convening power + thematic anchor',
+      'Adding civil-society network as channelling node',
       'Returning ordered counterpart list with rationale',
     ],
   },
@@ -107,7 +106,6 @@ export function SyriaAskPraxis({ className }: { className?: string }) {
     // step in thinking trace
     for (let i = 0; i < query.thinkingSteps.length; i += 1) {
       if (cancelRef.current) return;
-      // eslint-disable-next-line no-await-in-loop
       await wait(reduceMotion ? 80 : 320);
       const stepCopy = query.thinkingSteps.slice(0, i + 1);
       setMessages((prev) => {
@@ -122,7 +120,6 @@ export function SyriaAskPraxis({ className }: { className?: string }) {
     const tokens = query.answer.split(/(\s+)/);
     for (let i = 0; i < tokens.length; i += 1) {
       if (cancelRef.current) return;
-      // eslint-disable-next-line no-await-in-loop
       await wait(reduceMotion ? 0 : 24);
       const content = tokens.slice(0, i + 1).join('');
       setMessages((prev) => {
@@ -162,7 +159,7 @@ export function SyriaAskPraxis({ className }: { className?: string }) {
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-diplomatic-blue">Ask PRAXIS</p>
             <h3 className="text-sm font-semibold text-navy-950">
-              Domain AI calibrated by your profile <span className="text-slate-500">(UN NY · Syria mandate)</span> + active situation
+              Domain AI calibrated by your profile <span className="text-slate-500">(multilateral diplomacy · Syria)</span> + active situation
             </h3>
           </div>
         </div>
@@ -211,7 +208,7 @@ export function SyriaAskPraxis({ className }: { className?: string }) {
           {messages.length === 0 ? (
             <div className="flex h-full items-center justify-center rounded-md border border-dashed border-slate-300 bg-white p-6 text-center">
               <p className="text-[11px] leading-5 text-slate-500">
-                <span className="font-semibold text-navy-700">Calibration loaded:</span> UN NY · Syria mandate · senior analyst.
+                <span className="font-semibold text-navy-700">Calibration loaded:</span> multilateral diplomacy · Syria · senior analyst.
                 Pick a suggested question to see Ask Praxis reason in real time.
               </p>
             </div>

@@ -39,6 +39,32 @@ for (const marker of ['Redaction aware', 'Manifest embedded', 'DOCX/PDF/Markdown
   if (draft.includes(marker)) failures.push(`Draft still exposes decorative badge ${marker}`);
 }
 
+const debugPanel = read('src/components/app/debug-panel.tsx');
+if (!debugPanel.includes('NEXT_PUBLIC_DEBUG_PANEL')) failures.push('Debug panel is not gated behind explicit production opt-in');
+if (!debugPanel.includes("process.env.NODE_ENV !== 'production'")) failures.push('Debug panel lacks production environment guard');
+
+const askPraxis = read('src/components/syria/ask-praxis.tsx');
+for (const marker of ['UN NY', 'P-Rep', 'Security Council', 'NGO Working Group', 'UNSC informal']) {
+  if (askPraxis.includes(marker)) failures.push(`Ask Praxis still exposes generic institution/persona copy: ${marker}`);
+}
+
+const briefBlocks = read('src/components/briefing/brief-blocks-panel.tsx');
+for (const marker of ["useState('UNSC informal consultations')", "audience: 'UNSC informal consultations'", 'Audience (e.g., UNSC, Cabinet)']) {
+  if (briefBlocks.includes(marker)) failures.push(`Briefing builder still exposes institutional placeholder: ${marker}`);
+}
+
+const tools = read('src/app/app/tools/page.tsx');
+if (tools.includes('Showing the opinionated 8-surface PRAXIS shell')) {
+  failures.push('Tools page still shows archived-tool explanation before active workflow');
+}
+if (!tools.includes('Review archived tools')) failures.push('Tools page lacks secondary archive access after hiding first-view archive copy');
+
+const notificationSettings = read('src/app/app/settings/notifications/page.tsx');
+if (!notificationSettings.includes('formatNotificationType')) failures.push('Notification settings do not format event names as human labels');
+for (const marker of ['Source ingest complete', 'Research thread saved to memory', 'Memory service degraded']) {
+  if (!notificationSettings.includes(marker)) failures.push(`Notification settings missing human label ${marker}`);
+}
+
 if (failures.length) {
   console.error('[audit:purpose-surface] failures:');
   for (const failure of failures) console.error(`- ${failure}`);

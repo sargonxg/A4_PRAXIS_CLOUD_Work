@@ -39,6 +39,32 @@ const CHANNELS = [
   { key: 'webhook', label: 'Workspace webhook', icon: Webhook },
 ];
 
+function formatNotificationType(type: string): string {
+  const labels: Record<string, string> = {
+    source_ingest_complete: 'Source ingest complete',
+    source_ingest_failed: 'Source ingest failed',
+    candidates_ready_batch: 'Candidates ready',
+    dedup_suggestion_ready: 'Duplicate suggestion ready',
+    thread_idle_nudge: 'Research thread idle',
+    thread_closed_memified: 'Research thread saved to memory',
+    recipe_complete: 'Recipe complete',
+    briefing_exported: 'Briefing exported',
+    budget_warning: 'Budget warning',
+    budget_paused: 'Budget paused',
+    cognee_degraded: 'Memory service degraded',
+    ontology_update_available: 'Ontology update available',
+    ontology_gap_proposed: 'Ontology gap proposed',
+    workspace_shared: 'Workspace shared',
+    memo_comment: 'Memo comment',
+    case_milestone: 'Case milestone',
+  };
+  return labels[type] ?? type.replaceAll('_', ' ');
+}
+
+function formatCategory(category: string): string {
+  return category ? category[0].toUpperCase() + category.slice(1).replaceAll('_', ' ') : 'Other';
+}
+
 export default function NotificationSettingsPage() {
   const [types, setTypes] = useState<NotificationTypeRow[]>([]);
   const [prefs, setPrefs] = useState<Preferences>(DEFAULT_PREFS);
@@ -134,12 +160,12 @@ export default function NotificationSettingsPage() {
         <div className="divide-y divide-[var(--color-app-border)]">
           {grouped.map(([category, rows]) => (
             <div key={category} className="p-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-navy-600">{category}</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-navy-600">{formatCategory(category)}</h3>
               <div className="mt-3 space-y-2">
                 {rows.map((row) => (
                   <div key={row.type} className="grid gap-3 rounded-md border border-navy-200 px-3 py-2 sm:grid-cols-[1fr_160px] sm:items-center">
                     <div>
-                      <p className="text-sm font-medium text-navy-900">{row.type.replaceAll('_', ' ')}</p>
+                      <p className="text-sm font-medium text-navy-900">{formatNotificationType(row.type)}</p>
                       <p className="mt-0.5 text-xs text-navy-600">{row.description}</p>
                     </div>
                     <select
