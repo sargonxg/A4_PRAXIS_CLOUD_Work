@@ -73,3 +73,21 @@ Executed against `next start -p 3119` after production build:
 | `/app/workbench/syria-2026?tab=tools` in demo session | Marketplace rendered with `data-testid="tool-marketplace"` |
 | Transparency cards | 11 visible in the filtered default marketplace view; all 20 covered by `npm run audit:transparency-cards` |
 | Browser errors | 0 console errors, 0 page errors |
+
+## Production Verification Evidence
+
+Deployment:
+
+- Commit deployed: `5d2bb3c`
+- Command: `npm run deploy:frontend:cloud`
+- Cloud Build: `54d97487-ef2a-42d6-937d-59c0962bb97c`
+- Status: `SUCCESS`
+
+Live smoke against `https://praxis.tacitus.me/app/workbench/syria-2026?tab=tools`
+after demo-session entry:
+
+| Surface | Result |
+|---|---|
+| Tools marketplace | Rendered with `data-testid="tool-marketplace"` |
+| Transparency cards | 11 visible in the filtered default marketplace view |
+| Browser errors | 0 console errors, 0 page errors |

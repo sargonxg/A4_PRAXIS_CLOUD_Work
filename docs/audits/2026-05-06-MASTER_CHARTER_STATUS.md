@@ -83,7 +83,9 @@ real `/waitlist`, `/login/callback`, and canonical `/legal/*` pages guarded by
 `docs/audits/2026-05-07-PACK19_GENUINELY_USEFUL.md` records the first Pack 19
 foundation slice. The prompt is preserved, and marketplace transparency cards
 now expose methodology, limitations, evaluation posture, expected error modes,
-last-updated date, and cost class for all 20 current marketplace tools.
+last-updated date, and cost class for all 20 current marketplace tools. The
+slice is deployed to `https://praxis.tacitus.me` via Cloud Build
+`54d97487-ef2a-42d6-937d-59c0962bb97c`.
 
 ## Remaining Work
 
