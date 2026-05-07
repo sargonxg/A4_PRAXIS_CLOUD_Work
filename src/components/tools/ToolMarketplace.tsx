@@ -76,6 +76,13 @@ interface MarketplaceFullRunArtifact {
   createdAt: string;
 }
 
+interface DialecticaRecipe {
+  id: string;
+  title: string;
+  mode: string;
+  tokenBudget: number;
+}
+
 export function ToolMarketplace() {
   const { caseId, caseModule, activeTab } = useWorkbenchScope();
   const ontology = getOntologyForDomain(caseModule.manifest.domain);
@@ -89,6 +96,9 @@ export function ToolMarketplace() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [lastRunRequest, setLastRunRequest] = useState<string | null>(null);
+  const [dialecticaRecipes, setDialecticaRecipes] = useState<DialecticaRecipe[]>([]);
+  const [runningRecipeId, setRunningRecipeId] = useState<string | null>(null);
+  const [recipeNote, setRecipeNote] = useState<string | null>(null);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [diffOpen, setDiffOpen] = useState(false);
   const runAbortController = useRef<AbortController | null>(null);
@@ -146,6 +156,21 @@ export function ToolMarketplace() {
   useEffect(() => {
     void loadRunHistory();
   }, [loadRunHistory]);
+
+  useEffect(() => {
+    let ignore = false;
+    fetch('/api/backend/chapters/tools/recipes')
+      .then((response) => response.ok ? response.json() : { recipes: [] })
+      .then((payload) => {
+        if (!ignore && Array.isArray(payload.recipes)) setDialecticaRecipes(payload.recipes);
+      })
+      .catch(() => {
+        if (!ignore) setDialecticaRecipes([]);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   function buildLastRunFromSummary(item: MarketplaceRunHistoryItem): MarketplaceRunState {
     const tool = MARKETPLACE_TOOLS.find((candidate) => candidate.id === item.toolId);
@@ -274,6 +299,33 @@ export function ToolMarketplace() {
     runAbortController.current?.abort();
   }
 
+  async function runDialecticaRecipe(recipe: DialecticaRecipe) {
+    setRunningRecipeId(recipe.id);
+    setRecipeNote(`Running ${recipe.title}...`);
+    try {
+      const response = await fetch('/api/backend/chapters/tools/run', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          case_id: caseId,
+          recipe_id: recipe.id,
+          input: {
+            caseName: caseModule.manifest.name,
+            domain: caseModule.manifest.domain,
+            truthLayers: caseModule.truthLayers,
+          },
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.detail ?? 'recipe run failed');
+      setRecipeNote(`${recipe.title} queued as deterministic chapter run ${payload.runId}.`);
+    } catch {
+      setRecipeNote(`${recipe.title} could not be queued.`);
+    } finally {
+      setRunningRecipeId(null);
+    }
+  }
+
   return (
     <section data-testid="tool-marketplace" className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-navy-950/5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -344,6 +396,41 @@ export function ToolMarketplace() {
               <p className="mt-1 text-xs leading-5 text-slate-600">{suggestion.rationale}</p>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-700">DIALECTICA recipes</p>
+            <h3 className="mt-1 text-base font-semibold text-navy-950">Graph-grounded chapter runs</h3>
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-700">
+              These 12 guide-level recipes run through the chapter tools contract, separate from marketplace demos.
+            </p>
+          </div>
+          {recipeNote ? <p className="max-w-xl text-sm font-semibold text-navy-900">{recipeNote}</p> : null}
+        </div>
+        <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+          {dialecticaRecipes.map((recipe) => (
+            <button
+              key={recipe.id}
+              type="button"
+              onClick={() => void runDialecticaRecipe(recipe)}
+              disabled={runningRecipeId !== null}
+              className="rounded-md border border-slate-200 bg-white p-3 text-left transition hover:border-navy-300 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span className="flex items-start justify-between gap-2">
+                <span className="text-sm font-semibold text-navy-950">{recipe.title}</span>
+                {runningRecipeId === recipe.id ? <Loader2 className="h-4 w-4 animate-spin text-gold-700" /> : <Play className="h-4 w-4 text-gold-700" />}
+              </span>
+              <span className="mt-2 block text-xs font-semibold uppercase tracking-wider text-slate-700">
+                {recipe.mode} · {recipe.tokenBudget.toLocaleString()} tokens
+              </span>
+            </button>
+          ))}
+          {!dialecticaRecipes.length ? (
+            <p className="text-sm leading-6 text-slate-700">Recipe registry is unavailable; marketplace tools remain usable.</p>
+          ) : null}
         </div>
       </div>
 

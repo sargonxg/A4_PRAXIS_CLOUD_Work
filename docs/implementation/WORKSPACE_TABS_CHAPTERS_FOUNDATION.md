@@ -61,6 +61,10 @@ Chapters are the working panes on the desk:
 - Chapters now expose backend APIs for Desk Q&A, Research threads and recall, Memos, Drafts, ACH, Tools recipe runs, and Boardroom briefings.
 - Research's workbench UI now opens backend research threads, runs graph recall, and closes threads into the memify path.
 - Memo Studio now saves chapter memos through the backend memo contract and can request source-grounded assistance through the memo assist route.
+- Draft now saves chapter drafts, runs citation lookup, and queues non-Markdown exports through the draft backend contract.
+- ACH now calls the chapter ACH suggestion routes for hypotheses and evidence.
+- Tools now loads and runs the 12 DIALECTICA recipes through the chapter tools backend contract.
+- Boardroom now creates and exports chapter briefing shells through the boardroom backend contract while preserving the existing deliberation workflow.
 - Tools now expose the 12 DIALECTICA recipes: stakeholder map, contradiction scan, constraint leverage map, commitment tracker, narrative arc, ambiguity audit, red-team counterclaim, counterfactual branch, evidence gap finder, policy option generator, risk weighting, and decision memo synthesis.
 - MCP read surfaces now include research threads, memos, and drafts for agent/tool context interop.
 - Legacy chapter targets are no longer encoded as `?tab=` links; substrate tabs stay in the tab query and chapters use the workbench chapter rail/hash entrypoints.
@@ -83,6 +87,6 @@ Known remaining work:
 
 - Replace stubbed SSE coach/desk streams with live LangGraph subgraphs.
 - Apply migrations `0015_workspace_tabs_chapters.py` and `0016_workspace_chapter_products.py` in staging/production before relying on the SQL endpoints.
-- Build full frontend controls for the remaining Draft, ACH, Tools, and Boardroom backend endpoints; Library, Research, and Memo Studio are now connected.
+- Deepen frontend controls for advanced Draft, ACH, Tools, and Boardroom editing flows; the primary backend entrypoints are now connected across all seven chapters.
 - Wire the isolated live Cognee service behind `backend/services/cognee_memory.py`; current routes are deliberately disabled-safe and queue work rather than failing user flows.
 - Add browser e2e coverage for tab overlays, source ingest, research recall, memo assist, draft cite/export, ACH suggestions, recipe runs, and boardroom briefings.

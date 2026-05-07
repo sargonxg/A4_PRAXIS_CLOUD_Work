@@ -277,6 +277,34 @@ for (const marker of ['chapters/memos', 'chapters/memos/${encodeURIComponent(mem
   }
 }
 
+const draftTabComponent = readFileSync('src/components/workbench/draft/DraftTab.tsx', 'utf8');
+for (const marker of ['chapters/drafts', 'Find citations', 'Save draft', 'chapters/drafts/${encodeURIComponent(draftId)}/cite']) {
+  if (!draftTabComponent.includes(marker)) {
+    throw new Error(`Chapters guide Draft frontend missing backend marker: ${marker}`);
+  }
+}
+
+const achWorkbenchComponent = readFileSync('src/components/sats/ACHWorkbench.tsx', 'utf8');
+for (const marker of ['chapters/ach/suggest-hypotheses', 'chapters/ach/suggest-evidence', 'Suggest hypotheses', 'Suggest evidence']) {
+  if (!achWorkbenchComponent.includes(marker)) {
+    throw new Error(`Chapters guide ACH frontend missing backend marker: ${marker}`);
+  }
+}
+
+const toolMarketplaceComponent = readFileSync('src/components/tools/ToolMarketplace.tsx', 'utf8');
+for (const marker of ['chapters/tools/recipes', 'chapters/tools/run', 'DIALECTICA recipes', 'runDialecticaRecipe']) {
+  if (!toolMarketplaceComponent.includes(marker)) {
+    throw new Error(`Chapters guide Tools frontend missing backend marker: ${marker}`);
+  }
+}
+
+const boardroomWorkspaceComponent = readFileSync('src/components/boardroom/BoardroomWorkspace.tsx', 'utf8');
+for (const marker of ['chapters/boardroom?case_id', 'chapters/boardroom/briefings', 'Chapter briefings', 'exportChapterBriefing']) {
+  if (!boardroomWorkspaceComponent.includes(marker)) {
+    throw new Error(`Chapters guide Boardroom frontend missing backend marker: ${marker}`);
+  }
+}
+
 const openQuestionsRoute = readFileSync('src/app/api/cases/[caseId]/open-questions/route.ts', 'utf8');
 for (const marker of ['withAuth', 'listOpenQuestions', 'createOpenQuestion']) {
   if (!openQuestionsRoute.includes(marker)) {

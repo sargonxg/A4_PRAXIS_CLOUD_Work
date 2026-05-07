@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { FileText, ShieldCheck } from 'lucide-react';
+import { FileSearch, FileText, Save, ShieldCheck } from 'lucide-react';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { AppendixPicker } from '@/components/workbench/draft/AppendixPicker';
@@ -36,6 +36,8 @@ export function DraftTab() {
   });
   const [redactions, setRedactions] = useState(() => defaultBlockRedactions(memoOptions));
   const [exportNote, setExportNote] = useState<string | null>(null);
+  const [backendDraftId, setBackendDraftId] = useState<string | null>(null);
+  const [citationNote, setCitationNote] = useState<string | null>(null);
   const selectedMemos = memoOptions.filter((memo) => selectedMemoIds.includes(memo.id));
 
   function toggleMemo(memoId: string) {
@@ -60,8 +62,8 @@ export function DraftTab() {
     setRedactions((current) => ({ ...current, [blockId]: level }));
   }
 
-  async function exportPackage() {
-    const markdown = renderDraftMarkdown({
+  function buildMarkdown() {
+    return renderDraftMarkdown({
       caseModule,
       memos: selectedMemos,
       primaryMemoId,
@@ -71,7 +73,63 @@ export function DraftTab() {
       redactions,
       settings,
     });
+  }
+
+  async function persistDraft(markdown = buildMarkdown()): Promise<string | null> {
+    const response = await fetch('/api/backend/chapters/drafts', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        case_id: caseId,
+        title: coverPage.title,
+        body: markdown,
+        citations: selectedMemos.flatMap((memo) => memo.blocks.flatMap((block) => block.citations)),
+        metadata: {
+          audience: settings.audience,
+          format: settings.format,
+          primaryMemoId,
+          memoIds: selectedMemos.map((memo) => memo.id),
+          appendixIds: selectedAppendixIds,
+          redactionSummary: redactions,
+        },
+      }),
+    }).catch(() => null);
+    const payload = await response?.json().catch(() => ({}));
+    if (response?.ok && payload.draft?.id) {
+      setBackendDraftId(payload.draft.id);
+      setExportNote('Draft saved to the chapter backend.');
+      return payload.draft.id;
+    }
+    setExportNote('Draft held locally; chapter backend save unavailable.');
+    return null;
+  }
+
+  async function findCitations() {
+    const draftId = backendDraftId ?? await persistDraft();
+    if (!draftId) {
+      setCitationNote('Save the draft before citation lookup.');
+      return;
+    }
+    const response = await fetch(`/api/backend/chapters/drafts/${encodeURIComponent(draftId)}/cite`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query: `${coverPage.title} ${selectedMemos.map((memo) => memo.title).join(' ')}`, top_k: 5 }),
+    }).catch(() => null);
+    const payload = await response?.json().catch(() => ({}));
+    if (response?.ok) {
+      setCitationNote((payload.hits?.length ?? 0) > 0 ? `Found ${payload.hits.length} citation hit(s).` : 'Citation lookup ran; no source hits yet.');
+      return;
+    }
+    setCitationNote('Citation lookup unavailable.');
+  }
+
+  async function exportPackage() {
+    const markdown = buildMarkdown();
     const plainText = renderDraftPlainText(coverPage.title, markdown);
+    const draftId = await persistDraft(markdown);
+    if (draftId && settings.format !== 'markdown') {
+      await fetch(`/api/backend/chapters/drafts/${encodeURIComponent(draftId)}/export?format=${settings.format}`, { method: 'POST' }).catch(() => null);
+    }
     const persistResponse = await fetch(`/api/cases/${encodeURIComponent(caseId)}/draft/export`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -166,7 +224,24 @@ export function DraftTab() {
           </span>
           <span className="rounded-full bg-gold-100 px-2.5 py-1 text-xs font-semibold text-gold-800">Manifest embedded</span>
           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-800">DOCX/PDF/Markdown</span>
+          <button
+            type="button"
+            onClick={() => void persistDraft()}
+            className="inline-flex items-center gap-1 rounded-md border border-navy-300 bg-white px-2.5 py-1 text-xs font-semibold text-navy-900"
+          >
+            <Save className="h-3.5 w-3.5" />
+            Save draft
+          </button>
+          <button
+            type="button"
+            onClick={() => void findCitations()}
+            className="inline-flex items-center gap-1 rounded-md border border-navy-300 bg-white px-2.5 py-1 text-xs font-semibold text-navy-900"
+          >
+            <FileSearch className="h-3.5 w-3.5" />
+            Find citations
+          </button>
         </div>
+        {citationNote ? <p className="mt-3 text-sm font-semibold text-navy-900">{citationNote}</p> : null}
       </div>
 
       <MemosSelection

@@ -13,6 +13,14 @@ import type { DeliberationArtifact } from '@/types/boardroom';
 
 type LoadState = 'loading' | 'ready' | 'error';
 
+interface ChapterBriefing {
+  id: string;
+  title: string;
+  audience?: string;
+  export_status?: string;
+  updated_at?: string;
+}
+
 function listUrl(caseId: string) {
   return `/api/boardroom/deliberations?caseId=${encodeURIComponent(caseId)}`;
 }
@@ -52,7 +60,9 @@ function buildClientFallback(caseId: string, deliberationId: string) {
 export function BoardroomIndex({ caseId }: { caseId: string }) {
   const [state, setState] = useState<LoadState>('loading');
   const [items, setItems] = useState<DeliberationArtifact[]>([]);
+  const [briefings, setBriefings] = useState<ChapterBriefing[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [briefingNote, setBriefingNote] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,6 +90,52 @@ export function BoardroomIndex({ caseId }: { caseId: string }) {
     };
   }, [caseId]);
 
+  useEffect(() => {
+    void loadChapterBriefings();
+  }, [caseId]);
+
+  async function loadChapterBriefings() {
+    const response = await fetch(`/api/backend/chapters/boardroom?case_id=${encodeURIComponent(caseId)}`).catch(() => null);
+    const payload = await response?.json().catch(() => ({}));
+    if (response?.ok && Array.isArray(payload.briefings)) setBriefings(payload.briefings);
+  }
+
+  async function createChapterBriefing() {
+    setBriefingNote('Creating boardroom briefing shell...');
+    const response = await fetch('/api/backend/chapters/boardroom/briefings', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        case_id: caseId,
+        title: 'Boardroom synthesis briefing',
+        audience: 'principal',
+        sections: [
+          { title: 'Decision line', body: 'Synthesize the boardroom decision line here.' },
+          { title: 'Dissent', body: 'Capture minority views and unresolved assumptions.' },
+          { title: 'Next actions', body: 'List accountable next steps and review triggers.' },
+        ],
+      }),
+    }).catch(() => null);
+    const payload = await response?.json().catch(() => ({}));
+    if (response?.ok && payload.briefing) {
+      setBriefings((current) => [payload.briefing, ...current.filter((briefing) => briefing.id !== payload.briefing.id)]);
+      setBriefingNote('Boardroom briefing created through the chapter backend.');
+      return;
+    }
+    setBriefingNote('Chapter briefing backend unavailable; deliberation workflow still works.');
+  }
+
+  async function exportChapterBriefing(briefingId: string) {
+    setBriefingNote('Queueing briefing export...');
+    const response = await fetch(`/api/backend/chapters/boardroom/briefings/${encodeURIComponent(briefingId)}/export?format=docx`, { method: 'POST' }).catch(() => null);
+    if (response?.ok) {
+      setBriefingNote('Briefing export queued.');
+      await loadChapterBriefings();
+      return;
+    }
+    setBriefingNote('Briefing export could not be queued.');
+  }
+
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-navy-950/5">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -99,6 +155,51 @@ export function BoardroomIndex({ caseId }: { caseId: string }) {
           <Plus className="h-4 w-4" />
           Convene
         </Link>
+        <button
+          type="button"
+          onClick={() => void createChapterBriefing()}
+          className="inline-flex h-10 items-center gap-2 rounded-md border border-navy-300 bg-white px-4 text-sm font-semibold text-navy-900 transition-colors hover:bg-navy-50"
+        >
+          <UploadCloud className="h-4 w-4" />
+          New briefing
+        </button>
+      </div>
+
+      {briefingNote ? (
+        <div className="mt-5 rounded-lg border border-gold-200 bg-gold-50 p-4 text-sm font-semibold text-navy-950">
+          {briefingNote}
+        </div>
+      ) : null}
+
+      <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-navy-950">Chapter briefings</p>
+            <p className="mt-1 text-xs text-slate-700">Principal-ready synthesis packages backed by the chapter boardroom contract.</p>
+          </div>
+          <button type="button" onClick={() => void loadChapterBriefings()} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-navy-900">
+            Refresh
+          </button>
+        </div>
+        <div className="mt-3 grid gap-2">
+          {briefings.slice(0, 4).map((briefing) => (
+            <div key={briefing.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 bg-white p-3">
+              <div>
+                <p className="text-sm font-semibold text-navy-950">{briefing.title}</p>
+                <p className="mt-1 text-xs text-slate-700">{briefing.audience ?? 'principal'} · {briefing.export_status ?? 'draft'}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void exportChapterBriefing(briefing.id)}
+                className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-200 px-3 text-xs font-semibold text-navy-900"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Export
+              </button>
+            </div>
+          ))}
+          {!briefings.length ? <p className="text-sm leading-6 text-slate-700">No chapter briefings yet.</p> : null}
+        </div>
       </div>
 
       {state === 'loading' ? (

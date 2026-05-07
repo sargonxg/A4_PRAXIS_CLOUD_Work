@@ -58,6 +58,7 @@ export function ACHIndex({ caseId }: { caseId: string }) {
   const [items, setItems] = useState<ACHMatrix[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [suggestionNote, setSuggestionNote] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,6 +105,24 @@ export function ACHIndex({ caseId }: { caseId: string }) {
     }
   }
 
+  async function suggestHypotheses() {
+    setSuggestionNote('Asking the chapter ACH helper for competing explanations...');
+    const response = await fetch('/api/backend/chapters/ach/suggest-hypotheses', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        case_id: caseId,
+        question: 'Suggest competing hypotheses for the active case.',
+      }),
+    }).catch(() => null);
+    const payload = await response?.json().catch(() => ({}));
+    if (response?.ok && Array.isArray(payload.suggestions)) {
+      setSuggestionNote(payload.suggestions.map((item: { text?: string }) => item.text).filter(Boolean).join(' | ') || 'ACH helper returned no hypothesis text yet.');
+      return;
+    }
+    setSuggestionNote('ACH helper unavailable; local ACH matrices still work.');
+  }
+
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-navy-950/5">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -125,7 +144,21 @@ export function ACHIndex({ caseId }: { caseId: string }) {
           {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           New ACH
         </button>
+        <button
+          type="button"
+          onClick={() => void suggestHypotheses()}
+          className="inline-flex h-10 items-center gap-2 rounded-md border border-navy-300 bg-white px-4 text-sm font-semibold text-navy-900 transition-colors hover:bg-navy-50"
+        >
+          <GitBranchPlus className="h-4 w-4" />
+          Suggest hypotheses
+        </button>
       </div>
+
+      {suggestionNote ? (
+        <div className="mt-5 rounded-lg border border-gold-200 bg-gold-50 p-4 text-sm font-semibold text-navy-950">
+          {suggestionNote}
+        </div>
+      ) : null}
 
       {state === 'loading' ? (
         <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
@@ -184,6 +217,7 @@ export function ACHDetail({ caseId, achId }: { caseId: string; achId: string }) 
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [matrix, setMatrix] = useState<ACHMatrix>(fallback);
   const [error, setError] = useState<string | null>(null);
+  const [evidenceNote, setEvidenceNote] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -231,6 +265,24 @@ export function ACHDetail({ caseId, achId }: { caseId: string; achId: string }) 
     }
   }
 
+  async function suggestEvidence() {
+    setEvidenceNote('Searching the case graph for ACH evidence...');
+    const response = await fetch('/api/backend/chapters/ach/suggest-evidence', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        case_id: caseId,
+        query: matrix.hypotheses.map((hypothesis) => hypothesis.text).join(' '),
+      }),
+    }).catch(() => null);
+    const payload = await response?.json().catch(() => ({}));
+    if (response?.ok) {
+      setEvidenceNote((payload.hits?.length ?? 0) > 0 ? `Found ${payload.hits.length} evidence hit(s).` : 'ACH evidence helper ran; no graph hits yet.');
+      return;
+    }
+    setEvidenceNote('ACH evidence helper unavailable.');
+  }
+
   return (
     <section className="space-y-5">
       <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-navy-950/5">
@@ -253,7 +305,16 @@ export function ACHDetail({ caseId, achId }: { caseId: string; achId: string }) 
             <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Status</p>
             <p className="mt-1 text-sm font-semibold capitalize text-navy-950">{matrix.status.replace('_', ' ')}</p>
           </div>
+          <button
+            type="button"
+            onClick={() => void suggestEvidence()}
+            className="inline-flex h-10 items-center gap-2 rounded-md border border-navy-300 bg-white px-4 text-sm font-semibold text-navy-900"
+          >
+            <GitBranchPlus className="h-4 w-4" />
+            Suggest evidence
+          </button>
         </div>
+        {evidenceNote ? <p className="mt-3 text-sm font-semibold text-navy-900">{evidenceNote}</p> : null}
       </div>
 
       {state === 'loading' ? (
