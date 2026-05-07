@@ -148,6 +148,47 @@ async def health() -> dict:
     return {"status": "ok", "service": "praxis-backend", "version": "6.2.0"}
 
 
+@app.get("/healthz")
+async def healthz() -> dict:
+    return {"ok": True, "service": "praxis-backend", "version": "6.2.0"}
+
+
+@app.get("/v1/health")
+async def cognee_service_health(_service: dict = Depends(verify_service_token)) -> dict:
+    from services import cognee_memory
+
+    health = cognee_memory.health()
+    body = {
+        "ok": health.ready or not health.enabled,
+        "version": "6.2.0",
+        "features": {
+            "cogneeMemoryEnabled": health.enabled,
+            "cogneeMode": health.mode,
+            "provider": health.provider,
+            "embeddingModel": health.embedding_model,
+            "embeddingDimensions": health.embedding_dimensions,
+        },
+        "reason": health.reason,
+    }
+    if health.enabled and not health.ready:
+        raise HTTPException(status_code=503, detail=body)
+    return body
+
+
+@app.post("/admin/quiesce")
+async def cognee_admin_quiesce(_service: dict = Depends(verify_service_token)) -> dict:
+    app.state.cognee_quiesced = True
+    logger.warning("Cognee quiesce requested for snapshot/maintenance")
+    return {"ok": True, "quiesced": True}
+
+
+@app.post("/admin/resume")
+async def cognee_admin_resume(_service: dict = Depends(verify_service_token)) -> dict:
+    app.state.cognee_quiesced = False
+    logger.warning("Cognee resume requested after snapshot/maintenance")
+    return {"ok": True, "quiesced": False}
+
+
 async def _emit_agents_health_failure(exc: Exception) -> None:
     try:
         from google.cloud import firestore
@@ -181,9 +222,11 @@ async def agents_health(_service: dict = Depends(verify_service_token)) -> dict:
 
 
 # Router registration
-from routers import pipeline, graph, analyze, reason  # noqa: E402
+from routers import pipeline, graph, analyze, reason, memory  # noqa: E402
 
 app.include_router(pipeline.router, prefix="/api/v1/pipeline", tags=["pipeline"])
 app.include_router(graph.router, prefix="/api/v1/graph", tags=["graph"])
 app.include_router(analyze.router, prefix="/api/v1/analyze", tags=["analyze"])
 app.include_router(reason.router, prefix="/api/v1/reason", tags=["reason"])
+app.include_router(memory.router, prefix="/api/v1/memory", tags=["memory"])
+app.include_router(memory.router, prefix="/v1/memory", tags=["memory"])

@@ -4,6 +4,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends gcc g++ pkg-con
     rm -rf /var/lib/apt/lists/*
 COPY pyproject.toml ./
 RUN pip install --no-cache-dir -e .
+RUN python -c "import cognee, kuzu; print(getattr(cognee, '__version__', 'unknown'), kuzu.__version__)"
 
 FROM python:3.11-slim AS runner
 WORKDIR /app

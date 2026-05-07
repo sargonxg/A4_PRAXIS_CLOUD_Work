@@ -95,6 +95,9 @@ export const AI_CREDIT_COSTS: Record<string, number> = {
   // Executive situation intelligence panel — structured diagnosis, scenarios,
   // graph primitives, provenance, and confidence.
   'ai_situation_intelligence': 4,
+  // Cognee memory layer. Recall is cheap; durable remember/cognify can be LLM-bound.
+  'cognee_recall': 1,
+  'cognee_cognify': 4,
 };
 
 /**

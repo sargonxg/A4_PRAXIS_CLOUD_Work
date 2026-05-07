@@ -17,6 +17,7 @@ const requiredRunbooks = [
   'SECRET_ROTATION.md',
   'TERRAFORM_OPERATIONS.md',
   'LOAD_HANDLING.md',
+  'MEMORY_LAYER_RUNBOOK.md',
 ];
 
 const failures: string[] = [];

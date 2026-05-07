@@ -3,6 +3,8 @@ export { createGraphLayer, FirestoreGraphLayer, Neo4jGraphLayer } from './graph-
 export { VectorLayer } from './vector-layer';
 export { FeedLayer } from './feed-layer';
 export { ToolOutputLayer } from './tool-output-layer';
+export { MemoryLayer, cogneeDatasetFor } from './memory-layer';
+export type { MemoryHit, MemoryLayerHealth, MemoryLayerMode, MemoryScope } from './memory-layer';
 export { RetrievalOrchestrator } from './retrieval-orchestrator';
 export { generateEmbedding, generateEmbeddings, chunkText, EMBEDDING_DIMENSIONS } from './embedding-service';
 export {

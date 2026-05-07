@@ -107,6 +107,13 @@ async def verify_firebase_token(
                 raise
             except Exception as exc:
                 logger.warning("OIDC token verification failed: %s", exc)
+        try:
+            decoded = firebase_auth.verify_id_token(oidc_token)
+            return decoded
+        except (firebase_auth.ExpiredIdTokenError, firebase_auth.InvalidIdTokenError):
+            pass
+        except Exception as exc:
+            logger.warning("Authorization Firebase token verification error: %s", exc)
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

@@ -4,6 +4,7 @@ export type WorkbenchTabId =
   | 'context'
   | 'library'
   | 'research'
+  | 'memory'
   | 'ontology'
   | 'graph'
   | 'ach'

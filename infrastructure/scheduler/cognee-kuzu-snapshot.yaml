@@ -1,0 +1,18 @@
+apiVersion: scheduler.gcp.praxis/v1
+kind: CloudSchedulerJob
+metadata:
+  name: praxis-cognee-kuzu-snapshot
+spec:
+  project: praxisbytacitus
+  region: us-central1
+  schedule: "0 3 * * *"
+  timeZone: "Etc/UTC"
+  target:
+    type: cloud-run-job
+    job: praxis-cognee-kuzu-snapshot
+  serviceAccount: praxis-cognee-sa@praxisbytacitus.iam.gserviceaccount.com
+  command:
+    - infrastructure/cognee-kuzu-snapshot.sh
+  env:
+    COGNEE_KUZU_GCS_BUCKET: gs://praxis-cognee-graph
+    COGNEE_KUZU_BACKUP_BUCKET: gs://praxis-cognee-graph-backups

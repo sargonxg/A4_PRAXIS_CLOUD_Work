@@ -150,6 +150,66 @@ EOF
 apply_policy "$FILE"
 echo "[alerts] Applied Cloud Run p95 latency policy"
 
+# Policy 2b — Cognee recall/service p95 latency
+FILE="${TMPDIR_ROOT}/cognee_latency.json"
+cat > "$FILE" <<EOF
+{
+  "displayName": "PRAXIS — Cognee recall p95 >1s (10m)",
+  "combiner": "OR",
+  "userLabels": { "managed_by": "praxis", "service": "praxis-cognee" },
+  "conditions": [
+    {
+      "displayName": "praxis-cognee p95 latency > 1s over 10 minutes",
+      "conditionThreshold": {
+        "filter": "metric.type=\"run.googleapis.com/request_latencies\" resource.type=\"cloud_run_revision\" resource.labels.service_name=\"praxis-cognee\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 1000,
+        "duration": "600s",
+        "aggregations": [{
+          "alignmentPeriod": "60s",
+          "perSeriesAligner": "ALIGN_PERCENTILE_95",
+          "crossSeriesReducer": "REDUCE_MAX"
+        }]
+      }
+    }
+  ],
+  "notificationChannels": ["${NOTIFICATION_CHANNEL}"],
+  "alertStrategy": { "autoClose": "1800s" }
+}
+EOF
+apply_policy "$FILE"
+echo "[alerts] Applied Cognee p95 latency policy"
+
+# Policy 2c — Cognee 5xx rate
+FILE="${TMPDIR_ROOT}/cognee_5xx.json"
+cat > "$FILE" <<EOF
+{
+  "displayName": "PRAXIS — Cognee 5xx rate high",
+  "combiner": "OR",
+  "userLabels": { "managed_by": "praxis", "service": "praxis-cognee" },
+  "conditions": [
+    {
+      "displayName": "praxis-cognee 5xx > 1/min over 5 minutes",
+      "conditionThreshold": {
+        "filter": "metric.type=\"run.googleapis.com/request_count\" resource.type=\"cloud_run_revision\" resource.labels.service_name=\"praxis-cognee\" metric.labels.response_code_class=\"5xx\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 1,
+        "duration": "300s",
+        "aggregations": [{
+          "alignmentPeriod": "60s",
+          "perSeriesAligner": "ALIGN_RATE",
+          "crossSeriesReducer": "REDUCE_SUM"
+        }]
+      }
+    }
+  ],
+  "notificationChannels": ["${NOTIFICATION_CHANNEL}"],
+  "alertStrategy": { "autoClose": "1800s" }
+}
+EOF
+apply_policy "$FILE"
+echo "[alerts] Applied Cognee 5xx policy"
+
 # Policy 3 — Secret Manager GetSecret NOT_FOUND
 FILE="${TMPDIR_ROOT}/secrets.json"
 cat > "$FILE" <<EOF

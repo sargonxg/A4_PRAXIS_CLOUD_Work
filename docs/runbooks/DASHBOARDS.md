@@ -12,6 +12,9 @@
 ## Mitigation
 - Use `npm run audit:observability-coverage` to confirm local instrumentation.
 - Add missing dashboard URLs to this runbook after owner-approved dashboard creation.
+- Cognee dashboard definition is committed at `monitoring/dashboards/cognee.json`
+  and should be published as Cloud Monitoring dashboard `praxis-cognee` once
+  the private service is deployed.
 
 ## Escalation
 Dashboard creation and alert routing changes are infra changes and should be tracked in Terraform or an owner-approved operations PR.

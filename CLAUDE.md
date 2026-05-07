@@ -146,6 +146,24 @@ npm install
 - Keep `X-Firebase-Token` separate from `Authorization`; `Authorization` is for
   Cloud Run IAM/OIDC.
 
+## Cognee Memory Layer
+
+- Read `docs/architecture/COGNEE_MEMORY_LAYER.md` and
+  `docs/runbooks/MEMORY_LAYER_RUNBOOK.md` before changing memory, graph recall,
+  or Cognee-related code.
+- Cognee is disabled by default and is a probabilistic memory layer beside the
+  canonical ACO graph. It is not the graph source of truth.
+- `backend/services/cognee_memory.py` is the only backend file allowed to import
+  the Cognee SDK. Keep live SDK access out of routers and tool handlers.
+- Browser routes call `/api/memory/*`; the route is protected with `withAuth`
+  and proxies to either private FastAPI disabled-mode endpoints or the isolated
+  `praxis-cognee` service.
+- Keep Cognee on Vertex ADC only: `COGNEE_LLM_PROVIDER=vertex_ai`,
+  `COGNEE_LLM_API_KEY=vertex-adc`, and 768-dimensional
+  `text-embedding-005` embeddings.
+- Validate Cognee changes with `npm run audit:cognee`,
+  `npm run audit:embedding-dim`, and the focused backend Cognee pytest files.
+
 ## File Structure
 
 ```

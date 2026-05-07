@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Activity, BookOpen, Boxes, FileText, GitBranch, GitBranchPlus, Library, Search, Store, Users } from 'lucide-react';
+import { Activity, BookOpen, Boxes, BrainCircuit, FileText, GitBranch, GitBranchPlus, Library, Search, Store, Users } from 'lucide-react';
 import { BoardroomIndex } from '@/components/boardroom/BoardroomWorkspace';
 import { PraxisGraphView } from '@/components/graph/PraxisGraphView';
 import { MemoStudio } from '@/components/memo/MemoStudio';
@@ -12,6 +12,7 @@ import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { ContextTab } from '@/components/workbench/ContextTab';
 import { DeskTab } from '@/components/workbench/DeskTab';
 import { LibraryTab } from '@/components/workbench/LibraryTab';
+import { MemoryPanel } from '@/components/memory/MemoryPanel';
 import { ResearchTab } from '@/components/workbench/ResearchTab';
 import { DraftTab } from '@/components/workbench/draft/DraftTab';
 import { EmptyStateGuidance } from '@/components/workbench/empty-state/EmptyStateGuidance';
@@ -27,6 +28,7 @@ export function WorkbenchTabContent({ activeTab }: { activeTab: WorkbenchTabId }
   if (activeTab === 'context') return <ContextTab />;
   if (activeTab === 'library') return <LibraryTab />;
   if (activeTab === 'research') return <ResearchTab />;
+  if (activeTab === 'memory') return <WorkbenchMemoryPanel />;
   if (activeTab === 'ontology') return <GuidedSurface tabId="ontology"><OntologySchemaViewer /></GuidedSurface>;
   if (activeTab === 'graph') return <WorkbenchGraphPanel />;
   if (activeTab === 'ach') return <WorkbenchACHPanel />;
@@ -49,6 +51,15 @@ export function WorkbenchTabContent({ activeTab }: { activeTab: WorkbenchTabId }
     );
   }
   return <WorkbenchTabPanel tabId={activeTab} />;
+}
+
+function WorkbenchMemoryPanel() {
+  const { caseId } = useWorkbenchScope();
+  return (
+    <GuidedSurface tabId="memory">
+      <MemoryPanel caseId={caseId} />
+    </GuidedSurface>
+  );
 }
 
 function WorkbenchACHPanel() {
@@ -127,6 +138,7 @@ const TAB_TITLES: Record<WorkbenchTabId, string> = {
   context: 'Context Studio',
   library: 'Library',
   research: 'Research',
+  memory: 'Memory',
   ontology: 'Ontology',
   graph: 'Graph',
   ach: 'ACH',
@@ -142,6 +154,7 @@ const TAB_BODY: Record<WorkbenchTabId, string> = {
   context: 'Build the case before analysis: scope, sources, documents, actors, claims, and graph proposals.',
   library: 'Keep source receipts, documents, saved claims, and decision products tied to the active case.',
   research: 'Run source discovery and research collection against the active case context.',
+  memory: 'Recall session and durable memory, then review Cognee-derived graph candidates before promotion.',
   ontology: 'Inspect the active case ontology, primitive mapping, validators, and tool requirements.',
   graph: 'Inspect graph primitives, truth layers, provenance coverage, and graph projection health.',
   ach: 'Open and maintain Analysis of Competing Hypotheses matrices for competing explanations.',
@@ -156,6 +169,7 @@ const TAB_ICONS: Partial<Record<WorkbenchTabId, typeof Activity>> = {
   context: BookOpen,
   library: Library,
   research: Search,
+  memory: BrainCircuit,
   ontology: Boxes,
   graph: GitBranch,
   ach: GitBranchPlus,

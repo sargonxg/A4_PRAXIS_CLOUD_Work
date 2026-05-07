@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   BookOpen,
   Boxes,
+  BrainCircuit,
   Briefcase,
   ChevronsLeft,
   ChevronsRight,
@@ -36,6 +37,7 @@ const TAB_ICONS = {
   context: FileText,
   library: Library,
   research: Search,
+  memory: BrainCircuit,
   ontology: Boxes,
   graph: GitBranch,
   ach: GitBranchPlus,

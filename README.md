@@ -45,11 +45,13 @@ This README is a **reference document for both human developers and AI agents** 
 │    /api/v1/pipeline/*   extract → build → cluster → analyze     │
 │    /api/v1/graph/*      graph queries, temporal                 │
 │    /api/v1/analyze/*    pre-computed analysis                   │
+│    /api/v1/memory/*     disabled-safe Cognee memory bridge      │
 ├─────────────────────────────────────────────────────────────────┤
 │  Firebase: Auth + Firestore (single source of truth)            │
 │  GCP:  Vertex AI · BigQuery · Cloud Storage · Pub/Sub           │
 │        Cloud Functions · Cloud Scheduler · Secret Manager       │
 │        Artifact Registry · Cloud Build                          │
+│  Optional: private praxis-cognee service + praxis_cognee DB      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -128,9 +130,9 @@ graph-grounded policy question, and economic/HLP scenario research. See
 | State | Zustand 5 (persisted) |
 | AI SDK | Vercel AI SDK v6 (`@ai-sdk/google`, `@ai-sdk/google-vertex`) |
 | AI Providers | Gemini Flash / Gemini Pro on Google AI and Vertex AI, Vertex AI Agent Engine (ADK) |
-| Backend | Python FastAPI, NetworkX, Graspologic, Pydantic v2, Genkit |
+| Backend | Python FastAPI, NetworkX, Graspologic, Pydantic v2, Genkit, disabled-first Cognee adapter |
 | Auth & DB | Firebase Auth + Firestore + Admin SDK |
-| Graph | Firestore baseline with optional graph export adapters |
+| Graph | Postgres ACO graph with optional graph export adapters; Cognee is candidate memory only |
 | Validation | Zod 4 |
 | Documents | pdf-parse, mammoth, docx, jspdf |
 | Web Research | Grounded Google Search and open-data feed clients |

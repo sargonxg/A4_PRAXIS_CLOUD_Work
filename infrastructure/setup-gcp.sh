@@ -136,10 +136,17 @@ for secret in \
   praxis-firebase-sa \
   praxis-google-ai-key \
   praxis-cron-secret \
-  praxis-cookie-secret; do
+  praxis-cookie-secret \
+  praxis-cognee-db-password \
+  praxis-cognee-llm-api-key \
+  praxis-cognee-encryption-key; do
   gcloud secrets create "$secret" --replication-policy=automatic 2>/dev/null \
     || echo "Secret $secret already exists"
 done
+
+if ! gcloud secrets versions access latest --secret=praxis-cognee-llm-api-key --project="${PROJECT_ID}" >/dev/null 2>&1; then
+  printf 'vertex-adc' | gcloud secrets versions add praxis-cognee-llm-api-key --data-file=-
+fi
 
 echo ""
 echo "  ⚠️  Fill in the secrets now:"
@@ -147,6 +154,9 @@ echo "  printf 'YOUR_JSON_HERE' | gcloud secrets versions add praxis-firebase-sa
 echo "  printf 'AIzaSy...' | gcloud secrets versions add praxis-google-ai-key --data-file=-"
 echo "  printf 'my-cron-secret' | gcloud secrets versions add praxis-cron-secret --data-file=-"
 echo "  printf 'my-cookie-secret-32chars' | gcloud secrets versions add praxis-cookie-secret --data-file=-"
+echo "  openssl rand -base64 24 | gcloud secrets versions add praxis-cognee-db-password --data-file=-"
+echo "  printf 'vertex-adc' | gcloud secrets versions add praxis-cognee-llm-api-key --data-file=-"
+echo "  openssl rand -base64 32 | gcloud secrets versions add praxis-cognee-encryption-key --data-file=-"
 echo ""
 
 # ── IAM Permissions ──────────────────────────────────────────────────────────
@@ -189,6 +199,38 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" \
   --member="serviceAccount:${CR_SA}" \
   --role="roles/secretmanager.secretAccessor" \
   --quiet 2>/dev/null || true
+
+# ── Cognee memory service account, buckets, and IAM ─────────────────────────
+COGNEE_SA="praxis-cognee-sa@${PROJECT_ID}.iam.gserviceaccount.com"
+gcloud iam service-accounts create praxis-cognee-sa \
+  --display-name="PRAXIS Cognee Memory Service" \
+  --project="${PROJECT_ID}" \
+  --quiet 2>/dev/null || echo "Cognee service account already exists"
+
+for role in \
+  roles/aiplatform.user \
+  roles/cloudsql.client \
+  roles/logging.logWriter \
+  roles/monitoring.metricWriter; do
+  gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+    --member="serviceAccount:${COGNEE_SA}" \
+    --role="$role" \
+    --quiet 2>/dev/null || true
+done
+
+for secret in praxis-cognee-db-password praxis-cognee-llm-api-key praxis-cognee-encryption-key praxis-neo4j-password; do
+  gcloud secrets add-iam-policy-binding "$secret" \
+    --member="serviceAccount:${COGNEE_SA}" \
+    --role="roles/secretmanager.secretAccessor" \
+    --project="${PROJECT_ID}" \
+    --quiet 2>/dev/null || true
+done
+
+for bucket in praxis-cognee-graph praxis-cognee-graph-backups; do
+  gsutil mb -p "${PROJECT_ID}" -l "${REGION}" -b on "gs://${bucket}" 2>/dev/null || echo "Bucket ${bucket} already exists"
+  gsutil uniformbucketlevelaccess set on "gs://${bucket}" >/dev/null 2>&1 || true
+  gsutil iam ch "serviceAccount:${COGNEE_SA}:objectAdmin" "gs://${bucket}" >/dev/null 2>&1 || true
+done
 
 # ── Vendor shared spine helper into each function source dir ────────────────
 # The _shared package gives functions/workers a uniform job/event API. Cloud

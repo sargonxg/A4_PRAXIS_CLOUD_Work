@@ -39,6 +39,7 @@ export async function GET() {
 
   // --- Optional integrations (warn but don't fail) ---
   checks.vertex_adk = process.env.VERTEX_AGENT_ENGINE_ID ? 'ok' : 'unconfigured';
+  checks.cognee_memory = process.env.COGNEE_ENABLED === 'true' ? 'ok' : 'unconfigured';
   checks.polar = (process.env.POLAR_ACCESS_TOKEN && process.env.POLAR_WEBHOOK_SECRET) ? 'ok' : 'unconfigured';
 
   const status = healthy ? 200 : 503;
@@ -53,6 +54,8 @@ export async function GET() {
         aiRequestLimits: AI_REQUEST_LIMITS,
         highCostAiRoutesRequireAuth: true,
         calibratedAiRoutesStartToolRuns: true,
+        cogneeMemoryEnabled: process.env.COGNEE_ENABLED === 'true',
+        cogneeMode: process.env.COGNEE_MODE || 'disabled',
       },
     },
     { status }

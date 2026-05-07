@@ -33,6 +33,10 @@ dependencies = [
     "pgvector>=0.3,<1.0",
     "alembic>=1.13,<2.0",
     "google-cloud-secret-manager>=2.24,<3.0",
+    # Cognee memory layer (disabled by default; live service is provisioned separately)
+    "cognee==1.0.1",
+    "kuzu>=0.4.2,<1.0",
+    "litellm>=1.80,<2.0",
     # Observability — Sentry errors + traces; no-op when SENTRY_DSN is unset
     "sentry-sdk[fastapi]>=2.17,<3.0",
 ]

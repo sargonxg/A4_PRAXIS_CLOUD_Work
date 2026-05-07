@@ -2,7 +2,15 @@
 from functools import lru_cache
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings
-from ai.providers import MODEL_FLASH, MODEL_PRO
+from ai.providers import (
+    COGNEE_EMBED_DIMENSIONS,
+    COGNEE_EMBED_MODEL,
+    COGNEE_MODEL_FLASH,
+    COGNEE_MODEL_PRO,
+    COGNEE_VERTEX_PROVIDER,
+    MODEL_FLASH,
+    MODEL_PRO,
+)
 
 
 class Settings(BaseSettings):
@@ -22,6 +30,46 @@ class Settings(BaseSettings):
         default="postgres",
         validation_alias=AliasChoices("KG_BACKEND", "GRAPH_BACKEND", "graph_backend"),
     )
+
+    # Cognee memory layer. Disabled by default; when enabled it runs as an
+    # isolated probabilistic memory plane and never writes canonical ACO rows.
+    cognee_enabled: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("COGNEE_ENABLED", "cognee_enabled"),
+    )
+    cognee_mode: str = Field(
+        default="disabled",
+        validation_alias=AliasChoices("COGNEE_MODE", "cognee_mode"),
+    )
+    cognee_db_host: str = Field(default="pgbouncer", validation_alias=AliasChoices("COGNEE_DB_HOST", "cognee_db_host"))
+    cognee_db_port: int = Field(default=6432, validation_alias=AliasChoices("COGNEE_DB_PORT", "cognee_db_port"))
+    cognee_db_name: str = Field(default="praxis_cognee", validation_alias=AliasChoices("COGNEE_DB_NAME", "cognee_db_name"))
+    cognee_db_user: str = Field(default="praxis_cognee_app", validation_alias=AliasChoices("COGNEE_DB_USER", "cognee_db_user"))
+    cognee_db_password: str = Field(default="", validation_alias=AliasChoices("COGNEE_DB_PASSWORD", "cognee_db_password"))
+    cognee_kuzu_path: str = Field(default="/var/lib/cognee/kuzu", validation_alias=AliasChoices("COGNEE_KUZU_PATH", "cognee_kuzu_path"))
+    cognee_kuzu_gcs_bucket: str = Field(default="", validation_alias=AliasChoices("COGNEE_KUZU_GCS_BUCKET", "cognee_kuzu_gcs_bucket"))
+    cognee_neo4j_database: str = Field(default="cognee", validation_alias=AliasChoices("COGNEE_NEO4J_DATABASE", "cognee_neo4j_database"))
+    cognee_session_sync_seconds: int = Field(default=60, validation_alias=AliasChoices("COGNEE_SESSION_SYNC_SECONDS", "cognee_session_sync_seconds"))
+    cognee_session_ttl_hours: int = Field(default=24, validation_alias=AliasChoices("COGNEE_SESSION_TTL_HOURS", "cognee_session_ttl_hours"))
+    cognee_candidate_floor: float = Field(default=0.40, validation_alias=AliasChoices("COGNEE_CANDIDATE_FLOOR", "cognee_candidate_floor"))
+    cognee_promotion_confidence_ceiling: float = Field(default=0.60, validation_alias=AliasChoices("COGNEE_PROMOTION_CEILING", "COGNEE_PROMOTION_CONFIDENCE_CEILING", "cognee_promotion_confidence_ceiling"))
+    cognee_max_candidates: int = Field(default=50, validation_alias=AliasChoices("COGNEE_MAX_CANDIDATES_PER_DOC", "COGNEE_MAX_CANDIDATES", "cognee_max_candidates"))
+    cognee_llm_provider: str = Field(default=COGNEE_VERTEX_PROVIDER, validation_alias=AliasChoices("COGNEE_LLM_PROVIDER", "cognee_llm_provider"))
+    cognee_llm_model_pro: str = Field(default=COGNEE_MODEL_PRO, validation_alias=AliasChoices("COGNEE_LLM_MODEL_PRO", "cognee_llm_model_pro"))
+    cognee_llm_model_flash: str = Field(default=COGNEE_MODEL_FLASH, validation_alias=AliasChoices("COGNEE_LLM_MODEL_FLASH", "cognee_llm_model_flash"))
+    cognee_embedding_model: str = Field(default=COGNEE_EMBED_MODEL, validation_alias=AliasChoices("COGNEE_EMBEDDING_MODEL", "cognee_embedding_model"))
+    cognee_embedding_dimensions: int = Field(default=COGNEE_EMBED_DIMENSIONS, validation_alias=AliasChoices("COGNEE_EMBEDDING_DIMENSIONS", "cognee_embedding_dimensions"))
+    cognee_llm_api_key: str = Field(default="vertex-adc", validation_alias=AliasChoices("COGNEE_LLM_API_KEY", "LLM_API_KEY", "cognee_llm_api_key"))
+
+    @property
+    def cognee_db_dsn(self) -> str:
+        host = self.cognee_db_host or self.pgbouncer_host
+        port = self.cognee_db_port or self.pgbouncer_port
+        return f"postgresql://{self.cognee_db_user}:{self.cognee_db_password}@{host}:{port}/{self.cognee_db_name}"
+
+    @property
+    def cognee_promotion_ceiling(self) -> float:
+        return self.cognee_promotion_confidence_ceiling
 
     # LangGraph checkpointing (Cloud SQL Postgres; see docs/GCP_OPERATIONS.md)
     langgraph_checkpoint_backend: str = "postgres"

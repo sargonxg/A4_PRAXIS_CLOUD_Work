@@ -20,6 +20,20 @@ The v1 repository layer lives in `backend/services/kg_repositories.py`:
 
 Every repository method requires `owner_uid` and `case_id`; there is no unscoped graph read API.
 
+## Cognee Coexistence
+
+Cognee is an optional probabilistic memory layer, not a `KG_BACKEND` mode.
+It must never become the canonical graph store. The canonical ACO graph remains
+Postgres-backed through `NodeRepo` / `EdgeRepo`; Cognee may only write candidate
+links into `aco_cognee_link` and review metadata. Promotion into canonical
+`graph_nodes` or `graph_edges` still goes through the existing repository layer
+and symbolic firewall.
+
+The current default is `COGNEE_MODE=disabled`. Production enablement requires
+the isolated `praxis_cognee` database, RLS wrapper SQL, private `praxis-cognee`
+Cloud Run service, Vertex ADC-only provider config, and the runbook in
+`docs/runbooks/MEMORY_LAYER_RUNBOOK.md`.
+
 Rollback procedure:
 
 1. Set `KG_BACKEND=neo4j` on the backend service.
