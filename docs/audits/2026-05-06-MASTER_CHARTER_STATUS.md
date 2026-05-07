@@ -77,12 +77,13 @@ real `/waitlist`, `/login/callback`, and canonical `/legal/*` pages guarded by
 `npm run audit:legal-pages-present`. The same audit now records the memo-tool
 foundation closure: `cross.memo-create` and `cross.memo-refresh` are registered
 with v2 contracts, SKILL.md files, Memo Studio handoff payloads, and 22-tool
-marketplace audits. The route slice is deployed to
-`https://praxis.tacitus.me` via Cloud Build
-`43779fe0-dfc2-4e9b-8a38-cfe4430123e6`; the memo-tool slice is deployed via
-Cloud Build `6e9a9e93-f7cd-4c16-84b3-28d3e80bace0` to Cloud Run revision
-`praxis-frontend-00258-th2` and live-smoked on the tools tab with zero
-console/page errors.
+marketplace audits. The latest verified `main` deploy is commit `4669e02` via
+Cloud Build `4e76a579-73bf-447a-bee1-00033850783b` to Cloud Run revision
+`praxis-frontend-00262-vdn` at 100% traffic. The route and memo-tool surfaces
+were live-smoked with zero console/page errors. `/api/health` returned HTTP 200
+with `status: ok`. Production Lighthouse was also run for `/demo/syria-2024`;
+performance 87 and accessibility 95 are below the Pack 18 target, so
+public-demo polish remains an open launch gap.
 
 ## Latest Pack 19 Usefulness Pass
 
@@ -93,11 +94,13 @@ last-updated date, and cost class for all 22 current marketplace tools. The
 same audit now records the next S3 foundation slice: completed marketplace runs
 can open an evidence drawer with claims, provenance, context snapshot,
 advisories, raw output, handler posture, and metadata, and can compare raw
-output against the previous persisted run for the same tool. The transparency
-slice is deployed to `https://praxis.tacitus.me` via Cloud Build
-`54d97487-ef2a-42d6-937d-59c0962bb97c`; the evidence-drawer slice is deployed
-via Cloud Build `907cbf0c-0135-4e38-a01c-c014217aeef5` and live-smoked on the
-tools tab with zero console/page errors.
+output against the previous persisted run for the same tool. The latest
+verified Pack 19 slice is deployed to `https://praxis.tacitus.me` at commit
+`4669e02` via Cloud Build `4e76a579-73bf-447a-bee1-00033850783b` and Cloud Run
+revision `praxis-frontend-00262-vdn`. The tools tab was live-smoked with
+`cross.memo-create` and `cross.memo-refresh`; the evidence drawer rendered
+claims/provenance, context, raw output, and Memo Studio handoff with zero
+console/page errors.
 
 ## Remaining Work
 

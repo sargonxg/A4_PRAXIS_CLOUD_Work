@@ -113,11 +113,12 @@ production builds:
 
 Deployment:
 
-- Commit deployed: `5829dda`
+- Current commit deployed: `4669e02`
 - Command: `npm run deploy:frontend:cloud`
-- Cloud Build: `a70045cc-afee-4d78-bad0-74b805aaa50d`
+- Latest Cloud Build: `4e76a579-73bf-447a-bee1-00033850783b`
 - Status: `SUCCESS`
-- Cloud Run revision: `praxis-frontend-00260-zth`
+- Cloud Run revision: `praxis-frontend-00262-vdn`
+- Traffic: 100% to `praxis-frontend-00262-vdn`
 
 Live smoke against `https://praxis.tacitus.me/app/workbench/syria-2026?tab=tools`
 after demo-session entry:
@@ -131,9 +132,16 @@ after demo-session entry:
 | Run comparison | Live Compare control opened the run comparison panel |
 | Browser errors | 0 console errors, 0 page errors |
 
-Final Pack 19 re-check on 2026-05-07 confirmed the same live surface on the
-current Cloud Run revision: `cross.memo-create` and `cross.memo-refresh` were
-visible after searching `memo`; the memo-create run completed; the evidence
-drawer exposed `Memo Studio handoff`, `memoStudioReady`, `synthesized`,
-`reviewRequired`, claims/provenance, context snapshot, and raw output; browser
-console/page errors remained zero.
+Final Pack 19 re-check on 2026-05-07 confirmed the same live surface on Cloud
+Run revision `praxis-frontend-00262-vdn`: `cross.memo-create` and
+`cross.memo-refresh` were visible after searching `memo`; the memo-create run
+completed; the evidence drawer exposed `Memo Studio handoff`,
+`memoStudioReady`, `synthesized`, `reviewRequired`, claims/provenance, context
+snapshot, and raw output; browser console/page errors remained zero.
+
+The full local gate was rerun on 2026-05-07 against current `main` and passed:
+`npm run audit:gate` completed the production build, route audits, provider
+isolation, workbench/landing/dashboard/boardroom checks, context/type parity,
+22-tool marketplace contracts, transparency/evidence drawer audits,
+firewall/owner scoping, KG drift, memo studio, 138 Vitest files, 552 tests, and
+GCP inventory.

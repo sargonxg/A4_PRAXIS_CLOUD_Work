@@ -42,7 +42,8 @@ These are not marked complete until production-backed evidence exists.
 | S1 | Synthesized review queue for Source Augmenter and Memo Drafter | Implement typed queue storage, review UI, accept/reject APIs, and no-auto-persist invariant |
 | S1 | Marketplace tools need specialist output depth | Replace placeholder/general handlers with per-tool specialist behavior and canary fixtures; memo tools are now first-class foundation tools but still need audited model-backed runtime evidence before v1.0 sign-off |
 | S1 | Seven live Agent Engine runtimes | Requires deployment/eval/trace/cost evidence; do not claim until GCP evidence is captured |
-| S1 | Production deploy posture | Requires staging-green window, canary evidence, Cloud SQL posture, and signed readiness log |
+| S1 | Production deploy posture | Latest `main` is deployed and smoke-tested, but strict launch posture still requires staging-green window, canary evidence, Cloud SQL posture, and owner-signed readiness log |
+| S1 | Public demo Lighthouse/axe target | Production Lighthouse was run on 2026-05-07 and did not yet meet the Pack 18 target: performance 87 and accessibility 95 against the prompt target of performance >=92 and accessibility/axe 100 |
 
 ## Proposed Next Loop
 
@@ -86,35 +87,50 @@ Executed against `next start -p 3118` after production build:
 | `cross.memo-create` demo run | 200 | Completed from marketplace, opened Evidence drawer, rendered `Memo Studio handoff`, `memoStudioReady`, `synthesized`, and `reviewRequired`; zero console/page errors |
 | Full audit gate | pass | `npm run audit:gate` passed after the memo-tool slice: build, 22-tool marketplace audits, evidence-drawer audit, master-charter audit, 138 Vitest files, 552 tests, KG drift, GCP audit |
 
-The memo-tool slice has matching production evidence below. Pack 18 still
-requires production Lighthouse/axe, CI streak, canary, live Agent Engine,
-specialist model-backed handler, and cloud posture evidence before v1.0.0
-readiness.
+The memo-tool slice has matching production evidence below. `npm run
+audit:gate` was rerun on 2026-05-07 against commit `4669e02` and passed again:
+production build, route audits, provider isolation, workbench/landing/dashboard,
+boardroom, context/type parity, 22-tool marketplace contracts, firewall/owner
+scoping, KG drift, memo studio, 138 Vitest files, 552 tests, and GCP inventory.
+Pack 18 still requires CI streak, canary, live Agent Engine, specialist
+model-backed handler, Cloud SQL posture, owner signature, and public demo
+Lighthouse/accessibility closure before v1.0.0 readiness.
 
 ## Production Verification Evidence
 
 Deployment:
 
-- Commit deployed: `c34aac5`
+- Current commit deployed: `4669e02`
 - Command: `npm run deploy:frontend:cloud`
-- Cloud Build: `6e9a9e93-f7cd-4c16-84b3-28d3e80bace0`
+- Latest Cloud Build: `4e76a579-73bf-447a-bee1-00033850783b`
 - Status: `SUCCESS`
-- Cloud Run latest ready revision after deploy: `praxis-frontend-00258-th2`
+- Cloud Run latest ready revision after deploy: `praxis-frontend-00262-vdn`
+- Traffic: 100% to `praxis-frontend-00262-vdn`
+- Health endpoint: `https://praxis.tacitus.me/api/health` returned HTTP 200
+  with `status: ok`; Firestore, AI provider, cookie secret, and Vertex ADK
+  checks returned `ok`; Polar remains `unconfigured`.
 
 Live checks against `https://praxis.tacitus.me` after deploy:
 
 | Route | HTTP | Browser result |
 |---|---:|---|
-| `/demo/syria-2024` | 200 | Rendered `Syria transition case, source-grounded and graph-first.`, watermark present, no redirect to `/login`, zero console/page errors |
+| `/demo/syria-2024` | 200 | Rendered public read-only demo, watermark present, no redirect to `/login`, zero console/page errors |
 | `/waitlist` | 200 | Rendered `Join the PRAXIS production cohort.`, zero console/page errors |
 | `/login/callback` | 200 | Rendered `Completing secure sign-in`, zero console/page errors |
-| `/legal/privacy` | 200 | HTTP 200 confirmed |
-| `/legal/terms` | 200 | HTTP 200 confirmed |
+| `/legal/privacy` | 200 | Rendered `Privacy Policy`, zero console/page errors |
+| `/legal/terms` | 200 | Rendered `Terms of Service`, zero console/page errors |
 | `/legal/security` | 200 | Rendered `Security`, zero console/page errors |
 | `/legal/data-retention` | 200 | Rendered `Data Retention`, zero console/page errors |
 | `/app/workbench/syria-2026?tab=tools` memo search | 200 | Rendered `Twenty-two focused tools`; `Memo Create` and `Memo Refresh` visible after search |
 | `cross.memo-create` demo run | 200 | Completed from marketplace, opened Evidence drawer, rendered `Memo Studio handoff`, `memoStudioReady`, `synthesized`, and `reviewRequired`; zero console/page errors |
 
-Remaining evidence gap: production Lighthouse/axe has not yet been run for
-`/demo/syria-2024`, and the Pack 18 CI streak/canary requirements are still
-open.
+Public demo Lighthouse evidence:
+
+- Report: `docs/audits/lighthouse-demo-syria-2024-latest.json`
+- URL: `https://praxis.tacitus.me/demo/syria-2024`
+- Fetch time: `2026-05-07T05:26:13.516Z`
+- Performance: 87
+- Accessibility: 95
+- Status: below Pack 18 target (`>=92` desktop performance and `100`
+  accessibility/axe), so this remains an open launch gap rather than a closed
+  item.
