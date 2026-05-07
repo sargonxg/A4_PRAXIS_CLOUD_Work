@@ -86,8 +86,8 @@ Executed against `next start -p 3118` after production build:
 | `cross.memo-create` demo run | 200 | Completed from marketplace, opened Evidence drawer, rendered `Memo Studio handoff`, `memoStudioReady`, `synthesized`, and `reviewRequired`; zero console/page errors |
 | Full audit gate | pass | `npm run audit:gate` passed after the memo-tool slice: build, 22-tool marketplace audits, evidence-drawer audit, master-charter audit, 138 Vitest files, 552 tests, KG drift, GCP audit |
 
-This evidence is local only until the memo-tool slice is deployed. Pack 18
-still requires production Lighthouse/axe, CI streak, canary, live Agent Engine,
+The memo-tool slice has matching production evidence below. Pack 18 still
+requires production Lighthouse/axe, CI streak, canary, live Agent Engine,
 specialist model-backed handler, and cloud posture evidence before v1.0.0
 readiness.
 
@@ -95,10 +95,11 @@ readiness.
 
 Deployment:
 
-- Commit deployed: `ae6a00d`
+- Commit deployed: `6558fff`
 - Command: `npm run deploy:frontend:cloud`
-- Cloud Build: `43779fe0-dfc2-4e9b-8a38-cfe4430123e6`
+- Cloud Build: `915a2009-c016-4a2d-97a3-d1293e88728c`
 - Status: `SUCCESS`
+- Cloud Run latest ready revision after deploy: `praxis-frontend-00256-m4q`
 
 Live checks against `https://praxis.tacitus.me` after deploy:
 
@@ -111,6 +112,8 @@ Live checks against `https://praxis.tacitus.me` after deploy:
 | `/legal/terms` | 200 | HTTP 200 confirmed |
 | `/legal/security` | 200 | Rendered `Security`, zero console/page errors |
 | `/legal/data-retention` | 200 | Rendered `Data Retention`, zero console/page errors |
+| `/app/workbench/syria-2026?tab=tools` memo search | 200 | Rendered `Twenty-two focused tools`; `Memo Create` and `Memo Refresh` visible after search |
+| `cross.memo-create` demo run | 200 | Completed from marketplace, opened Evidence drawer, rendered `Memo Studio handoff`, `memoStudioReady`, `synthesized`, and `reviewRequired`; zero console/page errors |
 
 Remaining evidence gap: production Lighthouse/axe has not yet been run for
 `/demo/syria-2024`, and the Pack 18 CI streak/canary requirements are still
