@@ -36,6 +36,16 @@ export interface GraphNode {
   x: number;
   y: number;
   date?: string;
+  metadata?: {
+    sanctions?: Array<{
+      entity_id?: string;
+      entityId?: string;
+      score?: number;
+      datasets?: string[];
+      opensanctions_url?: string;
+      url?: string;
+    }>;
+  };
 }
 
 export interface GraphEdge {
@@ -209,6 +219,31 @@ export function EntityPanel({
                 </div>
               )}
             </div>
+
+            {node.metadata?.sanctions && node.metadata.sanctions.length > 0 && (
+              <div className="mb-4 rounded-lg border border-gold-500/30 bg-gold-500/10 p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gold-300">
+                    Sanctions: {node.metadata.sanctions.length} matches
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {node.metadata.sanctions.slice(0, 4).map((match, index) => (
+                    <a
+                      key={`${match.entity_id ?? match.entityId ?? index}`}
+                      href={match.opensanctions_url ?? match.url ?? '#'}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block rounded-md border border-navy-700/50 bg-navy-900/60 px-3 py-2 text-xs text-navy-200 hover:border-gold-500/40"
+                    >
+                      <span className="font-semibold">{match.entity_id ?? match.entityId ?? 'OpenSanctions record'}</span>
+                      {typeof match.score === 'number' ? <span className="ml-2 text-gold-300">{Math.round(match.score * 100)}%</span> : null}
+                      {match.datasets?.length ? <span className="mt-1 block text-navy-400">{match.datasets.join(', ')}</span> : null}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Relationships */}
             <div className="mb-4">

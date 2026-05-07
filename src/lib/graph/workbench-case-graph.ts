@@ -15,6 +15,16 @@ export interface WorkbenchGraphNode {
     label: string;
     derived: boolean;
   };
+  metrics?: {
+    centrality?: {
+      betweenness?: number;
+      eigenvector?: number;
+      pagerank?: number;
+      closeness?: number;
+    };
+    community?: number;
+    core_number?: number;
+  };
 }
 
 export interface WorkbenchGraphEdge {

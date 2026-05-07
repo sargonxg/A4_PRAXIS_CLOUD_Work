@@ -15,7 +15,9 @@ export function toForceGraphData(graph: WorkbenchGraph) {
       ...node,
       name: node.label,
       color: NODE_COLORS[node.type],
+      centralityValue: node.metrics?.centrality?.betweenness ?? 0,
       val: node.type === 'case' ? 11 : 4 + Math.round(node.confidence * 8),
+      centralityVal: node.type === 'case' ? 11 : 5 + Math.round((node.metrics?.centrality?.betweenness ?? 0) * 24),
     })),
     links: graph.edges.map((edge) => ({
       ...edge,

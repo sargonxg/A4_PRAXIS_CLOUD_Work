@@ -3,9 +3,9 @@ import { filterMarketplaceTools } from '@/lib/tools/marketplace/filter-engine';
 import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
 
 describe('tools marketplace', () => {
-  it('keeps the exposed registry capped at fifty-four curated tools including Pack 30 extraction tools', () => {
-    expect(MARKETPLACE_TOOLS).toHaveLength(54);
-    expect(new Set(MARKETPLACE_TOOLS.map((tool) => tool.id)).size).toBe(54);
+  it('keeps the exposed registry capped at fifty-seven curated tools including Pack 31 analytics tools', () => {
+    expect(MARKETPLACE_TOOLS).toHaveLength(57);
+    expect(new Set(MARKETPLACE_TOOLS.map((tool) => tool.id)).size).toBe(57);
     for (const id of ['cross.ach', 'cross.kac', 'cross.red-team', 'cross.premortem', 'cross.memo-create', 'cross.memo-refresh']) {
       expect(MARKETPLACE_TOOLS.some((tool) => tool.id === id)).toBe(true);
     }
@@ -13,6 +13,9 @@ describe('tools marketplace', () => {
       expect(MARKETPLACE_TOOLS.some((tool) => tool.id === id)).toBe(true);
     }
     for (const id of ['extract.entities.gliner', 'cross.community-synthesizer']) {
+      expect(MARKETPLACE_TOOLS.some((tool) => tool.id === id)).toBe(true);
+    }
+    for (const id of ['analyze.network', 'match.sanctions', 'simulate.policy_abm']) {
       expect(MARKETPLACE_TOOLS.some((tool) => tool.id === id)).toBe(true);
     }
   });

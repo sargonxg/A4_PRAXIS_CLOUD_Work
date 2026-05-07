@@ -10,7 +10,13 @@ const workerLicenses: Record<string, string> = {
   gliner: 'Apache-2.0',
   'google-cloud-storage': 'Apache-2.0',
   graphrag: 'MIT',
+  mesa: 'Apache-2.0',
   litellm: 'MIT',
+  networkx: 'BSD-3-Clause',
+  numpy: 'BSD-3-Clause',
+  followthemoney: 'MIT',
+  rigour: 'MIT',
+  'python-louvain': 'BSD-3-Clause',
   pydantic: 'MIT',
   torch: 'BSD-3-Clause',
   transformers: 'Apache-2.0',
@@ -39,6 +45,7 @@ for (const requirementsPath of [
   'services/extract-docling/requirements.txt',
   'services/extract-ner-gliner/requirements.txt',
   'services/extract-graphrag/requirements.txt',
+  'services/simulate-policy-abm/requirements.txt',
 ]) {
   if (!existsSync(join(root, requirementsPath))) {
     failures.push(`missing ${requirementsPath}`);
@@ -52,6 +59,14 @@ for (const requirementsPath of [
     rows.push(`${requirementsPath}:${pkgName} ${license ?? 'UNKNOWN'}`);
     if (!license || !allowed.has(license)) failures.push(`${requirementsPath} contains unsupported or unknown license for ${pkgName}`);
   }
+}
+
+const backendPyproject = readFileSync(join(root, 'backend/pyproject.toml'), 'utf8');
+for (const dep of ['networkx', 'python-louvain', 'followthemoney', 'rigour']) {
+  const license = workerLicenses[dep];
+  rows.push(`backend/pyproject.toml:${dep} ${license ?? 'UNKNOWN'}`);
+  if (!backendPyproject.includes(`"${dep}`)) failures.push(`backend pyproject missing ${dep}`);
+  if (!license || !allowed.has(license)) failures.push(`backend dependency ${dep} has unsupported or unknown license`);
 }
 
 for (const file of sourceFiles(['src', 'backend', 'scripts', 'tests'])) {
@@ -68,7 +83,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Pack 30 license SBOM audit passed.');
+console.log('Pack 31 license SBOM audit passed.');
 for (const row of rows) console.log(`- ${row}`);
 
 function normalizeLicense(license: string | undefined) {

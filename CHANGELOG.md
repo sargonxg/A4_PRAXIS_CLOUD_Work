@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(analytics): add Pack 31 network, sanctions, and simulation foundation.
+  Added NetworkX graph metrics, additive graph node metrics migration, yente
+  sanctions sidecar scaffolding, sanctions licensing runbook, Mesa-style policy
+  ABM worker, three cross-category marketplace tools, centrality graph sizing,
+  sanctions badges, ADR 0048, and Pack 31 audit/test coverage.
 - feat(extraction): add Pack 30 Docling, GLiNER, and GraphRAG foundation.
   Added isolated Cloud Run worker scaffolds, context-genesis pipeline contracts,
   Docling chunking, GLiNER ontology labels, GraphRAG-to-ACO review candidates,

@@ -363,6 +363,10 @@
     "mtime": 1778085548.3412228,
     "hash": "4d08c3ceb001e16bba89a1015c054e52"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\migrations\\versions\\0012_graph_nodes_metrics.py": {
+    "mtime": 1778155166.248202,
+    "hash": "752efee22138b14b7534751ad01a1e08"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\ontology\\base.py": {
     "mtime": 1778132521.2622633,
     "hash": "db8c4addf689d3842ce6247ccfc50426"
@@ -404,8 +408,8 @@
     "hash": "a226b138b8c2e45e8022890d91f09b04"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\routers\\pipeline.py": {
-    "mtime": 1778081599.5063639,
-    "hash": "9bddc99fcd360f6ede6d576367c61e70"
+    "mtime": 1778153449.3385818,
+    "hash": "d7cee677bd7cb969434f212f7b92b1e5"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\routers\\reason.py": {
     "mtime": 1777845127.7470264,
@@ -444,8 +448,8 @@
     "hash": "d579b8881c81bf0f309b15db80f99401"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\kg_repositories.py": {
-    "mtime": 1778090411.7810626,
-    "hash": "9cc0f190bbc46bc7816ab72de7110d71"
+    "mtime": 1778155189.7935114,
+    "hash": "7c8ba348033ddb6336950e90e4160ad2"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\neo4j_client.py": {
     "mtime": 1778081599.5063639,
@@ -479,6 +483,38 @@
     "mtime": 1777260426.793627,
     "hash": "8c2d3d99c80102933a20b8d613170f53"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\analytics\\firewall_metrics_writer.py": {
+    "mtime": 1778155166.2441833,
+    "hash": "595de44c2ec8a554380803f1377fb940"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\analytics\\network_metrics.py": {
+    "mtime": 1778155493.6764486,
+    "hash": "a5b3172a305051611967c406c97b24c3"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\analytics\\__init__.py": {
+    "mtime": 1778155166.242173,
+    "hash": "208f378f9ab15b498351ab76c2ead22b"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\chunker\\docling_chunker.py": {
+    "mtime": 1778153367.754148,
+    "hash": "3fb09f81a775da321b453da9b9d1d3db"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\chunker\\__init__.py": {
+    "mtime": 1778153106.2607071,
+    "hash": "1edeff1cf51a67a4791ca6ebfb48ba5a"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\context_genesis\\orchestrator.py": {
+    "mtime": 1778153367.754148,
+    "hash": "772c3dda363f3d587def762305375ecb"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\context_genesis\\pipeline.py": {
+    "mtime": 1778153765.1713698,
+    "hash": "12b3ecfebeadeb859f88eab4e2a65169"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\context_genesis\\__init__.py": {
+    "mtime": 1778153106.2607071,
+    "hash": "3d59c94856062be0bad37065b1b034c4"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\custom_personas\\sandbox.py": {
     "mtime": 1778112671.5011165,
     "hash": "ffadc4dbab617dceae89ec5847deb927"
@@ -495,17 +531,29 @@
     "mtime": 1778112642.640072,
     "hash": "553c2e3040f6e2eb9b56f0f0526fbffe"
   },
-  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\feed_clients\\acled.py": {
-    "mtime": 1777260426.7956326,
-    "hash": "2fda35b97d4915e413f6194b28d4a16e"
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\extract_graphrag\\aco_adapter.py": {
+    "mtime": 1778153106.2763863,
+    "hash": "73e47c4eeef0000f44c3c958d7a3104f"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\extract_graphrag\\__init__.py": {
+    "mtime": 1778153106.2763863,
+    "hash": "130a87c65387f21cbf23ac7cc835fd37"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\extract_structured\\orchestrator.py": {
+    "mtime": 1778153106.2607071,
+    "hash": "9319b2417dca3541e2954d478ed7d123"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\extract_structured\\__init__.py": {
+    "mtime": 1778153106.2607071,
+    "hash": "6576674ff899fef924615c382be018ce"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\feed_clients\\gdelt.py": {
     "mtime": 1777260426.796137,
     "hash": "e68457ad236c72f2a759daa546ed564a"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\feed_clients\\__init__.py": {
-    "mtime": 1777260426.7956326,
-    "hash": "605625053c29c2a6a2ad7940ae3f82fa"
+    "mtime": 1778153449.3385818,
+    "hash": "d68e40c2bdcb7585e803271add35c832"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\persona_corpus\\ingester.py": {
     "mtime": 1778113434.814474,
@@ -518,6 +566,18 @@
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\persona_corpus\\__init__.py": {
     "mtime": 1778112684.3639433,
     "hash": "cdfb71a836cb5e40b84b8e82c8176069"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\sanctions\\sync_index.py": {
+    "mtime": 1778155166.248202,
+    "hash": "7156f0b5aca4749146433033d2b1979b"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\sanctions\\yente_client.py": {
+    "mtime": 1778155166.2461936,
+    "hash": "9c2ad1ea600418bb2ac6577252ce89aa"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\sanctions\\__init__.py": {
+    "mtime": 1778155166.2461936,
+    "hash": "4fca74c4fb40acd4ed2ce1a5c61b3812"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\tests\\test_aco_schemas.py": {
     "mtime": 1777260426.796137,
@@ -535,9 +595,21 @@
     "mtime": 1778112718.7429063,
     "hash": "bcce902be52b87171958e21bbd1c2f46"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\tests\\test_docling_chunker.py": {
+    "mtime": 1778153698.8649278,
+    "hash": "67378fea16e7ea68976183717c49a2bd"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\tests\\test_extraction_wave_pipeline.py": {
+    "mtime": 1778153775.5251,
+    "hash": "6a3060d3bdadae8be51d59cd7123db0d"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\tests\\test_full_pipeline.py": {
     "mtime": 1778081599.5063639,
     "hash": "7b4230678492ca3c2d5bc7c68caf88c3"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\tests\\test_graphrag_aco_adapter.py": {
+    "mtime": 1778153698.8649278,
+    "hash": "7892f41e4b4f4e694df57bf6cb7ff866"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\tests\\test_graph_export.py": {
     "mtime": 1777260426.796137,
@@ -554,6 +626,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\tests\\test_neo4j_sync.py": {
     "mtime": 1778081599.5063639,
     "hash": "f859458cbce376e4c755a573caa93e8c"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\tests\\test_network_metrics.py": {
+    "mtime": 1778155516.8937645,
+    "hash": "2f8c5f1e805d4b22831ec75a4d13d3d3"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\tests\\test_persona_corpus_retrieval.py": {
     "mtime": 1778112727.2055748,
@@ -598,6 +674,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\tests\\test_red_team_analyst.py": {
     "mtime": 1778108139.5632663,
     "hash": "01f59bdf2588e353918cdaab29c07ebb"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\tests\\test_sanctions_yente_client.py": {
+    "mtime": 1778155439.452455,
+    "hash": "ca860a465de80013e6bb6eabbf35721a"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\tests\\test_sats_parity.py": {
     "mtime": 1778107786.8155828,
@@ -663,6 +743,10 @@
     "mtime": 1778101199.791952,
     "hash": "e4f69d1f28688f1fb940d0570421192c"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\infrastructure\\templates\\cloud-run-permissive-worker\\main.py": {
+    "mtime": 1778153367.7781088,
+    "hash": "5dbb8b2fea8827a8b546fb6294464834"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-ai-provider-isolation.ts": {
     "mtime": 1778100418.346756,
     "hash": "9c1b36ae162b2912877d84027559a8ba"
@@ -674,6 +758,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-ai-routes.mjs": {
     "mtime": 1777383284.436331,
     "hash": "9cc3fdccbe4d2837c6e1ac6793cc2fc3"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-analytics-wave.ts": {
+    "mtime": 1778155382.2039247,
+    "hash": "a1e70549dd7a1014a28146726edd13ee"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-architecture-chain.ts": {
     "mtime": 1778102890.4330862,
@@ -688,8 +776,8 @@
     "hash": "fc653e005795cbe2949dd644ea409dfc"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-codex-prompts.ts": {
-    "mtime": 1778143884.6471453,
-    "hash": "cb084200561d751eb9cd730d33fddd31"
+    "mtime": 1778155382.2011433,
+    "hash": "8752d020816df7467e7fd5940240336a"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-context-aware-coverage.ts": {
     "mtime": 1778093454.2561283,
@@ -703,6 +791,10 @@
     "mtime": 1778091826.1561506,
     "hash": "b85411e92f065fd18c4b16463142653f"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-cost-telemetry.ts": {
+    "mtime": 1778153803.6999037,
+    "hash": "7b63035534605a1698a259e1536383b8"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-dashboard.ts": {
     "mtime": 1778115221.4850445,
     "hash": "440b0c9154933d9837b9a83a3620a01b"
@@ -710,6 +802,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-evidence-drawer.ts": {
     "mtime": 1778128437.8974552,
     "hash": "daeed8a38a78e196fba41ca98a3614ac"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-extraction-wave.ts": {
+    "mtime": 1778153727.814276,
+    "hash": "e70c8413d87ecaab6d5b783f00e5b858"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-firewall-coverage.ts": {
     "mtime": 1778103018.7320793,
@@ -724,8 +820,8 @@
     "hash": "8c64fb5bbc35b833a6338da67229db5f"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-graph-viewer-uniqueness.ts": {
-    "mtime": 1778084582.6295912,
-    "hash": "1449da10e9c96a26c24dcbfcec7dc9cb"
+    "mtime": 1778151987.0746405,
+    "hash": "b29176f5a15f86765847188556938ea5"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-kg-backend.ts": {
     "mtime": 1778090433.7720823,
@@ -738,6 +834,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-legal-pages-present.ts": {
     "mtime": 1778123625.4451687,
     "hash": "60476ab9998df13a215e2679beec0eb6"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-license-sbom.ts": {
+    "mtime": 1778155558.8162532,
+    "hash": "88f4f7c576186d7ebb5d26ccfb25622c"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-master-charter.ts": {
     "mtime": 1778105910.8200254,
@@ -791,6 +891,10 @@
     "mtime": 1778092094.2208908,
     "hash": "29269935b5ae55bdff336e31eff7eb3f"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-route-bundle-budget.ts": {
+    "mtime": 1778151885.463899,
+    "hash": "c17336fadd4e21ce4a7221a778282465"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-routes.ts": {
     "mtime": 1777260426.8517656,
     "hash": "7b48bb73a142491703a587be6ba3afd6"
@@ -812,8 +916,8 @@
     "hash": "dc37ae9f168c05c30dee70d2fa2e6ad3"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-tool-composition-static.ts": {
-    "mtime": 1778134404.4423153,
-    "hash": "01a8f63f8771247533807af9ee7d2d70"
+    "mtime": 1778156081.1738732,
+    "hash": "a2fa6ace597cfb994738b7570d286b8a"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-tool-context-isolation.ts": {
     "mtime": 1778102890.4290872,
@@ -828,8 +932,8 @@
     "hash": "bf13c256e010eb7aa162aff053c9e37e"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-tool-marketplace.ts": {
-    "mtime": 1778134329.265147,
-    "hash": "fd572807f01572463c405724bc133542"
+    "mtime": 1778155927.9208226,
+    "hash": "7df9df7554af2a07c3902f05a8c944dc"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-tool-persona-coverage.ts": {
     "mtime": 1778137159.0301025,
@@ -863,6 +967,10 @@
     "mtime": 1778081599.623549,
     "hash": "a432770901b3dd04ccd7d4a743269e20"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-visualization-wave.ts": {
+    "mtime": 1778151856.3224049,
+    "hash": "36a123ccb734d92506e71dbe1a24319b"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-workbench.ts": {
     "mtime": 1778150042.5599928,
     "hash": "41f8e784c8c0d9839e5c521eb53c3cb9"
@@ -870,6 +978,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\auth-doctor.ts": {
     "mtime": 1778081604.8241844,
     "hash": "1503152355696c67b4b7ee45def6655d"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\scripts\\bench-gliner-cost-reduction.py": {
+    "mtime": 1778153634.9948537,
+    "hash": "c44a7f16201a62ac27e25859edbf9186"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\canary-monitor.ts": {
     "mtime": 1778101291.116755,
@@ -916,8 +1028,8 @@
     "hash": "1490eec2eadaa73deaaa250a9f7ba9ae"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\migrate-user-api-keys.mjs": {
-    "mtime": 1778081599.6265469,
-    "hash": "5689e9931d9ddf24fde947af9488f955"
+    "mtime": 1778153491.749698,
+    "hash": "f79f65b029590dbed5b2a316e80dbb7f"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\seed-advisors.ts": {
     "mtime": 1777839434.8027928,
@@ -935,6 +1047,10 @@
     "mtime": 1777260426.8517656,
     "hash": "fa7d48061f59a00882b63fee0e78162c"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\scripts\\smoke-extraction-pipeline.py": {
+    "mtime": 1778153868.0103104,
+    "hash": "b12546408733559941f6260600045802"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\verify-audit-fresh.ts": {
     "mtime": 1777260426.8539255,
     "hash": "d486ce64dff2f1d4cb7c205531d3f886"
@@ -946,6 +1062,34 @@
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\verify-tools.ts": {
     "mtime": 1778101371.1042085,
     "hash": "ea425391e8aa39d0b01fc7f8d867b514"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\extract-docling\\main.py": {
+    "mtime": 1778153161.2750058,
+    "hash": "6fdc3efd2ebc99420eac77216956112a"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\extract-graphrag\\main.py": {
+    "mtime": 1778153367.7612867,
+    "hash": "c1ea8ea7803bc21820c27b366ec54aa8"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\extract-ner-gliner\\main.py": {
+    "mtime": 1778153161.2750058,
+    "hash": "e22bc4f5fb23ca45c59fa22648bb63e9"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\simulate-policy-abm\\main.py": {
+    "mtime": 1778155244.279341,
+    "hash": "21c07cbad767aae8f06cfbd0ca5ab4b4"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\simulate-policy-abm\\scenarios\\escalation_ladder_with_mediator.py": {
+    "mtime": 1778155493.6764486,
+    "hash": "d9d21220a28b719da39bae8189ae09a0"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\simulate-policy-abm\\scenarios\\__init__.py": {
+    "mtime": 1778155244.2952487,
+    "hash": "cf5cad1fc82e5b6612149aa9c7de4fdc"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\simulate-policy-abm\\tests\\test_escalation_ladder.py": {
+    "mtime": 1778155493.6764486,
+    "hash": "9b4998779b89536ba431c62fe17bc53d"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\instrumentation.ts": {
     "mtime": 1777260427.049255,
@@ -1268,8 +1412,8 @@
     "hash": "bedff54a050df885188565de2a437a47"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\app\\api\\ai\\risk-assessment\\route.ts": {
-    "mtime": 1778081599.646289,
-    "hash": "d20b4385f60ab9f1f4c5a0e6800cb919"
+    "mtime": 1778153449.340587,
+    "hash": "1b0b95eb7ed52d0f8f0bdc6a53389ffe"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\app\\api\\ai\\risk-indicators\\route.ts": {
     "mtime": 1777472418.0839405,
@@ -2304,16 +2448,44 @@
     "hash": "485f81c37c9e4ecd123c6ae46ec8e7a5"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\graph\\entity-panel.tsx": {
-    "mtime": 1777260427.0082476,
-    "hash": "f856e76f96c8998adef1d3140c30c365"
+    "mtime": 1778155331.654392,
+    "hash": "a405c0aea69f08cbb15aeee5145c57e3"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\graph\\graph-viewer.tsx": {
     "mtime": 1777260427.0082476,
     "hash": "adabf7f9cdd242b3b6797fca59124efa"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\graph\\GraphLayoutToggle.tsx": {
+    "mtime": 1778151638.3468027,
+    "hash": "4235929d0b6ec9e7ac4ee251e287bc26"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\graph\\GraphVisualizationSkeleton.tsx": {
+    "mtime": 1778151645.4119241,
+    "hash": "890266bf122e4df370f2598e180c5e7c"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\graph\\PraxisForceGraph.tsx": {
+    "mtime": 1778155331.654392,
+    "hash": "fc9561988582249266160b1cccf1be0d"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\graph\\PraxisGraphCanvas.tsx": {
     "mtime": 1778099482.0529947,
     "hash": "30b4951da62aa882c1613bffc2316d6f"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\graph\\PraxisGraphView.tsx": {
+    "mtime": 1778151791.1734476,
+    "hash": "c1ee98314915efd67c8ce4916b7ffeb2"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\graph\\PraxisMap.tsx": {
+    "mtime": 1778151761.9030514,
+    "hash": "45a661038ae653058ea5412d672d55af"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\graph\\PraxisMapReact.tsx": {
+    "mtime": 1778151738.8549895,
+    "hash": "37655254141722c21a0f3367faef5098"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\graph\\PraxisTimeline.tsx": {
+    "mtime": 1778151706.3837633,
+    "hash": "31c30d210a9d20ade8a5d5a3ff3929a6"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\graph\\relationship-matrix.tsx": {
     "mtime": 1777260427.0082476,
@@ -2752,8 +2924,8 @@
     "hash": "8b862ea6f20137c784b4d5193be4764d"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\praxis\\tool-output-frame.tsx": {
-    "mtime": 1777654660.2301188,
-    "hash": "5aa7426b3247a762b43156eb6d6c4d02"
+    "mtime": 1778153491.749698,
+    "hash": "130e67a6c24fe608805aa5ee3f566bda"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\praxis\\tool-page-shell.tsx": {
     "mtime": 1777260427.0291336,
@@ -2920,8 +3092,8 @@
     "hash": "2071617344c741be15460c3a75055d97"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\syria\\chapter-3-conflict-graph.tsx": {
-    "mtime": 1777917486.2002282,
-    "hash": "bb5c00906fee3124b74421c499ea3ff0"
+    "mtime": 1778151835.0843728,
+    "hash": "5ece7ba91794d332ea40df3e7fed55dd"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\syria\\chapter-4-dialectica.tsx": {
     "mtime": 1777929330.4618316,
@@ -3006,6 +3178,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\timeline\\live-events-panel.tsx": {
     "mtime": 1777383284.532593,
     "hash": "7e35d9b292c5e1bd88068455524e8f18"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\tools\\AbmTrajectoryView.tsx": {
+    "mtime": 1778155331.654392,
+    "hash": "27a4653d1382f96cc9cbe790ef74a8be"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\tools\\ToolMarketplace.tsx": {
     "mtime": 1778134238.8295414,
@@ -3168,8 +3344,8 @@
     "hash": "50e1fcea30fab1be3a9bfa220fc8f3ef"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\workbench\\StructuredChapterContent.tsx": {
-    "mtime": 1778141124.0429022,
-    "hash": "1696e3d2415a7e75d56a4577da8ec2ee"
+    "mtime": 1778151818.713642,
+    "hash": "6c3e21561d3ff71bd2897a5273b790a1"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\workbench\\tool-gate.tsx": {
     "mtime": 1778091826.1551495,
@@ -3188,8 +3364,8 @@
     "hash": "1eefd234a6fb505ee0983cc1aa0c47fd"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\workbench\\workbench-tab-content.tsx": {
-    "mtime": 1778143767.7737255,
-    "hash": "7d03769f83d8345770faf7be6948b854"
+    "mtime": 1778151810.4949358,
+    "hash": "a1a25cfe183a37b73ebd668f81dfcae9"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\workbench\\workbench-tabs.tsx": {
     "mtime": 1778107887.7064826,
@@ -3432,24 +3608,24 @@
     "hash": "032d2d6e6bd08de4636e4e949d8827bb"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\analytics\\escalation-scorer.ts": {
-    "mtime": 1777260427.0600162,
-    "hash": "f276a9feb3cd8064a15ba290dc1d488e"
+    "mtime": 1778153449.3425932,
+    "hash": "d8354415b1e5215374bbc8be2b2151a8"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\analytics\\geospatial-engine.ts": {
-    "mtime": 1777260427.0600162,
-    "hash": "79c3e5c9514ff19ae3b11c237fc573ed"
+    "mtime": 1778153949.430128,
+    "hash": "32dec4bd9db4b63a9d2c3db7bbd07d4a"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\analytics\\risk-engine.ts": {
-    "mtime": 1777260427.0600162,
-    "hash": "0ccb95402bacf7127f51ab609ec0aefa"
+    "mtime": 1778153449.340587,
+    "hash": "2bfe685d092858e7969ffcf490548d2c"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\analytics\\salience-engine.ts": {
     "mtime": 1777260427.0600162,
     "hash": "675b04929d796947f8349079a3bb4655"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\analytics\\trustworthiness-engine.ts": {
-    "mtime": 1778081599.692655,
-    "hash": "fe767016deed2b87a48aeae4f3b73610"
+    "mtime": 1778153949.4321449,
+    "hash": "abd56ed6db895e110a3a07c30dd228a4"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\api\\ai-request-limits.ts": {
     "mtime": 1777485191.3464255,
@@ -3576,8 +3752,8 @@
     "hash": "8f33154fe63ac24dc2eb8688e4f95073"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\boardroom\\personas.ts": {
-    "mtime": 1778110137.1003942,
-    "hash": "a8eb8efae3018952e95460b768302663"
+    "mtime": 1778153510.0829859,
+    "hash": "fcc0f468d2b7a61165707eec8ed4a07a"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\boardroom\\store.ts": {
     "mtime": 1778111433.5959544,
@@ -3656,8 +3832,8 @@
     "hash": "9ca8686df2b6315c3a2fcce3d9472451"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\constants\\conflict-media-resources.ts": {
-    "mtime": 1777260427.0702949,
-    "hash": "8aaa3d811ca6eaba92fed8831b77d1a9"
+    "mtime": 1778153510.055627,
+    "hash": "1451c90f992a41afec4556d310d08248"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\constants\\consolidated-tools.ts": {
     "mtime": 1778081604.8665009,
@@ -3700,28 +3876,28 @@
     "hash": "0621e4805aad589ac7d5a14beec3766f"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\constants\\external-resources.ts": {
-    "mtime": 1777260427.0702949,
-    "hash": "faab7ca1e7bc988ff5048ff2af98f7cc"
+    "mtime": 1778154179.0188832,
+    "hash": "22919542bb952bea657bfc9cb24130df"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\constants\\frameworks.ts": {
-    "mtime": 1777260427.0702949,
-    "hash": "0de8b41164197542d48161ba9ddd5b33"
+    "mtime": 1778153510.0397575,
+    "hash": "362c13aa59709e35fade2078ea09d42e"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\constants\\global-media-sources.ts": {
-    "mtime": 1777260427.0702949,
-    "hash": "db0298cba88a28027a43117a4873a7bd"
+    "mtime": 1778154179.0188832,
+    "hash": "33ae63225046f6c9d48c1657e1ce9fe9"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\constants\\indicator-catalog.ts": {
-    "mtime": 1777383284.532593,
-    "hash": "6dca9226fdf4b7d30cabf331f75063d8"
+    "mtime": 1778153510.0397575,
+    "hash": "b9e5d256d66fe6557a891bf28bc8cdd3"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\constants\\lens-catalog.ts": {
     "mtime": 1777260427.0702949,
     "hash": "2e7678f9aad2cc03a314e278254f6937"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\constants\\media-database.ts": {
-    "mtime": 1777260427.0702949,
-    "hash": "82f9ad759a222d5018c3fb4ab7e2a0db"
+    "mtime": 1778154179.0261123,
+    "hash": "4c06afc7d46006439023ad27d042fa96"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\constants\\media-sources.ts": {
     "mtime": 1777260427.0702949,
@@ -3744,12 +3920,12 @@
     "hash": "e748c5a2f637445bc8754f727ad7e293"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\constants\\scenario-configs.ts": {
-    "mtime": 1777260427.081057,
-    "hash": "0a90058fe253b0d9ab75681d0e5b3bfd"
+    "mtime": 1778153510.0648947,
+    "hash": "b1c572e2046688f746121092269896ea"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\constants\\source-categories.ts": {
-    "mtime": 1778081599.692655,
-    "hash": "9500deabedfcf844860a04a05fbbec4a"
+    "mtime": 1778153510.0608797,
+    "hash": "28f7f01afc0351d31f2d6f36238a076e"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\constants\\syria-demo-case.ts": {
     "mtime": 1777782134.8178496,
@@ -3800,8 +3976,8 @@
     "hash": "beb7ead7fdcc82ff55fba8bee6efaef5"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\constants\\cases\\ethiopia-tigray.ts": {
-    "mtime": 1777260427.0702949,
-    "hash": "cdcbda428ba7947779a20268f849c0b2"
+    "mtime": 1778153510.0729308,
+    "hash": "1c8bc956c74deda204a73f7e199ffdf9"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\constants\\cases\\index.ts": {
     "mtime": 1777946042.4329362,
@@ -3812,8 +3988,8 @@
     "hash": "8e0248e0b06cdf2df44dd1a99b2173d4"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\constants\\cases\\sudan-crisis.ts": {
-    "mtime": 1777260427.0702949,
-    "hash": "ab4902e9ecc70bbb13f9c2e6a9deacb9"
+    "mtime": 1778154179.0261123,
+    "hash": "e4af71cb6036b9e51585980127aa21aa"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\constants\\cases\\ukraine-russia.ts": {
     "mtime": 1777260427.0702949,
@@ -3860,8 +4036,8 @@
     "hash": "49e2a38983aa59ab1f33fe335c24e709"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\crypto\\envelope.test.ts": {
-    "mtime": 1777260427.0848458,
-    "hash": "191061bb2db564673a50b0e01e92ea39"
+    "mtime": 1778153491.749698,
+    "hash": "db35a8e59939fe5af55f59b275145e45"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\crypto\\envelope.ts": {
     "mtime": 1777260427.0848458,
@@ -3876,12 +4052,8 @@
     "hash": "3c45dc2b105902799e0b0a65e21ca533"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\data\\source-credibility.ts": {
-    "mtime": 1778081599.692655,
-    "hash": "6652cf0b0373fad0445e37e724248ef8"
-  },
-  "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\data-feeds\\acled-client.ts": {
-    "mtime": 1777260427.087699,
-    "hash": "10593b28188a9361041c11d39edf7cce"
+    "mtime": 1778153491.749698,
+    "hash": "9a37600a9261d9e67e7cf0b27962219a"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\data-feeds\\aggregator-v2.ts": {
     "mtime": 1777474315.123784,
@@ -3890,6 +4062,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\data-feeds\\capabilities.ts": {
     "mtime": 1777474706.781226,
     "hash": "3bbd5d920e89891f8d21f8142ff45ef4"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\data-feeds\\conflict-events.ts": {
+    "mtime": 1778153949.425487,
+    "hash": "8ca531268a322f1d39ecdf1e2eb6dfc3"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\data-feeds\\crisisgroup-client.ts": {
     "mtime": 1778081599.692655,
@@ -4127,6 +4303,10 @@
     "mtime": 1778081599.692655,
     "hash": "2abc401bb3f95f391e55c995e30a4749"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\graph\\force-graph-adapter.ts": {
+    "mtime": 1778155331.654392,
+    "hash": "9fa4b799c15f7d5ea1bbad460a42cf49"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\graph\\graph-query-service.ts": {
     "mtime": 1777606356.894693,
     "hash": "aba6001717bff2fc4d094b1fdcb2f0f4"
@@ -4143,6 +4323,14 @@
     "mtime": 1777606399.050287,
     "hash": "08c90286496f3bf42795b787f13bfccd"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\graph\\layout-capability.ts": {
+    "mtime": 1778151596.9363954,
+    "hash": "5db1963abf0ba6fbb09b8b1a04d4cd02"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\graph\\map-adapter.ts": {
+    "mtime": 1778151624.2926588,
+    "hash": "39a2212e5219ec807cb0c0128dafe5ab"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\graph\\neo4j-drift-verifier.ts": {
     "mtime": 1778082853.8924625,
     "hash": "adbdb30f9fdd825157c5d360941cf7df"
@@ -4151,9 +4339,13 @@
     "mtime": 1778081599.692655,
     "hash": "9395f6fd8cbb2024a80b461721fd20b9"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\graph\\timeline-adapter.ts": {
+    "mtime": 1778151615.4034586,
+    "hash": "a320ee1cd1aedd9407a7523a0069d2e3"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\graph\\workbench-case-graph.ts": {
-    "mtime": 1778084398.5427556,
-    "hash": "e9a4a164f630b8eaf8f9b943efea6a1e"
+    "mtime": 1778155331.654392,
+    "hash": "14fd6c6413d8ca1fbec1ca24ffb8e2f7"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\intelligence\\corpus-search.ts": {
     "mtime": 1778100260.5785232,
@@ -4268,12 +4460,12 @@
     "hash": "1d95d74b7a5daaf9ca3271edcf92a74e"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\onboarding\\case-scaffold.ts": {
-    "mtime": 1778143943.2832067,
-    "hash": "96175e486dd554f18efff8b7566fa8e5"
+    "mtime": 1778153510.0789628,
+    "hash": "d5eb3815b19d140aef2749c65017581b"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\onboarding\\rationale.ts": {
-    "mtime": 1777260427.1070154,
-    "hash": "9497ab70ebe201cc4cf81259a5866c85"
+    "mtime": 1778153510.0749397,
+    "hash": "1bf6920db66a283865facedd9294b31f"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\ontology\\classifier.ts": {
     "mtime": 1778135610.8629315,
@@ -4292,8 +4484,8 @@
     "hash": "bcea405b77561455925af3ab772aed14"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\ontology\\validator-pass-rate.ts": {
-    "mtime": 1778147050.6561093,
-    "hash": "7e1464bd7fea8ad393b93f5935777bae"
+    "mtime": 1778153510.0397575,
+    "hash": "9458c7e1a7699fbfd5e651a8057cbe8b"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\ontology\\conflict\\index.ts": {
     "mtime": 1778102839.1056893,
@@ -4496,8 +4688,8 @@
     "hash": "7458b2e5d4f1cb3a47590164756c46a8"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\tools\\marketplace\\registry.ts": {
-    "mtime": 1778134229.4046354,
-    "hash": "2bb25e25624a8a9668145928750a8f90"
+    "mtime": 1778155493.6764486,
+    "hash": "de0903ebc9f3b6e496324c5e72ae9838"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\tools\\marketplace\\run-artifact.ts": {
     "mtime": 1778098588.7294984,
@@ -4732,8 +4924,8 @@
     "hash": "ed49c2e415adc3d57604f71b483562a5"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\types\\provenance.ts": {
-    "mtime": 1778081599.7108698,
-    "hash": "d0291f89f476a4614c2c16fb680281f0"
+    "mtime": 1778153449.3385818,
+    "hash": "9f5fc3c097ae318d40570d6ba0a3920a"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\types\\report.ts": {
     "mtime": 1777260427.1241047,
@@ -4758,6 +4950,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\src\\types\\truth-layers.ts": {
     "mtime": 1778081604.8665009,
     "hash": "0ecee82094fa57cf5726d38be0fac162"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\src\\types\\visualization.ts": {
+    "mtime": 1778151585.1188486,
+    "hash": "e5ac97de4fc510cd64bb027a5dd6a749"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\types\\workbench.ts": {
     "mtime": 1778107887.7044811,
@@ -4870,6 +5066,18 @@
   "C:\\Users\\giuli\\praxiscodexworking\\tests\\e2e\\settings\\custom-persona-creation.spec.ts": {
     "mtime": 1778113104.4164383,
     "hash": "efbc4c9f582b6a132028eba20d7e4ef9"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\tests\\e2e\\visualization\\force-graph-toggle.spec.ts": {
+    "mtime": 1778152160.060178,
+    "hash": "b0d98765f7273ea2ea3311ae57e559d5"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\tests\\e2e\\visualization\\map-display.spec.ts": {
+    "mtime": 1778152176.0701246,
+    "hash": "14ceaa9c06c095b9badf36070290e71a"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\tests\\e2e\\visualization\\timeline-display.spec.ts": {
+    "mtime": 1778152165.8685434,
+    "hash": "9df9096f5b7bb724d3109719d311bbb9"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\tests\\e2e\\workbench\\boardroom-abort-and-cost-guard.spec.ts": {
     "mtime": 1778112751.549608,
@@ -5220,8 +5428,8 @@
     "hash": "835708098c2c78e13e36ec9d00fb4572"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\tests\\unit\\lib\\domain\\resolve.test.ts": {
-    "mtime": 1777260427.1472983,
-    "hash": "4a247f9ec489534d6f7eebac4fb15e3d"
+    "mtime": 1778153491.749698,
+    "hash": "b4ab5685952574f915c2c5ad1e60391c"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\tests\\unit\\lib\\exports\\json-ld-prov.test.ts": {
     "mtime": 1778081599.7108698,
@@ -5372,8 +5580,16 @@
     "hash": "a8cca6a5328dc7329feaa5e1af068600"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\tests\\unit\\lib\\tools\\marketplace.test.ts": {
-    "mtime": 1778134355.3880517,
-    "hash": "35f4a641bf1c14298e9f0c1364d9e15e"
+    "mtime": 1778155450.7852888,
+    "hash": "bb9028e6e107b1d83b6aefe4f76575c3"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\tests\\unit\\lib\\tools\\pack30-marketplace.test.ts": {
+    "mtime": 1778153698.8708806,
+    "hash": "989c3faa24b1b379bd6c2f1d71902a0e"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\tests\\unit\\lib\\tools\\pack31-marketplace.test.ts": {
+    "mtime": 1778155439.452455,
+    "hash": "1ad1fcd06b5e962c62e4db38c8bae164"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\tests\\unit\\lib\\tools\\run-artifact.test.ts": {
     "mtime": 1778098637.4127138,
@@ -5424,8 +5640,8 @@
     "hash": "f7175e38e3ebeca23d30ac89f057231a"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\CHANGELOG.md": {
-    "mtime": 1778119306.726006,
-    "hash": "f3031dd5867b4686e99fbc4783b8613a"
+    "mtime": 1778155439.4593954,
+    "hash": "61916ba5d31b2218c875c4a8ade45243"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\CLAUDE.md": {
     "mtime": 1778102209.88419,
@@ -5494,6 +5710,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\agents\\red_team_analyst\\prompts\\system.md": {
     "mtime": 1778108139.555264,
     "hash": "6c201dc07ac2a3e6dd3a008193af78cd"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\services\\extract_structured\\prompts\\verification.md": {
+    "mtime": 1778153106.274376,
+    "hash": "b2fdbc41c47543b15835d058d1ca465c"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\tests\\fixtures\\hr_conflict.txt": {
     "mtime": 1777260426.796137,
@@ -5619,6 +5839,18 @@
     "mtime": 1778149925.9309697,
     "hash": "ec949b0fdbeade253dd2550084f7929b"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\adr\\0046-visualization-library-decision-matrix.md": {
+    "mtime": 1778151922.6602647,
+    "hash": "cf1d7ae3dc332460746953d4dc3662a5"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\adr\\0047-extraction-layering-plus-graphrag-batch.md": {
+    "mtime": 1778153698.8649278,
+    "hash": "162f0d70bf9fe98f66666681de590b3e"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\adr\\0048-analytics-sanctions-simulation-as-cross-cutting-tools.md": {
+    "mtime": 1778155439.452455,
+    "hash": "ce6b6df4cf40afc45f6cb07c7da5df3b"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\adr\\README.md": {
     "mtime": 1778149934.5739205,
     "hash": "2e1fecb84e1b1fa4cf1832892dcff0c2"
@@ -5626,6 +5858,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\architecture\\CAPACITY_PLAN.md": {
     "mtime": 1778101199.791952,
     "hash": "4d8b4b5e223644f479b9e6e8a4417d2e"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\architecture\\CONFLICT_DATA_SOURCES.md": {
+    "mtime": 1778153698.8649278,
+    "hash": "e7d1251ae3a03ff218d955322c4e76b1"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\architecture\\COST_NOTES.md": {
     "mtime": 1778085704.9144573,
@@ -5719,9 +5955,17 @@
     "mtime": 1778099699.2008111,
     "hash": "9590d6f1f88d9676abc371668eb40aba"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-07-ANALYTICS_WAVE_FOUNDATIONS.md": {
+    "mtime": 1778155439.452455,
+    "hash": "0922cbf41f4c083b1dbd7dae901e8546"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-07-DASHBOARD_REAL_APP_PASS.md": {
     "mtime": 1778115005.6090014,
     "hash": "83be03842a2213d09446e440778b600d"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-07-EXTRACTION_WAVE_FOUNDATIONS.md": {
+    "mtime": 1778153698.8649278,
+    "hash": "ec9c39759302b13315b303108f49f3e5"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-07-PACK16_AGENTIC_BOARDROOM_GAP_AUDIT.md": {
     "mtime": 1778119306.7212214,
@@ -5770,6 +6014,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-07-PACK28_SURFACES_DRAFT_NEW_USER_AND_HARDENING.md": {
     "mtime": 1778150024.635024,
     "hash": "3f4ab8a0994d2bd755da99fdd5bf8f1d"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-07-PACK29_VISUALIZATION_WAVE.md": {
+    "mtime": 1778151944.6592746,
+    "hash": "4df780470afa7862d65e42b635c9b072"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-07-TOOL_AUTHORING_SPIKE.md": {
     "mtime": 1778137178.0552294,
@@ -5951,6 +6199,18 @@
     "mtime": 1778126061.919283,
     "hash": "dae762068eb64c308ea2557ca4a15c5b"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\codex-prompts\\PRAXIS_CODEX_29_VISUALIZATION_WAVE.md": {
+    "mtime": 1778128409.7009995,
+    "hash": "b5a1c7b9ce7f8cf925bef1126e51f995"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\codex-prompts\\PRAXIS_CODEX_30_EXTRACTION_AND_GRAPHRAG_WAVE.md": {
+    "mtime": 1778128410.9235122,
+    "hash": "2bd2a18224aa430f9c12c79bbc2e0ee2"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\codex-prompts\\PRAXIS_CODEX_31_ANALYTICS_SANCTIONS_SIMULATION_WAVE.md": {
+    "mtime": 1778128412.3008616,
+    "hash": "6ceb1feb168f7efd74c0d5938d08fdda"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\codex-prompts\\PRAXIS_MAY_1_CHANGES.md": {
     "mtime": 1777831155.9938307,
     "hash": "118f32c6c01f13d98bb6fdfe4883296a"
@@ -6043,6 +6303,10 @@
     "mtime": 1778138382.4583616,
     "hash": "36316b0e9c3f981e1ae62fed83e574ed"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\runbooks\\MAP_TILE_HOSTING.md": {
+    "mtime": 1778151934.1359348,
+    "hash": "0865ddf03394401f8704007f07473952"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\runbooks\\PGVECTOR_INDEX_REBUILD.md": {
     "mtime": 1778138382.4386613,
     "hash": "7a0d4ba73a609d452cfbfb65ce566630"
@@ -6050,6 +6314,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\runbooks\\POSTGRES_OPERATIONS.md": {
     "mtime": 1778085704.915457,
     "hash": "1790e7875cd5511f3310b19c100ed26b"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\runbooks\\SANCTIONS_DATA_LICENSING.md": {
+    "mtime": 1778155439.452455,
+    "hash": "35d5aeadec7e759758162b8684f21b7e"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\runbooks\\SCHEDULER_JOB_FAILURE.md": {
     "mtime": 1778138382.456354,
@@ -6743,6 +7011,10 @@
     "mtime": 1778097262.979351,
     "hash": "9b089a36963f30b20bef6ffcce48db78"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\infrastructure\\templates\\cloud-run-permissive-worker\\README.md": {
+    "mtime": 1778153367.7761002,
+    "hash": "9a3bd38876fd4db6d0c570eb537eac78"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\public\\robots.txt": {
     "mtime": 1777260426.849761,
     "hash": "9484eec9ea0772d07c4906ec03ce98d2"
@@ -6754,6 +7026,46 @@
   "C:\\Users\\giuli\\praxiscodexworking\\schemas\\truth-layers-v1.md": {
     "mtime": 1778081604.8171813,
     "hash": "8e7d40a7c9065eb9a95ce1057d19d549"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\extract-docling\\cloudbuild.yaml": {
+    "mtime": 1778153161.2750058,
+    "hash": "202ba8b6293965690d398996425e9159"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\extract-docling\\requirements.txt": {
+    "mtime": 1778153161.2750058,
+    "hash": "917928f028f6dc61b68a609e3967b6b2"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\extract-graphrag\\cloudbuild.yaml": {
+    "mtime": 1778153367.7720828,
+    "hash": "eadd18463352f9df60b24effa1636f77"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\extract-graphrag\\requirements.txt": {
+    "mtime": 1778153367.7612867,
+    "hash": "613009e7e6aad5f383c3631e8dc7ad37"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\extract-ner-gliner\\cloudbuild.yaml": {
+    "mtime": 1778153161.2968955,
+    "hash": "2bed5577b7ce7d0a52403fbdd31f1af3"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\extract-ner-gliner\\requirements.txt": {
+    "mtime": 1778153161.2750058,
+    "hash": "72735ebb43d233c133e59036c24e193b"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\sanctions-yente\\cloudbuild.yaml": {
+    "mtime": 1778155244.279341,
+    "hash": "22e3a79426c98394befb7b6cc35f965a"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\sanctions-yente\\README.md": {
+    "mtime": 1778155244.279341,
+    "hash": "ad956a09d3b85568ade66c31db62169f"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\simulate-policy-abm\\cloudbuild.yaml": {
+    "mtime": 1778155244.3012774,
+    "hash": "6d17f0c9fdb33612979d29caafbee87b"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\services\\simulate-policy-abm\\requirements.txt": {
+    "mtime": 1778155244.2992697,
+    "hash": "9a97820cbaf2f001f2013548f8fdf7c1"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\skills\\subagents\\analyst_persona\\SKILL.md": {
     "mtime": 1778110640.1154642,
@@ -6786,6 +7098,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\skills\\templates\\SKILL_TEMPLATE.md": {
     "mtime": 1778092024.9551158,
     "hash": "c61a7d29d38869d70ca101f0b3f13f3c"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\skills\\tools\\analyze.network\\SKILL.md": {
+    "mtime": 1778155280.6891387,
+    "hash": "6930c2c61a11e4ec4ea41727550392fb"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\skills\\tools\\conflict.actor-alignment-shift\\SKILL.md": {
     "mtime": 1778134439.0578012,
@@ -6826,6 +7142,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\skills\\tools\\cross.causal-loop-diagram\\SKILL.md": {
     "mtime": 1778134439.068509,
     "hash": "891c86628d7bd5282e2de0529f590a0a"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\skills\\tools\\cross.community-synthesizer\\SKILL.md": {
+    "mtime": 1778153396.244387,
+    "hash": "ba9d61b1533c607ae5798845e3455411"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\skills\\tools\\cross.context-health-explainer\\SKILL.md": {
     "mtime": 1778092024.985644,
@@ -6895,6 +7215,10 @@
     "mtime": 1778134439.074028,
     "hash": "8d3fffdc61f88e93b7cfed115976acad"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\skills\\tools\\extract.entities.gliner\\SKILL.md": {
+    "mtime": 1778153396.2371416,
+    "hash": "c85fdb5805c54bea9f97188cd6b3c986"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\skills\\tools\\governance.coalition-map\\SKILL.md": {
     "mtime": 1778092024.9787302,
     "hash": "fc8212e69152159e0dd2fceaa0f92352"
@@ -6955,6 +7279,10 @@
     "mtime": 1778134439.0770447,
     "hash": "da52969bc698bdc54177ab0c6cd590f1"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\skills\\tools\\match.sanctions\\SKILL.md": {
+    "mtime": 1778155280.6954024,
+    "hash": "f2679a7b41863be9f0c3a4332a1a3350"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\skills\\tools\\mediation.mediation-brief\\SKILL.md": {
     "mtime": 1778092024.9757304,
     "hash": "1bc8109929e5b19a83f8ed62c518da80"
@@ -6994,6 +7322,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\skills\\tools\\security.posture-tracker\\SKILL.md": {
     "mtime": 1778134439.0790515,
     "hash": "ab972c95f587fcf89657273857b0c687"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\skills\\tools\\simulate.policy_abm\\SKILL.md": {
+    "mtime": 1778155280.6974106,
+    "hash": "00a085e9a2bec25b24391dc8b49b48d3"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\app\\app\\dashboard\\README.md": {
     "mtime": 1778114950.730507,

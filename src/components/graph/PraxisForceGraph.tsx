@@ -12,6 +12,7 @@ type ForceGraphComponent = ComponentType<Record<string, unknown>>;
 export function PraxisForceGraph({ graph, className }: { graph: WorkbenchGraph; className?: string }) {
   const [ForceGraph2D, setForceGraph2D] = useState<ForceGraphComponent | null>(null);
   const [failed, setFailed] = useState(false);
+  const [sizeByCentrality, setSizeByCentrality] = useState(false);
   const data = useMemo(() => toForceGraphData(graph), [graph]);
 
   useEffect(() => {
@@ -44,6 +45,15 @@ export function PraxisForceGraph({ graph, className }: { graph: WorkbenchGraph; 
           <ShieldCheck className="h-4 w-4" />
           {Math.round(graph.provenanceCoverage * 100)}% provenance
         </div>
+        <label className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700">
+          <input
+            type="checkbox"
+            checked={sizeByCentrality}
+            onChange={(event) => setSizeByCentrality(event.target.checked)}
+            className="h-3.5 w-3.5 accent-gold-600"
+          />
+          Size by centrality
+        </label>
       </div>
 
       <div className="mt-5 h-[520px] overflow-hidden rounded-md border border-slate-200 bg-slate-950" role="img" aria-label="Interactive PRAXIS force graph">
@@ -54,15 +64,16 @@ export function PraxisForceGraph({ graph, className }: { graph: WorkbenchGraph; 
             height={520}
             backgroundColor="#020617"
             nodeRelSize={5}
+            nodeVal={(node: { val?: number; centralityVal?: number }) => (sizeByCentrality ? node.centralityVal ?? node.val ?? 4 : node.val ?? 4)}
             nodeLabel={(node: { label?: string; description?: string }) => `${node.label ?? 'Node'}: ${node.description ?? ''}`}
             linkDirectionalArrowLength={4}
             linkDirectionalArrowRelPos={1}
             linkColor={() => 'rgba(203, 213, 225, 0.55)'}
             linkWidth={(link: { type?: string }) => (link.type === 'supports' ? 2 : 1)}
-            nodeCanvasObject={(node: { x?: number; y?: number; label?: string; type?: string; color?: string }, ctx: CanvasRenderingContext2D, globalScale: number) => {
+            nodeCanvasObject={(node: { x?: number; y?: number; label?: string; type?: string; color?: string; val?: number; centralityVal?: number }, ctx: CanvasRenderingContext2D, globalScale: number) => {
               const label = node.label ?? '';
               const fontSize = Math.max(9, 13 / globalScale);
-              const radius = node.type === 'case' ? 9 : 6;
+              const radius = sizeByCentrality ? Math.max(5, Math.min(16, node.centralityVal ?? node.val ?? 6)) : node.type === 'case' ? 9 : 6;
               ctx.beginPath();
               ctx.arc(node.x ?? 0, node.y ?? 0, radius, 0, 2 * Math.PI, false);
               ctx.fillStyle = node.color ?? '#d4af37';

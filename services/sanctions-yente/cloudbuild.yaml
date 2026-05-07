@@ -1,0 +1,33 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - pull
+      - ghcr.io/opensanctions/yente:sha-7c088b8
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - tag
+      - ghcr.io/opensanctions/yente:sha-7c088b8
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/praxis/sanctions-yente:$SHORT_SHA
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/praxis/sanctions-yente:$SHORT_SHA
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - sanctions-yente
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/praxis/sanctions-yente:$SHORT_SHA
+      - --region=${_REGION}
+      - --no-allow-unauthenticated
+      - --memory=4Gi
+      - --cpu=2
+      - --timeout=120
+      - --max-instances=3
+      - --set-env-vars=YENTE_INDEX_URL=${_YENTE_INDEX_URL}
+substitutions:
+  _REGION: us-central1
+  _YENTE_INDEX_URL: http://sanctions-opensearch:9200
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/praxis/sanctions-yente:$SHORT_SHA

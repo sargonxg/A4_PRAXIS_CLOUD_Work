@@ -146,6 +146,18 @@ class EdgeRepo:
         )
         return rows[0]
 
+    async def list_committed(self, *, owner_uid: str, case_id: str) -> list[dict[str, Any]]:
+        return await self.conn.fetch(
+            """
+            SELECT *
+            FROM graph_edges
+            WHERE owner_uid = %s AND case_id = %s AND status = 'committed'
+            ORDER BY relation_type, created_at
+            """,
+            owner_uid,
+            case_id,
+        )
+
 
 class GraphTraversalRepo:
     def __init__(self, conn: TenantConnection) -> None:

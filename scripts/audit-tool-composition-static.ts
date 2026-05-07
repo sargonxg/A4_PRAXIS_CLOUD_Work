@@ -3,9 +3,10 @@ import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
 
 const failures: string[] = [];
 const toolIds = new Set(MARKETPLACE_TOOLS.map((tool) => tool.id));
+const expectedToolCount = 57;
 
-if (MARKETPLACE_TOOLS.length !== 52) {
-  failures.push(`expected 52 marketplace tools, found ${MARKETPLACE_TOOLS.length}`);
+if (MARKETPLACE_TOOLS.length !== expectedToolCount) {
+  failures.push(`expected ${expectedToolCount} marketplace tools, found ${MARKETPLACE_TOOLS.length}`);
 }
 
 for (const tool of MARKETPLACE_TOOLS) {
@@ -29,10 +30,27 @@ for (const ontologyId of ['human-rights', 'economic', 'humanitarian', 'legal', '
   if (count !== 4) failures.push(`${ontologyId} should have exactly 4 Pack 21 specialist tools, found ${count}`);
 }
 
+const pack31Composition = new Map<string, string[]>([
+  ['analyze.network', ['cross.brief-exporter', 'cross.community-synthesizer']],
+  ['match.sanctions', ['cross.brief-exporter']],
+  ['simulate.policy_abm', ['cross.brief-exporter']],
+]);
+
+for (const [toolId, requiredTargets] of pack31Composition) {
+  const tool = MARKETPLACE_TOOLS.find((candidate) => candidate.id === toolId);
+  if (!tool) {
+    failures.push(`${toolId} Pack 31 tool is missing`);
+    continue;
+  }
+  for (const target of requiredTargets) {
+    if (!tool.composition.canChainInto.includes(target)) failures.push(`${toolId} must chain into ${target}`);
+  }
+}
+
 if (failures.length > 0) {
   console.error('Tool composition static audit failed');
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
 
-console.log('Tool composition static audit passed for 52 tools and ontology-recommended chains.');
+console.log(`Tool composition static audit passed for ${expectedToolCount} tools, ontology-recommended chains, and Pack 31 analytics chains.`);

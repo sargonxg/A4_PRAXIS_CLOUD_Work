@@ -8,8 +8,14 @@ const failures: string[] = [];
 const runRoutePath = 'src/app/api/tools/marketplace/run/route.ts';
 const runnerPath = 'src/lib/tools/marketplace/runner.ts';
 const uiPath = 'src/components/tools/ToolMarketplace.tsx';
+const expectedToolCount = 57;
+const defaultRuntimeBudgetMs = 30000;
+const extendedRuntimeBudgets = new Map<string, number>([
+  ['cross.community-synthesizer', 300000],
+  ['simulate.policy_abm', 60000],
+]);
 
-if (MARKETPLACE_TOOLS.length !== 52) failures.push(`expected exactly 52 marketplace tools after Pack 21 depth expansion, found ${MARKETPLACE_TOOLS.length}`);
+if (MARKETPLACE_TOOLS.length !== expectedToolCount) failures.push(`expected exactly ${expectedToolCount} marketplace tools after Pack 31 analytics expansion, found ${MARKETPLACE_TOOLS.length}`);
 for (const requiredMemoTool of ['cross.memo-create', 'cross.memo-refresh']) {
   if (!MARKETPLACE_TOOLS.some((tool) => tool.id === requiredMemoTool)) failures.push(`${requiredMemoTool} must be registered as a first-class marketplace tool`);
 }
@@ -17,7 +23,8 @@ if (new Set(MARKETPLACE_TOOLS.map((tool) => tool.id)).size !== MARKETPLACE_TOOLS
 
 for (const tool of MARKETPLACE_TOOLS) {
   const handlerContract = MARKETPLACE_HANDLER_CONTRACTS[tool.id];
-  if (tool.estimatedRuntimeMs > 30000) failures.push(`${tool.id} exceeds 30s runtime budget`);
+  const runtimeBudget = extendedRuntimeBudgets.get(tool.id) ?? defaultRuntimeBudgetMs;
+  if (tool.estimatedRuntimeMs > runtimeBudget) failures.push(`${tool.id} exceeds ${runtimeBudget}ms runtime budget`);
   if (tool.inputSchema.type !== 'object' || tool.outputSchema.type !== 'object') failures.push(`${tool.id} schemas must be object schemas`);
   if (!tool.inputSchema.additionalProperties || !tool.outputSchema.additionalProperties) failures.push(`${tool.id} schemas must allow additional properties`);
   if (tool.canaryCaseIds.length === 0) failures.push(`${tool.id} needs at least one canary case`);
@@ -74,5 +81,5 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Tool marketplace audit passed for 52 curated tools, handler contracts, and foundation execution.');
-console.log('Pack 21 depth set present: 30 added tools over the Pack 18 baseline, with Pack 20 ontology forward declarations honored.');
+console.log(`Tool marketplace audit passed for ${expectedToolCount} curated tools, handler contracts, and foundation execution.`);
+console.log('Pack 31 analytics expansion present: network analysis, sanctions matching, and policy ABM tools are registered with explicit extended runtime budgets.');
