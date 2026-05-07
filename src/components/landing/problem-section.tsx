@@ -12,7 +12,7 @@ const chaosTools = [
   { label: "WhatsApp", color: "#25D366" },
   { label: "SharePoint", color: "#038387" },
   { label: "Telegram", color: "#26A5E4" },
-  { label: "UN eDocs", color: "#009EDB" },
+  { label: "Diplomatic docs", color: "#009EDB" },
   { label: "Reuters", color: "#FF8000" },
   { label: "Twitter/X", color: "#000000" },
 ];
@@ -23,7 +23,7 @@ const praxisCards = [
     subtitle: "Syria Transition Update",
     badge: "Ready",
     badgeColor: "text-sage bg-sage/10 border-sage/20",
-    preview: "9 real app surfaces · source-audited · UN-formatted",
+    preview: "9 real app surfaces · source-audited · diplomatically formatted",
   },
   {
     title: "Risk Score",
@@ -99,7 +99,7 @@ export function ProblemSection() {
             {/* Time + message */}
             <div className="mb-6">
               <p className="font-mono text-base font-semibold text-navy-900">
-                8:47 AM — Security Council briefing in 73 minutes.
+                8:47 AM — principals briefing in 73 minutes.
               </p>
               <p className="mt-1.5 text-sm text-navy-500">
                 The evidence is scattered across systems, formats, and inboxes.

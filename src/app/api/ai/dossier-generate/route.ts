@@ -48,7 +48,7 @@ const DossierSchema = z.object({
       position: z.string(),
       leverage: z.string(),
     })).describe('Key international actors and their stated positions and leverage'),
-    relevantResolutions: z.array(z.string()).describe('Relevant UN Security Council resolutions and mandates'),
+    relevantResolutions: z.array(z.string()).describe('Relevant UN senior diplomatic forum resolutions and mandates'),
     humanitarianSituation: z.string().describe('Humanitarian impact and operational constraints'),
   }).describe('International and regional context'),
   scenarioOutlook: z.object({
@@ -174,13 +174,13 @@ The humanitarian toll — 1.2 million IDPs, 340,000 refugees, 2.8 million food-i
       {
         actor: 'Westmark',
         position: 'Political support for DRM; targeted sanctions on 23 GoN officials; denies military assistance',
-        leverage: 'Sanctions authority, refugee hosting (political leverage over DRM political bureau), UNSC P3 coordination',
+        leverage: 'Sanctions authority, refugee hosting (political leverage over DRM political bureau), multilateral forum P3 coordination',
       },
     ],
     relevantResolutions: [
-      'UNSC Resolution 2847 — UNMN Chapter VII mandate (civilian protection, ceasefire monitoring, political process facilitation)',
+      'multilateral forum Resolution 2847 — UNMN Chapter VII mandate (civilian protection, ceasefire monitoring, political process facilitation)',
       'AU Roadmap for Elections (September 2025) — transitional framework agreed by both parties',
-      'UNSC Panel of Experts mandate (arms embargo monitoring)',
+      'multilateral forum Panel of Experts mandate (arms embargo monitoring)',
     ],
     humanitarianSituation: '1.2 million IDPs, 340,000 refugees in Westmark. 2.8 million food-insecure. MSF expelled from eastern provinces February 2026. WFP access to Kessara and Baravon districts blocked for 6 weeks. IPC Phase 4 (Emergency) declared for eastern provinces.',
   },
@@ -218,7 +218,7 @@ The humanitarian toll — 1.2 million IDPs, 340,000 refugees, 2.8 million food-i
       priority: 'medium-term' as const,
       action: 'Engage Westmark on targeted financial accountability measures against the three most obstructive AFN General Staff hardliners',
       rationale: 'Stedman spoiler management — targeted isolation creates individual liability differentials that fracture hardliner bloc without frontal confrontation.',
-      actors: ['Westmark Department of Defence', 'UNSC Sanctions Committee', 'Panel of Experts'],
+      actors: ['Westmark Department of Defence', 'multilateral forum Sanctions Committee', 'Panel of Experts'],
     },
   ],
   intelligenceGaps: [
@@ -228,10 +228,10 @@ The humanitarian toll — 1.2 million IDPs, 340,000 refugees, 2.8 million food-i
     'BMC corporate structure and beneficiary ownership unclear — limits spoiler management targeting',
   ],
   sources: [
-    'UNMN SRSG briefing to UNSC, 14 Feb 2026',
+    'UNMN SRSG briefing to multilateral forum, 14 Feb 2026',
     'ICG Africa Report No. 312, March 2026',
     'OCHA Situation Report, 28 Feb 2026',
-    'UNSC Panel of Experts interim report S/2025/892',
+    'multilateral forum Panel of Experts interim report S/2025/892',
     'AU Roadmap for Elections, September 2025',
     'SIPRI arms transfer database',
   ],
@@ -314,9 +314,9 @@ export const POST = withCalibration('dossier', 'ai_report', {
 
     const result = await callProModel({
       output: Output.object({ schema: DossierSchema }),
-      system: `You are a senior intelligence analyst at a major international crisis monitoring organization — equivalent to UN DPPA, International Crisis Group, or a G7 diplomatic service analytical unit.
+      system: `You are a senior intelligence analyst at a major international crisis monitoring organization — equivalent to multilateral diplomacy, International Crisis Group, or a G7 diplomatic service analytical unit.
 
-Produce comprehensive, classified-format dossiers that meet the analytical standards of UN DPPA, ICG, and major diplomatic services. Write in authoritative, precise intelligence assessment language. Always:
+Produce comprehensive, classified-format dossiers that meet the analytical standards of multilateral diplomacy, ICG, and major diplomatic services. Write in authoritative, precise intelligence assessment language. Always:
 - Set classificationNote to "UNCLASSIFIED"
 - Open with a crisp BLUF (2-3 sentences, single most important finding)
 - Apply ACO analytical frameworks throughout: Glasl escalation, Fisher-Ury interests, Zartman ripeness, Stedman spoilers, Lederach multi-level
@@ -334,7 +334,7 @@ Calibrate framing, tone, and recommendations to the analyst profile above. Honou
 
 SITUATION: ${sitName}${sitRegion ? ` (${sitRegion})` : ''}
 ${type ? `DOSSIER TYPE: ${type}` : ''}
-${audience ? `TARGET AUDIENCE: ${audience}` : 'TARGET AUDIENCE: Senior diplomatic officials and UN political affairs officers'}
+${audience ? `TARGET AUDIENCE: ${audience}` : 'TARGET AUDIENCE: Senior diplomatic officials and multilateral diplomacy practitioners'}
 ${conflictContext ? `ADDITIONAL CONTEXT: ${conflictContext}` : ''}
 
 REQUIREMENTS:
@@ -343,7 +343,7 @@ REQUIREMENTS:
 - executiveSummary: 3-5 paragraphs covering situation status, key dynamics, and immediate priorities
 - actorProfiles: cover ALL significant actors with positions, interests, red lines, and decision-makers
 - conflictDynamics: use Glasl + Stedman frameworks explicitly
-- internationalContext: cover regional proxy dynamics and relevant UN mandates
+- internationalContext: cover regional proxy dynamics and relevant multilateral mandates
 - scenarioOutlook: apply ICD 203 probability language
 - recommendedActions: specific, actor-named, sequenced by priority
 - intelligenceGaps: honest assessment of what we do not know

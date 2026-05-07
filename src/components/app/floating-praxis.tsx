@@ -131,7 +131,7 @@ function getQuickActions(pathname: string, situationName?: string): QuickAction[
       { label: 'Draft intro', prompt: `Draft an executive summary for a situation report on ${name}` },
       { label: 'Key findings', prompt: `What should be the key findings in this report?` },
       { label: 'Language check', prompt: `What diplomatic language considerations apply to this report?` },
-      { label: 'Structure', prompt: `Suggest a structure for a UN DPPA-format report on ${name}` },
+      { label: 'Structure', prompt: `Suggest a structure for a professional diplomatic report on ${name}` },
     ],
     'timeline': [
       { label: 'Last 30 days', prompt: `What changed in ${name} in the last 30 days?` },

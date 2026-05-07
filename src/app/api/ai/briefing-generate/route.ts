@@ -27,17 +27,17 @@ const BriefingSchema = z.object({
   })).optional().describe('Key analytical judgments with ICD 203 calibrated probability language'),
   slides: z.array(
     z.object({
-      title: z.string().describe('Section heading using UN DPPA conventions: HEADLINE ASSESSMENT, KEY DEVELOPMENTS, POLITICAL DYNAMICS, RISK FACTORS, OPPORTUNITIES, INFORMATION GAPS, or UPCOMING DECISION POINTS'),
-      content: z.string().describe('Section body in markdown format following UN DPPA analytical standards. Use calibrated confidence language, bracketed source tags [GDELT] [UCDP] [ReliefWeb] [UN News] [PRAXIS Graph] [Web] [AI Assessment], and formal register throughout. No contractions.'),
+      title: z.string().describe('Section heading using multilateral diplomacy conventions: HEADLINE ASSESSMENT, KEY DEVELOPMENTS, POLITICAL DYNAMICS, RISK FACTORS, OPPORTUNITIES, INFORMATION GAPS, or UPCOMING DECISION POINTS'),
+      content: z.string().describe('Section body in markdown format following professional diplomatic analytical standards. Use calibrated confidence language, bracketed source tags [GDELT] [UCDP] [ReliefWeb] [UN News] [PRAXIS Graph] [Web] [AI Assessment], and formal register throughout. No contractions.'),
       speakerNotes: z.string().optional().describe('Presenter guidance with additional analytical context, recommended emphasis, and suggested responses to anticipated questions from senior leadership'),
-      sources: z.array(z.string()).optional().describe('Formal source attributions referenced in this section, using standard UN citation format'),
+      sources: z.array(z.string()).optional().describe('Formal source attributions referenced in this section, using standard professional citation format'),
     })
-  ).describe('Structured political affairs briefing sections for UN Senior Leadership, following DPPA analytical standards'),
+  ).describe('Structured political affairs briefing sections for senior diplomatic leadership, following professional diplomatic analytical standards'),
 });
 
 // ── Morning Digest System Prompt ─────────────────────────────────────────────
 
-const MORNING_DIGEST_SYSTEM_PROMPT = `You are drafting a morning political affairs digest for a UN Senior Leadership audience, following DPPA analytical standards. Structure exactly as follows:
+const MORNING_DIGEST_SYSTEM_PROMPT = `You are drafting a morning political affairs digest for a senior diplomatic leadership audience, following professional diplomatic analytical standards. Structure exactly as follows:
 
 ## HEADLINE ASSESSMENT
 [One sentence. The single most consequential overnight development or analytical judgment. Present tense, analytical voice. Use calibrated language: "It is assessed that..." for high confidence, "Available information suggests..." for medium confidence.]
@@ -55,7 +55,7 @@ const MORNING_DIGEST_SYSTEM_PROMPT = `You are drafting a morning political affai
 [Top 3 priorities for the day, framed as recommended actions for senior leadership. Each priority should specify the responsible actor or office and the recommended timeframe. Frame as diplomatic opportunities or risk mitigation measures, not merely intelligence collection tasks.]
 
 ## UPCOMING DECISION POINTS
-[Events in the next 7 days requiring senior-level attention or preparation. Use standard UN date format: DD Month YYYY.]
+[Events in the next 7 days requiring senior-level attention or preparation. Use standard diplomatic date format: DD Month YYYY.]
 
 ## INFORMATION GAPS
 [2-3 questions this digest cannot answer. Frame as: "Reporting is insufficient to assess whether..."]
@@ -65,7 +65,7 @@ FORMAT RULES:
 - All actors referred to by their names from the situation data.
 - Hedging calibration: HIGH confidence = "it is assessed that", MEDIUM = "available information suggests", LOW = "it cannot be confirmed whether".
 - Every factual claim should have a bracketed source tag: [GDELT], [UCDP], [ReliefWeb], [UN News], [PRAXIS Graph], [Web], [AI Assessment].
-- Use standard UN date format: DD Month YYYY.
+- Use standard diplomatic date format: DD Month YYYY.
 - Flag items by urgency where appropriate: CRITICAL / IMPORTANT / ROUTINE.`;
 
 // ── Demo responses ────────────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ const MORNING_DIGEST_DEMO = `## OVERNIGHT DEVELOPMENTS
 
 ## UPCOMING DEADLINES & MILESTONES
 - 🔴 **Today:** General Mensah expected first public statement
-- 🟡 **Wednesday:** UNSC informal consultations on Nordalia mandate
+- 🟡 **Wednesday:** multilateral forum informal consultations on Nordalia mandate
 - 🟡 **Friday:** SRSG weekly briefing to P5 ambassadors
 - 🟢 **Next Monday:** AU PSC consultative meeting on Sahel/Nordalia regional dynamics
 - 🟢 **April 1:** Eastern Province planting season begins — humanitarian access critical`;
@@ -146,7 +146,7 @@ const DEMO_RESPONSE_FULL = {
 3. **Military-to-military channel** — Expand SRSG back-channel to include senior military representatives
 4. **Arms embargo enforcement** — Implement Panel of Experts monitoring recommendations
 5. **Regional security dialogue** — Dedicated envoy or contact group for Karovia-Westmark dimension`,
-      speakerNotes: 'Frame these as a sequenced package. Items 1-3 are immediately actionable. Items 4-5 require UNSC consensus-building.',
+      speakerNotes: 'Frame these as a sequenced package. Items 1-3 are immediately actionable. Items 4-5 require multilateral forum consensus-building.',
       sources: ['PRAXIS policy analysis', 'UN Peacebuilding Fund cost-benefit methodology'],
     },
   ],
@@ -232,8 +232,8 @@ export const POST = withCalibration('briefing_room', 'ai_report', {
 
       const result = streamText({
         model: getModel(),
-        system: `You are a senior UN Political Affairs Officer preparing a concise morning intelligence brief.
-Write in professional UN diplomatic register. Use **bold headers** for each section.
+        system: `You are a senior multilateral diplomacy practitioner preparing a concise morning intelligence brief.
+Write in professional diplomatic register. Use **bold headers** for each section.
 Be precise, evidence-grounded, and actionable. Avoid speculation — note uncertainty where relevant.${calibrationSuffix}`,
         onFinish: async ({ text }) => {
           if (situationId && ctx.uid) {
@@ -383,7 +383,7 @@ PROBABILITY LANGUAGE REQUIREMENT: Use ICD 203 Analytic Standards probability lan
     const result = await generateText({
       model: getModel(),
       output: Output.object({ schema: BriefingSchema }),
-      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${intelContext ? `${intelContext}\n\n` : ''}${webCtx ? `${webCtx}\n\n` : ''}You are drafting a political affairs briefing for a UN Senior Leadership audience. This is a ${briefingType ?? 'standard'} briefing.
+      prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}${intelContext ? `${intelContext}\n\n` : ''}${webCtx ? `${webCtx}\n\n` : ''}You are drafting a political affairs briefing for a senior diplomatic leadership audience. This is a ${briefingType ?? 'standard'} briefing.
 
 CASE: ${caseId ?? ''}
 BRIEFING TYPE: ${briefingType ?? 'standard'}
@@ -422,17 +422,17 @@ Content: 2-3 questions that this briefing cannot answer due to insufficient data
 
 SLIDE 7 — UPCOMING DECISION POINTS
 Title: "Upcoming Decision Points and Key Dates"
-Content: Chronological list of events, deadlines, and milestones in the coming 30-90 days that require senior-level attention. Use standard UN date format: DD Month YYYY. For each, note the decision required and the responsible entity.
+Content: Chronological list of events, deadlines, and milestones in the coming 30-90 days that require senior-level attention. Use standard diplomatic date format: DD Month YYYY. For each, note the decision required and the responsible entity.
 
 FORMAT RULES:
-- Use standard UN date format: DD Month YYYY.
+- Use standard diplomatic date format: DD Month YYYY.
 - All actors referred to by their names from the situation data.
 - No contractions. Formal register throughout.
 - Hedging calibration: HIGH confidence = "it is assessed that", MEDIUM = "available information suggests", LOW = "it cannot be confirmed whether".
 - Every factual claim should have a bracketed source tag: [GDELT], [UCDP], [ReliefWeb], [UN News], [PRAXIS Graph], [Web], [AI Assessment].
 - Speaker notes for each slide should provide additional analytical depth, anticipated questions from senior leadership, and suggested responses.
 - Source attributions should use formal UN citation conventions where possible.`,
-      system: `You are a senior political affairs officer in the United Nations Department of Political and Peacebuilding Affairs (DPPA). You produce analytically rigorous briefing content for the Secretary-General, Under-Secretary-General, and Assistant Secretaries-General. Your analysis follows DPPA standards: calibrated confidence language, source attribution, formal register, and structured analytical judgments. Speaker notes should provide the depth, nuance, and anticipatory guidance that briefing slides cannot convey. Every assessment must distinguish between what is known, what is assessed, and what remains uncertain.
+      system: `You are a senior political affairs officer in the multilateral diplomacy and peacebuilding practice. You produce analytically rigorous briefing content for the senior principals, envoys, and policy leaders. Your analysis follows professional diplomatic standards: calibrated confidence language, source attribution, formal register, and structured analytical judgments. Speaker notes should provide the depth, nuance, and anticipatory guidance that briefing slides cannot convey. Every assessment must distinguish between what is known, what is assessed, and what remains uncertain.
 
 Use ICD 203 Analytic Standards probability language: 'almost no chance' (<5%), 'very unlikely' (5-20%), 'unlikely' (20-45%), 'roughly even' (45-55%), 'likely' (55-80%), 'very likely' (80-95%), 'almost certain' (>95%). Never use vague hedging.${calibrationSuffix}`,
     });

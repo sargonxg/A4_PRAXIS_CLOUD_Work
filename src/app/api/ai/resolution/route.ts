@@ -1,6 +1,6 @@
 import { streamText } from 'ai';
 import { getModel } from '@/lib/ai/providers';
-import { UN_STYLE_PROMPT } from '@/lib/ai/prompts/un-style';
+import { DIPLOMATIC_STYLE_PROMPT } from '@/lib/ai/prompts/un-style';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
@@ -79,7 +79,7 @@ export const POST = withCalibration('un_toolkit', 'ai_report', {
 
     const result = streamText({
       model: getModel(),
-      system: `${UN_STYLE_PROMPT}
+      system: `${DIPLOMATIC_STYLE_PROMPT}
 
 ${systemPromptBlock}
 
@@ -99,7 +99,7 @@ Calibrate framing, tone, and recommendations to the analyst profile above. Honou
       messages: [
         {
           role: 'user',
-          content: `${sitContext ? `${sitContext}\n\n---\n\n` : ''}Draft UN Security Council resolution language on: ${resolvedTopic}
+          content: `${sitContext ? `${sitContext}\n\n---\n\n` : ''}Draft multilateral sanctions authority resolution language on: ${resolvedTopic}
 
 ${typeInstruction}
 ${strengthGuide}
@@ -109,9 +109,9 @@ ${keyPointsBlock}
 
 Instructions:
 - Reference the specific situation, named actors, and relevant geography from the situation context above
-- Cite relevant previous UNSC resolutions by number where appropriate (e.g., resolution 2417 on food insecurity in armed conflict)
-- Reference the UN Charter provisions applicable to this situation (Chapter VI for peaceful settlement, Chapter VII for enforcement)
-- Include preambular references to Secretary-General's reports and relevant UN mechanisms
+- Cite relevant previous resolutions or formal instruments by number where appropriate
+- Reference the applicable legal authority and whether the measure is advisory, facilitative, or coercive
+- Include preambular references to authoritative reports and relevant mechanisms
 - For operative paragraphs, sequence from political/diplomatic actions → humanitarian → accountability → reporting
 
 This is draft language for expert review — note this explicitly at the end.`,

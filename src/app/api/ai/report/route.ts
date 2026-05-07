@@ -2,7 +2,7 @@ import { streamText } from 'ai';
 import { getModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
 import { buildGraphContext } from '@/lib/ai/context-builder-server';
-import { UN_STYLE_PROMPT } from '@/lib/ai/prompts/un-style';
+import { DIPLOMATIC_STYLE_PROMPT } from '@/lib/ai/prompts/un-style';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { handleRouteError } from '@/lib/api/standard-error';
@@ -60,14 +60,14 @@ export const POST = withCalibration('report', 'ai_report', {
       model: getModel(),
       system: `${systemPromptBlock}
 
-${UN_STYLE_PROMPT}
+${DIPLOMATIC_STYLE_PROMPT}
 
 ${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}You are drafting a section of a ${template || 'diplomatic report'}.
 Section type: ${sectionType}. Tone: ${tone || 'formal'}.
 ${conflictContext ? `Conflict context:\n${conflictContext}` : ''}
 ${existingSections ? `Already drafted sections for coherence:\n${existingSections}` : ''}
 
-Write ONLY the requested section content. Use numbered paragraphs for SG reports. Follow UN editorial standards strictly. Do not include meta-commentary about the drafting process. Honour the analyst profile above and the output-constraints block.${langDirective}${redLineDirective}`,
+Write ONLY the requested section content. Use numbered paragraphs for SG reports. Follow professional diplomatic editorial standards strictly. Do not include meta-commentary about the drafting process. Honour the analyst profile above and the output-constraints block.${langDirective}${redLineDirective}`,
       messages: [
         { role: 'user', content: `Draft the "${sectionType}" section.` },
       ],

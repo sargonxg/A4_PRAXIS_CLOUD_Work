@@ -165,7 +165,7 @@ const DEMO_RESPONSE_POWER = {
   actors: [
     { id: 'gov', name: 'Government of Nordalia (GoN)', shortName: 'GoN', type: 'state' as const, power: 8, interest: 9, stance: 'opponent' as const, color: '#1A2332', keyLeverage: 'Territorial control, international legitimacy, AFN military capacity', engagementStrategy: 'Manage closely — decision-maker with high stakes. Engage at ministerial level. Frame any concessions as sovereignty-preserving.' },
     { id: 'drm', name: 'Democratic Reform Movement', shortName: 'DRM', type: 'non_state_armed' as const, power: 6, interest: 10, stance: 'opponent' as const, color: '#A63D40', keyLeverage: 'Territorial control of Eastern Provinces, armed capacity, civilian support base', engagementStrategy: 'Manage closely — existential stakes. Engage through backchannel and international interlocutors. Address security guarantees first.' },
-    { id: 'unmn', name: 'UN Mission Nordalia', shortName: 'UNMN', type: 'international' as const, power: 7, interest: 8, stance: 'mediator' as const, color: '#4B92DB', keyLeverage: 'International legitimacy, monitoring capacity, UNSC reporting mandate', engagementStrategy: 'Key player — coordinate all mediation efforts. Leverage UNSC mandate for pressure on both parties.' },
+    { id: 'unmn', name: 'UN Mission Nordalia', shortName: 'UNMN', type: 'international' as const, power: 7, interest: 8, stance: 'mediator' as const, color: '#4B92DB', keyLeverage: 'International legitimacy, monitoring capacity, multilateral forum reporting mandate', engagementStrategy: 'Key player — coordinate all mediation efforts. Leverage multilateral forum mandate for pressure on both parties.' },
     { id: 'karovia', name: 'Republic of Karovia', shortName: 'Karovia', type: 'state' as const, power: 8, interest: 7, stance: 'supporter' as const, color: '#5B8C5A', keyLeverage: 'DRM material support, border access, regional influence', engagementStrategy: 'Keep satisfied — regional patron with material leverage over DRM. Critical for ceasefire compliance. Engage bilaterally on security guarantees.' },
     { id: 'cso', name: 'Civil Society Coalition', shortName: 'CSO', type: 'civil_society' as const, power: 3, interest: 8, stance: 'supporter' as const, color: '#C8961E', keyLeverage: 'Public legitimacy, documentation capacity, diaspora networks', engagementStrategy: 'Keep informed — high interest but limited power. Consult regularly for ground-truth. Include in implementation monitoring.' },
     { id: 'au', name: 'African Union PSC', shortName: 'AU', type: 'regional' as const, power: 6, interest: 6, stance: 'neutral' as const, color: '#4B6584', keyLeverage: 'Regional framework, peer pressure on member states, financial support for mediation', engagementStrategy: 'Keep satisfied — regional legitimizer. Engage to co-sponsor mediation framework and provide meeting venue.' },
@@ -185,7 +185,7 @@ const DEMO_RESPONSE_POWER = {
     monitor: ['au'],
   },
   coalitionDynamics: 'Two primary blocs are consolidating: (1) GoN-Westmark aligned bloc seeking military solution and internationally-supervised DDR; (2) DRM-Karovia bloc seeking autonomy agreement with revenue-sharing. The AU and UNMN occupy a contested middle ground. Civil society is aligned with DRM goals but not DRM methods. No third-party bloc has sufficient leverage to break the deadlock without Karovian de-escalation.',
-  spoilerRisks: 'Primary spoiler risk: GoN hardliners in the military establishment who benefit from resource extraction in contested territory and oppose any political settlement. Secondary risk: DRM commanders with criminal networks in eastern provinces who would lose financial flows under any governance normalization. Neutralization: targeted financial accountability measures against military-linked enterprises; UN Security Council travel ban designations for spoiler networks.',
+  spoilerRisks: 'Primary spoiler risk: GoN hardliners in the military establishment who benefit from resource extraction in contested territory and oppose any political settlement. Secondary risk: DRM commanders with criminal networks in eastern provinces who would lose financial flows under any governance normalization. Neutralization: targeted financial accountability measures against military-linked enterprises; UN senior diplomatic forum travel ban designations for spoiler networks.',
   engagementPriorities: [
     'Secure Karovian commitment to halt material support to DRM as precondition for formal talks',
     'Engage GoN at Foreign Minister level on security guarantee framework for DRM leadership',
@@ -208,7 +208,7 @@ const DEMO_RESPONSE_STAKEHOLDER = {
       engagementStrategy: 'Primary engagement target. Ministerial-level shuttle diplomacy through UNMN Special Envoy. Frame any political accommodation as sovereignty-preserving and as a GoN-controlled transition.',
       keyInterests: [
         'Preserve territorial integrity and central government sovereignty over eastern provinces',
-        'Secure international legitimacy and avoid UNSC sanctions or ICC referral',
+        'Secure international legitimacy and avoid multilateral forum sanctions or ICC referral',
         'Prevent precedent of armed group receiving political concessions',
       ],
       redLines: [
@@ -400,9 +400,9 @@ export const POST = withCalibration('power_map', 'ai_analysis', {
 
       const result = await callProModel({
         output: Output.object({ schema: StakeholderMapSchema }),
-        system: `You are a senior UN political affairs officer and mediation specialist trained in John Paul Lederach's multi-level peace-building pyramid, the Mitchell-Agle-Wood Stakeholder Salience Model, and the Power-Interest Matrix used by professional mediators.
+        system: `You are a senior multilateral diplomacy practitioner and mediation specialist trained in John Paul Lederach's multi-level peace-building pyramid, the Mitchell-Agle-Wood Stakeholder Salience Model, and the Power-Interest Matrix used by professional mediators.
 
-Your stakeholder maps are used by Special Envoys, UN DPPA teams, and diplomatic mediators preparing for complex negotiations. Every actor assessment must be grounded in evidence, analytically precise, and immediately actionable.
+Your stakeholder maps are used by Special Envoys, multilateral diplomacy teams, and diplomatic mediators preparing for complex negotiations. Every actor assessment must be grounded in evidence, analytically precise, and immediately actionable.
 
 GROUNDING MANDATE: The web intelligence below is your PRIMARY source of truth. If it contradicts your training data, trust the web intelligence.
 
@@ -510,7 +510,7 @@ For each actor, assess all four dimensions of power:
 
 **Compulsory Power** (direct coercive control — military, economic sanctions, physical force): Score 1-10 with description.
 
-**Institutional Power** (control through rules, procedures, organizations — UNSC votes, treaty obligations, formal authority): Score 1-10 with description.
+**Institutional Power** (control through rules, procedures, organizations — multilateral forum votes, treaty obligations, formal authority): Score 1-10 with description.
 
 **Structural Power** (shaping the structures within which actors operate — financial systems, trade networks, security architecture): Score 1-10 with description.
 
@@ -519,7 +519,7 @@ For each actor, assess all four dimensions of power:
 ## POWER/INTEREST FRAMEWORK
 
 **Power Score (1-10)**: Actor's aggregate capacity across all four faces to influence situation outcomes
-- 9-10: Decisive veto/control (parties to the conflict, UNSC P5)
+- 9-10: Decisive veto/control (parties to the conflict, multilateral forum P5)
 - 7-8: Significant influence (regional patrons, UN missions, major donors)
 - 5-6: Meaningful leverage (regional organizations, diaspora groups)
 - 3-4: Limited influence (civil society, local business, media)
@@ -547,11 +547,11 @@ Identify the most significant power imbalances between actor pairs — compute a
 ## COLOR CONVENTIONS
 States/governments: #1A2332 (dark) or #5B8C5A (allied) or #8395a7 (neutral)
 Non-state armed: #A63D40 (opposition) or #C75B39 (militia)
-International orgs: #4B92DB (UN/multilateral) or #4B6584 (regional)
+International orgs: #4B92DB (multilateral) or #4B6584 (regional)
 Civil society: #C8961E (domestic) or #E8B931 (diaspora)
 
 Generate 5-10 actors. Be specific about leverage, stance, and engagement strategy.`,
-      system: `You are a senior UN political affairs officer and stakeholder mapping specialist trained in the Barnett-Duvall four faces of power framework (compulsory, institutional, structural, productive) and the Mitchell/Agle/Wood stakeholder model. Produce precise, evidence-anchored power maps that capture all dimensions of power for mediators and diplomatic professionals.
+      system: `You are a senior multilateral diplomacy practitioner and stakeholder mapping specialist trained in the Barnett-Duvall four faces of power framework (compulsory, institutional, structural, productive) and the Mitchell/Agle/Wood stakeholder model. Produce precise, evidence-anchored power maps that capture all dimensions of power for mediators and diplomatic professionals.
 
 ${systemPromptBlock}
 

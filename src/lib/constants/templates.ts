@@ -372,7 +372,7 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
     description:
       'Structured 3-option analysis paper for senior decision-makers, presenting minimum, moderate, and maximum international response options.',
     estimatedLength: '4-6 pages',
-    audience: 'Senior decision-makers, Security Council members, mission leadership',
+    audience: 'Senior decision-makers, senior diplomatic decision-makers, mission leadership',
     sections: [
       {
         id: 'executive-summary',
@@ -432,9 +432,9 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
     name: 'Ceasefire Monitoring Report',
     category: 'security',
     description:
-      'Structured violation tracking report for ceasefire/armistice monitoring missions. Based on standard UN MICT and UNMM format.',
+      'Structured violation tracking report for ceasefire/armistice monitoring missions. Based on standard monitoring mission format.',
     estimatedLength: '3-5 pages',
-    audience: 'Truce monitoring mission, Security Council, parties to the agreement',
+    audience: 'Truce monitoring mission, senior diplomatic forum, parties to the agreement',
     sections: [
       {
         id: 'monitoring-summary',
@@ -467,8 +467,8 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
       {
         id: 'recommendations',
         title: 'Recommendations',
-        description: 'Recommendations for the parties and the Security Council.',
-        guidance: 'Specific recommendations to: (a) parties to address specific violations, (b) Security Council or oversight body on mandate or measures, (c) mission on monitoring methodology adjustments.',
+        description: 'Recommendations for the parties and the senior diplomatic forum.',
+        guidance: 'Specific recommendations to: (a) parties to address specific violations, (b) oversight body on mandate or measures, (c) mission on monitoring methodology adjustments.',
         wordTarget: 150,
       },
     ],
@@ -489,7 +489,7 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
     description:
       'OHCHR-style human rights situation assessment documenting incidents, patterns, and accountability gaps.',
     estimatedLength: '5-8 pages',
-    audience: 'OHCHR, UN Special Rapporteurs, human rights organizations, Security Council',
+    audience: 'OHCHR, UN Special Rapporteurs, human rights organizations, senior diplomatic forum',
     sections: [
       {
         id: 'hr-overview',
@@ -522,8 +522,8 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
       {
         id: 'recommendations',
         title: 'Recommendations',
-        description: 'Specific recommendations to states, UN bodies, and monitoring missions.',
-        guidance: 'Addressed to specific bodies (Security Council, General Assembly, OHCHR, parties to the conflict). Include: cessation of violations, accountability measures, protection of witnesses and HR defenders, humanitarian access.',
+        description: 'Specific recommendations to states, relevant institutions, and monitoring missions.',
+        guidance: 'Addressed to specific bodies (senior diplomatic forum, General Assembly, OHCHR, parties to the conflict). Include: cessation of violations, accountability measures, protection of witnesses and HR defenders, humanitarian access.',
         wordTarget: 200,
       },
     ],
@@ -542,15 +542,15 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
     name: 'Sanctions Compliance Report',
     category: 'political',
     description:
-      'Panel of Experts-style report documenting sanctions evasion, enforcement gaps, and compliance status. Based on UNSC Panel of Experts methodology.',
+      'Panel of Experts-style report documenting sanctions evasion, enforcement gaps, and compliance status. Based on multilateral forum Panel of Experts methodology.',
     estimatedLength: '6-10 pages',
-    audience: 'UNSC Sanctions Committee, member states, enforcement authorities',
+    audience: 'multilateral forum Sanctions Committee, member states, enforcement authorities',
     sections: [
       {
         id: 'regime-overview',
         title: 'Sanctions Regime Overview',
         description: 'Summary of applicable sanctions measures and legal basis.',
-        guidance: 'Cite the applicable UNSC Resolution(s) precisely. List all sanctions measures in effect (arms embargo, targeted financial sanctions, travel bans, other). Note the Committee structure and Panel mandate.',
+        guidance: 'Cite the applicable multilateral forum Resolution(s) precisely. List all sanctions measures in effect (arms embargo, targeted financial sanctions, travel bans, other). Note the Committee structure and Panel mandate.',
         wordTarget: 150,
       },
       {
@@ -599,13 +599,13 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
     description:
       'Disarmament, Demobilization, and Reintegration progress assessment following UN DDR Reference Manual framework.',
     estimatedLength: '5-8 pages',
-    audience: 'DDR program managers, Security Council, donors, implementing partners',
+    audience: 'DDR program managers, senior diplomatic forum, donors, implementing partners',
     sections: [
       {
         id: 'ddr-overview',
         title: 'DDR Program Overview',
         description: 'Summary of the DDR program mandate, scope, and implementation status.',
-        guidance: 'State: legal basis (peace agreement / UNSC mandate), program components, target caseload, implementing partners, funding status, overall implementation rate.',
+        guidance: 'State: legal basis (peace agreement / multilateral forum mandate), program components, target caseload, implementing partners, funding status, overall implementation rate.',
         wordTarget: 200,
       },
       {
@@ -771,7 +771,7 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
     description:
       'Periodic update on peace process status, tracking commitments against implementation, spoiler dynamics, and key milestones.',
     estimatedLength: '3-5 pages',
-    audience: 'Guarantors, facilitators, donors, Security Council',
+    audience: 'Guarantors, facilitators, donors, senior diplomatic forum',
     sections: [
       {
         id: 'process-status',
@@ -824,9 +824,9 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
     name: 'Executive Summary / Decision Memo',
     category: 'political',
     description:
-      '1-page decision memo for senior leadership. Maximum information density with minimum reading time. Designed for SRSG, Minister, or Security Council Presidency level.',
+      '1-page decision memo for senior leadership. Maximum information density with minimum reading time. Designed for SRSG, Minister, or senior diplomatic leadership level.',
     estimatedLength: '1 page',
-    audience: 'SRSG, ministers, Security Council members, heads of state',
+    audience: 'SRSG, ministers, senior diplomatic decision-makers, heads of state',
     sections: [
       {
         id: 'situation',

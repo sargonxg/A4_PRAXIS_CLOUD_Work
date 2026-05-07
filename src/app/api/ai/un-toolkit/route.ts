@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { UN_STYLE_PROMPT } from '@/lib/ai/prompts/un-style';
+import { DIPLOMATIC_STYLE_PROMPT } from '@/lib/ai/prompts/un-style';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { isServerDemoMode } from '@/lib/demo/demo-mode';
@@ -37,7 +37,7 @@ type DocumentMode = z.infer<typeof DocumentModeSchema>;
 // ---------------------------------------------------------------------------
 
 const UnToolkitSchema = z.object({
-  documentType: z.string().describe('The full formal document type name (e.g., "Presidential Statement of the Security Council")'),
+  documentType: z.string().describe('The full formal document type name (e.g., "Presidential statement for a senior diplomatic forum")'),
   title: z.string().describe('Document title or subject line'),
   preamble: z.array(z.string()).describe(
     'For resolutions: preambular clauses each beginning with a present participle (Recalling, Reaffirming, Noting, etc.). For other documents: background paragraphs establishing context.'
@@ -51,11 +51,11 @@ const UnToolkitSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
-// Demo response (Nordalia scenario — Security Council Resolution)
+// Demo response (Nordalia scenario — Multilateral Resolution)
 // ---------------------------------------------------------------------------
 
 const DEMO_RESPONSE = {
-  documentType: 'Security Council Resolution',
+  documentType: 'Multilateral Resolution',
   title: 'On the situation in Nordalia',
   preamble: [
     'Recalling its resolution 2847 (2024) and all subsequent relevant resolutions and statements of its President on the situation in Nordalia,',
@@ -80,10 +80,10 @@ Distr.: General
 
 Resolution XXXX (2026)
 
-Adopted by the Security Council at its [XXXX]th meeting,
+Adopted by the forum at its [XXXX]th meeting,
 on [Date] 2026
 
-The Security Council,
+The forum,
 
 Recalling its resolution 2847 (2024) and all subsequent relevant resolutions and statements of its President on the situation in Nordalia,
 
@@ -138,23 +138,23 @@ function getModeInstructions(mode: DocumentMode, toneLevel: string): string {
   };
 
   const modeInstructions: Record<DocumentMode, string> = {
-    'security-council-resolution': `Draft a Security Council Resolution following strict UNSC drafting conventions:
+    'security-council-resolution': `Draft a Multilateral Resolution following strict multilateral drafting conventions:
 PREAMBULAR PARAGRAPHS: Each begins with a present participle (Recalling, Reaffirming, Expressing, Noting, Welcoming, Bearing in mind, Deeply concerned, Acting under Chapter VII, etc.) and ends with a COMMA.
 OPERATIVE PARAGRAPHS: Each is numbered and begins with an action verb (Decides, Calls upon, Urges, Requests, Demands, Authorizes, Condemns, Reiterates, Strongly condemns, Stresses, Encourages, Invites, Commends). Each ends with a SEMICOLON except the final paragraph which ends with a PERIOD.
 TONE: ${toneGuide[toneLevel]}
 Standard final OP: Always end with "Decides to remain actively seized of the matter."`,
 
-    'presidential-statement': `Draft a Presidential Statement of the Security Council (PRST). Unlike resolutions, PRSTs:
+    'presidential-statement': `Draft a Presidential statement for a senior diplomatic forum (PRST). Unlike resolutions, PRSTs:
 - Are adopted by consensus — language must be acceptable to all 15 Council members
 - Are not legally binding but carry significant political weight
-- Use the third person ("The Security Council..." not "The Council decides...")
+- Use the third person ("The forum..." not "The Council decides...")
 - Do not have preambular/operative structure — use flowing paragraphs
-- Begin: "The Security Council..." and maintain that formulation throughout
+- Begin: "The forum..." and maintain that formulation throughout
 PREAMBLE array: Use as background context paragraphs establishing the situation.
 OPERATIVE CLAUSES array: The substantive positions and calls to action of the Council.
 TONE: ${toneGuide[toneLevel]}`,
 
-    'press-statement': `Draft a UN Security Council Press Statement. Press statements:
+    'press-statement': `Draft a senior diplomatic press statement. Press statements:
 - Are informal Council agreed language — attributed to "Council members"
 - Are shorter and more accessible than resolutions or PRSTs
 - Use clear, direct language accessible to general media audiences
@@ -163,7 +163,7 @@ PREAMBLE array: Brief contextual sentences.
 OPERATIVE CLAUSES array: Key messages and calls to action.
 TONE: ${toneGuide[toneLevel]}`,
 
-    'talking-points': `Draft structured UN diplomatic talking points:
+    'talking-points': `Draft structured diplomatic talking points:
 PREAMBLE array: Key contextual frames to establish before entering substance.
 OPERATIVE CLAUSES array: The main talking points, each as a standalone, quotable formulation. Each should be: concise (1-2 sentences), standalone, and diplomatically precise.
 Format each talking point to be delivered verbally — punchy, clear, quotable.
@@ -267,16 +267,16 @@ export const POST = withCalibration('un_toolkit', 'ai_report', {
 
     const result = await callProModel({
       output: Output.object({ schema: UnToolkitSchema }),
-      system: `${UN_STYLE_PROMPT}
+      system: `${DIPLOMATIC_STYLE_PROMPT}
 
 ---
 
-## UN Diplomatic Drafting Expert
+## Diplomatic Drafting Expert
 
-You are a senior UN Secretariat official with deep expertise in drafting Security Council documents, diplomatic communications, and UN-standard formal texts. You have 20+ years of experience in the UN DPPA and Office of Legal Affairs.
+You are a senior multilateral diplomacy practitioner with deep expertise in drafting multilateral diplomatic documents, diplomatic communications, and professional diplomatic texts. You have 20+ years of experience in the multilateral diplomacy and legal advisory practice.
 
 You know:
-- UN Security Council drafting conventions (preambular vs operative clause structure, action verb hierarchy)
+- multilateral resolution drafting conventions (preambular vs operative clause structure, action verb hierarchy)
 - Vienna Convention on Diplomatic Relations (diplomatic communications standards)
 - Chapter VI vs Chapter VII legal distinctions and their implications
 - How to navigate P5 dynamics — what language will fly and what will trigger vetoes
@@ -290,7 +290,7 @@ KEY INSTRUCTION: In diplomaticNotes, always explain WHY specific language choice
 ${systemPromptBlock}
 
 Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
-      prompt: `${webCtx ? `${webCtx}\n\n` : ''}${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Draft a UN diplomatic document with the following parameters:
+      prompt: `${webCtx ? `${webCtx}\n\n` : ''}${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `${sitContext}\n\n` : ''}Draft a professional diplomatic document with the following parameters:
 
 DOCUMENT MODE: ${mode}
 TONE LEVEL: ${toneLevel}
@@ -316,7 +316,7 @@ ${modeInstructions}
 
 5. **alternativeLanguage**: Provide 3-4 alternative formulations for the most politically sensitive clauses — both softer (for consensus-building) and harder (for stronger Council signal) where appropriate.
 
-6. **UN Style**: Follow UN_STYLE_PROMPT conventions throughout — entity naming, IHL terminology, humanitarian language, gender-inclusive drafting.
+6. **Diplomatic Style**: Follow DIPLOMATIC_STYLE_PROMPT conventions throughout — entity naming, IHL terminology, humanitarian language, gender-inclusive drafting.
 
 7. **Specificity**: Reference actual actors, specific events, existing mandates (resolutions, reports, frameworks) by name and number where possible based on the situation context provided.`,
     });

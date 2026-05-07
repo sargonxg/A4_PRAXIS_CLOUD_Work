@@ -142,7 +142,7 @@ const TOOL_META: Record<ToolDisplayType, ToolMeta> = {
     label: "Ceasefire Monitor",
     color: "text-sage",
     bgColor: "bg-sage/10",
-    framework: "UN DPKO",
+    framework: "peace operations",
   },
   stakeholder: {
     icon: Users,

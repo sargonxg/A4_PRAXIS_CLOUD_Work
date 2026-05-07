@@ -270,7 +270,7 @@ export const POST = withCalibration('media_compass', 'ai_analysis', {
     // --- AI generation ---
     const result = await callProModel({
       output: Output.object({ schema: MediaCompassSchema }),
-      system: `You are PRAXIS Media Compass, a specialist in conflict information environments, media bias analysis, and narrative mapping. You serve UN Political Affairs Officers, diplomatic mediators, and conflict analysts.
+      system: `You are PRAXIS Media Compass, a specialist in conflict information environments, media bias analysis, and narrative mapping. You serve multilateral diplomacy practitioners, diplomatic mediators, and conflict analysts.
 
 ${systemPromptBlock}
 

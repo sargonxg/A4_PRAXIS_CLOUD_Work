@@ -103,7 +103,7 @@ function getContextualPrompts(situation: Situation | null, phase?: string): stri
     ];
     case 'reporting': return [
       `Draft a situation report for ${name}`,
-      `Prepare talking points for Security Council`,
+      `Prepare talking points for a senior briefing`,
       `Generate a briefing note on recent developments`,
       `Draft an options paper for intervention`,
     ];

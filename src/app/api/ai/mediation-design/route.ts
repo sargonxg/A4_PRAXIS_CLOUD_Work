@@ -78,8 +78,8 @@ const SettlementSchema = z.object({
 const DEMO_RESPONSE_DESIGN = {
   processName: 'Nordalia Inclusive Peace Process (NIPP)',
   format: 'hybrid' as const,
-  venue: 'Kigali, Rwanda (African Union Peace and Security Council facilities)',
-  mediatorProfile: 'Joint AU-UN mediation team: AU Commissioner for Peace and Security (lead), UN DPPA senior political officer, supported by technical advisors for security, economic, and human rights tracks.',
+  venue: 'Kigali, Rwanda (African Union Peace and senior diplomatic forum facilities)',
+  mediatorProfile: 'Joint AU-UN mediation team: AU Commissioner for Peace and Security (lead), multilateral diplomacy senior political officer, supported by technical advisors for security, economic, and human rights tracks.',
   phases: [
     {
       id: 'p1',
@@ -191,11 +191,11 @@ const DEMO_RESPONSE_DESIGN = {
     'Nothing is agreed until everything is agreed (single undertaking principle)',
   ],
   spoilerMitigation: [
-    'GoN military hardliners: Engage through MoD parallel track; UNSC targeted sanctions as deterrent',
+    'GoN military hardliners: Engage through MoD parallel track; multilateral forum targeted sanctions as deterrent',
     'DRM commanders with criminal networks: Targeted financial accountability measures; DDR economic incentives',
     'Karovia: High-level bilateral engagement; investment package conditional on non-interference',
   ],
-  implementationMonitoring: 'Joint Implementation Commission co-chaired by AU and UN DPPA, with quarterly UNSC reporting. International Contact Group provides ministerial-level political oversight.',
+  implementationMonitoring: 'Joint Implementation Commission co-chaired by AU and multilateral diplomacy, with quarterly multilateral forum reporting. International Contact Group provides ministerial-level political oversight.',
   processRisks: [
     'Karovia non-compliance undermines DRM incentives to make concessions',
     'GoN elections before settlement removes negotiating mandate',
@@ -257,7 +257,7 @@ const DEMO_PLAN = {
       riskFactors: [
         'Karovian veto through GoN patron-client relationship',
         'DRM internal divisions between political and military wings',
-        'UNSC mandate renewal uncertainty may undermine implementation guarantees',
+        'multilateral forum mandate renewal uncertainty may undermine implementation guarantees',
       ],
     },
   ],
@@ -292,7 +292,7 @@ const DEMO_SETTLEMENT = {
   ],
   conditions: [
     'Ratification by both parties within 14 days of signing',
-    'UNSC endorsement through a supporting resolution within 30 days',
+    'multilateral forum endorsement through a supporting resolution within 30 days',
     'Establishment of Joint Implementation Monitoring Commission within 21 days',
   ],
 };
@@ -502,7 +502,7 @@ Calibrate framing, tone, and recommendations to the analyst profile above. Honou
 
 ## DESIGN METHODOLOGY
 
-Apply the UN Guidance for Effective Mediation (A/66/811), Lax/Sebenius deal architecture principles, and the Berghof Foundation process design framework.
+Apply the professional guidance for effective mediation (A/66/811), Lax/Sebenius deal architecture principles, and the Berghof Foundation process design framework.
 
 **Step 1: Process Format Selection**
 Choose the appropriate format based on trust levels and political context:
@@ -540,7 +540,7 @@ Design CBMs that:
 - Host country has diplomatic relationship with all parties
 
 Be specific to the actual parties, issues, and context. Design a process that has a realistic chance of succeeding given the specific constraints of this situation.`,
-      system: `You are a senior UN mediation advisor with extensive experience designing peace processes across multiple conflict contexts. You are trained in the UN Guidance for Effective Mediation, Berghof Foundation process design methodology, and Lax/Sebenius deal architecture. You have designed processes for intrastate conflicts involving non-state armed groups, international peace operations, and regional guarantor frameworks. Produce precise, operationally grounded process designs that a working mediator can actually use.
+      system: `You are a senior senior mediation advisor with extensive experience designing peace processes across multiple conflict contexts. You are trained in the professional guidance for effective mediation, Berghof Foundation process design methodology, and Lax/Sebenius deal architecture. You have designed processes for intrastate conflicts involving non-state armed groups, international peace operations, and regional guarantor frameworks. Produce precise, operationally grounded process designs that a working mediator can actually use.
 
 ${systemPromptBlock}
 

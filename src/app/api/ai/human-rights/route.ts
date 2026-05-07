@@ -56,7 +56,7 @@ const DEMO_RESPONSE = {
   accountabilityMechanisms: [
     {
       mechanism: 'un-inquiry' as const,
-      status: 'Requested by UNHRC, pending Security Council authorization',
+      status: 'Requested by human rights bodies, pending multilateral authorization',
       prospects: 'Unlikely given Karovian veto threat',
     },
   ],
@@ -71,7 +71,7 @@ const DEMO_RESPONSE = {
     'Accountability for market strike',
   ],
   recommendations: [
-    'Establish UN monitoring mission with IHL mandate',
+    'Establish independent monitoring mission with IHL mandate',
     'Engage ICC OTP on preliminary examination',
     'Press for ICRC access agreements',
   ],

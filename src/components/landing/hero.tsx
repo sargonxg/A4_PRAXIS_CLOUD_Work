@@ -37,7 +37,7 @@ const NODES = [
   { id: 0, x: 50, y: 50, r: 14, color: "#4E79A7", label: "State A", type: "state" },
   { id: 1, x: 82, y: 30, r: 10, color: "#E15759", label: "Armed Group", type: "armed_group" },
   { id: 2, x: 82, y: 72, r: 10, color: "#4E79A7", label: "State B", type: "state" },
-  { id: 3, x: 20, y: 22, r: 8, color: "#76B7B2", label: "UN Mission", type: "institution" },
+  { id: 3, x: 20, y: 22, r: 8, color: "#76B7B2", label: "Field Mission", type: "institution" },
   { id: 4, x: 22, y: 76, r: 8, color: "#F28E2B", label: "Claim", type: "claim" },
   { id: 5, x: 65, y: 85, r: 7, color: "#FF9DA7", label: "Narrative", type: "narrative" },
   { id: 6, x: 65, y: 15, r: 7, color: "#EDC948", label: "Leverage", type: "leverage" },
@@ -323,7 +323,7 @@ export function Hero() {
             className="mb-8 inline-flex max-w-xl items-center rounded-full border border-diplomatic-blue/10 bg-white/60 px-4 py-2 shadow-sm backdrop-blur-sm"
           >
             <span className="text-xs font-medium tracking-wide text-navy-700">
-              PRAXIS by TACITUS · Built on the practice of UN Political Affairs.
+              PRAXIS by TACITUS · Built from practitioner experience in multilateral diplomacy.
             </span>
           </motion.div>
 

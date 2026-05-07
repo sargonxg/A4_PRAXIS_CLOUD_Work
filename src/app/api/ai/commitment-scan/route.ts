@@ -24,7 +24,7 @@ const CommitmentSchema = z.object({
   description: z.string().describe('What the commitment entails and its significance'),
   violations: z.array(z.string()).describe('Specific reported violations with evidence'),
   monitoringBody: z.string().optional().describe('Entity responsible for monitoring compliance'),
-  referenceDoc: z.string().optional().describe('UN document reference or official instrument'),
+  referenceDoc: z.string().optional().describe('official document reference or formal instrument'),
 });
 
 const CommitmentScanSchema = z.object({
@@ -57,7 +57,7 @@ const DEMO_RESPONSE = {
         'DRM militia repositioning near Kessara corridor (reported by UNMN monitors)',
         'Failure to establish Joint Ceasefire Monitoring Commission (overdue 45 days)',
       ],
-      monitoringBody: 'UN Mission Nordalia (UNMN)',
+      monitoringBody: 'Field Mission Nordalia (UNMN)',
       referenceDoc: 'S/2025/891',
     },
     {
@@ -155,7 +155,7 @@ export const POST = withCalibration('commitments', 'ai_analysis', {
 
 ## ANALYTICAL FRAMEWORK
 
-Apply the following UN compliance monitoring methodology:
+Apply the following agreement compliance monitoring methodology:
 
 **Commitment Classification**
 - Ceasefire: Military/hostilities restraint agreements
@@ -173,7 +173,7 @@ Apply the following UN compliance monitoring methodology:
 - 0-24: Non-compliant — systematic violation or outright refusal
 
 **For each commitment, assess:**
-1. Specific, documented violations with source attribution (UN reports, OCHA, ICRC, Panel of Experts)
+1. Specific, documented violations with source attribution (formal reports, OCHA, ICRC, Panel of Experts)
 2. Compliance trends: is implementation improving, stable, or deteriorating?
 3. Monitoring body capacity: can the monitoring mechanism actually verify compliance?
 4. Leverage points: what incentives or sanctions can shift compliance behavior?
@@ -183,10 +183,10 @@ Flag as critical violations if they:
 - Create immediate risk to civilian life or safety
 - Threaten to collapse a peace process
 - Constitute grave violations of IHL or IHRL
-- Are subject to UNSC Council authority or reporting obligations
+- Are subject to multilateral forum Council authority or reporting obligations
 
 Generate 3-6 commitments relevant to this specific situation. Be specific about monitoring bodies, violation evidence, and compliance scores. Do not generate generic or placeholder commitments.`,
-      system: `You are a senior UN DPPA compliance officer and political affairs analyst specializing in agreement monitoring and implementation oversight. You have extensive experience tracking commitment compliance in UN-mediated peace processes, applying OCHA humanitarian access monitoring protocols, and drafting reports for the Security Council. Produce precise, evidence-grounded assessments.
+      system: `You are a senior multilateral diplomacy compliance officer and political affairs analyst specializing in agreement monitoring and implementation oversight. You have extensive experience tracking commitment compliance in internationally mediated peace processes, applying OCHA humanitarian access monitoring protocols, and drafting reports for the senior diplomatic forum. Produce precise, evidence-grounded assessments.
 
 ${systemPromptBlock}
 

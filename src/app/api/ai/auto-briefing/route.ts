@@ -48,10 +48,10 @@ const DEMO_RESPONSE = {
   mediaEnvironment: 'GoN state media amplifying counterterrorism narrative around Kessara. NIMN published buffer zone violation documentation today. International coverage increasing — BBC and Al Jazeera both ran humanitarian crisis features. Operation MIRROR social media campaign actively suppressing UNMN reporting.',
   actionItems: [
     'URGENT: Invoke OCHA escalation mechanism — emergency humanitarian access meeting within 48 hours',
-    'Request UNMN formally report buffer zone violations to UNSC under S/2025/891 mandate',
+    'Request UNMN formally report buffer zone violations to multilateral forum under S/2025/891 mandate',
     'Senior bilateral engagement with Karovia to clarify FM cancellation signal',
     'Issue joint AU-UN ceasefire compliance statement before international media cycle closes',
-    'Brief UNSC P3 on deteriorating access ahead of monthly Nordalia consultation',
+    'Brief multilateral forum P3 on deteriorating access ahead of monthly Nordalia consultation',
   ],
   nextReview: '24 hours — monitor Karovian diplomatic signals, OCHA convoy status, and any DRM statement on Kessara',
 };
@@ -165,7 +165,7 @@ export const POST = withCalibration('daily_brief', 'ai_report', {
       output: Output.object({ schema: AutoBriefingSchema }),
       prompt: `${graphCtx ? `${graphCtx}\n\n` : ''}${sitContext ? `SITUATION CONTEXT:\n${sitContext}\n` : ''}${intelContext}${webResearchContext}${deepResearchNote}
 
-Generate a daily intelligence brief for this conflict situation in UN DPPA Morning Note format.
+Generate a daily intelligence brief for this conflict situation in professional morning note format.
 
 RISK LEVEL: critical = active large-scale hostilities or atrocity risk; high = significant violations or blocked access; medium = tension but process ongoing; low = stable, implementation on track.
 TREND: escalating = increasing violence or diplomatic deterioration; stable = no significant change; de-escalating = fewer incidents, positive signals.
@@ -181,8 +181,8 @@ STRUCTURE:
 8. nextReview: specific monitoring triggers for next cycle
 ${deepResearch ? '9. sourcesSummary: which sources (web crawler/grounded search/GDELT/ReliefWeb/UN News) informed this brief' : ''}
 
-Be specific and evidence-grounded. Write for a senior UN Special Representative's morning briefing.`,
-      system: `You are a senior UN DPPA political affairs officer writing the daily morning intelligence brief for the Special Representative. Be precise, specific, and actionable. Apply the UN Morning Note standard.
+Be specific and evidence-grounded. Write for a senior diplomatic representative's morning briefing.`,
+      system: `You are a senior senior multilateral diplomacy practitioner writing the daily morning intelligence brief for the Special Representative. Be precise, specific, and actionable. Apply a professional morning note standard.
 
 ${systemPromptBlock}
 

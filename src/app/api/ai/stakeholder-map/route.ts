@@ -149,7 +149,7 @@ export const POST = withCalibration('stakeholder_map', 'ai_analysis', {
 
       const result = await callProModel({
         output: Output.object({ schema: ExplainSchema }),
-        system: `${systemPromptBlock}\n\nYou explain Mitchell-Agle-Wood stakeholder salience to senior UN political-affairs officers. Explanations are grounded, specific, and honour the calibration above.${lang}${redLines}`,
+        system: `${systemPromptBlock}\n\nYou explain Mitchell-Agle-Wood stakeholder salience to senior multilateral diplomacy practitioners. Explanations are grounded, specific, and honour the calibration above.${lang}${redLines}`,
         prompt: `Situation: ${situation?.name ?? '(unnamed)'} — ${situation?.region ?? ''}
 Actor: ${target.actorLabel} (id: ${target.actorId})
 

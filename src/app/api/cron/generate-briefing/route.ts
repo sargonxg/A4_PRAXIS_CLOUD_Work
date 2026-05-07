@@ -113,11 +113,11 @@ export async function GET(request: Request) {
         output: Output.object({ schema: BriefingSchema }),
         prompt: `${sitContext}\n\nGenerate a daily intelligence brief for this conflict situation.
 
-Format: UN DPPA Morning Note standard. Be specific, evidence-grounded, and actionable.
+Format: professional morning note standard. Be specific, evidence-grounded, and actionable.
 Risk levels: critical=active hostilities/atrocity risk, high=ceasefire violations/humanitarian blockage, medium=tension with process ongoing, low=stable.
 Trend: escalating/stable/de-escalating based on recent trajectory.
 Include 3-5 key developments, section analysis for security/political/humanitarian/media, 3-5 action items, and next review trigger.`,
-        system: 'You are a senior UN DPPA political affairs officer writing daily situation briefs for senior diplomatic staff.',
+        system: 'You are a senior senior multilateral diplomacy practitioner writing daily situation briefs for senior diplomatic staff.',
       });
 
       generated++;

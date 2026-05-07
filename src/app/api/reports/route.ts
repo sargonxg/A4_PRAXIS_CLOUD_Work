@@ -35,7 +35,7 @@ const DEMO_REPORTS = [
   },
   {
     id: 'report-003',
-    title: 'Security Council Briefing Notes - March 2026',
+    title: 'Senior Diplomatic Briefing Notes - March 2026',
     template: 'briefing_note',
     status: 'draft',
     createdAt: '2026-02-26T11:00:00Z',

@@ -1,12 +1,12 @@
 /**
- * UN_STYLE_PROMPT
+ * DIPLOMATIC_STYLE_PROMPT
  *
- * Comprehensive style guide for UN document formatting and language.
- * Used when generating or editing text for official UN document formats.
+ * Comprehensive style guide for professional diplomatic formatting and language.
+ * Used when generating or editing professional diplomatic documents.
  */
-export const UN_STYLE_PROMPT = `## United Nations Editorial Style Guide
+export const DIPLOMATIC_STYLE_PROMPT = `## Professional Diplomatic Editorial Style Guide
 
-Follow these conventions when drafting or editing text for United Nations documents.
+Follow these conventions when drafting or editing text for professional diplomatic documents.
 
 ### General Principles
 1. **Clarity**: Write clearly and concisely. Avoid unnecessarily complex sentence structures.
@@ -19,8 +19,8 @@ Follow these conventions when drafting or editing text for United Nations docume
 #### Entities and Actors
 - **States**: Use official short names (e.g., "the Democratic Republic of the Congo" on first reference, then "the Democratic Republic" or "the country"). Never use colloquial country names.
 - **Governments**: Use "the Government of [Country]" or "the [Country] authorities." Never use "regime."
-- **Non-State actors**: Use "non-State armed group" or refer by official designation. Use "terrorists" only for individuals or entities designated as such by the Security Council.
-- **UN bodies**: Use full names on first reference with abbreviation in parentheses, then abbreviation thereafter.
+- **Non-State actors**: Use "non-State armed group" or refer by official designation. Use "terrorists" only for individuals or entities formally designated as such by a competent authority.
+- **Institutions**: Use full names on first reference with abbreviation in parentheses, then abbreviation thereafter.
 
 #### Conflict and Security
 - Use "armed conflict" rather than "war."
@@ -49,13 +49,13 @@ Follow these conventions when drafting or editing text for United Nations docume
 
 ### Document Structure
 
-#### Secretary-General's Reports
-- Open with "I have the honour to submit the present report pursuant to [mandate]."
+#### Principal Reports
+- Open with a concise mandate or request line.
 - Use numbered paragraphs throughout.
 - Structure: Introduction, Political/Security sections, Humanitarian, Human Rights, Observations/Recommendations.
 - Recommendations should be specific and actionable.
 
-#### Security Council Resolutions
+#### Formal Resolutions
 - Preambular paragraphs begin with present participles ("Recalling," "Expressing," "Reaffirming").
 - Operative paragraphs begin with action verbs ("Decides," "Calls upon," "Requests").
 - Preambular paragraphs end with commas; operative paragraphs end with semicolons (except the last, which ends with a period).
@@ -90,5 +90,5 @@ Use calibrated language to indicate confidence levels:
 
 ### Abbreviations
 - Spell out on first use with abbreviation in parentheses.
-- Common abbreviations that do not need spelling out: UN, NATO, EU, AU.
-- Use "United Nations" (not "UN") at the start of a sentence.`;
+- Common abbreviations that do not need spelling out: NATO, EU, AU.
+- Avoid institutional branding unless the institution is an explicit source, party, or legal authority in the case record.`;

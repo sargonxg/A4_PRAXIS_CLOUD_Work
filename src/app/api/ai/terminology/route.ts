@@ -31,7 +31,7 @@ const TerminologyRequestSchema = z.object({
   situationId: z.string().optional(),
 });
 
-// Programmatic checks for common UN terminology issues
+// Programmatic checks for common diplomatic terminology issues
 function runProgrammaticChecks(text: string) {
   const issues: Array<{ term: string; suggestion: string; reason: string; severity: 'error' | 'warning' | 'info' }> = [];
 
@@ -56,7 +56,7 @@ function runProgrammaticChecks(text: string) {
         issues.push({
           term: match,
           suggestion: check.suggestion,
-          reason: `"${match}" is not standard UN terminology. Use "${check.suggestion}" instead.`,
+          reason: `"${match}" is not standard professional diplomatic terminology. Use "${check.suggestion}" instead.`,
           severity: check.severity,
         });
       }
@@ -104,22 +104,22 @@ export const POST = withCalibration('un_toolkit', 'ai_chat', {
     const result = await generateText({
       model: getModel(),
       output: Output.object({ schema: TerminologyResponseSchema }),
-      system: `You are a UN Editorial Manual expert specializing in diplomatic terminology.
+      system: `You are a professional diplomatic terminology editor specializing in diplomatic terminology.
 
 ${systemPromptBlock}
 
 Calibrate framing, tone, and recommendations to the analyst profile above. Honour the output-constraints block.${langDirective}${redLineDirective}`,
-      prompt: `You are a UN Editorial Manual expert. Analyze the following text for UN terminology compliance.
+      prompt: `You are a professional diplomatic terminology editor. Analyze the following text for professional diplomatic terminology compliance.
 Document context: ${context || 'general'}
 
 The following issues have already been detected programmatically:
 ${programmaticIssues.map((i) => `- "${i.term}" → "${i.suggestion}" (${i.severity})`).join('\n') || 'None'}
 
 Now perform a deeper analysis for:
-1. Additional terminology that doesn't meet UN standards
+1. Additional terminology that doesn't meet professional diplomatic standards
 2. Date format compliance (should be "1 January 2025" not "January 1st, 2025")
 3. Number formatting (spell out one through nine, use figures for 10+)
-4. Proper UN body references (full names on first reference)
+4. Proper institutional references (full names on first reference)
 5. Gender-inclusive language issues
 6. Diplomatic register (too informal, too loaded, or too politically charged language)
 7. Appropriate hedging for unverified claims

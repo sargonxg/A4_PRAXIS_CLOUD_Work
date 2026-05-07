@@ -91,7 +91,7 @@ const DEMO_RESPONSE = {
       },
       glaslStage: 5,
       trend: 'escalating' as const,
-      forecast: '90-day forecast: ELEVATED RISK. The cabinet reshuffle, increasing buffer zone violations, and Karovian logistics buildup create a convergent escalation pattern. Key trigger: potential AFN operation to recapture the Kessara corridor. Monitor AFN troop movements, Karovian military flights, and UNSC informal consultations. De-escalation window narrows if ceasefire violations continue at current pace. Planting season disruption (April-May) would accelerate humanitarian crisis.',
+      forecast: '90-day forecast: ELEVATED RISK. The cabinet reshuffle, increasing buffer zone violations, and Karovian logistics buildup create a convergent escalation pattern. Key trigger: potential AFN operation to recapture the Kessara corridor. Monitor AFN troop movements, Karovian military flights, and multilateral forum informal consultations. De-escalation window narrows if ceasefire violations continue at current pace. Planting season disruption (April-May) would accelerate humanitarian crisis.',
     },
     {
       name: 'Nordalia — Capital Region',
@@ -220,7 +220,7 @@ ${intel.humanitarian?.displacement ? `Displacement: ${intel.humanitarian.displac
     // --- AI analysis (Pro model with Flash fallback) ---
     const result = await callProModel({
       output: Output.object({ schema: RiskAssessmentSchema }),
-      system: `You are a senior risk analyst trained in INFORM Risk Index methodology, UNDP conflict-sensitive programming, and UN DPPA early warning frameworks. You serve the specific analyst described below — calibrate mandate, lens, audience, and red lines to their profile.
+      system: `You are a senior risk analyst trained in INFORM Risk Index methodology, conflict-sensitive programming, and multilateral diplomacy early warning frameworks. You serve the specific analyst described below — calibrate mandate, lens, audience, and red lines to their profile.
 
 ${systemPromptBlock}
 

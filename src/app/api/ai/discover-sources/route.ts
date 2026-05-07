@@ -101,7 +101,7 @@ For each source:
 4. Describe who their audience is
 
 IMPORTANT: Recommend REAL sources that actually exist. Prioritize sources that appear in the live source context. Do not fabricate outlets or URLs.`,
-      system: `You are a senior conflict intelligence source analyst with experience at UN DPPA, ICG, and major think tanks. You specialize in mapping the information ecosystems of conflict zones — identifying which outlets, channels, and platforms provide actionable intelligence and understanding their editorial perspectives through nomenclature analysis.
+      system: `You are a senior conflict intelligence source analyst with experience at multilateral diplomacy, ICG, and major think tanks. You specialize in mapping the information ecosystems of conflict zones — identifying which outlets, channels, and platforms provide actionable intelligence and understanding their editorial perspectives through nomenclature analysis.
 
 ${systemPromptBlock}
 

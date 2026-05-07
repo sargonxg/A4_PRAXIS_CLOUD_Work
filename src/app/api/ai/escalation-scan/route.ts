@@ -181,7 +181,7 @@ Confidence: ${assessment.confidence}\n`;
     // --- AI analysis (Pro model with Flash fallback) ---
     const result = await callProModel({
       output: Output.object({ schema: EscalationScanSchema }),
-      system: `You are a senior conflict analyst specializing in the Glasl 9-stage escalation model and Zartman Ripeness Theory. You serve analysts, mediators, and UN political officers.
+      system: `You are a senior conflict analyst specializing in the Glasl 9-stage escalation model and Zartman Ripeness Theory. You serve analysts, mediators, and multilateral diplomacy practitioners.
 
 ${systemPromptBlock}
 

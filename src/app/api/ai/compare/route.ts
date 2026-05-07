@@ -39,7 +39,7 @@ const CompareSchema = z.object({
     keyActors: z.array(z.string()).describe('Main parties to the conflict in this case'),
     glaslStageAtPeak: z.number().min(0).max(9).describe('Glasl escalation stage at conflict peak'),
     resolution: z.enum(['resolved', 'frozen', 'ongoing', 'relapsed']).describe('Ultimate outcome of this case'),
-    resolutionMechanism: z.string().describe('How and by whom the conflict was resolved or contained (e.g., "UN-mediated power-sharing agreement")'),
+    resolutionMechanism: z.string().describe('How and by whom the conflict was resolved or contained (e.g., "internationally mediated power-sharing agreement")'),
     durationMonths: z.number().describe('Total duration of the conflict in months from onset to resolution/freeze'),
     dimensionComparison: z.object({
       actors: z.string().describe('How actor dynamics and configurations compare to the current situation'),
@@ -292,7 +292,7 @@ export const POST = withCalibration('compare', 'ai_analysis', {
     // --- AI generation ---
     const result = await callProModel({
       output: Output.object({ schema: CompareSchema }),
-      system: `You are a senior UN conflict analyst and comparative peace studies expert trained in Most Similar Systems Design (MSSD) methodology. Your role is to identify the most instructive historical conflict cases that illuminate pathways to resolution for the current situation.
+      system: `You are a senior senior conflict analyst and comparative peace studies expert trained in Most Similar Systems Design (MSSD) methodology. Your role is to identify the most instructive historical conflict cases that illuminate pathways to resolution for the current situation.
 
 ${systemPromptBlock}
 

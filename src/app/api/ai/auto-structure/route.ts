@@ -18,7 +18,7 @@ import { saveToolData } from '@/lib/firebase/tool-data-service';
 const CATEGORY_SEARCH_TERMS: Record<string, string> = {
   'conflict-security': 'armed conflict violence escalation ceasefire security forces',
   'humanitarian': 'humanitarian crisis displacement refugees civilians protection',
-  'diplomatic-official': 'diplomatic negotiations peace talks UN Security Council resolution',
+  'diplomatic-official': 'diplomatic negotiations peace talks UN senior diplomatic forum resolution',
   'news-media': 'latest news developments situation update today',
   'think-tanks': 'analysis policy brief expert assessment scenario outlook',
   'military-intelligence': 'military forces weapons capabilities troop movements armed groups',
@@ -324,7 +324,7 @@ For each major actor (aim for 5 to 8):
 [Key institutions (formal and informal) that shape the conflict — governments, courts, international orgs, traditional structures. Map their legitimacy, capacity, and relationships — ACO Institutions]
 
 ## NORMS & LEGAL FRAMEWORK
-[Applicable international law, UN resolutions, customary norms, and contested rules of engagement — ACO Norms]
+[Applicable international law, formal resolutions, customary norms, and contested rules of engagement — ACO Norms]
 
 ## GRIEVANCES & ROOT CAUSES
 [Underlying grievances driving conflict motivation — unmet needs, historical injustices, identity threats, economic deprivation. Use Burton's Basic Human Needs framework — ACO Grievances]
@@ -335,7 +335,7 @@ For each major actor (aim for 5 to 8):
 ## SOURCES
 [List all sources consulted]
 
-Ground every claim in the pre-scraped context above first, then use web search only for missing current details. Use UN diplomatic language standards.`;
+Ground every claim in the pre-scraped context above first, then use web search only for missing current details. Use professional diplomatic language standards.`;
 
     // Use Flash for the first-value situation build. This route is fired in the
     // background after creation, so reliability beats Pro-only depth here.

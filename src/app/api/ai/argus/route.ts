@@ -33,7 +33,7 @@ const ArgusSchema = z.object({
       recommendedAction: z.string().describe('Recommended analyst or mediator action in response to this alert'),
       autoEscalate: z
         .boolean()
-        .describe('True if this alert warrants immediate escalation to senior staff or UN leadership'),
+        .describe('True if this alert warrants immediate escalation to senior staff or senior diplomatic leadership'),
     })
   ).describe('Ordered array of alerts, highest severity first'),
   overallThreatLevel: z
@@ -80,7 +80,7 @@ const DEMO_RESPONSE = {
       glaslImpact:
         'Leading indicator for Stage 6 "strategy of threats" escalation. Historical pattern suggests 4-6 week window before operational use of resupplied assets.',
       recommendedAction:
-        'Raise with Karovian ambassador through bilateral track. Request clarification from GoN Ministry of Defence. Brief Security Council pen-holders informally.',
+        'Raise with Karovian ambassador through bilateral track. Request clarification from GoN Ministry of Defence. Brief senior diplomatic forum pen-holders informally.',
       autoEscalate: false,
     },
     {
@@ -114,7 +114,7 @@ const DEMO_RESPONSE = {
       glaslImpact:
         'Narrative escalation consistent with Stage 5 dehumanisation and international reputation warfare. If not countered, may harden GoN domestic stance and reduce space for compromise.',
       recommendedAction:
-        'Share DFRLab findings with GoN and DRM through SRSG. Issue joint UN factual correction. Alert Communications Division to monitor spread.',
+        'Share DFRLab findings with GoN and DRM through SRSG. Issue joint factual correction. Alert Communications Division to monitor spread.',
       autoEscalate: false,
     },
     {
@@ -131,7 +131,7 @@ const DEMO_RESPONSE = {
       glaslImpact:
         'If passed, significantly raises DRM military capacity and GoN-Karovia escalatory response probability. Could trigger a patron-level confrontation above Stage 6.',
       recommendedAction:
-        'Engage Westmark Foreign Minister through bilateral diplomatic channel before 12 April. Propose conditions or a freeze tied to ceasefire compliance. Brief Security Council.',
+        'Engage Westmark Foreign Minister through bilateral diplomatic channel before 12 April. Propose conditions or a freeze tied to ceasefire compliance. Brief senior diplomatic forum.',
       autoEscalate: false,
     },
   ],
@@ -206,7 +206,7 @@ export const POST = withCalibration('argus', 'ai_analysis', {
     // --- AI generation ---
     const result = await callProModel({
       output: Output.object({ schema: ArgusSchema }),
-      system: `You are ARGUS, the automated alert and early warning signal scanner within TACITUS PRAXIS. You serve UN Political Affairs Officers, diplomatic mediators, and conflict analysts.
+      system: `You are ARGUS, the automated alert and early warning signal scanner within TACITUS PRAXIS. You serve multilateral diplomacy practitioners, diplomatic mediators, and conflict analysts.
 
 Your mandate: scan the full intelligence picture and surface the most operationally significant alerts. Every alert must be grounded in verifiable signals. Use ICD 203 probability language. Prioritise leading indicators — signals that precede escalation 1-4 weeks before it occurs.
 

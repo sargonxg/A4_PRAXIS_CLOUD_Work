@@ -125,7 +125,7 @@ const DEMO_RESPONSE = {
     'Weaken both parties\' BATNAs through coordinated international pressure: stricter arms embargo enforcement reduces GoN military option viability; DRM recognition constraints reduce unilateral declaration option',
     'Use the revenue-sharing agreement as a confidence-building foundation to tackle the harder political representation issues, building momentum from easier to harder issues',
     'Engage Karovia and Westmark directly in a parallel regional security track — their patron-client relationships give them effective veto power, so their buy-in is essential for any deal to hold',
-    'Establish clear consequences for non-engagement: UNSC should signal that failure to negotiate in good faith will trigger expanded sanctions (targeting GoN) and designation reviews (targeting DRM financial networks)',
+    'Establish clear consequences for non-engagement: multilateral forum should signal that failure to negotiate in good faith will trigger expanded sanctions (targeting GoN) and designation reviews (targeting DRM financial networks)',
   ],
 };
 
@@ -233,7 +233,7 @@ Apply Lax/Sebenius deal design principles:
 - Confidence building measures to shift negotiating climate?
 
 Be specific to the actual parties and issues. Do not give generic advice.`,
-      system: `You are a senior negotiation analyst trained at Harvard PON in Fisher/Ury principled negotiation, Lax/Sebenius deal design, and Zartman ripeness theory. You have extensive experience as a UN mediator and peace negotiation advisor. Produce analysis-grade assessments for senior mediators and diplomatic professionals. Be precise about reservation points, quantify BATNA strength, and generate actionable deal-design recommendations.
+      system: `You are a senior negotiation analyst trained at Harvard PON in Fisher/Ury principled negotiation, Lax/Sebenius deal design, and Zartman ripeness theory. You have extensive experience as a multilateral mediator and peace negotiation advisor. Produce analysis-grade assessments for senior mediators and diplomatic professionals. Be precise about reservation points, quantify BATNA strength, and generate actionable deal-design recommendations.
 
 ${systemPromptBlock}
 

@@ -47,8 +47,8 @@ function buildCategories(sitName: string, actors: string[]) {
       iconBg: 'bg-teal/10',
       iconColor: 'text-teal',
       prompts: [
-        'Draft Security Council briefing talking points',
-        'Prepare a situation report in UN Editorial Manual format',
+        'Draft senior briefing talking points',
+        'Prepare a situation report in professional diplomatic format',
         'Generate a mediation preparation package',
       ],
     },
@@ -99,8 +99,8 @@ const DEMO_CATEGORIES = [
     iconBg: 'bg-teal/10',
     iconColor: 'text-teal',
     prompts: [
-      'Draft Security Council briefing talking points',
-      'Prepare a situation report in UN Editorial Manual format',
+      'Draft senior briefing talking points',
+      'Prepare a situation report in professional diplomatic format',
       'Generate a mediation preparation package',
     ],
   },

@@ -3,7 +3,7 @@
  *
  * Agentic workflow #3 — Brief Builder. The Synthesis Chair persona reads
  * the active situation's recent tool outputs, analyst notes, and corpus
- * evidence and composes a versioned, lock-able UNSC-style brief with
+ * evidence and composes a versioned, lock-able senior diplomatic brief with
  * named decision points and per-section provenance.
  *
  * Persistence: `users/{uid}/situations/{sitId}/tools/brief-builder`.
@@ -60,7 +60,7 @@ export const BriefBuilderSchema = z.object({
 const DEMO_BRIEF = {
   briefId: 'demo-1',
   generatedAt: new Date().toISOString(),
-  audience: 'UNSC informal consultations',
+  audience: 'senior diplomatic consultations',
   bluf: 'Demo: corridor closure + casualty signal warrants a 72-hour quiet pause; public attribution is premature until ICRC verifies.',
   sections: [
     {
@@ -78,14 +78,14 @@ const DEMO_BRIEF = {
     {
       id: 'options',
       heading: 'Options for decision',
-      body: 'Demo. (a) Quiet 72-hour pause. (b) Public attribution + UNSC briefing.',
+      body: 'Demo. (a) Quiet 72-hour pause. (b) Public attribution + senior diplomatic briefing.',
       provenance: ['#4'],
     },
   ],
   decisionPoints: [
     {
       question: 'Public attribution now or quiet pause?',
-      options: ['Quiet 72-hour pause', 'Public attribution + UNSC briefing'],
+      options: ['Quiet 72-hour pause', 'Public attribution + senior diplomatic briefing'],
       recommendation: 'Quiet 72-hour pause until ICRC verifies casualty figures.',
       preferredBy: 'mediator + humanitarian',
     },
@@ -124,7 +124,7 @@ export const POST = withCalibration('brief-builder', 'ai_brief_builder', {
     const sit = situation as Situation | undefined;
     const situationId = sit?.id ?? '';
 
-    const extraSystem = `You are operating as the PRAXIS Brief Builder. Compose a UNSC-style brief for the audience named below. Output a structured brief conforming to BriefBuilderSchema with:
+    const extraSystem = `You are operating as the PRAXIS Brief Builder. Compose a senior diplomatic brief for the audience named below. Output a structured brief conforming to BriefBuilderSchema with:
 - BLUF (1-2 sentences, named decision)
 - 3-10 sections (Summary / Risk / Drivers / Stakeholders / Options / Action / Sources etc — use sensible IDs)
 - 0-8 decision points (question + 2-5 options + optional recommendation + preferredBy)

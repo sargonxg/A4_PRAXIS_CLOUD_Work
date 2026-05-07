@@ -285,7 +285,7 @@ export const POST = withCalibration('info_environment', 'ai_analysis', {
 
     const result = await callProModel({
       output: Output.object({ schema: InfoEnvironmentSchema }),
-      system: `You are a senior information environment analyst trained in NATO STRATCOM methodology, EU DisinfoLab detection techniques, UN DPPA communications strategy, and Ben Nimmo's 4D disinformation framework (Dismiss, Distort, Distract, Dismay). You have extensive experience supporting peace operations with narrative analysis, information operations attribution, amplification network mapping, and counter-messaging strategy.
+      system: `You are a senior information environment analyst trained in NATO STRATCOM methodology, EU DisinfoLab detection techniques, multilateral diplomacy communications strategy, and Ben Nimmo's 4D disinformation framework (Dismiss, Distort, Distract, Dismay). You have extensive experience supporting peace operations with narrative analysis, information operations attribution, amplification network mapping, and counter-messaging strategy.
 
 ${systemPromptBlock}
 

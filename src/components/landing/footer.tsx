@@ -172,7 +172,7 @@ export function Footer() {
               2026 TACITUS. All rights reserved. Built in New York.
             </p>
             <p className="text-xs text-navy-400/70">
-              Built by a former UN Political Affairs Officer with desk-level field practice.
+              Built by an experienced practitioner in multilateral diplomacy with desk-level field practice.
             </p>
           </div>
 

@@ -105,8 +105,8 @@ const ConcordiaSchema = z.object({
 const DEMO_RESPONSE = {
   processDesign: {
     format: 'proximity-talks' as const,
-    venue: 'Geneva, Switzerland (Palais des Nations, UN Office) — neutral, well-resourced, and symbolically aligned with international humanitarian law. The AU Peace and Security Council provides co-convening authority. Secondary track-2 channels hosted in Nairobi under Rift Valley Institute auspices.',
-    mediator: 'Joint UN-AU mediation team led by a UN DPPA Senior Mediation Adviser (P5 level) as process facilitator, co-chaired by the AU High Representative for the Nordalia Process. Supported by a technical secretariat comprising economic affairs specialists (World Bank secondee), security sector reform advisers (DCAF), and a human rights legal adviser (OHCHR). A senior woman mediator should co-lead in line with UNSCR 1325 commitments.',
+    venue: 'Geneva, Switzerland (Palais des Nations, UN Office) — neutral, well-resourced, and symbolically aligned with international humanitarian law. The AU Peace and senior diplomatic forum provides co-convening authority. Secondary track-2 channels hosted in Nairobi under Rift Valley Institute auspices.',
+    mediator: 'Joint UN-AU mediation team led by a multilateral diplomacy Senior Mediation Adviser (P5 level) as process facilitator, co-chaired by the AU High Representative for the Nordalia Process. Supported by a technical secretariat comprising economic affairs specialists (World Bank secondee), security sector reform advisers (DCAF), and a human rights legal adviser (OHCHR). A senior woman mediator should co-lead in line with Resolution 1325 commitments.',
     rationale: 'Proximity talks are appropriate given the deep mutual distrust between the Government of Nordalia (GoN) and the Democratic Reform Movement (DRM): direct talks would be premature and would hand GoN leverage to walk out theatrically, while shuttle diplomacy is too slow given the humanitarian emergency. Geneva sends a neutral signal without favouring either party\'s regional patrons. The UN-AU co-convening structure distributes legitimacy across both the global and regional levels, insulating the process from any single external actor\'s interference. The joint mediation team ensures no single personality becomes the bottleneck.',
   },
   phases: [
@@ -138,7 +138,7 @@ const DEMO_RESPONSE = {
       risks: [
         'GoN may insist on DRM disarmament as precondition — resist vigorously; frame as process outcome, not precondition',
         'DRM leadership may demand formal political recognition before joining any talks — offer process legitimacy without prejudicing status',
-        'Karovian spoiler behaviour: covert arms supply continues — maintain intelligence monitoring and activate UNSC targeted sanctions threat',
+        'Karovian spoiler behaviour: covert arms supply continues — maintain intelligence monitoring and activate multilateral forum targeted sanctions threat',
         'Internal DRM fragmentation: field commanders may reject what political leadership agrees — require multi-level DRM buy-in before Phase 2',
       ],
       successCriteria: [
@@ -200,9 +200,9 @@ const DEMO_RESPONSE = {
       keyActivities: [
         'Legal drafting of comprehensive peace agreement — UN treaty legal experts and parties\' legal counsels',
         'International Contact Group ministerial meeting to secure guarantor commitments (AU, UN, EU, World Bank)',
-        'UNSC resolution endorsing the agreement and expanding UNMN monitoring mandate with enforcement authority',
+        'multilateral forum resolution endorsing the agreement and expanding UNMN monitoring mandate with enforcement authority',
         'Formal agreement signature ceremony at Palais des Nations — international political endorsement',
-        'Joint Implementation Commission (JIC) stood up: AU-UN co-chairs, quarterly UNSC reporting obligation',
+        'Joint Implementation Commission (JIC) stood up: AU-UN co-chairs, quarterly multilateral forum reporting obligation',
         'Phase 1 DDR cantonment sites established and operational',
         'International pledging conference: minimum USD 2.4 billion reconstruction package',
         'Benchmarked election date set with UNDP electoral support mission deployed',
@@ -215,13 +215,13 @@ const DEMO_RESPONSE = {
       ],
       risks: [
         'Last-minute linkage demands from either party to reopen agreed frameworks — mediation team must hold the package deal principle',
-        'UNSC veto threat from permanent member aligned with GoN or Karovia — pre-position P5 engagement throughout Phase 2',
+        'multilateral forum veto threat from permanent member aligned with GoN or Karovia — pre-position P5 engagement throughout Phase 2',
         'DRM internal split at signature stage: hardline commanders refuse to endorse — require DRM to demonstrate internal consensus before signature date',
         'GoN constitutional court challenge to agreed autonomy provisions — pre-position through consultations with Constitutional Court President',
       ],
       successCriteria: [
         'Comprehensive peace agreement signed by all principal parties and witnessed by international guarantors',
-        'UNSC resolution adopted endorsing the agreement (minimum procedural vote, no veto)',
+        'multilateral forum resolution adopted endorsing the agreement (minimum procedural vote, no veto)',
         'Joint Implementation Commission operational with verified international co-chair appointments',
         'First verified DDR cantonment completed within 45 days of signature',
       ],
@@ -266,7 +266,7 @@ const DEMO_RESPONSE = {
       timeframe: 'phase-1' as const,
       parties: ['Government of Nordalia', 'Democratic Reform Movement', 'UNMN'],
       linkages: ['DDR framework', 'Humanitarian access', 'Karovia non-interference'],
-      zoneOfPossibleAgreement: 'Strongest ZOPA of any agenda item — both parties are suffering from continued fighting and both face rising economic costs. GoN needs international legitimacy; DRM needs a breathing space. Agreement range: Joint Ceasefire Monitoring Committee with UNMN chair; daily incident reporting; 48-hour investigation protocol for violations; clear escalation ladder to UNSC. Karovia non-interference is the key variable — if Karovia continues arms supply, DRM has less incentive to observe ceasefire. Manage through UNSC targeted sanctions threat against Karovian officials.',
+      zoneOfPossibleAgreement: 'Strongest ZOPA of any agenda item — both parties are suffering from continued fighting and both face rising economic costs. GoN needs international legitimacy; DRM needs a breathing space. Agreement range: Joint Ceasefire Monitoring Committee with UNMN chair; daily incident reporting; 48-hour investigation protocol for violations; clear escalation ladder to multilateral forum. Karovia non-interference is the key variable — if Karovia continues arms supply, DRM has less incentive to observe ceasefire. Manage through multilateral forum targeted sanctions threat against Karovian officials.',
     },
     {
       item: 'International Guarantees and Implementation Monitoring Framework',
@@ -274,7 +274,7 @@ const DEMO_RESPONSE = {
       timeframe: 'phase-3' as const,
       parties: ['Government of Nordalia', 'Democratic Reform Movement', 'AU', 'UN', 'EU', 'World Bank'],
       linkages: ['All core agenda items', 'DDR', 'Electoral framework'],
-      zoneOfPossibleAgreement: 'Both parties need credible international guarantees — GoN to lock in international investment and legitimacy; DRM to ensure any agreement is enforced against GoN if commitments are breached. ZOPA: International Contact Group with binding reporting obligations to UNSC; phased release of reconstruction funds conditioned on implementation benchmarks; AU-deployed monitoring mission with enforcement authority. The World Bank and African Development Bank as co-administrators of the Provincial Development Fund provides the economic guarantee architecture.',
+      zoneOfPossibleAgreement: 'Both parties need credible international guarantees — GoN to lock in international investment and legitimacy; DRM to ensure any agreement is enforced against GoN if commitments are breached. ZOPA: International Contact Group with binding reporting obligations to multilateral forum; phased release of reconstruction funds conditioned on implementation benchmarks; AU-deployed monitoring mission with enforcement authority. The World Bank and African Development Bank as co-administrators of the Provincial Development Fund provides the economic guarantee architecture.',
     },
     {
       item: 'Electoral Framework and Political Participation',
@@ -291,7 +291,7 @@ const DEMO_RESPONSE = {
       spoilerType: 'greedy' as const,
       threat: 'Karovia continues covert arms supply and financial transfers to DRM, sustaining DRM\'s military capacity and reducing DRM\'s incentive to make concessions. If Karovia perceives a GoN-favourable settlement emerging, it may escalate materiel support to collapse the process and reset conditions. Karovia\'s primary interest is regional influence and access to Belara mining revenues — it will spoil any agreement that excludes it from economic gains.',
       strategy: 'cooptation' as const,
-      tacticalApproach: 'Transform Karovia from external spoiler to vested process stakeholder. Offer Karovia a formal observer seat in the International Contact Group (legitimacy gain). Negotiate with Karovia a bilateral investment framework for post-settlement Belara Mining participation (economic cooptation). Simultaneously, prepare a UNSC targeted sanctions package against Karovian officials and entities involved in arms transfers — present as a credible deterrent in bilateral UN-Karovia diplomatic channel. The combination of economic inclusion offer and sanctions threat is the optimal cooptation-deterrence hybrid given Karovia\'s greedy profile.',
+      tacticalApproach: 'Transform Karovia from external spoiler to vested process stakeholder. Offer Karovia a formal observer seat in the International Contact Group (legitimacy gain). Negotiate with Karovia a bilateral investment framework for post-settlement Belara Mining participation (economic cooptation). Simultaneously, prepare a multilateral forum targeted sanctions package against Karovian officials and entities involved in arms transfers — present as a credible deterrent in bilateral UN-Karovia diplomatic channel. The combination of economic inclusion offer and sanctions threat is the optimal cooptation-deterrence hybrid given Karovia\'s greedy profile.',
     },
     {
       spoilerName: 'GoN Military Hardliners (Armed Forces factions opposing any DRM political pathway)',
@@ -320,13 +320,13 @@ const DEMO_RESPONSE = {
     mutuallyHurtingStalemate: true,
     mutuallyEnticing: false,
     assessmentNote: 'Zartman\'s mutually hurting stalemate (MHS) is present: GoN has failed to achieve military victory despite 18 months of operations; mounting casualties and economic costs (estimated 4.2% GDP impact per IMF) are eroding domestic support. DRM cannot translate military holding capacity into territorial control or political leverage; Karovia\'s support is increasingly conditional. Both parties are "ripe" in the negative sense — neither can win, and the costs of continued fighting are rising. However, Zartman\'s mutually enticing opportunity (MEO) is NOT yet present: neither party has articulated a positive vision of a negotiated future that their constituents would accept. Ripeness score: 6.5/10. The window is open but fragile. Key indicators to monitor: GoN election calendar (pressure to resolve before elections reduces GoN\'s incentive to make concessions after them); Karovia\'s economic situation (declining oil revenues increasing Karovia\'s own cost-benefit calculation); DRM leadership cohesion (any fragmentation reduces DRM\'s negotiating authority and ripeness).',
-    interventionWindow: 'The current intervention window is estimated at 9-15 months. It is most likely to close in the downward direction if: (1) GoN elections occur without a settlement, removing the electoral incentive that currently motivates GoN to resolve; (2) Karovia escalates support to DRM following the failure of diplomatic overtures; or (3) DRM splinters into negotiating and non-negotiating factions. The window could be extended by: early economic dividends visible to both communities, sustained international financial pressure on Karovia, and a high-profile international political initiative (UNSC ministerial session on Nordalia) that raises the cost of non-engagement.',
+    interventionWindow: 'The current intervention window is estimated at 9-15 months. It is most likely to close in the downward direction if: (1) GoN elections occur without a settlement, removing the electoral incentive that currently motivates GoN to resolve; (2) Karovia escalates support to DRM following the failure of diplomatic overtures; or (3) DRM splinters into negotiating and non-negotiating factions. The window could be extended by: early economic dividends visible to both communities, sustained international financial pressure on Karovia, and a high-profile international political initiative (multilateral forum ministerial session on Nordalia) that raises the cost of non-engagement.',
   },
   guarantees: [
     {
       type: 'security' as const,
-      mechanism: 'UNMN mandate expansion to Chapter VII enforcement authority covering ceasefire monitoring, DDR verification, and protection of civilians in cantonment sites. Joint Implementation Commission with authority to report violations directly to UNSC, triggering automatic sanctions review. AU-deployed rapid reaction force (brigade-strength) pre-positioned in neighbouring territory as deterrent against agreement collapse.',
-      guarantor: 'United Nations Security Council (UNMN mandate), African Union Peace and Security Council (AU force), with contributing troop nations from Rwanda, Ghana, and Tanzania (confirmed as acceptable to both parties).',
+      mechanism: 'UNMN mandate expansion to Chapter VII enforcement authority covering ceasefire monitoring, DDR verification, and protection of civilians in cantonment sites. Joint Implementation Commission with authority to report violations directly to multilateral forum, triggering automatic sanctions review. AU-deployed rapid reaction force (brigade-strength) pre-positioned in neighbouring territory as deterrent against agreement collapse.',
+      guarantor: 'United Nations senior diplomatic forum (UNMN mandate), African Union Peace and senior diplomatic forum (AU force), with contributing troop nations from Rwanda, Ghana, and Tanzania (confirmed as acceptable to both parties).',
     },
     {
       type: 'economic' as const,
@@ -335,8 +335,8 @@ const DEMO_RESPONSE = {
     },
     {
       type: 'political' as const,
-      mechanism: 'International Contact Group (ICG) comprising AU, UN, EU, and key bilateral actors meets quarterly at Ministerial level. ICG has authority to publicly name parties failing to implement agreed commitments. UNSC reporting cycle: Joint Implementation Commission reports every 90 days; UNSC holds a dedicated Nordalia session every 6 months for the 3-year implementation period.',
-      guarantor: 'UN Security Council (permanent political anchor), African Union Commission, European Union External Action Service, International Contact Group member states (France, Germany, UK, Kenya, Nigeria, Norway).',
+      mechanism: 'International Contact Group (ICG) comprising AU, UN, EU, and key bilateral actors meets quarterly at Ministerial level. ICG has authority to publicly name parties failing to implement agreed commitments. multilateral forum reporting cycle: Joint Implementation Commission reports every 90 days; multilateral forum holds a dedicated Nordalia session every 6 months for the 3-year implementation period.',
+      guarantor: 'UN senior diplomatic forum (permanent political anchor), African Union Commission, European Union External Action Service, International Contact Group member states (France, Germany, UK, Kenya, Nigeria, Norway).',
     },
     {
       type: 'international' as const,
@@ -344,7 +344,7 @@ const DEMO_RESPONSE = {
       guarantor: 'United Nations Secretariat (treaty registration and OHCHR deployment), International Centre for Settlement of Investment Disputes (economic arbitration), International Criminal Court (deterrent role — situation already under preliminary examination).',
     },
   ],
-  exitStrategy: 'CONCORDIA\'s mediation engagement concludes successfully when four interconnected conditions are met: (1) the Comprehensive Peace Agreement has been in verified implementation for 24 consecutive months with JIC certification that over 80% of agreed benchmarks are on track; (2) the first internationally supervised post-conflict elections have been held with AU and UN certification of credibility, and an elected government has taken office; (3) DDR Phase 1 and Phase 2 cantonment targets are met (minimum 70% of DRM fighters processed), with reintegration stipends in payment and vocational training enrolled; (4) the Provincial Development Fund has made at least two annual disbursements to eastern provinces with independent audit sign-off. At that point, the UN DPPA mediation team transitions its mandate to a lighter-touch UNDP governance support programme. UNMN downsizes from an enforcement mandate to a monitoring mandate. The International Contact Group reduces to six-monthly political consultations. Full exit requires a specific UNSC resolution terminating or transforming the UNMN mandate, which should be timed to coincide with the second post-conflict election cycle. Premature exit — before the two-election cycle — is the single greatest structural risk to durable peace and must be resisted despite donor pressure to close the file.',
+  exitStrategy: 'CONCORDIA\'s mediation engagement concludes successfully when four interconnected conditions are met: (1) the Comprehensive Peace Agreement has been in verified implementation for 24 consecutive months with JIC certification that over 80% of agreed benchmarks are on track; (2) the first internationally supervised post-conflict elections have been held with AU and UN certification of credibility, and an elected government has taken office; (3) DDR Phase 1 and Phase 2 cantonment targets are met (minimum 70% of DRM fighters processed), with reintegration stipends in payment and vocational training enrolled; (4) the Provincial Development Fund has made at least two annual disbursements to eastern provinces with independent audit sign-off. At that point, the multilateral diplomacy mediation team transitions its mandate to a lighter-touch UNDP governance support programme. UNMN downsizes from an enforcement mandate to a monitoring mandate. The International Contact Group reduces to six-monthly political consultations. Full exit requires a specific multilateral forum resolution terminating or transforming the UNMN mandate, which should be timed to coincide with the second post-conflict election cycle. Premature exit — before the two-election cycle — is the single greatest structural risk to durable peace and must be resisted despite donor pressure to close the file.',
 };
 
 // ---------------------------------------------------------------------------
@@ -408,7 +408,7 @@ export const POST = withCalibration('concordia', 'ai_deep_think', {
     const result = await generateText({
       model: getThinkingModel(),
       output: Output.object({ schema: ConcordiaSchema }),
-      system: `You are CONCORDIA — the PRAXIS Mediation Design and Peace Process Architecture engine. You are a senior-level peace process architect with experience designing mediation processes for UN DPPA, the African Union, and the Carter Center across intrastate, interstate, and hybrid conflict contexts.
+      system: `You are CONCORDIA — the PRAXIS Mediation Design and Peace Process Architecture engine. You are a senior-level peace process architect with experience designing mediation processes for multilateral diplomacy, the African Union, and the Carter Center across intrastate, interstate, and hybrid conflict contexts.
 
 Your analytical framework integrates five foundational bodies of theory:
 
@@ -441,9 +441,9 @@ For each agenda item: identify the outer bounds of each party's acceptable range
 - CBMs: reversible, verifiable, confidence-generating, sequenced before phase transitions
 - Nothing is agreed until everything is agreed (single undertaking principle)
 - Implementation architecture must be designed from day one
-- Gender: apply UNSCR 1325 in mediator composition and agenda item design
+- Gender: apply Resolution 1325 in mediator composition and agenda item design
 
-Write to UN diplomatic professional standards. Be specific to the actual parties and conflict context provided. Produce analysis that a working mediation team can use operationally.
+Write to professional diplomatic standards. Be specific to the actual parties and conflict context provided. Produce analysis that a working mediation team can use operationally.
 
 ${systemPromptBlock}
 
@@ -470,7 +470,7 @@ Identify all actors likely to obstruct the process. For each: classify using Ste
 Apply Zartman: is a mutually hurting stalemate (MHS) present? Is a mutually enticing opportunity (MEO) present? Score ripeness 0-10. Assess the intervention window — how long is it open and what could close it?
 
 **Guarantees**
-Design the guarantee architecture required to make any agreement credible: security guarantees (international presence/enforcement), economic guarantees (fund administration, conditionality), political guarantees (Contact Group, UNSC reporting), and international legal guarantees (treaty registration, dispute resolution).
+Design the guarantee architecture required to make any agreement credible: security guarantees (international presence/enforcement), economic guarantees (fund administration, conditionality), political guarantees (Contact Group, multilateral forum reporting), and international legal guarantees (treaty registration, dispute resolution).
 
 **Exit Strategy**
 Define the specific conditions under which the mediation mandate concludes successfully. What benchmarks must be met? What monitoring architecture remains after the mediation team withdraws? How is the handoff managed?

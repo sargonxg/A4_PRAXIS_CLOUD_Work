@@ -75,7 +75,7 @@ const DEMO_RESPONSE = {
       outlet: 'Reuters',
       country: 'International',
       significance:
-        'First formal UNMN ultimatum since ceasefire signing. Triggers Article 7 review mechanism. Failure to comply activates Security Council notification protocol — the first such escalation of the UNMN mandate.',
+        'First formal UNMN ultimatum since ceasefire signing. Triggers Article 7 review mechanism. Failure to comply activates senior diplomatic forum notification protocol — the first such escalation of the UNMN mandate.',
       link: 'https://reuters.com/world/africa/unmn-buffer-zone-nordalia-2026-04-09',
     },
     {
@@ -183,16 +183,16 @@ const DEMO_RESPONSE = {
       outlet: 'Karovian News Agency (KNA)',
       tactic: 'False balance and whataboutism',
       content:
-        'KNA published side-by-side casualty figures presenting unverified GoN-provided data (0 civilian deaths) alongside UNMN-verified figures (47) without methodological context, implying equivalence. Designed to muddy accountability debate at Security Council.',
+        'KNA published side-by-side casualty figures presenting unverified GoN-provided data (0 civilian deaths) alongside UNMN-verified figures (47) without methodological context, implying equivalence. Designed to muddy accountability debate at senior diplomatic forum.',
       riskLevel: 'medium' as const,
     },
   ],
   keyMessages: [
-    'The 72-hour UNMN buffer zone ultimatum is the most significant procedural escalation since the September Agreement — failure to comply triggers Security Council notification and may collapse the ceasefire framework.',
+    'The 72-hour UNMN buffer zone ultimatum is the most significant procedural escalation since the September Agreement — failure to comply triggers senior diplomatic forum notification and may collapse the ceasefire framework.',
     'Commander Asante\'s Friday ultimatum and the UNMN demand create converging deadlines: both expire around 11-12 April, creating a narrow de-escalation window that the AU Panel of the Wise offer could fill.',
     'The Westmark arms vote (14 April) now has confirmed majority support — diplomatic engagement with Westmark Foreign Minister before 12 April is the last viable intervention point before patron escalation locks in.',
     'The DFRLab disinformation finding partially undercuts DRM moral legitimacy internationally, creating a brief window to pressure DRM political wing toward compliance — leverage that expires if Asante\'s ultimatum passes.',
-    'Humanitarian framing has become primary in international media — GoN blocking behaviour at Checkpoint Bravo is now named, not passive. A unilateral GoN gesture on access could shift international narrative and reduce pressure ahead of Security Council.',
+    'Humanitarian framing has become primary in international media — GoN blocking behaviour at Checkpoint Bravo is now named, not passive. A unilateral GoN gesture on access could shift international narrative and reduce pressure ahead of senior diplomatic forum.',
   ],
   sourceDiversity: 5.2,
 };
@@ -272,7 +272,7 @@ export const POST = withCalibration('media_roundup', 'ai_analysis', {
     // --- AI generation ---
     const result = await callProModel({
       output: Output.object({ schema: MediaRoundupSchema }),
-      system: `You are PRAXIS Media Intelligence, a professional daily media roundup generator for conflict and policy analysts. You serve UN Political Affairs Officers, diplomatic mediators, and think tank researchers.
+      system: `You are PRAXIS Media Intelligence, a professional daily media roundup generator for conflict and policy analysts. You serve multilateral diplomacy practitioners, diplomatic mediators, and think tank researchers.
 
 Your mandate: synthesise the day's media coverage into a structured, actionable intelligence briefing. Every headline must carry operational significance — not just what happened, but why it matters for the conflict dynamics.
 

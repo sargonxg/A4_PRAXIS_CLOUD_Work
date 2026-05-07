@@ -52,7 +52,7 @@ const DEMO_RESPONSE = {
       category: 'diplomatic' as const,
       action: 'Activate a Karovian back-channel to condition DRM on accepting a preliminary ceasefire verification mechanism before formal talks.',
       rationale: 'Karovia holds decisive leverage over DRM political bureau. Zartman\'s ripeness theory identifies this moment — with the Eastern AFN offensive stalled and Karovian public support for intervention rising — as a narrow window for a mutually hurting stalemate to produce negotiating flexibility. Karovian foreign ministry moderates have signaled private interest in a stabilization deal.',
-      actors: ['UN Mission Nordalia — Special Envoy', 'Republic of Karovia — Ministry of Foreign Affairs', 'EU High Representative'],
+      actors: ['International Mission Nordalia — Special Envoy', 'Republic of Karovia — Ministry of Foreign Affairs', 'EU High Representative'],
       risks: ['DRM field commanders may reject political bureau signals and accelerate military activity', 'Karovian parliamentary hardliners could publicly denounce back-channel and force government reversal'],
       successIndicators: ['DRM agrees to halt offensive operations for 72-hour trial period', 'Karovian FM meets UNMN Special Envoy within 10 days', 'No new major ceasefire violations reported by JVCC'],
       timeframe: '0–14 days',
@@ -82,9 +82,9 @@ const DEMO_RESPONSE = {
       category: 'security' as const,
       action: 'Engage Westmark through military-to-military channel to identify and apply targeted financial accountability measures against the three most obstructive AFN General Staff hardliners.',
       rationale: 'Stedman\'s spoiler management framework prescribes targeted isolation rather than frontal confrontation with greedy spoilers motivated by resource capture. AFN commercial interests in contested-zone mining and transport create financial vulnerabilities. UNSC travel bans and asset freezes against designated commanders would fracture the hardliner bloc by creating individual liability differentials.',
-      actors: ['Westmark Department of Defence attaché', 'UN Security Council Sanctions Committee', 'UNMN Political Affairs Division', 'Panel of Experts (existing mandate)'],
+      actors: ['Westmark Department of Defence attaché', 'multilateral sanctions authority Sanctions Committee', 'mission political affairs division', 'Panel of Experts (existing mandate)'],
       risks: ['Premature designation could drive AFN to sabotage ceasefire before measures take effect', 'GoN civilian government may perceive military-focused measures as external interference in domestic security sector'],
-      successIndicators: ['Panel of Experts report documents specific commanders\' commercial interests', 'Westmark submits draft designations to UNSC within 45 days', 'AFN Chief of Staff signals restraint on eastern operations in response'],
+      successIndicators: ['Panel of Experts report documents specific commanders\' commercial interests', 'Westmark submits draft designations to the sanctions committee within 45 days', 'AFN Chief of Staff signals restraint on eastern operations in response'],
       timeframe: '3–8 weeks',
     },
     {
@@ -104,7 +104,7 @@ const DEMO_RESPONSE = {
       rationale: 'Putnam\'s two-level game theory identifies domestic constituency pressure as the critical variable: GoN civilian cabinet faces electoral pressure that military does not. 36.4% currency depreciation and fiscal deterioration are creating urban middle-class disaffection. An authoritative economic analysis (ideally World Bank or IMF co-branded) quantifying the opportunity cost of conflict in fiscal, trade, and investment terms would provide GoN reformers with political cover to pursue a deal.',
       actors: ['World Bank Country Director', 'IMF Resident Representative', 'GoN Finance Ministry technocrats', 'UNDP Country Office'],
       risks: ['Economic assessment may be dismissed by GoN as politically motivated if external authorship is not carefully managed', 'Prolonged assessment process may exhaust the political window before results are published'],
-      successIndicators: ['GoN Finance Ministry agrees to participate in assessment within 30 days', 'Preliminary findings briefed to UNSC members within 60 days', 'GoN Vice-President publicly references economic cost argument in domestic speech'],
+      successIndicators: ['GoN Finance Ministry agrees to participate in assessment within 30 days', 'Preliminary findings briefed to senior diplomatic counterparts within 60 days', 'GoN Vice-President publicly references economic cost argument in domestic speech'],
       timeframe: '6–12 weeks',
     },
   ],
@@ -114,7 +114,7 @@ const DEMO_RESPONSE = {
     criticalPath: [
       'Secure Karovian FM commitment to halt material support and condition DRM on ceasefire verification (Days 0–14)',
       'Deliver first humanitarian corridor to Kessara — establishes credibility and creates positive momentum (Days 0–7)',
-      'Identify and confidentially brief UNSC P3 on AFN hardliner financial accountability measures (Days 7–21)',
+      'Identify and confidentially brief senior diplomatic counterparts on AFN hardliner financial accountability measures (Days 7–21)',
       'Launch Belara revenue-sharing pre-negotiation technical working group under UNMN/World Bank auspices (Days 14–42)',
       'Issue joint interfaith ceasefire statement to create public political space for compromise (Days 21–35)',
       'Convene formal Track I pre-negotiation session with agreed terms of reference (Days 42–60)',
@@ -124,7 +124,7 @@ const DEMO_RESPONSE = {
       'Do not support any blanket amnesty language that covers senior AFN commanders — this will fracture civil society support and undermines IHL compliance obligations',
       'Do not allow BMC to participate in Belara revenue discussions in any official capacity — their commercial interests are fundamentally incompatible with a transparent settlement',
       'Do not engage DRM field commanders separately from political bureau in formal processes — it legitimizes the military wing\'s independent spoiler capacity',
-      'Do not support GoN\'s proposed bilateral negotiation track that excludes UNMN — Karovian facilitation as the only international presence is unacceptable to UNSC P3 members',
+      'Do not support GoN\'s proposed bilateral negotiation track that excludes the monitoring mission — Karovian facilitation as the only international presence is unacceptable to key diplomatic counterparts',
     ],
   },
   confidenceLevel: 'medium' as const,
@@ -198,7 +198,7 @@ export const POST = withCalibration('advisory', 'ai_analysis', {
     // --- AI generation ---
     const result = await callProModel({
       output: Output.object({ schema: AdvisorySchema }),
-      system: `You are a senior strategic advisor to the UN Secretary-General's office. You apply the full PRAXIS analytical framework — Glasl escalation model, Fisher-Ury interests, Zartman ripeness, Stedman spoiler theory — to generate prioritized, actionable strategic recommendations.
+      system: `You are a senior strategic advisor to multilateral diplomatic leadership. You apply the full PRAXIS analytical framework — Glasl escalation model, Fisher-Ury interests, Zartman ripeness, Stedman spoiler theory — to generate prioritized, actionable strategic recommendations.
 
 ${systemPromptBlock}
 

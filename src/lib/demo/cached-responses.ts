@@ -6,7 +6,7 @@
 
 // ── Chat Responses ──────────────────────────────────────────────────────────
 
-const CHAT_GREETING = `Welcome to PRAXIS. I'm your conflict intelligence analyst, trained in UN DPPA analytical frameworks, Glasl escalation modelling, and Fisher/Ury interest-based negotiation analysis.
+const CHAT_GREETING = `Welcome to PRAXIS. I'm your conflict intelligence analyst, trained in multilateral diplomacy analytical frameworks, Glasl escalation modelling, and Fisher/Ury interest-based negotiation analysis.
 
 I currently have the **Nordalia Crisis** loaded as the active conflict context, with structured data on 8 primary actors, 14 relationship edges, and 23 key events since March 2024.
 
@@ -14,7 +14,7 @@ How can I assist your analysis today? I can:
 - **Brief you** on the current situation and key dynamics
 - **Assess escalation risks** using the Glasl 9-stage model
 - **Analyze scenarios** (e.g., ceasefire collapse, election delay, external intervention)
-- **Generate talking points** for Security Council or regional body briefings
+- **Generate talking points** for senior diplomatic or regional body briefings
 - **Map actor interests** using positional vs. interest-based frameworks
 
 What would you like to explore?`;
@@ -37,7 +37,7 @@ Based on the structured conflict graph and open-source reporting through March 2
 Led by President Amara Osei following the disputed March 2024 elections. The GoN controls the Armed Forces of Nordalia (AFN, ~45,000 personnel), state revenue institutions, and the capital. It retains international recognition from the AU and RECONA, though its democratic legitimacy is contested.
 
 - **Stated position:** The elections were legitimate; the DRM is a terrorist insurgency that must disarm before any political dialogue.
-- **Underlying interests:** Regime survival; continued control of rare earth revenues in the Eastern Provinces; preventing precedent of armed opposition forcing power-sharing (sources: ICG Africa Report No. 312, March 2026; UNMN SRSG briefing to UNSC, 14 Feb 2026).
+- **Underlying interests:** Regime survival; continued control of rare earth revenues in the Eastern Provinces; preventing precedent of armed opposition forcing power-sharing (sources: ICG Africa Report No. 312, March 2026; UNMN SRSG briefing to multilateral forum, 14 Feb 2026).
 - **Key relationships:** Patron-client relationship with Karovia (military support); adversarial with DRM; transactional with UNMN (accepts peacekeeping presence but constrains mandate implementation).
 
 ### 2. Democratic Reform Movement (DRM)
@@ -49,28 +49,28 @@ Led by Commander Kwame Asante, a former parliamentarian. The DRM fields approxim
 - **Underlying interests:** Political inclusion for eastern communities; equitable resource-sharing; security guarantees for DRM leadership (sources: DRM communique to AU Panel, 8 Jan 2026; diaspora fundraising analysis, Nordalian Independent Media Network).
 - **Key relationships:** Political and logistical support from Westmark; contested but functional communication channel with UNMN; adversarial with GoN and Karovia.
 
-### 3. UN Mission in Nordalia (UNMN)
+### 3. Field Mission in Nordalia (UNMN)
 **Type:** International organization | **Influence:** High
 
-Established by UNSC Resolution 2847 under Chapter VII, led by SRSG Maria Santos. Deploys ~12,000 uniformed peacekeepers from 18 TCCs. Mandated for civilian protection, ceasefire monitoring, humanitarian access, and political process facilitation.
+Established by multilateral forum Resolution 2847 under Chapter VII, led by SRSG Maria Santos. Deploys ~12,000 uniformed peacekeepers from 18 TCCs. Mandated for civilian protection, ceasefire monitoring, humanitarian access, and political process facilitation.
 
 - **Stated position:** Inclusive political dialogue leading to credible elections within the AU Roadmap framework.
-- **Underlying interests:** Mandate renewal (next review: September 2026); demonstrating mission effectiveness amid Security Council fatigue; managing P5 divisions on Nordalia (sources: UNSC meeting records S/PV.9487; DPA internal planning documents referenced in Security Council Report forecast, Feb 2026).
+- **Underlying interests:** Mandate renewal (next review: September 2026); demonstrating mission effectiveness amid senior diplomatic forum fatigue; managing P5 divisions on Nordalia (sources: multilateral forum meeting records S/PV.9487; DPA internal planning documents referenced in senior diplomatic forum Report forecast, Feb 2026).
 - **Key relationships:** Coordination with AU Panel of the Wise on mediation; working relationship with both parties (strained with GoN over freedom of movement; limited access in DRM areas); dependent on Karovia and Westmark restraint for ceasefire viability.
 
 ### 4. Republic of Karovia
 **Type:** State actor (regional) | **Influence:** Moderate-High
 
-Principal external patron of the GoN, bound by the 2019 bilateral defense treaty. Provides military equipment, logistics, intelligence cooperation, and has seconded military advisors to the AFN. Widely assessed to be supplying ammunition in potential violation of the UNSC arms embargo (Panel of Experts interim report, S/2025/892).
+Principal external patron of the GoN, bound by the 2019 bilateral defense treaty. Provides military equipment, logistics, intelligence cooperation, and has seconded military advisors to the AFN. Widely assessed to be supplying ammunition in potential violation of the multilateral forum arms embargo (Panel of Experts interim report, S/2025/892).
 
 - **Stated position:** Supports sovereignty and territorial integrity of Nordalia; opposes "external interference" in internal affairs.
 - **Underlying interests:** Preserving preferential access to Nordalia's rare earth deposits under the 2021 Belara-Karovia commercial framework; preventing DRM success as a destabilizing precedent for its own restive eastern provinces; maintaining regional influence vis-a-vis Westmark (sources: Karovian parliamentary debates, Nov 2025; SIPRI arms transfer database; satellite imagery analysis by Conflict Armament Research).
-- **Key relationships:** Patron of GoN; strategic rival of Westmark; obstructive posture toward UNMN mandate expansion in UNSC (supported by one P5 member).
+- **Key relationships:** Patron of GoN; strategic rival of Westmark; obstructive posture toward UNMN mandate expansion in multilateral forum (supported by one P5 member).
 
 ### 5. Federal Republic of Westmark
 **Type:** State actor (external) | **Influence:** Moderate-High
 
-Principal external supporter of the DRM's political legitimacy. Hosts ~340,000 Nordalian refugees. Has imposed targeted sanctions on 23 senior GoN officials and lobbied for UNSC measures. Provides non-lethal support to the DRM including communications equipment and medical supplies; denies military assistance, though the GoN and Karovia allege otherwise.
+Principal external supporter of the DRM's political legitimacy. Hosts ~340,000 Nordalian refugees. Has imposed targeted sanctions on 23 senior GoN officials and lobbied for multilateral forum measures. Provides non-lethal support to the DRM including communications equipment and medical supplies; denies military assistance, though the GoN and Karovia allege otherwise.
 
 - **Stated position:** Democratic elections are the only path to legitimacy; the GoN must accept power-sharing as a precondition for stability.
 - **Underlying interests:** Containing refugee flows; countering Karovian regional influence; positioning as democratic governance champion in the sub-region (sources: Westmark Foreign Ministry statements; parliamentary committee hearings on Nordalia policy, Jan 2026; refugee agency UNHCR data).
@@ -94,7 +94,7 @@ const SCENARIO_CEASEFIRE_COLLAPSE = `## Scenario Analysis: Collapse of the Septe
 
 ### Political Dimension
 
-A ceasefire collapse would **immediately polarize the Security Council**. Karovia would frame it as DRM aggression justifying GoN self-defense; Westmark would attribute it to GoN provocation. The resulting P5 deadlock would likely delay UNMN mandate renewal (due September 2026) and could trigger a drawdown debate.
+A ceasefire collapse would **immediately polarize the senior diplomatic forum**. Karovia would frame it as DRM aggression justifying GoN self-defense; Westmark would attribute it to GoN provocation. The resulting P5 deadlock would likely delay UNMN mandate renewal (due September 2026) and could trigger a drawdown debate.
 
 Domestically, President Osei would face pressure from AFN hardliners to pursue a military solution in the Eastern Provinces. The DRM's political wing would lose influence to field commanders, narrowing the space for negotiated outcomes.
 
@@ -149,7 +149,7 @@ There is a **low but non-trivial risk** (assessed at 10-15%) that direct Karovia
 ### Policy Implications
 
 1. **Prevention is critical.** The cost differential between ceasefire reinforcement and post-collapse stabilization is estimated at 1:8 (based on UN Peacebuilding Fund methodology).
-2. **Early warning indicators to monitor:** AFN troop movements near the Kessara corridor; DRM arms procurement patterns; Karovian military logistics flights to Nordalia City; diplomatic signalling in UNSC informal consultations.
+2. **Early warning indicators to monitor:** AFN troop movements near the Kessara corridor; DRM arms procurement patterns; Karovian military logistics flights to Nordalia City; diplomatic signalling in multilateral forum informal consultations.
 3. **Contingency planning:** UNMN should pre-position PoC assets in the three most vulnerable eastern population centres. OCHA should activate Level 3 emergency preparedness protocols.
 
 *Confidence: Medium-High. Assessment draws on UNMN reporting, OCHA data, arms embargo monitoring, and comparative case analysis. Key uncertainty: the role of domestic political dynamics within both the GoN and DRM leadership that may not be visible in open-source reporting.*`;
@@ -189,7 +189,7 @@ The Nordalia conflict has crossed the second threshold (Win-Lose) and is firmly 
 
 **Coalition hardening with external patrons:**
 - Karovia and Westmark have locked into patron-client relationships that reinforce each party's sense of righteousness and reduce their perception of risk from escalation
-- The P5 split in the Security Council mirrors and amplifies the domestic polarization
+- The P5 split in the senior diplomatic forum mirrors and amplifies the domestic polarization
 
 ---
 
@@ -228,7 +228,7 @@ The Nordalia conflict has crossed the second threshold (Win-Lose) and is firmly 
 | Major ceasefire violation at Kessara corridor | 35% | Would likely trigger retaliatory cycle and full ceasefire collapse |
 | Assassination of senior political/military figure | 10% | Extreme escalatory potential; would likely push immediately to Stage 6-7 |
 | Karovian military advisors killed in DRM operation | 15% | Could trigger Karovian escalation under bilateral defense treaty |
-| UNSC mandate renewal failure | 10% (by Sep 2026) | Would remove primary constraint on both parties' military ambitions |
+| multilateral forum mandate renewal failure | 10% (by Sep 2026) | Would remove primary constraint on both parties' military ambitions |
 | Mass atrocity event documented on social media | 20% | Would harden international positions and reduce space for diplomatic ambiguity |
 
 ---
@@ -257,7 +257,7 @@ If the conflict transitions to Stage 6, we would expect to observe:
 
 // ── Talking Points ──────────────────────────────────────────────────────────
 
-const TALKING_POINTS_UNSC = `## Security Council Briefing: Talking Points on the Situation in Nordalia
+const TALKING_POINTS_MULTILATERAL_BRIEF = `## Senior Diplomatic Briefing: Talking Points on the Situation in Nordalia
 
 **Prepared for:** [Senior Official] | **Date:** March 2026
 **Classification:** PRAXIS-generated analytical support — verify against current reporting before use
@@ -320,7 +320,7 @@ Separately, the Nordalian Independent Media Network reports that the GoN has det
 
 **Upcoming Events and Priority Actions (Next 24 Hours)**
 
-The UNSC open debate on Protection of Civilians begins at 10:00 — three draft resolutions are on the agenda, including one with language on humanitarian access corridors that references the Nordalia precedent. The AU PSC 1187th meeting at 11:30 will review the Sahel situation but may include margins discussion on the stalled Nordalia mediation round. Today's priority actions: (1) finalize briefing materials for the PoC debate incorporating overnight Nordalia reporting; (2) coordinate with the AU Panel secretariat on the proposed March mediation session agenda; (3) review the Panel of Experts' updated arms flow analysis received yesterday for potential UNSC Committee referral. The Nordalian krone fell a further 2.1% yesterday, bringing cumulative depreciation to 36.4% since March 2024 — fiscal pressure on the GoN is intensifying, which historically correlates with both increased repression and increased willingness to negotiate (monitor for signals in either direction).`;
+The multilateral forum open debate on Protection of Civilians begins at 10:00 — three draft resolutions are on the agenda, including one with language on humanitarian access corridors that references the Nordalia precedent. The AU PSC 1187th meeting at 11:30 will review the Sahel situation but may include margins discussion on the stalled Nordalia mediation round. Today's priority actions: (1) finalize briefing materials for the PoC debate incorporating overnight Nordalia reporting; (2) coordinate with the AU Panel secretariat on the proposed March mediation session agenda; (3) review the Panel of Experts' updated arms flow analysis received yesterday for potential multilateral forum Committee referral. The Nordalian krone fell a further 2.1% yesterday, bringing cumulative depreciation to 36.4% since March 2024 — fiscal pressure on the GoN is intensifying, which historically correlates with both increased repression and increased willingness to negotiate (monitor for signals in either direction).`;
 
 // ── AI Insights (JSON format for dashboard cards) ───────────────────────────
 
@@ -333,7 +333,7 @@ const DASHBOARD_INSIGHTS = JSON.stringify([
   },
   {
     type: 'action',
-    title: 'UNSC PoC Debate — Nordalia Language in Draft Resolution',
+    title: 'multilateral forum PoC Debate — Nordalia Language in Draft Resolution',
     summary: 'Draft resolution A/3 includes humanitarian corridor language referencing Nordalia. Briefing materials should address GoN objections to "imposed access" framing and DRM concerns about corridor militarization. Three P5 delegations have requested bilateral consultations.',
     link: '/reports',
   },
@@ -457,7 +457,7 @@ export const CACHED_RESPONSES = new Map<string, string>([
   ['escalation:glasl_assessment', ESCALATION_ASSESSMENT],
 
   // Talking points
-  ['talking_points:unsc_briefing', TALKING_POINTS_UNSC],
+  ['talking_points:senior_briefing', TALKING_POINTS_MULTILATERAL_BRIEF],
 
   // Dashboard
   ['dashboard:morning_brief', DASHBOARD_BRIEF],

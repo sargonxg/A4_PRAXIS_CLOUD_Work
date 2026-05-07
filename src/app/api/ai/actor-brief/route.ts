@@ -8,7 +8,7 @@ import type { Situation } from '@/types/situation';
 
 export const maxDuration = 120;
 
-const ACTOR_BRIEF_SYSTEM_PROMPT = `You are a senior TACITUS analyst preparing a pre-meeting brief for a senior UN official or mediator. Generate a structured brief with these sections:
+const ACTOR_BRIEF_SYSTEM_PROMPT = `You are a senior TACITUS analyst preparing a pre-meeting brief for a senior diplomatic principal or mediator. Generate a structured brief with these sections:
 
 ## ACTOR PROFILE: [Name]
 
@@ -40,7 +40,7 @@ const ACTOR_BRIEF_SYSTEM_PROMPT = `You are a senior TACITUS analyst preparing a 
 **60-SECOND ELEVATOR BRIEF:**
 [One paragraph summary for the official walking into the room]
 
-Be specific. Ground analysis in the situation context provided. Flag where confidence is low. Use UN diplomatic language standards.`;
+Be specific. Ground analysis in the situation context provided. Flag where confidence is low. Use professional diplomatic language standards.`;
 
 const DEMO_BRIEF = `## ACTOR PROFILE: Government of Nordalia
 
@@ -66,7 +66,7 @@ The GoN's external patron is **Karovia**, which provides military equipment, log
 | Target | Type | Sustainability |
 |--------|------|---------------|
 | DRM | Military — conventional superiority, air assets | HIGH — as long as Karovian support continues |
-| UNMN | Political — host nation consent for peacekeeping | MEDIUM — withdrawal threat is a bluff given UNSC mandate |
+| UNMN | Political — host nation consent for peacekeeping | MEDIUM — withdrawal threat is a bluff given multilateral forum mandate |
 | Westmark | Economic — rare earth supply disruption threat | LOW — alternative sources exist |
 | Eastern population | Economic — control of customs, banking, services | HIGH — population has no alternatives |
 
@@ -75,7 +75,7 @@ The GoN's external patron is **Karovia**, which provides military equipment, log
 |--------|------|-----------|
 | Karovia | Military/Political — can withdraw support | HIGH — GoN is operationally dependent; this is your strongest indirect lever |
 | Westmark | Diplomatic — targeted sanctions on 23 officials | MEDIUM — asset freezes affect inner circle |
-| UNSC | Normative — mandate enforcement, arms embargo | MEDIUM — Panel of Experts documentation creates accountability pressure |
+| multilateral forum | Normative — mandate enforcement, arms embargo | MEDIUM — Panel of Experts documentation creates accountability pressure |
 | IMF | Economic — currency support conditional on stability | HIGH — 36.4% depreciation since March 2024 creates fiscal emergency |
 
 ### Commitment Record

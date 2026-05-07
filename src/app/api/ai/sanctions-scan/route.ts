@@ -20,7 +20,7 @@ const SanctionsScanSchema = z.object({
     z.object({
       entity: z.string().describe('Name of the sanctioned or potentially sanctioned entity'),
       changeType: z.enum(['new_designation', 'delisting', 'modification', 'investigation', 'evasion_detected', 'no_change']).describe('Type of sanctions change'),
-      source: z.string().describe('Source of this information (e.g., UNSC Committee, OFAC, EU Council)'),
+      source: z.string().describe('Source of this information (e.g., sanctions committee, OFAC, EU Council)'),
       date: z.string().describe('Date of the sanctions update or report'),
       details: z.string().describe('Detailed description of the sanctions change and its implications'),
     })
@@ -34,14 +34,14 @@ const SanctionsScanSchema = z.object({
 const SanctionsGroundedSchema = z.object({
   sanctions: z.array(
     z.object({
-      regime: z.string().describe('Name of the sanctions regime (e.g., UNSC Resolution 2847, EU Regulation 2024/1938, OFAC Nordalia SDN List)'),
+      regime: z.string().describe('Name of the sanctions regime (e.g., multilateral resolution 2847, EU Regulation 2024/1938, OFAC Nordalia SDN List)'),
       imposingActors: z.array(z.string()).describe('States or international bodies imposing the sanctions'),
       targetedActors: z.array(z.string()).describe('Individuals, entities, or states targeted by the sanctions'),
       type: z.enum(['financial', 'travel-ban', 'arms-embargo', 'trade', 'sectoral', 'comprehensive']).describe('Primary sanctions type'),
       status: z.enum(['active', 'suspended', 'lifted', 'proposed']).describe('Current status of the sanctions regime'),
       imposedDate: z.string().optional().describe('Date sanctions were imposed (e.g., "October 2024")'),
       liftedDate: z.string().optional().describe('Date sanctions were lifted, if applicable'),
-      legalBasis: z.string().describe('Legal instrument underpinning the sanctions (UN Charter Article, treaty, domestic statute)'),
+      legalBasis: z.string().describe('Legal instrument underpinning the sanctions (international legal authority, treaty, domestic statute)'),
       effectiveness: z.number().min(0).max(10).describe('Effectiveness score 0-10 based on target behaviour change and compliance'),
       complianceLevel: z.enum(['high', 'partial', 'low', 'unknown']).describe('Observed compliance level by sanctioned parties'),
       evasionPatterns: z.array(z.string()).describe('Documented or suspected sanctions evasion methods'),
@@ -63,14 +63,14 @@ const DEMO_RESPONSE_SCAN = {
     {
       entity: 'Government of Nordalia',
       changeType: 'modification' as const,
-      source: 'UNSC Sanctions Committee, Panel of Experts interim report S/2025/892',
+      source: 'sanctions committee, Panel of Experts interim report S/2025/892',
       date: 'February 2026',
-      details: 'Panel of Experts documented continued arms flows to the AFN in probable violation of the UNSC arms embargo. Evidence includes satellite imagery of Karovian military transport aircraft at Nordalia City International Airport and end-user certificate discrepancies. Committee considering expanded asset freeze for three senior AFN procurement officials.',
+      details: 'Panel of Experts documented continued arms flows to the AFN in probable violation of the multilateral arms embargo. Evidence includes satellite imagery of Karovian military transport aircraft at Nordalia City International Airport and end-user certificate discrepancies. Committee considering expanded asset freeze for three senior AFN procurement officials.',
     },
     {
       entity: 'Karovia Defence Industries (KDI)',
       changeType: 'investigation' as const,
-      source: 'UNSC Panel of Experts; Conflict Armament Research field report',
+      source: 'Panel of Experts; Conflict Armament Research field report',
       date: 'January 2026',
       details: 'Under investigation for circumventing the arms embargo through third-country transfer routing. Documented evidence of KDI-manufactured ammunition recovered in the Kessara corridor in December 2025, serial number analysis confirming post-embargo production.',
     },
@@ -79,7 +79,7 @@ const DEMO_RESPONSE_SCAN = {
       changeType: 'no_change' as const,
       source: 'Westmark unilateral sanctions list',
       date: 'March 2026',
-      details: 'Remains on Westmark\'s targeted sanctions list (travel ban + asset freeze) since October 2024. No additional UNSC designation. AU has resisted calls for multilateral sanctions on the head of state, citing sovereignty concerns.',
+      details: 'Remains on Westmark\'s targeted sanctions list (travel ban + asset freeze) since October 2024. No additional multilateral designation. AU has resisted calls for multilateral sanctions on the head of state, citing sovereignty concerns.',
     },
     {
       entity: 'DRM Financial Network',
@@ -89,20 +89,20 @@ const DEMO_RESPONSE_SCAN = {
       details: 'FATF identified suspicious financial flows through Westmark-based diaspora organizations linked to DRM procurement. Three wire transfer patterns flagged as potential sanctions evasion. Westmark financial intelligence unit conducting parallel investigation.',
     },
   ],
-  analysis: 'The Nordalia sanctions regime is under significant stress from multiple directions. The arms embargo is being systematically circumvented by Karovia through direct military transfers and third-country routing. Westmark\'s unilateral sanctions create a fragmented enforcement landscape — targeted individuals can still operate through non-sanctioning jurisdictions. The DRM\'s financial network exploitation of diaspora channels represents an emerging compliance gap. The P5 split on Nordalia makes UNSC Committee action slow and politically constrained. Overall, the sanctions architecture is sound in design but deteriorating in implementation.',
+  analysis: 'The Nordalia sanctions regime is under significant stress from multiple directions. The arms embargo is being systematically circumvented by Karovia through direct military transfers and third-country routing. Westmark\'s unilateral sanctions create a fragmented enforcement landscape — targeted individuals can still operate through non-sanctioning jurisdictions. The DRM\'s financial network exploitation of diaspora channels represents an emerging compliance gap. The P5 split on Nordalia makes sanctions committee action slow and politically constrained. Overall, the sanctions architecture is sound in design but deteriorating in implementation.',
   riskAssessment: 'HIGH RISK: Arms embargo enforcement is the critical weakness. Without improved monitoring of Karovian logistics flights and third-country transfer routes, military capability accumulation will continue to lower the escalation threshold. MEDIUM RISK: Financial sanctions evasion through informal value transfer systems and diaspora networks requires enhanced financial intelligence cooperation between Westmark and regional financial centres. RECOMMENDATION: Priority should be on enforcement of existing measures rather than expansion — particularly strengthening the Panel of Experts\' investigation capacity and implementing the maritime and aviation monitoring recommendations from the interim report.',
 };
 
 const DEMO_RESPONSE_GROUNDED = {
   sanctions: [
     {
-      regime: 'UNSC Arms Embargo — Resolution 2847 (2024)',
-      imposingActors: ['UN Security Council'],
+      regime: 'Multilateral Arms Embargo — Resolution 2847 (2024)',
+      imposingActors: ['multilateral sanctions authority'],
       targetedActors: ['Government of Nordalia', 'Democratic Reform Movement', 'all non-state armed groups'],
       type: 'arms-embargo' as const,
       status: 'active' as const,
       imposedDate: 'August 2024',
-      legalBasis: 'UN Charter Article 41; UNSC Resolution 2847 (2024)',
+      legalBasis: 'international legal authority 41; multilateral resolution 2847 (2024)',
       effectiveness: 4,
       complianceLevel: 'low' as const,
       evasionPatterns: [
@@ -204,7 +204,7 @@ export const POST = withCalibration('sanctions', 'ai_analysis', {
 
       const result = await callProModel({
         output: Output.object({ schema: SanctionsGroundedSchema }),
-        system: `You are a senior sanctions analyst specializing in conflict-related sanctions regimes, international humanitarian law compliance, and coercive diplomacy. You have deep expertise in UNSC sanctions architecture, OFAC, EU restrictive measures, and AU frameworks. Provide rigorous, evidence-grounded analysis for senior diplomatic and legal professionals. Always cite specific sanctions instruments, committee decisions, and Panel of Experts findings.
+        system: `You are a senior sanctions analyst specializing in conflict-related sanctions regimes, international humanitarian law compliance, and coercive diplomacy. You have deep expertise in multilateral sanctions architecture, OFAC, EU restrictive measures, and AU frameworks. Provide rigorous, evidence-grounded analysis for senior diplomatic and legal professionals. Always cite specific sanctions instruments, committee decisions, and Panel of Experts findings.
 
 ${systemPromptBlock}
 
@@ -213,7 +213,7 @@ Calibrate framing, tone, and recommendations to the analyst profile above. Honou
 Conduct a comprehensive sanctions landscape analysis for this conflict situation.
 
 Assess:
-1. All applicable sanctions regimes — UNSC, US (OFAC), EU, AU, and unilateral state measures
+1. All applicable sanctions regimes — multilateral, US (OFAC), EU, AU, and unilateral state measures
 2. For each regime: targeted actors, legal basis, current status, effectiveness, compliance level
 3. Evasion patterns — document specific methodologies with source attribution where possible
 4. Humanitarian impact — including exemption adequacy and civilian harm risks
@@ -276,7 +276,7 @@ Then provide:
 - A cross-cutting analysis of sanctions trends and enforcement patterns
 - A risk assessment covering evasion risks, compliance gaps, and monitoring recommendations
 
-Cover UNSC, US (OFAC), EU, and any relevant regional sanctions regimes.`,
+Cover multilateral, US (OFAC), EU, and any relevant regional sanctions regimes.`,
       system: `You are a senior sanctions compliance analyst specializing in conflict-related sanctions regimes. Provide rigorous analysis for diplomatic and legal professionals. Always cite specific sanctions instruments, committee decisions, and enforcement actions.
 
 ${systemPromptBlock}

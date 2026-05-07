@@ -27,7 +27,7 @@ const routeLabels: Record<string, string> = {
   assistant: 'Ask PRAXIS',
   'media-compass': 'Media Compass',
   'conflict-graph': 'Conflict Graph',
-  'un-toolkit': 'UN Toolkit',
+  'un-toolkit': 'Diplomatic Toolkit',
   documents: 'Documents',
   settings: 'Settings',
   calendar: 'Calendar Monitor',

@@ -42,7 +42,7 @@ const TalkingPointsSchema = z.object({
 });
 
 const DEMO_RESPONSE = {
-  audience: 'AU Peace and Security Council',
+  audience: 'AU peace and security principals',
   keyMessages: [
     {
       headline: 'Both parties have demonstrated willingness to sustain the ceasefire framework',
