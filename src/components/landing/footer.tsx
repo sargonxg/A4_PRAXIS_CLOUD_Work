@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { APP_RELEASE_LABEL } from "@/lib/constants/app-version";
 
-const EXAMPLE_CASE_HREF = "/login?mode=demo&example=syria-2026";
+const EXAMPLE_CASE_HREF = "/demo/syria-2024";
 
 const footerSections = [
   {
@@ -10,20 +10,20 @@ const footerSections = [
     links: [
       { label: "Example Case", href: EXAMPLE_CASE_HREF },
       { label: "Pricing", href: "/pricing" },
-      { label: "Briefing Studio", href: "/login?mode=demo&example=syria-2026" },
-      { label: "Ask PRAXIS", href: "/login?mode=demo&example=syria-2026" },
-      { label: "Conflict Graph", href: "/login?mode=demo&example=syria-2026" },
-      { label: "Source Scout", href: "/login?mode=demo&example=syria-2026" },
+      { label: "Briefing Studio", href: EXAMPLE_CASE_HREF },
+      { label: "Ask PRAXIS", href: EXAMPLE_CASE_HREF },
+      { label: "Conflict Graph", href: EXAMPLE_CASE_HREF },
+      { label: "Source Scout", href: EXAMPLE_CASE_HREF },
     ],
   },
   {
     title: "Tools",
     links: [
-      { label: "Context Builder", href: "/login?mode=demo&example=syria-2026" },
-      { label: "GraphOps", href: "/login?mode=demo&example=syria-2026" },
-      { label: "Advisor Table", href: "/login?mode=demo&example=syria-2026" },
-      { label: "Documents", href: "/login?mode=demo&example=syria-2026" },
-      { label: "Tools Workspace", href: "/login?mode=demo&example=syria-2026" },
+      { label: "Context Builder", href: EXAMPLE_CASE_HREF },
+      { label: "GraphOps", href: EXAMPLE_CASE_HREF },
+      { label: "Advisor Table", href: EXAMPLE_CASE_HREF },
+      { label: "Documents", href: EXAMPLE_CASE_HREF },
+      { label: "Tools Workspace", href: EXAMPLE_CASE_HREF },
     ],
   },
   {

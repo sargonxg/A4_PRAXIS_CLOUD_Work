@@ -163,6 +163,10 @@ export function proxy(request: NextRequest) {
 
   // --- /demo/* routes: require demo session cookie ---
   if (pathname.startsWith('/demo')) {
+    if (pathname === '/demo/syria-2024') {
+      return nextWithNonce(request, nonce);
+    }
+
     if (!sessionData) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('mode', 'demo');
@@ -260,5 +264,15 @@ function addSecurityHeaders(response: NextResponse, nonce?: string): NextRespons
 }
 
 export const config = {
-  matcher: ['/demo/:path*', '/app/:path*', '/onboarding/:path*', '/onboarding', '/login', '/pricing'],
+  matcher: [
+    '/demo/:path*',
+    '/app/:path*',
+    '/onboarding/:path*',
+    '/onboarding',
+    '/login',
+    '/login/:path*',
+    '/waitlist',
+    '/legal/:path*',
+    '/pricing',
+  ],
 };

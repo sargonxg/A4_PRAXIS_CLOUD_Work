@@ -20,6 +20,12 @@ The current master-charter completion checklist is
 source for remaining Pack 03-14, phase-spec, launch, and production-excellence
 tasks until PRAXIS reaches the strict `v1.0.0` gate.
 
+The latest Pack 18 production-reality closure pass is
+`docs/audits/2026-05-07-PACK18_PRODUCTION_REALITY_CLOSURE.md`. It records the
+preserved Pack 18 prompt and the closed canonical entry-route gap for
+`/demo/syria-2024`, `/waitlist`, `/login/callback`, and
+`/legal/{privacy,terms,security,data-retention}`.
+
 The latest real-app dashboard pass is
 `docs/audits/2026-05-07-DASHBOARD_REAL_APP_PASS.md`. It records the replacement
 of the redirect-only `/app/dashboard` with the current command-center route and

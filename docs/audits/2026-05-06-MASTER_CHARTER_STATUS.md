@@ -28,7 +28,7 @@ The master charter is now preserved in-repo and its high-level support structure
 | Pack | Charter Status | Current Reality | Notes |
 |---|---|---|---|
 | 03 Workbench Architecture | DONE foundation | DEGRADED by persona proof gap | Unified Workbench, route/sidebar audit, and local Workbench usability smoke are green. The charter's 10-green CI persona bar is not yet evidenced. |
-| 04 Landing & Entry Rebuild | DONE foundation | DEGRADED by canonical route gap | Landing is Workbench-first and Syria is only an example; local smoke verifies anchors, hero visual, static fallback, and DIALECTICA 3D graph. Canonical `/demo/syria-2024`, `/waitlist`, `/login/callback`, and `/legal/*` routes still need alignment. |
+| 04 Landing & Entry Rebuild | DONE foundation | DEGRADED by production evidence gap | Landing is Workbench-first and Syria is only an example; canonical `/demo/syria-2024`, `/waitlist`, `/login/callback`, and `/legal/*` routes are now present. Remaining gap is production evidence, Lighthouse/axe, and long-run persona proof. |
 | 05 Context vs Tools | DONE foundation | DONE | Context health, firewall, Trust Score persistence, and persona files are present. |
 | 06 Ontology System | PARTIAL backend depth | Frontend DONE, backend classifier deferred | Four ontologies are mapped; LangGraph classifier remains v1.1/Pack 14 depth. |
 | 07 Graph Visualization | PARTIAL edit depth | Viewer DONE, edit round-trip deferred | Canonical graph tab works; advanced edit UX remains backlog. |
@@ -39,6 +39,7 @@ The master charter is now preserved in-repo and its high-level support structure
 | 12 Context Architecture | DONE TS/runtime foundation, agent orchestration pending | DONE with LangGraph orchestration deferred | Signed conversation context and runtime ContextProvider are present. |
 | 13 Tool-Context Interop | DONE contract foundation, subagent runtime pending | DONE with runtime orchestration deferred | Contract v2, skills, projection, and suggestions are live. |
 | Pack 14 Production Excellence | PARTIAL local production-excellence foundation | Gemini Enterprise/Vertex posture, model matrix, shared embedding provider, backend model constants, provider audits, UX/observability audits, load-test scaffold, capacity plan, canary monitor, canary log template, and orchestration playbook DONE; production infra deferred | Requires owner decisions on final region/cost, Terraform/canary execution, public demo, and signup posture. |
+| Pack 18 Production Reality Closure | ACTIVE closure pass | Prompt preserved; canonical `/demo/syria-2024`, `/waitlist`, `/login/callback`, and `/legal/{privacy,terms,security,data-retention}` route gaps closed in code; route audit expanded | Persona CI streak, production context/storage parity, review queue, specialist tool depth, memo marketplace tools, Agent Engine runtime evidence, Lighthouse/axe, and canary proof remain open. |
 
 ## Open S0/S1 From Self-Audit
 
@@ -66,6 +67,14 @@ incomplete until live Agent Engine deployments, real persona corpus indexing,
 custom corpus upload, eval depth, tool invocation, cost telemetry, and trace
 evidence are closed.
 
+## Latest Pack 18 Closure Pass
+
+`docs/audits/2026-05-07-PACK18_PRODUCTION_REALITY_CLOSURE.md` records the
+current launch-gate closure pass. Pack 18 is preserved in `docs/codex-prompts/`,
+and the first route gap is closed with a public read-only `/demo/syria-2024`,
+real `/waitlist`, `/login/callback`, and canonical `/legal/*` pages guarded by
+`npm run audit:legal-pages-present`.
+
 ## Remaining Work
 
 - Run and maintain the four persona suites until the charter's 10-green-run bar is genuinely satisfied in CI.
@@ -75,4 +84,5 @@ evidence are closed.
 - Enrich scheduler-backed diagnostics with Postgres parity, provider-level cost, and streaming firewall event distributions.
 - Implement LangGraph subagent orchestration/telemetry for Context Preparer, Source Augmenter, Output Refiner, and Memo Drafter.
 - Continue Pack 14 after the local provider/posture pass: Terraform-managed infrastructure, managed Agent Platform Runtime deployment, public read-only demo, waitlist/magic-link posture, observability, load testing, cost dashboard, and canary deploy.
+- Continue Pack 18 by closing the synthesized review queue, persona CI streak evidence, production storage parity evidence, marketplace specialist depth, memo marketplace tools, Agent Engine runtime evidence, Lighthouse/axe evidence, and canary proof.
 - Obtain owner production-readiness signature, complete staging/production signed smoke records, and only then tag `v1.0.0`.

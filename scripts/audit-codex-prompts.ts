@@ -17,6 +17,7 @@ const required = [
   'docs/codex-prompts/PRAXIS_CODEX_14_PRODUCTION_EXCELLENCE.md',
   'docs/codex-prompts/PRAXIS_CODEX_15_SAT_TOOLKIT.md',
   'docs/codex-prompts/PRAXIS_CODEX_16_AGENTIC_BOARDROOM.md',
+  'docs/codex-prompts/PRAXIS_CODEX_18_PRODUCTION_REALITY_CLOSURE.md',
 ];
 
 const failures: string[] = [];
@@ -36,4 +37,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Codex prompt pack audit passed for master charter and packs 03-16.');
+console.log('Codex prompt pack audit passed for master charter and packs 03-16 plus pack 18.');

@@ -146,14 +146,14 @@ export function LiveDemo() {
             className="relative rounded-2xl border border-slate-200 bg-slate-100 shadow-2xl shadow-navy-950/10 outline-none ring-diplomatic-blue/20 transition focus:ring-4"
           >
             <Link
-              href="/login?mode=demo&example=syria-2026"
+              href="/demo/syria-2024"
               prefetch={false}
               target="_blank"
               rel="noopener"
-              aria-label="Open example case workspace in a new tab"
+              aria-label="Open public demo in a new tab"
               className="absolute inset-0 z-20 rounded-2xl focus:outline-none focus:ring-4 focus:ring-diplomatic-blue/30"
             >
-              <span className="sr-only">Open example case workspace</span>
+              <span className="sr-only">Open public demo</span>
             </Link>
             <div className="pointer-events-none relative z-30 flex items-center justify-between rounded-t-2xl border-b border-slate-200 bg-white/90 px-4 py-3">
               <div className="flex items-center gap-2">
