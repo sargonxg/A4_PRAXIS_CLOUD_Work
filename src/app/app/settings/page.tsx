@@ -804,6 +804,27 @@ export default function SettingsPage() {
         </div>
       </SettingsSection>
 
+      {/* ── Notifications ──────────────────────────────────────────── */}
+      <SettingsSection
+        icon={Mail}
+        title="Notifications"
+        description="Tune case updates, quiet hours, and feedback prompts"
+      >
+        <div className="space-y-3">
+          <p className="text-xs text-navy-600">
+            Choose which source, research, memo, budget, and workspace events interrupt you immediately and which ones wait for a digest.
+          </p>
+          <PraxisLink
+            href="/settings/notifications"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-diplomatic-blue hover:bg-diplomatic-blue/90 text-white rounded-md text-sm font-medium transition-colors"
+          >
+            <Mail className="h-3.5 w-3.5" />
+            Manage Notifications
+            <ArrowRight className="h-3.5 w-3.5" />
+          </PraxisLink>
+        </div>
+      </SettingsSection>
+
       {/* ── API Keys ──────────────────────────────────────────────── */}
       <SettingsSection
         icon={Key}

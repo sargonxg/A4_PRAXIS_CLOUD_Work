@@ -270,7 +270,7 @@ async def case_ontology_debug(case_id: str, token: dict = Depends(verify_firebas
 
 
 # Router registration
-from routers import pipeline, graph, analyze, reason, memory, tabs, chapters, workspace  # noqa: E402
+from routers import pipeline, graph, analyze, reason, memory, tabs, chapters, workspace, notifications  # noqa: E402
 
 app.include_router(pipeline.router, prefix="/api/v1/pipeline", tags=["pipeline"])
 app.include_router(graph.router, prefix="/api/v1/graph", tags=["graph"])
@@ -284,3 +284,5 @@ app.include_router(chapters.router, prefix="/api/v1/chapters", tags=["chapters"]
 app.include_router(chapters.router, prefix="/v1/chapters", tags=["chapters"])
 app.include_router(workspace.router, prefix="/api/v1/workspace", tags=["workspace"])
 app.include_router(workspace.router, prefix="/v1/workspace", tags=["workspace"])
+app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["notifications"])
+app.include_router(notifications.router, prefix="/v1/notifications", tags=["notifications"])

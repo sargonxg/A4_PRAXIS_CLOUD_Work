@@ -22,6 +22,9 @@ const ALLOWED_BACKEND_PATHS: Array<{ method: string; pattern: RegExp }> = [
   },
   { method: 'GET', pattern: /^workspace\/events$/ },
   { method: 'POST', pattern: /^workspace\/suggestions\/[^/]+\/(dismiss|confirm)$/ },
+  { method: 'GET', pattern: /^notifications(\/stream|\/registry|\/preferences)?$/ },
+  { method: 'PUT', pattern: /^notifications\/preferences$/ },
+  { method: 'POST', pattern: /^notifications\/(test|[^/]+\/signal)$/ },
   { method: 'GET', pattern: /^tabs\/(context\/situation-frame|library|library\/sources|ontology\/candidates|graph|graph\/timeline)$/ },
   { method: 'GET', pattern: /^tabs\/library\/[^/]+$/ },
   { method: 'GET', pattern: /^tabs\/graph\/node\/[^/]+$/ },
@@ -97,6 +100,37 @@ function localBackendFallback(method: string, path: string): Record<string, unkn
       status: 'backend_unconfigured',
       note: 'Python backend is not configured in this local session; demo artifacts remain available.',
     };
+  }
+  if (normalizedMethod === 'GET' && path === 'notifications') {
+    return { notifications: [], status: 'backend_unconfigured' };
+  }
+  if (normalizedMethod === 'GET' && path === 'notifications/registry') {
+    return { types: [], status: 'backend_unconfigured' };
+  }
+  if (normalizedMethod === 'GET' && path === 'notifications/preferences') {
+    return {
+      preferences: {
+        channels: { in_app: true, email_digest: false, email_immediate: false, browser_push: false, webhook: false },
+        per_type: {},
+        quiet_hours: { enabled: false, start: '22:00', end: '07:00' },
+        timezone: 'America/New_York',
+        digest_time: '08:00',
+        do_not_disturb: false,
+      },
+      status: 'backend_unconfigured',
+    };
+  }
+  if (normalizedMethod === 'PUT' && path === 'notifications/preferences') {
+    return { ok: true, status: 'backend_unconfigured' };
+  }
+  if (normalizedMethod === 'GET' && path === 'notifications/stream') {
+    return { notifications: [], status: 'backend_unconfigured' };
+  }
+  if (normalizedMethod === 'POST' && /^notifications\/[^/]+\/signal$/.test(path)) {
+    return { ok: true, status: 'backend_unconfigured' };
+  }
+  if (normalizedMethod === 'POST' && path === 'notifications/test') {
+    return { notification: null, status: 'backend_unconfigured' };
   }
   if (normalizedMethod === 'POST' && path === 'chapters/drafts') {
     return {

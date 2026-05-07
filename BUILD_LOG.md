@@ -1,5 +1,9 @@
 # PRAXIS Build Log
 
+## 2026-05-07 — Notifications and feedback foundation
+
+Built the first shippable in-app slice from `NOTIFICATIONS_FEEDBACK_SYSTEM.md`: added the 16-type notification taxonomy, Postgres lifecycle and feedback-signal migration, backend `notify()` service with quiet hours, per-type preferences, deduplication/bundling, orchestrator audit logging, acted/dismissed Cognee feedback with `save_interaction=True`, `/v1/notifications` APIs, backend proxy allowlisting, live notification center actions, and `/app/settings/notifications`. Verified with `audit:notifications-feedback`, focused backend pytest, Python compile, and TypeScript. Live Syria latency/token cost and external channels are not claimed yet; email/browser/webhook delivery and production migration checks are tracked in `BLOCKERS.md`.
+
 ## 2026-05-07 — Deep pre-ship checklist gate
 
 Built the first enforceable pass for `DEEP_PRESHIP_CHECKLIST.md`: added `audit:deep-preship`, wrote the saved audit ledger at `docs/audits/2026-05-07-DEEP_PRESHIP_CHECKLIST.md`, centralized Cognee dataset construction through `dataset_for()`, added disabled-safe `improve()` feedback calls, added tenant-scoped ontology debug endpoints, added the missing Postgres pre-ship foundation tables/RLS/NOTIFY triggers, wired workspace SSE to event history, and exposed canonical `praxis.*` MCP tool registry names. Verified with the new audit, Cognee/orchestrator/workspace audits, focused backend pytest, TypeScript, Vitest, and production build. Live staging checks, Cloud SQL restore/load tests, browser-hour checks, and Vertex billing comparisons remain live-environment work and are tracked in `BLOCKERS.md`.
