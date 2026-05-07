@@ -1,5 +1,9 @@
 # PRAXIS Build Log
 
+## 2026-05-07 — Purpose audit and first surface cleanup
+
+Ran `PURPOSE_AUDIT_PROMPT.md` against the Tabs, Chapters, Settings, and cross-cutting UI surfaces. Added `PURPOSE_AUDIT_REPORT.md` with Remove/Simplify/Consolidate/Keep findings, then shipped the first low-risk removals: removed Context implementation-contract narration, removed the duplicate Library case-frame-claim action, and removed decorative Draft capability badges. Added `audit:purpose-surface` so these pure-removal findings stay enforced. Verified with the purpose audit, scoped lint, TypeScript, and build.
+
 ## 2026-05-07 — Notifications and feedback foundation
 
 Built the first shippable in-app slice from `NOTIFICATIONS_FEEDBACK_SYSTEM.md`: added the 16-type notification taxonomy, Postgres lifecycle and feedback-signal migration, backend `notify()` service with quiet hours, per-type preferences, deduplication/bundling, orchestrator audit logging, acted/dismissed Cognee feedback with `save_interaction=True`, `/v1/notifications` APIs, backend proxy allowlisting, live notification center actions, and `/app/settings/notifications`. Verified with `audit:notifications-feedback`, focused backend pytest, Python compile, and TypeScript. Live Syria latency/token cost and external channels are not claimed yet; email/browser/webhook delivery and production migration checks are tracked in `BLOCKERS.md`.

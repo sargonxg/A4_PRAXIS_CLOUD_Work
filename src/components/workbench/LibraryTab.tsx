@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Archive, ExternalLink, FileText, Loader2, Plus, RefreshCw, Search, Trash2, Upload } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Archive, ExternalLink, FileText, Loader2, RefreshCw, Search, Trash2, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
@@ -39,7 +39,6 @@ export function LibraryTab() {
   const [selected, setSelected] = useState<LibraryArtifact | null>(null);
   const [savedClaims, setSavedClaims] = useState<SavedClaim[]>([]);
   const [backendSources, setBackendSources] = useState<BackendSourceReceipt[]>([]);
-  const [claimNote, setClaimNote] = useState<string | null>(null);
   const [sourceNote, setSourceNote] = useState<string | null>(null);
   const [sourceBusy, setSourceBusy] = useState(false);
   const backendArtifacts = useMemo(() => backendSources.map(sourceReceiptToArtifact), [backendSources]);
@@ -82,17 +81,17 @@ export function LibraryTab() {
     };
   }, [caseId]);
 
-  useEffect(() => {
-    void refreshBackendSources();
-  }, [caseId]);
-
-  async function refreshBackendSources() {
+  const refreshBackendSources = useCallback(async () => {
     const response = await fetch(`/api/backend/tabs/library?case_id=${encodeURIComponent(caseId)}`).catch(() => null);
     const payload = await response?.json().catch(() => ({}));
     if (response?.ok && Array.isArray(payload.sources)) {
       setBackendSources(payload.sources);
     }
-  }
+  }, [caseId]);
+
+  useEffect(() => {
+    void refreshBackendSources();
+  }, [refreshBackendSources]);
 
   async function uploadSource(files: FileList | null) {
     const file = files?.[0];
@@ -148,31 +147,6 @@ export function LibraryTab() {
     }
   }
 
-  async function saveCaseFrameClaim() {
-    const text = caseModule.situation.description || caseModule.manifest.summary;
-    if (!text) {
-      setClaimNote('No case-frame text is available to save yet.');
-      return;
-    }
-    const response = await fetch(`/api/cases/${encodeURIComponent(caseId)}/saved-claims`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        title: 'Saved case-frame claim',
-        text,
-        sourceRef: caseModule.sources[0]?.url,
-        trustScore: caseModule.sources.length ? 72 : 48,
-      }),
-    }).catch(() => null);
-    if (!response?.ok) {
-      setClaimNote('Saved claims are read-only in demo mode; signed-in cases persist them here.');
-      return;
-    }
-    const payload = await response.json().catch(() => ({}));
-    if (payload.claim) setSavedClaims((current) => [payload.claim, ...current]);
-    setClaimNote('Saved claim added to this case library.');
-  }
-
   return (
     <div className="space-y-6" data-testid="workbench-library-surface">
       <section className="rounded-lg border border-navy-200 bg-white p-5 shadow-sm shadow-navy-950/5">
@@ -197,21 +171,12 @@ export function LibraryTab() {
           </label>
           <button
             type="button"
-            onClick={() => void saveCaseFrameClaim()}
-            className="inline-flex items-center gap-2 rounded-md border border-navy-300 bg-white px-3 py-2 text-xs font-semibold text-navy-900"
-          >
-            <Plus className="h-4 w-4" />
-            Save case-frame claim
-          </button>
-          <button
-            type="button"
             onClick={() => void refreshBackendSources()}
             className="inline-flex items-center gap-2 rounded-md border border-navy-300 bg-white px-3 py-2 text-xs font-semibold text-navy-900"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh receipts
           </button>
-          {claimNote ? <p className="text-sm font-semibold text-navy-900">{claimNote}</p> : null}
           {sourceNote ? <p className="text-sm font-semibold text-navy-900">{sourceNote}</p> : null}
         </div>
 

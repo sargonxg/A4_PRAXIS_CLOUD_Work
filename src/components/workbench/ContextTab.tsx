@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { BookOpen, Database } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { ActorClaimInterestRefiner } from '@/components/workbench/context/ActorClaimInterestRefiner';
 import { DocumentUploadInline } from '@/components/workbench/context/DocumentUploadInline';
@@ -27,7 +27,14 @@ export function ContextTab() {
       ...(situation.sourceUrls ?? []),
       ...(situation.customSources ?? []).map((source) => source.url),
     ].join('\n'),
-  }), [situation.contextNotes, situation.customSources, situation.description, situation.sourceUrls]);
+  }), [
+    caseModule.manifest.name,
+    caseModule.manifest.summary,
+    situation.contextNotes,
+    situation.customSources,
+    situation.description,
+    situation.sourceUrls,
+  ]);
   const [draft, setDraft] = useState<ContextDraft>(initialDraft);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -115,18 +122,6 @@ export function ContextTab() {
           <ActorClaimInterestRefiner actors={situation.actors} questions={surface.openQuestions} />
         </SurfaceSection>
         <OpenQuestionsPanel caseId={caseId} fallbackQuestions={surface.openQuestions} />
-      </section>
-
-      <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <div className="flex items-start gap-3">
-          <Database className="mt-0.5 h-5 w-5 text-gold-700" />
-          <div>
-            <p className="text-sm font-semibold text-navy-950">Context storage contract</p>
-            <p className="mt-1 text-sm leading-6 text-slate-700">
-              The UI now distinguishes editable scope from tool execution. Scope saves use an owner-scoped API with an audit entry; full re-genesis jobs remain backend follow-up work, not hidden behind a fake action.
-            </p>
-          </div>
-        </div>
       </section>
     </div>
   );

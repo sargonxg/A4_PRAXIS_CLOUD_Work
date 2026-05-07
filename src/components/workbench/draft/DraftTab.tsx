@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { FileSearch, FileText, Save, ShieldCheck } from 'lucide-react';
+import { FileSearch, FileText, Save } from 'lucide-react';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { AppendixPicker } from '@/components/workbench/draft/AppendixPicker';
@@ -218,12 +218,6 @@ export function DraftTab() {
           <ContextHealthChip />
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-diplomatic-blue/10 px-2.5 py-1 text-xs font-semibold text-diplomatic-blue">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            Redaction aware
-          </span>
-          <span className="rounded-full bg-gold-100 px-2.5 py-1 text-xs font-semibold text-gold-800">Manifest embedded</span>
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-800">DOCX/PDF/Markdown</span>
           <button
             type="button"
             onClick={() => void persistDraft()}
