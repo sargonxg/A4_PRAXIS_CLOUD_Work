@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { WorkbenchChapterShell } from '@/components/workbench/chapter-shell';
+import { StructuredChapterContent } from '@/components/workbench/StructuredChapterContent';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import {
   WORKBENCH_CHAPTER_FLOW,
@@ -10,7 +11,7 @@ import {
 } from '@/lib/workbench/chapter-flow';
 
 export function WorkbenchChapterRenderer() {
-  const { caseModule, situation } = useWorkbenchScope();
+  const { caseModule } = useWorkbenchScope();
   const [openSet, setOpenSet] = useState<Set<WorkbenchChapterId>>(
     () => new Set(WORKBENCH_CHAPTER_FLOW.map((chapter) => chapter.id)),
   );
@@ -40,26 +41,10 @@ export function WorkbenchChapterRenderer() {
             </div>
           ) : null}
           <WorkbenchChapterShell chapter={chapter} active={openSet.has(chapter.id)} onOpen={toggleChapter}>
-            {caseModule.chapters?.[chapter.id]?.() ?? <GenericChapterContent chapterId={chapter.id} situationName={situation.name} />}
+            {caseModule.chapters?.[chapter.id]?.() ?? <StructuredChapterContent chapterId={chapter.id} />}
           </WorkbenchChapterShell>
         </div>
       ))}
-    </div>
-  );
-}
-
-function GenericChapterContent({ chapterId, situationName }: { chapterId: WorkbenchChapterId; situationName: string }) {
-  const copy: Record<WorkbenchChapterId, string> = {
-    'situation-frame': 'Frame the mandate, question, actors, constraints, and change indicators for this case.',
-    'source-receipts': 'Attach public sources, private documents, retrieved snippets, and reliability notes.',
-    'conflict-graph': 'Review graph primitives, pending proposals, provenance coverage, and confidence gaps.',
-    'dialectica-reasoning': 'Run graph-grounded recipes only after the context is strong enough to defend.',
-    'decision-product': 'Produce cited memos, briefings, talking points, and export manifests from the locked context.',
-  };
-  return (
-    <div className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-650">
-      <p className="font-semibold text-navy-900">{situationName}</p>
-      <p className="mt-1">{copy[chapterId]}</p>
     </div>
   );
 }

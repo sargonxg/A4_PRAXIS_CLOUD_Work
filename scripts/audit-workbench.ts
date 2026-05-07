@@ -12,6 +12,13 @@ const requiredFiles = [
   'src/app/app/workbench/[caseId]/ach/[achId]/page.tsx',
   'src/components/workbench/workbench-tabs.tsx',
   'src/components/workbench/workbench-tab-content.tsx',
+  'src/components/workbench/chapter-shell.tsx',
+  'src/components/workbench/chapter-renderer.tsx',
+  'src/components/workbench/StructuredChapterContent.tsx',
+  'src/components/workbench/DeskTab.tsx',
+  'src/components/workbench/ContextTab.tsx',
+  'src/components/workbench/workbench-surface-elements.tsx',
+  'src/lib/workbench/surface-state.ts',
   'src/components/sats/ACHWorkbench.tsx',
   'src/components/sats/ACHMatrix.tsx',
   'src/app/api/sats/ach/route.ts',
@@ -65,6 +72,28 @@ for (const path of ['src/components/workbench/chapter-shell.tsx', 'src/component
   const text = existsSync(path) ? readFileSync(path, 'utf8') : '';
   if (/syria|nordalia/i.test(text)) {
     throw new Error(`Generic workbench component contains case-specific copy/imports: ${path}`);
+  }
+}
+
+const tabContent = readFileSync('src/components/workbench/workbench-tab-content.tsx', 'utf8');
+for (const marker of ['<DeskTab />', '<ContextTab />', '<WorkbenchChapterRenderer />']) {
+  if (!tabContent.includes(marker)) {
+    throw new Error(`Workbench tab content missing Pack 26 surface dispatch: ${marker}`);
+  }
+}
+
+const chapterRenderer = readFileSync('src/components/workbench/chapter-renderer.tsx', 'utf8');
+if (!chapterRenderer.includes('<StructuredChapterContent chapterId={chapter.id} />')) {
+  throw new Error('Chapters must use structured case-aware fallback content for user cases.');
+}
+if (/GenericChapterContent|The default case flow/i.test(chapterRenderer)) {
+  throw new Error('Chapter renderer still contains generic placeholder fallback copy.');
+}
+
+const surfaceState = readFileSync('src/lib/workbench/surface-state.ts', 'utf8');
+for (const marker of ['buildWorkbenchSurfaceState', 'openQuestions', 'nextActions', 'chapterFacts']) {
+  if (!surfaceState.includes(marker)) {
+    throw new Error(`Pack 26 surface state helper missing marker: ${marker}`);
   }
 }
 

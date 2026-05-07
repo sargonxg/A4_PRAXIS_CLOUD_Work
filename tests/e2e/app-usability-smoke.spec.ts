@@ -45,9 +45,17 @@ test('demo workbench exposes context, ontology, graph, tools, and memo surfaces'
   await expect(page.getByText('Example case')).toBeVisible();
   await expect(page.getByText('Context health').first()).toBeVisible();
 
+  await page.getByRole('button', { name: /^Desk$/i }).click();
+  await expect(page.getByTestId('workbench-desk-surface')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Desk$/i })).toBeVisible();
+  await expect(page.getByText(/Next best actions/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Review queue$/i })).toBeVisible();
+
   await page.getByRole('button', { name: /^Context$/i }).click();
+  await expect(page.getByTestId('workbench-context-surface')).toBeVisible();
   await expect(page.getByRole('heading', { name: /^Context Studio$/i })).toBeVisible();
-  await expect(page.getByText(/Build the case before analysis/i)).toBeVisible();
+  await expect(page.getByText(/Shape the scope/i)).toBeVisible();
+  await expect(page.getByText(/Frame editor/i)).toBeVisible();
 
   await page.getByRole('button', { name: /^Ontology$/i }).click();
   await expect(page.getByTestId('ontology-schema-viewer')).toBeVisible();

@@ -8,6 +8,8 @@ import { OntologySchemaViewer } from '@/components/ontology/OntologySchemaViewer
 import { ACHIndex } from '@/components/sats/ACHWorkbench';
 import { ToolMarketplace } from '@/components/tools/ToolMarketplace';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
+import { ContextTab } from '@/components/workbench/ContextTab';
+import { DeskTab } from '@/components/workbench/DeskTab';
 import { ToolGate } from '@/components/workbench/tool-gate';
 import { WorkbenchChapterRenderer } from '@/components/workbench/chapter-renderer';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
@@ -16,6 +18,8 @@ import type { WorkbenchTabId } from '@/types/workbench';
 
 export function WorkbenchTabContent({ activeTab }: { activeTab: WorkbenchTabId }) {
   if (activeTab === 'chapters') return <WorkbenchChapterRenderer />;
+  if (activeTab === 'desk') return <DeskTab />;
+  if (activeTab === 'context') return <ContextTab />;
   if (activeTab === 'ontology') return <OntologySchemaViewer />;
   if (activeTab === 'graph') return <WorkbenchGraphPanel />;
   if (activeTab === 'ach') return <WorkbenchACHPanel />;
