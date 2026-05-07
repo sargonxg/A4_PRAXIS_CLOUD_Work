@@ -10,7 +10,7 @@ import type { MemoBlock, MemoTemplateId, MemoVersion } from '@/types/memo';
 import { cn } from '@/lib/utils/cn';
 
 export function MemoStudio() {
-  const { caseModule } = useWorkbenchScope();
+  const { caseId, caseModule } = useWorkbenchScope();
   const { user } = useAuth();
   const templates = listMemoTemplates();
   const [selectedTemplateId, setSelectedTemplateId] = useState<MemoTemplateId>('policy-memo');
@@ -21,6 +21,7 @@ export function MemoStudio() {
   const [blocks, setBlocks] = useState<MemoBlock[]>(generatedBlocks);
   const [versions, setVersions] = useState<MemoVersion[]>([]);
   const [status, setStatus] = useState('Draft ready');
+  const [backendMemoId, setBackendMemoId] = useState<string | null>(null);
   const title = `${templates.find((template) => template.id === selectedTemplateId)?.label ?? 'Memo'}: ${caseModule.manifest.name}`;
   const storageKey = `praxis:memo:${caseModule.id}:${selectedTemplateId}`;
   const graphSnapshotId = `${caseModule.id}:${caseModule.truthLayers.claim.lastUpdated}`;
@@ -140,6 +141,56 @@ export function MemoStudio() {
       changeNote: note,
     });
     persist(blocks, [...versions, version], `Version ${version.versionNumber} saved`, note);
+    void persistChapterMemo(note, blocks);
+  }
+
+  async function persistChapterMemo(changeNote: string, nextBlocks: MemoBlock[]): Promise<string | null> {
+    const response = await fetch('/api/backend/chapters/memos', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        case_id: caseId,
+        title,
+        body: memoBlocksToMarkdown(title, nextBlocks),
+        source_kind: 'memo-studio',
+        metadata: {
+          templateId: selectedTemplateId,
+          graphSnapshotId,
+          changeNote,
+          blockCount: nextBlocks.length,
+        },
+      }),
+    }).catch(() => null);
+    const payload = await response?.json().catch(() => ({}));
+    if (response?.ok && payload.memo?.id) {
+      setBackendMemoId(payload.memo.id);
+      setStatus(payload.cognee?.ok ? 'Chapter memo saved to memory' : 'Chapter memo saved; memory queued');
+      return payload.memo.id;
+    }
+    setStatus('Draft saved locally; chapter memo backend unavailable');
+    return null;
+  }
+
+  async function suggestContent() {
+    const memoId = backendMemoId ?? await persistChapterMemo('Prepared for content suggestion', blocks);
+    if (!memoId) {
+      setStatus('Save a version before requesting memo assistance');
+      return;
+    }
+    const response = await fetch(`/api/backend/chapters/memos/${encodeURIComponent(memoId)}/assist`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        case_id: caseId,
+        query: `Improve the memo "${title}" with source-grounded additions.`,
+      }),
+    }).catch(() => null);
+    const payload = await response?.json().catch(() => ({}));
+    if (response?.ok) {
+      setStatus((payload.hits?.length ?? 0) > 0 ? `Memo assistance found ${payload.hits.length} source hit(s)` : 'Memo assistance ran; no source hits yet');
+      return;
+    }
+    setStatus('Memo assistance unavailable');
   }
 
   function refreshFromGraph() {
@@ -236,6 +287,10 @@ export function MemoStudio() {
           <button type="button" onClick={() => saveVersion('Manual save')} className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600">
             <Save className="h-4 w-4" />
             Save version
+          </button>
+          <button type="button" onClick={() => void suggestContent()} className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600">
+            <RefreshCw className="h-4 w-4" />
+            Suggest content
           </button>
           <button type="button" onClick={exportMarkdown} className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-2 text-xs font-semibold text-white">
             <Download className="h-4 w-4" />

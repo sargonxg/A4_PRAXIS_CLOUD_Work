@@ -395,6 +395,10 @@
     "mtime": 1778171112.2766504,
     "hash": "946d2230ceb42693223328d4fe3d05f6"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\backend\\migrations\\versions\\0016_workspace_chapter_products.py": {
+    "mtime": 1778172474.677768,
+    "hash": "af72a72dbb345d9894f800227af5b304"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\backend\\ontology\\base.py": {
     "mtime": 1778132521.2622633,
     "hash": "db8c4addf689d3842ce6247ccfc50426"
@@ -1176,8 +1180,8 @@
     "hash": "6a3f5bd86de3f7d029c88fe3f60f5741"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-workbench.ts": {
-    "mtime": 1778172112.7120707,
-    "hash": "5660e2453e5212eeb00a1e8951680450"
+    "mtime": 1778172943.101789,
+    "hash": "cb54f3b0643da063f7f962aeda6409c8"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\auth-doctor.ts": {
     "mtime": 1778081604.8241844,
@@ -3040,8 +3044,8 @@
     "hash": "35540559f873b17a9f38cd0ed95a9831"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\memo\\MemoStudio.tsx": {
-    "mtime": 1778093562.4229329,
-    "hash": "64ce8f0aae9d56d21df4364156837dd9"
+    "mtime": 1778172924.484665,
+    "hash": "f2330dacd8f2bd5961b441afab9a314d"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\memory\\MemoryPanel.tsx": {
     "mtime": 1778165671.0834923,
@@ -3644,12 +3648,12 @@
     "hash": "f6a1a28177003a7ef6cd9fd12c99f219"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\workbench\\LibraryTab.tsx": {
-    "mtime": 1778147020.5709088,
-    "hash": "b74c74aea44c6d7bf73631b4c09e4525"
+    "mtime": 1778172771.685466,
+    "hash": "165804dca2a977fbdac81411acf8a925"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\workbench\\ResearchTab.tsx": {
-    "mtime": 1778147042.934168,
-    "hash": "50e1fcea30fab1be3a9bfa220fc8f3ef"
+    "mtime": 1778172861.2348175,
+    "hash": "a9179e12d3bd7658c99a144388eda09e"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\workbench\\StructuredChapterContent.tsx": {
     "mtime": 1778169859.6329205,
@@ -3684,8 +3688,8 @@
     "hash": "ec873abca56a6c1a238a88fed06109cc"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\workbench\\context\\DocumentUploadInline.tsx": {
-    "mtime": 1778145422.7520835,
-    "hash": "076e66dd204d544036aada222ab32c4d"
+    "mtime": 1778172730.3562346,
+    "hash": "09f2f00a90bcc6a555102ebbf578ec6f"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\components\\workbench\\context\\FrameEditor.tsx": {
     "mtime": 1778172097.4182835,
@@ -5116,8 +5120,8 @@
     "hash": "e03c511d8bc22cb9c34ccf9acbb29491"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\workbench\\library-state.ts": {
-    "mtime": 1778146998.816316,
-    "hash": "d3bd8e88c6b912a88aae7fefa7e1f3f6"
+    "mtime": 1778172730.3562346,
+    "hash": "4bc1bd7143eaa269b89ffe07b42b05d4"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\src\\lib\\workbench\\open-questions-store.ts": {
     "mtime": 1778145727.3761451,
@@ -6428,8 +6432,8 @@
     "hash": "14562a85cd365582b94083ccc906c86a"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-07-WORKSPACE_TABS_CHAPTERS_SECOND_PASS.md": {
-    "mtime": 1778172014.2167077,
-    "hash": "3e3b783f5f5b1394492716be43ce6286"
+    "mtime": 1778172943.101789,
+    "hash": "690ee452109793bbb4e9bee3d1f52670"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\codebase-app-docs-audit-2026-05-06.md": {
     "mtime": 1778081604.7595656,
@@ -6648,8 +6652,8 @@
     "hash": "a3b63e9cb0de4689c86d499af4177d8b"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\implementation\\WORKSPACE_TABS_CHAPTERS_FOUNDATION.md": {
-    "mtime": 1778172072.0707986,
-    "hash": "806e22f4a69b4b7b77f04c35742bcb7a"
+    "mtime": 1778172943.101789,
+    "hash": "5b8e63cd24b3e1acfe69c7c4b460fbdb"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\launch\\ANNOUNCEMENT.md": {
     "mtime": 1778134643.7986267,

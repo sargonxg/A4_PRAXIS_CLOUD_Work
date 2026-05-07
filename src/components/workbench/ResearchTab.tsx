@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ExternalLink, Loader2, Search, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
@@ -14,6 +14,14 @@ import {
 } from '@/lib/workbench/research-state';
 import { cn } from '@/lib/utils/cn';
 
+interface BackendResearchThread {
+  id: string;
+  question: string;
+  status: string;
+  memory_coverage?: number | string | null;
+  updated_at?: string;
+}
+
 export function ResearchTab() {
   const { caseId, caseModule } = useWorkbenchScope();
   const [question, setQuestion] = useState(`${caseModule.manifest.name} latest source updates`);
@@ -23,8 +31,15 @@ export function ResearchTab() {
   const [selectedResults, setSelectedResults] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [ingestNote, setIngestNote] = useState<string | null>(null);
+  const [threads, setThreads] = useState<BackendResearchThread[]>([]);
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [threadNote, setThreadNote] = useState<string | null>(null);
   const fallbackPlan = useMemo(() => buildResearchPlan(caseModule, question), [caseModule, question]);
   const [plan, setPlan] = useState(fallbackPlan);
+
+  useEffect(() => {
+    void refreshThreads();
+  }, [caseId]);
 
   function toggleSource(sourceId: string) {
     setSelectedSources((current) => current.includes(sourceId) ? current.filter((item) => item !== sourceId) : [...current, sourceId]);
@@ -56,6 +71,63 @@ export function ResearchTab() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function refreshThreads() {
+    const response = await fetch(`/api/backend/chapters/research/threads?case_id=${encodeURIComponent(caseId)}`).catch(() => null);
+    const payload = await response?.json().catch(() => ({}));
+    if (response?.ok && Array.isArray(payload.threads)) {
+      setThreads(payload.threads);
+      setActiveThreadId((current) => current ?? payload.threads[0]?.id ?? null);
+    }
+  }
+
+  async function createThread() {
+    setThreadNote('Opening research thread...');
+    const response = await fetch('/api/backend/chapters/research/threads', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ case_id: caseId, question }),
+    }).catch(() => null);
+    const payload = await response?.json().catch(() => ({}));
+    if (response?.ok && payload.thread) {
+      setThreads((current) => [payload.thread, ...current.filter((thread) => thread.id !== payload.thread.id)]);
+      setActiveThreadId(payload.thread.id);
+      setThreadNote('Research thread opened with Cognee session continuity.');
+      return;
+    }
+    setThreadNote('Research threads are unavailable in this session; source scout still works.');
+  }
+
+  async function recallThread(threadId: string) {
+    setThreadNote('Running graph recall...');
+    const response = await fetch(`/api/backend/chapters/research/threads/${encodeURIComponent(threadId)}/recall`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query: question }),
+    }).catch(() => null);
+    const text = await response?.text().catch(() => '') ?? '';
+    if (response?.ok) {
+      setThreadNote(text.includes('search_unavailable') ? 'Recall turn saved; Cognee search is queued/offline.' : 'Recall turn completed and was persisted.');
+      await refreshThreads();
+      return;
+    }
+    setThreadNote('Recall could not be completed.');
+  }
+
+  async function closeThread(threadId: string) {
+    setThreadNote('Closing thread into memory...');
+    const response = await fetch(`/api/backend/chapters/research/threads/${encodeURIComponent(threadId)}/close`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ resolution: question, confidence: 0.7 }),
+    }).catch(() => null);
+    if (response?.ok) {
+      setThreadNote('Thread closed and memoized or queued for Cognee memory.');
+      await refreshThreads();
+      return;
+    }
+    setThreadNote('Thread close could not be completed.');
   }
 
   async function stageIngest(resultIds: string[]) {
@@ -146,6 +218,7 @@ export function ResearchTab() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
+        <div className="space-y-4">
         <div className="rounded-lg border border-slate-200 bg-white p-4">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-gold-700" />
@@ -168,6 +241,62 @@ export function ResearchTab() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-navy-950">Research threads</h3>
+            <button
+              type="button"
+              onClick={() => void createThread()}
+              className="rounded-md bg-navy-900 px-3 py-2 text-xs font-semibold text-white"
+            >
+              Open thread
+            </button>
+          </div>
+          <div className="mt-3 space-y-2">
+            {threads.length ? threads.slice(0, 5).map((thread) => (
+              <button
+                key={thread.id}
+                type="button"
+                onClick={() => {
+                  setActiveThreadId(thread.id);
+                  setQuestion(thread.question);
+                }}
+                className={cn(
+                  'w-full rounded-md border p-3 text-left',
+                  activeThreadId === thread.id ? 'border-navy-500 bg-navy-50' : 'border-slate-200 bg-slate-50',
+                )}
+              >
+                <p className="text-sm font-semibold text-navy-950">{thread.question}</p>
+                <p className="mt-1 text-xs font-semibold text-slate-700">
+                  {thread.status} · coverage {Math.round(Number(thread.memory_coverage ?? 0) * 100)}%
+                </p>
+              </button>
+            )) : (
+              <p className="text-sm leading-6 text-slate-700">No backend research threads yet. Open one from the active question to start recall/memify continuity.</p>
+            )}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={!activeThreadId}
+              onClick={() => activeThreadId ? void recallThread(activeThreadId) : undefined}
+              className="rounded-md border border-navy-300 px-3 py-2 text-xs font-semibold text-navy-900 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Recall graph
+            </button>
+            <button
+              type="button"
+              disabled={!activeThreadId}
+              onClick={() => activeThreadId ? void closeThread(activeThreadId) : undefined}
+              className="rounded-md border border-navy-300 px-3 py-2 text-xs font-semibold text-navy-900 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Close to memory
+            </button>
+          </div>
+          {threadNote ? <p className="mt-3 text-sm font-semibold text-navy-900">{threadNote}</p> : null}
+        </div>
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-white">

@@ -249,6 +249,34 @@ for (const marker of ['FrameEditor', 'ScopeAdvisory', 'SourcePreferences', 'Docu
   }
 }
 
+const documentUploadInline = readFileSync('src/components/workbench/context/DocumentUploadInline.tsx', 'utf8');
+for (const marker of ['tabs/library/ingest', 'FormData', 'Memory layer queued']) {
+  if (!documentUploadInline.includes(marker)) {
+    throw new Error(`Tabs guide document upload handoff missing marker: ${marker}`);
+  }
+}
+
+const libraryTabComponent = readFileSync('src/components/workbench/LibraryTab.tsx', 'utf8');
+for (const marker of ['tabs/library?case_id', 'tabs/library/ingest', 're-extract', 'Remove receipt', 'sourceReceiptToArtifact']) {
+  if (!libraryTabComponent.includes(marker)) {
+    throw new Error(`Tabs guide Library frontend missing backend marker: ${marker}`);
+  }
+}
+
+const researchTabComponent = readFileSync('src/components/workbench/ResearchTab.tsx', 'utf8');
+for (const marker of ['chapters/research/threads', 'Recall graph', 'Close to memory', 'Research threads']) {
+  if (!researchTabComponent.includes(marker)) {
+    throw new Error(`Chapters guide Research frontend missing backend marker: ${marker}`);
+  }
+}
+
+const memoStudioComponent = readFileSync('src/components/memo/MemoStudio.tsx', 'utf8');
+for (const marker of ['chapters/memos', 'chapters/memos/${encodeURIComponent(memoId)}/assist', 'Suggest content', 'memo-studio']) {
+  if (!memoStudioComponent.includes(marker)) {
+    throw new Error(`Chapters guide Memo Studio missing backend marker: ${marker}`);
+  }
+}
+
 const openQuestionsRoute = readFileSync('src/app/api/cases/[caseId]/open-questions/route.ts', 'utf8');
 for (const marker of ['withAuth', 'listOpenQuestions', 'createOpenQuestion']) {
   if (!openQuestionsRoute.includes(marker)) {

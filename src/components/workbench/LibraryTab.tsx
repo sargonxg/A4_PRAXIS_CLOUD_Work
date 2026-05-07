@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Archive, ExternalLink, FileText, Plus, Search } from 'lucide-react';
+import { Archive, ExternalLink, FileText, Loader2, Plus, RefreshCw, Search, Trash2, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
@@ -17,14 +17,37 @@ const TYPE_LABELS: Record<LibraryArtifactType, string> = {
   export: 'Exports',
 };
 
+interface BackendSourceReceipt {
+  id: string;
+  title?: string;
+  source_uri?: string | null;
+  source_type?: string | null;
+  receipt_status?: string | null;
+  cognee_document_id?: string | null;
+  embeddings_count?: number | null;
+  nodes_extracted?: number | null;
+  ontology_valid_pct?: number | string | null;
+  metadata?: Record<string, unknown> | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export function LibraryTab() {
   const { caseId, caseModule } = useWorkbenchScope();
   const [query, setQuery] = useState('');
   const [activeTypes, setActiveTypes] = useState<LibraryArtifactType[]>(['source', 'document', 'claim', 'memo', 'export']);
   const [selected, setSelected] = useState<LibraryArtifact | null>(null);
   const [savedClaims, setSavedClaims] = useState<SavedClaim[]>([]);
+  const [backendSources, setBackendSources] = useState<BackendSourceReceipt[]>([]);
   const [claimNote, setClaimNote] = useState<string | null>(null);
-  const artifacts = useMemo(() => buildLibraryArtifacts(caseModule, caseId, savedClaims), [caseId, caseModule, savedClaims]);
+  const [sourceNote, setSourceNote] = useState<string | null>(null);
+  const [sourceBusy, setSourceBusy] = useState(false);
+  const backendArtifacts = useMemo(() => backendSources.map(sourceReceiptToArtifact), [backendSources]);
+  const artifacts = useMemo(() => {
+    const local = buildLibraryArtifacts(caseModule, caseId, savedClaims);
+    const backendIds = new Set(backendArtifacts.map((artifact) => artifact.id));
+    return [...backendArtifacts, ...local.filter((artifact) => !backendIds.has(artifact.id))];
+  }, [backendArtifacts, caseId, caseModule, savedClaims]);
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return artifacts.filter((artifact) => {
@@ -58,6 +81,72 @@ export function LibraryTab() {
       ignore = true;
     };
   }, [caseId]);
+
+  useEffect(() => {
+    void refreshBackendSources();
+  }, [caseId]);
+
+  async function refreshBackendSources() {
+    const response = await fetch(`/api/backend/tabs/library?case_id=${encodeURIComponent(caseId)}`).catch(() => null);
+    const payload = await response?.json().catch(() => ({}));
+    if (response?.ok && Array.isArray(payload.sources)) {
+      setBackendSources(payload.sources);
+    }
+  }
+
+  async function uploadSource(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    setSourceBusy(true);
+    setSourceNote(`Uploading ${file.name} to Library...`);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await fetch(`/api/backend/tabs/library/ingest?case_id=${encodeURIComponent(caseId)}`, { method: 'POST', body: formData });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error ?? 'upload failed');
+      setSourceNote(payload.status === 'ingested' ? `${file.name} ingested.` : `${file.name} saved; memory layer queued.`);
+      await refreshBackendSources();
+    } catch {
+      setSourceNote('Upload could not reach the Library backend. Existing demo artifacts remain visible.');
+    } finally {
+      setSourceBusy(false);
+    }
+  }
+
+  async function reextractSelected() {
+    if (!selected?.backendSourceId) return;
+    setSourceBusy(true);
+    setSourceNote(`Re-extracting ${selected.title}...`);
+    try {
+      const response = await fetch(`/api/backend/tabs/library/${encodeURIComponent(selected.backendSourceId)}/re-extract?case_id=${encodeURIComponent(caseId)}`, { method: 'POST' });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error ?? 're-extract failed');
+      setSourceNote(payload?.cognee?.ok ? 'Re-extraction requested.' : 'Re-extraction queued for the memory layer.');
+      await refreshBackendSources();
+    } catch {
+      setSourceNote('Re-extraction could not be requested.');
+    } finally {
+      setSourceBusy(false);
+    }
+  }
+
+  async function deleteSelected() {
+    if (!selected?.backendSourceId) return;
+    setSourceBusy(true);
+    setSourceNote(`Removing ${selected.title} from active Library receipts...`);
+    try {
+      const response = await fetch(`/api/backend/tabs/library/${encodeURIComponent(selected.backendSourceId)}?case_id=${encodeURIComponent(caseId)}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('delete failed');
+      setSelected(null);
+      setSourceNote('Source receipt marked deleted.');
+      await refreshBackendSources();
+    } catch {
+      setSourceNote('Source receipt could not be removed.');
+    } finally {
+      setSourceBusy(false);
+    }
+  }
 
   async function saveCaseFrameClaim() {
     const text = caseModule.situation.description || caseModule.manifest.summary;
@@ -101,6 +190,11 @@ export function LibraryTab() {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-navy-900 px-3 py-2 text-xs font-semibold text-white">
+            {sourceBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            Upload source
+            <input type="file" accept=".pdf,.docx,.txt,.md,.csv" className="hidden" onChange={(event) => void uploadSource(event.target.files)} />
+          </label>
           <button
             type="button"
             onClick={() => void saveCaseFrameClaim()}
@@ -109,7 +203,16 @@ export function LibraryTab() {
             <Plus className="h-4 w-4" />
             Save case-frame claim
           </button>
+          <button
+            type="button"
+            onClick={() => void refreshBackendSources()}
+            className="inline-flex items-center gap-2 rounded-md border border-navy-300 bg-white px-3 py-2 text-xs font-semibold text-navy-900"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh receipts
+          </button>
           {claimNote ? <p className="text-sm font-semibold text-navy-900">{claimNote}</p> : null}
+          {sourceNote ? <p className="text-sm font-semibold text-navy-900">{sourceNote}</p> : null}
         </div>
 
         <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
@@ -190,6 +293,26 @@ export function LibraryTab() {
                   <ExternalLink className="h-4 w-4" />
                 </a>
               ) : null}
+              {selected.backendSourceId ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void reextractSelected()}
+                    className="inline-flex items-center gap-2 rounded-md border border-navy-300 px-3 py-2 text-xs font-semibold text-navy-900"
+                  >
+                    {sourceBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                    Re-extract
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void deleteSelected()}
+                    className="inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-xs font-semibold text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Remove receipt
+                  </button>
+                </div>
+              ) : null}
             </div>
           ) : (
             <div>
@@ -201,6 +324,32 @@ export function LibraryTab() {
       </div>
     </div>
   );
+}
+
+function sourceReceiptToArtifact(source: BackendSourceReceipt): LibraryArtifact {
+  const metadata = source.metadata ?? {};
+  const filename = typeof metadata.filename === 'string' ? metadata.filename : undefined;
+  const status = source.receipt_status ?? 'staged';
+  return {
+    id: `source:${source.id}`,
+    backendSourceId: source.id,
+    type: 'source',
+    title: source.title ?? filename ?? 'Untitled source receipt',
+    summary: status === 'deleted'
+      ? 'Source receipt has been removed from the active library view.'
+      : 'Source receipt stored through the Library substrate pipeline.',
+    date: source.updated_at ?? source.created_at ?? new Date().toISOString(),
+    badge: status,
+    href: source.source_uri ?? undefined,
+    meta: {
+      Status: status,
+      Type: source.source_type ?? 'document',
+      Cognee: source.cognee_document_id ? 'document linked' : 'queued/offline',
+      Embeddings: String(source.embeddings_count ?? 0),
+      Nodes: String(source.nodes_extracted ?? 0),
+      'Ontology valid': source.ontology_valid_pct === null || source.ontology_valid_pct === undefined ? 'not scored' : `${Math.round(Number(source.ontology_valid_pct) * 100)}%`,
+    },
+  };
 }
 
 function formatDate(value: string): string {

@@ -11,6 +11,7 @@ export interface LibraryArtifact {
   date: string;
   badge: string;
   href?: string;
+  backendSourceId?: string;
   meta: Record<string, string>;
 }
 

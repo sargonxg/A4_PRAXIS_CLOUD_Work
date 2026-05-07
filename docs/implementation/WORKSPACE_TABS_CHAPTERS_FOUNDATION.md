@@ -57,7 +57,10 @@ Chapters are the working panes on the desk:
 - Context now saves the guide's four-field situation frame: what is happening, why it matters, what would change the assessment, and the policy question.
 - Situation-frame writes are remembered as a Cognee `Situation` data point and queued in `cognee_pending_writes` when Cognee is disabled or unavailable.
 - Library now has authenticated ingest, list, detail, re-extract, and soft-delete endpoints. Ingest calls Cognee `add` plus `cognify` when available, and records disabled/queued status honestly.
+- Library's workbench UI now uses those backend source receipt endpoints for upload, refresh, re-extract, and remove-receipt actions.
 - Chapters now expose backend APIs for Desk Q&A, Research threads and recall, Memos, Drafts, ACH, Tools recipe runs, and Boardroom briefings.
+- Research's workbench UI now opens backend research threads, runs graph recall, and closes threads into the memify path.
+- Memo Studio now saves chapter memos through the backend memo contract and can request source-grounded assistance through the memo assist route.
 - Tools now expose the 12 DIALECTICA recipes: stakeholder map, contradiction scan, constraint leverage map, commitment tracker, narrative arc, ambiguity audit, red-team counterclaim, counterfactual branch, evidence gap finder, policy option generator, risk weighting, and decision memo synthesis.
 - MCP read surfaces now include research threads, memos, and drafts for agent/tool context interop.
 - Legacy chapter targets are no longer encoded as `?tab=` links; substrate tabs stay in the tab query and chapters use the workbench chapter rail/hash entrypoints.
@@ -80,6 +83,6 @@ Known remaining work:
 
 - Replace stubbed SSE coach/desk streams with live LangGraph subgraphs.
 - Apply migrations `0015_workspace_tabs_chapters.py` and `0016_workspace_chapter_products.py` in staging/production before relying on the SQL endpoints.
-- Build full frontend controls for every new chapter endpoint; the backend contract is present, while several existing panes still use local/demo state until connected.
+- Build full frontend controls for the remaining Draft, ACH, Tools, and Boardroom backend endpoints; Library, Research, and Memo Studio are now connected.
 - Wire the isolated live Cognee service behind `backend/services/cognee_memory.py`; current routes are deliberately disabled-safe and queue work rather than failing user flows.
 - Add browser e2e coverage for tab overlays, source ingest, research recall, memo assist, draft cite/export, ACH suggestions, recipe runs, and boardroom briefings.

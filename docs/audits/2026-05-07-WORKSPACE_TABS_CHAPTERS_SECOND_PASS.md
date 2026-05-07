@@ -20,10 +20,19 @@ Source prompts:
 - Legacy chapter `?tab=` links were removed so the four-tab contract remains clean.
 - Audit scripts were expanded to assert the new endpoints, recipes, MCP reads, four-field context editor, and absence of legacy chapter tab links.
 
+## Follow-Up Frontend Wiring
+
+- Context's inline document upload now posts to `/api/backend/tabs/library/ingest`, so upload handoffs create Library source receipts instead of using the older document-only endpoint.
+- Library now reads backend source receipts from `/api/backend/tabs/library`, displays Cognee/embedding/node status fields, uploads files through the Library ingest route, and exposes re-extract plus remove-receipt actions.
+- Research now lists backend research threads, opens a thread from the active question, runs recall through `/api/backend/chapters/research/threads/{threadId}/recall`, and closes a thread through the memify path.
+- Memo Studio now writes saved/exported memo versions to `/api/backend/chapters/memos` and includes a "Suggest content" action through `/api/backend/chapters/memos/{memoId}/assist`.
+- `audit:workbench` now asserts the frontend/backend wiring for Library ingest/source management and Research thread recall.
+
 ## Still Not Complete
 
 - Live Cognee execution is not inside this monolith. The application now degrades and queues correctly, but the isolated `praxis-cognee` service still has to fulfill live `remember/add/cognify/search/memify/forget`.
 - Several chapter frontends still consume existing local/demo stores rather than the new backend endpoints.
+- Draft, ACH, Tools, and Boardroom still need the same level of frontend/backend connection that Library, Research, and Memo Studio received in this follow-up pass.
 - LangGraph orchestration is represented by subgraph skeletons and event logging; it is not yet a full durable multi-agent execution graph.
 - Migrations `0015_workspace_tabs_chapters.py` and `0016_workspace_chapter_products.py` must be applied in staging/production before these SQL-backed endpoints are production-ready.
 - Browser e2e tests for the new source ingest, research recall, memo assist, draft cite/export, ACH suggestion, tools recipe, and boardroom briefing routes remain to be added.

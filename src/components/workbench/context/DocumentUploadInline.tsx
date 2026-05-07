@@ -15,9 +15,14 @@ export function DocumentUploadInline({ caseId }: { caseId: string }) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('situationId', caseId);
-      const response = await fetch('/api/documents/upload', { method: 'POST', body: formData });
-      setStatus(response.ok ? `${file.name} uploaded for extraction.` : `${file.name} upload failed; try again from Library.`);
+      const response = await fetch(`/api/backend/tabs/library/ingest?case_id=${encodeURIComponent(caseId)}`, { method: 'POST', body: formData });
+      const payload = await response.json().catch(() => ({}));
+      if (response.ok) {
+        const layer = payload?.status === 'ingested' ? 'Cognee ingest started.' : 'Memory layer queued; source receipt saved.';
+        setStatus(`${file.name} uploaded. ${layer}`);
+      } else {
+        setStatus(`${file.name} upload failed; try again from Library.`);
+      }
     } catch {
       setStatus('Upload failed; try again from Library.');
     } finally {
