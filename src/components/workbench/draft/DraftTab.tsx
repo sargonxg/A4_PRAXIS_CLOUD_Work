@@ -21,7 +21,7 @@ import {
 } from '@/lib/workbench/draft-assembly-state';
 
 export function DraftTab() {
-  const { caseModule, user } = useWorkbenchScope();
+  const { caseId, caseModule, user } = useWorkbenchScope();
   const memoOptions = useMemo(() => buildDraftMemoOptions(caseModule), [caseModule]);
   const appendices = useMemo(() => buildDraftAppendices(caseModule), [caseModule]);
   const [selectedMemoIds, setSelectedMemoIds] = useState<string[]>(() => memoOptions.slice(0, 2).map((memo) => memo.id));
@@ -35,6 +35,7 @@ export function DraftTab() {
     embedAuditManifest: true,
   });
   const [redactions, setRedactions] = useState(() => defaultBlockRedactions(memoOptions));
+  const [exportNote, setExportNote] = useState<string | null>(null);
   const selectedMemos = memoOptions.filter((memo) => selectedMemoIds.includes(memo.id));
 
   function toggleMemo(memoId: string) {
@@ -70,6 +71,33 @@ export function DraftTab() {
       redactions,
       settings,
     });
+    const plainText = renderDraftPlainText(coverPage.title, markdown);
+    const persistResponse = await fetch(`/api/cases/${encodeURIComponent(caseId)}/draft/export`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        title: coverPage.title,
+        format: settings.format,
+        audience: settings.audience,
+        markdown,
+        plainText,
+        primaryMemoId,
+        memoIds: selectedMemos.map((memo) => memo.id),
+        appendixIds: selectedAppendixIds,
+        coverPage,
+        embedC2pa: settings.embedC2pa,
+        embedAuditManifest: settings.embedAuditManifest,
+        redactionSummary: redactions,
+      }),
+    }).catch(() => null);
+    const persistPayload = await persistResponse?.json().catch(() => ({}));
+    if (persistResponse?.ok) {
+      setExportNote(persistPayload.mode === 'persisted'
+        ? 'Export manifest persisted to this case library.'
+        : 'Demo export manifest generated for this session.');
+    } else {
+      setExportNote('Download prepared locally; server export persistence was unavailable.');
+    }
 
     const filenameRoot = `${caseModule.id}-briefing-package`;
     if (settings.format === 'markdown') {
@@ -79,7 +107,6 @@ export function DraftTab() {
 
     if (settings.format === 'docx') {
       const [{ Document, HeadingLevel, Packer, Paragraph }] = await Promise.all([import('docx')]);
-      const plainText = renderDraftPlainText(coverPage.title, markdown);
       const doc = new Document({
         sections: [{
           children: plainText.split('\n').filter(Boolean).map((line, index) => (
@@ -101,7 +128,7 @@ export function DraftTab() {
     let y = margin;
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(10);
-    for (const line of renderDraftPlainText(coverPage.title, markdown).split('\n')) {
+    for (const line of plainText.split('\n')) {
       const wrapped = pdf.splitTextToSize(line || ' ', 500) as string[];
       for (const segment of wrapped) {
         if (y > 760) {
@@ -161,7 +188,7 @@ export function DraftTab() {
       <ExportControls
         settings={settings}
         disabled={selectedMemos.length === 0}
-        exportSummary={exportSummary}
+        exportSummary={exportNote ? `${exportSummary} ${exportNote}` : exportSummary}
         onSettingsChange={setSettings}
         onExport={exportPackage}
       />

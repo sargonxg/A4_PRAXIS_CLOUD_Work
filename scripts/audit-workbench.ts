@@ -34,6 +34,9 @@ const requiredFiles = [
   'src/components/workbench/draft/AppendixPicker.tsx',
   'src/components/workbench/draft/RedactionSettings.tsx',
   'src/components/workbench/draft/ExportControls.tsx',
+  'src/app/api/cases/[caseId]/draft/export/route.ts',
+  'src/lib/workbench/draft-export-store.ts',
+  'src/types/draft-export.ts',
   'src/components/workbench/empty-state/EmptyStateGuidance.tsx',
   'src/components/workbench/workbench-surface-elements.tsx',
   'src/lib/workbench/library-state.ts',
@@ -48,6 +51,7 @@ const requiredFiles = [
   'src/lib/workbench/empty-state-actions.ts',
   'src/lib/ontology/validator-pass-rate.ts',
   'src/lib/onboarding/case-scaffold.ts',
+  'src/lib/onboarding/case-scaffold-audit-store.ts',
   'src/types/open-questions.ts',
   'src/types/saved-claims.ts',
   'src/app/api/cases/[caseId]/context-scope/route.ts',
@@ -59,6 +63,7 @@ const requiredFiles = [
   'src/app/api/cases/[caseId]/saved-claims/route.ts',
   'src/app/api/cases/[caseId]/ontologies/route.ts',
   'src/app/api/cases/scaffold/route.ts',
+  'src/app/api/cases/scaffold/audit/route.ts',
   'src/components/onboarding/ai-first-case-creation/AiFirstCaseCreation.tsx',
   'src/components/sats/ACHWorkbench.tsx',
   'src/components/sats/ACHMatrix.tsx',
@@ -216,9 +221,23 @@ for (const marker of ['buildDraftMemoOptions', 'buildDraftAppendices', 'renderDr
 }
 
 const draftTab = readFileSync('src/components/workbench/draft/DraftTab.tsx', 'utf8');
-for (const marker of ['Briefing Assembly', 'MemosSelection', 'CoverPageEditor', 'AppendixPicker', 'RedactionSettings', 'ExportControls']) {
+for (const marker of ['Briefing Assembly', 'MemosSelection', 'CoverPageEditor', 'AppendixPicker', 'RedactionSettings', 'ExportControls', '/draft/export', 'Export manifest persisted']) {
   if (!draftTab.includes(marker)) {
     throw new Error(`Pack 28 DraftTab missing section marker: ${marker}`);
+  }
+}
+
+const draftExportRoute = readFileSync('src/app/api/cases/[caseId]/draft/export/route.ts', 'utf8');
+for (const marker of ['withAuth', 'DraftExportSchema', 'persistDraftExport', 'c2pa-ready-manifest']) {
+  if (!draftExportRoute.includes(marker)) {
+    throw new Error(`Pack 28 draft export route missing marker: ${marker}`);
+  }
+}
+
+const draftExportStore = readFileSync('src/lib/workbench/draft-export-store.ts', 'utf8');
+for (const marker of ['persistDraftExport', 'artifactKind', 'draft-briefing-package', 'contentCredentials', 'auditManifest']) {
+  if (!draftExportStore.includes(marker)) {
+    throw new Error(`Pack 28 draft export store missing marker: ${marker}`);
   }
 }
 
@@ -230,9 +249,23 @@ for (const marker of ['CaseScaffoldProposal', 'buildCaseScaffoldProposal', 'init
 }
 
 const newSituation = readFileSync('src/app/app/situations/new/page.tsx', 'utf8');
-for (const marker of ['AiFirstCaseCreation', 'Create with AI assistance', 'handleApplyScaffold', 'CreationModeChooser']) {
+for (const marker of ['AiFirstCaseCreation', 'Create with AI assistance', 'handleApplyScaffold', 'CreationModeChooser', '/api/cases/scaffold/audit']) {
   if (!newSituation.includes(marker)) {
     throw new Error(`Pack 28 new-user case creation missing marker: ${marker}`);
+  }
+}
+
+const scaffoldAuditRoute = readFileSync('src/app/api/cases/scaffold/audit/route.ts', 'utf8');
+for (const marker of ['withAuth', 'persistCaseScaffoldAudit', 'CaseScaffoldProposal', 'demo-not-persisted']) {
+  if (!scaffoldAuditRoute.includes(marker)) {
+    throw new Error(`Pack 28 scaffold audit route missing marker: ${marker}`);
+  }
+}
+
+const scaffoldAuditStore = readFileSync('src/lib/onboarding/case-scaffold-audit-store.ts', 'utf8');
+for (const marker of ['persistCaseScaffoldAudit', 'discardedCandidates', 'user-reviewed', 'acceptedCounts']) {
+  if (!scaffoldAuditStore.includes(marker)) {
+    throw new Error(`Pack 28 scaffold audit store missing marker: ${marker}`);
   }
 }
 

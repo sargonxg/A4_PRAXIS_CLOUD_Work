@@ -5,8 +5,8 @@ Target release: v1.5 backend completion
 
 ## P1 — Signed Draft Export Backend
 
-- Add `backend/services/draft_export/exporter.py` or the current Next/API equivalent.
-- Persist exported artifacts under the authenticated workspace/case export collection.
+- Extend the current Next/API export manifest endpoint into a server-rendered binary artifact pipeline.
+- Persist generated Markdown/DOCX/PDF binaries under authenticated workspace/case storage with retention metadata.
 - Add server-side C2PA signing or a clearly named substitute until C2PA credentials are provisioned.
 - Add redaction filtering tests for public/internal/restricted outputs.
 
@@ -20,7 +20,7 @@ Target release: v1.5 backend completion
 ## P1 — Review Queue And Firewall Commit For Scaffold Items
 
 - Route accepted actor and claim candidates through the existing review queue.
-- Persist rejected candidates as discarded scaffold audit events only.
+- Continue persisting rejected candidates as discarded scaffold audit events only.
 - Add symbolic firewall tests proving accepted scaffold writes cannot violate owner scope or ontology invariants.
 
 ## P2 — New-User End-To-End CI Flow

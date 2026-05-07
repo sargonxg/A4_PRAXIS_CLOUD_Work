@@ -1365,6 +1365,20 @@ export default function NewSituationPage() {
   }, []);
 
   const handleApplyScaffold = useCallback((proposal: CaseScaffoldProposal) => {
+    try {
+      fetch('/api/cases/scaffold/audit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          proposal,
+          objective: proposal.suggestedDescription,
+        }),
+      }).catch(() => {});
+    } catch {
+      // Scaffold audit persistence is advisory; applying the user-reviewed
+      // scaffold should still work if the audit endpoint is temporarily down.
+    }
+
     const acceptedActors = proposal.initialActors
       .filter((actor) => actor.accepted)
       .map((actor) => actor.name);

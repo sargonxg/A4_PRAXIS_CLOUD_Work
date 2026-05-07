@@ -109,6 +109,12 @@ test('demo workbench exposes context, ontology, graph, tools, memo, and draft su
   await expect(page.getByRole('heading', { name: /^Appendices$/i })).toBeVisible();
   await expect(page.getByRole('heading', { name: /^Redaction Settings$/i })).toBeVisible();
   await expect(page.getByRole('heading', { name: /^Export Controls$/i })).toBeVisible();
+  const download = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: /^Export package$/i }).click(),
+  ]).then(([file]) => file);
+  expect(download.suggestedFilename()).toContain('briefing-package');
+  await expect(page.getByText(/Export manifest persisted|Demo export manifest generated|Download prepared locally/i)).toBeVisible();
 
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });

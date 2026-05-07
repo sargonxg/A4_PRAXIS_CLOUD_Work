@@ -38,6 +38,8 @@ Accepted ADRs are not edited for meaning. Supersede them with a later ADR.
 - `0034-composition-chain-governance.md`
 - `0035-marketplace-cap-and-deferred-candidates.md`
 - `0036-gcp-production-verification-discipline.md`
+- `0037-draft-briefing-assembly-contract.md`
+- `0038-ai-first-case-creation-pattern.md`
 
 Active target-state gaps are tracked in:
 
