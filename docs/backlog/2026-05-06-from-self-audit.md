@@ -42,7 +42,7 @@ These block any `v1.0.0` readiness claim.
 | Embeddings | Resolve `graph_embeddings vector(1536)` vs 768-dim text embedding default. | PRAXIS engineering | v1.0 |
 | Neo4j | Add production zero-connection proof or document optional runtime posture. | PRAXIS engineering | v1.0 |
 | Firewall | Enforce synthesized labels and confidence caps at persistence/output boundaries. | PRAXIS engineering | v1.0 |
-| Tools | Convert canary IDs into executable per-tool semantic tests. | PRAXIS engineering | v1.1 |
+| Tools | Convert canary IDs into executable per-tool semantic tests. CLOSED foundation 2026-05-07 with `audit:tool-semantic-canaries`; model-backed semantic evals remain for runtime cutover. | PRAXIS engineering | v1.1 |
 | Skills | Enforce ordered canonical SKILL.md sections. | PRAXIS engineering | v1.1 |
 | Suggestions | Add recall@3 eval and rationale assertions. | PRAXIS engineering | v1.1 |
 | Empty states | Add brand-new-user sweep with screenshot ledger. | PRAXIS engineering | v1.0 |

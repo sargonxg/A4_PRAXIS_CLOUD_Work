@@ -42,7 +42,7 @@ The master charter is now preserved in-repo and its high-level support structure
 | Pack 18 Production Reality Closure | ACTIVE closure pass | Prompt preserved; canonical `/demo/syria-2024`, `/waitlist`, `/login/callback`, and `/legal/{privacy,terms,security,data-retention}` route gaps closed in code; `cross.memo-create` and `cross.memo-refresh` are now first-class marketplace foundation tools; route/tool audits expanded | Persona CI streak, production context/storage parity, review queue, specialist tool depth, Agent Engine runtime evidence, Lighthouse/axe, and canary proof remain open. |
 | Pack 19 Genuinely Useful | ACTIVE v1.1 foundation | Prompt preserved; transparency cards added to all 22 current marketplace tools; tool-run evidence drawer and run comparison foundation added; audit guards added | Pack 19 preconditions are not fully true yet: Pack 18 remaining gaps, v1.0.0 tag, 10-green persona CI streak, live Agent Engine runtime evidence, specialist handlers, claim challenge, and semantic diffing remain open. |
 | Pack 20 Dynamic Ontologies | ACTIVE v1.1 foundation | Prompt preserved; five new ontology lenses registered; registry now returns 9 ontologies; role-aware ontology picker is wired into situation creation; optional multi-ontology fields persist through the API; backend mirrors, classifier baseline, accuracy audit, and ADR 0030 added | Full multi-ontology write-path enforcement, ingestion-driven review-queue advisories, Gemini-backed 50-case classifier, sample situations, and visual snapshots remain open. |
-| Pack 21 Marketplace Depth | ACTIVE v1.2 foundation | Prompt preserved; marketplace expanded to the explicit 52-tool cap with 30 new tools; Pack 20 recommended tool ids resolved; ordered SKILL.md audit, executable canary audit, composition audit, and suggestion eval audit added; ADRs 0033 and 0034 added | The prompt lists 36 candidates while requiring 30 new / 52 total. Six original-ontology depth candidates are deferred. Real model-backed specialist handlers and persona green-streak proof remain open. |
+| Pack 21 Marketplace Depth | ACTIVE v1.2 foundation | Prompt preserved; marketplace expanded to the explicit 52-tool cap with 30 new tools; Pack 20 recommended tool ids resolved; ordered SKILL.md audit, executable canary audit, semantic canary audit, persona coverage audit, authoring-spike audit, composition audit, and suggestion eval audit added; ADRs 0033, 0034, and 0035 added | The prompt's model-backed specialist handler and 10-green CI persona proof remain open. |
 
 ## Open S0/S1 From Self-Audit
 
@@ -129,7 +129,9 @@ humanitarian, legal, and security ontology tool declarations now resolve to
 registered tools. New gates cover executable foundation canaries, static
 composition chains, and ontology recommendation recall. The remaining Pack 21
 gap is specialist model-backed runtime depth and persona-suite green-streak
-evidence.
+evidence. The second Pack 21 pass adds semantic canaries, persona coverage,
+an authoring-spike record, a green-streak ledger reset, and ADR 0035 for the six
+over-cap deferred candidates.
 
 ## Remaining Work
 
@@ -143,5 +145,5 @@ evidence.
 - Continue Pack 18 by closing the synthesized review queue, persona CI streak evidence, production storage parity evidence, marketplace specialist depth, Agent Engine runtime evidence, Lighthouse/axe evidence, and canary proof.
 - Continue Pack 19 only in slices that do not falsely depend on unresolved v1.0 evidence. Highest safe next slices: claim challenge/reasoning-step appeal, workspace preference propagation audit, and Situation Genesis baseline measurement.
 - Continue Pack 20 by adding sample situations and visual snapshots for the five new ontology lenses, then replacing the deterministic classifier baseline with the Gemini-backed 50-case classifier after the review-queue and Situation Genesis prerequisites are ready.
-- Continue Pack 21 by replacing prompt-contract foundation runs with real specialist handlers, adding semantic canary fixtures, and expanding persona browser flows over the new marketplace depth.
+- Continue Pack 21 by replacing prompt-contract foundation runs with real specialist handlers and accumulating the 10-green CI persona streak over the expanded marketplace depth.
 - Obtain owner production-readiness signature, complete staging/production signed smoke records, and only then tag `v1.0.0`.

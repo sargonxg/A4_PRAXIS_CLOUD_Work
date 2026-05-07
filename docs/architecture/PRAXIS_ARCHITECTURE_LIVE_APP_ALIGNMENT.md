@@ -49,7 +49,7 @@ This matches `docs/architecture/MODEL_SELECTION.md`,
 | Every AI route calibrated | Enforced | `npm run audit:routes` reports 66/66 calibrated AI routes |
 | Context health advisory, not blocking | Enforced | `npm run audit:context-vs-tools`, `npm run audit:context-aware-coverage` |
 | Marketplace uses ContextProvider foundation | Enforced | `src/app/api/tools/marketplace/run/route.ts`, `npm run audit:tool-marketplace` |
-| Fifty-two curated marketplace tools | Enforced | `npm run audit:tool-marketplace`, `npm run audit:tool-skills-present`, `npm run audit:tool-canary-executable`, `npm run audit:tool-composition-static`, `npm run audit:tool-suggestion-eval` |
+| Fifty-two curated marketplace tools | Enforced | `npm run audit:tool-marketplace`, `npm run audit:tool-skills-present`, `npm run audit:tool-canary-executable`, `npm run audit:tool-semantic-canaries`, `npm run audit:tool-persona-coverage`, `npm run audit:tool-composition-static`, `npm run audit:tool-suggestion-eval` |
 | UX loading/empty/error states have local gate | Enforced | `npm run audit:ux-polish` |
 | Observability has local trace/logger/health gate | Enforced | `npm run audit:observability-coverage` |
 | Graphify stays refreshed | Enforced operationally | `graphify update .` output in Pack 14 audit docs |
@@ -67,8 +67,9 @@ chain. The repo now enforces command parity in two ways:
 Local aliases added for the real app include `typecheck`, `test`,
 `test:e2e:personas`, `audit:ontology-mapping`, `audit:ontology-versions`,
 `audit:ontology-classifier-accuracy`, `audit:context-types-parity`, `audit:tool-skill-conforms`,
-`audit:tool-canary-executable`, `audit:tool-composition-static`,
-`audit:tool-suggestion-eval`, `audit:tool-context-isolation`, `audit:firewall-coverage`,
+`audit:tool-canary-executable`, `audit:tool-semantic-canaries`,
+`audit:tool-persona-coverage`, `audit:tool-authoring-spike`,
+`audit:tool-composition-static`, `audit:tool-suggestion-eval`, `audit:tool-context-isolation`, `audit:firewall-coverage`,
 `audit:owner-scoping`, `audit:postgres-schema-current`, `audit:kg-drift`,
 `audit:legal-pages-present`, `audit:type-safety`, and `audit:docs`.
 
@@ -125,6 +126,9 @@ npm run audit:context-aware-coverage
 npm run audit:context-types-parity
 npm run audit:tool-marketplace
 npm run audit:tool-canary-executable
+npm run audit:tool-semantic-canaries
+npm run audit:tool-persona-coverage
+npm run audit:tool-authoring-spike
 npm run audit:tool-composition-static
 npm run audit:tool-suggestion-eval
 npm run audit:tool-context-isolation

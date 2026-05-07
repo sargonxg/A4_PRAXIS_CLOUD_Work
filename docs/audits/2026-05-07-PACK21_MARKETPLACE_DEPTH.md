@@ -35,11 +35,18 @@ The six deferred candidates are `mediation.batna-watna-explorer`,
 - The marketplace category filter includes the five new ontology categories.
 - New audits:
   - `npm run audit:tool-canary-executable`
+  - `npm run audit:tool-semantic-canaries`
+  - `npm run audit:tool-persona-coverage`
+  - `npm run audit:tool-authoring-spike`
   - `npm run audit:tool-composition-static`
   - `npm run audit:tool-suggestion-eval`
 - ADRs:
   - `docs/adr/0033-marketplace-depth-strategy.md`
   - `docs/adr/0034-composition-chain-governance.md`
+  - `docs/adr/0035-marketplace-cap-and-deferred-candidates.md`
+- Pack 21 records:
+  - `docs/audits/2026-05-07-TOOL_AUTHORING_SPIKE.md`
+  - `docs/audits/persona-green-streak.md`
 
 ## Verification
 
@@ -50,6 +57,9 @@ npm run audit:tool-marketplace
 npm run audit:tool-contract-v2
 npm run audit:tool-skills-present
 npm run audit:tool-canary-executable
+npm run audit:tool-semantic-canaries
+npm run audit:tool-persona-coverage
+npm run audit:tool-authoring-spike
 npm run audit:tool-composition-static
 npm run audit:tool-suggestion-eval
 npm run typecheck
@@ -62,8 +72,14 @@ npx vitest run tests/unit/lib/tools/marketplace.test.ts tests/unit/lib/tools/too
   specialist handlers where runtime evidence and provider cost controls exist.
 - Expand persona suites to exercise the new tools in real browser flows and
   rebuild the 10-green-run CI streak.
-- Decide whether the six deferred original-ontology depth candidates should
-  replace lower-value tools, become a later v1.3 expansion, or be rejected.
-- Add richer per-tool semantic canary fixtures beyond the current executable
-  foundation run.
+- The six deferred original-ontology depth candidates are formally governed by
+  ADR 0035; they require replacement, a cap-change ADR, or a role-specific
+  advanced bundle.
 - Run and record production browser evidence after deployment.
+
+## Still Not Claimed Complete
+
+Pack 21's explicit 52-tool marketplace surface is complete under local audit.
+The prompt's stricter runtime bar still remains open: model-backed specialist
+handlers, live provider cost controls, and 10 consecutive green CI persona runs.
+`docs/audits/persona-green-streak.md` resets the streak honestly at 0/10.

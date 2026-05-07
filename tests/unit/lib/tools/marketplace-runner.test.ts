@@ -66,6 +66,11 @@ describe('marketplace runner', () => {
       stage: 'prompt-contract',
       objective: expect.any(String),
     });
+    expect(result.structuredOutput.semanticProfile).toMatchObject({
+      requiredTerms: expect.arrayContaining([expect.any(String)]),
+      personaRoles: expect.arrayContaining([expect.any(String)]),
+      canaryAssertions: expect.arrayContaining(['preserves context dump']),
+    });
     expect(result.structuredOutput.claims).toEqual(expect.arrayContaining([
       expect.objectContaining({ trustScore: 0.68 }),
     ]));

@@ -1,5 +1,6 @@
 import type { ToolRunContext } from '@/lib/tools/context-provider';
 import { getMarketplaceHandlerContract } from '@/lib/tools/marketplace/handler-contracts';
+import { buildMarketplaceSemanticProfile } from '@/lib/tools/marketplace/semantic-canaries';
 import type { MarketplaceToolDefinition } from '@/lib/tools/marketplace/types';
 import { rankACH } from '@/lib/sats/ach-ranking';
 import type { ACHMatrix } from '@/types/sats';
@@ -258,6 +259,7 @@ export function buildMarketplaceToolRun(input: MarketplaceToolRunInput): Marketp
   const contextSummaries = runContext.prepared.prepared.summaries.map((summary) => `${summary.layer}: ${summary.summary}`);
   const satOutput = buildSatStructuredOutput(tool, runContext, displayCaseName);
   const memoOutput = buildMemoStructuredOutput(tool, runContext, displayCaseName);
+  const semanticProfile = buildMarketplaceSemanticProfile(tool);
   const rawText = [
     `${tool.name} foundation run completed for ${displayCaseName}.`,
     `Prompt: ${prompt}`,
@@ -270,6 +272,8 @@ export function buildMarketplaceToolRun(input: MarketplaceToolRunInput): Marketp
     handlerContract ? `Analysis moves: ${handlerContract.analysisMoves.join(' | ')}` : null,
     handlerContract ? `Expected sections: ${handlerContract.outputSections.join(' | ')}` : null,
     handlerContract ? `Quality checks: ${handlerContract.qualityChecks.join(' | ')}` : null,
+    `Semantic canary terms: ${semanticProfile.requiredTerms.join(' | ')}.`,
+    `Persona coverage: ${semanticProfile.personaRoles.join(' | ')}.`,
     'This run records tolerant raw text, structured output, context dumps, and the handler prompt contract for later model-backed handlers.',
   ].filter(Boolean).join('\n');
 
@@ -315,6 +319,7 @@ export function buildMarketplaceToolRun(input: MarketplaceToolRunInput): Marketp
         outputSections: handlerContract.outputSections,
         qualityChecks: handlerContract.qualityChecks,
       } : null,
+      semanticProfile,
       sat: satOutput,
       memo: memoOutput,
       posture: {

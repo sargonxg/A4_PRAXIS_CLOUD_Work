@@ -1151,6 +1151,9 @@ npm run audit:tool-contract-v2            # every tool conforms
 npm run audit:tool-skills-present
 npm run audit:tool-skill-conforms
 npm run audit:tool-canary-executable      # every marketplace tool can produce a foundation run
+npm run audit:tool-semantic-canaries      # every tool carries semantic assertions
+npm run audit:tool-persona-coverage       # every tool maps to a professional persona
+npm run audit:tool-authoring-spike        # 60-minute authoring target recorded
 npm run audit:tool-context-isolation      # no direct store access from handlers
 npm run audit:tool-composition-static
 npm run audit:tool-suggestion-eval        # recall@3 ≥ 80%
