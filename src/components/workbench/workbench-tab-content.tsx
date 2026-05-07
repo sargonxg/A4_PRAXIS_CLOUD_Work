@@ -10,6 +10,8 @@ import { ToolMarketplace } from '@/components/tools/ToolMarketplace';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { ContextTab } from '@/components/workbench/ContextTab';
 import { DeskTab } from '@/components/workbench/DeskTab';
+import { LibraryTab } from '@/components/workbench/LibraryTab';
+import { ResearchTab } from '@/components/workbench/ResearchTab';
 import { ToolGate } from '@/components/workbench/tool-gate';
 import { WorkbenchChapterRenderer } from '@/components/workbench/chapter-renderer';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
@@ -20,6 +22,8 @@ export function WorkbenchTabContent({ activeTab }: { activeTab: WorkbenchTabId }
   if (activeTab === 'chapters') return <WorkbenchChapterRenderer />;
   if (activeTab === 'desk') return <DeskTab />;
   if (activeTab === 'context') return <ContextTab />;
+  if (activeTab === 'library') return <LibraryTab />;
+  if (activeTab === 'research') return <ResearchTab />;
   if (activeTab === 'ontology') return <OntologySchemaViewer />;
   if (activeTab === 'graph') return <WorkbenchGraphPanel />;
   if (activeTab === 'ach') return <WorkbenchACHPanel />;

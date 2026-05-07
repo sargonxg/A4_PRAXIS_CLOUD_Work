@@ -57,10 +57,26 @@ test('demo workbench exposes context, ontology, graph, tools, and memo surfaces'
   await expect(page.getByText(/Shape the scope/i)).toBeVisible();
   await expect(page.getByText(/Frame editor/i)).toBeVisible();
 
+  await page.getByRole('button', { name: /^Library$/i }).click();
+  await expect(page.getByTestId('workbench-library-surface')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Library$/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Saved claims$/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Memo versions$/i })).toBeVisible();
+
+  await page.getByRole('button', { name: /^Research$/i }).click();
+  await expect(page.getByTestId('workbench-research-surface')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Research$/i })).toBeVisible();
+  await expect(page.getByText(/Staged collection plan/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Candidate sources$/i })).toBeVisible();
+
   await page.getByRole('button', { name: /^Ontology$/i }).click();
   await expect(page.getByTestId('ontology-schema-viewer')).toBeVisible();
-  await expect(page.getByText(/Node Types/i)).toBeVisible();
-  await expect(page.getByText(/Validators/i)).toBeVisible();
+  await expect(page.getByText('Node Types', { exact: true })).toBeVisible();
+  await expect(page.getByText('Validators', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('ontology-active-lenses')).toBeVisible();
+  await expect(page.getByTestId('ontology-validator-pass-rate')).toBeVisible();
+  await expect(page.getByTestId('ontology-primitive-coverage')).toBeVisible();
+  await expect(page.getByTestId('ontology-recommended-tools')).toBeVisible();
 
   await page.getByRole('button', { name: /^Graph$/i }).click();
   await expect(page.getByTestId('praxis-graph-canvas')).toBeVisible();

@@ -1,83 +1,186 @@
 'use client';
 
-import { GitBranch, ListChecks, Network } from 'lucide-react';
+import Link from 'next/link';
+import { GitBranch, Layers3, ListChecks, Network, ShieldCheck, Sparkles } from 'lucide-react';
 import { OntologyBadge } from '@/components/ontology/OntologyBadge';
+import { Badge } from '@/components/ui/badge';
 import { getOntologyForDomain, summarizeOntologyMapping } from '@/lib/ontology/registry';
+import { getActiveOntologyStatuses } from '@/lib/ontology/validator-pass-rate';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 
 export function OntologySchemaViewer() {
-  const { caseModule } = useWorkbenchScope();
+  const { caseId, caseModule } = useWorkbenchScope();
   const ontology = getOntologyForDomain(caseModule.manifest.domain);
   const mapping = summarizeOntologyMapping(ontology);
+  const activeOntologies = getActiveOntologyStatuses(caseModule);
 
   return (
-    <section data-testid="ontology-schema-viewer" className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-navy-950/5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="max-w-3xl">
-          <OntologyBadge ontology={ontology} />
-          <h2 className="mt-3 text-lg font-semibold text-navy-950">Ontology System</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-650">{ontology.description}</p>
-        </div>
-        <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-right">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Core coverage</p>
-          <p className="font-mono text-2xl font-semibold text-navy-950">{Math.round(mapping.primitiveCoverage * 100)}%</p>
-        </div>
-      </div>
-
-      <div className="mt-5 grid gap-4 xl:grid-cols-[1.1fr_1fr]">
-        <div className="rounded-md border border-slate-200">
-          <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-semibold text-navy-950">
-            <Network className="h-4 w-4 text-gold-600" />
-            Node Types
+    <div data-testid="ontology-schema-viewer" className="space-y-6">
+      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-navy-950/5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="max-w-3xl">
+            <OntologyBadge ontology={ontology} />
+            <h2 className="mt-3 text-lg font-semibold text-navy-950">Ontology System</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-700">{ontology.description}</p>
           </div>
-          <div className="grid gap-2 p-3 sm:grid-cols-2">
-            {ontology.nodeTypes.map((node) => (
-              <div key={node.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-navy-950">{node.label}</p>
-                  <span className="rounded bg-white px-2 py-1 text-[10px] font-semibold text-slate-600">{node.primitive}</span>
+          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-right">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-700">Core coverage</p>
+            <p className="font-mono text-2xl font-semibold text-navy-950">{Math.round(mapping.primitiveCoverage * 100)}%</p>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 xl:grid-cols-[1.1fr_1fr]">
+          <div className="rounded-md border border-slate-200">
+            <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-semibold text-navy-950">
+              <Network className="h-4 w-4 text-gold-600" />
+              Node Types
+            </div>
+            <div className="grid gap-2 p-3 sm:grid-cols-2">
+              {ontology.nodeTypes.map((node) => (
+                <div key={node.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-navy-950">{node.label}</p>
+                    <span className="rounded bg-white px-2 py-1 text-[10px] font-semibold text-slate-700">{node.primitive}</span>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-slate-700">{node.description}</p>
                 </div>
-                <p className="mt-2 text-xs leading-5 text-slate-600">{node.description}</p>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-md border border-slate-200">
+              <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-semibold text-navy-950">
+                <GitBranch className="h-4 w-4 text-gold-600" />
+                Edge Types
+              </div>
+              <div className="divide-y divide-slate-200">
+                {ontology.edgeTypes.map((edge) => (
+                  <div key={edge.id} className="px-4 py-3">
+                    <p className="text-sm font-semibold text-navy-950">{edge.label}</p>
+                    <p className="mt-1 text-xs text-slate-700">{edge.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-md border border-slate-200">
+              <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-semibold text-navy-950">
+                <ListChecks className="h-4 w-4 text-gold-600" />
+                Validators
+              </div>
+              <div className="divide-y divide-slate-200">
+                {ontology.validators.map((validator) => (
+                  <div key={validator.id} className="px-4 py-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-navy-950">{validator.label}</p>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-700">{validator.severity}</span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-700">{validator.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-5" data-testid="ontology-active-lenses">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Layers3 className="h-5 w-5 text-gold-700" />
+              <h3 className="text-base font-semibold text-navy-950">Active Ontologies</h3>
+            </div>
+            <p className="mt-2 text-sm leading-6 text-slate-700">One primary and up to two secondary lenses can guide source affinity, validators, and tool recommendations.</p>
+          </div>
+          <button type="button" disabled className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">
+            Add secondary ontology
+          </button>
+        </div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-3">
+          {activeOntologies.map((item) => (
+            <div key={item.ontology.id} className="rounded-md border border-slate-200 bg-slate-50 p-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="default" className="bg-gold-100 text-navy-950">{item.role}</Badge>
+                <p className="font-semibold text-navy-950">{item.ontology.label}</p>
+                <span className="text-xs font-semibold text-slate-700">v{item.ontology.version}</span>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Metric label="Validator pass" value={`${Math.round(item.passRate * 100)}%`} />
+                <Metric label="Primitive coverage" value={`${Math.round(item.primitiveCoverage * 100)}%`} />
+              </div>
+              {item.role === 'secondary' ? (
+                <button type="button" disabled className="mt-3 text-xs font-semibold text-slate-700">Remove requires firewall route</button>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-2">
+        <div className="rounded-lg border border-slate-200 bg-white p-5" data-testid="ontology-validator-pass-rate">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-gold-700" />
+            <h3 className="text-base font-semibold text-navy-950">Validator Pass-Rate Detail</h3>
+          </div>
+          <div className="mt-4 space-y-3">
+            {activeOntologies.flatMap((item) => item.validators.map((validator) => (
+              <div key={`${item.ontology.id}-${validator.id}`} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-navy-950">{item.ontology.label}: {validator.label}</p>
+                  <Badge variant="default" className={validator.passed ? 'bg-emerald-100 text-emerald-950' : 'bg-amber-100 text-amber-950'}>
+                    {validator.passed ? 'pass' : 'needs context'}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-sm leading-5 text-slate-700">{validator.hint}</p>
+              </div>
+            )))}
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-white p-5" data-testid="ontology-primitive-coverage">
+          <div className="flex items-center gap-2">
+            <Network className="h-5 w-5 text-gold-700" />
+            <h3 className="text-base font-semibold text-navy-950">Primitive Coverage</h3>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            {activeOntologies[0]?.primitives.map((primitive) => (
+              <div key={primitive.primitive} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-navy-950">{primitive.primitive}</p>
+                  <span className="font-mono text-sm font-semibold text-navy-950">{primitive.count}</span>
+                </div>
+                <p className="mt-1 text-xs leading-5 text-slate-700">{primitive.hint}</p>
               </div>
             ))}
           </div>
         </div>
+      </section>
 
-        <div className="space-y-4">
-          <div className="rounded-md border border-slate-200">
-            <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-semibold text-navy-950">
-              <GitBranch className="h-4 w-4 text-gold-600" />
-              Edge Types
-            </div>
-            <div className="divide-y divide-slate-200">
-              {ontology.edgeTypes.map((edge) => (
-                <div key={edge.id} className="px-4 py-3">
-                  <p className="text-sm font-semibold text-navy-950">{edge.label}</p>
-                  <p className="mt-1 text-xs text-slate-600">{edge.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-md border border-slate-200">
-            <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-semibold text-navy-950">
-              <ListChecks className="h-4 w-4 text-gold-600" />
-              Validators
-            </div>
-            <div className="divide-y divide-slate-200">
-              {ontology.validators.map((validator) => (
-                <div key={validator.id} className="px-4 py-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-navy-950">{validator.label}</p>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{validator.severity}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-600">{validator.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+      <section className="rounded-lg border border-slate-200 bg-white p-5" data-testid="ontology-recommended-tools">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-gold-700" />
+          <h3 className="text-base font-semibold text-navy-950">Recommended Tools Not Yet Run</h3>
         </div>
-      </div>
-    </section>
+        <div className="mt-4 grid gap-3 lg:grid-cols-3">
+          {activeOntologies.flatMap((item) => item.recommendedToolIds.map((toolId) => (
+            <Link key={`${item.ontology.id}-${toolId}`} href={`/app/workbench/${caseId}?tab=tools`} className="rounded-md border border-slate-200 bg-slate-50 p-4 transition hover:border-navy-300">
+              <p className="text-sm font-semibold text-navy-950">{toolId}</p>
+              <p className="mt-1 text-sm leading-5 text-slate-700">{item.ontology.label} source affinity: {item.sourceAffinity.slice(0, 2).join(', ')}</p>
+            </Link>
+          )))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-slate-200 bg-white p-3">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-700">{label}</p>
+      <p className="mt-1 font-mono text-xl font-semibold text-navy-950">{value}</p>
+    </div>
   );
 }

@@ -17,8 +17,14 @@ const requiredFiles = [
   'src/components/workbench/StructuredChapterContent.tsx',
   'src/components/workbench/DeskTab.tsx',
   'src/components/workbench/ContextTab.tsx',
+  'src/components/workbench/LibraryTab.tsx',
+  'src/components/workbench/ResearchTab.tsx',
   'src/components/workbench/workbench-surface-elements.tsx',
+  'src/lib/workbench/library-state.ts',
+  'src/lib/workbench/research-state.ts',
   'src/lib/workbench/surface-state.ts',
+  'src/lib/ontology/validator-pass-rate.ts',
+  'src/app/api/cases/[caseId]/research/route.ts',
   'src/components/sats/ACHWorkbench.tsx',
   'src/components/sats/ACHMatrix.tsx',
   'src/app/api/sats/ach/route.ts',
@@ -76,9 +82,9 @@ for (const path of ['src/components/workbench/chapter-shell.tsx', 'src/component
 }
 
 const tabContent = readFileSync('src/components/workbench/workbench-tab-content.tsx', 'utf8');
-for (const marker of ['<DeskTab />', '<ContextTab />', '<WorkbenchChapterRenderer />']) {
+for (const marker of ['<DeskTab />', '<ContextTab />', '<LibraryTab />', '<ResearchTab />', '<WorkbenchChapterRenderer />']) {
   if (!tabContent.includes(marker)) {
-    throw new Error(`Workbench tab content missing Pack 26 surface dispatch: ${marker}`);
+    throw new Error(`Workbench tab content missing surface dispatch: ${marker}`);
   }
 }
 
@@ -94,6 +100,27 @@ const surfaceState = readFileSync('src/lib/workbench/surface-state.ts', 'utf8');
 for (const marker of ['buildWorkbenchSurfaceState', 'openQuestions', 'nextActions', 'chapterFacts']) {
   if (!surfaceState.includes(marker)) {
     throw new Error(`Pack 26 surface state helper missing marker: ${marker}`);
+  }
+}
+
+const libraryState = readFileSync('src/lib/workbench/library-state.ts', 'utf8');
+for (const marker of ['source', 'document', 'claim', 'memo', 'export', 'buildLibraryArtifacts']) {
+  if (!libraryState.includes(marker)) {
+    throw new Error(`Pack 27 library state helper missing marker: ${marker}`);
+  }
+}
+
+const researchState = readFileSync('src/lib/workbench/research-state.ts', 'utf8');
+for (const marker of ['RESEARCH_SOURCE_SETS', 'buildResearchPlan', 'buildResearchCandidates']) {
+  if (!researchState.includes(marker)) {
+    throw new Error(`Pack 27 research state helper missing marker: ${marker}`);
+  }
+}
+
+const ontologyViewer = readFileSync('src/components/ontology/OntologySchemaViewer.tsx', 'utf8');
+for (const marker of ['Active Ontologies', 'Validator Pass-Rate Detail', 'Primitive Coverage', 'Recommended Tools Not Yet Run']) {
+  if (!ontologyViewer.includes(marker)) {
+    throw new Error(`Pack 27 ontology viewer missing section: ${marker}`);
   }
 }
 
