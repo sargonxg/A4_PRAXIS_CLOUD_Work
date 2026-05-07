@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Archive, ExternalLink, FileText, Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Archive, ExternalLink, FileText, Plus, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { buildLibraryArtifacts, type LibraryArtifact, type LibraryArtifactType } from '@/lib/workbench/library-state';
 import { cn } from '@/lib/utils/cn';
+import type { SavedClaim } from '@/types/saved-claims';
 
 const TYPE_LABELS: Record<LibraryArtifactType, string> = {
   source: 'Sources',
@@ -21,7 +22,9 @@ export function LibraryTab() {
   const [query, setQuery] = useState('');
   const [activeTypes, setActiveTypes] = useState<LibraryArtifactType[]>(['source', 'document', 'claim', 'memo', 'export']);
   const [selected, setSelected] = useState<LibraryArtifact | null>(null);
-  const artifacts = useMemo(() => buildLibraryArtifacts(caseModule, caseId), [caseId, caseModule]);
+  const [savedClaims, setSavedClaims] = useState<SavedClaim[]>([]);
+  const [claimNote, setClaimNote] = useState<string | null>(null);
+  const artifacts = useMemo(() => buildLibraryArtifacts(caseModule, caseId, savedClaims), [caseId, caseModule, savedClaims]);
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return artifacts.filter((artifact) => {
@@ -41,6 +44,46 @@ export function LibraryTab() {
     });
   }
 
+  useEffect(() => {
+    let ignore = false;
+    fetch(`/api/cases/${encodeURIComponent(caseId)}/saved-claims`)
+      .then((response) => response.ok ? response.json() : { claims: [] })
+      .then((payload) => {
+        if (!ignore && Array.isArray(payload.claims)) setSavedClaims(payload.claims);
+      })
+      .catch(() => {
+        if (!ignore) setSavedClaims([]);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [caseId]);
+
+  async function saveCaseFrameClaim() {
+    const text = caseModule.situation.description || caseModule.manifest.summary;
+    if (!text) {
+      setClaimNote('No case-frame text is available to save yet.');
+      return;
+    }
+    const response = await fetch(`/api/cases/${encodeURIComponent(caseId)}/saved-claims`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        title: 'Saved case-frame claim',
+        text,
+        sourceRef: caseModule.sources[0]?.url,
+        trustScore: caseModule.sources.length ? 72 : 48,
+      }),
+    }).catch(() => null);
+    if (!response?.ok) {
+      setClaimNote('Saved claims are read-only in demo mode; signed-in cases persist them here.');
+      return;
+    }
+    const payload = await response.json().catch(() => ({}));
+    if (payload.claim) setSavedClaims((current) => [payload.claim, ...current]);
+    setClaimNote('Saved claim added to this case library.');
+  }
+
   return (
     <div className="space-y-6" data-testid="workbench-library-surface">
       <section className="rounded-lg border border-navy-200 bg-white p-5 shadow-sm shadow-navy-950/5">
@@ -55,6 +98,18 @@ export function LibraryTab() {
             </p>
           </div>
           <ContextHealthChip />
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => void saveCaseFrameClaim()}
+            className="inline-flex items-center gap-2 rounded-md border border-navy-300 bg-white px-3 py-2 text-xs font-semibold text-navy-900"
+          >
+            <Plus className="h-4 w-4" />
+            Save case-frame claim
+          </button>
+          {claimNote ? <p className="text-sm font-semibold text-navy-900">{claimNote}</p> : null}
         </div>
 
         <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">

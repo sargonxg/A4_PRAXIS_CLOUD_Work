@@ -1,18 +1,53 @@
 'use client';
 
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
 import { GitBranch, Layers3, ListChecks, Network, ShieldCheck, Sparkles } from 'lucide-react';
 import { OntologyBadge } from '@/components/ontology/OntologyBadge';
 import { Badge } from '@/components/ui/badge';
-import { getOntologyForDomain, summarizeOntologyMapping } from '@/lib/ontology/registry';
-import { getActiveOntologyStatuses } from '@/lib/ontology/validator-pass-rate';
+import { CASE_ONTOLOGIES, getOntologyForDomain, summarizeOntologyMapping } from '@/lib/ontology/registry';
+import { activeOntologyIds, getOntologyStatusesForIds } from '@/lib/ontology/validator-pass-rate';
+import type { OntologyId } from '@/lib/ontology/types';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 
 export function OntologySchemaViewer() {
   const { caseId, caseModule } = useWorkbenchScope();
   const ontology = getOntologyForDomain(caseModule.manifest.domain);
   const mapping = summarizeOntologyMapping(ontology);
-  const activeOntologies = getActiveOntologyStatuses(caseModule);
+  const [activeIds, setActiveIds] = useState<OntologyId[]>(() => activeOntologyIds(caseModule));
+  const [pendingId, setPendingId] = useState<OntologyId>('humanitarian');
+  const [ontologyNote, setOntologyNote] = useState<string | null>(null);
+  const activeOntologies = useMemo(() => getOntologyStatusesForIds(caseModule, activeIds), [activeIds, caseModule]);
+  const availableOntologies = CASE_ONTOLOGIES.filter((item) => !activeIds.includes(item.id));
+
+  async function mutateOntology(action: 'add' | 'remove', ontologyId: OntologyId) {
+    if (action === 'add' && activeIds.length >= 3) {
+      setOntologyNote('This case already has 3 active ontologies; remove a secondary lens before adding another.');
+      return;
+    }
+    const response = await fetch(`/api/cases/${encodeURIComponent(caseId)}/ontologies`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        action,
+        ontologyId,
+        currentOntologyIds: activeIds,
+        primaryOntologyId: activeIds[0],
+      }),
+    }).catch(() => null);
+    const payload = await response?.json().catch(() => ({}));
+    if (response?.ok && Array.isArray(payload.ontologyIds)) {
+      setActiveIds(payload.ontologyIds);
+      setOntologyNote('Ontology lens selection updated. Graph migrations remain review-gated.');
+      return;
+    }
+    if (action === 'add' && !activeIds.includes(ontologyId)) {
+      setActiveIds((current) => [...current, ontologyId].slice(0, 3));
+      setOntologyNote(payload?.error ? `${payload.error} Showing a local preview.` : 'Showing a local preview; signed-in cases persist this selection.');
+      return;
+    }
+    setOntologyNote(payload?.error ?? 'Ontology update could not be staged.');
+  }
 
   return (
     <div data-testid="ontology-schema-viewer" className="space-y-6">
@@ -94,10 +129,26 @@ export function OntologySchemaViewer() {
             </div>
             <p className="mt-2 text-sm leading-6 text-slate-700">One primary and up to two secondary lenses can guide source affinity, validators, and tool recommendations.</p>
           </div>
-          <button type="button" disabled className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">
-            Add secondary ontology
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={pendingId}
+              onChange={(event) => setPendingId(event.target.value as OntologyId)}
+              className="h-9 rounded-md border border-slate-300 bg-white px-2 text-xs font-semibold text-navy-900"
+            >
+              {(availableOntologies.length ? availableOntologies : CASE_ONTOLOGIES).map((item) => (
+                <option key={item.id} value={item.id}>{item.label}</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => void mutateOntology('add', pendingId)}
+              className="rounded-md border border-navy-300 px-3 py-2 text-xs font-semibold text-navy-900"
+            >
+              Add secondary ontology
+            </button>
+          </div>
         </div>
+        {ontologyNote ? <p className="mt-3 text-sm font-semibold text-navy-900">{ontologyNote}</p> : null}
         <div className="mt-4 grid gap-3 lg:grid-cols-3">
           {activeOntologies.map((item) => (
             <div key={item.ontology.id} className="rounded-md border border-slate-200 bg-slate-50 p-4">
@@ -111,7 +162,13 @@ export function OntologySchemaViewer() {
                 <Metric label="Primitive coverage" value={`${Math.round(item.primitiveCoverage * 100)}%`} />
               </div>
               {item.role === 'secondary' ? (
-                <button type="button" disabled className="mt-3 text-xs font-semibold text-slate-700">Remove requires firewall route</button>
+                <button
+                  type="button"
+                  onClick={() => void mutateOntology('remove', item.ontology.id)}
+                  className="mt-3 text-xs font-semibold text-navy-900 underline decoration-gold-500 underline-offset-4"
+                >
+                  Remove secondary lens
+                </button>
               ) : null}
             </div>
           ))}

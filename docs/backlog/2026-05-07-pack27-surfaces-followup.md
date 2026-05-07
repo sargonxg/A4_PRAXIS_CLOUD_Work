@@ -5,14 +5,13 @@ Target release: surface hardening wave after Pack 27 first slice
 
 ## P0
 
-- Wire Library to a shared Firestore artifact read model used by both Library and Context Library.
-- Add re-genesis ingestion from Research results with rate limiting, review queue entries, and no silent graph writes.
-- Add owner-scoped ontology mutation API for secondary ontology add/remove through firewall and two-phase commit.
+- Wire Library to the full shared Firestore artifact read model used by both Library and Context Library, including uploaded documents, memo versions, and exports.
+- Connect staged Research ingest records to the Context Genesis orchestrator approval flow so reviewed sources can create Source-layer nodes.
+- Add two-phase graph migration for ontology add/remove when removed secondary ontologies have typed graph nodes.
 
 ## P1
 
-- Deploy `research_planner` to Vertex Agent Engine, add eval set, and connect the Research staged-plan panel to live planner output.
-- Add saved-claims service/API so Library saved claims are durable and not only derived from current case context.
+- Deploy `research_planner` to Vertex Agent Engine, add eval set, and switch the deterministic Research plan route to the live subagent once freshness checks exist.
 - Add work product export listing and re-download actions from the existing export persistence path.
 
 ## P2

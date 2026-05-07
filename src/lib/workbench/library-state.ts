@@ -1,4 +1,5 @@
 import type { CaseModule } from '@/types/case-module';
+import type { SavedClaim } from '@/types/saved-claims';
 
 export type LibraryArtifactType = 'source' | 'document' | 'claim' | 'memo' | 'export';
 
@@ -13,7 +14,7 @@ export interface LibraryArtifact {
   meta: Record<string, string>;
 }
 
-export function buildLibraryArtifacts(caseModule: CaseModule, caseId: string): LibraryArtifact[] {
+export function buildLibraryArtifacts(caseModule: CaseModule, caseId: string, savedClaims: SavedClaim[] = []): LibraryArtifact[] {
   const situation = caseModule.situation;
   const artifacts: LibraryArtifact[] = [];
 
@@ -65,6 +66,22 @@ export function buildLibraryArtifacts(caseModule: CaseModule, caseId: string): L
       meta: {
         Status: knownDocumentCount > 0 ? 'registered' : 'empty state',
         Collection: situation.workflowPathLabel ?? 'case library',
+      },
+    });
+  }
+
+  for (const claim of savedClaims) {
+    artifacts.push({
+      id: `saved-claim:${claim.id}`,
+      type: 'claim',
+      title: claim.title,
+      summary: claim.text,
+      date: claim.updatedAt,
+      badge: claim.status,
+      meta: {
+        Trust: `${claim.trustScore}%`,
+        Layer: 'Saved Claim',
+        Source: claim.sourceRef ?? 'not attached',
       },
     });
   }

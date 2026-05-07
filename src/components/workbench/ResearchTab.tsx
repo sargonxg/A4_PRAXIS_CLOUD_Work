@@ -23,7 +23,8 @@ export function ResearchTab() {
   const [selectedResults, setSelectedResults] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [ingestNote, setIngestNote] = useState<string | null>(null);
-  const plan = useMemo(() => buildResearchPlan(caseModule, question), [caseModule, question]);
+  const fallbackPlan = useMemo(() => buildResearchPlan(caseModule, question), [caseModule, question]);
+  const [plan, setPlan] = useState(fallbackPlan);
 
   function toggleSource(sourceId: string) {
     setSelectedSources((current) => current.includes(sourceId) ? current.filter((item) => item !== sourceId) : [...current, sourceId]);
@@ -33,6 +34,14 @@ export function ResearchTab() {
     setLoading(true);
     setIngestNote(null);
     try {
+      const planResponse = await fetch(`/api/cases/${encodeURIComponent(caseId)}/research/plan`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ question, situation: caseModule.situation }),
+      }).catch(() => null);
+      const planPayload = await planResponse?.json().catch(() => ({}));
+      if (Array.isArray(planPayload?.plan)) setPlan(planPayload.plan);
+
       const response = await fetch(`/api/cases/${encodeURIComponent(caseId)}/research`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -49,11 +58,24 @@ export function ResearchTab() {
     }
   }
 
-  function stageIngest(resultIds: string[]) {
-    const count = resultIds.length;
-    setIngestNote(count
-      ? `${count} candidate source${count === 1 ? '' : 's'} staged for non-destructive re-genesis review.`
-      : 'Select at least one candidate source before staging ingestion.');
+  async function stageIngest(resultIds: string[]) {
+    const candidates = results.filter((result) => resultIds.includes(result.id));
+    if (!candidates.length) {
+      setIngestNote('Select at least one candidate source before staging ingestion.');
+      return;
+    }
+    const response = await fetch(`/api/cases/${encodeURIComponent(caseId)}/research/ingest`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ candidates }),
+    }).catch(() => null);
+    const payload = await response?.json().catch(() => ({}));
+    if (response?.ok) {
+      setIngestNote(`${candidates.length} candidate source${candidates.length === 1 ? '' : 's'} staged for non-destructive re-genesis review. ${payload.remainingToday ?? 0} ingest run(s) remain today.`);
+      setSelectedResults([]);
+      return;
+    }
+    setIngestNote(payload?.error ?? 'Research ingest could not be staged.');
   }
 
   return (
@@ -153,7 +175,7 @@ export function ResearchTab() {
             <h3 className="text-sm font-semibold text-navy-950">Candidate sources</h3>
             <button
               type="button"
-              onClick={() => stageIngest(selectedResults)}
+              onClick={() => void stageIngest(selectedResults)}
               className="rounded-md border border-navy-300 px-3 py-2 text-xs font-semibold text-navy-900"
             >
               Ingest selected
@@ -182,7 +204,7 @@ export function ResearchTab() {
                     Open
                     <ExternalLink className="h-3.5 w-3.5" />
                   </a>
-                  <button type="button" onClick={() => stageIngest([result.id])} className="rounded-md bg-navy-900 px-3 py-2 text-xs font-semibold text-white">
+                  <button type="button" onClick={() => void stageIngest([result.id])} className="rounded-md bg-navy-900 px-3 py-2 text-xs font-semibold text-white">
                     Ingest
                   </button>
                 </div>

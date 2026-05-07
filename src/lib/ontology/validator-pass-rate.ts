@@ -40,7 +40,10 @@ const PRIMITIVE_TYPE_MAP: Record<string, TacitusCorePrimitive> = {
 };
 
 export function getActiveOntologyStatuses(caseModule: CaseModule): ActiveOntologyStatus[] {
-  const activeIds = activeOntologyIds(caseModule);
+  return getOntologyStatusesForIds(caseModule, activeOntologyIds(caseModule));
+}
+
+export function getOntologyStatusesForIds(caseModule: CaseModule, activeIds: OntologyId[]): ActiveOntologyStatus[] {
   const graph = buildWorkbenchCaseGraph(caseModule);
   const primitiveCounts = Object.fromEntries(TACITUS_CORE_PRIMITIVES.map((primitive) => [primitive, 0])) as Record<TacitusCorePrimitive, number>;
   for (const node of graph.nodes) {
@@ -48,7 +51,7 @@ export function getActiveOntologyStatuses(caseModule: CaseModule): ActiveOntolog
     if (primitive) primitiveCounts[primitive] += 1;
   }
 
-  return activeIds.map((id, index) => {
+  return activeIds.slice(0, 3).map((id, index) => {
     const ontology = getOntology(id);
     const mapping = summarizeOntologyMapping(ontology);
     const primitives = TACITUS_CORE_PRIMITIVES.map((primitive) => ({

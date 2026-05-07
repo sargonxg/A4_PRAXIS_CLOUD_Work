@@ -18,15 +18,23 @@ Prompt source: `docs/codex-prompts/PRAXIS_CODEX_27_SURFACES_LIBRARY_RESEARCH_ONT
 - Added deterministic helpers for Library, Research, and Ontology status derivation.
 - Extended `audit:workbench` and `audit:codex-prompts` for Pack 27 coverage.
 
+## Implemented in second pass
+
+- Added owner-scoped saved-claims persistence at `/api/cases/[caseId]/saved-claims` and wired Library to merge durable saved claims with derived graph/context claims.
+- Added `/api/cases/[caseId]/research/plan` as the deterministic `research_planner` integration surface until Vertex Agent Engine deployment is live.
+- Added `/api/cases/[caseId]/research/ingest` to stage selected research results into a review queue as non-destructive `re_genesis` candidates with a 3/day case limit.
+- Added `/api/cases/[caseId]/ontologies` for owner-scoped ontology lens add/remove, audit logging, and advisory firewall posture. Graph migrations remain review-gated.
+- Wired Research ingest buttons to the staging API and Ontology add/remove controls to the ontology route with demo-safe preview behavior.
+- Extended `audit:workbench` so saved-claims, research-plan, research-ingest, and ontology mutation routes are now required Pack 27 contract files.
+
 ## Remaining work
 
-- Shared Firestore read model that unifies Library and Context Library with live listeners.
-- Durable saved-claims browser backed by a user-owned saved-claims service and API.
-- Re-genesis write path for Research ingest, including 3/day rate limiting and review queue promotion.
-- `research_planner` deployment on Vertex Agent Engine and eval freshness checks.
-- Owner-scoped add/remove secondary ontology backend route with firewall and two-phase commit.
+- Shared Firestore read model that unifies Library and Context Library with live listeners beyond the saved-claims slice.
+- Full Context Genesis orchestrator support for applying staged Research ingest records after review.
+- `research_planner` deployment on Vertex Agent Engine and eval freshness checks; current route is deterministic and app-facing.
+- Full two-phase graph migration for ontology add/remove when existing nodes are typed against a removed secondary ontology.
 - Dedicated e2e suites for `library-faceted-browse`, `research-source-scout`, and `ontology-interactive` once backend mutation paths are live.
 
 ## Status
 
-First safe app slice complete. The three tabs now serve real user workflows without silent graph writes or fake backend claims.
+Second app slice complete. The three tabs now serve real user workflows with owner-scoped persistence/staging APIs while still avoiding silent graph writes.

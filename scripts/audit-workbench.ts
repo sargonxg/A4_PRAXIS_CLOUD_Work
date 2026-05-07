@@ -38,6 +38,8 @@ const requiredFiles = [
   'src/components/workbench/workbench-surface-elements.tsx',
   'src/lib/workbench/library-state.ts',
   'src/lib/workbench/research-state.ts',
+  'src/lib/workbench/saved-claims-store.ts',
+  'src/lib/workbench/research-ingest-store.ts',
   'src/lib/workbench/surface-state.ts',
   'src/lib/workbench/chapter-content-layer.ts',
   'src/lib/workbench/open-questions-store.ts',
@@ -47,10 +49,15 @@ const requiredFiles = [
   'src/lib/ontology/validator-pass-rate.ts',
   'src/lib/onboarding/case-scaffold.ts',
   'src/types/open-questions.ts',
+  'src/types/saved-claims.ts',
   'src/app/api/cases/[caseId]/context-scope/route.ts',
   'src/app/api/cases/[caseId]/open-questions/route.ts',
   'src/app/api/cases/[caseId]/open-questions/[questionId]/route.ts',
   'src/app/api/cases/[caseId]/research/route.ts',
+  'src/app/api/cases/[caseId]/research/plan/route.ts',
+  'src/app/api/cases/[caseId]/research/ingest/route.ts',
+  'src/app/api/cases/[caseId]/saved-claims/route.ts',
+  'src/app/api/cases/[caseId]/ontologies/route.ts',
   'src/app/api/cases/scaffold/route.ts',
   'src/components/onboarding/ai-first-case-creation/AiFirstCaseCreation.tsx',
   'src/components/sats/ACHWorkbench.tsx',
@@ -160,7 +167,7 @@ for (const marker of ['withAuth', 'listOpenQuestions', 'createOpenQuestion']) {
 }
 
 const libraryState = readFileSync('src/lib/workbench/library-state.ts', 'utf8');
-for (const marker of ['source', 'document', 'claim', 'memo', 'export', 'buildLibraryArtifacts']) {
+for (const marker of ['source', 'document', 'claim', 'memo', 'export', 'buildLibraryArtifacts', 'SavedClaim']) {
   if (!libraryState.includes(marker)) {
     throw new Error(`Pack 27 library state helper missing marker: ${marker}`);
   }
@@ -170,6 +177,34 @@ const researchState = readFileSync('src/lib/workbench/research-state.ts', 'utf8'
 for (const marker of ['RESEARCH_SOURCE_SETS', 'buildResearchPlan', 'buildResearchCandidates']) {
   if (!researchState.includes(marker)) {
     throw new Error(`Pack 27 research state helper missing marker: ${marker}`);
+  }
+}
+
+const savedClaimsRoute = readFileSync('src/app/api/cases/[caseId]/saved-claims/route.ts', 'utf8');
+for (const marker of ['withAuth', 'listSavedClaims', 'createSavedClaim']) {
+  if (!savedClaimsRoute.includes(marker)) {
+    throw new Error(`Pack 27 saved-claims API missing marker: ${marker}`);
+  }
+}
+
+const researchPlanRoute = readFileSync('src/app/api/cases/[caseId]/research/plan/route.ts', 'utf8');
+for (const marker of ['withAuth', 'research_planner', 'buildResearchPlan']) {
+  if (!researchPlanRoute.includes(marker)) {
+    throw new Error(`Pack 27 research plan API missing marker: ${marker}`);
+  }
+}
+
+const researchIngestRoute = readFileSync('src/app/api/cases/[caseId]/research/ingest/route.ts', 'utf8');
+for (const marker of ['withAuth', 'stageResearchIngest', 're_genesis']) {
+  if (!researchIngestRoute.includes(marker)) {
+    throw new Error(`Pack 27 research ingest API missing marker: ${marker}`);
+  }
+}
+
+const ontologiesRoute = readFileSync('src/app/api/cases/[caseId]/ontologies/route.ts', 'utf8');
+for (const marker of ['withAuth', 'ontologyIds', 'ontology-selection-update', 'advisory-pass']) {
+  if (!ontologiesRoute.includes(marker)) {
+    throw new Error(`Pack 27 ontology mutation API missing marker: ${marker}`);
   }
 }
 
@@ -209,7 +244,7 @@ for (const marker of ['computeCaseDensity', 'getEmptyStateActions', 'data-testid
 }
 
 const ontologyViewer = readFileSync('src/components/ontology/OntologySchemaViewer.tsx', 'utf8');
-for (const marker of ['Active Ontologies', 'Validator Pass-Rate Detail', 'Primitive Coverage', 'Recommended Tools Not Yet Run']) {
+for (const marker of ['Active Ontologies', 'Validator Pass-Rate Detail', 'Primitive Coverage', 'Recommended Tools Not Yet Run', 'Add secondary ontology', 'Remove secondary lens']) {
   if (!ontologyViewer.includes(marker)) {
     throw new Error(`Pack 27 ontology viewer missing section: ${marker}`);
   }
