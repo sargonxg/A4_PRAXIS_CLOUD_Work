@@ -69,3 +69,16 @@ test('demo workbench exposes context, ontology, graph, tools, and memo surfaces'
 
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });
+
+test('workbench case picker uses readable copy contrast', async ({ page }) => {
+  const consoleErrors = collectConsoleErrors(page);
+
+  await page.goto('/app/workbench');
+  const intro = page.getByText(/Each case opens in the same operating room/i);
+  await expect(intro).toBeVisible();
+
+  const color = await intro.evaluate((element) => getComputedStyle(element).color);
+  expect(color).toBe('rgb(51, 65, 85)');
+
+  expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
+});

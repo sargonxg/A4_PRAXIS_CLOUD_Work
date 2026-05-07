@@ -8,7 +8,7 @@
     "hash": "8b4b8776da15df30cee6721093b01ab1"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\next-env.d.ts": {
-    "mtime": 1778119395.98851,
+    "mtime": 1778139901.9809506,
     "hash": "b698cdd97fe8e3bd16dcd74899ad7cef"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\next.config.ts": {
@@ -856,8 +856,8 @@
     "hash": "eefac188382d54153500132fbbadb670"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-ux-polish.ts": {
-    "mtime": 1778101199.7692995,
-    "hash": "1a159c21719766444a05002306f71e82"
+    "mtime": 1778139653.5808835,
+    "hash": "142ac3a9f5bcc4a3c734e19975a6d34c"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-verb-hookup.ts": {
     "mtime": 1778081599.623549,
@@ -4608,8 +4608,8 @@
     "hash": "6ae2464f40bb3a7594abd0478502adc0"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\tests\\e2e\\app-usability-smoke.spec.ts": {
-    "mtime": 1778099635.9366932,
-    "hash": "61357423d035870ae7a9c0bf90c5631a"
+    "mtime": 1778139664.5919218,
+    "hash": "d48564f4e2e24b4acf82ef11f721303c"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\tests\\e2e\\capabilities-api.spec.ts": {
     "mtime": 1778081604.8665009,
@@ -5476,8 +5476,8 @@
     "hash": "b84863b8e3c492afb2e083ac135de8e1"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-07-PACK22_GCP_GEMINI_VERIFICATION_PASS2.md": {
-    "mtime": 1778138535.733892,
-    "hash": "c2309dcc4919baa9ffb32f85e23c8a72"
+    "mtime": 1778139130.0327528,
+    "hash": "a17e438db61ac5b0aadd91fc5b7999cb"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-07-TOOL_AUTHORING_SPIKE.md": {
     "mtime": 1778137178.0552294,

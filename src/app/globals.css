@@ -203,6 +203,19 @@ body {
   background: var(--color-navy-300);
 }
 
+/* App text contrast utilities
+   PRAXIS uses intermediate slate steps for dense product copy. Tailwind does
+   not ship 650/750 by default, so define them explicitly; otherwise the app
+   inherits the dark global body color and low-contrast text appears on white
+   workbench cards. */
+.text-slate-650 {
+  color: var(--color-app-text-secondary);
+}
+
+.text-slate-750 {
+  color: var(--color-navy-700);
+}
+
 /* Floating PRAXIS chat markdown — dark panel */
 .floating-praxis-md {
   font-size: 13px;
