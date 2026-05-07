@@ -1,5 +1,9 @@
 # PRAXIS Build Log
 
+## 2026-05-07 — Deep pre-ship observability counters
+
+Continued `DEEP_PRESHIP_CHECKLIST.md` by adding a protected backend `/metrics` endpoint and a small dependency-free Prometheus text registry. Cognee wrapper calls now record operation/status/mode counters and latency summaries even in disabled-safe mode, and tenant sessions record reset counters when connections return to the pool. Extended `audit:deep-preship` to enforce the metrics surface and added backend tests for the metrics contract. This improves the static pre-ship observability gate without claiming live Cloud SQL, Vertex billing, or staging scrape coverage.
+
 ## 2026-05-07 — Case typology surfaced in creation
 
 Continued the ontology system build by wiring the ten PRAXIS specialization case types into the user-facing situation creation path. Added a shared TypeScript case-type registry/classifier, manual primary/secondary case-type picker, review-card display, classify-domain preview payload, and `/api/situations` persistence into both camelCase and snake_case fields so Firestore cases carry the same `case_type` contract as the backend substrate. Extended `audit:ontology-system` and added unit coverage for the ten-type taxonomy. This preserves the existing broad ontology-lens UI for tool ranking while adding the specific ontology stack used by Cognee extraction.

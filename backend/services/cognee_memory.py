@@ -8,9 +8,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import StrEnum
+import logging
+import time
 from typing import Any
 
 from config import get_settings
+from services.metrics import record_cognee_call
 from services.ontology_system import (
     BASE_ONTOLOGY_FILE,
     data_point_class_names,
@@ -22,6 +25,7 @@ from services.ontology_system import (
 SUPPORTED_MODES = {"postgres-kuzu", "neo4j", "postgres-only-vector", "disabled"}
 COGNEE_DATASET_SEPARATOR = "__"
 ACO_ONTOLOGY_FILE = BASE_ONTOLOGY_FILE
+logger = logging.getLogger("praxis.cognee")
 
 
 class CogneeSearchMode(StrEnum):
@@ -121,6 +125,31 @@ def is_enabled() -> bool:
     return settings.cognee_enabled and settings.cognee_mode != "disabled"
 
 
+def _finish_call(
+    *,
+    operation: str,
+    scope: MemoryScope,
+    start: float,
+    status: str,
+    mode: CogneeSearchMode | None = None,
+) -> None:
+    latency = time.perf_counter() - start
+    record_cognee_call(
+        operation=operation,
+        status=status,
+        seconds=latency,
+        mode=mode.value if mode else None,
+    )
+    logger.info(
+        "cognee.%s dataset=%s mode=%s status=%s latency_ms=%.1f",
+        operation,
+        scope.dataset,
+        mode.value if mode else None,
+        status,
+        latency * 1000,
+    )
+
+
 def _validate_runtime_config() -> None:
     settings = get_settings()
     if settings.cognee_mode not in SUPPORTED_MODES:
@@ -190,10 +219,17 @@ async def remember(
     Disabled mode is a no-op. Enabled mode is intentionally not implemented in
     the monolith yet; the next pass wires it through the isolated Cognee service.
     """
+    start = time.perf_counter()
     _ = (content, metadata, run_cognify)
     if not is_enabled():
+        _finish_call(operation="remember", scope=scope, start=start, status="disabled")
         return {"ok": False, "status": "disabled", "dataset": scope.dataset, "sourceId": source_id}
-    _load_cognee()
+    try:
+        _load_cognee()
+    except Exception:
+        _finish_call(operation="remember", scope=scope, start=start, status="load_failed")
+        raise
+    _finish_call(operation="remember", scope=scope, start=start, status="not_implemented")
     raise NotImplementedError("Live Cognee remember is owned by the isolated praxis-cognee service")
 
 
@@ -206,9 +242,11 @@ async def add(
     metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Add a source document to the tenant/case Cognee dataset."""
+    start = time.perf_counter()
     _ = (content, metadata)
     node_set = node_set or [f"case_{scope.case_id}"]
     if not is_enabled():
+        _finish_call(operation="add", scope=scope, start=start, status="queued_disabled")
         return {
             "ok": False,
             "status": "queued_disabled",
@@ -216,7 +254,12 @@ async def add(
             "sourceId": source_id,
             "nodeSet": node_set,
         }
-    _load_cognee()
+    try:
+        _load_cognee()
+    except Exception:
+        _finish_call(operation="add", scope=scope, start=start, status="load_failed")
+        raise
+    _finish_call(operation="add", scope=scope, start=start, status="not_implemented")
     raise NotImplementedError("Live Cognee add is owned by the isolated praxis-cognee service")
 
 
@@ -237,6 +280,7 @@ async def cognify(
     The disabled path returns a queued shape so callers can keep their UX honest
     without pretending extraction completed.
     """
+    start = time.perf_counter()
     ontology_file_paths = _ontology_stack(
         case_type=case_type,
         case_type_secondary=case_type_secondary,
@@ -247,6 +291,7 @@ async def cognify(
         data_point_names = data_point_names + tuple(cls.__name__ for cls in custom_data_points)
     resolver = get_resolver(case_type=case_type, case_type_secondary=case_type_secondary)
     if not is_enabled():
+        _finish_call(operation="cognify", scope=scope, start=start, status="queued_disabled")
         return {
             "ok": False,
             "status": "queued_disabled",
@@ -259,7 +304,12 @@ async def cognify(
             "temporalCognify": temporal_cognify,
         }
     _ = (content, metadata)
-    _load_cognee()
+    try:
+        _load_cognee()
+    except Exception:
+        _finish_call(operation="cognify", scope=scope, start=start, status="load_failed")
+        raise
+    _finish_call(operation="cognify", scope=scope, start=start, status="not_implemented")
     raise NotImplementedError("Live Cognee cognify is owned by the isolated praxis-cognee service")
 
 
@@ -271,10 +321,17 @@ async def memify(
     metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Persist a closed research thread as long-lived memory coverage."""
+    start = time.perf_counter()
     if not is_enabled():
+        _finish_call(operation="memify", scope=scope, start=start, status="queued_disabled")
         return {"ok": False, "status": "queued_disabled", "dataset": scope.dataset, "threadId": thread_id}
     _ = (turns, metadata)
-    _load_cognee()
+    try:
+        _load_cognee()
+    except Exception:
+        _finish_call(operation="memify", scope=scope, start=start, status="load_failed")
+        raise
+    _finish_call(operation="memify", scope=scope, start=start, status="not_implemented")
     raise NotImplementedError("Live Cognee memify is owned by the isolated praxis-cognee service")
 
 
@@ -290,7 +347,9 @@ async def improve(
     Disabled mode returns a stable shape so callers can keep the UI honest
     without implying the live Cognee interaction log has been updated.
     """
+    start = time.perf_counter()
     if not is_enabled():
+        _finish_call(operation="improve", scope=scope, start=start, status="queued_disabled")
         return {
             "ok": False,
             "status": "queued_disabled",
@@ -299,7 +358,12 @@ async def improve(
             "positive": positive,
         }
     _ = metadata
-    _load_cognee()
+    try:
+        _load_cognee()
+    except Exception:
+        _finish_call(operation="improve", scope=scope, start=start, status="load_failed")
+        raise
+    _finish_call(operation="improve", scope=scope, start=start, status="not_implemented")
     raise NotImplementedError("Live Cognee improve is owned by the isolated praxis-cognee service")
 
 
@@ -317,13 +381,21 @@ async def search(
     audit: SearchAudit | None = None,
 ) -> list[MemoryHit]:
     """Route Cognee search modes with save_interaction=True by default."""
+    start = time.perf_counter()
     interaction = audit or SearchAudit(mode=mode)
     if not interaction.save_interaction:
+        _finish_call(operation="search", scope=scope, start=start, status="invalid_interaction", mode=mode)
         raise ValueError("Cognee search calls in PRAXIS must use save_interaction=True")
     if not is_enabled():
+        _finish_call(operation="search", scope=scope, start=start, status="disabled", mode=mode)
         return []
     _ = (scope, query, limit, session_id, source_kind, positive, signal, node_set)
-    _load_cognee()
+    try:
+        _load_cognee()
+    except Exception:
+        _finish_call(operation="search", scope=scope, start=start, status="load_failed", mode=mode)
+        raise
+    _finish_call(operation="search", scope=scope, start=start, status="not_implemented", mode=mode)
     raise NotImplementedError("Live Cognee search is owned by the isolated praxis-cognee service")
 
 
@@ -342,7 +414,14 @@ async def recall_provenance(*, scope: MemoryScope, node_name: str, top_k: int = 
 
 
 async def forget(*, scope: MemoryScope, memory_id: str) -> dict[str, Any]:
+    start = time.perf_counter()
     if not is_enabled():
+        _finish_call(operation="forget", scope=scope, start=start, status="disabled")
         return {"ok": False, "status": "disabled", "dataset": scope.dataset, "memoryId": memory_id}
-    _load_cognee()
+    try:
+        _load_cognee()
+    except Exception:
+        _finish_call(operation="forget", scope=scope, start=start, status="load_failed")
+        raise
+    _finish_call(operation="forget", scope=scope, start=start, status="not_implemented")
     raise NotImplementedError("Live Cognee forget is owned by the isolated praxis-cognee service")

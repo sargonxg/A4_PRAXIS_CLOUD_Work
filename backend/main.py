@@ -10,6 +10,7 @@ import asyncio
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from config import get_settings
@@ -151,6 +152,16 @@ async def health() -> dict:
 @app.get("/healthz")
 async def healthz() -> dict:
     return {"ok": True, "service": "praxis-backend", "version": "6.2.0"}
+
+
+@app.get("/metrics")
+async def metrics(_service: dict = Depends(verify_service_token)) -> PlainTextResponse:
+    from services.metrics import render_prometheus
+
+    return PlainTextResponse(
+        render_prometheus(),
+        media_type="text/plain; version=0.0.4; charset=utf-8",
+    )
 
 
 @app.get("/v1/health")

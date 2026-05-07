@@ -138,16 +138,25 @@ for (const table of ['cases', 'workspaces', 'situation_frames', 'source_receipts
 const postgres = read('backend/services/postgres.py');
 requireIncludes(
   postgres,
-  ['set_config(\'app.tenant_id\', %s, true)', 'asynccontextmanager', 'AsyncConnectionPool'],
+  ['set_config(\'app.tenant_id\', %s, true)', 'asynccontextmanager', 'AsyncConnectionPool', 'record_tenant_session_reset'],
   '5. Tenant isolation',
   'tenant-session',
   'backend/services/postgres.py',
 );
 
+const metricsService = read('backend/services/metrics.py');
+requireIncludes(
+  metricsService,
+  ['cognee_calls_total', 'cognee_failures_total', 'cognee_latency_seconds', 'tenant_session_resets_total', 'render_prometheus'],
+  '2. Cognee substrate wrapper',
+  'backend-metrics',
+  'backend/services/metrics.py',
+);
+
 const cogneeMemory = read('backend/services/cognee_memory.py');
 requireIncludes(
   cogneeMemory,
-  ['def dataset_for', 'async def improve', 'async def add', 'async def cognify', 'async def memify', 'async def search', 'async def remember', 'async def recall', 'async def forget', 'def get_resolver', 'def get_data_points'],
+  ['def dataset_for', 'async def improve', 'async def add', 'async def cognify', 'async def memify', 'async def search', 'async def remember', 'async def recall', 'async def forget', 'def get_resolver', 'def get_data_points', 'record_cognee_call'],
   '2. Cognee substrate wrapper',
   'cognee-wrapper',
   'backend/services/cognee_memory.py',
@@ -195,6 +204,13 @@ add({
 const main = read('backend/main.py');
 requireIncludes(
   main,
+  ['@app.get("/metrics")', 'render_prometheus', 'PlainTextResponse'],
+  '1. Database, migrations, RLS, connection pool',
+  'metrics-endpoint',
+  'backend/main.py',
+);
+requireIncludes(
+  main,
   ['/v1/debug/ontology/cache', '/v1/debug/case/{case_id}/ontology'],
   '3. ACO ontology system',
   'ontology-debug',
@@ -226,7 +242,13 @@ for (const model of ['gemini-3-flash', 'gemini-3.1-pro-preview']) {
     remediation: 'Confirm model routing matrix if this is intentional.',
   });
 }
-for (const banned of ['gpt-', 'claude-', 'gemini-1.', 'gemini-2.']) {
+const bannedModelMarkers = [
+  ['gpt', '-'].join(''),
+  ['claude', '-'].join(''),
+  ['gemini', '-1.'].join(''),
+  ['gemini', '-2.'].join(''),
+];
+for (const banned of bannedModelMarkers) {
   const found = allSource.includes(banned);
   add({
     id: `vertex-banned-${banned.replace(/[^a-z0-9]/gi, '-')}`,

@@ -1,10 +1,10 @@
 {
   "date": "2026-05-07",
   "summary": {
-    "pass": 83,
-    "warn": 4,
+    "pass": 94,
+    "warn": 3,
     "blocked": 0,
-    "total": 87
+    "total": 97
   },
   "checks": [
     {
@@ -400,6 +400,54 @@
       "remediation": "None."
     },
     {
+      "id": "tenant-session-record-tenant-session-reset",
+      "section": "5. Tenant isolation",
+      "title": "backend/services/postgres.py includes record_tenant_session_reset",
+      "status": "PASS",
+      "evidence": "backend/services/postgres.py contains required marker.",
+      "remediation": "None."
+    },
+    {
+      "id": "backend-metrics-cognee-calls-total",
+      "section": "2. Cognee substrate wrapper",
+      "title": "backend/services/metrics.py includes cognee_calls_total",
+      "status": "PASS",
+      "evidence": "backend/services/metrics.py contains required marker.",
+      "remediation": "None."
+    },
+    {
+      "id": "backend-metrics-cognee-failures-total",
+      "section": "2. Cognee substrate wrapper",
+      "title": "backend/services/metrics.py includes cognee_failures_total",
+      "status": "PASS",
+      "evidence": "backend/services/metrics.py contains required marker.",
+      "remediation": "None."
+    },
+    {
+      "id": "backend-metrics-cognee-latency-seconds",
+      "section": "2. Cognee substrate wrapper",
+      "title": "backend/services/metrics.py includes cognee_latency_seconds",
+      "status": "PASS",
+      "evidence": "backend/services/metrics.py contains required marker.",
+      "remediation": "None."
+    },
+    {
+      "id": "backend-metrics-tenant-session-resets-total",
+      "section": "2. Cognee substrate wrapper",
+      "title": "backend/services/metrics.py includes tenant_session_resets_total",
+      "status": "PASS",
+      "evidence": "backend/services/metrics.py contains required marker.",
+      "remediation": "None."
+    },
+    {
+      "id": "backend-metrics-render-prometheus",
+      "section": "2. Cognee substrate wrapper",
+      "title": "backend/services/metrics.py includes render_prometheus",
+      "status": "PASS",
+      "evidence": "backend/services/metrics.py contains required marker.",
+      "remediation": "None."
+    },
+    {
       "id": "cognee-wrapper-def-dataset-for",
       "section": "2. Cognee substrate wrapper",
       "title": "backend/services/cognee_memory.py includes def dataset_for",
@@ -488,6 +536,14 @@
       "remediation": "None."
     },
     {
+      "id": "cognee-wrapper-record-cognee-call",
+      "section": "2. Cognee substrate wrapper",
+      "title": "backend/services/cognee_memory.py includes record_cognee_call",
+      "status": "PASS",
+      "evidence": "backend/services/cognee_memory.py contains required marker.",
+      "remediation": "None."
+    },
+    {
       "id": "cognee-dataset-centralized",
       "section": "2. Cognee substrate wrapper",
       "title": "Dataset names flow through cognee_memory.dataset_for",
@@ -534,6 +590,30 @@
       "status": "PASS",
       "evidence": "base=true; specializations=10",
       "remediation": "Add the missing OWL files before marking ontology functional complete."
+    },
+    {
+      "id": "metrics-endpoint--app-get-metrics-",
+      "section": "1. Database, migrations, RLS, connection pool",
+      "title": "backend/main.py includes @app.get(\"/metrics\")",
+      "status": "PASS",
+      "evidence": "backend/main.py contains required marker.",
+      "remediation": "None."
+    },
+    {
+      "id": "metrics-endpoint-render-prometheus",
+      "section": "1. Database, migrations, RLS, connection pool",
+      "title": "backend/main.py includes render_prometheus",
+      "status": "PASS",
+      "evidence": "backend/main.py contains required marker.",
+      "remediation": "None."
+    },
+    {
+      "id": "metrics-endpoint-plaintextresponse",
+      "section": "1. Database, migrations, RLS, connection pool",
+      "title": "backend/main.py includes PlainTextResponse",
+      "status": "PASS",
+      "evidence": "backend/main.py contains required marker.",
+      "remediation": "None."
     },
     {
       "id": "ontology-debug--v1-debug-ontology-cache",
@@ -611,9 +691,9 @@
       "id": "vertex-banned-gemini-1-",
       "section": "7. Vertex Gemini integration",
       "title": "No banned direct model marker gemini-1.",
-      "status": "WARN",
-      "evidence": "gemini-1. marker found; run audit:model-strings for allowlist context.",
-      "remediation": "Move direct model strings into the approved provider matrix or update the allowlist audit."
+      "status": "PASS",
+      "evidence": "gemini-1. marker not found.",
+      "remediation": "None."
     },
     {
       "id": "vertex-banned-gemini-2-",

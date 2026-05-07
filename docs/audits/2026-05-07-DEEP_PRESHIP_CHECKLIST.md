@@ -2,7 +2,7 @@
 
 Date: 2026-05-07
 
-Summary: 83 PASS, 4 WARN, 0 BLOCKED across 87 static pre-ship checks.
+Summary: 94 PASS, 3 WARN, 0 BLOCKED across 97 static pre-ship checks.
 
 This audit is deliberately conservative: live staging checks, Cloud SQL restore tests, load tests, browser sessions, and Vertex billing comparisons remain blocked until run against staging/production credentials and datasets.
 
@@ -56,6 +56,9 @@ This audit is deliberately conservative: live staging checks, Cloud SQL restore 
 | PASS | workspace_orchestrator_log RLS policy | workspace_orchestrator_log has RLS and tenant policy markers. | None. |
 | PASS | notifications RLS policy | notifications has RLS and tenant policy markers. | None. |
 | PASS | notification_preferences RLS policy | notification_preferences has RLS and tenant policy markers. | None. |
+| PASS | backend/main.py includes @app.get("/metrics") | backend/main.py contains required marker. | None. |
+| PASS | backend/main.py includes render_prometheus | backend/main.py contains required marker. | None. |
+| PASS | backend/main.py includes PlainTextResponse | backend/main.py contains required marker. | None. |
 
 ## 5. Tenant isolation
 
@@ -64,11 +67,17 @@ This audit is deliberately conservative: live staging checks, Cloud SQL restore 
 | PASS | backend/services/postgres.py includes set_config('app.tenant_id', %s, true) | backend/services/postgres.py contains required marker. | None. |
 | PASS | backend/services/postgres.py includes asynccontextmanager | backend/services/postgres.py contains required marker. | None. |
 | PASS | backend/services/postgres.py includes AsyncConnectionPool | backend/services/postgres.py contains required marker. | None. |
+| PASS | backend/services/postgres.py includes record_tenant_session_reset | backend/services/postgres.py contains required marker. | None. |
 
 ## 2. Cognee substrate wrapper
 
 | Status | Check | Evidence | Remediation |
 |---|---|---|---|
+| PASS | backend/services/metrics.py includes cognee_calls_total | backend/services/metrics.py contains required marker. | None. |
+| PASS | backend/services/metrics.py includes cognee_failures_total | backend/services/metrics.py contains required marker. | None. |
+| PASS | backend/services/metrics.py includes cognee_latency_seconds | backend/services/metrics.py contains required marker. | None. |
+| PASS | backend/services/metrics.py includes tenant_session_resets_total | backend/services/metrics.py contains required marker. | None. |
+| PASS | backend/services/metrics.py includes render_prometheus | backend/services/metrics.py contains required marker. | None. |
 | PASS | backend/services/cognee_memory.py includes def dataset_for | backend/services/cognee_memory.py contains required marker. | None. |
 | PASS | backend/services/cognee_memory.py includes async def improve | backend/services/cognee_memory.py contains required marker. | None. |
 | PASS | backend/services/cognee_memory.py includes async def add | backend/services/cognee_memory.py contains required marker. | None. |
@@ -80,6 +89,7 @@ This audit is deliberately conservative: live staging checks, Cloud SQL restore 
 | PASS | backend/services/cognee_memory.py includes async def forget | backend/services/cognee_memory.py contains required marker. | None. |
 | PASS | backend/services/cognee_memory.py includes def get_resolver | backend/services/cognee_memory.py contains required marker. | None. |
 | PASS | backend/services/cognee_memory.py includes def get_data_points | backend/services/cognee_memory.py contains required marker. | None. |
+| PASS | backend/services/cognee_memory.py includes record_cognee_call | backend/services/cognee_memory.py contains required marker. | None. |
 | PASS | Dataset names flow through cognee_memory.dataset_for | No inline owner_uid__case_id construction found outside wrapper. | Replace inline dataset-name construction with MemoryScope or dataset_for(). |
 
 ## 3. ACO ontology system
@@ -110,7 +120,7 @@ This audit is deliberately conservative: live staging checks, Cloud SQL restore 
 | PASS | Allowed model gemini-3.1-pro-preview present | gemini-3.1-pro-preview appears in source. | Confirm model routing matrix if this is intentional. |
 | WARN | No banned direct model marker gpt- | gpt- marker found; run audit:model-strings for allowlist context. | Move direct model strings into the approved provider matrix or update the allowlist audit. |
 | WARN | No banned direct model marker claude- | claude- marker found; run audit:model-strings for allowlist context. | Move direct model strings into the approved provider matrix or update the allowlist audit. |
-| WARN | No banned direct model marker gemini-1. | gemini-1. marker found; run audit:model-strings for allowlist context. | Move direct model strings into the approved provider matrix or update the allowlist audit. |
+| PASS | No banned direct model marker gemini-1. | gemini-1. marker not found. | None. |
 | WARN | No banned direct model marker gemini-2. | gemini-2. marker found; run audit:model-strings for allowlist context. | Move direct model strings into the approved provider matrix or update the allowlist audit. |
 
 ## 9. MCP server

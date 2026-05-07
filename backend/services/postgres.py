@@ -13,6 +13,7 @@ from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
 from config import get_settings
+from services.metrics import increment_counter, record_tenant_session_reset
 
 
 class TenantConnection:
@@ -76,11 +77,15 @@ async def tenant_session(uid: str) -> AsyncIterator[TenantConnection]:
         raise ValueError("tenant_session requires a non-empty uid")
     if pool.closed:
         await open_pool()
+    increment_counter("tenant_session_starts_total")
     async with pool.connection() as conn:
         async with conn.transaction():
             async with conn.cursor() as cur:
                 await cur.execute("SELECT set_config('app.tenant_id', %s, true)", (uid,))
-            yield TenantConnection(conn)
+            try:
+                yield TenantConnection(conn)
+            finally:
+                record_tenant_session_reset()
 
 
 async def verify_extensions() -> None:
