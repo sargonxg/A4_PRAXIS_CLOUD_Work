@@ -1,9 +1,11 @@
 'use client';
 
-import { Activity, BookOpen, Boxes, FileText, GitBranch, Library, Search, Store, Users } from 'lucide-react';
+import { Activity, BookOpen, Boxes, FileText, GitBranch, GitBranchPlus, Library, Search, Store, Users } from 'lucide-react';
+import { BoardroomIndex } from '@/components/boardroom/BoardroomWorkspace';
 import { PraxisGraphCanvas } from '@/components/graph/PraxisGraphCanvas';
 import { MemoStudio } from '@/components/memo/MemoStudio';
 import { OntologySchemaViewer } from '@/components/ontology/OntologySchemaViewer';
+import { ACHIndex } from '@/components/sats/ACHWorkbench';
 import { ToolMarketplace } from '@/components/tools/ToolMarketplace';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { ToolGate } from '@/components/workbench/tool-gate';
@@ -16,9 +18,17 @@ export function WorkbenchTabContent({ activeTab }: { activeTab: WorkbenchTabId }
   if (activeTab === 'chapters') return <WorkbenchChapterRenderer />;
   if (activeTab === 'ontology') return <OntologySchemaViewer />;
   if (activeTab === 'graph') return <WorkbenchGraphPanel />;
+  if (activeTab === 'ach') return <WorkbenchACHPanel />;
   if (activeTab === 'tools') return <ToolMarketplace />;
   if (activeTab === 'memos') return <MemoStudio />;
-  if (activeTab === 'boardroom' || activeTab === 'draft') {
+  if (activeTab === 'boardroom') {
+    return (
+      <ToolGate>
+        <WorkbenchBoardroomPanel />
+      </ToolGate>
+    );
+  }
+  if (activeTab === 'draft') {
     return (
       <ToolGate>
         <WorkbenchTabPanel tabId={activeTab} />
@@ -26,6 +36,16 @@ export function WorkbenchTabContent({ activeTab }: { activeTab: WorkbenchTabId }
     );
   }
   return <WorkbenchTabPanel tabId={activeTab} />;
+}
+
+function WorkbenchACHPanel() {
+  const { caseId } = useWorkbenchScope();
+  return <ACHIndex caseId={caseId} />;
+}
+
+function WorkbenchBoardroomPanel() {
+  const { caseId } = useWorkbenchScope();
+  return <BoardroomIndex caseId={caseId} />;
 }
 
 function WorkbenchGraphPanel() {
@@ -78,6 +98,7 @@ const TAB_TITLES: Record<WorkbenchTabId, string> = {
   research: 'Research',
   ontology: 'Ontology',
   graph: 'Graph',
+  ach: 'ACH',
   tools: 'Tools',
   memos: 'Memos',
   boardroom: 'Boardroom',
@@ -92,6 +113,7 @@ const TAB_BODY: Record<WorkbenchTabId, string> = {
   research: 'Run source discovery and research collection against the active case context.',
   ontology: 'Inspect the active case ontology, primitive mapping, validators, and tool requirements.',
   graph: 'Inspect graph primitives, truth layers, provenance coverage, and graph projection health.',
+  ach: 'Open and maintain Analysis of Competing Hypotheses matrices for competing explanations.',
   tools: 'Browse the curated ontology-aware tool marketplace for the active case.',
   memos: 'Create cited memos, talking points, sit-reps, and policy notes from the active case graph.',
   boardroom: 'Use advisor deliberation on top of the locked context.',
@@ -105,6 +127,7 @@ const TAB_ICONS: Partial<Record<WorkbenchTabId, typeof Activity>> = {
   research: Search,
   ontology: Boxes,
   graph: GitBranch,
+  ach: GitBranchPlus,
   tools: Store,
   memos: FileText,
   boardroom: Users,

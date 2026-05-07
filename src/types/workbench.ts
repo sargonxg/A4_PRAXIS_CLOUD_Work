@@ -6,6 +6,7 @@ export type WorkbenchTabId =
   | 'research'
   | 'ontology'
   | 'graph'
+  | 'ach'
   | 'tools'
   | 'memos'
   | 'boardroom'

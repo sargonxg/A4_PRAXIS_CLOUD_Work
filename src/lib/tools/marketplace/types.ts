@@ -1,10 +1,11 @@
 import type { OntologyId } from '@/lib/ontology/types';
 import type { ContextSpec } from '@/types/context';
+import type { SATCategory } from '@/types/sats';
 
 export type MarketplaceToolCategory = 'conflict' | 'mediation' | 'governance' | 'narrative' | 'cross';
 export type MarketplaceCostClass = 'low' | 'medium' | 'high';
 export type ToolContractCategory = 'analysis' | 'synthesis' | 'export' | 'utility' | 'meta';
-export type SubagentId = 'context-preparer' | 'source-augmenter' | 'output-refiner' | 'memo-drafter';
+export type SubagentId = 'context-preparer' | 'source-augmenter' | 'output-refiner' | 'memo-drafter' | 'red-team-analyst';
 
 export interface LooseObjectSchema {
   type: 'object';
@@ -21,6 +22,7 @@ export interface MarketplaceToolDefinition {
   title: string;
   category: MarketplaceToolCategory;
   contractCategory: ToolContractCategory;
+  satCategory?: SATCategory;
   description: string;
   ontologyRequirements: OntologyId[];
   minContextHealth: number;

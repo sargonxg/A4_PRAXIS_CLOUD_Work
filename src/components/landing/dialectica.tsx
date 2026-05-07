@@ -18,11 +18,11 @@ export function Dialectica() {
   const narrativeMotion = useNarrativeMotion();
 
   return (
-    <section id="dialectica" className="relative overflow-hidden bg-cream-50 px-6 py-16 lg:py-24">
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.65),transparent_28%,rgba(26,35,50,0.04))]" />
-      <div className="relative mx-auto max-w-7xl">
+    <section id="dialectica" className="relative overflow-hidden bg-cream-50 px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.72),transparent_24%,rgba(26,35,50,0.05))]" />
+      <div className="relative mx-auto max-w-[1520px]">
         <motion.div
-          className="mx-auto max-w-3xl text-center"
+          className="mx-auto max-w-4xl text-center"
           initial={narrativeMotion ? { opacity: 0, y: 24 } : { opacity: 1, y: 0 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
@@ -41,7 +41,7 @@ export function Dialectica() {
           </p>
         </motion.div>
 
-        <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)] lg:items-stretch">
+        <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.45fr)] lg:items-stretch xl:grid-cols-[minmax(0,1.68fr)_minmax(360px,0.42fr)]">
           <motion.div
             initial={narrativeMotion ? { opacity: 0, x: -24 } : { opacity: 1, x: 0 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -51,9 +51,9 @@ export function Dialectica() {
             <DialecticaGraph3D narrativeMotion={narrativeMotion} />
           </motion.div>
 
-          <div className="grid gap-6">
+          <div className="grid content-stretch gap-6">
             <motion.div
-              initial={narrativeMotion ? { opacity: 0, x: 24 } : { opacity: 1, x: 0 }}
+              initial={false}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.7, delay: 0.05 }}
@@ -61,7 +61,7 @@ export function Dialectica() {
               <DialecticaFirewallDemo narrativeMotion={narrativeMotion} />
             </motion.div>
             <motion.div
-              initial={narrativeMotion ? { opacity: 0, x: 24 } : { opacity: 1, x: 0 }}
+              initial={false}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.7, delay: 0.12 }}
@@ -73,7 +73,7 @@ export function Dialectica() {
 
         <motion.div
           className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-4"
-          initial={narrativeMotion ? { opacity: 0, y: 18 } : { opacity: 1, y: 0 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.15 }}

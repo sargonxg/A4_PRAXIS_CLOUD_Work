@@ -9,7 +9,7 @@ const runRoutePath = 'src/app/api/tools/marketplace/run/route.ts';
 const runnerPath = 'src/lib/tools/marketplace/runner.ts';
 const uiPath = 'src/components/tools/ToolMarketplace.tsx';
 
-if (MARKETPLACE_TOOLS.length !== 16) failures.push(`expected exactly 16 marketplace tools, found ${MARKETPLACE_TOOLS.length}`);
+if (MARKETPLACE_TOOLS.length !== 20) failures.push(`expected exactly 20 marketplace tools after Pack 15 SAT additions, found ${MARKETPLACE_TOOLS.length}`);
 if (new Set(MARKETPLACE_TOOLS.map((tool) => tool.id)).size !== MARKETPLACE_TOOLS.length) failures.push('tool ids must be unique');
 
 for (const tool of MARKETPLACE_TOOLS) {
@@ -74,4 +74,5 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Tool marketplace audit passed for 16 curated tools, handler contracts, and foundation execution.');
+console.log('Tool marketplace audit passed for 20 curated tools, handler contracts, and foundation execution.');
+console.log('Pack 15 SAT toolkit present: ACH, KAC, Red Team, and Premortem.');

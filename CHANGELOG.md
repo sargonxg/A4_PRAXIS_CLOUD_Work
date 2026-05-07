@@ -2,6 +2,29 @@
 
 ## [Unreleased]
 
+- feat(boardroom): add Pack 16 Agentic Boardroom foundation.
+  Added boardroom schemas, ten canonical persona specs, deterministic citable
+  deliberation orchestration, authenticated deliberation APIs, first-class
+  workbench routes, visual round-table components, analyst_persona/moderator
+  subagent scaffolds, ADRs 0026-0028, and audit/test coverage for the
+  foundation slice.
+- feat(boardroom): complete Pack 16 second-pass local surfaces.
+  Added boardroom start/abort lifecycle routes, DOCX and Markdown transcript
+  exports, synthesis-claim promotion into the `graph_updates` review queue,
+  and custom persona authoring v1 at `/app/settings/personas` with Firestore
+  persistence, corpus manifest capture, voice controls, tool affinity, and
+  deterministic preview coverage.
+- feat(boardroom): finish Pack 16 third-pass contract coverage.
+  Added deterministic SSE turn streaming, custom-persona detail/new routes,
+  backend custom-persona validator/prompt/sandbox scaffolds, persona-corpus
+  ingest/retrieval scaffolds, persona corpus audit script, and e2e coverage
+  for boardroom flow, abort/cost guard, and custom persona creation.
+- feat(sats): add Pack 15 Analyst's Toolkit foundation.
+  Added SAT schemas, ACH ranking, first-class ACH routes/tab, owner-scoped ACH
+  API persistence, editable matrix cells, Markdown export, four
+  Heuer-Pherson/Klein marketplace entries, SAT skill files, red-team analyst
+  scaffold, SAT annex block typing, ADRs 0021-0023, and a foundation audit
+  ledger for remaining report/deployment work.
 - prod(ai): add Pack 14 Gemini Enterprise / Vertex AI provider posture.
   Added the model matrix, typed matrix loader, backend model constants,
   provider-isolation audits, Vertex-default audit gate, and rewired document

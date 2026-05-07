@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, CheckCircle2, History, Loader2, Play, RefreshCw, RotateCcw, Search, SlidersHorizontal, Square, Wrench } from 'lucide-react';
+import { AlertCircle, CheckCircle2, GitBranchPlus, History, Loader2, Play, RefreshCw, RotateCcw, Search, SlidersHorizontal, Square, Wrench } from 'lucide-react';
 import { getOntologyForDomain } from '@/lib/ontology/registry';
 import { filterMarketplaceTools, sortMarketplaceTools } from '@/lib/tools/marketplace/filter-engine';
 import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
@@ -80,6 +81,14 @@ export function ToolMarketplace() {
   const suggestions = useMemo(
     () => rankMarketplaceToolsForCase(MARKETPLACE_TOOLS, caseModule).slice(0, 3),
     [caseModule],
+  );
+  const analystToolkitTools = useMemo(
+    () => MARKETPLACE_TOOLS.filter((tool) => tool.satCategory),
+    [],
+  );
+  const visibleNonSatTools = useMemo(
+    () => visibleTools.filter((tool) => !tool.satCategory),
+    [visibleTools],
   );
 
   const loadRunHistory = useCallback(async () => {
@@ -190,7 +199,7 @@ export function ToolMarketplace() {
             <h2 className="text-lg font-semibold">Tools Marketplace</h2>
           </div>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-650">
-            Sixteen focused tools mapped to ontology requirements, context health, runtime, cost, and canary cases. Artifacts allow raw text, AI generations, and context dumps alongside structured output.
+            Twenty focused tools mapped to ontology requirements, context health, runtime, cost, and canary cases, including the Pack 15 Analyst&apos;s Toolkit SATs. Artifacts allow raw text, AI generations, and context dumps alongside structured output.
           </p>
         </div>
         <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-right">
@@ -252,6 +261,61 @@ export function ToolMarketplace() {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="mt-5 rounded-lg border border-navy-200 bg-navy-950 p-4 text-white shadow-sm shadow-navy-950/10">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-300">Analyst&apos;s Toolkit</p>
+            <h3 className="mt-1 text-lg font-semibold">Heuer-Pherson Structured Analytic Techniques</h3>
+            <p className="mt-2 max-w-4xl text-sm leading-6 text-blue-100/85">
+              ACH, Key Assumptions Check, Red Team Analysis, and Premortem are grouped as first-class SAT actions. PRAXIS implementations are independent and keep synthesized outputs advisory until a user promotes them through review.
+            </p>
+          </div>
+          <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-blue-100">
+            Pack 15
+          </span>
+        </div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-4">
+          {analystToolkitTools.map((tool) => (
+            <article key={tool.id} className="rounded-lg border border-white/10 bg-white/8 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-white">{tool.name}</p>
+                  <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-blue-100/55">
+                    {tool.satCategory?.replace('_', ' ')}
+                  </p>
+                </div>
+                <span className="rounded bg-white/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-blue-100">
+                  {tool.costClass}
+                </span>
+              </div>
+              <p className="mt-3 min-h-20 text-xs leading-5 text-blue-100/80">{tool.description}</p>
+              {tool.satCategory === 'ach' ? (
+                <Link
+                  href={`/app/workbench/${encodeURIComponent(caseId)}/ach`}
+                  className="mt-3 inline-flex h-8 items-center gap-1 rounded-md bg-gold-500 px-3 text-xs font-semibold text-navy-950 transition-colors hover:bg-gold-400"
+                >
+                  <GitBranchPlus className="h-3.5 w-3.5" />
+                  Open ACH
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => runTool(tool.id)}
+                  disabled={runningToolId !== null}
+                  className="mt-3 inline-flex h-8 items-center gap-1 rounded-md bg-white px-3 text-xs font-semibold text-navy-950 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:bg-white/40"
+                >
+                  {runningToolId === tool.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+                  Run
+                </button>
+              )}
+            </article>
+          ))}
+        </div>
+        <p className="mt-3 text-[10px] leading-5 text-blue-100/60">
+          Based on Richards J. Heuer Jr. and Randolph H. Pherson, Structured Analytic Techniques for Intelligence Analysis, with Klein 2007 for Premortem.
+        </p>
       </div>
 
       {(lastRun || runError) && (
@@ -382,7 +446,7 @@ export function ToolMarketplace() {
       </div>
 
       <div className="mt-5 grid gap-3 lg:grid-cols-2">
-        {visibleTools.map((tool) => (
+        {visibleNonSatTools.map((tool) => (
           <article key={tool.id} className="rounded-md border border-slate-200 bg-slate-50 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>

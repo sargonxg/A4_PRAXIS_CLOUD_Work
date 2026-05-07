@@ -1,0 +1,14 @@
+[
+  {"id": "conflict-1", "ontology": "conflict", "targetActorId": "actor-a", "framing": "Model strategic incentives around a ceasefire."},
+  {"id": "conflict-2", "ontology": "conflict", "targetActorId": "actor-b", "framing": "Challenge assumptions about pressure sensitivity."},
+  {"id": "conflict-3", "ontology": "conflict", "targetActorId": "actor-c", "framing": "Assess likely bargaining posture."},
+  {"id": "mediation-1", "ontology": "mediation", "targetActorId": "party-a", "framing": "Model how party A views sequencing."},
+  {"id": "mediation-2", "ontology": "mediation", "targetActorId": "party-b", "framing": "Stress-test interest assumptions."},
+  {"id": "mediation-3", "ontology": "mediation", "targetActorId": "party-c", "framing": "Model mediator credibility concerns."},
+  {"id": "governance-1", "ontology": "governance", "targetActorId": "bloc-a", "framing": "Model veto incentives."},
+  {"id": "governance-2", "ontology": "governance", "targetActorId": "bloc-b", "framing": "Challenge coalition-map assumptions."},
+  {"id": "governance-3", "ontology": "governance", "targetActorId": "institution-a", "framing": "Model mandate-risk perception."},
+  {"id": "narrative-1", "ontology": "narrative", "targetActorId": "messenger-a", "framing": "Model frame adoption incentives."},
+  {"id": "narrative-2", "ontology": "narrative", "targetActorId": "audience-a", "framing": "Challenge audience assumptions."},
+  {"id": "narrative-3", "ontology": "narrative", "targetActorId": "media-a", "framing": "Model credibility constraints."}
+]

@@ -94,8 +94,8 @@ export function LiveDemo() {
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-diplomatic-blue/40 to-transparent" />
 
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="grid gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
+      <div className="mx-auto max-w-[1520px] px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-10 lg:grid-cols-[0.68fr_1.32fr] lg:items-center xl:grid-cols-[0.6fr_1.4fr]">
           <div>
             <span className="mb-5 block h-px w-16 bg-gradient-to-r from-gold-600 to-transparent" aria-hidden="true" />
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-600">Watch it work</p>
@@ -168,7 +168,7 @@ export function LiveDemo() {
               </span>
             </div>
 
-            <div className="relative h-[520px] overflow-hidden rounded-b-2xl bg-white">
+            <div className="relative h-[560px] overflow-hidden rounded-b-2xl bg-white lg:h-[620px]">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeStep}

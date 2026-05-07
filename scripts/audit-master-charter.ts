@@ -60,8 +60,18 @@ for (const script of ['audit:gate', 'audit:master-charter', 'audit:codex-prompts
 }
 
 const status = readIfExists('docs/audits/2026-05-06-MASTER_CHARTER_STATUS.md');
-for (const marker of ['Pack 14', 'Not v1.0.0 complete', 'No open S0/S1', 'Graphify', 'Remaining Work']) {
+for (const marker of ['Pack 14', 'Not v1.0.0 complete', 'Open S0/S1 From Self-Audit', 'Graphify', 'Remaining Work']) {
   if (!status.includes(marker)) failures.push(`master charter status missing marker: ${marker}`);
+}
+
+const selfAudit = readIfExists('docs/audits/2026-05-06-SELF_AUDIT.md');
+for (const marker of ['3 S0', '15 S1', 'Public demo', 'Persona CI', 'Landing-Page Polish Plan']) {
+  if (!selfAudit.includes(marker)) failures.push(`self audit missing marker: ${marker}`);
+}
+
+const selfAuditBacklog = readIfExists('docs/backlog/2026-05-06-from-self-audit.md');
+for (const marker of ['S0 / S1 Launch Blockers', 'Public demo contract', 'Persona CI', 'Canonical entry routes', 'S2 Backlog']) {
+  if (!selfAuditBacklog.includes(marker)) failures.push(`self audit backlog missing marker: ${marker}`);
 }
 
 const announcement = readIfExists('docs/launch/ANNOUNCEMENT.md');

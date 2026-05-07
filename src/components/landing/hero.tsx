@@ -291,7 +291,7 @@ export function Hero() {
   const headline = "The policy workbench for grounded statecraft.";
 
   return (
-    <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-24">
+    <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 pb-8 pt-24 sm:px-6 lg:px-8">
       {/* Background mesh gradient */}
       <div
         className="pointer-events-none absolute inset-0"
@@ -312,9 +312,9 @@ export function Hero() {
       />
 
       {/* Two-column layout on large screens */}
-      <div className="relative z-10 mx-auto flex max-w-6xl w-full flex-col items-center gap-16 lg:flex-row lg:items-center lg:gap-12">
+      <div className="relative z-10 mx-auto grid w-full max-w-[1520px] grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,0.82fr)_minmax(540px,1.18fr)] lg:gap-10 xl:grid-cols-[minmax(0,0.76fr)_minmax(720px,1.24fr)]">
         {/* LEFT: headline + CTAs */}
-        <div className="flex flex-col items-center text-center lg:items-start lg:text-left lg:flex-1">
+        <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
           {/* Eyebrow */}
           <motion.div
             initial={animateText ? { opacity: 0, y: -10 } : { opacity: 1, y: 0 }}
@@ -332,7 +332,7 @@ export function Hero() {
             variants={animateText ? containerVariants : {}}
             initial="hidden"
             animate="visible"
-            className="mb-8 font-serif text-5xl leading-[1.08] font-normal tracking-tight text-navy-950 sm:text-6xl lg:text-[68px]"
+            className="mb-8 max-w-4xl font-serif text-5xl leading-[1.06] font-normal tracking-tight text-navy-950 sm:text-6xl lg:text-[64px] xl:text-[72px]"
           >
             {headline.split(" ").map((word, index) => (
               <motion.span
@@ -383,7 +383,7 @@ export function Hero() {
         </div>
 
         {/* RIGHT: hero visual (video loop with ProductGlimpse fallback) */}
-        <div className="w-full max-w-md lg:flex-1 lg:max-w-none">
+        <div className="relative w-full max-w-[760px] justify-self-center lg:max-w-none xl:-mr-4">
           <HeroVisual narrativeMotion={narrativeMotion} />
         </div>
       </div>

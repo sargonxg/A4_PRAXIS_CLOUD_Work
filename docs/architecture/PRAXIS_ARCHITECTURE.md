@@ -575,11 +575,12 @@ Every tool declares its full surface as static fields:
 At `/app/workbench/[caseId]/tools` the user sees:
 
 - **Suggestion banner**: top 3 tools ranked by the suggestion engine, each with a one-sentence rationale ("Recommended because your case is mediation-ontology and you're a mediator").
-- **Card grid**: all 16 tools with `ToolFitBadge` (Ready / Needs more sources / Not for this ontology — colored, advisory).
+- **Analyst's Toolkit strip**: ACH, Key Assumptions Check, Red Team Analysis, and Premortem grouped as Heuer-Pherson SATs (Premortem cites Klein 2007). ACH links to its first-class workbench surface; the other SATs run as marketplace tools.
+- **Card grid**: all 20 curated marketplace tools with `ToolFitBadge` (Ready / Needs more sources / Not for this ontology — colored, advisory).
 - **Filters**: by category, ontology, cost class, recent runs.
 - **Per-tool page** at `tools/[toolId]`: schema-driven form (via @rjsf/core), composition links, "About this tool" panel rendering the SKILL.md.
 
-### 11.3 The 16 v1 tools
+### 11.3 The 20 v1.1 marketplace tools
 
 | Ontology | Tools |
 |---|---|
@@ -588,8 +589,11 @@ At `/app/workbench/[caseId]/tools` the user sees:
 | Governance | veto-probability, mandate-traceback, coalition-map |
 | Narrative | frame-cascade, counter-narrative-finder, fact-check-traceback |
 | Cross-cutting | contradiction-finder, context-health-explainer, brief-exporter, scenario-projector |
+| Analyst's Toolkit SATs | ach, kac, red-team, premortem |
 
 Plus the memo tools (`cross.memo-create`, `cross.memo-refresh`) added in pack 13 M8.
+
+ACH is also a first-class workbench surface at `/app/workbench/[caseId]/ach/[achId]` because its central artifact is a multi-session hypothesis x evidence matrix. The surface loads and saves through authenticated owner-scoped Next API routes under `/api/sats/ach`, storing matrices at `users/{uid}/situations/{caseId}/ach/{achId}`. SAT outputs are synthesized and advisory until the user promotes claims through the review queue and symbolic firewall.
 
 ### 11.4 Adding a new tool
 
@@ -607,7 +611,7 @@ Every tool execution produces a `ToolRun` record at `users/{uid}/situations/{cas
 
 ## 12. Agents (L3) — Vertex AI Agent Engine
 
-### 12.1 The four subagents
+### 12.1 The seven subagents
 
 | Subagent | Purpose | Default model | Cost ceiling | P95 latency |
 |---|---|---|---|---|
@@ -615,6 +619,11 @@ Every tool execution produces a `ToolRun` record at `users/{uid}/situations/{cas
 | **Source Augmenter** | Suggests authoritative public sources from a domain allowlist | gemini-3-flash | $0.10/call | 8s |
 | **Output Refiner** | Adapts tool output to user's communication style; schema-validated, can't change facts | claude-opus-4.7@vertex | $0.03/call | 4s |
 | **Memo Drafter** | Drafts memo blocks from prepared context with graph citations | claude-opus-4.7@vertex | $0.08/call | 6s |
+| **Red Team Analyst** | Safe adversary-perspective modeling for Pack 15 SATs | gemini-3-flash | $0.06/call | 6s |
+| **Analyst Persona** | Parameterized Pack 16 boardroom persona contribution; loads persona spec, corpus namespace, and tool affinity | claude-opus-4.7@vertex for final prose | $0.04/call | 5s |
+| **Moderator** | Pack 16 boardroom orchestration; schedules phases, surfaces dissent, enforces cost guard, calls synthesis | gemini-3-flash | $1.50/deliberation | 30s |
+
+Pack 16 adds the Agentic Boardroom as a first-class workbench surface at `/app/workbench/[caseId]/boardroom`. The local foundation uses deterministic orchestration and authenticated owner-scoped API routes under `/api/boardroom/deliberations` for create/read/update, start, abort, deterministic SSE turn streaming, DOCX/Markdown export, and synthesis-claim promotion into `graph_updates`. Custom persona authoring v1 lives at `/app/settings/personas` with declared corpus manifests, detail/new routes, prompt sandboxing, and tool affinity; binary corpus ingestion, live pgvector retrieval, and live Agent Engine deployment for `analyst_persona` and `moderator` remain the staging/prod follow-up.
 
 ### 12.2 Why Vertex AI Agent Engine
 
@@ -1086,6 +1095,12 @@ The current ADR set:
 | 0018 | Subagent pattern | 13 |
 | 0019 | Vertex AI Agent Engine for subagent runtime | 14 |
 | 0020 | Symbolic firewall recalibration (hard/soft/synthesized tiers) | this revision |
+| 0021 | SATs as first-class Analyst's Toolkit surfaces | 15 |
+| 0022 | Red Team Analyst subagent | 15 |
+| 0023 | ACH workbench surface | 15 |
+| 0026 | Agentic Boardroom architecture | 16 |
+| 0027 | Parameterized analyst_persona subagent | 16 |
+| 0028 | Persona corpus retrieval pattern | 16 |
 
 ### 18.5 Persona suites as the production bar
 

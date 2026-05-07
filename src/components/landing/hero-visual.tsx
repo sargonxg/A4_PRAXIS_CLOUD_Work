@@ -18,6 +18,12 @@ const COMMAND_STEPS = [
   { label: "BRIEF", value: "18 cites" },
 ];
 
+const MOBILE_SIGNAL_STEPS = [
+  ["Graph", "42 edges"],
+  ["Evidence", "18 cites"],
+  ["Memo", "DOCX"],
+];
+
 /**
  * Hero visual — the "portal".
  *
@@ -64,16 +70,21 @@ export function HeroVisual({ narrativeMotion = true }: { narrativeMotion?: boole
       ref={wrapperRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative w-full"
+      className="relative mx-auto w-full max-w-[900px]"
       style={{ perspective: "1400px" }}
       aria-hidden="true"
     >
-      {!shouldReduceMotion && <HeroDepthField active />}
+      {!shouldReduceMotion && (
+        <>
+          <HeroDepthField active />
+          <HeroSignalLattice active />
+        </>
+      )}
 
       {/* Outer aurora — sits behind everything, breathes slowly */}
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-12 -z-20 rounded-[40px] blur-3xl"
+        className="pointer-events-none absolute -inset-16 -z-20 rounded-[48px] blur-3xl"
         style={{
           background:
             "radial-gradient(ellipse 55% 45% at 30% 30%, rgba(232,185,49,0.32) 0%, transparent 65%), radial-gradient(ellipse 50% 50% at 75% 70%, rgba(75,146,219,0.28) 0%, transparent 65%), radial-gradient(ellipse 35% 35% at 50% 50%, rgba(120,82,180,0.18) 0%, transparent 70%)",
@@ -95,7 +106,7 @@ export function HeroVisual({ narrativeMotion = true }: { narrativeMotion?: boole
       {!shouldReduceMotion && (
         <motion.div
           aria-hidden="true"
-          className="pointer-events-none absolute -inset-3 -z-10 rounded-[34px]"
+          className="pointer-events-none absolute -inset-4 -z-10 rounded-[38px]"
           style={{
             background:
               "conic-gradient(from 0deg, transparent 0%, rgba(232,185,49,0.55) 12%, transparent 28%, transparent 60%, rgba(75,146,219,0.5) 72%, transparent 88%, transparent 100%)",
@@ -114,7 +125,7 @@ export function HeroVisual({ narrativeMotion = true }: { narrativeMotion?: boole
       {!shouldReduceMotion && (
         <motion.div
           aria-hidden="true"
-          className="pointer-events-none absolute -inset-1 -z-10 rounded-[30px] opacity-70"
+          className="pointer-events-none absolute -inset-1.5 -z-10 rounded-[34px] opacity-70"
           style={{
             background:
               "conic-gradient(from 180deg, transparent 0%, rgba(255,255,255,0.45) 8%, transparent 22%, transparent 52%, rgba(232,185,49,0.4) 64%, transparent 78%, transparent 100%)",
@@ -160,7 +171,7 @@ export function HeroVisual({ narrativeMotion = true }: { narrativeMotion?: boole
         {!shouldReduceMotion && (
           <motion.div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 rounded-2xl"
+            className="pointer-events-none absolute inset-0 rounded-3xl"
             style={{
               background: glareBg,
               mixBlendMode: "soft-light",
@@ -172,7 +183,7 @@ export function HeroVisual({ narrativeMotion = true }: { narrativeMotion?: boole
         {!shouldReduceMotion && (
           <motion.div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
+            className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl"
             style={{ mixBlendMode: "screen" }}
           >
             <motion.div
@@ -194,6 +205,8 @@ export function HeroVisual({ narrativeMotion = true }: { narrativeMotion?: boole
           </motion.div>
         )}
       </motion.div>
+
+      <MobileSignalRail active={!shouldReduceMotion} />
 
       {/* Orbiting telemetry pings around the portal */}
       {!shouldReduceMotion && (
@@ -234,7 +247,7 @@ export function HeroVisual({ narrativeMotion = true }: { narrativeMotion?: boole
 
 function HeroDepthField({ active }: { active: boolean }) {
   return (
-    <div className="pointer-events-none absolute -inset-14 -z-30 overflow-hidden rounded-[44px]">
+    <div className="pointer-events-none absolute -inset-16 -z-30 overflow-hidden rounded-[52px]">
       <svg className="h-full w-full" viewBox="0 0 700 520" aria-hidden="true">
         <defs>
           <linearGradient id="hero-depth-stroke" x1="0" x2="1" y1="0" y2="1">
@@ -285,11 +298,97 @@ function HeroDepthField({ active }: { active: boolean }) {
   );
 }
 
+function HeroSignalLattice({ active }: { active: boolean }) {
+  const paths = [
+    { d: "M62 96 C178 14 275 102 350 188 S562 334 650 236", delay: 0 },
+    { d: "M52 360 C170 268 254 336 350 246 S548 92 650 160", delay: 0.55 },
+    { d: "M100 246 C206 170 282 178 350 242 S488 350 612 312", delay: 1.1 },
+  ];
+
+  return (
+    <div className="pointer-events-none absolute -inset-10 -z-10 overflow-hidden rounded-[46px] opacity-80">
+      <svg className="h-full w-full" viewBox="0 0 700 520" aria-hidden="true">
+        <defs>
+          <linearGradient id="hero-signal-lattice" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stopColor="#4B92DB" stopOpacity="0.08" />
+            <stop offset="44%" stopColor="#E8B931" stopOpacity="0.38" />
+            <stop offset="100%" stopColor="#59A14F" stopOpacity="0.08" />
+          </linearGradient>
+          <filter id="hero-signal-glow" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        {paths.map((path, index) => (
+          <g key={path.d}>
+            <motion.path
+              d={path.d}
+              fill="none"
+              stroke="url(#hero-signal-lattice)"
+              strokeWidth={index === 1 ? 1.3 : 1}
+              strokeLinecap="round"
+              strokeDasharray="10 18"
+              initial={false}
+              animate={active ? { pathLength: [0.25, 1, 0.25], opacity: [0.16, 0.56, 0.16] } : undefined}
+              transition={active ? { duration: 6.2 + index * 0.7, repeat: Infinity, ease: "easeInOut", delay: path.delay } : undefined}
+            />
+            <motion.circle
+              r={index === 1 ? 4.5 : 3.5}
+              fill={index === 1 ? "#E8B931" : "#4B92DB"}
+              filter="url(#hero-signal-glow)"
+              initial={{ opacity: 0 }}
+              animate={active ? { opacity: [0, 0.92, 0], offsetDistance: ["0%", "100%"] } : undefined}
+              transition={active ? { duration: 4.8 + index * 0.6, repeat: Infinity, ease: "easeInOut", delay: path.delay } : undefined}
+              style={{
+                offsetPath: `path("${path.d}")`,
+              }}
+            />
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function MobileSignalRail({ active }: { active: boolean }) {
+  return (
+    <div className="mt-3 grid grid-cols-3 gap-2 sm:hidden">
+      {MOBILE_SIGNAL_STEPS.map(([label, value], index) => (
+        <motion.div
+          key={label}
+          className="relative overflow-hidden rounded-xl border border-white/55 bg-white/84 px-2.5 py-2 text-center shadow-lg shadow-navy-950/10 backdrop-blur-md"
+          initial={active ? { opacity: 0, y: 8 } : false}
+          animate={active ? { opacity: 1, y: 0 } : undefined}
+          transition={active ? { duration: 0.45, delay: 0.18 + index * 0.08 } : undefined}
+        >
+          {active && (
+            <motion.span
+              aria-hidden="true"
+              className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold-400 to-transparent"
+              animate={{ x: ["-100%", "100%"] }}
+              transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut", delay: index * 0.25 }}
+            />
+          )}
+          <span className="block text-[7.5px] font-semibold uppercase tracking-[0.16em] text-navy-400">
+            {label}
+          </span>
+          <span className="mt-0.5 block font-mono text-[10px] font-bold leading-none text-navy-850">
+            {value}
+          </span>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
 function CommandDeckOverlay({ active }: { active: boolean }) {
   return (
     <div className="pointer-events-none absolute inset-0">
       <motion.div
-        className="absolute -left-4 top-8 hidden w-28 flex-col gap-1.5 lg:flex"
+        className="absolute -left-5 top-10 hidden w-32 flex-col gap-1.5 lg:flex"
         initial={active ? { opacity: 0, x: -12 } : false}
         animate={active ? { opacity: 1, x: 0 } : undefined}
         transition={{ duration: 0.6, delay: 0.35 }}
@@ -312,7 +411,7 @@ function CommandDeckOverlay({ active }: { active: boolean }) {
       </motion.div>
 
       <motion.div
-        className="absolute -right-5 top-5 hidden w-36 rounded-xl border border-diplomatic-blue/15 bg-navy-950/88 p-2.5 text-white shadow-2xl shadow-navy-950/20 backdrop-blur-md lg:block"
+        className="absolute -right-6 top-7 hidden w-40 rounded-xl border border-diplomatic-blue/15 bg-navy-950/88 p-3 text-white shadow-2xl shadow-navy-950/20 backdrop-blur-md lg:block"
         initial={active ? { opacity: 0, y: -10, rotate: 2 } : false}
         animate={active ? { opacity: 1, y: 0, rotate: 0 } : undefined}
         transition={{ duration: 0.55, delay: 0.5 }}
@@ -332,7 +431,7 @@ function CommandDeckOverlay({ active }: { active: boolean }) {
       </motion.div>
 
       <motion.div
-        className="absolute inset-x-5 -bottom-4 hidden items-center justify-between rounded-xl border border-white/40 bg-white/82 px-3 py-2 shadow-2xl shadow-navy-950/12 backdrop-blur-md sm:flex"
+        className="absolute inset-x-6 -bottom-5 hidden items-center justify-between rounded-xl border border-white/40 bg-white/86 px-4 py-2.5 shadow-2xl shadow-navy-950/12 backdrop-blur-md sm:flex"
         initial={active ? { opacity: 0, y: 10 } : false}
         animate={active ? { opacity: 1, y: 0 } : undefined}
         transition={{ duration: 0.55, delay: 0.7 }}

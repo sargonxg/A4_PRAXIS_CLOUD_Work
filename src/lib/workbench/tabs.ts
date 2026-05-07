@@ -8,6 +8,7 @@ export const WORKBENCH_TABS: WorkbenchTabDescriptor[] = [
   { id: 'research', label: 'Research', summary: 'Source Scout, deep research, and staged collection plans.', group: 'context' },
   { id: 'ontology', label: 'Ontology', summary: 'Case ontology, primitives, validators, and recommended tool mappings.', group: 'context' },
   { id: 'graph', label: 'Graph', summary: 'GraphOps, conflict graph, paths, and projection checks.', group: 'context' },
+  { id: 'ach', label: 'ACH', summary: 'Analysis of Competing Hypotheses matrix and ranking.', group: 'tools' },
   { id: 'tools', label: 'Tools', summary: 'Curated marketplace for ontology-aware analysis tools.', group: 'tools' },
   { id: 'memos', label: 'Memos', summary: 'Template-based memo studio with graph citations and export preparation.', group: 'tools' },
   { id: 'boardroom', label: 'Boardroom', summary: 'Advisor deliberation and option synthesis.', group: 'tools' },

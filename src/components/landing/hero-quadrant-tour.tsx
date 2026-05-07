@@ -12,7 +12,7 @@
  *   4. User Context Card (analyst profile + situation + lenses)
  *
  * Each panel renders a deliberately simplified, animated SVG/HTML card —
- * representational, not pixel-perfect screenshots. Auto-cycles every 4.2s.
+ * representational, not pixel-perfect screenshots. Auto-cycles every 5.2s.
  * Honours `prefers-reduced-motion` (no auto-cycle, all four panels stack
  * vertically as a static product collage).
  */
@@ -30,13 +30,15 @@ const PANELS = [
   { id: 'context', label: 'User Context', icon: UserCog },
 ] as const;
 
+const PANEL_INTERVAL_MS = 5200;
+
 export function HeroQuadrantTour() {
   const shouldReduceMotion = useReducedMotion() ?? false;
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
     if (shouldReduceMotion) return;
-    const t = setInterval(() => setIndex((i) => (i + 1) % PANELS.length), 4200);
+    const t = setInterval(() => setIndex((i) => (i + 1) % PANELS.length), PANEL_INTERVAL_MS);
     return () => clearInterval(t);
   }, [shouldReduceMotion]);
 
@@ -55,7 +57,7 @@ export function HeroQuadrantTour() {
   const active = PANELS[index];
   return (
     <div className="relative">
-      <div className="relative aspect-[16/10] w-full">
+      <div className="relative aspect-[16/11] min-h-[500px] w-full sm:min-h-[430px] lg:min-h-[470px] xl:min-h-[520px]">
         <AnimatePresence mode="wait">
           <motion.div
             key={active.id}
@@ -75,14 +77,14 @@ export function HeroQuadrantTour() {
         </AnimatePresence>
       </div>
       {/* Step indicator pills */}
-      <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+      <div className="mt-5 flex flex-wrap justify-center gap-2">
         {PANELS.map((p, i) => (
           <button
             key={p.id}
             onClick={() => setIndex(i)}
             aria-label={`Show ${p.label}`}
             className={cn(
-              'group relative inline-flex items-center gap-1 overflow-hidden rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide transition',
+              'group relative inline-flex items-center gap-1 overflow-hidden rounded-full border px-3 py-1.5 text-[10px] font-medium uppercase tracking-wide transition',
               i === index
                 ? 'border-gold-500 bg-gold-50 text-gold-800 shadow-sm shadow-gold-500/30'
                 : 'border-cream-300 bg-white/70 text-navy-500 hover:border-diplomatic-blue/40 hover:text-diplomatic-blue'
@@ -100,6 +102,15 @@ export function HeroQuadrantTour() {
             <span className="relative z-10">{p.label}</span>
           </button>
         ))}
+      </div>
+      <div className="mx-auto mt-3 h-1 w-40 overflow-hidden rounded-full bg-navy-900/8">
+        <motion.div
+          key={active.id}
+          className="h-full origin-left rounded-full bg-gradient-to-r from-diplomatic-blue via-gold-500 to-sage"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: PANEL_INTERVAL_MS / 1000, ease: "linear" }}
+        />
       </div>
     </div>
   );
@@ -145,8 +156,8 @@ function PanelGraph() {
   }
   return (
     <Card title="ACO v2.0 · Conflict Graph" subtitle="praxis.tacitus.me · Syria case · 30 entities · 42 edges">
-      <div className="grid h-full grid-cols-[1.4fr_1fr] gap-3 p-3">
-        <div className="relative overflow-hidden rounded-lg border border-cream-200/60 bg-gradient-to-br from-white/85 via-white/60 to-cream-50/60 p-2">
+      <div className="grid h-full grid-rows-[minmax(0,1fr)_auto] gap-3 p-3 sm:grid-cols-[1.55fr_0.95fr] sm:grid-rows-none sm:gap-4 sm:p-4">
+        <div className="relative min-h-[280px] overflow-hidden rounded-xl border border-cream-200/60 bg-gradient-to-br from-white/90 via-white/65 to-cream-50/70 p-3 sm:min-h-[235px]">
           <div className="flex items-center justify-between">
             <span className="text-[9px] font-semibold uppercase tracking-wider text-navy-500">
               Transition risk · High
@@ -155,7 +166,7 @@ function PanelGraph() {
               risk 78 · provenance 91%
             </span>
           </div>
-          <svg viewBox="0 0 100 100" className="mt-1 h-full w-full" aria-hidden="true">
+          <svg viewBox="0 0 100 100" className="mt-1 h-[calc(100%-22px)] w-full" aria-hidden="true">
             <defs>
               <radialGradient id="hero-graph-glow" cx="50%" cy="50%" r="50%">
                 <stop offset="0%" stopColor="rgba(232,185,49,0.18)" />
@@ -187,6 +198,30 @@ function PanelGraph() {
                 />
               );
             })}
+            {!shouldReduceMotion &&
+              edges.slice(0, 5).map((e, i) => {
+                const a = nodeById(e.from);
+                const b = nodeById(e.to);
+                return (
+                  <motion.circle
+                    key={`${e.from}-${e.to}-packet`}
+                    r={i === 0 ? 1.75 : 1.2}
+                    fill={i === 0 ? '#E8B931' : e.color}
+                    initial={{ cx: a.cx, cy: a.cy, opacity: 0 }}
+                    animate={{
+                      cx: [a.cx, b.cx],
+                      cy: [a.cy, b.cy],
+                      opacity: [0, 0.95, 0],
+                    }}
+                    transition={{
+                      duration: 2.3 + i * 0.22,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                      delay: i * 0.32,
+                    }}
+                  />
+                );
+              })}
             {nodes.map((n, i) => (
               <g key={n.id}>
                 {!shouldReduceMotion && n.type !== 'historical' && (
@@ -195,12 +230,12 @@ function PanelGraph() {
                     cy={n.cy}
                     r={n.r}
                     fill="none"
-                  stroke={n.fill}
-                  strokeWidth={0.5}
+                    stroke={n.fill}
+                    strokeWidth={0.5}
                     initial={{ scale: 1, opacity: 0.45 }}
                     animate={{ scale: [1, 1.55, 1], opacity: [0.55, 0, 0.55] }}
-                  transition={{ duration: 2.4 + (i % 4) * 0.4, repeat: Infinity, ease: 'easeInOut', delay: (i % 5) * 0.2 }}
-                  style={{ transformOrigin: `${n.cx}px ${n.cy}px` }}
+                    transition={{ duration: 2.4 + (i % 4) * 0.4, repeat: Infinity, ease: 'easeInOut', delay: (i % 5) * 0.2 }}
+                    style={{ transformOrigin: `${n.cx}px ${n.cy}px` }}
                   />
                 )}
                 <motion.circle
@@ -230,8 +265,8 @@ function PanelGraph() {
             ))}
           </svg>
         </div>
-        <div className="flex flex-col gap-1.5 overflow-hidden">
-          <div className="rounded-md border border-crimson/20 bg-crimson/5 px-2 py-1">
+        <div className="grid grid-cols-2 gap-2 overflow-hidden sm:flex sm:flex-col">
+          <div className="rounded-lg border border-crimson/20 bg-crimson/5 px-2.5 py-2 sm:px-3">
             <div className="text-[8.5px] font-semibold uppercase tracking-wider text-crimson">
               Pivot actors
             </div>
@@ -239,7 +274,7 @@ function PanelGraph() {
               Damascus · SDF · UN Envoy
             </div>
           </div>
-          <div className="rounded-md border border-cream-200/60 bg-white/70 px-2 py-1">
+          <div className="rounded-lg border border-cream-200/60 bg-white/75 px-2.5 py-2 sm:px-3">
             <div className="text-[8.5px] font-semibold uppercase tracking-wider text-navy-500">
               Hidden linkage
             </div>
@@ -252,7 +287,7 @@ function PanelGraph() {
           <Pill color="#9C755F" label="HLP constraints" count={3} />
           <Pill color="#76B7B2" label="Commitments" count={6} />
           <Pill color="#F28E2B" label="Humanitarian" count={7} />
-          <div className="mt-auto rounded-md border border-emerald-200 bg-emerald-50/80 px-2 py-1">
+          <div className="col-span-2 hidden rounded-lg border border-emerald-200 bg-emerald-50/80 px-2.5 py-2 sm:mt-auto sm:block sm:px-3">
             <span className="text-[8.5px] font-semibold uppercase tracking-wider text-emerald-700">
               GraphOps · 18 repairs cleared
             </span>
@@ -634,8 +669,8 @@ since:   2026-01-30 · live case`}
 function Card({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   const shouldReduceMotion = useReducedMotion() ?? false;
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-2xl border border-diplomatic-blue/15 bg-gradient-to-br from-white/85 via-white/75 to-cream-50/70 shadow-2xl shadow-navy-950/10 backdrop-blur-md">
-      <div className="flex items-center gap-1.5 border-b border-cream-200/60 bg-gradient-to-r from-cream-50/90 via-white/80 to-cream-50/90 px-4 py-2.5">
+    <div className="relative h-full w-full overflow-hidden rounded-3xl border border-diplomatic-blue/15 bg-gradient-to-br from-white/88 via-white/78 to-cream-50/72 shadow-2xl shadow-navy-950/12 backdrop-blur-md">
+      <div className="flex items-center gap-1.5 border-b border-cream-200/60 bg-gradient-to-r from-cream-50/90 via-white/80 to-cream-50/90 px-5 py-3">
         <span className="h-2.5 w-2.5 rounded-full bg-crimson/40" />
         <span className="h-2.5 w-2.5 rounded-full bg-gold-400/70" />
         <span className="h-2.5 w-2.5 rounded-full bg-sage/50" />
@@ -643,7 +678,7 @@ function Card({ title, subtitle, children }: { title: string; subtitle: string; 
           <span className={cn("h-1 w-1 rounded-full bg-emerald-500", !shouldReduceMotion && "animate-pulse")} />
           {subtitle}
         </span>
-        <span className="ml-auto text-[9px] font-semibold uppercase tracking-wider text-navy-700">
+        <span className="ml-auto hidden whitespace-nowrap text-[9px] font-semibold uppercase tracking-wider text-navy-700 sm:block">
           {title}
         </span>
       </div>

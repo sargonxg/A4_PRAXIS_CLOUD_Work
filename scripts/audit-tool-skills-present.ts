@@ -17,7 +17,7 @@ for (const tool of MARKETPLACE_TOOLS) {
   }
 }
 
-for (const subagent of ['context-preparer', 'source-augmenter', 'output-refiner', 'memo-drafter']) {
+for (const subagent of ['context-preparer', 'source-augmenter', 'output-refiner', 'memo-drafter', 'red-team-analyst', 'analyst_persona', 'moderator']) {
   const file = join(process.cwd(), `skills/subagents/${subagent}/SKILL.md`);
   if (!existsSync(file)) failures.push(`missing subagent skill ${subagent}`);
 }
@@ -28,4 +28,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Tool skills audit passed for ${MARKETPLACE_TOOLS.length} tools and 4 subagents.`);
+console.log(`Tool skills audit passed for ${MARKETPLACE_TOOLS.length} tools and 7 subagents.`);

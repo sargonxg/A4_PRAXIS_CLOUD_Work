@@ -8,8 +8,33 @@ const root = process.cwd();
 const requiredFiles = [
   'src/app/app/workbench/page.tsx',
   'src/app/app/workbench/[caseId]/page.tsx',
+  'src/app/app/workbench/[caseId]/ach/page.tsx',
+  'src/app/app/workbench/[caseId]/ach/[achId]/page.tsx',
   'src/components/workbench/workbench-tabs.tsx',
   'src/components/workbench/workbench-tab-content.tsx',
+  'src/components/sats/ACHWorkbench.tsx',
+  'src/components/sats/ACHMatrix.tsx',
+  'src/app/api/sats/ach/route.ts',
+  'src/app/api/sats/ach/[achId]/route.ts',
+  'src/lib/sats/ach-store.ts',
+  'src/app/app/workbench/[caseId]/boardroom/page.tsx',
+  'src/app/app/workbench/[caseId]/boardroom/new/page.tsx',
+  'src/app/app/workbench/[caseId]/boardroom/[deliberationId]/page.tsx',
+  'src/app/app/workbench/[caseId]/boardroom/[deliberationId]/synthesis/page.tsx',
+  'src/app/app/settings/personas/page.tsx',
+  'src/app/app/settings/personas/new/page.tsx',
+  'src/app/app/settings/personas/[personaId]/page.tsx',
+  'src/app/api/boardroom/deliberations/route.ts',
+  'src/app/api/boardroom/deliberations/[deliberationId]/route.ts',
+  'src/app/api/boardroom/deliberations/[deliberationId]/start/route.ts',
+  'src/app/api/boardroom/deliberations/[deliberationId]/abort/route.ts',
+  'src/app/api/boardroom/deliberations/[deliberationId]/stream/route.ts',
+  'src/app/api/boardroom/deliberations/[deliberationId]/export/route.ts',
+  'src/app/api/boardroom/deliberations/[deliberationId]/synthesis/promote/route.ts',
+  'src/app/api/boardroom/personas/route.ts',
+  'src/app/api/boardroom/personas/[personaId]/route.ts',
+  'src/components/boardroom/BoardroomWorkspace.tsx',
+  'src/lib/boardroom/personas.ts',
   'src/lib/cases/registry.ts',
   'src/lib/cases/user-cases/loader.ts',
 ];
@@ -20,7 +45,7 @@ for (const file of requiredFiles) {
   }
 }
 
-const expectedTabs = ['chapters', 'desk', 'context', 'library', 'research', 'ontology', 'graph', 'tools', 'memos', 'boardroom', 'draft'];
+const expectedTabs = ['chapters', 'desk', 'context', 'library', 'research', 'ontology', 'graph', 'ach', 'tools', 'memos', 'boardroom', 'draft'];
 const actualTabs = WORKBENCH_TABS.map((tab) => tab.id);
 if (actualTabs.join(',') !== expectedTabs.join(',')) {
   throw new Error(`Workbench tabs mismatch: ${actualTabs.join(',')}`);
@@ -44,8 +69,9 @@ for (const path of ['src/components/workbench/chapter-shell.tsx', 'src/component
 }
 
 const appPageCount = countFiles('src/app/app', 'page.tsx');
-if (appPageCount > 25) {
-  throw new Error(`Too many visible app route pages: ${appPageCount}; expected <= 25.`);
+// Pack 16 intentionally adds settings/personas, settings/personas/new, and settings/personas/[personaId].
+if (appPageCount > 34) {
+  throw new Error(`Too many visible app route pages: ${appPageCount}; expected <= 34.`);
 }
 
 const sidebarLines = readFileSync('src/components/app/app-sidebar.tsx', 'utf8').split(/\r?\n/).length;

@@ -27,7 +27,8 @@ export function rankMarketplaceToolsForCase(
       const costFit = tool.costClass === 'low' ? 15 : tool.costClass === 'medium' ? 8 : 3;
       const runtimeFit = tool.estimatedRuntimeMs <= 15000 ? 10 : 5;
       const gracefulFit = tool.contextSpec.graceful ? 10 : 0;
-      const score = Math.round(ontologyFit + healthFit + costFit + runtimeFit + gracefulFit);
+      const satFit = tool.satCategory ? 8 : 0;
+      const score = Math.round(ontologyFit + healthFit + costFit + runtimeFit + gracefulFit + satFit);
       return {
         tool,
         score,
@@ -41,6 +42,10 @@ function buildRationale(tool: MarketplaceToolDefinition, ontologyId: OntologyId,
   const reasons = [];
   if (tool.ontologyRequirements.includes(ontologyId)) reasons.push(`fits ${ontologyId} ontology`);
   if (tool.contextSpec.graceful) reasons.push('runs with advisory context');
+  if (tool.satCategory === 'ach') reasons.push('recommended for competing explanations');
+  if (tool.satCategory === 'kac') reasons.push('checks hidden assumptions before briefing');
+  if (tool.satCategory === 'red_team') reasons.push('challenges dominant actor assumptions');
+  if (tool.satCategory === 'premortem') reasons.push('stress-tests recommendations before export');
   if (contextHealth < tool.minContextHealth) reasons.push('AI assist can fill thin context');
   if (tool.subagentDeps.length) reasons.push(`uses ${tool.subagentDeps.join(', ')}`);
   return reasons.join('; ');

@@ -47,6 +47,21 @@ FLOW_REGISTRY: dict[str, FlowRegistration] = {
         _placeholder_flow("symbolic_firewall"),
         "Claim verification and trust scoring before user-visible rendering.",
     ),
+    "red_team_analyst": FlowRegistration(
+        "red_team_analyst",
+        _placeholder_flow("red_team_analyst"),
+        "Safe adversary-perspective modeling subagent for Pack 15 SAT toolkit.",
+    ),
+    "analyst_persona": FlowRegistration(
+        "analyst_persona",
+        _placeholder_flow("analyst_persona"),
+        "Parameterized specialist persona contribution subagent for Pack 16 boardroom.",
+    ),
+    "moderator": FlowRegistration(
+        "moderator",
+        _placeholder_flow("moderator"),
+        "Agentic Boardroom orchestration subagent with cost guard and synthesis handoff.",
+    ),
     "gdelt_monitor": FlowRegistration(
         "gdelt_monitor",
         _placeholder_flow("gdelt_monitor"),

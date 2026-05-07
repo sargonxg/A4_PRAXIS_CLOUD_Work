@@ -10,7 +10,7 @@ const queries = [
 
 export function CypherFlicker({ active }: { active: boolean }) {
   return (
-    <div className="pointer-events-none absolute inset-x-3 bottom-3 h-10 overflow-hidden rounded-md border border-navy-950/15 bg-navy-950/85 px-3 py-2 shadow-lg shadow-navy-950/20" aria-hidden="true">
+    <div className="pointer-events-none absolute inset-x-3 bottom-3 hidden h-10 overflow-hidden rounded-md border border-navy-950/15 bg-navy-950/85 px-3 py-2 shadow-lg shadow-navy-950/20 sm:block" aria-hidden="true">
       {queries.map((query, index) => (
         <motion.div
           key={query}

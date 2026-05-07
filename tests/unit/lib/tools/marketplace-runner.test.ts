@@ -94,4 +94,36 @@ describe('marketplace runner', () => {
     expect(result.rawText).toContain('Syria 2026');
     expect(result.structuredOutput.case).toMatchObject({ name: 'Syria 2026', region: 'Levant' });
   });
+
+  it('returns SAT-shaped structured output for the analyst toolkit tools', () => {
+    const tool = MARKETPLACE_TOOLS.find((item) => item.id === 'cross.ach');
+    expect(tool).toBeDefined();
+    const runContext = createContextProvider({ snapshot }).forTool(tool!);
+    const result = buildMarketplaceToolRun({
+      tool: tool!,
+      runContext,
+      prompt: 'rank competing explanations',
+    });
+
+    expect(result.structuredOutput.sat).toMatchObject({
+      satCategory: 'ach',
+      sourceAttribution: 'Heuer-Pherson Structured Analytic Techniques',
+      synthesized: true,
+      confidence: 0.6,
+      annexReady: true,
+      reviewRequired: true,
+      firewallPosture: {
+        directGraphWrite: false,
+        promoteThroughReviewQueue: true,
+      },
+    });
+    expect(result.structuredOutput.sat).toMatchObject({
+      ach: {
+        rankingMethod: expect.stringContaining('Least-disconfirming evidence'),
+        ranking: expect.arrayContaining([
+          expect.objectContaining({ hypothesisId: 'h1', conclusion: 'most_likely' }),
+        ]),
+      },
+    });
+  });
 });

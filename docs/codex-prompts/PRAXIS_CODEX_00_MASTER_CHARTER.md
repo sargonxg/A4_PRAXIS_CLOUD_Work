@@ -499,7 +499,16 @@ When Codex encounters a question only Giulio can answer, it stops the loop and w
 **Resolved**: <pending | YYYY-MM-DD; resolution: ...>
 ```
 
-(No active blockers at charter creation.)
+### 2026-05-06 18:16 - Self-audit launch blockers
+
+**Pack**: 03-14 cross-cutting
+**Prompt**: architecture self-audit follow-up
+**Severity**: S0 / S1
+**Question**: close the active self-audit launch blockers before any `v1.0.0` readiness claim.
+**Context**: `docs/audits/2026-05-06-SELF_AUDIT.md` supersedes the older reality-check severity ledger and records open S0/S1 findings. The actionable queue is stored in `docs/backlog/2026-05-06-from-self-audit.md`.
+**Recommended path**: start with the public demo contract, canonical entry/legal routes, and persona CI green-streak evidence; then move to context/storage, firewall, marketplace, and platform posture.
+**Blocked since**: 2026-05-06 18:16 -04:00
+**Resolved**: pending
 
 ---
 
@@ -507,20 +516,21 @@ When Codex encounters a question only Giulio can answer, it stops the loop and w
 
 | # | Pack | Status | Last touched | Blockers | Notes |
 |---|---|---|---|---|---|
-| 03 | Workbench Architecture | ☐ | — | — | — |
-| 04 | Landing & Entry Rebuild | ☐ | — | — | — |
-| 05 | Context vs Tools Separation | ☐ | — | — | — |
-| 06 | Ontology System | ☐ | — | — | — |
-| 07 | Graph Visualization | ☐ | — | — | — |
-| 08 | Tools Marketplace | ☐ | — | — | — |
-| 09 | Verification & Admin | ☐ | — | — | — |
-| 10 | Postgres Knowledge Graph | ☐ | — | — | — |
-| 11 | Memo Studio & Launch | ☐ | — | — | — |
-| 12 | Context Architecture | ☐ | — | — | — |
-| 13 | Tool-Context Interop | ☐ | — | — | — |
+| 03 | Workbench Architecture | 🟡 | 2026-05-06 | Persona CI streak missing | Workbench foundation audits pass; charter 10-green CI persona bar is not met. |
+| 04 | Landing & Entry Rebuild | 🟡 | 2026-05-06 | Public demo and canonical entry routes | Landing visuals improved; `/demo/syria-2024`, `/waitlist`, `/login/callback`, and `/legal/*` remain launch blockers. |
+| 05 | Context vs Tools Separation | 🟡 | 2026-05-06 | Firewall coverage and Trust Score persistence | Advisory posture works; hard-tier write-path and streaming claim persistence need proof. |
+| 06 | Ontology System | 🟡 | 2026-05-06 | Backend classifier and ingestion atomicity | Four ontology mappings pass; classifier/2-phase ingestion depth remains. |
+| 07 | Graph Visualization | 🟡 | 2026-05-06 | Edit round-trip persistence | Graph viewer audit passes; merge/revert/audit-trail proof remains. |
+| 08 | Tools Marketplace | 🟡 | 2026-05-06 | Specialist handlers and memo tools | 16-tool registry audits pass; specialist canaries, composition proof, and memo tools remain. |
+| 09 | Verification & Admin | 🟡 | 2026-05-06 | Production metrics evidence | Admin foundation passes; scheduler, parity, and structured logging proof remain. |
+| 10 | Postgres Knowledge Graph | 🟡 | 2026-05-06 | Production cutover and embedding dimension | KG backend audits pass; production parity, reconciliation, and dimension drift remain. |
+| 11 | Memo Studio & Launch | 🟡 | 2026-05-06 | 60-second wow and export proof | Memo Studio audit passes; first-run export and launch sign-off remain. |
+| 12 | Context Architecture | 🟡 | 2026-05-06 | Production round-trip proof | Context-aware audits pass; synthetic live layer round trips remain. |
+| 13 | Tool-Context Interop | 🟡 | 2026-05-06 | Subagent runtime evidence | Contract v2 audits pass; Agent Engine binding/telemetry remain. |
+| 14 | Production Excellence | 🟡 | 2026-05-06 | Canary, Cloud SQL, scheduler, staging proof | Provider and platform foundation pass; production-excellence gate remains. |
 
-**Last loop iteration**: (none yet)
-**Loop iterations completed**: 0
+**Last loop iteration**: 2026-05-06 18:16 -04:00
+**Loop iterations completed**: 1
 **Total commits across all packs**: 0
 **Open PRs**: 0
 **Persona suite green-streak**: 0 / 10
@@ -599,7 +609,19 @@ Codex writes an entry here after every full loop pass. Format:
 - Notes: ...
 ```
 
-(No iterations yet.)
+## Loop iteration 1 — 2026-05-06 18:16
+- Started at: 2026-05-06 18:00 -04:00
+- Ended at: 2026-05-06 18:16 -04:00
+- Packs touched: 03-14 cross-cutting master pass
+- Packs marked DONE this pass: none; all remain yellow until the self-audit S0/S1 queue is closed
+- Packs in progress: 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14
+- Packs blocked: cross-cutting S0/S1 items in `docs/backlog/2026-05-06-from-self-audit.md`
+- Commits made: 0
+- Audits run: `audit:master-charter`, `audit:architecture-chain`, `audit:architecture-reference`, `audit:workbench`, `audit:landing`, `audit:routes`, `audit:ai-provider-isolation`, `audit:context-vs-tools`, `audit:context-aware-coverage`, `audit:tool-marketplace`, `audit:tool-contract-v2`, `audit:ontology`, `audit:graph-viewer`, `audit:memo-studio`, `audit:reality-check`, `audit:codex-prompts`, `audit:operational-metrics`
+- Persona suite runs: 0 in this pass; green-streak remains 0 / 10
+- Staging deploys: 0
+- Production deploys: 0
+- Notes: Preserved the master charter as the live control file, connected the architecture self-audit to the active backlog, and corrected the stale "no open S0/S1" status posture.
 
 ---
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { SATCategory } from '@/types/sats';
 
 export const MemoTemplateIdSchema = z.enum([
   'mandate-brief',
@@ -19,7 +20,7 @@ export const MemoCitationSchema = z.object({
 
 export const MemoBlockSchema = z.object({
   id: z.string(),
-  type: z.enum(['heading', 'paragraph', 'bullets', 'quote', 'callout', 'graph-snippet', 'table', 'divider']),
+  type: z.enum(['heading', 'paragraph', 'bullets', 'quote', 'callout', 'graph-snippet', 'table', 'divider', 'sat-annex']),
   title: z.string().optional(),
   content: z.string().default(''),
   items: z.array(z.string()).optional(),
@@ -54,6 +55,16 @@ export type MemoTemplateId = z.infer<typeof MemoTemplateIdSchema>;
 export type MemoStatus = z.infer<typeof MemoStatusSchema>;
 export type MemoCitation = z.infer<typeof MemoCitationSchema>;
 export type MemoBlock = z.infer<typeof MemoBlockSchema>;
+export type SATAnnexBlock = MemoBlock & {
+  type: 'sat-annex';
+  metadata: {
+    satCategory: SATCategory;
+    reportId?: string;
+    sourceTechnique: string;
+    synthesized: true;
+    confidence: number;
+  };
+};
 export type Memo = z.infer<typeof MemoSchema>;
 export type MemoVersion = z.infer<typeof MemoVersionSchema>;
 

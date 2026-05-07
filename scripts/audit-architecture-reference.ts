@@ -7,6 +7,9 @@ const requiredFiles = [
   'docs/architecture/PRAXIS_ARCHITECTURE.md',
   'docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md',
   'docs/architecture/MODEL_SELECTION.md',
+  'docs/adr/README.md',
+  'docs/audits/2026-05-06-SELF_AUDIT.md',
+  'docs/backlog/2026-05-06-from-self-audit.md',
   'docs/backlog/2026-05-06-master-charter-completion-todo.md',
   'ARCHITECTURE.md',
   'package.json',
@@ -31,6 +34,9 @@ function body(file: string): string {
 if (failures.length === 0) {
   const bible = body('docs/architecture/PRAXIS_ARCHITECTURE.md');
   const alignment = body('docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md');
+  const adrReadme = body('docs/adr/README.md');
+  const selfAudit = body('docs/audits/2026-05-06-SELF_AUDIT.md');
+  const selfAuditBacklog = body('docs/backlog/2026-05-06-from-self-audit.md');
   const rootArchitecture = body('ARCHITECTURE.md');
   const startupDocs = ['README.md', 'AGENTS.md', 'CLAUDE.md', 'TODO.md'];
 
@@ -48,11 +54,24 @@ if (failures.length === 0) {
     'Gemini Enterprise',
     'Vertex AI',
     'Shipped And Enforced',
+    'Active Status Ledger',
     'Partially Implemented Target State',
     'Known Reference/API Shape Drift',
   ];
   for (const marker of requiredAlignmentMarkers) {
     if (!alignment.includes(marker)) failures.push(`alignment doc missing marker: ${marker}`);
+  }
+
+  for (const marker of ['Architecture Decision Records', 'MADR-style', 'Current ADR Set']) {
+    if (!adrReadme.includes(marker)) failures.push(`ADR README missing marker: ${marker}`);
+  }
+
+  for (const marker of ['PRAXIS Self Audit Against Architecture Bible', '3 S0', '15 S1', 'Proposed Plan For Giulio']) {
+    if (!selfAudit.includes(marker)) failures.push(`self-audit missing marker: ${marker}`);
+  }
+
+  for (const marker of ['S0 / S1 Launch Blockers', 'Public demo contract', 'Persona CI', 'S2 Backlog']) {
+    if (!selfAuditBacklog.includes(marker)) failures.push(`self-audit backlog missing marker: ${marker}`);
   }
 
   for (const marker of ['PRAXIS_ARCHITECTURE.md', 'PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md', 'audit:architecture-reference', 'audit:architecture-chain']) {

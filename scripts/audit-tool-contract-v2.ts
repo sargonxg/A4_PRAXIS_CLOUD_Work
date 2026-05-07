@@ -8,6 +8,7 @@ for (const tool of MARKETPLACE_TOOLS) {
   if (!tool.version?.startsWith('2.')) failures.push(`${tool.id} missing v2 version`);
   if (!tool.title) failures.push(`${tool.id} missing title`);
   if (!tool.contractCategory) failures.push(`${tool.id} missing contractCategory`);
+  if (tool.satCategory && !['ach', 'kac', 'red_team', 'premortem'].includes(tool.satCategory)) failures.push(`${tool.id} invalid satCategory`);
   if (!tool.contextSpec) failures.push(`${tool.id} missing contextSpec`);
   if (tool.contextSpec.minHealthScore && tool.contextSpec.minHealthScore > 100) failures.push(`${tool.id} invalid minHealthScore`);
   if (tool.contextSpec.graceful !== true) failures.push(`${tool.id} must run gracefully with partial context`);

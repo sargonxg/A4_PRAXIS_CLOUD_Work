@@ -8,6 +8,24 @@ This document makes the new architecture bible usable against the real app. It
 does not weaken the reference. It separates shipped invariants from target-state
 claims so engineers and future agents can safely continue implementation.
 
+## Active Status Ledger
+
+The latest architecture-level truth ledger is
+`docs/audits/2026-05-06-SELF_AUDIT.md`, with the actionable blocker queue in
+`docs/backlog/2026-05-06-from-self-audit.md`. Treat that pair as newer than
+older reality-check claims that reported no S0/S1 blockers.
+
+Current launch-blocking gaps are not architectural disagreements; they are
+implementation gaps against this reference:
+
+- canonical public demo `/demo/syria-2024`;
+- persona CI green-streak evidence;
+- canonical `/waitlist`, `/login/callback`, and `/legal/*` routes;
+- production context/storage parity and Firestore/Postgres reconciliation;
+- complete symbolic-firewall write-path coverage and synthesized review queue;
+- marketplace specialist handlers, memo tools, and composition proof;
+- canary, Cloud SQL, scheduler, and structured logging evidence.
+
 ## Required Correction
 
 The stored architecture reference uses the phrase "Gemini Enterprise Agent
@@ -77,6 +95,7 @@ Local aliases added for the real app include `typecheck`, `test`,
 
 | Reference claim | Current state | Next implementation slice |
 |---|---|---|
+| ADR directory and policy | `docs/adr/README.md` exists; no accepted ADRs yet | Add ADRs only when architecture invariants or layer responsibilities change |
 | Postgres + pgvector is production graph source of truth | Schema/repository scaffolding and audits exist; live cutover evidence remains open | Production Cloud SQL migration, RLS smoke, traversal endpoints, parity snapshots |
 | Four subagents run on Gemini Enterprise / Agent Engine | Deep Research/Agent Engine path exists; Context Preparer, Source Augmenter, Output Refiner, Memo Drafter runtime remains open | Subagent deployment plan, typed input/output schemas, staging smoke |
 | Two-phase Firestore/Postgres commit everywhere | Designed and tracked; not complete across all ingestion/tool write paths | Reconciler and crash-injection tests |

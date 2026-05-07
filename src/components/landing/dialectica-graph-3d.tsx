@@ -5,11 +5,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ACO_COLORS, getACOColor } from "@/lib/constants/aco-colors";
 
 const ENTITY_TYPES = Object.keys(ACO_COLORS);
-const NODE_COUNT = 60;
-const EDGE_COUNT = 100;
+const NODE_COUNT = 72;
+const EDGE_COUNT = 132;
 const TOAST = "Asserted 2026-04-30 · Valid 2025-08-12 → present";
 const roundCoord = (value: number) => Number(value.toFixed(3));
-const ACTIVE_PATH = [11, 24, 37, 50];
+const ACTIVE_PATH = [11, 24, 37, 50, 63];
 
 function makeGraph() {
   const nodes = Array.from({ length: NODE_COUNT }, (_, index) => {
@@ -59,10 +59,12 @@ export function DialecticaGraph3D({ narrativeMotion }: { narrativeMotion: boolea
   return (
     <div
       data-testid="dialectica-graph-3d"
-      className="relative min-h-[460px] overflow-hidden rounded-2xl border border-white/10 bg-navy-950 p-4 shadow-2xl shadow-navy-950/20"
+      className="relative min-h-[540px] overflow-hidden rounded-3xl border border-white/10 bg-navy-950 p-4 shadow-2xl shadow-navy-950/25 lg:min-h-[660px]"
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_35%_20%,rgba(76,201,240,0.14),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_42%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_35%_20%,rgba(76,201,240,0.18),transparent_34%),radial-gradient(circle_at_68%_62%,rgba(232,185,49,0.12),transparent_33%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_42%)]" />
       <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(148,163,184,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.12)_1px,transparent_1px)] [background-size:34px_34px]" />
+      <div className="absolute inset-x-0 top-1/2 h-px bg-gradient-to-r from-transparent via-gold-300/25 to-transparent" />
+      <div className="absolute left-1/2 top-0 h-full w-px bg-gradient-to-b from-transparent via-diplomatic-blue/22 to-transparent" />
       <div className="absolute left-5 top-5 z-10 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-100/80">
         Situation graph
       </div>
@@ -75,11 +77,11 @@ export function DialecticaGraph3D({ narrativeMotion }: { narrativeMotion: boolea
         aria-hidden="true"
         className="absolute inset-0 flex items-center justify-center"
         style={{
-          perspective: 900,
+          perspective: 1100,
         }}
       >
         <motion.div
-          className="relative h-[400px] w-[500px] max-w-[115vw]"
+          className="relative h-[470px] w-[620px] max-w-[130vw] lg:h-[590px] lg:w-[820px]"
           style={{
             transformStyle: "preserve-3d",
             transform: "rotateX(25deg) rotateZ(-9deg)",
@@ -113,6 +115,13 @@ export function DialecticaGraph3D({ narrativeMotion }: { narrativeMotion: boolea
                 <stop offset="50%" stopColor="#E8B931" stopOpacity="0.95" />
                 <stop offset="100%" stopColor="#4B92DB" stopOpacity="0.2" />
               </linearGradient>
+              <filter id="dialectica-packet-glow" x="-120%" y="-120%" width="340%" height="340%">
+                <feGaussianBlur stdDeviation="3.5" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
             </defs>
             <motion.ellipse
               cx="250"
@@ -161,7 +170,7 @@ export function DialecticaGraph3D({ narrativeMotion }: { narrativeMotion: boolea
                   y2={y2}
                   stroke={stroke}
                   strokeOpacity={edge.id % 5 === 0 ? 0.34 : 0.17}
-                  strokeWidth={edge.id % 7 === 0 ? 1.2 : 0.7}
+                  strokeWidth={edge.id % 7 === 0 ? 1.35 : 0.82}
                   initial={false}
                   animate={shouldReduceMotion ? undefined : { opacity: [0.45, 0.9, 0.45] }}
                   transition={{ duration: 5 + (edge.id % 4), repeat: Infinity, ease: "easeInOut" }}
@@ -199,6 +208,38 @@ export function DialecticaGraph3D({ narrativeMotion }: { narrativeMotion: boolea
               );
             })}
 
+            {!shouldReduceMotion &&
+              ACTIVE_PATH.slice(0, -1).map((sourceId, index) => {
+                const source = nodes[sourceId];
+                const target = nodes[ACTIVE_PATH[index + 1]];
+                const lift = (source.z + target.z) / 18;
+                const x1 = roundCoord(source.x + lift);
+                const y1 = roundCoord(source.y - lift);
+                const x2 = roundCoord(target.x + lift);
+                const y2 = roundCoord(target.y - lift);
+
+                return (
+                  <motion.circle
+                    key={`${sourceId}-${target.id}-packet`}
+                    r={index === 1 ? 4.8 : 3.6}
+                    fill={index === 1 ? "#E8B931" : "#7DD3FC"}
+                    filter="url(#dialectica-packet-glow)"
+                    initial={{ cx: x1, cy: y1, opacity: 0 }}
+                    animate={{
+                      cx: [x1, x2],
+                      cy: [y1, y2],
+                      opacity: [0, 1, 0],
+                    }}
+                    transition={{
+                      duration: 2.8,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: index * 0.55,
+                    }}
+                  />
+                );
+              })}
+
             {nodes.map((node) => {
               const active = node.id === activeNode;
               const inPath = ACTIVE_PATH.includes(node.id);
@@ -225,7 +266,7 @@ export function DialecticaGraph3D({ narrativeMotion }: { narrativeMotion: boolea
                     />
                   ) : null}
                   <motion.circle
-                    r={active ? node.r + 1.8 : inPath ? node.r + 1 : node.r}
+                    r={active ? node.r + 2.2 : inPath ? node.r + 1.25 : node.r + 0.35}
                     fill={color}
                     fillOpacity={0.9}
                     stroke={color}
@@ -245,7 +286,7 @@ export function DialecticaGraph3D({ narrativeMotion }: { narrativeMotion: boolea
       <AnimatePresence mode="wait">
         <motion.div
           key={toastKey}
-          className="absolute bottom-5 left-5 right-5 z-10 rounded-lg border border-white/10 bg-navy-900/92 px-4 py-3 text-xs font-medium text-blue-50 shadow-lg backdrop-blur"
+          className="absolute bottom-5 left-5 right-5 z-10 rounded-xl border border-white/10 bg-navy-900/92 px-4 py-3 text-xs font-medium text-blue-50 shadow-lg backdrop-blur sm:left-auto sm:right-5 sm:max-w-[520px]"
           initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           exit={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 8 }}
@@ -254,7 +295,23 @@ export function DialecticaGraph3D({ narrativeMotion }: { narrativeMotion: boolea
           {TOAST}
         </motion.div>
       </AnimatePresence>
-      <div className="absolute bottom-20 left-5 z-10 grid gap-1.5">
+      <div className="absolute bottom-24 left-5 right-5 z-10 grid grid-cols-3 gap-1.5 sm:hidden">
+        {[
+          ["Nodes", NODE_COUNT.toString()],
+          ["Edges", EDGE_COUNT.toString()],
+          ["Path", `${ACTIVE_PATH.length - 1} hops`],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-lg border border-white/10 bg-white/10 px-2 py-1.5 text-center text-blue-50 backdrop-blur">
+            <span className="block text-[7px] font-semibold uppercase tracking-[0.18em] text-blue-100/50">
+              {label}
+            </span>
+            <span className="mt-0.5 block font-mono text-[10px] font-bold leading-none text-blue-50">
+              {value}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="absolute bottom-20 left-5 z-10 hidden gap-1.5 sm:grid">
         {[
           ["world-time", "2025-08-12"],
           ["system-time", "2026-04-30"],

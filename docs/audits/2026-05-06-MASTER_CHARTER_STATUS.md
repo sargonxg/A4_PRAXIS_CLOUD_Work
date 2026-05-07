@@ -8,7 +8,7 @@ Graphify: refreshed during the master-charter pass; `graphify-out/GRAPH_REPORT.m
 
 ## Executive Finding
 
-The master charter is now preserved in-repo and its high-level support structure is present, but PRAXIS is **Not v1.0.0 complete** under the charter's strict launch contract. The current state is a launch-foundation product on `main`, deployed and smoke-tested, with no open S0/S1 blockers recorded. The remaining work is backend/ops depth and production-excellence hardening, not landing-page or Workbench foundation.
+The master charter is now preserved in-repo and its high-level support structure is present, but PRAXIS is **Not v1.0.0 complete** under the charter's strict launch contract. The current state is a launch-foundation product on `main`, deployed and smoke-tested locally. The newer architecture self-audit (`docs/audits/2026-05-06-SELF_AUDIT.md`) supersedes the earlier reality-check severity ledger and records open S0/S1 findings around the public demo contract, persona green-streak evidence, canonical entry/legal routes, storage parity, firewall/write coverage, marketplace depth, and production deploy posture. These are now tracked in `docs/backlog/2026-05-06-from-self-audit.md`.
 
 ## Charter Index Check
 
@@ -27,8 +27,8 @@ The master charter is now preserved in-repo and its high-level support structure
 
 | Pack | Charter Status | Current Reality | Notes |
 |---|---|---|---|
-| 03 Workbench Architecture | DONE foundation | DONE | Unified Workbench, route/sidebar audit, persona flows, and local Workbench usability smoke are green. |
-| 04 Landing & Entry Rebuild | DONE foundation | DONE | Landing is Workbench-first and Syria is only an example; local smoke verifies anchors, hero visual, static fallback, and DIALECTICA 3D graph. |
+| 03 Workbench Architecture | DONE foundation | DEGRADED by persona proof gap | Unified Workbench, route/sidebar audit, and local Workbench usability smoke are green. The charter's 10-green CI persona bar is not yet evidenced. |
+| 04 Landing & Entry Rebuild | DONE foundation | DEGRADED by canonical route gap | Landing is Workbench-first and Syria is only an example; local smoke verifies anchors, hero visual, static fallback, and DIALECTICA 3D graph. Canonical `/demo/syria-2024`, `/waitlist`, `/login/callback`, and `/legal/*` routes still need alignment. |
 | 05 Context vs Tools | DONE foundation | DONE | Context health, firewall, Trust Score persistence, and persona files are present. |
 | 06 Ontology System | PARTIAL backend depth | Frontend DONE, backend classifier deferred | Four ontologies are mapped; LangGraph classifier remains v1.1/Pack 14 depth. |
 | 07 Graph Visualization | PARTIAL edit depth | Viewer DONE, edit round-trip deferred | Canonical graph tab works; advanced edit UX remains backlog. |
@@ -40,9 +40,9 @@ The master charter is now preserved in-repo and its high-level support structure
 | 13 Tool-Context Interop | DONE contract foundation, subagent runtime pending | DONE with runtime orchestration deferred | Contract v2, skills, projection, and suggestions are live. |
 | Pack 14 Production Excellence | PARTIAL local production-excellence foundation | Gemini Enterprise/Vertex posture, model matrix, shared embedding provider, backend model constants, provider audits, UX/observability audits, load-test scaffold, capacity plan, canary monitor, canary log template, and orchestration playbook DONE; production infra deferred | Requires owner decisions on final region/cost, Terraform/canary execution, public demo, and signup posture. |
 
-## No open S0/S1
+## Open S0/S1 From Self-Audit
 
-The current reality check records no open S0/S1 launch blockers. Existing open items are S2/S3 and are tracked in `docs/backlog/2026-05-06-from-reality-check.md` plus `docs/roadmap/v1.1-and-beyond.md`.
+The older `docs/audits/2026-05-06-REALITY_CHECK.md` records no open S0/S1 launch blockers, but the newer architecture self-audit is stricter and currently has open S0/S1 findings. Treat `docs/audits/2026-05-06-SELF_AUDIT.md` and `docs/backlog/2026-05-06-from-self-audit.md` as the active blocker ledger until those findings are closed and re-audited.
 
 ## Latest Usability Smoke
 
@@ -53,6 +53,7 @@ persona flows passed against `http://localhost:3107`.
 ## Remaining Work
 
 - Run and maintain the four persona suites until the charter's 10-green-run bar is genuinely satisfied in CI.
+- Close the S0/S1 self-audit items before any v1.0.0 readiness claim.
 - Complete Postgres KG production cutover and migration verification.
 - Implement specialist model-backed marketplace handlers for all 16 tools on top of the audited per-tool prompt contracts.
 - Enrich scheduler-backed diagnostics with Postgres parity, provider-level cost, and streaming firewall event distributions.

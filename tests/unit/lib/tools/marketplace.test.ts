@@ -3,9 +3,12 @@ import { filterMarketplaceTools } from '@/lib/tools/marketplace/filter-engine';
 import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
 
 describe('tools marketplace', () => {
-  it('keeps the exposed registry capped at sixteen curated tools', () => {
-    expect(MARKETPLACE_TOOLS).toHaveLength(16);
-    expect(new Set(MARKETPLACE_TOOLS.map((tool) => tool.id)).size).toBe(16);
+  it('keeps the exposed registry capped at twenty curated tools including the SAT pack', () => {
+    expect(MARKETPLACE_TOOLS).toHaveLength(20);
+    expect(new Set(MARKETPLACE_TOOLS.map((tool) => tool.id)).size).toBe(20);
+    for (const id of ['cross.ach', 'cross.kac', 'cross.red-team', 'cross.premortem']) {
+      expect(MARKETPLACE_TOOLS.some((tool) => tool.id === id)).toBe(true);
+    }
   });
 
   it('uses loose object schemas so raw text and context dumps can persist', () => {
