@@ -51,7 +51,9 @@ This pass lands the disabled-first implementation spine:
 - server-side credit metering for live Cognee recall/cognify operations.
 - frontend recall/remember client helpers for future UI surfaces.
 - deploy script scaffold for the private `praxis-cognee` Cloud Run service.
-- Workbench Memory tab for recall and candidate review in disabled-safe mode.
+- Disabled-safe memory client and panel components that are consumed behind
+  existing workbench surfaces. Cognee does not add a fifth substrate tab; the
+  canonical four tabs remain Context, Library, Ontology, and Graph.
 - GCP setup script additions for Cognee secrets, buckets, service account, and
   baseline IAM.
 - operations runbook, snapshot script, scheduler manifest, Cloud Monitoring

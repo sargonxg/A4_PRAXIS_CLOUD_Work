@@ -80,6 +80,18 @@ requireMarkers('backend/Dockerfile', [
   'import cognee, kuzu',
 ]);
 
+requireMarkers('backend/data/ontologies/praxis_aco.owl', [
+  'PRAXIS Analytical Context Ontology',
+  'rdf:about="#Actor"',
+  'rdf:about="#Claim"',
+  'rdf:about="#Interest"',
+  'rdf:about="#Constraint"',
+  'rdf:about="#Leverage"',
+  'rdf:about="#Commitment"',
+  'rdf:about="#Event"',
+  'rdf:about="#Narrative"',
+]);
+
 requireMarkers('src/components/memory/MemoryPanel.tsx', [
   'Memory recall',
   'Candidate review',
@@ -88,9 +100,17 @@ requireMarkers('src/components/memory/MemoryPanel.tsx', [
 ]);
 
 requireMarkers('src/lib/workbench/tabs.ts', [
-  "id: 'memory'",
-  'Cognee recall',
+  "id: 'context'",
+  "id: 'library'",
+  "id: 'ontology'",
+  "id: 'graph'",
+  'Canonical graph, candidate overlay, timeline, and provenance.',
 ]);
+
+const tabs = requireFile('src/lib/workbench/tabs.ts');
+if (tabs.includes("id: 'memory'")) {
+  failures.push("src/lib/workbench/tabs.ts must not reintroduce a fifth Memory tab; Cognee belongs behind Library/Ontology/Graph and disabled-safe memory routes");
+}
 
 requireMarkers('infrastructure/cognee-kuzu-snapshot.sh', [
   '/admin/quiesce',

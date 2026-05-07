@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/lib/auth/auth-context';
+import { DEFAULT_MODEL_PREFERENCE, MODEL_PREFERENCE_VALUES, modelPreferenceLabel } from '@/lib/ai/model-preferences';
 
 interface ModelPreferences {
   fast_analysis: string;
@@ -13,16 +14,13 @@ interface ModelPreferences {
 }
 
 const DEFAULT_PREFS: ModelPreferences = {
-  fast_analysis: 'gemini-2.5-flash',
-  deep_analysis: 'gemini-2.5-pro',
-  creative_drafting: 'gemini-2.5-pro',
-  research: 'gemini-2.5-flash',
+  fast_analysis: DEFAULT_MODEL_PREFERENCE,
+  deep_analysis: MODEL_PREFERENCE_VALUES[1],
+  creative_drafting: MODEL_PREFERENCE_VALUES[1],
+  research: DEFAULT_MODEL_PREFERENCE,
 };
 
-const MODEL_OPTIONS = [
-  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (fast, economical)' },
-  { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (deep, comprehensive)' },
-];
+const MODEL_OPTIONS = MODEL_PREFERENCE_VALUES.map((value) => ({ value, label: modelPreferenceLabel(value) }));
 
 export default function ModelPreferencesPage() {
   const { user } = useAuth();

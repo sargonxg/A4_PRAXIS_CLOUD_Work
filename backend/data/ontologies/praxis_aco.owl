@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+<rdf:RDF
+  xmlns="https://praxis.tacitus.me/ontology/aco#"
+  xml:base="https://praxis.tacitus.me/ontology/aco"
+  xmlns:aco="https://praxis.tacitus.me/ontology/aco#"
+  xmlns:owl="http://www.w3.org/2002/07/owl#"
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema#">
+
+  <owl:Ontology rdf:about="https://praxis.tacitus.me/ontology/aco">
+    <rdfs:label>PRAXIS Analytical Context Ontology</rdfs:label>
+    <rdfs:comment>
+      Canonical eight-primitive substrate used by Cognee cognify runs. Domain
+      ontologies are lenses over these primitives, not new top-level classes.
+    </rdfs:comment>
+    <owl:versionInfo>2026-05-07</owl:versionInfo>
+  </owl:Ontology>
+
+  <owl:Class rdf:about="#ACOPrimitive"/>
+
+  <owl:Class rdf:about="#Actor">
+    <rdfs:subClassOf rdf:resource="#ACOPrimitive"/>
+  </owl:Class>
+  <owl:Class rdf:about="#Claim">
+    <rdfs:subClassOf rdf:resource="#ACOPrimitive"/>
+  </owl:Class>
+  <owl:Class rdf:about="#Interest">
+    <rdfs:subClassOf rdf:resource="#ACOPrimitive"/>
+  </owl:Class>
+  <owl:Class rdf:about="#Constraint">
+    <rdfs:subClassOf rdf:resource="#ACOPrimitive"/>
+  </owl:Class>
+  <owl:Class rdf:about="#Leverage">
+    <rdfs:subClassOf rdf:resource="#ACOPrimitive"/>
+  </owl:Class>
+  <owl:Class rdf:about="#Commitment">
+    <rdfs:subClassOf rdf:resource="#ACOPrimitive"/>
+  </owl:Class>
+  <owl:Class rdf:about="#Event">
+    <rdfs:subClassOf rdf:resource="#ACOPrimitive"/>
+  </owl:Class>
+  <owl:Class rdf:about="#Narrative">
+    <rdfs:subClassOf rdf:resource="#ACOPrimitive"/>
+  </owl:Class>
+
+  <owl:Class rdf:about="#Situation">
+    <rdfs:subClassOf rdf:resource="#ACOPrimitive"/>
+    <rdfs:comment>Situation frames are allowed as case-level extraction summaries.</rdfs:comment>
+  </owl:Class>
+  <owl:Class rdf:about="#Position">
+    <rdfs:subClassOf rdf:resource="#Claim"/>
+  </owl:Class>
+
+  <owl:Class rdf:about="#State">
+    <rdfs:subClassOf rdf:resource="#Actor"/>
+  </owl:Class>
+  <owl:Class rdf:about="#NonState">
+    <rdfs:subClassOf rdf:resource="#Actor"/>
+  </owl:Class>
+  <owl:Class rdf:about="#Individual">
+    <rdfs:subClassOf rdf:resource="#Actor"/>
+  </owl:Class>
+  <owl:Class rdf:about="#Coalition">
+    <rdfs:subClassOf rdf:resource="#Actor"/>
+  </owl:Class>
+  <owl:Class rdf:about="#Institution">
+    <rdfs:subClassOf rdf:resource="#Actor"/>
+  </owl:Class>
+
+  <owl:Class rdf:about="#Kinetic">
+    <rdfs:subClassOf rdf:resource="#Event"/>
+  </owl:Class>
+  <owl:Class rdf:about="#Diplomatic">
+    <rdfs:subClassOf rdf:resource="#Event"/>
+  </owl:Class>
+  <owl:Class rdf:about="#Economic">
+    <rdfs:subClassOf rdf:resource="#Event"/>
+  </owl:Class>
+  <owl:Class rdf:about="#Information">
+    <rdfs:subClassOf rdf:resource="#Event"/>
+  </owl:Class>
+  <owl:Class rdf:about="#Humanitarian">
+    <rdfs:subClassOf rdf:resource="#Event"/>
+  </owl:Class>
+  <owl:Class rdf:about="#Legal">
+    <rdfs:subClassOf rdf:resource="#Event"/>
+  </owl:Class>
+
+  <owl:ObjectProperty rdf:about="#supports">
+    <rdfs:domain rdf:resource="#Claim"/>
+    <rdfs:range rdf:resource="#Claim"/>
+  </owl:ObjectProperty>
+  <owl:ObjectProperty rdf:about="#contests">
+    <rdfs:domain rdf:resource="#Claim"/>
+    <rdfs:range rdf:resource="#Claim"/>
+  </owl:ObjectProperty>
+  <owl:ObjectProperty rdf:about="#heldBy">
+    <rdfs:domain rdf:resource="#Interest"/>
+    <rdfs:range rdf:resource="#Actor"/>
+  </owl:ObjectProperty>
+  <owl:ObjectProperty rdf:about="#constrains">
+    <rdfs:domain rdf:resource="#Constraint"/>
+    <rdfs:range rdf:resource="#Actor"/>
+  </owl:ObjectProperty>
+  <owl:ObjectProperty rdf:about="#committedBy">
+    <rdfs:domain rdf:resource="#Commitment"/>
+    <rdfs:range rdf:resource="#Actor"/>
+  </owl:ObjectProperty>
+  <owl:ObjectProperty rdf:about="#causedBy">
+    <rdfs:domain rdf:resource="#Event"/>
+    <rdfs:range rdf:resource="#Event"/>
+  </owl:ObjectProperty>
+  <owl:ObjectProperty rdf:about="#frames">
+    <rdfs:domain rdf:resource="#Narrative"/>
+    <rdfs:range rdf:resource="#Claim"/>
+  </owl:ObjectProperty>
+
+  <owl:DatatypeProperty rdf:about="#caseId">
+    <rdfs:domain rdf:resource="#ACOPrimitive"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+  <owl:DatatypeProperty rdf:about="#ownerUid">
+    <rdfs:domain rdf:resource="#ACOPrimitive"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+  <owl:DatatypeProperty rdf:about="#confidence">
+    <rdfs:domain rdf:resource="#ACOPrimitive"/>
+    <rdfs:range rdf:resource="xsd:decimal"/>
+  </owl:DatatypeProperty>
+  <owl:DatatypeProperty rdf:about="#synthesized">
+    <rdfs:domain rdf:resource="#ACOPrimitive"/>
+    <rdfs:range rdf:resource="xsd:boolean"/>
+  </owl:DatatypeProperty>
+  <owl:DatatypeProperty rdf:about="#validFrom">
+    <rdfs:domain rdf:resource="#Event"/>
+    <rdfs:range rdf:resource="xsd:dateTime"/>
+  </owl:DatatypeProperty>
+  <owl:DatatypeProperty rdf:about="#validTo">
+    <rdfs:domain rdf:resource="#Event"/>
+    <rdfs:range rdf:resource="xsd:dateTime"/>
+  </owl:DatatypeProperty>
+</rdf:RDF>

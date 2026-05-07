@@ -13,6 +13,7 @@ import {
   type Timestamp,
 } from 'firebase/firestore';
 import { db } from './config';
+import { DEFAULT_MODEL_PREFERENCE, type ModelPreferenceValue } from '@/lib/ai/model-preferences';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -20,11 +21,9 @@ import { db } from './config';
 
 export interface AISettings {
   preferredModel:
-    | 'gemini-2.5-flash'
-    | 'gemini-2.5-pro'
+    | ModelPreferenceValue
     // Legacy values — kept for backwards-compatibility, mapped to new models at runtime
     | 'gemini-3-flash'
-    | 'gemini-2.5-flash'
   temperature: number;              // 0.0-1.0, default 0.4
   researchDepth: 'quick' | 'standard' | 'comprehensive';
   customInstructions: string;       // Additional system prompt text
@@ -32,7 +31,7 @@ export interface AISettings {
 }
 
 export const DEFAULT_AI_SETTINGS: AISettings = {
-  preferredModel: 'gemini-2.5-flash',
+  preferredModel: DEFAULT_MODEL_PREFERENCE,
   temperature: 0.4,
   researchDepth: 'standard',
   customInstructions: '',

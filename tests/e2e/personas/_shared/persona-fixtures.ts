@@ -5,7 +5,7 @@ export async function openExampleWorkbench(page: Page, caseId: string, tab = 'ch
     window.localStorage.setItem('praxis-tour-seen', 'true');
   });
   await page.goto(`/login?mode=demo&example=${caseId}`);
-  await page.waitForURL(new RegExp(`/app/workbench/${caseId}\\?tab=chapters`), { timeout: 30_000 });
+  await page.waitForURL(new RegExp(`/app/workbench/${caseId}(?:\\?tab=chapters)?$`), { timeout: 30_000 });
   const exploreFreely = page.getByRole('button', { name: /Explore Freely/i });
   if (await exploreFreely.isVisible().catch(() => false)) {
     await exploreFreely.click();

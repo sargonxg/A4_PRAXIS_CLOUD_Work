@@ -65,6 +65,11 @@ async function proxyBackendRequest(req: Request, uid: string, path: string): Pro
     ? undefined
     : await req.arrayBuffer();
 
+  const localFallback = localBackendFallback(req.method, path);
+  if (!process.env.NEXT_PUBLIC_PRAXIS_BACKEND_URL && localFallback) {
+    return NextResponse.json(localFallback);
+  }
+
   const backendRes = await callBackend(`/api/v1/${path}${query}`, {
     method: req.method,
     headers: {
@@ -81,6 +86,35 @@ async function proxyBackendRequest(req: Request, uid: string, path: string): Pro
       'content-type': backendRes.headers.get('content-type') ?? 'application/json',
     },
   });
+}
+
+function localBackendFallback(method: string, path: string): Record<string, unknown> | null {
+  const normalizedMethod = method.toUpperCase();
+  if (normalizedMethod === 'GET' && path === 'tabs/library') {
+    return {
+      sources: [],
+      status: 'backend_unconfigured',
+      note: 'Python backend is not configured in this local session; demo artifacts remain available.',
+    };
+  }
+  if (normalizedMethod === 'POST' && path === 'chapters/drafts') {
+    return {
+      draft: {
+        id: `local-draft-${Date.now()}`,
+        status: 'local_fallback',
+      },
+      status: 'backend_unconfigured',
+      note: 'Draft held locally because the Python backend is not configured.',
+    };
+  }
+  if (normalizedMethod === 'POST' && /^chapters\/drafts\/[^/]+\/(cite|export)$/.test(path)) {
+    return {
+      hits: [],
+      status: 'backend_unconfigured',
+      note: 'Citation/export backend is not configured in this local session.',
+    };
+  }
+  return null;
 }
 
 export const GET = withAuth<RouteContext>(async (req, user, context) => {

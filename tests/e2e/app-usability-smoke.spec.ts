@@ -40,18 +40,18 @@ test('landing renders hero animation, static fallback, and 3D ontology graph', a
 
 test('demo workbench exposes context, ontology, graph, tools, memo, and draft surfaces', async ({ page }) => {
   const consoleErrors = collectConsoleErrors(page);
+  const closeWorkspaceTab = () => page.getByRole('button', { name: /^Close workspace tab$/i }).click();
 
   await openExampleWorkbench(page, 'syria-2026');
   await expect(page.getByText('Example case')).toBeVisible();
   await expect(page.getByText('Context health').first()).toBeVisible();
 
-  await page.getByRole('button', { name: /^Desk$/i }).click();
+  await expect(page.getByRole('button', { name: /Desk.*always on/i })).toBeVisible();
   await expect(page.getByTestId('workbench-desk-surface')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^Desk$/i })).toBeVisible();
-  await expect(page.getByText(/Next best actions/i)).toBeVisible();
-  await expect(page.getByText('What changed', { exact: true })).toBeVisible();
-  await expect(page.getByText(/Stale context advisory|Context freshness acceptable/i)).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^Board$/i })).toBeVisible();
+  await expect(page.getByText(/Context generation flow/i)).toBeVisible();
+  await expect(page.getByText(/Geographic intelligence/i)).toBeVisible();
+  await expect(page.getByText(/Cinematic timeline/i)).toBeVisible();
+  await expect(page.getByText(/Stakeholder|NYC/i).first()).toBeVisible();
 
   await page.getByRole('button', { name: /^Context$/i }).click();
   await expect(page.getByTestId('workbench-context-surface')).toBeVisible();
@@ -62,21 +62,23 @@ test('demo workbench exposes context, ontology, graph, tools, memo, and draft su
   await expect(page.getByRole('heading', { name: /^Preferences$/i })).toBeVisible();
   await expect(page.getByText('Document upload', { exact: true })).toBeVisible();
   await expect(page.getByText('Actors / Claims / Interests', { exact: true })).toBeVisible();
+  await closeWorkspaceTab();
 
   await page.getByRole('button', { name: /^Library$/i }).click();
-  await expect(page.getByTestId('workbench-library-surface')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^Library$/i })).toBeVisible();
+  const librarySurface = page.getByTestId('workbench-library-surface');
+  await expect(librarySurface).toBeVisible();
+  await expect(librarySurface.getByRole('heading', { name: /^Library$/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Saved claims$/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Memo versions$/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Save case-frame claim$/i })).toBeVisible();
+  await closeWorkspaceTab();
 
   await page.getByRole('button', { name: /^Research$/i }).click();
-  await expect(page.getByTestId('workbench-research-surface')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^Research$/i })).toBeVisible();
-  await expect(page.getByText(/Staged collection plan/i)).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^Candidate sources$/i })).toBeVisible();
-  await page.getByRole('button', { name: /^Ingest$/i }).first().click();
-  await expect(page.getByText(/staged for non-destructive re-genesis review/i)).toBeVisible();
+  const researchSurface = page.getByTestId('workbench-research-surface');
+  await expect(researchSurface).toBeVisible();
+  await expect(researchSurface.getByText(/Current source receipts/i)).toBeVisible();
+  await expect(researchSurface.getByText('Grounded reference layer', { exact: true })).toBeVisible();
+  await expect(researchSurface.getByText(/Live AI modes/i)).toBeVisible();
 
   await page.getByRole('button', { name: /^Ontology$/i }).click();
   await expect(page.getByTestId('ontology-schema-viewer')).toBeVisible();
@@ -87,19 +89,22 @@ test('demo workbench exposes context, ontology, graph, tools, memo, and draft su
   await expect(page.getByTestId('ontology-primitive-coverage')).toBeVisible();
   await expect(page.getByTestId('ontology-recommended-tools')).toBeVisible();
   await expect(page.getByRole('button', { name: /^Add secondary ontology$/i })).toBeVisible();
+  await closeWorkspaceTab();
 
   await page.getByRole('button', { name: /^Graph$/i }).click();
   await expect(page.getByTestId('praxis-graph-canvas')).toBeVisible();
   await expect(page.getByRole('img', { name: /Canonical PRAXIS graph/i })).toBeVisible();
   await expect(page.getByText(/Graph nodes/i).first()).toBeVisible();
+  await closeWorkspaceTab();
 
   await page.getByRole('button', { name: /^Tools$/i }).click();
-  await expect(page.getByTestId('tool-marketplace')).toBeVisible();
-  await expect(page.getByText('Run history', { exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Run$/i }).first()).toBeVisible();
+  await expect(page.getByTestId('workbench-tools-surface')).toBeVisible();
+  await expect(page.getByText(/DIALECTICA backbone/i)).toBeVisible();
+  await expect(page.getByText(/Graph-grounded execution/i)).toBeVisible();
 
   await page.getByRole('button', { name: /^Memos$/i }).click();
-  await expect(page.getByRole('heading', { name: /Memo Studio/i })).toBeVisible();
+  await expect(page.getByTestId('workbench-memos-surface')).toBeVisible();
+  await expect(page.getByText(/From graph evidence to work product/i)).toBeVisible();
 
   await page.getByRole('button', { name: /^Draft$/i }).click();
   await expect(page.getByTestId('workbench-draft-surface')).toBeVisible();

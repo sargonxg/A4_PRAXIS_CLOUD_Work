@@ -86,7 +86,7 @@ export function WorkbenchChapterRenderer() {
 function ChapterContent({ chapterId, caseId }: { chapterId: WorkbenchChapterId; caseId: string }) {
   const { caseModule } = useWorkbenchScope();
   const customChapter = caseModule.chapters?.[chapterId];
-  if (customChapter) return customChapter();
+  if (customChapter) return <div data-testid={`workbench-${chapterId}-surface`}>{customChapter()}</div>;
   if (chapterId === 'desk') return <DeskTab />;
   if (chapterId === 'research') return <ResearchTab />;
   if (chapterId === 'memos') return <MemoStudio />;

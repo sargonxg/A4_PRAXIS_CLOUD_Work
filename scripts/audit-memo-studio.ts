@@ -10,7 +10,9 @@ if (!existsSync(join(process.cwd(), 'src/lib/firebase/memo-service.ts'))) failur
 if (!existsSync(join(process.cwd(), 'src/app/api/memos/route.ts'))) failures.push('missing memo persistence API route');
 
 const tabs = readFileSync(join(process.cwd(), 'src/lib/workbench/tabs.ts'), 'utf8');
-if (!tabs.includes("id: 'memos'")) failures.push('Workbench tabs must include memos');
+if (tabs.includes("id: 'memos'")) failures.push('Workbench tabs must not include memos; Memo Studio is a work chapter');
+const chapterFlow = readFileSync(join(process.cwd(), 'src/lib/workbench/chapter-flow.ts'), 'utf8');
+if (!chapterFlow.includes("id: 'memos'")) failures.push('Workbench chapter flow must include memos');
 
 const docs = [
   'docs/audits/2026-05-06-MEMO_INVENTORY.md',

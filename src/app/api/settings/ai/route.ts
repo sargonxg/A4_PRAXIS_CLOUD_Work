@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyIdToken, getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { DEFAULT_AI_SETTINGS, type AISettings } from '@/lib/firebase/firestore';
+import { isModelPreferenceValue } from '@/lib/ai/model-preferences';
 
 export async function GET() {
   try {
@@ -66,7 +67,7 @@ export async function PUT(request: Request) {
 
     // Validate and sanitize
     const settings: Partial<AISettings> = {};
-    if (body.preferredModel && ['gemini-2.5-flash', 'gemini-2.5-pro'].includes(body.preferredModel)) {
+    if (isModelPreferenceValue(body.preferredModel)) {
       settings.preferredModel = body.preferredModel;
     }
     if (typeof body.temperature === 'number') {
