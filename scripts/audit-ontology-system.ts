@@ -113,6 +113,24 @@ for (const marker of ['case_type: str | None = Query', 'case_type_secondary: str
   if (!tabsRouter.includes(marker)) failures.push(`tabs.py missing ${marker}`);
 }
 
+const frontendCaseTypes = read('src/lib/ontology/case-types.ts');
+for (const marker of ['CaseTypeId', 'CASE_TYPE_DEFINITIONS', 'classifyCaseTypeSignals', 'MAX_ACTIVE_CASE_TYPES']) {
+  if (!frontendCaseTypes.includes(marker)) failures.push(`case-types.ts missing ${marker}`);
+}
+for (const slug of caseTypes.map((spec) => spec.slug)) {
+  if (!frontendCaseTypes.includes(`'${slug}'`)) failures.push(`case-types.ts missing ${slug}`);
+}
+
+const situationApi = read('src/app/api/situations/route.ts');
+for (const marker of ['classifyCaseTypeSignals', 'caseType', 'caseTypeSecondary', 'caseTypeLocked']) {
+  if (!situationApi.includes(marker)) failures.push(`situations route missing ${marker}`);
+}
+
+const creationWizard = read('src/app/app/situations/new/page.tsx');
+for (const marker of ['CaseTypeSelector', 'caseTypeSelectionForRole', 'CASE_TYPE_DEFINITIONS', 'caseTypeLocked']) {
+  if (!creationWizard.includes(marker)) failures.push(`new situation wizard missing ${marker}`);
+}
+
 const evolutionService = read('backend/services/ontology_evolution.py');
 for (const marker of ['ONTOLOGY_EVOLUTION_EVENT', 'detect_ontology_gap', 'OntologyGapProposal', 'mutates_ontology']) {
   if (!evolutionService.includes(marker)) failures.push(`ontology_evolution.py missing ${marker}`);

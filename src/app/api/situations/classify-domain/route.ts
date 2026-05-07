@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
 import { classifyDomain } from '@/lib/domain/classifier';
+import { classifyCaseTypeSignals } from '@/lib/ontology/case-types';
 import { classifyOntologySignals } from '@/lib/ontology/classifier';
 
 const BodySchema = z.object({
@@ -34,6 +35,10 @@ export const POST = withAuth(async (req, user) => {
       primaryOntologyId: 'conflict',
       ontologyConfidence: 0,
       ontologyRationale: 'Demo users do not persist situations.',
+      caseType: 'active-conflict',
+      caseTypeSecondary: undefined,
+      caseTypeConfidence: 0,
+      caseTypeRationale: 'Demo users do not persist situations.',
     });
   }
   const body = await req.json().catch(() => ({}));
@@ -62,6 +67,12 @@ export const POST = withAuth(async (req, user) => {
     sourceUrls: parsed.data.sourceUrls,
     role: parsed.data.userRole,
   });
+  const caseType = classifyCaseTypeSignals({
+    name: parsed.data.name,
+    description: parsed.data.description,
+    sourceUrls: parsed.data.sourceUrls,
+    role: parsed.data.userRole,
+  });
 
   return NextResponse.json({
     ...result,
@@ -70,5 +81,9 @@ export const POST = withAuth(async (req, user) => {
     primaryOntologyId: ontology.primaryOntologyId,
     ontologyConfidence: ontology.confidence,
     ontologyRationale: ontology.rationale,
+    caseType: caseType.caseType,
+    caseTypeSecondary: caseType.caseTypeSecondary,
+    caseTypeConfidence: caseType.confidence,
+    caseTypeRationale: caseType.rationale,
   });
 });

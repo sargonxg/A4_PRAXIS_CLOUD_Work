@@ -1,5 +1,9 @@
 # PRAXIS Build Log
 
+## 2026-05-07 — Case typology surfaced in creation
+
+Continued the ontology system build by wiring the ten PRAXIS specialization case types into the user-facing situation creation path. Added a shared TypeScript case-type registry/classifier, manual primary/secondary case-type picker, review-card display, classify-domain preview payload, and `/api/situations` persistence into both camelCase and snake_case fields so Firestore cases carry the same `case_type` contract as the backend substrate. Extended `audit:ontology-system` and added unit coverage for the ten-type taxonomy. This preserves the existing broad ontology-lens UI for tool ranking while adding the specific ontology stack used by Cognee extraction.
+
 ## 2026-05-07 — Ontology evolution loop and golden contracts
 
 Continued `ONTOLOGY_SYSTEM_BUILD.md` by adding the advisory ontology evolution loop for repeated rejected extraction patterns, plus a workspace subgraph that emits `ontology_evolution_proposed` suggestions without mutating OWL files, firewall rules, RLS policy, or substrate rows. Added five priority golden sets with 5 documents and 30 labeled primitives each, aligned the resolver/data-point LRU cache with the documented size of 50, and extended `audit:ontology-system` so the evolution loop and golden contracts stay enforced. Verified locally with the ontology audit, ontology version/classifier audits, Python compile, and focused backend pytest; live Cognee extraction recall/precision, Syria latency, and token cost remain environment-gated and are not claimed here.

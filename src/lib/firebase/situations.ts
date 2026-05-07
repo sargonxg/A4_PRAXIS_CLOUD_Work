@@ -515,6 +515,14 @@ export async function createSituationAdmin(
     ...(typeof data.ontologyOverriddenByUser === 'boolean'
       ? { ontologyOverriddenByUser: data.ontologyOverriddenByUser }
       : {}),
+    ...(data.caseType ? { caseType: data.caseType, case_type: data.caseType } : {}),
+    ...(data.caseTypeSecondary ? { caseTypeSecondary: data.caseTypeSecondary, case_type_secondary: data.caseTypeSecondary } : {}),
+    ...(typeof data.caseTypeConfidence === 'number'
+      ? { caseTypeConfidence: data.caseTypeConfidence, case_type_confidence: data.caseTypeConfidence }
+      : {}),
+    ...(typeof data.caseTypeLocked === 'boolean'
+      ? { caseTypeLocked: data.caseTypeLocked, case_type_locked: data.caseTypeLocked }
+      : {}),
     ...(data.sourceCategoriesEnabled ? { sourceCategoriesEnabled: data.sourceCategoriesEnabled } : {}),
     ...(data.sourceCategoryOrder?.length ? { sourceCategoryOrder: data.sourceCategoryOrder } : {}),
     ...(data.workflowPath ? { workflowPath: data.workflowPath } : {}),

@@ -49,6 +49,14 @@ import {
   primaryOntologyId,
   suggestOntologiesForRole,
 } from '@/lib/ontology/suggestions';
+import {
+  CASE_TYPE_DEFINITIONS,
+  type CaseTypeId,
+  classifyCaseTypeSignals,
+  getCaseTypeDefinition,
+  normalizeCaseTypeSelection,
+  suggestCaseTypesForRole,
+} from '@/lib/ontology/case-types';
 import type { CaseScaffoldProposal } from '@/lib/onboarding/case-scaffold';
 
 /* ---------- Types ---------- */
@@ -69,6 +77,10 @@ interface SituationForm {
   ontologyIds: OntologyId[];
   primaryOntologyId: OntologyId;
   ontologyOverriddenByUser: boolean;
+  caseType: CaseTypeId;
+  caseTypeSecondary?: CaseTypeId;
+  caseTypeConfidence: number;
+  caseTypeLocked: boolean;
 }
 
 type Step = 1 | 2 | 3 | 4;
@@ -153,6 +165,16 @@ const ONTOLOGY_BY_ID = Object.fromEntries(
 function ontologySelectionForRole(role: UserRole): { ontologyIds: OntologyId[]; primaryOntologyId: OntologyId } {
   const ontologyIds = suggestOntologiesForRole(role);
   return { ontologyIds, primaryOntologyId: primaryOntologyId(ontologyIds) };
+}
+
+function caseTypeSelectionForRole(role: UserRole): Pick<SituationForm, 'caseType' | 'caseTypeSecondary' | 'caseTypeConfidence' | 'caseTypeLocked'> {
+  const [caseType, caseTypeSecondary] = suggestCaseTypesForRole(role);
+  return {
+    caseType: caseType ?? 'active-conflict',
+    caseTypeSecondary,
+    caseTypeConfidence: 0.45,
+    caseTypeLocked: false,
+  };
 }
 
 function StepIndicator({ current }: { current: Step }) {
@@ -470,6 +492,7 @@ function StepActors({ form, setForm, onNext, onBack }: { form: SituationForm; se
       </div>
 
       <OntologyLensSelector form={form} setForm={setForm} />
+      <CaseTypeSelector form={form} setForm={setForm} />
 
       {/* Optional Initial Assessment */}
       <InitialAssessment form={form} setForm={setForm} />
@@ -574,6 +597,132 @@ function OntologyLensSelector({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function CaseTypeSelector({
+  form,
+  setForm,
+}: {
+  form: SituationForm;
+  setForm: React.Dispatch<React.SetStateAction<SituationForm>>;
+}) {
+  const roleSuggestions = suggestCaseTypesForRole(form.userRole);
+  const selected = normalizeCaseTypeSelection([form.caseType, form.caseTypeSecondary]);
+
+  const setPrimary = (caseType: CaseTypeId) => {
+    setForm((f) => ({
+      ...f,
+      caseType,
+      caseTypeSecondary: f.caseTypeSecondary === caseType ? undefined : f.caseTypeSecondary,
+      caseTypeConfidence: 1,
+      caseTypeLocked: true,
+    }));
+  };
+
+  const toggleSecondary = (caseType: CaseTypeId) => {
+    setForm((f) => {
+      if (f.caseType === caseType) return f;
+      return {
+        ...f,
+        caseTypeSecondary: f.caseTypeSecondary === caseType ? undefined : caseType,
+        caseTypeConfidence: 1,
+        caseTypeLocked: true,
+      };
+    });
+  };
+
+  const autoClassify = () => {
+    setForm((f) => {
+      const classified = classifyCaseTypeSignals({
+        name: f.name,
+        description: f.description,
+        role: f.userRole,
+      });
+      return {
+        ...f,
+        caseType: classified.caseType,
+        caseTypeSecondary: classified.caseTypeSecondary,
+        caseTypeConfidence: classified.confidence,
+        caseTypeLocked: false,
+      };
+    });
+  };
+
+  return (
+    <div className="rounded-xl border border-navy-200 bg-white p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold text-navy-800">Case type specialization</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-navy-500">
+            Select the domain vocabulary Cognee uses for extraction. Primary and optional secondary types compose with the base ACO ontology.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={autoClassify}
+          className="rounded-md border border-navy-200 bg-navy-50 px-2.5 py-1 text-xs font-medium text-navy-700 hover:bg-navy-100"
+        >
+          Auto-classify
+        </button>
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        {CASE_TYPE_DEFINITIONS.map((definition) => {
+          const isPrimary = form.caseType === definition.id;
+          const isSecondary = form.caseTypeSecondary === definition.id;
+          const suggested = roleSuggestions.includes(definition.id);
+          return (
+            <div
+              key={definition.id}
+              className={cn(
+                'rounded-lg border p-3 transition-all',
+                isPrimary || isSecondary
+                  ? 'border-diplomatic-blue bg-diplomatic-blue/5'
+                  : 'border-navy-200 bg-white',
+              )}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold text-navy-900">{definition.label}</p>
+                  <p className="mt-1 line-clamp-2 text-[10px] leading-snug text-navy-500">{definition.description}</p>
+                </div>
+                {suggested ? <span className="rounded-full bg-teal/10 px-1.5 py-0.5 text-[9px] font-semibold text-teal">Suggested</span> : null}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setPrimary(definition.id)}
+                  className={cn(
+                    'rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                    isPrimary ? 'bg-gold-100 text-gold-700' : 'bg-navy-100 text-navy-600 hover:bg-navy-200',
+                  )}
+                >
+                  Primary
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleSecondary(definition.id)}
+                  disabled={isPrimary}
+                  className={cn(
+                    'rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                    isSecondary
+                      ? 'bg-diplomatic-blue/10 text-diplomatic-blue'
+                      : isPrimary
+                        ? 'cursor-not-allowed bg-navy-50 text-navy-300'
+                        : 'bg-navy-100 text-navy-600 hover:bg-navy-200',
+                  )}
+                >
+                  Secondary
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-[10px] text-navy-500">
+        Active stack: {selected.map((id) => getCaseTypeDefinition(id).label).join(' + ')}.
+      </p>
     </div>
   );
 }
@@ -1045,6 +1194,31 @@ function StepReview({
             </p>
           </div>
 
+          <div className="rounded-lg border border-navy-200 bg-white p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-navy-400">Case type stack</p>
+                <p className="mt-1 text-sm font-semibold text-navy-900">
+                  {getCaseTypeDefinition(form.caseType).label}
+                </p>
+                {form.caseTypeSecondary ? (
+                  <p className="mt-1 text-xs text-navy-600">
+                    Secondary: {getCaseTypeDefinition(form.caseTypeSecondary).label}
+                  </p>
+                ) : null}
+              </div>
+              <span className={cn(
+                'rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                form.caseTypeLocked ? 'bg-gold-100 text-gold-700' : 'bg-navy-100 text-navy-600',
+              )}>
+                {form.caseTypeLocked ? 'Manual' : `${Math.round(form.caseTypeConfidence * 100)}% auto`}
+              </span>
+            </div>
+            <p className="mt-2 text-[10px] text-navy-400">
+              This controls the OWL specialization and Pydantic DataPoints used by ingestion.
+            </p>
+          </div>
+
           <DomainReviewCard
             form={form}
             preview={domainPreview}
@@ -1206,6 +1380,7 @@ export default function NewSituationPage() {
   const [form, setForm] = useState<SituationForm>(() => {
     const userRole = mapAnalystRoleToSituationRole(analystProfile?.identity.role);
     const ontologySelection = ontologySelectionForRole(userRole);
+    const caseTypeSelection = caseTypeSelectionForRole(userRole);
     return {
       name: '',
       type: 'international',
@@ -1219,6 +1394,7 @@ export default function NewSituationPage() {
       escalationTrend: 'stable',
       workflowPath: '',
       ...ontologySelection,
+      ...caseTypeSelection,
       ontologyOverriddenByUser: false,
     };
   });
@@ -1231,7 +1407,7 @@ export default function NewSituationPage() {
       const ontologySelection = current.ontologyOverriddenByUser
         ? { ontologyIds: current.ontologyIds, primaryOntologyId: current.primaryOntologyId }
         : ontologySelectionForRole(userRole);
-      return { ...current, userRole, ...ontologySelection };
+      return { ...current, userRole, ...ontologySelection, ...(current.caseTypeLocked ? {} : caseTypeSelectionForRole(userRole)) };
     });
   }, [analystProfile?.identity.role]);
 
@@ -1294,6 +1470,9 @@ export default function NewSituationPage() {
         rationale?: string;
         ontologyIds?: OntologyId[];
         primaryOntologyId?: OntologyId;
+        caseType?: CaseTypeId;
+        caseTypeSecondary?: CaseTypeId;
+        caseTypeConfidence?: number;
       }) => {
         if (cancelled) return;
         const id = isDomainId(data.domainId ?? '') ? (data.domainId as DomainId) : 'generic';
@@ -1314,6 +1493,14 @@ export default function NewSituationPage() {
               : primaryOntologyId(ontologyIds),
           }));
         }
+        if (!form.caseTypeLocked && data.caseType) {
+          setForm((f) => ({
+            ...f,
+            caseType: data.caseType ?? f.caseType,
+            caseTypeSecondary: data.caseTypeSecondary,
+            caseTypeConfidence: typeof data.caseTypeConfidence === 'number' ? data.caseTypeConfidence : f.caseTypeConfidence,
+          }));
+        }
       })
       .catch(() => {
         if (cancelled) return;
@@ -1328,7 +1515,7 @@ export default function NewSituationPage() {
     return () => {
       cancelled = true;
     };
-  }, [step, form.name, form.description, form.userRole, form.ontologyOverriddenByUser, context.urls, domainPreview.overridden]);
+  }, [step, form.name, form.description, form.userRole, form.ontologyOverriddenByUser, form.caseTypeLocked, context.urls, domainPreview.overridden]);
 
   const handleDomainPick = useCallback((id: DomainId, overridden: boolean) => {
     setDomainPreview({
@@ -1349,6 +1536,7 @@ export default function NewSituationPage() {
       type: path.situationType,
       userRole: path.userRole,
       ...(f.ontologyOverriddenByUser ? {} : ontologySelectionForRole(path.userRole)),
+      ...(f.caseTypeLocked ? {} : caseTypeSelectionForRole(path.userRole)),
     }));
     setContext((c) => {
       const enabled = Object.fromEntries(
@@ -1390,6 +1578,11 @@ export default function NewSituationPage() {
       proposal.primaryOntologyId,
       ...proposal.secondaryOntologyIds,
     ]);
+    const caseTypeClassification = classifyCaseTypeSignals({
+      name: proposal.suggestedCaseName,
+      description: proposal.suggestedDescription,
+      role: form.userRole,
+    });
 
     setForm((current) => ({
       ...current,
@@ -1401,6 +1594,10 @@ export default function NewSituationPage() {
       ontologyIds,
       primaryOntologyId: proposal.primaryOntologyId,
       ontologyOverriddenByUser: true,
+      caseType: caseTypeClassification.caseType,
+      caseTypeSecondary: caseTypeClassification.caseTypeSecondary,
+      caseTypeConfidence: caseTypeClassification.confidence,
+      caseTypeLocked: false,
       riskScore: current.riskScore > 0 ? current.riskScore : 5,
     }));
     setContext((current) => ({
@@ -1431,7 +1628,7 @@ export default function NewSituationPage() {
     setCreationMode('manual');
     setDirection(1);
     setStep(4);
-  }, []);
+  }, [form.userRole]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -1495,6 +1692,10 @@ export default function NewSituationPage() {
           ontologyIds: form.ontologyIds,
           primaryOntologyId: form.primaryOntologyId,
           ontologyOverriddenByUser: form.ontologyOverriddenByUser,
+          caseType: form.caseType,
+          caseTypeSecondary: form.caseTypeSecondary,
+          caseTypeConfidence: form.caseTypeConfidence,
+          caseTypeLocked: form.caseTypeLocked,
         }),
       });
       if (!res.ok) {
@@ -1539,6 +1740,8 @@ export default function NewSituationPage() {
             userRole: form.userRole,
             ontologyIds: form.ontologyIds,
             primaryOntologyId: form.primaryOntologyId,
+            caseType: form.caseType,
+            caseTypeSecondary: form.caseTypeSecondary,
             situationId: situation.id,
             urls: filteredUrls.length ? filteredUrls : undefined,
             notes: context.notes.trim() || undefined,

@@ -8,6 +8,7 @@ import { classifyDomain } from '@/lib/domain/classifier';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
 import { isDomainId } from '@/types/domain';
 import type { EscalationTrend } from '@/types/situation';
+import { classifyCaseTypeSignals, isCaseTypeId } from '@/lib/ontology/case-types';
 import { classifyOntologySignals } from '@/lib/ontology/classifier';
 import { isOntologyId, type OntologyId } from '@/lib/ontology/types';
 import { normalizeOntologySelection } from '@/lib/ontology/suggestions';
@@ -79,6 +80,9 @@ export const POST = withAuth(async (req, user) => {
       ontologyIds: clientOntologyIds,
       primaryOntologyId: clientPrimaryOntologyId,
       ontologyOverriddenByUser,
+      caseType: clientCaseType,
+      caseTypeSecondary: clientCaseTypeSecondary,
+      caseTypeLocked,
       domain: clientDomain,
       domainOverriddenByUser,
       riskScore,
@@ -162,6 +166,21 @@ export const POST = withAuth(async (req, user) => {
       isOntologyId(clientPrimaryOntologyId) && ontologyIds.includes(clientPrimaryOntologyId)
         ? clientPrimaryOntologyId
         : ontologyIds[0];
+    const classifiedCaseType = classifyCaseTypeSignals({
+      name,
+      description: description ?? '',
+      sourceUrls: filteredUrls,
+      role: userRole,
+    });
+    const caseType = isCaseTypeId(clientCaseType) ? clientCaseType : classifiedCaseType.caseType;
+    const caseTypeSecondary =
+      isCaseTypeId(clientCaseTypeSecondary) && clientCaseTypeSecondary !== caseType
+        ? clientCaseTypeSecondary
+        : classifiedCaseType.caseTypeSecondary !== caseType
+          ? classifiedCaseType.caseTypeSecondary
+          : undefined;
+    const caseTypeConfidence = isCaseTypeId(clientCaseType) ? 1 : classifiedCaseType.confidence;
+    const resolvedCaseTypeLocked = caseTypeLocked === true || isCaseTypeId(clientCaseType);
 
     const situation = await createSituationAdmin(user.uid, {
       name: name.trim(),
@@ -183,6 +202,10 @@ export const POST = withAuth(async (req, user) => {
         ? 'User confirmed ontology lenses during situation creation.'
         : classifiedOntology.rationale,
       ontologyOverriddenByUser: ontologyOverriddenByUser === true,
+      caseType,
+      ...(caseTypeSecondary ? { caseTypeSecondary } : {}),
+      caseTypeConfidence,
+      caseTypeLocked: resolvedCaseTypeLocked,
       ...(typeof riskScore === 'number' ? { riskScore } : {}),
       ...(typeof glaslStage === 'number' || glaslStage === null ? { glaslStage } : {}),
       ...(isEscalationTrend(escalationTrend) ? { escalationTrend } : {}),

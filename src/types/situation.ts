@@ -1,4 +1,5 @@
 import type { CaseOntology } from '@/lib/constants/case-registry';
+import type { CaseTypeId } from '@/lib/ontology/case-types';
 import type { OntologyId } from '@/lib/ontology/types';
 
 // ============================================================================
@@ -131,6 +132,14 @@ export interface Situation {
   ontologyConfidence?: number;
   ontologyRationale?: string;
   ontologyOverriddenByUser?: boolean;
+  caseType?: CaseTypeId;
+  caseTypeSecondary?: CaseTypeId;
+  caseTypeConfidence?: number;
+  caseTypeLocked?: boolean;
+  case_type?: CaseTypeId;
+  case_type_secondary?: CaseTypeId;
+  case_type_confidence?: number;
+  case_type_locked?: boolean;
   canonicalPreCheck?: {
     currentLeadership?: string;
     currentStatus?: string;
@@ -195,6 +204,14 @@ export interface CreateSituationInput {
   ontologyConfidence?: number;
   ontologyRationale?: string;
   ontologyOverriddenByUser?: boolean;
+  caseType?: CaseTypeId;
+  caseTypeSecondary?: CaseTypeId;
+  caseTypeConfidence?: number;
+  caseTypeLocked?: boolean;
+  case_type?: CaseTypeId;
+  case_type_secondary?: CaseTypeId;
+  case_type_confidence?: number;
+  case_type_locked?: boolean;
   /** Optional pre-classified domain from the wizard review step. */
   domain?: string;
   domainConfidence?: number;
