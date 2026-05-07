@@ -33,6 +33,12 @@ surfaces therefore cover all 22 current marketplace tools. Model-backed
 specialist runtime evidence remains tracked under Pack 18 specialist depth, not
 under this Pack 19 usefulness pass.
 
+This pass does not claim Pack 19 complete. It closes and verifies the safe,
+shippable Pack 19 foundation slice already coded on `main`: tool transparency,
+inspectable run evidence, run comparison scaffolding, and memo-tool evidence
+handoff visibility. The larger Pack 19 flows still require the product and
+orchestration decisions listed in the remaining-work table.
+
 ## What The Transparency Card Shows
 
 Each card derives from the marketplace registry and handler contract:
@@ -54,6 +60,9 @@ panel instead of reducing the result to opaque text. The drawer exposes:
 - context snapshot health, weakest layer, and projection payload;
 - context advisories, next actions, generated artifacts, raw output, handler
   contract, posture, and metadata;
+- memo studio handoff payload for memo-producing tool outputs, including
+  `memoStudioReady`, `memoDraftId`, `suggestedTemplate`, and synthesized/review
+  posture;
 - persisted artifact reload by `artifactId` for signed-in users.
 
 The completed-run panel also includes a run comparison control. It compares the
@@ -69,8 +78,8 @@ These remain open until the Pack 18 launch gaps are truly closed:
 |---|---|---|
 | S1 | Situation Genesis flow | Not started; requires orchestration decision and review-queue integration |
 | S2 | Workspace guideline propagation + case fork | Not started |
-| S3 | Claim challenge and semantic diffing | Evidence drawer and line-level output diff foundation closed; claim challenge/reasoning-step appeal remains open |
-| S4 | Memo redaction, milestones, review workflow, branded exports | Not started |
+| S3 | Claim challenge and semantic diffing | Evidence drawer, memo handoff visibility, and line-level output diff foundation closed; claim challenge/reasoning-step appeal remains open |
+| S4 | Memo redaction, milestones, review workflow, branded exports | Memo marketplace foundation tools are registered; redaction, milestones, review workflow, and branded export polish remain open |
 | S5 | Boardroom intervention and deliberation history | Not started |
 | S6 | Live signal panel | Not started; depends on signal integrations |
 | S7 | 60-second wow 10-run streak | Not evidenced |
@@ -104,10 +113,11 @@ production builds:
 
 Deployment:
 
-- Commit deployed: `eefcec8`
+- Commit deployed: `5829dda`
 - Command: `npm run deploy:frontend:cloud`
-- Cloud Build: `907cbf0c-0135-4e38-a01c-c014217aeef5`
+- Cloud Build: `a70045cc-afee-4d78-bad0-74b805aaa50d`
 - Status: `SUCCESS`
+- Cloud Run revision: `praxis-frontend-00260-zth`
 
 Live smoke against `https://praxis.tacitus.me/app/workbench/syria-2026?tab=tools`
 after demo-session entry:
@@ -115,7 +125,15 @@ after demo-session entry:
 | Surface | Result |
 |---|---|
 | Tools marketplace | Rendered with `data-testid="tool-marketplace"` |
-| Transparency cards | 11 visible in the filtered default marketplace view |
-| Tool-run evidence drawer | Live demo session completed a marketplace run and verified claims/provenance, context snapshot, and raw output sections |
+| Tool count and Pack 18/19 alignment | Marketplace copy shows "Twenty-two focused tools"; memo tools are searchable and visible |
+| Transparency cards | 11 visible in the filtered default marketplace view; all 22 covered by `npm run audit:transparency-cards` |
+| Tool-run evidence drawer | Live demo session completed `cross.memo-create` and verified claims/provenance, context snapshot, raw output, and memo studio handoff sections |
 | Run comparison | Live Compare control opened the run comparison panel |
 | Browser errors | 0 console errors, 0 page errors |
+
+Final Pack 19 re-check on 2026-05-07 confirmed the same live surface on the
+current Cloud Run revision: `cross.memo-create` and `cross.memo-refresh` were
+visible after searching `memo`; the memo-create run completed; the evidence
+drawer exposed `Memo Studio handoff`, `memoStudioReady`, `synthesized`,
+`reviewRequired`, claims/provenance, context snapshot, and raw output; browser
+console/page errors remained zero.
