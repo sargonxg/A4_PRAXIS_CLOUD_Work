@@ -53,7 +53,7 @@ def test_runtime_composes_base_primary_and_secondary_stacks():
     assert resolver["kind"] == "rdflib_ontology_resolver"
     assert resolver["ontologyFilePaths"] == list(stack)
     snapshot = ontology_cache_snapshot()
-    assert snapshot["resolver"]["maxsize"] == 64
+    assert snapshot["resolver"]["maxsize"] == 50
     assert len(snapshot["caseTypes"]) == 10
 
 

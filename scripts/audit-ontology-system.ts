@@ -113,6 +113,35 @@ for (const marker of ['case_type: str | None = Query', 'case_type_secondary: str
   if (!tabsRouter.includes(marker)) failures.push(`tabs.py missing ${marker}`);
 }
 
+const evolutionService = read('backend/services/ontology_evolution.py');
+for (const marker of ['ONTOLOGY_EVOLUTION_EVENT', 'detect_ontology_gap', 'OntologyGapProposal', 'mutates_ontology']) {
+  if (!evolutionService.includes(marker)) failures.push(`ontology_evolution.py missing ${marker}`);
+}
+
+const evolutionSubgraph = read('backend/services/workspace_orchestrator/subgraphs/detect_ontology_gap.py');
+for (const marker of ['target_chapter', 'surface_key', 'ONTOLOGY_EVOLUTION_SURFACE', 'confidence']) {
+  if (!evolutionSubgraph.includes(marker)) failures.push(`detect_ontology_gap.py missing ${marker}`);
+}
+
+const goldenRoot = path.join(root, 'backend/tests/data/ontology_golden');
+for (const slug of ['active-conflict', 'negotiation-mediation', 'counter-terrorism', 'humanitarian-crisis', 'political-transition']) {
+  const caseRoot = path.join(goldenRoot, slug);
+  const expected = path.join(caseRoot, 'expected.json');
+  const documents = path.join(caseRoot, 'documents');
+  if (!existsSync(expected)) failures.push(`${slug} ontology golden expected.json missing`);
+  if (!existsSync(documents)) {
+    failures.push(`${slug} ontology golden documents missing`);
+    continue;
+  }
+  const documentCount = readdirSync(documents).filter((entry) => entry.endsWith('.txt')).length;
+  if (documentCount < 5) failures.push(`${slug} ontology golden set has fewer than 5 documents`);
+  if (existsSync(expected)) {
+    const expectedText = readFileSync(expected, 'utf8');
+    const labelCount = (expectedText.match(/"source_quote"/g) ?? []).length;
+    if (labelCount < 30) failures.push(`${slug} ontology golden set has fewer than 30 labels`);
+  }
+}
+
 const newOntologyText = [
   baseOwl,
   ...readdirSync(specializationDir)

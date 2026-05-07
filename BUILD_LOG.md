@@ -1,5 +1,9 @@
 # PRAXIS Build Log
 
+## 2026-05-07 — Ontology evolution loop and golden contracts
+
+Continued `ONTOLOGY_SYSTEM_BUILD.md` by adding the advisory ontology evolution loop for repeated rejected extraction patterns, plus a workspace subgraph that emits `ontology_evolution_proposed` suggestions without mutating OWL files, firewall rules, RLS policy, or substrate rows. Added five priority golden sets with 5 documents and 30 labeled primitives each, aligned the resolver/data-point LRU cache with the documented size of 50, and extended `audit:ontology-system` so the evolution loop and golden contracts stay enforced. Verified locally with the ontology audit, ontology version/classifier audits, Python compile, and focused backend pytest; live Cognee extraction recall/precision, Syria latency, and token cost remain environment-gated and are not claimed here.
+
 ## 2026-05-07 — Purpose audit and first surface cleanup
 
 Ran `PURPOSE_AUDIT_PROMPT.md` against the Tabs, Chapters, Settings, and cross-cutting UI surfaces. Added `PURPOSE_AUDIT_REPORT.md` with Remove/Simplify/Consolidate/Keep findings, then shipped the first low-risk removals: removed Context implementation-contract narration, removed the duplicate Library case-frame-claim action, and removed decorative Draft capability badges. Added `audit:purpose-surface` so these pure-removal findings stay enforced. Verified with the purpose audit, scoped lint, TypeScript, and build.

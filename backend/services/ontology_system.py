@@ -138,7 +138,7 @@ def ontology_stack_for_case_types(
     return tuple(stack)
 
 
-@lru_cache(maxsize=64)
+@lru_cache(maxsize=50)
 def ontology_resolver_descriptor(
     case_type: str | None = None,
     case_type_secondary: str | None = None,
@@ -167,7 +167,7 @@ def data_point_modules_for_case_types(
     return tuple(modules)
 
 
-@lru_cache(maxsize=64)
+@lru_cache(maxsize=50)
 def data_point_classes_for_case_types(
     case_type: str | None = None,
     case_type_secondary: str | None = None,
