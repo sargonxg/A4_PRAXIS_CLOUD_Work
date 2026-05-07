@@ -22,6 +22,15 @@ sanctions matching scaffolding, and policy simulation scaffolding.
 - Force graph centrality sizing toggle and entity panel sanctions badge support.
 - License audit extended for NetworkX, python-louvain, FollowTheMoney, Rigour,
   yente/OpenSanctions code posture, and Mesa worker dependencies.
+- Second-pass hardening: the active Pack 29 graph entity inspector now renders
+  Pack 31 `metadata.sanctions[]` matches with review posture and
+  OpenSanctions links.
+- Second-pass hardening: yente matching now has an owner-scoped Actor metadata
+  update payload helper so matches cannot be persisted without `owner_uid` and
+  `case_id`.
+- Second-pass hardening: the ABM worker deploy config now targets the existing
+  `praxis` Artifact Registry repository, not the nonexistent `praxis-workers`
+  repository.
 
 ## Deployment Reality
 
@@ -29,6 +38,9 @@ NetworkX is ready for in-process backend use once the backend image includes the
 new Python dependencies. The yente and ABM services are committed as Cloud Run
 worker scaffolds and Terraform modules; they still need explicit builds,
 service URLs, and production verification before being described as live.
+On 2026-05-07, `gcloud run services list --region=us-central1
+--project=praxisbytacitus` showed `praxis-backend` and `praxis-frontend` live,
+but not `sanctions-yente` or `simulate-policy-abm`.
 
 ## Verification Targets
 
@@ -37,4 +49,3 @@ service URLs, and production verification before being described as live.
 - Sanctions data licensing documented separately from MIT code use.
 - ABM output consistently says scenario stress-test, not prediction.
 - No new categories, ontologies, or graph primitives.
-

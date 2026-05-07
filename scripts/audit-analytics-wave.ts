@@ -49,6 +49,25 @@ if (!migration.includes('metrics jsonb')) failures.push('migration must add grap
 const abm = read('services/simulate-policy-abm/scenarios/escalation_ladder_with_mediator.py');
 if (!abm.includes('scenario stress-test')) failures.push('ABM output must use scenario stress-test framing');
 
+const abmCloudbuild = read('services/simulate-policy-abm/cloudbuild.yaml');
+if (!abmCloudbuild.includes('/praxis/simulate-policy-abm')) failures.push('ABM worker image must use the existing praxis Artifact Registry repository');
+if (!abmCloudbuild.includes('--no-allow-unauthenticated')) failures.push('ABM worker must deploy without public unauthenticated access');
+
+const yenteClient = read('backend/services/sanctions/yente_client.py');
+if (!yenteClient.includes('build_owner_scoped_actor_metadata_update') || !yenteClient.includes('owner-scoped-actor-metadata-only')) {
+  failures.push('sanctions yente client must expose owner-scoped Actor metadata persistence payload');
+}
+
+const graphEntityPanel = read('src/components/graph/GraphEntityPanel.tsx');
+if (!graphEntityPanel.includes('graph-sanctions-badge') || !graphEntityPanel.includes('OpenSanctions')) {
+  failures.push('active Pack 29 graph entity panel must render Pack 31 sanctions matches');
+}
+
+const workbenchGraph = read('src/lib/graph/workbench-case-graph.ts');
+if (!workbenchGraph.includes('WorkbenchGraphSanctionsMatch') || !workbenchGraph.includes('metadata?:')) {
+  failures.push('WorkbenchGraphNode must carry optional sanctions metadata for entity-panel rendering');
+}
+
 if (failures.length > 0) {
   console.error('Pack 31 analytics wave audit failed');
   for (const failure of failures) console.error(`- ${failure}`);

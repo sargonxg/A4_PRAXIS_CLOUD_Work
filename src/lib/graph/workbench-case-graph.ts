@@ -25,6 +25,19 @@ export interface WorkbenchGraphNode {
     community?: number;
     core_number?: number;
   };
+  metadata?: {
+    sanctions?: WorkbenchGraphSanctionsMatch[];
+    [key: string]: unknown;
+  };
+}
+
+export interface WorkbenchGraphSanctionsMatch {
+  entity_id?: string;
+  entityId?: string;
+  score?: number;
+  datasets?: string[];
+  opensanctions_url?: string;
+  url?: string;
 }
 
 export interface WorkbenchGraphEdge {

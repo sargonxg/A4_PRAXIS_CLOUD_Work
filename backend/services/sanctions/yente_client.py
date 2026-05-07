@@ -35,6 +35,18 @@ class SanctionsMatch:
     datasets: list[str]
     opensanctions_url: str
 
+    def to_metadata(self) -> dict[str, Any]:
+        return {
+            "entity_id": self.entity_id,
+            "schema": self.schema,
+            "score": self.score,
+            "matched_labels": self.matched_labels,
+            "datasets": self.datasets,
+            "opensanctions_url": self.opensanctions_url,
+            "source": "opensanctions-yente",
+            "review_status": "pending",
+        }
+
 
 def normalize_actor(actor: ActorNode) -> dict[str, Any]:
     schema = "Person" if "person" in actor.subtype.lower() else "Organization"
@@ -67,15 +79,44 @@ async def match_actor(actor: ActorNode, *, yente_url: str | None = None, thresho
             continue
         entity_id = str(result.get("id"))
         properties = result.get("properties", {}) or {}
+        topics = list(properties.get("topics", []) or [])
+        names = list(properties.get("name", []) or [])
+        caption = result.get("caption")
         matches.append(
             SanctionsMatch(
                 entity_id=entity_id,
                 schema=str(result.get("schema", "")),
                 score=score,
-                matched_labels=list(properties.get("topics", []) or []),
+                matched_labels=[str(value) for value in [*topics, *names, caption] if value],
                 datasets=list(result.get("datasets", []) or []),
                 opensanctions_url=f"https://www.opensanctions.org/entities/{entity_id}/",
             )
         )
     return matches
 
+
+def build_owner_scoped_actor_metadata_update(
+    *,
+    actor: ActorNode,
+    matches: list[SanctionsMatch],
+    owner_uid: str,
+    case_id: str,
+) -> dict[str, Any]:
+    """Build the only payload shape allowed to persist yente results.
+
+    yente is a stateless public-index matcher. Tenant isolation is enforced by
+    the PRAXIS write boundary: matches can only be attached to the current
+    owner's Actor metadata, never returned as a cross-tenant graph write.
+    """
+    if not owner_uid or not case_id:
+        raise ValueError("owner_uid and case_id are required for sanctions persistence")
+    return {
+        "owner_uid": owner_uid,
+        "case_id": case_id,
+        "actor_id": actor.id,
+        "metadata_patch": {
+            "sanctions": [match.to_metadata() for match in matches],
+            "sanctions_review_required": True,
+        },
+        "write_policy": "owner-scoped-actor-metadata-only",
+    }

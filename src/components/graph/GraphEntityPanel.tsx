@@ -51,6 +51,7 @@ export function GraphEntityPanel({
           Location is a derived regional anchor, not evidence-grade geocoding.
         </p>
       ) : null}
+      {node.metadata?.sanctions?.length ? <SanctionsMatches matches={node.metadata.sanctions} /> : null}
     </aside>
   );
 }
@@ -81,4 +82,35 @@ function shortDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function SanctionsMatches({ matches }: { matches: NonNullable<WorkbenchGraphNode['metadata']>['sanctions'] }) {
+  if (!matches?.length) return null;
+  return (
+    <div data-testid="graph-sanctions-badge" className="mt-4 rounded-md border border-rose-200 bg-rose-50 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-rose-800">Sanctions: {matches.length} matches</p>
+        <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-rose-800">review</span>
+      </div>
+      <div className="mt-2 space-y-2">
+        {matches.slice(0, 4).map((match, index) => {
+          const entityId = match.entity_id ?? match.entityId ?? `match-${index + 1}`;
+          const href = match.opensanctions_url ?? match.url ?? '#';
+          return (
+            <a
+              key={`${entityId}-${index}`}
+              href={href}
+              target={href === '#' ? undefined : '_blank'}
+              rel={href === '#' ? undefined : 'noreferrer'}
+              className="block rounded-md border border-rose-200 bg-white px-3 py-2 text-xs leading-5 text-navy-950 hover:border-rose-300"
+            >
+              <span className="font-semibold">OpenSanctions {entityId}</span>
+              {typeof match.score === 'number' ? <span className="ml-2 text-rose-800">{Math.round(match.score * 100)}%</span> : null}
+              {match.datasets?.length ? <span className="mt-0.5 block text-slate-700">{match.datasets.join(', ')}</span> : null}
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
