@@ -74,6 +74,11 @@ if (!mapReact.includes('NEXT_PUBLIC_MAPTILER_KEY') || !mapReact.includes('https:
   failures.push('PraxisMapReact must keep MapTiler env support with a no-key fallback style');
 }
 
+const proxy = readFileSync(join(root, 'src/proxy.ts'), 'utf8');
+for (const host of ['api.maptiler.com', 'demotiles.maplibre.org']) {
+  if (!proxy.includes(host)) failures.push(`CSP must allow map tile/style host ${host}`);
+}
+
 const graphModel = readFileSync(join(root, 'src/lib/graph/workbench-case-graph.ts'), 'utf8');
 for (const marker of ['occurredAt', 'geo', 'derivedGeo']) {
   if (!graphModel.includes(marker)) failures.push(`WorkbenchGraph must carry ${marker} metadata`);
