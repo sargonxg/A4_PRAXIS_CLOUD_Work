@@ -52,6 +52,27 @@ def _event_from_log(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _sse_event_name(event: dict[str, Any]) -> str:
+    status = event.get("status")
+    payload = event.get("payload") if isinstance(event.get("payload"), dict) else {}
+    event_type = payload.get("eventType") if isinstance(payload, dict) else None
+    if status in {"complete", "completed", "acted"}:
+        return "complete"
+    if status in {"fail", "failed", "error"}:
+        return "fail"
+    if status in {"working", "paused"}:
+        return "progress"
+    if event_type in {"start", "step", "progress", "complete", "fail"}:
+        return str(event_type)
+    return "step"
+
+
+def _sse(event: dict[str, Any]) -> str:
+    event_id = str(event.get("id") or "")
+    event_name = _sse_event_name(event)
+    return f"id: {event_id}\nevent: {event_name}\ndata: {json.dumps(event)}\n\n"
+
+
 @router.get("/events")
 async def workspace_events(
     case_id: str = Query(..., min_length=1, max_length=128),
@@ -59,6 +80,7 @@ async def workspace_events(
     token: dict = Depends(verify_firebase_token),
 ) -> StreamingResponse:
     async def stream():
+        yield "retry: 5000\n\n"
         async with tenant_session(token["uid"]) as conn:
             suggestions = await conn.fetch(
                 """
@@ -108,12 +130,12 @@ async def workspace_events(
                 surface_key,
             )
         for row in suggestions:
-            yield f"data: {json.dumps(_event_from_suggestion(dict(row)))}\n\n"
+            yield _sse(_event_from_suggestion(dict(row)))
         for row in history:
-            yield f"data: {json.dumps(_event_from_log(dict(row)))}\n\n"
+            yield _sse(_event_from_log(dict(row)))
         for row in logs:
-            yield f"data: {json.dumps(_event_from_log(dict(row)))}\n\n"
-        yield f"data: {json.dumps(orchestrator_heartbeat(case_id=case_id, surface_key=surface_key).to_api())}\n\n"
+            yield _sse(_event_from_log(dict(row)))
+        yield _sse(orchestrator_heartbeat(case_id=case_id, surface_key=surface_key).to_api())
 
     return StreamingResponse(stream(), media_type="text/event-stream")
 

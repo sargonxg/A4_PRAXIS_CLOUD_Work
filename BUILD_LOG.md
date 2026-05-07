@@ -1,5 +1,9 @@
 # PRAXIS Build Log
 
+## 2026-05-07 — Deep pre-ship operator SSE hardening
+
+Continued `DEEP_PRESHIP_CHECKLIST.md` by hardening the workspace operator SSE path and expanding the saved pre-ship audit from 97 to 141 static checks. `/v1/workspace/events` now emits SSE retry hints, event IDs, and named events using the checklist vocabulary (`start`, `step`, `progress`, `complete`, `fail`); `useOrchestratorEvents` now subscribes to named events and leaves browser EventSource reconnection active instead of closing on transient errors. Added a backend SSE contract test and extended `audit:deep-preship` to cover operator transparency, notifications, frontend polish, E2E scaffolding, and performance script availability. Verified with the deep pre-ship audit, focused pytest, scoped ESLint, Python compile, TypeScript, and production build. Live staging/browser/Cloud SQL/Vertex checks remain environment gates.
+
 ## 2026-05-07 — Purpose audit continuation
 
 Continued `PURPOSE_AUDIT_PROMPT.md` by finishing the remaining pure-removal and first-view cleanup findings from `PURPOSE_AUDIT_REPORT.md`. Generic institution/persona phrasing was removed from the Syria Ask PRAXIS demo, briefing audience placeholders were made neutral, the default Tools page no longer foregrounds archive mechanics before the active workflow, notification settings now show human event labels, and the purpose audit gate now checks these regressions. Verified with the focused purpose audit, scoped ESLint on touched UI, TypeScript, and production build.

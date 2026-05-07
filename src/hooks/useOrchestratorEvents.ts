@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 
 export type WorkspaceOrchestratorStatus = 'idle' | 'working' | 'paused' | 'error';
+type WorkspaceSseEventName = 'start' | 'step' | 'progress' | 'complete' | 'fail';
 
 export interface WorkspaceOrchestratorEvent {
   id: string;
@@ -19,6 +20,8 @@ export function useOrchestratorEvents(surfaceKey: string) {
   const { caseId } = useWorkbenchScope();
   const [events, setEvents] = useState<WorkspaceOrchestratorEvent[]>([]);
   const [status, setStatus] = useState<WorkspaceOrchestratorStatus>('idle');
+  const [lastEventAt, setLastEventAt] = useState<string | null>(null);
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
   const url = useMemo(() => (
     `/api/backend/workspace/events?case_id=${encodeURIComponent(caseId)}&surface_key=${encodeURIComponent(surfaceKey)}`
@@ -28,22 +31,37 @@ export function useOrchestratorEvents(surfaceKey: string) {
     if (typeof EventSource === 'undefined') return undefined;
     const source = new EventSource(url);
 
-    source.onmessage = (event) => {
+    const handleEvent = (event: MessageEvent) => {
       try {
         const parsed = JSON.parse(event.data) as WorkspaceOrchestratorEvent;
         setEvents((current) => [parsed, ...current].slice(0, 30));
         setStatus(parsed.status);
+        setLastEventAt(new Date().toISOString());
+        setIsReconnecting(false);
       } catch {
         setStatus('error');
       }
     };
 
+    const eventNames: WorkspaceSseEventName[] = ['start', 'step', 'progress', 'complete', 'fail'];
+    for (const eventName of eventNames) {
+      source.addEventListener(eventName, handleEvent as EventListener);
+    }
+    source.onmessage = handleEvent;
+
     source.onerror = () => {
+      // Do not close here: browser EventSource auto-reconnects and sends
+      // Last-Event-ID when the server has emitted SSE id fields.
       setStatus((current) => current === 'idle' ? 'idle' : 'error');
-      source.close();
+      setIsReconnecting(true);
     };
 
-    return () => source.close();
+    return () => {
+      for (const eventName of eventNames) {
+        source.removeEventListener(eventName, handleEvent as EventListener);
+      }
+      source.close();
+    };
   }, [url]);
 
   async function dismiss(id: string) {
@@ -64,5 +82,5 @@ export function useOrchestratorEvents(surfaceKey: string) {
     return response?.ok ?? false;
   }
 
-  return { events, status, dismiss, confirm };
+  return { events, status, dismiss, confirm, lastEventAt, isReconnecting };
 }

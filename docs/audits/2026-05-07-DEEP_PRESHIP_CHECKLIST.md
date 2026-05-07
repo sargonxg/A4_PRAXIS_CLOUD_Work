@@ -2,7 +2,7 @@
 
 Date: 2026-05-07
 
-Summary: 94 PASS, 3 WARN, 0 BLOCKED across 97 static pre-ship checks.
+Summary: 138 PASS, 3 WARN, 0 BLOCKED across 141 static pre-ship checks.
 
 This audit is deliberately conservative: live staging checks, Cloud SQL restore tests, load tests, browser sessions, and Vertex billing comparisons remain blocked until run against staging/production credentials and datasets.
 
@@ -111,6 +111,75 @@ This audit is deliberately conservative: live staging checks, Cloud SQL restore 
 | PASS | Workspace orchestrator marker on_situation_frame_saved | Found on_situation_frame_saved. | Wire on_situation_frame_saved before the orchestrator checklist can be complete. |
 | PASS | Workspace orchestrator marker workspace_orchestrator_log | Found workspace_orchestrator_log. | Wire workspace_orchestrator_log before the orchestrator checklist can be complete. |
 | PASS | Workspace orchestrator marker workspace_suggestions | Found workspace_suggestions. | Wire workspace_suggestions before the orchestrator checklist can be complete. |
+
+## 14. Operator view — the transparency surface
+
+| Status | Check | Evidence | Remediation |
+|---|---|---|---|
+| PASS | backend/routers/workspace.py includes StreamingResponse | backend/routers/workspace.py contains required marker. | None. |
+| PASS | backend/routers/workspace.py includes verify_firebase_token | backend/routers/workspace.py contains required marker. | None. |
+| PASS | backend/routers/workspace.py includes tenant_session | backend/routers/workspace.py contains required marker. | None. |
+| PASS | backend/routers/workspace.py includes retry: 5000 | backend/routers/workspace.py contains required marker. | None. |
+| PASS | backend/routers/workspace.py includes id: {event_id} | backend/routers/workspace.py contains required marker. | None. |
+| PASS | backend/routers/workspace.py includes event: {event_name} | backend/routers/workspace.py contains required marker. | None. |
+| PASS | backend/routers/workspace.py includes _sse_event_name | backend/routers/workspace.py contains required marker. | None. |
+| PASS | backend/routers/workspace.py includes "start" | backend/routers/workspace.py contains required marker. | None. |
+| PASS | backend/routers/workspace.py includes "step" | backend/routers/workspace.py contains required marker. | None. |
+| PASS | backend/routers/workspace.py includes "progress" | backend/routers/workspace.py contains required marker. | None. |
+| PASS | backend/routers/workspace.py includes "complete" | backend/routers/workspace.py contains required marker. | None. |
+| PASS | backend/routers/workspace.py includes "fail" | backend/routers/workspace.py contains required marker. | None. |
+| PASS | src/hooks/useOrchestratorEvents.ts includes EventSource | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
+| PASS | src/hooks/useOrchestratorEvents.ts includes addEventListener | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
+| PASS | src/hooks/useOrchestratorEvents.ts includes removeEventListener | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
+| PASS | src/hooks/useOrchestratorEvents.ts includes Last-Event-ID | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
+| PASS | src/hooks/useOrchestratorEvents.ts includes isReconnecting | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
+| PASS | src/hooks/useOrchestratorEvents.ts includes lastEventAt | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
+| PASS | src/hooks/useOrchestratorEvents.ts includes 'start' | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
+| PASS | src/hooks/useOrchestratorEvents.ts includes 'step' | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
+| PASS | src/hooks/useOrchestratorEvents.ts includes 'progress' | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
+| PASS | src/hooks/useOrchestratorEvents.ts includes 'complete' | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
+| PASS | src/hooks/useOrchestratorEvents.ts includes 'fail' | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
+
+## 13. Notifications system
+
+| Status | Check | Evidence | Remediation |
+|---|---|---|---|
+| PASS | notifications stack includes @router.get("/stream") | notifications stack contains required marker. | None. |
+| PASS | notifications stack includes @router.post("/{notification_id}/signal") | notifications stack contains required marker. | None. |
+| PASS | notifications stack includes @router.put("/preferences") | notifications stack contains required marker. | None. |
+| PASS | notifications stack includes @router.post("/dispatch") | notifications stack contains required marker. | None. |
+| PASS | notifications stack includes quiet_hours | notifications stack contains required marker. | None. |
+| PASS | notifications stack includes provider_unconfigured | notifications stack contains required marker. | None. |
+| PASS | notifications stack includes MAX_DELIVERY_ATTEMPTS | notifications stack contains required marker. | None. |
+| PASS | notifications stack includes formatNotificationType | notifications stack contains required marker. | None. |
+
+## 18. Frontend polish
+
+| Status | Check | Evidence | Remediation |
+|---|---|---|---|
+| PASS | frontend polish files includes EmptyState | frontend polish files contains required marker. | None. |
+| PASS | frontend polish files includes ErrorState | frontend polish files contains required marker. | None. |
+| PASS | frontend polish files includes Retry | frontend polish files contains required marker. | None. |
+| PASS | frontend polish files includes Skeleton | frontend polish files contains required marker. | None. |
+| PASS | frontend polish files includes Permissions-Policy | frontend polish files contains required marker. | None. |
+
+## 17. End-to-end product tests
+
+| Status | Check | Evidence | Remediation |
+|---|---|---|---|
+| PASS | tests/e2e/golden-path.spec.ts exists | tests/e2e/golden-path.spec.ts found. | None. |
+| PASS | tests/e2e/app-usability-smoke.spec.ts exists | tests/e2e/app-usability-smoke.spec.ts found. | None. |
+| PASS | tests/e2e/workbench/draft-briefing-assembly.spec.ts exists | tests/e2e/workbench/draft-briefing-assembly.spec.ts found. | None. |
+| PASS | tests/e2e/workbench/desk-command-center.spec.ts exists | tests/e2e/workbench/desk-command-center.spec.ts found. | None. |
+| PASS | tests/e2e/visualization/timeline-display.spec.ts exists | tests/e2e/visualization/timeline-display.spec.ts found. | None. |
+
+## 19. Performance and latency targets
+
+| Status | Check | Evidence | Remediation |
+|---|---|---|---|
+| PASS | smoke:app-usability script exists | smoke:app-usability is available in package.json. | Run against staging weekly. |
+| PASS | smoke:golden-path script exists | smoke:golden-path is available in package.json. | Run against staging weekly. |
+| PASS | smoke:personas script exists | smoke:personas is available in package.json. | Run against staging weekly. |
 
 ## 7. Vertex Gemini integration
 

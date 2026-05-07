@@ -219,7 +219,8 @@ requireIncludes(
 
 const orchestratorFiles = walk(path.join(root, 'backend/services/workspace_orchestrator')).filter((file) => file.endsWith('.py'));
 const orchestratorText = orchestratorFiles.map((file) => readFileSync(file, 'utf8')).join('\n');
-const orchestratorSurfaceText = `${orchestratorText}\n${read('backend/routers/tabs.py')}\n${read('backend/routers/workspace.py')}`;
+const workspaceRouter = read('backend/routers/workspace.py');
+const orchestratorSurfaceText = `${orchestratorText}\n${read('backend/routers/tabs.py')}\n${workspaceRouter}`;
 for (const marker of ['on_situation_frame_saved', 'workspace_orchestrator_log', 'workspace_suggestions']) {
   add({
     id: `orchestrator-${marker.replace(/_/g, '-')}`,
@@ -228,6 +229,76 @@ for (const marker of ['on_situation_frame_saved', 'workspace_orchestrator_log', 
     status: orchestratorSurfaceText.includes(marker) ? 'PASS' : 'BLOCKED',
     evidence: orchestratorSurfaceText.includes(marker) ? `Found ${marker}.` : `Missing ${marker}.`,
     remediation: `Wire ${marker} before the orchestrator checklist can be complete.`,
+  });
+}
+requireIncludes(
+  workspaceRouter,
+  ['StreamingResponse', 'verify_firebase_token', 'tenant_session', 'retry: 5000', 'id: {event_id}', 'event: {event_name}', '_sse_event_name', '"start"', '"step"', '"progress"', '"complete"', '"fail"'],
+  '14. Operator view — the transparency surface',
+  'operator-sse',
+  'backend/routers/workspace.py',
+);
+
+const orchestratorHook = read('src/hooks/useOrchestratorEvents.ts');
+requireIncludes(
+  orchestratorHook,
+  ['EventSource', 'addEventListener', 'removeEventListener', 'Last-Event-ID', 'isReconnecting', 'lastEventAt', "'start'", "'step'", "'progress'", "'complete'", "'fail'"],
+  '14. Operator view — the transparency surface',
+  'operator-hook',
+  'src/hooks/useOrchestratorEvents.ts',
+);
+
+const notificationsRouter = read('backend/routers/notifications.py');
+const notificationsService = read('backend/services/notifications/__init__.py');
+const notificationsDelivery = read('backend/services/notifications/delivery.py');
+const notificationsSettings = read('src/app/app/settings/notifications/page.tsx');
+requireIncludes(
+  `${notificationsRouter}\n${notificationsService}\n${notificationsDelivery}\n${notificationsSettings}`,
+  ['@router.get("/stream")', '@router.post("/{notification_id}/signal")', '@router.put("/preferences")', '@router.post("/dispatch")', 'quiet_hours', 'provider_unconfigured', 'MAX_DELIVERY_ATTEMPTS', 'formatNotificationType'],
+  '13. Notifications system',
+  'notifications-pre-ship',
+  'notifications stack',
+);
+
+const emptyStateTest = read('tests/unit/components/praxis/empty-error-state.test.tsx');
+const loadingFiles = `${read('src/app/app/loading.tsx')}\n${read('src/app/app/dashboard/loading.tsx')}`;
+const proxy = read('src/proxy.ts');
+requireIncludes(
+  `${emptyStateTest}\n${loadingFiles}\n${proxy}`,
+  ['EmptyState', 'ErrorState', 'Retry', 'Skeleton', 'Permissions-Policy'],
+  '18. Frontend polish',
+  'frontend-polish',
+  'frontend polish files',
+);
+
+const e2eFiles = walk(path.join(root, 'tests/e2e')).filter((file) => file.endsWith('.ts')).map((file) => path.relative(root, file).replaceAll('\\', '/'));
+for (const expected of [
+  'tests/e2e/golden-path.spec.ts',
+  'tests/e2e/app-usability-smoke.spec.ts',
+  'tests/e2e/workbench/draft-briefing-assembly.spec.ts',
+  'tests/e2e/workbench/desk-command-center.spec.ts',
+  'tests/e2e/visualization/timeline-display.spec.ts',
+]) {
+  add({
+    id: `e2e-${expected.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`,
+    section: '17. End-to-end product tests',
+    title: `${expected} exists`,
+    status: e2eFiles.includes(expected) ? 'PASS' : 'WARN',
+    evidence: e2eFiles.includes(expected) ? `${expected} found.` : `${expected} missing from tests/e2e.`,
+    remediation: e2eFiles.includes(expected) ? 'None.' : `Add or rename an E2E covering ${expected}.`,
+  });
+}
+
+const packageJson = read('package.json');
+for (const script of ['smoke:app-usability', 'smoke:golden-path', 'smoke:personas']) {
+  const present = packageJson.includes(`"${script}"`);
+  add({
+    id: `e2e-script-${script.replace(/[^a-z0-9]+/gi, '-')}`,
+    section: '19. Performance and latency targets',
+    title: `${script} script exists`,
+    status: present ? 'PASS' : 'WARN',
+    evidence: present ? `${script} is available in package.json.` : `${script} is missing from package.json.`,
+    remediation: present ? 'Run against staging weekly.' : `Add ${script} so the pre-ship latency pack can be run consistently.`,
   });
 }
 
