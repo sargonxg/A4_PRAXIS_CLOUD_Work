@@ -12,6 +12,17 @@ This README is a **reference document for both human developers and AI agents** 
 
 ---
 
+## Current Ship Checkpoint
+
+As of 2026-05-07, `main` includes the disabled-first Cognee memory layer, the
+Workbench Memory tab, the production Cloud Run deploy evidence, and the latest
+repo-shape pass. The full-repo graphify map is now larger than the HTML
+visualization guard, so use `graphify-out/GRAPH_REPORT.md` and
+`graphify-out/graph.json` for architecture navigation. The current next-round
+handoff is [`docs/audits/2026-05-07-REPO_SHAPE_GRAPHIFY_PREP.md`](./docs/audits/2026-05-07-REPO_SHAPE_GRAPHIFY_PREP.md).
+
+---
+
 ## Table of Contents
 
 1. [Architecture](#architecture)

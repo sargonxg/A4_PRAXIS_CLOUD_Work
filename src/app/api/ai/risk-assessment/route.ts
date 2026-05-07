@@ -10,7 +10,6 @@ import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { computeRiskScore } from '@/lib/analytics/risk-engine';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
-import { situationContextSchema } from '@/lib/api/schemas';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import type { Situation } from '@/types/situation';
 

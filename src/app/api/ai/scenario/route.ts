@@ -1,6 +1,6 @@
 import { streamText } from 'ai';
 import { z } from 'zod';
-import { getProModel, getThinkingModel } from '@/lib/ai/providers';
+import { getThinkingModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext } from '@/lib/ai/context-builder-server';
 import { withCalibration } from '@/lib/api/with-calibration';

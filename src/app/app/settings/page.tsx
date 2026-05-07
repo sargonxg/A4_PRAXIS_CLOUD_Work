@@ -10,7 +10,6 @@ import {
   Shield,
   Mail,
   Briefcase,
-  Lock,
   PlayCircle,
   RotateCcw,
   Cpu,

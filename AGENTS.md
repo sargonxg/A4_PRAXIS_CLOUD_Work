@@ -86,3 +86,4 @@ Rules:
 - If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
 - For cross-module "how does X relate to Y" questions, prefer `graphify query "<question>"`, `graphify path "<A>" "<B>"`, or `graphify explain "<concept>"` over grep — these traverse the graph's EXTRACTED + INFERRED edges instead of scanning files
 - After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)
+- The full repo graph currently exceeds the 5,000-node HTML visualization guard. Do not resurrect stale `graphify-out/graph.html`; use `graph.json`/`GRAPH_REPORT.md` or generate a narrowed subgraph.

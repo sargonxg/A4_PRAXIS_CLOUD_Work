@@ -17,7 +17,6 @@ import {
   Rocket,
   Loader2,
   AlertTriangle,
-  Building2,
   Shield,
   Heart,
   Briefcase,
@@ -26,7 +25,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useConflictStore } from '@/stores/conflict-store';
 import { useAuth } from '@/lib/auth/auth-context';
-import { useRouter } from 'next/navigation';
 import type { CaseOntology } from '@/lib/constants/case-registry';
 import { CASE_REGISTRY } from '@/lib/constants/case-registry';
 import type { AnalystRole } from '@/types/analyst-profile';
@@ -448,13 +446,6 @@ function Step3Claims({
     setNewClaim({ type: 'demand' });
   };
 
-  const addInterest = (actorId: string, description: string, isExplicit: boolean) => {
-    if (!description) return;
-    onChange({
-      interests: [...data.interests, { actorId, description, isExplicit }],
-    });
-  };
-
   return (
     <div className="space-y-4">
       <p className="text-sm text-navy-500">
@@ -855,7 +846,6 @@ export function CaseCreationWizard({ onComplete, onCancel }: CaseCreationWizardP
 
   const { addConflict, addCustomCase, setActiveConflict } = useConflictStore();
   const { user, analystProfile } = useAuth();
-  const router = useRouter(); 
 
   const handleChange = useCallback((updates: Partial<WizardData>) => {
     setData((prev) => ({ ...prev, ...updates }));

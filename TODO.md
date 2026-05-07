@@ -1,7 +1,7 @@
 # PRAXIS Production TODO
 
 Status: active continuation roadmap.
-Last updated: 2026-05-06.
+Last updated: 2026-05-07.
 Workspace: `C:\Users\giuli\praxiscodexworking`.
 Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`.
 Branch: `main`.
@@ -39,6 +39,31 @@ The latest real-app dashboard pass is
 `docs/audits/2026-05-07-DASHBOARD_REAL_APP_PASS.md`. It records the replacement
 of the redirect-only `/app/dashboard` with the current command-center route and
 the audit guard that keeps the route tied to real workbench surfaces.
+
+The latest repo-shape and graphify prep pass is
+`docs/audits/2026-05-07-REPO_SHAPE_GRAPHIFY_PREP.md`. It records the refreshed
+5,147-node / 8,517-edge graphify map, explains why `graphify-out/graph.html`
+is no longer tracked for the full repo graph, adds `npm run audit:repo-shape`,
+and separates advisory Knip dead-code findings from safe deletion work.
+
+## Repo Shape And Next-Round Readiness
+
+- [x] Refresh graphify with `graphify update .` after the Cognee/memory layer
+  work so the code graph reflects the current app.
+- [x] Treat `graphify-out/GRAPH_REPORT.md` and `graphify-out/graph.json` as
+  authoritative for the full repo now that the graph is above the HTML
+  visualization limit.
+- [x] Add `npm run audit:repo-shape` and wire it into `audit:gate`.
+- [x] Record Knip findings as advisory instead of deleting route-discovered,
+  registry-discovered, migration, or upcoming-surface files blindly.
+- [ ] Create a narrowed graphify HTML view for the app/workbench/tools subgraph
+  so humans can inspect the architecture visually without the full-repo
+  5,000-node guard.
+- [ ] Triage Knip candidates by category: scripts, hooks, stores, UI
+  components, and types. Delete only after proving no route/registry/generated
+  docs/build path still uses them.
+- [ ] Add an authenticated browser fixture for `/app/*` flows so production
+  smoke can prove real-user behavior, not only public routes and auth redirects.
 
 The latest Pack 16 boardroom gap pass is
 `docs/audits/2026-05-07-PACK16_AGENTIC_BOARDROOM_GAP_AUDIT.md`. It records the

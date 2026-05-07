@@ -8,9 +8,9 @@
  * that runs in the background, saves to Firestore, and updates semaphores.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
-import { getToolData, saveToolData } from '@/lib/firebase/tool-data-service';
+import { getToolData } from '@/lib/firebase/tool-data-service';
 import { adminDb } from '@/lib/firebase/admin';
 
 // ---------------------------------------------------------------------------
@@ -149,7 +149,7 @@ export const GET = withAuth(async (req, user) => {
 
 export const POST = withAuth(async (req, user) => {
   const body = await req.json();
-  const { toolId, situationId, situation } = body;
+  const { toolId, situationId } = body;
 
   if (!toolId || !situationId) {
     return NextResponse.json(

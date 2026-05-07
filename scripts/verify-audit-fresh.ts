@@ -4,7 +4,7 @@
  * has had changes in the last 24h. Encourages devs to re-run audit after tool edits.
  * Run: npx tsx scripts/verify-audit-fresh.ts
  */
-import { readdirSync, statSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { execSync } from 'node:child_process';
 

@@ -47,7 +47,6 @@ const requiredDocs = [
   'docs/launch/ANNOUNCEMENT.md',
   'graphify-out/GRAPH_REPORT.md',
   'graphify-out/graph.json',
-  'graphify-out/graph.html',
 ];
 
 for (const file of requiredDocs) {
@@ -85,10 +84,16 @@ for (const marker of ['Pack 14 - Production Excellence', 'specialist model-backe
 }
 
 const graphReport = readIfExists('graphify-out/GRAPH_REPORT.md');
+const graphJson = readJsonIfExists('graphify-out/graph.json') as { nodes?: unknown[] } | null;
 const head = execSync('git rev-parse --short=8 HEAD', { cwd: root, encoding: 'utf8' }).trim();
 const previousHead = execSync('git rev-parse --short=8 HEAD~1', { cwd: root, encoding: 'utf8' }).trim();
 if (!graphReport.includes(`Built from commit: \`${head}`) && !graphReport.includes(`Built from commit: \`${previousHead}`)) {
   failures.push(`graphify report is stale; expected commit ${head} or ${previousHead}`);
+}
+if (!graphJson?.nodes?.length) {
+  failures.push('graphify graph.json has no nodes');
+} else if (graphJson.nodes.length <= 5000 && !existsSync(join(root, 'graphify-out/graph.html'))) {
+  failures.push('graphify graph.html missing for graph under HTML visualization limit');
 }
 
 if (failures.length > 0) {
@@ -102,4 +107,9 @@ console.log('Master charter audit passed.');
 function readIfExists(file: string): string {
   const path = join(root, file);
   return existsSync(path) ? readFileSync(path, 'utf8') : '';
+}
+
+function readJsonIfExists(file: string): unknown | null {
+  const path = join(root, file);
+  return existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : null;
 }

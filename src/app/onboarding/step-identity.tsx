@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ArrowRight, Loader2 } from 'lucide-react';
-import { ROLES, SENIORITIES, type AnalystProfile, type AnalystRole, type Seniority } from '@/types/analyst-profile';
+import { ROLES, SENIORITIES, type AnalystProfile, type AnalystRole } from '@/types/analyst-profile';
 import { cn } from '@/lib/utils/cn';
 
 const ROLE_LABEL: Record<AnalystRole, string> = {

@@ -13,9 +13,12 @@
 > section in `CHANGELOG.md`. The latest Codex sessions deployed dashboard route
 > hardening, evidence-envelope retrieval, integration readiness, admin/security
 > hardening, backend trust-boundary work, a root production continuation
-> roadmap, and the first executive situation-intelligence panel. Validate with
+> roadmap, the first executive situation-intelligence panel, disabled-first
+> Cognee memory layer, and the 2026-05-07 repo-shape/graphify checkpoint.
+> Validate with
 > `npx tsc --noEmit`, focused Vitest/pytest for touched areas, `npm run build`,
-> and `npm run audit:routes` before deploying via Cloud Build.
+> `npm run audit:repo-shape`, and `npm run audit:routes` before deploying via
+> Cloud Build.
 
 ## What This Is
 
