@@ -13,15 +13,17 @@ Prompt source: `docs/codex-prompts/PRAXIS_CODEX_26_SURFACES_CHAPTERS_DESK_CONTEX
 ## Implemented in this pass
 
 - Added a shared surface derivation helper: `src/lib/workbench/surface-state.ts`.
+- Added explicit Pack 26 chapter-layer metadata: `src/lib/workbench/chapter-content-layer.ts`.
 - Replaced generic chapter fallback content with structured case-aware content for all five chapters.
 - Replaced the Desk placeholder with an operating desk showing what changed, next actions, stale-context advisories, and open questions.
-- Replaced the Context placeholder with a scope editor, source URL draft area, actor/claim candidate summary, advisory questions, and a clear local-draft storage contract.
+- Split Desk into the four requested command-center panels: What Changed, Next Best Actions, Stale Context, and Open Questions.
+- Added owner-scoped Open Questions API and UI creation path under `users/{uid}/situations/{caseId}/open-questions`.
+- Replaced the Context placeholder with a scope editor, AI scope advisory, source preferences, document-upload handoff, actor/claim/interest refinement, open questions, and authenticated context-scope save API with audit entries.
 - Updated `scripts/audit-workbench.ts` so Pack 26 regressions are caught by static audit.
 - Preserved the Pack 26 prompt under `docs/codex-prompts/` and extended `audit:codex-prompts`.
 
 ## Remaining work
 
-- Durable Firestore/Postgres persistence for Context Studio scope edits.
 - Agent Engine subagents for `chapter_suggester`, `desk_advisor`, and context re-genesis.
 - Non-destructive re-genesis job orchestration and owner-scoped audit trail.
 - Review-queue promotion API for graph proposals created from Context Studio.
@@ -29,4 +31,4 @@ Prompt source: `docs/codex-prompts/PRAXIS_CODEX_26_SURFACES_CHAPTERS_DESK_CONTEX
 
 ## Status
 
-First safe app slice complete. Backend and Agent Engine work remains explicitly tracked in the Pack 26 backlog.
+Second app-facing pass complete. Context scope and open questions now have owner-scoped APIs; Agent Engine subagents, full re-genesis orchestration, and review-queue promotion remain explicitly tracked in the Pack 26 backlog.

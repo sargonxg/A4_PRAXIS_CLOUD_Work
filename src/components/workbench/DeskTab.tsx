@@ -1,8 +1,11 @@
 'use client';
 
-import { Activity, AlertTriangle, CheckCircle2, Sparkles, type LucideIcon } from 'lucide-react';
+import { Activity, Sparkles, type LucideIcon } from 'lucide-react';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
-import { SurfaceActionList, SurfaceFactGrid, SurfaceQuestionList, SurfaceSection } from '@/components/workbench/workbench-surface-elements';
+import { NextBestActionsPanel } from '@/components/workbench/desk/NextBestActionsPanel';
+import { OpenQuestionsPanel } from '@/components/workbench/desk/OpenQuestionsPanel';
+import { StaleContextPanel } from '@/components/workbench/desk/StaleContextPanel';
+import { WhatChangedPanel } from '@/components/workbench/desk/WhatChangedPanel';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { buildWorkbenchSurfaceState } from '@/lib/workbench/surface-state';
 
@@ -25,28 +28,17 @@ export function DeskTab() {
           </div>
           <ContextHealthChip />
         </div>
-        <div className="mt-5">
-          <SurfaceFactGrid facts={surface.changedFacts} />
-        </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-        <SurfaceSection eyebrow="Next best actions" title="Recommended operating moves">
-          <SurfaceActionList actions={surface.nextActions} />
-        </SurfaceSection>
+      <WhatChangedPanel facts={surface.changedFacts} />
 
-        <SurfaceSection eyebrow="Open questions" title="Review queue">
-          <SurfaceQuestionList questions={surface.openQuestions} />
-        </SurfaceSection>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+        <NextBestActionsPanel actions={surface.nextActions} />
+        <OpenQuestionsPanel caseId={caseId} fallbackQuestions={surface.openQuestions} />
       </div>
 
       <section className="grid gap-4 lg:grid-cols-3">
-        <DeskSignal
-          icon={surface.staleSignals.length ? AlertTriangle : CheckCircle2}
-          title={surface.staleSignals.length ? 'Stale context advisory' : 'Context freshness acceptable'}
-          detail={surface.staleSignals[0]?.detail ?? 'No stale source or context-health signal is currently elevated.'}
-          tone={surface.staleSignals.length ? 'warn' : 'good'}
-        />
+        <StaleContextPanel staleSignals={surface.staleSignals} />
         <DeskSignal
           icon={Sparkles}
           title="AI remains advisory"

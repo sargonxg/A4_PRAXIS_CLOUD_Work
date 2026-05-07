@@ -16,7 +16,16 @@ const requiredFiles = [
   'src/components/workbench/chapter-renderer.tsx',
   'src/components/workbench/StructuredChapterContent.tsx',
   'src/components/workbench/DeskTab.tsx',
+  'src/components/workbench/desk/WhatChangedPanel.tsx',
+  'src/components/workbench/desk/NextBestActionsPanel.tsx',
+  'src/components/workbench/desk/StaleContextPanel.tsx',
+  'src/components/workbench/desk/OpenQuestionsPanel.tsx',
   'src/components/workbench/ContextTab.tsx',
+  'src/components/workbench/context/FrameEditor.tsx',
+  'src/components/workbench/context/ScopeAdvisory.tsx',
+  'src/components/workbench/context/SourcePreferences.tsx',
+  'src/components/workbench/context/DocumentUploadInline.tsx',
+  'src/components/workbench/context/ActorClaimInterestRefiner.tsx',
   'src/components/workbench/LibraryTab.tsx',
   'src/components/workbench/ResearchTab.tsx',
   'src/components/workbench/draft/DraftTab.tsx',
@@ -30,11 +39,17 @@ const requiredFiles = [
   'src/lib/workbench/library-state.ts',
   'src/lib/workbench/research-state.ts',
   'src/lib/workbench/surface-state.ts',
+  'src/lib/workbench/chapter-content-layer.ts',
+  'src/lib/workbench/open-questions-store.ts',
   'src/lib/workbench/draft-assembly-state.ts',
   'src/lib/workbench/case-density.ts',
   'src/lib/workbench/empty-state-actions.ts',
   'src/lib/ontology/validator-pass-rate.ts',
   'src/lib/onboarding/case-scaffold.ts',
+  'src/types/open-questions.ts',
+  'src/app/api/cases/[caseId]/context-scope/route.ts',
+  'src/app/api/cases/[caseId]/open-questions/route.ts',
+  'src/app/api/cases/[caseId]/open-questions/[questionId]/route.ts',
   'src/app/api/cases/[caseId]/research/route.ts',
   'src/app/api/cases/scaffold/route.ts',
   'src/components/onboarding/ai-first-case-creation/AiFirstCaseCreation.tsx',
@@ -102,17 +117,45 @@ for (const marker of ['<DeskTab />', '<ContextTab />', '<LibraryTab />', '<Resea
 }
 
 const chapterRenderer = readFileSync('src/components/workbench/chapter-renderer.tsx', 'utf8');
-if (!chapterRenderer.includes('<StructuredChapterContent chapterId={chapter.id} />')) {
-  throw new Error('Chapters must use structured case-aware fallback content for user cases.');
+if (!chapterRenderer.includes('renderLayeredChapterContent')) {
+  throw new Error('Chapters must use the Pack 26 layered content dispatcher for user cases.');
 }
 if (/GenericChapterContent|The default case flow/i.test(chapterRenderer)) {
   throw new Error('Chapter renderer still contains generic placeholder fallback copy.');
+}
+
+const chapterLayers = readFileSync('src/lib/workbench/chapter-content-layer.ts', 'utf8');
+for (const marker of ['SuggestedChapterItem', 'ChapterContentLayer', 'CHAPTER_LAYERS', 'renderLayeredChapterContent']) {
+  if (!chapterLayers.includes(marker)) {
+    throw new Error(`Pack 26 chapter-content-layer missing marker: ${marker}`);
+  }
 }
 
 const surfaceState = readFileSync('src/lib/workbench/surface-state.ts', 'utf8');
 for (const marker of ['buildWorkbenchSurfaceState', 'openQuestions', 'nextActions', 'chapterFacts']) {
   if (!surfaceState.includes(marker)) {
     throw new Error(`Pack 26 surface state helper missing marker: ${marker}`);
+  }
+}
+
+const deskTab = readFileSync('src/components/workbench/DeskTab.tsx', 'utf8');
+for (const marker of ['WhatChangedPanel', 'NextBestActionsPanel', 'StaleContextPanel', 'OpenQuestionsPanel']) {
+  if (!deskTab.includes(marker)) {
+    throw new Error(`Pack 26 Desk command center missing panel: ${marker}`);
+  }
+}
+
+const contextTab = readFileSync('src/components/workbench/ContextTab.tsx', 'utf8');
+for (const marker of ['FrameEditor', 'ScopeAdvisory', 'SourcePreferences', 'DocumentUploadInline', 'ActorClaimInterestRefiner', 'context-scope']) {
+  if (!contextTab.includes(marker)) {
+    throw new Error(`Pack 26 Context Studio missing section/API marker: ${marker}`);
+  }
+}
+
+const openQuestionsRoute = readFileSync('src/app/api/cases/[caseId]/open-questions/route.ts', 'utf8');
+for (const marker of ['withAuth', 'listOpenQuestions', 'createOpenQuestion']) {
+  if (!openQuestionsRoute.includes(marker)) {
+    throw new Error(`Pack 26 open-questions API missing marker: ${marker}`);
   }
 }
 

@@ -3,8 +3,8 @@
 import { useCallback, useState } from 'react';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { WorkbenchChapterShell } from '@/components/workbench/chapter-shell';
-import { StructuredChapterContent } from '@/components/workbench/StructuredChapterContent';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
+import { renderLayeredChapterContent, type SuggestedChapterItem } from '@/lib/workbench/chapter-content-layer';
 import {
   WORKBENCH_CHAPTER_FLOW,
   type WorkbenchChapterId,
@@ -25,6 +25,11 @@ export function WorkbenchChapterRenderer() {
     });
   }, []);
 
+  const onSuggestionAccept = useCallback((_item: SuggestedChapterItem) => {
+    // Pack 26 backend follow-up wires accepted AI suggestions into the review
+    // queue. The current layer keeps all generated content advisory.
+  }, []);
+
   return (
     <div className="space-y-5">
       {WORKBENCH_CHAPTER_FLOW.map((chapter) => (
@@ -41,7 +46,11 @@ export function WorkbenchChapterRenderer() {
             </div>
           ) : null}
           <WorkbenchChapterShell chapter={chapter} active={openSet.has(chapter.id)} onOpen={toggleChapter}>
-            {caseModule.chapters?.[chapter.id]?.() ?? <StructuredChapterContent chapterId={chapter.id} />}
+            {caseModule.chapters?.[chapter.id]?.() ?? renderLayeredChapterContent({
+              caseModule,
+              chapterId: chapter.id,
+              onSuggestionAccept,
+            })}
           </WorkbenchChapterShell>
         </div>
       ))}

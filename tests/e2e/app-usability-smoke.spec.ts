@@ -49,13 +49,19 @@ test('demo workbench exposes context, ontology, graph, tools, memo, and draft su
   await expect(page.getByTestId('workbench-desk-surface')).toBeVisible();
   await expect(page.getByRole('heading', { name: /^Desk$/i })).toBeVisible();
   await expect(page.getByText(/Next best actions/i)).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^Review queue$/i })).toBeVisible();
+  await expect(page.getByText('What changed', { exact: true })).toBeVisible();
+  await expect(page.getByText(/Stale context advisory|Context freshness acceptable/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Board$/i })).toBeVisible();
 
   await page.getByRole('button', { name: /^Context$/i }).click();
   await expect(page.getByTestId('workbench-context-surface')).toBeVisible();
   await expect(page.getByRole('heading', { name: /^Context Studio$/i })).toBeVisible();
   await expect(page.getByText(/Shape the scope/i)).toBeVisible();
   await expect(page.getByText(/Frame editor/i)).toBeVisible();
+  await expect(page.getByText(/AI Scope Advisory/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Preferences$/i })).toBeVisible();
+  await expect(page.getByText('Document upload', { exact: true })).toBeVisible();
+  await expect(page.getByText('Actors / Claims / Interests', { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: /^Library$/i }).click();
   await expect(page.getByTestId('workbench-library-surface')).toBeVisible();
