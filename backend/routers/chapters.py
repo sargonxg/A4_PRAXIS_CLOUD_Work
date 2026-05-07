@@ -157,6 +157,31 @@ async def _safe_cognee_memify(
         return {"ok": False, "status": "memify_unavailable", "error": str(exc)}
 
 
+def _serialize_memory_hit(hit: Any) -> dict[str, Any]:
+    metadata = getattr(hit, "metadata", {}) or {}
+    return {
+        "id": str(getattr(hit, "id", "")),
+        "text": str(getattr(hit, "text", ""))[:1200],
+        "score": float(getattr(hit, "score", 0) or 0),
+        "sourceId": getattr(hit, "source_id", None),
+        "metadata": metadata if isinstance(metadata, dict) else {},
+    }
+
+
+def _build_recall_answer(hits: list[Any], cognee_status: dict[str, Any]) -> str:
+    if hits:
+        top = _serialize_memory_hit(hits[0])
+        text = top["text"].strip()
+        if text:
+            return text
+    if cognee_status.get("ok"):
+        return "Graph recall completed, but no high-signal Cognee hits were returned for this query."
+    return (
+        "Graph recall turn was persisted for the research thread. Live Cognee search is queued or unavailable in this "
+        "environment, so no retrieved evidence was attached yet."
+    )
+
+
 @router.get("/desk/summary")
 async def desk_summary(case_id: str = Query(..., min_length=1, max_length=128), token: dict = Depends(verify_firebase_token)) -> dict[str, Any]:
     async with tenant_session(token["uid"]) as conn:
@@ -264,6 +289,15 @@ async def recall_research_thread(thread_id: str, req: ResearchRecallRequest, tok
                 node_set=[f"case_{thread['case_id']}"],
                 audit=SearchAudit(mode=CogneeSearchMode.GRAPH_COMPLETION, surface_key="chapter.research.recall"),
             )
+            citations = [_serialize_memory_hit(hit) for hit in hits[:5]]
+            recall_turn = {
+                "query": req.query,
+                "answer": _build_recall_answer(hits, cognee_status),
+                "hit_count": len(hits),
+                "citations": citations,
+                "status": "completed",
+                "cognee": cognee_status,
+            }
             await conn.execute(
                 """
                 UPDATE research_threads
@@ -272,12 +306,12 @@ async def recall_research_thread(thread_id: str, req: ResearchRecallRequest, tok
                     updated_at = now()
                 WHERE owner_uid = %s AND id = %s::uuid
                 """,
-                [{"query": req.query, "hit_count": len(hits), "status": "completed", "cognee": cognee_status}],
+                json.dumps([recall_turn]),
                 token["uid"],
                 thread_id,
             )
-        yield f"data: {json.dumps({'status': 'working', 'message': 'Graph recall complete', 'hits': len(hits), 'cognee': cognee_status})}\n\n"
-        yield f"data: {json.dumps({'status': 'idle', 'message': 'Recall turn persisted with Cognee session continuity.'})}\n\n"
+        yield f"data: {json.dumps({'status': 'working', 'message': 'Graph recall complete', 'hits': len(hits), 'citations': citations, 'answer': recall_turn['answer'], 'cognee': cognee_status})}\n\n"
+        yield f"data: {json.dumps({'status': 'idle', 'message': 'Recall turn persisted with Cognee session continuity.', 'turn': recall_turn})}\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream")
 

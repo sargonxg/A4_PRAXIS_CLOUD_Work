@@ -7,12 +7,14 @@ import { OpenQuestionsPanel } from '@/components/workbench/desk/OpenQuestionsPan
 import { StaleContextPanel } from '@/components/workbench/desk/StaleContextPanel';
 import { WhatChangedPanel } from '@/components/workbench/desk/WhatChangedPanel';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
+import { useOrchestratorEvents } from '@/hooks/useOrchestratorEvents';
 import { buildWorkbenchCaseGraph } from '@/lib/graph/workbench-case-graph';
 import { toTimelineItems } from '@/lib/graph/timeline-adapter';
 import { buildWorkbenchSurfaceState } from '@/lib/workbench/surface-state';
 
 export function DeskTab() {
   const { caseId, caseModule } = useWorkbenchScope();
+  const orchestrator = useOrchestratorEvents('workspace');
   const surface = buildWorkbenchSurfaceState(caseModule, caseId);
   const graph = buildWorkbenchCaseGraph(caseModule);
   const timelineItems = toTimelineItems(graph).slice(0, 6);
@@ -37,7 +39,13 @@ export function DeskTab() {
       <WhatChangedPanel facts={surface.changedFacts} timelineItems={timelineItems} />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-        <NextBestActionsPanel actions={surface.nextActions} />
+        <NextBestActionsPanel
+          actions={surface.nextActions}
+          events={orchestrator.events}
+          streamStatus={orchestrator.status}
+          onConfirm={orchestrator.confirm}
+          onDismiss={orchestrator.dismiss}
+        />
         <OpenQuestionsPanel caseId={caseId} fallbackQuestions={surface.openQuestions} />
       </div>
 

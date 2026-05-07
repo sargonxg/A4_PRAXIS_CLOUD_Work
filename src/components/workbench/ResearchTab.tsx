@@ -18,8 +18,36 @@ interface BackendResearchThread {
   id: string;
   question: string;
   status: string;
+  recall_history?: ResearchRecallTurn[] | null;
   memory_coverage?: number | string | null;
   updated_at?: string;
+}
+
+interface ResearchRecallCitation {
+  id?: string;
+  text?: string;
+  score?: number;
+  sourceId?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+interface ResearchRecallTurn {
+  query: string;
+  answer?: string;
+  hit_count?: number;
+  citations?: ResearchRecallCitation[];
+  status?: string;
+  cognee?: { ok?: boolean; status?: string; error?: string };
+}
+
+interface ResearchStreamEvent {
+  status?: string;
+  message?: string;
+  hits?: number;
+  answer?: string;
+  citations?: ResearchRecallCitation[];
+  cognee?: { ok?: boolean; status?: string; error?: string };
+  turn?: ResearchRecallTurn;
 }
 
 export function ResearchTab() {
@@ -34,8 +62,13 @@ export function ResearchTab() {
   const [threads, setThreads] = useState<BackendResearchThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [threadNote, setThreadNote] = useState<string | null>(null);
+  const [recallEvents, setRecallEvents] = useState<ResearchStreamEvent[]>([]);
   const fallbackPlan = useMemo(() => buildResearchPlan(caseModule, question), [caseModule, question]);
   const [plan, setPlan] = useState(fallbackPlan);
+  const activeThread = useMemo(
+    () => threads.find((thread) => thread.id === activeThreadId) ?? null,
+    [activeThreadId, threads],
+  );
 
   const refreshThreads = useCallback(async () => {
     const response = await fetch(`/api/backend/chapters/research/threads?case_id=${encodeURIComponent(caseId)}`).catch(() => null);
@@ -93,6 +126,7 @@ export function ResearchTab() {
     if (response?.ok && payload.thread) {
       setThreads((current) => [payload.thread, ...current.filter((thread) => thread.id !== payload.thread.id)]);
       setActiveThreadId(payload.thread.id);
+      setRecallEvents([]);
       setThreadNote('Research thread opened with Cognee session continuity.');
       return;
     }
@@ -107,8 +141,12 @@ export function ResearchTab() {
       body: JSON.stringify({ query: question }),
     }).catch(() => null);
     const text = await response?.text().catch(() => '') ?? '';
+    const events = parseSseEvents(text);
+    setRecallEvents(events);
     if (response?.ok) {
-      setThreadNote(text.includes('search_unavailable') ? 'Recall turn saved; Cognee search is queued/offline.' : 'Recall turn completed and was persisted.');
+      const lastEvent = events[events.length - 1];
+      const cogneeStatus = events.find((event) => event.cognee)?.cognee?.status;
+      setThreadNote(cogneeStatus === 'search_unavailable' ? 'Recall turn saved; Cognee search is queued/offline.' : lastEvent?.message ?? 'Recall turn completed and was persisted.');
       await refreshThreads();
       return;
     }
@@ -261,6 +299,7 @@ export function ResearchTab() {
                 type="button"
                 onClick={() => {
                   setActiveThreadId(thread.id);
+                  setRecallEvents([]);
                   setQuestion(thread.question);
                 }}
                 className={cn(
@@ -296,6 +335,55 @@ export function ResearchTab() {
             </button>
           </div>
           {threadNote ? <p className="mt-3 text-sm font-semibold text-navy-900">{threadNote}</p> : null}
+          {activeThread ? (
+            <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3" data-testid="research-thread-recall-ledger">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-700">Recall ledger</p>
+                <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-700">
+                  {Math.round(Number(activeThread.memory_coverage ?? 0) * 100)}% coverage
+                </span>
+              </div>
+              <div className="mt-3 space-y-3">
+                {recallEvents.filter((event) => event.answer || event.message).map((event, index) => (
+                  <div key={`${event.status}-${index}`} className="rounded-md border border-white bg-white p-3">
+                    <p className="text-sm font-semibold text-navy-950">{event.message ?? 'Recall event'}</p>
+                    {event.answer ? <p className="mt-1 text-sm leading-5 text-slate-700">{event.answer}</p> : null}
+                    {typeof event.hits === 'number' ? <p className="mt-2 text-xs font-semibold text-slate-700">{event.hits} Cognee hit(s)</p> : null}
+                  </div>
+                ))}
+                {(activeThread.recall_history ?? []).slice(-3).reverse().map((turn, index) => (
+                  <div key={`${turn.query}-${index}`} className="rounded-md border border-white bg-white p-3">
+                    <p className="text-sm font-semibold text-navy-950">{turn.query}</p>
+                    {turn.answer ? <p className="mt-1 text-sm leading-5 text-slate-700">{turn.answer}</p> : null}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-navy-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-navy-900">
+                        {turn.hit_count ?? 0} hit(s)
+                      </span>
+                      {turn.cognee?.status ? (
+                        <span className="rounded-full bg-gold-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-navy-950">
+                          {turn.cognee.status}
+                        </span>
+                      ) : null}
+                    </div>
+                    {turn.citations?.length ? (
+                      <div className="mt-2 space-y-1">
+                        {turn.citations.slice(0, 2).map((citation, citationIndex) => (
+                          <p key={citation.id ?? citationIndex} className="text-xs leading-5 text-slate-700">
+                            {citation.sourceId ?? citation.id ?? 'Cognee chunk'}: {citation.text}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+                {!recallEvents.length && !(activeThread.recall_history ?? []).length ? (
+                  <p className="text-sm leading-5 text-slate-700">
+                    Run graph recall to attach Cognee session results, then close the thread to improve long-term memory coverage.
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
         </div>
         </div>
 
@@ -345,4 +433,18 @@ export function ResearchTab() {
       </section>
     </div>
   );
+}
+
+function parseSseEvents(text: string): ResearchStreamEvent[] {
+  return text
+    .split(/\n\n+/)
+    .map((chunk) => chunk.split('\n').find((line) => line.startsWith('data: '))?.slice(6))
+    .filter((line): line is string => Boolean(line))
+    .map((line) => {
+      try {
+        return JSON.parse(line) as ResearchStreamEvent;
+      } catch {
+        return { status: 'error', message: 'Could not parse recall event.' };
+      }
+    });
 }

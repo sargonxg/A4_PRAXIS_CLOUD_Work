@@ -41,3 +41,12 @@ def test_workspace_events_stream_suggestions_and_logs():
     assert "FROM workspace_orchestrator_log" in source
     assert "dismiss_workspace_suggestion" in source
     assert "confirm_workspace_suggestion" in source
+
+
+def test_research_recall_persists_visible_citation_shaped_turns():
+    source = (ROOT / "routers" / "chapters.py").read_text(encoding="utf-8")
+    assert "_serialize_memory_hit" in source
+    assert "_build_recall_answer" in source
+    assert '"citations": citations' in source
+    assert "json.dumps([recall_turn])" in source
+    assert "Recall turn persisted with Cognee session continuity." in source
