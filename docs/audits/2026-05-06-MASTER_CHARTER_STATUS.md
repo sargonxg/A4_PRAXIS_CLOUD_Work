@@ -80,8 +80,8 @@ with v2 contracts, SKILL.md files, Memo Studio handoff payloads, and 22-tool
 marketplace audits. The route slice is deployed to
 `https://praxis.tacitus.me` via Cloud Build
 `43779fe0-dfc2-4e9b-8a38-cfe4430123e6`; the memo-tool slice is deployed via
-Cloud Build `915a2009-c016-4a2d-97a3-d1293e88728c` to Cloud Run revision
-`praxis-frontend-00256-m4q` and live-smoked on the tools tab with zero
+Cloud Build `6e9a9e93-f7cd-4c16-84b3-28d3e80bace0` to Cloud Run revision
+`praxis-frontend-00258-th2` and live-smoked on the tools tab with zero
 console/page errors.
 
 ## Latest Pack 19 Usefulness Pass

@@ -95,11 +95,11 @@ readiness.
 
 Deployment:
 
-- Commit deployed: `6558fff`
+- Commit deployed: `c34aac5`
 - Command: `npm run deploy:frontend:cloud`
-- Cloud Build: `915a2009-c016-4a2d-97a3-d1293e88728c`
+- Cloud Build: `6e9a9e93-f7cd-4c16-84b3-28d3e80bace0`
 - Status: `SUCCESS`
-- Cloud Run latest ready revision after deploy: `praxis-frontend-00256-m4q`
+- Cloud Run latest ready revision after deploy: `praxis-frontend-00258-th2`
 
 Live checks against `https://praxis.tacitus.me` after deploy:
 
