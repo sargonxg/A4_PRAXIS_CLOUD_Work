@@ -73,7 +73,9 @@ evidence are closed.
 current launch-gate closure pass. Pack 18 is preserved in `docs/codex-prompts/`,
 and the first route gap is closed with a public read-only `/demo/syria-2024`,
 real `/waitlist`, `/login/callback`, and canonical `/legal/*` pages guarded by
-`npm run audit:legal-pages-present`.
+`npm run audit:legal-pages-present`. The slice is deployed to
+`https://praxis.tacitus.me` via Cloud Build
+`43779fe0-dfc2-4e9b-8a38-cfe4430123e6`.
 
 ## Remaining Work
 

@@ -79,3 +79,28 @@ Executed against `next start -p 3118` after production build:
 
 This evidence is local only. Pack 18 still requires production Lighthouse/axe,
 CI streak, canary, and cloud posture evidence before v1.0.0 readiness.
+
+## Production Verification Evidence
+
+Deployment:
+
+- Commit deployed: `ae6a00d`
+- Command: `npm run deploy:frontend:cloud`
+- Cloud Build: `43779fe0-dfc2-4e9b-8a38-cfe4430123e6`
+- Status: `SUCCESS`
+
+Live checks against `https://praxis.tacitus.me` after deploy:
+
+| Route | HTTP | Browser result |
+|---|---:|---|
+| `/demo/syria-2024` | 200 | Rendered `Syria transition case, source-grounded and graph-first.`, watermark present, no redirect to `/login`, zero console/page errors |
+| `/waitlist` | 200 | Rendered `Join the PRAXIS production cohort.`, zero console/page errors |
+| `/login/callback` | 200 | Rendered `Completing secure sign-in`, zero console/page errors |
+| `/legal/privacy` | 200 | HTTP 200 confirmed |
+| `/legal/terms` | 200 | HTTP 200 confirmed |
+| `/legal/security` | 200 | Rendered `Security`, zero console/page errors |
+| `/legal/data-retention` | 200 | Rendered `Data Retention`, zero console/page errors |
+
+Remaining evidence gap: production Lighthouse/axe has not yet been run for
+`/demo/syria-2024`, and the Pack 18 CI streak/canary requirements are still
+open.
