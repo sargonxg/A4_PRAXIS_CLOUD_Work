@@ -77,7 +77,7 @@ for (const service of ['extract-docling', 'extract-ner-gliner', 'extract-graphra
     failures.push(`${service} cloudbuild must build and deploy the Cloud Run worker`);
   }
   if (!cloudbuild.includes('--no-allow-unauthenticated')) failures.push(`${service} must deploy without public unauthenticated access`);
-  if (!cloudbuild.includes('praxis-workers')) failures.push(`${service} image must use the praxis-workers Artifact Registry repository`);
+  if (!cloudbuild.includes('/praxis/')) failures.push(`${service} image must use the existing praxis Artifact Registry repository`);
 }
 
 const labelDir = join(process.cwd(), 'services/extract-ner-gliner/labels');

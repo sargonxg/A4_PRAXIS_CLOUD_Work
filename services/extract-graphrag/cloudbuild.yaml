@@ -3,19 +3,19 @@ steps:
     args:
       - build
       - -t
-      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/praxis-workers/extract-graphrag:$SHORT_SHA
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/praxis/extract-graphrag:$SHORT_SHA
       - services/extract-graphrag
   - name: gcr.io/cloud-builders/docker
     args:
       - push
-      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/praxis-workers/extract-graphrag:$SHORT_SHA
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/praxis/extract-graphrag:$SHORT_SHA
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: gcloud
     args:
       - run
       - deploy
       - extract-graphrag
-      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/praxis-workers/extract-graphrag:$SHORT_SHA
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/praxis/extract-graphrag:$SHORT_SHA
       - --region=${_REGION}
       - --no-allow-unauthenticated
       - --memory=8Gi
@@ -25,4 +25,4 @@ steps:
 substitutions:
   _REGION: us-central1
 images:
-  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/praxis-workers/extract-graphrag:$SHORT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/praxis/extract-graphrag:$SHORT_SHA

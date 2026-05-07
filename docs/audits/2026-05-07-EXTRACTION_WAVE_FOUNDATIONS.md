@@ -32,8 +32,9 @@ posture, prompt storage, and audit coverage.
 - Second-pass hardening: `audit:extraction-wave` now checks these invariants and
   the regression tests that guard them.
 - Second-pass hardening: Docling and GLiNER Cloud Build configs now deploy the
-  private Cloud Run services instead of only building images; all three worker
-  deploy configs use the `praxis-workers` image repository and deny public
+- Third-pass deployment reality check: the project has `praxis`, not
+  `praxis-workers`, as the active Artifact Registry repository. All three worker
+  deploy configs now target the existing `praxis` repository and deny public
   unauthenticated invocation.
 
 ## GLiNER cost reduction
