@@ -13,6 +13,7 @@ documented. A partial item must keep its named gap visible.
 ## Control Gates
 
 - [x] Preserve master charter and prompt packs 03-14 in `docs/codex-prompts/`.
+- [x] Preserve prompt packs 18-22 in `docs/codex-prompts/` as the current post-charter execution wave.
 - [x] Keep `npm run audit:gate` green on `main`.
 - [x] Keep Graphify outputs refreshed after code changes.
 - [x] Keep repo identity visible in charter docs and handoff docs.
@@ -221,6 +222,28 @@ documented. A partial item must keep its named gap visible.
 - [x] Add `docs/launch/CANARY_LOG.md` with phase metrics and sign-offs.
 - [ ] Add rollback runbook and prove rollback command path.
 - [ ] Add final `docs/audits/2026-05-06-LAUNCH_GATE.md`.
+
+## Pack 22 - GCP Gemini Verification
+
+- [x] Preserve Pack 22 prompt in `docs/codex-prompts/`.
+- [x] Add two-pass evidence docs for safe read-only/local verification.
+- [x] Add Pack 22 runbook bundle for provider, Agent Engine, Cloud SQL,
+  pgvector, Firestore, Storage, observability, canary, scheduler, identity,
+  IAM, secret rotation, Terraform, and load handling.
+- [x] Add local audit for Pack 22 evidence completeness.
+- [x] Add local audit for model-matrix coverage and Vertex/Gemini posture.
+- [x] Add read-only GCP production posture audit for named resources.
+- [x] Add ADR 0036 documenting the safe verification versus owner-gated
+  infrastructure boundary.
+- [ ] Run owner-approved Terraform plan against staging and production.
+- [ ] Verify Cloud SQL HA, PITR, backup/restore, and pgvector index posture with
+  production evidence.
+- [ ] Verify Agent Engine deployment freshness, eval freshness, per-call cost
+  ceilings, and trace trees against live runtime.
+- [ ] Verify CMEK, VPC-SC, Cloud Armor, and load-test posture after owner
+  approval.
+- [ ] Record seven-day staging green window, canary 5/25/100 timestamps, and
+  release tag/signature.
 
 ## Phase 1-3 Spec Audit Carryover
 

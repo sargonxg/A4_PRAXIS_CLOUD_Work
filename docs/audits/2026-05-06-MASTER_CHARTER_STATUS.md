@@ -43,6 +43,7 @@ The master charter is now preserved in-repo and its high-level support structure
 | Pack 19 Genuinely Useful | ACTIVE v1.1 foundation | Prompt preserved; transparency cards added to all 22 current marketplace tools; tool-run evidence drawer and run comparison foundation added; audit guards added | Pack 19 preconditions are not fully true yet: Pack 18 remaining gaps, v1.0.0 tag, 10-green persona CI streak, live Agent Engine runtime evidence, specialist handlers, claim challenge, and semantic diffing remain open. |
 | Pack 20 Dynamic Ontologies | ACTIVE v1.1 foundation | Prompt preserved; five new ontology lenses registered; registry now returns 9 ontologies; role-aware ontology picker is wired into situation creation; optional multi-ontology fields persist through the API; backend mirrors, classifier baseline, accuracy audit, and ADR 0030 added | Full multi-ontology write-path enforcement, ingestion-driven review-queue advisories, Gemini-backed 50-case classifier, sample situations, and visual snapshots remain open. |
 | Pack 21 Marketplace Depth | ACTIVE v1.2 foundation | Prompt preserved; marketplace expanded to the explicit 52-tool cap with 30 new tools; Pack 20 recommended tool ids resolved; ordered SKILL.md audit, executable canary audit, semantic canary audit, persona coverage audit, authoring-spike audit, composition audit, and suggestion eval audit added; ADRs 0033, 0034, and 0035 added | The prompt's model-backed specialist handler and 10-green CI persona proof remain open. |
+| Pack 22 GCP Gemini Verification | ACTIVE production verification foundation | Prompt preserved; two-pass evidence docs added; Pack 22 runbook bundle, model-matrix coverage, evidence audit, read-only GCP production posture audit, and ADR 0036 added | Owner-gated items remain open: HA/CMEK/VPC-SC/Cloud Armor changes, Terraform apply, Agent Engine deployment freshness, load intensity, canary 5/25/100, staging 7-day green window, and release tag/signature. |
 
 ## Open S0/S1 From Self-Audit
 
@@ -133,6 +134,17 @@ evidence. The second Pack 21 pass adds semantic canaries, persona coverage,
 an authoring-spike record, a green-streak ledger reset, and ADR 0035 for the six
 over-cap deferred candidates.
 
+## Latest Pack 22 GCP Gemini Verification Pass
+
+`docs/audits/2026-05-07-PACK22_GCP_GEMINI_VERIFICATION_PASS1.md` and
+`docs/audits/2026-05-07-PACK22_GCP_GEMINI_VERIFICATION_PASS2.md` record the
+two-pass Pack 22 result. The work deliberately stayed inside safe local and
+read-only verification: the prompt is preserved, runbooks are present, model
+runtime posture is audited, Pack 22 evidence is audited, and a read-only GCP
+production posture command checks named Cloud Run, Cloud SQL, Storage, Secret
+Manager, and Scheduler resources. The pass did not mutate infrastructure or
+claim closure on owner-gated production operations.
+
 ## Remaining Work
 
 - Run and maintain the four persona suites until the charter's 10-green-run bar is genuinely satisfied in CI.
@@ -146,4 +158,5 @@ over-cap deferred candidates.
 - Continue Pack 19 only in slices that do not falsely depend on unresolved v1.0 evidence. Highest safe next slices: claim challenge/reasoning-step appeal, workspace preference propagation audit, and Situation Genesis baseline measurement.
 - Continue Pack 20 by adding sample situations and visual snapshots for the five new ontology lenses, then replacing the deterministic classifier baseline with the Gemini-backed 50-case classifier after the review-queue and Situation Genesis prerequisites are ready.
 - Continue Pack 21 by replacing prompt-contract foundation runs with real specialist handlers and accumulating the 10-green CI persona streak over the expanded marketplace depth.
+- Continue Pack 22 through owner-approved production operations only: Terraform plan/apply, HA/PITR verification, CMEK/VPC-SC/Cloud Armor posture, Agent Engine freshness, canary traffic phases, load intensity, and signed release evidence.
 - Obtain owner production-readiness signature, complete staging/production signed smoke records, and only then tag `v1.0.0`.

@@ -46,6 +46,7 @@ This matches `docs/architecture/MODEL_SELECTION.md`,
 |---|---|---|
 | Model strings centralized | Enforced | `src/lib/ai/MODEL_MATRIX.json`, `src/lib/ai/providers.ts`, `backend/ai/providers.py`, `npm run audit:ai-provider-isolation` |
 | Vertex default in production posture | Enforced locally | `npm run audit:ai-provider-vertex-default` |
+| Pack 22 GCP/Gemini verification discipline | Enforced for safe local/read-only checks | `npm run audit:model-matrix-coverage`, `npm run audit:runbook-bundle`, `npm run audit:pack22-verification`, `npm run audit:gcp-production-posture` |
 | Every AI route calibrated | Enforced | `npm run audit:routes` reports 66/66 calibrated AI routes |
 | Context health advisory, not blocking | Enforced | `npm run audit:context-vs-tools`, `npm run audit:context-aware-coverage` |
 | Marketplace uses ContextProvider foundation | Enforced | `src/app/api/tools/marketplace/run/route.ts`, `npm run audit:tool-marketplace` |
@@ -71,7 +72,15 @@ Local aliases added for the real app include `typecheck`, `test`,
 `audit:tool-persona-coverage`, `audit:tool-authoring-spike`,
 `audit:tool-composition-static`, `audit:tool-suggestion-eval`, `audit:tool-context-isolation`, `audit:firewall-coverage`,
 `audit:owner-scoping`, `audit:postgres-schema-current`, `audit:kg-drift`,
-`audit:legal-pages-present`, `audit:type-safety`, and `audit:docs`.
+`audit:legal-pages-present`, `audit:type-safety`, `audit:docs`,
+`audit:model-matrix-coverage`, `audit:runbook-bundle`,
+`audit:pack22-verification`, and `audit:gcp-production-posture`.
+
+Pack 22 adds a production verification layer for GCP and Gemini Enterprise
+posture. The local aliases are intentionally limited to safe static/read-only
+checks. Cost-impacting operations such as HA changes, CMEK/VPC-SC enforcement,
+Terraform apply, Cloud Armor mutation, Agent Engine deployment, canary traffic
+shifts, and high-intensity load tests remain owner-gated operational work.
 
 <!-- architecture-gated-audits:start -->
 
@@ -121,6 +130,10 @@ npm run audit:architecture-reference
 npm run audit:architecture-chain
 npm run audit:ai-provider-isolation
 npm run audit:ai-provider-vertex-default
+npm run audit:model-matrix-coverage
+npm run audit:runbook-bundle
+npm run audit:pack22-verification
+npm run audit:gcp-production-posture
 npm run audit:context-vs-tools
 npm run audit:context-aware-coverage
 npm run audit:context-types-parity

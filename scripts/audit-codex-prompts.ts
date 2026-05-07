@@ -21,6 +21,7 @@ const required = [
   'docs/codex-prompts/PRAXIS_CODEX_19_GENUINELY_USEFUL.md',
   'docs/codex-prompts/PRAXIS_CODEX_20_DYNAMIC_ONTOLOGIES.md',
   'docs/codex-prompts/PRAXIS_CODEX_21_MARKETPLACE_DEPTH.md',
+  'docs/codex-prompts/PRAXIS_CODEX_22_GCP_GEMINI_VERIFICATION.md',
 ];
 
 const failures: string[] = [];
@@ -40,4 +41,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Codex prompt pack audit passed for master charter and packs 03-16 plus packs 18-21.');
+console.log('Codex prompt pack audit passed for master charter and packs 03-16 plus packs 18-22.');

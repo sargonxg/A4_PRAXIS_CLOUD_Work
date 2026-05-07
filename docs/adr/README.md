@@ -36,6 +36,8 @@ Accepted ADRs are not edited for meaning. Supersede them with a later ADR.
 - `0030-dynamic-ontology-lenses.md`
 - `0033-marketplace-depth-strategy.md`
 - `0034-composition-chain-governance.md`
+- `0035-marketplace-cap-and-deferred-candidates.md`
+- `0036-gcp-production-verification-discipline.md`
 
 Active target-state gaps are tracked in:
 

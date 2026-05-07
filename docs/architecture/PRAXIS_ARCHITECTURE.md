@@ -1113,6 +1113,11 @@ The current ADR set:
 | 0026 | Agentic Boardroom architecture | 16 |
 | 0027 | Parameterized analyst_persona subagent | 16 |
 | 0028 | Persona corpus retrieval pattern | 16 |
+| 0030 | Dynamic ontology lenses | 20 |
+| 0033 | Marketplace depth strategy | 21 |
+| 0034 | Composition chain governance | 21 |
+| 0035 | Marketplace cap and deferred candidate governance | 21 |
+| 0036 | GCP production verification discipline | 22 |
 
 ### 18.5 Persona suites as the production bar
 
@@ -1159,6 +1164,7 @@ npm run audit:tool-composition-static
 npm run audit:tool-suggestion-eval        # recall@3 ≥ 80%
 npm run audit:ai-provider-isolation       # no model-string leaks
 npm run audit:ai-provider-vertex-default
+npm run audit:model-matrix-coverage       # Pack 22 model/runtime coverage
 npm run audit:subagent-deployment-fresh
 npm run audit:subagent-eval-fresh         # eval ran in last 7 days
 npm run audit:firewall-coverage           # every write path goes through firewall
@@ -1169,6 +1175,7 @@ npm run audit:kg-drift                    # Firestore↔Postgres drift dry-run
 npm run audit:graph-query-perf            # P95 budgets on 10k-node fixture
 npm run audit:embeddings-v2-coverage
 npm run audit:terraform-drift             # no hand-clicked resources
+npm run audit:gcp-production-posture      # read-only named-resource posture
 npm run audit:observability-coverage      # 100% trace on critical paths
 npm run audit:legal-pages-present
 npm run audit:ux-polish
@@ -1176,6 +1183,8 @@ npm run audit:dead-code
 npm run audit:type-safety
 npm run audit:test-coverage
 npm run audit:docs                        # markdownlint + vale + lychee
+npm run audit:runbook-bundle              # operational runbooks present
+npm run audit:pack22-verification         # GCP/Gemini evidence package
 npm run audit:security                    # npm audit, pip-audit, gitleaks
 
 # Persona suites — production bar
@@ -1291,6 +1300,7 @@ Updates flow:
 | Version | Date | Changes |
 |---|---|---|
 | 1.0 | 2026-05-06 | Initial canonical bible. Crystallizes architecture across packs 03-14. Recalibrates symbolic firewall to three-tier model (hard/soft/synthesized). Confirms Vertex AI / Gemini Enterprise Agent Platform as runtime. Confirms Neo4j retirement in v1. |
+| 1.1 | 2026-05-07 | Adds Pack 22 safe/read-only GCP and Gemini verification guards to the audit chain while keeping cost-impacting infrastructure work owner-gated. |
 
 ---
 
