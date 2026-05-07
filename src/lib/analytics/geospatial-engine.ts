@@ -1,13 +1,13 @@
 /**
- * Geospatial Engine — Conflict event clustering and movement analysis
+ * Geospatial Engine - Conflict event clustering and movement analysis
  *
  * Provides DBSCAN-based hotspot clustering, geographic spread scoring,
- * and movement detection for ACLED conflict event datasets.
+ * and movement detection for conflict event datasets.
  *
  * No external dependencies — uses pure TypeScript arithmetic.
  */
 
-import type { ACLEDEvent } from '@/lib/data-feeds/acled-client';
+import type { ConflictEvent } from '@/lib/data-feeds/conflict-events';
 
 // ---------------------------------------------------------------------------
 // Exported interfaces
@@ -58,7 +58,7 @@ export function haversineDistance(
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-function hasValidCoordinates(e: ACLEDEvent): boolean {
+function hasValidCoordinates(e: ConflictEvent): boolean {
   // Reject (0, 0) and missing values
   return (
     typeof e.latitude === 'number' &&
@@ -69,13 +69,13 @@ function hasValidCoordinates(e: ACLEDEvent): boolean {
   );
 }
 
-function computeCentroid(events: ACLEDEvent[]): { lat: number; lng: number } {
+function computeCentroid(events: ConflictEvent[]): { lat: number; lng: number } {
   const lat = events.reduce((s, e) => s + e.latitude, 0) / events.length;
   const lng = events.reduce((s, e) => s + e.longitude, 0) / events.length;
   return { lat, lng };
 }
 
-function computeRadius(events: ACLEDEvent[], centroid: { lat: number; lng: number }): number {
+function computeRadius(events: ConflictEvent[], centroid: { lat: number; lng: number }): number {
   if (events.length <= 1) return 0;
   return Math.max(...events.map((e) => haversineDistance(centroid.lat, centroid.lng, e.latitude, e.longitude)));
 }
@@ -92,7 +92,7 @@ function mostFrequent(values: string[]): string {
   return best;
 }
 
-function uniqueActors(events: ACLEDEvent[]): string[] {
+function uniqueActors(events: ConflictEvent[]): string[] {
   const set = new Set<string>();
   for (const e of events) {
     if (e.actor1) set.add(e.actor1);
@@ -113,7 +113,7 @@ function daysBefore(days: number): Date {
  * - >25% fewer events recently → contracting
  * - otherwise → stable
  */
-function computeTrend(events: ACLEDEvent[]): 'expanding' | 'stable' | 'contracting' {
+function computeTrend(events: ConflictEvent[]): 'expanding' | 'stable' | 'contracting' {
   const now = Date.now();
   const week1Start = daysBefore(7).getTime();
   const week2Start = daysBefore(14).getTime();
@@ -144,17 +144,17 @@ const UNVISITED = -1;
 const NOISE = 0;
 
 /**
- * DBSCAN clustering of ACLED events by geographic proximity.
+ * DBSCAN clustering of conflict events by geographic proximity.
  *
  * Uses an iterative (queue-based) expansion to avoid call-stack limits on
  * large datasets. Events without valid coordinates are silently skipped.
  *
- * @param events    Array of ACLED events to cluster
+ * @param events    Array of conflict events to cluster
  * @param eps_km    Neighbourhood radius in kilometres (default 50)
  * @param minPoints Minimum points to form a cluster core (default 3)
  */
 export function clusterEvents(
-  events: ACLEDEvent[],
+  events: ConflictEvent[],
   eps_km = 50,
   minPoints = 3,
 ): HotspotCluster[] {
@@ -218,7 +218,7 @@ export function clusterEvents(
   }
 
   // Collect events by cluster
-  const clusterMap = new Map<number, ACLEDEvent[]>();
+  const clusterMap = new Map<number, ConflictEvent[]>();
   for (let i = 0; i < n; i++) {
     const label = labels[i];
     if (label <= 0) continue; // skip noise
@@ -236,7 +236,7 @@ export function clusterEvents(
     const dominantEventType = mostFrequent(clusterEvents.map((e) => e.event_type));
     const actors = uniqueActors(clusterEvents);
     const trend = computeTrend(clusterEvents);
-    const admin1 = mostFrequent(clusterEvents.map((e) => e.admin1).filter(Boolean));
+    const admin1 = mostFrequent(clusterEvents.map((e) => e.admin1).filter((value): value is string => Boolean(value)));
 
     clusters.push({
       centroid,
@@ -271,7 +271,7 @@ const NORMALIZATION_AREA_DEG2 = 135 * 360; // 48600 deg²
  * its area against a reference global area. A score of 100 means conflict
  * events span the widest possible geographic range; 0 means a single point.
  */
-export function geographicSpreadIndex(events: ACLEDEvent[]): number {
+export function geographicSpreadIndex(events: ConflictEvent[]): number {
   const valid = events.filter(hasValidCoordinates);
   if (valid.length < 2) return 0;
 
@@ -304,7 +304,7 @@ export function geographicSpreadIndex(events: ACLEDEvent[]): number {
  * 7–14 day window before that. Returns direction based on the dominant
  * lat/lng delta, total distance, and the days span (always 7).
  */
-export function detectMovement(events: ACLEDEvent[]): MovementDetection {
+export function detectMovement(events: ConflictEvent[]): MovementDetection {
   const valid = events.filter(hasValidCoordinates);
 
   const now = Date.now();

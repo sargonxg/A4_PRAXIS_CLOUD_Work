@@ -179,7 +179,7 @@ export const POST = withCalibration('risk_assessment', 'ai_risk_assessment', {
     try {
       const intel = await getSituationIntelligence({ country, limit: 30 });
       const dataRisk = computeRiskScore({
-        acledEvents: [],
+        conflictEvents: [],
         stabilityScore: intel.stability?.score,
         stabilityTrend: intel.stability?.trend,
         foodSecurityPct: intel.humanitarian?.foodSecurity?.[0]?.pct,

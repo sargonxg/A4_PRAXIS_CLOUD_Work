@@ -171,7 +171,7 @@ const PERSPECTIVE_BY_DOMAIN: Record<string, OnboardingRationale> = {
     bullets: [
       'Risk Monitor leans into Glasl 9-stage + INFORM hazard pillar.',
       'Early Warning is the front-page tool.',
-      'Source Scout boosts ACLED-equivalent OSINT (UCDP, Crisis Group, SIPRI).',
+      'Source Scout boosts event-data OSINT (UCDP, Crisis Group, SIPRI).',
       'Brainstorming Table prioritises the Security/Risk Analyst persona.',
     ],
     example: {

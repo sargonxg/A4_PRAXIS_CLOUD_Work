@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(extraction): add Pack 30 Docling, GLiNER, and GraphRAG foundation.
+  Added isolated Cloud Run worker scaffolds, context-genesis pipeline contracts,
+  Docling chunking, GLiNER ontology labels, GraphRAG-to-ACO review candidates,
+  marketplace tools, license/source audits, ADR 0047, and retired active ACLED
+  code paths in favor of the current UCDP baseline.
 - feat(dashboard): replace legacy redirect with real app command center.
   `/app/dashboard` now renders an active-case command surface with a larger
   graph visualization, case/workbench metrics, direct links into graph, tools,

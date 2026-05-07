@@ -61,14 +61,14 @@ describe('resolveDomain — baseline behaviour from seeds', () => {
       ...user,
       id: 'armed-conflict-security' as const,
       name: 'Armed Conflict & Security',
-      preferredFeeds: ['acled'],
+      preferredFeeds: ['ucdp'],
       frameworks: ['glasl_escalation'],
       colorHex: '#A63D40',
       icon: 'Shield',
     };
     const merged = mergeUserAndSituationDomains(user, situation);
     expect(merged.id).toBe('armed-conflict-security');
-    expect(merged.preferredFeeds).toContain('acled');
+    expect(merged.preferredFeeds).toContain('ucdp');
     expect(merged.preferredFeeds).toContain('reliefweb');
     expect(merged.frameworks).toContain('glasl_escalation');
     expect(merged.frameworks).toContain('ocha_humanitarian');

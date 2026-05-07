@@ -556,8 +556,8 @@ export const MEDIA_DATABASE: MediaOutlet[] = [
     notableFor: 'Gold standard for OSINT verification; essential for assessing battlefield claims and war crime evidence',
   },
   {
-    name: 'ACLED (Armed Conflict Location & Event Data)',
-    country: 'United States / Global',
+    name: 'UCDP (Uppsala Conflict Data Program)',
+    country: 'Sweden / Global',
     ownershipType: 'ngo',
     politicalOrientation: 0,
     reliabilityScore: 0.92,

@@ -238,7 +238,7 @@ export const INFORM_RISK_INDEX = {
         'The probability of a hazardous event occurring (natural or human-caused) combined with the human exposure to that hazard.',
       subdimensions: [
         'Natural hazards: earthquakes, floods, droughts, cyclones',
-        'Human-caused hazards: conflict intensity (ACLED), political instability (GDELT), food insecurity',
+        'Human-caused hazards: conflict intensity (UCDP), political instability (GDELT), food insecurity',
       ],
     },
     {
@@ -534,7 +534,7 @@ export const UN_DPPA_BRIEF_FORMAT = {
   sections: [
     { name: 'Situation Overview', content: 'Key developments in past 24–72 hours (3–5 bullet points maximum). Most critical facts first.' },
     { name: 'Political Track', content: 'Peace process status, negotiations, diplomatic contacts, UNSC activity, electoral developments.' },
-    { name: 'Security Situation', content: 'Armed incidents (ACLED source), displacement, ceasefire compliance, force postures.' },
+    { name: 'Security Situation', content: 'Armed incidents (UCDP source), displacement, ceasefire compliance, force postures.' },
     { name: 'Humanitarian', content: 'IPC phase, displacement figures (UNHCR), funding gaps (OCHA FTS), access constraints.' },
     { name: 'Human Rights', content: 'Protection incidents, OHCHR alerts, accountability developments, SGBV.' },
     { name: 'International Response', content: 'UNSC resolutions, regional organization actions, bilateral demarches, sanctions.' },

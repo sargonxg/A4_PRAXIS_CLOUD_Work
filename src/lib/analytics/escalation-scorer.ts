@@ -1,10 +1,10 @@
 /**
  * Data-driven escalation scoring using Glasl's 9-stage model
- * Computes stage from ACLED events + GDELT stability data
+ * Computes stage from conflict events plus GDELT stability data
  * Includes weighted event scoring, actor fragmentation, and geographic spread
  */
 
-import type { ACLEDEvent } from '@/lib/data-feeds/acled-client';
+import type { ConflictEvent } from '@/lib/data-feeds/conflict-events';
 
 export interface EscalationAssessment {
   glaslStage: number;
@@ -31,7 +31,7 @@ const GLASL_STAGES = [
 ];
 
 // ---------------------------------------------------------------------------
-// Event type weights (ACLED taxonomy → conflict severity weight)
+// Event type weights mapped to conflict severity weight.
 // ---------------------------------------------------------------------------
 
 const EVENT_TYPE_WEIGHTS: Record<string, number> = {
@@ -51,7 +51,7 @@ function getEventWeight(eventType: string): number {
  * Compute the weighted intensity score for a set of events.
  * Returns the sum of per-event weights.
  */
-function computeWeightedIntensity(events: ACLEDEvent[]): number {
+function computeWeightedIntensity(events: ConflictEvent[]): number {
   return events.reduce((sum, e) => sum + getEventWeight(e.event_type), 0);
 }
 
@@ -63,7 +63,7 @@ function computeWeightedIntensity(events: ACLEDEvent[]): number {
  * Fragmentation = (unique actors) / (total events), clamped 0-1.
  * High fragmentation indicates a complex multi-actor conflict.
  */
-function computeActorFragmentation(events: ACLEDEvent[]): number {
+function computeActorFragmentation(events: ConflictEvent[]): number {
   if (events.length === 0) return 0;
 
   const actorCounts = new Map<string, number>();
@@ -85,7 +85,7 @@ function computeActorFragmentation(events: ACLEDEvent[]): number {
  * Geographic spread index based on unique admin1 regions.
  * Each unique admin1 region adds 10 points, max 100.
  */
-function computeGeographicSpread(events: ACLEDEvent[]): number {
+function computeGeographicSpread(events: ConflictEvent[]): number {
   const admin1Regions = new Set<string>();
   for (const e of events) {
     if (e.admin1) admin1Regions.add(e.admin1);
@@ -137,11 +137,11 @@ export function getStageTransitionProbability(
 // Main escalation computation
 // ---------------------------------------------------------------------------
 
-export function computeEscalation(events: ACLEDEvent[], stabilityScore?: number): EscalationAssessment {
+export function computeEscalation(events: ConflictEvent[], stabilityScore?: number): EscalationAssessment {
   if (events.length === 0) {
     return {
       glaslStage: 1, stageName: GLASL_STAGES[1], confidence: 'low',
-      evidence: ['No ACLED event data available'], weeklyEventCount: 0,
+      evidence: ['No conflict event data available'], weeklyEventCount: 0,
       weeklyBaseline: 0, fatalityTrend: 'stable', eventTypeShift: null,
       probability30d: 0.1, keyDrivers: ['Insufficient data'],
       actorFragmentation: 0, geographicSpread: 0, weightedIntensity: 0,

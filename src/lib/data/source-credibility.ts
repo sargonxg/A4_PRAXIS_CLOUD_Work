@@ -18,15 +18,15 @@ export interface SourceProfile {
 }
 
 export const SOURCE_CREDIBILITY: Record<string, SourceProfile> = {
-  ACLED: {
-    name: 'Armed Conflict Location & Event Data Project',
-    shortName: 'ACLED',
-    credibility: 0.78,
-    coverageBias: 'Urban areas over-represented; English/French/Arabic media bias',
-    lag: '1-3 days',
+  UCDP: {
+    name: 'Uppsala Conflict Data Program',
+    shortName: 'UCDP',
+    credibility: 0.84,
+    coverageBias: 'Conservative coding and slower updates than media monitoring feeds',
+    lag: 'Weekly to annual depending on dataset',
     suitableFor: ['Event verification', 'Fatality tracking', 'Actor attribution', 'Trend analysis'],
-    notSuitableFor: ['Classified operations', 'Rural areas with limited media', 'Real-time alerting'],
-    citationFormat: 'ACLED (Armed Conflict Location & Event Data Project), {date}',
+    notSuitableFor: ['Classified operations', 'Real-time alerting'],
+    citationFormat: 'UCDP, {date}',
     unCitable: true,
     color: '#4B92DB',
   },

@@ -72,7 +72,7 @@ export const CANONICAL_PERSONAS: PersonaSpec[] = [
     corpusTitle: 'Conflict event coding, escalation, and civilian-protection references',
     background: {
       professionalProfile: 'A civil-military security analyst focused on conflict event patterns, force posture, coercive leverage, and protection risks. He is strongest when translating fragmentary battlefield or incident data into operational implications. He distinguishes observable capability from stated intent and flags where confidence depends on event-data quality.',
-      credentials: ['Civil-military analysis', 'UCDP/ACLED event-data literacy', 'Protection-of-civilians planning'],
+      credentials: ['Civil-military analysis', 'UCDP/UCDP event-data literacy', 'Protection-of-civilians planning'],
       yearsOfExperience: 21,
       languages: ['English', 'Arabic'],
     },

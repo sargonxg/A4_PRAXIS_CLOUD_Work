@@ -37,7 +37,7 @@ export const EXTERNAL_RESOURCES: ExternalResource[] = [
   { name: 'Carnegie Endowment', url: 'https://carnegieendowment.org', category: 'think_tank', description: 'International affairs research with global network of centers', tags: ['global', 'policy', 'research'] },
 
   // Data Platforms
-  { name: 'ACLED', url: 'https://acleddata.com', category: 'data_platform', description: 'Armed Conflict Location & Event Data — disaggregated conflict event tracking with geolocation', tags: ['conflict data', 'events', 'geospatial'] },
+  { name: 'UCDP GED', url: 'https://ucdp.uu.se', category: 'data_platform', description: 'Uppsala Conflict Data Program georeferenced event data for conflict tracking', tags: ['conflict data', 'events', 'geospatial'] },
   { name: 'UCDP', url: 'https://ucdp.uu.se', category: 'data_platform', description: 'Uppsala Conflict Data Program — battle-related deaths, conflict onset, and peace agreements', tags: ['conflict data', 'fatalities', 'historical'] },
   { name: 'IOM DTM', url: 'https://dtm.iom.int', category: 'data_platform', description: 'Displacement Tracking Matrix — mobility tracking across 90+ countries', tags: ['displacement', 'migration', 'tracking'] },
   { name: 'IPC Info', url: 'https://www.ipcinfo.org', category: 'data_platform', description: 'Integrated Phase Classification — food security and famine monitoring', tags: ['food security', 'famine', 'humanitarian'] },

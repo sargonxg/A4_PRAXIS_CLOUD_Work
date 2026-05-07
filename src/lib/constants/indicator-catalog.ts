@@ -32,7 +32,7 @@ export type DomainKey =
 const COMMON_INDICATORS: IndicatorSpec[] = [
   { id: 'inform-overall', name: 'INFORM composite risk', framework: 'INFORM Risk Index', unit: '0–10', rationale: 'Headline composite — drives heatmap colour.' },
   { id: 'glasl-stage', name: 'Glasl escalation stage', framework: 'Glasl 9-stage', unit: 'stage', rationale: 'Where the conflict sits on the 9-stage hardening → abyss model.' },
-  { id: 'incident-trend-30d', name: 'Incident trend (30d)', framework: 'GDELT/ACLED proxy', unit: '%Δ', rationale: 'Direction and magnitude of incident volume vs prior 30 days.' },
+  { id: 'incident-trend-30d', name: 'Incident trend (30d)', framework: 'GDELT/UCDP proxy', unit: '%Δ', rationale: 'Direction and magnitude of incident volume vs prior 30 days.' },
   { id: 'rhetoric-temperature', name: 'Rhetorical temperature', framework: 'Galtung Triangle (cultural)', unit: '−5 to +5', rationale: 'Tone of public statements by primary actors.' },
 ];
 
@@ -40,7 +40,7 @@ export const INDICATOR_CATALOG: Record<DomainKey, IndicatorSpec[]> = {
   'generic': COMMON_INDICATORS,
   'armed-conflict-security': [
     ...COMMON_INDICATORS,
-    { id: 'armed-clashes-7d', name: 'Armed clashes (7d)', framework: 'ACLED proxy', unit: 'count', rationale: 'Recent kinetic activity, week-over-week.' },
+    { id: 'armed-clashes-7d', name: 'Armed clashes (7d)', framework: 'UCDP proxy', unit: 'count', rationale: 'Recent kinetic activity, week-over-week.' },
     { id: 'civilian-casualties-30d', name: 'Civilian casualties (30d)', framework: 'IHL / OCHA', unit: 'count', rationale: 'Civilian harm signal.' },
     { id: 'ceasefire-violations', name: 'Ceasefire violations', framework: 'Berghof / Stedman', unit: 'count', rationale: 'Spoiler activity vs current agreements.' },
     { id: 'frontline-shift', name: 'Frontline shift', framework: 'OSINT', unit: 'km', rationale: 'Net territorial change in the last week.' },
@@ -90,7 +90,7 @@ export const INDICATOR_CATALOG: Record<DomainKey, IndicatorSpec[]> = {
   ],
   'transnational-threats': [
     ...COMMON_INDICATORS,
-    { id: 'terror-attacks-30d', name: 'Terror attacks (30d)', framework: 'GTD / ACLED', unit: 'count', rationale: 'Non-state armed group activity.' },
+    { id: 'terror-attacks-30d', name: 'Terror attacks (30d)', framework: 'GTD / UCDP', unit: 'count', rationale: 'Non-state armed group activity.' },
     { id: 'illicit-flows', name: 'Illicit flows', framework: 'GI-TOC', unit: 'qual', rationale: 'Trafficking, finance, smuggling signal.' },
   ],
 };

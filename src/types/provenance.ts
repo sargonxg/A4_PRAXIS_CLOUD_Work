@@ -5,7 +5,6 @@
 
 export type ProvenanceSource =
   | 'GDELT'
-  | 'ACLED'
   | 'ReliefWeb'
   | 'UNHCR'
   | 'HDX'

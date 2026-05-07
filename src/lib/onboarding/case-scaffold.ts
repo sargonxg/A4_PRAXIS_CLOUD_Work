@@ -43,7 +43,7 @@ const FALLBACK_ACTORS = [
   ['International mediator', 'Third party'],
 ];
 
-const SOURCE_HINTS = ['gdelt', 'reliefweb', 'acled', 'ucdp', 'un', 'icg', 'hdx'];
+const SOURCE_HINTS = ['gdelt', 'reliefweb', 'ucdp', 'ucdp', 'un', 'icg', 'hdx'];
 
 export function buildCaseScaffoldProposal(input: {
   objective: string;

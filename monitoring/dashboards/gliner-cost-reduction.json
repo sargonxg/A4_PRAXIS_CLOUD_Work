@@ -1,0 +1,11 @@
+{
+  "displayName": "PRAXIS GLiNER Cost Reduction",
+  "metrics": [
+    "gliner_candidates_total",
+    "precision_extract_calls_total",
+    "precision_extract_tokens_total",
+    "graphrag_batch_cost_usd",
+    "review_queue_candidates_total"
+  ],
+  "notes": "Pack 30 dashboard contract. Live Cloud Monitoring bindings are created during worker deployment."
+}

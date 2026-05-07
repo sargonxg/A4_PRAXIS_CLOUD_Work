@@ -83,7 +83,7 @@ const LEGACY_MAP = {
   google_ai_key: { provider: 'google_ai', shape: (v) => ({ key: v }) },
 };
 
-const NON_SECRET_FIELDS = { acled: ['email'] };
+const NON_SECRET_FIELDS = {};
 
 // ───────────────────────────────────────────────────────────────────────────
 // Firestore init
@@ -132,33 +132,6 @@ async function migrateUser(db, uid, legacy) {
     };
     if (COMMIT) await targetRef.set(doc);
     results.push({ provider, status: COMMIT ? 'migrated' : 'would-migrate' });
-  }
-
-  // ACLED — key + email
-  const acledKey = (legacy.acled_key ?? '').trim();
-  const acledEmail = (legacy.acled_email ?? '').trim();
-  if (acledKey && acledEmail) {
-    const provider = 'acled';
-    const targetRef = db.collection('users').doc(uid).collection('settings').doc('api_keys_encrypted').collection('providers').doc(provider);
-    const existing = await targetRef.get();
-    if (!existing.exists) {
-      const payload = { key: acledKey, email: acledEmail };
-      const record = encrypt(JSON.stringify(payload), buildAad(uid, provider));
-      const doc = {
-        provider,
-        record,
-        fieldsConfigured: ['key', 'email'],
-        nonSecretValues: { email: acledEmail },
-        maskedSecretPreview: maskSecret(acledKey),
-        validatedAt: null,
-        validationError: null,
-        updatedAt: admin.firestore.Timestamp.now(),
-      };
-      if (COMMIT) await targetRef.set(doc);
-      results.push({ provider, status: COMMIT ? 'migrated' : 'would-migrate' });
-    } else {
-      results.push({ provider: 'acled', status: 'skipped-already-present' });
-    }
   }
 
   return results;

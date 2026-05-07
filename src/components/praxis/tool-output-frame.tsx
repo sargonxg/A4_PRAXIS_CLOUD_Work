@@ -23,7 +23,7 @@
  *     retrievalLayers={data?.retrievalLayers}
  *     sourceCount={data?.sources?.length}
  *     degraded={liveDataMissing}
- *     missingFeeds={['ACLED', 'GDELT']}
+ *     missingFeeds={['UCDP', 'GDELT']}
  *   >
  *     <RiskOutputBody data={data} />
  *   </ToolOutputFrame>

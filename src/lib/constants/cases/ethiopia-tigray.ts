@@ -4,7 +4,7 @@
  *
  * DIPLOMATIC DISCLAIMER: This case study is based exclusively on publicly
  * available open-source reporting, official UN documentation, published
- * AU reports, and institutional analyses from ACLED, Crisis Group, and
+ * AU reports, and institutional analyses from UCDP, Crisis Group, and
  * the UN Secretary-General's reports to the Security Council. All positions
  * attributed to parties reflect their documented public statements and
  * positions as reported by international observers. Inclusion of any

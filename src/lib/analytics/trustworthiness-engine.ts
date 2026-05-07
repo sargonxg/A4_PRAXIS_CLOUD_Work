@@ -31,12 +31,11 @@ export interface TrustworthinessScore {
  */
 const SOURCE_RELIABILITY: Record<string, number> = {
   // Tier 1: Official / institutional
-  'ACLED': 95,
+  'UCDP': 95,
   'UNHCR': 95,
   'OCHA': 95,
   'World Bank': 90,
   'HDX HAPI': 90,
-  'UCDP': 90,
   'SIPRI': 88,
   'ReliefWeb': 85,
   'UN News': 85,

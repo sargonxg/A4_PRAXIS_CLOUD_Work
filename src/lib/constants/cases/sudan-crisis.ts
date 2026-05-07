@@ -170,13 +170,13 @@ export const SUDAN_MEDIA_LANDSCAPE = {
       website: 'https://www.unocha.org/sudan',
     },
     {
-      name: 'ACLED',
-      country: 'United States',
+      name: 'UCDP',
+      country: 'Sweden',
       type: 'think_tank' as const,
       orientation: 0.0,
       reliability: 0.90,
-      notes: 'Armed Conflict Location & Event Data Project. Systematic conflict event tracking. Used by humanitarian agencies for operational planning.',
-      website: 'https://acleddata.com',
+      notes: 'Uppsala Conflict Data Program. Systematic conflict event tracking. Used by humanitarian agencies for operational planning.',
+      website: 'https://ucdp.uu.se',
     },
     {
       name: 'International Crisis Group',

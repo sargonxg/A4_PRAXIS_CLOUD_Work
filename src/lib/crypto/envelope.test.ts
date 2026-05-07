@@ -16,14 +16,14 @@ beforeAll(() => {
 
 describe('envelope crypto', () => {
   it('round-trips a plaintext under matching AAD', () => {
-    const aad = buildAad('uid-alice', 'acled');
+    const aad = buildAad('uid-alice', 'google_ai');
     const rec = encrypt('tvly-secret-1234', aad);
     const pt = decrypt(rec, aad);
     expect(pt).toBe('tvly-secret-1234');
   });
 
   it('produces a fresh IV per call (two encryptions of the same plaintext differ)', () => {
-    const aad = buildAad('uid-alice', 'acled');
+    const aad = buildAad('uid-alice', 'google_ai');
     const a = encrypt('same-plain', aad);
     const b = encrypt('same-plain', aad);
     expect(a.ciphertext).not.toBe(b.ciphertext);
@@ -32,36 +32,36 @@ describe('envelope crypto', () => {
   });
 
   it('rejects decryption when AAD does not match', () => {
-    const aad = buildAad('uid-alice', 'acled');
+    const aad = buildAad('uid-alice', 'google_ai');
     const rec = encrypt('secret', aad);
     const wrong = buildAad('uid-alice', 'gdelt');
     expect(() => decrypt(rec, wrong)).toThrow(/AAD mismatch/);
   });
 
   it('rejects tampered ciphertext', () => {
-    const aad = buildAad('uid-alice', 'acled');
+    const aad = buildAad('uid-alice', 'google_ai');
     const rec = encrypt('secret', aad);
     const tampered = { ...rec, ciphertext: Buffer.from('tampered').toString('base64') };
     expect(() => decrypt(tampered, aad)).toThrow();
   });
 
   it('rejects version mismatches', () => {
-    const aad = buildAad('uid-alice', 'acled');
+    const aad = buildAad('uid-alice', 'google_ai');
     const rec = encrypt('secret', aad);
     const bad = { ...rec, v: 2 as unknown as 1 };
     expect(() => decrypt(bad, aad)).toThrow(/unsupported record version/);
   });
 
   it('rejects replay across providers for the same user', () => {
-    const aadA = buildAad('uid-alice', 'acled');
+    const aadA = buildAad('uid-alice', 'google_ai');
     const aadB = buildAad('uid-alice', 'gdelt');
     const rec = encrypt('secret', aadA);
     expect(() => decrypt(rec, aadB)).toThrow();
   });
 
   it('rejects replay across users for the same provider', () => {
-    const aadA = buildAad('uid-alice', 'acled');
-    const aadB = buildAad('uid-bob', 'acled');
+    const aadA = buildAad('uid-alice', 'google_ai');
+    const aadB = buildAad('uid-bob', 'google_ai');
     const rec = encrypt('secret', aadA);
     expect(() => decrypt(rec, aadB)).toThrow();
   });

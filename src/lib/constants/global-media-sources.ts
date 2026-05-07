@@ -43,7 +43,7 @@ export const GLOBAL_MEDIA_SOURCES: MediaSource[] = [
   { id: 'brookings', name: 'Brookings Institution', type: 'think-tank', region: 'US', reliability: 0.88, bias: 'center-left', url: 'brookings.edu', specialties: ['US foreign policy', 'governance', 'economics'] },
   { id: 'cfr', name: 'Council on Foreign Relations', type: 'think-tank', region: 'US', reliability: 0.88, bias: 'center', url: 'cfr.org', specialties: ['US foreign policy', 'conflict tracker', 'backgrounders'] },
   { id: 'carnegie', name: 'Carnegie Endowment', type: 'think-tank', region: 'US', reliability: 0.88, bias: 'center', url: 'carnegieendowment.org', specialties: ['democracy', 'conflict', 'Middle East'] },
-  { id: 'acled', name: 'ACLED', type: 'think-tank', region: 'US', reliability: 0.93, bias: 'independent', url: 'acleddata.com', specialties: ['conflict data', 'event tracking', 'visualization'] },
+  { id: 'ucdp', name: 'UCDP', type: 'think-tank', region: 'Europe', reliability: 0.93, bias: 'independent', url: 'ucdp.uu.se', specialties: ['conflict data', 'event tracking', 'visualization'] },
 
   // Government / Official
   { id: 'un-news', name: 'UN News', type: 'government', region: 'Global', reliability: 0.90, bias: 'center', url: 'news.un.org', specialties: ['UN proceedings', 'humanitarian', 'peacekeeping'] },

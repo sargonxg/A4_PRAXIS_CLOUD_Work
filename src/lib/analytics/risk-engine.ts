@@ -1,10 +1,10 @@
 /**
  * Multi-dimensional risk scoring engine
- * Computes composite risk from ACLED, GDELT, HDX, World Bank data
+ * Computes composite risk from conflict events, GDELT, HDX, World Bank data
  * Includes INFORM Risk Index geometric mean methodology and WGI integration
  */
 
-import type { ACLEDEvent } from '@/lib/data-feeds/acled-client';
+import type { ConflictEvent } from '@/lib/data-feeds/conflict-events';
 
 export interface RiskDimension {
   name: string;
@@ -49,8 +49,8 @@ function clamp(value: number, min: number, max: number): number {
  * Reference: INFORM (2023). INFORM Global Risk Index. IASC Task Team.
  */
 export function computeINFORM(params: {
-  /** Raw ACLED event count for the context window */
-  acledEventCount: number;
+  /** Raw conflict event count for the context window */
+  conflictEventCount: number;
   /** Proportion of population facing IPC 3+ food insecurity (0-1) */
   foodInsecurityPct?: number;
   /** Number of displaced persons */
@@ -62,8 +62,8 @@ export function computeINFORM(params: {
   /** World Bank WGI Government Effectiveness score (-2.5 to 2.5) */
   wgiGovEffectiveness?: number;
 }): INFORMComponents {
-  // --- Hazard (0-10): normalise ACLED events; 0 events = 0, 100+ = 10
-  const hazard = clamp((params.acledEventCount / 100) * 10, 0, 10);
+  // --- Hazard (0-10): normalise conflict events; 0 events = 0, 100+ = 10
+  const hazard = clamp((params.conflictEventCount / 100) * 10, 0, 10);
 
   // --- Vulnerability (0-10): food insecurity + displacement pressure
   let vulnerability = 0;
@@ -135,7 +135,7 @@ export function getStageTransitionRisk(currentStage: number, recentEventRatio: n
 // ---------------------------------------------------------------------------
 
 export function computeRiskScore(params: {
-  acledEvents?: ACLEDEvent[];
+  conflictEvents?: ConflictEvent[];
   stabilityScore?: number;
   stabilityTrend?: string;
   foodSecurityPct?: number;
@@ -153,12 +153,12 @@ export function computeRiskScore(params: {
 }): RiskAssessment {
   const sources: string[] = [];
 
-  // Security dimension (from ACLED)
+  // Security dimension from conflict event data.
   const security: RiskDimension = { name: 'Security', score: 20, evidence: [], sources: [], trend: 'stable' };
-  if (params.acledEvents && params.acledEvents.length > 0) {
-    sources.push('ACLED');
-    security.sources.push('ACLED');
-    const weekEvents = params.acledEvents.filter((e) => {
+  if (params.conflictEvents && params.conflictEvents.length > 0) {
+    sources.push('UCDP');
+    security.sources.push('UCDP');
+    const weekEvents = params.conflictEvents.filter((e) => {
       const d = new Date(e.event_date).getTime();
       return d > Date.now() - 7 * 86400000;
     });
@@ -238,8 +238,8 @@ export function computeRiskScore(params: {
 
   // Social dimension (composite)
   const social: RiskDimension = { name: 'Social', score: 25, evidence: [], sources: ['Composite'], trend: 'stable' };
-  if (params.acledEvents) {
-    const protests = params.acledEvents.filter((e) => e.event_type === 'Protests' || e.event_type === 'Riots');
+  if (params.conflictEvents) {
+    const protests = params.conflictEvents.filter((e) => e.event_type === 'Protests' || e.event_type === 'Riots');
     if (protests.length > 0) {
       social.score = Math.min(100, protests.length * 5);
       social.evidence.push(`${protests.length} protests/riots in dataset`);
@@ -249,12 +249,12 @@ export function computeRiskScore(params: {
 
   // If INFORM components are provided, use the composite to calibrate overall confidence
   let informComponents: INFORMComponents | undefined = params.informComponents;
-  if (!informComponents && params.acledEvents !== undefined) {
+  if (!informComponents && params.conflictEvents !== undefined) {
     // Auto-compute INFORM when enough data is available
-    const totalEvents = params.acledEvents.length;
+    const totalEvents = params.conflictEvents.length;
     if (totalEvents > 0 || params.foodSecurityPct !== undefined || wgiScores.length > 0) {
       informComponents = computeINFORM({
-        acledEventCount: totalEvents,
+        conflictEventCount: totalEvents,
         foodInsecurityPct: params.foodSecurityPct,
         displacementCount: params.displacementCount,
         wgiPoliticalStability: params.wgiPoliticalStability,

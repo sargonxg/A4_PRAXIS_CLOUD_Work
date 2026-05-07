@@ -3,13 +3,16 @@ import { filterMarketplaceTools } from '@/lib/tools/marketplace/filter-engine';
 import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
 
 describe('tools marketplace', () => {
-  it('keeps the exposed registry capped at fifty-two curated tools including Pack 21 depth tools', () => {
-    expect(MARKETPLACE_TOOLS).toHaveLength(52);
-    expect(new Set(MARKETPLACE_TOOLS.map((tool) => tool.id)).size).toBe(52);
+  it('keeps the exposed registry capped at fifty-four curated tools including Pack 30 extraction tools', () => {
+    expect(MARKETPLACE_TOOLS).toHaveLength(54);
+    expect(new Set(MARKETPLACE_TOOLS.map((tool) => tool.id)).size).toBe(54);
     for (const id of ['cross.ach', 'cross.kac', 'cross.red-team', 'cross.premortem', 'cross.memo-create', 'cross.memo-refresh']) {
       expect(MARKETPLACE_TOOLS.some((tool) => tool.id === id)).toBe(true);
     }
     for (const id of ['human-rights.violation-tracker', 'economic.designation-tracer', 'humanitarian.needs-aggregator', 'legal.provision-tracer', 'security.posture-tracker']) {
+      expect(MARKETPLACE_TOOLS.some((tool) => tool.id === id)).toBe(true);
+    }
+    for (const id of ['extract.entities.gliner', 'cross.community-synthesizer']) {
       expect(MARKETPLACE_TOOLS.some((tool) => tool.id === id)).toBe(true);
     }
   });

@@ -1,1 +1,1 @@
-# Feed clients package — GDELT, ACLED
+# Feed clients package: GDELT plus TypeScript-side UCDP providers.

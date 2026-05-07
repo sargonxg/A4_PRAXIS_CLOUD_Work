@@ -41,7 +41,7 @@ export const PARAM_METADATA: Record<
   ceasefireCompliance: {
     label: 'Ceasefire Compliance',
     tooltip:
-      'Degree to which parties are adhering to existing ceasefire arrangements. Based on ACLED ceasefire violation events and monitoring mission reports.',
+      'Degree to which parties are adhering to existing ceasefire arrangements. Based on UCDP-coded ceasefire violation events and monitoring mission reports.',
     lowLabel: 'Total collapse',
     highLabel: 'Full compliance',
   },

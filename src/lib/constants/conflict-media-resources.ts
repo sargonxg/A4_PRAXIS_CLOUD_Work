@@ -46,7 +46,7 @@ export const CONFLICT_RESEARCH_KITS: ConflictResearchKit[] = [
       { name: 'OSCE', url: 'https://www.osce.org', type: 'regional_org', description: 'Moscow Mechanism reports and election observation', region: 'Europe' },
     ],
     dataSources: [
-      { name: 'ACLED Ukraine', url: 'https://acleddata.com', type: 'data', description: 'Conflict event data with geolocation', region: 'Global' },
+      { name: 'UCDP Ukraine', url: 'https://ucdp.uu.se', type: 'data', description: 'Conflict event data with geolocation', region: 'Global' },
       { name: 'UCDP', url: 'https://ucdp.uu.se', type: 'data', description: 'Uppsala Conflict Data Program — battle-related deaths', region: 'Global' },
       { name: 'IOM DTM', url: 'https://dtm.iom.int', type: 'data', description: 'Displacement tracking and mobility data', region: 'Global' },
       { name: 'UNHCR Data', url: 'https://data.unhcr.org/en/situations/ukraine', type: 'data', description: 'Refugee and displacement statistics', region: 'Global' },
@@ -74,7 +74,7 @@ export const CONFLICT_RESEARCH_KITS: ConflictResearchKit[] = [
       { name: 'IGAD', url: 'https://igad.int', type: 'regional_org', description: 'Regional mediation and early warning', region: 'East Africa' },
     ],
     dataSources: [
-      { name: 'ACLED Sudan', url: 'https://acleddata.com', type: 'data', description: 'Conflict event tracking across Sudan', region: 'Global' },
+      { name: 'UCDP Sudan', url: 'https://ucdp.uu.se', type: 'data', description: 'Conflict event tracking across Sudan', region: 'Global' },
       { name: 'IPC Food Security', url: 'https://www.ipcinfo.org', type: 'data', description: 'Integrated Phase Classification — famine monitoring', region: 'Global' },
       { name: 'IOM DTM Sudan', url: 'https://dtm.iom.int/sudan', type: 'data', description: 'Internal displacement tracking', region: 'Global' },
       { name: 'ReliefWeb', url: 'https://reliefweb.int/country/sdn', type: 'data', description: 'Humanitarian information portal', region: 'Global' },
@@ -97,7 +97,7 @@ export const CONFLICT_RESEARCH_KITS: ConflictResearchKit[] = [
       { name: 'ReliefWeb', url: 'https://reliefweb.int', type: 'un_agency', description: 'Humanitarian information service', region: 'International' },
     ],
     dataSources: [
-      { name: 'ACLED', url: 'https://acleddata.com', type: 'data', description: 'Armed conflict event data', region: 'Global' },
+      { name: 'UCDP', url: 'https://ucdp.uu.se', type: 'data', description: 'Armed conflict event data', region: 'Global' },
       { name: 'UCDP', url: 'https://ucdp.uu.se', type: 'data', description: 'Uppsala Conflict Data Program', region: 'Global' },
     ],
   },

@@ -100,7 +100,7 @@ export const SOURCE_CATEGORIES: SourceCategory[] = [
     description: 'Armed groups, violence data, conflict dynamics',
     longDescription:
       'Structured conflict datasets and security-focused monitors. Combines event-level violence data with analytical weekly briefings so you can trace both what happened and how specialists read it.',
-    sources: ['ICG CrisisWatch', 'ACLED', 'SIPRI', 'IISS', 'Geneva Academy', 'UCDP'],
+    sources: ['ICG CrisisWatch', 'UCDP', 'SIPRI', 'IISS', 'Geneva Academy', 'UCDP'],
     searchTerms: ['armed conflict violence escalation', 'security forces ceasefire'],
     icon: Shield,
     color: '#E15759',

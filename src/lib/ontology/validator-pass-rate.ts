@@ -106,7 +106,7 @@ export function activeOntologyIds(caseModule: CaseModule): OntologyId[] {
 
 function sourceAffinityFor(id: OntologyId): string[] {
   const map: Record<OntologyId, string[]> = {
-    conflict: ['wire reporting', 'UCDP/ACLED-style event data', 'ICG analysis'],
+    conflict: ['wire reporting', 'UCDP-style event data', 'ICG analysis'],
     mediation: ['party statements', 'agreement texts', 'process design notes'],
     governance: ['UN documents', 'mandates', 'voting records'],
     narrative: ['local media', 'social channels', 'fact-check traces'],

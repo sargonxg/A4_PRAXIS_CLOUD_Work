@@ -305,7 +305,7 @@ async def ingest_feeds(
 
     return {
         "gdelt_articles": len(gdelt_articles),
-        "acled_events": 0,
+        "conflict_events": 0,
         "new_extractions": len(extractions),
         "total_nodes": G.number_of_nodes(),
     }
