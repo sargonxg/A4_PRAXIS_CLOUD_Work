@@ -9,7 +9,10 @@ const runRoutePath = 'src/app/api/tools/marketplace/run/route.ts';
 const runnerPath = 'src/lib/tools/marketplace/runner.ts';
 const uiPath = 'src/components/tools/ToolMarketplace.tsx';
 
-if (MARKETPLACE_TOOLS.length !== 20) failures.push(`expected exactly 20 marketplace tools after Pack 15 SAT additions, found ${MARKETPLACE_TOOLS.length}`);
+if (MARKETPLACE_TOOLS.length !== 22) failures.push(`expected exactly 22 marketplace tools after Pack 18 memo additions, found ${MARKETPLACE_TOOLS.length}`);
+for (const requiredMemoTool of ['cross.memo-create', 'cross.memo-refresh']) {
+  if (!MARKETPLACE_TOOLS.some((tool) => tool.id === requiredMemoTool)) failures.push(`${requiredMemoTool} must be registered as a first-class marketplace tool`);
+}
 if (new Set(MARKETPLACE_TOOLS.map((tool) => tool.id)).size !== MARKETPLACE_TOOLS.length) failures.push('tool ids must be unique');
 
 for (const tool of MARKETPLACE_TOOLS) {
@@ -74,5 +77,5 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Tool marketplace audit passed for 20 curated tools, handler contracts, and foundation execution.');
-console.log('Pack 15 SAT toolkit present: ACH, KAC, Red Team, and Premortem.');
+console.log('Tool marketplace audit passed for 22 curated tools, handler contracts, and foundation execution.');
+console.log('Pack 15 SAT toolkit present: ACH, KAC, Red Team, and Premortem. Pack 18 memo tools present: memo-create and memo-refresh.');

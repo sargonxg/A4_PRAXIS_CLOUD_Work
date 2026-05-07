@@ -24,13 +24,14 @@ The latest Pack 18 production-reality closure pass is
 `docs/audits/2026-05-07-PACK18_PRODUCTION_REALITY_CLOSURE.md`. It records the
 preserved Pack 18 prompt and the closed canonical entry-route gap for
 `/demo/syria-2024`, `/waitlist`, `/login/callback`, and
-`/legal/{privacy,terms,security,data-retention}`.
+`/legal/{privacy,terms,security,data-retention}`, plus first-class foundation
+registration for `cross.memo-create` and `cross.memo-refresh`.
 
 The latest Pack 19 genuinely-useful pass is
 `docs/audits/2026-05-07-PACK19_GENUINELY_USEFUL.md`. It preserves the v1.1
 prompt, records that Pack 19's post-v1.0 assumptions are not fully true yet,
 and ships the safe usefulness slices that are honest on the current app:
-marketplace transparency cards for all 20 current tools plus tool-run evidence
+marketplace transparency cards for all 22 current tools plus tool-run evidence
 drawer and comparison UI, guarded by `npm run audit:transparency-cards` and
 `npm run audit:evidence-drawer`.
 

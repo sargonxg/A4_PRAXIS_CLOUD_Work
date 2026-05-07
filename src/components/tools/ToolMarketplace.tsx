@@ -271,7 +271,7 @@ export function ToolMarketplace() {
             <h2 className="text-lg font-semibold">Tools Marketplace</h2>
           </div>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-650">
-            Twenty focused tools mapped to ontology requirements, context health, runtime, cost, and canary cases, including the Pack 15 Analyst&apos;s Toolkit SATs. Artifacts allow raw text, AI generations, and context dumps alongside structured output.
+            Twenty-two focused tools mapped to ontology requirements, context health, runtime, cost, and canary cases, including the Pack 15 Analyst&apos;s Toolkit SATs and Pack 18 Memo Studio actions. Artifacts allow raw text, AI generations, and context dumps alongside structured output.
           </p>
         </div>
         <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-right">

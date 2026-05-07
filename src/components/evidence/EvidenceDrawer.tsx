@@ -65,6 +65,7 @@ export function EvidenceDrawer({ open, onClose, caseId, artifact }: EvidenceDraw
   const nextActions = Array.isArray(structured.nextActions) ? structured.nextActions.map(String).slice(0, 6) : [];
   const handlerContract = isRecord(structured.handlerContract) ? structured.handlerContract : null;
   const posture = isRecord(structured.posture) ? structured.posture : null;
+  const memoPayload = isRecord(structured.memo) ? structured.memo : null;
   const snapshot = isRecord(contextDump.snapshot) ? contextDump.snapshot : null;
   const snapshotCase = snapshot && isRecord(snapshot.case) ? snapshot.case : null;
   const composite = snapshot && isRecord(snapshot.composite) ? snapshot.composite : null;
@@ -187,6 +188,20 @@ export function EvidenceDrawer({ open, onClose, caseId, artifact }: EvidenceDraw
           </div>
 
           <div className="mt-4 grid gap-4 xl:grid-cols-2">
+            {memoPayload ? (
+              <section className="rounded-md border border-gold-200 bg-gold-50 p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gold-800">Memo Studio handoff</p>
+                <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                  <Metric label="Operation" value={stringValue(memoPayload.operation) ?? 'Memo'} />
+                  <Metric label="Studio ready" value={memoPayload.memoStudioReady === true ? 'Yes' : 'Review first'} />
+                  <Metric label="Review" value={memoPayload.reviewRequired === true ? 'Required' : 'Optional'} />
+                </div>
+                <pre className="mt-3 max-h-56 overflow-auto rounded border border-gold-200 bg-white p-2 text-[11px] leading-5 text-slate-700">
+                  {compactJson(memoPayload)}
+                </pre>
+              </section>
+            ) : null}
+
             <section className="rounded-md border border-slate-200 bg-white p-3">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Generated artifacts</p>
               {artifacts.length === 0 ? (

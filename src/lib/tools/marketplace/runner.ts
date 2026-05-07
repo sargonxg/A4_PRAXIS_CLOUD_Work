@@ -166,6 +166,84 @@ function buildSatStructuredOutput(tool: MarketplaceToolDefinition, runContext: T
   };
 }
 
+function buildMemoStructuredOutput(tool: MarketplaceToolDefinition, runContext: ToolRunContext, displayCaseName: string): Record<string, unknown> | null {
+  if (tool.id === 'cross.memo-create') {
+    return {
+      operation: 'create',
+      memoStudioReady: true,
+      synthesized: true,
+      reviewRequired: true,
+      confidence: 0.6,
+      caseId: runContext.snapshot.case.caseId,
+      caseName: displayCaseName,
+      blocks: [
+        {
+          id: 'memo-create-summary',
+          title: 'Situation Summary',
+          purpose: 'Frame the case in memo-ready language.',
+          evidenceStatus: runContext.snapshot.case.graphNodeCount > 5 ? 'context-backed' : 'needs-source-review',
+          synthesized: true,
+        },
+        {
+          id: 'memo-create-findings',
+          title: 'Key Findings',
+          purpose: 'Convert accepted tool outputs into reviewable memo claims.',
+          evidenceStatus: 'citation-gaps-visible',
+          synthesized: true,
+        },
+        {
+          id: 'memo-create-next-actions',
+          title: 'Recommended Next Actions',
+          purpose: 'List collection or review steps before export.',
+          evidenceStatus: 'advisory',
+          synthesized: true,
+        },
+      ],
+      handoff: {
+        target: 'Memo Studio',
+        autoApply: false,
+        preserveProvenance: true,
+      },
+    };
+  }
+
+  if (tool.id === 'cross.memo-refresh') {
+    return {
+      operation: 'refresh',
+      memoStudioReady: true,
+      synthesized: true,
+      reviewRequired: true,
+      confidence: 0.6,
+      caseId: runContext.snapshot.case.caseId,
+      caseName: displayCaseName,
+      refreshPlan: [
+        {
+          section: 'Claims',
+          reason: 'Compare existing memo claims against current graph and source receipts.',
+          action: 'Flag stale, contradicted, or citation-thin claims for user review.',
+        },
+        {
+          section: 'Evidence notes',
+          reason: 'Keep citation gaps visible after context changes.',
+          action: 'Attach updated provenance notes to affected blocks.',
+        },
+        {
+          section: 'Executive summary',
+          reason: 'Reflect accepted graph changes without overwriting user-authored prose.',
+          action: 'Suggest block-level edits only.',
+        },
+      ],
+      handoff: {
+        target: 'Memo Studio',
+        autoApply: false,
+        preserveVersionHistory: true,
+      },
+    };
+  }
+
+  return null;
+}
+
 export function buildMarketplaceToolRun(input: MarketplaceToolRunInput): MarketplaceToolRunResult {
   const { tool, runContext } = input;
   const handlerContract = getMarketplaceHandlerContract(tool.id);
@@ -179,6 +257,7 @@ export function buildMarketplaceToolRun(input: MarketplaceToolRunInput): Marketp
   const advisoryLines = advisorySummary(runContext);
   const contextSummaries = runContext.prepared.prepared.summaries.map((summary) => `${summary.layer}: ${summary.summary}`);
   const satOutput = buildSatStructuredOutput(tool, runContext, displayCaseName);
+  const memoOutput = buildMemoStructuredOutput(tool, runContext, displayCaseName);
   const rawText = [
     `${tool.name} foundation run completed for ${displayCaseName}.`,
     `Prompt: ${prompt}`,
@@ -237,6 +316,7 @@ export function buildMarketplaceToolRun(input: MarketplaceToolRunInput): Marketp
         qualityChecks: handlerContract.qualityChecks,
       } : null,
       sat: satOutput,
+      memo: memoOutput,
       posture: {
         mode: handlerContract ? 'deterministic-foundation-with-handler-contract' : 'deterministic-foundation',
         strictBlocking: false,

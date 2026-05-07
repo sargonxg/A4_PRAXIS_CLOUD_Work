@@ -3,10 +3,10 @@ import { filterMarketplaceTools } from '@/lib/tools/marketplace/filter-engine';
 import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
 
 describe('tools marketplace', () => {
-  it('keeps the exposed registry capped at twenty curated tools including the SAT pack', () => {
-    expect(MARKETPLACE_TOOLS).toHaveLength(20);
-    expect(new Set(MARKETPLACE_TOOLS.map((tool) => tool.id)).size).toBe(20);
-    for (const id of ['cross.ach', 'cross.kac', 'cross.red-team', 'cross.premortem']) {
+  it('keeps the exposed registry capped at twenty-two curated tools including SAT and memo tools', () => {
+    expect(MARKETPLACE_TOOLS).toHaveLength(22);
+    expect(new Set(MARKETPLACE_TOOLS.map((tool) => tool.id)).size).toBe(22);
+    for (const id of ['cross.ach', 'cross.kac', 'cross.red-team', 'cross.premortem', 'cross.memo-create', 'cross.memo-refresh']) {
       expect(MARKETPLACE_TOOLS.some((tool) => tool.id === id)).toBe(true);
     }
   });

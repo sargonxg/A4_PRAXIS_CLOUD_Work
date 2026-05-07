@@ -24,6 +24,9 @@ canonical entry and legal routes.
 | Canonical `/legal/security` route | CLOSED foundation | `src/app/legal/security/page.tsx` |
 | Canonical `/legal/data-retention` route | CLOSED foundation | `src/app/legal/data-retention/page.tsx` |
 | Entry-route regression guard | CLOSED | `scripts/audit-legal-pages-present.ts` now checks public demo, waitlist, login callback, legal routes, landing demo CTAs, and proxy matchers |
+| `cross.memo-create` first-class marketplace tool | CLOSED foundation | `src/lib/tools/marketplace/registry.ts`, `src/lib/tools/marketplace/handler-contracts.ts`, `skills/tools/cross.memo-create/SKILL.md`, `src/lib/tools/marketplace/runner.ts` |
+| `cross.memo-refresh` first-class marketplace tool | CLOSED foundation | `src/lib/tools/marketplace/registry.ts`, `src/lib/tools/marketplace/handler-contracts.ts`, `skills/tools/cross.memo-refresh/SKILL.md`, `src/lib/tools/marketplace/runner.ts` |
+| Memo-tool regression guards | CLOSED | `npm run audit:tool-marketplace`, `npm run audit:tool-contract-v2`, `npm run audit:tool-skills-present`, and `npm run audit:transparency-cards` now pass for 22 tools |
 | Prompt preservation | CLOSED | `docs/codex-prompts/PRAXIS_CODEX_18_PRODUCTION_REALITY_CLOSURE.md`, `scripts/audit-codex-prompts.ts` |
 
 ## Remaining Pack 18 Launch Gaps
@@ -37,8 +40,7 @@ These are not marked complete until production-backed evidence exists.
 | S1 | Two-phase Firestore/Postgres commit and reconciler proof | Run crash-injection tests, scheduler freshness check, and drift dry run |
 | S1 | Structural firewall on every graph write path | Extend AST audit and deliberate-failure fixtures for all graph mutation routes |
 | S1 | Synthesized review queue for Source Augmenter and Memo Drafter | Implement typed queue storage, review UI, accept/reject APIs, and no-auto-persist invariant |
-| S1 | Marketplace tools need specialist output depth | Replace placeholder/general handlers with per-tool specialist behavior and canary fixtures |
-| S1 | `cross.memo-create` and `cross.memo-refresh` first-class marketplace tools | Add registry contracts, skills, handlers, canaries, and UI exposure |
+| S1 | Marketplace tools need specialist output depth | Replace placeholder/general handlers with per-tool specialist behavior and canary fixtures; memo tools are now first-class foundation tools but still need audited model-backed runtime evidence before v1.0 sign-off |
 | S1 | Seven live Agent Engine runtimes | Requires deployment/eval/trace/cost evidence; do not claim until GCP evidence is captured |
 | S1 | Production deploy posture | Requires staging-green window, canary evidence, Cloud SQL posture, and signed readiness log |
 
@@ -55,6 +57,10 @@ These are not marked complete until production-backed evidence exists.
 ## Verification Targets
 
 - `npm run audit:legal-pages-present`
+- `npm run audit:tool-marketplace`
+- `npm run audit:tool-contract-v2`
+- `npm run audit:tool-skills-present`
+- `npm run audit:transparency-cards`
 - `npm run audit:codex-prompts`
 - `npm run typecheck`
 - `npm run build`
@@ -76,9 +82,14 @@ Executed against `next start -p 3118` after production build:
 | `/legal/terms` | 200 | Rendered `Terms of Service`, zero console/page errors |
 | `/legal/security` | 200 | Rendered `Security`, zero console/page errors |
 | `/legal/data-retention` | 200 | Rendered `Data Retention`, zero console/page errors |
+| `/app/workbench/syria-2026?tab=tools` memo search | 200 | Rendered `Twenty-two focused tools`; `Memo Create` and `Memo Refresh` visible after search |
+| `cross.memo-create` demo run | 200 | Completed from marketplace, opened Evidence drawer, rendered `Memo Studio handoff`, `memoStudioReady`, `synthesized`, and `reviewRequired`; zero console/page errors |
+| Full audit gate | pass | `npm run audit:gate` passed after the memo-tool slice: build, 22-tool marketplace audits, evidence-drawer audit, master-charter audit, 138 Vitest files, 552 tests, KG drift, GCP audit |
 
-This evidence is local only. Pack 18 still requires production Lighthouse/axe,
-CI streak, canary, and cloud posture evidence before v1.0.0 readiness.
+This evidence is local only until the memo-tool slice is deployed. Pack 18
+still requires production Lighthouse/axe, CI streak, canary, live Agent Engine,
+specialist model-backed handler, and cloud posture evidence before v1.0.0
+readiness.
 
 ## Production Verification Evidence
 

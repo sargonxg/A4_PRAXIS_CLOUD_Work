@@ -25,6 +25,7 @@ const pkg = JSON.parse(read(packagePath)) as { scripts?: Record<string, string> 
 if (!drawer.includes('Claims and provenance')) failures.push('EvidenceDrawer must expose claim/provenance evidence');
 if (!drawer.includes('Context snapshot')) failures.push('EvidenceDrawer must expose context snapshot evidence');
 if (!drawer.includes('Handler posture')) failures.push('EvidenceDrawer must expose handler posture evidence');
+if (!drawer.includes('Memo Studio handoff')) failures.push('EvidenceDrawer must expose memo handoff payloads for memo tools');
 if (!drawer.includes('Open graph evidence')) failures.push('EvidenceDrawer must link graph provenance when available');
 if (!diff.includes('changed lines')) failures.push('RunDiff must summarize changed lines');
 if (!marketplace.includes('EvidenceDrawer')) failures.push('ToolMarketplace must render EvidenceDrawer');

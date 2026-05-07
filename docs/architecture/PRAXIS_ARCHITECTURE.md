@@ -576,11 +576,11 @@ At `/app/workbench/[caseId]/tools` the user sees:
 
 - **Suggestion banner**: top 3 tools ranked by the suggestion engine, each with a one-sentence rationale ("Recommended because your case is mediation-ontology and you're a mediator").
 - **Analyst's Toolkit strip**: ACH, Key Assumptions Check, Red Team Analysis, and Premortem grouped as Heuer-Pherson SATs (Premortem cites Klein 2007). ACH links to its first-class workbench surface; the other SATs run as marketplace tools.
-- **Card grid**: all 20 curated marketplace tools with `ToolFitBadge` (Ready / Needs more sources / Not for this ontology — colored, advisory).
+- **Card grid**: all 22 curated marketplace tools with `ToolFitBadge` (Ready / Needs more sources / Not for this ontology — colored, advisory).
 - **Filters**: by category, ontology, cost class, recent runs.
 - **Per-tool page** at `tools/[toolId]`: schema-driven form (via @rjsf/core), composition links, "About this tool" panel rendering the SKILL.md.
 
-### 11.3 The 20 v1.1 marketplace tools
+### 11.3 The 22 v1.1 marketplace tools
 
 | Ontology | Tools |
 |---|---|
@@ -590,8 +590,7 @@ At `/app/workbench/[caseId]/tools` the user sees:
 | Narrative | frame-cascade, counter-narrative-finder, fact-check-traceback |
 | Cross-cutting | contradiction-finder, context-health-explainer, brief-exporter, scenario-projector |
 | Analyst's Toolkit SATs | ach, kac, red-team, premortem |
-
-Plus the memo tools (`cross.memo-create`, `cross.memo-refresh`) added in pack 13 M8.
+| Memo Studio | memo-create, memo-refresh |
 
 ACH is also a first-class workbench surface at `/app/workbench/[caseId]/ach/[achId]` because its central artifact is a multi-session hypothesis x evidence matrix. The surface loads and saves through authenticated owner-scoped Next API routes under `/api/sats/ach`, storing matrices at `users/{uid}/situations/{caseId}/ach/{achId}`. SAT outputs are synthesized and advisory until the user promotes claims through the review queue and symbolic firewall.
 

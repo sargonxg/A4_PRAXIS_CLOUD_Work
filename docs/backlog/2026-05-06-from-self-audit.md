@@ -22,7 +22,7 @@ These block any `v1.0.0` readiness claim.
 | S1 | Firewall | Hard-tier structural write coverage | Every graph/write path passes through the symbolic firewall; AST/route audit fails on bypass. | PRAXIS engineering | v1.0 gate |
 | S1 | Firewall | Synthesized review queue | Source Augmenter and Memo Drafter synthesized candidates are labeled and review-gated before graph persistence. | PRAXIS engineering | v1.0 gate |
 | S1 | Tools | Specialist marketplace depth | The 16 curated marketplace tools have executable canaries and specialist handlers or clearly documented foundation fallback status. | PRAXIS engineering | v1.0 gate |
-| S1 | Memos | Memo marketplace tools | `cross.memo-create` and `cross.memo-refresh` are registered with contract v2, skills, handlers, and tests. | PRAXIS engineering | v1.0 gate |
+| S1 | Memos | Memo marketplace tools | CLOSED foundation 2026-05-07: `cross.memo-create` and `cross.memo-refresh` are registered with contract v2, SKILL.md files, Memo Studio handoff payloads, and 22-tool audits. Model-backed runtime evidence remains covered by Specialist marketplace depth. | PRAXIS engineering | v1.0 gate |
 | S1 | Tool composition | Context projection through chains | Documented chains persist and pass augmented context to the next tool; chain tests prove it. | PRAXIS engineering | v1.0 gate |
 | S1 | Onboarding | 60-second wow | Five consecutive e2e runs complete demo/onboarding/memo export in the target window or produce a named blocker. | PRAXIS engineering | v1.0 gate |
 | S1 | Deployment | Canary evidence | Latest production deploy has 5 -> 25 -> 100 phase timestamps or launch docs stop claiming canary completion. | PRAXIS engineering | v1.0 gate |
