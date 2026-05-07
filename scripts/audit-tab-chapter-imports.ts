@@ -61,6 +61,13 @@ for (const file of walk(path.join(root, 'src/chapters'))) {
   if (source.includes('@/tabs/')) failures.push(`${rel}: chapters must not import tabs`);
 }
 
+for (const file of walk(path.join(root, 'src'))) {
+  const rel = path.relative(root, file);
+  const source = readFileSync(file, 'utf8');
+  const legacyChapterTab = source.match(/\?tab=(desk|research|memos|draft|ach|tools|boardroom|chapters|memory)/);
+  if (legacyChapterTab) failures.push(`${rel}: chapter route still encoded as tab query (${legacyChapterTab[0]})`);
+}
+
 if (failures.length) {
   console.error('[audit:workspace-tabs-chapters] failures:');
   for (const failure of failures) console.error(`- ${failure}`);

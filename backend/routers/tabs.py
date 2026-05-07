@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -39,6 +39,32 @@ class CoachRequest(BaseModel):
 
 def _row_or_empty(rows: list[dict[str, Any]]) -> dict[str, Any]:
     return rows[0] if rows else {}
+
+
+async def _queue_cognee_pending(
+    conn: Any,
+    *,
+    owner_uid: str,
+    case_id: str,
+    source_id: str,
+    operation: str,
+    payload: dict[str, Any],
+    error: str | None = None,
+) -> None:
+    await conn.execute(
+        """
+        INSERT INTO cognee_pending_writes (
+          owner_uid, case_id, source_id, operation, payload, last_error
+        )
+        VALUES (%s, %s, %s, %s, %s::jsonb, %s)
+        """,
+        owner_uid,
+        case_id,
+        source_id,
+        operation,
+        payload,
+        error,
+    )
 
 
 @router.get("/context/situation-frame")
@@ -122,12 +148,28 @@ async def put_situation_frame(
         )
 
     scope = MemoryScope(owner_uid=token["uid"], case_id=case_id)
-    cognee_status = await cognee_memory.cognify(
-        scope=scope,
-        content=json.dumps(req.model_dump()),
-        source_id=f"situation-frame:{case_id}",
-        metadata={"source": "situation_frame"},
-    )
+    frame_source_id = f"situation-frame:{case_id}"
+    try:
+        cognee_status = await cognee_memory.remember(
+            scope=scope,
+            content=json.dumps(req.model_dump()),
+            source_id=frame_source_id,
+            metadata={"source": "situation_frame", "dataPoint": "Situation"},
+            run_cognify=False,
+        )
+    except Exception as exc:
+        cognee_status = {"ok": False, "status": "queued_retry", "error": str(exc)}
+    if not cognee_status.get("ok"):
+        async with tenant_session(token["uid"]) as conn:
+            await _queue_cognee_pending(
+                conn,
+                owner_uid=token["uid"],
+                case_id=case_id,
+                source_id=frame_source_id,
+                operation="remember_situation_frame",
+                payload=req.model_dump(),
+                error=cognee_status.get("error") or cognee_status.get("status"),
+            )
     return {"frame": _row_or_empty(rows), "suggestions": suggestions, "cognee": cognee_status}
 
 
@@ -141,6 +183,93 @@ async def coach_context(req: CoachRequest, token: dict = Depends(verify_firebase
     return StreamingResponse(stream(), media_type="text/event-stream")
 
 
+@router.post("/library/ingest")
+async def ingest_library_source(
+    case_id: str = Query(..., min_length=1, max_length=128),
+    file: UploadFile = File(...),
+    token: dict = Depends(verify_firebase_token),
+) -> dict[str, Any]:
+    content = await file.read()
+    title = file.filename or "Untitled source"
+    async with tenant_session(token["uid"]) as conn:
+        rows = await conn.fetch(
+            """
+            INSERT INTO source_receipts (
+              owner_uid, case_id, title, source_type, receipt_status, metadata
+            )
+            VALUES (%s, %s, %s, %s, 'uploading', %s::jsonb)
+            RETURNING *
+            """,
+            token["uid"],
+            case_id,
+            title,
+            file.content_type or "document",
+            {"filename": title, "bytes": len(content)},
+        )
+        source_id = str(rows[0]["id"])
+
+    scope = MemoryScope(owner_uid=token["uid"], case_id=case_id)
+    try:
+        add_status = await cognee_memory.add(
+            scope=scope,
+            content=content,
+            source_id=source_id,
+            node_set=[f"case_{case_id}"],
+            metadata={"filename": title, "contentType": file.content_type},
+        )
+    except Exception as exc:
+        add_status = {"ok": False, "status": "queued_retry", "error": str(exc)}
+    try:
+        cognify_status = await cognee_memory.cognify(
+            scope=scope,
+            content=content.decode("utf-8", errors="ignore")[:200_000],
+            source_id=source_id,
+            metadata={"filename": title, "source": "library_upload"},
+        )
+    except Exception as exc:
+        cognify_status = {"ok": False, "status": "queued_retry", "error": str(exc)}
+    status = "cognee_disabled" if not add_status.get("ok") or not cognify_status.get("ok") else "ingested"
+    async with tenant_session(token["uid"]) as conn:
+        await conn.execute(
+            """
+            UPDATE source_receipts
+            SET receipt_status = %s,
+                cognee_document_id = %s,
+                metadata = metadata || %s::jsonb,
+                updated_at = now()
+            WHERE owner_uid = %s AND case_id = %s AND id = %s::uuid
+            """,
+            status,
+            source_id,
+            {"add": add_status, "cognify": cognify_status},
+            token["uid"],
+            case_id,
+            source_id,
+        )
+        if status != "ingested":
+            await _queue_cognee_pending(
+                conn,
+                owner_uid=token["uid"],
+                case_id=case_id,
+                source_id=source_id,
+                operation="library_add_cognify",
+                payload={"add": add_status, "cognify": cognify_status},
+                error=status,
+            )
+        await log_orchestrator_event(
+            conn,
+            owner_uid=token["uid"],
+            case_id=case_id,
+            surface_key="library.ingest",
+            event_type="source_receipt_ingested",
+            status="idle",
+            payload={"sourceId": source_id, "status": status},
+        )
+
+    return {"sourceId": source_id, "status": status, "cognee": {"add": add_status, "cognify": cognify_status}}
+
+
+@router.get("/library")
 @router.get("/library/sources")
 async def list_sources(
     case_id: str = Query(..., min_length=1, max_length=128),
@@ -149,7 +278,9 @@ async def list_sources(
     async with tenant_session(token["uid"]) as conn:
         rows = await conn.fetch(
             """
-            SELECT id, title, source_uri, source_type, receipt_status, metadata, created_at
+            SELECT id, title, source_uri, source_type, receipt_status,
+                   cognee_document_id, embeddings_count, nodes_extracted,
+                   ontology_valid_pct, metadata, created_at, updated_at
             FROM source_receipts
             WHERE owner_uid = %s AND case_id = %s
             ORDER BY created_at DESC
@@ -159,6 +290,84 @@ async def list_sources(
             case_id,
         )
     return {"sources": rows}
+
+
+@router.get("/library/{source_id}")
+async def get_source_detail(source_id: str, token: dict = Depends(verify_firebase_token)) -> dict[str, Any]:
+    async with tenant_session(token["uid"]) as conn:
+        rows = await conn.fetch(
+            "SELECT * FROM source_receipts WHERE owner_uid = %s AND id = %s::uuid",
+            token["uid"],
+            source_id,
+        )
+    if not rows:
+        raise HTTPException(status_code=404, detail="source_receipt_not_found")
+    return {"source": rows[0]}
+
+
+@router.post("/library/{source_id}/re-extract")
+async def reextract_source(
+    source_id: str,
+    case_id: str = Query(..., min_length=1, max_length=128),
+    token: dict = Depends(verify_firebase_token),
+) -> dict[str, Any]:
+    scope = MemoryScope(owner_uid=token["uid"], case_id=case_id)
+    try:
+        status = await cognee_memory.cognify(
+            scope=scope,
+            content=f"Re-extract source receipt {source_id}",
+            source_id=source_id,
+            metadata={"source": "library_reextract"},
+        )
+    except Exception as exc:
+        status = {"ok": False, "status": "queued_retry", "error": str(exc)}
+    async with tenant_session(token["uid"]) as conn:
+        await log_orchestrator_event(
+            conn,
+            owner_uid=token["uid"],
+            case_id=case_id,
+            surface_key="library.reextract",
+            event_type="source_reextract_requested",
+            status="idle",
+            payload={"sourceId": source_id, "cognee": status},
+        )
+        if not status.get("ok"):
+            await _queue_cognee_pending(
+                conn,
+                owner_uid=token["uid"],
+                case_id=case_id,
+                source_id=source_id,
+                operation="library_reextract",
+                payload={"cognee": status},
+                error=status.get("status"),
+            )
+    return {"sourceId": source_id, "cognee": status}
+
+
+@router.delete("/library/{source_id}")
+async def delete_source(
+    source_id: str,
+    case_id: str = Query(..., min_length=1, max_length=128),
+    token: dict = Depends(verify_firebase_token),
+) -> dict[str, Any]:
+    scope = MemoryScope(owner_uid=token["uid"], case_id=case_id)
+    try:
+        forget_status = await cognee_memory.forget(scope=scope, memory_id=source_id)
+    except Exception as exc:
+        forget_status = {"ok": False, "status": "delete_pending", "error": str(exc)}
+    async with tenant_session(token["uid"]) as conn:
+        await conn.execute(
+            """
+            UPDATE source_receipts
+            SET receipt_status = 'deleted', metadata = metadata || %s::jsonb, updated_at = now()
+            WHERE owner_uid = %s AND case_id = %s AND id = %s::uuid
+            """,
+            {"forget": forget_status},
+            token["uid"],
+            case_id,
+            source_id,
+        )
+    return {"ok": True, "sourceId": source_id, "cognee": forget_status}
 
 
 @router.get("/ontology/candidates")

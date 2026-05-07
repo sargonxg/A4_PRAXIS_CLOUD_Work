@@ -18,7 +18,10 @@ export function ContextTab() {
   const surface = buildWorkbenchSurfaceState(caseModule, caseId);
   const storageKey = `praxis-context-draft:${caseId}`;
   const initialDraft = useMemo<ContextDraft>(() => ({
-    frame: situation.description,
+    whatHappening: situation.description,
+    whyMatters: situation.contextNotes ?? caseModule.manifest.summary,
+    whatWouldChange: '',
+    policyQuestion: `${caseModule.manifest.name}: what should change the recommendation?`,
     notes: situation.contextNotes ?? '',
     sources: [
       ...(situation.sourceUrls ?? []),
@@ -46,10 +49,20 @@ export function ContextTab() {
     setSaving(true);
     window.localStorage.setItem(storageKey, JSON.stringify(draft));
     try {
-      const response = await fetch(`/api/cases/${caseId}/context-scope`, {
-        method: 'PATCH',
+      const response = await fetch(`/api/backend/tabs/context/situation-frame?case_id=${encodeURIComponent(caseId)}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...draft, reason: 'Saved from Context Studio' }),
+        body: JSON.stringify({
+          what_happening: draft.whatHappening,
+          why_matters: draft.whyMatters,
+          what_would_change: draft.whatWouldChange,
+          policy_question: draft.policyQuestion,
+          metadata: {
+            notes: draft.notes,
+            sources: draft.sources,
+            reason: 'Saved from Context Tab',
+          },
+        }),
       });
       if (!response.ok) throw new Error('scope save failed');
       setSavedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));

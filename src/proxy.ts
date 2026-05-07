@@ -176,13 +176,12 @@ export function proxy(request: NextRequest) {
 
     const url = request.nextUrl.clone();
     url.pathname = pathname === '/demo' ? '/app/workbench/syria-2026' : pathname.replace(/^\/demo/, '/app');
-    if (pathname === '/demo') url.searchParams.set('tab', 'chapters');
     return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }
 
   // --- /onboarding routes ---
   if (pathname.startsWith('/onboarding')) {
-    if (isDemo) return addSecurityHeaders(NextResponse.redirect(new URL('/app/workbench/syria-2026?tab=chapters', request.url)), nonce);
+    if (isDemo) return addSecurityHeaders(NextResponse.redirect(new URL('/app/workbench/syria-2026', request.url)), nonce);
     if (!hasFirebaseToken) return addSecurityHeaders(NextResponse.redirect(new URL('/login', request.url)), nonce);
     return nextWithNonce(request, nonce);
   }

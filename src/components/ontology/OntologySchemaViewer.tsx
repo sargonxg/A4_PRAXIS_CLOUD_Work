@@ -222,7 +222,7 @@ export function OntologySchemaViewer() {
         </div>
         <div className="mt-4 grid gap-3 lg:grid-cols-3">
           {activeOntologies.flatMap((item) => item.recommendedToolIds.map((toolId) => (
-            <Link key={`${item.ontology.id}-${toolId}`} href={`/app/workbench/${caseId}?tab=tools`} className="rounded-md border border-slate-200 bg-slate-50 p-4 transition hover:border-navy-300">
+            <Link key={`${item.ontology.id}-${toolId}`} href={`/app/workbench/${caseId}#tools`} className="rounded-md border border-slate-200 bg-slate-50 p-4 transition hover:border-navy-300">
               <p className="text-sm font-semibold text-navy-950">{toolId}</p>
               <p className="mt-1 text-sm leading-5 text-slate-700">{item.ontology.label} source affinity: {item.sourceAffinity.slice(0, 2).join(', ')}</p>
             </Link>

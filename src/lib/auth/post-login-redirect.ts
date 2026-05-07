@@ -5,9 +5,9 @@ export function resolvePostLoginRedirect(params: URLSearchParams, isDemoMode: bo
   if (isDemoMode) {
     const example = params.get('example');
     if (example && /^[a-z0-9-]+$/.test(example)) {
-      return `/app/workbench/${example}?tab=chapters`;
+      return `/app/workbench/${example}`;
     }
-    return '/app/workbench/syria-2026?tab=chapters';
+    return '/app/workbench/syria-2026';
   }
 
   return '/app/workbench';

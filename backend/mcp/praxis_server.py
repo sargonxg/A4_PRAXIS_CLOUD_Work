@@ -122,3 +122,51 @@ async def get_graph_subgraph(owner_uid: str, case_id: str, node_id: str, depth: 
             node_id,
         )
     return {"nodes": node, "edges": edges}
+
+
+async def list_research_threads(owner_uid: str, case_id: str) -> dict[str, Any]:
+    async with tenant_session(owner_uid) as conn:
+        rows = await conn.fetch(
+            """
+            SELECT id, question, status, memory_coverage, updated_at
+            FROM research_threads
+            WHERE owner_uid = %s AND case_id = %s
+            ORDER BY updated_at DESC
+            LIMIT 100
+            """,
+            owner_uid,
+            case_id,
+        )
+    return {"threads": rows}
+
+
+async def list_memos(owner_uid: str, case_id: str) -> dict[str, Any]:
+    async with tenant_session(owner_uid) as conn:
+        rows = await conn.fetch(
+            """
+            SELECT id, title, source_kind, pinned, updated_at
+            FROM memos
+            WHERE owner_uid = %s AND case_id = %s
+            ORDER BY pinned DESC, updated_at DESC
+            LIMIT 100
+            """,
+            owner_uid,
+            case_id,
+        )
+    return {"memos": rows}
+
+
+async def list_drafts(owner_uid: str, case_id: str) -> dict[str, Any]:
+    async with tenant_session(owner_uid) as conn:
+        rows = await conn.fetch(
+            """
+            SELECT id, title, jsonb_array_length(citations) AS citation_count, updated_at
+            FROM drafts
+            WHERE owner_uid = %s AND case_id = %s
+            ORDER BY updated_at DESC
+            LIMIT 100
+            """,
+            owner_uid,
+            case_id,
+        )
+    return {"drafts": rows}

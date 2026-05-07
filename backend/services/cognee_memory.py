@@ -23,6 +23,7 @@ class CogneeSearchMode(StrEnum):
     CODE = "CODE"
     INSIGHTS = "INSIGHTS"
     CHUNKS = "CHUNKS"
+    SUMMARIES = "SUMMARIES"
 
 
 @dataclass(frozen=True)
@@ -146,6 +147,29 @@ async def remember(
     raise NotImplementedError("Live Cognee remember is owned by the isolated praxis-cognee service")
 
 
+async def add(
+    *,
+    scope: MemoryScope,
+    content: bytes | str,
+    source_id: str,
+    node_set: list[str] | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Add a source document to the tenant/case Cognee dataset."""
+    _ = (content, metadata)
+    node_set = node_set or [f"case_{scope.case_id}"]
+    if not is_enabled():
+        return {
+            "ok": False,
+            "status": "queued_disabled",
+            "dataset": scope.dataset,
+            "sourceId": source_id,
+            "nodeSet": node_set,
+        }
+    _load_cognee()
+    raise NotImplementedError("Live Cognee add is owned by the isolated praxis-cognee service")
+
+
 async def cognify(
     *,
     scope: MemoryScope,
@@ -195,6 +219,11 @@ async def search(
     query: str,
     mode: CogneeSearchMode = CogneeSearchMode.NATURAL_LANGUAGE,
     limit: int = 10,
+    session_id: str | None = None,
+    source_kind: str | None = None,
+    positive: bool | None = None,
+    signal: str | None = None,
+    node_set: list[str] | None = None,
     audit: SearchAudit | None = None,
 ) -> list[MemoryHit]:
     """Route Cognee search modes with save_interaction=True by default."""
@@ -203,7 +232,7 @@ async def search(
         raise ValueError("Cognee search calls in PRAXIS must use save_interaction=True")
     if not is_enabled():
         return []
-    _ = (scope, query, limit)
+    _ = (scope, query, limit, session_id, source_kind, positive, signal, node_set)
     _load_cognee()
     raise NotImplementedError("Live Cognee search is owned by the isolated praxis-cognee service")
 

@@ -192,9 +192,9 @@ function buildOpenQuestions(caseModule: CaseModule, sourceCount: number, graphNo
 }
 
 function buildNextActions(caseId: string, caseModule: CaseModule, openQuestionCount: number, contextHealth: number): SurfaceAction[] {
-  const toolsHref = `/app/workbench/${caseId}?tab=tools`;
+  const toolsHref = `/app/workbench/${caseId}#tools`;
   const contextHref = `/app/workbench/${caseId}?tab=context`;
-  const memosHref = `/app/workbench/${caseId}?tab=memos`;
+  const memosHref = `/app/workbench/${caseId}#memos`;
   const graphHref = `/app/workbench/${caseId}?tab=graph`;
   const domain = caseModule.manifest.domain;
   const toolLabel = domain === 'mediation'

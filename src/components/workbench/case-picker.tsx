@@ -35,7 +35,7 @@ export function WorkbenchCasePicker() {
               {situations.map((situation) => (
                 <CaseCard
                   key={situation.id}
-                  href={`/app/workbench/${situation.id}?tab=chapters`}
+                  href={`/app/workbench/${situation.id}`}
                   label="User case"
                   title={situation.name}
                   region={situation.region}
@@ -54,7 +54,7 @@ export function WorkbenchCasePicker() {
             {exampleCases.map((caseModule) => (
               <CaseCard
                 key={caseModule.id}
-                href={`/app/workbench/${caseModule.id}?tab=chapters`}
+                href={`/app/workbench/${caseModule.id}`}
                 label="Example"
                 title={caseModule.manifest.name}
                 region={caseModule.manifest.region}

@@ -23,6 +23,7 @@ const requiredFiles = [
   'backend/services/workspace_orchestrator/log.py',
   'backend/services/cognee_aco_models.py',
   'backend/mcp/praxis_server.py',
+  'backend/migrations/versions/0016_workspace_chapter_products.py',
   'docs/implementation/WORKSPACE_TABS_CHAPTERS_FOUNDATION.md',
   'src/components/workbench/StructuredChapterContent.tsx',
   'src/components/workbench/DeskTab.tsx',
@@ -166,9 +167,57 @@ if (/GenericChapterContent|The default case flow/i.test(chapterRenderer)) {
 }
 
 const foundationDoc = readFileSync('docs/implementation/WORKSPACE_TABS_CHAPTERS_FOUNDATION.md', 'utf8');
-for (const marker of ['Context', 'Library', 'Ontology', 'Graph', 'Desk, always on', 'Research', 'Boardroom']) {
+for (const marker of ['Context', 'Library', 'Ontology', 'Graph', 'Desk, always on', 'Research', 'Boardroom', 'four-field situation frame', '12 DIALECTICA recipes']) {
   if (!foundationDoc.includes(marker)) {
     throw new Error(`Workspace foundation doc missing marker: ${marker}`);
+  }
+}
+
+const frameEditor = readFileSync('src/components/workbench/context/FrameEditor.tsx', 'utf8');
+for (const marker of ['What is happening?', 'Why does it matter?', 'What would change the assessment?', 'Policy question']) {
+  if (!frameEditor.includes(marker)) {
+    throw new Error(`Tabs guide four-field frame editor missing marker: ${marker}`);
+  }
+}
+
+const tabsRouter = readFileSync('backend/routers/tabs.py', 'utf8');
+for (const marker of ['@router.post("/library/ingest")', '@router.get("/library")', '@router.get("/library/{source_id}")', '@router.post("/library/{source_id}/re-extract")', '@router.delete("/library/{source_id}")', 'cognee_memory.add', 'cognee_memory.cognify', 'cognee_pending_writes', 'dataPoint": "Situation"']) {
+  if (!tabsRouter.includes(marker)) {
+    throw new Error(`Tabs backend router missing guide marker: ${marker}`);
+  }
+}
+
+const chaptersRouter = readFileSync('backend/routers/chapters.py', 'utf8');
+for (const marker of [
+  'DIALECTICA_RECIPES',
+  'stakeholder-map',
+  'contradiction-scan',
+  'constraint-leverage-map',
+  'commitment-tracker',
+  'narrative-arc',
+  'ambiguity-audit',
+  'red-team-counterclaim',
+  'counterfactual-branch',
+  'evidence-gap-finder',
+  'policy-option-generator',
+  'risk-weighting',
+  'decision-memo-synth',
+  '@router.post("/research/threads")',
+  '@router.post("/memos")',
+  '@router.post("/drafts")',
+  '@router.post("/ach/suggest-evidence")',
+  '@router.post("/tools/run")',
+  '@router.post("/boardroom/briefings")',
+]) {
+  if (!chaptersRouter.includes(marker)) {
+    throw new Error(`Chapters backend router missing guide marker: ${marker}`);
+  }
+}
+
+const mcpServer = readFileSync('backend/mcp/praxis_server.py', 'utf8');
+for (const marker of ['list_research_threads', 'list_memos', 'list_drafts']) {
+  if (!mcpServer.includes(marker)) {
+    throw new Error(`MCP workspace read surface missing marker: ${marker}`);
   }
 }
 
@@ -194,7 +243,7 @@ for (const marker of ['WhatChangedPanel', 'NextBestActionsPanel', 'StaleContextP
 }
 
 const contextTab = readFileSync('src/components/workbench/ContextTab.tsx', 'utf8');
-for (const marker of ['FrameEditor', 'ScopeAdvisory', 'SourcePreferences', 'DocumentUploadInline', 'ActorClaimInterestRefiner', 'context-scope']) {
+for (const marker of ['FrameEditor', 'ScopeAdvisory', 'SourcePreferences', 'DocumentUploadInline', 'ActorClaimInterestRefiner', 'tabs/context/situation-frame']) {
   if (!contextTab.includes(marker)) {
     throw new Error(`Pack 26 Context Studio missing section/API marker: ${marker}`);
   }

@@ -1,6 +1,6 @@
 # Workspace Tabs and Chapters Foundation
 
-Status: implemented foundation, 2026-05-07.
+Status: implemented foundation plus second pass, 2026-05-07.
 
 Source prompts:
 
@@ -49,7 +49,18 @@ Chapters are the working panes on the desk:
 - Orchestrator skeleton: `backend/services/workspace_orchestrator/`
 - Cognee ACO models: `backend/services/cognee_aco_models.py`
 - Workspace migration: `backend/migrations/versions/0015_workspace_tabs_chapters.py`
+- Follow-up convergence migration: `backend/migrations/versions/0016_workspace_chapter_products.py`
 - MCP read surface: `backend/mcp/praxis_server.py`
+
+## Second-Pass Coverage
+
+- Context now saves the guide's four-field situation frame: what is happening, why it matters, what would change the assessment, and the policy question.
+- Situation-frame writes are remembered as a Cognee `Situation` data point and queued in `cognee_pending_writes` when Cognee is disabled or unavailable.
+- Library now has authenticated ingest, list, detail, re-extract, and soft-delete endpoints. Ingest calls Cognee `add` plus `cognify` when available, and records disabled/queued status honestly.
+- Chapters now expose backend APIs for Desk Q&A, Research threads and recall, Memos, Drafts, ACH, Tools recipe runs, and Boardroom briefings.
+- Tools now expose the 12 DIALECTICA recipes: stakeholder map, contradiction scan, constraint leverage map, commitment tracker, narrative arc, ambiguity audit, red-team counterclaim, counterfactual branch, evidence gap finder, policy option generator, risk weighting, and decision memo synthesis.
+- MCP read surfaces now include research threads, memos, and drafts for agent/tool context interop.
+- Legacy chapter targets are no longer encoded as `?tab=` links; substrate tabs stay in the tab query and chapters use the workbench chapter rail/hash entrypoints.
 
 ## Guardrails
 
@@ -63,10 +74,12 @@ Chapters are the working panes on the desk:
 - `npm run audit:workspace-tabs-chapters`
 - `npm run audit:substrate-writers`
 - `npm run audit:orchestrator-writes`
+- `npm run audit:workbench`
 
 Known remaining work:
 
 - Replace stubbed SSE coach/desk streams with live LangGraph subgraphs.
-- Apply the new migration in staging/production before relying on the SQL endpoints.
-- Move frontend tab overlay content to `src/tabs/registry.ts` directly once the legacy workbench components are fully retired.
-- Add browser e2e coverage for tab overlays and chapter toggles.
+- Apply migrations `0015_workspace_tabs_chapters.py` and `0016_workspace_chapter_products.py` in staging/production before relying on the SQL endpoints.
+- Build full frontend controls for every new chapter endpoint; the backend contract is present, while several existing panes still use local/demo state until connected.
+- Wire the isolated live Cognee service behind `backend/services/cognee_memory.py`; current routes are deliberately disabled-safe and queue work rather than failing user flows.
+- Add browser e2e coverage for tab overlays, source ingest, research recall, memo assist, draft cite/export, ACH suggestions, recipe runs, and boardroom briefings.
