@@ -14,7 +14,19 @@ import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { cn } from '@/lib/utils/cn';
 import { ToolTransparencyCard } from '@/components/tools/ToolTransparencyCard';
 
-const CATEGORIES: Array<MarketplaceToolCategory | 'all'> = ['all', 'conflict', 'mediation', 'governance', 'narrative', 'cross'];
+const CATEGORIES: Array<MarketplaceToolCategory | 'all'> = [
+  'all',
+  'conflict',
+  'mediation',
+  'governance',
+  'narrative',
+  'human-rights',
+  'economic',
+  'humanitarian',
+  'legal',
+  'security',
+  'cross',
+];
 const COSTS: MarketplaceCostClass[] = ['low', 'medium', 'high'];
 
 interface MarketplaceRunState {

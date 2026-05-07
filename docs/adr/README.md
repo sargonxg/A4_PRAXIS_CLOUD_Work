@@ -34,6 +34,8 @@ Accepted ADRs are not edited for meaning. Supersede them with a later ADR.
 - `0027-parameterized-analyst-persona-subagent.md`
 - `0028-persona-corpus-retrieval.md`
 - `0030-dynamic-ontology-lenses.md`
+- `0033-marketplace-depth-strategy.md`
+- `0034-composition-chain-governance.md`
 
 Active target-state gaps are tracked in:
 

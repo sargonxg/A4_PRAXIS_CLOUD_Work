@@ -32,5 +32,5 @@ ONTOLOGY = CaseOntologyDefinition(
         OntologyValidator(id="humanitarian.access-constraint-visible", label="Access constraint visible", severity="info", description="Access constraints make recommendations operational."),
         OntologyValidator(id="humanitarian.response-monitorable", label="Response monitorable", severity="info", description="Response commitments should be monitorable."),
     ],
-    recommended_tool_ids=["humanitarian.needs-assessment-synthesizer", "humanitarian.access-constraint-map", "humanitarian.response-gap-brief", "humanitarian.cluster-priority-setter", "cross.brief-exporter", "cross.context-health-explainer"],
+    recommended_tool_ids=["humanitarian.needs-aggregator", "humanitarian.access-map", "humanitarian.cluster-coordinator", "humanitarian.aa-trigger-monitor", "cross.brief-exporter", "cross.context-health-explainer"],
 )

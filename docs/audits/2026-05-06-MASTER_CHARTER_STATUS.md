@@ -42,6 +42,7 @@ The master charter is now preserved in-repo and its high-level support structure
 | Pack 18 Production Reality Closure | ACTIVE closure pass | Prompt preserved; canonical `/demo/syria-2024`, `/waitlist`, `/login/callback`, and `/legal/{privacy,terms,security,data-retention}` route gaps closed in code; `cross.memo-create` and `cross.memo-refresh` are now first-class marketplace foundation tools; route/tool audits expanded | Persona CI streak, production context/storage parity, review queue, specialist tool depth, Agent Engine runtime evidence, Lighthouse/axe, and canary proof remain open. |
 | Pack 19 Genuinely Useful | ACTIVE v1.1 foundation | Prompt preserved; transparency cards added to all 22 current marketplace tools; tool-run evidence drawer and run comparison foundation added; audit guards added | Pack 19 preconditions are not fully true yet: Pack 18 remaining gaps, v1.0.0 tag, 10-green persona CI streak, live Agent Engine runtime evidence, specialist handlers, claim challenge, and semantic diffing remain open. |
 | Pack 20 Dynamic Ontologies | ACTIVE v1.1 foundation | Prompt preserved; five new ontology lenses registered; registry now returns 9 ontologies; role-aware ontology suggestion helper, optional multi-ontology context fields, backend mirrors, audit coverage, and ADR 0030 added | Full multi-ontology write-path enforcement, ingestion-driven classifier, eval set, sample situations, visual snapshots, and Pack 21 specialist tools remain open. |
+| Pack 21 Marketplace Depth | ACTIVE v1.2 foundation | Prompt preserved; marketplace expanded to the explicit 52-tool cap with 30 new tools; Pack 20 recommended tool ids resolved; ordered SKILL.md audit, executable canary audit, composition audit, and suggestion eval audit added; ADRs 0033 and 0034 added | The prompt lists 36 candidates while requiring 30 new / 52 total. Six original-ontology depth candidates are deferred. Real model-backed specialist handlers and persona green-streak proof remain open. |
 
 ## Open S0/S1 From Self-Audit
 
@@ -115,6 +116,17 @@ for nine ontologies. Role-aware ontology suggestions and optional
 multi-ontology case fields are present as foundation code; classifier routing,
 sample situations, and full multi-ontology write-path enforcement remain open.
 
+## Latest Pack 21 Marketplace Depth Pass
+
+`docs/audits/2026-05-07-PACK21_MARKETPLACE_DEPTH.md` records the marketplace
+depth foundation. PRAXIS now exposes 52 curated marketplace tools: the Pack 18
+baseline plus 30 Pack 21 additions. The Pack 20 human-rights, economic,
+humanitarian, legal, and security ontology tool declarations now resolve to
+registered tools. New gates cover executable foundation canaries, static
+composition chains, and ontology recommendation recall. The remaining Pack 21
+gap is specialist model-backed runtime depth and persona-suite green-streak
+evidence.
+
 ## Remaining Work
 
 - Run and maintain the four persona suites until the charter's 10-green-run bar is genuinely satisfied in CI.
@@ -127,4 +139,5 @@ sample situations, and full multi-ontology write-path enforcement remain open.
 - Continue Pack 18 by closing the synthesized review queue, persona CI streak evidence, production storage parity evidence, marketplace specialist depth, Agent Engine runtime evidence, Lighthouse/axe evidence, and canary proof.
 - Continue Pack 19 only in slices that do not falsely depend on unresolved v1.0 evidence. Highest safe next slices: claim challenge/reasoning-step appeal, workspace preference propagation audit, and Situation Genesis baseline measurement.
 - Continue Pack 20 by wiring role-aware ontology suggestions into case creation, then adding classifier/eval/sample-case work after the review-queue and Situation Genesis prerequisites are ready.
+- Continue Pack 21 by replacing prompt-contract foundation runs with real specialist handlers, adding semantic canary fixtures, and expanding persona browser flows over the new marketplace depth.
 - Obtain owner production-readiness signature, complete staging/production signed smoke records, and only then tag `v1.0.0`.

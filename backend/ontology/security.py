@@ -32,5 +32,5 @@ ONTOLOGY = CaseOntologyDefinition(
         OntologyValidator(id="security.event-dated", label="Operational event dated", severity="info", description="Operational events should carry dates."),
         OntologyValidator(id="security.capability-sourced", label="Capability sourced", severity="info", description="Capability claims should cite evidence."),
     ],
-    recommended_tool_ids=["security.force-posture-map", "security.threat-vector-brief", "security.deterrence-option-set", "security.roe-risk-check", "cross.scenario-projector", "cross.brief-exporter"],
+    recommended_tool_ids=["security.posture-tracker", "security.capability-assessor", "security.escalation-modeler", "security.alliance-cohesion-map", "cross.scenario-projector", "cross.brief-exporter"],
 )

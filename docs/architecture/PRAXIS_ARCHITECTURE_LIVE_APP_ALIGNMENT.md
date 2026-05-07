@@ -23,7 +23,7 @@ implementation gaps against this reference:
 - canonical `/waitlist`, `/login/callback`, and `/legal/*` routes;
 - production context/storage parity and Firestore/Postgres reconciliation;
 - complete symbolic-firewall write-path coverage and synthesized review queue;
-- marketplace specialist handlers, memo tools, and composition proof;
+- marketplace specialist handlers and production persona green-streak proof;
 - canary, Cloud SQL, scheduler, and structured logging evidence.
 
 ## Required Correction
@@ -49,7 +49,7 @@ This matches `docs/architecture/MODEL_SELECTION.md`,
 | Every AI route calibrated | Enforced | `npm run audit:routes` reports 66/66 calibrated AI routes |
 | Context health advisory, not blocking | Enforced | `npm run audit:context-vs-tools`, `npm run audit:context-aware-coverage` |
 | Marketplace uses ContextProvider foundation | Enforced | `src/app/api/tools/marketplace/run/route.ts`, `npm run audit:tool-marketplace` |
-| Sixteen curated marketplace tools | Enforced | `npm run audit:tool-marketplace`, `npm run audit:tool-skills-present` |
+| Fifty-two curated marketplace tools | Enforced | `npm run audit:tool-marketplace`, `npm run audit:tool-skills-present`, `npm run audit:tool-canary-executable`, `npm run audit:tool-composition-static`, `npm run audit:tool-suggestion-eval` |
 | UX loading/empty/error states have local gate | Enforced | `npm run audit:ux-polish` |
 | Observability has local trace/logger/health gate | Enforced | `npm run audit:observability-coverage` |
 | Graphify stays refreshed | Enforced operationally | `graphify update .` output in Pack 14 audit docs |
@@ -67,15 +67,14 @@ chain. The repo now enforces command parity in two ways:
 Local aliases added for the real app include `typecheck`, `test`,
 `test:e2e:personas`, `audit:ontology-mapping`, `audit:ontology-versions`,
 `audit:context-types-parity`, `audit:tool-skill-conforms`,
-`audit:tool-context-isolation`, `audit:firewall-coverage`,
+`audit:tool-canary-executable`, `audit:tool-composition-static`,
+`audit:tool-suggestion-eval`, `audit:tool-context-isolation`, `audit:firewall-coverage`,
 `audit:owner-scoping`, `audit:postgres-schema-current`, `audit:kg-drift`,
 `audit:legal-pages-present`, `audit:type-safety`, and `audit:docs`.
 
 <!-- architecture-gated-audits:start -->
 
 - `audit:ontology-classifier-accuracy` — needs a labeled classifier eval set.
-- `audit:tool-composition-static` — needs static composition graph fixtures.
-- `audit:tool-suggestion-eval` — needs recall@3 suggestion eval corpus.
 - `audit:subagent-deployment-fresh` — needs live Agent Engine deployment metadata.
 - `audit:subagent-eval-fresh` — needs committed per-subagent eval runs.
 - `audit:bi-temporal-coverage` — needs full Postgres write-path cutover.
@@ -126,6 +125,9 @@ npm run audit:context-vs-tools
 npm run audit:context-aware-coverage
 npm run audit:context-types-parity
 npm run audit:tool-marketplace
+npm run audit:tool-canary-executable
+npm run audit:tool-composition-static
+npm run audit:tool-suggestion-eval
 npm run audit:tool-context-isolation
 npm run audit:firewall-coverage
 npm run audit:owner-scoping

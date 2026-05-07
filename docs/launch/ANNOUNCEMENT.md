@@ -10,7 +10,7 @@ This launch foundation includes:
 - Context health and symbolic firewall trust metadata.
 - Ontology-backed graph structure over the ACO primitive substrate.
 - A canonical graph view.
-- A curated 16-tool marketplace.
+- A curated 52-tool marketplace foundation spanning conflict, mediation, governance, narrative, human-rights, economic/sanctions, humanitarian, legal/treaty, security/defense, SAT, memo, and cross-cutting workflows.
 - A Memo Studio foundation for mandate briefs, mediation summaries, policy memos, sit-reps, frame analysis, and talking points.
 
-Known v1.1 priorities are memo citation/export polish, Postgres KG production cutover, specialist marketplace handlers, scheduler-backed operational diagnostics, graph edit round-trips, and LangGraph subagent orchestration. Pack 14 adds the production-excellence layer: Vertex AI defaults, Terraform-managed infrastructure, public read-only demo, waitlist/magic-link posture, observability, load testing, cost dashboard, and canary launch.
+Known v1.2 priorities are memo citation/export polish, Postgres KG production cutover, genuinely model-backed specialist marketplace handlers, persona-suite green-streak proof, scheduler-backed operational diagnostics, graph edit round-trips, and LangGraph subagent orchestration. Pack 14 adds the production-excellence layer: Vertex AI defaults, Terraform-managed infrastructure, public read-only demo, waitlist/magic-link posture, observability, load testing, cost dashboard, and canary launch.

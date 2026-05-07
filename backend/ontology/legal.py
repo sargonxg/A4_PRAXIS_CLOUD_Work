@@ -32,5 +32,5 @@ ONTOLOGY = CaseOntologyDefinition(
         OntologyValidator(id="legal.procedure-dated", label="Procedure dated", severity="info", description="Procedural events should include dates."),
         OntologyValidator(id="legal.remedy-visible", label="Remedy visible", severity="info", description="Available remedies should be visible."),
     ],
-    recommended_tool_ids=["legal.provision-extractor", "legal.jurisdiction-map", "legal.precedent-compare", "legal.treaty-compliance-brief", "cross.contradiction-finder", "cross.brief-exporter"],
+    recommended_tool_ids=["legal.provision-tracer", "legal.precedent-finder", "legal.reservation-effect-mapper", "legal.jurisdictional-analyzer", "cross.contradiction-finder", "cross.brief-exporter"],
 )

@@ -12,8 +12,15 @@ for (const tool of MARKETPLACE_TOOLS) {
     continue;
   }
   const text = readFileSync(file, 'utf8');
+  let previousIndex = -1;
   for (const section of sections) {
-    if (!text.includes(`## ${section}`)) failures.push(`${tool.id} skill missing ${section}`);
+    const index = text.indexOf(`## ${section}`);
+    if (index === -1) {
+      failures.push(`${tool.id} skill missing ${section}`);
+      continue;
+    }
+    if (index <= previousIndex) failures.push(`${tool.id} skill section ${section} is out of canonical order`);
+    previousIndex = index;
   }
 }
 

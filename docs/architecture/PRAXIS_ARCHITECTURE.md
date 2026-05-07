@@ -578,21 +578,32 @@ At `/app/workbench/[caseId]/tools` the user sees:
 
 - **Suggestion banner**: top 3 tools ranked by the suggestion engine, each with a one-sentence rationale ("Recommended because your case is mediation-ontology and you're a mediator").
 - **Analyst's Toolkit strip**: ACH, Key Assumptions Check, Red Team Analysis, and Premortem grouped as Heuer-Pherson SATs (Premortem cites Klein 2007). ACH links to its first-class workbench surface; the other SATs run as marketplace tools.
-- **Card grid**: all 22 curated marketplace tools with `ToolFitBadge` (Ready / Needs more sources / Not for this ontology — colored, advisory).
+- **Card grid**: all 52 curated marketplace tools with `ToolFitBadge` (Ready / Needs more sources / Not for this ontology — colored, advisory).
 - **Filters**: by category, ontology, cost class, recent runs.
 - **Per-tool page** at `tools/[toolId]`: schema-driven form (via @rjsf/core), composition links, "About this tool" panel rendering the SKILL.md.
 
-### 11.3 The 22 v1.1 marketplace tools
+### 11.3 The 52 v1.2 marketplace tools
 
 | Ontology | Tools |
 |---|---|
-| Conflict | leverage-trace, commitment-check, escalation-timeline |
+| Conflict | leverage-trace, commitment-check, escalation-timeline, escalation-ladder, cease-fire-monitor, actor-alignment-shift |
 | Mediation | position-vs-interest, zopa-finder, mediation-brief |
 | Governance | veto-probability, mandate-traceback, coalition-map |
 | Narrative | frame-cascade, counter-narrative-finder, fact-check-traceback |
-| Cross-cutting | contradiction-finder, context-health-explainer, brief-exporter, scenario-projector |
+| Human Rights | violation-tracker, upr-cycle-mapper, treaty-body-engagement, pattern-detector |
+| Economic / Sanctions | designation-tracer, beneficial-ownership-map, sanctions-impact-model, evasion-pattern-detector |
+| Humanitarian | needs-aggregator, access-map, cluster-coordinator, aa-trigger-monitor |
+| Legal / Treaty | provision-tracer, precedent-finder, reservation-effect-mapper, jurisdictional-analyzer |
+| Security / Defense | posture-tracker, capability-assessor, escalation-modeler, alliance-cohesion-map |
+| Cross-cutting | contradiction-finder, context-health-explainer, brief-exporter, scenario-projector, stakeholder-power-interest, causal-loop-diagram, indicators-tracker, timeline-comparator, assumption-mapper, outside-in-thinking, devils-advocate |
 | Analyst's Toolkit SATs | ach, kac, red-team, premortem |
 | Memo Studio | memo-create, memo-refresh |
+
+Pack 21 deliberately preserves the 52-tool cap. The source prompt listed 36
+candidate additions while also requiring "30 new / 52 total"; the shipped
+foundation set honors the cap by registering the 20 Pack 20 ontology-forward
+tools, 7 cross-cutting depth tools, and 3 conflict-depth tools. The deferred
+six original-ontology depth candidates require a later cap decision.
 
 ACH is also a first-class workbench surface at `/app/workbench/[caseId]/ach/[achId]` because its central artifact is a multi-session hypothesis x evidence matrix. The surface loads and saves through authenticated owner-scoped Next API routes under `/api/sats/ach`, storing matrices at `users/{uid}/situations/{caseId}/ach/{achId}`. SAT outputs are synthesized and advisory until the user promotes claims through the review queue and symbolic firewall.
 
@@ -1139,6 +1150,7 @@ npm run audit:context-aware-coverage      # no withContextHealthGate references
 npm run audit:tool-contract-v2            # every tool conforms
 npm run audit:tool-skills-present
 npm run audit:tool-skill-conforms
+npm run audit:tool-canary-executable      # every marketplace tool can produce a foundation run
 npm run audit:tool-context-isolation      # no direct store access from handlers
 npm run audit:tool-composition-static
 npm run audit:tool-suggestion-eval        # recall@3 ≥ 80%

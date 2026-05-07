@@ -1,3 +1,6 @@
+import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
+import type { MarketplaceToolDefinition } from '@/lib/tools/marketplace/types';
+
 export type MarketplaceHandlerStage = 'prompt-contract' | 'model-backed';
 
 export interface MarketplaceHandlerContract {
@@ -14,6 +17,47 @@ export interface MarketplaceHandlerContract {
 
 function contract(input: MarketplaceHandlerContract): MarketplaceHandlerContract {
   return input;
+}
+
+function generatedContractForTool(tool: MarketplaceToolDefinition): MarketplaceHandlerContract {
+  const ontologyList = tool.ontologyRequirements.join(', ');
+  const subagentList = tool.subagentDeps.join(', ');
+  return contract({
+    toolId: tool.id,
+    executionStage: 'prompt-contract',
+    objective: `${tool.description} Use the Pack 21 tool rationale as the operating frame: ${tool.rationale ?? 'deliver a grounded, reviewable marketplace output for the active case.'}`,
+    requiredContext: [
+      'user role and preferences',
+      'active case frame and ontology',
+      'case graph nodes and edges',
+      'source receipts and provenance gaps',
+      'conversation focus and analyst prompt',
+    ],
+    analysisMoves: [
+      `Project the active case through the ${ontologyList} ontology requirements without inventing missing facts.`,
+      `Invoke or prepare handoff context for declared subagents: ${subagentList}.`,
+      'Separate source-backed findings from synthesized options and label confidence.',
+      'Preserve weak context, contradictions, and missing receipts as advisories.',
+      'Produce structured next actions that can chain into the declared composition targets.',
+    ],
+    outputSections: ['Summary', 'Evidence-grounded findings', 'Structured artifacts', 'Confidence and gaps', 'Recommended next actions'],
+    modelInstructions: [
+      'Keep outputs advisory and reviewable; do not auto-promote graph assertions.',
+      'Use the active ontology vocabulary while preserving the eight ACO primitive substrate.',
+      'Cite available receipts or explicitly mark synthesized text and missing evidence.',
+    ],
+    qualityChecks: [
+      'Every material finding has an evidence status or synthesized label.',
+      'The output names the ontology lens and relevant actors, claims, events, constraints, or narratives.',
+      'No direct store access, hard-coded model string, or unreviewed graph write is required.',
+      'Composition handoff targets exist in the marketplace registry.',
+    ],
+    nextActions: [
+      tool.composition.canChainInto.length > 0
+        ? `Chain into ${tool.composition.canChainInto.slice(0, 2).join(' or ')} when the user accepts this result.`
+        : 'Review the result and export or save it only after checking evidence gaps.',
+    ],
+  });
 }
 
 export const MARKETPLACE_HANDLER_CONTRACTS: Record<string, MarketplaceHandlerContract> = {
@@ -546,6 +590,10 @@ export const MARKETPLACE_HANDLER_CONTRACTS: Record<string, MarketplaceHandlerCon
     nextActions: ['Set monitoring indicators for key signposts.', 'Chain into Mediation Brief or Coalition Map depending on branch risk.'],
   }),
 };
+
+for (const toolDefinition of MARKETPLACE_TOOLS) {
+  MARKETPLACE_HANDLER_CONTRACTS[toolDefinition.id] ??= generatedContractForTool(toolDefinition);
+}
 
 export function getMarketplaceHandlerContract(toolId: string): MarketplaceHandlerContract | null {
   return MARKETPLACE_HANDLER_CONTRACTS[toolId] ?? null;

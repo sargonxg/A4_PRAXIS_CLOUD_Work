@@ -2,7 +2,7 @@ import type { OntologyId } from '@/lib/ontology/types';
 import type { ContextSpec } from '@/types/context';
 import type { SATCategory } from '@/types/sats';
 
-export type MarketplaceToolCategory = 'conflict' | 'mediation' | 'governance' | 'narrative' | 'cross';
+export type MarketplaceToolCategory = OntologyId | 'cross';
 export type MarketplaceCostClass = 'low' | 'medium' | 'high';
 export type ToolContractCategory = 'analysis' | 'synthesis' | 'export' | 'utility' | 'meta';
 export type SubagentId = 'context-preparer' | 'source-augmenter' | 'output-refiner' | 'memo-drafter' | 'red-team-analyst';
@@ -24,6 +24,7 @@ export interface MarketplaceToolDefinition {
   contractCategory: ToolContractCategory;
   satCategory?: SATCategory;
   description: string;
+  rationale?: string;
   ontologyRequirements: OntologyId[];
   minContextHealth: number;
   estimatedRuntimeMs: number;

@@ -32,5 +32,5 @@ ONTOLOGY = CaseOntologyDefinition(
         OntologyValidator(id="economic.ownership-evidence", label="Ownership evidence present", severity="info", description="Ownership edges should cite evidence."),
         OntologyValidator(id="economic.transaction-dated", label="Transaction dated", severity="info", description="Transaction events should carry dates."),
     ],
-    recommended_tool_ids=["economic.designation-risk-scorer", "economic.ownership-unwrapper", "economic.sanctions-impact-brief", "economic.export-control-check", "cross.contradiction-finder", "cross.brief-exporter"],
+    recommended_tool_ids=["economic.designation-tracer", "economic.beneficial-ownership-map", "economic.sanctions-impact-model", "economic.evasion-pattern-detector", "cross.contradiction-finder", "cross.brief-exporter"],
 )
