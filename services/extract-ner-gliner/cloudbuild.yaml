@@ -1,5 +1,28 @@
 steps:
   - name: gcr.io/cloud-builders/docker
-    args: ["build", "-t", "us-central1-docker.pkg.dev/$PROJECT_ID/praxis/extract-ner-gliner:$SHORT_SHA", "."]
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/praxis-workers/extract-ner-gliner:$SHORT_SHA
+      - services/extract-ner-gliner
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/praxis-workers/extract-ner-gliner:$SHORT_SHA
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - extract-ner-gliner
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/praxis-workers/extract-ner-gliner:$SHORT_SHA
+      - --region=${_REGION}
+      - --no-allow-unauthenticated
+      - --memory=4Gi
+      - --cpu=2
+      - --timeout=120
+      - --max-instances=6
+substitutions:
+  _REGION: us-central1
 images:
-  - "us-central1-docker.pkg.dev/$PROJECT_ID/praxis/extract-ner-gliner:$SHORT_SHA"
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/praxis-workers/extract-ner-gliner:$SHORT_SHA

@@ -71,6 +71,15 @@ if (!doclingChunker.includes('"tables"') || !doclingChunker.includes('_order_key
   failures.push('Docling chunker must merge table collections into reading-order chunks');
 }
 
+for (const service of ['extract-docling', 'extract-ner-gliner', 'extract-graphrag']) {
+  const cloudbuild = read(`services/${service}/cloudbuild.yaml`);
+  if (!cloudbuild.includes('gcloud') || !cloudbuild.includes('run') || !cloudbuild.includes('deploy') || !cloudbuild.includes(service)) {
+    failures.push(`${service} cloudbuild must build and deploy the Cloud Run worker`);
+  }
+  if (!cloudbuild.includes('--no-allow-unauthenticated')) failures.push(`${service} must deploy without public unauthenticated access`);
+  if (!cloudbuild.includes('praxis-workers')) failures.push(`${service} image must use the praxis-workers Artifact Registry repository`);
+}
+
 const labelDir = join(process.cwd(), 'services/extract-ner-gliner/labels');
 const labels = existsSync(labelDir) ? readdirSync(labelDir).filter((name) => name.endsWith('.json')).sort() : [];
 const expectedLabels = ['conflict', 'economic', 'governance', 'human-rights', 'humanitarian', 'legal', 'mediation', 'narrative', 'security'];
