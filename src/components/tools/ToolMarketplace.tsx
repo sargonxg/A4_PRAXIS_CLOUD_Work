@@ -10,6 +10,7 @@ import { rankMarketplaceToolsForCase } from '@/lib/tools/marketplace/suggestions
 import type { MarketplaceToolCategory, MarketplaceCostClass } from '@/lib/tools/marketplace/types';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { cn } from '@/lib/utils/cn';
+import { ToolTransparencyCard } from '@/components/tools/ToolTransparencyCard';
 
 const CATEGORIES: Array<MarketplaceToolCategory | 'all'> = ['all', 'conflict', 'mediation', 'governance', 'narrative', 'cross'];
 const COSTS: MarketplaceCostClass[] = ['low', 'medium', 'high'];
@@ -291,6 +292,9 @@ export function ToolMarketplace() {
                 </span>
               </div>
               <p className="mt-3 min-h-20 text-xs leading-5 text-blue-100/80">{tool.description}</p>
+              <div className="[&_details]:border-white/10 [&_details]:bg-white/10 [&_details_summary_span]:text-blue-50 [&_details_div]:border-white/10 [&_details_p]:text-blue-100/80 [&_details_li]:text-blue-100/75">
+                <ToolTransparencyCard tool={tool} />
+              </div>
               {tool.satCategory === 'ach' ? (
                 <Link
                   href={`/app/workbench/${encodeURIComponent(caseId)}/ach`}
@@ -471,6 +475,7 @@ export function ToolMarketplace() {
               </div>
             </div>
             <p className="mt-3 text-sm leading-6 text-slate-650">{tool.description}</p>
+            <ToolTransparencyCard tool={tool} />
             <div className="mt-4 grid gap-2 sm:grid-cols-3">
               <Chip label="Runtime" value={`${Math.round(tool.estimatedRuntimeMs / 1000)}s`} />
               <Chip label="Context" value={`${Math.round(tool.minContextHealth * 100)}%`} />

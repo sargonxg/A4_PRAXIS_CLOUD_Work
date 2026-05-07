@@ -40,6 +40,7 @@ The master charter is now preserved in-repo and its high-level support structure
 | 13 Tool-Context Interop | DONE contract foundation, subagent runtime pending | DONE with runtime orchestration deferred | Contract v2, skills, projection, and suggestions are live. |
 | Pack 14 Production Excellence | PARTIAL local production-excellence foundation | Gemini Enterprise/Vertex posture, model matrix, shared embedding provider, backend model constants, provider audits, UX/observability audits, load-test scaffold, capacity plan, canary monitor, canary log template, and orchestration playbook DONE; production infra deferred | Requires owner decisions on final region/cost, Terraform/canary execution, public demo, and signup posture. |
 | Pack 18 Production Reality Closure | ACTIVE closure pass | Prompt preserved; canonical `/demo/syria-2024`, `/waitlist`, `/login/callback`, and `/legal/{privacy,terms,security,data-retention}` route gaps closed in code; route audit expanded | Persona CI streak, production context/storage parity, review queue, specialist tool depth, memo marketplace tools, Agent Engine runtime evidence, Lighthouse/axe, and canary proof remain open. |
+| Pack 19 Genuinely Useful | ACTIVE v1.1 foundation | Prompt preserved; transparency cards added to all 20 current marketplace tools; audit guard added | Pack 19 preconditions are not fully true yet: Pack 18 remaining gaps, v1.0.0 tag, 10-green persona CI streak, live Agent Engine runtime evidence, specialist handlers, and memo marketplace tools remain open. |
 
 ## Open S0/S1 From Self-Audit
 
@@ -77,6 +78,13 @@ real `/waitlist`, `/login/callback`, and canonical `/legal/*` pages guarded by
 `https://praxis.tacitus.me` via Cloud Build
 `43779fe0-dfc2-4e9b-8a38-cfe4430123e6`.
 
+## Latest Pack 19 Usefulness Pass
+
+`docs/audits/2026-05-07-PACK19_GENUINELY_USEFUL.md` records the first Pack 19
+foundation slice. The prompt is preserved, and marketplace transparency cards
+now expose methodology, limitations, evaluation posture, expected error modes,
+last-updated date, and cost class for all 20 current marketplace tools.
+
 ## Remaining Work
 
 - Run and maintain the four persona suites until the charter's 10-green-run bar is genuinely satisfied in CI.
@@ -87,4 +95,5 @@ real `/waitlist`, `/login/callback`, and canonical `/legal/*` pages guarded by
 - Implement LangGraph subagent orchestration/telemetry for Context Preparer, Source Augmenter, Output Refiner, and Memo Drafter.
 - Continue Pack 14 after the local provider/posture pass: Terraform-managed infrastructure, managed Agent Platform Runtime deployment, public read-only demo, waitlist/magic-link posture, observability, load testing, cost dashboard, and canary deploy.
 - Continue Pack 18 by closing the synthesized review queue, persona CI streak evidence, production storage parity evidence, marketplace specialist depth, memo marketplace tools, Agent Engine runtime evidence, Lighthouse/axe evidence, and canary proof.
+- Continue Pack 19 only in slices that do not falsely depend on unresolved v1.0 evidence. Highest safe next slices: evidence drawer scaffolding, workspace preference propagation audit, and Situation Genesis baseline measurement.
 - Obtain owner production-readiness signature, complete staging/production signed smoke records, and only then tag `v1.0.0`.

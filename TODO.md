@@ -26,6 +26,12 @@ preserved Pack 18 prompt and the closed canonical entry-route gap for
 `/demo/syria-2024`, `/waitlist`, `/login/callback`, and
 `/legal/{privacy,terms,security,data-retention}`.
 
+The latest Pack 19 genuinely-useful pass is
+`docs/audits/2026-05-07-PACK19_GENUINELY_USEFUL.md`. It preserves the v1.1
+prompt, records that Pack 19's post-v1.0 assumptions are not fully true yet,
+and ships the first safe usefulness slice: marketplace transparency cards for
+all 20 current tools plus `npm run audit:transparency-cards`.
+
 The latest real-app dashboard pass is
 `docs/audits/2026-05-07-DASHBOARD_REAL_APP_PASS.md`. It records the replacement
 of the redirect-only `/app/dashboard` with the current command-center route and
