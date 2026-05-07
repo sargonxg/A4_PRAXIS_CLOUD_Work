@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, CheckCircle2, GitBranchPlus, History, Loader2, Play, RefreshCw, RotateCcw, Search, SlidersHorizontal, Square, Wrench } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Eye, GitBranchPlus, GitCompare, History, Loader2, Play, RefreshCw, RotateCcw, Search, SlidersHorizontal, Square, Wrench } from 'lucide-react';
+import { EvidenceDrawer } from '@/components/evidence/EvidenceDrawer';
+import { RunDiff } from '@/components/evidence/RunDiff';
 import { getOntologyForDomain } from '@/lib/ontology/registry';
 import { filterMarketplaceTools, sortMarketplaceTools } from '@/lib/tools/marketplace/filter-engine';
 import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
@@ -21,8 +23,12 @@ interface MarketplaceRunState {
   artifactId: string;
   persisted: boolean;
   persistenceReason?: string;
+  prompt?: string | null;
   summary: string;
   rawText: string;
+  structuredOutput?: Record<string, unknown>;
+  contextDump?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
   health: number;
   advisoryCount: number;
   generatedAt?: string;
@@ -46,6 +52,18 @@ interface MarketplaceRunHistoryItem {
   providerCostUsd: number | null;
 }
 
+interface MarketplaceFullRunArtifact {
+  id: string;
+  toolId: string;
+  toolRunId: string;
+  prompt: string | null;
+  rawText: string | null;
+  structuredOutput: Record<string, unknown>;
+  contextDump: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+}
+
 export function ToolMarketplace() {
   const { caseId, caseModule, activeTab } = useWorkbenchScope();
   const ontology = getOntologyForDomain(caseModule.manifest.domain);
@@ -59,6 +77,8 @@ export function ToolMarketplace() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [lastRunRequest, setLastRunRequest] = useState<string | null>(null);
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [diffOpen, setDiffOpen] = useState(false);
   const runAbortController = useRef<AbortController | null>(null);
   const contextHealth =
     (caseModule.truthLayers.source.provenanceCoverage +
@@ -91,6 +111,10 @@ export function ToolMarketplace() {
     () => visibleTools.filter((tool) => !tool.satCategory),
     [visibleTools],
   );
+  const previousComparableRun = useMemo(() => {
+    if (!lastRun) return null;
+    return runHistory.find((item) => item.toolId === lastRun.toolId && item.id !== lastRun.artifactId) ?? null;
+  }, [lastRun, runHistory]);
 
   const loadRunHistory = useCallback(async () => {
     setHistoryLoading(true);
@@ -111,14 +135,14 @@ export function ToolMarketplace() {
     void loadRunHistory();
   }, [loadRunHistory]);
 
-  function loadHistoryItem(item: MarketplaceRunHistoryItem) {
+  function buildLastRunFromSummary(item: MarketplaceRunHistoryItem): MarketplaceRunState {
     const tool = MARKETPLACE_TOOLS.find((candidate) => candidate.id === item.toolId);
-    setRunError(null);
-    setLastRun({
+    return {
       toolId: item.toolId,
       toolName: tool?.name ?? item.toolId,
       artifactId: item.id,
       persisted: true,
+      prompt: item.prompt,
       summary: item.summary ?? `${tool?.name ?? item.toolId} completed.`,
       rawText: item.rawText ?? '',
       health: item.contextHealth ?? 0,
@@ -126,7 +150,48 @@ export function ToolMarketplace() {
       generatedAt: item.createdAt,
       durationMs: item.durationMs ?? undefined,
       costClass: item.costClass ?? undefined,
-    });
+    };
+  }
+
+  async function loadHistoryItem(item: MarketplaceRunHistoryItem) {
+    const fallback = buildLastRunFromSummary(item);
+    setRunError(null);
+    setHistoryError(null);
+    setEvidenceOpen(false);
+    setDiffOpen(false);
+    try {
+      const response = await fetch(`/api/tools/marketplace/run?caseId=${encodeURIComponent(caseId)}&artifactId=${encodeURIComponent(item.id)}`);
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? 'Failed to load full artifact');
+      const full = payload.item as MarketplaceFullRunArtifact;
+      const tool = MARKETPLACE_TOOLS.find((candidate) => candidate.id === full.toolId);
+      const summary = typeof full.structuredOutput?.summary === 'string'
+        ? full.structuredOutput.summary
+        : fallback.summary;
+      const caseOutput = full.structuredOutput?.case as { contextHealth?: { score?: unknown } } | undefined;
+      const advisories = Array.isArray(full.structuredOutput?.advisories) ? full.structuredOutput.advisories : [];
+      const telemetry = full.metadata?.runTelemetry as Record<string, unknown> | undefined;
+      setLastRun({
+        toolId: full.toolId,
+        toolName: tool?.name ?? full.toolId,
+        artifactId: full.id,
+        persisted: true,
+        prompt: full.prompt,
+        summary,
+        rawText: full.rawText ?? '',
+        structuredOutput: full.structuredOutput,
+        contextDump: full.contextDump,
+        metadata: full.metadata,
+        health: typeof caseOutput?.contextHealth?.score === 'number' ? caseOutput.contextHealth.score : fallback.health,
+        advisoryCount: advisories.length,
+        generatedAt: full.createdAt,
+        durationMs: typeof telemetry?.durationMs === 'number' ? telemetry.durationMs : fallback.durationMs,
+        costClass: typeof telemetry?.costClass === 'string' ? telemetry.costClass : fallback.costClass,
+      });
+    } catch (err) {
+      setLastRun(fallback);
+      setHistoryError(err instanceof Error ? `Loaded summary only: ${err.message}` : 'Loaded summary only.');
+    }
   }
 
   async function runTool(toolId: string) {
@@ -166,14 +231,20 @@ export function ToolMarketplace() {
         artifactId: payload.artifact.id,
         persisted: payload.persistence.persisted,
         persistenceReason: payload.persistence.reason,
+        prompt: payload.artifact.prompt,
         summary: payload.artifact.structuredOutput?.summary ?? `${payload.tool.name} completed.`,
         rawText: payload.artifact.rawText ?? '',
+        structuredOutput: payload.artifact.structuredOutput,
+        contextDump: payload.artifact.contextDump,
+        metadata: payload.artifact.metadata,
         health: payload.runContext.health,
         advisoryCount: payload.runContext.advisories?.length ?? 0,
         generatedAt: payload.artifact.createdAt,
         durationMs: payload.telemetry?.durationMs,
         costClass: payload.telemetry?.costClass,
       });
+      setEvidenceOpen(false);
+      setDiffOpen(false);
       void loadRunHistory();
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
@@ -362,6 +433,26 @@ export function ToolMarketplace() {
                   Cancel
                 </button>
               )}
+              {lastRun && (
+                <button
+                  type="button"
+                  onClick={() => setEvidenceOpen(true)}
+                  className="inline-flex h-8 items-center gap-1 rounded-md border border-emerald-200 bg-white px-3 text-xs font-semibold text-emerald-900 transition-colors hover:bg-emerald-50"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  Evidence
+                </button>
+              )}
+              {lastRun && (
+                <button
+                  type="button"
+                  onClick={() => setDiffOpen((value) => !value)}
+                  className="inline-flex h-8 items-center gap-1 rounded-md border border-emerald-200 bg-white px-3 text-xs font-semibold text-emerald-900 transition-colors hover:bg-emerald-50"
+                >
+                  <GitCompare className="h-3.5 w-3.5" />
+                  Compare
+                </button>
+              )}
               {runError && lastRunRequest && (
                 <button
                   type="button"
@@ -379,6 +470,14 @@ export function ToolMarketplace() {
             <pre className="mt-3 max-h-40 overflow-auto rounded border border-emerald-200 bg-white p-3 text-xs leading-5 text-slate-700">
               {lastRun.rawText}
             </pre>
+          )}
+          {lastRun && diffOpen && (
+            <RunDiff
+              currentLabel={`${lastRun.toolName} current`}
+              baselineLabel={previousComparableRun ? `${previousComparableRun.toolId} previous` : 'Previous run'}
+              currentText={lastRun.rawText}
+              baselineText={previousComparableRun?.rawText}
+            />
           )}
           {lastRun && (
             <ToolChainActions
@@ -423,7 +522,7 @@ export function ToolMarketplace() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => loadHistoryItem(item)}
+                  onClick={() => void loadHistoryItem(item)}
                   className="rounded-md border border-slate-200 bg-white p-3 text-left transition-colors hover:border-gold-300 hover:bg-gold-50"
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -491,6 +590,23 @@ export function ToolMarketplace() {
           </article>
         ))}
       </div>
+
+      <EvidenceDrawer
+        open={evidenceOpen}
+        onClose={() => setEvidenceOpen(false)}
+        caseId={caseId}
+        artifact={lastRun ? {
+          toolName: lastRun.toolName,
+          artifactId: lastRun.artifactId,
+          prompt: lastRun.prompt,
+          summary: lastRun.summary,
+          rawText: lastRun.rawText,
+          structuredOutput: lastRun.structuredOutput,
+          contextDump: lastRun.contextDump,
+          metadata: lastRun.metadata,
+          generatedAt: lastRun.generatedAt,
+        } : null}
+      />
     </section>
   );
 }

@@ -40,7 +40,7 @@ The master charter is now preserved in-repo and its high-level support structure
 | 13 Tool-Context Interop | DONE contract foundation, subagent runtime pending | DONE with runtime orchestration deferred | Contract v2, skills, projection, and suggestions are live. |
 | Pack 14 Production Excellence | PARTIAL local production-excellence foundation | Gemini Enterprise/Vertex posture, model matrix, shared embedding provider, backend model constants, provider audits, UX/observability audits, load-test scaffold, capacity plan, canary monitor, canary log template, and orchestration playbook DONE; production infra deferred | Requires owner decisions on final region/cost, Terraform/canary execution, public demo, and signup posture. |
 | Pack 18 Production Reality Closure | ACTIVE closure pass | Prompt preserved; canonical `/demo/syria-2024`, `/waitlist`, `/login/callback`, and `/legal/{privacy,terms,security,data-retention}` route gaps closed in code; route audit expanded | Persona CI streak, production context/storage parity, review queue, specialist tool depth, memo marketplace tools, Agent Engine runtime evidence, Lighthouse/axe, and canary proof remain open. |
-| Pack 19 Genuinely Useful | ACTIVE v1.1 foundation | Prompt preserved; transparency cards added to all 20 current marketplace tools; audit guard added | Pack 19 preconditions are not fully true yet: Pack 18 remaining gaps, v1.0.0 tag, 10-green persona CI streak, live Agent Engine runtime evidence, specialist handlers, and memo marketplace tools remain open. |
+| Pack 19 Genuinely Useful | ACTIVE v1.1 foundation | Prompt preserved; transparency cards added to all 20 current marketplace tools; tool-run evidence drawer and run comparison foundation added; audit guards added | Pack 19 preconditions are not fully true yet: Pack 18 remaining gaps, v1.0.0 tag, 10-green persona CI streak, live Agent Engine runtime evidence, specialist handlers, memo marketplace tools, claim challenge, and semantic diffing remain open. |
 
 ## Open S0/S1 From Self-Audit
 
@@ -84,8 +84,13 @@ real `/waitlist`, `/login/callback`, and canonical `/legal/*` pages guarded by
 foundation slice. The prompt is preserved, and marketplace transparency cards
 now expose methodology, limitations, evaluation posture, expected error modes,
 last-updated date, and cost class for all 20 current marketplace tools. The
+same audit now records the next S3 foundation slice: completed marketplace runs
+can open an evidence drawer with claims, provenance, context snapshot,
+advisories, raw output, handler posture, and metadata, and can compare raw
+output against the previous persisted run for the same tool. The transparency
 slice is deployed to `https://praxis.tacitus.me` via Cloud Build
-`54d97487-ef2a-42d6-937d-59c0962bb97c`.
+`54d97487-ef2a-42d6-937d-59c0962bb97c`; the evidence-drawer slice is pending
+fresh deployment evidence.
 
 ## Remaining Work
 
@@ -97,5 +102,5 @@ slice is deployed to `https://praxis.tacitus.me` via Cloud Build
 - Implement LangGraph subagent orchestration/telemetry for Context Preparer, Source Augmenter, Output Refiner, and Memo Drafter.
 - Continue Pack 14 after the local provider/posture pass: Terraform-managed infrastructure, managed Agent Platform Runtime deployment, public read-only demo, waitlist/magic-link posture, observability, load testing, cost dashboard, and canary deploy.
 - Continue Pack 18 by closing the synthesized review queue, persona CI streak evidence, production storage parity evidence, marketplace specialist depth, memo marketplace tools, Agent Engine runtime evidence, Lighthouse/axe evidence, and canary proof.
-- Continue Pack 19 only in slices that do not falsely depend on unresolved v1.0 evidence. Highest safe next slices: evidence drawer scaffolding, workspace preference propagation audit, and Situation Genesis baseline measurement.
+- Continue Pack 19 only in slices that do not falsely depend on unresolved v1.0 evidence. Highest safe next slices: claim challenge/reasoning-step appeal, workspace preference propagation audit, and Situation Genesis baseline measurement.
 - Obtain owner production-readiness signature, complete staging/production signed smoke records, and only then tag `v1.0.0`.

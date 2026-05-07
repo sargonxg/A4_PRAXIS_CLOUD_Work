@@ -12,8 +12,8 @@ true in the current repo: Pack 18 has not been fully closed, v1.0.0 is not
 tagged, ten green persona CI runs are not evidenced, live Agent Engine runtime
 evidence is incomplete, and specialist model-backed marketplace handlers remain
 an open launch gap. This pass therefore preserved the prompt, documented the
-dependency mismatch, and implemented a safe Pack 19 foundation slice: visible
-transparency cards on marketplace tools.
+dependency mismatch, and implemented safe Pack 19 foundation slices: visible
+transparency cards on marketplace tools plus inspectable tool-run evidence.
 
 ## Implemented In This Pass
 
@@ -21,7 +21,9 @@ transparency cards on marketplace tools.
 |---|---|---|
 | Prompt preservation | CLOSED | `docs/codex-prompts/PRAXIS_CODEX_19_GENUINELY_USEFUL.md`, `scripts/audit-codex-prompts.ts` |
 | S9 transparency cards foundation | CLOSED for 20 current marketplace tools | `src/lib/tools/marketplace/transparency.ts`, `src/components/tools/ToolTransparencyCard.tsx`, `src/components/tools/ToolMarketplace.tsx` |
+| S3 evidence drawer foundation | CLOSED for marketplace tool-run artifacts | `src/components/evidence/EvidenceDrawer.tsx`, `src/components/evidence/RunDiff.tsx`, `src/app/api/tools/marketplace/run/route.ts` |
 | Regression audit | CLOSED | `scripts/audit-transparency-cards.ts`, `npm run audit:transparency-cards`, included in `npm run audit:gate` |
+| Regression audit | CLOSED | `scripts/audit-evidence-drawer.ts`, `npm run audit:evidence-drawer`, included in `npm run audit:gate` |
 
 ## Current Scope Note
 
@@ -40,6 +42,24 @@ Each card derives from the marketplace registry and handler contract:
 - expected error modes: quality-bar failures, stale/missing receipts, ontology mismatch;
 - last updated date and cost class.
 
+## What The Evidence Drawer Shows
+
+Marketplace runs now keep the full run artifact available to the completed-run
+panel instead of reducing the result to opaque text. The drawer exposes:
+
+- run prompt, summary, latency/cost-class telemetry, and handler stage;
+- claim text, trust score, provenance, and a graph-tab link for case-backed
+  provenance;
+- context snapshot health, weakest layer, and projection payload;
+- context advisories, next actions, generated artifacts, raw output, handler
+  contract, posture, and metadata;
+- persisted artifact reload by `artifactId` for signed-in users.
+
+The completed-run panel also includes a run comparison control. It compares the
+current raw output with the previous persisted run for the same tool when one
+exists; demo sessions correctly show that no previous persisted raw output is
+available.
+
 ## Remaining Pack 19 Work
 
 These remain open until the Pack 18 launch gaps are truly closed:
@@ -48,7 +68,7 @@ These remain open until the Pack 18 launch gaps are truly closed:
 |---|---|---|
 | S1 | Situation Genesis flow | Not started; requires orchestration decision and review-queue integration |
 | S2 | Workspace guideline propagation + case fork | Not started |
-| S3 | Evidence drawer, output diffing, claim challenge | Not started |
+| S3 | Claim challenge and semantic diffing | Evidence drawer and line-level output diff foundation closed; claim challenge/reasoning-step appeal remains open |
 | S4 | Memo redaction, milestones, review workflow, branded exports | Not started |
 | S5 | Boardroom intervention and deliberation history | Not started |
 | S6 | Live signal panel | Not started; depends on signal integrations |
@@ -59,6 +79,7 @@ These remain open until the Pack 18 launch gaps are truly closed:
 ## Verification Targets
 
 - `npm run audit:transparency-cards`
+- `npm run audit:evidence-drawer`
 - `npm run audit:codex-prompts`
 - `npm run audit:tool-marketplace`
 - `npm run typecheck`
@@ -66,12 +87,16 @@ These remain open until the Pack 18 launch gaps are truly closed:
 
 ## Local Verification Evidence
 
-Executed against `next start -p 3119` after production build:
+Executed against `next start -p 3119` and `next start -p 3120` after
+production builds:
 
 | Surface | Result |
 |---|---|
 | `/app/workbench/syria-2026?tab=tools` in demo session | Marketplace rendered with `data-testid="tool-marketplace"` |
 | Transparency cards | 11 visible in the filtered default marketplace view; all 20 covered by `npm run audit:transparency-cards` |
+| Tool-run evidence drawer | Desktop and mobile browser smokes completed a marketplace run, opened the drawer, and verified claims/provenance, context snapshot, and raw output sections |
+| Run comparison | Completed-run Compare control opened the run comparison panel; demo mode correctly showed no previous persisted run when history was absent |
+| Full audit gate | `npm run audit:gate` passed, including `npm run audit:evidence-drawer`, `npm run build`, 138 Vitest files, 552 tests, KG drift, GCP, and master-charter checks |
 | Browser errors | 0 console errors, 0 page errors |
 
 ## Production Verification Evidence

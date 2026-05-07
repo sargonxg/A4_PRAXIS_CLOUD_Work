@@ -30,6 +30,7 @@ export const GET = withAuth(async (req, user) => {
   try {
     const url = new URL(req.url);
     const caseId = url.searchParams.get('caseId')?.trim();
+    const artifactId = url.searchParams.get('artifactId')?.trim();
     const limit = Math.min(20, Math.max(1, Number(url.searchParams.get('limit') ?? '8') || 8));
 
     if (!caseId) {
@@ -41,6 +42,24 @@ export const GET = withAuth(async (req, user) => {
     }
 
     const db = getAdminDbOrThrow();
+
+    if (artifactId) {
+      const doc = await db
+        .collection('users')
+        .doc(user.uid)
+        .collection('situations')
+        .doc(caseId)
+        .collection('toolRunArtifacts')
+        .doc(artifactId)
+        .get();
+
+      if (!doc.exists) {
+        return NextResponse.json({ error: 'Artifact not found' }, { status: 404 });
+      }
+
+      return NextResponse.json({ item: { id: doc.id, ...doc.data() } as ToolRunArtifactRecord });
+    }
+
     const snap = await db
       .collection('users')
       .doc(user.uid)

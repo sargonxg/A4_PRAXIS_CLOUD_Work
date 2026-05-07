@@ -29,8 +29,10 @@ preserved Pack 18 prompt and the closed canonical entry-route gap for
 The latest Pack 19 genuinely-useful pass is
 `docs/audits/2026-05-07-PACK19_GENUINELY_USEFUL.md`. It preserves the v1.1
 prompt, records that Pack 19's post-v1.0 assumptions are not fully true yet,
-and ships the first safe usefulness slice: marketplace transparency cards for
-all 20 current tools plus `npm run audit:transparency-cards`.
+and ships the safe usefulness slices that are honest on the current app:
+marketplace transparency cards for all 20 current tools plus tool-run evidence
+drawer and comparison UI, guarded by `npm run audit:transparency-cards` and
+`npm run audit:evidence-drawer`.
 
 The latest real-app dashboard pass is
 `docs/audits/2026-05-07-DASHBOARD_REAL_APP_PASS.md`. It records the replacement
