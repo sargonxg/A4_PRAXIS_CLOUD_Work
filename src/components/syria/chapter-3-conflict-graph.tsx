@@ -3,8 +3,11 @@
 import { useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { GitBranch, Network, RadioTower, ShieldAlert } from 'lucide-react';
+import { PraxisGraphView } from '@/components/graph/PraxisGraphView';
 import { PraxisLink } from '@/components/shared/praxis-link';
+import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { SYRIA_DEMO_CONFLICT_GRAPH } from '@/lib/constants/syria-demo-case';
+import { buildWorkbenchCaseGraph } from '@/lib/graph/workbench-case-graph';
 import { summarizeCounterfactuals } from '@/lib/syria/counterfactuals';
 import { SyriaCounterfactualControls } from '@/components/syria/counterfactual-controls';
 import { cn } from '@/lib/utils/cn';
@@ -27,10 +30,12 @@ const EDGES: EdgeDef[] = [
 ];
 
 export function SyriaChapterConflictGraph() {
+  const { caseModule } = useWorkbenchScope();
   const [view, setView] = useState<GraphView>('episodic');
   const [activeCounterfactuals, setActiveCounterfactuals] = useState<string[]>([]);
   const [hoverNode, setHoverNode] = useState<string | null>(null);
   const reduceMotion = useReducedMotion();
+  const workbenchGraph = useMemo(() => buildWorkbenchCaseGraph(caseModule), [caseModule]);
   const counterfactualSummary = useMemo(() => summarizeCounterfactuals(activeCounterfactuals), [activeCounterfactuals]);
 
   const nodes = useMemo(() => {
@@ -219,6 +224,10 @@ export function SyriaChapterConflictGraph() {
           </motion.div>
         </AnimatePresence>
       </aside>
+
+      <div className="xl:col-span-2">
+        <PraxisGraphView graph={workbenchGraph} initialLayout="force" persistToUrl={false} />
+      </div>
     </div>
   );
 }

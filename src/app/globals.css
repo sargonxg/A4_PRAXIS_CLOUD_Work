@@ -1,3 +1,4 @@
+@import "maplibre-gl/dist/maplibre-gl.css";
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
@@ -333,4 +334,63 @@ body {
   background: linear-gradient(90deg, var(--color-gold-600), var(--color-gold-400));
   z-index: 9999;
   transition: width 0.1s ease-out;
+}
+
+/* Pack 29 graph projections */
+.praxis-timeline .vis-timeline {
+  border: 0;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.praxis-timeline .vis-panel,
+.praxis-timeline .vis-labelset .vis-label {
+  background: var(--color-app-surface);
+  color: var(--color-navy-800);
+}
+
+.praxis-timeline .vis-labelset .vis-label,
+.praxis-timeline .vis-time-axis .vis-grid.vis-minor,
+.praxis-timeline .vis-panel.vis-center,
+.praxis-timeline .vis-panel.vis-left {
+  border-color: var(--color-app-border);
+}
+
+.praxis-timeline .vis-item {
+  border-color: var(--color-navy-300);
+  background: var(--color-app-surface);
+  color: var(--color-navy-950);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.praxis-timeline .praxis-timeline-case {
+  border-color: var(--color-navy-900);
+  background: var(--color-navy-950);
+  color: white;
+}
+
+.praxis-timeline .praxis-timeline-actor {
+  border-color: #7c3aed;
+  background: #f3e8ff;
+}
+
+.praxis-timeline .praxis-timeline-source {
+  border-color: #0ea5e9;
+  background: #e0f2fe;
+}
+
+.praxis-timeline .praxis-timeline-claim {
+  border-color: #b45309;
+  background: #fef3c7;
+}
+
+.praxis-timeline .praxis-timeline-evidence {
+  border-color: #059669;
+  background: #dcfce7;
+}
+
+.praxis-timeline .praxis-timeline-verdict {
+  border-color: #be123c;
+  background: #ffe4e6;
 }

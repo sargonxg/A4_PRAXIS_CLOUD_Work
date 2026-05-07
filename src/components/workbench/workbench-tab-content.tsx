@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { Activity, BookOpen, Boxes, FileText, GitBranch, GitBranchPlus, Library, Search, Store, Users } from 'lucide-react';
 import { BoardroomIndex } from '@/components/boardroom/BoardroomWorkspace';
-import { PraxisGraphCanvas } from '@/components/graph/PraxisGraphCanvas';
+import { PraxisGraphView } from '@/components/graph/PraxisGraphView';
 import { MemoStudio } from '@/components/memo/MemoStudio';
 import { OntologySchemaViewer } from '@/components/ontology/OntologySchemaViewer';
 import { ACHIndex } from '@/components/sats/ACHWorkbench';
@@ -69,7 +69,7 @@ function WorkbenchGraphPanel() {
   const { caseModule } = useWorkbenchScope();
   return (
     <GuidedSurface tabId="graph">
-      <PraxisGraphCanvas graph={buildWorkbenchCaseGraph(caseModule)} />
+      <PraxisGraphView graph={buildWorkbenchCaseGraph(caseModule)} />
     </GuidedSurface>
   );
 }

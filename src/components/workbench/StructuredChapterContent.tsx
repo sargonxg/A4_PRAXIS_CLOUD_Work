@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { ArrowRight, FileText, GitBranch, Library, Sparkles, type LucideIcon } from 'lucide-react';
+import { PraxisGraphView } from '@/components/graph/PraxisGraphView';
 import { SurfaceFactGrid, SurfaceQuestionList } from '@/components/workbench/workbench-surface-elements';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
+import { buildWorkbenchCaseGraph } from '@/lib/graph/workbench-case-graph';
 import { buildWorkbenchSurfaceState } from '@/lib/workbench/surface-state';
 import type { WorkbenchChapterId } from '@/lib/workbench/chapter-flow';
 
@@ -50,6 +52,7 @@ export function StructuredChapterContent({ chapterId }: { chapterId: WorkbenchCh
     return (
       <div className="space-y-4">
         <SurfaceFactGrid facts={surface.chapterFacts[chapterId]} />
+        <PraxisGraphView graph={buildWorkbenchCaseGraph(caseModule)} initialLayout="force" persistToUrl={false} />
         <SurfaceQuestionList questions={surface.openQuestions.filter((question) => question.id === 'graph' || question.id === 'health')} />
       </div>
     );
