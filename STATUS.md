@@ -21,8 +21,8 @@
 - Started: 2026-05-08T00:27:51-04:00 checkpoint.
 - Branch: `main`
 - Last commit at start: `46d8cf1`
-- Last commit at end: `cbca72e` before this Cognee honesty follow-up pass.
-- Total commits this session: `2`
+- Last commit at end: current `main` HEAD after this chapter code-split follow-up pass.
+- Total commits this session: `7`
 - Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`
 
 ## Tasks
@@ -33,7 +33,7 @@
 | 02_MARKETPLACE_HONESTY | done | Tools chapter is a Recipe library; 53 non-SAT recipes stage hero-tool context; deterministic foundation strings are redacted from UI; stage-target coverage and UI-copy audits are wired. |
 | 03_CALIBRATION_INVARIANT | done | All 55 registry tools are tiered (`46` calibrated AI, `9` deterministic structural); deterministic structural tools are labeled; calibrated AI hero routes are audited for `withCalibration`; negative flip test catches `context-builder`; docs updated. |
 | 04_COGNEE_UI_HONESTY | done | `/api/health/features` exposes server-derived flags with reasons; Cognee/memory UI copy is gated or neutralized; user-facing memory panel/client removed; Agent Engine subagent labels are hidden unless `VERTEX_AGENT_ENGINE_ID` is set; legacy Cognee audits now enforce the boundary instead of requiring deleted UI. |
-| 05_CHAPTER_CODE_SPLIT | done | Six heavy chapters and four substrate tabs are dynamic islands with skeletons; bundle audit wired into gate. |
+| 05_CHAPTER_CODE_SPLIT | done | Six heavy chapters and four substrate tabs are dynamic islands with skeletons; shell/tab modal only mount active children; `audit:workbench-bundle` is wired into gate and now enforces dynamic imports, closed Tools-by-default, skeleton presence, and conditional mounting. |
 | 06_LIBRARY_INGEST_CONSOLIDATION | partial | Upload UI now saves through `/api/documents/upload` before attempting backend Library ingest; static audit added. Runtime RAG retrieval verification not run. |
 | 07_ONBOARDING_GATE | done | Shared onboarding helper added; calibrated routes import it; post-login redirect and Next proxy route incomplete profiles to `/onboarding`; completion refreshes signed session claim; workbench banner added; audit wired. |
 | 08_THIN_CASE_CALIBRATION | deferred | No thin-case prompt-health scoring or 422 contract added yet. |
@@ -68,7 +68,7 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 | audit:hero-tool-calibration-coverage | pass | static-marker | Checked 12 visible hero tools and catches deterministic/calibrated mismatches. |
 | audit:cognee-ui-honesty | pass | static-marker | Verifies Cognee/memory copy is not exposed by default-disabled UI and marketplace subagent pills are feature-gated. |
 | audit:surface-registry-coherence | pass | static-marker | Ensures product surfaces are reachable through tabs or chapters. |
-| audit:workbench-bundle | pass | build-output | Measured current workbench initial client JS at `511.1 KB gzip`. |
+| audit:workbench-bundle | pass | build-output | Measured current workbench initial client JS at `511.4 KB gzip` with a `520 KB` budget; also enforces dynamic chapter/tab imports and active-only mounting. |
 | audit:library-ingest-consolidation | pass | static-marker | Ensures upload UI calls both document save and backend ingest paths. |
 
 ### Verification Commands Run
@@ -86,7 +86,7 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 | `npm run audit:cognee-operations` | pass |
 | `npm run audit:hero-tool-calibration-coverage` | pass |
 | `npm run audit:library-ingest-consolidation` | pass |
-| `npm run audit:workbench-bundle` | pass, `511.1 KB gzip` |
+| `npm run audit:workbench-bundle` | pass, `511.4 KB gzip` |
 | `npm run audit:embedding-dim` | pass |
 | `npm run audit:ai-provider-isolation` | pass |
 | `npm run audit:model-matrix-coverage` | pass |
