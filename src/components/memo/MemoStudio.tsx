@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Download, FileText, RefreshCw, Save } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
+import { useFeatureFlags } from '@/lib/features/client';
 import { createMemoVersion, memoBlocksToMarkdown, memoBlocksToPlainText } from '@/lib/memo/export';
 import { buildMemoBlocksForCase, listMemoTemplates } from '@/lib/memo/templates/registry';
 import type { MemoBlock, MemoTemplateId, MemoVersion } from '@/types/memo';
@@ -12,6 +13,8 @@ import { cn } from '@/lib/utils/cn';
 export function MemoStudio() {
   const { caseId, caseModule } = useWorkbenchScope();
   const { user } = useAuth();
+  const features = useFeatureFlags();
+  const cogneeEnabled = features.cognee.enabled;
   const templates = listMemoTemplates();
   const [selectedTemplateId, setSelectedTemplateId] = useState<MemoTemplateId>('policy-memo');
   const generatedBlocks = useMemo(
@@ -164,7 +167,7 @@ export function MemoStudio() {
     const payload = await response?.json().catch(() => ({}));
     if (response?.ok && payload.memo?.id) {
       setBackendMemoId(payload.memo.id);
-      setStatus(payload.cognee?.ok ? 'Chapter memo saved to memory' : 'Chapter memo saved; memory queued');
+      setStatus(cogneeEnabled ? (payload.cognee?.ok ? 'Chapter memo saved to memory' : 'Chapter memo saved; memory queued') : 'Chapter memo saved');
       return payload.memo.id;
     }
     setStatus('Draft saved locally; chapter memo backend unavailable');

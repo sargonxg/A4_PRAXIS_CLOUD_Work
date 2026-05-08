@@ -39,7 +39,7 @@ export const WORKBENCH_CHAPTER_FLOW: WorkbenchChapterDescriptor[] = [
     number: 1,
     title: 'Research',
     navLabel: 'Research',
-    question: 'Which source gaps need collection, memory coverage, or review?',
+    question: 'Which source gaps need collection, context coverage, or review?',
     metric: 'Threads',
     timeBudget: '4k tokens/turn',
     href: '#research',

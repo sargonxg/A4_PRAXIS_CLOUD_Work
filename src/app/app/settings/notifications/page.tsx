@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Bell, Clock, Mail, Send, Smartphone, TestTube2, Webhook } from 'lucide-react';
+import { useFeatureFlags } from '@/lib/features/client';
 import { cn } from '@/lib/utils/cn';
 
 type NotificationTypeRow = {
@@ -39,19 +40,22 @@ const CHANNELS = [
   { key: 'webhook', label: 'Workspace webhook', icon: Webhook },
 ];
 
-function formatNotificationType(type: string): string {
+const MEMORY_NOTIFICATION_TYPES = new Set(['thread_closed_memified', 'cognee_degraded']);
+
+function formatNotificationType(type: string, cogneeEnabled: boolean): string {
+  if (type === 'thread_closed_memified') return cogneeEnabled ? 'Research thread saved to memory' : 'Research thread closed';
+  if (type === 'cognee_degraded') return cogneeEnabled ? 'Memory service degraded' : 'Context service degraded';
+
   const labels: Record<string, string> = {
     source_ingest_complete: 'Source ingest complete',
     source_ingest_failed: 'Source ingest failed',
     candidates_ready_batch: 'Candidates ready',
     dedup_suggestion_ready: 'Duplicate suggestion ready',
     thread_idle_nudge: 'Research thread idle',
-    thread_closed_memified: 'Research thread saved to memory',
     recipe_complete: 'Recipe complete',
     briefing_exported: 'Briefing exported',
     budget_warning: 'Budget warning',
     budget_paused: 'Budget paused',
-    cognee_degraded: 'Memory service degraded',
     ontology_update_available: 'Ontology update available',
     ontology_gap_proposed: 'Ontology gap proposed',
     workspace_shared: 'Workspace shared',
@@ -66,6 +70,8 @@ function formatCategory(category: string): string {
 }
 
 export default function NotificationSettingsPage() {
+  const features = useFeatureFlags();
+  const cogneeEnabled = features.cognee.enabled;
   const [types, setTypes] = useState<NotificationTypeRow[]>([]);
   const [prefs, setPrefs] = useState<Preferences>(DEFAULT_PREFS);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'testing' | 'error'>('idle');
@@ -82,9 +88,10 @@ export default function NotificationSettingsPage() {
 
   const grouped = useMemo(() => {
     const map = new Map<string, NotificationTypeRow[]>();
-    for (const row of types) map.set(row.category, [...(map.get(row.category) ?? []), row]);
+    const visibleTypes = cogneeEnabled ? types : types.filter((row) => !MEMORY_NOTIFICATION_TYPES.has(row.type));
+    for (const row of visibleTypes) map.set(row.category, [...(map.get(row.category) ?? []), row]);
     return Array.from(map.entries());
-  }, [types]);
+  }, [cogneeEnabled, types]);
 
   async function save(next: Preferences) {
     setPrefs(next);
@@ -165,7 +172,7 @@ export default function NotificationSettingsPage() {
                 {rows.map((row) => (
                   <div key={row.type} className="grid gap-3 rounded-md border border-navy-200 px-3 py-2 sm:grid-cols-[1fr_160px] sm:items-center">
                     <div>
-                      <p className="text-sm font-medium text-navy-900">{formatNotificationType(row.type)}</p>
+                      <p className="text-sm font-medium text-navy-900">{formatNotificationType(row.type, cogneeEnabled)}</p>
                       <p className="mt-0.5 text-xs text-navy-600">{row.description}</p>
                     </div>
                     <select

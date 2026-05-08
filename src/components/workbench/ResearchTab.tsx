@@ -12,6 +12,8 @@ import {
   type ResearchCandidate,
   type ResearchDepth,
 } from '@/lib/workbench/research-state';
+import { readStagedMarketplaceContext } from '@/lib/tools/marketplace/staged-context';
+import { useFeatureFlags } from '@/lib/features/client';
 import { cn } from '@/lib/utils/cn';
 
 interface BackendResearchThread {
@@ -52,6 +54,8 @@ interface ResearchStreamEvent {
 
 export function ResearchTab() {
   const { caseId, caseModule } = useWorkbenchScope();
+  const features = useFeatureFlags();
+  const cogneeEnabled = features.cognee.enabled;
   const [question, setQuestion] = useState(`${caseModule.manifest.name} latest source updates`);
   const [depth, setDepth] = useState<ResearchDepth>('standard');
   const [selectedSources, setSelectedSources] = useState<string[]>(['un', 'crisisgroup', 'reuters', 'case-docs']);
@@ -82,6 +86,16 @@ export function ResearchTab() {
   useEffect(() => {
     void refreshThreads();
   }, [refreshThreads]);
+
+  useEffect(() => {
+    const staged = readStagedMarketplaceContext(caseId, 'source-scout');
+    if (!staged) return;
+    setQuestion(staged.prompt);
+    setResults(buildResearchCandidates(caseModule, staged.prompt, selectedSources, depth));
+    setPlan(buildResearchPlan(caseModule, staged.prompt));
+    // Stage payload should prefill once without locking later analyst edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [caseId]);
 
   function toggleSource(sourceId: string) {
     setSelectedSources((current) => current.includes(sourceId) ? current.filter((item) => item !== sourceId) : [...current, sourceId]);
@@ -127,7 +141,7 @@ export function ResearchTab() {
       setThreads((current) => [payload.thread, ...current.filter((thread) => thread.id !== payload.thread.id)]);
       setActiveThreadId(payload.thread.id);
       setRecallEvents([]);
-      setThreadNote('Research thread opened with Cognee session continuity.');
+      setThreadNote(cogneeEnabled ? 'Research thread opened with Cognee session continuity.' : 'Research thread opened.');
       return;
     }
     setThreadNote('Research threads are unavailable in this session; source scout still works.');
@@ -146,7 +160,11 @@ export function ResearchTab() {
     if (response?.ok) {
       const lastEvent = events[events.length - 1];
       const cogneeStatus = events.find((event) => event.cognee)?.cognee?.status;
-      setThreadNote(cogneeStatus === 'search_unavailable' ? 'Recall turn saved; Cognee search is queued/offline.' : lastEvent?.message ?? 'Recall turn completed and was persisted.');
+      setThreadNote(
+        cogneeEnabled && cogneeStatus === 'search_unavailable'
+          ? 'Recall turn saved; Cognee search is queued/offline.'
+          : lastEvent?.message ?? 'Recall turn completed and was persisted.',
+      );
       await refreshThreads();
       return;
     }
@@ -154,14 +172,14 @@ export function ResearchTab() {
   }
 
   async function closeThread(threadId: string) {
-    setThreadNote('Closing thread into memory...');
+    setThreadNote(cogneeEnabled ? 'Closing thread into memory...' : 'Closing thread...');
     const response = await fetch(`/api/backend/chapters/research/threads/${encodeURIComponent(threadId)}/close`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ resolution: question, confidence: 0.7 }),
     }).catch(() => null);
     if (response?.ok) {
-      setThreadNote('Thread closed and memoized or queued for Cognee memory.');
+      setThreadNote(cogneeEnabled ? 'Thread closed and memoized or queued for Cognee memory.' : 'Thread closed.');
       await refreshThreads();
       return;
     }
@@ -309,11 +327,12 @@ export function ResearchTab() {
               >
                 <p className="text-sm font-semibold text-navy-950">{thread.question}</p>
                 <p className="mt-1 text-xs font-semibold text-slate-700">
-                  {thread.status} · coverage {Math.round(Number(thread.memory_coverage ?? 0) * 100)}%
+                  {thread.status}
+                  {cogneeEnabled ? ` · coverage ${Math.round(Number(thread.memory_coverage ?? 0) * 100)}%` : ''}
                 </p>
               </button>
             )) : (
-              <p className="text-sm leading-6 text-slate-700">No backend research threads yet. Open one from the active question to start recall/memify continuity.</p>
+              <p className="text-sm leading-6 text-slate-700">No backend research threads yet. Open one from the active question to keep the research trail continuous.</p>
             )}
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -331,7 +350,7 @@ export function ResearchTab() {
               onClick={() => activeThreadId ? void closeThread(activeThreadId) : undefined}
               className="rounded-md border border-navy-300 px-3 py-2 text-xs font-semibold text-navy-900 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Close thread → improve memory
+              {cogneeEnabled ? 'Close thread → improve memory' : 'Close thread'}
             </button>
           </div>
           {threadNote ? <p className="mt-3 text-sm font-semibold text-navy-900">{threadNote}</p> : null}
@@ -339,16 +358,18 @@ export function ResearchTab() {
             <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3" data-testid="research-thread-recall-ledger">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-700">Recall ledger</p>
-                <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-700">
-                  {Math.round(Number(activeThread.memory_coverage ?? 0) * 100)}% coverage
-                </span>
+                {cogneeEnabled ? (
+                  <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-700">
+                    {Math.round(Number(activeThread.memory_coverage ?? 0) * 100)}% coverage
+                  </span>
+                ) : null}
               </div>
               <div className="mt-3 space-y-3">
                 {recallEvents.filter((event) => event.answer || event.message).map((event, index) => (
                   <div key={`${event.status}-${index}`} className="rounded-md border border-white bg-white p-3">
                     <p className="text-sm font-semibold text-navy-950">{event.message ?? 'Recall event'}</p>
                     {event.answer ? <p className="mt-1 text-sm leading-5 text-slate-700">{event.answer}</p> : null}
-                    {typeof event.hits === 'number' ? <p className="mt-2 text-xs font-semibold text-slate-700">{event.hits} Cognee hit(s)</p> : null}
+                    {typeof event.hits === 'number' ? <p className="mt-2 text-xs font-semibold text-slate-700">{event.hits} {cogneeEnabled ? 'Cognee' : 'graph'} hit(s)</p> : null}
                   </div>
                 ))}
                 {(activeThread.recall_history ?? []).slice(-3).reverse().map((turn, index) => (
@@ -359,7 +380,7 @@ export function ResearchTab() {
                       <span className="rounded-full bg-navy-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-navy-900">
                         {turn.hit_count ?? 0} hit(s)
                       </span>
-                      {turn.cognee?.status ? (
+                      {cogneeEnabled && turn.cognee?.status ? (
                         <span className="rounded-full bg-gold-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-navy-950">
                           {turn.cognee.status}
                         </span>
@@ -369,7 +390,7 @@ export function ResearchTab() {
                       <div className="mt-2 space-y-1">
                         {turn.citations.slice(0, 2).map((citation, citationIndex) => (
                           <p key={citation.id ?? citationIndex} className="text-xs leading-5 text-slate-700">
-                            {citation.sourceId ?? citation.id ?? 'Cognee chunk'}: {citation.text}
+                            {citation.sourceId ?? citation.id ?? (cogneeEnabled ? 'Cognee chunk' : 'retrieved source')}: {citation.text}
                           </p>
                         ))}
                       </div>
@@ -378,7 +399,9 @@ export function ResearchTab() {
                 ))}
                 {!recallEvents.length && !(activeThread.recall_history ?? []).length ? (
                   <p className="text-sm leading-5 text-slate-700">
-                    Run graph recall to attach Cognee session results, then close the thread to improve long-term memory coverage.
+                    {cogneeEnabled
+                      ? 'Run graph recall to attach Cognee session results, then close the thread to improve long-term memory coverage.'
+                      : 'Run graph recall to attach retrieved source and graph context to the thread.'}
                   </p>
                 ) : null}
               </div>

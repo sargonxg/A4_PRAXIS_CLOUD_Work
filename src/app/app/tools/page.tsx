@@ -80,6 +80,16 @@ const TIER_LABEL: Record<WorkspaceToolRow['tier'], string> = {
   unmapped: 'Other',
 };
 
+function ToolExecutionTierPill({ tool }: { tool: ToolDefinition }) {
+  if (tool.tier !== 'deterministic-structural') return null;
+
+  return (
+    <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-navy-700">
+      Structural · no AI
+    </span>
+  );
+}
+
 export default function ToolsWorkspacePage() {
   const { needsOnboarding, loading, situation } = useSituationGuard();
 
@@ -373,7 +383,10 @@ function DemoRunway({ rows }: { rows: WorkspaceToolRow[] }) {
                       {String(index + 1).padStart(2, '0')}
                     </span>
                   </div>
-                  <h3 className="mt-2 text-xs font-semibold text-navy-900 group-hover:text-diplomatic-blue">{tool.name}</h3>
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <h3 className="text-xs font-semibold text-navy-900 group-hover:text-diplomatic-blue">{tool.name}</h3>
+                    <ToolExecutionTierPill tool={tool} />
+                  </div>
                   <p className="mt-1 line-clamp-3 text-[11px] leading-snug text-navy-500">{tool.shortDescription}</p>
                 </div>
                 <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2">
@@ -563,6 +576,7 @@ function ToolRow({ row, packages }: { row: WorkspaceToolRow; packages: ToolPathP
           <div className="flex flex-wrap items-center gap-2">
             <HealthDot health={health} stale={status?.isStale} />
             <h3 className="text-sm font-semibold text-navy-900">{row.tool.name}</h3>
+            <ToolExecutionTierPill tool={row.tool} />
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-navy-500">
               {TIER_LABEL[row.tier]}
             </span>

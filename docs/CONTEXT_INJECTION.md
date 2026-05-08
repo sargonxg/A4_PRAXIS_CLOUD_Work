@@ -18,9 +18,10 @@ captured, where each is read, how each propagates, and how to extend it.
 
 ## TL;DR
 
-Every authenticated AI request in PRAXIS is wrapped by `withCalibration`,
-which assembles a `CalibrationContext` from four data sources and renders an
-XML-shaped `systemPromptBlock` that is prepended to the AI system prompt.
+Every calibrated-ai-tier hero tool's AI route, plus every backend chapter
+recipe that accepts a `situationId`, is wrapped by `withCalibration`. The
+wrapper assembles a `CalibrationContext` from four data sources and renders
+an XML-shaped `systemPromptBlock` that is prepended to the AI system prompt.
 
 ```
 AnalystProfile  ──▶┐
@@ -181,9 +182,11 @@ POST /api/ai/auto-briefing
 
 The wrapper `withCalibration(toolId, creditOpType)(handler)` factory in
 `src/lib/api/with-calibration.ts` is what makes this work uniformly across
-all 53 calibrated AI routes. **Adding a new AI tool? Wrap with
-`withCalibration` and you're done with the contract** — every layer
-above plugs in for free.
+calibrated AI surfaces. **Adding a new calibrated-ai-tier hero tool? Wrap
+its AI route with `withCalibration` and you're done with the contract** —
+every layer above plugs in for free. Deterministic structural tools must be
+declared as `tier: 'deterministic-structural'` in the tool registry and
+labelled honestly in the UI.
 
 ---
 
@@ -363,18 +366,20 @@ Common extension points, in order of how often you'll touch them:
 
 ## Health-check the contract
 
-The audit script at `scripts/audit-ai-routes.mjs` enumerates every AI
-route and verifies it is wrapped in `withCalibration` (or explicitly
-exempt). It currently reports `53 calibrated, 4 exempt`. Run it any
-time you add or refactor a route:
+The audit script at `scripts/audit-hero-tool-calibration-coverage.ts`
+enumerates every `surface === 'hero' && visible === true` registry entry.
+For entries tiered `calibrated-ai`, it resolves `aiRoute` and verifies the
+route export is wrapped in `withCalibration`; deterministic structural tools
+must be explicitly tiered to be exempt. Run it any time you add or refactor a
+hero route:
 
 ```bash
-node scripts/audit-ai-routes.mjs
+npm run audit:hero-tool-calibration-coverage
 ```
 
-Expected output: zero warnings, zero failures. If a route appears
-without calibration and is not in the exempt list, that's a bug —
-the contract has a hole.
+Expected output: zero warnings, zero failures. If a calibrated-ai hero route
+appears without calibration, or a visible hero tool omits `tier`, that's a
+bug — the contract has a hole.
 
 ---
 

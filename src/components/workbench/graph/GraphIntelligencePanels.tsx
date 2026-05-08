@@ -7,6 +7,7 @@ import type { Situation } from '@/types/situation';
 import type { WorkbenchGraph } from '@/lib/graph/workbench-case-graph';
 import { toMapPoints } from '@/lib/graph/map-adapter';
 import { toTimelineItems } from '@/lib/graph/timeline-adapter';
+import { useFeatureFlags } from '@/lib/features/client';
 
 interface GraphIntelligencePanelsProps {
   caseModule: CaseModule;
@@ -21,6 +22,8 @@ interface StakeholderProfile {
 }
 
 export function GraphIntelligencePanels({ caseModule, graph }: GraphIntelligencePanelsProps) {
+  const features = useFeatureFlags();
+  const cogneeEnabled = features.cognee.enabled;
   const situation = caseModule.situation;
   const timelineItems = toTimelineItems(graph);
   const mapPoints = toMapPoints(graph);
@@ -37,7 +40,7 @@ export function GraphIntelligencePanels({ caseModule, graph }: GraphIntelligence
               <h2 className="text-lg font-semibold">Situation Intelligence</h2>
             </div>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700">
-              The graph tab now explains the case as an operating picture: map, timeline, stakeholder roles, policy/conflict anatomy, and memory handoff.
+              The graph tab explains the case as an operating picture: map, timeline, stakeholder roles, policy/conflict anatomy, and review-gated context handoff.
             </p>
           </div>
           <div className="inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-900">
@@ -50,13 +53,17 @@ export function GraphIntelligencePanels({ caseModule, graph }: GraphIntelligence
           <InsightMetric label="Mapped nodes" value={String(mapPoints.length)} detail={`${derivedCount(mapPoints)} derived regional anchors`} />
           <InsightMetric label="Timeline events" value={String(timelineItems.length)} detail={timelineRange(timelineItems)} />
           <InsightMetric label="Stakeholders" value={String(stakeholders.length)} detail={stakeholderLaneSummary(stakeholders)} />
-          <InsightMetric label="Memory path" value="Review-gated" detail="Postgres canonical graph; Cognee candidates stay advisory." />
+          <InsightMetric
+            label={cogneeEnabled ? 'Memory path' : 'Context path'}
+            value="Review-gated"
+            detail={cogneeEnabled ? 'Postgres canonical graph; Cognee candidates stay advisory.' : 'Postgres canonical graph; generated candidates stay advisory.'}
+          />
         </div>
       </section>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
         <CaseAnatomyPanel caseModule={caseModule} />
-        <SituationMapPanel situation={situation} graph={graph} />
+        <SituationMapPanel situation={situation} graph={graph} cogneeEnabled={cogneeEnabled} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
@@ -64,7 +71,7 @@ export function GraphIntelligencePanels({ caseModule, graph }: GraphIntelligence
         <StakeholderPanel stakeholders={stakeholders} />
       </div>
 
-      <MemoryMarketplacePanel caseModule={caseModule} />
+      {cogneeEnabled ? <MemoryMarketplacePanel caseModule={caseModule} /> : null}
     </div>
   );
 }
@@ -97,7 +104,7 @@ function CaseAnatomyPanel({ caseModule }: { caseModule: CaseModule }) {
   );
 }
 
-function SituationMapPanel({ situation, graph }: { situation: Situation; graph: WorkbenchGraph }) {
+function SituationMapPanel({ situation, graph, cogneeEnabled }: { situation: Situation; graph: WorkbenchGraph; cogneeEnabled: boolean }) {
   const points = toMapPoints(graph);
   const derived = derivedCount(points);
   const bounds = situation.geoBoundingBox;
@@ -115,7 +122,9 @@ function SituationMapPanel({ situation, graph }: { situation: Situation; graph: 
           <MiniStat label="Bounds" value={bounds ? `${bounds.south}/${bounds.west} to ${bounds.north}/${bounds.east}` : 'not specified'} />
         </div>
         <p>
-          The next coding target is ingestion of source-level coordinates from receipts and Cognee candidates, with promotion into canonical graph nodes only after review.
+          {cogneeEnabled
+            ? 'The next coding target is ingestion of source-level coordinates from receipts and Cognee candidates, with promotion into canonical graph nodes only after review.'
+            : 'The next coding target is ingestion of source-level coordinates from receipts and extracted candidates, with promotion into canonical graph nodes only after review.'}
         </p>
       </div>
     </SurfacePanel>

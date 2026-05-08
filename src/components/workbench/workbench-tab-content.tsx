@@ -1,17 +1,30 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import { Activity, Boxes, GitBranch } from 'lucide-react';
-import { PraxisGraphView } from '@/components/graph/PraxisGraphView';
-import { OntologySchemaViewer } from '@/components/ontology/OntologySchemaViewer';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
-import { ContextTab } from '@/components/workbench/ContextTab';
-import { GraphIntelligencePanels } from '@/components/workbench/graph/GraphIntelligencePanels';
-import { LibraryTab } from '@/components/workbench/LibraryTab';
+import { ChapterSkeleton } from '@/components/workbench/chapter-skeleton';
 import { EmptyStateGuidance } from '@/components/workbench/empty-state/EmptyStateGuidance';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
-import { buildWorkbenchCaseGraph } from '@/lib/graph/workbench-case-graph';
 import type { WorkspaceTabId } from '@/types/workbench';
+
+const ContextTab = dynamic(
+  () => import('@/components/workbench/ContextTab').then((module) => ({ default: module.ContextTab })),
+  { loading: () => <ChapterSkeleton title="Context" />, ssr: false },
+);
+const LibraryTab = dynamic(
+  () => import('@/components/workbench/LibraryTab').then((module) => ({ default: module.LibraryTab })),
+  { loading: () => <ChapterSkeleton title="Library" />, ssr: false },
+);
+const OntologySchemaViewer = dynamic(
+  () => import('@/components/ontology/OntologySchemaViewer').then((module) => ({ default: module.OntologySchemaViewer })),
+  { loading: () => <ChapterSkeleton title="Ontology" />, ssr: false },
+);
+const WorkbenchGraphPanel = dynamic(
+  () => import('@/components/workbench/workbench-graph-panel').then((module) => ({ default: module.WorkbenchGraphPanel })),
+  { loading: () => <ChapterSkeleton title="Graph" />, ssr: false },
+);
 
 export function WorkbenchTabContent({ activeTab }: { activeTab: WorkspaceTabId }) {
   if (activeTab === 'context') return <ContextTab />;
@@ -19,17 +32,6 @@ export function WorkbenchTabContent({ activeTab }: { activeTab: WorkspaceTabId }
   if (activeTab === 'ontology') return <GuidedSurface tabId="ontology"><OntologySchemaViewer /></GuidedSurface>;
   if (activeTab === 'graph') return <WorkbenchGraphPanel />;
   return <WorkbenchTabPanel tabId={activeTab} />;
-}
-
-function WorkbenchGraphPanel() {
-  const { caseModule } = useWorkbenchScope();
-  const graph = buildWorkbenchCaseGraph(caseModule);
-  return (
-    <GuidedSurface tabId="graph">
-      <PraxisGraphView graph={graph} />
-      <GraphIntelligencePanels caseModule={caseModule} graph={graph} />
-    </GuidedSurface>
-  );
 }
 
 function GuidedSurface({ tabId, children }: { tabId: WorkspaceTabId; children: ReactNode }) {

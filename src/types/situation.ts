@@ -16,6 +16,7 @@ export type ToolCategory =
 
 export type ToolOutputType = 'structured' | 'streaming' | 'hybrid';
 export type ToolSurface = 'hero' | 'archive' | 'admin';
+export type ToolTier = 'calibrated-ai' | 'deterministic-structural';
 
 export interface ToolDefinition {
   id: string;
@@ -25,6 +26,8 @@ export interface ToolDefinition {
   surface: ToolSurface;
   /** False keeps a tool routable but hidden from default user navigation. */
   visible: boolean;
+  /** User-facing execution tier. Hero tools must declare this explicitly. */
+  tier?: ToolTier;
   description: string;
   shortDescription: string;
   credits: number;

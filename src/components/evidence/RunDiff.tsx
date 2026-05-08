@@ -1,6 +1,7 @@
 'use client';
 
 import { GitCompare } from 'lucide-react';
+import { redactMarketplaceFoundationMarkers } from '@/lib/tools/marketplace/ui-redaction';
 
 interface RunDiffProps {
   currentLabel: string;
@@ -17,8 +18,8 @@ interface DiffRow {
 }
 
 function buildDiff(baselineText: string, currentText: string): DiffRow[] {
-  const baseline = baselineText.split(/\r?\n/).slice(0, 80);
-  const current = currentText.split(/\r?\n/).slice(0, 80);
+  const baseline = redactMarketplaceFoundationMarkers(baselineText).split(/\r?\n/).slice(0, 80);
+  const current = redactMarketplaceFoundationMarkers(currentText).split(/\r?\n/).slice(0, 80);
   const length = Math.max(baseline.length, current.length);
   const rows: DiffRow[] = [];
 

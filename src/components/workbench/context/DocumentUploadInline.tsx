@@ -2,8 +2,11 @@
 
 import { useState } from 'react';
 import { FileUp, Loader2 } from 'lucide-react';
+import { useFeatureFlags } from '@/lib/features/client';
 
 export function DocumentUploadInline({ caseId }: { caseId: string }) {
+  const features = useFeatureFlags();
+  const cogneeEnabled = features.cognee.enabled;
   const [status, setStatus] = useState('Upload PDF, DOCX, or TXT files to hand them to the document pipeline.');
   const [uploading, setUploading] = useState(false);
 
@@ -13,15 +16,26 @@ export function DocumentUploadInline({ caseId }: { caseId: string }) {
     setUploading(true);
     setStatus(`Uploading ${file.name}...`);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const response = await fetch(`/api/backend/tabs/library/ingest?case_id=${encodeURIComponent(caseId)}`, { method: 'POST', body: formData });
+      const documentFormData = new FormData();
+      documentFormData.append('file', file);
+      documentFormData.append('situationId', caseId);
+      const documentResponse = await fetch('/api/documents/upload', { method: 'POST', body: documentFormData });
+      const documentPayload = await documentResponse.json().catch(() => ({}));
+      if (!documentResponse.ok) {
+        throw new Error(documentPayload?.error ?? 'document upload failed');
+      }
+
+      const libraryFormData = new FormData();
+      libraryFormData.append('file', file);
+      const response = await fetch(`/api/backend/tabs/library/ingest?case_id=${encodeURIComponent(caseId)}`, { method: 'POST', body: libraryFormData });
       const payload = await response.json().catch(() => ({}));
       if (response.ok) {
-        const layer = payload?.status === 'ingested' ? 'Cognee ingest started.' : 'Memory layer queued; source receipt saved.';
+        const layer = cogneeEnabled
+          ? payload?.status === 'ingested' ? 'Cognee ingest started. Source receipt saved.' : 'Memory layer queued; source receipt saved.'
+          : 'Source receipt saved.';
         setStatus(`${file.name} uploaded. ${layer}`);
       } else {
-        setStatus(`${file.name} upload failed; try again from Library.`);
+        setStatus(`${file.name} saved. Source receipt saved; extraction backend is unavailable.`);
       }
     } catch {
       setStatus('Upload failed; try again from Library.');

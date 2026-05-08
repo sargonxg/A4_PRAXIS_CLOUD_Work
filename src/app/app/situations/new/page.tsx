@@ -656,7 +656,7 @@ function CaseTypeSelector({
         <div>
           <p className="text-xs font-semibold text-navy-800">Case type specialization</p>
           <p className="mt-1 text-[11px] leading-relaxed text-navy-500">
-            Select the domain vocabulary Cognee uses for extraction. Primary and optional secondary types compose with the base ACO ontology.
+            Select the domain vocabulary used for context extraction. Primary and optional secondary types compose with the base ACO ontology.
           </p>
         </div>
         <button

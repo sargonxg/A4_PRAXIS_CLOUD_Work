@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, Eye, GitBranchPlus, GitCompare, History, Loader2, Play, RefreshCw, RotateCcw, Search, SlidersHorizontal, Square, Wrench } from 'lucide-react';
 import { EvidenceDrawer } from '@/components/evidence/EvidenceDrawer';
@@ -8,8 +9,11 @@ import { RunDiff } from '@/components/evidence/RunDiff';
 import { getOntologyForDomain } from '@/lib/ontology/registry';
 import { filterMarketplaceTools, sortMarketplaceTools } from '@/lib/tools/marketplace/filter-engine';
 import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
+import { getMarketplaceStageTarget, stageTargetHref } from '@/lib/tools/marketplace/stage-targets';
+import { writeStagedMarketplaceContext } from '@/lib/tools/marketplace/staged-context';
 import { rankMarketplaceToolsForCase } from '@/lib/tools/marketplace/suggestions';
 import type { MarketplaceToolCategory, MarketplaceCostClass } from '@/lib/tools/marketplace/types';
+import { redactMarketplaceFoundationJson, redactMarketplaceFoundationMarkers } from '@/lib/tools/marketplace/ui-redaction';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { cn } from '@/lib/utils/cn';
 import { ToolTransparencyCard } from '@/components/tools/ToolTransparencyCard';
@@ -83,7 +87,23 @@ interface DialecticaRecipe {
   tokenBudget: number;
 }
 
+const DIALECTICA_RECIPE_PATTERNS: DialecticaRecipe[] = [
+  { id: 'stakeholder-map', title: 'StakeholderMap', mode: 'graph_completion', tokenBudget: 8000 },
+  { id: 'contradiction-scan', title: 'ContradictionScan', mode: 'insights', tokenBudget: 8000 },
+  { id: 'constraint-leverage-map', title: 'ConstraintLeverageMap', mode: 'graph_completion', tokenBudget: 8000 },
+  { id: 'commitment-tracker', title: 'CommitmentTracker', mode: 'graph_completion', tokenBudget: 8000 },
+  { id: 'narrative-arc', title: 'NarrativeArc', mode: 'summaries', tokenBudget: 8000 },
+  { id: 'ambiguity-audit', title: 'AmbiguityAudit', mode: 'insights', tokenBudget: 8000 },
+  { id: 'red-team-counterclaim', title: 'RedTeamCounterclaim', mode: 'insights', tokenBudget: 8000 },
+  { id: 'counterfactual-branch', title: 'CounterfactualBranch', mode: 'graph_completion', tokenBudget: 8000 },
+  { id: 'evidence-gap-finder', title: 'EvidenceGapFinder', mode: 'insights', tokenBudget: 8000 },
+  { id: 'policy-option-generator', title: 'PolicyOptionGenerator', mode: 'summaries', tokenBudget: 8000 },
+  { id: 'risk-weighting', title: 'RiskWeighting', mode: 'graph_completion', tokenBudget: 8000 },
+  { id: 'decision-memo-synth', title: 'DecisionMemoSynth', mode: 'summaries', tokenBudget: 8000 },
+];
+
 export function ToolMarketplace() {
+  const router = useRouter();
   const { caseId, caseModule, activeTab } = useWorkbenchScope();
   const ontology = getOntologyForDomain(caseModule.manifest.domain);
   const [query, setQuery] = useState('');
@@ -96,7 +116,6 @@ export function ToolMarketplace() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [lastRunRequest, setLastRunRequest] = useState<string | null>(null);
-  const [dialecticaRecipes, setDialecticaRecipes] = useState<DialecticaRecipe[]>([]);
   const [runningRecipeId, setRunningRecipeId] = useState<string | null>(null);
   const [recipeNote, setRecipeNote] = useState<string | null>(null);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
@@ -157,21 +176,6 @@ export function ToolMarketplace() {
     void loadRunHistory();
   }, [loadRunHistory]);
 
-  useEffect(() => {
-    let ignore = false;
-    fetch('/api/backend/chapters/tools/recipes')
-      .then((response) => response.ok ? response.json() : { recipes: [] })
-      .then((payload) => {
-        if (!ignore && Array.isArray(payload.recipes)) setDialecticaRecipes(payload.recipes);
-      })
-      .catch(() => {
-        if (!ignore) setDialecticaRecipes([]);
-      });
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
   function buildLastRunFromSummary(item: MarketplaceRunHistoryItem): MarketplaceRunState {
     const tool = MARKETPLACE_TOOLS.find((candidate) => candidate.id === item.toolId);
     return {
@@ -180,8 +184,8 @@ export function ToolMarketplace() {
       artifactId: item.id,
       persisted: true,
       prompt: item.prompt,
-      summary: item.summary ?? `${tool?.name ?? item.toolId} completed.`,
-      rawText: item.rawText ?? '',
+      summary: redactMarketplaceFoundationMarkers(item.summary ?? `${tool?.name ?? item.toolId} completed.`),
+      rawText: redactMarketplaceFoundationMarkers(item.rawText ?? ''),
       health: item.contextHealth ?? 0,
       advisoryCount: item.advisoryCount ?? 0,
       generatedAt: item.createdAt,
@@ -214,11 +218,11 @@ export function ToolMarketplace() {
         artifactId: full.id,
         persisted: true,
         prompt: full.prompt,
-        summary,
-        rawText: full.rawText ?? '',
-        structuredOutput: full.structuredOutput,
-        contextDump: full.contextDump,
-        metadata: full.metadata,
+        summary: redactMarketplaceFoundationMarkers(summary),
+        rawText: redactMarketplaceFoundationMarkers(full.rawText ?? ''),
+        structuredOutput: redactMarketplaceFoundationJson(full.structuredOutput) as Record<string, unknown>,
+        contextDump: redactMarketplaceFoundationJson(full.contextDump) as Record<string, unknown>,
+        metadata: redactMarketplaceFoundationJson(full.metadata) as Record<string, unknown>,
         health: typeof caseOutput?.contextHealth?.score === 'number' ? caseOutput.contextHealth.score : fallback.health,
         advisoryCount: advisories.length,
         generatedAt: full.createdAt,
@@ -231,9 +235,45 @@ export function ToolMarketplace() {
     }
   }
 
-  async function runTool(toolId: string) {
+  function stageTool(toolId: string) {
     const tool = MARKETPLACE_TOOLS.find((item) => item.id === toolId);
-    if (!tool) return;
+    if (!tool || tool.satCategory) return;
+    const target = getMarketplaceStageTarget(tool);
+    const prompt = [
+      `Use the ${tool.name} recipe as the framing context for ${target.heroToolName}.`,
+      tool.description,
+      `Active case: ${caseModule.manifest.name}.`,
+      'Answer through the hero tool, not as a standalone recipe result.',
+    ].join('\n\n');
+
+    writeStagedMarketplaceContext({
+      recipeId: tool.id,
+      recipeName: tool.name,
+      recipeDescription: tool.description,
+      heroToolId: target.heroToolId,
+      heroToolName: target.heroToolName,
+      chapter: target.chapter,
+      caseId,
+      caseName: caseModule.manifest.name,
+      prompt,
+      context: {
+        activeTab,
+        caseName: caseModule.manifest.name,
+        domain: caseModule.manifest.domain,
+        truthLayers: caseModule.truthLayers,
+        ontologyRequirements: tool.ontologyRequirements,
+        contextSpec: tool.contextSpec,
+        sideEffects: tool.sideEffects,
+        composition: tool.composition,
+      },
+      stagedAt: new Date().toISOString(),
+    });
+    router.push(stageTargetHref(caseId, target));
+  }
+
+  async function runSatTool(toolId: string) {
+    const tool = MARKETPLACE_TOOLS.find((item) => item.id === toolId);
+    if (!tool?.satCategory) return;
     const controller = new AbortController();
 
     runAbortController.current = controller;
@@ -269,11 +309,11 @@ export function ToolMarketplace() {
         persisted: payload.persistence.persisted,
         persistenceReason: payload.persistence.reason,
         prompt: payload.artifact.prompt,
-        summary: payload.artifact.structuredOutput?.summary ?? `${payload.tool.name} completed.`,
-        rawText: payload.artifact.rawText ?? '',
-        structuredOutput: payload.artifact.structuredOutput,
-        contextDump: payload.artifact.contextDump,
-        metadata: payload.artifact.metadata,
+        summary: redactMarketplaceFoundationMarkers(payload.artifact.structuredOutput?.summary ?? `${payload.tool.name} completed.`),
+        rawText: redactMarketplaceFoundationMarkers(payload.artifact.rawText ?? ''),
+        structuredOutput: redactMarketplaceFoundationJson(payload.artifact.structuredOutput) as Record<string, unknown>,
+        contextDump: redactMarketplaceFoundationJson(payload.artifact.contextDump) as Record<string, unknown>,
+        metadata: redactMarketplaceFoundationJson(payload.artifact.metadata) as Record<string, unknown>,
         health: payload.runContext.health,
         advisoryCount: payload.runContext.advisories?.length ?? 0,
         generatedAt: payload.artifact.createdAt,
@@ -301,29 +341,8 @@ export function ToolMarketplace() {
 
   async function runDialecticaRecipe(recipe: DialecticaRecipe) {
     setRunningRecipeId(recipe.id);
-    setRecipeNote(`Running ${recipe.title}...`);
-    try {
-      const response = await fetch('/api/backend/chapters/tools/run', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          case_id: caseId,
-          recipe_id: recipe.id,
-          input: {
-            caseName: caseModule.manifest.name,
-            domain: caseModule.manifest.domain,
-            truthLayers: caseModule.truthLayers,
-          },
-        }),
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload?.detail ?? 'recipe run failed');
-      setRecipeNote(`${recipe.title} queued as deterministic chapter run ${payload.runId}.`);
-    } catch {
-      setRecipeNote(`${recipe.title} could not be queued.`);
-    } finally {
-      setRunningRecipeId(null);
-    }
+    setRecipeNote(`${recipe.title} is a backend pattern. Stage a recipe card below into a hero tool to run live AI.`);
+    window.setTimeout(() => setRunningRecipeId(null), 250);
   }
 
   return (
@@ -332,10 +351,10 @@ export function ToolMarketplace() {
         <div>
           <div className="flex items-center gap-2 text-navy-950">
             <Wrench className="h-5 w-5 text-gold-600" />
-            <h2 className="text-lg font-semibold">Tools Marketplace</h2>
+            <h2 className="text-lg font-semibold">Recipe library</h2>
           </div>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-650">
-            Twenty-two focused tools mapped to ontology requirements, context health, runtime, cost, and canary cases, including the Pack 15 Analyst&apos;s Toolkit SATs and Pack 18 Memo Studio actions. Artifacts allow raw text, AI generations, and context dumps alongside structured output.
+            Patterns that frame what the AI tools should answer. Each recipe stages context for a hero tool below.
           </p>
         </div>
         <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-right">
@@ -403,15 +422,15 @@ export function ToolMarketplace() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-700">DIALECTICA recipes</p>
-            <h3 className="mt-1 text-base font-semibold text-navy-950">Graph-grounded chapter runs</h3>
+            <h3 className="mt-1 text-base font-semibold text-navy-950">Backend recipe patterns</h3>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-700">
-              These 12 guide-level recipes run through the chapter tools contract, separate from marketplace demos.
+              These guide-level recipes describe useful graph-grounded frames. Use the recipe cards below to stage context into live hero tools.
             </p>
           </div>
           {recipeNote ? <p className="max-w-xl text-sm font-semibold text-navy-900">{recipeNote}</p> : null}
         </div>
         <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-          {dialecticaRecipes.map((recipe) => (
+          {DIALECTICA_RECIPE_PATTERNS.map((recipe) => (
             <button
               key={recipe.id}
               type="button"
@@ -421,16 +440,13 @@ export function ToolMarketplace() {
             >
               <span className="flex items-start justify-between gap-2">
                 <span className="text-sm font-semibold text-navy-950">{recipe.title}</span>
-                {runningRecipeId === recipe.id ? <Loader2 className="h-4 w-4 animate-spin text-gold-700" /> : <Play className="h-4 w-4 text-gold-700" />}
+                {runningRecipeId === recipe.id ? <Loader2 className="h-4 w-4 animate-spin text-gold-700" /> : <Eye className="h-4 w-4 text-gold-700" />}
               </span>
               <span className="mt-2 block text-xs font-semibold uppercase tracking-wider text-slate-700">
                 {recipe.mode} · {recipe.tokenBudget.toLocaleString()} tokens
               </span>
             </button>
           ))}
-          {!dialecticaRecipes.length ? (
-            <p className="text-sm leading-6 text-slate-700">Recipe registry is unavailable; marketplace tools remain usable.</p>
-          ) : null}
         </div>
       </div>
 
@@ -476,7 +492,7 @@ export function ToolMarketplace() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => runTool(tool.id)}
+                  onClick={() => void runSatTool(tool.id)}
                   disabled={runningToolId !== null}
                   className="mt-3 inline-flex h-8 items-center gap-1 rounded-md bg-white px-3 text-xs font-semibold text-navy-950 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:bg-white/40"
                 >
@@ -555,7 +571,7 @@ export function ToolMarketplace() {
               {runError && lastRunRequest && (
                 <button
                   type="button"
-                  onClick={() => void runTool(lastRunRequest)}
+                  onClick={() => void runSatTool(lastRunRequest)}
                   disabled={runningToolId !== null}
                   className="inline-flex h-8 items-center gap-1 rounded-md border border-red-200 bg-white px-3 text-xs font-semibold text-red-800 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:text-slate-400"
                 >
@@ -582,7 +598,7 @@ export function ToolMarketplace() {
             <ToolChainActions
               toolId={lastRun.toolId}
               runningToolId={runningToolId}
-              onRun={runTool}
+              onRun={runSatTool}
             />
           )}
         </div>
@@ -650,6 +666,9 @@ export function ToolMarketplace() {
       <div className="mt-5 grid gap-3 lg:grid-cols-2">
         {visibleNonSatTools.map((tool) => (
           <article key={tool.id} className="rounded-md border border-slate-200 bg-slate-50 p-4">
+            {(() => {
+              const stageTarget = getMarketplaceStageTarget(tool);
+              return (
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-navy-950">{tool.name}</p>
@@ -659,19 +678,16 @@ export function ToolMarketplace() {
                 <span className="rounded bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">{tool.costClass}</span>
                 <button
                   type="button"
-                  onClick={() => runTool(tool.id)}
-                  disabled={runningToolId !== null}
+                  onClick={() => stageTool(tool.id)}
                   className="inline-flex h-8 items-center gap-1 rounded-md bg-navy-950 px-3 text-xs font-semibold text-white transition-colors hover:bg-navy-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
-                  {runningToolId === tool.id ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Play className="h-3.5 w-3.5" />
-                  )}
-                  Run
+                  <GitBranchPlus className="h-3.5 w-3.5" />
+                  Stage in {stageTarget.heroToolName}
                 </button>
               </div>
             </div>
+              );
+            })()}
             <p className="mt-3 text-sm leading-6 text-slate-650">{tool.description}</p>
             <ToolTransparencyCard tool={tool} />
             <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -732,6 +748,7 @@ function ToolChainActions({
   const chainTargets = tool?.composition.canChainInto
     .map((targetId) => MARKETPLACE_TOOLS.find((item) => item.id === targetId))
     .filter((item): item is (typeof MARKETPLACE_TOOLS)[number] => Boolean(item))
+    .filter((item) => Boolean(item.satCategory))
     .slice(0, 3) ?? [];
 
   if (chainTargets.length === 0) return null;

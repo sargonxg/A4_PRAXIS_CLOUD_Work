@@ -94,6 +94,15 @@ export const POST = withAuth(async (req, user) => {
     if (!tool) {
       return NextResponse.json({ error: 'Unknown marketplace tool', toolId: parsed.data.toolId }, { status: 404 });
     }
+    if (!tool.satCategory) {
+      return NextResponse.json(
+        {
+          error: 'Recipe library entries stage context into hero tools instead of producing standalone runs.',
+          toolId: tool.id,
+        },
+        { status: 410 },
+      );
+    }
 
     const situationId = parsed.data.caseId ?? tool.canaryCaseIds[0] ?? 'no-active-case';
     const snapshot = await buildContextSnapshot({

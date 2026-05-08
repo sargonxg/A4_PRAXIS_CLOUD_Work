@@ -5,6 +5,7 @@ import { Archive, ExternalLink, FileText, Loader2, RefreshCw, Search, Trash2, Up
 import { Badge } from '@/components/ui/badge';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
+import { useFeatureFlags } from '@/lib/features/client';
 import { buildLibraryArtifacts, type LibraryArtifact, type LibraryArtifactType } from '@/lib/workbench/library-state';
 import { cn } from '@/lib/utils/cn';
 import type { SavedClaim } from '@/types/saved-claims';
@@ -34,6 +35,8 @@ interface BackendSourceReceipt {
 
 export function LibraryTab() {
   const { caseId, caseModule } = useWorkbenchScope();
+  const features = useFeatureFlags();
+  const cogneeEnabled = features.cognee.enabled;
   const [query, setQuery] = useState('');
   const [activeTypes, setActiveTypes] = useState<LibraryArtifactType[]>(['source', 'document', 'claim', 'memo', 'export']);
   const [selected, setSelected] = useState<LibraryArtifact | null>(null);
@@ -41,7 +44,7 @@ export function LibraryTab() {
   const [backendSources, setBackendSources] = useState<BackendSourceReceipt[]>([]);
   const [sourceNote, setSourceNote] = useState<string | null>(null);
   const [sourceBusy, setSourceBusy] = useState(false);
-  const backendArtifacts = useMemo(() => backendSources.map(sourceReceiptToArtifact), [backendSources]);
+  const backendArtifacts = useMemo(() => backendSources.map((source) => sourceReceiptToArtifact(source, cogneeEnabled)), [backendSources, cogneeEnabled]);
   const artifacts = useMemo(() => {
     const local = buildLibraryArtifacts(caseModule, caseId, savedClaims);
     const backendIds = new Set(backendArtifacts.map((artifact) => artifact.id));
@@ -99,12 +102,26 @@ export function LibraryTab() {
     setSourceBusy(true);
     setSourceNote(`Uploading ${file.name} to Library...`);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const response = await fetch(`/api/backend/tabs/library/ingest?case_id=${encodeURIComponent(caseId)}`, { method: 'POST', body: formData });
+      const documentFormData = new FormData();
+      documentFormData.append('file', file);
+      documentFormData.append('situationId', caseId);
+      const documentResponse = await fetch('/api/documents/upload', { method: 'POST', body: documentFormData });
+      const documentPayload = await documentResponse.json().catch(() => ({}));
+      if (!documentResponse.ok) throw new Error(documentPayload?.error ?? 'document upload failed');
+
+      const libraryFormData = new FormData();
+      libraryFormData.append('file', file);
+      const response = await fetch(`/api/backend/tabs/library/ingest?case_id=${encodeURIComponent(caseId)}`, { method: 'POST', body: libraryFormData });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload?.error ?? 'upload failed');
-      setSourceNote(payload.status === 'ingested' ? `${file.name} ingested.` : `${file.name} saved; memory layer queued.`);
+      if (response.ok) {
+        setSourceNote(
+          cogneeEnabled
+            ? payload.status === 'ingested' ? `${file.name} ingested.` : `${file.name} saved; memory layer queued.`
+            : `${file.name} uploaded; source receipt saved.`,
+        );
+      } else {
+        setSourceNote(`${file.name} saved. Source receipt saved; extraction backend is unavailable.`);
+      }
       await refreshBackendSources();
     } catch {
       setSourceNote('Upload could not reach the Library backend. Existing demo artifacts remain visible.');
@@ -121,7 +138,11 @@ export function LibraryTab() {
       const response = await fetch(`/api/backend/tabs/library/${encodeURIComponent(selected.backendSourceId)}/re-extract?case_id=${encodeURIComponent(caseId)}`, { method: 'POST' });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload?.error ?? 're-extract failed');
-      setSourceNote(payload?.cognee?.ok ? 'Re-extraction requested.' : 'Re-extraction queued for the memory layer.');
+      setSourceNote(
+        cogneeEnabled
+          ? payload?.cognee?.ok ? 'Re-extraction requested.' : 'Re-extraction queued for the memory layer.'
+          : 'Re-extraction requested.',
+      );
       await refreshBackendSources();
     } catch {
       setSourceNote('Re-extraction could not be requested.');
@@ -291,7 +312,7 @@ export function LibraryTab() {
   );
 }
 
-function sourceReceiptToArtifact(source: BackendSourceReceipt): LibraryArtifact {
+function sourceReceiptToArtifact(source: BackendSourceReceipt, cogneeEnabled: boolean): LibraryArtifact {
   const metadata = source.metadata ?? {};
   const filename = typeof metadata.filename === 'string' ? metadata.filename : undefined;
   const status = source.receipt_status ?? 'staged';
@@ -309,7 +330,7 @@ function sourceReceiptToArtifact(source: BackendSourceReceipt): LibraryArtifact 
     meta: {
       Status: status,
       Type: source.source_type ?? 'document',
-      Cognee: source.cognee_document_id ? 'document linked' : 'queued/offline',
+      ...(cogneeEnabled ? { Cognee: source.cognee_document_id ? 'document linked' : 'queued/offline' } : {}),
       Embeddings: String(source.embeddings_count ?? 0),
       Nodes: String(source.nodes_extracted ?? 0),
       'Ontology valid': source.ontology_valid_pct === null || source.ontology_valid_pct === undefined ? 'not scored' : `${Math.round(Number(source.ontology_valid_pct) * 100)}%`,

@@ -1,13 +1,10 @@
 'use client';
 
-import { useCallback, useState } from 'react';
-import { BoardroomIndex } from '@/components/boardroom/BoardroomWorkspace';
-import { MemoStudio } from '@/components/memo/MemoStudio';
-import { ACHIndex } from '@/components/sats/ACHWorkbench';
-import { ToolMarketplace } from '@/components/tools/ToolMarketplace';
+import { useCallback, useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { DeskTab } from '@/components/workbench/DeskTab';
-import { DraftTab } from '@/components/workbench/draft/DraftTab';
-import { ResearchTab } from '@/components/workbench/ResearchTab';
+import { ChapterSkeleton } from '@/components/workbench/chapter-skeleton';
+import { StagedHeroToolNotice } from '@/components/workbench/staged-hero-tool-notice';
 import { ToolGate } from '@/components/workbench/tool-gate';
 import { WorkbenchChapterShell } from '@/components/workbench/chapter-shell';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
@@ -15,13 +12,52 @@ import {
   WORKBENCH_CHAPTER_FLOW,
   type WorkbenchChapterId,
 } from '@/lib/workbench/chapter-flow';
+import type { MarketplaceHeroToolId } from '@/lib/tools/marketplace/stage-targets';
 import { cn } from '@/lib/utils/cn';
 
-const DEFAULT_OPEN_CHAPTERS: WorkbenchChapterId[] = ['research', 'memos', 'tools'];
+const ResearchTab = dynamic(
+  () => import('@/components/workbench/ResearchTab').then((module) => ({ default: module.ResearchTab })),
+  { loading: () => <ChapterSkeleton title="Research" />, ssr: false },
+);
+const MemoStudio = dynamic(
+  () => import('@/components/memo/MemoStudio').then((module) => ({ default: module.MemoStudio })),
+  { loading: () => <ChapterSkeleton title="Memos" />, ssr: false },
+);
+const DraftTab = dynamic(
+  () => import('@/components/workbench/draft/DraftTab').then((module) => ({ default: module.DraftTab })),
+  { loading: () => <ChapterSkeleton title="Draft" />, ssr: false },
+);
+const ACHIndex = dynamic(
+  () => import('@/components/sats/ACHWorkbench').then((module) => ({ default: module.ACHIndex })),
+  { loading: () => <ChapterSkeleton title="ACH" />, ssr: false },
+);
+const ToolMarketplace = dynamic(
+  () => import('@/components/tools/ToolMarketplace').then((module) => ({ default: module.ToolMarketplace })),
+  { loading: () => <ChapterSkeleton title="Recipe library" />, ssr: false },
+);
+const BoardroomIndex = dynamic(
+  () => import('@/components/boardroom/BoardroomWorkspace').then((module) => ({ default: module.BoardroomIndex })),
+  { loading: () => <ChapterSkeleton title="Boardroom" />, ssr: false },
+);
+
+const DEFAULT_OPEN_CHAPTERS: WorkbenchChapterId[] = ['research', 'memos'];
+const VALID_CHAPTER_IDS = new Set<WorkbenchChapterId>(WORKBENCH_CHAPTER_FLOW.map((chapter) => chapter.id));
+const STAGED_HERO_TOOLS_BY_CHAPTER: Partial<Record<WorkbenchChapterId, MarketplaceHeroToolId[]>> = {
+  desk: ['situation-intelligence'],
+  research: ['source-scout'],
+  draft: ['policy-memo', 'briefing'],
+  boardroom: ['brainstorming-table', 'scenarios', 'negotiation-prep'],
+};
 
 export function WorkbenchChapterRenderer() {
   const { caseId } = useWorkbenchScope();
   const [openSet, setOpenSet] = useState<Set<WorkbenchChapterId>>(() => new Set(DEFAULT_OPEN_CHAPTERS));
+
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get('openChapter') as WorkbenchChapterId | null;
+    if (!requested || requested === 'desk' || !VALID_CHAPTER_IDS.has(requested)) return;
+    setOpenSet((prev) => new Set(prev).add(requested));
+  }, []);
 
   const toggleChapter = useCallback((id: WorkbenchChapterId) => {
     if (id === 'desk') return;
@@ -85,22 +121,26 @@ export function WorkbenchChapterRenderer() {
 
 function ChapterContent({ chapterId, caseId }: { chapterId: WorkbenchChapterId; caseId: string }) {
   const { caseModule } = useWorkbenchScope();
+  const stagedHeroToolIds = STAGED_HERO_TOOLS_BY_CHAPTER[chapterId] ?? [];
+  const stagedNotice = stagedHeroToolIds.length > 0 ? <StagedHeroToolNotice heroToolIds={stagedHeroToolIds} /> : null;
+  if (chapterId === 'tools') return <ToolMarketplace />;
   const customChapter = caseModule.chapters?.[chapterId];
-  if (customChapter) return <div data-testid={`workbench-${chapterId}-surface`}>{customChapter()}</div>;
-  if (chapterId === 'desk') return <DeskTab />;
-  if (chapterId === 'research') return <ResearchTab />;
-  if (chapterId === 'memos') return <MemoStudio />;
+  if (customChapter) return <div data-testid={`workbench-${chapterId}-surface`}>{stagedNotice}{customChapter()}</div>;
+  if (chapterId === 'desk') return <>{stagedNotice}<DeskTab /></>;
+  if (chapterId === 'research') return <>{stagedNotice}<ResearchTab /></>;
+  if (chapterId === 'memos') return <>{stagedNotice}<MemoStudio /></>;
   if (chapterId === 'draft') {
     return (
       <ToolGate>
+        {stagedNotice}
         <DraftTab />
       </ToolGate>
     );
   }
-  if (chapterId === 'ach') return <ACHIndex caseId={caseId} />;
-  if (chapterId === 'tools') return <ToolMarketplace />;
+  if (chapterId === 'ach') return <>{stagedNotice}<ACHIndex caseId={caseId} /></>;
   return (
     <ToolGate>
+      {stagedNotice}
       <BoardroomIndex caseId={caseId} />
     </ToolGate>
   );

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { AlertTriangle, Database, FileText, ShieldCheck, X } from 'lucide-react';
+import { redactMarketplaceFoundationJson, redactMarketplaceFoundationMarkers } from '@/lib/tools/marketplace/ui-redaction';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -41,7 +42,7 @@ function numberValue(value: unknown): number | null {
 function compactJson(value: unknown): string {
   if (value == null) return 'None recorded.';
   try {
-    return JSON.stringify(value, null, 2).slice(0, 3200);
+    return redactMarketplaceFoundationMarkers(JSON.stringify(redactMarketplaceFoundationJson(value), null, 2).slice(0, 3200));
   } catch {
     return 'Unable to render this evidence payload.';
   }
@@ -103,10 +104,10 @@ export function EvidenceDrawer({ open, onClose, caseId, artifact }: EvidenceDraw
                 <FileText className="h-3 w-3" />
                 Run summary
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-750">{artifact.summary ?? 'No structured summary recorded.'}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-750">{artifact.summary ? redactMarketplaceFoundationMarkers(artifact.summary) : 'No structured summary recorded.'}</p>
               {artifact.prompt ? (
                 <p className="mt-3 rounded border border-slate-200 bg-white p-2 text-xs leading-5 text-slate-650">
-                  <span className="font-semibold text-navy-950">Prompt:</span> {artifact.prompt}
+                  <span className="font-semibold text-navy-950">Prompt:</span> {redactMarketplaceFoundationMarkers(artifact.prompt)}
                 </p>
               ) : null}
               {runTelemetry ? (
@@ -229,7 +230,7 @@ export function EvidenceDrawer({ open, onClose, caseId, artifact }: EvidenceDraw
           <section className="mt-4 rounded-md border border-slate-200 bg-white p-3">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Raw output</p>
             <pre className="mt-2 max-h-64 overflow-auto rounded border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700">
-              {artifact.rawText ?? 'No raw text recorded.'}
+              {artifact.rawText ? redactMarketplaceFoundationMarkers(artifact.rawText) : 'No raw text recorded.'}
             </pre>
           </section>
         </div>

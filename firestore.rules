@@ -192,7 +192,8 @@ service cloud.firestore {
 
     match /background_jobs/{jobId} {
       allow read: if request.auth != null
-                  && (resource.data.uid == request.auth.uid || resource.data.uid == null);
+                  && (resource.data.uid == request.auth.uid
+                      || (resource.data.uid == null && request.auth.token.admin == true));
       allow write: if false;
     }
 
