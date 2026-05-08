@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
+import { requireCronSecret } from '@/lib/api/cron-auth';
 
 export const maxDuration = 300;
 
@@ -14,10 +15,8 @@ export const maxDuration = 300;
  * flag and calls `POST /api/ai/escalation-scan` with the user's session.
  */
 export async function GET(req: Request) {
-  const secret = req.headers.get('x-cron-secret');
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-  }
+  const forbidden = requireCronSecret(req, 403);
+  if (forbidden) return forbidden;
 
   try {
     const snap = await adminDb

@@ -86,7 +86,8 @@ if (neo4jVerifier.includes('requires production Neo4j credentials') || !neo4jVer
 }
 
 const neo4jCron = readFileSync('src/app/api/cron/verify-neo4j-sync/route.ts', 'utf8');
-if (!neo4jCron.includes('verifyNeo4jSync') || !neo4jCron.includes('CRON_SECRET')) {
+const cronAuth = readFileSync('src/lib/api/cron-auth.ts', 'utf8');
+if (!neo4jCron.includes('verifyNeo4jSync') || !neo4jCron.includes('requireCronSecret') || !cronAuth.includes('CRON_SECRET')) {
   throw new Error('Neo4j drift verifier must have a protected cron route.');
 }
 

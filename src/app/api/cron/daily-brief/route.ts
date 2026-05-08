@@ -15,6 +15,7 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { publishBacklogEntry } from '@/lib/dev-backlog/service';
+import { requireCronSecret } from '@/lib/api/cron-auth';
 
 export const maxDuration = 300; // up to 5 min — iterates many situations
 
@@ -25,13 +26,6 @@ interface RunResult {
   situationId: string;
   status: 'ok' | 'skipped' | 'failed';
   reason?: string;
-}
-
-function isVerified(req: Request): boolean {
-  const cron = process.env.CRON_SECRET ?? '';
-  if (!cron) return false;
-  const got = req.headers.get('x-cron-secret') ?? req.headers.get('authorization')?.replace(/^bearer\s+/i, '') ?? '';
-  return got === cron;
 }
 
 function localHourFor(timezone: string | undefined): number {
@@ -78,9 +72,9 @@ async function runDailyBriefForSituation(
 }
 
 export async function GET(request: Request) {
-  if (!isVerified(request)) {
-    return NextResponse.json({ error: 'Cron secret required' }, { status: 401 });
-  }
+  const unauthorized = requireCronSecret(request);
+  if (unauthorized) return unauthorized;
+
   if (!adminDb) {
     return NextResponse.json({ error: 'Firestore Admin not initialized' }, { status: 503 });
   }

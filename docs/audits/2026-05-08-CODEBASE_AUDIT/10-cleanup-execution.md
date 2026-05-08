@@ -43,7 +43,31 @@ Kept planned/runtime-critical families:
 
 Next cleanup should consolidate duplicated route plumbing, not delete feature surfaces:
 
-- shared cron secret guard
 - shared boardroom route guard
 - shared research case validation helper
 - shared calibrated AI route executor where the route contracts are stable
+
+## Graphify Follow-Up Pass
+
+The follow-up Graphify pass rebuilt the code graph from commit `2c14212b`, then refreshed it again after the cron-auth consolidation:
+
+- 1,594 code files
+- 5,892 nodes
+- 10,044 edges
+- 848 communities
+- zero LLM token cost
+
+The graph highlighted cross-cutting route helpers as the highest-value simplification target. The safe implementation from this pass extracted cron route authentication into `src/lib/api/cron-auth.ts` and updated all six cron routes to use it.
+
+Updated routes:
+
+- `/api/cron/check-alerts`
+- `/api/cron/daily-brief`
+- `/api/cron/early-warning-refresh`
+- `/api/cron/generate-briefing`
+- `/api/cron/operational-metrics`
+- `/api/cron/verify-neo4j-sync`
+
+The audits now check the shared cron boundary instead of requiring duplicated `CRON_SECRET` logic inside each route file.
+
+Dependency scan note: `depcheck` still reports `maplibre-gl` as unused, but it is intentionally retained because the active map surface imports `react-map-gl/maplibre` and global MapLibre CSS. Do not remove it unless the active `PraxisMapReact` implementation is replaced.

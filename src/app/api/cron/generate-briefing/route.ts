@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
+import { requireCronSecret } from '@/lib/api/cron-auth';
 
 export const maxDuration = 60;
 
@@ -30,10 +31,8 @@ const BriefingSchema = z.object({
 });
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const unauthorized = requireCronSecret(request);
+  if (unauthorized) return unauthorized;
 
   const startedAt = new Date().toISOString();
   console.log('[cron] Daily briefing generation started at', startedAt);

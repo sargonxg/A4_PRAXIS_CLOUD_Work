@@ -19,8 +19,13 @@ for (const marker of ['tool-health', 'ingestion-pipeline', 'drift-verifier', 'co
 }
 
 const route = read('src/app/api/cron/operational-metrics/route.ts');
-for (const marker of ['CRON_SECRET', 'collectOperationalMetrics', 'writeOperationalMetricsSnapshot']) {
+for (const marker of ['requireCronSecret', 'collectOperationalMetrics', 'writeOperationalMetricsSnapshot']) {
   if (!route.includes(marker)) failures.push(`operational metrics cron missing marker: ${marker}`);
+}
+
+const cronAuth = read('src/lib/api/cron-auth.ts');
+for (const marker of ['CRON_SECRET', 'x-cron-secret', 'authorization']) {
+  if (!cronAuth.includes(marker)) failures.push(`shared cron auth missing marker: ${marker}`);
 }
 
 const diagnostics = read('src/app/api/admin/diagnostics/route.ts');

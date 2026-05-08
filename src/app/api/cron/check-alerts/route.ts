@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { searchArticles } from '@/lib/data-feeds/gdelt-client';
 import { getCurrentStability } from '@/lib/data-feeds/gdelt-stability';
+import { requireCronSecret } from '@/lib/api/cron-auth';
 
 export const maxDuration = 60;
 
@@ -41,10 +42,8 @@ const TONE_THRESHOLD_MEDIUM = 5;
  * 4. Store alerts to Firestore for display on the dashboard
  */
 export async function GET(request: Request) {
-  const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const unauthorized = requireCronSecret(request);
+  if (unauthorized) return unauthorized;
 
   try {
     console.log('[cron] Alert check started at', new Date().toISOString());
