@@ -9,7 +9,7 @@ Help a policy or intelligence user use ARGUS Grounded to turn the active situati
 ARGUS Grounded exists so the user does not have to start from a blank chat prompt. It applies a named method, reads the active situation, and produces an output that can be challenged, saved, exported, or reused by other tools.
 
 - Category: `intelligence`
-- AI route: `/api/ai/deep-research`
+- AI route: `/api/ai/deep-search-agent`
 - Data schema: `DeepResearchSchema`
 - Output type: `streaming`
 - Model tier: `pro`

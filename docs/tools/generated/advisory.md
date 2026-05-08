@@ -17,17 +17,17 @@ Advisory Council exists so the user does not have to start from a blank chat pro
 
 ## Workflow Paths
 
-- Generic core / core / active
-- Conflict analyst / core / active
-- Country desk / core / next
-- Mediator / core / next
-- Humanitarian / core / future
-- Legal / sanctions / core / future
-- Political risk / core / future
-- Policy research / core / future
-- Media analyst / core / future
-- Stabilization / core / future
-- Election / governance / core / future
+- Generic core / hidden-default / active
+- Conflict analyst / hidden-default / active
+- Country desk / hidden-default / next
+- Mediator / hidden-default / next
+- Humanitarian / hidden-default / future
+- Legal / sanctions / hidden-default / future
+- Political risk / hidden-default / future
+- Policy research / hidden-default / future
+- Media analyst / hidden-default / future
+- Stabilization / hidden-default / future
+- Election / governance / hidden-default / future
 
 ## Required Context
 

@@ -65,7 +65,7 @@ Primary evidence policy:
 - active situation record
 - analyst profile and preferences
 - GDELT
-- Firecrawl
+- Google Grounding
 - grounded web search receipts
 
 Degraded state triggers:

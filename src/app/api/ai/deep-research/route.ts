@@ -1,8 +1,13 @@
-import { conductResearch, type ResearchMode, type ResearchDepth } from '@/lib/ai/research-engine';
-import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { validateAiRequest } from '@/lib/api/validate-request';
+import {
+  deepResearchStreamHeaders,
+  encodeDeepResearchEvent,
+  streamResearchEngineEnvelope,
+} from '@/lib/ai/deep-research-envelope';
+import { isServerDemoMode } from '@/lib/demo/demo-mode';
+import type { ResearchDepth, ResearchMode } from '@/lib/ai/research-engine';
 import { z } from 'zod';
 
 export const maxDuration = 120;
@@ -43,53 +48,88 @@ export const POST = withCalibration('deep_research', 'ai_deep_think', {
       situationId?: string;
     };
 
-    // --- Demo mode: return pre-computed responses when no API key is set ---
     if (isServerDemoMode()) {
-      const inputHash = hashInput({ content: query, mode, depth, context: conflictContext });
-      if (inputHash) {
-        const cached = getCachedResponse('deep_research', inputHash);
-        if (cached) return formatAsStreamResponse(cached);
-      }
       return new Response(
-        JSON.stringify({ error: 'AI service not configured. Set GOOGLE_AI_API_KEY in environment variables.' }),
-        { status: 503, headers: { 'Content-Type': 'application/json' } }
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(encodeDeepResearchEvent({
+              type: 'error',
+              text: 'Deprecated deep-research compatibility route requires live AI configuration. Use /api/ai/deep-search-agent for canonical Deep Research Agent calls.',
+            }));
+            controller.enqueue(encodeDeepResearchEvent({ type: 'done' }));
+            controller.close();
+          },
+        }),
+        {
+          status: 503,
+          headers: deprecatedHeaders(),
+        },
       );
     }
 
     // Credits + profile gate already handled by withCalibration above.
 
-    // Note: conductResearch wraps its own system prompt; calibration provenance is captured
-    // by saveToolOutput below. Situation-specific calibration is still applied via profile gate.
+    // Deprecated compatibility route. It intentionally keeps the local research
+    // engine as the fallback implementation, but emits the canonical
+    // deep-search-agent SSE envelope so clients do not need two parsers.
     void ctx.calibration.systemPromptBlock;
 
-    const result = await conductResearch({
+    const stream = streamResearchEngineEnvelope({
       query,
       mode,
       depth,
       conflictContext,
+      fallbackReason: 'legacy-route',
+      onComplete: async () => {
+        if (situationId && ctx.uid) {
+          await saveToolOutput({
+            uid: ctx.uid,
+            situationId,
+            toolId: 'deep-search-agent',
+            profileVersion: ctx.calibration.provenance.profileVersion,
+            toolRunId: ctx.toolRunId,
+            output: {
+              query,
+              mode,
+              depth,
+              conflictContext,
+              streamed: true,
+              envelope: 'deep-search-agent-v1',
+              sourceRoute: '/api/ai/deep-research',
+            },
+            metadata: {
+              streamed: true,
+              deprecatedRoute: '/api/ai/deep-research',
+              canonicalRoute: '/api/ai/deep-search-agent',
+            },
+          }).catch((err) => console.warn('[deep_research] compatibility saveToolOutput failed:', err));
+        }
+      },
     });
 
-    // Best-effort persistence — only if situationId provided
-    if (situationId && ctx.uid) {
-      // conductResearch returns a stream; we can't easily capture full text without consuming it.
-      // Emit a metadata-only saveToolOutput so profile-version provenance is recorded.
-      await saveToolOutput({
-        uid: ctx.uid,
-        situationId,
-        toolId: 'deep_research',
-        profileVersion: ctx.calibration.provenance.profileVersion,
-        toolRunId: ctx.toolRunId,
-        output: { query, mode, depth, conflictContext, streamed: true },
-        metadata: { streamed: true },
-      }).catch((err) => console.warn('[deep_research] saveToolOutput failed:', err));
-    }
-
-    return result.toTextStreamResponse();
+    return new Response(stream, { headers: deprecatedHeaders() });
   } catch (err) {
     console.error('Deep research route error:', err);
-    return new Response(JSON.stringify({ error: 'Research request failed' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(encodeDeepResearchEvent({ type: 'error', text: 'Research request failed' }));
+          controller.enqueue(encodeDeepResearchEvent({ type: 'done' }));
+          controller.close();
+        },
+      }),
+      {
+        status: 500,
+        headers: deprecatedHeaders(),
+      },
+    );
   }
 });
+
+function deprecatedHeaders(): HeadersInit {
+  return deepResearchStreamHeaders({
+    'X-PRAXIS-Deprecated-Route': '/api/ai/deep-research',
+    'X-PRAXIS-Canonical-Route': '/api/ai/deep-search-agent',
+    'X-PRAXIS-Fallback-Strategy': 'soft-deprecated-research-engine-fallback',
+  });
+}

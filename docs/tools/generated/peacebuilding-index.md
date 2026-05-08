@@ -57,7 +57,7 @@ Peacebuilding Index exists so the user does not have to start from a blank chat 
 ## Methods And Sources
 
 Frameworks:
-- UN Peacebuilding Commission Methodology
+- Peacebuilding Assessment Methodology
 - World Bank FCV Framework
 - IEP Global Peace Index
 

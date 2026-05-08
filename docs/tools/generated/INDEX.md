@@ -2,7 +2,7 @@
 
 This directory is generated from live PRAXIS code. It gives every registered tool a stable product, context, database, graph, document-production, and verification contract.
 
-Generated at: 2026-05-06T04:09:02.015Z
+Generated at: 2026-05-08T08:33:28.742Z
 
 | Tool | Category | Active path focus | AI route |
 |---|---:|---:|---|
@@ -29,7 +29,7 @@ Generated at: 2026-05-06T04:09:02.015Z
 | [Talking Points](./talking-points.md) | drafting | yes | `/api/ai/talking-points` |
 | [Briefing Room](./briefing.md) | drafting | yes | `/api/ai/briefing-generate` |
 | [Daily Brief](./auto-briefings.md) | drafting | no | `/api/ai/auto-briefing` |
-| [UN Toolkit](./un-toolkit.md) | drafting | yes | `/api/ai/un-toolkit` |
+| [Diplomatic Toolkit](./un-toolkit.md) | drafting | yes | `/api/ai/un-toolkit` |
 | [Scenario Planner](./scenarios.md) | simulation | no | `/api/ai/scenario` |
 | [Negotiation Prep](./negotiation-prep.md) | simulation | yes | `/api/ai/negotiation` |
 | [Brief Builder](./brief-builder.md) | drafting | no | `/api/ai/brief-builder` |
@@ -47,7 +47,7 @@ Generated at: 2026-05-06T04:09:02.015Z
 | [Commitment Tracker](./commitments.md) | intelligence | no | `/api/ai/commitment-scan` |
 | [Treaty Analyzer](./treaty-analyzer.md) | intelligence | yes | `/api/ai/treaty-analyze` |
 | [Alert Center](./alert-center.md) | intelligence | yes | `/api/cron/check-alerts` |
-| [ARGUS Grounded](./deep-research.md) | intelligence | no | `/api/ai/deep-research` |
+| [ARGUS Grounded](./deep-research.md) | intelligence | no | `/api/ai/deep-search-agent` |
 | [Geospatial Monitor](./geospatial-monitor.md) | intelligence | yes | `/api/data/geospatial` |
 | [Case Library](./cases.md) | workspace | no | `/api/data/conflicts` |
 | [Team Hub](./team.md) | workspace | yes | `` |

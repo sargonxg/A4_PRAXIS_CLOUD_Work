@@ -56,8 +56,8 @@ Report Studio exists so the user does not have to start from a blank chat prompt
 ## Methods And Sources
 
 Frameworks:
-- UN DPPA Report Standards
-- UN Editorial Manual
+- Diplomatic Report Standards
+- Professional Editorial Standards
 - OCHA Situation Report Format
 
 Primary evidence policy:

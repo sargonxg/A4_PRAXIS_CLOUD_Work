@@ -56,7 +56,7 @@ Commitment Tracker exists so the user does not have to start from a blank chat p
 
 Frameworks:
 - UCDP Peace Agreement Dataset Methodology
-- UN Compliance Monitoring Standards
+- Agreement Compliance Monitoring Standards
 - Stedman Implementation Analysis
 
 Primary evidence policy:

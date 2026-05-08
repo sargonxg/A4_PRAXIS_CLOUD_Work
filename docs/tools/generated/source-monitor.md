@@ -58,7 +58,7 @@ Frameworks:
 Primary evidence policy:
 - active situation record
 - analyst profile and preferences
-- Firecrawl
+- Google Grounding
 - User-defined sources
 
 Degraded state triggers:

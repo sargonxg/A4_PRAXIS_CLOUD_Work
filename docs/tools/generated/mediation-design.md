@@ -61,7 +61,7 @@ Frameworks:
 - Berghof Mediation Process Framework
 - Zartman Ripeness Theory
 - Stedman Spoiler Theory
-- UN DPPA Mediation Standards
+- Professional Mediation Standards
 
 Primary evidence policy:
 - active situation record

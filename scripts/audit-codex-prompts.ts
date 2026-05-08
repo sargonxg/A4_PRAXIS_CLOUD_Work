@@ -47,6 +47,7 @@ const required = [
   'docs/codex-prompts/PRAXIS_V2_D1_KPI_PIPELINE.md',
   'docs/codex-prompts/PRAXIS_V2_Z1_EXPORT_E2E.md',
   'docs/codex-prompts/PRAXIS_V2_Z2_DEMO_TRANSITION.md',
+  'docs/codex-prompts/PRAXIS_V2_Z3_DEEP_RESEARCH_CONSOLIDATE.md',
   'docs/codex-prompts/PRAXIS_V2_ITERATE_LOOP.md',
   'docs/codex-prompts/PRAXIS_V2_STATUS_TEMPLATE.md',
 ];
@@ -83,6 +84,12 @@ for (const file of required) {
     }
     continue;
   }
+  if (file.endsWith('PRAXIS_V2_Z3_DEEP_RESEARCH_CONSOLIDATE.md')) {
+    for (const marker of ['deep-search-agent', 'deep-research', 'audit:deep-research-canonical']) {
+      if (!text.includes(marker)) failures.push(`${file} missing deep-research marker: ${marker}`);
+    }
+    continue;
+  }
   if ((!text.includes('PRAXIS') && !text.includes('V2_WORK_PACK')) || text.length < 5000) {
     failures.push(`${file} does not look like a complete pack prompt`);
   }
@@ -94,4 +101,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Codex prompt pack audit passed for master charter, packs 03-16, packs 18-22, packs 26-31, PRAXIS V2 README, Session A prompts A0-A6, Session B prompts B0-B3, Session C prompts C0-C2, Session D prompts D0-D1, Session Z prompts Z1-Z2, and V2 control prompts ITERATE_LOOP/STATUS_TEMPLATE. (static-marker)');
+console.log('Codex prompt pack audit passed for master charter, packs 03-16, packs 18-22, packs 26-31, PRAXIS V2 README, Session A prompts A0-A6, Session B prompts B0-B3, Session C prompts C0-C2, Session D prompts D0-D1, Session Z prompts Z1-Z3, and V2 control prompts ITERATE_LOOP/STATUS_TEMPLATE. (static-marker)');

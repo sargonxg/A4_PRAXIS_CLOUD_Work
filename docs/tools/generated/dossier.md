@@ -63,7 +63,7 @@ Frameworks:
 Primary evidence policy:
 - active situation record
 - analyst profile and preferences
-- Firecrawl
+- Google Grounding
 - GDELT
 - UCDP
 - uploaded documents and extracted fragments

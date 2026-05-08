@@ -62,7 +62,7 @@ Ask PRAXIS exists so the user does not have to start from a blank chat prompt. I
 ## Methods And Sources
 
 Frameworks:
-- UN Editorial Manual
+- Professional Editorial Standards
 - Fisher-Ury Principled Negotiation
 - Glasl Escalation Model
 
@@ -71,7 +71,7 @@ Primary evidence policy:
 - analyst profile and preferences
 - GDELT
 - UCDP
-- Firecrawl
+- Google Grounding
 
 Degraded state triggers:
 - missing active situation

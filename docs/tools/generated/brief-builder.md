@@ -54,7 +54,7 @@ Brief Builder exists so the user does not have to start from a blank chat prompt
 ## Methods And Sources
 
 Frameworks:
-- UN DPPA Brief Writing
+- Diplomatic Brief Writing
 - ICD 203 Probability Language
 - BLUF Method
 

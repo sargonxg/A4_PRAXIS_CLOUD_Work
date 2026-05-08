@@ -1,5 +1,9 @@
 # PRAXIS Build Log
 
+## 2026-05-08 — Z3 deep research route consolidation
+
+Built `Z3_DEEP_RESEARCH_CONSOLIDATE.md`: preserved the prompt, documented the route comparison and decision in `docs/architecture/DEEP_RESEARCH.md`, chose `/api/ai/deep-search-agent` as canonical, and soft-deprecated `/api/ai/deep-research` as a local research-engine fallback. Both routes now share the same Deep Research Agent SSE envelope (`planning`, `research`, `synthesis`, `done`, `error`), the legacy tool registry entry points at the canonical route, and `scripts/verify-tools.ts` no longer exercises the deprecated endpoint. Added `audit:deep-research-canonical` to the gate and regenerated tool docs. Production p50/p95/cost/failure metrics remain unmeasured because D1 BigQuery telemetry is not available from this local pass.
+
 ## 2026-05-08 — Z1/Z2 export and demo transition
 
 Built the first enforceable pass from `Z1_EXPORT_E2E.md` and `Z2_DEMO_TRANSITION.md`: preserved both prompts, upgraded briefing exports with executive summary, numbered references, and calibration footer, upgraded boardroom exports with critical claims, Q&A prep, sources appendix, and visible export progress, and added the signed-in public-demo copy path at `/api/situations/copy-from-demo` with canonical graph seeding and a workbench banner. Added `audit:export-coverage` and `audit:demo-claim` to the gate. Verified locally with the new audits, prompt audit, TypeScript, and scoped ESLint; live browser downloads, production copy flow, and telemetry-log confirmation remain deployment gates rather than claimed results.

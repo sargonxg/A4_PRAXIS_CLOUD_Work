@@ -55,7 +55,7 @@ CONCORDIA exists so the user does not have to start from a blank chat prompt. It
 
 Frameworks:
 - Berghof Mediation Process Framework
-- UN DPPA Mediation Guidelines
+- Professional Mediation Guidelines
 - Sisk Spoiler Management Theory
 
 Primary evidence policy:

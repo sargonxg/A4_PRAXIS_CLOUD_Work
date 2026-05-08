@@ -56,14 +56,14 @@ Sanctions Tracker exists so the user does not have to start from a blank chat pr
 ## Methods And Sources
 
 Frameworks:
-- UN Sanctions Monitoring Methodology
+- Sanctions Monitoring Methodology
 - OFAC SDN List Compliance
 - EU Restrictive Measures Framework
 
 Primary evidence policy:
 - active situation record
 - analyst profile and preferences
-- Firecrawl
+- Google Grounding
 - grounded web search receipts
 - uploaded documents and extracted fragments
 

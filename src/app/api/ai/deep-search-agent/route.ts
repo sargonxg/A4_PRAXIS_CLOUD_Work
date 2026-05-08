@@ -7,7 +7,11 @@ import {
   streamAgentTurn,
   parseAgentEvent,
 } from '@/lib/ai/vertex-agent';
-import { conductResearch } from '@/lib/ai/research-engine';
+import {
+  deepResearchStreamHeaders,
+  encodeDeepResearchEvent,
+  streamResearchEngineEnvelope,
+} from '@/lib/ai/deep-research-envelope';
 import { getSituationAdmin } from '@/lib/firebase/situations';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { validateAiRequest } from '@/lib/api/validate-request';
@@ -35,13 +39,6 @@ export const POST = withCalibration('deep_research', 'ai_deep_think', {
     return q || undefined;
   },
 })(async (req, ctx) => {
-  if (isServerDemoMode()) {
-    return new Response(
-      JSON.stringify({ error: 'Deep Research Agent requires a live AI configuration.' }),
-      { status: 503, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
   // Credits + profile gate already handled by withCalibration above.
 
   const body = await req.json();
@@ -69,89 +66,47 @@ Provide a thorough, evidence-based analysis using your web research capabilities
     }
   }
 
-  const encoder = new TextEncoder();
-
   function emit(obj: Record<string, unknown>): Uint8Array {
-    return encoder.encode(`data: ${JSON.stringify(obj)}\n\n`);
+    return encodeDeepResearchEvent(obj);
   }
 
   function streamResearchEngineFallback(reason: 'not-configured' | 'agent-unavailable') {
-    return new ReadableStream({
-      async start(controller) {
-        try {
-          controller.enqueue(emit({
-            type: 'planning',
-            phase: 'planning',
-            author: 'praxis_research_router',
-            text: reason === 'not-configured'
-              ? 'Managed Vertex Agent Engine is not configured yet. Routing this request through the PRAXIS research engine.'
-              : 'Managed Vertex Agent Engine is unavailable. Falling back to the PRAXIS research engine.',
-          }));
-          controller.enqueue(emit({
-            type: 'research',
-            phase: 'research',
-            author: 'praxis_research_engine',
-            text: 'Gathering available web/source context and preparing a cited intelligence brief.',
-          }));
-
-          const result = await conductResearch({
-            query: enrichedQuery,
-            mode: 'background',
-            depth: 'comprehensive',
-          });
-
-          controller.enqueue(emit({
-            type: 'synthesis',
-            phase: 'synthesis',
-            author: 'praxis_report_composer',
-            text: '',
-          }));
-
-          for await (const delta of result.textStream) {
-            if (delta) {
-              controller.enqueue(emit({
-                type: 'synthesis',
-                phase: 'synthesis',
-                author: 'praxis_report_composer',
-                text: delta,
-              }));
-            }
-          }
-
-          if (situationId && ctx.uid && !ctx.isDemo) {
-            await saveToolOutput({
-              uid: ctx.uid,
-              situationId,
-              toolId: 'deep-search-agent',
-              profileVersion: ctx.calibration.provenance.profileVersion,
-              toolRunId: ctx.toolRunId,
-              output: { query, fallback: reason, streamed: true },
-              metadata: { variant: 'research-engine-fallback', fallbackReason: reason },
-            }).catch((err) => console.warn('[deep_search_agent] fallback saveToolOutput failed:', err));
-          }
-
-          controller.enqueue(emit({ type: 'done' }));
-          controller.close();
-        } catch (err) {
-          const message = err instanceof Error ? err.message : 'Unknown error';
-          console.error('[deep-search-agent:fallback]', err);
-          controller.enqueue(emit({ type: 'error', text: `Research engine fallback error: ${message}` }));
-          controller.close();
+    return streamResearchEngineEnvelope({
+      query: enrichedQuery,
+      mode: 'background',
+      depth: 'comprehensive',
+      fallbackReason: reason,
+      onComplete: async () => {
+        if (situationId && ctx.uid && !ctx.isDemo) {
+          await saveToolOutput({
+            uid: ctx.uid,
+            situationId,
+            toolId: 'deep-search-agent',
+            profileVersion: ctx.calibration.provenance.profileVersion,
+            toolRunId: ctx.toolRunId,
+            output: { query, fallback: reason, streamed: true, envelope: 'deep-search-agent-v1' },
+            metadata: { variant: 'research-engine-fallback', fallbackReason: reason },
+          }).catch((err) => console.warn('[deep_search_agent] fallback saveToolOutput failed:', err));
         }
       },
+    });
+  }
+
+  if (isServerDemoMode()) {
+    return new Response(streamResearchEngineFallback('not-configured'), {
+      status: 503,
+      headers: deepResearchStreamHeaders({
+        'X-PRAXIS-Agent-Fallback': 'research-engine',
+      }),
     });
   }
 
   const config = getVertexAgentConfig();
   if (!config) {
     return new Response(streamResearchEngineFallback('not-configured'), {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache, no-transform',
-        Connection: 'keep-alive',
-        'X-Accel-Buffering': 'no',
+      headers: deepResearchStreamHeaders({
         'X-PRAXIS-Agent-Fallback': 'research-engine',
-      },
+      }),
     });
   }
 
@@ -258,8 +213,8 @@ Provide a thorough, evidence-based analysis using your web research capabilities
                   toolId: 'deep-search-agent',
                   profileVersion: ctx.calibration.provenance.profileVersion,
                   toolRunId: ctx.toolRunId,
-                  output: { query, sessionId, streamed: true },
-                  metadata: { variant: 'adk-agent', sessionId },
+                  output: { query, sessionId, streamed: true, envelope: 'deep-search-agent-v1' },
+                  metadata: { variant: 'adk-agent', sessionId, envelope: 'deep-search-agent-v1' },
                 }).catch((err) => console.warn('[deep_search_agent] saveToolOutput failed:', err));
                 outputSaved = true;
               }
@@ -290,8 +245,8 @@ Provide a thorough, evidence-based analysis using your web research capabilities
             toolId: 'deep-search-agent',
             profileVersion: ctx.calibration.provenance.profileVersion,
             toolRunId: ctx.toolRunId,
-            output: { query, sessionId, streamed: true, endedWithoutDoneEvent: true },
-            metadata: { variant: 'adk-agent', sessionId, endedWithoutDoneEvent: true },
+            output: { query, sessionId, streamed: true, endedWithoutDoneEvent: true, envelope: 'deep-search-agent-v1' },
+            metadata: { variant: 'adk-agent', sessionId, endedWithoutDoneEvent: true, envelope: 'deep-search-agent-v1' },
           }).catch((err) => console.warn('[deep_search_agent] final saveToolOutput failed:', err));
         }
 
@@ -307,11 +262,6 @@ Provide a thorough, evidence-based analysis using your web research capabilities
   });
 
   return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive',
-      'X-Accel-Buffering': 'no',
-    },
+    headers: deepResearchStreamHeaders(),
   });
 });

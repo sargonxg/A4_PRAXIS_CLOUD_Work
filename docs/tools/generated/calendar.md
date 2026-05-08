@@ -53,7 +53,7 @@ Calendar Monitor exists so the user does not have to start from a blank chat pro
 
 Frameworks:
 - Zartman Ripeness Theory
-- UNSC Procedural Rules
+- Multilateral Procedural Rules
 
 Primary evidence policy:
 - active situation record

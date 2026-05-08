@@ -65,7 +65,7 @@ Briefing Room exists so the user does not have to start from a blank chat prompt
 ## Methods And Sources
 
 Frameworks:
-- UN DPPA Morning Brief Format
+- Diplomatic Morning Brief Format
 - Intelligence Analysis Standards (ICD 203)
 
 Primary evidence policy:

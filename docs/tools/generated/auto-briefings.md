@@ -54,7 +54,7 @@ Daily Brief exists so the user does not have to start from a blank chat prompt. 
 ## Methods And Sources
 
 Frameworks:
-- UN DPPA Morning Brief Format
+- Diplomatic Morning Brief Format
 - OCHA SitRep Standards
 
 Primary evidence policy:
@@ -64,7 +64,7 @@ Primary evidence policy:
 - UCDP
 - ReliefWeb
 - HDX HAPI
-- Firecrawl
+- Google Grounding
 
 Degraded state triggers:
 - missing active situation

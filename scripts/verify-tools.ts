@@ -176,7 +176,7 @@ const ROUTES: Array<{ route: string; method: 'GET' | 'POST'; body?: Record<strin
   }},
 
   // Intelligence tools
-  { route: '/api/ai/deep-research', method: 'POST', body: { situation: TEST_SITUATION, query: 'Sudan conflict dynamics' } },
+  { route: '/api/ai/deep-search-agent', method: 'POST', body: { situation: TEST_SITUATION, query: 'Sudan conflict dynamics' } },
   { route: '/api/ai/source-scout', method: 'POST', body: { situation: TEST_SITUATION, query: 'Sudan conflict sources' } },
   { route: '/api/ai/media-scan', method: 'POST', body: { situation: TEST_SITUATION, action: 'scan' } },
   { route: '/api/ai/geospatial', method: 'POST', body: { situation: TEST_SITUATION } },

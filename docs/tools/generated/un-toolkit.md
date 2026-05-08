@@ -1,12 +1,12 @@
-# UN Toolkit
+# Diplomatic Toolkit
 
 Tool id: `un-toolkit`
 
 ## Product Role
 
-Help a policy or intelligence user use UN Toolkit to turn the active situation into a concrete, reviewable work product.
+Help a policy or intelligence user use Diplomatic Toolkit to turn the active situation into a concrete, reviewable work product.
 
-UN Toolkit exists so the user does not have to start from a blank chat prompt. It applies a named method, reads the active situation, and produces an output that can be challenged, saved, exported, or reused by other tools.
+Diplomatic Toolkit exists so the user does not have to start from a blank chat prompt. It applies a named method, reads the active situation, and produces an output that can be challenged, saved, exported, or reused by other tools.
 
 - Category: `drafting`
 - AI route: `/api/ai/un-toolkit`
@@ -54,9 +54,9 @@ UN Toolkit exists so the user does not have to start from a blank chat prompt. I
 ## Methods And Sources
 
 Frameworks:
-- UN Editorial Manual (8th ed.)
-- UNSC Resolution Drafting Conventions
-- UN Canonical Name Registry
+- Professional Editorial Standards
+- Multilateral Resolution Drafting Conventions
+- Canonical Name Registry
 
 Primary evidence policy:
 - active situation record

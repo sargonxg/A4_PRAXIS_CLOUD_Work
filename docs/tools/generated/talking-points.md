@@ -59,7 +59,7 @@ Talking Points exists so the user does not have to start from a blank chat promp
 
 Frameworks:
 - Fisher-Ury Principled Negotiation
-- UN SC Briefing Conventions
+- Multilateral Briefing Conventions
 - Diplomatic Communication Theory
 
 Primary evidence policy:

@@ -68,7 +68,7 @@ Primary evidence policy:
 - active situation record
 - analyst profile and preferences
 - Google Search Grounding
-- Firecrawl
+- Google Grounding
 - grounded web search receipts
 - uploaded documents and extracted fragments
 

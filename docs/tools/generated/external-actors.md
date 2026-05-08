@@ -66,7 +66,7 @@ Primary evidence policy:
 - active situation record
 - analyst profile and preferences
 - Google Search Grounding
-- Tavily
+- Google Search
 
 Degraded state triggers:
 - missing active situation

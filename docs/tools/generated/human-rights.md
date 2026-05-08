@@ -68,7 +68,7 @@ Primary evidence policy:
 - active situation record
 - analyst profile and preferences
 - Google Search Grounding
-- Firecrawl
+- Google Grounding
 - uploaded documents and extracted fragments
 
 Degraded state triggers:

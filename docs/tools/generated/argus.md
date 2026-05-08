@@ -69,7 +69,7 @@ Frameworks:
 Primary evidence policy:
 - active situation record
 - analyst profile and preferences
-- Firecrawl
+- Google Grounding
 - grounded web search receipts
 - ACO graph primitives and graph proposals
 
