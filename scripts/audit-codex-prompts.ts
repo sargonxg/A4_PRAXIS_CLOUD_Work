@@ -33,6 +33,9 @@ const required = [
   'docs/codex-prompts/PRAXIS_V2_A1_ORGID_CONTEXT.md',
   'docs/codex-prompts/PRAXIS_V2_A2_COLLABORATORS_SCHEMA.md',
   'docs/codex-prompts/PRAXIS_V2_A3_FIRESTORE_RULES.md',
+  'docs/codex-prompts/PRAXIS_V2_A4_TEAM_INVITE_FLOW.md',
+  'docs/codex-prompts/PRAXIS_V2_A5_ROLE_PILLS_AND_GUARDS.md',
+  'docs/codex-prompts/PRAXIS_V2_A6_MT_AUDIT_LOG.md',
 ];
 
 const failures: string[] = [];
@@ -54,4 +57,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Codex prompt pack audit passed for master charter, packs 03-16, packs 18-22, packs 26-31, PRAXIS V2 README, and V2 Session A prompts A0-A3. (static-marker)');
+console.log('Codex prompt pack audit passed for master charter, packs 03-16, packs 18-22, packs 26-31, PRAXIS V2 README, and V2 Session A prompts A0-A6. (static-marker)');

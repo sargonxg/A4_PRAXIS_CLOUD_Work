@@ -5,7 +5,7 @@
 ## Morning Brief
 
 - Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `V2_00_README`, `V2_A0_MT_DATA_MODEL`.
-- Prompts deferred: Cloud SQL live row counts from `01` (blocked by private IP plus missing local `psql`/Cloud SQL Proxy); `V2_A1_ORGID_CONTEXT`, `V2_A2_COLLABORATORS_SCHEMA`, and `V2_A3_FIRESTORE_RULES` are blocked until all MT approval rows below are marked approved or explicitly revised.
+- Prompts deferred: Cloud SQL live row counts from `01` (blocked by private IP plus missing local `psql`/Cloud SQL Proxy); `V2_A1_ORGID_CONTEXT` through `V2_A6_MT_AUDIT_LOG` are blocked until all MT approval rows below are marked approved or explicitly revised.
 - Recovery loop resolved: `audit:ux-polish`, `audit:workbench`, `audit:evidence-drawer`, `audit:graph-viewer`, `audit:visualization`, `audit:master-charter`, stale Graphify outputs, and withCalibration unit fixture drift.
 - Measured deltas:
   - Workbench root JS gzipped: current built workbench initial client JS is `511.3 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
@@ -48,6 +48,9 @@
 | V2_A1_ORGID_CONTEXT | blocked | Must not start until MT-1 through MT-5 are approved or explicitly revised by GC. |
 | V2_A2_COLLABORATORS_SCHEMA | blocked | Depends on A1 and the MT approval gate. |
 | V2_A3_FIRESTORE_RULES | blocked | Depends on A1, A2, migration confirmation, and security tests; no rules changes made in A0. |
+| V2_A4_TEAM_INVITE_FLOW | blocked | Depends on A1 org context, A3 invitation rules, and invite token secret/email deploy decisions. |
+| V2_A5_ROLE_PILLS_AND_GUARDS | blocked | Depends on A2 effective-role helpers and A3 server/rules enforcement. |
+| V2_A6_MT_AUDIT_LOG | blocked | Depends on A1 org context, A3 audit-log rules, and state-changing route mapping. |
 
 Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blocked`.
 
@@ -355,6 +358,15 @@ marked `approved` or `revised: <alternative>`.
 - Approval gate: MT-1 through MT-5 are pending GC in `## Approvals Required`.
 - Prompt preservation: A0-A3 copied into `docs/codex-prompts/` and registered in `audit:codex-prompts`.
 - Issues encountered: A0 explicitly forbids starting A1 before approval, so A1-A3 implementation was not started.
+
+### V2_A4_A5_A6_INTAKE
+
+- Completed: 2026-05-08.
+- Commit: current A4-A6 intake pass.
+- Prompt preservation: A4-A6 copied into `docs/codex-prompts/` and registered in `audit:codex-prompts`.
+- Implementation status: blocked by the same MT approval gate, plus dependencies on A1-A3.
+- Operational notes captured: A4 needs `PRAXIS_INVITE_TOKEN_SECRET` and a production email provider decision; A6 needs an audit-action route map before broad code edits.
+- Issues encountered: no code implementation started because A0 still blocks A1-A6.
 
 ## Blockers
 
