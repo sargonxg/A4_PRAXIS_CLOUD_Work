@@ -55,6 +55,7 @@ This matches `docs/architecture/MODEL_SELECTION.md`,
 | Observability has local trace/logger/health gate | Enforced | `npm run audit:observability-coverage` |
 | Graphify stays refreshed | Enforced operationally | `graphify update .` output in Pack 14 audit docs |
 | Architecture §19 command chain is accounted | Enforced | `npm run audit:architecture-chain` |
+| Embedding dimension canon | Enforced | `src/lib/knowledge/embedding-config.ts`, `backend/migrations/versions/0012_embedding_dim_alignment.py`, `npm run audit:embedding-dim` |
 
 ## Architecture Audit Chain Parity
 
@@ -104,7 +105,7 @@ shifts, and high-intensity load tests remain owner-gated operational work.
 | Reference claim | Current state | Next implementation slice |
 |---|---|---|
 | ADR directory and policy | `docs/adr/README.md` exists; no accepted ADRs yet | Add ADRs only when architecture invariants or layer responsibilities change |
-| Postgres + pgvector is production graph source of truth | Schema/repository scaffolding and audits exist; live cutover evidence remains open | Production Cloud SQL migration, RLS smoke, traversal endpoints, parity snapshots |
+| Postgres + pgvector is production graph source of truth | Schema/repository scaffolding and audits exist; embedding dimension is aligned to `text-embedding-005` at 768d, but live cutover evidence remains open | Production Cloud SQL migration, RLS smoke, traversal endpoints, parity snapshots |
 | Four subagents run on Gemini Enterprise / Agent Engine | Deep Research/Agent Engine path exists; Context Preparer, Source Augmenter, Output Refiner, Memo Drafter runtime remains open | Subagent deployment plan, typed input/output schemas, staging smoke |
 | Two-phase Firestore/Postgres commit everywhere | Designed and tracked; not complete across all ingestion/tool write paths | Reconciler and crash-injection tests |
 | Identity Platform magic-link signup | Login/waitlist surfaces exist; final Identity Platform/magic-link posture is owner-gated | Owner decision, implementation, onboarding wow-flow e2e |

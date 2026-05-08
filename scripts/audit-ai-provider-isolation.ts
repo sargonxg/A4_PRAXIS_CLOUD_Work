@@ -27,6 +27,7 @@ const allowedModelLiteralFiles = new Set([
   path.normalize('src/lib/ai/providers.ts'),
   path.normalize('src/lib/ai/model-matrix.ts'),
   path.normalize('src/lib/ai/MODEL_MATRIX.json'),
+  path.normalize('src/lib/knowledge/embedding-config.ts'),
   path.normalize('src/lib/ai/advisor-model.ts'),
   path.normalize('src/types/advisor.ts'),
   path.normalize('src/lib/constants/advisor-configs.ts'),

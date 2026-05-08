@@ -39,7 +39,7 @@ These block any `v1.0.0` readiness claim.
 | AI telemetry | Populate cost/token/model telemetry for every task kind and tool run. | PRAXIS engineering | v1.1 |
 | Cloud Trace | Prove route-to-Vertex span trees for latest sampled tool runs. | PRAXIS engineering | v1.1 |
 | Context | Add synthetic user/workspace/case/conversation round-trip tests. | PRAXIS engineering | v1.0 |
-| Embeddings | Resolve `graph_embeddings vector(1536)` vs 768-dim text embedding default. | PRAXIS engineering | v1.0 |
+| Embeddings | CLOSED foundation 2026-05-08: `graph_embeddings` now has `0012_embedding_dim_alignment.py` to move from legacy `vector(1536)` to canonical `text-embedding-005` at 768d, and `audit:embedding-dim` enforces the TS config, migration, Cognee guard, and Postgres query length check. Live migration still requires the documented `SELECT count(*) FROM graph_embeddings` pre-flight. | PRAXIS engineering | v1.0 |
 | Neo4j | Add production zero-connection proof or document optional runtime posture. | PRAXIS engineering | v1.0 |
 | Firewall | Enforce synthesized labels and confidence caps at persistence/output boundaries. | PRAXIS engineering | v1.0 |
 | Tools | Convert canary IDs into executable per-tool semantic tests. CLOSED foundation 2026-05-07 with `audit:tool-semantic-canaries`; model-backed semantic evals remain for runtime cutover. | PRAXIS engineering | v1.1 |

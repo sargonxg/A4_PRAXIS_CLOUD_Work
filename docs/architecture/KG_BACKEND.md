@@ -20,6 +20,30 @@ The v1 repository layer lives in `backend/services/kg_repositories.py`:
 
 Every repository method requires `owner_uid` and `case_id`; there is no unscoped graph read API.
 
+## Embedding Canon
+
+`EMBEDDING_MODEL = text-embedding-005`
+
+`EMBEDDING_DIMENSION = 768`
+
+Both the active Firestore vector layer and target Postgres
+`graph_embeddings.embedding` column must use this canon. The source of truth
+for TypeScript code is `src/lib/knowledge/embedding-config.ts`; backend Cognee
+settings mirror the same model and dimension through `backend/ai/providers.py`.
+This is enforced by `npm run audit:embedding-dim`.
+
+The legacy `vector(1536)` declaration in `0011_postgres_kg_contract.py` is
+superseded by `0012_embedding_dim_alignment.py`, which alters
+`graph_embeddings.embedding` to `vector(768)` and recreates the IVFFlat index.
+Before applying that migration outside empty local/dev databases, run:
+
+```sql
+SELECT count(*) FROM graph_embeddings;
+```
+
+If the count is non-zero, do not truncate or alter the table until there is a
+backup/re-embed plan and explicit approval recorded in the status ledger.
+
 ## Cognee Coexistence
 
 Cognee is an optional probabilistic memory layer, not a `KG_BACKEND` mode.

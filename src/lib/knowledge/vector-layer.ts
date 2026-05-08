@@ -1,12 +1,13 @@
 /**
  * PRAXIS Vector Layer — Firestore native KNN vector search.
- * Stores 768-dim embeddings; searches via findNearest with COSINE distance.
+ * Stores canonical-dimension embeddings; searches via findNearest with COSINE distance.
  * Gracefully disabled if no embedding model is available.
  */
 
 import { adminDb } from '@/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { generateEmbedding, generateEmbeddings, chunkText } from './embedding-service';
+import { EMBEDDING_DIMENSION, EMBEDDING_MODEL } from './embedding-config';
 import type { VectorResult } from './types';
 
 export class VectorLayer {
@@ -46,6 +47,8 @@ export class VectorLayer {
       const ref = this.embeddingsRef().doc(`${docId}-chunk-${i}`);
       batch.set(ref, {
         embedding: FieldValue.vector(emb),
+        embeddingDimension: EMBEDDING_DIMENSION,
+        embeddingModel: EMBEDDING_MODEL,
         text: chunk,
         sourceDocId: docId,
         pageNumber: i,
@@ -63,6 +66,8 @@ export class VectorLayer {
     if (!emb) return;
     await this.toolEmbeddingsRef().doc(toolId).set({
       embedding: FieldValue.vector(emb),
+      embeddingDimension: EMBEDDING_DIMENSION,
+      embeddingModel: EMBEDDING_MODEL,
       summary,
       toolId,
       situationId: this.situationId,

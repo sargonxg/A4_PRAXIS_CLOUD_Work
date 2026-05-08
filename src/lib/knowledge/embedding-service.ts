@@ -1,13 +1,13 @@
 /**
- * PRAXIS Embedding Service — centralized 768-dim embedding generation
- * Uses gemini-embedding-2-preview via AI SDK v6.
+ * PRAXIS Embedding Service — centralized embedding generation.
  * Gracefully handles unavailable embedding models (returns empty arrays).
  */
 
 import { embed, embedMany } from 'ai';
 import { getEmbeddingModel } from '@/lib/ai/providers';
+import { EMBEDDING_DIMENSION } from './embedding-config';
 
-export const EMBEDDING_DIMENSIONS = 768;
+export const EMBEDDING_DIMENSIONS = EMBEDDING_DIMENSION;
 const MAX_CHUNK_SIZE = 2000;
 const OVERLAP = 200;
 const MAX_BATCH_SIZE = 100;

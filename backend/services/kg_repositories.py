@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from ai.providers import COGNEE_EMBED_DIMENSIONS as EMBEDDING_DIMENSIONS
 from services.postgres import TenantConnection
 
 
@@ -254,6 +255,8 @@ class EmbeddingRepo:
         self.conn = conn
 
     async def semantic_search(self, *, owner_uid: str, case_id: str, embedding: list[float], limit: int = 10) -> list[dict[str, Any]]:
+        if len(embedding) != EMBEDDING_DIMENSIONS:
+            raise ValueError(f"graph_embeddings search requires {EMBEDDING_DIMENSIONS}d embedding, got {len(embedding)}")
         return await self.conn.fetch(
             """
             SELECT n.*, 1 - (e.embedding <=> %s::vector) AS similarity
