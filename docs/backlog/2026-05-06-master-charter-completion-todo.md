@@ -221,7 +221,7 @@ documented. A partial item must keep its named gap visible.
 - [x] Add canary monitor script for phases 5, 25, and 100.
 - [x] Add `docs/launch/CANARY_LOG.md` with phase metrics and sign-offs.
 - [ ] Add rollback runbook and prove rollback command path.
-- [ ] Add final `docs/audits/2026-05-06-LAUNCH_GATE.md`.
+- [ ] Add final current-date launch gate under `docs/audits/` before a v1.0 readiness claim.
 
 ## Pack 22 - GCP Gemini Verification
 

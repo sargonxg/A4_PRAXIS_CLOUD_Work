@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 
-const path = 'docs/audits/2026-05-07-TOOL_AUTHORING_SPIKE.md';
+const path = 'docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md';
 const failures: string[] = [];
 
 if (!existsSync(path)) {

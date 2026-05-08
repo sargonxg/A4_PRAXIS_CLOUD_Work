@@ -21,7 +21,7 @@ For the detailed line-by-line phase-spec audit, known red flags, missing work, a
 |---|---:|---|---|---|
 | Phase 1 Foundation | Shipped | Cloud SQL private path, Neo4j secrets/IAM, GCP audit, model/provider cleanup, route calibration, health checks, production deploy. | `phase-1-foundation-shipped`; Cloud Build `463da685-707e-434d-a4fe-316dfb421ae4`; production `/api/health` green at ship time. | None currently blocking. |
 | Phase 2 Agentic Spine | Shipped | LangGraph/checkpointer scaffold, five agent registrations, deterministic DIALECTICA recipes, symbolic-firewall helpers, `/api/ai/dialectica`, backend recipe tests, production deploy. | `phase-2-agentic-spine-shipped`; Cloud Build `7673e615-ad2b-441b-b77c-aa194ccc092f`; full backend and frontend tests green at ship time. | The original "62 routes collapse to 20 verbs" remains policy/scaffold rather than a literal route-count collapse; route audit now reports 66 calibrated AI route files. |
-| Phase 3 Product Surface | Shipped | Eight-surface sidebar, archive exposure, `/app/desk`, `/app/context`, `/app/research`, `/app/graph`, `/app/boardroom`, `/app/draft`, Library split routes, Draft provenance editor, Boardroom room, read-only Cypher validator/API, graph diff/SSE stubs, AI Act ack routes, cost-cap API/UI, landing copy refresh. | `npx tsc --noEmit`; `npm run build`; `npm run lint` zero errors; `npx vitest run` 114 files/502 tests; `npm run audit:routes`; archived phase audits under `docs/_archive/audit-scripts/2026-05-08/`; production Cloud Build `39134256-fc38-409a-b2a4-1e4f98cf9830`; production Playwright public smoke 4/4. | Streaming Boardroom, live Neo4j execution, DOCX footer embedding, and production cost-cap persistence are functional scaffolds, not full live provider flows. |
+| Phase 3 Product Surface | Shipped | Eight-surface sidebar, archive exposure, `/app/desk`, `/app/context`, `/app/research`, `/app/graph`, `/app/boardroom`, `/app/draft`, Library split routes, Draft provenance editor, Boardroom room, read-only Cypher validator/API, graph diff/SSE stubs, AI Act ack routes, cost-cap API/UI, landing copy refresh. | `npx tsc --noEmit`; `npm run build`; `npm run lint` zero errors; `npx vitest run` 114 files/502 tests; `npm run audit:routes`; active retained evidence in `docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md`; production Cloud Build `39134256-fc38-409a-b2a4-1e4f98cf9830`; production Playwright public smoke 4/4. | Streaming Boardroom, live Neo4j execution, DOCX footer embedding, and production cost-cap persistence are functional scaffolds, not full live provider flows. |
 
 ## Runtime Architecture
 
@@ -94,7 +94,7 @@ npm run audit:memo-studio
 npm run verify:neo4j-sync
 ```
 
-Historical phase-specific audits from the first shipping wave are preserved under `docs/_archive/audit-scripts/2026-05-08/`. Use the active `package.json` scripts and `npm run audit:gate` for current merge checks.
+Historical phase-specific audit outputs from the first shipping wave were removed from the active tree during the 2026-05-08 repo-shape cleanup. Use `docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md`, the active `package.json` scripts, and `npm run audit:gate` for current merge checks; older reports remain recoverable from git history.
 
 Known lint baseline: zero errors with existing warnings allowed.
 

@@ -10,10 +10,11 @@ claims so engineers and future agents can safely continue implementation.
 
 ## Active Status Ledger
 
-The latest architecture-level truth ledger is
-`docs/audits/2026-05-06-SELF_AUDIT.md`, with the actionable blocker queue in
-`docs/backlog/2026-05-06-from-self-audit.md`. Treat that pair as newer than
-older reality-check claims that reported no S0/S1 blockers.
+The latest compact architecture-level truth ledger is
+`docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md`, with the actionable
+blocker queue in `docs/backlog/2026-05-06-from-self-audit.md`. Older detailed
+self-audit and reality-check reports were removed from the active tree during
+the 2026-05-08 repo-shape cleanup and remain recoverable from git history.
 
 Current launch-blocking gaps are not architectural disagreements; they are
 implementation gaps against this reference:

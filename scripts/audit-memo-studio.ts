@@ -15,8 +15,7 @@ const chapterFlow = readFileSync(join(process.cwd(), 'src/lib/workbench/chapter-
 if (!chapterFlow.includes("id: 'memos'")) failures.push('Workbench chapter flow must include memos');
 
 const docs = [
-  'docs/audits/2026-05-06-MEMO_INVENTORY.md',
-  'docs/audits/2026-05-06-COMPREHENSIVE.md',
+  'docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md',
   'docs/roadmap/v1.1-and-beyond.md',
   'docs/launch/ANNOUNCEMENT.md',
 ];

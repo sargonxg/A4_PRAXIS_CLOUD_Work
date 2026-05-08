@@ -97,7 +97,7 @@ const requiredFiles = [
   'docs/adr/0043-research-as-ingestion-front-door.md',
   'docs/adr/0044-draft-as-briefing-assembly-contract.md',
   'docs/adr/0045-ai-first-case-creation-pattern.md',
-  'docs/audits/2026-05-07-PACK26_27_28_SURFACES_TRIPLE_CHECK.md',
+  'docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md',
   'tests/e2e/workbench/chapters-structured-content.spec.ts',
   'tests/e2e/workbench/desk-command-center.spec.ts',
   'tests/e2e/workbench/context-scope-studio.spec.ts',

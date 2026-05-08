@@ -20,7 +20,7 @@ const requiredFiles = [
   'skills/tools/match.sanctions/SKILL.md',
   'skills/tools/simulate.policy_abm/SKILL.md',
   'docs/adr/0048-analytics-sanctions-simulation-as-cross-cutting-tools.md',
-  'docs/audits/2026-05-07-ANALYTICS_WAVE_FOUNDATIONS.md',
+  'docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md',
   'docs/runbooks/SANCTIONS_DATA_LICENSING.md',
   'docs/codex-prompts/PRAXIS_CODEX_31_ANALYTICS_SANCTIONS_SIMULATION_WAVE.md',
 ];

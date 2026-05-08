@@ -45,7 +45,7 @@ _Not computed from live environment; no local set-but-unread claims made._
 | POLAR_WEBHOOK_SECRET | src/app/api/health/diagnostics/route.ts, src/app/api/health/route.ts, src/app/api/polar/webhook/route.ts | Document default or add to env template if required. |
 | PRAXIS_ALLOW_GEMINI3_TARGETS | scripts/audit-model-matrix-coverage.ts | Document default or add to env template if required. |
 | PRAXIS_ALLOW_UNSIGNED_CONTEXT | src/lib/context/context-aware.ts | Document default or add to env template if required. |
-| PRAXIS_AUDIENCE_TUNED_BRIEFING | docs/_archive/SPRINT_BACKLOG.md, src/lib/ai/audience-presets.ts, tests/unit/lib/ai/audience-presets.test.ts | Document default or add to env template if required. |
+| PRAXIS_AUDIENCE_TUNED_BRIEFING | src/lib/ai/audience-presets.ts, tests/unit/lib/ai/audience-presets.test.ts | Document default or add to env template if required. |
 | PRAXIS_BASE_URL | scripts/audit-owner-scoping-runtime.ts, scripts/audit-tool-context-isolation-runtime.ts | Document default or add to env template if required. |
 | PRAXIS_CONTEXT_TOKEN_SECRET | src/lib/context/conversation-token.ts | Document default or add to env template if required. |
 | PRAXIS_EMAIL_PROVIDER | docs/codex-prompts/PRAXIS_V2_A4_TEAM_INVITE_FLOW.md | Document default or add to env template if required. |

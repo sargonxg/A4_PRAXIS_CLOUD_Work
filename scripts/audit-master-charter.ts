@@ -38,9 +38,8 @@ const requiredDocs = [
   'TESTING.md',
   'TODO.md',
   'CHANGELOG.md',
-  'docs/audits/2026-05-06-MASTER_CHARTER_STATUS.md',
-  'docs/audits/2026-05-06-COMPREHENSIVE.md',
-  'docs/audits/2026-05-06-REALITY_CHECK.md',
+  'docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md',
+  'docs/audits/2026-05-08-REPO_PURPOSE_AUDIT/summary.md',
   'docs/roadmap/v1.1-and-beyond.md',
   'docs/backlog/2026-05-06-master-charter-completion-todo.md',
   'docs/launch/PRODUCTION_READINESS.signed.md',
@@ -58,12 +57,12 @@ for (const script of ['audit:gate', 'audit:master-charter', 'audit:codex-prompts
   if (!packageJson.scripts?.[script]) failures.push(`missing package script: ${script}`);
 }
 
-const status = readIfExists('docs/audits/2026-05-06-MASTER_CHARTER_STATUS.md');
+const status = readIfExists('docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md');
 for (const marker of ['Pack 14', 'Not v1.0.0 complete', 'Open S0/S1 From Self-Audit', 'Graphify', 'Remaining Work']) {
   if (!status.includes(marker)) failures.push(`master charter status missing marker: ${marker}`);
 }
 
-const selfAudit = readIfExists('docs/audits/2026-05-06-SELF_AUDIT.md');
+const selfAudit = readIfExists('docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md');
 for (const marker of ['3 S0', '15 S1', 'Public demo', 'Persona CI', 'Landing-Page Polish Plan']) {
   if (!selfAudit.includes(marker)) failures.push(`self audit missing marker: ${marker}`);
 }

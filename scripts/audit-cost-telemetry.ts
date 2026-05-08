@@ -4,7 +4,7 @@ import { join } from 'node:path';
 const required = [
   'scripts/bench-gliner-cost-reduction.py',
   'monitoring/dashboards/gliner-cost-reduction.json',
-  'docs/audits/2026-05-07-EXTRACTION_WAVE_FOUNDATIONS.md',
+  'docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md',
 ];
 
 const failures: string[] = [];
@@ -12,7 +12,7 @@ for (const file of required) {
   if (!existsSync(join(process.cwd(), file))) failures.push(`missing ${file}`);
 }
 
-const audit = read('docs/audits/2026-05-07-EXTRACTION_WAVE_FOUNDATIONS.md').toLowerCase();
+const audit = read('docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md').toLowerCase();
 for (const marker of ['GLiNER cost reduction', 'GraphRAG batch ceiling', 'review queue', 'cost telemetry']) {
   if (!audit.includes(marker.toLowerCase())) failures.push(`audit ledger missing marker: ${marker}`);
 }

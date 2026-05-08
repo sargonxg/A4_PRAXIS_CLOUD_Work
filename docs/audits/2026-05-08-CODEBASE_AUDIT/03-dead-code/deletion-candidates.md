@@ -15,7 +15,7 @@ No deletion was executed in this pass. The audit prompt requires review before s
 | dep rehype-highlight | dependency | n/a | remove if markdown highlighter not runtime used | 03-dead-code/unused-deps-frontend.md |
 | dep @google-cloud/tasks | dependency | n/a | remove or wire actual Cloud Tasks producer | 03-dead-code/unused-deps-frontend.md |
 | dep @radix-ui/react-popover | dependency | n/a | remove if no popover component uses it | 03-dead-code/unused-deps-frontend.md |
-| legacy docs in docs/_archive | documentation | 26502 | keep archived but exclude from active product docs search/navigation | 03-dead-code/unused-files.md |
+| legacy docs in docs/_archive | documentation | 26502 | removed from active tree; recoverable from git history | 03-dead-code/unused-files.md |
 
 ## Tier 2 - investigate before removal
 

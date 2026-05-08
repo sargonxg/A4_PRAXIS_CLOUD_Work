@@ -1,11 +1,11 @@
 # PRAXIS Backlog From 2026-05-06 Self-Audit
 
 Date: 2026-05-06  
-Source: `docs/audits/2026-05-06-SELF_AUDIT.md`  
+Source: `docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md` (retained markers from the original 2026-05-06 self-audit)
 Owner: Giulio / PRAXIS engineering loop  
 Status: active blocker and backlog ledger
 
-This file converts the architecture self-audit findings into the master-charter work queue. It supersedes any older "no open S0/S1" reading from `docs/audits/2026-05-06-REALITY_CHECK.md` until every item below is fixed and re-audited.
+This file converts the architecture self-audit findings into the master-charter work queue. It supersedes any older "no open S0/S1" reality-check reading until every item below is fixed and re-audited.
 
 ## S0 / S1 Launch Blockers
 

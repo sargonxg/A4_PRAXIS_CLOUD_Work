@@ -4,14 +4,14 @@ This pass applies the first safe cleanup tranche from the comprehensive codebase
 
 ## Archived From Active Scripts
 
-The following historical phase audits were moved from `scripts/` to `docs/_archive/audit-scripts/2026-05-08/` and renamed to `.ts.txt` so they remain readable but are excluded from TypeScript compilation:
+The following historical phase audits were first moved out of active `scripts/` and later removed from the active tree during the 2026-05-08 repo-shape cleanup. Their current gate markers are preserved in `docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md`; full historical detail is recoverable from git history:
 
 - `audit-phase3-product-surface.ts.txt`
 - `audit-routes.ts.txt`
 - `audit-spine.ts.txt`
 - `audit-verb-hookup.ts.txt`
 
-Reason: these files are not referenced by `package.json` or the active audit gate. Their evidence value is preserved in the archive, while the active script surface now reflects the current gate.
+Reason: these files are not referenced by `package.json` or the active audit gate. Their evidence value is preserved in retained evidence, while the active script surface now reflects the current gate.
 
 ## Retained Intentionally
 

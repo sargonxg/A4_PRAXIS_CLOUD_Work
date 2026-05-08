@@ -8,7 +8,7 @@ const requiredFiles = [
   'docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md',
   'docs/architecture/MODEL_SELECTION.md',
   'docs/adr/README.md',
-  'docs/audits/2026-05-06-SELF_AUDIT.md',
+  'docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md',
   'docs/backlog/2026-05-06-from-self-audit.md',
   'docs/backlog/2026-05-06-master-charter-completion-todo.md',
   'ARCHITECTURE.md',
@@ -35,7 +35,7 @@ if (failures.length === 0) {
   const bible = body('docs/architecture/PRAXIS_ARCHITECTURE.md');
   const alignment = body('docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md');
   const adrReadme = body('docs/adr/README.md');
-  const selfAudit = body('docs/audits/2026-05-06-SELF_AUDIT.md');
+  const selfAudit = body('docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md');
   const selfAuditBacklog = body('docs/backlog/2026-05-06-from-self-audit.md');
   const rootArchitecture = body('ARCHITECTURE.md');
   const startupDocs = ['README.md', 'AGENTS.md', 'CLAUDE.md', 'TODO.md'];

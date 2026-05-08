@@ -1,11 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const reportPath = join(process.cwd(), 'docs/audits/2026-05-06-REALITY_CHECK.md');
+const reportPath = join(process.cwd(), 'docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md');
 const backlogPath = join(process.cwd(), 'docs/backlog/2026-05-06-from-reality-check.md');
 const failures: string[] = [];
 
-if (!existsSync(reportPath)) failures.push('missing docs/audits/2026-05-06-REALITY_CHECK.md');
+if (!existsSync(reportPath)) failures.push('missing docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md');
 if (!existsSync(backlogPath)) failures.push('missing docs/backlog/2026-05-06-from-reality-check.md');
 
 if (existsSync(reportPath)) {

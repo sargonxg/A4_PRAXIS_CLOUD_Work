@@ -7,15 +7,15 @@ Generated 2026-05-08 from main @ 817b7eb54402c0ea7aea0a40c252eb2d4ec2dc4e. This 
 | # | action | item | est. lines | risk | evidence |
 |---|---|---|---|---|---|
 | 1 | retained intentionally; README added | src/components/landing/_archive/* | 1243 | low-to-medium | Pack 04 asked to preserve retired landing components |
-| 2 | archived to `docs/_archive/audit-scripts/2026-05-08/audit-phase3-product-surface.ts.txt` | scripts/audit-phase3-product-surface.ts | 31 | low-to-medium | 03-dead-code/unused-files.md |
-| 3 | archived to `docs/_archive/audit-scripts/2026-05-08/audit-routes.ts.txt` | scripts/audit-routes.ts | 61 | low-to-medium | 03-dead-code/unused-files.md |
-| 4 | archived to `docs/_archive/audit-scripts/2026-05-08/audit-spine.ts.txt` | scripts/audit-spine.ts | 60 | low-to-medium | 03-dead-code/unused-files.md |
-| 5 | archived to `docs/_archive/audit-scripts/2026-05-08/audit-verb-hookup.ts.txt` | scripts/audit-verb-hookup.ts | 45 | low-to-medium | 03-dead-code/unused-files.md |
+| 2 | removed from active tree; retained marker evidence | scripts/audit-phase3-product-surface.ts | 31 | low-to-medium | 03-dead-code/unused-files.md |
+| 3 | removed from active tree; retained marker evidence | scripts/audit-routes.ts | 61 | low-to-medium | 03-dead-code/unused-files.md |
+| 4 | removed from active tree; retained marker evidence | scripts/audit-spine.ts | 60 | low-to-medium | 03-dead-code/unused-files.md |
+| 5 | removed from active tree; retained marker evidence | scripts/audit-verb-hookup.ts | 45 | low-to-medium | 03-dead-code/unused-files.md |
 | 6 | removed after active import check | dep @types/leaflet | n/a | low-to-medium | 03-dead-code/unused-deps-frontend.md |
 | 7 | removed after active import check | dep rehype-highlight | n/a | low-to-medium | 03-dead-code/unused-deps-frontend.md |
 | 8 | removed after active import check; Cloud Tasks remains architectural, package should return with first producer | dep @google-cloud/tasks | n/a | low-to-medium | 03-dead-code/unused-deps-frontend.md |
 | 9 | removed after active import check | dep @radix-ui/react-popover | n/a | low-to-medium | 03-dead-code/unused-deps-frontend.md |
-| 10 | keep archived but exclude from active product docs search/navigation | legacy docs in docs/_archive | 26502 | low-to-medium | 03-dead-code/unused-files.md |
+| 10 | removed from active tree; recoverable from git history | legacy docs in docs/_archive | 26502 | low-to-medium | 03-dead-code/unused-files.md |
 
 ## Tier 2 - consolidate after Tier 1 is green
 

@@ -49,6 +49,6 @@ Accepted ADRs are not edited for meaning. Supersede them with a later ADR.
 
 Active target-state gaps are tracked in:
 
-- `docs/audits/2026-05-06-SELF_AUDIT.md`
+- `docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md`
 - `docs/backlog/2026-05-06-from-self-audit.md`
 - `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`

@@ -9,7 +9,7 @@ const requiredFiles = [
   'src/lib/api/with-context-aware.ts',
   'src/lib/tools/context-provider.ts',
   'backend/services/context_layers.py',
-  'docs/audits/2026-05-06-CONTEXT_INVENTORY.md',
+  'docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md',
 ];
 
 for (const file of requiredFiles) {

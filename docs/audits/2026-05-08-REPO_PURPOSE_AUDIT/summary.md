@@ -10,19 +10,19 @@ Branch: `main`
 
 ## Scope
 
-This pass classified every tracked file in the repository with `git ls-files`, grouped files by purpose, and spot-checked the largest active files and obvious generated artifacts with `rg`. The full per-file inventory is in `file-purpose-inventory.csv`.
+This pass classified every tracked file in the repository with `git ls-files`, grouped files by purpose, spot-checked the largest active files and obvious generated artifacts with `rg`, then removed older archive/generated evidence that no longer needed to live in the active tree. The full post-cleanup per-file inventory is in `file-purpose-inventory.csv`.
 
 ## High-Level Finding
 
-The repository feels larger than the active product because reference and generated material is now bigger than runtime application code.
+The repository is now substantially leaner. The main non-runtime weight that remains is intentional: Graphify output, source prompt packs, current May 8 audit ledgers, and root handoff/config docs.
 
 | Bucket | Files | Bytes | Meaning |
 | --- | ---: | ---: | --- |
-| Active-ish runtime and product code | 1,309 | 7,833,249 | `src`, `backend`, `services`, `cloud_functions`, infra, schemas, tests, scripts |
-| Reference, archive, generated, and audit evidence | 440 | 14,384,288 | `docs/audits`, `docs/_archive`, prompt packs, `graphify-out`, root generated reports |
-| Total tracked inventory | 2,291 | 23,908,547 | All tracked files |
+| Active-ish runtime and product code | 2,015 | 11,340,477 | `src`, `backend`, `services`, `cloud_functions`, infra, schemas, tests, scripts, root config/docs |
+| Reference, current generated, and retained evidence | 123 | 8,017,126 | prompt packs, `graphify-out`, current May 8 audit ledgers, landing component archive |
+| Total tracked/new inventory after cleanup | 2,138 | 19,357,603 | All tracked files plus new retained-evidence doc |
 
-The main cleanup opportunity is not deleting application code. It is separating generated/reference artifacts from active code, reducing large monolithic registries and pages, and making the repo shape easier to navigate.
+This cleanup removed 160 tracked reference/generated files, about 5.0 MB, without deleting application code.
 
 ## Area Purpose Map
 
@@ -35,24 +35,23 @@ The main cleanup opportunity is not deleting application code. It is separating 
 | `backend` | 312 | FastAPI backend, agents, Cognee boundary, orchestrator, graph/storage services | Keep. Some paths may be shelf code from the UI perspective, but they support planned backend lanes. |
 | `tests` | 171 | Unit, audit, route, and behavior tests | Keep. Promote useful audits into gate rather than deleting. |
 | `scripts` | 107 | Audit, generation, migration, smoke, and repo-shape scripts | Keep. Remove only scripts that are provably superseded by newer gate scripts. |
-| `docs/audits` | 125 | Durable evidence ledger, snapshots, codebase audits, Lighthouse/Graphify outputs | Keep latest evidence. Archive or compress older generated JSON. |
-| `docs/_archive` | 86 | Historical specs and older implementation notes | Keep for now as reference. Can be moved out of active docs search later. |
+| `docs/audits` | 59 | Current May 8 audit/status evidence and retained gate markers | Keep current evidence only. Historical details are recoverable from git history. |
 | `docs/codex-prompts` | 53 | Prompt/spec source material used to drive previous implementation waves | Keep as source-of-truth history, but index it better. |
 | `graphify-out` | 4 | Generated codebase graph used by audit scripts and architecture checks | Keep unless audit scripts are changed. It is ignored by deploy packaging. |
 | `infrastructure` | 41 | Terraform, Firebase, cloud/deploy config | Keep. |
 | `services` | 32 | Worker/service support code | Keep until backend route usage audit proves otherwise. |
 | `cloud_functions` | 10 | Firebase/Cloud Functions support | Keep until deploy target is retired. |
-| root config | 10 | Package, TypeScript, Next, Tailwind, ESLint, lockfile, env/deploy config | Keep. |
+| root config | 25 | Package, TypeScript, Next, Tailwind, ESLint, lockfile, handoff docs, env/deploy config | Keep. |
 
 ## Largest Tracked Files
 
 | File | Bytes | Purpose | Assessment |
 | --- | ---: | --- | --- |
-| `graphify-out/graph.json` | 5,381,948 | Generated codebase graph | Intentional, but should stay deploy-ignored. |
+| `graphify-out/graph.json` | 5,381,601 | Generated codebase graph | Intentional, but should stay deploy-ignored. |
 | `package-lock.json` | 883,686 | Dependency lockfile | Keep. |
-| `docs/audits/2026-05-08-CODEBASE_AUDIT/01-inventory/modules.json` | 725,620 | Generated audit inventory | Keep latest, consider compressing/archive policy. |
-| `docs/audits/lighthouse-demo-syria-2024-latest.json` | 634,791 | Lighthouse evidence | Keep if latest production evidence. |
-| `lighthouse-landing.json` | 609,021 | Root-level Lighthouse artifact | Cleanup candidate. No current source reference found. |
+| `docs/audits/2026-05-08-REPO_PURPOSE_AUDIT/file-purpose-inventory.csv` | 368,872 | Current per-file purpose inventory | Keep as the latest repo map. |
+| `graphify-out/manifest.json` | 359,707 | Generated Graphify manifest | Keep with Graphify output. |
+| `docs/audits/2026-05-08-REPO_PURPOSE_AUDIT/review-candidates.csv` | 104,472 | Current cleanup/refactor candidate list | Keep as the latest cleanup queue. |
 | `src/lib/ai/tools.ts` | 163,834 | AI SDK tool definitions/helpers | Active but too large. Split behind same exports. |
 | `src/lib/constants/tool-registry.ts` | 94,973 | Core tool registry | Active but too large. Split by domain/surface behind same exports. |
 | `src/app/app/situations/new/page.tsx` | 83,997 | New situation wizard page | Active but too large. Extract local components/hooks. |
@@ -70,17 +69,19 @@ These files are active and should not be deleted. They are good simplification t
 | `src/app/api/ai/concordia/route.ts` | Large API route | Extract shared request validation and prompt assembly helpers. |
 | `src/lib/constants/*demo*` and `src/lib/constants/cases/*` | Demo data is actively imported by demo routes and case registry | Move demo case data into case packages and lazy import where possible. |
 
-## Cleanup Candidates
+## Cleanup Executed
 
-No deletes were performed in this audit. The following are candidates to review before removal or relocation.
+Executed in this pass:
 
-| Candidate | Confidence | Proposed action | Reason |
-| --- | --- | --- | --- |
-| `lighthouse-landing.json` | High | Move to `docs/audits/` or delete if superseded | Root-level generated artifact, no app references found. |
-| Old generated JSON under `docs/audits/*/01-inventory/` | Medium | Keep latest, compress or archive older runs | Useful evidence but not product runtime. |
-| Old Lighthouse JSON/screenshots | Medium | Keep latest per route, move older to archive | Prevent audit evidence from dominating active docs. |
-| `docs/_archive/*` very old sprint backlogs | Low | Keep for now, add archive index | Historical source material may still explain decisions. |
-| Large monolithic runtime files | High | Refactor, do not delete | Simplifies active app without changing behavior. |
+| Removed | Count / size | Reason |
+| --- | --- | --- |
+| `docs/_archive/*` | 86 files | Historical planning/reference docs. Removed from active tree; recoverable from git history. |
+| Old `docs/audits/2026-05-06-*` and `2026-05-07-*` snapshots | 57 files | Superseded by current retained evidence and May 8 audits. |
+| Old generated audit JSON/DOT/MJS payloads | 11 files | Large machine output no longer needed in active tree. Human-readable markdown outputs remain. |
+| Root/generated Lighthouse payloads | 2 files | `lighthouse-landing.json` and stale demo Lighthouse JSON were generated artifacts. |
+| Older generated tool contract/tool docs snapshots | 4 files | Kept only the current May 8 tool contract output. |
+
+The gate scripts that previously referenced older dated audits now point at `docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md`, so the repository keeps audit proof without carrying every historical one-off report.
 
 ## Do Not Delete Without A Separate Usage Audit
 
@@ -89,15 +90,15 @@ No deletes were performed in this audit. The following are candidates to review 
 - `graphify-out/`: current repo-shape/master-charter audits expect Graphify output.
 - Demo constants: Syria, Nordalia, Northwind, CTED, and related fixtures are actively imported by demo routes and tests.
 - `docs/codex-prompts/`: these are implementation source prompts and should stay discoverable.
+- `src/components/landing/_archive/`: the landing audit expects the retired heritage components to exist.
 
 ## Recommended Cleanup Order
 
-1. Move or retire root generated artifacts, starting with `lighthouse-landing.json`.
-2. Add a docs/audit retention policy so generated JSON does not accumulate without boundaries.
-3. Split `src/lib/ai/tools.ts` behind stable exports.
-4. Split `src/lib/constants/tool-registry.ts` behind stable exports.
-5. Extract the new-situation wizard and dashboard into smaller local modules.
-6. Run a backend proxy usage audit before touching `backend/`, `services/`, or `cloud_functions/`.
+1. Split `src/lib/ai/tools.ts` behind stable exports.
+2. Split `src/lib/constants/tool-registry.ts` behind stable exports.
+3. Extract the new-situation wizard and dashboard into smaller local modules.
+4. Add a lightweight docs/audit retention policy so future generated JSON does not accumulate.
+5. Run a backend proxy usage audit before touching `backend/`, `services/`, or `cloud_functions/`.
 
 ## Audit Artifacts
 

@@ -25,7 +25,7 @@ const requiredFiles = [
   'skills/tools/extract.entities.gliner/SKILL.md',
   'skills/tools/cross.community-synthesizer/SKILL.md',
   'docs/adr/0047-extraction-layering-plus-graphrag-batch.md',
-  'docs/audits/2026-05-07-EXTRACTION_WAVE_FOUNDATIONS.md',
+  'docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md',
   'docs/architecture/CONFLICT_DATA_SOURCES.md',
   'docs/codex-prompts/PRAXIS_CODEX_30_EXTRACTION_AND_GRAPHRAG_WAVE.md',
 ];

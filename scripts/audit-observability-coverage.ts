@@ -36,7 +36,7 @@ const checks: Array<{ label: string; file: string; mustInclude: string[] }> = [
   },
   {
     label: 'Pack 14 audit records gcloud auth environment gate',
-    file: 'docs/audits/2026-05-06-PACK14_PRODUCTION_EXCELLENCE_PASS.md',
+    file: 'docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md',
     mustInclude: ['audit:gcp', 'interactive reauthentication'],
   },
 ];
