@@ -4,14 +4,14 @@
 
 ## Morning Brief
 
-- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `V2_00_README`, `V2_A0_MT_DATA_MODEL`.
-- Prompts deferred: Cloud SQL live row counts from `01` (blocked by private IP plus missing local `psql`/Cloud SQL Proxy); `V2_A1_ORGID_CONTEXT` through `V2_A6_MT_AUDIT_LOG` are blocked until all MT approval rows below are marked approved or explicitly revised.
+- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `V2_00_README`, `V2_A0_MT_DATA_MODEL`, `V2_B0_KG_PREFLIGHT` local attempt.
+- Prompts deferred: Cloud SQL live row counts from `01` and `V2_B0_KG_PREFLIGHT` are blocked locally by private IP plus missing local `psql`/Cloud SQL Proxy; `V2_A1_ORGID_CONTEXT` through `V2_A6_MT_AUDIT_LOG` are blocked until all MT approval rows below are marked approved or explicitly revised; `V2_B1_DUAL_WRITE_GRAPH` is blocked until B0 live counts select and approve Case 1/2/3.
 - Recovery loop resolved: `audit:ux-polish`, `audit:workbench`, `audit:evidence-drawer`, `audit:graph-viewer`, `audit:visualization`, `audit:master-charter`, stale Graphify outputs, and withCalibration unit fixture drift.
 - Measured deltas:
   - Workbench root JS gzipped: current built workbench initial client JS is `511.3 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
   - Tools chapter density: live demo DOM count is 54 interactive controls after opening the closed Recipe library.
   - Prompt-health: thin synthetic case `72/red`, rich Syria demo `94/yellow`, prompt block delta `+2179` bytes for rich.
-- Next-session priorities: GC approval of the five MT decisions, then `A1_ORGID_CONTEXT.md`; runtime document ingest parity and production workbench smoke remain carried follow-ups.
+- Next-session priorities: run B0 KG preflight from a VPC-connected shell, GC approval of the five MT decisions, then `A1_ORGID_CONTEXT.md`; runtime document ingest parity and production workbench smoke remain carried follow-ups.
 - Blockers requiring GC: none for the low-risk code changes here; production deployment/commit approval remains separate.
 
 ---
@@ -51,6 +51,8 @@
 | V2_A4_TEAM_INVITE_FLOW | blocked | Depends on A1 org context, A3 invitation rules, and invite token secret/email deploy decisions. |
 | V2_A5_ROLE_PILLS_AND_GUARDS | blocked | Depends on A2 effective-role helpers and A3 server/rules enforcement. |
 | V2_A6_MT_AUDIT_LOG | blocked | Depends on A1 org context, A3 audit-log rules, and state-changing route mapping. |
+| V2_B0_KG_PREFLIGHT | blocked | Local preflight documented at `docs/audits/2026-05-08-POSTGRES_KG_PREFLIGHT.md`; Cloud SQL instance is private-IP and local shell lacks `psql` plus Cloud SQL Auth Proxy. |
+| V2_B1_DUAL_WRITE_GRAPH | blocked | Must not start until B0 records live row counts, latency, schema/index health, selected Case 1/2/3, and approval. |
 
 Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blocked`.
 
@@ -66,6 +68,12 @@ marked `approved` or `revised: <alternative>`.
 | MT-3 roles | owner/editor/viewer/commenter | pending GC | |
 | MT-4 invite | email + direct add | pending GC | |
 | MT-5 migration | lazy script | pending GC | |
+
+## B0 KG Preflight Approval
+
+| decision | status | approved_by | timestamp |
+|---|---|---|---|
+| B0 KG preflight | blocked: live SQL counts and latency not measured from local shell | pending GC | |
 
 ## Baselines And Checks
 
@@ -368,16 +376,27 @@ marked `approved` or `revised: <alternative>`.
 - Operational notes captured: A4 needs `PRAXIS_INVITE_TOKEN_SECRET` and a production email provider decision; A6 needs an audit-action route map before broad code edits.
 - Issues encountered: no code implementation started because A0 still blocks A1-A6.
 
+### V2_B0_KG_PREFLIGHT
+
+- Completed: 2026-05-08 as a local blocked preflight.
+- Commit: current B0/B1 intake pass.
+- Decision doc: `docs/audits/2026-05-08-POSTGRES_KG_PREFLIGHT.md`.
+- Connection evidence: `gcloud` sees `praxisbytacitus-instance` at private IP `10.101.0.3`; local `psql` and Cloud SQL Auth Proxy are missing; `gcloud sql connect` fails because Cloud SQL Proxy v2 is not in PATH.
+- Counts and latency: not measured; Case 1/2/3 not selected.
+- B1 status: blocked until B0 is rerun from Cloud Shell, a VPC-connected host, or a temporary worker in the existing VPC.
+
 ## Blockers
 
 - Runtime verification still needed for: production workbench first mount, staged recipe navigation, document upload -> retrieval, thin-case prompt-health, and live fresh-account onboarding enforcement.
 - Live Cloud SQL row counts remain blocked until `psql`/Cloud SQL Proxy or a VPC-connected shell is available.
 - V2 Session B remains risk-gated on live Cloud SQL graph row counts; do not cut over graph reads/writes until `B0_KG_PREFLIGHT.md` is completed.
 - V2 Session A implementation is blocked until GC approves or revises MT-1 through MT-5 in `STATUS.md` or `docs/architecture/MULTI_TENANT_MODEL.md`.
+- B1 dual-write implementation is blocked until `docs/audits/2026-05-08-POSTGRES_KG_PREFLIGHT.md` has live counts, pgvector latency, schema/index health, selected Case 1/2/3, and GC approval.
 
 ## Notes For Next Session
 
 - Start V2 Session A implementation only after approving MT-1 through MT-5; then read `docs/codex-prompts/PRAXIS_V2_A1_ORGID_CONTEXT.md`.
+- To unblock B0, run the documented SQL from a VPC-connected Cloud Shell/bastion/worker against `praxisbytacitus:us-east4:praxisbytacitus-instance`.
 - Keep solo-user backwards compatibility as a hard invariant while adding team/org scaffolding.
 - Firestore rules changes in V2 Session A require matching tests in `tests/security/firestore-rules.test.ts`.
 - Runtime-smoke `08_THIN_CASE_CALIBRATION`: verify a real thin case returns 422, the help panel renders, and `forceRun: true` reaches the model with `<context-quality>` attached.
