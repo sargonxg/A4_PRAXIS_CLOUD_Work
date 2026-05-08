@@ -10,6 +10,18 @@ import {
   getAdminDbOrThrow,
 } from '@/lib/firebase/admin';
 
+/**
+ * Canonical document ingestion endpoint.
+ *
+ * As of 2026-05-08 (CODEX_NIGHT_PACK/06_LIBRARY_INGEST_CONSOLIDATION.md),
+ * this endpoint is the single source of truth for extracting text, chunking,
+ * and indexing documents for Firestore-backed retrieval. The Library
+ * substrate path (/api/backend/tabs/library/ingest) registers source_receipts
+ * rows and queues Cognee writes, but does not own retrieval indexing.
+ *
+ * Visible Library uploads call both paths in sequence: this endpoint first,
+ * then the Library substrate ingest route with the returned documentId.
+ */
 export const maxDuration = 300;
 
 const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'txt', 'md', 'html'];
@@ -205,14 +217,19 @@ export const POST = withAuth(async (request, user) => {
       bucketUri: bucketUri ?? undefined,
     });
 
+    let chunkCount = 0;
     if (text.length > 0 && !text.startsWith('[')) {
-      chunkAndSaveDocument(user.uid, situationId, stored.id, file.name, text)
-        .then((count) => console.log(`[documents] Chunked ${file.name}: ${count} chunks`))
-        .catch((err) => console.error('[documents] Chunking failed:', err));
+      try {
+        chunkCount = await chunkAndSaveDocument(user.uid, situationId, stored.id, file.name, text);
+        console.log(`[documents] Chunked ${file.name}: ${chunkCount} chunks`);
+      } catch (err) {
+        console.error('[documents] Chunking failed:', err);
+      }
     }
 
     return NextResponse.json({
       success: true,
+      documentId: stored.id,
       document: {
         id: stored.id,
         title: stored.title,
@@ -221,9 +238,12 @@ export const POST = withAuth(async (request, user) => {
         status: stored.status,
         uploadedAt: stored.uploadedAt,
         entityCount: 0,
+        chunkCount,
         bucketUri,
       },
-      message: 'Document uploaded and saved to your situation. Chunking for AI retrieval in progress.',
+      message: chunkCount > 0
+        ? 'Document uploaded, chunked, and indexed for retrieval.'
+        : 'Document uploaded and saved to your situation. Text extraction did not produce retrievable chunks.',
     });
   } catch (err) {
     console.error('[documents/upload] failed:', err);

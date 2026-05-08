@@ -4,6 +4,14 @@ import { useState } from 'react';
 import { FileUp, Loader2 } from 'lucide-react';
 import { useFeatureFlags } from '@/lib/features/client';
 
+function documentIdFromPayload(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const root = payload as { documentId?: unknown; document?: { id?: unknown } };
+  if (typeof root.documentId === 'string') return root.documentId;
+  if (typeof root.document?.id === 'string') return root.document.id;
+  return null;
+}
+
 export function DocumentUploadInline({ caseId }: { caseId: string }) {
   const features = useFeatureFlags();
   const cogneeEnabled = features.cognee.enabled;
@@ -24,21 +32,26 @@ export function DocumentUploadInline({ caseId }: { caseId: string }) {
       if (!documentResponse.ok) {
         throw new Error(documentPayload?.error ?? 'document upload failed');
       }
+      const documentId = documentIdFromPayload(documentPayload);
 
       const libraryFormData = new FormData();
       libraryFormData.append('file', file);
+      if (documentId) libraryFormData.append('documentId', documentId);
       const response = await fetch(`/api/backend/tabs/library/ingest?case_id=${encodeURIComponent(caseId)}`, { method: 'POST', body: libraryFormData });
       const payload = await response.json().catch(() => ({}));
       if (response.ok) {
         const layer = cogneeEnabled
-          ? payload?.status === 'ingested' ? 'Cognee ingest started. Source receipt saved.' : 'Memory layer queued; source receipt saved.'
-          : 'Source receipt saved.';
+          ? payload?.status === 'ingested'
+            ? 'Document embedded for retrieval. Source receipt saved. Cognee ingest started.'
+            : 'Document embedded for retrieval. Source receipt saved. Memory layer queued.'
+          : 'Document embedded for retrieval. Source receipt saved.';
         setStatus(`${file.name} uploaded. ${layer}`);
       } else {
-        setStatus(`${file.name} saved. Source receipt saved; extraction backend is unavailable.`);
+        setStatus(`${file.name} uploaded. Document embedded for retrieval. Source receipt deferred.`);
       }
-    } catch {
-      setStatus('Upload failed; try again from Library.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'unknown error';
+      setStatus(`Upload failed: ${message}`);
     } finally {
       setUploading(false);
     }

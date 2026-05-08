@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -188,6 +188,7 @@ async def ingest_library_source(
     case_id: str = Query(..., min_length=1, max_length=128),
     case_type: str | None = Query(default=None, max_length=96),
     case_type_secondary: str | None = Query(default=None, max_length=96),
+    document_id: str | None = Form(default=None, alias="documentId"),
     file: UploadFile = File(...),
     token: dict = Depends(verify_firebase_token),
 ) -> dict[str, Any]:
@@ -209,6 +210,7 @@ async def ingest_library_source(
             {
                 "filename": title,
                 "bytes": len(content),
+                "documentId": document_id,
                 "caseType": case_type,
                 "caseTypeSecondary": case_type_secondary,
             },
@@ -234,6 +236,7 @@ async def ingest_library_source(
             metadata={
                 "filename": title,
                 "source": "library_upload",
+                "documentId": document_id,
                 "caseType": case_type,
                 "caseTypeSecondary": case_type_secondary,
             },
@@ -280,7 +283,7 @@ async def ingest_library_source(
             payload={"sourceId": source_id, "status": status},
         )
 
-    return {"sourceId": source_id, "status": status, "cognee": {"add": add_status, "cognify": cognify_status}}
+    return {"sourceId": source_id, "documentId": document_id, "status": status, "cognee": {"add": add_status, "cognify": cognify_status}}
 
 
 @router.get("/library")

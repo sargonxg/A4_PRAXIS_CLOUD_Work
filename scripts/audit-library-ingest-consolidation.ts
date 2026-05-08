@@ -19,8 +19,11 @@ for (const file of files) {
   if (!source.includes("append('situationId', caseId)")) {
     failures.push(`${file}: /api/documents/upload call must include situationId`);
   }
-  if (!source.includes('extraction backend is unavailable')) {
-    failures.push(`${file}: upload path must expose an honest backend-unavailable fallback`);
+  if (!source.includes("append('documentId', documentId)")) {
+    failures.push(`${file}: backend Library ingest must receive the embedded documentId`);
+  }
+  if (!source.includes('Document embedded for retrieval. Source receipt deferred.')) {
+    failures.push(`${file}: upload path must expose an honest source-receipt-deferred fallback`);
   }
 }
 

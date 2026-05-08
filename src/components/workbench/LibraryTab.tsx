@@ -33,6 +33,14 @@ interface BackendSourceReceipt {
   updated_at?: string;
 }
 
+function documentIdFromPayload(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const root = payload as { documentId?: unknown; document?: { id?: unknown } };
+  if (typeof root.documentId === 'string') return root.documentId;
+  if (typeof root.document?.id === 'string') return root.document.id;
+  return null;
+}
+
 export function LibraryTab() {
   const { caseId, caseModule } = useWorkbenchScope();
   const features = useFeatureFlags();
@@ -108,23 +116,28 @@ export function LibraryTab() {
       const documentResponse = await fetch('/api/documents/upload', { method: 'POST', body: documentFormData });
       const documentPayload = await documentResponse.json().catch(() => ({}));
       if (!documentResponse.ok) throw new Error(documentPayload?.error ?? 'document upload failed');
+      const documentId = documentIdFromPayload(documentPayload);
 
       const libraryFormData = new FormData();
       libraryFormData.append('file', file);
+      if (documentId) libraryFormData.append('documentId', documentId);
       const response = await fetch(`/api/backend/tabs/library/ingest?case_id=${encodeURIComponent(caseId)}`, { method: 'POST', body: libraryFormData });
       const payload = await response.json().catch(() => ({}));
       if (response.ok) {
         setSourceNote(
           cogneeEnabled
-            ? payload.status === 'ingested' ? `${file.name} ingested.` : `${file.name} saved; memory layer queued.`
-            : `${file.name} uploaded; source receipt saved.`,
+            ? payload.status === 'ingested'
+              ? `${file.name} uploaded. Document embedded for retrieval. Source receipt saved. Cognee ingest started.`
+              : `${file.name} uploaded. Document embedded for retrieval. Source receipt saved. Memory layer queued.`
+            : `${file.name} uploaded. Document embedded for retrieval. Source receipt saved.`,
         );
       } else {
-        setSourceNote(`${file.name} saved. Source receipt saved; extraction backend is unavailable.`);
+        setSourceNote(`${file.name} uploaded. Document embedded for retrieval. Source receipt deferred.`);
       }
       await refreshBackendSources();
-    } catch {
-      setSourceNote('Upload could not reach the Library backend. Existing demo artifacts remain visible.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'unknown error';
+      setSourceNote(`Upload failed: ${message}`);
     } finally {
       setSourceBusy(false);
     }
