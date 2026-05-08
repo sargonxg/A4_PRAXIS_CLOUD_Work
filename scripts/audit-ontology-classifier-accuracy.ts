@@ -38,4 +38,4 @@ if (accuracy < floor || failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Ontology classifier audit passed: ${correct}/${fixtures.length} (${Math.round(accuracy * 100)}%)`);
+console.log(`Ontology classifier audit passed: ${correct}/${fixtures.length} (${Math.round(accuracy * 100)}%) (static-marker)`);

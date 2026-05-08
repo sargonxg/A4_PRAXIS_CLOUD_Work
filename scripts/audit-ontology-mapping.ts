@@ -38,4 +38,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Ontology mapping audit passed for ${summaries.length} ontologies.`);
+console.log(`Ontology mapping audit passed for ${summaries.length} ontologies. (static-marker)`);

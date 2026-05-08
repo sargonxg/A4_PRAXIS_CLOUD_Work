@@ -104,4 +104,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('[audit:architecture-reference] ok');
+console.log('[audit:architecture-reference] ok (static-marker)');

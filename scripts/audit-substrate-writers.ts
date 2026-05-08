@@ -43,4 +43,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('[audit:substrate-writers] ok');
+console.log('[audit:substrate-writers] ok (static-marker)');

@@ -40,4 +40,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('[audit:surface-registry-coherence] ok');
+console.log('[audit:surface-registry-coherence] ok (static-marker)');

@@ -53,4 +53,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Architecture chain audit passed: ${uniqueScripts.length} §19 npm scripts accounted for.`);
+console.log(`Architecture chain audit passed: ${uniqueScripts.length} §19 npm scripts accounted for. (static-marker)`);

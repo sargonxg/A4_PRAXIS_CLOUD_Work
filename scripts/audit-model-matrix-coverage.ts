@@ -51,4 +51,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Model matrix coverage audit passed for ${taskKinds.length} task kinds.`);
+console.log(`Model matrix coverage audit passed for ${taskKinds.length} task kinds. (configuration-aware)`);

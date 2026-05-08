@@ -36,4 +36,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Transparency card audit passed for ${MARKETPLACE_TOOLS.length} marketplace tools.`);
+console.log(`Transparency card audit passed for ${MARKETPLACE_TOOLS.length} marketplace tools. (static-marker)`);

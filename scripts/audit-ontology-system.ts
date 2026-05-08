@@ -176,4 +176,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`[audit:ontology-system] ok - ${caseTypes.length} case types`);
+console.log(`[audit:ontology-system] ok - ${caseTypes.length} case types (static-marker)`);

@@ -28,7 +28,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Cost telemetry audit passed for Pack 30 extraction wave.');
+console.log('Cost telemetry audit passed for Pack 30 extraction wave. (static-marker)');
 
 function read(file: string) {
   return existsSync(join(process.cwd(), file)) ? readFileSync(join(process.cwd(), file), 'utf8') : '';

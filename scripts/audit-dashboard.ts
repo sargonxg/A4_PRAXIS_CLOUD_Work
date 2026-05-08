@@ -54,7 +54,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('[audit:dashboard] ok');
+console.log('[audit:dashboard] ok (static-marker)');
 
 function mustInclude(file: string, expected: string[]) {
   const body = read(file);

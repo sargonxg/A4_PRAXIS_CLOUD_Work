@@ -87,7 +87,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log('[audit:onboarding-gate] ok');
+  console.log('[audit:onboarding-gate] ok (static-marker)');
 }
 
 main().catch((err) => {

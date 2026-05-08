@@ -44,4 +44,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Tool persona coverage audit passed for ${MARKETPLACE_TOOLS.length} tools across ${requiredRoles.size} roles.`);
+console.log(`Tool persona coverage audit passed for ${MARKETPLACE_TOOLS.length} tools across ${requiredRoles.size} roles. (static-marker)`);

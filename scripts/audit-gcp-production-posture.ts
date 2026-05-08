@@ -80,7 +80,7 @@ let hardFailures = 0;
 let softWarnings = 0;
 
 if (SKIP_GCLOUD) {
-  console.log('AUDIT_GCP_SKIP=1 - skipping Pack 22 GCP production posture calls.');
+  console.log('AUDIT_GCP_SKIP=1 - skipping Pack 22 GCP production posture calls (runtime-proof).');
   process.exit(0);
 }
 
@@ -88,7 +88,7 @@ for (const check of checks) {
   try {
     const output = gcloud(check.command);
     const ok = check.requiredText ? output.includes(check.requiredText) : output.length > 0;
-    console.log(`${ok ? 'OK  ' : check.soft ? 'WARN' : 'FAIL'} ${check.name}${output ? `: ${output.split(/\r?\n/)[0]}` : ''}`);
+    console.log(`${ok ? 'OK  ' : check.soft ? 'WARN' : 'FAIL'} ${check.name}${output ? `: ${output.split(/\r?\n/)[0]}` : ''} (runtime-proof)`);
     if (!ok) {
       if (check.soft) softWarnings += 1;
       else hardFailures += 1;
@@ -100,5 +100,5 @@ for (const check of checks) {
   }
 }
 
-console.log(`Pack 22 GCP production posture: hardFailures=${hardFailures}, softWarnings=${softWarnings}`);
+console.log(`Pack 22 GCP production posture: hardFailures=${hardFailures}, softWarnings=${softWarnings} (runtime-proof)`);
 if (hardFailures > 0) process.exit(1);

@@ -63,4 +63,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('[audit:observability-coverage] ok');
+console.log('[audit:observability-coverage] ok (static-marker)');

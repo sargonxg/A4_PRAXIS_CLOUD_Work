@@ -94,4 +94,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Tool semantic canary audit passed for ${MARKETPLACE_TOOLS.length} marketplace tools.`);
+console.log(`Tool semantic canary audit passed for ${MARKETPLACE_TOOLS.length} marketplace tools. (static-marker)`);

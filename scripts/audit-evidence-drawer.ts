@@ -46,4 +46,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Evidence drawer audit passed: marketplace runs expose evidence, context, and comparison UI.');
+console.log('Evidence drawer audit passed: marketplace runs expose evidence, context, and comparison UI. (static-marker)');

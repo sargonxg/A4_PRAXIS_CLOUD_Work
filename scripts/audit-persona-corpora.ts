@@ -22,4 +22,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Persona corpus audit passed: canonical manifests are versioned, cited, and namespace-scoped.');
+console.log('Persona corpus audit passed: canonical manifests are versioned, cited, and namespace-scoped. (static-marker)');

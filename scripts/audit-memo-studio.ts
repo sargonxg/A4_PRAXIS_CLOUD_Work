@@ -40,4 +40,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Memo Studio audit passed.');
+console.log('Memo Studio audit passed. (static-marker)');

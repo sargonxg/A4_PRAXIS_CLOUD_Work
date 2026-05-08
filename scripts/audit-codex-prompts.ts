@@ -47,4 +47,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Codex prompt pack audit passed for master charter, packs 03-16, packs 18-22, and packs 26-31.');
+console.log('Codex prompt pack audit passed for master charter, packs 03-16, packs 18-22, and packs 26-31. (static-marker)');

@@ -104,4 +104,4 @@ if (findings.length > 0) {
   process.exit(1);
 }
 
-console.log('[audit:cognee-ui-honesty] ok');
+console.log('[audit:cognee-ui-honesty] ok (static-marker)');

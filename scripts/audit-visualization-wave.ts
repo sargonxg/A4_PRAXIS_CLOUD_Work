@@ -90,4 +90,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Visualization wave audit passed.');
+console.log('Visualization wave audit passed. (static-marker)');

@@ -49,4 +49,4 @@ if (!login.includes("resolvePostLoginRedirect")) {
   throw new Error('Login page does not use centralized post-login redirect helper.');
 }
 
-console.log('audit-landing: ok');
+console.log('audit-landing: ok (static-marker)');

@@ -32,4 +32,4 @@ if (fails.length) {
   fails.forEach((f) => console.error('  ' + f));
   process.exit(1);
 }
-console.log(`OK — ${files.length} AI route files, ${files.length - fails.length} calibrated, ${EXEMPT.size} exempt.`);
+console.log(`OK - ${files.length} AI route files, ${files.length - fails.length} calibrated, ${EXEMPT.size} exempt (static-marker).`);

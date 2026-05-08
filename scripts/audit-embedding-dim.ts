@@ -173,7 +173,7 @@ async function main() {
     for (const finding of findings) console.error(`  [${finding.source}] ${finding.problem}`);
     process.exit(1);
   }
-  console.log(`audit:embedding-dim passed (canonical: ${EMBEDDING_MODEL} @ ${EMBEDDING_DIMENSION}d)`);
+  console.log(`audit:embedding-dim passed (canonical: ${EMBEDDING_MODEL} @ ${EMBEDDING_DIMENSION}d) (configuration-aware)`);
 }
 
 main().catch((err) => {

@@ -29,4 +29,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Firewall coverage audit passed.');
+console.log('Firewall coverage audit passed. (static-marker)');

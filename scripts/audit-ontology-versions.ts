@@ -16,4 +16,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Ontology version audit passed for ${CASE_ONTOLOGIES.length} ontologies.`);
+console.log(`Ontology version audit passed for ${CASE_ONTOLOGIES.length} ontologies. (static-marker)`);

@@ -31,4 +31,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Tool suggestion eval passed: ontology recommendation recall is at least 80% across the 52-tool marketplace.');
+console.log('Tool suggestion eval passed: ontology recommendation recall is at least 80% across the 52-tool marketplace. (static-marker)');

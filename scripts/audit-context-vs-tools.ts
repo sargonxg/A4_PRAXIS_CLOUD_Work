@@ -103,4 +103,4 @@ for (const file of personaFiles) {
   }
 }
 
-console.log('audit-context-vs-tools: ok');
+console.log('audit-context-vs-tools: ok (static-marker)');

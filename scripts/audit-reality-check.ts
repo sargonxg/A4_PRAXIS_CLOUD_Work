@@ -23,4 +23,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Reality check audit passed.');
+console.log('Reality check audit passed. (static-marker)');

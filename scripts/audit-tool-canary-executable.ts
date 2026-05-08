@@ -70,4 +70,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Tool canary executable audit passed for ${MARKETPLACE_TOOLS.length} tools.`);
+console.log(`Tool canary executable audit passed for ${MARKETPLACE_TOOLS.length} tools. (static-marker)`);

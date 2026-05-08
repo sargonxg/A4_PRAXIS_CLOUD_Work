@@ -83,7 +83,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('License SBOM audit passed.');
+console.log('License SBOM audit passed. (static-marker)');
 for (const row of rows) console.log(`- ${row}`);
 
 function normalizeLicense(license: string | undefined) {

@@ -58,4 +58,4 @@ if (findings.length > 0) {
   process.exit(1);
 }
 
-console.log(`[audit:stage-target-coverage] ok (${nonSatTools.length} non-SAT recipes staged)`);
+console.log(`[audit:stage-target-coverage] ok (${nonSatTools.length} non-SAT recipes staged) (static-marker)`);

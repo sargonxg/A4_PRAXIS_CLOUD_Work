@@ -62,4 +62,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('[audit:document-ingest-parity] ok');
+console.log('[audit:document-ingest-parity] ok (configuration-aware)');

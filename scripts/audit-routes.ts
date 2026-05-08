@@ -51,10 +51,10 @@ for (const dir of routeDirs) {
   }
 }
 
-console.log(`\n✅ ${passed}/${routeDirs.length} routes pass all checks`);
+console.log(`\n✅ ${passed}/${routeDirs.length} routes pass all checks (static-marker)`);
 if (issues.length > 0) {
   console.log(`\n❌ Issues found:`);
   issues.forEach(i => console.log(`  - ${i}`));
 } else {
-  console.log('\n🎉 All routes pass!');
+  console.log('\n🎉 All routes pass! (static-marker)');
 }

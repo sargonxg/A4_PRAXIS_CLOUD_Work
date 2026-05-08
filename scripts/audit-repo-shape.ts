@@ -70,4 +70,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Repo shape audit passed.');
+console.log('Repo shape audit passed. (static-marker)');

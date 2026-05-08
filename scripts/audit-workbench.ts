@@ -493,7 +493,7 @@ if (sidebarLines >= 350) {
   throw new Error(`Sidebar is still too large: ${sidebarLines} lines; expected < 350.`);
 }
 
-console.log('audit-workbench: ok');
+console.log('audit-workbench: ok (static-marker)');
 
 function countFiles(dir: string, fileName: string): number {
   if (!existsSync(dir)) return 0;

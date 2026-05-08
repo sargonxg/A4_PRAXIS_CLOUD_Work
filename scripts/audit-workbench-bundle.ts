@@ -118,7 +118,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('[audit:workbench-bundle] ok');
+console.log('[audit:workbench-bundle] ok (static-marker)');
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

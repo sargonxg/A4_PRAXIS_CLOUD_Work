@@ -66,7 +66,7 @@ async function main() {
     for (const failure of failures) console.error(`  ${failure}`);
     process.exit(1);
   }
-  console.log('audit:aco-parity passed (14 entities, overlay mounted, ontology reference wired)');
+  console.log('audit:aco-parity passed (14 entities, overlay mounted, ontology reference wired) (static-marker)');
 }
 
 async function assertFileContains(file: string, markers: string[], failures: string[]) {

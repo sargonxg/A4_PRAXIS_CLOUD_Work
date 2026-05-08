@@ -17,4 +17,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Graph viewer uniqueness audit passed.');
+console.log('Graph viewer uniqueness audit passed. (static-marker)');

@@ -50,4 +50,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Context-aware coverage audit passed.');
+console.log('Context-aware coverage audit passed. (static-marker)');

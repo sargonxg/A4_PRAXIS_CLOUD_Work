@@ -46,4 +46,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('[audit:ai-provider-vertex-default] ok');
+console.log('[audit:ai-provider-vertex-default] ok (configuration-aware)');

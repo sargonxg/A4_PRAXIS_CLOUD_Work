@@ -94,4 +94,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Boardroom audit passed for Pack 16 third pass: 10 personas, SSE stream route, lifecycle controls, DOCX/Markdown export, review-queue promotion, custom-persona scaffolds, persona-corpus fallback, UI, e2e coverage, subagent scaffolds, and citable synthesized sample deliberation.');
+console.log('Boardroom audit passed for Pack 16 third pass: 10 personas, SSE stream route, lifecycle controls, DOCX/Markdown export, review-queue promotion, custom-persona scaffolds, persona-corpus fallback, UI, e2e coverage, subagent scaffolds, and citable synthesized sample deliberation. (static-marker)');

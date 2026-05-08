@@ -112,4 +112,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('[audit:cognee] ok');
+console.log('[audit:cognee] ok (static-marker)');

@@ -71,4 +71,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('[audit:purpose-surface] ok');
+console.log('[audit:purpose-surface] ok (static-marker)');

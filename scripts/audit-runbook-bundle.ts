@@ -40,4 +40,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Runbook bundle audit passed for ${requiredRunbooks.length} Pack 22 runbooks.`);
+console.log(`Runbook bundle audit passed for ${requiredRunbooks.length} Pack 22 runbooks. (static-marker)`);

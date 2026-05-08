@@ -50,4 +50,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Pack 22 verification audit passed.');
+console.log('Pack 22 verification audit passed. (static-marker)');

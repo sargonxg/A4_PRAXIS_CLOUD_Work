@@ -103,7 +103,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Pack 30 extraction wave audit passed.');
+console.log('Pack 30 extraction wave audit passed. (static-marker)');
 console.log(`GLiNER label files: ${labels.join(', ')}`);
 
 function read(file: string) {

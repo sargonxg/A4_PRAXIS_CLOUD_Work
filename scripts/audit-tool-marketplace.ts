@@ -81,5 +81,5 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Tool marketplace audit passed for ${expectedToolCount} curated tools, handler contracts, and foundation execution.`);
+console.log(`Tool marketplace audit passed for ${expectedToolCount} curated tools, handler contracts, and foundation execution. (static-marker)`);
 console.log('Pack 31 analytics expansion present: network analysis, sanctions matching, and policy ABM tools are registered with explicit extended runtime budgets.');

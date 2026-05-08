@@ -102,4 +102,4 @@ if (findings.length > 0) {
   process.exit(1);
 }
 
-console.log(`[audit:hero-tool-calibration-coverage] ok (${heroTools.length} visible hero tools checked)`);
+console.log(`[audit:hero-tool-calibration-coverage] ok (${heroTools.length} visible hero tools checked) (static-marker)`);

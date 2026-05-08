@@ -93,7 +93,7 @@ function main() {
   const out = join(auditsDir, `tool-contracts-${new Date().toISOString().slice(0, 10)}.md`);
   writeFileSync(out, render(rows));
   console.log(`Wrote ${out}`);
-  console.log(`${rows.filter((row) => row.score >= 6).length}/${rows.length} tools pass >=6/7 operating-contract checks`);
+  console.log(`${rows.filter((row) => row.score >= 6).length}/${rows.length} tools pass >=6/7 operating-contract checks (static-marker)`);
 }
 
 main();

@@ -25,4 +25,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Tool authoring spike audit passed.');
+console.log('Tool authoring spike audit passed. (static-marker)');

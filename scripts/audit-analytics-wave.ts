@@ -74,7 +74,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Pack 31 analytics wave audit passed for 57 marketplace tools.');
+console.log('Pack 31 analytics wave audit passed for 57 marketplace tools. (static-marker)');
 
 function read(file: string) {
   const path = join(process.cwd(), file);

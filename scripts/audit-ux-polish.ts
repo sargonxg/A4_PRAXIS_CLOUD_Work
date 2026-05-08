@@ -98,7 +98,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('[audit:ux-polish] ok');
+console.log('[audit:ux-polish] ok (static-marker)');
 
 function collectFiles(dir: string, pattern: RegExp): string[] {
   if (!existsSync(dir)) return [];

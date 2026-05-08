@@ -110,4 +110,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('[audit:notifications-feedback] ok');
+console.log('[audit:notifications-feedback] ok (static-marker)');

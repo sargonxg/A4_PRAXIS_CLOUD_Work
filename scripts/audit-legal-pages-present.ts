@@ -56,4 +56,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Canonical entry routes audit passed.');
+console.log('Canonical entry routes audit passed. (static-marker)');

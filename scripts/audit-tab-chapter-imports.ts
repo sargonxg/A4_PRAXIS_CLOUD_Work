@@ -74,4 +74,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('[audit:workspace-tabs-chapters] ok');
+console.log('[audit:workspace-tabs-chapters] ok (static-marker)');

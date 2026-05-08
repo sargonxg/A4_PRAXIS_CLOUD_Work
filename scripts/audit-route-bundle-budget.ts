@@ -32,7 +32,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Route bundle budget audit passed.');
+console.log('Route bundle budget audit passed. (static-marker)');
 
 function walk(dir: string): string[] {
   const entries = readdirSync(dir);

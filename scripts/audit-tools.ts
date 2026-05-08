@@ -114,7 +114,7 @@ function main() {
   writeFileSync(out, renderReport(results));
   const dimensionCount = Object.keys(results[0]?.dimensions ?? {}).length;
   console.log(`✓ Wrote ${out}`);
-  console.log(`  ${results.filter(r => r.score >= 10).length}/${results.length} tools ≥10/${dimensionCount}`);
+  console.log(`  ${results.filter(r => r.score >= 10).length}/${results.length} tools >=10/${dimensionCount} (static-marker)`);
 }
 
 // Run only when invoked directly

@@ -38,4 +38,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('[audit:orchestrator-writes] ok');
+console.log('[audit:orchestrator-writes] ok (static-marker)');

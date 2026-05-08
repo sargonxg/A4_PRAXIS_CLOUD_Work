@@ -27,4 +27,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Owner scoping audit passed.');
+console.log('Owner scoping audit passed. (static-marker)');

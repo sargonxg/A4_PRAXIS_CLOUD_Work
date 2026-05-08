@@ -32,4 +32,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Tool context isolation audit passed.');
+console.log('Tool context isolation audit passed. (static-marker)');

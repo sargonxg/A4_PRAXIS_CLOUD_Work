@@ -37,4 +37,4 @@ if (findings.length > 0) {
   process.exit(1);
 }
 
-console.log('[audit:no-deterministic-tool-output-in-ui] ok');
+console.log('[audit:no-deterministic-tool-output-in-ui] ok (static-marker)');

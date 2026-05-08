@@ -53,4 +53,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Tool composition static audit passed for ${expectedToolCount} tools, ontology-recommended chains, and Pack 31 analytics chains.`);
+console.log(`Tool composition static audit passed for ${expectedToolCount} tools, ontology-recommended chains, and Pack 31 analytics chains. (static-marker)`);

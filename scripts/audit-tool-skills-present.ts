@@ -35,4 +35,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Tool skills audit passed for ${MARKETPLACE_TOOLS.length} tools and 7 subagents.`);
+console.log(`Tool skills audit passed for ${MARKETPLACE_TOOLS.length} tools and 7 subagents. (static-marker)`);

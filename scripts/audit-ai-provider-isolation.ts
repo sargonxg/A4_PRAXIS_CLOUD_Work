@@ -113,4 +113,4 @@ if (violations.length > 0) {
   process.exit(1);
 }
 
-console.log('[audit:ai-provider-isolation] ok');
+console.log('[audit:ai-provider-isolation] ok (configuration-aware)');

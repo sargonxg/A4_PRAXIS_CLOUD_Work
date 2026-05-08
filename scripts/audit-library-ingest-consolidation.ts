@@ -33,4 +33,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('[audit:library-ingest-consolidation] ok');
+console.log('[audit:library-ingest-consolidation] ok (static-marker)');

@@ -40,5 +40,5 @@ if (findings.length > 0) {
   console.error(findings.join('\n'));
   process.exitCode = 1;
 } else {
-  console.log('[phase3] verb hookup audit passed');
+  console.log('[phase3] verb hookup audit passed (static-marker)');
 }

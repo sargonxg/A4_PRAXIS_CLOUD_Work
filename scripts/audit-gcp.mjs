@@ -106,7 +106,7 @@ const checks = [
 
 async function main() {
   if (SKIP_GCLOUD) {
-    console.log('AUDIT_GCP_SKIP=1 — skipping gcloud calls, reporting PASS.');
+    console.log('AUDIT_GCP_SKIP=1 - skipping gcloud calls, reporting PASS (runtime-proof).');
     process.exit(0);
   }
   let hardFail = 0;
@@ -127,7 +127,7 @@ async function main() {
     }
   }
   console.log(`\nSummary: ${Object.entries(byCategory).map(([k, v]) => `${k}=${v}`).join(', ')}`);
-  console.log(`Hard failures: ${hardFail} · Soft warnings: ${softFail}`);
+  console.log(`Hard failures: ${hardFail} · Soft warnings: ${softFail} (runtime-proof)`);
   if (hardFail > 0) process.exit(1);
 }
 

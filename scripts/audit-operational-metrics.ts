@@ -37,7 +37,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Operational metrics audit passed.');
+console.log('Operational metrics audit passed. (static-marker)');
 
 function read(file: string): string {
   return existsSync(file) ? readFileSync(file, 'utf8') : '';

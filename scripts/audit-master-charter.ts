@@ -102,7 +102,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Master charter audit passed.');
+console.log('Master charter audit passed. (static-marker)');
 
 function readIfExists(file: string): string {
   const path = join(root, file);

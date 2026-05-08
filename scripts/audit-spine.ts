@@ -56,4 +56,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`OK - audit-spine checked ${changed.length} changed API files.`);
+console.log(`OK - audit-spine checked ${changed.length} changed API files. (static-marker)`);

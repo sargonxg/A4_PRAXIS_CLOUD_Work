@@ -390,4 +390,4 @@ writeFileSync(mdPath, `${reportLines.join('\n')}\n`);
 writeFileSync(jsonPath, JSON.stringify({ date: today, summary: { pass, warn, blocked, total: checks.length }, checks }, null, 2));
 
 console.log(`[audit:deep-preship] wrote ${path.relative(root, mdPath)} and ${path.relative(root, jsonPath)}`);
-console.log(`[audit:deep-preship] ${pass} PASS, ${warn} WARN, ${blocked} BLOCKED`);
+console.log(`[audit:deep-preship] ${pass} PASS, ${warn} WARN, ${blocked} BLOCKED (static-marker)`);
