@@ -4,13 +4,13 @@
 
 ## Morning Brief
 
-- Prompts completed: `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `12_HYGIENE` low-risk items.
-- Prompts deferred: `08_THIN_CASE_CALIBRATION` (requires prompt-health runtime contract), `10_ACO_EXPLAINER` (product UI work still pending), `11_AUDIT_PROMOTION` full runtime tagging (only new gates were wired), Cloud SQL live diagnostics from `01` (not run in this local pass).
+- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `12_HYGIENE` low-risk items.
+- Prompts deferred: `08_THIN_CASE_CALIBRATION` (requires prompt-health runtime contract), `10_ACO_EXPLAINER` (product UI work still pending), `11_AUDIT_PROMOTION` full runtime tagging (only new gates were wired), Cloud SQL live row counts from `01` (blocked by private IP plus missing local `psql`/Cloud SQL Proxy).
 - Pre-existing audit failures surfaced: none from the focused audits run in this pass.
 - Measured deltas:
-  - Workbench root JS gzipped: no clean pre-change baseline captured; current built workbench initial client JS is `511.1 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
-  - Tools chapter density: not re-counted after this pass; recipe library is closed on first mount because `DEFAULT_OPEN_CHAPTERS` is now `['research', 'memos']`.
-  - Prompt-health on thin case: not run; deferred to `08_THIN_CASE_CALIBRATION`.
+  - Workbench root JS gzipped: current built workbench initial client JS is `511.3 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
+  - Tools chapter density: live demo DOM count is 54 interactive controls after opening the closed Recipe library.
+  - Prompt-health: thin synthetic case `72/red`, rich Syria demo `94/yellow`, prompt block delta `+2179` bytes for rich.
 - Next-session priorities: thin-case calibration contract, ACO explainer, runtime document ingest parity, production smoke on `praxis.tacitus.me`.
 - Blockers requiring GC: none for the low-risk code changes here; production deployment/commit approval remains separate.
 
@@ -21,15 +21,15 @@
 - Started: 2026-05-08T00:27:51-04:00 checkpoint.
 - Branch: `main`
 - Last commit at start: `46d8cf1`
-- Last commit at end: pending after current `07_ONBOARDING_GATE` commit.
-- Total commits this session: `1` completed, one pending in this pass.
+- Last commit at end: `b3193c7`
+- Total commits this session: `2`
 - Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`
 
 ## Tasks
 
 | File | Status | Notes |
 |---|---|---|
-| 01_DIAGNOSTICS | partial | Repo/branch/build/audit composition inspected. Cloud SQL live counts and clean pre-change baselines were not available because the worktree already contained uncommitted fixes. |
+| 01_DIAGNOSTICS | done | Gate attempted and stopped at `audit:ux-polish`; Cloud SQL instance discovered but live counts blocked by missing local `psql`/Cloud SQL Proxy and private IP; bundle, DOM density, prompt-health, Cognee copy, marketplace strings, and surface registry measured. |
 | 02_MARKETPLACE_HONESTY | done | Tools chapter is a Recipe library; non-SAT recipes stage hero-tool context; deterministic foundation strings are redacted from UI; audit wired. |
 | 03_CALIBRATION_INVARIANT | done | Visible hero tools are tiered; deterministic structural tools are labeled; calibrated AI hero routes are audited for `withCalibration`; docs updated. |
 | 04_COGNEE_UI_HONESTY | done | `/api/health/features` exposes server-derived flags; Cognee/memory UI copy is gated or neutralized; user-facing memory panel/client removed. |
@@ -48,10 +48,22 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 
 ### audit:gate composition
 
-`audit:gate` currently includes 68 `npm run audit:*` commands. New gates added in this pass:
+`audit:gate` currently includes 69 `npm run audit:*` commands. Full gate baseline attempted on 2026-05-08 and stopped at `audit:ux-polish`.
 
 | audit | status | tier | notes |
 |---|---|---|---|
+| typecheck | pass | runtime-build | `tsc --noEmit` completed. |
+| build | pass | runtime-build | `next build` completed; 197 app pages generated. |
+| audit:routes | pass | static-marker | `66 AI route files, 66 calibrated, 5 exempt.` |
+| audit:architecture-chain | pass | static-marker | `47 §19 npm scripts accounted for.` |
+| audit:architecture-reference | pass | static-marker | `ok`. |
+| audit:ai-provider-isolation | pass | static-marker | `ok`. |
+| audit:ai-provider-vertex-default | pass | static-marker | `ok`. |
+| audit:model-matrix-coverage | pass | static-marker | `7 task kinds.` |
+| audit:runbook-bundle | pass | static-marker | `17 Pack 22 runbooks.` |
+| audit:pack22-verification | pass | static-marker | `passed`. |
+| audit:observability-coverage | pass | static-marker | `ok`. |
+| audit:ux-polish | fail | static-marker | `tests/e2e/app-usability-smoke.spec.ts` missing `tool-marketplace` and `Memo Studio` coverage. Gate stopped here. |
 | audit:no-deterministic-tool-output-in-ui | pass | static-marker | Prevents `deterministic-foundation`, `foundation-run`, and `marketplace-foundation-v1` from visible UI. |
 | audit:hero-tool-calibration-coverage | pass | static-marker | Checked 12 visible hero tools. |
 | audit:cognee-ui-honesty | pass | static-marker | Verifies Cognee/memory copy is not exposed by default-disabled UI. |
@@ -76,45 +88,82 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 | `npm run audit:ai-provider-isolation` | pass |
 | `npm run audit:model-matrix-coverage` | pass |
 | `npm run audit:onboarding-gate` | pass |
+| `npm run audit:gate` | fail at `audit:ux-polish` |
 
 ### Postgres KG Live Counts
 
-Blocked/not run in this pass. No Cloud SQL mutation or live production query was performed.
+- Cloud SQL instance discovered: `praxisbytacitus-instance`, `POSTGRES_16`, `us-east4`, `db-f1-micro`, private IP `10.101.0.3`.
+- `graph_nodes total`: blocked.
+- `graph_nodes real_user_rows`: blocked.
+- `graph_edges total`: blocked.
+- `graph_embeddings total`: blocked.
+- `graph_audit total`: blocked.
+- Blocker: local shell has no `psql` and no `cloud-sql-proxy`; instance is private-IP. The attempted `gcloud sql connect ... -- -c` path is not supported by this local `gcloud sql connect` command.
 
 ### Bundle Baseline
 
-- Pre-change root JS gzipped: not captured from a clean build.
-- Current `/app/workbench/[caseId]` initial client JS gzipped: `511.1 KB`.
+- Current `/app/workbench/[caseId]` initial client JS raw: `1748.4 KB` across 18 client chunks.
+- Current `/app/workbench/[caseId]` initial client JS gzipped: `511.3 KB`.
+- Per-chapter chunks: Turbopack chunk filenames are hashed in the route client-reference manifest, so per-chapter attribution was not recoverable from filenames. Static lazy-loading audit confirms chapter islands.
 - Chapters lazy-loaded: `6/6` (`ResearchTab`, `MemoStudio`, `DraftTab`, `ACHIndex`, `ToolMarketplace`, `BoardroomIndex`).
 - Substrate tabs lazy-loaded: `4/4` (`ContextTab`, `LibraryTab`, `OntologySchemaViewer`, `WorkbenchGraphPanel`).
 
-### Marketplace Deterministic Output
+### Tools Chapter Density
 
-- `audit:no-deterministic-tool-output-in-ui`: pass.
-- Non-SAT recipes now stage hero tool context instead of presenting deterministic foundation runs as AI-backed output.
+- Runtime path: local production server on `localhost:3032`, demo session cookie, `/app/workbench/syria-2026`, opened the closed `Tools` chapter.
+- Container: `[data-testid="tool-marketplace"]`.
+- Heading: `Recipe library`.
+- Buttons: `51`.
+- Links: `1`.
+- Selects: `1`.
+- Inputs: `1`.
+- Role buttons: `0`.
+- Total interactive: `54`.
+
+### Prompt-Health Baseline
+
+- Thin synthetic case: `72/red`.
+- Thin missing/weak layers: no source/document evidence, thin graph, no retrieved chunks or episodes.
+- Rich Syria demo case: `94/yellow`.
+- Rich finding: freshness warning, `Situation context has not been refreshed in 6 day(s).`
+- Prompt block bytes: thin `3022`, rich `5201`, delta `+2179`.
+- Prompt files written for this diagnostic run: `%TEMP%\prompt-thin.txt`, `%TEMP%\prompt-rich.txt`.
+- Caveat: the one-shot diagnostic used the same deterministic context-health path and prompt renderer, not live Firestore-backed `buildCalibratedContext`; Firestore Admin was unavailable in the local shell.
 
 ### Cognee Copy Inventory
 
+- Files with Cognee/memory strings under `src/components` and `src/app`: `9`.
+- Distinct matching lines: `59`.
+- Components/routes: `MemoStudio`, `ResearchTab`, `LibraryTab`, `DocumentUploadInline`, `GraphIntelligencePanels`, notification settings, `/api/health`, `/api/health/features`, `/api/memory/[...slug]`.
 - `/api/health/features` cache: 60s.
 - Cognee flag semantics: enabled only when `COGNEE_ENABLED === 'true'` and `COGNEE_BACKEND_URL` is configured.
 - `MemoryPanel.tsx` and `src/lib/memory/client.ts` removed.
 - `audit:cognee-ui-honesty`: pass.
 
+### Marketplace Deterministic Output
+
+- `audit:no-deterministic-tool-output-in-ui`: pass.
+- Non-SAT recipes now stage hero tool context instead of presenting deterministic foundation runs as AI-backed output.
+- `rg 'deterministic-foundation|foundation-run|marketplace-foundation-v1' src/components src/app -n`: `0` locations.
+
 ### Surface Registry Orphans
 
 - `audit:surface-registry-coherence`: pass.
+- Counts: product surfaces `8`, tabs `4`, chapters `7`.
+- In product surfaces but unreachable: `[]`.
+- Reachable but not in product surfaces: `['ontology', 'memos', 'ach']`.
 - Allowed non-product registry surfaces: `ontology` tab, `memos` chapter, `ach` chapter.
 
 ## Pre-existing Audit Failures Surfaced This Session
 
 | audit | failure | session of fix |
 |---|---|---|
-| none | none from focused checks | n/a |
+| audit:ux-polish | Workbench smoke spec missing `tool-marketplace` and `Memo Studio` coverage. | next diagnostics/fix pass |
 
 ## Blockers
 
 - Runtime verification still needed for: production workbench first mount, staged recipe navigation, document upload -> retrieval, thin-case prompt-health, and live fresh-account onboarding enforcement.
-- Live Cloud SQL counts and production observability were not pulled in this pass.
+- Live Cloud SQL row counts remain blocked until `psql`/Cloud SQL Proxy or a VPC-connected shell is available.
 
 ## Notes For Next Session
 
