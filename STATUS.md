@@ -4,14 +4,14 @@
 
 ## Morning Brief
 
-- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`.
+- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `V2_00_README`.
 - Prompts deferred: Cloud SQL live row counts from `01` (blocked by private IP plus missing local `psql`/Cloud SQL Proxy).
 - Recovery loop resolved: `audit:ux-polish`, `audit:workbench`, `audit:evidence-drawer`, `audit:graph-viewer`, `audit:visualization`, `audit:master-charter`, stale Graphify outputs, and withCalibration unit fixture drift.
 - Measured deltas:
   - Workbench root JS gzipped: current built workbench initial client JS is `511.3 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
   - Tools chapter density: live demo DOM count is 54 interactive controls after opening the closed Recipe library.
   - Prompt-health: thin synthetic case `72/red`, rich Syria demo `94/yellow`, prompt block delta `+2179` bytes for rich.
-- Next-session priorities: runtime document ingest parity, production workbench smoke on `praxis.tacitus.me`, and live fresh-account onboarding enforcement.
+- Next-session priorities: start PRAXIS V2 Session A with `A0_MT_DATA_MODEL.md`, then `A1_ORGID_CONTEXT.md`; runtime document ingest parity and production workbench smoke remain carried follow-ups.
 - Blockers requiring GC: none for the low-risk code changes here; production deployment/commit approval remains separate.
 
 ---
@@ -22,7 +22,7 @@
 - Branch: `main`
 - Last commit at start: `46d8cf1`
 - Last commit at end: current `main` HEAD after this status-template pass.
-- Total commits this session: `16` including the status-template pass.
+- Total commits this session: `17` including the V2 README pass.
 - Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`
 
 ## Tasks
@@ -43,6 +43,7 @@
 | 12_HYGIENE | done | `background_jobs` global reads now admin-only; surface registry coherence audit includes tabs, chapters, and visible hero tools; deleted memory UI files stayed deleted; forbidden legacy model string grep returned 0; committed-secret grep found no leaks beyond env/config references; lint baseline recorded at `98` problems before this cleanup. |
 | 13_ITERATE_LOOP | done | Recovery loop applied until `audit:gate` passed; fixed UX smoke markers, redirect-only visible route counting, evidence drawer immediate-run markers, lazy graph audit expectations, stale Graphify output, and withCalibration unit fixtures. |
 | STATUS_TEMPLATE | done | Root `STATUS.md` now conforms to the template contract with morning brief, metadata, baselines, pre-existing audit failures, per-prompt notes, blockers, and next-session notes. |
+| V2_00_README | done | Preserved the PRAXIS V2 institutional-foundations README under `docs/codex-prompts/`; audited the precondition as green; next executable prompt is Session A `A0_MT_DATA_MODEL.md`. |
 
 Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blocked`.
 
@@ -318,13 +319,27 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 - Template applied: yes; root `STATUS.md` now contains the morning brief, metadata, task table, baselines, pre-existing failures, per-prompt notes, blockers, and next-session notes from `STATUS_TEMPLATE.md`.
 - Issues encountered: none.
 
+### V2_00_README
+
+- Completed: 2026-05-08.
+- Commit: current V2 README pass.
+- Source preserved: `docs/codex-prompts/PRAXIS_V2_00_README.md`.
+- Precondition check: satisfied; the night-pack status ledger shows honesty/calibration/Cognee guardrails complete and `npm run audit:gate` passed.
+- Session map recorded: Session A multi-tenant foundations, Session B Postgres KG cutover, Session C Cognee plus Agent Engine, Session D observability.
+- Next executable file: `A0_MT_DATA_MODEL.md`.
+- Issues encountered: none; no production data or Firestore rule changes made in this README pass.
+
 ## Blockers
 
 - Runtime verification still needed for: production workbench first mount, staged recipe navigation, document upload -> retrieval, thin-case prompt-health, and live fresh-account onboarding enforcement.
 - Live Cloud SQL row counts remain blocked until `psql`/Cloud SQL Proxy or a VPC-connected shell is available.
+- V2 Session B remains risk-gated on live Cloud SQL graph row counts; do not cut over graph reads/writes until `B0_KG_PREFLIGHT.md` is completed.
 
 ## Notes For Next Session
 
+- Start V2 Session A by reading `docs/codex-prompts/PRAXIS_V2_00_README.md`, then `C:\Users\giuli\Downloads\files (7)\A0_MT_DATA_MODEL.md`.
+- Keep solo-user backwards compatibility as a hard invariant while adding team/org scaffolding.
+- Firestore rules changes in V2 Session A require matching tests in `tests/security/firestore-rules.test.ts`.
 - Runtime-smoke `08_THIN_CASE_CALIBRATION`: verify a real thin case returns 422, the help panel renders, and `forceRun: true` reaches the model with `<context-quality>` attached.
 - Manual-smoke `10_ACO_EXPLAINER`: clear `praxis:aco-overlay-dismissed:<uid>`, open a case, dismiss the primer, refresh, then reopen via Ontology tab.
 - Add runtime document ingest parity: upload a file, verify saved document/chunks, backend source receipt, and retrieval.

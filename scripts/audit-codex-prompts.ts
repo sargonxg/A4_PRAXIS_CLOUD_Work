@@ -28,6 +28,7 @@ const required = [
   'docs/codex-prompts/PRAXIS_CODEX_29_VISUALIZATION_WAVE.md',
   'docs/codex-prompts/PRAXIS_CODEX_30_EXTRACTION_AND_GRAPHRAG_WAVE.md',
   'docs/codex-prompts/PRAXIS_CODEX_31_ANALYTICS_SANCTIONS_SIMULATION_WAVE.md',
+  'docs/codex-prompts/PRAXIS_V2_00_README.md',
 ];
 
 const failures: string[] = [];
@@ -47,4 +48,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Codex prompt pack audit passed for master charter, packs 03-16, packs 18-22, and packs 26-31. (static-marker)');
+console.log('Codex prompt pack audit passed for master charter, packs 03-16, packs 18-22, packs 26-31, and PRAXIS V2 README. (static-marker)');
