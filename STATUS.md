@@ -4,14 +4,14 @@
 
 ## Morning Brief
 
-- Prompts completed: `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `12_HYGIENE` low-risk items.
-- Prompts deferred: `07_ONBOARDING_GATE` (existing onboarding flow is present, but no new gate audit added in this pass), `08_THIN_CASE_CALIBRATION` (requires prompt-health runtime contract), `10_ACO_EXPLAINER` (product UI work still pending), `11_AUDIT_PROMOTION` full runtime tagging (only new gates were wired), Cloud SQL live diagnostics from `01` (not run in this local pass).
+- Prompts completed: `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `12_HYGIENE` low-risk items.
+- Prompts deferred: `08_THIN_CASE_CALIBRATION` (requires prompt-health runtime contract), `10_ACO_EXPLAINER` (product UI work still pending), `11_AUDIT_PROMOTION` full runtime tagging (only new gates were wired), Cloud SQL live diagnostics from `01` (not run in this local pass).
 - Pre-existing audit failures surfaced: none from the focused audits run in this pass.
 - Measured deltas:
   - Workbench root JS gzipped: no clean pre-change baseline captured; current built workbench initial client JS is `511.1 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
   - Tools chapter density: not re-counted after this pass; recipe library is closed on first mount because `DEFAULT_OPEN_CHAPTERS` is now `['research', 'memos']`.
   - Prompt-health on thin case: not run; deferred to `08_THIN_CASE_CALIBRATION`.
-- Next-session priorities: thin-case calibration contract, ACO explainer, onboarding gate audit, runtime document ingest parity, production smoke on `praxis.tacitus.me`.
+- Next-session priorities: thin-case calibration contract, ACO explainer, runtime document ingest parity, production smoke on `praxis.tacitus.me`.
 - Blockers requiring GC: none for the low-risk code changes here; production deployment/commit approval remains separate.
 
 ---
@@ -21,8 +21,8 @@
 - Started: 2026-05-08T00:27:51-04:00 checkpoint.
 - Branch: `main`
 - Last commit at start: `46d8cf1`
-- Last commit at end: `46d8cf1`
-- Total commits this session: `0`
+- Last commit at end: pending after current `07_ONBOARDING_GATE` commit.
+- Total commits this session: `1` completed, one pending in this pass.
 - Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`
 
 ## Tasks
@@ -35,7 +35,7 @@
 | 04_COGNEE_UI_HONESTY | done | `/api/health/features` exposes server-derived flags; Cognee/memory UI copy is gated or neutralized; user-facing memory panel/client removed. |
 | 05_CHAPTER_CODE_SPLIT | done | Six heavy chapters and four substrate tabs are dynamic islands with skeletons; bundle audit wired into gate. |
 | 06_LIBRARY_INGEST_CONSOLIDATION | partial | Upload UI now saves through `/api/documents/upload` before attempting backend Library ingest; static audit added. Runtime RAG retrieval verification not run. |
-| 07_ONBOARDING_GATE | deferred | Existing onboarding wizard and withCalibration onboarding checks are present; dedicated gate audit not added in this pass. |
+| 07_ONBOARDING_GATE | done | Shared onboarding helper added; calibrated routes import it; post-login redirect and Next proxy route incomplete profiles to `/onboarding`; completion refreshes signed session claim; workbench banner added; audit wired. |
 | 08_THIN_CASE_CALIBRATION | deferred | No thin-case prompt-health scoring or 422 contract added yet. |
 | 09_EMBEDDING_DIMENSION | partial | Existing `audit:embedding-dim` passes for 768-dim Vertex text embeddings; no migration touched. |
 | 10_ACO_EXPLAINER | deferred | Needs in-app first-run ACO explainer. |
@@ -75,6 +75,7 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 | `npm run audit:embedding-dim` | pass |
 | `npm run audit:ai-provider-isolation` | pass |
 | `npm run audit:model-matrix-coverage` | pass |
+| `npm run audit:onboarding-gate` | pass |
 
 ### Postgres KG Live Counts
 
@@ -112,13 +113,12 @@ Blocked/not run in this pass. No Cloud SQL mutation or live production query was
 
 ## Blockers
 
-- Runtime verification still needed for: production workbench first mount, staged recipe navigation, document upload -> retrieval, thin-case prompt-health, and first-run onboarding enforcement.
+- Runtime verification still needed for: production workbench first mount, staged recipe navigation, document upload -> retrieval, thin-case prompt-health, and live fresh-account onboarding enforcement.
 - Live Cloud SQL counts and production observability were not pulled in this pass.
 
 ## Notes For Next Session
 
 - Implement `08_THIN_CASE_CALIBRATION`: prompt-health score, visible badge, compensation block for thin cases, and refusal below the agreed threshold.
 - Implement `10_ACO_EXPLAINER`: plain-language 14-entity explainer surfaced inside the app, not just landing/docs.
-- Add `audit:onboarding-gate` covering `/login/callback`, app shell/middleware behavior, and session cookie onboarding status.
 - Add runtime document ingest parity: upload a file, verify saved document/chunks, backend source receipt, and retrieval.
 - Run a browser smoke against `praxis.tacitus.me` after commit/deploy.

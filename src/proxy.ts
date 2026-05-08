@@ -89,13 +89,13 @@ const LEGACY_WORKBENCH_ROUTE_ALIASES: Record<string, string> = {
  * We extract the JSON payload before the last dot for routing decisions.
  * A forged cookie that gets past this check will still fail in with-auth.ts.
  */
-function parseSessionForRouting(cookieValue: string): { demo?: boolean; token?: string; onboarded?: boolean } | null {
+function parseSessionForRouting(cookieValue: string): { demo?: boolean; token?: string; onboarded?: boolean; onboardingComplete?: boolean } | null {
   try {
     const idx = cookieValue.lastIndexOf('.');
     const jsonPart = idx !== -1 ? cookieValue.slice(0, idx) : cookieValue;
     const parsed = JSON.parse(jsonPart);
     if (typeof parsed === 'object' && parsed !== null) {
-      return parsed as { demo?: boolean; token?: string };
+      return parsed as { demo?: boolean; token?: string; onboarded?: boolean; onboardingComplete?: boolean };
     }
     return null;
   } catch {
@@ -187,7 +187,12 @@ export function proxy(request: NextRequest) {
   }
 
   // --- First-login redirect for un-onboarded Firebase users ---
-  if (pathname.startsWith('/app') && hasFirebaseToken && sessionData?.onboarded === false && pathname !== '/onboarding') {
+  if (
+    pathname.startsWith('/app') &&
+    hasFirebaseToken &&
+    (sessionData?.onboardingComplete === false || sessionData?.onboarded === false) &&
+    pathname !== '/onboarding'
+  ) {
     return addSecurityHeaders(NextResponse.redirect(new URL('/onboarding', request.url)), nonce);
   }
 

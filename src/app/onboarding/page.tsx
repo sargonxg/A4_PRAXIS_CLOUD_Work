@@ -29,7 +29,7 @@ export default function OnboardingPage() {
 function OnboardingWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const resumeMode = searchParams.get('resume') === '1';
+  const resumeMode = searchParams.get('resume') === '1' || searchParams.get('edit') === '1';
   const { user } = useAuth();
   const [step, setStep] = useState<Step>(1);
   const [profile, setProfile] = useState<AnalystProfile>(DEFAULT_ANALYST_PROFILE);

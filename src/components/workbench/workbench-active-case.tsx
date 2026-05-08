@@ -2,12 +2,14 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { ArrowLeft, Bot, ShieldCheck, X } from 'lucide-react';
+import { ArrowLeft, Bot, ShieldAlert, ShieldCheck, X } from 'lucide-react';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { WorkbenchChapterRenderer } from '@/components/workbench/chapter-renderer';
 import { WorkbenchScopeProvider, useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { WorkbenchTabContent } from '@/components/workbench/workbench-tab-content';
 import { WorkbenchTabs } from '@/components/workbench/workbench-tabs';
+import { useAuth } from '@/lib/auth/auth-context';
+import { isOnboardingComplete } from '@/lib/auth/onboarding-status';
 import type { WorkspaceTabId } from '@/types/workbench';
 
 export function WorkbenchActiveCase({ caseId, activeTab }: { caseId: string; activeTab: WorkspaceTabId | null }) {
@@ -28,10 +30,23 @@ function WorkbenchActiveCaseInner({
   onOpenTab: (tab: WorkspaceTabId | null) => void;
 }) {
   const { situation, isExampleCase, caseModule } = useWorkbenchScope();
+  const { user, analystProfile } = useAuth();
+  const showOnboardingBanner = Boolean(user && !user.isDemo && !isOnboardingComplete(analystProfile));
 
   return (
     <main className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
+        {showOnboardingBanner ? (
+          <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-950">
+            <span className="inline-flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4" />
+              Your analyst profile is incomplete. Hero tools may produce thin output.
+            </span>
+            <Link href="/onboarding" className="ml-2 font-semibold underline underline-offset-2">
+              Complete onboarding
+            </Link>
+          </div>
+        ) : null}
         <div className="px-4 py-4">
           <Link href="/app/workbench" className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-navy-900">
             <ArrowLeft className="h-3.5 w-3.5" />

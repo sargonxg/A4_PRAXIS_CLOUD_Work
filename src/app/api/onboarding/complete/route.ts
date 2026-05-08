@@ -37,7 +37,7 @@ export const POST = withAuth(async (req, user) => {
       const verified = verifyCookie(sessionCookie.value);
       if (verified) {
         const payload = JSON.parse(verified);
-        const newPayload = { ...payload, onboarded: true };
+        const newPayload = { ...payload, onboarded: true, onboardingComplete: true };
         const signed = signCookie(JSON.stringify(newPayload));
         cookieStore.set(SESSION_COOKIE, signed, COOKIE_OPTIONS);
       }

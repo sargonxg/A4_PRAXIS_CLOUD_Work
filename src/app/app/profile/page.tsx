@@ -246,11 +246,11 @@ export default function WorkingProfilePage() {
         </div>
         <div className="flex flex-col items-end gap-2">
           <PraxisLink
-            href="/settings/profile"
+            href="/onboarding?edit=1"
             className="inline-flex items-center gap-1.5 rounded-lg border border-navy-200 bg-white px-3 py-1.5 text-xs font-medium text-navy-700 shadow-sm transition-colors hover:border-gold-500/40 hover:bg-gold-500/5 hover:text-gold-700"
           >
             <Pencil className="h-3 w-3" />
-            Edit profile
+            Edit analyst profile
             <ArrowRight className="h-3 w-3" />
           </PraxisLink>
           <div className="flex items-center gap-2 rounded-full border border-navy-200 bg-white px-3 py-1 text-[11px]">

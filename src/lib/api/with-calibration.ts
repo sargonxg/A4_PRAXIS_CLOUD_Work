@@ -3,6 +3,7 @@ import { withAuth, type AuthenticatedUser } from './with-auth';
 import { checkAndDeductCreditsForUid } from './with-credits';
 import { buildCalibratedContext, type ContextBlock } from '@/lib/context/profile-context';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
+import { isOnboardingComplete } from '@/lib/auth/onboarding-status';
 import {
   buildIdempotencyKey,
   startToolRun,
@@ -151,7 +152,7 @@ export function withCalibration(
       // Onboarding gate (non-demo)
       if (!user.isDemo) {
         const profile = await getAnalystProfile(user.uid).catch(() => null);
-        if (!profile?.meta?.completedAt) {
+        if (!isOnboardingComplete(profile)) {
           return NextResponse.json({
             error: 'Onboarding required',
             message: 'Complete your analyst profile before using PRAXIS tools.',

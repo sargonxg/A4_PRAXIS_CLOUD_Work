@@ -1,6 +1,9 @@
-export function resolvePostLoginRedirect(params: URLSearchParams, isDemoMode: boolean): string {
+export function resolvePostLoginRedirect(
+  params: URLSearchParams,
+  isDemoMode: boolean,
+  onboardingComplete = true,
+): string {
   const explicit = params.get('redirect');
-  if (explicit && explicit.startsWith('/app/')) return explicit;
 
   if (isDemoMode) {
     const example = params.get('example');
@@ -9,6 +12,10 @@ export function resolvePostLoginRedirect(params: URLSearchParams, isDemoMode: bo
     }
     return '/app/workbench/syria-2026';
   }
+
+  if (!onboardingComplete) return '/onboarding';
+
+  if (explicit && explicit.startsWith('/app/')) return explicit;
 
   return '/app/workbench';
 }

@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
     if (body.demo === true) {
       // Demo mode session
-      cookieStore.set(SESSION_COOKIE, signCookie(JSON.stringify({ demo: true })), COOKIE_OPTIONS);
+      cookieStore.set(SESSION_COOKIE, signCookie(JSON.stringify({ demo: true, onboarded: true, onboardingComplete: true })), COOKIE_OPTIONS);
       return NextResponse.json({ success: true });
     }
 
@@ -87,6 +87,7 @@ export async function POST(request: Request) {
         signCookie(JSON.stringify({
           token: body.token,
           onboarded,
+          onboardingComplete: onboarded,
           issuedAt: Date.now(),
           user: {
             uid: verifiedUser.uid,
@@ -136,6 +137,7 @@ export async function GET() {
           orgId: 'org-demo-001',
           orgName: 'TACITUS Demo Organization',
           isDemo: true,
+          onboardingComplete: true,
         },
       });
     }
@@ -149,6 +151,7 @@ export async function GET() {
           emailVerified: data.user.emailVerified === true,
           isDemo: false,
           admin: data.admin === true,
+          onboardingComplete: data.onboardingComplete === true || data.onboarded === true,
         },
       });
     }

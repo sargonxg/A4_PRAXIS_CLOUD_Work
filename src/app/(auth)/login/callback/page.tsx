@@ -55,8 +55,8 @@ function CallbackCard({
 function LoginCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, loading, authError } = useAuth();
-  const redirectTo = resolvePostLoginRedirect(searchParams, Boolean(user?.isDemo));
+  const { user, loading, authError, onboardingComplete } = useAuth();
+  const redirectTo = resolvePostLoginRedirect(searchParams, Boolean(user?.isDemo), onboardingComplete);
 
   useEffect(() => {
     if (!loading && user) {
