@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
 import { generateSituationReportDOCX, generateBriefingDOCX, generateDossierDOCX, exportConflictGrammarJSON, exportTimelineCSV } from '@/lib/services/export-engine';
+import { emitTelemetrySafe } from '@/lib/telemetry/emit';
+import type { AuthenticatedUser } from '@/lib/api/with-auth';
 import type { Situation } from '@/types/situation';
 
 export const POST = withAuth(async (req, user) => {
@@ -31,6 +33,20 @@ export const POST = withAuth(async (req, user) => {
         buffer = await generateBriefingDOCX(sit, content);
         filename = `PRAXIS_Briefing_${sit.name.replace(/\s+/g, '_')}.docx`;
         contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        await emitTelemetrySafe({
+          eventName: 'export.briefing',
+          uid: user.uid,
+          orgId: orgIdOf(user),
+          caseId: sit.id,
+          route: '/api/export',
+          status: 'ok',
+          details: {
+            type,
+            format: 'docx',
+            sizeBytes: buffer.length,
+            sectionCount: Array.isArray(content?.slides) ? content.slides.length : null,
+          },
+        });
         break;
       }
       case 'dossier': {
@@ -69,3 +85,7 @@ export const POST = withAuth(async (req, user) => {
     return NextResponse.json({ error: 'Export generation failed' }, { status: 500 });
   }
 });
+
+function orgIdOf(user: AuthenticatedUser): string | null {
+  return (user as AuthenticatedUser & { orgId?: string }).orgId ?? null;
+}

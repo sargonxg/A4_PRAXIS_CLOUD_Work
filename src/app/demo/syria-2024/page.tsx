@@ -1,10 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
+  SYRIA_DEMO_CASE_ID,
   SYRIA_DEMO_CANONICAL_GRAPH,
   SYRIA_DEMO_CONFLICT_GRAPH,
   SYRIA_DEMO_SITUATION,
 } from "@/lib/constants/syria-demo-case";
+import { DemoClaimButton } from "@/components/demo/DemoClaimButton";
 
 export const dynamic = "force-static";
 
@@ -79,12 +81,10 @@ export default function SyriaPublicDemoPage() {
             <Link href="/waitlist" className="text-sm font-medium text-slate-300 hover:text-white">
               Join waitlist
             </Link>
-            <Link
-              href="/login?mode=demo&example=syria-2026"
-              className="rounded-md border border-gold-400/40 bg-gold-400/10 px-3 py-2 text-sm font-semibold text-gold-200 hover:bg-gold-400/20"
-            >
-              Open in workbench
-            </Link>
+            <DemoClaimButton
+              demoCaseId={SYRIA_DEMO_CASE_ID}
+              className="rounded-md border border-gold-400/40 bg-gold-400/10 px-3 py-2 text-sm font-semibold text-gold-200 hover:bg-gold-400/20 disabled:opacity-60"
+            />
           </div>
         </header>
 
@@ -103,12 +103,10 @@ export default function SyriaPublicDemoPage() {
               browse without an account.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/login?mode=demo&example=syria-2026"
-                className="inline-flex items-center justify-center rounded-md bg-gold-500 px-6 py-3 text-sm font-semibold text-navy-950 transition hover:bg-gold-400"
-              >
-                Open in workbench
-              </Link>
+              <DemoClaimButton
+                demoCaseId={SYRIA_DEMO_CASE_ID}
+                className="inline-flex items-center justify-center rounded-md bg-gold-500 px-6 py-3 text-sm font-semibold text-navy-950 transition hover:bg-gold-400 disabled:opacity-60"
+              />
               <Link
                 href="/waitlist"
                 className="inline-flex items-center justify-center rounded-md border border-white/14 px-6 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/10"

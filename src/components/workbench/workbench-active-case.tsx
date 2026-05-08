@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Bot, ShieldAlert, ShieldCheck, X } from 'lucide-react';
 import { AcoFirstTimeOverlay } from '@/components/ontology/AcoFirstTimeOverlay';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
@@ -32,7 +33,9 @@ function WorkbenchActiveCaseInner({
 }) {
   const { situation, isExampleCase, caseModule } = useWorkbenchScope();
   const { user, analystProfile } = useAuth();
+  const searchParams = useSearchParams();
   const showOnboardingBanner = Boolean(user && !user.isDemo && !isOnboardingComplete(analystProfile));
+  const showDemoCopyBanner = !isExampleCase && searchParams.get('source') === 'demo';
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -47,6 +50,14 @@ function WorkbenchActiveCaseInner({
             <Link href="/onboarding" className="ml-2 font-semibold underline underline-offset-2">
               Complete onboarding
             </Link>
+          </div>
+        ) : null}
+        {showDemoCopyBanner ? (
+          <div className="border-b border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-950">
+            <span className="inline-flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4" />
+              Demo case copied to your workspace. You can now edit the case, run tools, save memos, and export products.
+            </span>
           </div>
         ) : null}
         <div className="px-4 py-4">

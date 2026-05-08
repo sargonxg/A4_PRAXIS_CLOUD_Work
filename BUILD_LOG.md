@@ -1,5 +1,9 @@
 # PRAXIS Build Log
 
+## 2026-05-08 — Z1/Z2 export and demo transition
+
+Built the first enforceable pass from `Z1_EXPORT_E2E.md` and `Z2_DEMO_TRANSITION.md`: preserved both prompts, upgraded briefing exports with executive summary, numbered references, and calibration footer, upgraded boardroom exports with critical claims, Q&A prep, sources appendix, and visible export progress, and added the signed-in public-demo copy path at `/api/situations/copy-from-demo` with canonical graph seeding and a workbench banner. Added `audit:export-coverage` and `audit:demo-claim` to the gate. Verified locally with the new audits, prompt audit, TypeScript, and scoped ESLint; live browser downloads, production copy flow, and telemetry-log confirmation remain deployment gates rather than claimed results.
+
 ## 2026-05-08 — V2 recovery loop and status control prompts
 
 Preserved `ITERATE_LOOP.md` and `STATUS_TEMPLATE.md` as first-class V2 control prompts under `docs/codex-prompts/`, updated `audit:codex-prompts` so recovery/status docs are checked by marker-specific rules, and reconciled `STATUS.md` with the template's pending-operational-step contract. No app runtime code changed in this pass; the work hardens the handoff loop that keeps risky V2 work from silently advancing past blocked operations.

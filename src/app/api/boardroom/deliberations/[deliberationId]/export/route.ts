@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { withAuth } from '@/lib/api/with-auth';
+import { withAuth, type AuthenticatedUser } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { boardroomExportFilename, renderBoardroomDocxBuffer, renderBoardroomMarkdown } from '@/lib/boardroom/export';
 import { buildDemoDeliberation, getDeliberation } from '@/lib/boardroom/store';
+import { emitTelemetrySafe } from '@/lib/telemetry/emit';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +38,19 @@ export const GET = withAuth<RouteContext>(async (request, user, context) => {
     if (!deliberation) return NextResponse.json({ error: 'Deliberation not found' }, { status: 404 });
 
     if (parsed.data.format === 'md') {
+      await emitTelemetrySafe({
+        eventName: 'export.boardroom',
+        uid: user.uid,
+        orgId: orgIdOf(user),
+        caseId: parsed.data.caseId,
+        route: '/api/boardroom/deliberations/[deliberationId]/export',
+        status: 'ok',
+        details: {
+          deliberationId,
+          format: 'md',
+          contributionCount: deliberation.contributions.length,
+        },
+      });
       return new Response(renderBoardroomMarkdown(deliberation), {
         headers: {
           'Content-Type': 'text/markdown; charset=utf-8',
@@ -47,6 +61,20 @@ export const GET = withAuth<RouteContext>(async (request, user, context) => {
     }
 
     const buffer = await renderBoardroomDocxBuffer(deliberation);
+    await emitTelemetrySafe({
+      eventName: 'export.boardroom',
+      uid: user.uid,
+      orgId: orgIdOf(user),
+      caseId: parsed.data.caseId,
+      route: '/api/boardroom/deliberations/[deliberationId]/export',
+      status: 'ok',
+      details: {
+        deliberationId,
+        format: 'docx',
+        contributionCount: deliberation.contributions.length,
+        sizeBytes: buffer.length,
+      },
+    });
     return new Response(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -58,3 +86,7 @@ export const GET = withAuth<RouteContext>(async (request, user, context) => {
     return handleRouteError(err, 'boardroom/deliberations/export');
   }
 });
+
+function orgIdOf(user: AuthenticatedUser): string | null {
+  return (user as AuthenticatedUser & { orgId?: string }).orgId ?? null;
+}

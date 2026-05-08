@@ -50,6 +50,28 @@ function bullet(text: string) {
   });
 }
 
+function uniqueCitationLabels(deliberation: DeliberationArtifact) {
+  const seen = new Set<string>();
+  const labels: string[] = [];
+  for (const turn of deliberation.contributions) {
+    for (const citation of turn.citations) {
+      const label = citation.label.trim();
+      if (!label || seen.has(label)) continue;
+      seen.add(label);
+      labels.push(label);
+    }
+  }
+  return labels;
+}
+
+function criticalClaims(deliberation: DeliberationArtifact) {
+  return deliberation.synthesis?.consensusClaims?.length
+    ? deliberation.synthesis.consensusClaims.map((claim) =>
+      `${claim.text} Confidence: ${Math.round(claim.confidence * 100)}%. Synthesized: yes.`
+    )
+    : ['No critical claims or hypotheses were finalized in this deliberation.'];
+}
+
 function synthesisParagraphs(synthesis: DeliberationSynthesis | undefined) {
   if (!synthesis) return [paragraph('No synthesis has been produced yet.')];
 
@@ -73,28 +95,37 @@ export function boardroomExportFilename(deliberation: DeliberationArtifact, exte
 }
 
 export function renderBoardroomMarkdown(deliberation: DeliberationArtifact) {
+  const citations = uniqueCitationLabels(deliberation);
   const lines = [
     `# ${deliberation.title}`,
+    '',
+    '## Title Slide',
     '',
     `Case: ${deliberation.caseId}`,
     `Status: ${deliberation.status}`,
     `Phase: ${deliberation.phase}`,
     `Cost estimate: $${deliberation.cost.estimatedUsd.toFixed(3)} / $${deliberation.cost.ceilingUsd.toFixed(2)}`,
     `Exported: ${new Date().toISOString()}`,
+    `Visuals: maps/charts are included when the deliberation artifact carries visual attachments; none were attached to this export.`,
     '',
     '## Synthesis',
     '',
     deliberation.synthesis?.bluf ?? 'No synthesis has been produced yet.',
     '',
+    '## Critical Claims And Hypotheses',
+    '',
     '## Consensus Claims',
     '',
-    ...(deliberation.synthesis?.consensusClaims.map((claim) =>
-      `- ${claim.text} (confidence ${Math.round(claim.confidence * 100)}%, synthesized)`
-    ) ?? ['- No consensus claims recorded.']),
+    ...criticalClaims(deliberation).map((claim) => `- ${claim}`),
     '',
     '## Dissenting Views',
     '',
     ...(deliberation.synthesis?.dissentingViews.map((view) => `- ${view}`) ?? ['- No dissent recorded.']),
+    '',
+    '## Q&A Prep',
+    '',
+    ...(deliberation.synthesis?.unresolvedQuestions.map((question) => `- Likely question: ${question}`) ?? ['- No unresolved questions recorded.']),
+    ...(deliberation.synthesis?.recommendedActions.map((action) => `- Prepared answer/action: ${action}`) ?? ['- No recommended actions recorded.']),
     '',
     '## Transcript',
     '',
@@ -106,6 +137,10 @@ export function renderBoardroomMarkdown(deliberation: DeliberationArtifact) {
       `Citations: ${turn.citations.map((citation) => citation.label).join('; ')}`,
       '',
     ]),
+    '## Sources Appendix',
+    '',
+    ...(citations.length ? citations.map((label, index) => `[${index + 1}] ${label}`) : ['[1] No citations were attached to this deliberation.']),
+    '',
     '## Handling Note',
     '',
     'Boardroom output is synthesized and advisory. Promote selected claims through the PRAXIS review queue before treating them as graph assertions.',
@@ -116,6 +151,7 @@ export function renderBoardroomMarkdown(deliberation: DeliberationArtifact) {
 }
 
 export async function renderBoardroomDocxBuffer(deliberation: DeliberationArtifact): Promise<Buffer> {
+  const citations = uniqueCitationLabels(deliberation);
   const doc = new Document({
     creator: 'PRAXIS',
     description: 'PRAXIS Agentic Boardroom deliberation export',
@@ -152,9 +188,21 @@ export async function renderBoardroomDocxBuffer(deliberation: DeliberationArtifa
         meta(`Status: ${deliberation.status} | Phase: ${deliberation.phase}`),
         meta(`Cost estimate: $${deliberation.cost.estimatedUsd.toFixed(3)} / $${deliberation.cost.ceilingUsd.toFixed(2)}`),
         meta(`Exported: ${new Date().toISOString()}`),
+        meta('Visuals: maps/charts are included when deliberation artifacts carry visual attachments; none were attached to this export.'),
         divider(),
         heading('Synthesis'),
         ...synthesisParagraphs(deliberation.synthesis),
+        divider(),
+        heading('Critical Claims And Hypotheses'),
+        heading('Consensus Claims'),
+        ...criticalClaims(deliberation).map(bullet),
+        heading('Q&A Prep'),
+        ...(deliberation.synthesis?.unresolvedQuestions.length
+          ? deliberation.synthesis.unresolvedQuestions.map((question) => bullet(`Likely question: ${question}`))
+          : [paragraph('No unresolved questions recorded.')]),
+        ...(deliberation.synthesis?.recommendedActions.length
+          ? deliberation.synthesis.recommendedActions.map((action) => bullet(`Prepared answer/action: ${action}`))
+          : [paragraph('No recommended actions recorded.')]),
         divider(),
         heading('Transcript'),
         ...deliberation.contributions.flatMap((turn) => [
@@ -162,6 +210,11 @@ export async function renderBoardroomDocxBuffer(deliberation: DeliberationArtifa
           paragraph(turn.text),
           meta(`Citations: ${turn.citations.map((citation) => citation.label).join('; ')}`),
         ]),
+        divider(),
+        heading('Sources Appendix'),
+        ...(citations.length
+          ? citations.map((label, index) => paragraph(`[${index + 1}] ${label}`))
+          : [paragraph('[1] No citations were attached to this deliberation.')]),
         divider(),
         heading('Handling Note'),
         paragraph('Boardroom output is synthesized and advisory. Promote selected claims through the PRAXIS review queue before treating them as graph assertions.'),

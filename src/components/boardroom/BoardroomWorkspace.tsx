@@ -479,6 +479,7 @@ export function BoardroomSynthesis({ caseId, deliberationId }: { caseId: string;
   const [deliberation, setDeliberation] = useState<DeliberationArtifact>(fallback);
   const [promoting, setPromoting] = useState<string | null>(null);
   const [promotionMessage, setPromotionMessage] = useState<string | null>(null);
+  const [exporting, setExporting] = useState<'docx' | 'md' | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -513,6 +514,29 @@ export function BoardroomSynthesis({ caseId, deliberationId }: { caseId: string;
       setPromotionMessage(err instanceof Error ? err.message : 'Could not promote this claim.');
     } finally {
       setPromoting(null);
+    }
+  }
+
+  async function downloadExport(format: 'docx' | 'md') {
+    setExporting(format);
+    try {
+      const response = await fetch(exportUrl(caseId, deliberation.id, format));
+      if (!response.ok) throw new Error(`Export failed (${response.status})`);
+      const blob = await response.blob();
+      const disposition = response.headers.get('Content-Disposition') ?? '';
+      const filename = disposition.match(/filename="([^"]+)"/)?.[1] ?? `${deliberation.title}.${format}`;
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setPromotionMessage(err instanceof Error ? err.message : 'Boardroom export failed.');
+    } finally {
+      setExporting(null);
     }
   }
 
@@ -556,20 +580,24 @@ export function BoardroomSynthesis({ caseId, deliberationId }: { caseId: string;
       ) : null}
       <div className="mt-5 flex flex-wrap gap-2">
         <button type="button" className="rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-950">Append to memo</button>
-        <a
-          href={exportUrl(caseId, deliberation.id, 'docx')}
-          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-950 hover:border-gold-300 hover:bg-gold-50"
+        <button
+          type="button"
+          onClick={() => void downloadExport('docx')}
+          disabled={exporting !== null}
+          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-950 hover:border-gold-300 hover:bg-gold-50 disabled:opacity-60"
         >
-          <Download className="h-3.5 w-3.5" />
-          Export DOCX
-        </a>
-        <a
-          href={exportUrl(caseId, deliberation.id, 'md')}
-          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-950 hover:border-gold-300 hover:bg-gold-50"
+          {exporting === 'docx' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+          {exporting === 'docx' ? 'Preparing DOCX...' : 'Export DOCX'}
+        </button>
+        <button
+          type="button"
+          onClick={() => void downloadExport('md')}
+          disabled={exporting !== null}
+          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-950 hover:border-gold-300 hover:bg-gold-50 disabled:opacity-60"
         >
-          <Download className="h-3.5 w-3.5" />
-          Export Markdown
-        </a>
+          {exporting === 'md' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+          {exporting === 'md' ? 'Preparing Markdown...' : 'Export Markdown'}
+        </button>
       </div>
     </section>
   );

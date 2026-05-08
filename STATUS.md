@@ -4,14 +4,14 @@
 
 ## Morning Brief
 
-- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `V2_00_README`, `V2_A0_MT_DATA_MODEL`, `V2_B0_KG_PREFLIGHT` local attempt, `V2_D0_STRUCTURED_EVENTS` static implementation, `V2_D1_KPI_PIPELINE` static assets, `V2_ITERATE_LOOP`, `V2_STATUS_TEMPLATE`.
+- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `V2_00_README`, `V2_A0_MT_DATA_MODEL`, `V2_B0_KG_PREFLIGHT` local attempt, `V2_D0_STRUCTURED_EVENTS` static implementation, `V2_D1_KPI_PIPELINE` static assets, `V2_ITERATE_LOOP`, `V2_STATUS_TEMPLATE`, `V2_Z1_EXPORT_E2E`, `V2_Z2_DEMO_TRANSITION`.
 - Prompts deferred: Cloud SQL live row counts from `01` and `V2_B0_KG_PREFLIGHT` are blocked locally by private IP plus missing local `psql`/Cloud SQL Proxy; `V2_A1_ORGID_CONTEXT` through `V2_A6_MT_AUDIT_LOG` are blocked until all MT approval rows below are marked approved or explicitly revised; `V2_B1_DUAL_WRITE_GRAPH` through `V2_B3_RETIRE_FIRESTORE_GRAPH` are blocked until B0 live counts select and approve Case 1/2/3, B1 runs clean for 7 days, and B2 runs clean for 7 days; `V2_C0_COGNEE_LIVE` and `V2_C1_MEMORY_RECALL_IN_CALIBRATION` are blocked because `praxis-cognee` is not deployed in Cloud Run; `V2_C2_AGENT_ENGINE_SUBAGENTS` is blocked pending the deploy-vs-rename decision.
 - Recovery loop resolved: `audit:ux-polish`, `audit:workbench`, `audit:evidence-drawer`, `audit:graph-viewer`, `audit:visualization`, `audit:master-charter`, stale Graphify outputs, and withCalibration unit fixture drift.
 - Measured deltas:
-  - Workbench root JS gzipped: current built workbench initial client JS is `511.3 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
+  - Workbench root JS gzipped: current built workbench initial client JS is `514.2 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
   - Tools chapter density: live demo DOM count is 54 interactive controls after opening the closed Recipe library.
   - Prompt-health: thin synthetic case `72/red`, rich Syria demo `94/yellow`, prompt block delta `+2179` bytes for rich.
-- Next-session priorities: deploy D0 and confirm production Cloud Logging emits `praxis.telemetry.*`, then wire D1 BigQuery sink/dashboard; decide C2 Option A deploy vs Option B rename; run B0 KG preflight from a VPC-connected shell; deploy or provision `praxis-cognee` before C0; GC approval of the five MT decisions, then `A1_ORGID_CONTEXT.md`; runtime document ingest parity and production workbench smoke remain carried follow-ups.
+- Next-session priorities: deploy D0/Z1/Z2 telemetry and confirm production Cloud Logging emits `praxis.telemetry.*`; run browser E2E for briefing/boardroom downloads and demo copy-to-workspace; then wire D1 BigQuery sink/dashboard; decide C2 Option A deploy vs Option B rename; run B0 KG preflight from a VPC-connected shell; deploy or provision `praxis-cognee` before C0; GC approval of the five MT decisions, then `A1_ORGID_CONTEXT.md`; runtime document ingest parity and production workbench smoke remain carried follow-ups.
 - Blockers requiring GC: none for the low-risk code changes here; production deployment/commit approval remains separate.
 
 ---
@@ -62,6 +62,8 @@
 | V2_D1_KPI_PIPELINE | partial | BigQuery views/queries, deploy helper, alert definitions, KPI/dashboard docs, and `audit:bq-views` added; live sink/dashboard verification waits for production D0 events. |
 | V2_ITERATE_LOOP | done | Preserved `ITERATE_LOOP.md` as a V2 control prompt, registered it in `audit:codex-prompts`, and kept the recovery playbook available for future audit/test failures. |
 | V2_STATUS_TEMPLATE | done | Preserved `STATUS_TEMPLATE.md` as a V2 control prompt, registered it in `audit:codex-prompts`, and reconciled its required operational-step structure with this richer status ledger. |
+| V2_Z1_EXPORT_E2E | partial | Briefing and boardroom export structure, telemetry hooks, client progress, prompt preservation, and `audit:export-coverage` are built; live browser download and Cloud Logging telemetry confirmation remain deployment gates. |
+| V2_Z2_DEMO_TRANSITION | partial | Public demo copy CTA, authenticated `/api/situations/copy-from-demo`, canonical graph seed, workspace banner, prompt preservation, and `audit:demo-claim` are built; authenticated production copy smoke remains a deployment gate. |
 
 Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blocked`.
 
