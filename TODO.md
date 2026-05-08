@@ -11,6 +11,20 @@ loop. The deeper historical backlog remains in
 `docs/PRODUCTION_TODO_2026-04-28.md`; this file is the current operating
 checklist for the next implementation passes.
 
+## v7 Design-Led Agentic UX Packet
+
+- [x] Save the v7 operating packet in `docs/v7/`:
+  `AGENTS.md`, `PROMPTS.md`, `STATUS.md`, `SLICE_TEMPLATE.md`, vision briefs,
+  open questions, and the first proposed slice.
+- [x] Link root agent handoff docs to `docs/v7/README.md`,
+  `docs/v7/STATUS.md`, `docs/v7/AGENTS.md`, and
+  `docs/v7/OPEN_QUESTIONS.md`.
+- [ ] Get Giulio approval for
+  `docs/v7/SLICES/01_foundations_experience_map.md` before coding the first
+  v7 product slice.
+- [ ] After approval, implement the thin v7 experience map and agentic workflow
+  registry without deleting existing workbench functionality.
+
 The hyper-detailed multi-agent execution plan is
 `docs/PRAXIS_SUPERPLAN_2026-04-29.md`. Use that document for subagent lanes,
 file-level work scopes, acceptance criteria, and verification evidence.

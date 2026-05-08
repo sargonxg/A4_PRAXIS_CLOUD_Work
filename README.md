@@ -14,12 +14,21 @@ This README is a **reference document for both human developers and AI agents** 
 
 ## Current Ship Checkpoint
 
-As of 2026-05-07, `main` includes the disabled-first Cognee memory layer, the
-Workbench Memory tab, the production Cloud Run deploy evidence, and the latest
-repo-shape pass. The full-repo graphify map is now larger than the HTML
-visualization guard, so use `graphify-out/GRAPH_REPORT.md` and
-`graphify-out/graph.json` for architecture navigation. The current next-round
-handoff is [`docs/audits/2026-05-07-REPO_SHAPE_GRAPHIFY_PREP.md`](./docs/audits/2026-05-07-REPO_SHAPE_GRAPHIFY_PREP.md).
+As of 2026-05-08, `main` is moving into the v7 design-led simplification wave:
+Ask PRAXIS as the primary entry point, mobile-first workbench navigation, and a
+clear tacit-knowledge model for policy teams. The operating packet is
+[`docs/v7/README.md`](./docs/v7/README.md), with current status in
+[`docs/v7/STATUS.md`](./docs/v7/STATUS.md) and open decisions in
+[`docs/v7/OPEN_QUESTIONS.md`](./docs/v7/OPEN_QUESTIONS.md).
+
+The active strategic plans for this wave are
+[`docs/roadmap/PRAXIS_DESIGN_LED_AGENTIC_APP_PLAN_2026-05-08.md`](./docs/roadmap/PRAXIS_DESIGN_LED_AGENTIC_APP_PLAN_2026-05-08.md),
+[`docs/roadmap/PRAXIS_AGENTIC_MOBILE_FIRST_UX_PLAN_2026-05-08.md`](./docs/roadmap/PRAXIS_AGENTIC_MOBILE_FIRST_UX_PLAN_2026-05-08.md), and
+[`docs/roadmap/PRAXIS_TACIT_KNOWLEDGE_UX_REORGANIZATION_PLAN_2026-05-08.md`](./docs/roadmap/PRAXIS_TACIT_KNOWLEDGE_UX_REORGANIZATION_PLAN_2026-05-08.md).
+
+The full-repo graphify map is larger than the HTML visualization guard, so use
+`graphify-out/GRAPH_REPORT.md` and `graphify-out/graph.json` for architecture
+navigation.
 
 ---
 

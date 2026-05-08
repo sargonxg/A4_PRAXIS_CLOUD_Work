@@ -8,17 +8,15 @@
 > **Current handoff:** Before continuing work, read `ARCHITECTURE.md`,
 > `docs/architecture/PRAXIS_ARCHITECTURE.md`,
 > `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`, `TODO.md`,
-> `docs/PRAXIS_SUPERPLAN_2026-04-29.md`,
-> `docs/CONTINUATION.md`, `docs/DEPLOYMENT_LOG.md`, and the `[Unreleased]`
-> section in `CHANGELOG.md`. The latest Codex sessions deployed dashboard route
-> hardening, evidence-envelope retrieval, integration readiness, admin/security
-> hardening, backend trust-boundary work, a root production continuation
-> roadmap, the first executive situation-intelligence panel, disabled-first
-> Cognee memory layer, and the 2026-05-07 repo-shape/graphify checkpoint.
-> Validate with
-> `npx tsc --noEmit`, focused Vitest/pytest for touched areas, `npm run build`,
-> `npm run audit:repo-shape`, and `npm run audit:routes` before deploying via
-> Cloud Build.
+> `docs/v7/README.md`, `docs/v7/STATUS.md`, `docs/v7/AGENTS.md`,
+> `docs/v7/OPEN_QUESTIONS.md`, and the `[Unreleased]` section in
+> `CHANGELOG.md`. The current product direction is the v7 design-led Ask
+> PRAXIS simplification wave: mobile-first, tacit-knowledge centered, and built
+> on the existing workbench, context, Cognee boundary, graph, and output
+> infrastructure. Do not start a v7 slice marked `proposed` without Giulio's
+> approval. Validate with `npx tsc --noEmit`, focused Vitest/pytest for touched
+> areas, `npm run build`, `npm run audit:repo-shape`, and relevant audit gates
+> before deploying via Cloud Build.
 
 ## What This Is
 

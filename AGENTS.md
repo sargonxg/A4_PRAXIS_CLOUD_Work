@@ -40,6 +40,20 @@ work unless Giulio explicitly asks.
 18. [`docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md`](./docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md)
 19. [`docs/PRAXIS_PHASE_SPEC_AUDIT_2026-05-06.md`](./docs/PRAXIS_PHASE_SPEC_AUDIT_2026-05-06.md)
 
+## v7 Slice Work
+
+For the design-led Ask PRAXIS, mobile-first, tacit-knowledge simplification
+wave, also read these before changing code:
+
+1. [`docs/v7/README.md`](./docs/v7/README.md)
+2. [`docs/v7/STATUS.md`](./docs/v7/STATUS.md)
+3. [`docs/v7/AGENTS.md`](./docs/v7/AGENTS.md)
+4. [`docs/v7/OPEN_QUESTIONS.md`](./docs/v7/OPEN_QUESTIONS.md)
+
+Do not start a v7 slice that is still marked `proposed` without Giulio's
+approval. Use [`docs/v7/SLICE_TEMPLATE.md`](./docs/v7/SLICE_TEMPLATE.md) for
+new slices and store slice plans under [`docs/v7/SLICES/`](./docs/v7/SLICES/).
+
 ## Validation
 
 Run the narrowest useful tests while developing. Before a push or deploy,
@@ -49,17 +63,17 @@ run the full gate unless the user explicitly asks for a smaller checkpoint:
 npx tsc --noEmit
 npm run build
 npm run lint
-npm run audit:architecture-chain
+npm run audit:repo-shape
+npm run audit:gate
 npm run audit:architecture-reference
 npm run audit:gcp
 node scripts/audit-ai-routes.mjs
 npx vitest run
-npx tsx scripts/audit-phase3-product-surface.ts
-npx tsx scripts/audit-verb-hookup.ts
 ```
 
 Lint warnings are currently tracked technical debt; build, typecheck, route
-audit, GCP audit, and tests must pass.
+audit, GCP audit, repo-shape audit, and focused tests for touched areas must
+pass before a deploy checkpoint.
 
 ## Hard Rules
 
