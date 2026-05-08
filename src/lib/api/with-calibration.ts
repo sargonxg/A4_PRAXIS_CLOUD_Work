@@ -18,7 +18,9 @@ import { buildToolPromptContract } from '@/lib/tools/tool-operating-contracts';
 import { buildToolContextBlueprintPrompt } from '@/lib/tools/tool-context-blueprints';
 import { withContextAware } from '@/lib/api/with-context-aware';
 import { withFirewall } from '@/lib/api/with-firewall';
+import { appendContextQualityBlock, buildPromptHealthReport } from '@/lib/context/prompt-health';
 import type { ContextSnapshot } from '@/types/context';
+import type { Situation } from '@/types/situation';
 
 export interface CalibrationCtx extends AuthenticatedUser {
   calibration: ContextBlock;
@@ -119,6 +121,7 @@ export function withCalibration(
     withAuth(async (req: Request, user: AuthenticatedUser) => {
       let body: Record<string, unknown> = {};
       let situationId: string | undefined;
+      let providedSituation: Partial<Situation> | null = null;
       try {
         const raw = await req.clone().text();
         const rawBytes = new TextEncoder().encode(raw).byteLength;
@@ -144,6 +147,7 @@ export function withCalibration(
         if (typeof body.situationId === 'string') situationId = body.situationId;
         if (!situationId && body.situation && typeof body.situation === 'object') {
           const situation = body.situation as { id?: unknown };
+          providedSituation = body.situation as Partial<Situation>;
           if (typeof situation.id === 'string') situationId = situation.id;
         }
       } catch { /* non-JSON body OK */ }
@@ -165,6 +169,7 @@ export function withCalibration(
         req,
         user,
         situationId,
+        situation: providedSituation,
         spec: {
           user: { role: true, preferences: true },
           workspace: { methodologyDocs: true },
@@ -173,6 +178,28 @@ export function withCalibration(
           graceful: true,
         },
       });
+      const promptHealth = buildPromptHealthReport(contextAware.snapshot);
+      if (promptHealth.forceRunRequired && body.forceRun !== true) {
+        const response = NextResponse.json({
+          error: 'context_too_thin',
+          message: 'This case file is too thin for a trustworthy calibrated AI run. Add context first, or run anyway with visible caveats.',
+          refusal: true,
+          reason: 'context-too-thin',
+          score: promptHealth.score,
+          missingLayers: promptHealth.missingLayers,
+          weakLayers: promptHealth.weakLayers,
+          suggestedFlow: promptHealth.suggestedFlow,
+          promptHealth,
+        }, {
+          status: 422,
+          headers: {
+            'X-Praxis-Safeguard': 'context_too_thin',
+            'X-Praxis-Context-Health-State': promptHealth.state,
+          },
+        });
+        contextAware.headers.forEach((value, key) => response.headers.set(key, value));
+        return response;
+      }
 
       // Credit gate (non-demo)
       if (!user.isDemo) {
@@ -189,6 +216,10 @@ export function withCalibration(
         retrievalQuery,
       });
       const enrichedCalibration = enrichCalibrationWithToolBackbone(calibration, toolId);
+      const calibratedWithPromptHealth = {
+        ...enrichedCalibration,
+        systemPromptBlock: appendContextQualityBlock(enrichedCalibration.systemPromptBlock, promptHealth),
+      };
 
       // Start tool_run record (non-demo only — demo users do not get persisted runs)
       let toolRunId: string | null = null;
@@ -208,7 +239,7 @@ export function withCalibration(
             variant,
             idempotencyKey,
             triggeredBy: 'user',
-            profileVersion: enrichedCalibration.provenance.profileVersion,
+            profileVersion: calibratedWithPromptHealth.provenance.profileVersion,
           });
           toolRunId = run.toolRunId;
           await emitSystemEvent({
@@ -218,7 +249,15 @@ export function withCalibration(
             situationId: situationId ?? null,
             toolRunId,
             message: `Tool ${toolId} started`,
-            data: { variant, profileVersion: enrichedCalibration.provenance.profileVersion },
+            data: {
+              variant,
+              profileVersion: calibratedWithPromptHealth.provenance.profileVersion,
+              promptHealth: {
+                score: promptHealth.score,
+                state: promptHealth.state,
+                missingLayers: promptHealth.missingLayers,
+              },
+            },
             source: 'frontend',
           });
         } catch (err) {
@@ -231,7 +270,7 @@ export function withCalibration(
       try {
         response = await handler(req, {
           ...user,
-          calibration: enrichedCalibration,
+          calibration: calibratedWithPromptHealth,
           contextSnapshot: contextAware.snapshot,
           toolRunId,
         });
@@ -321,6 +360,7 @@ export function withCalibration(
       }
 
       contextAware.headers.forEach((value, key) => response.headers.set(key, value));
+      response.headers.set('X-Praxis-Context-Health-State', promptHealth.state);
 
       return withFirewall({
         req,

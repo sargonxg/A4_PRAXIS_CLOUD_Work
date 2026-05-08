@@ -12,7 +12,9 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
+import { PromptHealthBadge } from '@/components/praxis/prompt-health-badge';
 import type { SituationIntelligence } from '@/lib/ai/schemas/situation-intelligence';
+import type { PromptHealthReport } from '@/lib/context/prompt-health';
 import type { Situation } from '@/types/situation';
 
 type IntelligenceResult = SituationIntelligence & {
@@ -20,6 +22,14 @@ type IntelligenceResult = SituationIntelligence & {
   toolId: string;
   persistence?: { toolDataSaved?: boolean };
 };
+
+interface ThinCaseRefusal {
+  message: string;
+  score?: number;
+  missingLayers: string[];
+  suggestedFlow: string[];
+  promptHealth?: PromptHealthReport;
+}
 
 const TOOL_ID = 'situation-intelligence';
 
@@ -66,6 +76,7 @@ export function ExecutiveIntelligencePanel({ situation }: { situation: Situation
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [thinCaseRefusal, setThinCaseRefusal] = useState<ThinCaseRefusal | null>(null);
 
   const activeResult = result ?? (isIntelligenceResult(persisted.data) ? persisted.data : null);
 
@@ -77,17 +88,28 @@ export function ExecutiveIntelligencePanel({ situation }: { situation: Situation
 
   const inputWeak = !situation.description || situation.description.length < 80 || situation.actors.length < 2;
 
-  async function generate() {
+  async function generate(options?: { forceRun?: boolean }) {
     setLoading(true);
     setError(null);
+    setThinCaseRefusal(null);
     try {
       const res = await fetch('/api/ai/situation-intelligence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ situation }),
+        body: JSON.stringify({ situation, forceRun: options?.forceRun === true }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
+        if (res.status === 422 && data?.reason === 'context-too-thin') {
+          setThinCaseRefusal({
+            message: data.message ?? 'This case file is too thin for calibrated AI.',
+            score: typeof data.score === 'number' ? data.score : data.promptHealth?.score,
+            missingLayers: Array.isArray(data.missingLayers) ? data.missingLayers.filter(isString) : [],
+            suggestedFlow: Array.isArray(data.suggestedFlow) ? data.suggestedFlow.filter(isString) : [],
+            promptHealth: data.promptHealth,
+          });
+          return;
+        }
         throw new Error(data?.error ?? `Request failed (${res.status})`);
       }
       if (!isIntelligenceResult(data)) {
@@ -121,6 +143,7 @@ export function ExecutiveIntelligencePanel({ situation }: { situation: Situation
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <PromptHealthBadge situationId={situation.id} toolId={TOOL_ID} className="max-w-sm" />
           {activeResult ? (
             <button
               type="button"
@@ -133,7 +156,7 @@ export function ExecutiveIntelligencePanel({ situation }: { situation: Situation
           ) : null}
           <button
             type="button"
-            onClick={generate}
+            onClick={() => void generate()}
             disabled={loading || persisted.isLoading}
             className="inline-flex items-center gap-1.5 rounded-md border border-gold-500/40 bg-gold-500/10 px-3 py-1.5 text-xs font-medium text-gold-700 hover:bg-gold-500/20 disabled:opacity-60"
           >
@@ -146,6 +169,29 @@ export function ExecutiveIntelligencePanel({ situation }: { situation: Situation
       {inputWeak && !activeResult ? (
         <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-800">
           Add a fuller description and at least two actors for higher-confidence analysis. PRAXIS will refuse inputs that are too thin to support a trustworthy output.
+        </div>
+      ) : null}
+
+      {thinCaseRefusal ? (
+        <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-xs leading-relaxed text-red-800">
+          <p className="font-semibold text-red-900">
+            Context is too thin for a normal calibrated run
+            {typeof thinCaseRefusal.score === 'number' ? ` (${thinCaseRefusal.score}/100)` : ''}
+          </p>
+          <p className="mt-1">{thinCaseRefusal.message}</p>
+          {thinCaseRefusal.missingLayers.length ? (
+            <p className="mt-1">Missing: {thinCaseRefusal.missingLayers.join(', ')}</p>
+          ) : null}
+          <ol className="mt-2 space-y-1">
+            {thinCaseRefusal.suggestedFlow.map((step) => <li key={step}>{step}</li>)}
+          </ol>
+          <button
+            type="button"
+            onClick={() => void generate({ forceRun: true })}
+            className="mt-3 rounded-md bg-red-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-800"
+          >
+            Run anyway with caveats
+          </button>
         </div>
       ) : null}
 
@@ -318,6 +364,10 @@ export function ExecutiveIntelligencePanel({ situation }: { situation: Situation
       )}
     </section>
   );
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string';
 }
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {

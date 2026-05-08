@@ -4,8 +4,8 @@
 
 ## Morning Brief
 
-- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `12_HYGIENE` low-risk items.
-- Prompts deferred: `08_THIN_CASE_CALIBRATION` (requires prompt-health runtime contract), `10_ACO_EXPLAINER` (product UI work still pending), `11_AUDIT_PROMOTION` full runtime tagging (only new gates were wired), Cloud SQL live row counts from `01` (blocked by private IP plus missing local `psql`/Cloud SQL Proxy).
+- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `12_HYGIENE` low-risk items.
+- Prompts deferred: `10_ACO_EXPLAINER` (product UI work still pending), `11_AUDIT_PROMOTION` full runtime tagging (only new gates were wired), Cloud SQL live row counts from `01` (blocked by private IP plus missing local `psql`/Cloud SQL Proxy).
 - Pre-existing audit failures surfaced: `audit:workbench` now reaches its final route-count guard and fails on `35` visible app pages versus the current `<=34` ceiling.
 - Measured deltas:
   - Workbench root JS gzipped: current built workbench initial client JS is `511.3 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
@@ -36,7 +36,7 @@
 | 05_CHAPTER_CODE_SPLIT | done | Six heavy chapters and four substrate tabs are dynamic islands with skeletons; shell/tab modal only mount active children; `audit:workbench-bundle` is wired into gate and now enforces dynamic imports, closed Tools-by-default, skeleton presence, and conditional mounting. |
 | 06_LIBRARY_INGEST_CONSOLIDATION | partial | Upload UI now saves and chunks through `/api/documents/upload`, passes the returned `documentId` into backend Library ingest, and reports source-receipt deferral honestly. Static parity audit and ingest parity doc added. Runtime upload -> source receipt -> hero-tool retrieval verification still not run. |
 | 07_ONBOARDING_GATE | done | Shared onboarding helper gates calibrated routes, client auth state, and server cookie onboarding resolution; post-login redirect and Next proxy route incomplete/stale-claim profiles to `/onboarding`; completion refreshes signed session claim; workbench banner and profile edit link are wired; audit expanded. |
-| 08_THIN_CASE_CALIBRATION | deferred | No thin-case prompt-health scoring or 422 contract added yet. |
+| 08_THIN_CASE_CALIBRATION | done | `/api/context/prompt-health` exposes prompt health; calibrated routes append `<context-quality>` below 80 and refuse below 30 unless `forceRun` is true; prompt-health badge and run-anyway help panel are wired into shared AI generation UI and the direct Executive Intelligence panel; `audit:thin-case-handling` is in gate. |
 | 09_EMBEDDING_DIMENSION | partial | Existing `audit:embedding-dim` passes for 768-dim Vertex text embeddings; no migration touched. |
 | 10_ACO_EXPLAINER | deferred | Needs in-app first-run ACO explainer. |
 | 11_AUDIT_PROMOTION | partial | New audits wired into `audit:gate`; full runtime audit taxonomy still pending. |
@@ -66,6 +66,7 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 | audit:ux-polish | fail | static-marker | `tests/e2e/app-usability-smoke.spec.ts` missing `tool-marketplace` and `Memo Studio` coverage. Gate stopped here. |
 | audit:no-deterministic-tool-output-in-ui | pass | static-marker | Prevents `deterministic-foundation`, `foundation-run`, and `marketplace-foundation-v1` from visible UI. |
 | audit:hero-tool-calibration-coverage | pass | static-marker | Checked 12 visible hero tools and catches deterministic/calibrated mismatches. |
+| audit:thin-case-handling | pass | static-marker | New gate for prompt-health endpoint, `<context-quality>` compensation, 422 refusal, and UI run-anyway handling. |
 | audit:cognee-ui-honesty | pass | static-marker | Verifies Cognee/memory copy is not exposed by default-disabled UI and marketplace subagent pills are feature-gated. |
 | audit:surface-registry-coherence | pass | static-marker | Ensures product surfaces are reachable through tabs or chapters. |
 | audit:workbench-bundle | pass | build-output | Measured current workbench initial client JS at `511.4 KB gzip` with a `520 KB` budget; also enforces dynamic chapter/tab imports and active-only mounting. |
@@ -86,6 +87,7 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 | `npm run audit:cognee` | pass |
 | `npm run audit:cognee-operations` | pass |
 | `npm run audit:hero-tool-calibration-coverage` | pass |
+| `npm run audit:thin-case-handling` | pass |
 | `npm run audit:library-ingest-consolidation` | pass |
 | `npm run audit:document-ingest-parity` | pass |
 | `npm run audit:workbench-bundle` | pass, `511.4 KB gzip` |
@@ -175,7 +177,7 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 
 ## Notes For Next Session
 
-- Implement `08_THIN_CASE_CALIBRATION`: prompt-health score, visible badge, compensation block for thin cases, and refusal below the agreed threshold.
+- Runtime-smoke `08_THIN_CASE_CALIBRATION`: verify a real thin case returns 422, the help panel renders, and `forceRun: true` reaches the model with `<context-quality>` attached.
 - Implement `10_ACO_EXPLAINER`: plain-language 14-entity explainer surfaced inside the app, not just landing/docs.
 - Add runtime document ingest parity: upload a file, verify saved document/chunks, backend source receipt, and retrieval.
 - Run a browser smoke against `praxis.tacitus.me` after commit/deploy.

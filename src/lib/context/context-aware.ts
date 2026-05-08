@@ -9,6 +9,7 @@ export interface ContextAwareOptions {
   req: Request;
   user: AuthenticatedUser;
   situationId?: string;
+  situation?: Partial<Situation> | null;
   spec?: ContextSpec;
 }
 
@@ -21,11 +22,13 @@ export async function buildContextSnapshot({
   req,
   user,
   situationId,
+  situation: providedSituation,
   spec,
 }: ContextAwareOptions): Promise<ContextSnapshot> {
-  const situation = situationId && !user.isDemo
+  const storedSituation = situationId && !user.isDemo
     ? await getSituationAdmin(user.uid, situationId).catch(() => null)
     : null;
+  const situation = storedSituation ?? providedSituation ?? null;
   const caseContext = buildCaseContext(user.uid, situationId, situation, spec);
   const userContext = buildUserContext(user, caseContext.ontologyId);
   const workspaceContext = buildWorkspaceContext(userContext);
@@ -87,7 +90,7 @@ function buildWorkspaceContext(userContext: UserContext): WorkspaceContext {
   };
 }
 
-function buildCaseContext(ownerUid: string, situationId: string | undefined, situation: Situation | null, spec: ContextSpec | undefined): ContextSnapshot['case'] {
+function buildCaseContext(ownerUid: string, situationId: string | undefined, situation: Partial<Situation> | null, spec: ContextSpec | undefined): ContextSnapshot['case'] {
   const report = computeContextHealthScore({ situation, threshold: spec?.minHealthScore ?? 60 });
   const ontologyId = situation?.primaryOntologyId ?? situation?.ontologyId ?? spec?.caseGraph?.requiredOntology ?? 'conflict';
   const ontologyIds = situation?.ontologyIds?.length ? situation.ontologyIds : [ontologyId];

@@ -11,6 +11,8 @@ import { usePersistedToolData } from '@/hooks/use-persisted-tool-data';
 import { useDebugStore } from '@/stores/debug-store';
 import { getToolById } from '@/lib/constants/tool-registry';
 import { OutputProvenancePanel } from '@/components/praxis/output-provenance-panel';
+import { PromptHealthBadge } from '@/components/praxis/prompt-health-badge';
+import type { PromptHealthReport } from '@/lib/context/prompt-health';
 import type { Situation } from '@/types/situation';
 
 // Hard cap: abort after 90 seconds to avoid infinite hangs
@@ -47,6 +49,14 @@ interface AiPopulateProps {
   children: React.ReactNode;
 }
 
+interface ThinCaseRefusal {
+  message: string;
+  score?: number;
+  missingLayers: string[];
+  suggestedFlow: string[];
+  promptHealth?: PromptHealthReport;
+}
+
 const SOURCE_MODE_LABELS: Record<DataSourceMode, string> = {
   all: 'All sources (web + documents + AI knowledge)',
   'web-and-docs': 'Web sources + uploaded documents',
@@ -75,15 +85,18 @@ export function AiPopulate({
   const persisted = usePersistedToolData(toolId, activeSituation?.id);
   const restoredRef = useRef(false);
 
-  const [status, setStatus] = useState<'idle' | 'generating' | 'done' | 'error' | 'skipped'>('idle');
+  const [status, setStatus] = useState<'idle' | 'generating' | 'done' | 'error' | 'skipped' | 'blocked'>('idle');
   const [showSourcePicker, setShowSourcePicker] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [thinCaseRefusal, setThinCaseRefusal] = useState<ThinCaseRefusal | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { log: debugLog } = useDebugStore();
 
   const sourceMode = getEffectiveMode(toolId);
+  const toolDefinition = getToolById(toolId);
+  const showPromptHealth = toolDefinition?.tier === 'calibrated-ai';
 
   // Background research status polling
   const [researchStatus, setResearchStatus] = useState<string>('idle');
@@ -166,10 +179,11 @@ export function AiPopulate({
     };
   }, []);
 
-  const generate = useCallback(async () => {
+  const generate = useCallback(async (options?: { forceRun?: boolean }) => {
     if (!activeSituation) return;
     setStatus('generating');
     setErrorMsg('');
+    setThinCaseRefusal(null);
     setElapsed(0);
 
     // AbortController: cancel the fetch after GENERATION_TIMEOUT_MS
@@ -197,6 +211,7 @@ export function AiPopulate({
           situationId: activeSituation.id,
           situation: activeSituation,
           sourceMode,
+          forceRun: options?.forceRun === true,
           ...extraBody,
         }),
       });
@@ -206,6 +221,18 @@ export function AiPopulate({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: 'Generation failed' }));
+        if (res.status === 422 && data?.reason === 'context-too-thin') {
+          setThinCaseRefusal({
+            message: data.message ?? 'This case file is too thin for calibrated AI.',
+            score: typeof data.score === 'number' ? data.score : data.promptHealth?.score,
+            missingLayers: Array.isArray(data.missingLayers) ? data.missingLayers.filter(isString) : [],
+            suggestedFlow: Array.isArray(data.suggestedFlow) ? data.suggestedFlow.filter(isString) : [],
+            promptHealth: data.promptHealth,
+          });
+          debugLog({ id: requestId, type: 'error', tool: toolId, status: res.status, error: 'context-too-thin', ts: new Date().toISOString() });
+          setStatus('blocked');
+          return;
+        }
         const errMsg = data.error || `Failed to generate ${toolName} data (HTTP ${res.status})`;
         debugLog({ id: requestId, type: 'error', tool: toolId, status: res.status, error: errMsg, ts: new Date().toISOString() });
         setErrorMsg(errMsg);
@@ -251,7 +278,6 @@ export function AiPopulate({
     const isResearching = ['pending', 'fetching-sources', 'synthesizing', 'saving'].includes(researchStatus);
     const rsLabel = RESEARCH_STATUS_LABELS[researchStatus];
 
-    const toolDefinition = getToolById(toolId);
     const provenance = extractOutputProvenance({
       data: persisted.data,
       fallbackGeneratedAt: persisted.generatedAt,
@@ -269,9 +295,9 @@ export function AiPopulate({
     return (
       <>
         {(status === 'done' || hasExistingData) && (
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             {/* Research status indicator */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {isResearching && (
                 <div className="flex items-center gap-2 rounded-full bg-gold-50 px-3 py-1 text-xs text-gold-700">
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -298,7 +324,10 @@ export function AiPopulate({
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {showPromptHealth && activeSituation?.id ? (
+                <PromptHealthBadge situationId={activeSituation.id} toolId={toolId} className="max-w-sm" />
+              ) : null}
               <button
                 onClick={handleRegenerate}
                 className="flex items-center gap-1.5 rounded-lg border border-navy-200 px-3 py-1.5 text-xs font-medium text-navy-500 transition-colors hover:border-navy-300 hover:text-navy-700"
@@ -381,6 +410,19 @@ export function AiPopulate({
     );
   }
 
+  if (status === 'blocked') {
+    return (
+      <div className="space-y-6">
+        <ThinCaseHelpPanel
+          refusal={thinCaseRefusal}
+          onRunAnyway={() => void generate({ forceRun: true })}
+          onSkip={() => setStatus('skipped')}
+        />
+        {children}
+      </div>
+    );
+  }
+
   // Error state
   if (status === 'error') {
     return (
@@ -389,7 +431,7 @@ export function AiPopulate({
         <h3 className="mt-4 text-base font-semibold text-navy-900">Generation Failed</h3>
         <p className="mt-2 text-sm text-navy-500">{errorMsg}</p>
         <div className="mt-4 flex gap-3">
-          <button onClick={generate} className="rounded-lg bg-diplomatic-blue px-4 py-2 text-sm font-medium text-white hover:bg-diplomatic-blue/90">
+          <button onClick={() => void generate()} className="rounded-lg bg-diplomatic-blue px-4 py-2 text-sm font-medium text-white hover:bg-diplomatic-blue/90">
             Retry
           </button>
           <button onClick={() => setStatus('skipped')} className="rounded-lg border border-navy-200 px-4 py-2 text-sm font-medium text-navy-600 hover:bg-navy-50">
@@ -461,9 +503,13 @@ export function AiPopulate({
               </AnimatePresence>
             </div>
 
+            {showPromptHealth && activeSituation?.id ? (
+              <PromptHealthBadge situationId={activeSituation.id} toolId={toolId} className="mt-4 max-w-md" />
+            ) : null}
+
             <div className="mt-4 flex items-center gap-3">
               <button
-                onClick={generate}
+                onClick={() => void generate()}
                 disabled={credits < creditCost}
                 className="flex items-center gap-2 rounded-lg bg-gold-500 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-gold-500/20 hover:bg-gold-600 disabled:opacity-50"
               >
@@ -485,6 +531,67 @@ export function AiPopulate({
       {children}
     </div>
   );
+}
+
+function ThinCaseHelpPanel({
+  refusal,
+  onRunAnyway,
+  onSkip,
+}: {
+  refusal: ThinCaseRefusal | null;
+  onRunAnyway: () => void;
+  onSkip: () => void;
+}) {
+  const suggestedFlow = refusal?.suggestedFlow.length
+    ? refusal.suggestedFlow
+    : ['Add a fuller situation frame, sources, documents, or graph facts, then run again.'];
+
+  return (
+    <div className="rounded-xl border border-red-200 bg-red-50 p-5">
+      <div className="flex items-start gap-3">
+        <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-700" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-red-900">
+            Context is too thin for a normal calibrated run
+            {typeof refusal?.score === 'number' ? ` (${refusal.score}/100)` : ''}
+          </p>
+          <p className="mt-1 text-sm leading-6 text-red-800">
+            {refusal?.message ?? 'PRAXIS needs more case context before it can produce a trustworthy answer without heavy caveats.'}
+          </p>
+          {refusal?.missingLayers.length ? (
+            <p className="mt-2 text-xs leading-5 text-red-800">
+              Missing: {refusal.missingLayers.join(', ')}
+            </p>
+          ) : null}
+          <ol className="mt-3 space-y-1.5 text-xs leading-5 text-red-900">
+            {suggestedFlow.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={onRunAnyway}
+              className="rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800"
+            >
+              Run anyway with caveats
+            </button>
+            <button
+              type="button"
+              onClick={onSkip}
+              className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-800 hover:bg-red-100"
+            >
+              Use empty view
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string';
 }
 
 function hasMeaningfulOutput(value: unknown): boolean {

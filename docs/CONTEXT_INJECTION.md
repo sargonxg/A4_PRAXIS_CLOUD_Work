@@ -197,6 +197,31 @@ labelled honestly in the UI.
 
 ---
 
+## Thin-case handling
+
+Calibrated AI tools now expose prompt health before the user clicks
+Generate. The visible badge calls `/api/context/prompt-health`, which builds
+the same four-layer context snapshot as `withCalibration` and returns a
+`PromptHealthReport` with score, missing layers, weak layers, and suggested
+repair flow.
+
+At request time, `withCalibration` applies two rules:
+
+- If prompt health is below `80`, it appends a `<context-quality>` block to
+  the system prompt. The block instructs the model to state uncertainty,
+  avoid unsupported causal claims, and prefer evidence-gathering moves where
+  context is missing.
+- If prompt health is below `30`, the wrapper returns HTTP 422 with
+  `reason: "context-too-thin"` unless the request includes
+  `forceRun: true`. The UI renders that response as a help panel with
+  missing layers, suggested repairs, and an explicit "Run anyway with
+  caveats" action.
+
+The contract is enforced by `audit:thin-case-handling`, which is wired into
+`audit:gate` beside `audit:hero-tool-calibration-coverage`.
+
+---
+
 ## Worked example — the Briefing tool
 
 User asks for a daily briefing on a Yemen ceasefire situation. They are a
