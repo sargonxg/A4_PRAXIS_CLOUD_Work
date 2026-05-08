@@ -5,7 +5,7 @@
 ## Morning Brief
 
 - Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `V2_00_README`, `V2_A0_MT_DATA_MODEL`, `V2_B0_KG_PREFLIGHT` local attempt.
-- Prompts deferred: Cloud SQL live row counts from `01` and `V2_B0_KG_PREFLIGHT` are blocked locally by private IP plus missing local `psql`/Cloud SQL Proxy; `V2_A1_ORGID_CONTEXT` through `V2_A6_MT_AUDIT_LOG` are blocked until all MT approval rows below are marked approved or explicitly revised; `V2_B1_DUAL_WRITE_GRAPH` is blocked until B0 live counts select and approve Case 1/2/3.
+- Prompts deferred: Cloud SQL live row counts from `01` and `V2_B0_KG_PREFLIGHT` are blocked locally by private IP plus missing local `psql`/Cloud SQL Proxy; `V2_A1_ORGID_CONTEXT` through `V2_A6_MT_AUDIT_LOG` are blocked until all MT approval rows below are marked approved or explicitly revised; `V2_B1_DUAL_WRITE_GRAPH` through `V2_B3_RETIRE_FIRESTORE_GRAPH` are blocked until B0 live counts select and approve Case 1/2/3, B1 runs clean for 7 days, and B2 runs clean for 7 days.
 - Recovery loop resolved: `audit:ux-polish`, `audit:workbench`, `audit:evidence-drawer`, `audit:graph-viewer`, `audit:visualization`, `audit:master-charter`, stale Graphify outputs, and withCalibration unit fixture drift.
 - Measured deltas:
   - Workbench root JS gzipped: current built workbench initial client JS is `511.3 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
@@ -53,6 +53,8 @@
 | V2_A6_MT_AUDIT_LOG | blocked | Depends on A1 org context, A3 audit-log rules, and state-changing route mapping. |
 | V2_B0_KG_PREFLIGHT | blocked | Local preflight documented at `docs/audits/2026-05-08-POSTGRES_KG_PREFLIGHT.md`; Cloud SQL instance is private-IP and local shell lacks `psql` plus Cloud SQL Auth Proxy. |
 | V2_B1_DUAL_WRITE_GRAPH | blocked | Must not start until B0 records live row counts, latency, schema/index health, selected Case 1/2/3, and approval. |
+| V2_B2_READ_PATH_POSTGRES | blocked | Must not start until B1 has run for at least 7 production days with `KG_DUAL_WRITE=true`, parity drift is below 5%, backlog is near-empty, and B0 latency is acceptable. |
+| V2_B3_RETIRE_FIRESTORE_GRAPH | blocked | Must not start until B2 has run for at least 7 production days with Postgres reads, shadow drift is below 0.1%, telemetry is over 99% Postgres, and GC explicitly signs off. |
 
 Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blocked`.
 
@@ -385,6 +387,15 @@ marked `approved` or `revised: <alternative>`.
 - Counts and latency: not measured; Case 1/2/3 not selected.
 - B1 status: blocked until B0 is rerun from Cloud Shell, a VPC-connected host, or a temporary worker in the existing VPC.
 
+### V2_B2_B3_INTAKE
+
+- Completed: 2026-05-08.
+- Commit: current B2/B3 intake pass.
+- Prompt preservation: B2-B3 copied into `docs/codex-prompts/` and registered in `audit:codex-prompts`.
+- B2 status: blocked until B1 has at least 7 clean production days of dual-write, parity drift below 5%, near-empty retry backlog, and acceptable B0 pgvector latency.
+- B3 status: blocked until B2 has at least 7 clean production days of Postgres reads, shadow drift below 0.1%, more than 99% Postgres source telemetry, no graph regressions, and explicit GC sign-off.
+- Issues encountered: no graph read/write code, Firestore rules, or environment flags changed because the cutover preconditions are not met.
+
 ## Blockers
 
 - Runtime verification still needed for: production workbench first mount, staged recipe navigation, document upload -> retrieval, thin-case prompt-health, and live fresh-account onboarding enforcement.
@@ -392,6 +403,7 @@ marked `approved` or `revised: <alternative>`.
 - V2 Session B remains risk-gated on live Cloud SQL graph row counts; do not cut over graph reads/writes until `B0_KG_PREFLIGHT.md` is completed.
 - V2 Session A implementation is blocked until GC approves or revises MT-1 through MT-5 in `STATUS.md` or `docs/architecture/MULTI_TENANT_MODEL.md`.
 - B1 dual-write implementation is blocked until `docs/audits/2026-05-08-POSTGRES_KG_PREFLIGHT.md` has live counts, pgvector latency, schema/index health, selected Case 1/2/3, and GC approval.
+- B2/B3 graph cutover work is blocked by the required 7-day verification windows after B1 and B2.
 
 ## Notes For Next Session
 
