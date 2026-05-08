@@ -6,6 +6,7 @@ import { buildContextSnapshot } from '@/lib/context/context-aware';
 import { createContextProvider } from '@/lib/tools/context-provider';
 import { getMarketplaceTool } from '@/lib/tools/marketplace/registry';
 import { buildMarketplaceToolRun } from '@/lib/tools/marketplace/runner';
+import { getStageTarget } from '@/lib/tools/marketplace/stage-targets';
 import {
   buildToolRunArtifact,
   persistToolRunArtifact,
@@ -94,11 +95,15 @@ export const POST = withAuth(async (req, user) => {
     if (!tool) {
       return NextResponse.json({ error: 'Unknown marketplace tool', toolId: parsed.data.toolId }, { status: 404 });
     }
-    if (!tool.satCategory) {
+    const stageTarget = getStageTarget(tool.id);
+    if (!tool.satCategory && stageTarget) {
       return NextResponse.json(
         {
-          error: 'Recipe library entries stage context into hero tools instead of producing standalone runs.',
+          success: false,
+          error: 'Recipe migrated to staged hero-tool flow.',
+          action: 'stage',
           toolId: tool.id,
+          stageTarget,
         },
         { status: 410 },
       );

@@ -9,7 +9,7 @@ import { RunDiff } from '@/components/evidence/RunDiff';
 import { getOntologyForDomain } from '@/lib/ontology/registry';
 import { filterMarketplaceTools, sortMarketplaceTools } from '@/lib/tools/marketplace/filter-engine';
 import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
-import { getMarketplaceStageTarget, stageTargetHref } from '@/lib/tools/marketplace/stage-targets';
+import { getMarketplaceStageTarget, renderMarketplaceStagePrompt, stageTargetHref } from '@/lib/tools/marketplace/stage-targets';
 import { writeStagedMarketplaceContext } from '@/lib/tools/marketplace/staged-context';
 import { rankMarketplaceToolsForCase } from '@/lib/tools/marketplace/suggestions';
 import type { MarketplaceToolCategory, MarketplaceCostClass } from '@/lib/tools/marketplace/types';
@@ -239,12 +239,11 @@ export function ToolMarketplace() {
     const tool = MARKETPLACE_TOOLS.find((item) => item.id === toolId);
     if (!tool || tool.satCategory) return;
     const target = getMarketplaceStageTarget(tool);
-    const prompt = [
-      `Use the ${tool.name} recipe as the framing context for ${target.heroToolName}.`,
-      tool.description,
-      `Active case: ${caseModule.manifest.name}.`,
-      'Answer through the hero tool, not as a standalone recipe result.',
-    ].join('\n\n');
+    if (!target) {
+      setRunError(`No stage target configured for ${tool.id}.`);
+      return;
+    }
+    const prompt = renderMarketplaceStagePrompt(target, caseModule.manifest.name);
 
     writeStagedMarketplaceContext({
       recipeId: tool.id,
@@ -256,6 +255,8 @@ export function ToolMarketplace() {
       caseId,
       caseName: caseModule.manifest.name,
       prompt,
+      flags: target.flags,
+      rationale: target.rationale,
       context: {
         activeTab,
         caseName: caseModule.manifest.name,
@@ -358,7 +359,7 @@ export function ToolMarketplace() {
           </p>
         </div>
         <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-right">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Available now</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Recipes</p>
           <p className="font-mono text-2xl font-semibold text-navy-950">{visibleTools.length}</p>
         </div>
       </div>
@@ -679,16 +680,24 @@ export function ToolMarketplace() {
                 <button
                   type="button"
                   onClick={() => stageTool(tool.id)}
+                  disabled={!stageTarget}
+                  title={stageTarget?.rationale ?? 'No stage target configured'}
                   className="inline-flex h-8 items-center gap-1 rounded-md bg-navy-950 px-3 text-xs font-semibold text-white transition-colors hover:bg-navy-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   <GitBranchPlus className="h-3.5 w-3.5" />
-                  Stage in {stageTarget.heroToolName}
+                  {stageTarget ? `Stage in ${stageTarget.heroToolName}` : 'Stage unavailable'}
                 </button>
               </div>
             </div>
               );
             })()}
             <p className="mt-3 text-sm leading-6 text-slate-650">{tool.description}</p>
+            {(() => {
+              const stageTarget = getMarketplaceStageTarget(tool);
+              return stageTarget ? (
+                <p className="mt-2 text-[11px] italic leading-5 text-slate-600">{stageTarget.rationale}</p>
+              ) : null;
+            })()}
             <ToolTransparencyCard tool={tool} />
             <div className="mt-4 grid gap-2 sm:grid-cols-3">
               <Chip label="Runtime" value={`${Math.round(tool.estimatedRuntimeMs / 1000)}s`} />

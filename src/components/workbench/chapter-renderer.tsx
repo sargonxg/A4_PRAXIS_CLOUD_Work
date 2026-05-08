@@ -43,9 +43,9 @@ const BoardroomIndex = dynamic(
 const DEFAULT_OPEN_CHAPTERS: WorkbenchChapterId[] = ['research', 'memos'];
 const VALID_CHAPTER_IDS = new Set<WorkbenchChapterId>(WORKBENCH_CHAPTER_FLOW.map((chapter) => chapter.id));
 const STAGED_HERO_TOOLS_BY_CHAPTER: Partial<Record<WorkbenchChapterId, MarketplaceHeroToolId[]>> = {
-  desk: ['situation-intelligence'],
+  desk: ['dashboard', 'situation-intelligence', 'conflict-graph'],
   research: ['source-scout'],
-  draft: ['policy-memo', 'briefing'],
+  draft: ['policy-memo', 'briefing', 'treaty-analyzer'],
   boardroom: ['brainstorming-table', 'scenarios', 'negotiation-prep'],
 };
 
@@ -56,7 +56,8 @@ export function WorkbenchChapterRenderer() {
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get('openChapter') as WorkbenchChapterId | null;
     if (!requested || requested === 'desk' || !VALID_CHAPTER_IDS.has(requested)) return;
-    setOpenSet((prev) => new Set(prev).add(requested));
+    const frame = window.requestAnimationFrame(() => setOpenSet((prev) => new Set(prev).add(requested)));
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   const toggleChapter = useCallback((id: WorkbenchChapterId) => {

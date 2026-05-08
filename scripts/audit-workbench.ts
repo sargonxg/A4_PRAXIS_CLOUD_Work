@@ -152,10 +152,15 @@ for (const path of ['src/components/workbench/chapter-shell.tsx', 'src/component
 }
 
 const tabContent = readFileSync('src/components/workbench/workbench-tab-content.tsx', 'utf8');
-for (const marker of ['<ContextTab />', '<LibraryTab />', '<OntologySchemaViewer />', '<WorkbenchGraphPanel />', '<GraphIntelligencePanels', '<EmptyStateGuidance']) {
+for (const marker of ['<ContextTab />', '<LibraryTab />', '<OntologySchemaViewer />', '<WorkbenchGraphPanel />', '<EmptyStateGuidance']) {
   if (!tabContent.includes(marker)) {
     throw new Error(`Workbench tab content missing surface dispatch: ${marker}`);
   }
+}
+
+const graphPanel = readFileSync('src/components/workbench/workbench-graph-panel.tsx', 'utf8');
+if (!graphPanel.includes('<GraphIntelligencePanels')) {
+  throw new Error('Workbench graph panel missing GraphIntelligencePanels render');
 }
 
 const graphIntelligence = readFileSync('src/components/workbench/graph/GraphIntelligencePanels.tsx', 'utf8');
@@ -298,7 +303,7 @@ for (const marker of ['tabs/library?case_id', 'tabs/library/ingest', 're-extract
 }
 
 const researchTabComponent = readFileSync('src/components/workbench/ResearchTab.tsx', 'utf8');
-for (const marker of ['chapters/research/threads', 'Recall graph', 'Close to memory', 'Research threads']) {
+for (const marker of ['chapters/research/threads', 'Recall graph', 'Close thread', 'Research threads', 'cogneeEnabled']) {
   if (!researchTabComponent.includes(marker)) {
     throw new Error(`Chapters guide Research frontend missing backend marker: ${marker}`);
   }
@@ -326,7 +331,7 @@ for (const marker of ['chapters/ach/suggest-hypotheses', 'chapters/ach/suggest-e
 }
 
 const toolMarketplaceComponent = readFileSync('src/components/tools/ToolMarketplace.tsx', 'utf8');
-for (const marker of ['chapters/tools/recipes', 'chapters/tools/run', 'DIALECTICA recipes', 'runDialecticaRecipe']) {
+for (const marker of ['Recipe library', 'Stage in', 'writeStagedMarketplaceContext', 'stageTargetHref', 'DIALECTICA recipes', 'runDialecticaRecipe']) {
   if (!toolMarketplaceComponent.includes(marker)) {
     throw new Error(`Chapters guide Tools frontend missing backend marker: ${marker}`);
   }

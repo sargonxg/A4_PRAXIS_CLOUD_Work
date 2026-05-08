@@ -6,7 +6,7 @@
 
 - Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `12_HYGIENE` low-risk items.
 - Prompts deferred: `08_THIN_CASE_CALIBRATION` (requires prompt-health runtime contract), `10_ACO_EXPLAINER` (product UI work still pending), `11_AUDIT_PROMOTION` full runtime tagging (only new gates were wired), Cloud SQL live row counts from `01` (blocked by private IP plus missing local `psql`/Cloud SQL Proxy).
-- Pre-existing audit failures surfaced: none from the focused audits run in this pass.
+- Pre-existing audit failures surfaced: `audit:workbench` now reaches its final route-count guard and fails on `35` visible app pages versus the current `<=34` ceiling.
 - Measured deltas:
   - Workbench root JS gzipped: current built workbench initial client JS is `511.3 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
   - Tools chapter density: live demo DOM count is 54 interactive controls after opening the closed Recipe library.
@@ -21,7 +21,7 @@
 - Started: 2026-05-08T00:27:51-04:00 checkpoint.
 - Branch: `main`
 - Last commit at start: `46d8cf1`
-- Last commit at end: `b3193c7`
+- Last commit at end: `c16dcd7` before this marketplace follow-up pass.
 - Total commits this session: `2`
 - Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`
 
@@ -30,7 +30,7 @@
 | File | Status | Notes |
 |---|---|---|
 | 01_DIAGNOSTICS | done | Gate attempted and stopped at `audit:ux-polish`; Cloud SQL instance discovered but live counts blocked by missing local `psql`/Cloud SQL Proxy and private IP; bundle, DOM density, prompt-health, Cognee copy, marketplace strings, and surface registry measured. |
-| 02_MARKETPLACE_HONESTY | done | Tools chapter is a Recipe library; non-SAT recipes stage hero-tool context; deterministic foundation strings are redacted from UI; audit wired. |
+| 02_MARKETPLACE_HONESTY | done | Tools chapter is a Recipe library; 53 non-SAT recipes stage hero-tool context; deterministic foundation strings are redacted from UI; stage-target coverage and UI-copy audits are wired. |
 | 03_CALIBRATION_INVARIANT | done | Visible hero tools are tiered; deterministic structural tools are labeled; calibrated AI hero routes are audited for `withCalibration`; docs updated. |
 | 04_COGNEE_UI_HONESTY | done | `/api/health/features` exposes server-derived flags; Cognee/memory UI copy is gated or neutralized; user-facing memory panel/client removed. |
 | 05_CHAPTER_CODE_SPLIT | done | Six heavy chapters and four substrate tabs are dynamic islands with skeletons; bundle audit wired into gate. |
@@ -80,6 +80,7 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 | `npm run audit:surface-registry-coherence` | pass |
 | `npm run audit:workspace-tabs-chapters` | pass |
 | `npm run audit:no-deterministic-tool-output-in-ui` | pass |
+| `npm run audit:stage-target-coverage` | pass, 53 non-SAT recipes staged |
 | `npm run audit:cognee-ui-honesty` | pass |
 | `npm run audit:hero-tool-calibration-coverage` | pass |
 | `npm run audit:library-ingest-consolidation` | pass |
@@ -88,7 +89,8 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 | `npm run audit:ai-provider-isolation` | pass |
 | `npm run audit:model-matrix-coverage` | pass |
 | `npm run audit:onboarding-gate` | pass |
-| `npm run audit:gate` | fail at `audit:ux-polish` |
+| `npm run audit:workbench` | fail at route-count ceiling, `35` visible app pages vs `<=34` |
+| `npm run audit:gate` | known fail before this slice at `audit:ux-polish`; current workbench audit also surfaces route-count ceiling |
 
 ### Postgres KG Live Counts
 

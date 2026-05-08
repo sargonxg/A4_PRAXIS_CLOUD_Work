@@ -10,6 +10,8 @@ export interface MarketplaceStagedContext {
   caseId: string;
   caseName: string;
   prompt: string;
+  flags?: Record<string, unknown>;
+  rationale: string;
   context: Record<string, unknown>;
   stagedAt: string;
 }

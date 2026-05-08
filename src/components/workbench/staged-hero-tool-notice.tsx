@@ -31,7 +31,7 @@ export function StagedHeroToolNotice({ heroToolIds }: { heroToolIds: Marketplace
         <div className="min-w-0">
           <p className="text-sm font-semibold text-navy-950">Recipe staged for this hero tool</p>
           <p className="mt-1 text-sm leading-6 text-slate-800">
-            The recipe library staged context here without running a foundation result. Review the prompt, then run the hero tool when ready.
+            The recipe library staged context here without producing a standalone recipe output. Review the prompt, then run the hero tool when ready.
           </p>
         </div>
       </div>
@@ -39,10 +39,14 @@ export function StagedHeroToolNotice({ heroToolIds }: { heroToolIds: Marketplace
         {items.map((item) => (
           <article key={`${item.heroToolId}:${item.recipeId}:${item.stagedAt}`} className="rounded-md border border-gold-200 bg-white p-3">
             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-navy-950">
+              <span className="rounded-full border border-gold-200 bg-gold-50 px-2 py-0.5 text-[10px] uppercase tracking-wider text-gold-800">
+                Staged from {item.recipeName}
+              </span>
               <span>{item.recipeName}</span>
               <ArrowRight className="h-3.5 w-3.5 text-gold-700" />
               <span>{item.heroToolName}</span>
             </div>
+            <p className="mt-2 text-xs leading-5 text-slate-650">{item.rationale}</p>
             <p className="mt-2 text-sm leading-6 text-slate-750">{item.prompt}</p>
           </article>
         ))}
