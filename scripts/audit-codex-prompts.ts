@@ -29,6 +29,10 @@ const required = [
   'docs/codex-prompts/PRAXIS_CODEX_30_EXTRACTION_AND_GRAPHRAG_WAVE.md',
   'docs/codex-prompts/PRAXIS_CODEX_31_ANALYTICS_SANCTIONS_SIMULATION_WAVE.md',
   'docs/codex-prompts/PRAXIS_V2_00_README.md',
+  'docs/codex-prompts/PRAXIS_V2_A0_MT_DATA_MODEL.md',
+  'docs/codex-prompts/PRAXIS_V2_A1_ORGID_CONTEXT.md',
+  'docs/codex-prompts/PRAXIS_V2_A2_COLLABORATORS_SCHEMA.md',
+  'docs/codex-prompts/PRAXIS_V2_A3_FIRESTORE_RULES.md',
 ];
 
 const failures: string[] = [];
@@ -39,7 +43,9 @@ for (const file of required) {
     continue;
   }
   const text = readFileSync(path, 'utf8');
-  if (!text.includes('PRAXIS') || text.length < 5000) failures.push(`${file} does not look like a complete pack prompt`);
+  if ((!text.includes('PRAXIS') && !text.includes('V2_WORK_PACK')) || text.length < 5000) {
+    failures.push(`${file} does not look like a complete pack prompt`);
+  }
 }
 
 if (failures.length > 0) {
@@ -48,4 +54,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Codex prompt pack audit passed for master charter, packs 03-16, packs 18-22, packs 26-31, and PRAXIS V2 README. (static-marker)');
+console.log('Codex prompt pack audit passed for master charter, packs 03-16, packs 18-22, packs 26-31, PRAXIS V2 README, and V2 Session A prompts A0-A3. (static-marker)');

@@ -4,14 +4,14 @@
 
 ## Morning Brief
 
-- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `V2_00_README`.
-- Prompts deferred: Cloud SQL live row counts from `01` (blocked by private IP plus missing local `psql`/Cloud SQL Proxy).
+- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `V2_00_README`, `V2_A0_MT_DATA_MODEL`.
+- Prompts deferred: Cloud SQL live row counts from `01` (blocked by private IP plus missing local `psql`/Cloud SQL Proxy); `V2_A1_ORGID_CONTEXT`, `V2_A2_COLLABORATORS_SCHEMA`, and `V2_A3_FIRESTORE_RULES` are blocked until all MT approval rows below are marked approved or explicitly revised.
 - Recovery loop resolved: `audit:ux-polish`, `audit:workbench`, `audit:evidence-drawer`, `audit:graph-viewer`, `audit:visualization`, `audit:master-charter`, stale Graphify outputs, and withCalibration unit fixture drift.
 - Measured deltas:
   - Workbench root JS gzipped: current built workbench initial client JS is `511.3 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
   - Tools chapter density: live demo DOM count is 54 interactive controls after opening the closed Recipe library.
   - Prompt-health: thin synthetic case `72/red`, rich Syria demo `94/yellow`, prompt block delta `+2179` bytes for rich.
-- Next-session priorities: start PRAXIS V2 Session A with `A0_MT_DATA_MODEL.md`, then `A1_ORGID_CONTEXT.md`; runtime document ingest parity and production workbench smoke remain carried follow-ups.
+- Next-session priorities: GC approval of the five MT decisions, then `A1_ORGID_CONTEXT.md`; runtime document ingest parity and production workbench smoke remain carried follow-ups.
 - Blockers requiring GC: none for the low-risk code changes here; production deployment/commit approval remains separate.
 
 ---
@@ -44,8 +44,25 @@
 | 13_ITERATE_LOOP | done | Recovery loop applied until `audit:gate` passed; fixed UX smoke markers, redirect-only visible route counting, evidence drawer immediate-run markers, lazy graph audit expectations, stale Graphify output, and withCalibration unit fixtures. |
 | STATUS_TEMPLATE | done | Root `STATUS.md` now conforms to the template contract with morning brief, metadata, baselines, pre-existing audit failures, per-prompt notes, blockers, and next-session notes. |
 | V2_00_README | done | Preserved the PRAXIS V2 institutional-foundations README under `docs/codex-prompts/`; audited the precondition as green; next executable prompt is Session A `A0_MT_DATA_MODEL.md`. |
+| V2_A0_MT_DATA_MODEL | done | Created `docs/architecture/MULTI_TENANT_MODEL.md`, recorded current single-user state, preserved A0-A3 prompts, and added the required MT approval gate. |
+| V2_A1_ORGID_CONTEXT | blocked | Must not start until MT-1 through MT-5 are approved or explicitly revised by GC. |
+| V2_A2_COLLABORATORS_SCHEMA | blocked | Depends on A1 and the MT approval gate. |
+| V2_A3_FIRESTORE_RULES | blocked | Depends on A1, A2, migration confirmation, and security tests; no rules changes made in A0. |
 
 Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blocked`.
+
+## Approvals Required
+
+These rows gate PRAXIS V2 Session A. A1-A6 cannot start until all five rows are
+marked `approved` or `revised: <alternative>`.
+
+| decision | option | approved_by | timestamp |
+|---|---|---|---|
+| MT-1 org model | A (implicit self-org) | pending GC | |
+| MT-2 case ownership | C (user-owned, org-scoped) | pending GC | |
+| MT-3 roles | owner/editor/viewer/commenter | pending GC | |
+| MT-4 invite | email + direct add | pending GC | |
+| MT-5 migration | lazy script | pending GC | |
 
 ## Baselines And Checks
 
@@ -329,15 +346,26 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 - Next executable file: `A0_MT_DATA_MODEL.md`.
 - Issues encountered: none; no production data or Firestore rule changes made in this README pass.
 
+### V2_A0_MT_DATA_MODEL
+
+- Completed: 2026-05-08.
+- Commit: current A0 pass.
+- Decision doc: `docs/architecture/MULTI_TENANT_MODEL.md`.
+- Current-state scan: `collaborators` has no current code hits; `orgId` exists in profile/context/service metadata but is not an access-control model; Firestore situation rules are still owner-only.
+- Approval gate: MT-1 through MT-5 are pending GC in `## Approvals Required`.
+- Prompt preservation: A0-A3 copied into `docs/codex-prompts/` and registered in `audit:codex-prompts`.
+- Issues encountered: A0 explicitly forbids starting A1 before approval, so A1-A3 implementation was not started.
+
 ## Blockers
 
 - Runtime verification still needed for: production workbench first mount, staged recipe navigation, document upload -> retrieval, thin-case prompt-health, and live fresh-account onboarding enforcement.
 - Live Cloud SQL row counts remain blocked until `psql`/Cloud SQL Proxy or a VPC-connected shell is available.
 - V2 Session B remains risk-gated on live Cloud SQL graph row counts; do not cut over graph reads/writes until `B0_KG_PREFLIGHT.md` is completed.
+- V2 Session A implementation is blocked until GC approves or revises MT-1 through MT-5 in `STATUS.md` or `docs/architecture/MULTI_TENANT_MODEL.md`.
 
 ## Notes For Next Session
 
-- Start V2 Session A by reading `docs/codex-prompts/PRAXIS_V2_00_README.md`, then `C:\Users\giuli\Downloads\files (7)\A0_MT_DATA_MODEL.md`.
+- Start V2 Session A implementation only after approving MT-1 through MT-5; then read `docs/codex-prompts/PRAXIS_V2_A1_ORGID_CONTEXT.md`.
 - Keep solo-user backwards compatibility as a hard invariant while adding team/org scaffolding.
 - Firestore rules changes in V2 Session A require matching tests in `tests/security/firestore-rules.test.ts`.
 - Runtime-smoke `08_THIN_CASE_CALIBRATION`: verify a real thin case returns 422, the help panel renders, and `forceRun: true` reaches the model with `<context-quality>` attached.
