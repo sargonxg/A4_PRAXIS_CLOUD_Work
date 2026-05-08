@@ -4,7 +4,7 @@
 
 ## Morning Brief
 
-- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `V2_00_README`, `V2_A0_MT_DATA_MODEL`, `V2_B0_KG_PREFLIGHT` local attempt, `V2_D0_STRUCTURED_EVENTS` static implementation, `V2_D1_KPI_PIPELINE` static assets.
+- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `V2_00_README`, `V2_A0_MT_DATA_MODEL`, `V2_B0_KG_PREFLIGHT` local attempt, `V2_D0_STRUCTURED_EVENTS` static implementation, `V2_D1_KPI_PIPELINE` static assets, `V2_ITERATE_LOOP`, `V2_STATUS_TEMPLATE`.
 - Prompts deferred: Cloud SQL live row counts from `01` and `V2_B0_KG_PREFLIGHT` are blocked locally by private IP plus missing local `psql`/Cloud SQL Proxy; `V2_A1_ORGID_CONTEXT` through `V2_A6_MT_AUDIT_LOG` are blocked until all MT approval rows below are marked approved or explicitly revised; `V2_B1_DUAL_WRITE_GRAPH` through `V2_B3_RETIRE_FIRESTORE_GRAPH` are blocked until B0 live counts select and approve Case 1/2/3, B1 runs clean for 7 days, and B2 runs clean for 7 days; `V2_C0_COGNEE_LIVE` and `V2_C1_MEMORY_RECALL_IN_CALIBRATION` are blocked because `praxis-cognee` is not deployed in Cloud Run; `V2_C2_AGENT_ENGINE_SUBAGENTS` is blocked pending the deploy-vs-rename decision.
 - Recovery loop resolved: `audit:ux-polish`, `audit:workbench`, `audit:evidence-drawer`, `audit:graph-viewer`, `audit:visualization`, `audit:master-charter`, stale Graphify outputs, and withCalibration unit fixture drift.
 - Measured deltas:
@@ -60,6 +60,8 @@
 | V2_C2_AGENT_ENGINE_SUBAGENTS | blocked | No `VERTEX_AGENT*` secrets or visible Agent Engine CLI surface; decision required: Option A deploy real artifacts or Option B rename subagent claims to calibrated pipeline. |
 | V2_D0_STRUCTURED_EVENTS | done | Typed schema, server emitter, browser intake, critical route hooks, 1KB details cap, unit test, docs, and `audit:telemetry-coverage` added. |
 | V2_D1_KPI_PIPELINE | partial | BigQuery views/queries, deploy helper, alert definitions, KPI/dashboard docs, and `audit:bq-views` added; live sink/dashboard verification waits for production D0 events. |
+| V2_ITERATE_LOOP | done | Preserved `ITERATE_LOOP.md` as a V2 control prompt, registered it in `audit:codex-prompts`, and kept the recovery playbook available for future audit/test failures. |
+| V2_STATUS_TEMPLATE | done | Preserved `STATUS_TEMPLATE.md` as a V2 control prompt, registered it in `audit:codex-prompts`, and reconciled its required operational-step structure with this richer status ledger. |
 
 Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blocked`.
 
@@ -87,6 +89,18 @@ marked `approved` or `revised: <alternative>`.
 | decision | recommended option | status | approved_by | timestamp |
 |---|---|---|---|---|
 | C2 Agent Engine subagents | B (rename labels to calibrated pipeline unless GC explicitly chooses deploy) | pending GC | | |
+
+## Pending Operational Steps
+
+| id | prompt | step | command | who | status |
+|---|---|---|---|---|---|
+| OP-001 | V2_A1_ORGID_CONTEXT | Approve MT-1 through MT-5 before org context work starts | Update the `## Approvals Required` rows in this file with `approved` or a revised option | GC | pending |
+| OP-002 | V2_B0_KG_PREFLIGHT | Run live Postgres graph counts from a VPC-connected shell | `psql "$PRAXIS_DATABASE_URL" -f docs/audits/2026-05-08-POSTGRES_KG_PREFLIGHT.sql` or run the equivalent queries in Cloud Shell | GC | pending |
+| OP-003 | V2_C0_COGNEE_LIVE | Deploy/provision `praxis-cognee` and bind service-to-service auth | Follow `docs/codex-prompts/PRAXIS_V2_C0_COGNEE_LIVE.md`; expected checks include `gcloud run services describe praxis-cognee --region=us-east4 --project=praxisbytacitus` | GC | pending |
+| OP-004 | V2_C2_AGENT_ENGINE_SUBAGENTS | Choose Agent Engine subagent posture | Mark C2 as Option A deploy or Option B rename in `## C2 Agent Engine Decision` | GC | pending |
+| OP-005 | V2_D1_KPI_PIPELINE | Create the D1 BigQuery dataset after D0 telemetry is deployed | `bq --project_id=praxisbytacitus mk --dataset praxis_telemetry` | GC | pending |
+| OP-006 | V2_D1_KPI_PIPELINE | Create/update the D1 Cloud Logging sink for structured telemetry | `gcloud logging sinks create praxis-telemetry-sink bigquery.googleapis.com/projects/praxisbytacitus/datasets/praxis_telemetry --log-filter='jsonPayload.message:"praxis.telemetry."' --project=praxisbytacitus` | GC | pending |
+| OP-007 | V2_D1_KPI_PIPELINE | Deploy D1 KPI views after sink rows exist | `PROJECT_ID=praxisbytacitus infrastructure/bigquery/deploy-views.sh` | GC | pending |
 
 ## Baselines And Checks
 
@@ -247,6 +261,13 @@ marked `approved` or `revised: <alternative>`.
 | audit:graph-viewer / audit:visualization | Static audits expected the old direct graph viewer import path instead of the lazy `WorkbenchGraphPanel` route. | fixed in `13_ITERATE_LOOP` |
 | audit:master-charter | Graphify outputs were stale against the current codebase. | fixed in `13_ITERATE_LOOP` |
 | npm test | withCalibration unit fixtures lagged current `withContextAware` and onboarding profile contracts. | fixed in `13_ITERATE_LOOP` |
+
+## Failures And Recoveries
+
+| task | date | failure | ITERATE_LOOP pattern | recovery | result |
+|---|---|---|---|---|---|
+| V2_D0_D1 | 2026-05-08 | `audit:gate` stopped at `audit:master-charter` because Graphify output was stale after telemetry/KPI changes. | Pattern 1 — failing audit/test | Ran `graphify update .`, then reran the failed gate tail from `audit:master-charter` through GCP posture. | success; tail passed and Graphify now reports 5843 nodes, 9952 edges, 834 communities. |
+| V2_ITERATE_LOOP_STATUS_TEMPLATE | 2026-05-08 | No runtime failure; control prompts were not preserved in `docs/codex-prompts/` or enforced by `audit:codex-prompts`. | Pattern 10 adjacent — operational/control step would be lost without a status row | Preserved both files, added marker-specific audit checks, and added `## Pending Operational Steps`. | success; `audit:codex-prompts` should now guard both control prompts. |
 
 ## Per-Prompt Notes
 
@@ -453,6 +474,21 @@ marked `approved` or `revised: <alternative>`.
 - Assets: BigQuery normalized events view, daily KPI/route/tool views, deploy helper, monitoring alert definitions, KPI runbook, and Looker Studio dashboard outline.
 - Enforcement: `audit:bq-views` added and wired into `audit:gate`.
 - Issues encountered: D1 requires D0 to be live with structured Cloud Logging rows before the BigQuery sink and dashboard can be verified.
+
+### V2_ITERATE_LOOP
+
+- Completed: 2026-05-08.
+- Prompt preservation: `ITERATE_LOOP.md` copied into `docs/codex-prompts/PRAXIS_V2_ITERATE_LOOP.md`.
+- Audit update: `audit:codex-prompts` now validates the recovery playbook with marker checks for Pattern 1, Pattern 12, and the fallback path.
+- Issues encountered: none in this pass; latest prior recovery was stale Graphify after Session D telemetry/KPI changes.
+
+### V2_STATUS_TEMPLATE
+
+- Completed: 2026-05-08.
+- Prompt preservation: `STATUS_TEMPLATE.md` copied into `docs/codex-prompts/PRAXIS_V2_STATUS_TEMPLATE.md`.
+- Audit update: `audit:codex-prompts` now validates status-template markers for pending operational steps, diagnostics log, and morning brief.
+- Status reconciliation: added `## Pending Operational Steps` with the active GC/operator gates for Sessions A-D.
+- Issues encountered: the current `STATUS.md` is intentionally richer than the template, so it was updated in place rather than overwritten.
 
 ## Blockers
 

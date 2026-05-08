@@ -1,5 +1,9 @@
 # PRAXIS Build Log
 
+## 2026-05-08 — V2 recovery loop and status control prompts
+
+Preserved `ITERATE_LOOP.md` and `STATUS_TEMPLATE.md` as first-class V2 control prompts under `docs/codex-prompts/`, updated `audit:codex-prompts` so recovery/status docs are checked by marker-specific rules, and reconciled `STATUS.md` with the template's pending-operational-step contract. No app runtime code changed in this pass; the work hardens the handoff loop that keeps risky V2 work from silently advancing past blocked operations.
+
 ## 2026-05-08 — Structured telemetry and KPI assets
 
 Built Session D from `D0_STRUCTURED_EVENTS.md` and `D1_KPI_PIPELINE.md`: added a typed telemetry schema, server JSON-line emitter, authenticated browser intake route, 1KB details cap, and first critical emit sites for case lifecycle, calibrated AI/tool lifecycle, document upload, and graph population. Added D1 BigQuery event/KPI views, deploy helper, alert definitions, KPI/dashboard docs, and static audits for both D0 and D1. Runtime production validation remains deferred until this commit is deployed and Cloud Logging shows `praxis.telemetry.*` rows; latency and token cost on the Syria demo were not measured in this local static pass.
