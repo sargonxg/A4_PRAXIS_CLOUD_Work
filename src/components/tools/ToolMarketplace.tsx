@@ -17,6 +17,7 @@ import { redactMarketplaceFoundationJson, redactMarketplaceFoundationMarkers } f
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { cn } from '@/lib/utils/cn';
 import { ToolTransparencyCard } from '@/components/tools/ToolTransparencyCard';
+import { useFeatureFlags } from '@/lib/features/client';
 
 const CATEGORIES: Array<MarketplaceToolCategory | 'all'> = [
   'all',
@@ -105,6 +106,8 @@ const DIALECTICA_RECIPE_PATTERNS: DialecticaRecipe[] = [
 export function ToolMarketplace() {
   const router = useRouter();
   const { caseId, caseModule, activeTab } = useWorkbenchScope();
+  const features = useFeatureFlags();
+  const agentEngineSubagentsEnabled = features.agentEngineSubagents.enabled;
   const ontology = getOntologyForDomain(caseModule.manifest.domain);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<MarketplaceToolCategory | 'all'>('all');
@@ -707,9 +710,9 @@ export function ToolMarketplace() {
             <div className="mt-3 flex flex-wrap gap-2">
               <span className="rounded bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">v{tool.version}</span>
               <span className="rounded bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">context-aware</span>
-              {tool.subagentDeps.map((subagent) => (
+              {agentEngineSubagentsEnabled ? tool.subagentDeps.map((subagent) => (
                 <span key={subagent} className="rounded bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">{subagent}</span>
-              ))}
+              )) : null}
             </div>
           </article>
         ))}

@@ -24,6 +24,7 @@ interface StakeholderProfile {
 export function GraphIntelligencePanels({ caseModule, graph }: GraphIntelligencePanelsProps) {
   const features = useFeatureFlags();
   const cogneeEnabled = features.cognee.enabled;
+  const postgresKgEnabled = features.postgresKg.enabled;
   const situation = caseModule.situation;
   const timelineItems = toTimelineItems(graph);
   const mapPoints = toMapPoints(graph);
@@ -71,7 +72,12 @@ export function GraphIntelligencePanels({ caseModule, graph }: GraphIntelligence
         <StakeholderPanel stakeholders={stakeholders} />
       </div>
 
-      {cogneeEnabled ? <MemoryMarketplacePanel caseModule={caseModule} /> : null}
+      {cogneeEnabled || postgresKgEnabled ? (
+        <MemoryMarketplacePanel
+          caseModule={caseModule}
+          cogneeEnabled={cogneeEnabled}
+        />
+      ) : null}
     </div>
   );
 }
@@ -193,20 +199,32 @@ function StakeholderPanel({ stakeholders }: { stakeholders: StakeholderProfile[]
   );
 }
 
-function MemoryMarketplacePanel({ caseModule }: { caseModule: CaseModule }) {
+function MemoryMarketplacePanel({
+  caseModule,
+  cogneeEnabled,
+}: {
+  caseModule: CaseModule;
+  cogneeEnabled: boolean;
+}) {
   const claimCoverage = Math.round(caseModule.truthLayers.claim.provenanceCoverage * 100);
   const evidenceCoverage = Math.round(caseModule.truthLayers.evidence.provenanceCoverage * 100);
 
   return (
-    <SurfacePanel icon={Database} title="Cognee, GraphRAG, And Marketplace Handoff" eyebrow="architecture preserved">
+    <SurfacePanel
+      icon={Database}
+      title={cogneeEnabled ? 'Cognee, GraphRAG, And Marketplace Handoff' : 'Postgres KG And Marketplace Handoff'}
+      eyebrow="architecture preserved"
+    >
       <div className="grid gap-3 md:grid-cols-3">
         <HandoffStep
           title="1. Canonical graph"
           detail={`Postgres remains the source of truth. Claim provenance is ${claimCoverage}% and evidence provenance is ${evidenceCoverage}%.`}
         />
         <HandoffStep
-          title="2. Cognee memory"
-          detail="Cognee recall and cognify are allowed to create candidates and context, but canonical writes stay review-gated."
+          title={cogneeEnabled ? '2. Cognee memory' : '2. Derived context'}
+          detail={cogneeEnabled
+            ? 'Cognee recall and cognify are allowed to create candidates and context, but canonical writes stay review-gated.'
+            : 'Derived candidates and contextual extracts remain advisory until reviewed into the canonical graph.'}
         />
         <HandoffStep
           title="3. Tools marketplace"

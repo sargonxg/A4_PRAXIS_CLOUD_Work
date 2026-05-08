@@ -92,11 +92,18 @@ requireMarkers('backend/data/ontologies/praxis_aco.owl', [
   'rdf:about="#Narrative"',
 ]);
 
-requireMarkers('src/components/memory/MemoryPanel.tsx', [
-  'Memory recall',
-  'Candidate review',
-  'memoryCandidates',
-  'memoryReject',
+requireMarkers('src/app/api/health/features/route.ts', [
+  "process.env.COGNEE_ENABLED === 'true'",
+  'COGNEE_BACKEND_URL',
+  'VERTEX_AGENT_ENGINE_ID',
+  'Cache-Control',
+]);
+
+requireMarkers('src/lib/features/client.ts', [
+  'useFeatureFlags',
+  'useCogneeEnabled',
+  'cachedFeatures',
+  'expiresAt',
 ]);
 
 requireMarkers('src/lib/workbench/tabs.ts', [

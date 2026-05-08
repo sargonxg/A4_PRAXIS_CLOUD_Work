@@ -64,8 +64,25 @@ if (!featureRoute.includes("process.env.COGNEE_ENABLED === 'true'")) {
   });
 }
 
+if (!featureRoute.includes('process.env.VERTEX_AGENT_ENGINE_ID')) {
+  findings.push({
+    file: FEATURE_ROUTE,
+    line: 1,
+    text: 'agentEngineSubagents must derive from VERTEX_AGENT_ENGINE_ID',
+  });
+}
+
 for (const file of UI_ROOTS.flatMap(walk)) {
   const content = readFileSync(file, 'utf8');
+
+  if (content.includes('subagentDeps.map') && !content.includes('agentEngineSubagents.enabled')) {
+    findings.push({
+      file: relativePath(file),
+      line: lineNumber(content, content.indexOf('subagentDeps.map')),
+      text: 'subagent dependency pills must be gated by agentEngineSubagents.enabled',
+    });
+  }
+
   if (isCogneeGated(content)) continue;
 
   for (const pattern of FORBIDDEN_PATTERNS) {

@@ -21,7 +21,7 @@
 - Started: 2026-05-08T00:27:51-04:00 checkpoint.
 - Branch: `main`
 - Last commit at start: `46d8cf1`
-- Last commit at end: `c2d2b6f` before this calibration follow-up pass.
+- Last commit at end: `cbca72e` before this Cognee honesty follow-up pass.
 - Total commits this session: `2`
 - Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`
 
@@ -32,7 +32,7 @@
 | 01_DIAGNOSTICS | done | Gate attempted and stopped at `audit:ux-polish`; Cloud SQL instance discovered but live counts blocked by missing local `psql`/Cloud SQL Proxy and private IP; bundle, DOM density, prompt-health, Cognee copy, marketplace strings, and surface registry measured. |
 | 02_MARKETPLACE_HONESTY | done | Tools chapter is a Recipe library; 53 non-SAT recipes stage hero-tool context; deterministic foundation strings are redacted from UI; stage-target coverage and UI-copy audits are wired. |
 | 03_CALIBRATION_INVARIANT | done | All 55 registry tools are tiered (`46` calibrated AI, `9` deterministic structural); deterministic structural tools are labeled; calibrated AI hero routes are audited for `withCalibration`; negative flip test catches `context-builder`; docs updated. |
-| 04_COGNEE_UI_HONESTY | done | `/api/health/features` exposes server-derived flags; Cognee/memory UI copy is gated or neutralized; user-facing memory panel/client removed. |
+| 04_COGNEE_UI_HONESTY | done | `/api/health/features` exposes server-derived flags with reasons; Cognee/memory UI copy is gated or neutralized; user-facing memory panel/client removed; Agent Engine subagent labels are hidden unless `VERTEX_AGENT_ENGINE_ID` is set; legacy Cognee audits now enforce the boundary instead of requiring deleted UI. |
 | 05_CHAPTER_CODE_SPLIT | done | Six heavy chapters and four substrate tabs are dynamic islands with skeletons; bundle audit wired into gate. |
 | 06_LIBRARY_INGEST_CONSOLIDATION | partial | Upload UI now saves through `/api/documents/upload` before attempting backend Library ingest; static audit added. Runtime RAG retrieval verification not run. |
 | 07_ONBOARDING_GATE | done | Shared onboarding helper added; calibrated routes import it; post-login redirect and Next proxy route incomplete profiles to `/onboarding`; completion refreshes signed session claim; workbench banner added; audit wired. |
@@ -66,7 +66,7 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 | audit:ux-polish | fail | static-marker | `tests/e2e/app-usability-smoke.spec.ts` missing `tool-marketplace` and `Memo Studio` coverage. Gate stopped here. |
 | audit:no-deterministic-tool-output-in-ui | pass | static-marker | Prevents `deterministic-foundation`, `foundation-run`, and `marketplace-foundation-v1` from visible UI. |
 | audit:hero-tool-calibration-coverage | pass | static-marker | Checked 12 visible hero tools and catches deterministic/calibrated mismatches. |
-| audit:cognee-ui-honesty | pass | static-marker | Verifies Cognee/memory copy is not exposed by default-disabled UI. |
+| audit:cognee-ui-honesty | pass | static-marker | Verifies Cognee/memory copy is not exposed by default-disabled UI and marketplace subagent pills are feature-gated. |
 | audit:surface-registry-coherence | pass | static-marker | Ensures product surfaces are reachable through tabs or chapters. |
 | audit:workbench-bundle | pass | build-output | Measured current workbench initial client JS at `511.1 KB gzip`. |
 | audit:library-ingest-consolidation | pass | static-marker | Ensures upload UI calls both document save and backend ingest paths. |
@@ -82,12 +82,16 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 | `npm run audit:no-deterministic-tool-output-in-ui` | pass |
 | `npm run audit:stage-target-coverage` | pass, 53 non-SAT recipes staged |
 | `npm run audit:cognee-ui-honesty` | pass |
+| `npm run audit:cognee` | pass |
+| `npm run audit:cognee-operations` | pass |
 | `npm run audit:hero-tool-calibration-coverage` | pass |
 | `npm run audit:library-ingest-consolidation` | pass |
 | `npm run audit:workbench-bundle` | pass, `511.1 KB gzip` |
 | `npm run audit:embedding-dim` | pass |
 | `npm run audit:ai-provider-isolation` | pass |
 | `npm run audit:model-matrix-coverage` | pass |
+| `/api/health/features` direct route smoke | pass, defaults off; env flip enables `cognee`, `postgresKg`, and `agentEngineSubagents` |
+| `npm run audit:gate` | fail, pre-existing `audit:ux-polish` coverage gaps for `tool-marketplace` and `Memo Studio` |
 | `npm run audit:onboarding-gate` | pass |
 | `npm run audit:workbench` | fail at route-count ceiling, `35` visible app pages vs `<=34` |
 | `npm run audit:gate` | known fail before this slice at `audit:ux-polish`; current workbench audit also surfaces route-count ceiling |

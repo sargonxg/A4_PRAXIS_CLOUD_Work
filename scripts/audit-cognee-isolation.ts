@@ -17,9 +17,10 @@ const requiredFiles = [
   'backend/migrations/sql/cognee_database_setup.sql',
   'backend/migrations/sql/cognee_rls_apply.sql',
   'src/app/api/memory/[...slug]/route.ts',
-  'src/components/memory/MemoryPanel.tsx',
+  'src/app/api/health/features/route.ts',
+  'src/hooks/use-feature-flags.ts',
+  'src/lib/features/client.ts',
   'src/lib/knowledge/memory-layer.ts',
-  'src/lib/memory/client.ts',
   'src/types/env.d.ts',
   'docs/architecture/COGNEE_MEMORY_LAYER.md',
   'docs/runbooks/MEMORY_LAYER_RUNBOOK.md',
@@ -78,6 +79,11 @@ if (!backendMain.includes('memory.router') || !backendMain.includes('/api/v1/mem
 const nextMemoryRoute = readFileSync(path.join(root, 'src/app/api/memory/[...slug]/route.ts'), 'utf8');
 if (!nextMemoryRoute.includes('withAuth')) {
   failures.push('src/app/api/memory/[...slug]/route.ts is not protected by withAuth');
+}
+
+const featureRoute = readFileSync(path.join(root, 'src/app/api/health/features/route.ts'), 'utf8');
+for (const marker of ["process.env.COGNEE_ENABLED === 'true'", 'COGNEE_BACKEND_URL', 'VERTEX_AGENT_ENGINE_ID']) {
+  if (!featureRoute.includes(marker)) failures.push(`src/app/api/health/features/route.ts missing marker: ${marker}`);
 }
 
 const cogneeSetupSql = readFileSync(path.join(root, 'backend/migrations/sql/cognee_database_setup.sql'), 'utf8');
