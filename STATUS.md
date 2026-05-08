@@ -5,13 +5,13 @@
 ## Morning Brief
 
 - Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `V2_00_README`, `V2_A0_MT_DATA_MODEL`, `V2_B0_KG_PREFLIGHT` local attempt.
-- Prompts deferred: Cloud SQL live row counts from `01` and `V2_B0_KG_PREFLIGHT` are blocked locally by private IP plus missing local `psql`/Cloud SQL Proxy; `V2_A1_ORGID_CONTEXT` through `V2_A6_MT_AUDIT_LOG` are blocked until all MT approval rows below are marked approved or explicitly revised; `V2_B1_DUAL_WRITE_GRAPH` through `V2_B3_RETIRE_FIRESTORE_GRAPH` are blocked until B0 live counts select and approve Case 1/2/3, B1 runs clean for 7 days, and B2 runs clean for 7 days; `V2_C0_COGNEE_LIVE` and `V2_C1_MEMORY_RECALL_IN_CALIBRATION` are blocked because `praxis-cognee` is not deployed in Cloud Run.
+- Prompts deferred: Cloud SQL live row counts from `01` and `V2_B0_KG_PREFLIGHT` are blocked locally by private IP plus missing local `psql`/Cloud SQL Proxy; `V2_A1_ORGID_CONTEXT` through `V2_A6_MT_AUDIT_LOG` are blocked until all MT approval rows below are marked approved or explicitly revised; `V2_B1_DUAL_WRITE_GRAPH` through `V2_B3_RETIRE_FIRESTORE_GRAPH` are blocked until B0 live counts select and approve Case 1/2/3, B1 runs clean for 7 days, and B2 runs clean for 7 days; `V2_C0_COGNEE_LIVE` and `V2_C1_MEMORY_RECALL_IN_CALIBRATION` are blocked because `praxis-cognee` is not deployed in Cloud Run; `V2_C2_AGENT_ENGINE_SUBAGENTS` is blocked pending the deploy-vs-rename decision.
 - Recovery loop resolved: `audit:ux-polish`, `audit:workbench`, `audit:evidence-drawer`, `audit:graph-viewer`, `audit:visualization`, `audit:master-charter`, stale Graphify outputs, and withCalibration unit fixture drift.
 - Measured deltas:
   - Workbench root JS gzipped: current built workbench initial client JS is `511.3 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
   - Tools chapter density: live demo DOM count is 54 interactive controls after opening the closed Recipe library.
   - Prompt-health: thin synthetic case `72/red`, rich Syria demo `94/yellow`, prompt block delta `+2179` bytes for rich.
-- Next-session priorities: run B0 KG preflight from a VPC-connected shell, deploy or provision `praxis-cognee` before C0, GC approval of the five MT decisions, then `A1_ORGID_CONTEXT.md`; runtime document ingest parity and production workbench smoke remain carried follow-ups.
+- Next-session priorities: decide C2 Option A deploy vs Option B rename, run B0 KG preflight from a VPC-connected shell, deploy or provision `praxis-cognee` before C0, GC approval of the five MT decisions, then `A1_ORGID_CONTEXT.md`; runtime document ingest parity and production workbench smoke remain carried follow-ups.
 - Blockers requiring GC: none for the low-risk code changes here; production deployment/commit approval remains separate.
 
 ---
@@ -57,6 +57,7 @@
 | V2_B3_RETIRE_FIRESTORE_GRAPH | blocked | Must not start until B2 has run for at least 7 production days with Postgres reads, shadow drift is below 0.1%, telemetry is over 99% Postgres, and GC explicitly signs off. |
 | V2_C0_COGNEE_LIVE | blocked | `praxis-cognee` Cloud Run service is not present in `praxisbytacitus`; repo also lacks `infrastructure/cloudrun/praxis-cognee/`. |
 | V2_C1_MEMORY_RECALL_IN_CALIBRATION | blocked | Depends on C0 smoke-green with `COGNEE_ENABLED=true`; must not wire memory recall into calibration before live Cognee exists. |
+| V2_C2_AGENT_ENGINE_SUBAGENTS | blocked | No `VERTEX_AGENT*` secrets or visible Agent Engine CLI surface; decision required: Option A deploy real artifacts or Option B rename subagent claims to calibrated pipeline. |
 
 Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blocked`.
 
@@ -78,6 +79,12 @@ marked `approved` or `revised: <alternative>`.
 | decision | status | approved_by | timestamp |
 |---|---|---|---|
 | B0 KG preflight | blocked: live SQL counts and latency not measured from local shell | pending GC | |
+
+## C2 Agent Engine Decision
+
+| decision | recommended option | status | approved_by | timestamp |
+|---|---|---|---|---|
+| C2 Agent Engine subagents | B (rename labels to calibrated pipeline unless GC explicitly chooses deploy) | pending GC | | |
 
 ## Baselines And Checks
 
@@ -410,6 +417,17 @@ marked `approved` or `revised: <alternative>`.
 - C1 status: blocked until C0 smoke test is green and production has `COGNEE_ENABLED=true` plus `COGNEE_BACKEND_URL`.
 - Issues encountered: no memory/calibration code changed because wiring recall into calibration before live Cognee would violate the current honesty guardrails.
 
+### V2_C2_AGENT_ENGINE_SUBAGENTS
+
+- Completed: 2026-05-08 as a decision-gate intake.
+- Commit: current C2 intake pass.
+- Prompt preservation: C2 copied into `docs/codex-prompts/` and registered in `audit:codex-prompts`.
+- Runtime check: no `VERTEX_AGENT*` secrets found in Secret Manager.
+- CLI check: local `gcloud ai` does not expose `reasoning-engines`; Agent Engine deployment cannot be verified from this shell.
+- Codebase check: marketplace `subagentDeps` metadata still exists, while visible marketplace pills remain gated behind the Agent Engine feature flag.
+- Decision status: pending GC. Default recommendation from C2 is Option B, rename labels to "calibrated pipeline" unless GC explicitly approves deploying real Agent Engine artifacts.
+- Issues encountered: no registry/docs rename and no Agent Engine deployment prep were started because the C2 decision is binary and explicit.
+
 ## Blockers
 
 - Runtime verification still needed for: production workbench first mount, staged recipe navigation, document upload -> retrieval, thin-case prompt-health, and live fresh-account onboarding enforcement.
@@ -419,12 +437,14 @@ marked `approved` or `revised: <alternative>`.
 - B1 dual-write implementation is blocked until `docs/audits/2026-05-08-POSTGRES_KG_PREFLIGHT.md` has live counts, pgvector latency, schema/index health, selected Case 1/2/3, and GC approval.
 - B2/B3 graph cutover work is blocked by the required 7-day verification windows after B1 and B2.
 - C0/C1 are blocked until `praxis-cognee` exists as a healthy Cloud Run service with service-to-service auth and production env binding.
+- C2 is blocked until GC chooses Option A deploy or Option B rename; current evidence supports Option B as the lower-cost honest path.
 
 ## Notes For Next Session
 
 - Start V2 Session A implementation only after approving MT-1 through MT-5; then read `docs/codex-prompts/PRAXIS_V2_A1_ORGID_CONTEXT.md`.
 - To unblock B0, run the documented SQL from a VPC-connected Cloud Shell/bastion/worker against `praxisbytacitus:us-east4:praxisbytacitus-instance`.
 - To unblock C0, deploy/provision `praxis-cognee`, add monolith `roles/run.invoker`, set `COGNEE_BACKEND_URL`, then run the smoke test before enabling `COGNEE_ENABLED=true`.
+- To unblock C2, mark `C2 Agent Engine subagents` approved for Option A or Option B in `STATUS.md`; Option B should be the default unless Agent Engine deployment is explicitly funded.
 - Keep solo-user backwards compatibility as a hard invariant while adding team/org scaffolding.
 - Firestore rules changes in V2 Session A require matching tests in `tests/security/firestore-rules.test.ts`.
 - Runtime-smoke `08_THIN_CASE_CALIBRATION`: verify a real thin case returns 422, the help panel renders, and `forceRun: true` reaches the model with `<context-quality>` attached.
