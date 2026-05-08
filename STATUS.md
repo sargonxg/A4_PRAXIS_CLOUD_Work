@@ -163,7 +163,8 @@ marked `approved` or `revised: <alternative>`.
 | `npm run audit:embedding-dim` | pass |
 | `npm run audit:telemetry-coverage` | pass |
 | `npm run audit:bq-views` | pass |
-| `npm run audit:codex-prompts` | pass, Session D prompts D0-D1 included |
+| `npm run audit:codex-prompts` | pass, V2 prompts A0-A6, B0-B3, C0-C2, D0-D1, Z1-Z3, and control prompts included |
+| `npm run audit:v2-prompt-pack-completion` | pass, all V2 prompts preserved, status rows present, blocker gates explicit, and D/Z guard audits in `audit:gate` |
 | `npm run test -- tests/unit/lib/telemetry/emit.test.ts` | pass, 2 tests |
 | `npm run audit:ai-provider-isolation` | pass |
 | `npm run audit:model-matrix-coverage` | pass |
@@ -177,8 +178,8 @@ marked `approved` or `revised: <alternative>`.
 | `npm run audit:graph-viewer` | pass |
 | `npm run audit:visualization` | pass |
 | `npm run audit:master-charter` | pass after Graphify refresh |
-| `npm run test` | pass, 146 files and 573 tests |
-| `graphify update .` | pass, latest rebuild 5843 nodes, 9952 edges, and 834 communities; HTML skipped because the graph exceeds the 5000-node render limit |
+| `npm run test` | pass, 147 files and 575 tests |
+| `graphify update .` | pass, latest rebuild 5872 nodes, 10007 edges, and 839 communities; HTML skipped because the graph exceeds the 5000-node render limit |
 
 ### Postgres KG Live Counts
 

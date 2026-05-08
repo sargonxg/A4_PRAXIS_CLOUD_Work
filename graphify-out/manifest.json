@@ -1399,6 +1399,10 @@
     "mtime": 1778222025.5377305,
     "hash": "9a25186001709edfb4d39c1faeaa488d"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-v2-prompt-pack-completion.ts": {
+    "mtime": 1778229670.9153557,
+    "hash": "01d9b6c7e187ed472b3b7b0535b6ca62"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\scripts\\audit-verb-hookup.ts": {
     "mtime": 1778222025.5377305,
     "hash": "08c604d6db577a41aaabe0775a2ffc96"
@@ -6388,8 +6392,8 @@
     "hash": "b574cfc27ca97dacb1a663bdcd0800d4"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\BUILD_LOG.md": {
-    "mtime": 1778229221.9242082,
-    "hash": "cf02666539cea4079f42d8ec2550c7a9"
+    "mtime": 1778229670.9153557,
+    "hash": "95ea8c75a5cc9be0c23d50d11dd06d8d"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\CHANGELOG.md": {
     "mtime": 1778155439.4593954,
@@ -7006,6 +7010,10 @@
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-POSTGRES_KG_PREFLIGHT.md": {
     "mtime": 1778225661.897945,
     "hash": "d3ea0b4f166a3b52c19caa9e9d581015"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-V2-PROMPT-PACK-COMPLETION.md": {
+    "mtime": 1778229670.9153557,
+    "hash": "8ab48a9806dfce4d0490540242fad02f"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-V2_CONTROL_LOOP_STATUS.md": {
     "mtime": 1778227496.487441,

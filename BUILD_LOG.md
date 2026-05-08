@@ -1,5 +1,9 @@
 # PRAXIS Build Log
 
+## 2026-05-08 — V2 prompt pack completion checkpoint
+
+Checked the full `files (7)` V2 prompt pack end-to-end: every prompt is preserved in `docs/codex-prompts/`, every prompt has a status row in `STATUS.md`, and the safe implementation slices already built for A0, D0, D1 static assets, control prompts, and Z1-Z3 are now summarized in `docs/audits/2026-05-08-V2-PROMPT-PACK-COMPLETION.md`. Added `audit:v2-prompt-pack-completion` so the repo fails if a prompt disappears, a blocker gate is removed, or the D/Z guard audits drift out of `audit:gate`. A1-A6, B0-B3, C0-C2, and live portions of D1/Z1/Z2/Z3 remain explicit approval/live-infra gates rather than fake-completed code.
+
 ## 2026-05-08 — Z3 deep research route consolidation
 
 Built `Z3_DEEP_RESEARCH_CONSOLIDATE.md`: preserved the prompt, documented the route comparison and decision in `docs/architecture/DEEP_RESEARCH.md`, chose `/api/ai/deep-search-agent` as canonical, and soft-deprecated `/api/ai/deep-research` as a local research-engine fallback. Both routes now share the same Deep Research Agent SSE envelope (`planning`, `research`, `synthesis`, `done`, `error`), the legacy tool registry entry points at the canonical route, and `scripts/verify-tools.ts` no longer exercises the deprecated endpoint. Added `audit:deep-research-canonical` to the gate and regenerated tool docs. Production p50/p95/cost/failure metrics remain unmeasured because D1 BigQuery telemetry is not available from this local pass.
