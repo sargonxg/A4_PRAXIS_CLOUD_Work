@@ -2,9 +2,12 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { GitBranch, Layers3, ListChecks, Network, ShieldCheck, Sparkles } from 'lucide-react';
+import { BookOpen, GitBranch, Layers3, ListChecks, Network, ShieldCheck, Sparkles } from 'lucide-react';
+import { AcoFirstTimeOverlay } from '@/components/ontology/AcoFirstTimeOverlay';
 import { OntologyBadge } from '@/components/ontology/OntologyBadge';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/lib/auth/auth-context';
+import { ACO_COPY, ACO_THESIS_COPY } from '@/lib/ontology/aco-copy';
 import { CASE_ONTOLOGIES, getOntologyForDomain, summarizeOntologyMapping } from '@/lib/ontology/registry';
 import { activeOntologyIds, getOntologyStatusesForIds } from '@/lib/ontology/validator-pass-rate';
 import type { OntologyId } from '@/lib/ontology/types';
@@ -12,13 +15,17 @@ import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 
 export function OntologySchemaViewer() {
   const { caseId, caseModule } = useWorkbenchScope();
+  const { user } = useAuth();
   const ontology = getOntologyForDomain(caseModule.manifest.domain);
   const mapping = summarizeOntologyMapping(ontology);
   const [activeIds, setActiveIds] = useState<OntologyId[]>(() => activeOntologyIds(caseModule));
   const [pendingId, setPendingId] = useState<OntologyId>('humanitarian');
   const [ontologyNote, setOntologyNote] = useState<string | null>(null);
+  const [grammarOverlayVersion, setGrammarOverlayVersion] = useState(0);
   const activeOntologies = useMemo(() => getOntologyStatusesForIds(caseModule, activeIds), [activeIds, caseModule]);
   const availableOntologies = CASE_ONTOLOGIES.filter((item) => !activeIds.includes(item.id));
+  const core = ACO_COPY.filter((entity) => entity.tier === 'core');
+  const extended = ACO_COPY.filter((entity) => entity.tier === 'extended');
 
   async function mutateOntology(action: 'add' | 'remove', ontologyId: OntologyId) {
     if (action === 'add' && activeIds.length >= 3) {
@@ -51,6 +58,47 @@ export function OntologySchemaViewer() {
 
   return (
     <div data-testid="ontology-schema-viewer" className="space-y-6">
+      {grammarOverlayVersion > 0 ? (
+        <AcoFirstTimeOverlay
+          key={grammarOverlayVersion}
+          userKey={user?.id ?? caseId}
+          trigger="manual"
+        />
+      ) : null}
+
+      <section className="rounded-lg border border-gold-200 bg-gold-50 p-5 shadow-sm shadow-navy-950/5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-4xl">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-gold-700" />
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-navy-700">ACO reference</p>
+            </div>
+            <h2 className="mt-2 text-lg font-semibold text-navy-950">The 14-entity conflict grammar</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-800">{ACO_THESIS_COPY}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {core.map((entity) => (
+                <span key={entity.id} className="rounded-full border border-navy-200 bg-white px-2.5 py-1 text-xs font-semibold text-navy-900">
+                  {entity.name}
+                </span>
+              ))}
+              {extended.map((entity) => (
+                <span key={entity.id} className="rounded-full border border-gold-200 bg-white/80 px-2.5 py-1 text-xs font-semibold text-slate-800">
+                  {entity.name}
+                </span>
+              ))}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setGrammarOverlayVersion((current) => current + 1)}
+            className="inline-flex items-center gap-2 rounded-md bg-navy-900 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800"
+          >
+            <BookOpen className="h-4 w-4" />
+            View the conflict grammar
+          </button>
+        </div>
+      </section>
+
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-navy-950/5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="max-w-3xl">

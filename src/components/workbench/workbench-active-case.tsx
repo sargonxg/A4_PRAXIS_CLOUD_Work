@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { ArrowLeft, Bot, ShieldAlert, ShieldCheck, X } from 'lucide-react';
+import { AcoFirstTimeOverlay } from '@/components/ontology/AcoFirstTimeOverlay';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { WorkbenchChapterRenderer } from '@/components/workbench/chapter-renderer';
 import { WorkbenchScopeProvider, useWorkbenchScope } from '@/components/workbench/workbench-scope';
@@ -35,6 +36,7 @@ function WorkbenchActiveCaseInner({
 
   return (
     <main className="min-h-screen bg-slate-50">
+      {user ? <AcoFirstTimeOverlay userKey={user.id} trigger="first-case-open" /> : null}
       <header className="border-b border-slate-200 bg-white">
         {showOnboardingBanner ? (
           <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-950">

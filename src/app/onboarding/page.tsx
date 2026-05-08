@@ -167,10 +167,18 @@ function OnboardingWizard() {
               />
             )}
             {step === 4 && (
-              <CompletionSuccess
-                profile={profile}
-                onComplete={complete}
-              />
+              <>
+                <CompletionSuccess
+                  profile={profile}
+                  onComplete={complete}
+                />
+                <p className="mt-4 text-xs leading-5 text-slate-600">
+                  PRAXIS organizes every case around 14 conflict-grammar entities
+                  (Actor, Claim, Interest, Constraint, Leverage, Commitment, Event,
+                  Narrative, plus six extended types). You&apos;ll see the full primer
+                  the first time you open a case.
+                </p>
+              </>
             )}
           </div>
         </div>
