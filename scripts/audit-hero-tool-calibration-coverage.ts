@@ -44,13 +44,20 @@ for (const tool of heroTools) {
     continue;
   }
 
-  if (tool.tier === 'deterministic-structural') continue;
-
-  if (tool.tier !== 'calibrated-ai') {
+  if (tool.tier !== 'calibrated-ai' && tool.tier !== 'deterministic-structural') {
     findings.push({
       file: 'src/lib/constants/tool-registry.ts',
       line: registryLine(tool.id),
       message: `${tool.id} has unsupported tier ${String(tool.tier)}`,
+    });
+    continue;
+  }
+
+  if (!tool.aiRoute) {
+    findings.push({
+      file: 'src/lib/constants/tool-registry.ts',
+      line: registryLine(tool.id),
+      message: `${tool.id} is a visible hero tool and must point to an aiRoute`,
     });
     continue;
   }
@@ -70,15 +77,20 @@ for (const tool of heroTools) {
   const calibratedExport = exports.find((match) => match[2] === 'withCalibration');
   const bareAuthExport = exports.find((match) => match[2] === 'withAuth');
 
-  if (calibratedExport) continue;
+  if (tool.tier === 'calibrated-ai' && calibratedExport) continue;
+  if (tool.tier === 'deterministic-structural' && bareAuthExport && !calibratedExport) continue;
 
-  const reference = bareAuthExport ?? exports[0];
+  const reference = calibratedExport ?? bareAuthExport ?? exports[0];
   findings.push({
     file: relativePath(routeFile),
     line: reference ? lineNumber(content, reference.index ?? 0) : 1,
-    message: bareAuthExport
-      ? `${tool.id} is tier calibrated-ai but ${tool.aiRoute} exports a bare withAuth handler`
-      : `${tool.id} is tier calibrated-ai but ${tool.aiRoute} does not export a withCalibration-wrapped handler`,
+    message: tool.tier === 'calibrated-ai'
+      ? (bareAuthExport
+        ? `${tool.id} is tier calibrated-ai but ${tool.aiRoute} exports a bare withAuth handler`
+        : `${tool.id} is tier calibrated-ai but ${tool.aiRoute} does not export a withCalibration-wrapped handler`)
+      : (calibratedExport
+        ? `${tool.id} is tier deterministic-structural but ${tool.aiRoute} exports a withCalibration handler`
+        : `${tool.id} is tier deterministic-structural but ${tool.aiRoute} does not export a bare withAuth handler`),
   });
 }
 

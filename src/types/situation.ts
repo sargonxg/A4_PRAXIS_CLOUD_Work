@@ -26,8 +26,11 @@ export interface ToolDefinition {
   surface: ToolSurface;
   /** False keeps a tool routable but hidden from default user navigation. */
   visible: boolean;
-  /** User-facing execution tier. Hero tools must declare this explicitly. */
-  tier?: ToolTier;
+  /**
+   * Whether this tool's route calls calibrated AI or deterministic structural logic.
+   * Hero+visible tools are additionally enforced by audit:hero-tool-calibration-coverage.
+   */
+  tier: ToolTier;
   description: string;
   shortDescription: string;
   credits: number;

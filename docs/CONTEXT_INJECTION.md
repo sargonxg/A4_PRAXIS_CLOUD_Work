@@ -30,10 +30,17 @@ Domain config   ──▶├──▶ build ─▶│ systemPromptBlock │─�
 SKC retrieval   ──▶┘           └──────────────────┘
 ```
 
-The contract is: **no AI route writes its own system prompt without first
-prepending the systemPromptBlock.** That guarantees every output is
-calibrated to who the user is, what they are working on, what domain they
-operate in, and what relevant prior knowledge already exists.
+The contract is: **every hero tool tagged `tier: 'calibrated-ai'` in
+`src/lib/constants/tool-registry.ts` has its `aiRoute` wrapped by
+`withCalibration`, which prepends the systemPromptBlock before the AI
+system prompt.** This is enforced statically by
+`audit:hero-tool-calibration-coverage` as part of `audit:gate`.
+
+Two visible hero tools are intentionally classified
+`tier: 'deterministic-structural'` because they do not call a model:
+`context-builder` (domain classifier) and `graphops` (graph maintenance
+dispatcher). Their UI surfaces a "Structural · no AI" pill so analysts do
+not expect Pro-tier reasoning from them.
 
 ---
 
@@ -378,8 +385,31 @@ npm run audit:hero-tool-calibration-coverage
 ```
 
 Expected output: zero warnings, zero failures. If a calibrated-ai hero route
-appears without calibration, or a visible hero tool omits `tier`, that's a
-bug — the contract has a hole.
+appears without calibration, a deterministic-structural hero route starts
+using `withCalibration`, or a visible hero tool omits `tier`, that's a bug —
+the contract has a hole.
+
+---
+
+## What is NOT calibrated
+
+For honesty: not every authenticated request in PRAXIS is calibrated.
+Specifically:
+
+- Marketplace recipes (`/api/tools/marketplace/run`) are not standalone AI
+  outputs; non-SAT recipes now stage prompts into calibrated hero-tool
+  invocations.
+- The Cognee memory proxy (`/api/memory/[...slug]`) does not invoke
+  `withCalibration`; it forwards to the isolated memory service when
+  `COGNEE_BACKEND_URL` is set.
+- DIALECTICA chapter recipes are backend recipe scaffolds unless they are
+  explicitly routed through a calibrated Next.js API boundary.
+- Two visible hero tools (`context-builder`, `graphops`) are
+  `tier: 'deterministic-structural'`.
+
+When this document says "calibration," it means "calibrated-ai tier hero
+tool routes plus explicitly calibrated backend chapter recipes." That is the
+gate.
 
 ---
 
