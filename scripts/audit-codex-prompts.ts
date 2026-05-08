@@ -40,6 +40,8 @@ const required = [
   'docs/codex-prompts/PRAXIS_V2_B1_DUAL_WRITE_GRAPH.md',
   'docs/codex-prompts/PRAXIS_V2_B2_READ_PATH_POSTGRES.md',
   'docs/codex-prompts/PRAXIS_V2_B3_RETIRE_FIRESTORE_GRAPH.md',
+  'docs/codex-prompts/PRAXIS_V2_C0_COGNEE_LIVE.md',
+  'docs/codex-prompts/PRAXIS_V2_C1_MEMORY_RECALL_IN_CALIBRATION.md',
 ];
 
 const failures: string[] = [];
@@ -61,4 +63,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Codex prompt pack audit passed for master charter, packs 03-16, packs 18-22, packs 26-31, PRAXIS V2 README, Session A prompts A0-A6, and Session B prompts B0-B3. (static-marker)');
+console.log('Codex prompt pack audit passed for master charter, packs 03-16, packs 18-22, packs 26-31, PRAXIS V2 README, Session A prompts A0-A6, Session B prompts B0-B3, and Session C prompts C0-C1. (static-marker)');

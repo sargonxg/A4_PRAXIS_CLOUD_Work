@@ -5,13 +5,13 @@
 ## Morning Brief
 
 - Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `V2_00_README`, `V2_A0_MT_DATA_MODEL`, `V2_B0_KG_PREFLIGHT` local attempt.
-- Prompts deferred: Cloud SQL live row counts from `01` and `V2_B0_KG_PREFLIGHT` are blocked locally by private IP plus missing local `psql`/Cloud SQL Proxy; `V2_A1_ORGID_CONTEXT` through `V2_A6_MT_AUDIT_LOG` are blocked until all MT approval rows below are marked approved or explicitly revised; `V2_B1_DUAL_WRITE_GRAPH` through `V2_B3_RETIRE_FIRESTORE_GRAPH` are blocked until B0 live counts select and approve Case 1/2/3, B1 runs clean for 7 days, and B2 runs clean for 7 days.
+- Prompts deferred: Cloud SQL live row counts from `01` and `V2_B0_KG_PREFLIGHT` are blocked locally by private IP plus missing local `psql`/Cloud SQL Proxy; `V2_A1_ORGID_CONTEXT` through `V2_A6_MT_AUDIT_LOG` are blocked until all MT approval rows below are marked approved or explicitly revised; `V2_B1_DUAL_WRITE_GRAPH` through `V2_B3_RETIRE_FIRESTORE_GRAPH` are blocked until B0 live counts select and approve Case 1/2/3, B1 runs clean for 7 days, and B2 runs clean for 7 days; `V2_C0_COGNEE_LIVE` and `V2_C1_MEMORY_RECALL_IN_CALIBRATION` are blocked because `praxis-cognee` is not deployed in Cloud Run.
 - Recovery loop resolved: `audit:ux-polish`, `audit:workbench`, `audit:evidence-drawer`, `audit:graph-viewer`, `audit:visualization`, `audit:master-charter`, stale Graphify outputs, and withCalibration unit fixture drift.
 - Measured deltas:
   - Workbench root JS gzipped: current built workbench initial client JS is `511.3 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
   - Tools chapter density: live demo DOM count is 54 interactive controls after opening the closed Recipe library.
   - Prompt-health: thin synthetic case `72/red`, rich Syria demo `94/yellow`, prompt block delta `+2179` bytes for rich.
-- Next-session priorities: run B0 KG preflight from a VPC-connected shell, GC approval of the five MT decisions, then `A1_ORGID_CONTEXT.md`; runtime document ingest parity and production workbench smoke remain carried follow-ups.
+- Next-session priorities: run B0 KG preflight from a VPC-connected shell, deploy or provision `praxis-cognee` before C0, GC approval of the five MT decisions, then `A1_ORGID_CONTEXT.md`; runtime document ingest parity and production workbench smoke remain carried follow-ups.
 - Blockers requiring GC: none for the low-risk code changes here; production deployment/commit approval remains separate.
 
 ---
@@ -55,6 +55,8 @@
 | V2_B1_DUAL_WRITE_GRAPH | blocked | Must not start until B0 records live row counts, latency, schema/index health, selected Case 1/2/3, and approval. |
 | V2_B2_READ_PATH_POSTGRES | blocked | Must not start until B1 has run for at least 7 production days with `KG_DUAL_WRITE=true`, parity drift is below 5%, backlog is near-empty, and B0 latency is acceptable. |
 | V2_B3_RETIRE_FIRESTORE_GRAPH | blocked | Must not start until B2 has run for at least 7 production days with Postgres reads, shadow drift is below 0.1%, telemetry is over 99% Postgres, and GC explicitly signs off. |
+| V2_C0_COGNEE_LIVE | blocked | `praxis-cognee` Cloud Run service is not present in `praxisbytacitus`; repo also lacks `infrastructure/cloudrun/praxis-cognee/`. |
+| V2_C1_MEMORY_RECALL_IN_CALIBRATION | blocked | Depends on C0 smoke-green with `COGNEE_ENABLED=true`; must not wire memory recall into calibration before live Cognee exists. |
 
 Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blocked`.
 
@@ -396,6 +398,18 @@ marked `approved` or `revised: <alternative>`.
 - B3 status: blocked until B2 has at least 7 clean production days of Postgres reads, shadow drift below 0.1%, more than 99% Postgres source telemetry, no graph regressions, and explicit GC sign-off.
 - Issues encountered: no graph read/write code, Firestore rules, or environment flags changed because the cutover preconditions are not met.
 
+### V2_C0_C1_INTAKE
+
+- Completed: 2026-05-08.
+- Commit: current C0/C1 intake pass.
+- Prompt preservation: C0-C1 copied into `docs/codex-prompts/` and registered in `audit:codex-prompts`.
+- Live service check: `gcloud run services describe praxis-cognee --region=us-east4 --project=praxisbytacitus` returned `Cannot find service [praxis-cognee]`.
+- Cloud Run inventory: `praxis-frontend`, `praxis-backend`, two document/situation handlers, `gdelt-poller`, and Dialectica services exist; `praxis-cognee` does not.
+- Repo infrastructure check: `infrastructure/cloudrun/praxis-cognee/` is missing.
+- C0 status: blocked until the isolated Cognee service is deployed, healthy, and reachable via service-to-service auth.
+- C1 status: blocked until C0 smoke test is green and production has `COGNEE_ENABLED=true` plus `COGNEE_BACKEND_URL`.
+- Issues encountered: no memory/calibration code changed because wiring recall into calibration before live Cognee would violate the current honesty guardrails.
+
 ## Blockers
 
 - Runtime verification still needed for: production workbench first mount, staged recipe navigation, document upload -> retrieval, thin-case prompt-health, and live fresh-account onboarding enforcement.
@@ -404,11 +418,13 @@ marked `approved` or `revised: <alternative>`.
 - V2 Session A implementation is blocked until GC approves or revises MT-1 through MT-5 in `STATUS.md` or `docs/architecture/MULTI_TENANT_MODEL.md`.
 - B1 dual-write implementation is blocked until `docs/audits/2026-05-08-POSTGRES_KG_PREFLIGHT.md` has live counts, pgvector latency, schema/index health, selected Case 1/2/3, and GC approval.
 - B2/B3 graph cutover work is blocked by the required 7-day verification windows after B1 and B2.
+- C0/C1 are blocked until `praxis-cognee` exists as a healthy Cloud Run service with service-to-service auth and production env binding.
 
 ## Notes For Next Session
 
 - Start V2 Session A implementation only after approving MT-1 through MT-5; then read `docs/codex-prompts/PRAXIS_V2_A1_ORGID_CONTEXT.md`.
 - To unblock B0, run the documented SQL from a VPC-connected Cloud Shell/bastion/worker against `praxisbytacitus:us-east4:praxisbytacitus-instance`.
+- To unblock C0, deploy/provision `praxis-cognee`, add monolith `roles/run.invoker`, set `COGNEE_BACKEND_URL`, then run the smoke test before enabling `COGNEE_ENABLED=true`.
 - Keep solo-user backwards compatibility as a hard invariant while adding team/org scaffolding.
 - Firestore rules changes in V2 Session A require matching tests in `tests/security/firestore-rules.test.ts`.
 - Runtime-smoke `08_THIN_CASE_CALIBRATION`: verify a real thin case returns 422, the help panel renders, and `forceRun: true` reaches the model with `<context-quality>` attached.
