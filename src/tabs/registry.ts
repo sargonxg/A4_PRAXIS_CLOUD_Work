@@ -17,7 +17,7 @@ export const WORKSPACE_TAB_MANIFESTS = WORKSPACE_TAB_MODULES
   .sort((a, b) => a.position - b.position);
 
 export function getWorkspaceTabModule(tabId: WorkspaceTabId): WorkspaceTabModule {
-  const module = WORKSPACE_TAB_MODULES.find((tab) => tab.manifest.id === tabId);
-  if (!module) throw new Error(`Unknown workspace tab: ${tabId}`);
-  return module;
+  const tabModule = WORKSPACE_TAB_MODULES.find((tab) => tab.manifest.id === tabId);
+  if (!tabModule) throw new Error(`Unknown workspace tab: ${tabId}`);
+  return tabModule;
 }

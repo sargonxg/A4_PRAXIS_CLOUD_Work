@@ -40,7 +40,7 @@
 | 09_EMBEDDING_DIMENSION | done | Canonical constants added for `text-embedding-005` at 768d; Firestore vector writes stamp model/dimension; Postgres migration `0012_embedding_dim_alignment.py` supersedes legacy `vector(1536)`; `EmbeddingRepo` validates query vector length; `audit:embedding-dim` now checks config, model matrix, migration, Cognee guard, and repo validation. Live migration remains gated by `SELECT count(*) FROM graph_embeddings`. |
 | 10_ACO_EXPLAINER | done | Added the 14-entity ACO copy source of truth, first-case overlay with localStorage dismissal, permanent Ontology-tab reference button, onboarding mention, and `audit:aco-parity` in `audit:gate`. |
 | 11_AUDIT_PROMOTION | done | Audit pass messages now carry tier labels, runtime-proof variants exist for KG drift, Cognee, owner scoping, and tool-context isolation, `audit:gate-with-cloud` and `audit:gate-runtime-full` are wired, runtime audits skip without opt-ins, and `docs/audits/README.md` documents the taxonomy. |
-| 12_HYGIENE | done | `background_jobs` global reads now admin-only; surface registry coherence audit added; forbidden legacy model string grep returned 0. |
+| 12_HYGIENE | done | `background_jobs` global reads now admin-only; surface registry coherence audit includes tabs, chapters, and visible hero tools; deleted memory UI files stayed deleted; forbidden legacy model string grep returned 0; committed-secret grep found no leaks beyond env/config references; lint baseline recorded at `98` problems before this cleanup. |
 
 Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blocked`.
 
@@ -68,7 +68,7 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 | audit:hero-tool-calibration-coverage | pass | static-marker | Checked 12 visible hero tools and catches deterministic/calibrated mismatches. |
 | audit:thin-case-handling | pass | static-marker | New gate for prompt-health endpoint, `<context-quality>` compensation, 422 refusal, and UI run-anyway handling. |
 | audit:cognee-ui-honesty | pass | static-marker | Verifies Cognee/memory copy is not exposed by default-disabled UI and marketplace subagent pills are feature-gated. |
-| audit:surface-registry-coherence | pass | static-marker | Ensures product surfaces are reachable through tabs or chapters. |
+| audit:surface-registry-coherence | pass | static-marker | Ensures product surfaces are reachable through tabs, chapters, or visible hero tools. |
 | audit:workbench-bundle | pass | build-output | Measured current workbench initial client JS at `511.4 KB gzip` with a `520 KB` budget; also enforces dynamic chapter/tab imports and active-only mounting. |
 | audit:library-ingest-consolidation | pass | static-marker | Ensures upload UI calls both document save and backend ingest paths and passes `documentId`. |
 | audit:document-ingest-parity | pass | static-marker | Guards visible Library upload order, `documentId` handoff, canonical upload route, and backend metadata retention. |
@@ -159,10 +159,20 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 ### Surface Registry Orphans
 
 - `audit:surface-registry-coherence`: pass.
-- Counts: product surfaces `8`, tabs `4`, chapters `7`.
+- Counts: product surfaces `8`, tabs `4`, chapters `7`, visible hero tools `12`.
 - In product surfaces but unreachable: `[]`.
 - Reachable but not in product surfaces: `['ontology', 'memos', 'ach']`.
 - Allowed non-product registry surfaces: `ontology` tab, `memos` chapter, `ach` chapter.
+
+### Hygiene Baseline
+
+- `background_jobs` client read path is user-scoped via `where('uid', '==', uid)` in `useBackgroundJobs`; admin/operator and job-service paths use Admin SDK or backend service credentials.
+- `MemoryPanel.tsx`: absent.
+- `src/lib/memory/client.ts`: absent.
+- Forbidden legacy model string grep: `0` matches in `src/` and `backend/`.
+- Secret marker grep: no committed API secrets; matches are env/config diagnostics only.
+- Dated TODO sweep: `0` matches for `TODO(20xx)` in `src/` and `backend/`.
+- Lint baseline before the focused cleanup: `98` problems (`2` errors, `96` warnings); after the two focused registry fixes: `96` problems (`0` errors, `96` warnings). No broad `--fix` was run.
 
 ## Pre-existing Audit Failures Surfaced This Session
 

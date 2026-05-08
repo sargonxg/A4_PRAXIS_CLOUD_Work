@@ -23,7 +23,7 @@ export const WORKSPACE_CHAPTER_MANIFESTS = WORKSPACE_CHAPTER_MODULES
   .sort((a, b) => a.position - b.position);
 
 export function getWorkspaceChapterModule(chapterId: WorkbenchChapterId): WorkspaceChapterModule {
-  const module = WORKSPACE_CHAPTER_MODULES.find((chapter) => chapter.manifest.id === chapterId);
-  if (!module) throw new Error(`Unknown workspace chapter: ${chapterId}`);
-  return module;
+  const chapterModule = WORKSPACE_CHAPTER_MODULES.find((chapter) => chapter.manifest.id === chapterId);
+  if (!chapterModule) throw new Error(`Unknown workspace chapter: ${chapterId}`);
+  return chapterModule;
 }
