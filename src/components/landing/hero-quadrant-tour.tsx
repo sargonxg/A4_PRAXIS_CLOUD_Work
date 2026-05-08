@@ -6,7 +6,7 @@
  * Cycles through four product surfaces in the right column of the hero so
  * a first-time visitor sees the breadth of PRAXIS without having to scroll:
  *
- *   1. Conflict Graph (ACO v2.0 nodes + edges)
+ *   1. Situation Model (typed nodes + source-backed relationships)
  *   2. Media Monitor (sources, frame divergence, signal velocity)
  *   3. Drafting Studio (briefing slides + locked version + diff)
  *   4. User Context Card (analyst profile + situation + lenses)
@@ -23,7 +23,7 @@ import { MessageSquareText, Network, Newspaper, FileText, UserCog } from "lucide
 import { cn } from "@/lib/utils/cn";
 
 const PANELS = [
-  { id: 'graph', label: 'Conflict Graph', icon: Network },
+  { id: 'graph', label: 'Situation Model', icon: Network },
   { id: 'media', label: 'Media Monitor', icon: Newspaper },
   { id: 'assistant', label: 'Ask PRAXIS', icon: MessageSquareText },
   { id: 'drafting', label: 'Drafting Studio', icon: FileText },
@@ -117,7 +117,7 @@ export function HeroQuadrantTour() {
 }
 
 // ---------------------------------------------------------------------------
-// Panel 1 — Conflict Graph (uses the existing ProductGlimpse SVG vibe)
+// Panel 1 — Situation Model (uses the existing ProductGlimpse SVG vibe)
 // ---------------------------------------------------------------------------
 
 function PanelGraph() {
@@ -155,7 +155,7 @@ function PanelGraph() {
     return nodes.find((n) => n.id === id)!;
   }
   return (
-    <Card title="ACO v2.0 · Conflict Graph" subtitle="praxis.tacitus.me · Syria case · 30 entities · 42 edges">
+    <Card title="Situation Model" subtitle="praxis.tacitus.me · active case · 30 entities · 42 relationships">
       <div className="grid h-full grid-rows-[minmax(0,1fr)_auto] gap-3 p-3 sm:grid-cols-[1.55fr_0.95fr] sm:grid-rows-none sm:gap-4 sm:p-4">
         <div className="relative min-h-[280px] overflow-hidden rounded-xl border border-cream-200/60 bg-gradient-to-br from-white/90 via-white/65 to-cream-50/70 p-3 sm:min-h-[235px]">
           <div className="flex items-center justify-between">
@@ -289,7 +289,7 @@ function PanelGraph() {
           <Pill color="#F28E2B" label="Humanitarian" count={7} />
           <div className="col-span-2 hidden rounded-lg border border-emerald-200 bg-emerald-50/80 px-2.5 py-2 sm:mt-auto sm:block sm:px-3">
             <span className="text-[8.5px] font-semibold uppercase tracking-wider text-emerald-700">
-              GraphOps · 18 repairs cleared
+              Review queue · 18 repairs cleared
             </span>
           </div>
         </div>
@@ -423,7 +423,7 @@ function PanelAssistant() {
       text: (
         <>
           Reasoning over the Syria source pack: UN Geneva, OCHA, UNFPA,
-          UNHCR, local media profiles, and the current conflict graph.
+          UNHCR, local media profiles, and the current Situation Model.
           <br />
           <span className="font-semibold text-navy-900">Fact</span>:
           public UN reporting frames the 30 January agreement as potentially
@@ -636,7 +636,7 @@ since:   2026-01-30 · live case`}
               Frameworks active
             </div>
             <div className="mt-1 flex flex-wrap gap-1">
-              {['ACO v2', 'ICD-203', 'INFORM', 'OCHA', 'IHL', 'Media', 'GraphOps'].map((f) => (
+              {['Source receipts', 'Episodes', 'Risk posture', 'Humanitarian access', 'Legal norms', 'Media frames', 'Review queue'].map((f) => (
                 <span
                   key={f}
                   className="rounded px-1.5 py-[1px] text-[7.5px] font-semibold uppercase tracking-wide text-diplomatic-blue bg-diplomatic-blue/8 border border-diplomatic-blue/15"

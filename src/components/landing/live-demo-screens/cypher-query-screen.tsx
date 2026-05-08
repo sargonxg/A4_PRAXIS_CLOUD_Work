@@ -8,10 +8,10 @@ type ScreenProps = {
   reduceMotion: boolean;
 };
 
-const QUERY = 'MATCH (a:Actor)-[:CONSTRAINS]->(r:Risk {case:"SYR-2025"}) RETURN a.name, r.name, r.score LIMIT 3';
+const QUERY = 'Check which actors constrain the current risk and return the three strongest source-backed findings.';
 const RESULTS = ['UN-led process', 'Border crossings', 'Host community strain'];
 
-export function CypherQueryScreen({ progress, reduceMotion }: ScreenProps) {
+export function EvidenceCheckScreen({ progress, reduceMotion }: ScreenProps) {
   const queryText = reduceMotion ? QUERY : QUERY.slice(0, Math.max(18, Math.floor(QUERY.length * Math.min(progress * 1.55, 1))));
   const resultsVisible = reduceMotion || progress > 0.58;
 
@@ -20,10 +20,10 @@ export function CypherQueryScreen({ progress, reduceMotion }: ScreenProps) {
       <div className="overflow-hidden rounded-lg border border-navy-800 bg-navy-950 text-white shadow-sm">
         <div className="flex items-center gap-2 border-b border-white/10 bg-white/5 px-4 py-3">
           <Terminal className="h-4 w-4 text-gold-300" aria-hidden="true" />
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-blue-100/70">Cypher console</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-blue-100/70">Evidence check</p>
         </div>
         <div className="p-4 font-mono text-xs leading-6 text-blue-100">
-          <p className="text-emerald-300">neo4j@syria-case&gt;</p>
+          <p className="text-emerald-300">praxis@situation&gt;</p>
           <p className="mt-2 min-h-24 text-gold-100">{queryText}<span className="animate-pulse text-white">_</span></p>
           <motion.div animate={{ opacity: resultsVisible ? 1 : 0.15 }} className="mt-4 rounded-md border border-white/10 bg-white/[0.06] p-3">
             <p className="text-[10px] uppercase tracking-wider text-blue-100/55">Result</p>

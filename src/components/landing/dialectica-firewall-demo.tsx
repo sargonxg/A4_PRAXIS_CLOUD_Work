@@ -2,8 +2,8 @@
 
 import { motion } from "framer-motion";
 
-const CYPHER =
-  "MATCH p = (:Actor {name: $state})-[:CONTROLS_VIA*1..2]->(:Actor {name: $faction})-[:OPERATES_IN]->(:Event {name: $corridor}) RETURN p";
+const REVIEW_TRACE =
+  "Claim checked against active actors, source receipts, episode scope, and prior accepted findings.";
 
 export function DialecticaFirewallDemo({ narrativeMotion }: { narrativeMotion: boolean }) {
   const shouldReduceMotion = !narrativeMotion;
@@ -37,14 +37,14 @@ export function DialecticaFirewallDemo({ narrativeMotion }: { narrativeMotion: b
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
       >
         <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-100/50">
-          Cypher MATCH
+          Review trace
         </p>
         <motion.pre
           className="mt-2 whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-blue-50"
           animate={shouldReduceMotion ? undefined : { opacity: [0.68, 1, 0.68] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         >
-          {CYPHER}
+          {REVIEW_TRACE}
         </motion.pre>
       </motion.div>
 
@@ -54,7 +54,7 @@ export function DialecticaFirewallDemo({ narrativeMotion }: { narrativeMotion: b
           animate={shouldReduceMotion ? undefined : { scale: [1, 1.04, 1] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         >
-          GRAPH GROUNDED
+          SOURCE GROUNDED
         </motion.span>
         <p className="text-xs font-medium text-navy-500">
           Path: 3 hops · Confidence ASSESSED · Source 2 receipts

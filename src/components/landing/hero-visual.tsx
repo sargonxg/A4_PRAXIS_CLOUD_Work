@@ -7,19 +7,18 @@ import { BitemporalClock } from "./hero-narrative-layers/bitemporal-clock";
 import { BoardroomOrbit } from "./hero-narrative-layers/boardroom-orbit";
 import { CausalEdgeTrace } from "./hero-narrative-layers/causal-edge-trace";
 import { ClaimToParagraph } from "./hero-narrative-layers/claim-to-paragraph";
-import { CypherFlicker } from "./hero-narrative-layers/cypher-flicker";
 import { ParticleResolution } from "./hero-narrative-layers/particle-resolution";
 import { SourceReceipts } from "./hero-narrative-layers/source-receipts";
 
 const COMMAND_STEPS = [
-  { label: "INGEST", value: "8 feeds" },
-  { label: "STRUCTURE", value: "ACO v2" },
-  { label: "VERIFY", value: "Cypher" },
-  { label: "BRIEF", value: "18 cites" },
+  { label: "HOME", value: "Situation" },
+  { label: "ASK", value: "Plan ready" },
+  { label: "TRUST", value: "18 cites" },
+  { label: "OUTPUT", value: "Handover" },
 ];
 
 const MOBILE_SIGNAL_STEPS = [
-  ["Graph", "42 edges"],
+  ["Model", "42 links"],
   ["Evidence", "18 cites"],
   ["Memo", "DOCX"],
 ];
@@ -164,7 +163,6 @@ export function HeroVisual({ narrativeMotion = true }: { narrativeMotion?: boole
         <CausalEdgeTrace active={activeNarrativeMotion} />
         <BoardroomOrbit active={activeNarrativeMotion} />
         <ClaimToParagraph active={activeNarrativeMotion} />
-        <CypherFlicker active={activeNarrativeMotion} />
         <BitemporalClock active={activeNarrativeMotion} />
 
         {/* Cursor-driven glare across the surface */}
@@ -423,7 +421,7 @@ function CommandDeckOverlay({ active }: { active: boolean }) {
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]" />
         </div>
         <div className="mt-2 font-mono text-[8.5px] leading-snug text-blue-100">
-          MATCH p=(claim)-[:SUPPORTED_BY*1..2]-&gt;(source)
+          Check claim support across accepted sources
         </div>
         <div className="mt-2 rounded-md border border-emerald-300/20 bg-emerald-400/10 px-2 py-1 text-[9px] font-semibold text-emerald-100">
           91% provenance sealed
@@ -438,7 +436,7 @@ function CommandDeckOverlay({ active }: { active: boolean }) {
       >
         {[
           ["Evidence", "18 receipts"],
-          ["Graph", "42 edges"],
+          ["Model", "42 links"],
           ["Risk", "78/100"],
           ["Export", "DOCX ready"],
         ].map(([label, value], index) => (
@@ -469,14 +467,14 @@ function StaticHeroCard() {
         <span className="h-2.5 w-2.5 rounded-full bg-gold-400/70" />
         <span className="h-2.5 w-2.5 rounded-full bg-sage/50" />
         <span className="ml-3 font-mono text-[9px] text-navy-500">
-          praxis.tacitus.me · source-grounded graph
+          praxis.tacitus.me · source-grounded model
         </span>
       </div>
       <div className="grid h-[calc(100%-42px)] grid-cols-[1.15fr_0.85fr] gap-3 p-4">
         <div className="rounded-lg border border-cream-200/70 bg-white/70 p-3">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-[9px] font-semibold uppercase tracking-wider text-navy-500">
-              ACO graph
+              Situation model
             </span>
             <span className="rounded bg-gold-50 px-1.5 py-0.5 font-mono text-[8px] text-gold-700">
               18 citations
@@ -510,8 +508,8 @@ function StaticHeroCard() {
         </div>
         <div className="flex flex-col gap-2">
           {[
-            ["MATCH", "claim supported by 2 sources"],
-            ["VERIFY", "graph grounded · 3 hops"],
+            ["CHECK", "claim supported by 2 sources"],
+            ["VERIFY", "source grounded · 3 hops"],
             ["EXPORT", "paragraph provenance sealed"],
           ].map(([label, copy]) => (
             <div key={label} className="rounded-md border border-cream-200/70 bg-white/75 px-3 py-2">

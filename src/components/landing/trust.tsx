@@ -5,9 +5,9 @@ const trustSignals = [
     detail: "Every exported artifact carries structured lineage so a reviewer can trace where claims came from.",
   },
   {
-    label: "Symbolic Firewall",
-    sub: "Cypher-verified claims",
-    detail: "Graph assertions are checked against explicit query constraints before they enter the analytic record.",
+    label: "Review Firewall",
+    sub: "Source-checked claims",
+    detail: "Claims are checked against source receipts, episode scope, and accepted context before they enter the analytic record.",
   },
   {
     label: "Trust Score",

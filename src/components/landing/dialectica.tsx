@@ -9,9 +9,9 @@ import { useNarrativeMotion } from "./landing-motion-context";
 
 const BULLETS = [
   "Bi-temporal: every node carries world-time and system-time.",
-  "Ontology-bound: 14 ACO entity types, 72 typed relationships.",
+  "Situation-bound: every claim is tied to typed actors, events, interests, and sources.",
   "Causal: typed CAUSES, ENABLES, PREVENTS, TRIGGERS edges.",
-  "Vector co-located: hybrid Cypher returns semantic + structural in one round trip.",
+  "Reviewable: grounded paths, citations, and confidence stay visible before output.",
 ];
 
 export function Dialectica() {
@@ -29,15 +29,12 @@ export function Dialectica() {
           transition={{ duration: 0.7 }}
         >
           <span className="mx-auto mb-5 block h-px w-16 bg-gradient-to-r from-transparent via-gold-600 to-transparent" aria-hidden="true" />
-          <p className="text-overline text-gold-700">The moat</p>
+          <p className="text-overline text-gold-700">The trust layer</p>
           <h2 className="mt-3 font-serif text-3xl font-semibold leading-tight text-navy-950 sm:text-4xl lg:text-5xl">
-            DIALECTICA — the symbolic backbone of policy AI
+            DIALECTICA keeps policy AI tied to evidence.
           </h2>
           <p className="mt-5 text-base leading-7 text-navy-600 sm:text-lg">
-            PRAXIS does not let Gemini make claims the graph does not support.
-            Every claim is verified by a Cypher MATCH against your situation
-            graph. Grounded claims show their path. Inferred claims demand a
-            source receipt. Unsupported claims never reach the user.
+            PRAXIS does not let an answer become a work product until its source basis, confidence, and review posture are visible. Grounded claims show their path. Inferred claims demand a source receipt. Unsupported claims stay out of the handover.
           </p>
         </motion.div>
 

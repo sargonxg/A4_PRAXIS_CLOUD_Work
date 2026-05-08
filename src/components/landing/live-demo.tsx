@@ -7,7 +7,7 @@ import { ArrowLeft, ArrowRight, ExternalLink, Play } from 'lucide-react';
 import { useNarrativeMotion } from './landing-motion-context';
 import { LibraryUploadScreen } from './live-demo-screens/library-upload-screen';
 import { GraphStagingScreen } from './live-demo-screens/graph-staging-screen';
-import { CypherQueryScreen } from './live-demo-screens/cypher-query-screen';
+import { EvidenceCheckScreen } from './live-demo-screens/cypher-query-screen';
 import { BoardroomScreen } from './live-demo-screens/boardroom-screen';
 import { DraftScreen } from './live-demo-screens/draft-screen';
 import { ExportScreen } from './live-demo-screens/export-screen';
@@ -23,10 +23,10 @@ const TIMELINE = STEP_DURATIONS.reduce<Array<{ start: number; end: number; durat
 );
 
 const SCREENS = [
-  { label: 'Library upload', component: LibraryUploadScreen },
-  { label: 'Graph staging', component: GraphStagingScreen },
-  { label: 'Cypher query', component: CypherQueryScreen },
-  { label: 'Boardroom', component: BoardroomScreen },
+  { label: 'Sources', component: LibraryUploadScreen },
+  { label: 'Situation Model', component: GraphStagingScreen },
+  { label: 'Evidence check', component: EvidenceCheckScreen },
+  { label: 'Review', component: BoardroomScreen },
   { label: 'Draft', component: DraftScreen },
   { label: 'Export', component: ExportScreen },
 ];
@@ -103,7 +103,7 @@ export function LiveDemo() {
               An example case, end to end
             </h2>
             <p className="mt-4 text-base leading-relaxed text-navy-600">
-              Evidence intake, graph staging, symbolic checks, boardroom review, drafting, and export in one workspace.
+              Ask PRAXIS, improve the Situation Model, review source-backed claims, draft the handover, and export the result in one workspace.
             </p>
             <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-navy-600">
               <Play className="h-3.5 w-3.5 text-diplomatic-blue" aria-hidden="true" />

@@ -22,6 +22,7 @@ import {
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
+import { AskPraxisHome } from '@/components/dashboard/ask-praxis-home';
 
 interface DashboardExampleCase {
   id: string;
@@ -83,6 +84,8 @@ export function DashboardCommandCenter({ exampleCases, marketplaceToolCount }: D
 
   return (
     <div className="space-y-6" data-testid="praxis-dashboard-command-center">
+      <AskPraxisHome exampleCases={exampleCases} marketplaceToolCount={marketplaceToolCount} />
+
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
         <div className="rounded-lg border border-[var(--color-app-border)] bg-white p-5 shadow-sm shadow-navy-950/5 sm:p-6">
           <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">

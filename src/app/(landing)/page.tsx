@@ -2,6 +2,7 @@ import { headers } from 'next/headers';
 import dynamic from 'next/dynamic';
 import { Hero } from "@/components/landing/hero";
 import { SixSteps } from "@/components/landing/six-steps";
+import { AgenticAppSection } from "@/components/landing/agentic-app-section";
 import { ExampleCasesGallery } from "@/components/landing/example-cases-gallery";
 import { Dialectica } from "@/components/landing/dialectica";
 import { LiveDemo } from "@/components/landing/live-demo";
@@ -33,7 +34,7 @@ const softwareJsonLd = {
   applicationSubCategory: "Policy Workbench & Conflict Intelligence",
   operatingSystem: "Web",
   description:
-    "PRAXIS is a policy workbench: every user builds live cases, anchors them in a graph that carries provenance, confidence, and time, and progresses through a five-chapter flow from Situation Frame to Decision Product. Example cases including Syria, Nordalia, Sahel, US housing, workplace mediation, and sanctions are available as guest sessions before login.",
+    "PRAXIS is a policy workbench: every user opens a live Situation, asks PRAXIS what matters, reviews trust-marked sources and claims, and produces handovers, briefs, memos, drafts, and exports. Example cases including Syria, Nordalia, Sahel, US housing, workplace mediation, and sanctions are available as guest sessions before login.",
   url: siteUrl,
   image: `${siteUrl}/opengraph-image`,
   inLanguage: "en",
@@ -86,9 +87,9 @@ const softwareJsonLd = {
     url: "https://tacitus.me",
   },
   featureList: [
-    "One workbench per user with cases scoped to authenticated user state",
-    "Five-chapter flow: Situation Frame, Source Receipts, Conflict Graph, DIALECTICA Reasoning, Decision Product",
-    "ACO Conflict Grammar entities mapped onto truth layers and provenance",
+    "Home, Ask PRAXIS, Situation Model, Sources, Outputs, and Advanced areas",
+    "Guided workflows for understanding a Situation, improving context, updating briefs, and generating handovers",
+    "Mobile-first navigation for Home, Ask, Sources, Outputs, and More",
     "Source receipts and provenance manifests on exported work products",
     "Example cases as guest sessions before login: Syria, Nordalia, Sahel, US housing, workplace mediation, and sanctions",
     "Boardroom-deliberated policy options with human review",
@@ -151,6 +152,7 @@ export default async function LandingPage() {
       />
       <Hero />
       <SixSteps />
+      <AgenticAppSection />
       <ExampleCasesGallery />
       <Dialectica />
       <LiveDemo />

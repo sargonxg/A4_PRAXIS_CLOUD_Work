@@ -486,7 +486,7 @@ export function FloatingPraxis() {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-diplomatic-blue text-white shadow-lg shadow-diplomatic-blue/25 transition-transform hover:scale-105 hover:shadow-xl active:scale-95"
+            className="fixed bottom-6 right-6 z-50 hidden h-14 w-14 items-center justify-center rounded-full bg-diplomatic-blue text-white shadow-lg shadow-diplomatic-blue/25 transition-transform hover:scale-105 hover:shadow-xl active:scale-95 md:flex"
             aria-label="Ask PRAXIS"
           >
             <Sparkles className="h-5 w-5 text-gold-400" />

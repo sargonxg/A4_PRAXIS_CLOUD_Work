@@ -16,6 +16,7 @@ import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useNotificationStore } from '@/stores/notification-store';
 import { Loader2 } from 'lucide-react';
 import { FloatingPraxis } from '@/components/app/floating-praxis';
+import { MobileBottomNav } from '@/components/app/mobile-bottom-nav';
 import { DebugPanel } from '@/components/app/debug-panel';
 import { ActivityPanel } from '@/components/app/activity-panel';
 import { ErrorBoundary } from '@/components/shared/error-boundary';
@@ -136,7 +137,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <DemoModeBanner />
           {!user.isDemo && <SkipNudgeBanner />}
           <Header isMobile={isMobile} />
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
             <div className="mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-6">
               <ErrorBoundary>
                 <ToolErrorBoundary>
@@ -153,6 +154,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <OnboardingWrapper />
       {/* Floating Ask PRAXIS button + chat panel */}
       <FloatingPraxis />
+      <MobileBottomNav />
       {/* Debug panel — Ctrl+Shift+D to toggle, bottom-left corner */}
       <DebugPanel />
       {/* Activity panel — real-time operation tracking, bottom-right corner */}

@@ -124,7 +124,7 @@ function ChapterContent({ chapterId, caseId }: { chapterId: WorkbenchChapterId; 
   const { caseModule } = useWorkbenchScope();
   const stagedHeroToolIds = STAGED_HERO_TOOLS_BY_CHAPTER[chapterId] ?? [];
   const stagedNotice = stagedHeroToolIds.length > 0 ? <StagedHeroToolNotice heroToolIds={stagedHeroToolIds} /> : null;
-  if (chapterId === 'tools') return <ToolMarketplace />;
+  if (chapterId === 'tools') return <div data-testid="workbench-tools-surface">{stagedNotice}<ToolMarketplace /></div>;
   const customChapter = caseModule.chapters?.[chapterId];
   if (customChapter) return <div data-testid={`workbench-${chapterId}-surface`}>{stagedNotice}{customChapter()}</div>;
   if (chapterId === 'desk') return <>{stagedNotice}<DeskTab /></>;

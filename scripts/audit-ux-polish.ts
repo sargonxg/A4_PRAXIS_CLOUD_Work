@@ -52,7 +52,7 @@ const checks: Array<{ label: string; file: string; mustInclude: string[] }> = [
   {
     label: 'Workbench smoke covers the five primary surfaces',
     file: 'tests/e2e/app-usability-smoke.spec.ts',
-    mustInclude: ['Context Studio', 'ontology-schema-viewer', 'praxis-graph-canvas', 'tool-marketplace', 'Memo Studio', 'Each case opens'],
+    mustInclude: ['Context Studio', 'ontology-schema-viewer', 'praxis-graph-canvas', 'tool-marketplace', 'From graph evidence to work product', 'Each case opens'],
   },
   {
     label: 'Intermediate app text utilities are defined for contrast',

@@ -24,16 +24,17 @@ test('landing renders hero animation, static fallback, and 3D ontology graph', a
 
   await page.goto('/');
   await expect(page.getByTestId('landing-hero-visual')).toBeVisible();
-  await expect(page.getByText(/Policy workbench/i).first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Open a Situation\. Ask PRAXIS\. Produce the handover\./i })).toBeVisible();
+  await expect(page.getByText(/The real app now starts with the job/i)).toBeVisible();
 
   await page.locator('#dialectica').scrollIntoViewIfNeeded();
   await expect(page.getByTestId('dialectica-graph-3d')).toBeVisible();
-  await expect(page.getByText(/Ontology-bound/i)).toBeVisible();
-  await expect(page.getByText(/Cypher grounded/i)).toBeVisible();
+  await expect(page.getByText(/DIALECTICA keeps policy AI tied to evidence/i)).toBeVisible();
+  await expect(page.getByTestId('dialectica-graph-3d').getByText(/Source grounded/i)).toBeVisible();
 
   await page.goto('/?staticHero=1');
   await expect(page.getByTestId('landing-hero-visual')).toBeVisible();
-  await expect(page.getByText(/source-grounded graph/i)).toBeVisible();
+  await expect(page.getByText(/source-grounded model/i)).toBeVisible();
 
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });
@@ -70,7 +71,10 @@ test('demo workbench exposes context, ontology, graph, tools, memo, and draft su
   await expect(librarySurface.getByRole('heading', { name: /^Library$/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Saved claims$/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Memo versions$/i })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Save case-frame claim$/i })).toBeVisible();
+  await expect(page.getByText(/Select an artifact/i)).toBeVisible();
+  await expect(page.getByText(/Details, provenance fields, and source\/export actions appear here/i)).toBeVisible();
+  await expect(page.getByText(/^Upload source$/i)).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Refresh receipts$/i })).toBeVisible();
   await closeWorkspaceTab();
 
   await page.getByRole('button', { name: /^Research$/i }).click();
@@ -100,13 +104,18 @@ test('demo workbench exposes context, ontology, graph, tools, memo, and draft su
   await page.getByRole('button', { name: /^Tools$/i }).click();
   await expect(page.getByTestId('workbench-tools-surface')).toBeVisible();
   await expect(page.getByTestId('tool-marketplace')).toBeVisible();
-  await expect(page.getByText(/DIALECTICA backbone/i)).toBeVisible();
-  await expect(page.getByText(/Graph-grounded execution/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Recipe library$/i })).toBeVisible();
+  await expect(page.getByText(/Recommended for this case/i)).toBeVisible();
+  await expect(page.getByTestId('tool-marketplace').getByText(/DIALECTICA recipes/i)).toBeVisible();
 
-  await page.getByRole('button', { name: /^Memos$/i }).click();
-  await expect(page.getByTestId('workbench-memos-surface')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^Memo Studio$/i })).toBeVisible();
-  await expect(page.getByText(/From graph evidence to work product/i)).toBeVisible();
+  const memosSurface = page.getByTestId('workbench-memos-surface');
+  if (!(await memosSurface.isVisible().catch(() => false))) {
+    await page.getByRole('button', { name: /^Memos$/i }).click();
+  }
+  await expect(memosSurface).toBeVisible();
+  await expect(memosSurface.getByRole('heading', { name: /From graph evidence to work product/i })).toBeVisible();
+  await expect(memosSurface.getByRole('link', { name: /Principal briefing/i })).toBeVisible();
+  await expect(memosSurface.getByRole('link', { name: /Policy memo/i })).toBeVisible();
 
   await page.getByRole('button', { name: /^Draft$/i }).click();
   await expect(page.getByTestId('workbench-draft-surface')).toBeVisible();
@@ -129,6 +138,7 @@ test('demo workbench exposes context, ontology, graph, tools, memo, and draft su
 test('workbench case picker uses readable copy contrast', async ({ page }) => {
   const consoleErrors = collectConsoleErrors(page);
 
+  await page.request.post('/api/auth/session', { data: { demo: true } });
   await page.goto('/app/workbench');
   const intro = page.getByText(/Each case opens in the same operating room/i);
   await expect(intro).toBeVisible();

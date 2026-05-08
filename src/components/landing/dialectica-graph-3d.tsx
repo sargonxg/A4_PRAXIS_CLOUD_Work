@@ -70,7 +70,7 @@ export function DialecticaGraph3D({ narrativeMotion }: { narrativeMotion: boolea
       </div>
       <div className="absolute right-5 top-5 z-10 flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-100">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.9)]" />
-        Cypher grounded
+        Source grounded
       </div>
 
       <motion.div
@@ -315,7 +315,7 @@ export function DialecticaGraph3D({ narrativeMotion }: { narrativeMotion: boolea
         {[
           ["world-time", "2025-08-12"],
           ["system-time", "2026-04-30"],
-          ["MATCH depth", "3 hops"],
+          ["Review path", "3 hops"],
         ].map(([label, value]) => (
           <div key={label} className="rounded-md border border-white/10 bg-white/8 px-2.5 py-1 text-[10px] text-blue-50/85 backdrop-blur">
             <span className="font-mono uppercase tracking-[0.15em] text-blue-100/45">{label}</span>

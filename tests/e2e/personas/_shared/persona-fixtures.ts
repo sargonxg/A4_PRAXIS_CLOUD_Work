@@ -12,6 +12,10 @@ export async function openExampleWorkbench(page: Page, caseId: string, tab = 'ch
   }
   await expect(page.getByText('Example case')).toBeVisible();
   await expect(page.getByText('Context health').first()).toBeVisible();
+  const dismissPrimer = page.getByRole('button', { name: /^Dismiss conflict grammar primer$/i });
+  if (await dismissPrimer.isVisible().catch(() => false)) {
+    await dismissPrimer.click();
+  }
 
   if (tab !== 'chapters') {
     await page.goto(`/app/workbench/${caseId}?tab=${tab}`);

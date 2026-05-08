@@ -12,16 +12,16 @@ const footerSections = [
       { label: "Pricing", href: "/pricing" },
       { label: "Briefing Studio", href: EXAMPLE_CASE_HREF },
       { label: "Ask PRAXIS", href: EXAMPLE_CASE_HREF },
-      { label: "Conflict Graph", href: EXAMPLE_CASE_HREF },
-      { label: "Source Scout", href: EXAMPLE_CASE_HREF },
+      { label: "Situation Model", href: EXAMPLE_CASE_HREF },
+      { label: "Sources", href: EXAMPLE_CASE_HREF },
     ],
   },
   {
     title: "Tools",
     links: [
       { label: "Context Builder", href: EXAMPLE_CASE_HREF },
-      { label: "GraphOps", href: EXAMPLE_CASE_HREF },
-      { label: "Advisor Table", href: EXAMPLE_CASE_HREF },
+      { label: "Guided Workflows", href: EXAMPLE_CASE_HREF },
+      { label: "Review Room", href: EXAMPLE_CASE_HREF },
       { label: "Documents", href: EXAMPLE_CASE_HREF },
       { label: "Tools Workspace", href: EXAMPLE_CASE_HREF },
     ],
@@ -133,7 +133,7 @@ export function Footer() {
         <div className="mt-12 flex flex-col items-center gap-4 rounded-xl border border-gold-600/15 bg-gold-600/4 px-8 py-6 text-center sm:flex-row sm:justify-between sm:text-left">
           <div>
             <p className="font-serif text-base font-medium text-navy-900">
-              Ready to upgrade your analytical workflow?
+            Ready to open a Situation and ask PRAXIS?
             </p>
             <p className="mt-1 text-sm text-navy-500">
               Free Plan · Full PRAXIS workspace · example cases available instantly
@@ -154,7 +154,7 @@ export function Footer() {
             Built on
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-            {["Gemini AI", "Vertex AI Deep Research", "Google Cloud Run", "BigQuery", "GDELT", "UCDP", "ReliefWeb"].map((name)=> (
+            {["Guided workflows", "Source receipts", "Trust-marked claims", "Review gates", "GDELT", "UCDP", "ReliefWeb"].map((name)=> (
               <span
                 key={name}
                 className="text-xs font-semibold uppercase tracking-wider text-navy-300/60"

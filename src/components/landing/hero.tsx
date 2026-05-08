@@ -9,29 +9,7 @@ import { useNarrativeMotion } from "./landing-motion-context";
 import { HeroVisual } from "./hero-visual";
 import { ExampleCasesModal } from "./example-cases-modal";
 
-// --- Word-by-word reveal ---
-
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.055,
-      delayChildren: 0.12,
-    },
-  },
-};
-
-const wordVariants = {
-  hidden: { opacity: 0, y: 12, filter: "blur(2px)" },
-  visible: {
-    opacity: 1,
-    y: 0,
-    filter: "blur(0px)",
-    transition: { duration: 0.34, ease: [0.25, 0.46, 0.45, 0.94] as const },
-  },
-};
-
-// ---- Animated Conflict Graph SVG ----
+// ---- Animated Situation Model SVG ----
 // 7 nodes: 3 state actors, 2 armed groups, 1 institution, 1 norm
 const NODES = [
   { id: 0, x: 50, y: 50, r: 14, color: "#4E79A7", label: "State A", type: "state" },
@@ -207,7 +185,7 @@ export function ProductGlimpse() {
           {/* Left: conflict graph */}
           <div className="flex flex-col gap-2 p-4">
             <span className="text-[9px] font-semibold uppercase tracking-wider text-navy-400">
-              Conflict Graph · ACO v2.0
+              Situation model
             </span>
             <div className="aspect-square w-full max-w-[140px] mx-auto">
               <ConflictGraphSVG shouldReduceMotion={shouldReduceMotion} />
@@ -288,8 +266,6 @@ export function ProductGlimpse() {
 export function Hero() {
   const narrativeMotion = useNarrativeMotion();
   const animateText = narrativeMotion;
-  const headline = "The policy workbench for grounded statecraft.";
-
   return (
     <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 pb-8 pt-24 sm:px-6 lg:px-8">
       {/* Background mesh gradient */}
@@ -327,24 +303,15 @@ export function Hero() {
             </span>
           </motion.div>
 
-          {/* Animated headline */}
           <motion.h1
-            variants={animateText ? containerVariants : {}}
-            initial="hidden"
-            animate="visible"
+            initial={animateText ? { opacity: 0, y: 18 } : { opacity: 1, y: 0 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.18, duration: 0.58 }}
             className="mb-8 max-w-4xl font-serif text-5xl leading-[1.06] font-normal tracking-tight text-navy-950 sm:text-6xl lg:text-[64px] xl:text-[72px]"
           >
-            {headline.split(" ").map((word, index) => (
-              <motion.span
-                key={`${word}-${index}`}
-                variants={animateText ? wordVariants : {}}
-                className={word === "source." ? "text-gold-600" : undefined}
-              >
-                {word}
-                {index === 4 && <br />}
-                {index < headline.split(" ").length - 1 ? " " : ""}
-              </motion.span>
-            ))}
+            Open a Situation. Ask <span className="text-gold-600">PRAXIS.</span>
+            <br />
+            Produce the handover.
           </motion.h1>
 
           {/* Subheadline */}
@@ -352,8 +319,7 @@ export function Hero() {
             initial={false}
             className="mb-6 max-w-2xl text-lg leading-relaxed text-navy-500 sm:text-xl"
           >
-            Build live cases, anchor them in a graph that carries provenance, confidence, and time, then export
-            decision-ready briefings with every claim cited.
+            PRAXIS turns tacit desk context into a guided app: choose the Situation, ask what matters, review sources and confidence, then export a trusted brief, memo, or successor handover.
           </motion.p>
 
           {/* Single CTA — all paths go through /login */}

@@ -6,7 +6,7 @@ type StepIconProps = {
 };
 
 export function QueryIcon({ delay, reducedMotion }: StepIconProps) {
-  const code = "MATCH (a)-[r]->(b) RETURN path";
+  const code = "Check claim support";
 
   return (
     <svg viewBox="0 0 180 128" className="h-full w-full" aria-hidden="true">

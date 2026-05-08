@@ -14,43 +14,43 @@ import {
 const steps = [
   {
     number: "1",
-    title: "Ingest",
-    copy: "Drop sources, documents, and feeds into a Situation.",
+    title: "Open",
+    copy: "Choose a workspace and open the Situation that needs attention.",
     delay: 0,
     Icon: IngestIcon,
   },
   {
     number: "2",
-    title: "Structure",
-    copy: "Gemini extracts ACO primitives. You approve them into the graph.",
+    title: "Ask",
+    copy: "Ask PRAXIS what changed, what is weak, or what should happen next.",
     delay: 0.5,
     Icon: StructureIcon,
   },
   {
     number: "3",
-    title: "Query",
-    copy: "Cypher and Cypher-derived recipes run reasoning over the graph.",
+    title: "Model",
+    copy: "See the Situation Model: stakeholders, stakes, episodes, hypotheses, open threads, and counsel.",
     delay: 1,
     Icon: QueryIcon,
   },
   {
     number: "4",
-    title: "Compare",
-    copy: "Discrepancies surface across UN docs, think tanks, local media.",
+    title: "Source",
+    copy: "Add evidence, review source receipts, and keep trust posture visible.",
     delay: 1.5,
     Icon: CompareIcon,
   },
   {
     number: "5",
-    title: "Brief",
-    copy: "The Boardroom deliberates. The Draft writes itself, paragraph by paragraph.",
+    title: "Produce",
+    copy: "Generate a handover, brief, memo, draft, or export-ready package.",
     delay: 2,
     Icon: BriefIcon,
   },
   {
     number: "6",
     title: "Inherit",
-    copy: "Every export carries provenance. Next analyst inherits the work.",
+    copy: "Every output carries citations, confidence, and remaining gaps for the next analyst.",
     delay: 2.5,
     Icon: InheritIcon,
   },
@@ -73,10 +73,10 @@ export function SixSteps() {
         <div className="mb-12 max-w-3xl">
           <span className="mb-5 block h-px w-16 bg-gradient-to-r from-gold-600 to-transparent" aria-hidden="true" />
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-gold-700">
-            Six-step workflow
+            Product workflow
           </p>
           <h2 className="font-serif text-4xl font-normal tracking-tight text-navy-950 sm:text-5xl">
-            From source intake to inherited institutional memory.
+            Open a Situation, ask PRAXIS, and produce a trusted handover.
           </h2>
         </div>
 

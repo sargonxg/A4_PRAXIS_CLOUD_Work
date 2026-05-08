@@ -14,6 +14,12 @@ import { messageContentSchema, situationContextSchema, aiSettingsSchema } from '
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { resolveTier } from '@/lib/api/tier';
 import { buildAskPraxisExtensions } from '@/lib/ai/ask-praxis-tools';
+import {
+  buildAskPraxisAnswerPolicyBlock,
+  buildAskPraxisSituationSourcePosture,
+  formatAskPraxisCorpusBlock,
+  summarizeAskPraxisGraphSnapshot,
+} from '@/lib/ai/ask-praxis-context';
 import { toLegacyDataStreamResponse } from '@/lib/ai/legacy-data-stream';
 import { buildToolPromptContract } from '@/lib/tools/tool-operating-contracts';
 import type { Situation } from '@/types/situation';
@@ -159,6 +165,7 @@ You have access to the user's active situation data. When answering questions:
     if (situation) {
       const sit = situation as unknown as Situation;
       systemPrompt += '\n\n' + buildSituationContext(sit);
+      systemPrompt += '\n\n' + buildAskPraxisSituationSourcePosture(sit);
 
       // Include source URLs when available so the AI can reference them
       if (sit.sourceUrls && sit.sourceUrls.length > 0) {
@@ -167,6 +174,8 @@ You have access to the user's active situation data. When answering questions:
     } else if (conflictContext) {
       systemPrompt += `\n\n## Active Conflict Context\nThe user is analyzing: **${conflictContext}**\nUse queryConflictGraph to retrieve structured data before answering.`;
     }
+
+    systemPrompt += '\n\n' + buildAskPraxisAnswerPolicyBlock();
 
     if (currentToolId) {
       systemPrompt += `\n\n${buildToolPromptContract(currentToolId)}`;
@@ -192,12 +201,9 @@ You have access to the user's active situation data. When answering questions:
             limit: 12,
           });
           if (corpus.items.length > 0) {
-            const lines = corpus.items.map((it, i) =>
-              `[#${i + 1}] (${it.sourceType}) ${it.title} — ${it.excerpt}\n    citation=${it.citation} confidence=${it.confidence}${it.freshness ? ` freshness=${it.freshness}` : ''}`
-            );
-            systemPrompt += `\n\n## User Situation Corpus (${corpus.items.length} items, layers: ${corpus.trace.layersSearched.join(', ')}, retrieval=${corpus.trace.durationMs}ms)\nUse these items to ground every factual claim. Cite inline by reference like [#3] (corpus index) or by the layer name in brackets (e.g. [argus], [documents]). NEVER fabricate sources — when an item is missing, say "intelligence gap on X" and suggest a relevant tool to fill it.\n\n${lines.join('\n\n')}`;
+            systemPrompt += '\n\n' + formatAskPraxisCorpusBlock(corpus);
           } else {
-            systemPrompt += `\n\n## User Situation Corpus\nThe shared retriever found 0 evidence items across layers ${corpus.trace.layersSearched.join(', ')}. Treat any factual claim as an intelligence gap. Recommend a tool run (e.g. Brainstorming Table, Risk Monitor, Humanitarian, Briefing Room) to fill the gap before answering with high confidence.`;
+            systemPrompt += '\n\n' + formatAskPraxisCorpusBlock(corpus);
           }
         }
       } catch (ragErr) {
@@ -246,6 +252,7 @@ You have access to the user's active situation data. When answering questions:
         }
       }
     }
+    systemPrompt += '\n\n' + summarizeAskPraxisGraphSnapshot(graphSnapshot);
     const baseTools = createSituationBoundTools(situationCtx, graphSnapshot);
     // Ask PRAXIS extensions — writeToTool / groundedSearchFetch /
     // runDeepResearch. Tier-gated; safe to attach for all callers because each
