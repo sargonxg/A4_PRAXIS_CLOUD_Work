@@ -4,14 +4,14 @@
 
 ## Morning Brief
 
-- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items.
+- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`.
 - Prompts deferred: Cloud SQL live row counts from `01` (blocked by private IP plus missing local `psql`/Cloud SQL Proxy).
-- Pre-existing audit failures surfaced: `audit:workbench` now reaches its final route-count guard and fails on `35` visible app pages versus the current `<=34` ceiling.
+- Recovery loop resolved: `audit:ux-polish`, `audit:workbench`, `audit:evidence-drawer`, `audit:graph-viewer`, `audit:visualization`, `audit:master-charter`, stale Graphify outputs, and withCalibration unit fixture drift.
 - Measured deltas:
   - Workbench root JS gzipped: current built workbench initial client JS is `511.3 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
   - Tools chapter density: live demo DOM count is 54 interactive controls after opening the closed Recipe library.
   - Prompt-health: thin synthetic case `72/red`, rich Syria demo `94/yellow`, prompt block delta `+2179` bytes for rich.
-- Next-session priorities: thin-case calibration contract, ACO explainer, runtime document ingest parity, production smoke on `praxis.tacitus.me`.
+- Next-session priorities: runtime document ingest parity, production workbench smoke on `praxis.tacitus.me`, and live fresh-account onboarding enforcement.
 - Blockers requiring GC: none for the low-risk code changes here; production deployment/commit approval remains separate.
 
 ---
@@ -21,8 +21,8 @@
 - Started: 2026-05-08T00:27:51-04:00 checkpoint.
 - Branch: `main`
 - Last commit at start: `46d8cf1`
-- Last commit at end: current `main` HEAD after this onboarding gate follow-up pass.
-- Total commits this session: `9`
+- Last commit at end: current `main` HEAD after this iterate-loop recovery pass.
+- Total commits this session: see `git log --oneline 46d8cf1..HEAD`.
 - Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`
 
 ## Tasks
@@ -41,6 +41,7 @@
 | 10_ACO_EXPLAINER | done | Added the 14-entity ACO copy source of truth, first-case overlay with localStorage dismissal, permanent Ontology-tab reference button, onboarding mention, and `audit:aco-parity` in `audit:gate`. |
 | 11_AUDIT_PROMOTION | done | Audit pass messages now carry tier labels, runtime-proof variants exist for KG drift, Cognee, owner scoping, and tool-context isolation, `audit:gate-with-cloud` and `audit:gate-runtime-full` are wired, runtime audits skip without opt-ins, and `docs/audits/README.md` documents the taxonomy. |
 | 12_HYGIENE | done | `background_jobs` global reads now admin-only; surface registry coherence audit includes tabs, chapters, and visible hero tools; deleted memory UI files stayed deleted; forbidden legacy model string grep returned 0; committed-secret grep found no leaks beyond env/config references; lint baseline recorded at `98` problems before this cleanup. |
+| 13_ITERATE_LOOP | done | Recovery loop applied until `audit:gate` passed; fixed UX smoke markers, redirect-only visible route counting, evidence drawer immediate-run markers, lazy graph audit expectations, stale Graphify output, and withCalibration unit fixtures. |
 
 Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blocked`.
 
@@ -48,7 +49,7 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 
 ### audit:gate composition
 
-`audit:gate` currently includes 69 `npm run audit:*` commands. Full gate baseline attempted on 2026-05-08 and stopped at `audit:ux-polish`.
+`audit:gate` currently includes 69 `npm run audit:*` commands. Full gate passed on 2026-05-08 after the iterate-loop recovery pass.
 
 | audit | status | tier | notes |
 |---|---|---|---|
@@ -63,7 +64,7 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 | audit:runbook-bundle | pass | static-marker | `17 Pack 22 runbooks.` |
 | audit:pack22-verification | pass | static-marker | `passed`. |
 | audit:observability-coverage | pass | static-marker | `ok`. |
-| audit:ux-polish | fail | static-marker | `tests/e2e/app-usability-smoke.spec.ts` missing `tool-marketplace` and `Memo Studio` coverage. Gate stopped here. |
+| audit:ux-polish | pass | static-marker | Workbench smoke now asserts the Recipe library and Memo Studio surfaces. |
 | audit:no-deterministic-tool-output-in-ui | pass | static-marker | Prevents `deterministic-foundation`, `foundation-run`, and `marketplace-foundation-v1` from visible UI. |
 | audit:hero-tool-calibration-coverage | pass | static-marker | Checked 12 visible hero tools and catches deterministic/calibrated mismatches. |
 | audit:thin-case-handling | pass | static-marker | New gate for prompt-health endpoint, `<context-quality>` compensation, 422 refusal, and UI run-anyway handling. |
@@ -72,6 +73,12 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 | audit:workbench-bundle | pass | build-output | Measured current workbench initial client JS at `511.4 KB gzip` with a `520 KB` budget; also enforces dynamic chapter/tab imports and active-only mounting. |
 | audit:library-ingest-consolidation | pass | static-marker | Ensures upload UI calls both document save and backend ingest paths and passes `documentId`. |
 | audit:document-ingest-parity | pass | static-marker | Guards visible Library upload order, `documentId` handoff, canonical upload route, and backend metadata retention. |
+| audit:graph-viewer | pass | static-marker | Verifies the graph tab routes through lazy `WorkbenchGraphPanel`, which renders `PraxisGraphView`. |
+| audit:visualization | pass | static-marker | Verifies visualization-wave graph surfaces follow the current lazy tab path. |
+| audit:master-charter | pass | static-marker | Graphify outputs refreshed at current commit. |
+| npm test | pass | runtime-test | 146 files and 573 tests passed. |
+| audit:gcp | pass | runtime-proof | Hard failures 0, soft warnings 0. |
+| audit:gcp-production-posture | pass | runtime-proof | Hard failures 0, soft warnings 3: inherited public-access prevention, Terraform state bucket permission denied, and Cloud Armor policy warning. |
 
 ### Verification Commands Run
 
@@ -95,10 +102,16 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 | `npm run audit:ai-provider-isolation` | pass |
 | `npm run audit:model-matrix-coverage` | pass |
 | `/api/health/features` direct route smoke | pass, defaults off; env flip enables `cognee`, `postgresKg`, and `agentEngineSubagents` |
-| `npm run audit:gate` | fail, pre-existing `audit:ux-polish` coverage gaps for `tool-marketplace` and `Memo Studio` |
+| `npm run audit:gate` | pass after iterate-loop recovery |
 | `npm run audit:onboarding-gate` | pass |
-| `npm run audit:workbench` | fail at route-count ceiling, `35` visible app pages vs `<=34` |
-| `npm run audit:gate` | known fail before this slice at `audit:ux-polish`; current workbench audit also surfaces route-count ceiling |
+| `npm run audit:workbench` | pass; redirect-only compatibility shims no longer count as visible app pages |
+| `npm run audit:ux-polish` | pass; smoke spec now covers Recipe library and Memo Studio |
+| `npm run audit:evidence-drawer` | pass; immediate SAT artifact sources remain visible while deterministic markers stay redacted |
+| `npm run audit:graph-viewer` | pass |
+| `npm run audit:visualization` | pass |
+| `npm run audit:master-charter` | pass after Graphify refresh |
+| `npm run test` | pass, 146 files and 573 tests |
+| `graphify update .` | pass, rebuilt 5818 nodes, 9917 edges, and 821 communities; HTML skipped because the graph exceeds the 5000-node render limit |
 
 ### Postgres KG Live Counts
 
@@ -178,7 +191,12 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 
 | audit | failure | session of fix |
 |---|---|---|
-| audit:ux-polish | Workbench smoke spec missing `tool-marketplace` and `Memo Studio` coverage. | next diagnostics/fix pass |
+| audit:ux-polish | Workbench smoke spec missing `tool-marketplace` and `Memo Studio` coverage. | fixed in `13_ITERATE_LOOP` |
+| audit:workbench | Visible app route count included redirect-only compatibility shims. | fixed in `13_ITERATE_LOOP` |
+| audit:evidence-drawer | Immediate SAT run artifact sources were redacted too aggressively for the evidence audit. | fixed in `13_ITERATE_LOOP` |
+| audit:graph-viewer / audit:visualization | Static audits expected the old direct graph viewer import path instead of the lazy `WorkbenchGraphPanel` route. | fixed in `13_ITERATE_LOOP` |
+| audit:master-charter | Graphify outputs were stale against the current codebase. | fixed in `13_ITERATE_LOOP` |
+| npm test | withCalibration unit fixtures lagged current `withContextAware` and onboarding profile contracts. | fixed in `13_ITERATE_LOOP` |
 
 ## Blockers
 

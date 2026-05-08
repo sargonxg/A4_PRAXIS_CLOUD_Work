@@ -6,6 +6,54 @@ vi.mock('@/lib/api/with-auth', () => ({
 vi.mock('@/lib/api/with-credits', () => ({
   checkAndDeductCreditsForUid: vi.fn().mockResolvedValue({ allowed: true }),
 }));
+vi.mock('@/lib/api/with-context-aware', () => ({
+  withContextAware: vi.fn().mockResolvedValue({
+    headers: new Headers(),
+    snapshot: {
+      user: {
+        uid: 'u1',
+        workspaceId: 'personal-u1',
+        identity: { displayName: 'A', role: 'analyst' },
+        preferences: {},
+        capturedAt: {},
+      },
+      workspace: {
+        workspaceId: 'personal-u1',
+        ownerUid: 'u1',
+        label: 'Personal workspace',
+        guidelines: [],
+        methodologyDocs: ['Structured analytic technique notes'],
+      },
+      case: {
+        caseId: 's1',
+        ownerUid: 'u1',
+        ontologyId: 'conflict',
+        frame: { name: 'Case', summary: 'A real enough situation summary for prompt health.' },
+        sourceCount: 2,
+        documentCount: 1,
+        graphNodeCount: 8,
+        graphEdgeCount: 4,
+        contextHealth: {
+          score: 86,
+          threshold: 60,
+          ready: true,
+          lowestDimension: { id: 'sources', label: 'Sources', score: 86, detail: 'Sources are adequate.' },
+        },
+      },
+      conversation: {
+        sessionId: 'test-session',
+        startedAt: '2026-05-08T00:00:00.000Z',
+        workbenchTab: 'tools',
+        recentActions: [],
+      },
+      composite: {
+        health: 86,
+        weakestLayer: 'case',
+        advisories: [],
+      },
+    },
+  }),
+}));
 vi.mock('@/lib/context/profile-context', () => ({
   buildCalibratedContext: vi.fn().mockResolvedValue({
     systemPromptBlock: '<analyst-profile>X</analyst-profile>',
@@ -15,7 +63,7 @@ vi.mock('@/lib/context/profile-context', () => ({
   }),
 }));
 vi.mock('@/lib/firebase/analyst-profile-admin', () => ({
-  getAnalystProfile: vi.fn().mockResolvedValue({ meta: { completedAt: new Date() } }),
+  getAnalystProfile: vi.fn().mockResolvedValue(completeProfile()),
 }));
 
 import { AI_REQUEST_LIMITS } from '@/lib/api/ai-request-limits';
@@ -23,11 +71,44 @@ import { withCalibration } from '@/lib/api/with-calibration';
 import { buildCalibratedContext } from '@/lib/context/profile-context';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
 
+function completeProfile() {
+  return {
+    identity: {
+      role: 'analyst',
+      seniority: 'senior',
+      org: '',
+      team: '',
+    },
+    perspective: {
+      mandate: 'Provide grounded policy analysis for complex political and conflict situations.',
+      lenses: ['diplomatic'],
+      regions: ['global'],
+      audience: 'myself',
+      primaryDomain: 'conflict',
+      secondaryDomains: [],
+    },
+    workingStyle: {
+      sourceCategories: ['foundational'],
+      language: 'en',
+      redLines: [],
+      analyticalStyle: 'rapid_brief',
+    },
+    meta: {
+      version: 1,
+      completedAt: new Date(),
+      lastEditedAt: null,
+      skipCount: 0,
+      createdAt: null,
+      deletedAt: null,
+    },
+  };
+}
+
 describe('withCalibration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Restore default: completed onboarding profile
-    (getAnalystProfile as ReturnType<typeof vi.fn>).mockResolvedValue({ meta: { completedAt: new Date() } });
+    (getAnalystProfile as ReturnType<typeof vi.fn>).mockResolvedValue(completeProfile());
   });
 
   it('injects calibration into handler', async () => {

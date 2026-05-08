@@ -43,11 +43,13 @@ if (!graphView.includes('dynamic(') || !graphView.includes('ssr: false')) {
 }
 
 const workbench = readFileSync(join(root, 'src/components/workbench/workbench-tab-content.tsx'), 'utf8');
+const workbenchGraphPanel = readFileSync(join(root, 'src/components/workbench/workbench-graph-panel.tsx'), 'utf8');
 const deskTab = readFileSync(join(root, 'src/components/workbench/DeskTab.tsx'), 'utf8');
 const whatChanged = readFileSync(join(root, 'src/components/workbench/desk/WhatChangedPanel.tsx'), 'utf8');
 const structuredChapter = readFileSync(join(root, 'src/components/workbench/StructuredChapterContent.tsx'), 'utf8');
 const syriaChapter = readFileSync(join(root, 'src/components/syria/chapter-3-conflict-graph.tsx'), 'utf8');
-if (!workbench.includes('PraxisGraphView')) failures.push('Graph tab must render PraxisGraphView');
+if (!workbench.includes('WorkbenchGraphPanel')) failures.push('Graph tab must route through WorkbenchGraphPanel');
+if (!workbenchGraphPanel.includes('PraxisGraphView')) failures.push('WorkbenchGraphPanel must render PraxisGraphView');
 if (!structuredChapter.includes('PraxisGraphView')) failures.push('Structured chapter 3 must render PraxisGraphView');
 if (!syriaChapter.includes('PraxisGraphView')) failures.push('Syria chapter 3 must render PraxisGraphView');
 if (!deskTab.includes('toTimelineItems') || !whatChanged.includes('desk-inline-timeline')) {

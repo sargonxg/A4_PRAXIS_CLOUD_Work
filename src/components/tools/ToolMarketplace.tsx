@@ -315,8 +315,12 @@ export function ToolMarketplace() {
         prompt: payload.artifact.prompt,
         summary: redactMarketplaceFoundationMarkers(payload.artifact.structuredOutput?.summary ?? `${payload.tool.name} completed.`),
         rawText: redactMarketplaceFoundationMarkers(payload.artifact.rawText ?? ''),
-        structuredOutput: redactMarketplaceFoundationJson(payload.artifact.structuredOutput) as Record<string, unknown>,
-        contextDump: redactMarketplaceFoundationJson(payload.artifact.contextDump) as Record<string, unknown>,
+        structuredOutput: payload.artifact.structuredOutput
+          ? redactMarketplaceFoundationJson(payload.artifact.structuredOutput) as Record<string, unknown>
+          : undefined,
+        contextDump: payload.artifact.contextDump
+          ? redactMarketplaceFoundationJson(payload.artifact.contextDump) as Record<string, unknown>
+          : undefined,
         metadata: redactMarketplaceFoundationJson(payload.artifact.metadata) as Record<string, unknown>,
         health: payload.runContext.health,
         advisoryCount: payload.runContext.advisories?.length ?? 0,

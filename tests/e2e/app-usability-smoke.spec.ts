@@ -99,11 +99,13 @@ test('demo workbench exposes context, ontology, graph, tools, memo, and draft su
 
   await page.getByRole('button', { name: /^Tools$/i }).click();
   await expect(page.getByTestId('workbench-tools-surface')).toBeVisible();
+  await expect(page.getByTestId('tool-marketplace')).toBeVisible();
   await expect(page.getByText(/DIALECTICA backbone/i)).toBeVisible();
   await expect(page.getByText(/Graph-grounded execution/i)).toBeVisible();
 
   await page.getByRole('button', { name: /^Memos$/i }).click();
   await expect(page.getByTestId('workbench-memos-surface')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Memo Studio$/i })).toBeVisible();
   await expect(page.getByText(/From graph evidence to work product/i)).toBeVisible();
 
   await page.getByRole('button', { name: /^Draft$/i }).click();

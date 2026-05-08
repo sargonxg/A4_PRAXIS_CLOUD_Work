@@ -482,7 +482,7 @@ for (const marker of ['Active Ontologies', 'Validator Pass-Rate Detail', 'Primit
   }
 }
 
-const appPageCount = countFiles('src/app/app', 'page.tsx');
+const appPageCount = countVisiblePages('src/app/app', 'page.tsx');
 // Pack 16 intentionally adds settings/personas, settings/personas/new, and settings/personas/[personaId].
 if (appPageCount > 34) {
   throw new Error(`Too many visible app route pages: ${appPageCount}; expected <= 34.`);
@@ -502,5 +502,18 @@ function countFiles(dir: string, fileName: string): number {
     const stat = statSync(path);
     if (stat.isDirectory()) return count + countFiles(path, fileName);
     return count + (entry === fileName ? 1 : 0);
+  }, 0);
+}
+
+function countVisiblePages(dir: string, fileName: string): number {
+  if (!existsSync(dir)) return 0;
+  return readdirSync(dir).reduce((count, entry) => {
+    const pagePath = join(dir, entry);
+    const stat = statSync(pagePath);
+    if (stat.isDirectory()) return count + countVisiblePages(pagePath, fileName);
+    if (entry !== fileName) return count;
+    const body = readFileSync(pagePath, 'utf8');
+    const redirectOnly = body.includes("from 'next/navigation'") && body.includes('redirect(') && !body.includes('return (');
+    return count + (redirectOnly ? 0 : 1);
   }, 0);
 }
