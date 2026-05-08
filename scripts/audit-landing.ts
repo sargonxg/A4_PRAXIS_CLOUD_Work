@@ -36,6 +36,12 @@ for (const required of ['PRODUCT_EXPERIENCE_AREAS', 'AGENTIC_WORKFLOWS', 'PRIMAR
   }
 }
 
+for (const required of ['Context cores', 'General PRAXIS', 'User core', 'Team core', 'Situation core']) {
+  if (!agenticApp.includes(required)) {
+    throw new Error(`Agentic landing section is missing context-core copy: ${required}.`);
+  }
+}
+
 for (const required of ['Open', 'Ask', 'Model', 'Source', 'Produce', 'Inherit']) {
   if (!sixSteps.includes(`title: "${required}"`)) {
     throw new Error(`Six-step landing workflow is missing "${required}".`);

@@ -36,6 +36,30 @@ The simplified app depends on a stronger answer engine, not a thinner one. This 
 
 `src/app/api/ai/chat/route.ts` now injects this context pack into Ask PRAXIS before streaming. `scripts/audit-ask-praxis-primary.ts` verifies that the chat route continues to use the context pack.
 
+## Context Core Model And Tool Incorporation
+
+The follow-up architecture pass adds `src/lib/product/context-core-map.ts` and `docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md` so the simplification is tracked as code and documentation, not loose product language.
+
+The model states that PRAXIS can work in general platform mode through the PRAXIS Core, or it can bind the same capabilities to specific context cores:
+
+- User Core for profile, preferences, saved situations, and owner scope.
+- Team Core for future authorized multi-user workspaces.
+- Situation Core for the active case frame.
+- Source Core and Document Core for receipts, uploaded material, retrieval fragments, and optional Cognee memory.
+- Graph Core for canonical and advisory graph context.
+- Output Core for briefs, memos, drafts, handovers, and exports.
+
+`getSimplifiedCapabilityLedger()` now maps every consolidated capability to the user-facing area, preserved specialist tool IDs, required context cores, primary output, live AI capability, and current posture. This preserves the existing tool work while making the simplified app legible: the user starts from Home and Ask PRAXIS, while the code can still route into Sources, Situation Model, Outputs, GraphOps, Boardroom, ACH, Memo Studio, export, admin, and advanced tools.
+
+`scripts/audit-simplified-capability-ledger.ts` verifies:
+
+- every required context core exists
+- every consolidated tool maps to at least one context core
+- user-core and team-core are represented
+- optional Cognee memory is explicitly accounted for without claiming it is always live
+- specialized tool development groups still point back to consolidated capabilities
+- every simplified capability preserves existing tool/functionality paths
+
 ## Landing Alignment
 
 The landing page now leads with:
@@ -57,6 +81,7 @@ Passed:
 - `npm run audit:experience-map-coherence`
 - `npm run audit:ask-praxis-primary`
 - `npm run audit:mobile-primary-flows`
+- `npm run audit:simplified-capability-ledger`
 - `npm run audit:dashboard`
 - `npm run audit:workbench`
 - `npm run audit:workspace-tabs-chapters`
