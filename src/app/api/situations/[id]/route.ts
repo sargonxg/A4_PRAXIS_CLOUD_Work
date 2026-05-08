@@ -6,6 +6,7 @@ import {
   deleteSituationAdmin,
 } from '@/lib/firebase/situations';
 import type { Situation } from '@/types/situation';
+import { emitTelemetrySafe } from '@/lib/telemetry/emit';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -87,11 +88,40 @@ export function PATCH(req: NextRequest, ctx: RouteContext) {
 
 export function DELETE(_req: NextRequest, ctx: RouteContext) {
   return withAuth(async (_r, user) => {
+    const startedAt = Date.now();
     const demoErr = rejectDemo(user);
     if (demoErr) return demoErr;
 
     const { id } = await ctx.params;
-    await deleteSituationAdmin(user.uid, id);
+    try {
+      await deleteSituationAdmin(user.uid, id);
+      await emitTelemetrySafe({
+        eventName: 'case.delete',
+        uid: user.uid,
+        orgId: orgIdOf(user),
+        caseId: id,
+        route: `/api/situations/${id}`,
+        status: 'ok',
+        latencyMs: Date.now() - startedAt,
+        details: {},
+      });
+    } catch (err) {
+      await emitTelemetrySafe({
+        eventName: 'case.delete',
+        uid: user.uid,
+        orgId: orgIdOf(user),
+        caseId: id,
+        route: `/api/situations/${id}`,
+        status: 'fail',
+        latencyMs: Date.now() - startedAt,
+        details: { message: err instanceof Error ? err.message.slice(0, 240) : String(err).slice(0, 240) },
+      });
+      throw err;
+    }
     return NextResponse.json({ success: true });
   })(_req);
+}
+
+function orgIdOf(user: AuthenticatedUser & { orgId?: string }): string | null {
+  return user.orgId ?? null;
 }

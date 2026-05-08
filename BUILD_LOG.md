@@ -1,5 +1,9 @@
 # PRAXIS Build Log
 
+## 2026-05-08 — Structured telemetry and KPI assets
+
+Built Session D from `D0_STRUCTURED_EVENTS.md` and `D1_KPI_PIPELINE.md`: added a typed telemetry schema, server JSON-line emitter, authenticated browser intake route, 1KB details cap, and first critical emit sites for case lifecycle, calibrated AI/tool lifecycle, document upload, and graph population. Added D1 BigQuery event/KPI views, deploy helper, alert definitions, KPI/dashboard docs, and static audits for both D0 and D1. Runtime production validation remains deferred until this commit is deployed and Cloud Logging shows `praxis.telemetry.*` rows; latency and token cost on the Syria demo were not measured in this local static pass.
+
 ## 2026-05-07 — Deep pre-ship operator SSE hardening
 
 Continued `DEEP_PRESHIP_CHECKLIST.md` by hardening the workspace operator SSE path and expanding the saved pre-ship audit from 97 to 141 static checks. `/v1/workspace/events` now emits SSE retry hints, event IDs, and named events using the checklist vocabulary (`start`, `step`, `progress`, `complete`, `fail`); `useOrchestratorEvents` now subscribes to named events and leaves browser EventSource reconnection active instead of closing on transient errors. Added a backend SSE contract test and extended `audit:deep-preship` to cover operator transparency, notifications, frontend polish, E2E scaffolding, and performance script availability. Verified with the deep pre-ship audit, focused pytest, scoped ESLint, Python compile, TypeScript, and production build. Live staging/browser/Cloud SQL/Vertex checks remain environment gates.

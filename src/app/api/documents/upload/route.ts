@@ -9,6 +9,7 @@ import {
   getDefaultBucketName,
   getAdminDbOrThrow,
 } from '@/lib/firebase/admin';
+import { emitTelemetrySafe } from '@/lib/telemetry/emit';
 
 /**
  * Canonical document ingestion endpoint.
@@ -36,6 +37,7 @@ interface JsonUploadBody {
 }
 
 export const POST = withAuth(async (request, user) => {
+  const startedAt = Date.now();
   const contentTypeHeader = request.headers.get('content-type') || '';
 
   // ── JSON body path: artifacts generated inside the app (briefs, memos,
@@ -66,6 +68,15 @@ export const POST = withAuth(async (request, user) => {
       );
     }
     try {
+      await emitTelemetrySafe({
+        eventName: 'document.upload-start',
+        uid: user.uid,
+        orgId: orgIdOf(user),
+        caseId: body.situationId,
+        route: '/api/documents/upload',
+        status: 'queued',
+        details: { mode: 'json', toolId: body.toolId || 'editor' },
+      });
       const bucketName = getDefaultBucketName();
       const bucket = getAdminStorage().bucket(bucketName);
       const docId = body.documentId || `doc-${Date.now().toString(36)}`;
@@ -114,6 +125,16 @@ export const POST = withAuth(async (request, user) => {
         console.warn('[documents/upload] Firestore mirror failed:', metaErr);
       }
 
+      await emitTelemetrySafe({
+        eventName: 'document.upload-complete',
+        uid: user.uid,
+        orgId: orgIdOf(user),
+        caseId: body.situationId,
+        route: '/api/documents/upload',
+        status: 'ok',
+        latencyMs: Date.now() - startedAt,
+        details: { mode: 'json', size: Buffer.byteLength(body.html, 'utf8') },
+      });
       return NextResponse.json({
         success: true,
         mode: 'json',
@@ -122,6 +143,16 @@ export const POST = withAuth(async (request, user) => {
         message: 'Artifact synced to bucket and indexed for the document dashboard.',
       });
     } catch (err) {
+      await emitTelemetrySafe({
+        eventName: 'document.upload-fail',
+        uid: user.uid,
+        orgId: orgIdOf(user),
+        caseId: body.situationId,
+        route: '/api/documents/upload',
+        status: 'fail',
+        latencyMs: Date.now() - startedAt,
+        details: { mode: 'json', message: err instanceof Error ? err.message.slice(0, 240) : String(err).slice(0, 240) },
+      });
       console.error('[documents/upload] JSON path failed:', err);
       return NextResponse.json(
         { error: err instanceof Error ? err.message : 'Bucket upload failed' },
@@ -149,6 +180,15 @@ export const POST = withAuth(async (request, user) => {
     }
 
     const fileType = file.name.split('.').pop()?.toLowerCase() || 'unknown';
+    await emitTelemetrySafe({
+      eventName: 'document.upload-start',
+      uid: user.uid,
+      orgId: orgIdOf(user),
+      caseId: situationId,
+      route: '/api/documents/upload',
+      status: 'queued',
+      details: { mode: 'multipart', fileType, size: file.size },
+    });
 
     if (!ALLOWED_EXTENSIONS.includes(fileType)) {
       return NextResponse.json(
@@ -227,6 +267,16 @@ export const POST = withAuth(async (request, user) => {
       }
     }
 
+    await emitTelemetrySafe({
+      eventName: 'document.upload-complete',
+      uid: user.uid,
+      orgId: orgIdOf(user),
+      caseId: situationId,
+      route: '/api/documents/upload',
+      status: 'ok',
+      latencyMs: Date.now() - startedAt,
+      details: { mode: 'multipart', fileType, chunkCount, documentId: stored.id },
+    });
     return NextResponse.json({
       success: true,
       documentId: stored.id,
@@ -246,7 +296,20 @@ export const POST = withAuth(async (request, user) => {
         : 'Document uploaded and saved to your situation. Text extraction did not produce retrievable chunks.',
     });
   } catch (err) {
+    await emitTelemetrySafe({
+      eventName: 'document.upload-fail',
+      uid: user.uid,
+      orgId: orgIdOf(user),
+      route: '/api/documents/upload',
+      status: 'fail',
+      latencyMs: Date.now() - startedAt,
+      details: { message: err instanceof Error ? err.message.slice(0, 240) : String(err).slice(0, 240) },
+    });
     console.error('[documents/upload] failed:', err);
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
   }
 });
+
+function orgIdOf(user: unknown): string | null {
+  return (user as { orgId?: string }).orgId ?? null;
+}

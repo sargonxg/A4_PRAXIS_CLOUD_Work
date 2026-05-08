@@ -53,6 +53,8 @@ This matches `docs/architecture/MODEL_SELECTION.md`,
 | Fifty-two curated marketplace tools | Enforced | `npm run audit:tool-marketplace`, `npm run audit:tool-skills-present`, `npm run audit:tool-canary-executable`, `npm run audit:tool-semantic-canaries`, `npm run audit:tool-persona-coverage`, `npm run audit:tool-composition-static`, `npm run audit:tool-suggestion-eval` |
 | UX loading/empty/error states have local gate | Enforced | `npm run audit:ux-polish` |
 | Observability has local trace/logger/health gate | Enforced | `npm run audit:observability-coverage` |
+| Structured telemetry has local schema/emit-site gate | Enforced | `src/types/telemetry.ts`, `src/lib/telemetry/emit.ts`, `npm run audit:telemetry-coverage` |
+| KPI BigQuery assets are tracked in repo | Enforced for static assets; live sink pending deploy | `infrastructure/bigquery/`, `docs/operational/KPIS.md`, `npm run audit:bq-views` |
 | Graphify stays refreshed | Enforced operationally | `graphify update .` output in Pack 14 audit docs |
 | Architecture §19 command chain is accounted | Enforced | `npm run audit:architecture-chain` |
 | Embedding dimension canon | Enforced | `src/lib/knowledge/embedding-config.ts`, `backend/migrations/versions/0012_embedding_dim_alignment.py`, `npm run audit:embedding-dim` |
@@ -76,6 +78,8 @@ Local aliases added for the real app include `typecheck`, `test`,
 `audit:legal-pages-present`, `audit:type-safety`, `audit:docs`,
 `audit:model-matrix-coverage`, `audit:runbook-bundle`,
 `audit:pack22-verification`, and `audit:gcp-production-posture`.
+Session D adds `audit:telemetry-coverage` and `audit:bq-views` so structured
+product telemetry and KPI assets are part of the deploy gate.
 
 Pack 22 adds a production verification layer for GCP and Gemini Enterprise
 posture. The local aliases are intentionally limited to safe static/read-only

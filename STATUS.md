@@ -4,14 +4,14 @@
 
 ## Morning Brief
 
-- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `V2_00_README`, `V2_A0_MT_DATA_MODEL`, `V2_B0_KG_PREFLIGHT` local attempt.
+- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `V2_00_README`, `V2_A0_MT_DATA_MODEL`, `V2_B0_KG_PREFLIGHT` local attempt, `V2_D0_STRUCTURED_EVENTS` static implementation, `V2_D1_KPI_PIPELINE` static assets.
 - Prompts deferred: Cloud SQL live row counts from `01` and `V2_B0_KG_PREFLIGHT` are blocked locally by private IP plus missing local `psql`/Cloud SQL Proxy; `V2_A1_ORGID_CONTEXT` through `V2_A6_MT_AUDIT_LOG` are blocked until all MT approval rows below are marked approved or explicitly revised; `V2_B1_DUAL_WRITE_GRAPH` through `V2_B3_RETIRE_FIRESTORE_GRAPH` are blocked until B0 live counts select and approve Case 1/2/3, B1 runs clean for 7 days, and B2 runs clean for 7 days; `V2_C0_COGNEE_LIVE` and `V2_C1_MEMORY_RECALL_IN_CALIBRATION` are blocked because `praxis-cognee` is not deployed in Cloud Run; `V2_C2_AGENT_ENGINE_SUBAGENTS` is blocked pending the deploy-vs-rename decision.
 - Recovery loop resolved: `audit:ux-polish`, `audit:workbench`, `audit:evidence-drawer`, `audit:graph-viewer`, `audit:visualization`, `audit:master-charter`, stale Graphify outputs, and withCalibration unit fixture drift.
 - Measured deltas:
   - Workbench root JS gzipped: current built workbench initial client JS is `511.3 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
   - Tools chapter density: live demo DOM count is 54 interactive controls after opening the closed Recipe library.
   - Prompt-health: thin synthetic case `72/red`, rich Syria demo `94/yellow`, prompt block delta `+2179` bytes for rich.
-- Next-session priorities: decide C2 Option A deploy vs Option B rename, run B0 KG preflight from a VPC-connected shell, deploy or provision `praxis-cognee` before C0, GC approval of the five MT decisions, then `A1_ORGID_CONTEXT.md`; runtime document ingest parity and production workbench smoke remain carried follow-ups.
+- Next-session priorities: deploy D0 and confirm production Cloud Logging emits `praxis.telemetry.*`, then wire D1 BigQuery sink/dashboard; decide C2 Option A deploy vs Option B rename; run B0 KG preflight from a VPC-connected shell; deploy or provision `praxis-cognee` before C0; GC approval of the five MT decisions, then `A1_ORGID_CONTEXT.md`; runtime document ingest parity and production workbench smoke remain carried follow-ups.
 - Blockers requiring GC: none for the low-risk code changes here; production deployment/commit approval remains separate.
 
 ---
@@ -58,6 +58,8 @@
 | V2_C0_COGNEE_LIVE | blocked | `praxis-cognee` Cloud Run service is not present in `praxisbytacitus`; repo also lacks `infrastructure/cloudrun/praxis-cognee/`. |
 | V2_C1_MEMORY_RECALL_IN_CALIBRATION | blocked | Depends on C0 smoke-green with `COGNEE_ENABLED=true`; must not wire memory recall into calibration before live Cognee exists. |
 | V2_C2_AGENT_ENGINE_SUBAGENTS | blocked | No `VERTEX_AGENT*` secrets or visible Agent Engine CLI surface; decision required: Option A deploy real artifacts or Option B rename subagent claims to calibrated pipeline. |
+| V2_D0_STRUCTURED_EVENTS | done | Typed schema, server emitter, browser intake, critical route hooks, 1KB details cap, unit test, docs, and `audit:telemetry-coverage` added. |
+| V2_D1_KPI_PIPELINE | partial | BigQuery views/queries, deploy helper, alert definitions, KPI/dashboard docs, and `audit:bq-views` added; live sink/dashboard verification waits for production D0 events. |
 
 Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blocked`.
 
@@ -105,6 +107,7 @@ marked `approved` or `revised: <alternative>`.
 | audit:runbook-bundle | pass | static-marker | `17 Pack 22 runbooks.` |
 | audit:pack22-verification | pass | static-marker | `passed`. |
 | audit:observability-coverage | pass | static-marker | `ok`. |
+| audit:telemetry-coverage | pass | static-marker | Added for D0 structured events; validates schema, emitter, browser intake, core emit sites, and 1KB details cap. |
 | audit:ux-polish | pass | static-marker | Workbench smoke now asserts the Recipe library and Memo Studio surfaces. |
 | audit:no-deterministic-tool-output-in-ui | pass | static-marker | Prevents `deterministic-foundation`, `foundation-run`, and `marketplace-foundation-v1` from visible UI. |
 | audit:hero-tool-calibration-coverage | pass | static-marker | Checked 12 visible hero tools and catches deterministic/calibrated mismatches. |
@@ -117,6 +120,7 @@ marked `approved` or `revised: <alternative>`.
 | audit:graph-viewer | pass | static-marker | Verifies the graph tab routes through lazy `WorkbenchGraphPanel`, which renders `PraxisGraphView`. |
 | audit:visualization | pass | static-marker | Verifies visualization-wave graph surfaces follow the current lazy tab path. |
 | audit:master-charter | pass | static-marker | Graphify outputs refreshed at current commit. |
+| audit:bq-views | pass | static-marker | Added for D1 KPI pipeline assets; validates BigQuery SQL, alert definitions, docs, and gate membership. |
 | npm test | pass | runtime-test | 146 files and 573 tests passed. |
 | audit:gcp | pass | runtime-proof | Hard failures 0, soft warnings 0. |
 | audit:gcp-production-posture | pass | runtime-proof | Hard failures 0, soft warnings 3: inherited public-access prevention, Terraform state bucket permission denied, and Cloud Armor policy warning. |
@@ -140,10 +144,15 @@ marked `approved` or `revised: <alternative>`.
 | `npm run audit:document-ingest-parity` | pass |
 | `npm run audit:workbench-bundle` | pass, `511.4 KB gzip` |
 | `npm run audit:embedding-dim` | pass |
+| `npm run audit:telemetry-coverage` | pass |
+| `npm run audit:bq-views` | pass |
+| `npm run audit:codex-prompts` | pass, Session D prompts D0-D1 included |
+| `npm run test -- tests/unit/lib/telemetry/emit.test.ts` | pass, 2 tests |
 | `npm run audit:ai-provider-isolation` | pass |
 | `npm run audit:model-matrix-coverage` | pass |
 | `/api/health/features` direct route smoke | pass, defaults off; env flip enables `cognee`, `postgresKg`, and `agentEngineSubagents` |
 | `npm run audit:gate` | pass after iterate-loop recovery |
+| `npm run audit:gate` | partial rerun on 2026-05-08: passed through `audit:codex-prompts`, stopped at stale Graphify; `graphify update .` refreshed 5843 nodes, 9952 edges, 834 communities; failed tail then passed. |
 | `npm run audit:onboarding-gate` | pass |
 | `npm run audit:workbench` | pass; redirect-only compatibility shims no longer count as visible app pages |
 | `npm run audit:ux-polish` | pass; smoke spec now covers Recipe library and Memo Studio |
@@ -152,7 +161,7 @@ marked `approved` or `revised: <alternative>`.
 | `npm run audit:visualization` | pass |
 | `npm run audit:master-charter` | pass after Graphify refresh |
 | `npm run test` | pass, 146 files and 573 tests |
-| `graphify update .` | pass, rebuilt 5818 nodes, 9917 edges, and 821 communities; HTML skipped because the graph exceeds the 5000-node render limit |
+| `graphify update .` | pass, latest rebuild 5843 nodes, 9952 edges, and 834 communities; HTML skipped because the graph exceeds the 5000-node render limit |
 
 ### Postgres KG Live Counts
 
@@ -428,6 +437,23 @@ marked `approved` or `revised: <alternative>`.
 - Decision status: pending GC. Default recommendation from C2 is Option B, rename labels to "calibrated pipeline" unless GC explicitly approves deploying real Agent Engine artifacts.
 - Issues encountered: no registry/docs rename and no Agent Engine deployment prep were started because the C2 decision is binary and explicit.
 
+### V2_D0_STRUCTURED_EVENTS
+
+- Completed: 2026-05-08 as a static implementation.
+- Prompt preservation: D0 copied into `docs/codex-prompts/` and registered in `audit:codex-prompts`.
+- Structured telemetry: added `src/types/telemetry.ts`, `src/lib/telemetry/emit.ts`, browser helper, and authenticated `/api/telemetry/log`.
+- Emit sites: case create/delete, withCalibration snapshot/refusal/force-run/tool lifecycle, document upload, graph populate, and telemetry intake rate-limit drops.
+- Enforcement: `audit:telemetry-coverage` added and wired into `audit:gate`; unit test covers schema JSON-line emission and 1KB details cap.
+- Issues encountered: production Cloud Logging verification is deferred until this commit is deployed.
+
+### V2_D1_KPI_PIPELINE
+
+- Completed: 2026-05-08 as static repo assets; live operations remain pending.
+- Prompt preservation: D1 copied into `docs/codex-prompts/` and registered in `audit:codex-prompts`.
+- Assets: BigQuery normalized events view, daily KPI/route/tool views, deploy helper, monitoring alert definitions, KPI runbook, and Looker Studio dashboard outline.
+- Enforcement: `audit:bq-views` added and wired into `audit:gate`.
+- Issues encountered: D1 requires D0 to be live with structured Cloud Logging rows before the BigQuery sink and dashboard can be verified.
+
 ## Blockers
 
 - Runtime verification still needed for: production workbench first mount, staged recipe navigation, document upload -> retrieval, thin-case prompt-health, and live fresh-account onboarding enforcement.
@@ -438,6 +464,7 @@ marked `approved` or `revised: <alternative>`.
 - B2/B3 graph cutover work is blocked by the required 7-day verification windows after B1 and B2.
 - C0/C1 are blocked until `praxis-cognee` exists as a healthy Cloud Run service with service-to-service auth and production env binding.
 - C2 is blocked until GC chooses Option A deploy or Option B rename; current evidence supports Option B as the lower-cost honest path.
+- D1 live verification is blocked until D0 is deployed and Cloud Logging shows structured `praxis.telemetry.*` rows.
 
 ## Notes For Next Session
 
@@ -445,6 +472,7 @@ marked `approved` or `revised: <alternative>`.
 - To unblock B0, run the documented SQL from a VPC-connected Cloud Shell/bastion/worker against `praxisbytacitus:us-east4:praxisbytacitus-instance`.
 - To unblock C0, deploy/provision `praxis-cognee`, add monolith `roles/run.invoker`, set `COGNEE_BACKEND_URL`, then run the smoke test before enabling `COGNEE_ENABLED=true`.
 - To unblock C2, mark `C2 Agent Engine subagents` approved for Option A or Option B in `STATUS.md`; Option B should be the default unless Agent Engine deployment is explicitly funded.
+- To unblock D1, deploy the D0 code, confirm Cloud Logging structured rows, create/update the BigQuery sink into `praxis_telemetry`, run `infrastructure/bigquery/deploy-views.sh`, then build the Looker Studio dashboard from `praxis_telemetry.kpis_daily`.
 - Keep solo-user backwards compatibility as a hard invariant while adding team/org scaffolding.
 - Firestore rules changes in V2 Session A require matching tests in `tests/security/firestore-rules.test.ts`.
 - Runtime-smoke `08_THIN_CASE_CALIBRATION`: verify a real thin case returns 422, the help panel renders, and `forceRun: true` reaches the model with `<context-quality>` attached.

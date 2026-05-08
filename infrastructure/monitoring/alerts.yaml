@@ -1,0 +1,19 @@
+alerts:
+  - name: praxis-telemetry-dropout
+    severity: warning
+    description: No D0 structured telemetry events observed for 15 minutes in production.
+    metric: logging.googleapis.com/user/praxis_telemetry_events
+    condition: absent_for_15m
+    playbook: docs/operational/KPIS.md#telemetry-dropout
+  - name: praxis-tool-run-fail-rate
+    severity: critical
+    description: Tool run failure rate is above 10% over a 15 minute window.
+    metric: bigquery.googleapis.com/query/praxis_telemetry.tool_health_daily.fail_rate
+    condition: gt_0_10_for_15m
+    playbook: docs/operational/KPIS.md#tool-run-fail-rate
+  - name: praxis-document-upload-fail-rate
+    severity: warning
+    description: Document upload failure rate is above 5% over a 30 minute window.
+    metric: bigquery.googleapis.com/query/praxis_telemetry.events.document_upload_fail_rate
+    condition: gt_0_05_for_30m
+    playbook: docs/operational/KPIS.md#document-upload-fail-rate

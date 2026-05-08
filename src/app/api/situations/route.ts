@@ -12,6 +12,7 @@ import { classifyCaseTypeSignals, isCaseTypeId } from '@/lib/ontology/case-types
 import { classifyOntologySignals } from '@/lib/ontology/classifier';
 import { isOntologyId, type OntologyId } from '@/lib/ontology/types';
 import { normalizeOntologySelection } from '@/lib/ontology/suggestions';
+import { emitTelemetrySafe } from '@/lib/telemetry/emit';
 
 const ESCALATION_TRENDS: EscalationTrend[] = ['stable', 'escalating', 'de-escalating', 'volatile'];
 const MAX_CONTEXT_NOTES_CHARS = 12_000;
@@ -56,6 +57,7 @@ export const GET = withAuth(async (_req, user) => {
 });
 
 export const POST = withAuth(async (req, user) => {
+  const startedAt = Date.now();
   if (user.isDemo) {
     return NextResponse.json(
       { error: 'Demo users cannot create situations' },
@@ -220,6 +222,21 @@ export const POST = withAuth(async (req, user) => {
       domainConfidence,
       domainOverriddenByUser: overridden,
     });
+    await emitTelemetrySafe({
+      eventName: 'case.create',
+      uid: user.uid,
+      orgId: orgIdOf(user),
+      caseId: situation.id,
+      route: '/api/situations',
+      status: 'ok',
+      latencyMs: Date.now() - startedAt,
+      details: {
+        domain,
+        primaryOntologyId,
+        caseType,
+        sourceUrlCount: filteredUrls.length,
+      },
+    });
 
     // Fire-and-forget: auto-extract Episodes (chronology) so Timeline tab is
     // populated within ~60s of situation creation. Never block the response.
@@ -245,6 +262,15 @@ export const POST = withAuth(async (req, user) => {
     return NextResponse.json({ situation });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    await emitTelemetrySafe({
+      eventName: 'case.create',
+      uid: user.uid,
+      orgId: orgIdOf(user),
+      route: '/api/situations',
+      status: 'fail',
+      latencyMs: Date.now() - startedAt,
+      details: { message: message.slice(0, 240) },
+    });
     console.error('[situations] Create failed:', message, err);
     return NextResponse.json(
       { error: `Failed to create situation: ${message}` },
@@ -252,3 +278,7 @@ export const POST = withAuth(async (req, user) => {
     );
   }
 });
+
+function orgIdOf(user: unknown): string | null {
+  return (user as { orgId?: string }).orgId ?? null;
+}

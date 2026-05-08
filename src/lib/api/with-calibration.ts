@@ -21,6 +21,7 @@ import { withFirewall } from '@/lib/api/with-firewall';
 import { appendContextQualityBlock, buildPromptHealthReport } from '@/lib/context/prompt-health';
 import type { ContextSnapshot } from '@/types/context';
 import type { Situation } from '@/types/situation';
+import { emitTelemetrySafe } from '@/lib/telemetry/emit';
 
 export interface CalibrationCtx extends AuthenticatedUser {
   calibration: ContextBlock;
@@ -119,6 +120,8 @@ export function withCalibration(
 
   return (handler: CalibratedHandler) =>
     withAuth(async (req: Request, user: AuthenticatedUser) => {
+      const requestStartedAt = Date.now();
+      const routePath = new URL(req.url).pathname;
       let body: Record<string, unknown> = {};
       let situationId: string | undefined;
       let providedSituation: Partial<Situation> | null = null;
@@ -180,6 +183,21 @@ export function withCalibration(
       });
       const promptHealth = buildPromptHealthReport(contextAware.snapshot);
       if (promptHealth.forceRunRequired && body.forceRun !== true) {
+        await emitTelemetrySafe({
+          eventName: 'calibration.refusal',
+          uid: user.uid,
+          orgId: orgIdOf(user),
+          caseId: situationId ?? null,
+          route: routePath,
+          toolId,
+          status: 'blocked',
+          latencyMs: Date.now() - requestStartedAt,
+          details: {
+            reason: 'context-too-thin',
+            score: promptHealth.score,
+            missingLayerCount: promptHealth.missingLayers.length,
+          },
+        });
         const response = NextResponse.json({
           error: 'context_too_thin',
           message: 'This case file is too thin for a trustworthy calibrated AI run. Add context first, or run anyway with visible caveats.',
@@ -220,6 +238,48 @@ export function withCalibration(
         ...enrichedCalibration,
         systemPromptBlock: appendContextQualityBlock(enrichedCalibration.systemPromptBlock, promptHealth),
       };
+      await emitTelemetrySafe({
+        eventName: 'calibration.snapshot-built',
+        uid: user.uid,
+        orgId: orgIdOf(user),
+        caseId: situationId ?? null,
+        route: routePath,
+        toolId,
+        status: 'ok',
+        latencyMs: Date.now() - requestStartedAt,
+        details: {
+          profileVersion: calibratedWithPromptHealth.provenance.profileVersion ?? null,
+          promptHealthState: promptHealth.state,
+          promptHealthScore: promptHealth.score,
+          forceRun: body.forceRun === true,
+        },
+      });
+      if (body.forceRun === true) {
+        await emitTelemetrySafe({
+          eventName: 'calibration.force-run',
+          uid: user.uid,
+          orgId: orgIdOf(user),
+          caseId: situationId ?? null,
+          route: routePath,
+          toolId,
+          status: 'ok',
+          latencyMs: Date.now() - requestStartedAt,
+          details: {
+            promptHealthState: promptHealth.state,
+            promptHealthScore: promptHealth.score,
+          },
+        });
+      }
+      await emitTelemetrySafe({
+        eventName: 'tool.run-start',
+        uid: user.uid,
+        orgId: orgIdOf(user),
+        caseId: situationId ?? null,
+        route: routePath,
+        toolId,
+        status: 'queued',
+        details: { variant },
+      });
 
       // Start tool_run record (non-demo only — demo users do not get persisted runs)
       let toolRunId: string | null = null;
@@ -276,6 +336,20 @@ export function withCalibration(
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
+        await emitTelemetrySafe({
+          eventName: 'tool.run-fail',
+          uid: user.uid,
+          orgId: orgIdOf(user),
+          caseId: situationId ?? null,
+          route: routePath,
+          toolId,
+          status: 'fail',
+          latencyMs: Date.now() - requestStartedAt,
+          details: {
+            code: 'handler_throw',
+            message: message.slice(0, 240),
+          },
+        });
         if (toolRunId) {
           await failToolRun(toolRunId, { code: 'handler_throw', message }).catch(() => {});
           await emitSystemEvent({
@@ -306,12 +380,25 @@ export function withCalibration(
             toolId,
             situationId: situationId ?? undefined,
             uid: user.uid,
-            route: new URL(req.url).pathname,
+            route: routePath,
             httpStatus: 500,
           }).catch(() => {});
         }
         throw err;
       }
+
+      const terminalStatus = response.status;
+      await emitTelemetrySafe({
+        eventName: terminalStatus >= 200 && terminalStatus < 300 ? 'tool.run-complete' : 'tool.run-fail',
+        uid: user.uid,
+        orgId: orgIdOf(user),
+        caseId: situationId ?? null,
+        route: routePath,
+        toolId,
+        status: terminalStatus >= 200 && terminalStatus < 300 ? 'ok' : 'fail',
+        latencyMs: Date.now() - requestStartedAt,
+        details: { httpStatus: terminalStatus, variant },
+      });
 
       // Mark tool_run terminal based on response status
       if (toolRunId) {
@@ -352,7 +439,7 @@ export function withCalibration(
               toolId,
               situationId: situationId ?? undefined,
               uid: user.uid,
-              route: new URL(req.url).pathname,
+              route: routePath,
               httpStatus: status,
             }).catch(() => {});
           }
@@ -371,4 +458,8 @@ export function withCalibration(
         toolRunId,
       });
     });
+}
+
+function orgIdOf(user: AuthenticatedUser): string | null {
+  return (user as AuthenticatedUser & { orgId?: string }).orgId ?? null;
 }
