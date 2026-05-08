@@ -4,7 +4,7 @@
 
 ## Morning Brief
 
-- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`.
+- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`.
 - Prompts deferred: Cloud SQL live row counts from `01` (blocked by private IP plus missing local `psql`/Cloud SQL Proxy).
 - Recovery loop resolved: `audit:ux-polish`, `audit:workbench`, `audit:evidence-drawer`, `audit:graph-viewer`, `audit:visualization`, `audit:master-charter`, stale Graphify outputs, and withCalibration unit fixture drift.
 - Measured deltas:
@@ -21,8 +21,8 @@
 - Started: 2026-05-08T00:27:51-04:00 checkpoint.
 - Branch: `main`
 - Last commit at start: `46d8cf1`
-- Last commit at end: current `main` HEAD after this iterate-loop recovery pass.
-- Total commits this session: see `git log --oneline 46d8cf1..HEAD`.
+- Last commit at end: current `main` HEAD after this status-template pass.
+- Total commits this session: `16` including the status-template pass.
 - Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`
 
 ## Tasks
@@ -42,6 +42,7 @@
 | 11_AUDIT_PROMOTION | done | Audit pass messages now carry tier labels, runtime-proof variants exist for KG drift, Cognee, owner scoping, and tool-context isolation, `audit:gate-with-cloud` and `audit:gate-runtime-full` are wired, runtime audits skip without opt-ins, and `docs/audits/README.md` documents the taxonomy. |
 | 12_HYGIENE | done | `background_jobs` global reads now admin-only; surface registry coherence audit includes tabs, chapters, and visible hero tools; deleted memory UI files stayed deleted; forbidden legacy model string grep returned 0; committed-secret grep found no leaks beyond env/config references; lint baseline recorded at `98` problems before this cleanup. |
 | 13_ITERATE_LOOP | done | Recovery loop applied until `audit:gate` passed; fixed UX smoke markers, redirect-only visible route counting, evidence drawer immediate-run markers, lazy graph audit expectations, stale Graphify output, and withCalibration unit fixtures. |
+| STATUS_TEMPLATE | done | Root `STATUS.md` now conforms to the template contract with morning brief, metadata, baselines, pre-existing audit failures, per-prompt notes, blockers, and next-session notes. |
 
 Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blocked`.
 
@@ -197,6 +198,125 @@ Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blo
 | audit:graph-viewer / audit:visualization | Static audits expected the old direct graph viewer import path instead of the lazy `WorkbenchGraphPanel` route. | fixed in `13_ITERATE_LOOP` |
 | audit:master-charter | Graphify outputs were stale against the current codebase. | fixed in `13_ITERATE_LOOP` |
 | npm test | withCalibration unit fixtures lagged current `withContextAware` and onboarding profile contracts. | fixed in `13_ITERATE_LOOP` |
+
+## Per-Prompt Notes
+
+### 01_DIAGNOSTICS
+
+- Completed: 2026-05-08.
+- Commits: `c16dcd7`, plus baseline hardening already present in `879871a`.
+- Diagnostic output: captured gate composition, Cloud SQL reachability, bundle size, Tools density, prompt-health deltas, Cognee copy inventory, marketplace deterministic strings, surface registry coherence, and hygiene baselines.
+- Issues encountered: live Cloud SQL row counts blocked by private IP plus missing local `psql`/Cloud SQL Proxy.
+
+### 02_MARKETPLACE_HONESTY
+
+- Completed: 2026-05-08.
+- Commit: `c2d2b6f`.
+- Stage targets populated: `53` non-SAT recipes staged into hero tools.
+- Hero staging behavior: non-SAT marketplace recipes stage context instead of firing a marketplace POST; SAT recipes retain their existing routing.
+- audit:no-deterministic-tool-output-in-ui: pass.
+
+### 03_CALIBRATION_INVARIANT
+
+- Completed: 2026-05-08.
+- Commit: `cbca72e`.
+- Tier field on visible hero tools: yes.
+- audit:hero-tool-calibration-coverage: pass for 12 visible hero tools.
+- Doc updated: yes, `docs/CONTEXT_INJECTION.md` now states the calibrated-ai hero route contract instead of overclaiming every authenticated AI request.
+
+### 04_COGNEE_UI_HONESTY
+
+- Completed: 2026-05-08.
+- Commit: `ac4683f`.
+- `/api/health/features` endpoint live: yes, with 60s cache semantics.
+- Components gated: Research, Library, upload, Memo Studio, graph intelligence, notifications, and new-situation copy.
+- MemoryPanel deleted: yes; `src/lib/memory/client.ts` deleted; boundary files remain.
+- audit:cognee-ui-honesty: pass.
+
+### 05_CHAPTER_CODE_SPLIT
+
+- Completed: 2026-05-08.
+- Commit: `1e4b651`.
+- Chapters lazy: `6/6`.
+- Substrate tabs lazy: `4/4`.
+- Bundle gzipped result: `514 KB` against a `520 KB` budget in the latest gate.
+- audit:workbench-bundle: pass.
+
+### 06_LIBRARY_INGEST_CONSOLIDATION
+
+- Completed: 2026-05-08 as a static implementation; runtime ingest remains deferred.
+- Commit: `44594cd`.
+- DocumentUploadInline calls both endpoints: yes.
+- Document on a fresh case retrievable by RAG: not runtime-verified yet.
+- audit:document-ingest-parity: pass.
+
+### 07_ONBOARDING_GATE
+
+- Completed: 2026-05-08.
+- Commits: `b3193c7`, `4b403ee`.
+- `/login/callback` redirects incomplete profiles: yes.
+- Middleware/proxy enforces incomplete profile routing: yes.
+- Cookie includes onboardingComplete resolution: yes, via refreshed signed session claim after completion.
+- audit:onboarding-gate: pass.
+
+### 08_THIN_CASE_CALIBRATION
+
+- Completed: 2026-05-08.
+- Commit: `8516030`.
+- Badge mounted on shared AI generation UI and the direct Executive Intelligence panel.
+- Compensation block injected below prompt-health `80`: yes.
+- 422 refusal below prompt-health `30`: yes unless `forceRun` is true.
+- audit:thin-case-handling: pass.
+
+### 09_EMBEDDING_DIMENSION
+
+- Completed: 2026-05-08.
+- Commit: `6ac1bd0`.
+- Canonical embedding config created: yes.
+- Migration `0012_embedding_dim_alignment.py` created: yes.
+- Pre-flight count: blocked until live SQL access is available.
+- Migration applied locally: not applied in this session.
+- audit:embedding-dim: pass.
+
+### 10_ACO_EXPLAINER
+
+- Completed: 2026-05-08.
+- Commit: `4ec44f2`.
+- `aco-copy.ts` has 14 entries: yes.
+- Overlay mounts on first case open: yes by static audit; manual browser smoke still recommended.
+- audit:aco-parity: pass.
+
+### 11_AUDIT_PROMOTION
+
+- Completed: 2026-05-08.
+- Commit: `f46c2cf`.
+- Audits tagged with tier labels where touched.
+- Runtime audits created or promoted: `audit:gate-with-cloud`, `audit:gate-runtime-full`, and runtime-proof variants for KG drift, Cognee, owner scoping, and tool-context isolation.
+- audit:gate-with-cloud composition: yes.
+
+### 12_HYGIENE
+
+- Completed: 2026-05-08.
+- Commit: `a4add50`.
+- `background_jobs` rule tightened: client reads are user-scoped and global reads remain admin/service-only.
+- audit:surface-registry-coherence: pass.
+- Forbidden model strings: `0`.
+- Lint count delta: `98` problems to `96` problems after focused cleanup.
+
+### 13_ITERATE_LOOP
+
+- Completed: 2026-05-08.
+- Commit: `a4d2651`.
+- Recovery loop result: `npm run audit:gate` passed after fixing the surfaced audit/test drift.
+- Graphify refresh: `5818` nodes, `9917` edges, `821` communities; HTML render skipped by Graphify because the graph exceeds the 5000-node render limit.
+- Issues encountered: none requiring GC; production browser smoke remains a next-session runtime task.
+
+### STATUS_TEMPLATE
+
+- Completed: 2026-05-08.
+- Commit: current status-template pass.
+- Template applied: yes; root `STATUS.md` now contains the morning brief, metadata, task table, baselines, pre-existing failures, per-prompt notes, blockers, and next-session notes from `STATUS_TEMPLATE.md`.
+- Issues encountered: none.
 
 ## Blockers
 
