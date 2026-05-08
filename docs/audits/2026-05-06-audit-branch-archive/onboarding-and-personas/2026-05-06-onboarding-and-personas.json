@@ -1,0 +1,179 @@
+{
+  "audit_id": "2026-05-06-onboarding-and-personas",
+  "topic": "F: onboarding and personas",
+  "phase": "Phase 1 self-audit",
+  "date": "2026-05-06",
+  "repo": {
+    "path": "C:\\Users\\giuli\\praxis-audit-onboarding-and-personas",
+    "remote": "https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git",
+    "branch": "audit/onboarding-and-personas-20260506",
+    "head": "ac2a7bbac66388af8a0f06f0c53324c08af0791e"
+  },
+  "write_scope": [
+    "docs/audits/2026-05-06-onboarding-and-personas.json",
+    "docs/audits/2026-05-06-onboarding-and-personas.md"
+  ],
+  "source_documents_reviewed": [
+    "docs/architecture/PRAXIS_ARCHITECTURE.md",
+    "docs/codex-prompts/PRAXIS_CODEX_04_LANDING_AND_ENTRY_REBUILD.md",
+    "docs/codex-prompts/PRAXIS_CODEX_09_VERIFICATION_AND_ADMIN.md",
+    "docs/codex-prompts/PRAXIS_CODEX_11_MEMO_STUDIO_AND_LAUNCH.md",
+    "docs/codex-prompts/PRAXIS_CODEX_14_PRODUCTION_EXCELLENCE.md",
+    "docs/audits/2026-05-06-COMPREHENSIVE.md"
+  ],
+  "requirements": {
+    "persona_bar": {
+      "target": "Architecture/master charter require Diplomat-Syria, Mediator-Northwind, Analyst-Sahel, Researcher-Nordalia persona suites green for 10 consecutive CI runs.",
+      "observed": "Four Playwright persona specs exist, but they currently map diplomat/analyst to Syria and mediator/researcher to Nordalia. No Northwind or Sahel persona specs were present in tests/e2e/personas.",
+      "status": "fail"
+    },
+    "public_demo": {
+      "target": "Public, signed-out, read-only /demo/syria-2024 route with Lighthouse/accessibility proof.",
+      "observed": "src/app/demo/syria-2024/page.tsx is absent. src/app/demo/page.tsx redirects to /app/workbench/syria-2026?tab=chapters. Production https://praxis.tacitus.me/demo/syria-2024 returns 307 to /login?mode=demo&example=syria-2026.",
+      "status": "fail"
+    },
+    "sixty_second_wow": {
+      "target": "Welcome -> sample case -> first memo -> DOCX within 60-90 seconds, with e2e/onboarding/60-second-wow.spec.ts.",
+      "observed": "The architecture and Pack 14 docs specify the flow, but tests/e2e/onboarding/60-second-wow.spec.ts is absent. Existing onboarding.spec.ts covers profile setup, not sample-case first memo export.",
+      "status": "fail"
+    },
+    "empty_states": {
+      "target": "Designed empty/loading/error states across app surfaces.",
+      "observed": "Shared and PRAXIS empty states, NoSituationState, OnboardingRequiredState, loading states, and tool error boundaries exist. audit:ux-polish statically checks several of these hooks, and prior local usability smoke docs report app-workbench coverage. This is a partial posture because no full surface-by-surface empty-state ledger exists in this worktree.",
+      "status": "partial"
+    },
+    "lighthouse_accessibility": {
+      "target": "Lighthouse CI for public demo/landing/workbench and axe/accessibility proof.",
+      "observed": "No lighthouserc.json and no lh:ci script are present. axe-core is present transitively in package-lock, but there is no dedicated demo accessibility test for /demo/syria-2024.",
+      "status": "fail"
+    }
+  },
+  "verification": {
+    "github": {
+      "auth_available": true,
+      "workflow_list": [
+        "calibration-drift"
+      ],
+      "main_runs_observed": [
+        {
+          "workflow": "calibration-drift",
+          "created_at": "2026-05-04T15:09:39Z",
+          "conclusion": "success",
+          "url": "https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work/actions/runs/25326872759"
+        },
+        {
+          "workflow": "calibration-drift",
+          "created_at": "2026-04-27T15:07:18Z",
+          "conclusion": "success",
+          "url": "https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work/actions/runs/25002984849"
+        }
+      ],
+      "persona_green_streak": {
+        "status": "not_found",
+        "details": "gh workflow list --all exposed only calibration-drift. No persona workflow or 10-run persona CI history was available."
+      }
+    },
+    "local_dependencies": {
+      "node": "v24.12.0",
+      "npm": "11.12.1",
+      "npx": "11.12.1",
+      "assigned_worktree_node_modules": false,
+      "notes": "No dependencies were installed per scope. First Playwright attempt via sibling binary failed until NODE_PATH was pointed at C:\\Users\\giuli\\praxiscodexworking\\node_modules."
+    },
+    "playwright_personas": {
+      "command": "PLAYWRIGHT_BASE_URL=https://praxis.tacitus.me NODE_PATH=C:\\Users\\giuli\\praxiscodexworking\\node_modules C:\\Users\\giuli\\praxiscodexworking\\node_modules\\.bin\\playwright.cmd test tests/e2e/personas --reporter=line --output=%TEMP%\\praxis-audit-personas-pw",
+      "target": "production",
+      "result": "failed",
+      "passed": 3,
+      "failed": 1,
+      "failure": {
+        "spec": "tests/e2e/personas/analyst.spec.ts",
+        "assertion": "expect(page.getByTestId('praxis-graph-canvas')).toBeVisible()",
+        "reason": "Production graph tab rendered an accessible image named Canonical PRAXIS graph, but not the expected data-testid=praxis-graph-canvas."
+      }
+    },
+    "public_routes": [
+      {
+        "url": "https://praxis.tacitus.me/demo/syria-2024",
+        "method": "GET",
+        "status": 307,
+        "location": "/login?mode=demo&example=syria-2026"
+      },
+      {
+        "url": "https://praxis.tacitus.me/demo",
+        "method": "GET",
+        "status": 307,
+        "location": "/login?mode=demo&example=syria-2026"
+      },
+      {
+        "url": "https://praxis.tacitus.me/login?mode=demo&example=syria-2026",
+        "method": "HEAD",
+        "status": 200
+      }
+    ]
+  },
+  "findings": [
+    {
+      "id": "F-01",
+      "severity": "S0",
+      "title": "Persona CI green-streak requirement is not evidenced and the production persona suite is currently red.",
+      "evidence": [
+        "package.json exposes smoke:personas/test:e2e:personas.",
+        ".github/workflows contains only calibration-drift.yml.",
+        "gh run list on main returned only two calibration-drift successes.",
+        "Production persona run passed 3/4 and failed analyst graph canvas assertion."
+      ],
+      "recommendation": "Add a required persona workflow, align persona case coverage with the architecture contract, fix or update the graph canvas test hook, and record 10 consecutive green CI runs before claiming the persona bar."
+    },
+    {
+      "id": "F-02",
+      "severity": "S0",
+      "title": "Public /demo/syria-2024 route does not exist as specified.",
+      "evidence": [
+        "src/app/demo/syria-2024/page.tsx missing.",
+        "src/app/demo/page.tsx redirects to /app/workbench/syria-2026?tab=chapters.",
+        "Production /demo/syria-2024 returns 307 to /login?mode=demo&example=syria-2026."
+      ],
+      "recommendation": "Implement or explicitly defer the public signed-out read-only demo route; until then, do not claim public demo Lighthouse/accessibility readiness."
+    },
+    {
+      "id": "F-03",
+      "severity": "S1",
+      "title": "60-second wow flow is specified but not testable.",
+      "evidence": [
+        "Architecture and Pack 14 specify Welcome -> sample case -> first memo -> DOCX.",
+        "tests/e2e/onboarding/60-second-wow.spec.ts missing.",
+        "Existing tests/e2e/onboarding.spec.ts covers profile wizard completion only."
+      ],
+      "recommendation": "Create the 60-second wow orchestrator and E2E test, or mark the launch requirement deferred in the master charter."
+    },
+    {
+      "id": "F-04",
+      "severity": "S1",
+      "title": "Lighthouse/accessibility feasibility is blocked for the public demo.",
+      "evidence": [
+        "No /demo/syria-2024 page to audit.",
+        "No lh:ci script or lighthouserc.json present.",
+        "No demo-specific axe/accessibility Playwright spec found."
+      ],
+      "recommendation": "Add Lighthouse CI wiring and demo accessibility tests after the public route exists."
+    },
+    {
+      "id": "F-05",
+      "severity": "S2",
+      "title": "Empty-state posture has reusable components but no comprehensive sweep ledger.",
+      "evidence": [
+        "src/components/praxis/empty-state.tsx and src/components/shared/empty-state.tsx include test ids.",
+        "NoSituationState and OnboardingRequiredState are wired in key app/tool surfaces.",
+        "scripts/audit-ux-polish.ts checks selected hooks only."
+      ],
+      "recommendation": "Produce the Pack 09-style surface-by-surface empty/loading/error ledger and connect it to audit:ux-polish beyond static token checks."
+    }
+  ],
+  "overall_status": "red",
+  "notes": [
+    "No app code was modified.",
+    "No dependencies were installed.",
+    "No push or deploy was performed."
+  ]
+}

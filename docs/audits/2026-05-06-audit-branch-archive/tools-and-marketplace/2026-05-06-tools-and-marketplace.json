@@ -1,0 +1,589 @@
+{
+  "audit": {
+    "id": "phase-1-topic-e-tools-and-marketplace",
+    "date": "2026-05-06",
+    "worktree": "C:\\Users\\giuli\\praxis-audit-tools-and-marketplace",
+    "remote": "https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git",
+    "scope": "PRAXIS Phase 1 self-audit only; Topic E tools and marketplace.",
+    "write_scope": [
+      "docs/audits/2026-05-06-tools-and-marketplace.json",
+      "docs/audits/2026-05-06-tools-and-marketplace.md"
+    ],
+    "no_touch_confirmed": true
+  },
+  "sources_read": [
+    "docs/architecture/PRAXIS_ARCHITECTURE.md#11",
+    "docs/codex-prompts/PRAXIS_CODEX_08_TOOLS_MARKETPLACE.md",
+    "docs/codex-prompts/PRAXIS_CODEX_11_MEMO_STUDIO_AND_LAUNCH.md",
+    "docs/codex-prompts/PRAXIS_CODEX_13_TOOL_CONTEXT_INTEROP.md",
+    "docs/audits/2026-05-06-COMPREHENSIVE.md",
+    "docs/audits/2026-05-06-TOOL_CONTRACT_INVENTORY.md",
+    "docs/audits/praxis-packs-06-07-08-implementation-status-2026-05-06.md",
+    "docs/audits/praxis-packs-12-13-implementation-status-2026-05-06.md"
+  ],
+  "commands": [
+    {
+      "command": "npm run audit:tool-marketplace",
+      "status": "failed_initially",
+      "evidence": "'tsx' is not recognized as an internal or external command",
+      "reason": "assigned sibling worktree has no node_modules"
+    },
+    {
+      "command": "$env:Path='C:\\Users\\giuli\\praxiscodexworking\\node_modules\\.bin;' + $env:Path; npm run audit:tool-marketplace",
+      "status": "pass",
+      "evidence": "Tool marketplace audit passed for 16 curated tools, handler contracts, and foundation execution."
+    },
+    {
+      "command": "$env:Path='C:\\Users\\giuli\\praxiscodexworking\\node_modules\\.bin;' + $env:Path; npm run audit:tool-contract-v2",
+      "status": "pass",
+      "evidence": "Tool contract v2 audit passed for 16 tools."
+    },
+    {
+      "command": "$env:Path='C:\\Users\\giuli\\praxiscodexworking\\node_modules\\.bin;' + $env:Path; npm run audit:tool-skills-present",
+      "status": "pass",
+      "evidence": "Tool skills audit passed for 16 tools and 4 subagents."
+    },
+    {
+      "command": "$env:Path='C:\\Users\\giuli\\praxiscodexworking\\node_modules\\.bin;' + $env:Path; npm run audit:tool-skill-conforms",
+      "status": "pass",
+      "evidence": "Tool skills audit passed for 16 tools and 4 subagents."
+    },
+    {
+      "command": "$env:Path='C:\\Users\\giuli\\praxiscodexworking\\node_modules\\.bin;' + $env:Path; npm run audit:memo-studio",
+      "status": "pass",
+      "evidence": "Memo Studio audit passed."
+    },
+    {
+      "command": "PowerShell heading-order check over skills/tools/*/SKILL.md",
+      "status": "pass",
+      "evidence": "All 16 tool skills match canonical section order."
+    }
+  ],
+  "summary": {
+    "overall_status": "partial_foundation_green",
+    "registry_count": 16,
+    "v1_tool_count_expected": 16,
+    "v1_tool_count_found": 16,
+    "memo_tool_status": "memo studio exists and passes its audit, but cross.memo-create and cross.memo-refresh are not registered marketplace tools",
+    "critical_blockers": 0,
+    "high_findings": 3,
+    "medium_findings": 4
+  },
+  "per_tool": [
+    {
+      "id": "conflict.leverage-trace",
+      "name": "Leverage Trace",
+      "ontology": "conflict",
+      "skill_status": "present_canonical_order",
+      "v2_contract_status": "complete_for_current_audit",
+      "handler_runtime_status": "prompt_contract_foundation",
+      "handler_stage": "prompt-contract",
+      "canary_fixture_status": "declared_ids_only",
+      "canary_case_ids": [
+        "syria-2026",
+        "nordalia-2026"
+      ],
+      "composition": {
+        "can_chain_into": [
+          "cross.brief-exporter",
+          "cross.contradiction-finder"
+        ],
+        "projection": "src/lib/tools/marketplace/projections/default.ts"
+      },
+      "subagent_deps": [
+        "context-preparer"
+      ]
+    },
+    {
+      "id": "conflict.commitment-check",
+      "name": "Commitment Check",
+      "ontology": "conflict",
+      "skill_status": "present_canonical_order",
+      "v2_contract_status": "complete_for_current_audit",
+      "handler_runtime_status": "prompt_contract_foundation",
+      "handler_stage": "prompt-contract",
+      "canary_fixture_status": "declared_ids_only",
+      "canary_case_ids": [
+        "syria-2026"
+      ],
+      "composition": {
+        "can_chain_into": [
+          "cross.brief-exporter",
+          "cross.contradiction-finder"
+        ],
+        "projection": "src/lib/tools/marketplace/projections/default.ts"
+      },
+      "subagent_deps": [
+        "context-preparer"
+      ]
+    },
+    {
+      "id": "conflict.escalation-timeline",
+      "name": "Escalation Timeline",
+      "ontology": "conflict",
+      "skill_status": "present_canonical_order",
+      "v2_contract_status": "complete_for_current_audit",
+      "handler_runtime_status": "prompt_contract_foundation",
+      "handler_stage": "prompt-contract",
+      "canary_fixture_status": "declared_ids_only",
+      "canary_case_ids": [
+        "syria-2026",
+        "nordalia-2026"
+      ],
+      "composition": {
+        "can_chain_into": [
+          "cross.brief-exporter",
+          "cross.contradiction-finder"
+        ],
+        "projection": "src/lib/tools/marketplace/projections/default.ts"
+      },
+      "subagent_deps": [
+        "context-preparer"
+      ]
+    },
+    {
+      "id": "mediation.position-vs-interest",
+      "name": "Position vs Interest",
+      "ontology": "mediation",
+      "skill_status": "present_canonical_order",
+      "v2_contract_status": "complete_for_current_audit",
+      "handler_runtime_status": "prompt_contract_foundation",
+      "handler_stage": "prompt-contract",
+      "canary_fixture_status": "declared_ids_only",
+      "canary_case_ids": [
+        "nordalia-2026"
+      ],
+      "composition": {
+        "can_chain_into": [
+          "cross.brief-exporter",
+          "cross.contradiction-finder"
+        ],
+        "projection": "src/lib/tools/marketplace/projections/default.ts"
+      },
+      "subagent_deps": [
+        "context-preparer"
+      ]
+    },
+    {
+      "id": "mediation.zopa-finder",
+      "name": "ZOPA Finder",
+      "ontology": "mediation",
+      "skill_status": "present_canonical_order",
+      "v2_contract_status": "complete_for_current_audit",
+      "handler_runtime_status": "prompt_contract_foundation",
+      "handler_stage": "prompt-contract",
+      "canary_fixture_status": "declared_ids_only",
+      "canary_case_ids": [
+        "nordalia-2026"
+      ],
+      "composition": {
+        "can_chain_into": [
+          "cross.brief-exporter",
+          "cross.contradiction-finder"
+        ],
+        "projection": "src/lib/tools/marketplace/projections/default.ts"
+      },
+      "subagent_deps": [
+        "context-preparer"
+      ]
+    },
+    {
+      "id": "mediation.mediation-brief",
+      "name": "Mediation Brief",
+      "ontology": "mediation",
+      "skill_status": "present_canonical_order",
+      "v2_contract_status": "complete_for_current_audit",
+      "handler_runtime_status": "prompt_contract_foundation",
+      "handler_stage": "prompt-contract",
+      "canary_fixture_status": "declared_ids_only",
+      "canary_case_ids": [
+        "syria-2026",
+        "nordalia-2026"
+      ],
+      "composition": {
+        "can_chain_into": [
+          "cross.brief-exporter",
+          "cross.contradiction-finder"
+        ],
+        "projection": "src/lib/tools/marketplace/projections/default.ts"
+      },
+      "subagent_deps": [
+        "context-preparer"
+      ],
+      "gap_against_pack_13_expectation": "Pack 13 suggested output-refiner and memo-drafter for this tool; current registry declares only context-preparer."
+    },
+    {
+      "id": "governance.veto-probability",
+      "name": "Veto Probability",
+      "ontology": "governance",
+      "skill_status": "present_canonical_order",
+      "v2_contract_status": "complete_for_current_audit",
+      "handler_runtime_status": "prompt_contract_foundation",
+      "handler_stage": "prompt-contract",
+      "canary_fixture_status": "declared_ids_only",
+      "canary_case_ids": [
+        "nordalia-2026"
+      ],
+      "composition": {
+        "can_chain_into": [
+          "cross.brief-exporter",
+          "cross.contradiction-finder"
+        ],
+        "projection": "src/lib/tools/marketplace/projections/default.ts"
+      },
+      "subagent_deps": [
+        "context-preparer"
+      ]
+    },
+    {
+      "id": "governance.mandate-traceback",
+      "name": "Mandate Traceback",
+      "ontology": "governance",
+      "skill_status": "present_canonical_order",
+      "v2_contract_status": "complete_for_current_audit",
+      "handler_runtime_status": "prompt_contract_foundation",
+      "handler_stage": "prompt-contract",
+      "canary_fixture_status": "declared_ids_only",
+      "canary_case_ids": [
+        "syria-2026"
+      ],
+      "composition": {
+        "can_chain_into": [
+          "cross.brief-exporter",
+          "cross.contradiction-finder"
+        ],
+        "projection": "src/lib/tools/marketplace/projections/default.ts"
+      },
+      "subagent_deps": [
+        "context-preparer"
+      ]
+    },
+    {
+      "id": "governance.coalition-map",
+      "name": "Coalition Map",
+      "ontology": "governance",
+      "skill_status": "present_canonical_order",
+      "v2_contract_status": "complete_for_current_audit",
+      "handler_runtime_status": "prompt_contract_foundation",
+      "handler_stage": "prompt-contract",
+      "canary_fixture_status": "declared_ids_only",
+      "canary_case_ids": [
+        "nordalia-2026"
+      ],
+      "composition": {
+        "can_chain_into": [
+          "cross.brief-exporter",
+          "cross.contradiction-finder"
+        ],
+        "projection": "src/lib/tools/marketplace/projections/default.ts"
+      },
+      "subagent_deps": [
+        "context-preparer"
+      ]
+    },
+    {
+      "id": "narrative.frame-cascade",
+      "name": "Frame Cascade",
+      "ontology": "narrative",
+      "skill_status": "present_canonical_order",
+      "v2_contract_status": "complete_for_current_audit",
+      "handler_runtime_status": "prompt_contract_foundation",
+      "handler_stage": "prompt-contract",
+      "canary_fixture_status": "declared_ids_only",
+      "canary_case_ids": [
+        "syria-2026"
+      ],
+      "composition": {
+        "can_chain_into": [
+          "cross.brief-exporter",
+          "cross.contradiction-finder"
+        ],
+        "projection": "src/lib/tools/marketplace/projections/default.ts"
+      },
+      "subagent_deps": [
+        "context-preparer"
+      ]
+    },
+    {
+      "id": "narrative.counter-narrative-finder",
+      "name": "Counter-Narrative Finder",
+      "ontology": "narrative",
+      "skill_status": "present_canonical_order",
+      "v2_contract_status": "complete_for_current_audit",
+      "handler_runtime_status": "prompt_contract_foundation",
+      "handler_stage": "prompt-contract",
+      "canary_fixture_status": "declared_ids_only",
+      "canary_case_ids": [
+        "syria-2026"
+      ],
+      "composition": {
+        "can_chain_into": [
+          "cross.brief-exporter",
+          "cross.contradiction-finder"
+        ],
+        "projection": "src/lib/tools/marketplace/projections/default.ts"
+      },
+      "subagent_deps": [
+        "context-preparer"
+      ],
+      "gap_against_pack_13_expectation": "Pack 13 suggested source-augmenter for this tool; current registry declares only context-preparer."
+    },
+    {
+      "id": "narrative.fact-check-traceback",
+      "name": "Fact-Check Traceback",
+      "ontology": "narrative",
+      "skill_status": "present_canonical_order",
+      "v2_contract_status": "complete_for_current_audit",
+      "handler_runtime_status": "prompt_contract_foundation",
+      "handler_stage": "prompt-contract",
+      "canary_fixture_status": "declared_ids_only",
+      "canary_case_ids": [
+        "syria-2026",
+        "nordalia-2026"
+      ],
+      "composition": {
+        "can_chain_into": [
+          "cross.brief-exporter",
+          "cross.contradiction-finder"
+        ],
+        "projection": "src/lib/tools/marketplace/projections/default.ts"
+      },
+      "subagent_deps": [
+        "context-preparer"
+      ],
+      "gap_against_pack_13_expectation": "Pack 13 suggested source-augmenter for this tool; current registry declares only context-preparer."
+    },
+    {
+      "id": "cross.contradiction-finder",
+      "name": "Contradiction Finder",
+      "ontology": "cross",
+      "skill_status": "present_canonical_order",
+      "v2_contract_status": "complete_for_current_audit",
+      "handler_runtime_status": "prompt_contract_foundation",
+      "handler_stage": "prompt-contract",
+      "canary_fixture_status": "declared_ids_only",
+      "canary_case_ids": [
+        "syria-2026",
+        "nordalia-2026"
+      ],
+      "composition": {
+        "can_chain_into": [],
+        "projection": "src/lib/tools/marketplace/projections/default.ts"
+      },
+      "subagent_deps": [
+        "context-preparer",
+        "output-refiner"
+      ]
+    },
+    {
+      "id": "cross.context-health-explainer",
+      "name": "Context Health Explainer",
+      "ontology": "cross",
+      "skill_status": "present_canonical_order",
+      "v2_contract_status": "complete_for_current_audit",
+      "handler_runtime_status": "prompt_contract_foundation",
+      "handler_stage": "prompt-contract",
+      "canary_fixture_status": "declared_ids_only",
+      "canary_case_ids": [
+        "syria-2026",
+        "nordalia-2026"
+      ],
+      "composition": {
+        "can_chain_into": [],
+        "projection": "src/lib/tools/marketplace/projections/default.ts"
+      },
+      "subagent_deps": [
+        "context-preparer",
+        "output-refiner"
+      ]
+    },
+    {
+      "id": "cross.brief-exporter",
+      "name": "Brief Exporter",
+      "ontology": "cross",
+      "skill_status": "present_canonical_order",
+      "v2_contract_status": "complete_for_current_audit",
+      "handler_runtime_status": "prompt_contract_foundation",
+      "handler_stage": "prompt-contract",
+      "canary_fixture_status": "declared_ids_only",
+      "canary_case_ids": [
+        "syria-2026",
+        "nordalia-2026"
+      ],
+      "composition": {
+        "can_chain_into": [],
+        "projection": "src/lib/tools/marketplace/projections/default.ts"
+      },
+      "side_effects": {
+        "writes_memo_blocks": true,
+        "writes_audit_logs": true
+      },
+      "subagent_deps": [
+        "context-preparer",
+        "output-refiner"
+      ],
+      "gap_against_pack_13_expectation": "Pack 13 suggested output-refiner and memo-drafter for this tool; current registry omits memo-drafter."
+    },
+    {
+      "id": "cross.scenario-projector",
+      "name": "Scenario Projector",
+      "ontology": "cross",
+      "skill_status": "present_canonical_order",
+      "v2_contract_status": "complete_for_current_audit",
+      "handler_runtime_status": "prompt_contract_foundation",
+      "handler_stage": "prompt-contract",
+      "canary_fixture_status": "declared_ids_only",
+      "canary_case_ids": [
+        "syria-2026",
+        "nordalia-2026"
+      ],
+      "composition": {
+        "can_chain_into": [],
+        "projection": "src/lib/tools/marketplace/projections/default.ts"
+      },
+      "subagent_deps": [
+        "context-preparer",
+        "output-refiner"
+      ]
+    }
+  ],
+  "suggestions_and_composition": {
+    "suggestion_engine": {
+      "status": "present_foundation",
+      "implementation": "src/lib/tools/marketplace/suggestions.ts",
+      "surfaces": [
+        "src/components/tools/ToolMarketplace.tsx recommended-for-this-case banner"
+      ],
+      "gaps": [
+        "No dedicated backend tool-suggestions API route found.",
+        "No committed recall@3 eval set for 16 user/case scenarios found.",
+        "No onboarding coach starter-tool integration found."
+      ]
+    },
+    "composition": {
+      "status": "partial_foundation",
+      "declared_links": "Every non-cross tool can chain into cross.brief-exporter and cross.contradiction-finder.",
+      "ui_surface": "ToolChainActions renders chain buttons after a run.",
+      "projection": "All tools point at one default projection module.",
+      "gaps": [
+        "No parentRunId request field or persisted chain tree found in marketplace run route.",
+        "No per-chain static projection map found for the four Pack 13 documented chains.",
+        "No runtime merge of parent output into child ContextProvider snapshot found.",
+        "No tool composition context-flow E2E found."
+      ]
+    }
+  },
+  "memo_posture": {
+    "memo_studio": "present",
+    "memo_audit": "pass",
+    "memo_as_tool_run": "partial",
+    "evidence": [
+      "src/types/memo.ts",
+      "src/components/memo/MemoStudio.tsx",
+      "src/lib/firebase/memo-service.ts",
+      "src/app/api/memos/route.ts",
+      "docs/audits/2026-05-06-MEMO_INVENTORY.md"
+    ],
+    "gaps": [
+      "cross.memo-create is specified in architecture and Pack 13 M8 but is not registered in MARKETPLACE_TOOLS.",
+      "cross.memo-refresh is specified in architecture and Pack 13 M8 but is not registered in MARKETPLACE_TOOLS.",
+      "Memo Drafter has a SKILL.md but no backend/agents/memo_drafter LangGraph runtime or eval set found.",
+      "Memo citation side panel and server-side footnoted DOCX/PDF/Markdown exports remain listed as remaining implementation."
+    ]
+  },
+  "seventeenth_tool_spike_feasibility": {
+    "verdict": "feasible_with_manual_registry_edit_not_yet_one_folder",
+    "estimated_effort": "60-120 minutes for a foundation-only tool; longer for model-backed handler, composition-specific projections, evals, and docs.",
+    "why_feasible": [
+      "SKILL_TEMPLATE.md exists and all 16 tool skills follow the same nine-section order.",
+      "Registry helper auto-fills v2 defaults, schemas, persistence posture, default ContextProvider projection, side effects, and skill file path.",
+      "Audit scripts catch count, schema, ontology, handler-contract, skill presence, and projection-file existence."
+    ],
+    "why_not_one_folder_yet": [
+      "Marketplace registry is a central MARKETPLACE_TOOLS array, not one file per tool or import.meta.glob discovery.",
+      "A new tool requires adding a handler contract to src/lib/tools/marketplace/handler-contracts.ts.",
+      "No docs/contributing/AUTHORING_A_TOOL.md exists.",
+      "The audit enforces exactly 16 tools, so a real 17th-tool spike would fail until the cap/gate is intentionally changed.",
+      "Canary status is declared case IDs, not an executable canary fixture harness."
+    ]
+  },
+  "findings": [
+    {
+      "id": "E-HIGH-001",
+      "severity": "high",
+      "title": "Marketplace handlers are prompt-contract foundation runs, not specialist model-backed tool handlers.",
+      "evidence": [
+        "src/lib/tools/marketplace/handler-contracts.ts executionStage is prompt-contract for every tool.",
+        "src/lib/tools/marketplace/runner.ts emits deterministic-foundation-with-handler-contract posture.",
+        "docs/audits/2026-05-06-COMPREHENSIVE.md lists specialist model-backed marketplace handlers as a remaining launch gap."
+      ],
+      "impact": "The marketplace can run and persist artifacts, but it should not be represented as fully specialist analytical execution."
+    },
+    {
+      "id": "E-HIGH-002",
+      "severity": "high",
+      "title": "Memo tools promised by architecture and Pack 13 are not registered marketplace tools.",
+      "evidence": [
+        "PRAXIS_ARCHITECTURE.md section 11.3 names cross.memo-create and cross.memo-refresh.",
+        "PRAXIS_CODEX_13_TOOL_CONTEXT_INTEROP.md M8 specifies cross.memo-create and cross.memo-refresh.",
+        "MARKETPLACE_TOOLS contains exactly the 16 v1 tools and no cross.memo-* entries."
+      ],
+      "impact": "Memo Studio exists, but memo-tool posture is partial rather than unified under the same marketplace contract."
+    },
+    {
+      "id": "E-HIGH-003",
+      "severity": "high",
+      "title": "Composition v2 context flow is only partially implemented.",
+      "evidence": [
+        "All tools share src/lib/tools/marketplace/projections/default.ts.",
+        "No parentRunId handling found in src/app/api/tools/marketplace/run/route.ts.",
+        "ToolChainActions can start a target tool but does not pass parent run output into child context."
+      ],
+      "impact": "Users see chain actions, but Pack 13's typed parent-output to child-context flow is not yet present."
+    },
+    {
+      "id": "E-MED-001",
+      "severity": "medium",
+      "title": "Canary fixtures are declared but not executable per-tool canary runs.",
+      "evidence": [
+        "Registry canaryCaseIds reference syria-2026 and nordalia-2026.",
+        "audit-tool-marketplace checks non-empty canaryCaseIds, not handler execution against expected fields.",
+        "No audit:tool-coverage script found."
+      ],
+      "impact": "Canary coverage is a useful fixture pointer, but not proof that each tool's analytical path passes."
+    },
+    {
+      "id": "E-MED-002",
+      "severity": "medium",
+      "title": "Skill conformance script name is an alias to presence checks and does not itself enforce order.",
+      "evidence": [
+        "package.json maps audit:tool-skill-conforms to npm run audit:tool-skills-present.",
+        "scripts/audit-tool-skills-present.ts checks section presence only.",
+        "Manual PowerShell check confirmed current 16 tool skills do match canonical order."
+      ],
+      "impact": "Current files are ordered correctly, but CI would not catch future section reordering unless the script is strengthened."
+    },
+    {
+      "id": "E-MED-003",
+      "severity": "medium",
+      "title": "Suggestion engine lacks the full Pack 13 eval and surface set.",
+      "evidence": [
+        "src/lib/tools/marketplace/suggestions.ts ranks by ontology, health, cost, runtime, and graceful context.",
+        "ToolMarketplace renders top-three recommendations.",
+        "No tool_suggestions API, recall@3 eval set, or onboarding starter-tool integration found."
+      ],
+      "impact": "Recommendations are useful in the tools tab but not yet the full deterministic suggestion product promised by Pack 13."
+    },
+    {
+      "id": "E-MED-004",
+      "severity": "medium",
+      "title": "17th-tool authoring is feasible but not yet the documented one-folder operation.",
+      "evidence": [
+        "skills/templates/SKILL_TEMPLATE.md exists.",
+        "docs/contributing/AUTHORING_A_TOOL.md is missing.",
+        "Registry and handler contracts are central files; audit enforces exactly 16 tools."
+      ],
+      "impact": "A spike can be done without app architecture risk, but it would require coordinated gate changes and central edits."
+    }
+  ]
+}

@@ -49,6 +49,17 @@ Examples: `audit:owner-scoping-runtime`,
 
 Run on release candidates through `npm run audit:gate-runtime-full`.
 
+## Historical Audit Branches
+
+The May 6 focused audit branch outputs from the sibling `praxis-audit-*`
+checkouts are archived in
+[`2026-05-06-audit-branch-archive/`](2026-05-06-audit-branch-archive/).
+
+Use
+[`2026-05-08-AUDIT_BRANCH_GAP_RECONCILIATION.md`](2026-05-08-AUDIT_BRANCH_GAP_RECONCILIATION.md)
+as the current status ledger. It records which May 6 findings are now closed on
+`main` and which capabilities remain missing or not yet evidenced.
+
 ## Gate Composition
 
 `audit:gate` is the every-PR gate: static-marker plus configuration-aware.
