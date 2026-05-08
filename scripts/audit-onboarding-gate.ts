@@ -38,6 +38,16 @@ const CHECKS: Check[] = [
     reason: 'session cookie must include onboardingComplete from the server-side profile check',
   },
   {
+    file: 'src/lib/firebase/analyst-profile-admin.ts',
+    must: [/isOnboardingComplete/, /isUserOnboarded/],
+    reason: 'server-side cookie claim check must use the shared onboarding helper',
+  },
+  {
+    file: 'src/lib/auth/auth-context.tsx',
+    must: [/isOnboardingComplete/, /const onboardingComplete = isOnboardingComplete\(analystProfile\)/],
+    reason: 'client auth context must use the same onboarding completeness helper as calibrated routes',
+  },
+  {
     file: 'src/app/api/onboarding/complete/route.ts',
     must: [/onboardingComplete:\s*true/, /signCookie/],
     reason: 'completion route must refresh the session cookie claim',

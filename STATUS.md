@@ -21,8 +21,8 @@
 - Started: 2026-05-08T00:27:51-04:00 checkpoint.
 - Branch: `main`
 - Last commit at start: `46d8cf1`
-- Last commit at end: current `main` HEAD after this library ingest follow-up pass.
-- Total commits this session: `8`
+- Last commit at end: current `main` HEAD after this onboarding gate follow-up pass.
+- Total commits this session: `9`
 - Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`
 
 ## Tasks
@@ -35,7 +35,7 @@
 | 04_COGNEE_UI_HONESTY | done | `/api/health/features` exposes server-derived flags with reasons; Cognee/memory UI copy is gated or neutralized; user-facing memory panel/client removed; Agent Engine subagent labels are hidden unless `VERTEX_AGENT_ENGINE_ID` is set; legacy Cognee audits now enforce the boundary instead of requiring deleted UI. |
 | 05_CHAPTER_CODE_SPLIT | done | Six heavy chapters and four substrate tabs are dynamic islands with skeletons; shell/tab modal only mount active children; `audit:workbench-bundle` is wired into gate and now enforces dynamic imports, closed Tools-by-default, skeleton presence, and conditional mounting. |
 | 06_LIBRARY_INGEST_CONSOLIDATION | partial | Upload UI now saves and chunks through `/api/documents/upload`, passes the returned `documentId` into backend Library ingest, and reports source-receipt deferral honestly. Static parity audit and ingest parity doc added. Runtime upload -> source receipt -> hero-tool retrieval verification still not run. |
-| 07_ONBOARDING_GATE | done | Shared onboarding helper added; calibrated routes import it; post-login redirect and Next proxy route incomplete profiles to `/onboarding`; completion refreshes signed session claim; workbench banner added; audit wired. |
+| 07_ONBOARDING_GATE | done | Shared onboarding helper gates calibrated routes, client auth state, and server cookie onboarding resolution; post-login redirect and Next proxy route incomplete/stale-claim profiles to `/onboarding`; completion refreshes signed session claim; workbench banner and profile edit link are wired; audit expanded. |
 | 08_THIN_CASE_CALIBRATION | deferred | No thin-case prompt-health scoring or 422 contract added yet. |
 | 09_EMBEDDING_DIMENSION | partial | Existing `audit:embedding-dim` passes for 768-dim Vertex text embeddings; no migration touched. |
 | 10_ACO_EXPLAINER | deferred | Needs in-app first-run ACO explainer. |

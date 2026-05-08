@@ -19,6 +19,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { AnalystProfileSchema, type AnalystProfile } from '@/types/analyst-profile';
 import type { SubscriptionTier } from '@/lib/firebase/firestore';
 import { SYRIA_DEMO_ANALYST_PROFILE } from '@/lib/constants/syria-demo-workspace';
+import { isOnboardingComplete } from '@/lib/auth/onboarding-status';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -597,7 +598,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const clearAuthError = useCallback(() => setAuthError(null), []);
 
-  const onboardingComplete = Boolean(analystProfile?.meta?.completedAt);
+  const onboardingComplete = isOnboardingComplete(analystProfile);
 
   const value = useMemo<AuthContextValue>(() => ({
     user,

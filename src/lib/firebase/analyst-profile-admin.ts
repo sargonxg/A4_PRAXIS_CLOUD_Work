@@ -1,6 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb, getAdminDbOrThrow } from './admin';
 import { DEFAULT_ANALYST_PROFILE, type AnalystProfile } from '@/types/analyst-profile';
+import { isOnboardingComplete } from '@/lib/auth/onboarding-status';
 
 const USERS = 'users';
 const PROFILE = 'profile';
@@ -116,7 +117,7 @@ export async function isUserOnboarded(uid: string): Promise<boolean> {
   const db = getAdminDbOrThrow();
   const profileRef = db.collection(USERS).doc(uid).collection(PROFILE).doc(PROFILE_DOC);
   const profileSnap = await profileRef.get();
-  if (profileSnap.exists && profileSnap.data()?.meta?.completedAt) return true;
+  if (profileSnap.exists && isOnboardingComplete(profileSnap.data() as AnalystProfile)) return true;
 
   // Legacy fallback: pre-merge users have completion only on root doc.
   // Lazily mirror onto profile/analyst then drop the legacy field.
@@ -129,6 +130,10 @@ export async function isUserOnboarded(uid: string): Promise<boolean> {
         { meta: { completedAt: legacyCompleted, lastEditedAt: FieldValue.serverTimestamp() } },
         { merge: true },
       );
+      const migratedSnap = await profileRef.get();
+      if (!migratedSnap.exists || !isOnboardingComplete(migratedSnap.data() as AnalystProfile)) {
+        return false;
+      }
       await userRef.update({
         onboardingCompletedAt: FieldValue.delete(),
         onboardingSkipCount: FieldValue.delete(),

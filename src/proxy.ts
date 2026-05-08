@@ -190,7 +190,8 @@ export function proxy(request: NextRequest) {
   if (
     pathname.startsWith('/app') &&
     hasFirebaseToken &&
-    (sessionData?.onboardingComplete === false || sessionData?.onboarded === false) &&
+    sessionData?.onboardingComplete !== true &&
+    sessionData?.onboarded !== true &&
     pathname !== '/onboarding'
   ) {
     return addSecurityHeaders(NextResponse.redirect(new URL('/onboarding', request.url)), nonce);
