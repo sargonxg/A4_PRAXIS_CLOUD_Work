@@ -1035,6 +1035,10 @@
     "mtime": 1777260426.796137,
     "hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\generate-audit.mjs": {
+    "mtime": 1778230700.4163995,
+    "hash": "bdd94c2b32c0bed8593c17793111a519"
+  },
   "C:\\Users\\giuli\\praxiscodexworking\\infrastructure\\deploy-windows.ps1": {
     "mtime": 1777260426.8380463,
     "hash": "9fbf46289cbd0ca665aeac28b7b49a56"
@@ -6392,8 +6396,8 @@
     "hash": "b574cfc27ca97dacb1a663bdcd0800d4"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\BUILD_LOG.md": {
-    "mtime": 1778229670.9153557,
-    "hash": "95ea8c75a5cc9be0c23d50d11dd06d8d"
+    "mtime": 1778230747.8705163,
+    "hash": "67977b44fcae5956b9a070c986a2380a"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\CHANGELOG.md": {
     "mtime": 1778155439.4593954,
@@ -6436,8 +6440,8 @@
     "hash": "19eecbe783ca32343926540dab18f29b"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\STATUS.md": {
-    "mtime": 1778229242.9616294,
-    "hash": "1b04bc6dc87c16a51099ef5f0bac3593"
+    "mtime": 1778230767.210003,
+    "hash": "1a00531c95e557c7f139d14cc55617ba"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\TESTING.md": {
     "mtime": 1777485307.7824988,
@@ -7126,6 +7130,134 @@
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\tools-2026-05-06.md": {
     "mtime": 1778081604.7595656,
     "hash": "dffcd26ef3545ba18553cded0851e15e"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\00-context.md": {
+    "mtime": 1778230715.5525224,
+    "hash": "458052147da089f75c878e8f510527a1"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\07-cleanup-plan.md": {
+    "mtime": 1778230715.6587934,
+    "hash": "b28bf3b17d47e81111ea6f977062b194"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\08-unknowns.md": {
+    "mtime": 1778230715.6596646,
+    "hash": "bdcb917923b40490521eea503432e67b"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\09-summary.md": {
+    "mtime": 1778230715.6596646,
+    "hash": "ab4781fc32a32cbaf0391fd82d86e201"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\COMPREHENSIVE_AUDIT_SOURCE.md": {
+    "mtime": 1778217700.7433822,
+    "hash": "df2ac863b0715fe63302822b3487aea8"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\01-inventory\\tools-installed.md": {
+    "mtime": 1778230714.8654096,
+    "hash": "87c974bdce1b281580e7317033678a1c"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\02-graphs\\cycles.md": {
+    "mtime": 1778230715.5651276,
+    "hash": "d053415453395b5533f391d1e76d74fb"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\02-graphs\\hub-modules.md": {
+    "mtime": 1778230715.5651276,
+    "hash": "f82e3d34f668e78a2e06f42f15f39c8f"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\02-graphs\\orphan-modules.md": {
+    "mtime": 1778230715.5651276,
+    "hash": "65bc9de62e1d96ce10a6f1eab6102d9f"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\03-dead-code\\dead-env-vars.md": {
+    "mtime": 1778230715.5679626,
+    "hash": "3b9a00b2bacaf614e31f3843e9c1c69e"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\03-dead-code\\dead-feature-flags.md": {
+    "mtime": 1778230715.5751004,
+    "hash": "91cbc6cfa25117e676e2ad51e178dfb0"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\03-dead-code\\dead-routes.md": {
+    "mtime": 1778230715.5679626,
+    "hash": "bc78ce2cc1db401159cff7675f4c8856"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\03-dead-code\\deletion-candidates.md": {
+    "mtime": 1778230715.576635,
+    "hash": "6324ca9a6068033327973f46149e3131"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\03-dead-code\\unused-deps-backend.md": {
+    "mtime": 1778230715.5679626,
+    "hash": "16eb21eeaace8531788e46865beaeba3"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\03-dead-code\\unused-deps-frontend.md": {
+    "mtime": 1778230715.5679626,
+    "hash": "6292dff24ed664c62940ef40950d6615"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\03-dead-code\\unused-exports.md": {
+    "mtime": 1778230715.5679626,
+    "hash": "52841c86ebc5bbaafaabd7910fda1355"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\03-dead-code\\unused-files.md": {
+    "mtime": 1778230715.5679626,
+    "hash": "7e14814d0830c0455ee400d7e2adbd79"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\04-duplications\\code-clones.md": {
+    "mtime": 1778230715.576635,
+    "hash": "f9e830cf7fc187838628ed79e0389e79"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\04-duplications\\consolidation-candidates.md": {
+    "mtime": 1778230715.579343,
+    "hash": "2bb1b1ba386b7a99f17ee422cabd3e81"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\04-duplications\\near-duplicate-routes.md": {
+    "mtime": 1778230715.579343,
+    "hash": "23a25e0c2cfda0dad98f8a50e2a9a1f2"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\04-duplications\\parallel-implementations.md": {
+    "mtime": 1778230715.5781858,
+    "hash": "88bd44da25e0a37b61866c415655e571"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\05-hotspots\\boundary-leaks.md": {
+    "mtime": 1778230715.64937,
+    "hash": "6d16f47bbd6cc12c06cd5138292fefaa"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\05-hotspots\\god-modules.md": {
+    "mtime": 1778230715.581929,
+    "hash": "86d2e396637b204b6068b124a6f190e4"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\05-hotspots\\lying-labels.md": {
+    "mtime": 1778230715.64937,
+    "hash": "c9b65c7e21fd6472627c831dc95efa45"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\05-hotspots\\overcomplex-functions.md": {
+    "mtime": 1778230715.581929,
+    "hash": "f2707af92091bd78ecf535c22ab9db07"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\05-hotspots\\oversized-files.md": {
+    "mtime": 1778230715.579343,
+    "hash": "e6fac6cbebfff9cfb0fb787e7bdcacc5"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\05-hotspots\\refactor-candidates.md": {
+    "mtime": 1778230715.6513774,
+    "hash": "3c2d0b6152c916bd1814df762eff64f0"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\06-surface-area\\lying-routes.md": {
+    "mtime": 1778230715.6573675,
+    "hash": "806f644a90da97e489013f036b19e5d0"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\06-surface-area\\orphan-routes.md": {
+    "mtime": 1778230715.6553612,
+    "hash": "695c4b1150fb2178c1826182e9371bbf"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\06-surface-area\\public-api-surface.md": {
+    "mtime": 1778230715.6531281,
+    "hash": "a8779fccbc4b4c4cee94c18c9718d80a"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\06-surface-area\\surface-recommendations.md": {
+    "mtime": 1778230715.6573675,
+    "hash": "50bcab8d4c6f8aaf32f1d8a10b4c5250"
+  },
+  "C:\\Users\\giuli\\praxiscodexworking\\docs\\audits\\2026-05-08-CODEBASE_AUDIT\\06-surface-area\\undocumented-routes.md": {
+    "mtime": 1778230715.6531281,
+    "hash": "f55ccfe10242c208b261edb21a756acd"
   },
   "C:\\Users\\giuli\\praxiscodexworking\\docs\\backlog\\2026-05-06-from-reality-check.md": {
     "mtime": 1778097409.8635182,

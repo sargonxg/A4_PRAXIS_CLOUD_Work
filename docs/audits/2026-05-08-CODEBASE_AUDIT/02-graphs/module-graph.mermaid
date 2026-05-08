@@ -1,0 +1,193 @@
+graph LR
+  N0["src/lib/utils/cn.ts"]
+  "src/app/(auth)/login/page.tsx" --> N0
+  "src/app/(landing)/layout.tsx" --> N0
+  "src/app/app/admin/diagnostics/page.tsx" --> N0
+  "src/app/app/admin/domains/page.tsx" --> N0
+  "src/app/app/admin/operator-console/page.tsx" --> N0
+  N1["src/types/situation.ts"]
+  "src/__tests__/situation-creation-flow.test.ts" --> N1
+  "src/app/api/ai/actor-brief/route.ts" --> N1
+  "src/app/api/ai/actor-enrichment/route.ts" --> N1
+  "src/app/api/ai/actor-profiles/route.ts" --> N1
+  "src/app/api/ai/advisor-chat/briefing.ts" --> N1
+  N2["src/lib/api/with-auth.ts"]
+  "src/app/api/account/route.ts" --> N2
+  "src/app/api/admin/add-credits/route.ts" --> N2
+  "src/app/api/admin/advisor-feed/route.ts" --> N2
+  "src/app/api/admin/diagnostics/route.ts" --> N2
+  "src/app/api/admin/domains/[id]/route.ts" --> N2
+  N3["src/lib/firebase/admin.ts"]
+  "scripts/migrate-bitemporal.ts" --> N3
+  "scripts/migrate-documents-to-sources.ts" --> N3
+  "scripts/migrate-tool-outputs-to-tools.ts" --> N3
+  "scripts/seed-preferences-defaults.ts" --> N3
+  "src/app/api/account/route.ts" --> N3
+  N4["src/lib/ai/providers.ts"]
+  "src/__tests__/ai-providers.test.ts" --> N4
+  "src/app/api/ai/actor-brief/route.ts" --> N4
+  "src/app/api/ai/actor-enrichment/route.ts" --> N4
+  "src/app/api/ai/actor-profiles/route.ts" --> N4
+  "src/app/api/ai/advisor-chat/route.ts" --> N4
+  N5["src/lib/api/standard-error.ts"]
+  "src/app/api/account/route.ts" --> N5
+  "src/app/api/advisors/recent-by-situation/route.ts" --> N5
+  "src/app/api/ai/actor-enrichment/route.ts" --> N5
+  "src/app/api/ai/actor-profiles/route.ts" --> N5
+  "src/app/api/ai/advisory/route.ts" --> N5
+  N6["src/lib/api/with-calibration.ts"]
+  "src/app/api/ai/actor-brief/route.ts" --> N6
+  "src/app/api/ai/actor-enrichment/route.ts" --> N6
+  "src/app/api/ai/actor-profiles/route.ts" --> N6
+  "src/app/api/ai/advisor-chat/route.ts" --> N6
+  "src/app/api/ai/advisory/route.ts" --> N6
+  N7["src/lib/api/save-tool-output.ts"]
+  "src/app/api/ai/actor-brief/route.ts" --> N7
+  "src/app/api/ai/actor-enrichment/route.ts" --> N7
+  "src/app/api/ai/actor-profiles/route.ts" --> N7
+  "src/app/api/ai/advisor-chat/route.ts" --> N7
+  "src/app/api/ai/advisory/route.ts" --> N7
+  N8["src/lib/demo/demo-mode.ts"]
+  "src/app/api/ai/actor-brief/route.ts" --> N8
+  "src/app/api/ai/actor-enrichment/route.ts" --> N8
+  "src/app/api/ai/actor-profiles/route.ts" --> N8
+  "src/app/api/ai/advisor-chat/route.ts" --> N8
+  "src/app/api/ai/advisory/route.ts" --> N8
+  N9["src/types/analyst-profile.ts"]
+  "src/app/api/onboarding/chips/route.ts" --> N9
+  "src/app/api/onboarding/complete/route.ts" --> N9
+  "src/app/api/onboarding/profile/route.ts" --> N9
+  "src/app/api/profile/resolved/route.ts" --> N9
+  "src/app/api/profile/route.ts" --> N9
+  N10["src/lib/ai/situation-context.ts"]
+  "src/app/api/ai/actor-brief/route.ts" --> N10
+  "src/app/api/ai/actor-enrichment/route.ts" --> N10
+  "src/app/api/ai/actor-profiles/route.ts" --> N10
+  "src/app/api/ai/advisor-chat/route.ts" --> N10
+  "src/app/api/ai/advisory/route.ts" --> N10
+  N11["src/lib/ai/context-builder-server.ts"]
+  "src/app/api/ai/actor-enrichment/route.ts" --> N11
+  "src/app/api/ai/actor-profiles/route.ts" --> N11
+  "src/app/api/ai/advisory/route.ts" --> N11
+  "src/app/api/ai/argus/route.ts" --> N11
+  "src/app/api/ai/auto-briefing/route.ts" --> N11
+  N12["src/lib/auth/auth-context.tsx"]
+  "src/app/(auth)/layout.tsx" --> N12
+  "src/app/(auth)/login/callback/page.tsx" --> N12
+  "src/app/(auth)/login/page.tsx" --> N12
+  "src/app/app/admin/operator-console/page.tsx" --> N12
+  "src/app/app/layout.tsx" --> N12
+  N13["src/lib/api/validate-request.ts"]
+  "src/app/api/ai/advisory/route.ts" --> N13
+  "src/app/api/ai/argus/route.ts" --> N13
+  "src/app/api/ai/brainstorming-table/route.ts" --> N13
+  "src/app/api/ai/brief-builder/route.ts" --> N13
+  "src/app/api/ai/chat/route.ts" --> N13
+  N14["src/components/shared/praxis-link.tsx"]
+  "src/app/app/cases/page.tsx" --> N14
+  "src/app/app/profile/page.tsx" --> N14
+  "src/app/app/settings/graph-backend/page.tsx" --> N14
+  "src/app/app/settings/page.tsx" --> N14
+  "src/app/app/settings/profile/page.tsx" --> N14
+  N15["src/lib/ontology/types.ts"]
+  "scripts/audit-ontology-classifier-accuracy.ts" --> N15
+  "src/app/api/cases/[caseId]/ontologies/route.ts" --> N15
+  "src/app/api/situations/route.ts" --> N15
+  "src/app/app/situations/new/page.tsx" --> N15
+  "src/components/ontology/OntologyBadge.tsx" --> N15
+  N16["src/lib/constants/tool-registry.ts"]
+  "scripts/audit-hero-tool-calibration-coverage.ts" --> N16
+  "scripts/audit-stage-target-coverage.ts" --> N16
+  "scripts/audit-surface-registry-coherence.ts" --> N16
+  "src/__tests__/consolidated-tools.test.ts" --> N16
+  "src/app/api/tool-status/route.ts" --> N16
+  N17["src/lib/tools/marketplace/registry.ts"]
+  "scripts/audit-analytics-wave.ts" --> N17
+  "scripts/audit-stage-target-coverage.ts" --> N17
+  "scripts/audit-tool-canary-executable.ts" --> N17
+  "scripts/audit-tool-composition-static.ts" --> N17
+  "scripts/audit-tool-contract-v2.ts" --> N17
+  N18["src/components/workbench/workbench-scope.tsx"]
+  "src/chapters/ach/ACHChapter.tsx" --> N18
+  "src/chapters/boardroom/BoardroomChapter.tsx" --> N18
+  "src/components/memo/MemoStudio.tsx" --> N18
+  "src/components/ontology/OntologySchemaViewer.tsx" --> N18
+  "src/components/syria/chapter-3-conflict-graph.tsx" --> N18
+  N19["src/types/case-module.ts"]
+  "src/app/api/cases/[caseId]/research/plan/route.ts" --> N19
+  "src/app/api/cases/[caseId]/research/route.ts" --> N19
+  "src/components/workbench/empty-state/EmptyStateGuidance.tsx" --> N19
+  "src/components/workbench/graph/GraphIntelligencePanels.tsx" --> N19
+  "src/components/workbench/workbench-scope.tsx" --> N19
+  N20["tests/e2e/personas/_shared/persona-fixtures.ts"]
+  "tests/e2e/app-usability-smoke.spec.ts" --> N20
+  "tests/e2e/dashboard-command-center.spec.ts" --> N20
+  "tests/e2e/onboarding/ai-first-case-creation.spec.ts" --> N20
+  "tests/e2e/onboarding/new-user-end-to-end.spec.ts" --> N20
+  "tests/e2e/personas/analyst.spec.ts" --> N20
+  N21["src/lib/api/schemas.ts"]
+  "src/app/api/ai/advisory/route.ts" --> N21
+  "src/app/api/ai/argus/route.ts" --> N21
+  "src/app/api/ai/chat/route.ts" --> N21
+  "src/app/api/ai/compare/route.ts" --> N21
+  "src/app/api/ai/concordia/route.ts" --> N21
+  N22["src/types/boardroom.ts"]
+  "scripts/audit-boardroom.ts" --> N22
+  "src/app/api/boardroom/deliberations/[deliberationId]/route.ts" --> N22
+  "src/app/api/boardroom/deliberations/route.ts" --> N22
+  "src/components/boardroom/BoardroomWorkspace.tsx" --> N22
+  "src/components/boardroom/CitationPill.tsx" --> N22
+  N23["src/lib/firebase/graph-service.ts"]
+  "src/app/api/ai/stakeholder-map/route.ts" --> N23
+  "src/app/api/graph/evolution/route.ts" --> N23
+  "src/lib/analytics/salience-engine.ts" --> N23
+  "src/lib/constants/syria-demo-case.ts" --> N23
+  "src/lib/firebase/graph-updates-service.ts" --> N23
+  N24["src/lib/graph/workbench-case-graph.ts"]
+  "src/components/graph/GraphEntityPanel.tsx" --> N24
+  "src/components/graph/PraxisForceGraph.tsx" --> N24
+  "src/components/graph/PraxisGraphCanvas.tsx" --> N24
+  "src/components/graph/PraxisGraphView.tsx" --> N24
+  "src/components/graph/PraxisMap.tsx" --> N24
+  N25["src/types/advisor.ts"]
+  "src/app/api/advisors/[id]/route.ts" --> N25
+  "src/app/api/advisors/recent-by-situation/route.ts" --> N25
+  "src/app/api/ai/advisor-chat/briefing.ts" --> N25
+  "src/app/api/ai/advisor-chat/route.ts" --> N25
+  "src/app/app/admin/advisors/page.tsx" --> N25
+  N26["src/lib/constants/syria-demo-case.ts"]
+  "src/app/api/graph/query/route.ts" --> N26
+  "src/app/api/situations/copy-from-demo/route.ts" --> N26
+  "src/app/demo/syria-2024/page.tsx" --> N26
+  "src/components/app/situation-selector.tsx" --> N26
+  "src/components/briefing/brief-blocks-panel.tsx" --> N26
+  N27["src/stores/situation-store.ts"]
+  "src/app/app/cases/page.tsx" --> N27
+  "src/app/app/settings/system-health/page.tsx" --> N27
+  "src/app/app/situations/new/page.tsx" --> N27
+  "src/components/app/app-sidebar.tsx" --> N27
+  "src/components/app/floating-praxis.tsx" --> N27
+  N28["src/lib/firebase/situations.ts"]
+  "src/app/api/ai/auto-structure/route.ts" --> N28
+  "src/app/api/ai/chat/route.ts" --> N28
+  "src/app/api/ai/deep-search-agent/route.ts" --> N28
+  "src/app/api/situations/[id]/context-health/route.ts" --> N28
+  "src/app/api/situations/[id]/feed-alerts/route.ts" --> N28
+  N29["src/lib/auth/admin-gate.ts"]
+  "scripts/check-admin-access.ts" --> N29
+  "src/app/api/admin/add-credits/route.ts" --> N29
+  "src/app/api/admin/advisor-feed/route.ts" --> N29
+  "src/app/api/admin/diagnostics/route.ts" --> N29
+  "src/app/api/admin/domains/[id]/route.ts" --> N29
+  N30["src/lib/firebase/analyst-profile-admin.ts"]
+  "src/app/api/auth/session/route.ts" --> N30
+  "src/app/api/onboarding/complete/route.ts" --> N30
+  "src/app/api/onboarding/profile/route.ts" --> N30
+  "src/app/api/onboarding/skip/route.ts" --> N30
+  "src/app/api/profile/resolved/route.ts" --> N30
+  N31["src/lib/firebase/config.ts"]
+  "src/app/app/settings/graph-backend/page.tsx" --> N31
+  "src/app/app/settings/model-preferences/page.tsx" --> N31
+  "src/components/praxis/situation-dashboard.tsx" --> N31
+  "src/hooks/use-activity-feed.ts" --> N31
+  "src/lib/auth/auth-context.tsx" --> N31

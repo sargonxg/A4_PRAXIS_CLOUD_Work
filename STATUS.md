@@ -4,7 +4,7 @@
 
 ## Morning Brief
 
-- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `V2_00_README`, `V2_A0_MT_DATA_MODEL`, `V2_B0_KG_PREFLIGHT` local attempt, `V2_D0_STRUCTURED_EVENTS` static implementation, `V2_D1_KPI_PIPELINE` static assets, `V2_ITERATE_LOOP`, `V2_STATUS_TEMPLATE`, `V2_Z1_EXPORT_E2E`, `V2_Z2_DEMO_TRANSITION`, `V2_Z3_DEEP_RESEARCH_CONSOLIDATE`.
+- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `COMPREHENSIVE_AUDIT` read-only evidence pass, `V2_00_README`, `V2_A0_MT_DATA_MODEL`, `V2_B0_KG_PREFLIGHT` local attempt, `V2_D0_STRUCTURED_EVENTS` static implementation, `V2_D1_KPI_PIPELINE` static assets, `V2_ITERATE_LOOP`, `V2_STATUS_TEMPLATE`, `V2_Z1_EXPORT_E2E`, `V2_Z2_DEMO_TRANSITION`, `V2_Z3_DEEP_RESEARCH_CONSOLIDATE`.
 - Prompts deferred: Cloud SQL live row counts from `01` and `V2_B0_KG_PREFLIGHT` are blocked locally by private IP plus missing local `psql`/Cloud SQL Proxy; `V2_A1_ORGID_CONTEXT` through `V2_A6_MT_AUDIT_LOG` are blocked until all MT approval rows below are marked approved or explicitly revised; `V2_B1_DUAL_WRITE_GRAPH` through `V2_B3_RETIRE_FIRESTORE_GRAPH` are blocked until B0 live counts select and approve Case 1/2/3, B1 runs clean for 7 days, and B2 runs clean for 7 days; `V2_C0_COGNEE_LIVE` and `V2_C1_MEMORY_RECALL_IN_CALIBRATION` are blocked because `praxis-cognee` is not deployed in Cloud Run; `V2_C2_AGENT_ENGINE_SUBAGENTS` is blocked pending the deploy-vs-rename decision.
 - Recovery loop resolved: `audit:ux-polish`, `audit:workbench`, `audit:evidence-drawer`, `audit:graph-viewer`, `audit:visualization`, `audit:master-charter`, stale Graphify outputs, and withCalibration unit fixture drift.
 - Measured deltas:
@@ -65,6 +65,7 @@
 | V2_Z1_EXPORT_E2E | partial | Briefing and boardroom export structure, telemetry hooks, client progress, prompt preservation, and `audit:export-coverage` are built; live browser download and Cloud Logging telemetry confirmation remain deployment gates. |
 | V2_Z2_DEMO_TRANSITION | partial | Public demo copy CTA, authenticated `/api/situations/copy-from-demo`, canonical graph seed, workspace banner, prompt preservation, and `audit:demo-claim` are built; authenticated production copy smoke remains a deployment gate. |
 | V2_Z3_DEEP_RESEARCH_CONSOLIDATE | partial | `/api/ai/deep-search-agent` is canonical, `/api/ai/deep-research` is soft-deprecated with the same SSE envelope, active consumers point to the canonical route, tool docs regenerated, and `audit:deep-research-canonical` is in gate; D1 p50/p95/cost/failure metrics remain unavailable locally. |
+| COMPREHENSIVE_AUDIT | done | Read-only audit saved at `docs/audits/2026-05-08-CODEBASE_AUDIT/`; generated 44+ evidence artifacts plus the source prompt, mapped deletion/consolidation/refactor candidates, and intentionally executed no source deletions per the prompt's hard rule. |
 
 Status legend: `not_started`, `in_progress`, `partial`, `done`, `deferred`, `blocked`.
 
@@ -165,6 +166,11 @@ marked `approved` or `revised: <alternative>`.
 | `npm run audit:bq-views` | pass |
 | `npm run audit:codex-prompts` | pass, V2 prompts A0-A6, B0-B3, C0-C2, D0-D1, Z1-Z3, and control prompts included |
 | `npm run audit:v2-prompt-pack-completion` | pass, all V2 prompts preserved, status rows present, blocker gates explicit, and D/Z guard audits in `audit:gate` |
+| `node docs/audits/2026-05-08-CODEBASE_AUDIT/generate-audit.mjs` | pass, generated comprehensive audit evidence and cleanup plan |
+| `npx --yes madge --ts-config tsconfig.json --circular src` | pass, no circular dependency found |
+| `npx --yes depcheck --json` | findings captured, expected nonzero audit result |
+| `npx --yes knip --reporter json` | findings captured, expected nonzero audit result |
+| `npx --yes jscpd src backend --reporters json` | pass, clone report captured |
 | `npm run test -- tests/unit/lib/telemetry/emit.test.ts` | pass, 2 tests |
 | `npm run audit:ai-provider-isolation` | pass |
 | `npm run audit:model-matrix-coverage` | pass |
@@ -179,7 +185,7 @@ marked `approved` or `revised: <alternative>`.
 | `npm run audit:visualization` | pass |
 | `npm run audit:master-charter` | pass after Graphify refresh |
 | `npm run test` | pass, 147 files and 575 tests |
-| `graphify update .` | pass, latest rebuild 5872 nodes, 10007 edges, and 839 communities; HTML skipped because the graph exceeds the 5000-node render limit |
+| `graphify update .` | pass, latest rebuild 5887 nodes, 10024 edges, and 829 communities; HTML skipped because the graph exceeds the 5000-node render limit |
 
 ### Postgres KG Live Counts
 

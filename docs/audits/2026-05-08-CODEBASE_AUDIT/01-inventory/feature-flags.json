@@ -1,0 +1,85 @@
+{
+  "generated_at": "2026-05-08T08:58:34.825Z",
+  "feature_flags": [
+    {
+      "name": "COGNEE_ENABLED",
+      "type": "env",
+      "read_sites": [
+        "docs/codex-prompts/PRAXIS_V2_C0_COGNEE_LIVE.md",
+        "scripts/audit-cognee-isolation.ts",
+        "scripts/audit-cognee-operations.ts",
+        "scripts/audit-cognee-runtime.ts",
+        "scripts/audit-cognee-ui-honesty.ts",
+        "src/app/api/health/features/route.ts",
+        "src/app/api/health/route.ts",
+        "src/app/api/memory/[...slug]/route.ts"
+      ],
+      "set_sites": [],
+      "default_value": "false unless true + backend URL"
+    },
+    {
+      "name": "DIALECTICA_ENABLED",
+      "type": "env",
+      "read_sites": [
+        "src/lib/dialectica/http-adapter.ts",
+        "src/lib/dialectica/index.ts"
+      ],
+      "set_sites": [],
+      "default_value": "see read site"
+    },
+    {
+      "name": "KG_BACKEND",
+      "type": "env",
+      "read_sites": [
+        "src/app/api/health/features/route.ts"
+      ],
+      "set_sites": [],
+      "default_value": "see read site"
+    },
+    {
+      "name": "NEXT_PUBLIC_DEBUG_PANEL",
+      "type": "env",
+      "read_sites": [
+        "src/components/app/debug-panel.tsx"
+      ],
+      "set_sites": [],
+      "default_value": "see read site"
+    },
+    {
+      "name": "NEXT_PUBLIC_FIREBASE_APPCHECK_ENABLED",
+      "type": "env",
+      "read_sites": [
+        "src/lib/firebase/config.ts"
+      ],
+      "set_sites": [
+        "src/lib/firebase/config.ts"
+      ],
+      "default_value": "see read site"
+    },
+    {
+      "name": "SYRIA_LIVE_INGEST_ENABLED",
+      "type": "env",
+      "read_sites": [
+        "src/app/api/situations/[id]/syria-ingest/route.ts"
+      ],
+      "set_sites": [],
+      "default_value": "see read site"
+    },
+    {
+      "name": "VERTEX_AGENT_ENGINE_ID",
+      "type": "env",
+      "read_sites": [
+        "scripts/audit-cognee-ui-honesty.ts",
+        "src/app/api/health/diagnostics/route.ts",
+        "src/app/api/health/features/route.ts",
+        "src/app/api/health/route.ts",
+        "src/lib/ai/vertex-agent.ts"
+      ],
+      "set_sites": [
+        "cloudbuild.frontend.yaml",
+        "cloudbuild.yaml"
+      ],
+      "default_value": "see read site"
+    }
+  ]
+}

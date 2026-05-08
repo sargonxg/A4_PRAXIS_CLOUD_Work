@@ -1,5 +1,9 @@
 # PRAXIS Build Log
 
+## 2026-05-08 — Comprehensive codebase audit
+
+Ran `COMPREHENSIVE_AUDIT.md` as a read-only source-of-truth pass and saved the evidence under `docs/audits/2026-05-08-CODEBASE_AUDIT/`. The audit inventories files, modules, routes, UI surfaces, env vars, feature flags, dependencies, module/route/data-flow graphs, orphan modules, hub modules, circular dependencies, dead-code candidates, duplications, hotspots, surface area, unknowns, and a tiered cleanup plan. Per the audit pack's hard rule, no source deletion was executed in this pass; deletion candidates are mapped with evidence for the follow-up cleanup pack. Verified with Madge, depcheck, knip, jscpd, TypeScript, production build, test suite, and a fresh Graphify refresh.
+
 ## 2026-05-08 — V2 prompt pack completion checkpoint
 
 Checked the full `files (7)` V2 prompt pack end-to-end: every prompt is preserved in `docs/codex-prompts/`, every prompt has a status row in `STATUS.md`, and the safe implementation slices already built for A0, D0, D1 static assets, control prompts, and Z1-Z3 are now summarized in `docs/audits/2026-05-08-V2-PROMPT-PACK-COMPLETION.md`. Added `audit:v2-prompt-pack-completion` so the repo fails if a prompt disappears, a blocker gate is removed, or the D/Z guard audits drift out of `audit:gate`. A1-A6, B0-B3, C0-C2, and live portions of D1/Z1/Z2/Z3 remain explicit approval/live-infra gates rather than fake-completed code.

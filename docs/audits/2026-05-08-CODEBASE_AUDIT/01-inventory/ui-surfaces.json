@@ -1,0 +1,839 @@
+{
+  "generated_at": "2026-05-08T08:58:34.823Z",
+  "surfaces": [
+    {
+      "kind": "page",
+      "route": "/login/callback",
+      "file": "src/app/(auth)/login/callback/page.tsx",
+      "uses_components": [
+        "Link",
+        "Suspense",
+        "CheckCircle2",
+        "Loader2",
+        "ShieldAlert"
+      ],
+      "uses_hooks": [
+        "useEffect",
+        "useRouter",
+        "useSearchParams",
+        "useAuth"
+      ],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/login",
+      "file": "src/app/(auth)/login/page.tsx",
+      "uses_components": [
+        "Suspense",
+        "Shield",
+        "ArrowRight",
+        "Loader2",
+        "Mail",
+        "Chrome"
+      ],
+      "uses_hooks": [
+        "useState",
+        "useEffect",
+        "useRef",
+        "useMemo",
+        "useRouter",
+        "useSearchParams",
+        "useAuth"
+      ],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/",
+      "file": "src/app/(landing)/page.tsx",
+      "uses_components": [
+        "Hero",
+        "SixSteps",
+        "ExampleCasesGallery",
+        "Dialectica",
+        "LiveDemo"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/admin/advisor-feed",
+      "file": "src/app/app/admin/advisor-feed/page.tsx",
+      "uses_components": [],
+      "uses_hooks": [
+        "useEffect",
+        "useState"
+      ],
+      "uses_routes": [
+        "/api/admin/advisor-feed"
+      ]
+    },
+    {
+      "kind": "page",
+      "route": "/app/admin/advisors",
+      "file": "src/app/app/admin/advisors/page.tsx",
+      "uses_components": [],
+      "uses_hooks": [
+        "useEffect",
+        "useState"
+      ],
+      "uses_routes": [
+        "/api/admin/me",
+        "/api/advisors",
+        "/api/advisors/${selected.id}"
+      ]
+    },
+    {
+      "kind": "page",
+      "route": "/app/admin/diagnostics",
+      "file": "src/app/app/admin/diagnostics/page.tsx",
+      "uses_components": [
+        "Activity",
+        "CheckCircle2",
+        "AlertCircle",
+        "XCircle",
+        "RefreshCw",
+        "Cpu",
+        "Database",
+        "Lock",
+        "Globe",
+        "Zap"
+      ],
+      "uses_hooks": [
+        "useCallback",
+        "useEffect",
+        "useState"
+      ],
+      "uses_routes": [
+        "/api/admin/diagnostics"
+      ]
+    },
+    {
+      "kind": "page",
+      "route": "/app/admin/domains",
+      "file": "src/app/app/admin/domains/page.tsx",
+      "uses_components": [],
+      "uses_hooks": [
+        "useEffect",
+        "useState"
+      ],
+      "uses_routes": [
+        "/api/admin/domains",
+        "/api/admin/domains/${id}"
+      ]
+    },
+    {
+      "kind": "page",
+      "route": "/app/admin/operator-console",
+      "file": "src/app/app/admin/operator-console/page.tsx",
+      "uses_components": [
+        "SemaphoreChip"
+      ],
+      "uses_hooks": [
+        "useEffect",
+        "useMemo",
+        "useState",
+        "useAuth"
+      ],
+      "uses_routes": [
+        "/api/admin/operator-console"
+      ]
+    },
+    {
+      "kind": "page",
+      "route": "/app/admin",
+      "file": "src/app/app/admin/page.tsx",
+      "uses_components": [
+        "Activity",
+        "Brain",
+        "CheckCircle2",
+        "CreditCard",
+        "Database",
+        "FileText",
+        "KeyRound",
+        "ShieldCheck",
+        "Users",
+        "AdvisorFeedPage",
+        "AdvisorsPage",
+        "DiagnosticsPage",
+        "DomainsPage",
+        "OperatorConsolePage",
+        "UsersPage"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/admin/users",
+      "file": "src/app/app/admin/users/page.tsx",
+      "uses_components": [
+        "RefreshCw"
+      ],
+      "uses_hooks": [
+        "useEffect",
+        "useState"
+      ],
+      "uses_routes": [
+        "/api/admin/users?limit=100"
+      ]
+    },
+    {
+      "kind": "page",
+      "route": "/app/cases",
+      "file": "src/app/app/cases/page.tsx",
+      "uses_components": [
+        "NoSituationState",
+        "PraxisLink",
+        "BookOpen",
+        "Search",
+        "GitCompare",
+        "AlertTriangle",
+        "Pause",
+        "CheckCircle",
+        "TrendingUp",
+        "Filter",
+        "X",
+        "ExternalLink",
+        "Plus",
+        "FolderOpen",
+        "Archive",
+        "RegistryToolInfo"
+      ],
+      "uses_hooks": [
+        "useSituationGuard",
+        "useSituationStore",
+        "useState",
+        "useMemo",
+        "useRouter",
+        "usePraxisRoute"
+      ],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/dashboard",
+      "file": "src/app/app/dashboard/page.tsx",
+      "uses_components": [
+        "DashboardCommandCenter",
+        "MARKETPLACE_TOOLS"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app",
+      "file": "src/app/app/page.tsx",
+      "uses_components": [],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/profile",
+      "file": "src/app/app/profile/page.tsx",
+      "uses_components": [
+        "ArrowRight",
+        "CheckCircle2",
+        "Compass",
+        "Eye",
+        "History",
+        "Languages",
+        "Loader2",
+        "Pencil",
+        "ShieldAlert",
+        "Sparkles",
+        "UserIcon",
+        "PraxisLink",
+        "LENS_CATALOG",
+        "LENSES"
+      ],
+      "uses_hooks": [
+        "useEffect",
+        "useState",
+        "useAuth"
+      ],
+      "uses_routes": [
+        "/api/profile/resolved"
+      ]
+    },
+    {
+      "kind": "page",
+      "route": "/app/settings/api-keys",
+      "file": "src/app/app/settings/api-keys/page.tsx",
+      "uses_components": [
+        "Check",
+        "ExternalLink",
+        "Loader2",
+        "ShieldCheck",
+        "Trash2",
+        "X"
+      ],
+      "uses_hooks": [
+        "useCallback",
+        "useEffect",
+        "useMemo",
+        "useState"
+      ],
+      "uses_routes": [
+        "/api/settings/api-keys",
+        "/api/settings/api-keys/${spec.id}",
+        "/api/settings/api-keys/${spec.id}/validate"
+      ]
+    },
+    {
+      "kind": "page",
+      "route": "/app/settings/graph-backend",
+      "file": "src/app/app/settings/graph-backend/page.tsx",
+      "uses_components": [
+        "PraxisLink"
+      ],
+      "uses_hooks": [
+        "useEffect",
+        "useState",
+        "useAuth"
+      ],
+      "uses_routes": [
+        "/api/backend/graph/test-connection"
+      ]
+    },
+    {
+      "kind": "page",
+      "route": "/app/settings/model-preferences",
+      "file": "src/app/app/settings/model-preferences/page.tsx",
+      "uses_components": [
+        "DEFAULT_MODEL_PREFERENCE",
+        "MODEL_PREFERENCE_VALUES"
+      ],
+      "uses_hooks": [
+        "useEffect",
+        "useState",
+        "useAuth"
+      ],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/settings/notifications",
+      "file": "src/app/app/settings/notifications/page.tsx",
+      "uses_components": [
+        "Bell",
+        "Clock",
+        "Mail",
+        "Send",
+        "Smartphone",
+        "TestTube2",
+        "Webhook"
+      ],
+      "uses_hooks": [
+        "useEffect",
+        "useMemo",
+        "useState",
+        "useFeatureFlags"
+      ],
+      "uses_routes": [
+        "/api/backend/notifications/registry",
+        "/api/backend/notifications/preferences",
+        "/api/backend/notifications/test"
+      ]
+    },
+    {
+      "kind": "page",
+      "route": "/app/settings",
+      "file": "src/app/app/settings/page.tsx",
+      "uses_components": [
+        "Suspense",
+        "User",
+        "Building2",
+        "Palette",
+        "Key",
+        "Shield",
+        "Mail",
+        "Briefcase",
+        "PlayCircle",
+        "RotateCcw",
+        "Cpu",
+        "CheckCircle2",
+        "AlertCircle",
+        "Server",
+        "Globe",
+        "GitBranch",
+        "Layers",
+        "ArrowRight",
+        "CreditCard",
+        "Sparkles",
+        "Activity",
+        "PraxisLink",
+        "Badge"
+      ],
+      "uses_hooks": [
+        "useState",
+        "useEffect",
+        "useSearchParams",
+        "useAuth"
+      ],
+      "uses_routes": [
+        "/api/polar/checkout",
+        "/api/promo/redeem",
+        "argus.tacitus.me/api/v1",
+        "concordia.tacitus.me/api/v1",
+        "windtunnel.tacitus.me/api/v1",
+        "conflictcompass.tacitus.me/api/v1"
+      ]
+    },
+    {
+      "kind": "page",
+      "route": "/app/settings/personas/:personaId",
+      "file": "src/app/app/settings/personas/[personaId]/page.tsx",
+      "uses_components": [
+        "PersonaSpecForm",
+        "CANONICAL_PERSONAS"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/settings/personas/new",
+      "file": "src/app/app/settings/personas/new/page.tsx",
+      "uses_components": [
+        "PersonaSpecForm",
+        "CANONICAL_PERSONAS"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/settings/personas",
+      "file": "src/app/app/settings/personas/page.tsx",
+      "uses_components": [
+        "PersonaSpecForm",
+        "CANONICAL_PERSONAS"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/settings/preferences",
+      "file": "src/app/app/settings/preferences/page.tsx",
+      "uses_components": [
+        "CITATION_STYLES",
+        "REPORT_LENGTHS",
+        "CONFIDENCE_LABELLING",
+        "TIME_HORIZONS",
+        "LANGUAGES",
+        "ADVISOR_IDS",
+        "ArrowDown",
+        "ArrowUp",
+        "Eye",
+        "EyeOff",
+        "CUSTOMIZABLE_SIDEBAR_TOOLS"
+      ],
+      "uses_hooks": [
+        "useUserPreferences"
+      ],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/settings/profile",
+      "file": "src/app/app/settings/profile/page.tsx",
+      "uses_components": [
+        "ArrowLeft",
+        "Briefcase",
+        "CheckCircle2",
+        "Languages",
+        "Loader2",
+        "Compass",
+        "UserIcon",
+        "DEFAULT_ANALYST_PROFILE",
+        "StepIdentity",
+        "StepPerspective",
+        "StepWorkingStyle",
+        "LivePreview",
+        "PraxisLink",
+        "DangerZone"
+      ],
+      "uses_hooks": [
+        "useCallback",
+        "useEffect",
+        "useState",
+        "useAuth"
+      ],
+      "uses_routes": [
+        "/api/onboarding/profile"
+      ]
+    },
+    {
+      "kind": "page",
+      "route": "/app/settings/system-health",
+      "file": "src/app/app/settings/system-health/page.tsx",
+      "uses_components": [
+        "Activity",
+        "CheckCircle2",
+        "XCircle",
+        "AlertCircle",
+        "RefreshCw",
+        "Cpu",
+        "Database",
+        "Globe",
+        "Zap",
+        "Shield",
+        "Layers",
+        "Brain",
+        "BarChart3",
+        "Copy",
+        "ExternalLink",
+        "Plug"
+      ],
+      "uses_hooks": [
+        "useState",
+        "useEffect",
+        "useCallback",
+        "useMemo",
+        "useAuth",
+        "useSituationStore"
+      ],
+      "uses_routes": [
+        "Required for live monthly subscriptions. Until configured, /api/polar/checkout returns 503 and users stay on the free plan.",
+        "/api/health/skc?situationId=${situationId}",
+        "/api/health/breakers",
+        "/api/health/provider",
+        ">\r\n            Breaker health endpoint not available — deploy /api/health/breakers\r\n          </p>\r\n        ) : (\r\n          breakers.map((b) => (\r\n            <HealthRow\r\n              key={b.name}\r\n              icon={b.state === "
+      ]
+    },
+    {
+      "kind": "page",
+      "route": "/app/situations/new",
+      "file": "src/app/app/situations/new/page.tsx",
+      "uses_components": [
+        "AnimatePresence",
+        "Globe",
+        "FileText",
+        "Sparkles",
+        "ArrowRight",
+        "ArrowLeft",
+        "Loader2",
+        "Check",
+        "Plus",
+        "Users",
+        "Upload",
+        "X",
+        "BookOpen",
+        "Info",
+        "DomainPicker",
+        "DOMAIN_SEEDS",
+        "SourcePicker",
+        "AiFirstCaseCreation",
+        "SOURCE_CATEGORIES",
+        "POLICY_WORKFLOW_PATHS",
+        "CASE_ONTOLOGIES",
+        "MAX_ACTIVE_ONTOLOGIES",
+        "CASE_TYPE_DEFINITIONS"
+      ],
+      "uses_hooks": [
+        "useState",
+        "useCallback",
+        "useEffect",
+        "useRef",
+        "useRouter",
+        "usePraxisRoute",
+        "useSituationStore",
+        "useAuth",
+        "useGroundedSearch"
+      ],
+      "uses_routes": [
+        "/api/data/intelligence",
+        "/api/situations/classify-domain",
+        "/api/cases/scaffold/audit",
+        "/api/auth/session",
+        "/api/situations",
+        "/api/documents/upload",
+        "/api/ai/auto-structure",
+        "@/lib/api/praxis-backend"
+      ]
+    },
+    {
+      "kind": "page",
+      "route": "/app/situations",
+      "file": "src/app/app/situations/page.tsx",
+      "uses_components": [],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/syria-case",
+      "file": "src/app/app/syria-case/page.tsx",
+      "uses_components": [],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/tools/archive",
+      "file": "src/app/app/tools/archive/page.tsx",
+      "uses_components": [],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/tools",
+      "file": "src/app/app/tools/page.tsx",
+      "uses_components": [
+        "ArrowRight",
+        "BookOpen",
+        "Bot",
+        "CheckCircle2",
+        "Circle",
+        "Gauge",
+        "GitBranch",
+        "Layers3",
+        "Loader2",
+        "MessagesSquare",
+        "PackageOpen",
+        "Search",
+        "ShieldCheck",
+        "SlidersHorizontal",
+        "Sparkles",
+        "Target",
+        "TriangleAlert",
+        "Wrench",
+        "OnboardingRequiredState",
+        "PraxisLink",
+        "CONSOLIDATED_TOOLS",
+        "HERO_TOOLS",
+        "TOOL_REGISTRY"
+      ],
+      "uses_hooks": [
+        "useMemo",
+        "useState",
+        "useSearchParams",
+        "useSituationGuard",
+        "useAllToolStatuses"
+      ],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/workbench/:caseId/ach/:achId",
+      "file": "src/app/app/workbench/[caseId]/ach/[achId]/page.tsx",
+      "uses_components": [
+        "ACHDetail"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/workbench/:caseId/ach",
+      "file": "src/app/app/workbench/[caseId]/ach/page.tsx",
+      "uses_components": [
+        "ACHIndex"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/workbench/:caseId/boardroom/:deliberationId",
+      "file": "src/app/app/workbench/[caseId]/boardroom/[deliberationId]/page.tsx",
+      "uses_components": [
+        "BoardroomLive"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/workbench/:caseId/boardroom/:deliberationId/synthesis",
+      "file": "src/app/app/workbench/[caseId]/boardroom/[deliberationId]/synthesis/page.tsx",
+      "uses_components": [
+        "BoardroomSynthesis"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/workbench/:caseId/boardroom/new",
+      "file": "src/app/app/workbench/[caseId]/boardroom/new/page.tsx",
+      "uses_components": [
+        "BoardroomConfigure"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/workbench/:caseId/boardroom",
+      "file": "src/app/app/workbench/[caseId]/boardroom/page.tsx",
+      "uses_components": [
+        "BoardroomIndex"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/workbench/:caseId",
+      "file": "src/app/app/workbench/[caseId]/page.tsx",
+      "uses_components": [
+        "WorkbenchActiveCase"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/app/workbench",
+      "file": "src/app/app/workbench/page.tsx",
+      "uses_components": [
+        "WorkbenchCasePicker"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/demo",
+      "file": "src/app/demo/page.tsx",
+      "uses_components": [],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/demo/syria-2024",
+      "file": "src/app/demo/syria-2024/page.tsx",
+      "uses_components": [
+        "Link",
+        "SYRIA_DEMO_CASE_ID",
+        "SYRIA_DEMO_CANONICAL_GRAPH",
+        "SYRIA_DEMO_CONFLICT_GRAPH",
+        "SYRIA_DEMO_SITUATION",
+        "DemoClaimButton"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/legal/data-retention",
+      "file": "src/app/legal/data-retention/page.tsx",
+      "uses_components": [
+        "Link"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/legal/privacy",
+      "file": "src/app/legal/privacy/page.tsx",
+      "uses_components": [],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/legal/security",
+      "file": "src/app/legal/security/page.tsx",
+      "uses_components": [
+        "Link"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/legal/terms",
+      "file": "src/app/legal/terms/page.tsx",
+      "uses_components": [],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/onboarding",
+      "file": "src/app/onboarding/page.tsx",
+      "uses_components": [
+        "Suspense",
+        "Link",
+        "ArrowLeft",
+        "CheckCircle2",
+        "DEFAULT_ANALYST_PROFILE",
+        "StepIdentity",
+        "StepPerspective",
+        "StepWorkingStyle",
+        "CompletionSuccess",
+        "LivePreview"
+      ],
+      "uses_hooks": [
+        "useState",
+        "useEffect",
+        "useCallback",
+        "useRouter",
+        "useSearchParams",
+        "useAuth"
+      ],
+      "uses_routes": [
+        "/api/onboarding/draft",
+        "/api/onboarding/profile",
+        "/api/onboarding/skip",
+        "/api/onboarding/complete"
+      ]
+    },
+    {
+      "kind": "page",
+      "route": "/pricing",
+      "file": "src/app/pricing/page.tsx",
+      "uses_components": [
+        "Link",
+        "Check",
+        "ShieldCheck",
+        "INTERNAL_COST_DISCLOSURE_NOTICE",
+        "PLAN_USAGE_BUCKETS",
+        "PRICING_TIERS"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/privacy",
+      "file": "src/app/privacy/page.tsx",
+      "uses_components": [
+        "Link"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/terms",
+      "file": "src/app/terms/page.tsx",
+      "uses_components": [
+        "Link"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    },
+    {
+      "kind": "page",
+      "route": "/waitlist",
+      "file": "src/app/waitlist/page.tsx",
+      "uses_components": [
+        "WaitlistPageClient"
+      ],
+      "uses_hooks": [],
+      "uses_routes": []
+    }
+  ]
+}
