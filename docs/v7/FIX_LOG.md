@@ -606,3 +606,20 @@
   - HIGH: seeded examples must be deployed through migrations before production can show them.
   - MEDIUM: provider-isolation audit drift blocks full `audit:gate` and belongs to Block 6.
 - Suggested next letter for paste #28: B/E to run INSPECT Block 3 and make the Cores picker first-class.
+
+### Paste #28 - 2026-05-09
+- Letter chosen: B/E
+- Slice/issue: INSPECT Block 3 - Cores picker is first-class.
+- PR: pending at this checkpoint.
+- LOC diff: bounded picker/UI/audit/docs update under the 600 LOC block limit.
+- Audits added or changed: added `audit:cores-picker-coverage`; updated `audit:v7-home-shape`, `audit:v7-inline-cores`, and architecture-chain requirements.
+- Acceptance criteria results:
+  - Picker one-click Home/Ask, grouped core kinds, live search, multi-attach, reorder, detach, and mobile sheet: pass via `docs/v7/build/SCREENSHOTS/v7-block3-*.png`.
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build`, `npm run audit:cores-picker-coverage`, `npm run audit:v7-home-shape`, `npm run audit:v7-inline-cores`, `npm run audit:architecture-chain`, `npx vitest run`: pass.
+  - `npm run audit:gate`: red at pre-existing `audit:ai-provider-isolation` findings; parked for Block 6.
+- Skills/subagents invoked: playwright skill for browser verification.
+- Findings parked for later:
+  - HIGH: Ask comparative execution across all attached cores remains Block 4.
+  - HIGH: production Core availability depends on the stacked migrations/API landing.
+  - MEDIUM: add full pointer-drag gesture test to Playwright after this branch stack is merged.
+- Suggested next letter for paste #29: E/Block 5 to verify Postgres Cores and owner scoping before deeper Ask routing.

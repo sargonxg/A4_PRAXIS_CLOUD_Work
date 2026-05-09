@@ -14,6 +14,7 @@ function read(path: string): string {
 }
 
 const home = read('src/components/v7/v7-home-surface.tsx');
+const picker = read('src/components/v7/v7-core-picker.tsx');
 const homeRoute = read('src/app/app/home/page.tsx');
 const migration = read('backend/migrations/versions/0023_seeded_examples.py');
 const packageJson = JSON.parse(read('package.json') || '{}') as { scripts?: Record<string, string> };
@@ -32,12 +33,15 @@ for (const token of [
   'Pick a Situation to see gaps',
   'No recent Ask threads or outputs yet.',
   'href="/app/cores?examples=1"',
-  'data-testid="v7-attach-core-link"',
   "activeSituation ?? null",
   "attachedCoreIds: attachedSituationIds.join(',')",
   'Two Situations attached — answers will reference both.',
 ]) {
   if (!home.includes(token)) failures.push(`v7 home missing generic empty-state token: ${token}`);
+}
+
+if (!picker.includes('data-testid="v7-attach-core-link"')) {
+  failures.push('v7 shared core picker missing attach-core test id');
 }
 
 for (const ontology of ['conflict', 'mediation', 'governance', 'narrative', 'human-rights', 'economic', 'humanitarian', 'legal', 'security']) {

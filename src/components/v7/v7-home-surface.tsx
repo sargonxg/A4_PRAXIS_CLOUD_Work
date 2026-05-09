@@ -17,10 +17,10 @@ import {
   ShieldAlert,
   Sparkles,
   Target,
-  UserRound,
 } from 'lucide-react';
 
 import { V7CoreDrawer, type V7CoreDrawerKind, type V7CoreDrawerSituation } from '@/components/v7/v7-core-drawer';
+import { V7CorePickerStrip, type V7PickableCore } from '@/components/v7/v7-core-picker';
 import { getSimplifiedCapabilityLedger } from '@/lib/product/context-core-map';
 import { useSituationStore } from '@/stores/situation-store';
 
@@ -67,6 +67,7 @@ export function V7HomeSurface() {
   const situations = useSituationStore((state) => state.situations);
   const activeSituation = useSituationStore((state) => state.activeSituation);
   const addSituation = useSituationStore((state) => state.addSituation);
+  const setActiveSituation = useSituationStore((state) => state.setActiveSituation);
   const [query, setQuery] = useState('');
   const [mode, setMode] = useState<(typeof modeOptions)[number]>('Quick');
   const [newSituationOpen, setNewSituationOpen] = useState(false);
@@ -74,14 +75,28 @@ export function V7HomeSurface() {
   const [newSituationOntology, setNewSituationOntology] = useState('conflict');
   const [newSituationNote, setNewSituationNote] = useState('');
   const active = activeSituation ?? null;
+  const [pickableCores, setPickableCores] = useState<V7PickableCore[]>([]);
   const [attachedSituationIds, setAttachedSituationIds] = useState<string[]>([]);
   const [openCore, setOpenCore] = useState<V7CoreDrawerKind | null>(null);
   const activeCaseId = active?.id;
-  const attachedSituations = useMemo(() => {
-    const byId = new Map(situations.map((situation) => [situation.id, situation]));
-    if (active) byId.set(active.id, active);
-    return attachedSituationIds.map((id) => byId.get(id)).filter(Boolean) as typeof situations;
-  }, [active, attachedSituationIds, situations]);
+  const situationCoreOptions = useMemo<V7PickableCore[]>(() => [
+    ...pickableCores,
+    ...situations.map((situation) => ({
+      id: situation.id,
+      kind: 'situation',
+      name: situation.name,
+      description: situation.description,
+      tags: ['local'],
+    })),
+  ], [pickableCores, situations]);
+  const activeSituationCore = active
+    ? { id: active.id, kind: 'situation', name: active.name, description: active.description, tags: ['active'] }
+    : null;
+  const attachedSituations = useMemo(() => (
+    attachedSituationIds
+      .map((id) => situationCoreOptions.find((core) => core.id === id && core.kind === 'situation'))
+      .filter(Boolean) as V7PickableCore[]
+  ), [attachedSituationIds, situationCoreOptions]);
   const activeCaseName = active?.name ?? 'No Situation selected';
   const activeRegion = active?.region ?? 'Pick or create a Situation Core to start';
   const sourceCount = active?.sourceUrls?.length ?? active?.customSources?.length ?? 0;
@@ -104,22 +119,26 @@ export function V7HomeSurface() {
       }
     : null;
 
-  const attachedCores = [
-    { label: 'My Core', detail: 'Always attached', tone: 'user', icon: UserRound, kind: 'user' as const },
-    ...attachedSituations.map((situation) => ({
-      label: situation.name,
-      detail: 'Situation Core',
-      tone: 'situation',
-      icon: Boxes,
-      kind: 'situation' as const,
-    })),
-  ];
-
   const gaps = buildGaps({ active: Boolean(active), sourceCount, documentCount, graphCount });
   const visibleRecentItems = active ? recentItems : [];
 
   useEffect(() => {
     inputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/backend/cores')
+      .then(async (response) => (await response.json()) as { cores?: V7PickableCore[] })
+      .then((body) => {
+        if (!cancelled) setPickableCores(body.cores ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setPickableCores([]);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -142,6 +161,35 @@ export function V7HomeSurface() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  function handleAttachedCoreIdsChange(ids: string[]) {
+    setAttachedSituationIds(ids);
+    const nextSituation = situationCoreOptions.find((core) => ids.includes(core.id) && core.kind === 'situation');
+    if (!nextSituation) return;
+    if (!situations.some((situation) => situation.id === nextSituation.id)) {
+      addSituation({
+        id: nextSituation.id,
+        name: nextSituation.name,
+        type: 'international',
+        description: nextSituation.description ?? '',
+        region: nextSituation.tags?.includes('example') ? 'Seeded example' : 'Frame this Situation',
+        actors: [],
+        userRole: 'analyst',
+        status: 'active',
+        riskScore: 0,
+        glaslStage: null,
+        escalationTrend: 'stable',
+        actorCount: 0,
+        graphEntities: 0,
+        documentCount: 0,
+        sourceUrls: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      return;
+    }
+    setActiveSituation(nextSituation.id);
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -279,24 +327,13 @@ export function V7HomeSurface() {
                   active ? 'border-navy-200 bg-white shadow-navy-950/5' : 'border-slate-200 bg-slate-50'
                 }`}
               >
-                <div className="flex flex-wrap gap-2 pb-3" aria-label="Attached cores">
-                  {attachedCores.map((core) => (
-                    <CoreChip
-                      key={`${core.label}-${core.detail}`}
-                      {...core}
-                      onClick={() => setOpenCore(core.kind)}
-                      disabled={!active && core.tone !== 'user'}
-                    />
-                  ))}
-                  <Link
-                    href="/app/cores?examples=1"
-                    data-testid="v7-attach-core-link"
-                    className="inline-flex min-h-10 items-center gap-2 rounded-full border border-dashed border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-navy-900 transition hover:border-navy-400 hover:bg-slate-50"
-                  >
-                    <Plus className="h-4 w-4" />
-                    attach core
-                  </Link>
-                </div>
+                <V7CorePickerStrip
+                  availableCores={situationCoreOptions}
+                  attachedCoreIds={attachedSituationIds}
+                  onAttachedCoreIdsChange={handleAttachedCoreIdsChange}
+                  activeSituation={activeSituationCore}
+                  onOpenCore={setOpenCore}
+                />
                 {attachedSituations.length > 1 && (
                   <p className="mb-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
                     Two Situations attached — answers will reference both.
@@ -513,46 +550,6 @@ function CoreRail({ activeCaseId }: { activeCaseId?: string }) {
         })}
       </div>
     </nav>
-  );
-}
-
-function CoreChip({
-  label,
-  detail,
-  tone,
-  icon: Icon,
-  kind,
-  onClick,
-  disabled = false,
-}: {
-  label: string;
-  detail: string;
-  tone: string;
-  icon: ComponentType<{ className?: string }>;
-  kind: V7CoreDrawerKind;
-  onClick: () => void;
-  disabled?: boolean;
-}) {
-  const toneClass =
-    tone === 'user'
-      ? 'border-blue-200 bg-blue-50 text-blue-900'
-      : tone === 'situation'
-        ? 'border-purple-200 bg-purple-50 text-purple-900'
-        : 'border-emerald-200 bg-emerald-50 text-emerald-900';
-
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      data-testid={`v7-core-chip-${kind}`}
-      onClick={onClick}
-      className={`inline-flex min-h-10 max-w-full items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${toneClass} disabled:opacity-60`}
-      title={`${label}: ${detail}`}
-    >
-      <Icon className="h-4 w-4 shrink-0" />
-      <span className="truncate">{label}</span>
-      <span className="hidden text-[10px] uppercase opacity-75 sm:inline">{detail}</span>
-    </button>
   );
 }
 

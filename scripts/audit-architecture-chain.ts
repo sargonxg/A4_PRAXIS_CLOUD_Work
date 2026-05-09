@@ -46,6 +46,7 @@ for (const script of [
   'audit:v7-home-shape',
   'audit:v7-cores-surface',
   'audit:v7-cores-api',
+  'audit:cores-picker-coverage',
   'audit:v7-source-document-core-panel',
   'audit:v7-analyst-skills-panel',
   'audit:v7-ask-skill-routing',

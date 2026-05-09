@@ -15,6 +15,7 @@ function read(path: string): string {
 
 const brief = read('docs/v7/build/02_CORES_INLINE.md');
 const drawer = read('src/components/v7/v7-core-drawer.tsx');
+const picker = read('src/components/v7/v7-core-picker.tsx');
 const home = read('src/components/v7/v7-home-surface.tsx');
 const ask = read('src/components/v7/v7-ask-surface.tsx');
 const cores = read('src/components/v7/v7-cores-surface.tsx');
@@ -57,7 +58,7 @@ for (const [path, source] of [
   ['src/components/v7/v7-cores-surface.tsx', cores],
 ] as const) {
   if (!source.includes('V7CoreDrawer')) failures.push(`${path} does not render V7CoreDrawer`);
-  if (!source.includes('v7-core-chip')) failures.push(`${path} missing Core chip test id contract`);
+  if (!source.includes('V7CorePickerStrip') && !picker.includes('v7-core-chip')) failures.push(`${path} missing Core chip test id contract`);
 }
 
 if (home.includes("detail: 'Source Core'") || ask.includes("detail: 'Source Core'")) {

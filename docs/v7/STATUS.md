@@ -5,7 +5,7 @@
 > Codex reads this first, every session.
 
 **Last updated:** 2026-05-09 by Codex
-**Current focus:** Block 2 generic homepage audit/fix is recorded in `docs/v7/AUDIT_2026-05-09_BLOCK2.md`. The seven-loop sequence in `03_BUILD_LOOP.md` is canonical; none of Loops A-G are shipped to `main` yet. Production is coherently legacy (`NEXT_PUBLIC_PRAXIS_V7` and `PRAXIS_V7_BACKEND` absent/off), while the stacked v7 branch is blocked by `audit:ai-provider-isolation` findings in v7 files before it can be considered gate-green.
+**Current focus:** Block 3 Cores picker audit/fix is recorded in `docs/v7/AUDIT_2026-05-09_BLOCK3.md`. The seven-loop sequence in `03_BUILD_LOOP.md` is canonical; none of Loops A-G are shipped to `main` yet. Production is coherently legacy (`NEXT_PUBLIC_PRAXIS_V7` and `PRAXIS_V7_BACKEND` absent/off), while the stacked v7 branch is blocked by `audit:ai-provider-isolation` findings in v7 files before it can be considered gate-green.
 **Production state:** legacy shell live; v7 not canaried.
 
 ---
@@ -20,7 +20,7 @@
 | D | The new landing | proposed | `03_BUILD_LOOP.md` defines the five-section landing loop; production landing is still legacy/current public site. | Start after B/C or as an independent landing PR. |
 | E | User Core inline | in-progress | PR #9 open; User Core drawer/editor code exists locally, but not shipped and gate is red. | Fix #11, then verify Loop E acceptance. |
 | F | Situation Core inline | in-progress | PR #9 open; Situation create/fork/share paths are described as local/unmerged. | Verify after Loop E. |
-| G | Cores rail + share | in-progress | PR #9 open; attach picker/grants exist locally, while drag/drop rail polish remains pending. | Verify after Loop F. |
+| G | Cores rail + share | in-progress | Block 3 branch adds shared searchable picker on Home/Ask, grouped core kinds, mobile sheet, attach/detach, ordered chips, and `audit:cores-picker-coverage`; PR pending. | Review/merge Block 3, then run Block 5 before Block 4 if following dependency order. |
 
 States: `proposed | in-progress | shipped | reverted`.
 
@@ -105,7 +105,7 @@ gets longer than 5, stop new work and burn it down.]
 - Slice 14 Cores read API is local and unmerged: `backend/routers/cores.py` exposes owner-scoped `GET /cores` and `GET /cores/{id}`, the authenticated Next proxy allowlists `/api/backend/cores`, `/app/cores` shows a materialized-core panel with fallback posture, and `audit:v7-cores-api` is wired into the gate. Core mutations and backfill remain pending. Owner: Codex.
 - Slice 15 Ask core skill execution is local and unmerged: `backend/services/ask/executor.py` now executes `research-sources`, `actors-stakeholders`, and `briefing-studio` from the resolved `coreContext`, with Vertex/Gemini calls gated by `PRAXIS_V7_ASK_AI_ENABLED` and deterministic core-grounded previews when disabled. Unsupported tools and subagent plans still return staged receipts. `audit:v7-ask-skill-execution` is wired into the gate. Owner: Codex.
 - New Face Loop 1 is local and unmerged: `docs/v7/build/01_THE_NEW_FACE.md` is installed and corrected to require a generic empty home by default. Block 2 now implements and verifies that branch state: workspace name, User Core only, "No Situation selected", disabled Ask copy, four greyed-out tools, seeded examples CTA, mobile empty state, and Lighthouse performance 86. Owner: Codex.
-- Cores Inline Loops 1-3 are local and unmerged: `docs/v7/build/02_CORES_INLINE.md` is installed and corrected to make multi-select core attachment canonical. Home/Ask must support prominent "+ attach core", 0/1/many Situation Cores per thread, reorderable chips, calibration precedence by chip order, methodology/rubric/source examples, and a non-blocking warning for multiple attached Situations. `audit:v7-inline-cores` and `audit:cores-grants-coverage` are wired into `audit:gate`. Production lazy backfill proof and drag-and-drop rail polish remain pending. Owner: Codex.
+- Cores Inline Loops 1-3 are local and unmerged: `docs/v7/build/02_CORES_INLINE.md` is installed and corrected to make multi-select core attachment canonical. Block 3 adds the shared first-class picker for Home/Ask with grouped core kinds, live search, mobile sheet, attach/detach, reorder controls, and DnD handler coverage. `audit:v7-inline-cores`, `audit:cores-picker-coverage`, and `audit:cores-grants-coverage` are wired into `audit:gate`. Production lazy backfill proof remains pending. Owner: Codex.
 - Build Loop playbook is local and unmerged: `docs/v7/build/03_BUILD_LOOP.md` is installed, listed in `docs/v7/INDEX.md`, and `audit:v7-build-loop` is wired into `audit:gate` to keep the A-G loop sequence, ADVANCE/VERIFY prompt rhythm, Vertex-only routing, drawer-first cores, anchor-core model, non-negotiables, and ledger references from drifting. Owner: Codex.
 - Production v7 verification is incomplete: Cloud Run revisions and `monitoring/v7_dashboard.json` were not verified in this shell. Owner: Codex after GCP auth is repaired.
 
