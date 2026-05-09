@@ -2,10 +2,11 @@
 
 import type { ComponentType } from 'react';
 import Link from 'next/link';
-import { FileText, Home, Library, MoreHorizontal, Sparkles } from 'lucide-react';
+import { Boxes, FileText, Home, Library, MoreHorizontal, Sparkles } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useSituationStore } from '@/stores/situation-store';
 import { cn } from '@/lib/utils/cn';
+import { useFeatureFlags } from '@/lib/features/client';
 
 type MobileNavItem =
   | { kind: 'query'; label: string; queryKey: 'tab' | 'openChapter'; queryValue: string; icon: ComponentType<{ className?: string }> }
@@ -17,12 +18,44 @@ const navItems: MobileNavItem[] = [
   { kind: 'link', label: 'More', href: '/app/tools', icon: MoreHorizontal },
 ];
 
+const v7NavItems = [
+  { label: 'Home', href: '/app/home', icon: Home },
+  { label: 'Ask', href: '/app/ask', icon: Sparkles },
+  { label: 'Cores', href: '/app/cores', icon: Boxes },
+  { label: 'Outputs', href: '/app/outputs', icon: FileText },
+];
+
 export function MobileBottomNav() {
+  const features = useFeatureFlags();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const situations = useSituationStore((state) => state.situations);
   const activeSituation = useSituationStore((state) => state.activeSituation);
   const activeCaseId = activeSituation?.id ?? situations[0]?.id ?? 'syria-2026';
+
+  if (features.praxisV7.enabled) {
+    return (
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-navy-200 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-lg shadow-navy-950/10 backdrop-blur md:hidden"
+        aria-label="Primary mobile navigation"
+        data-testid="mobile-bottom-nav"
+        data-v7="true"
+      >
+        <div className="mx-auto grid max-w-md grid-cols-4 gap-1">
+          {v7NavItems.map((item) => (
+            <MobileLink
+              key={item.label}
+              href={item.href}
+              label={item.label}
+              active={pathname === item.href}
+              icon={item.icon}
+              onClick={item.label === 'Ask' ? () => window.dispatchEvent(new CustomEvent('open-praxis-chat')) : undefined}
+            />
+          ))}
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav
@@ -59,15 +92,18 @@ function MobileLink({
   label,
   active,
   icon: Icon,
+  onClick,
 }: {
   href: string;
   label: string;
   active: boolean;
   icon: ComponentType<{ className?: string }>;
+  onClick?: () => void;
 }) {
   return (
     <Link
       href={href}
+      onClick={onClick}
       className={cn(
         'flex min-h-12 flex-col items-center justify-center gap-1 rounded-md text-xs font-semibold transition',
         active ? 'bg-navy-50 text-navy-950' : 'text-slate-700 hover:bg-slate-50 hover:text-navy-900',

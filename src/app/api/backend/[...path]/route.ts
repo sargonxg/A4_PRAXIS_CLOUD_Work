@@ -22,6 +22,13 @@ const ALLOWED_BACKEND_PATHS: Array<{ method: string; pattern: RegExp }> = [
   },
   { method: 'GET', pattern: /^workspace\/events$/ },
   { method: 'POST', pattern: /^workspace\/suggestions\/[^/]+\/(dismiss|confirm)$/ },
+  { method: 'GET', pattern: /^ask\/threads$/ },
+  { method: 'POST', pattern: /^ask\/run$/ },
+  { method: 'GET', pattern: /^cores$/ },
+  { method: 'GET', pattern: /^cores\/me$/ },
+  { method: 'PATCH', pattern: /^cores\/me$/ },
+  { method: 'GET', pattern: /^cores\/[^/]+$/ },
+  { method: 'PATCH', pattern: /^cores\/[^/]+$/ },
   { method: 'GET', pattern: /^notifications(\/stream|\/registry|\/preferences)?$/ },
   { method: 'PUT', pattern: /^notifications\/preferences$/ },
   { method: 'POST', pattern: /^notifications\/(test|dispatch|[^/]+\/signal)$/ },
@@ -65,14 +72,14 @@ export function isAllowedBackendPath(method: string, path: string): boolean {
 async function proxyBackendRequest(req: Request, uid: string, path: string): Promise<Response> {
   const url = new URL(req.url);
   const query = url.search ? url.search : '';
-  const body = req.method === 'GET' || req.method === 'HEAD'
-    ? undefined
-    : await req.arrayBuffer();
-
-  const localFallback = localBackendFallback(req.method, path);
+  const localFallback = await localBackendFallback(req, path);
   if (!process.env.NEXT_PUBLIC_PRAXIS_BACKEND_URL && localFallback) {
     return NextResponse.json(localFallback);
   }
+
+  const body = req.method === 'GET' || req.method === 'HEAD'
+    ? undefined
+    : await req.arrayBuffer();
 
   const backendRes = await callBackend(`/api/v1/${path}${query}`, {
     method: req.method,
@@ -92,7 +99,8 @@ async function proxyBackendRequest(req: Request, uid: string, path: string): Pro
   });
 }
 
-function localBackendFallback(method: string, path: string): Record<string, unknown> | null {
+async function localBackendFallback(req: Request, path: string): Promise<Record<string, unknown> | null> {
+  const method = req.method;
   const normalizedMethod = method.toUpperCase();
   if (normalizedMethod === 'GET' && path === 'tabs/library') {
     return {
@@ -103,6 +111,135 @@ function localBackendFallback(method: string, path: string): Record<string, unkn
   }
   if (normalizedMethod === 'GET' && path === 'notifications') {
     return { notifications: [], status: 'backend_unconfigured' };
+  }
+  if (normalizedMethod === 'GET' && path === 'ask/threads') {
+    return { threads: [], status: 'backend_unconfigured' };
+  }
+  if (normalizedMethod === 'GET' && path === 'cores') {
+    return {
+      cores: [],
+      status: 'backend_unconfigured',
+      note: 'Python backend is not configured in this local session; static Context Core cards remain visible.',
+    };
+  }
+  if (normalizedMethod === 'GET' && path === 'cores/me') {
+    return {
+      core: {
+        id: 'local-user-core',
+        kind: 'user',
+        name: 'Giulio Catanzariti',
+        description: 'Conflict analyst',
+        metadata: {
+          profile: {
+            name: 'Giulio Catanzariti',
+            role: 'Conflict analyst',
+            mandate: 'Policy and multilateral diplomacy practice',
+            language: 'en-US',
+            jurisdiction: '',
+          },
+          style: {
+            formality: 'Formal',
+            citationDensity: 'High',
+            structure: 'Bulleted',
+          },
+          models: {
+            quick: 'gemini-3-flash',
+            deep: 'gemini-3.1-pro-preview',
+            memo: 'gemini-3.1-pro-preview',
+            costCeiling: '2.50',
+          },
+        },
+      },
+      status: 'backend_unconfigured',
+      note: 'Python backend is not configured in this local session; User Core is hydrated from local defaults.',
+    };
+  }
+  if (normalizedMethod === 'GET' && /^cores\/[^/]+$/.test(path)) {
+    return { core: null, status: 'backend_unconfigured' };
+  }
+  if (normalizedMethod === 'PATCH' && /^cores\/(me|[^/]+)$/.test(path)) {
+    let requestBody: Record<string, unknown> = {};
+    try {
+      requestBody = await req.clone().json();
+    } catch {
+      requestBody = {};
+    }
+    return {
+      ok: true,
+      status: 'backend_unconfigured',
+      core: {
+        id: path === 'cores/me' ? 'local-user-core' : path.split('/')[1],
+        kind: path === 'cores/me' ? 'user' : 'situation',
+        name: typeof requestBody.name === 'string' ? requestBody.name : 'Local Core',
+        metadata: requestBody,
+      },
+      note: 'Core edit accepted locally because the Python backend is not configured.',
+    };
+  }
+  if (normalizedMethod === 'POST' && path === 'ask/run') {
+    let requestBody: { mode?: string; skill_id?: string; attached_core_ids?: string[]; situation_id?: string } = {};
+    try {
+      requestBody = await req.clone().json();
+    } catch {
+      requestBody = {};
+    }
+    const route = requestBody.skill_id
+      ? {
+          action: 'run_skill',
+          intent: 'answer',
+          confidence: 0.95,
+          rationale: 'User explicitly staged an Analyst Skill.',
+          candidate_skill_ids: [requestBody.skill_id, 'research-sources', 'briefing-studio'],
+          skill_id: requestBody.skill_id,
+          subagent_id: null,
+          runtime: 'local_fallback',
+        }
+      : {
+          action: requestBody.mode && requestBody.mode !== 'quick' ? 'run_subagent_plan' : 'direct_answer',
+          intent: requestBody.mode === 'plan' ? 'plan' : 'answer',
+          confidence: requestBody.mode && requestBody.mode !== 'quick' ? 0.8 : 0.62,
+          rationale: 'Local fallback mirrors the v7 Ask routing receipt without backend persistence.',
+          candidate_skill_ids: ['research-sources', 'actors-stakeholders', 'briefing-studio'],
+          skill_id: null,
+          subagent_id: requestBody.mode && requestBody.mode !== 'quick' ? 'context-preparer' : null,
+          runtime: 'local_fallback',
+        };
+    return {
+      thread: {
+        id: 'local-ask-thread',
+        title: 'Local Ask PRAXIS thread',
+        mode: requestBody.mode ?? 'quick',
+        status: 'active',
+        attachedCoreIds: [],
+        },
+      messages: [
+        {
+          id: 'local-ask-message',
+          role: 'assistant',
+          content: `Backend is not configured in this local session; PRAXIS staged this turn as ${route.action} with a local Context Core receipt.`,
+        },
+      ],
+      route,
+      coreContext: {
+        attachedCoreIds: requestBody.attached_core_ids ?? [],
+        implicitCoreIds: [],
+        resolvedCores: [],
+        missingCoreIds: requestBody.attached_core_ids ?? [],
+        ontologyBinding: null,
+        contextHealth: requestBody.situation_id ? 40 : 20,
+        advisories: [
+          'Python backend is not configured in this local session; Context Core resolution is shown as a fallback receipt.',
+        ],
+      },
+      execution: {
+        runtime: 'local_fallback',
+        token_count: 0,
+        cost_usd: 0,
+        citations: [],
+        metadata: { aiExecution: 'backend_unconfigured' },
+      },
+      status: 'backend_unconfigured',
+    };
   }
   if (normalizedMethod === 'GET' && path === 'notifications/registry') {
     return { types: [], status: 'backend_unconfigured' };
@@ -193,6 +330,15 @@ export const DELETE = withAuth<RouteContext>(async (req, user, context) => {
   const { path: parts } = await context.params;
   const path = parts.join('/');
   if (!isAllowedBackendPath('DELETE', path)) {
+    return NextResponse.json({ error: 'Backend path not allowed' }, { status: 404 });
+  }
+  return proxyBackendRequest(req, user.uid, path);
+});
+
+export const PATCH = withAuth<RouteContext>(async (req, user, context) => {
+  const { path: parts } = await context.params;
+  const path = parts.join('/');
+  if (!isAllowedBackendPath('PATCH', path)) {
     return NextResponse.json({ error: 'Backend path not allowed' }, { status: 404 });
   }
   return proxyBackendRequest(req, user.uid, path);

@@ -1,9 +1,9 @@
-import { ArrowRight, CheckCircle2, FileText, Home, Layers3, Library, MessageSquareText, MoreHorizontal, ShieldCheck, Users } from 'lucide-react';
+import { ArrowRight, Boxes, CheckCircle2, FileText, Home, Layers3, MessageSquareText, ShieldCheck, Users } from 'lucide-react';
 import { AGENTIC_WORKFLOWS, PRIMARY_MOBILE_WORKFLOWS } from '@/lib/agentic-workflows/registry';
 import { PRODUCT_EXPERIENCE_AREAS } from '@/lib/product/experience-map';
 
 const visibleAreas = PRODUCT_EXPERIENCE_AREAS.filter((area) =>
-  ['home', 'ask', 'situation', 'sources', 'outputs'].includes(area.id),
+  ['home', 'ask', 'cores', 'outputs'].includes(area.id),
 );
 
 const landingWorkflows = AGENTIC_WORKFLOWS.filter((workflow) =>
@@ -13,9 +13,8 @@ const landingWorkflows = AGENTIC_WORKFLOWS.filter((workflow) =>
 const mobileNav = [
   { label: 'Home', icon: Home },
   { label: 'Ask', icon: MessageSquareText },
-  { label: 'Sources', icon: Library },
+  { label: 'Cores', icon: Boxes },
   { label: 'Outputs', icon: FileText },
-  { label: 'More', icon: MoreHorizontal },
 ];
 
 const publicContextCores = [
@@ -46,7 +45,7 @@ export function AgenticAppSection() {
 
             <div className="mt-7 rounded-lg border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-navy-500">Mobile-first by default</p>
-              <div className="mt-4 grid grid-cols-5 gap-1 rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
+              <div className="mt-4 grid grid-cols-4 gap-1 rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
                 {mobileNav.map(({ label, icon: Icon }) => (
                   <div key={label} className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-md text-center text-[11px] font-semibold text-navy-700">
                     <Icon className="h-4 w-4 text-diplomatic-blue" aria-hidden="true" />
@@ -76,7 +75,7 @@ export function AgenticAppSection() {
           </div>
 
           <div className="grid gap-4">
-            <div className="grid gap-3 md:grid-cols-5">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {visibleAreas.map((area) => (
                 <div key={area.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold-700">{area.shortLabel}</p>

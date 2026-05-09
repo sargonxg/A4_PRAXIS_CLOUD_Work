@@ -1,10 +1,8 @@
 export type AgenticWorkflowArea =
   | 'home'
   | 'ask'
-  | 'situation'
-  | 'sources'
-  | 'outputs'
-  | 'advanced';
+  | 'cores'
+  | 'outputs';
 
 export type AgenticWorkflowContext =
   | 'workspace'
@@ -65,7 +63,7 @@ export const AGENTIC_WORKFLOWS: AgenticWorkflow[] = [
     shortLabel: 'Improve',
     intent: 'Find thin chapters, missing sources, stale claims, and repair actions before expensive analysis.',
     prompt: 'Diagnose the weakest context in this Situation and give me a repair plan.',
-    primaryArea: 'sources',
+    primaryArea: 'cores',
     mobilePriority: 'primary',
     requiredContext: ['workspace', 'situation', 'sources', 'chapters', 'claims'],
     outputKind: 'context_update',
@@ -113,7 +111,7 @@ export const AGENTIC_WORKFLOWS: AgenticWorkflow[] = [
     shortLabel: 'Red-team',
     intent: 'Challenge the dominant assessment and surface assumptions, dissent, and evidence gaps.',
     prompt: 'Red-team the current assessment. Show assumptions, dissent, weak evidence, and alternative explanations.',
-    primaryArea: 'situation',
+    primaryArea: 'cores',
     mobilePriority: 'secondary',
     requiredContext: ['workspace', 'situation', 'chapters', 'claims', 'sources'],
     outputKind: 'review_queue',
@@ -145,7 +143,7 @@ export const AGENTIC_WORKFLOWS: AgenticWorkflow[] = [
     shortLabel: 'Review',
     intent: 'Audit source basis, stale claims, missing citations, and candidate promotion posture.',
     prompt: 'Review sources and claims for this Situation. Flag stale, thin, disputed, and well-supported items.',
-    primaryArea: 'sources',
+    primaryArea: 'cores',
     mobilePriority: 'secondary',
     requiredContext: ['workspace', 'situation', 'sources', 'claims'],
     outputKind: 'review_queue',

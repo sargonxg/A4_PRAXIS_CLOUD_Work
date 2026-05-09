@@ -38,6 +38,23 @@ for (const script of [
   'audit:tool-context-isolation',
   'audit:firewall-coverage',
   'audit:owner-scoping',
+  'audit:cores-schema',
+  'audit:cores-types-parity',
+  'audit:cores-owner-scoping',
+  'audit:v7-shell-skeleton',
+  'audit:v7-cores-surface',
+  'audit:v7-cores-api',
+  'audit:v7-source-document-core-panel',
+  'audit:v7-analyst-skills-panel',
+  'audit:v7-ask-skill-routing',
+  'audit:v7-skill-manifest',
+  'audit:v7-ask-runtime',
+  'audit:v7-ask-routing-layer',
+  'audit:v7-ask-core-resolution',
+  'audit:v7-ask-direct-execution',
+  'audit:v7-ask-skill-execution',
+  'audit:v7-outputs-surface',
+  'audit:ask-thread-substrate',
 ]) {
   if (!scripts[script]) failures.push(`missing required architecture script: ${script}`);
 }

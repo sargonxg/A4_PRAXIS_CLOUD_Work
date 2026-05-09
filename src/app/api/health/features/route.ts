@@ -9,6 +9,7 @@ interface FeatureFlagState {
 }
 
 interface FeatureFlags {
+  praxisV7: FeatureFlagState;
   cognee: FeatureFlagState;
   postgresKg: FeatureFlagState;
   agentEngineSubagents: FeatureFlagState;
@@ -20,8 +21,16 @@ export async function GET() {
   const kgBackend = (process.env.KG_BACKEND ?? 'firestore').toLowerCase();
   const postgresKgEnabled = kgBackend === 'postgres' || kgBackend === 'both';
   const agentEngineConfigured = Boolean(process.env.VERTEX_AGENT_ENGINE_ID);
+  const praxisV7Enabled = process.env.PRAXIS_V7_BACKEND === 'true' || process.env.NEXT_PUBLIC_PRAXIS_V7 === 'true';
 
   const flags: FeatureFlags = {
+      praxisV7: {
+        enabled: praxisV7Enabled,
+        mode: praxisV7Enabled ? 'enabled' : 'disabled',
+        reason: praxisV7Enabled
+          ? 'PRAXIS_V7_BACKEND=true or NEXT_PUBLIC_PRAXIS_V7=true'
+          : 'v7 shell is disabled by default',
+      },
       cognee: {
         enabled: cogneeEnabled,
         mode: cogneeEnabled ? process.env.COGNEE_MODE || 'enabled' : 'disabled',

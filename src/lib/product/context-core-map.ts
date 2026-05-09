@@ -138,13 +138,13 @@ export const CONSOLIDATED_TOOL_CONTEXT_CORES: Record<string, ContextCoreId[]> = 
 
 const TOOL_TO_AREA: Record<string, ProductExperienceAreaId> = {
   'situation-dashboard': 'home',
-  'context-builder': 'situation',
+  'context-builder': 'cores',
   'ask-praxis': 'ask',
-  'research-sources': 'sources',
-  documents: 'sources',
-  graphops: 'situation',
-  timeline: 'situation',
-  'actors-stakeholders': 'situation',
+  'research-sources': 'cores',
+  documents: 'cores',
+  graphops: 'cores',
+  timeline: 'cores',
+  'actors-stakeholders': 'cores',
   'briefing-studio': 'outputs',
 };
 

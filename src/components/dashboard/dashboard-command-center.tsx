@@ -23,6 +23,8 @@ import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
 import { AskPraxisHome } from '@/components/dashboard/ask-praxis-home';
+import { V7CommandShell } from '@/components/v7/v7-command-shell';
+import { useFeatureFlags } from '@/lib/features/client';
 
 interface DashboardExampleCase {
   id: string;
@@ -70,6 +72,7 @@ const workQueue = [
 ];
 
 export function DashboardCommandCenter({ exampleCases, marketplaceToolCount }: DashboardCommandCenterProps) {
+  const features = useFeatureFlags();
   const userCases = useSituationStore((state) => state.situations);
   const activeSituation = useSituationStore((state) => state.activeSituation);
   const activeCase = activeSituation ?? userCases[0] ?? exampleCases[0];
@@ -84,6 +87,12 @@ export function DashboardCommandCenter({ exampleCases, marketplaceToolCount }: D
 
   return (
     <div className="space-y-6" data-testid="praxis-dashboard-command-center">
+      {features.praxisV7.enabled ? (
+        <V7CommandShell
+          activeCaseId={activeSituation || userCases.length ? activeCaseId : ''}
+          activeCaseName={activeSituation || userCases.length ? activeCaseName : 'No active Situation'}
+        />
+      ) : null}
       <AskPraxisHome exampleCases={exampleCases} marketplaceToolCount={marketplaceToolCount} />
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">

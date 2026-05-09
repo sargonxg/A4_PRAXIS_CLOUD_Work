@@ -37,6 +37,14 @@ class Settings(BaseSettings):
         default=False,
         validation_alias=AliasChoices("COGNEE_ENABLED", "cognee_enabled"),
     )
+    praxis_v7_backend: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("PRAXIS_V7_BACKEND", "praxis_v7_backend"),
+    )
+    praxis_v7_ask_ai_enabled: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("PRAXIS_V7_ASK_AI_ENABLED", "praxis_v7_ask_ai_enabled"),
+    )
     cognee_mode: str = Field(
         default="disabled",
         validation_alias=AliasChoices("COGNEE_MODE", "cognee_mode"),

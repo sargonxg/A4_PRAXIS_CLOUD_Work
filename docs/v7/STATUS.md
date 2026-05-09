@@ -4,9 +4,9 @@
 > The single source of truth for "where are we?". Updated after every PR merge.
 > Codex reads this first, every session.
 
-**Last updated:** 2026-05-08 by Codex
-**Current focus:** v7 operating packet installed; Slice 1 remains proposed pending Giulio approval.
-**Production state:** legacy shell live; v7 design-led Ask PRAXIS shell not yet implemented.
+**Last updated:** 2026-05-09 by Codex
+**Current focus:** `01_THE_NEW_FACE.md` Loop 1 is functionally complete behind the v7 flag: Home is Ask-first, launches `/app/ask/[threadId]`, exposes a working Cmd/Ctrl-K command affordance, shows My Core and Case Core drawer chips, and keeps the rest of the capability surface one click away. Next missing item is real Situation Core mutation/create/fork/share plus backfill.
+**Production state:** legacy shell live; v7 not canaried.
 
 ---
 
@@ -14,23 +14,31 @@
 
 | # | Slice | Brief | State | PR | Notes |
 |---|---|---|---|---|---|
-| 1 | Foundations: cores schema + flag | 02, 03 | proposed | — | — |
-| 2 | App shell skeleton (v7 IA) | 01 | proposed | — | depends on 1 |
-| 3 | Home destination | 01 | proposed | — | depends on 2 |
-| 4 | Ask end-to-end | 01, 02, 04 | proposed | — | depends on 3 |
-| 5 | Situation destination | 01, 03 | proposed | — | depends on 2 |
-| 6 | Sources destination | 01, 03 | proposed | — | depends on 2 |
-| 7 | Outputs destination | 01, 04 | proposed | — | depends on 2 |
-| 8 | Analyst Skills + routing | 04 | proposed | — | depends on 4 |
-| 9 | Cutover | all | proposed | — | depends on 1–8 |
+| 0 | Foundations: cores schema + flag | 02, 03 | in-progress | — | migrations/types/flags/audits implemented locally; build/lint/tests/gate-through-cloud pass; ephemeral Postgres blocked by missing Docker; full gate blocked at `audit:gcp` reauth |
+| 1 | Foundations: experience map + workflow registry | 01, 02, 03 | in-progress | — | implemented locally; hardened audit and focused tests pass; waits on Slice 00 merge/checkpoint |
+| 2 | App shell skeleton (v7 IA) | 01 | in-progress | — | flagged dashboard shell, four primary surface routes, compatibility route shells, and mobile nav implemented locally; build and v7 Playwright smoke pass after four-surface consolidation |
+| 3 | Home destination | 01 | in-progress | — | real flagged `/app/home` preview implemented locally; Ask persistence and orchestrator-backed next actions still pending |
+| 4 | Ask thread substrate | 01, 02, 04 | in-progress | — | schema/types/audit and flagged `/app/ask` surface implemented locally; runtime persistence/router still pending |
+| 5 | Cores Library destination | 01, 03 | in-progress | — | real flagged `/app/cores` surface implemented locally; source/document ingestion consolidation and inline specialist wrappers still pending |
+| 6 | Source/Document Core consolidation | 01, 03 | in-progress | — | Source/Document Core panel implemented locally inside Cores; runtime ingest/indexing unification still pending |
+| 7 | Outputs destination | 01, 04 | in-progress | — | real flagged `/app/outputs` surface implemented locally; Output Core persistence and export e2e still pending |
+| 8 | Analyst Skills + routing | 04 | in-progress | — | Analyst Skills panel implemented locally inside Cores; Ask shows suggested skills, staged skill cards, and input/output contracts; runtime Ask execution still pending |
+| 9 | v7 skill manifest | 04 | in-progress | — | derived manifest implemented and verified locally for all 55 registered tools; hand-curated top-skill ontology review still pending |
+| 10 | Ask runtime persistence seam | 01, 02, 04 | in-progress | — | FastAPI Ask router, authenticated proxy path, and v7 Ask runtime panel implemented locally; calibrated generation and skill-run execution still use the existing chat path |
+| 11 | Ask routing layer | 01, 02, 04 | in-progress | — | inspectable routing service implemented locally for direct answers, staged skills, subagent plans, clarification receipts, and top candidate skill IDs; execution still remains on existing chat path |
+| 12 | Ask core resolution | 01, 02, 03 | in-progress | — | resolver implemented locally for implicit User/Situation Cores, explicit attachments, ontology binding, context health, core audit attach rows, and visible Ask core-context receipts |
+| 13 | Ask direct answer execution | 01, 02, 03, 04 | in-progress | — | direct-answer executor implemented locally from resolved Context Cores; Vertex calls are gated by `PRAXIS_V7_ASK_AI_ENABLED`, and skill/subagent execution remains pending |
+| 14 | Cores read API | 01, 02, 03 | in-progress | — | owner-scoped Core list/detail API, authenticated proxy path, local fallback, materialized-core UI panel, and audit implemented locally |
+| 15 | Ask core skill execution | 01, 02, 03, 04 | in-progress | — | first read-only consolidated skills execute from resolved Context Cores: research-sources, actors-stakeholders, briefing-studio |
+| 16 | Cutover | all | proposed | — | depends on 0–15 |
 
 States: `proposed | in-progress | shipped | reverted`.
 
 ---
 
-## Production checklist (for slice 9)
+## Production checklist (for slice 15)
 
-- [ ] All slices 1–8 shipped + audits green for 7 days.
+- [ ] All slices 0–15 shipped + audits green for 7 days.
 - [ ] `monitoring/v7_dashboard.json` deployed and showing real traffic.
 - [ ] Migrations 0019–0022 applied to prod.
 - [ ] Cognee toggle tested in `disabled` and `postgres-kuzu` modes.
@@ -56,22 +64,43 @@ States: `proposed | in-progress | shipped | reverted`.
 
 [Append-only. Newest first. One paragraph each.]
 
-- **2026-05-08 — Codex —** Installed the v7 operating packet under `docs/v7/` rather than replacing root `AGENTS.md`. The packet governs future v7 slices after Giulio approves a slice to move from `proposed` to `in-progress`.
+- **YYYY-MM-DD — [Codex] —** [decision summary] (PR #NNNN, ADR `docs/adr/NNNN-title.md`).
 
 ---
 
 ## Known issues / flakies
 
-No known v7-specific flakies yet. Existing repo-wide audit/build posture remains governed by root docs and `package.json`.
+[Things that are red but not blocking, with owner and ETA. If this list
+gets longer than 5, stop new work and burn it down.]
+
+- `audit:gate` fails at `audit:gcp` in this local shell because `gcloud` and ADC require browser reauthentication. Owner: GC/Codex once credentials are refreshed. Workaround: run `npm run auth:doctor` and the printed `gcloud auth login --update-adc` / ADC commands.
+- Slice 00 foundation implementation is local and unmerged: `0019`/`0020`, core TS/Python schemas, v7 flags, and core audits now exist. Ephemeral Postgres migration verification is blocked because Docker is not installed in this shell. Full `audit:gate` passes through local/static audits and tests, then fails at `audit:gcp` because `gcloud` requires browser reauthentication. Owner: Codex/GC.
+- Slice 01 experience map implementation is local and unmerged: the four-surface map and agentic workflow registry exist; `audit:experience-map-coherence`, `audit:simplified-capability-ledger`, and focused unit tests pass after the four-surface consolidation. Owner: Codex.
+- Slice 02 app shell skeleton is local and unmerged: `/api/health/features` exposes `praxisV7`, the client feature boundary normalizes it, the dashboard can show `V7CommandShell`, and `/app/home`, `/app/ask`, `/app/cores`, and `/app/outputs` render behind the flag. `/app/situation`, `/app/sources`, and `/app/advanced` remain compatibility routes into Cores. `npm run build` and `PRAXIS_V7_BACKEND=true` Playwright smoke pass. Owner: Codex.
+- Slice 03 Home surface preview is local and unmerged: `/app/home` renders `V7HomeSurface` with active Situation, Ask CTA, core-readiness chips, next actions, and Cores/Outputs links behind the v7 flag. Owner: Codex.
+- Slice 04 Ask thread substrate is local and unmerged: `0022_ask_threads`, TS/Pydantic Ask types, `audit:ask-thread-substrate`, and `V7AskSurface` exist. Runtime persistence into the new tables is not yet implemented. Owner: Codex.
+- Slice 05 Cores Library surface is local and unmerged: `/app/cores` renders `V7CoresSurface`; `/app/situation`, `/app/sources`, and `/app/advanced` render entry-specific Cores views; `audit:v7-cores-surface` is wired into the gate. Source/document ingestion consolidation, inline specialist wrappers, and runtime Core persistence remain pending. Owner: Codex.
+- Slice 06 Source/Document Core panel is local and unmerged: Cores Library now shows source receipts, upload/extraction/index posture, coverage gaps, and Source Scout as an in-context action through `V7SourceDocumentCorePanel`; `audit:v7-source-document-core-panel` is wired into the gate. Runtime ingest/indexing unification remains pending. Owner: Codex.
+- Slice 07 Outputs surface is local and unmerged: `/app/outputs` renders `V7OutputsSurface` with output templates, output buckets, provenance posture, and existing Ask/editor/export entry points; `audit:v7-outputs-surface` is wired into the gate. Output Core persistence and export e2e remain pending. Owner: Codex.
+- Slice 08 Analyst Skills panel is local and unmerged: Cores Library now renders `V7AnalystSkillsPanel`, grouping the consolidated capability ledger as Structure, Research, Analysis, and Production skills, with structural/no-AI posture labels and Stage in Ask links. `/app/ask?skill=<id>` now shows a staged skill card, and Ask shows suggested skills plus an input/output contract before the chat. Runtime skill execution from Ask remains pending. Owner: Codex.
+- Slice 09 v7 skill manifest is local and unmerged: `src/lib/tools/v7-skill-manifest.ts` derives v7 `skillCategory`, `ontologyCompat`, structural posture, and v7 visibility for every registered tool; `audit:v7-skill-manifest` is wired into the gate and passes for all 55 registered tools. Hand-curated launch review for the top visible skills remains pending. Owner: Codex.
+- Slice 10 Ask runtime persistence seam is local and unmerged: `backend/routers/ask.py` persists owner-scoped Ask threads/messages through `tenant_session`, `/api/backend/ask/run` is allowlisted through the authenticated Next proxy, and `/app/ask` renders `V7AskRuntimePanel` with honest copy that calibrated generation still uses the existing chat path. `audit:v7-ask-runtime` is wired into the gate. Owner: Codex.
+- Slice 11 Ask routing layer is local and unmerged: `backend/services/ask/router.py` classifies Ask turns into `direct_answer`, `run_skill`, `run_subagent_plan`, or `clarify`, persists the routing receipt and top candidate skill IDs on `ask_messages`, returns them from `/ask/run`, and shows them in `/app/ask`. `audit:v7-ask-routing-layer` is wired into the gate. Owner: Codex.
+- Slice 12 Ask core resolution is local and unmerged: `backend/services/cores/resolver.py` resolves implicit User/Situation Cores plus explicit attachments, persists a `coreContext` snapshot on Ask threads/messages, writes `core_audit` attach rows, and shows context health/advisories in `/app/ask`. `audit:v7-ask-core-resolution` is wired into the gate. Owner: Codex.
+- Slice 13 Ask direct answer execution is local and unmerged: `backend/services/ask/executor.py` builds direct-answer prompts from resolved Context Cores, persists assistant execution metadata and core citations, and can call Vertex/Gemini when `PRAXIS_V7_ASK_AI_ENABLED=true`. Skill and subagent actions still return staged execution receipts. `audit:v7-ask-direct-execution` is wired into the gate. Owner: Codex.
+- Slice 14 Cores read API is local and unmerged: `backend/routers/cores.py` exposes owner-scoped `GET /cores` and `GET /cores/{id}`, the authenticated Next proxy allowlists `/api/backend/cores`, `/app/cores` shows a materialized-core panel with fallback posture, and `audit:v7-cores-api` is wired into the gate. Core mutations and backfill remain pending. Owner: Codex.
+- Slice 15 Ask core skill execution is local and unmerged: `backend/services/ask/executor.py` now executes `research-sources`, `actors-stakeholders`, and `briefing-studio` from the resolved `coreContext`, with Vertex/Gemini calls gated by `PRAXIS_V7_ASK_AI_ENABLED` and deterministic core-grounded previews when disabled. Unsupported tools and subagent plans still return staged receipts. `audit:v7-ask-skill-execution` is wired into the gate. Owner: Codex.
+- New Face Loop 1 is local and unmerged: `docs/v7/build/01_THE_NEW_FACE.md` is installed, `/app/home` now uses an Ask-first layout with My Core and Case Core chips, mode strip, four starter skill cards, missing-context rail, Cmd/Ctrl-K command affordance, and query handoff to `/app/ask/[threadId]?query=...`. Desktop/mobile screenshots were captured under `docs/v7/build/SCREENSHOTS/`; Lighthouse pass is still pending because Lighthouse is not installed in this repo. Owner: Codex.
+- Cores Inline Loop 1 is local and unmerged: `docs/v7/build/02_CORES_INLINE.md` is installed; Home, Ask, and Cores Library now expose only `My Core` and `Case Core` as first-class chips/cards; `V7CoreDrawer` opens from those chips, hydrates saved User Core metadata via `GET /cores/me`, autosaves User Core fields through `PATCH /cores/me` with audit rows, and folds Sources/Documents/Graph/Outputs into Case Core drawer tabs. `audit:v7-inline-cores` is wired into `audit:gate`. Situation Core mutation/create/fork/share and `/app/cores/me` full editor remain pending. Owner: Codex.
+- Build Loop playbook is local and unmerged: `docs/v7/build/03_BUILD_LOOP.md` is installed and `audit:v7-build-loop` is wired into `audit:gate` to keep the A-G loop sequence, Vertex-only routing, drawer-first cores, two-visible-core model, and ledger references from drifting. Owner: Codex.
+- Production v7 verification is incomplete: Cloud Run revisions and `monitoring/v7_dashboard.json` were not verified in this shell. Owner: Codex after GCP auth is repaired.
 
 ---
 
 ## Next session prompt (Codex copy-pastes this into chat)
 
 ```
-Read root AGENTS.md and docs/v7/AGENTS.md, then docs/v7/STATUS.md,
-docs/v7/OPEN_QUESTIONS.md, and the approved slice under docs/v7/SLICES/.
-If Slice 1 is still proposed, stop and ask Giulio before implementation.
-Follow docs/v7/AGENTS.md session ritual and self-review. Ship to main behind
-flags only after approval. Update STATUS.md and DECISION_LOG.md when done.
+Read docs/v7/STATUS.md, then docs/v7/<the brief that owns the current focus>.
+Resume the current slice. Follow AGENTS.md §1 (session ritual) and §4
+(self-review). Ship to main behind flags. Update STATUS.md when done.
 ```

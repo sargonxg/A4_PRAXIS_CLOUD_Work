@@ -1,10 +1,10 @@
 # Slice 01 - Foundations: Experience Map And Workflow Registry
 
-**State:** proposed
+**State:** in-progress
 **Brief:** 01, 02, 03
 **Owner (human):** GC
 **Owner (agent):** Codex
-**Depends on:** none
+**Depends on:** Slice 00
 **Blocks:** Slice 02 App shell skeleton, Slice 04 Ask end-to-end
 **Estimated size:** M (200-600)
 
@@ -12,18 +12,19 @@
 
 ## Goal in one sentence
 
-Add the thin v7 product layer that maps the existing PRAXIS app into Home, Ask, Situation, Sources, Outputs, and Advanced, plus a typed registry for agentic workflows.
+Add the thin v7 product layer that maps the existing PRAXIS app into Home, Ask, Cores Library, and Outputs, plus a typed registry for agentic workflows.
 
 ---
 
 ## In scope
 
-- [ ] Add `src/lib/product/experience-map.ts`.
-- [ ] Add `src/lib/agentic-workflows/registry.ts`.
-- [ ] Map every existing major app surface to a v7 area.
-- [ ] Declare the initial workflow catalog from Brief 02.
-- [ ] Add a focused audit such as `audit:experience-map-coherence`.
-- [ ] Update `docs/v7/STATUS.md`, `CHANGELOG.md`, and relevant docs.
+- [x] Add `src/lib/product/experience-map.ts`.
+- [x] Add `src/lib/agentic-workflows/registry.ts`.
+- [x] Map every existing major app surface to a v7 area.
+- [x] Declare the initial workflow catalog from Brief 02.
+- [x] Add a focused audit such as `audit:experience-map-coherence`.
+- [x] Add focused unit tests for the four-surface map and agentic workflow registry.
+- [x] Update `docs/v7/STATUS.md`, `CHANGELOG.md`, and relevant docs.
 
 ## Out of scope
 
@@ -35,11 +36,12 @@ Add the thin v7 product layer that maps the existing PRAXIS app into Home, Ask, 
 
 ## Acceptance criteria
 
-- [ ] Existing Workbench, Graph, Ontology, Library, Research, Tools, ACH, Boardroom, Memo Studio, Draft, Settings, and Admin surfaces remain reachable.
-- [ ] Every workflow declares input context, routes/tools, output kind, save location, and tier.
-- [ ] `npm run build` passes.
-- [ ] Focused audit passes.
-- [ ] Relevant existing audits pass.
+- [x] Existing Workbench, Graph, Ontology, Library, Research, Tools, ACH, Boardroom, Memo Studio, Draft, Settings, and Admin surfaces remain reachable through the current route tree and v7 map.
+- [x] Every workflow declares input context, routes/tools, output kind, save location, and tier.
+- [x] `npm run build` passes.
+- [x] Focused audit passes.
+- [x] Relevant focused unit tests pass.
+- [x] Relevant existing audits pass through `audit:gate` until the known `audit:gcp` reauth blocker.
 
 ## Rollback
 
@@ -48,7 +50,7 @@ Remove the new v7 mapping/registry files and focused audit. Since this slice sho
 ## Open questions
 
 - [ ] Should Team Cores appear in the experience map as hidden/flagged? Default: no UI in v7, schema-only if approved.
-- [ ] Should Advanced include all legacy routes or only workbench-adjacent routes? Default: include all reachable app routes but keep hidden from first-view UX.
+- [x] Should Advanced include all legacy routes or only workbench-adjacent routes? Default resolved: Advanced is not a primary surface; legacy power routes map to Cores Library specialist panels.
 
 ## Notes for Codex
 

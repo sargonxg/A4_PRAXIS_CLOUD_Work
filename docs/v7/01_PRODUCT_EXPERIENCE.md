@@ -20,10 +20,8 @@ The user should not start in a dense workbench. The user should start with:
 | --- | --- | --- |
 | Home | Pick workspace/Situation and resume. | Dashboard, situations, onboarding, workbench picker. |
 | Ask | Ask, plan, run, review, produce. | Assistant components, calibrated AI routes, tool invocation UI. |
-| Situation | Understand the TACITUS model. | Context, Graph, Ontology, Desk, open questions. |
-| Sources | Improve evidence and context. | Library, Research, DocumentUploadInline, source receipts. |
+| Cores Library | Understand and improve the TACITUS model. | Context, Library, Graph, Ontology, Research, DocumentUploadInline, source receipts, admin/settings, ACH, GraphOps. |
 | Outputs | Handover, briefs, memos, drafts, exports. | MemoStudio, DraftTab, Boardroom synthesis, export routes. |
-| Advanced | Power-user tools. | Marketplace, ACH, GraphOps, Boardroom rooms, admin/settings. |
 
 ## Desktop Shell
 
@@ -38,9 +36,8 @@ Bottom nav:
 
 1. Home
 2. Ask
-3. Sources
+3. Cores
 4. Outputs
-5. More
 
 Mobile must avoid dense grids, wide tables, and graph editing as the first view.
 
@@ -48,6 +45,6 @@ Mobile must avoid dense grids, wide tables, and graph editing as the first view.
 
 - New user sees a clear first action.
 - Ask PRAXIS is visible or one tap away.
-- Every advanced surface remains reachable.
+- Every specialist surface remains reachable from Cores Library or Ask.
 - Mobile has no horizontal overflow.
 - Internal tech names are not visible in first-run UX.

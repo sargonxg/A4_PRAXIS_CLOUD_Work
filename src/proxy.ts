@@ -19,6 +19,16 @@ const PUBLIC_SYRIA_APP_ROUTES = new Set([
   '/app/tools',
 ]);
 
+const V7_DESTINATION_ROUTES = new Set([
+  '/app/home',
+  '/app/ask',
+  '/app/cores',
+  '/app/situation',
+  '/app/sources',
+  '/app/outputs',
+  '/app/advanced',
+]);
+
 const LEGACY_WORKBENCH_ROUTE_ALIASES: Record<string, string> = {
   '/app/desk': 'desk',
   '/app/cockpit': 'desk',
@@ -137,6 +147,7 @@ export function proxy(request: NextRequest) {
   const nonce = generateNonce();
 
   const sessionData = session?.value ? parseSessionForRouting(session.value) : null;
+  const praxisV7Enabled = process.env.PRAXIS_V7_BACKEND === 'true' || process.env.NEXT_PUBLIC_PRAXIS_V7 === 'true';
 
   const isDemo = sessionData?.demo === true;
   const hasFirebaseToken = !!sessionData?.token;
@@ -147,7 +158,13 @@ export function proxy(request: NextRequest) {
     return addSecurityHeaders(NextResponse.redirect(new URL('/pricing', request.url)), nonce);
   }
 
-  const legacyWorkbenchTab = LEGACY_WORKBENCH_ROUTE_ALIASES[pathname];
+  if (V7_DESTINATION_ROUTES.has(pathname) && !praxisV7Enabled) {
+    return addSecurityHeaders(NextResponse.redirect(new URL('/app/dashboard', request.url)), nonce);
+  }
+
+  const legacyWorkbenchTab = praxisV7Enabled && V7_DESTINATION_ROUTES.has(pathname)
+    ? undefined
+    : LEGACY_WORKBENCH_ROUTE_ALIASES[pathname];
   const legacyWorkbenchPrefixTab =
     pathname.startsWith('/app/boardroom/') ? 'boardroom'
     : pathname.startsWith('/app/draft/') ? 'draft'

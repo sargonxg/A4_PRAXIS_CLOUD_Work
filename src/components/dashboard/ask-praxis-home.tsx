@@ -133,7 +133,7 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
 
 function WorkflowButton({ workflow, activeCaseId }: { workflow: AgenticWorkflow; activeCaseId: string }) {
   const Icon = workflowIcon[workflow.id as keyof typeof workflowIcon] ?? MessageSquareText;
-  const href = workflow.primaryArea === 'sources'
+  const href = workflow.primaryArea === 'cores'
     ? `/app/workbench/${activeCaseId}?tab=library`
     : workflow.primaryArea === 'outputs'
       ? `/app/workbench/${activeCaseId}?openChapter=memos`

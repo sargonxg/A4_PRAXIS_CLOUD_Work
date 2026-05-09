@@ -3,6 +3,11 @@
 import { useEffect, useState } from 'react';
 
 export interface ClientFeatureFlags {
+  praxisV7: {
+    enabled: boolean;
+    mode: string;
+    reason: string;
+  };
   cognee: {
     enabled: boolean;
     mode: string;
@@ -21,6 +26,11 @@ export interface ClientFeatureFlags {
 }
 
 const DEFAULT_FEATURES: ClientFeatureFlags = {
+  praxisV7: {
+    enabled: false,
+    mode: 'disabled',
+    reason: 'v7 shell disabled by default',
+  },
   cognee: {
     enabled: false,
     mode: 'disabled',
@@ -43,14 +53,21 @@ let cachedFeatures: { value: ClientFeatureFlags; expiresAt: number } | null = nu
 function normalizeFeatures(value: unknown): ClientFeatureFlags {
   if (!value || typeof value !== 'object') return DEFAULT_FEATURES;
   const payload = value as {
+    praxisV7?: { enabled?: unknown; mode?: unknown; reason?: unknown };
     cognee?: { enabled?: unknown; mode?: unknown; reason?: unknown };
     postgresKg?: { enabled?: unknown; mode?: unknown; reason?: unknown };
     agentEngineSubagents?: { enabled?: unknown; mode?: unknown; reason?: unknown };
   };
+  const praxisV7 = payload.praxisV7;
   const cognee = payload.cognee;
   const postgresKg = payload.postgresKg;
   const agentEngineSubagents = payload.agentEngineSubagents;
   return {
+    praxisV7: {
+      enabled: praxisV7?.enabled === true,
+      mode: typeof praxisV7?.mode === 'string' ? praxisV7.mode : 'disabled',
+      reason: typeof praxisV7?.reason === 'string' ? praxisV7.reason : DEFAULT_FEATURES.praxisV7.reason,
+    },
     cognee: {
       enabled: cognee?.enabled === true,
       mode: typeof cognee?.mode === 'string' ? cognee.mode : 'disabled',

@@ -1,0 +1,508 @@
+# PRAXIS v7 Fix Log
+
+### Paste #1 - 2026-05-08
+- Letter chosen: C
+- Slice/issue: Gate regression from verification issue https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work/issues/3 plus process-gap issue https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work/issues/7.
+- PR: not opened in this checkpoint.
+- LOC diff: docs/scaffolding only, plus one audit script and package script wiring.
+- Audits added or changed: added `audit:v7-index-current`; wired it into `audit:gate`.
+- Acceptance criteria results:
+  - `npm run audit:architecture-reference`: pass.
+  - `npm run audit:v7-index-current`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run audit:gate`: fails at `audit:gcp` because `gcloud` requires non-interactive reauthentication; all earlier local/static checks and tests in the gate reached green.
+  - `npm run auth:doctor`: confirms `gcloud` and ADC require reauth; Firebase CLI remains logged in and project-bound.
+- Skills/subagents invoked: none; this was scaffolding and gate repair.
+- Findings parked for later:
+  - HIGH: v7 foundations are still not implemented: core migrations, core schemas, flags, routers, and v7 shell remain open.
+  - HIGH: production verification remains blocked until `gcloud auth login --update-adc` and ADC reauth are completed.
+  - MEDIUM: Local verification artifacts from pass #1 were moved into `docs/v7/build/SCREENSHOTS/`; transient Playwright logs should stay uncommitted.
+- Suggested next letter for paste #2: E if GC approves Slice 1; otherwise C if the owner wants the GCP auth gate repaired first.
+
+### Paste #2 - 2026-05-08
+- Letter chosen: E
+- Slice/issue: Slice 00 foundations (`docs/v7/SLICES/00_foundations_cores_schema.md`), addressing https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work/issues/4.
+- PR: not opened in this checkpoint.
+- LOC diff: foundation slice is above the normal 600 LOC limit because it includes migrations, TS/Pydantic mirrors, and audits; no user-facing runtime route was changed.
+- Audits added or changed: added `audit:cores-schema`, `audit:cores-types-parity`, `audit:cores-owner-scoping`; wired them into `audit:gate` and `audit:architecture-chain`.
+- Acceptance criteria results:
+  - `npm run audit:cores-schema`: pass.
+  - `npm run audit:cores-types-parity`: pass.
+  - `npm run audit:cores-owner-scoping`: pass.
+  - `npx vitest run tests/unit/lib/cores/types.test.ts`: pass.
+  - `python -m py_compile backend\migrations\versions\0019_cores_baseline.py backend\migrations\versions\0020_cores_linkage.py backend\services\cores\types\models.py`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing warnings only.
+  - `npm run build`: pass.
+  - `npx vitest run`: pass, 150 files and 586 tests.
+  - `npm run audit:gate`: passes through all local/static audits and tests, then fails at `audit:gcp` because `gcloud` requires browser reauthentication.
+  - `npm run audit:v7-index-current`: pass.
+  - `npm run audit:architecture-reference`: pass.
+  - Pending: ephemeral Postgres migration upgrade/downgrade; Docker is not installed in this shell.
+- Skills/subagents invoked: none.
+- Findings parked for later:
+  - HIGH: migration upgrade/downgrade has not yet been run against ephemeral Postgres because Docker is unavailable.
+  - HIGH: local full gate is still expected to fail at `audit:gcp` until GCP/ADC reauth is repaired.
+  - MEDIUM: no v7 route or Ask UI should start until Slice 00 is merged and migration verification is complete.
+- Suggested next letter for paste #3: A/C to finish migration/gate verification for Slice 00 before starting experience-map or app-shell work.
+
+### Paste #3 - 2026-05-08
+- Letter chosen: A
+- Slice/issue: Slice 01 was marked proposed even though the experience map and workflow registry already existed locally; hardened and documented the slice instead of starting a new runtime surface.
+- PR: not opened in this checkpoint.
+- LOC diff: small audit/test/docs addition.
+- Audits added or changed: strengthened `audit:experience-map-coherence` to validate workflow contracts, route references, six v7 destinations, and founder-priority workflows.
+- Acceptance criteria results:
+  - `npm run audit:experience-map-coherence`: pass.
+  - `npx vitest run tests/unit/lib/product/experience-map.test.ts tests/unit/lib/agentic-workflows/registry.test.ts`: pass.
+  - Prior `npm run build`: pass in Paste #2.
+- Skills/subagents invoked: none.
+- Findings parked for later:
+  - HIGH: the executable v7 map exists, but the flagged v7 shell has not been built yet.
+  - HIGH: Ask PRAXIS still needs thread persistence and core-aware retrieval before it can become the true front door.
+- Suggested next letter for paste #4: E to start the flagged v7 app-shell skeleton, unless GC wants cloud auth/migration verification repaired first.
+
+### Paste #4 - 2026-05-08
+- Letter chosen: E
+- Slice/issue: Slice 02 flagged v7 app-shell skeleton.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded frontend/feature-flag/audit/docs addition.
+- Audits added or changed: added `audit:v7-shell-skeleton`, wired into `audit:gate` and `audit:architecture-chain`.
+- Acceptance criteria results:
+  - `npm run audit:v7-shell-skeleton`: pass.
+  - `npm run audit:experience-map-coherence`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true` local `next start -p 3100` plus `npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass for dashboard shell plus `/app/home`, `/app/ask`, `/app/situation`, `/app/sources`, `/app/outputs`, `/app/advanced`.
+- Skills/subagents invoked: none.
+- Findings parked for later:
+  - HIGH: destination pages are thin route shells; Ask still needs persistent threads and context-aware execution.
+  - HIGH: mobile bottom navigation still reflects the legacy app, not the six v7 destinations when the flag is on.
+- Suggested next letter for paste #5: E to add the flag-aware mobile navigation and begin the Ask thread substrate.
+
+### Paste #5 - 2026-05-08
+- Letter chosen: A
+- Slice/issue: Latest v7 kickoff vision superseded the six-destination IA with four primary surfaces: Home, Ask, Cores Library, Outputs.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded consolidation across the v7 map, shell preview, mobile nav, landing app-section preview, audits, tests, and v7 docs.
+- Audits added or changed: updated `audit:experience-map-coherence`, `audit:v7-shell-skeleton`, and dependent capability/mobile/landing checks to enforce the four-surface contract.
+- Acceptance criteria results:
+  - `npm run audit:experience-map-coherence`: pass.
+  - `npm run audit:v7-shell-skeleton`: pass.
+  - `npm run audit:simplified-capability-ledger`: pass.
+  - `npm run audit:mobile-primary-flows`: pass.
+  - `npm run audit:landing`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `npx vitest run tests/unit/lib/product/experience-map.test.ts tests/unit/lib/agentic-workflows/registry.test.ts`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing warnings only.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true` local `next start -p 3100` plus `npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass for dashboard shell, `/app/home`, `/app/ask`, `/app/cores`, `/app/outputs`, and mobile four-surface nav.
+- Skills/subagents invoked: Playwright skill for browser smoke.
+- Findings parked for later:
+  - HIGH: the four surface pages are still thin preview shells; Home, Ask, Cores Library, and Outputs need real surface-specific UI and backend wiring.
+  - HIGH: full `audit:gate` remains blocked at `audit:gcp` until GCP/ADC reauthentication is repaired.
+  - HIGH: ephemeral Postgres migration upgrade/downgrade remains blocked because Docker is not installed in this shell.
+  - MEDIUM: compatibility routes `/app/situation`, `/app/sources`, and `/app/advanced` still exist by design and should redirect/render into Cores until cutover.
+- Suggested next letter for paste #6: E to implement the real Home surface and Ask PRAXIS thread substrate, unless GC wants GCP auth/migration verification repaired first.
+
+### Paste #6 - 2026-05-08
+- Letter chosen: E
+- Slice/issue: Slice 03 Home surface preview.
+- PR: not opened in this checkpoint.
+- LOC diff: small flagged frontend surface plus audit/test/docs updates.
+- Audits added or changed: extended `audit:v7-shell-skeleton`; extended `tests/e2e/v7-shell-smoke.spec.ts`.
+- Acceptance criteria results:
+  - `npm run audit:v7-shell-skeleton`: pass.
+  - `npm run audit:experience-map-coherence`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true` local `next start -p 3100` plus `npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass, including a submitted Ask runtime turn through the authenticated local fallback.
+- Skills/subagents invoked: Playwright skill for browser smoke.
+- Findings parked for later:
+  - HIGH: Home next actions are still locally derived from workflows/readiness; the persisted orchestrator queue is not wired yet.
+  - HIGH: Ask PRAXIS still needs thread persistence, core attachment, routing, and citations before v7 can be the real front door.
+  - MEDIUM: the first-run modal can interfere with route smoke if `praxis-tour-seen` is not seeded; the v7 smoke now seeds it explicitly.
+- Suggested next letter for paste #7: E to implement the Ask thread substrate (`0022` plus a flagged `/app/ask` shell), unless GC wants auth/migration blockers repaired first.
+
+### Paste #7 - 2026-05-08
+- Letter chosen: E
+- Slice/issue: Slice 04 Ask thread substrate.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded schema/types/audit/frontend/docs addition.
+- Audits added or changed: added `audit:ask-thread-substrate`; wired it into `audit:gate` and `audit:architecture-chain`; extended `audit:v7-shell-skeleton`; extended v7 Playwright smoke.
+- Acceptance criteria results:
+  - `npm run audit:ask-thread-substrate`: pass.
+  - `npm run audit:v7-shell-skeleton`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `npx vitest run tests/unit/lib/ask/types.test.ts`: pass.
+  - `python -m py_compile backend\migrations\versions\0022_ask_threads.py backend\services\ask\types\models.py backend\services\ask\types\__init__.py`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing warnings only.
+  - `npm run build`: pass.
+  - `npx vitest run`: pass, 153 files and 594 tests.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true` local `next start -p 3100` plus `npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass.
+- Skills/subagents invoked: Playwright skill for browser smoke.
+- Findings parked for later:
+  - HIGH: `backend/routers/ask.py` is still not implemented, so Ask thread persistence is schema/type/audit-ready but not live.
+  - HIGH: runtime Ask still uses the existing calibrated `ChatInterface` and `/api/ai/chat`; v7 `POST /ask` routing is pending.
+  - MEDIUM: `0022_ask_threads` currently revises `0020_cores_linkage`; production ordering still needs an explicit decision on whether `0021_cores_backfill` lands before runtime Ask writes.
+- Suggested next letter for paste #8: E to implement `backend/routers/ask.py` plus a Next proxy, or C/A if GC wants migration ordering and GCP auth resolved first.
+
+### Paste #8 - 2026-05-08
+- Letter chosen: E
+- Slice/issue: Slice 05 Cores Library surface.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded frontend surface plus audit/test/docs updates.
+- Audits added or changed: added `audit:v7-cores-surface`; wired it into `audit:gate` and `audit:architecture-chain`; updated `audit:v7-shell-skeleton`; extended v7 Playwright smoke.
+- Acceptance criteria results:
+  - `npm run audit:v7-cores-surface`: pass.
+  - `npm run audit:v7-shell-skeleton`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing warnings only.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true` local `next start -p 3100` plus `npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass after tightening the Coverage gaps assertion to the panel scope.
+  - `npm run lint`: pass with existing warnings only.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true` local `next start -p 3100` plus `npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass.
+  - `npm run lint`: pass with existing warnings only.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true` local `next start -p 3100` plus `npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass.
+- Skills/subagents invoked: none.
+- Findings parked for later:
+  - HIGH: Cores Library now wraps existing live surfaces, but inline Source/Document ingestion consolidation is still pending.
+  - HIGH: runtime Core writes and Ask attachment persistence are still not implemented.
+  - MEDIUM: compatibility routes `/app/situation`, `/app/sources`, and `/app/advanced` render Cores entry copy; final cutover should decide redirect vs render.
+- Suggested next letter for paste #9: E to implement the Outputs surface preview, unless GC wants the FastAPI Ask router before more frontend surface work.
+
+### Paste #9 - 2026-05-08
+- Letter chosen: E
+- Slice/issue: Slice 07 Outputs surface.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded frontend surface plus audit/test/docs updates.
+- Audits added or changed: added `audit:v7-outputs-surface`; wired it into `audit:gate` and `audit:architecture-chain`; updated `audit:v7-shell-skeleton`; extended v7 Playwright smoke.
+- Acceptance criteria results:
+  - `npm run audit:v7-outputs-surface`: pass.
+  - `npm run audit:v7-shell-skeleton`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `npx tsc --noEmit`: pass.
+- Skills/subagents invoked: none.
+- Findings parked for later:
+  - HIGH: Outputs is now a real destination preview, but the v7 Output Core writer is not implemented.
+  - HIGH: PDF/DOCX export e2e and final citation-coverage gates are still pending.
+  - MEDIUM: templates currently stage Ask/editor entry points rather than creating persisted drafts directly.
+- Suggested next letter for paste #10: E to implement Source/Document Core consolidation inside Cores, or B to continue Ask runtime persistence.
+
+### Paste #10 - 2026-05-08
+- Letter chosen: E
+- Slice/issue: Slice 06 Source/Document Core panel.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded Cores Library panel plus audit/test/docs updates.
+- Audits added or changed: added `audit:v7-source-document-core-panel`; wired it into `audit:gate` and `audit:architecture-chain`; extended `audit:v7-cores-surface`; extended v7 Playwright smoke.
+- Acceptance criteria results:
+  - `npm run audit:v7-source-document-core-panel`: pass.
+  - `npm run audit:v7-cores-surface`: pass.
+  - `npm run audit:v7-shell-skeleton`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `npx tsc --noEmit`: pass.
+- Skills/subagents invoked: Next.js and React best-practices skills.
+- Findings parked for later:
+  - HIGH: the panel links to existing live workbench upload/library paths; v7-native source/document writes are not implemented.
+  - HIGH: extraction/indexing status is presented as workflow posture from current Situation data, not a live ingest job stream.
+  - MEDIUM: Source Scout is an entry action into existing research/workbench flow; Ask-stage routing is pending.
+- Suggested next letter for paste #11: B to continue Ask runtime persistence, or E to implement Analyst Skills grouping inside Cores.
+
+### Paste #11 - 2026-05-08
+- Letter chosen: E
+- Slice/issue: Slice 08 Analyst Skills panel.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded Cores Library panel, staged Ask card, plus audit/test/docs updates.
+- Audits added or changed: added `audit:v7-analyst-skills-panel`; wired it into `audit:gate` and `audit:architecture-chain`; extended `audit:v7-cores-surface`; extended v7 Playwright smoke.
+- Acceptance criteria results:
+  - `npm run audit:v7-analyst-skills-panel`: pass.
+  - `npm run audit:v7-cores-surface`: pass.
+  - `npm run audit:v7-shell-skeleton`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `npm run audit:simplified-capability-ledger`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing warnings only.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true` local `next start -p 3100` plus `npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass after switching the smoke to the real browser demo-login path instead of a secure-cookie request shortcut.
+- Skills/subagents invoked: Next.js and React best-practices skills.
+- Findings parked for later:
+  - HIGH: Stage in Ask links select the intended skill and Ask displays a staged skill card, but Ask does not yet create a persisted skill-run draft or execute the staged skill.
+  - HIGH: raw 57-skill manifests still need v7 `category` and `ontology_compat` enrichment before cutover.
+  - MEDIUM: structural/no-AI posture is enforced for the consolidated v7 panel; the older marketplace surfaces remain covered by their separate honesty audits.
+- Suggested next letter for paste #12: B to continue Ask runtime persistence and skill-stage execution, or E to add raw skill manifest enrichment if GC wants registry cleanup first.
+
+### Paste #12 - 2026-05-08
+- Letter chosen: B
+- Slice/issue: Continue Slice 08 Ask-side skill routing UX.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded Ask routing panel plus audit/test/docs updates.
+- Audits added or changed: added `audit:v7-ask-skill-routing`; wired it into `audit:gate` and `audit:architecture-chain`; extended `audit:v7-shell-skeleton`; extended v7 Playwright smoke.
+- Acceptance criteria results:
+  - `npm run audit:v7-ask-skill-routing`: pass.
+  - `npm run audit:v7-shell-skeleton`: pass.
+  - `npm run audit:v7-analyst-skills-panel`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `npm run audit:simplified-capability-ledger`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing warnings only.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true` local `next start -p 3100` plus `npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass.
+- Skills/subagents invoked: Next.js and React best-practices skills.
+- Findings parked for later:
+  - HIGH: Ask now suggests and stages skills with a visible input/output contract, but backend skill-run execution and Ask thread persistence are still pending.
+  - HIGH: raw 57-skill manifest enrichment with `category` and `ontology_compat` remains pending.
+- Suggested next letter for paste #13: B to implement persisted Ask runtime execution once owner scoping and router contracts are ready.
+
+### Paste #13 - 2026-05-08
+- Letter chosen: E
+- Slice/issue: Slice 09 v7 skill manifest.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded derived manifest plus audit/docs updates.
+- Audits added or changed: added `audit:v7-skill-manifest`; wired it into `audit:gate` and `audit:architecture-chain`.
+- Acceptance criteria results:
+  - `npm run audit:v7-skill-manifest`: pass; 55 tools covered.
+  - `npm run audit:v7-ask-skill-routing`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing warnings only.
+  - `npm run build`: pass.
+- Skills/subagents invoked: Next.js and React best-practices skills.
+- Findings parked for later:
+  - MEDIUM: manifest ontology compatibility is derived from existing tool metadata; top visible skills still need human curation before canary.
+  - HIGH: Ask skill-run execution and thread persistence remain pending.
+- Suggested next letter for paste #14: B to implement persisted Ask runtime execution once owner scoping and router contracts are ready.
+
+### Paste #14 - 2026-05-08
+- Letter chosen: B
+- Slice/issue: Slice 10 Ask runtime persistence seam.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded FastAPI router, Next proxy allowlist, v7 Ask runtime panel, audit, and docs updates.
+- Audits added or changed: added `audit:v7-ask-runtime`; wired it into `audit:gate` and `audit:architecture-chain`; extended `audit:v7-shell-skeleton`.
+- Acceptance criteria results:
+  - `npm run audit:v7-ask-runtime`: pass.
+  - `npm run audit:v7-shell-skeleton`: pass.
+  - `npm run audit:ask-thread-substrate`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `python -m py_compile backend\routers\ask.py backend\main.py backend\services\ask\types\models.py`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing warnings only.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true` local `next start -p 3100` plus `npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass.
+- Skills/subagents invoked: Next.js and React best-practices skills.
+- Findings parked for later:
+  - HIGH: Ask now has a persisted thread/message seam, but calibrated generation and skill-run execution still use the existing chat path.
+  - MEDIUM: Ask citation persistence remains unused until generated answers move onto the v7 router.
+- Suggested next letter for paste #15: B/E to cut over one low-risk Ask mode to calibrated v7 execution, or to implement Output Core persistence if Ask generation is held for review.
+
+### Paste #15 - 2026-05-08
+- Letter chosen: B
+- Slice/issue: Slice 11 Ask routing layer.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded Ask router, UI receipt, audit, smoke-test, and docs updates.
+- Audits added or changed: added `audit:v7-ask-routing-layer`; wired it into `audit:gate` and `audit:architecture-chain`; extended v7 Playwright smoke to assert visible routing receipts.
+- Acceptance criteria results:
+  - `python -m py_compile backend\services\ask\router.py backend\routers\ask.py backend\services\ask\types\models.py backend\services\ask\types\__init__.py`: pass.
+  - `npm run audit:v7-ask-routing-layer`: pass.
+  - `npm run audit:v7-ask-runtime`: pass.
+  - `npm run audit:ask-thread-substrate`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing 97 warnings.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true` local `next start -p 3100` plus `npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass after clearing a stale port-3100 server and adding route-load waits to the smoke; smoke now also asserts visible routing and candidate-skill receipts.
+- Skills/subagents invoked: none; this was a bounded routing/audit continuation.
+- Findings parked for later:
+  - HIGH: Ask now persists and displays an inspectable routing decision and top candidate skills, but the chosen action still does not execute through the new v7 backend path.
+  - MEDIUM: explicit user override capture is not yet a first-class Ask-thread field.
+  - MEDIUM: citation rows remain unused until generated answers move onto the v7 router.
+- Suggested next letter for paste #16: B to cut over one low-risk Ask action to calibrated execution with citations, or E to implement Output Core persistence if generation cutover needs review.
+
+### Paste #16 - 2026-05-08
+- Letter chosen: B
+- Slice/issue: Slice 12 Ask core resolution.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded core resolver, Ask metadata wiring, UI context receipt, audit, smoke-test, and docs updates.
+- Audits added or changed: added `audit:v7-ask-core-resolution`; wired it into `audit:gate` and `audit:architecture-chain`; extended v7 Playwright smoke to assert a visible Context receipt.
+- Acceptance criteria results:
+  - `python -m py_compile backend\services\cores\resolver.py backend\routers\ask.py backend\services\ask\types\models.py backend\services\ask\types\__init__.py`: pass.
+  - `npm run audit:v7-ask-core-resolution`: pass.
+  - `npm run audit:v7-ask-routing-layer`: pass.
+  - `npm run audit:v7-ask-runtime`: pass.
+  - `npm run audit:ask-thread-substrate`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing 97 warnings.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true` local `next start -p 3100` plus `npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass.
+- Skills/subagents invoked: Next.js skill.
+- Findings parked for later:
+  - HIGH: `coreContext` is persisted and displayed, but it is not yet consumed by calibrated generation.
+  - HIGH: core sharing/grant resolution and Team Core reads remain pending behind the multi-tenant decisions.
+  - MEDIUM: no `0021` backfill exists yet, so real user situations may show fallback advisories until cores are materialized.
+- Suggested next letter for paste #17: B to cut over one low-risk Ask action to calibrated generation using `coreContext`, or E to implement the cores CRUD/list router if generation is held.
+
+### Paste #17 - 2026-05-08
+- Letter chosen: B
+- Slice/issue: Slice 13 Ask direct answer execution.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded backend Ask executor, runtime flag, citation persistence, UI execution receipt, audit, smoke-test, and docs updates.
+- Audits added or changed: added `audit:v7-ask-direct-execution`; wired it into `audit:gate` and `audit:architecture-chain`; updated `audit:v7-ask-runtime`; updated v7 Playwright smoke for the new Ask copy.
+- Acceptance criteria results:
+  - `python -m py_compile backend\services\ask\executor.py backend\routers\ask.py backend\config.py`: pass.
+  - `npm run audit:v7-ask-direct-execution`: pass.
+  - `npm run audit:v7-ask-runtime`: pass.
+  - `npm run audit:v7-ask-core-resolution`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `npm run audit:ai-provider-isolation`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing 97 warnings.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true PLAYWRIGHT_BASE_URL=http://localhost:3100` local `next start -p 3100` plus `npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass.
+- Skills/subagents invoked: Next.js skill.
+- Findings parked for later:
+  - HIGH: skill and subagent actions still return staged execution receipts; dedicated executors are pending.
+  - HIGH: live Vertex execution is gated behind `PRAXIS_V7_ASK_AI_ENABLED=false` by default and still needs staging credential validation before production canary.
+  - MEDIUM: execution cost is a deterministic token estimate until provider usage accounting is wired into the backend Ask path.
+- Suggested next letter for paste #18: B to implement the first Ask skill executor for one read-only Analyst Skill, or E to expose owner-scoped Core list/detail APIs if skill execution needs Core CRUD first.
+
+### Paste #18 - 2026-05-08
+- Letter chosen: E
+- Slice/issue: Slice 14 Cores read API.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded read-only Core router, authenticated proxy allowlist/fallback, materialized-core UI panel, audit, smoke-test, and docs updates.
+- Audits added or changed: added `audit:v7-cores-api`; wired it into `audit:gate` and `audit:architecture-chain`; extended v7 Playwright smoke to assert the materialized-core panel.
+- Acceptance criteria results:
+  - `python -m py_compile backend\routers\cores.py backend\main.py`: pass.
+  - `npm run audit:v7-cores-api`: pass.
+  - `npm run audit:v7-cores-surface`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing 97 warnings.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true PLAYWRIGHT_BASE_URL=http://localhost:3100` local `next start -p 3100` plus `npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass.
+- Skills/subagents invoked: Next.js skill.
+- Findings parked for later:
+  - HIGH: Core create/update/archive/fork/share mutations remain pending.
+  - HIGH: `0021` backfill is still required before real situations reliably return materialized Situation/Source/Graph/Output Cores.
+  - MEDIUM: Team Core grants are still blocked behind the multi-tenant decisions.
+- Suggested next letter for paste #19: B/E to implement the first Core mutation path for Situation Core edits, or a first read-only Ask skill executor if Core mutation is held.
+
+### Paste #19 - 2026-05-08
+- Letter chosen: E
+- Slice/issue: Slice 15 Ask core skill execution.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded backend skill execution branch, skill prompt builder, Ask skill-contract copy, audit, smoke-test, and docs updates.
+- Audits added or changed: added `audit:v7-ask-skill-execution`; wired it into `audit:gate` and `audit:architecture-chain`; extended v7 Playwright smoke to stage `briefing-studio` and submit a skill Ask turn.
+- Acceptance criteria results:
+  - `python -m py_compile backend\services\ask\executor.py backend\routers\ask.py`: pass.
+  - `npm run audit:v7-ask-skill-execution`: pass.
+  - `npm run audit:v7-ask-direct-execution`: pass.
+  - `npm run audit:v7-ask-runtime`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `npm run audit:ai-provider-isolation`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing 97 warnings.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true PLAYWRIGHT_BASE_URL=http://localhost:3100` local `next start -p 3100` plus `npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass.
+- Skills/subagents invoked: Next.js skill.
+- Findings parked for later:
+  - HIGH: only three consolidated read-only skills execute in this first slice; broader tool execution remains pending.
+  - HIGH: subagent plans still return staged receipts.
+  - MEDIUM: skill outputs are core-grounded previews when `PRAXIS_V7_ASK_AI_ENABLED=false`; staging needs live Vertex validation before canary.
+- Suggested next letter for paste #20: B/E to implement Situation Core mutation/backfill, or add the next skill executor group once materialized cores are reliable.
+
+### Paste #20 - 2026-05-09
+- Letter chosen: B
+- Slice/issue: New Face Loop 1 / Slice 03 Home surface.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded frontend/doc update: installed the New Face build spec, reshaped `/app/home`, added Ask query prefill handoff, and updated v7 ledgers.
+- Audits added or changed: none; existing `audit:v7-shell-skeleton` remains the guard for this surface.
+- Acceptance criteria results:
+  - `npm run audit:v7-shell-skeleton`: pass.
+  - `npm run audit:v7-ask-runtime`: pass.
+  - `npm run audit:v7-index-current`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing 97 warnings.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true PLAYWRIGHT_BASE_URL=http://localhost:3100 npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass.
+  - Browser screenshot captured at `docs/v7/build/SCREENSHOTS/v7-new-face-home.png`.
+  - Mobile screenshot captured at `docs/v7/build/SCREENSHOTS/v7-new-face-home-mobile.png`; 390px viewport had no horizontal overflow.
+- Skills/subagents invoked: attempted frontend-design skill from the spec path; the path was not available in this shell, so repo-native Tailwind/Radix/lucide conventions were followed directly.
+- Findings parked for later:
+  - HIGH: Loop 1 still needs Lighthouse evidence.
+  - HIGH: Home query handoff pre-fills `/app/ask`; it does not yet create `/app/ask/[threadId]` before navigation because the dynamic thread route is not implemented.
+  - MEDIUM: Starter tools use consolidated v7 skill IDs and Cores panels; the old full 57-skill picker remains a later Ask/Cores slice.
+- Suggested next letter for paste #21: B to verify and polish New Face Loop 1 with screenshots, or E to implement the dynamic Ask thread route if the visual gate passes.
+
+### Paste #21 - 2026-05-09
+- Letter chosen: B
+- Slice/issue: Cores Inline Loop 1 / Slice 05 Cores Library + Slice 03 Home.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded v7 core interaction update: installed the Cores Inline build spec, added `V7CoreDrawer`, simplified visible core chips to My Core + Case Core, added User Core autosave through `PATCH /cores/me`, folded sources/documents/graph/outputs into Case Core tabs, and updated ledgers.
+- Audits added or changed: added `audit:v7-inline-cores`; wired it into `audit:gate`; extended v7 Playwright smoke to open My Core and Case Core drawers.
+- Acceptance criteria results:
+  - `python -m py_compile backend\routers\cores.py backend\main.py`: pass.
+  - `npm run audit:v7-inline-cores`: pass.
+  - `npm run audit:v7-shell-skeleton`: pass.
+  - `npm run audit:v7-cores-api`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing 97 warnings.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true PLAYWRIGHT_BASE_URL=http://localhost:3100 npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass.
+  - Screenshots captured at `docs/v7/build/SCREENSHOTS/v7-inline-cores-user-drawer.png`, `docs/v7/build/SCREENSHOTS/v7-inline-cores-case-drawer.png`, and `docs/v7/build/SCREENSHOTS/v7-inline-cores-mobile.png`.
+- Skills/subagents invoked: none; this was a bounded v7 UI/API slice.
+- Findings parked for later:
+  - HIGH: Situation Core frame fields are still thin drawer views; real `PATCH /cores/{id}` UI wiring, lazy backfill, create, fork, and share are pending.
+  - HIGH: `/app/cores/me` full editor route is linked but not implemented yet.
+  - MEDIUM: User Core drawer currently starts from local defaults; it does not hydrate existing `/cores/me` metadata into the form before editing.
+- Suggested next letter for paste #22: B/E to implement Situation Core mutation/create/fork/share, or add `/app/cores/me` full editor before broader attach/share flows.
+
+### Paste #22 - 2026-05-09
+- Letter chosen: A/B
+- Slice/issue: Build Loop playbook plus Cores Inline Loop E completion.
+- PR: not opened in this checkpoint.
+- LOC diff: bounded docs/audit/UI update: installed `docs/v7/build/03_BUILD_LOOP.md`, added `audit:v7-build-loop`, hydrated User Core drawer state from `GET /cores/me`, and added local backend fallback metadata for reload persistence in dev.
+- Audits added or changed: added `audit:v7-build-loop`; extended `audit:v7-inline-cores` to require User Core hydration.
+- Acceptance criteria results:
+  - `npm run audit:v7-build-loop`: pass.
+  - `npm run audit:v7-inline-cores`: pass.
+  - `npm run audit:v7-shell-skeleton`: pass.
+  - `npm run audit:v7-cores-api`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `python -m py_compile backend\routers\cores.py backend\main.py`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing 97 warnings.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true PLAYWRIGHT_BASE_URL=http://localhost:3100 npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass.
+- Skills/subagents invoked: none; this was a bounded build-loop/documentation plus hydration fix.
+- Findings parked for later:
+  - HIGH: Situation Core mutation/create/fork/share remains the next Cores Inline loop.
+  - HIGH: `/app/cores/me` full editor route is still linked but not implemented.
+  - MEDIUM: full `audit:gate` remains blocked locally by GCP auth unless credentials are refreshed.
+- Suggested next letter for paste #23: B/E to ship Situation Core inline mutation and creation, keeping Loop F behind v7 flags.
+
+### Paste #23 - 2026-05-09
+- Letter chosen: B
+- Slice/issue: `01_THE_NEW_FACE.md` Loop 1 completion.
+- PR: not opened in this checkpoint; committed locally on `v7/bootstrap-current-state-audit`.
+- LOC diff: bounded Home/Ask handoff update: `/app/home` now creates a thread URL, navigates to `/app/ask/[threadId]?query=...`, exposes a working Cmd/Ctrl-K command affordance, and the dynamic Ask route renders the same v7 Ask surface with the thread id visible.
+- Audits added or changed: extended `audit:v7-shell-skeleton`; extended v7 Playwright smoke to assert the `/app/ask/[threadId]` handoff.
+- Acceptance criteria results:
+  - `npm run audit:v7-shell-skeleton`: pass.
+  - `npm run audit:v7-build-loop`: pass.
+  - `npm run audit:v7-inline-cores`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing 97 warnings.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true PLAYWRIGHT_BASE_URL=http://localhost:3100 npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass.
+- Skills/subagents invoked: none; this was a bounded v7 route/UI completion.
+- Findings parked for later:
+  - MEDIUM: Lighthouse remains pending because the repo has no local Lighthouse dependency.
+  - HIGH: real Situation Core mutation/create/fork/share remains next.
+- Suggested next letter for paste #24: B/E to ship Situation Core inline mutation and creation, keeping Loop F behind v7 flags.

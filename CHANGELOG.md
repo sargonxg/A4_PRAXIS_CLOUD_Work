@@ -2,6 +2,96 @@
 
 ## [Unreleased]
 
+- feat(v7): complete the New Face launcher handoff.
+  `/app/home` now launches Ask turns at `/app/ask/[threadId]`, exposes a
+  working Cmd/Ctrl-K command affordance, and covers the thread handoff in the
+  v7 smoke test.
+- docs(v7): install the Build Loop playbook.
+  Added `docs/v7/build/03_BUILD_LOOP.md`, wired `audit:v7-build-loop`, and
+  tightened User Core drawer hydration so inline editing loads saved Core
+  metadata before autosave.
+- feat(v7): install Cores Inline loop and drawer-first Core editing.
+  Added `docs/v7/build/02_CORES_INLINE.md`, a shared `V7CoreDrawer`, My Core
+  autosave through `/api/backend/cores/me`, Case Core drawer tabs, and
+  `audit:v7-inline-cores` so Home, Ask, and Cores expose only the two
+  user-facing core concepts.
+- feat(v7): install the New Face build spec and tighten Home around Ask.
+  Added `docs/v7/build/01_THE_NEW_FACE.md`, reshaped `/app/home` into an
+  Ask-first launcher with attached Core chips, mode strip, four starter skills,
+  missing-context rail, and query handoff into `/app/ask`.
+- feat(v7): run first Analyst Skills from Context Cores.
+  Ask PRAXIS now executes `research-sources`, `actors-stakeholders`, and
+  `briefing-studio` from the resolved core snapshot, with Vertex execution
+  behind `PRAXIS_V7_ASK_AI_ENABLED` and honest core-grounded previews by
+  default.
+- feat(v7): add owner-scoped Cores read API.
+  Added FastAPI Core list/detail routes, authenticated proxy allowlisting,
+  local fallback, a materialized-core panel in the Cores Library, and
+  `audit:v7-cores-api`.
+- feat(v7): execute direct Ask answers from resolved Context Cores.
+  Added a backend Ask executor that builds direct-answer prompts from
+  `coreContext`, persists execution metadata and core citations, and gates live
+  Vertex/Gemini calls behind `PRAXIS_V7_ASK_AI_ENABLED`.
+- feat(v7): resolve Context Cores inside Ask receipts.
+  Added a backend Context Core resolver for Ask PRAXIS that resolves implicit
+  User/Situation Cores plus explicit attachments, persists a `coreContext`
+  snapshot with ontology binding and context health, writes core attach audit
+  rows, and shows the context receipt in the v7 Ask UI.
+- feat(v7): add inspectable Ask routing receipts.
+  Added a deterministic Ask routing layer for direct answers, staged Analyst
+  Skills, subagent plans, and clarification receipts, with persisted route
+  metadata and a visible `/app/ask` routing receipt while full calibrated
+  execution remains on the existing chat path.
+- feat(v7): add Ask runtime persistence seam.
+  Added a FastAPI Ask router, authenticated Next proxy allowlist, v7 Ask
+  runtime panel, and `audit:v7-ask-runtime` so Ask turns can be written to
+  owner-scoped v7 thread/message tables while calibrated generation remains on
+  the existing chat path until cutover.
+- feat(v7): add Analyst Skills panel inside Cores Library.
+  The flagged Cores surface now presents the consolidated capability ledger as
+  Structure, Research, Analysis, and Production skills, labels structural/no-AI
+  capabilities honestly, stages selected skills into Ask PRAXIS, and shows the
+  staged skill card on `/app/ask?skill=<id>`. Ask now also shows suggested
+  skills plus the input/output contract before the chat.
+- feat(v7): add derived skill manifest for all registered tools.
+  Added a v7 manifest bridge that maps every existing registry tool to an
+  Analyst Skill category, ontology compatibility set, structural posture, and
+  v7 visibility flag without rewriting legacy tool definitions.
+- feat(v7): add Source and Document Core panel inside Cores Library.
+  The flagged Cores surface now shows active Situation source receipts,
+  upload/extraction/index posture, actor/event/claim coverage gaps, and
+  Source Scout/Add source actions without creating another top-level surface.
+- feat(v7): add the real flagged Outputs surface.
+  `/app/outputs` now renders a v7 Outputs surface with handover, decision
+  brief, policy memo, and talking-points templates, output buckets, provenance
+  posture, and existing Ask/editor/export entry points.
+- feat(v7): add the real flagged Cores Library surface.
+  `/app/cores` now renders a v7 Cores surface with the seven-chapter Situation
+  spine, registry-backed Context Cores, source/document/graph grounding cards,
+  Ask-ready repair workflows, and specialist panel links. Compatibility routes
+  `/app/situation`, `/app/sources`, and `/app/advanced` now render into that
+  same surface with entry-specific framing.
+- feat(v7): add Ask thread substrate and flagged Ask surface.
+  Added reversible Ask thread/message/citation schema, TS/Pydantic Ask
+  contracts, `audit:ask-thread-substrate`, and a v7 `/app/ask` surface
+  reusing the existing calibrated chat interface behind the v7 flag.
+- feat(v7): add the real flagged Home surface preview.
+  `/app/home` now renders a v7 Home surface with active Situation context,
+  Ask PRAXIS CTA, core-readiness chips, next actions, and Cores/Outputs
+  links behind the disabled-by-default v7 flag.
+- feat(v7): add Context Core foundation behind disabled flags.
+  Added reversible `0019`/`0020` core migrations, TypeScript and Pydantic core
+  schemas, v7 frontend/backend feature flags, focused core audits, and schema
+  tests without exposing new user-facing routes.
+- chore(v7): harden and consolidate the four-surface experience map.
+  Strengthened the v7 product-map audit to cover route and workflow contracts,
+  then added focused tests for the Home/Ask/Cores/Outputs map, compatibility
+  route handling, and founder-priority agentic workflows.
+- feat(v7): add a flagged dashboard command shell preview.
+  Exposed `praxisV7` through the feature flag health API, added a client flag
+  defaulting off, mounted a simplified command shell on the dashboard, added
+  four primary surface route shells plus compatibility routes, guarded them in
+  the proxy, and added an audit so the preview cannot drift silently.
 - feat(analytics): add Pack 31 network, sanctions, and simulation foundation.
   Added NetworkX graph metrics, additive graph node metrics migration, yente
   sanctions sidecar scaffolding, sanctions licensing runbook, Mesa-style policy

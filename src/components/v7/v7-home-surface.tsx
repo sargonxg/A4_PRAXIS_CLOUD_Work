@@ -1,0 +1,509 @@
+'use client';
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import type { ComponentType, ReactNode } from 'react';
+import {
+  ArrowRight,
+  Boxes,
+  ChevronDown,
+  FileText,
+  GitBranch,
+  Library,
+  ListChecks,
+  Plus,
+  Search,
+  ShieldAlert,
+  Sparkles,
+  Target,
+  UserRound,
+} from 'lucide-react';
+
+import { V7CoreDrawer, type V7CoreDrawerKind, type V7CoreDrawerSituation } from '@/components/v7/v7-core-drawer';
+import { useAuth } from '@/lib/auth/auth-context';
+import { getSimplifiedCapabilityLedger } from '@/lib/product/context-core-map';
+import { useSituationStore } from '@/stores/situation-store';
+
+const modeOptions = ['Quick', 'Deep', 'Plan', 'Memo', 'Brief'] as const;
+
+const starterTools = [
+  {
+    label: 'Stakeholder map',
+    detail: 'Map actors, interests, leverage, and constraints.',
+    icon: Target,
+    href: '/app/ask?skill=actors-stakeholders',
+  },
+  {
+    label: 'Timeline',
+    detail: 'Open the event and signal structure for this Situation.',
+    icon: ListChecks,
+    href: '/app/cores?panel=graph',
+  },
+  {
+    label: "Devil's advocate",
+    detail: 'Stress-test the dominant assessment and thin claims.',
+    icon: ShieldAlert,
+    href: '/app/ask?skill=research-sources&query=Red-team%20the%20current%20assessment.',
+  },
+  {
+    label: 'Find gaps',
+    detail: 'Surface missing sources, actors, events, and weak evidence.',
+    icon: Search,
+    href: '/app/ask?skill=research-sources&query=Find%20the%20most%20important%20context%20gaps.',
+  },
+];
+
+const recentItems = [
+  { label: 'Memo draft', detail: 'Output Core', href: '/app/outputs' },
+  { label: 'Source review', detail: 'Case evidence', href: '/app/cores?panel=sources' },
+  { label: 'Ask thread', detail: 'Quick mode', href: '/app/ask' },
+  { label: 'Graph pass', detail: 'Graph Core', href: '/app/cores?panel=graph' },
+  { label: 'Brief outline', detail: 'Output Core', href: '/app/outputs' },
+];
+
+const demoSituationFallback = {
+  id: 'syria-2026',
+  name: 'Syria Transition',
+  region: 'Northeast integration, humanitarian strain, and regional spillover',
+  sourceUrls: ['demo-source-1', 'demo-source-2', 'demo-source-3'],
+  customSources: [],
+  documentCount: 4,
+  graphEntities: 18,
+  actorCount: 7,
+  actors: [],
+};
+
+export function V7HomeSurface() {
+  const router = useRouter();
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const { user } = useAuth();
+  const situations = useSituationStore((state) => state.situations);
+  const activeSituation = useSituationStore((state) => state.activeSituation);
+  const [query, setQuery] = useState('');
+  const [mode, setMode] = useState<(typeof modeOptions)[number]>('Quick');
+  const active = activeSituation ?? situations[0] ?? (user?.isDemo ? demoSituationFallback : null);
+  const [openCore, setOpenCore] = useState<V7CoreDrawerKind | null>(null);
+  const activeCaseId = active?.id;
+  const activeCaseName = active?.name ?? 'No active Situation';
+  const activeRegion = active?.region ?? 'Open or create a Situation';
+  const sourceCount = active?.sourceUrls?.length ?? active?.customSources?.length ?? 0;
+  const documentCount = active?.documentCount ?? 0;
+  const graphCount = active?.graphEntities ?? active?.actorCount ?? active?.actors?.length ?? 0;
+  const skillLedger = useMemo(() => getSimplifiedCapabilityLedger(), []);
+  const suggestedSkills = skillLedger
+    .filter((skill) => ['actors-stakeholders', 'timeline', 'research-sources', 'briefing-studio'].includes(skill.toolId))
+    .slice(0, 4);
+
+  const drawerSituation: V7CoreDrawerSituation | null = active
+    ? {
+        id: active.id,
+        name: active.name,
+        region: active.region,
+        sourceCount,
+        documentCount,
+        graphCount,
+        actorCount: active.actorCount ?? active.actors?.length ?? 0,
+      }
+    : null;
+
+  const attachedCores = [
+    { label: 'My Core', detail: 'Always attached', tone: 'user', icon: UserRound, kind: 'user' as const },
+    { label: active?.name ?? 'Pick a Case', detail: 'Case Core', tone: 'situation', icon: Boxes, kind: 'situation' as const },
+  ];
+
+  const gaps = buildGaps({ active: Boolean(active), sourceCount, documentCount, graphCount });
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        window.dispatchEvent(new CustomEvent('open-praxis-chat'));
+        inputRef.current?.focus();
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmed = query.trim();
+    if (!trimmed || !active) return;
+    const threadId = `home-${Date.now().toString(36)}`;
+    const params = new URLSearchParams({ query: trimmed, mode: mode.toLowerCase(), situationId: active.id });
+    router.push(`/app/ask/${threadId}?${params.toString()}`);
+  }
+
+  function openCommandPalette() {
+    window.dispatchEvent(new CustomEvent('open-praxis-chat'));
+    inputRef.current?.focus();
+  }
+
+  return (
+    <div className="space-y-5" data-testid="v7-home-surface">
+      <section className="overflow-hidden rounded-lg border border-navy-200 bg-white shadow-sm shadow-navy-950/5">
+        <div className="border-b border-slate-200 px-4 py-3 sm:px-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <Link href="/app/home" className="inline-flex items-center gap-2 text-sm font-semibold text-navy-950">
+              <Sparkles className="h-4 w-4 text-gold-700" />
+              PRAXIS
+            </Link>
+            <button
+              type="button"
+              className="inline-flex min-h-11 items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-left text-sm font-semibold text-navy-950 hover:border-navy-300 hover:bg-white md:min-w-[320px]"
+              aria-label="Switch active Situation"
+            >
+              <span className="truncate">My workspace · {activeCaseName}</span>
+              <ChevronDown className="h-4 w-4 shrink-0 text-slate-600" />
+            </button>
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+              <button
+                type="button"
+                onClick={openCommandPalette}
+                className="rounded-md border border-slate-200 bg-white px-2.5 py-1.5 transition hover:border-navy-300 hover:text-navy-950"
+                aria-label="Open PRAXIS command palette"
+              >
+                Cmd/Ctrl K
+              </button>
+              <span className="rounded-full bg-navy-950 px-2.5 py-1.5 text-white">GC</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-0 lg:grid-cols-[72px_minmax(0,1fr)]">
+          <CoreRail activeCaseId={activeCaseId} />
+          <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_minmax(300px,0.34fr)]">
+            <div className="p-4 sm:p-6 lg:p-8">
+              <p className="text-sm font-semibold text-gold-700">Welcome back, Giulio.</p>
+              <h1 className="mt-2 max-w-3xl text-2xl font-semibold leading-tight text-navy-950 sm:text-4xl">
+                {active ? `You're working on ${activeCaseName}.` : "You haven't opened a Situation yet."}
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
+                Type the question. Pick the cores that frame it. Let PRAXIS choose the skill or constrain the answer yourself.
+              </p>
+              <p className="mt-2 text-xs font-semibold uppercase text-slate-600">{activeRegion}</p>
+
+              <form
+                onSubmit={handleSubmit}
+                className={`mt-6 rounded-xl border p-3 shadow-sm ${
+                  active ? 'border-navy-200 bg-white shadow-navy-950/5' : 'border-slate-200 bg-slate-50'
+                }`}
+              >
+                <div className="flex flex-wrap gap-2 pb-3" aria-label="Attached cores">
+                  {attachedCores.map((core) => (
+                    <CoreChip
+                      key={`${core.label}-${core.detail}`}
+                      {...core}
+                      onClick={() => setOpenCore(core.kind)}
+                      disabled={!active && core.tone !== 'user'}
+                    />
+                  ))}
+                </div>
+                <textarea
+                  ref={inputRef}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  disabled={!active}
+                  rows={3}
+                  placeholder={active ? `Ask PRAXIS about ${activeCaseName}...` : 'Open a Situation to ask PRAXIS...'}
+                  className="min-h-[108px] w-full resize-none border-0 bg-transparent px-2 py-2 text-base text-navy-950 outline-none placeholder:text-slate-500 disabled:cursor-not-allowed sm:text-lg"
+                  onKeyDown={(event) => {
+                    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                      event.currentTarget.form?.requestSubmit();
+                    }
+                  }}
+                />
+                <div className="flex flex-col gap-3 border-t border-slate-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap gap-1.5">
+                    {modeOptions.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setMode(item)}
+                        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                          mode === item
+                            ? 'bg-navy-950 text-white'
+                            : 'border border-slate-200 bg-slate-50 text-slate-700 hover:border-navy-300 hover:text-navy-950'
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={!active || !query.trim()}
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-navy-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-navy-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Ask PRAXIS
+                  </button>
+                </div>
+              </form>
+
+              {!active && (
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                  <Link href="/login?mode=demo&example=syria-2026" className="inline-flex min-h-11 items-center justify-center rounded-md bg-navy-950 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800">
+                    Open demo Situation
+                  </Link>
+                  <Link href="/app/situations/new" className="inline-flex min-h-11 items-center justify-center rounded-md border border-slate-200 px-4 py-2 text-sm font-semibold text-navy-800 hover:border-navy-300">
+                    Create new Situation
+                  </Link>
+                </div>
+              )}
+
+              <div className="mt-6">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-navy-950">Or start with a tool:</p>
+                  <Link href="/app/cores?panel=skills" className="text-xs font-semibold text-gold-800 hover:text-gold-900">
+                    See all skills
+                  </Link>
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  {starterTools.map((tool) => (
+                    <ToolCard key={tool.label} {...tool} disabled={!active} />
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                {suggestedSkills.map((skill) => (
+                  <Link
+                    key={skill.toolId}
+                    href={`/app/ask?skill=${skill.toolId}`}
+                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-navy-300 hover:bg-white hover:text-navy-950"
+                  >
+                    {skill.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <aside className="border-t border-navy-200 bg-slate-50 p-4 xl:border-l xl:border-t-0 sm:p-5">
+              <p className="mb-3 text-xs font-semibold uppercase text-gold-700">Next actions</p>
+              <Panel title="What's missing right now">
+                <div className="space-y-2">
+                  {gaps.map((gap) => (
+                    <Link
+                      key={gap.label}
+                      href={gap.href}
+                      className="block rounded-lg border border-slate-200 bg-white p-3 transition hover:border-navy-300"
+                    >
+                      <span className="block text-sm font-semibold text-navy-950">{gap.label}</span>
+                      <span className="mt-1 block text-xs leading-5 text-slate-700">{gap.detail}</span>
+                    </Link>
+                  ))}
+                </div>
+              </Panel>
+              <Panel title="Recent">
+                <div className="space-y-2">
+                  {recentItems.map((item) => (
+                    <Link
+                      key={`${item.label}-${item.detail}`}
+                      href={item.href}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 transition hover:border-navy-300"
+                    >
+                      <span>
+                        <span className="block text-sm font-semibold text-navy-950">{item.label}</span>
+                        <span className="block text-xs text-slate-700">{item.detail}</span>
+                      </span>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-slate-500" />
+                    </Link>
+                  ))}
+                </div>
+              </Panel>
+            </aside>
+          </div>
+        </div>
+      </section>
+      <V7CoreDrawer
+        open={openCore !== null}
+        kind={openCore ?? 'user'}
+        situation={drawerSituation}
+        onClose={() => setOpenCore(null)}
+      />
+    </div>
+  );
+}
+
+function CoreRail({ activeCaseId }: { activeCaseId?: string }) {
+  const items = [
+    { label: 'Ask threads', icon: Sparkles, href: '/app/ask' },
+    { label: 'Cores Library', icon: Boxes, href: '/app/cores' },
+    { label: 'Situations', icon: GitBranch, href: activeCaseId ? `/app/workbench/${activeCaseId}` : '/app/workbench' },
+    { label: 'Sources', icon: Library, href: '/app/cores?panel=sources' },
+    { label: 'Outputs', icon: FileText, href: '/app/outputs' },
+    { label: 'Advanced', icon: Plus, href: '/app/cores?panel=advanced' },
+  ];
+
+  return (
+    <nav className="hidden border-r border-navy-200 bg-navy-950 px-3 py-5 text-white lg:block" aria-label="Cores rail">
+      <div className="flex flex-col items-center gap-3">
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.label}
+              href={item.href}
+              title={item.label}
+              className="group flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 bg-white/[0.06] text-navy-100 transition hover:border-gold-300/60 hover:bg-white/[0.12] hover:text-white"
+            >
+              <Icon className="h-5 w-5" />
+              <span className="sr-only">{item.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+function CoreChip({
+  label,
+  detail,
+  tone,
+  icon: Icon,
+  kind,
+  onClick,
+  disabled = false,
+}: {
+  label: string;
+  detail: string;
+  tone: string;
+  icon: ComponentType<{ className?: string }>;
+  kind: V7CoreDrawerKind;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  const toneClass =
+    tone === 'user'
+      ? 'border-blue-200 bg-blue-50 text-blue-900'
+      : tone === 'situation'
+        ? 'border-purple-200 bg-purple-50 text-purple-900'
+        : 'border-emerald-200 bg-emerald-50 text-emerald-900';
+
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      data-testid={`v7-core-chip-${kind}`}
+      onClick={onClick}
+      className={`inline-flex min-h-10 max-w-full items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${toneClass} disabled:opacity-60`}
+      title={`${label}: ${detail}`}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="truncate">{label}</span>
+      <span className="hidden text-[10px] uppercase opacity-75 sm:inline">{detail}</span>
+    </button>
+  );
+}
+
+function ToolCard({
+  label,
+  detail,
+  href,
+  icon: Icon,
+  disabled = false,
+}: {
+  label: string;
+  detail: string;
+  href: string;
+  icon: ComponentType<{ className?: string }>;
+  disabled?: boolean;
+}) {
+  const className = 'group min-h-[104px] rounded-lg border border-slate-200 bg-white p-4 text-left transition hover:border-navy-300 hover:bg-slate-50';
+  const content = (
+    <>
+      <span className="flex h-9 w-9 items-center justify-center rounded-md bg-navy-50 text-navy-900 group-hover:bg-navy-950 group-hover:text-white">
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="mt-3 block text-sm font-semibold text-navy-950">{label}</span>
+      <span className="mt-1 block text-xs leading-5 text-slate-700">{disabled ? 'Open a Situation to use this skill.' : detail}</span>
+    </>
+  );
+
+  if (disabled) {
+    return (
+      <div className={`${className} opacity-65`} aria-disabled="true">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Link href={href} className={className}>
+      {content}
+    </Link>
+  );
+}
+
+function Panel({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="mb-4 rounded-lg border border-slate-200 bg-white/70 p-4">
+      <h2 className="text-sm font-semibold text-navy-950">{title}</h2>
+      <div className="mt-3">{children}</div>
+    </section>
+  );
+}
+
+function buildGaps({
+  active,
+  sourceCount,
+  documentCount,
+  graphCount,
+}: {
+  active: boolean;
+  sourceCount: number;
+  documentCount: number;
+  graphCount: number;
+}) {
+  if (!active) {
+    return [
+      {
+        label: 'No active Situation',
+        detail: 'Open a demo or create a new Situation before running skills.',
+        href: '/app/workbench',
+      },
+    ];
+  }
+
+  const gaps = [
+    sourceCount === 0
+      ? {
+          label: 'Source basis is thin',
+          detail: 'Add receipts or run Research & Sources before final outputs.',
+          href: '/app/cores?panel=sources',
+        }
+      : null,
+    graphCount === 0
+      ? {
+          label: 'Stakeholder map is empty',
+          detail: 'Run Stakeholder map to stage actors, interests, and leverage.',
+          href: '/app/ask?skill=actors-stakeholders',
+        }
+      : null,
+    documentCount === 0
+      ? {
+          label: 'No uploaded documents',
+          detail: 'Attach source files when the analysis depends on internal documents.',
+          href: '/app/cores?panel=sources',
+        }
+      : null,
+  ].filter(Boolean) as Array<{ label: string; detail: string; href: string }>;
+
+  return gaps.length
+    ? gaps.slice(0, 3)
+    : [
+        {
+          label: "Looks complete. Try a stress test.",
+          detail: "Run Devil's advocate before drafting or exporting.",
+          href: '/app/ask?skill=research-sources&query=Stress-test%20the%20current%20assessment.',
+        },
+      ];
+}
