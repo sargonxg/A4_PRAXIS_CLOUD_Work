@@ -25,8 +25,8 @@ Everything in this doc serves that sentence. If a screen, a button, or a link do
 When a first-time user lands on the authenticated app, they should grasp this without reading any copy:
 
 1. **There's a bar.** I type my question here.
-2. **Above the bar there are some chips.** Those are the cores — they tell PRAXIS who I am and what case I'm working on.
-3. **Below the bar there are a few tools.** I can pick one to constrain the answer, or let PRAXIS pick.
+2. **Above the bar there are some chips.** Those are the cores — they tell PRAXIS who I am, what situations are attached, and which methodology/source/rubric should frame the answer.
+3. **Below the bar there are a few tools.** They wake up once at least one Situation Core is picked or created.
 4. **To the right there's a small panel.** It tells me what's missing, what's next.
 5. **At the top left there's a workspace switcher.** That's where I jump to a different case, output, or settings.
 
@@ -42,31 +42,31 @@ Five things. No tabs. No archive sidebar. No floating button. No tool grid deman
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  [PRAXIS]  ▾ My workspace · Syria 2026          ⌘K   👤 GC          │  ← header (56px)
+│  [PRAXIS]  ▾ My workspace · No Situation selected  ⌘K   👤 GC       │  ← header (56px)
 ├────┬─────────────────────────────────────────────────────────────────┤
 │    │                                                                 │
-│ Q  │   Welcome back, Giulio.                                         │
-│ ★  │   You're working on Syria 2026 transition.                      │
+│ Q  │   My workspace                                                  │
+│ ★  │   Pick or create a Situation Core to start.                     │
 │ S  │                                                                 │
 │ R  │   ┌───────────────────────────────────────────────────────┐     │
-│ O  │   │ 🟦 You · 🟪 Syria 2026 · + attach core               │     │  ← cores strip
+│ O  │   │ 🟦 User Core · + attach core                         │     │  ← empty cores strip
 │ A  │   │                                                       │     │
-│    │   │  Ask PRAXIS about Syria 2026…                         │     │  ← ask bar
+│    │   │  Pick or create a Situation Core to start             │     │  ← disabled ask bar
 │    │   │                                                       │     │  (multiline,
-│    │   │                                              [⏎ Ask] │     │   focused on
+│    │   │                                      [Ask disabled]  │     │   visible on
 │    │   └───────────────────────────────────────────────────────┘     │   first paint)
-│    │   Quick · Deep · Plan · Memo · Brief                            │  ← mode strip
+│    │   Quick · Deep · Plan · Memo · Brief                            │  ← disabled mode strip
 │    │                                                                 │
-│    │   Or start with a tool:                                         │
-│    │   [Stakeholder map] [Timeline] [Devil's advocate] [Find gaps]   │  ← 4 tools
+│    │   Available after you attach a Situation:                       │
+│    │   [Stakeholder map] [Timeline] [Devil's advocate] [Find gaps]   │  ← 4 grey tools
 │    │                                                                 │
 │    │   ─────────────────────────────────────────────────────         │
 │    │                                                                 │
 │    │   What's missing right now                  Recent              │
 │    │   ┌──────────────────────────┐    ┌────────────────────┐        │
-│    │   │ 3 claims have no source  │    │ Sat: Memo for OCHA │        │
-│    │   │ Stakeholder map empty    │    │ Fri: ACH on…      │        │
-│    │   │ Timeline gap in Q2 2024  │    │ Thu: Source…       │        │
+│    │   │ Attach a Situation Core  │    │ No recent work yet │        │
+│    │   │ to compute gaps.         │    │                    │        │
+│    │   │                          │    │                    │        │
 │    │   └──────────────────────────┘    └────────────────────┘        │
 │    │                                                                 │
 └────┴─────────────────────────────────────────────────────────────────┘
@@ -77,28 +77,30 @@ The left rail is the **cores rail**: 5 icons stacked (Q=Ask threads, ★=Cores, 
 ### Header
 
 - Left: logo. Click → `/app/home`.
-- Center: workspace + active situation pill. Click → opens situation switcher (a Radix `Combobox` with search). The pill always shows the active Situation.
+- Center: workspace + active situation pill. Click → opens the first-class core picker (a Radix `Combobox` with search and examples). The pill defaults to **"No Situation selected"** until the user attaches at least one Situation Core.
 - Right: ⌘K palette trigger, user menu (Profile, Settings, Sign out).
 - No "Ask PRAXIS" button in the header. The Ask bar is the page.
 
 ### Cores strip (above the Ask bar)
 
-A horizontal row of chips. Always shows:
+A horizontal row of reorderable chips. Always shows:
 - **User Core** chip (blue, with the user's avatar and short name)
-- **Active Situation Core** chip (purple, with the situation name)
 
-Plus optional attached cores the user has dragged from the cores rail or added via "+ attach core".
+Everything else is optional and explicit. The user can attach zero, one, or many Situation Cores to an Ask thread, plus methodology, team-rubric, source, document, graph, and output cores. The "+ attach core" affordance is prominent on the homepage, not hidden behind a dropdown.
+
+When more than one Situation Core is attached, a small warning appears under the strip: **"Two Situations attached — answers will reference both."** The warning does not block submission.
 
 Each chip:
 - Click → opens that core's quick-edit popover (read summary + jump to full editor).
 - Hover → tooltip showing what fields the core contributes to the calibration.
-- × on hover → detach (User and Situation are detachable temporarily but auto-reattach on next thread).
+- × on hover → detach (User Core cannot be removed; all other cores can).
 - Drag handle → re-order.
 
 ### Ask bar
 
 - One multiline `textarea`, sized to grow as the user types (max 6 lines before scroll).
-- Placeholder: `Ask PRAXIS about {Situation}…` — interpolated.
+- Empty homepage placeholder: `Pick or create a Situation Core to start`.
+- Active placeholder: `Ask PRAXIS about a Situation...` or `Ask PRAXIS across {n} attached cores...`.
 - Submit: `Cmd/Ctrl + Enter` or the `[⏎ Ask]` button. `Enter` alone inserts a newline.
 - Below: the **mode strip** (Quick · Deep · Plan · Memo · Brief). Default `Quick`. The selected mode is highlighted with the existing diplomatic-blue accent.
 - Slash commands: typing `/` opens the **skill picker** (filterable list of the 57 skills, grouped by category).
@@ -116,6 +118,8 @@ These four are not the only tools — they're the most-asked starts. A small "se
 
 The four can be reordered per User Core preference (later loop). For loop 1: hardcode the four above.
 
+In the empty state all four render as greyed-out cards with the same disabled reason: "Attach a Situation Core first." They become active as soon as at least one compatible Situation Core is attached.
+
 ### What's missing + Recent (right column on home, two stacked cards)
 
 - **What's missing**: top 3 gaps from the situation, each clickable to jump to the relevant Situation panel pre-scrolled. Pulled from existing `chapters/desk/` "next actions" logic.
@@ -123,15 +127,33 @@ The four can be reordered per User Core preference (later loop). For loop 1: har
 
 ### Empty states
 
-- **No active Situation** → the welcome line says "You haven't opened a Situation yet." The Ask bar is greyed out. Tools strip becomes "Open a Situation to use these tools." A primary CTA "Open demo Situation (Syria)" + secondary "Create new Situation" sit beneath the welcome.
-- **No cores attached besides defaults** → the cores strip shows a faint "+ attach a core" placeholder.
+- **No active Situation** → the homepage stays generic. It shows the workspace name, only the User Core chip, disabled Ask copy **"Pick or create a Situation Core to start"**, and four greyed-out tools. Primary CTA: "Browse example Situation Cores" → `/app/cores?examples=1`. Secondary: "Create new Situation".
+- **No cores attached besides User Core** → the cores strip shows a prominent "+ attach core" button.
 - **No "what's missing"** → the card collapses to a one-liner: "Looks complete. Try a stress test in Devil's advocate."
+
+### Seeded example Situation Cores
+
+Syria is not the product and never the default empty state. It is one seed in the shared example library at `/app/cores?examples=1`.
+
+Codex should keep 6-10 diverse seeds covering all 9 ontologies. Required seeds include:
+- Syria 2026 transition
+- US housing access California
+- Workplace mediation
+- Sanctions-evasion case
+- Humanitarian access NES
+- Governance transition Tunisia
+- Narrative laundering case
+- Treaty interpretation case
+
+Methodology and team-rubric cores are also first-class examples in the same picker, so the user can attach a Situation plus a methodology/rubric/source core before asking.
 
 ### Loop 1 acceptance
 
 - [ ] `/app/home` renders the layout above behind the v7 flag.
 - [ ] Ask bar focused on first paint, ⌘K palette works.
-- [ ] User Core and Situation Core chips render with real data from existing endpoints (synthesize cores from existing user profile + situation row for now; full cores schema lands in Loop 4).
+- [ ] Empty state renders generic workspace name, User Core only, disabled Ask copy, and four greyed-out tools.
+- [ ] User Core renders with real data; Situation Core chips render only after the user attaches or creates one (synthesize cores from existing user profile + situation row for now; full cores schema lands in Loop 4).
+- [ ] `/app/cores?examples=1` exposes 6-10 seeded examples, including methodology and rubric cores.
 - [ ] Submitting the Ask bar opens `/app/ask/{id}` and streams a stub response with a "you asked about X" reply (real routing in Loop 2).
 - [ ] Four tools strip cards trigger their respective existing flows (route to the existing `/app/tools/...` URLs is acceptable for loop 1).
 - [ ] Mobile view at 380px: header collapses to hamburger + situation pill + ⌘K, cores rail moves to bottom nav, tools strip becomes a horizontally scrollable row.
@@ -207,19 +229,24 @@ The four can be reordered per User Core preference (later loop). For loop 1: har
 1. **Hero** — full viewport. One headline, one sub-line, one CTA, one micro-demo loop.
    - Headline: **"Ask PRAXIS about a Situation."**
    - Sub-line: *"A workbench for analysts of conflicts, policy, and complex human friction. Cited, decision-grade work in five minutes, not five days."*
-   - CTA: `[ Try the demo ]` (opens `/app/home` with a seeded Syria Situation in guest mode)
+   - CTA: `[ Try the demo ]` (opens `/app/cores?examples=1` so the user picks a seeded Situation Core)
    - Secondary: `Sign in` (small, top-right of the section)
-   - Right side: a 12-second screen capture loop of someone typing "build me a stakeholder map for Syria" and getting an answer with citations. Use the existing `live-platform-preview.tsx` style as a starting point but compress.
+   - Right side: a 12-second screen capture loop rotating through three seeded examples with the generic prompt frame "Ask PRAXIS about a Situation." Use the existing `live-platform-preview.tsx` style as a starting point but compress.
 
 2. **How it works** — 5 panels in a row, with one icon each.
    `Open a Situation` → `Ask PRAXIS` → `Build evidence` → `Model the conflict` → `Produce the output`
    Each panel: 60-word description, one screenshot, an outline-only diagram. Reuse `how-it-works.tsx`.
 
-3. **What you can do** — 3 example cases in a gallery.
-   - Syria 2026 transition (default demo)
+3. **What you can do** — 6-10 example cores in a compact gallery, covering all 9 ontologies.
+   - Syria 2026 transition
    - US housing access California
    - Workplace mediation case
-   Each opens a guest-mode session with the Situation pre-loaded. Reuse `example-cases-gallery.tsx`, `example-cases-modal.tsx`. Drop the rest of the example case bloat.
+   - Sanctions-evasion case
+   - Humanitarian access NES
+   - Governance transition Tunisia
+   - Narrative laundering case
+   - Treaty interpretation case
+   Each opens `/app/cores?examples=1` with that example highlighted. Reuse `example-cases-gallery.tsx`, `example-cases-modal.tsx`. Drop the rest of the example case bloat.
 
 4. **Trust & evidence** — provenance, audit posture, owner scoping, evidence layers. One panel, four small claims with proof links:
    - Every claim cites a source.
@@ -248,7 +275,7 @@ Anything in `_archive/` that hasn't been resurrected stays archived.
 ### Loop 3 acceptance
 
 - [ ] Landing renders five sections in order, no others.
-- [ ] Hero CTA opens `/app/home` with a seeded Syria Situation in guest mode (no auth required for first 5 minutes; soft sign-in prompt after).
+- [ ] Hero CTA opens `/app/cores?examples=1`; choosing any seed opens `/app/home` with that Situation Core attached in guest mode (no auth required for first 5 minutes; soft sign-in prompt after).
 - [ ] Lighthouse perf ≥ 85, LCP < 2.5s, CLS < 0.05.
 - [ ] All retired components moved to `_archive/`, not deleted.
 - [ ] `audit:landing-bundle` and `audit:legal-pages-present` green.
