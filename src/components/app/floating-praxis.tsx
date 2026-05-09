@@ -256,6 +256,7 @@ export function FloatingPraxis() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
+  const [hasBlockingDialog, setHasBlockingDialog] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -322,6 +323,17 @@ export function FloatingPraxis() {
       window.removeEventListener('keydown', keyHandler);
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const updateBlockingDialog = () => {
+      setHasBlockingDialog(Boolean(document.querySelector('[role="dialog"][aria-modal="true"], [data-testid="v7-new-situation-popover"]')));
+    };
+    updateBlockingDialog();
+    const observer = new MutationObserver(updateBlockingDialog);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
 
   const sendWithText = useCallback(
     async (text: string) => {
@@ -480,7 +492,7 @@ export function FloatingPraxis() {
     <>
       {/* Floating Action Button */}
       <AnimatePresence>
-        {!isOpen && (
+        {!isOpen && !hasBlockingDialog && (
           <motion.button
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

@@ -137,7 +137,7 @@ or a verification finding forces a regression fix first.
    - Timeline and Events.
    - Graph and Ontology.
    - Hypotheses and Gaps.
-   - Current status: `/app/cores` now renders `V7CoresSurface` behind the v7 flag. It wraps the current workbench as the live source of truth, explains the seven-chapter spine in plain language, exposes only My Core and Case Core as first-class user concepts, calls the owner-scoped `/api/backend/cores` read path, and links to existing Source, Document, Graph, Ontology, Analyst Skills, ACH, Boardroom, and Settings panels. User Core inline hydration and autosave are implemented through `GET/PATCH /cores/me`; Situation Core mutation/create/fork/share remains pending.
+   - Current status: `/app/cores` now renders `V7CoresSurface` behind the v7 flag. It wraps the current workbench as the live source of truth, explains the seven-chapter spine in plain language, exposes only My Core and Case Core as first-class user concepts, calls the owner-scoped `/api/backend/cores` read path, and links to existing Source, Document, Graph, Ontology, Analyst Skills, ACH, Boardroom, and Settings panels. User Core inline hydration and autosave are implemented through `GET/PATCH /cores/me`; Situation Core frame autosave, inline creation, fork, share grants, and Ask attachment picker are implemented and covered by focused audits. Full `/app/cores/me`, production backfill proof, and drag-and-drop rail polish remain.
 
 2. Source + Document Core panel.
    - Library with source receipts.
@@ -259,7 +259,7 @@ user-visible behavior all work.
 4. Brief 03 - Context Cores and dynamic ontologies.
    - [x] Eight core kinds exist in TS/Pydantic contracts.
    - [x] Situation Core can describe local ontology extensions without adding primitives.
-   - [ ] Core inheritance and attached-core resolution are implemented and audited. Current status: attached-core resolution, owner-scoped Core list/detail reads, and User Core inline hydrate/update via `GET/PATCH /cores/me` are implemented; Situation Core create/fork/share/grants remain pending.
+   - [x] Core inheritance and attached-core resolution are implemented and audited. Current status: attached-core resolution, owner-scoped Core list/detail reads, User Core inline hydrate/update via `GET/PATCH /cores/me`, Situation Core create/fork/share grants, and Ask attachment picker are implemented; production backfill proof and drag-and-drop polish remain follow-ups.
    - [ ] Dynamic ontology binding is implemented as per-situation overlays, not primitive drift.
    - [ ] Cognee remains optional and never auto-promotes low-confidence memory into canonical ACO rows.
    - [ ] Ask PRAXIS retrieval uses User Core + Situation Core by default and can attach Source/Document/Graph/Output cores. Current status: backend core resolution now materializes implicit and explicit core attachments into an Ask `coreContext` snapshot, and direct-answer execution consumes it behind `PRAXIS_V7_ASK_AI_ENABLED`; Source/Document/Graph retrieval and Cognee recall still need to be added.

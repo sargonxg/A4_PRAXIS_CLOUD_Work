@@ -94,16 +94,51 @@ def upgrade() -> None:
         """
     )
 
-    for table in CORE_TABLES:
-        op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
-        op.execute(f"DROP POLICY IF EXISTS {table}_tenant_isolation ON {table}")
-        op.execute(
-            f"""
-            CREATE POLICY {table}_tenant_isolation ON {table}
-              USING (owner_uid = current_tenant() OR owner_uid = 'platform')
-              WITH CHECK (owner_uid = current_tenant() OR owner_uid = 'platform')
-            """
-        )
+    op.execute("ALTER TABLE cores ENABLE ROW LEVEL SECURITY")
+    op.execute("DROP POLICY IF EXISTS cores_tenant_isolation ON cores")
+    op.execute(
+        """
+        CREATE POLICY cores_tenant_isolation ON cores
+          USING (
+            owner_uid = current_tenant()
+            OR owner_uid = 'platform'
+            OR EXISTS (
+              SELECT 1
+              FROM core_grants
+              WHERE core_grants.core_id = cores.id
+                AND core_grants.revoked_at IS NULL
+                AND (
+                  (core_grants.principal_kind = 'user' AND core_grants.principal_id = current_tenant())
+                  OR (core_grants.principal_kind = 'public')
+                )
+            )
+          )
+          WITH CHECK (owner_uid = current_tenant() OR owner_uid = 'platform')
+        """
+    )
+
+    op.execute("ALTER TABLE core_grants ENABLE ROW LEVEL SECURITY")
+    op.execute("DROP POLICY IF EXISTS core_grants_tenant_isolation ON core_grants")
+    op.execute(
+        """
+        CREATE POLICY core_grants_tenant_isolation ON core_grants
+          USING (
+            owner_uid = current_tenant()
+            OR (principal_kind = 'user' AND principal_id = current_tenant())
+          )
+          WITH CHECK (owner_uid = current_tenant())
+        """
+    )
+
+    op.execute("ALTER TABLE core_audit ENABLE ROW LEVEL SECURITY")
+    op.execute("DROP POLICY IF EXISTS core_audit_tenant_isolation ON core_audit")
+    op.execute(
+        """
+        CREATE POLICY core_audit_tenant_isolation ON core_audit
+          USING (owner_uid = current_tenant() OR owner_uid = 'platform')
+          WITH CHECK (owner_uid = current_tenant() OR owner_uid = 'platform')
+        """
+    )
 
 
 def downgrade() -> None:

@@ -25,10 +25,13 @@ const ALLOWED_BACKEND_PATHS: Array<{ method: string; pattern: RegExp }> = [
   { method: 'GET', pattern: /^ask\/threads$/ },
   { method: 'POST', pattern: /^ask\/run$/ },
   { method: 'GET', pattern: /^cores$/ },
+  { method: 'POST', pattern: /^cores$/ },
   { method: 'GET', pattern: /^cores\/me$/ },
   { method: 'PATCH', pattern: /^cores\/me$/ },
   { method: 'GET', pattern: /^cores\/[^/]+$/ },
   { method: 'PATCH', pattern: /^cores\/[^/]+$/ },
+  { method: 'POST', pattern: /^cores\/[^/]+\/(fork|grants)$/ },
+  { method: 'DELETE', pattern: /^cores\/[^/]+\/grants\/[^/]+$/ },
   { method: 'GET', pattern: /^notifications(\/stream|\/registry|\/preferences)?$/ },
   { method: 'PUT', pattern: /^notifications\/preferences$/ },
   { method: 'POST', pattern: /^notifications\/(test|dispatch|[^/]+\/signal)$/ },
@@ -122,6 +125,27 @@ async function localBackendFallback(req: Request, path: string): Promise<Record<
       note: 'Python backend is not configured in this local session; static Context Core cards remain visible.',
     };
   }
+  if (normalizedMethod === 'POST' && path === 'cores') {
+    let requestBody: Record<string, unknown> = {};
+    try {
+      requestBody = await req.clone().json();
+    } catch {
+      requestBody = {};
+    }
+    return {
+      ok: true,
+      status: 'backend_unconfigured',
+      core: {
+        id: `local-core-${Date.now()}`,
+        kind: typeof requestBody.kind === 'string' ? requestBody.kind : 'situation',
+        name: typeof requestBody.name === 'string' ? requestBody.name : 'New Situation',
+        description: typeof requestBody.description === 'string' ? requestBody.description : null,
+        parentCoreId: typeof requestBody.parentCoreId === 'string' ? requestBody.parentCoreId : null,
+        metadata: typeof requestBody.metadata === 'object' && requestBody.metadata !== null ? requestBody.metadata : {},
+      },
+      note: 'Core created locally because the Python backend is not configured.',
+    };
+  }
   if (normalizedMethod === 'GET' && path === 'cores/me') {
     return {
       core: {
@@ -175,6 +199,49 @@ async function localBackendFallback(req: Request, path: string): Promise<Record<
       },
       note: 'Core edit accepted locally because the Python backend is not configured.',
     };
+  }
+  if (normalizedMethod === 'POST' && /^cores\/[^/]+\/fork$/.test(path)) {
+    let requestBody: Record<string, unknown> = {};
+    try {
+      requestBody = await req.clone().json();
+    } catch {
+      requestBody = {};
+    }
+    return {
+      ok: true,
+      status: 'backend_unconfigured',
+      core: {
+        id: `local-fork-${Date.now()}`,
+        kind: 'situation',
+        name: typeof requestBody.name === 'string' ? requestBody.name : 'Forked Situation',
+        parentCoreId: path.split('/')[1],
+        metadata: { inherit: requestBody.inherit ?? {} },
+      },
+      note: 'Core fork created locally because the Python backend is not configured.',
+    };
+  }
+  if (normalizedMethod === 'POST' && /^cores\/[^/]+\/grants$/.test(path)) {
+    let requestBody: Record<string, unknown> = {};
+    try {
+      requestBody = await req.clone().json();
+    } catch {
+      requestBody = {};
+    }
+    return {
+      ok: true,
+      status: 'backend_unconfigured',
+      grant: {
+        id: `local-grant-${Date.now()}`,
+        coreId: path.split('/')[1],
+        principalKind: requestBody.principalKind ?? 'user',
+        principalId: requestBody.principalId ?? 'local@example.com',
+        role: requestBody.role ?? 'viewer',
+      },
+      note: 'Core grant staged locally because the Python backend is not configured.',
+    };
+  }
+  if (normalizedMethod === 'DELETE' && /^cores\/[^/]+\/grants\/[^/]+$/.test(path)) {
+    return { ok: true, status: 'backend_unconfigured' };
   }
   if (normalizedMethod === 'POST' && path === 'ask/run') {
     let requestBody: { mode?: string; skill_id?: string; attached_core_ids?: string[]; situation_id?: string } = {};

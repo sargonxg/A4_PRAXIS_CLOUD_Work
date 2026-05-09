@@ -41,6 +41,7 @@ for (const script of [
   'audit:cores-schema',
   'audit:cores-types-parity',
   'audit:cores-owner-scoping',
+  'audit:cores-grants-coverage',
   'audit:v7-shell-skeleton',
   'audit:v7-cores-surface',
   'audit:v7-cores-api',

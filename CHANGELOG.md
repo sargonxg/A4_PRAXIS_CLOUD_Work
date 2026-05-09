@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- feat(v7): complete Cores Inline create, fork, share, and attach.
+  Case Core drawers now edit and autosave the Situation frame, Home can create
+  a new Situation Core inline, Ask exposes an attach-core picker, and backend
+  Core create/fork/grant/revoke routes are covered by `audit:cores-grants-coverage`.
 - feat(v7): complete the New Face launcher handoff.
   `/app/home` now launches Ask turns at `/app/ask/[threadId]`, exposes a
   working Cmd/Ctrl-K command affordance, and covers the thread handoff in the

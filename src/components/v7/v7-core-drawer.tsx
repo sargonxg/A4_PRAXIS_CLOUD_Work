@@ -14,9 +14,12 @@ import {
   Loader2,
   Plus,
   Save,
+  Share2,
   UserRound,
   X,
 } from 'lucide-react';
+
+import { useSituationStore } from '@/stores/situation-store';
 
 export type V7CoreDrawerKind = 'user' | 'situation';
 
@@ -68,6 +71,17 @@ type UserCoreResponse = {
       };
     } | null;
   } | null;
+};
+type SituationCoreForm = {
+  name: string;
+  what: string;
+  why: string;
+  change: string;
+  question: string;
+  goalsText: string;
+  ontology: string;
+  geography: string;
+  localSubtype: string;
 };
 
 const styleOptions = ['Formal', 'Plain', 'Casual'] as const;
@@ -336,8 +350,155 @@ function SituationCoreDrawerBody({
   setActiveTab: (tab: (typeof situationTabs)[number]) => void;
   situation?: V7CoreDrawerSituation | null;
 }) {
+  const addSituation = useSituationStore((state) => state.addSituation);
+  const updateSituation = useSituationStore((state) => state.updateSituation);
+  const [coreId, setCoreId] = useState(isUuid(situation?.id) ? situation?.id ?? null : null);
+  const [form, setForm] = useState<SituationCoreForm>(() => situationDefaults(situation));
+  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [forkName, setForkName] = useState(`${situation?.name ?? 'New Situation'} fork`);
+  const [principalId, setPrincipalId] = useState('');
+  const [grantRole, setGrantRole] = useState('viewer');
+  const [operationNote, setOperationNote] = useState('');
   const workspaceHref = situation?.id ? `/app/workbench/${situation.id}` : '/app/workbench';
   const tabHref = (tab: string) => (situation?.id ? `/app/workbench/${situation.id}?tab=${tab}` : '/app/workbench');
+
+  useEffect(() => {
+    setCoreId(isUuid(situation?.id) ? situation?.id ?? null : null);
+    setForm(situationDefaults(situation));
+    setForkName(`${situation?.name ?? 'New Situation'} fork`);
+    setOperationNote('');
+  }, [situation]);
+
+  const ensureSituationCore = useCallback(async (nextForm = form): Promise<string> => {
+    if (coreId) return coreId;
+    const response = await fetch('/api/backend/cores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kind: 'situation',
+        name: nextForm.name,
+        description: nextForm.what,
+        metadata: situationPayload(nextForm),
+        ontologyId: nextForm.ontology,
+      }),
+    });
+    if (!response.ok) throw new Error(`create_failed_${response.status}`);
+    const body = await response.json() as { core?: { id?: string } };
+    const id = body.core?.id;
+    if (!id) throw new Error('missing_core_id');
+    setCoreId(id);
+    return id;
+  }, [coreId, form]);
+
+  const saveSituation = useCallback(async (nextForm = form) => {
+    setSaveState('saving');
+    try {
+      const id = await ensureSituationCore(nextForm);
+      const response = await fetch(`/api/backend/cores/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(situationPayload(nextForm)),
+      });
+      if (!response.ok) throw new Error(`save_failed_${response.status}`);
+      if (situation?.id) {
+        updateSituation(situation.id, {
+          name: nextForm.name,
+          region: nextForm.geography,
+          description: nextForm.what,
+          ontologyId: nextForm.ontology as never,
+        });
+      }
+      setSaveState('saved');
+      setOperationNote('Case Core saved.');
+    } catch {
+      setSaveState('error');
+      setOperationNote('Case Core save failed.');
+    }
+  }, [ensureSituationCore, form, situation?.id, updateSituation]);
+
+  useEffect(() => {
+    if (saveState !== 'dirty') return;
+    const timer = window.setTimeout(() => {
+      void saveSituation();
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [saveSituation, saveState]);
+
+  function updateField(field: keyof SituationCoreForm, value: string) {
+    setForm((current) => ({ ...current, [field]: value }));
+    setSaveState('dirty');
+  }
+
+  async function handleFork() {
+    setSaveState('saving');
+    try {
+      const id = await ensureSituationCore();
+      const response = await fetch(`/api/backend/cores/${id}/fork`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: forkName,
+          inherit: {
+            frame: true,
+            methodology: true,
+            ontology: true,
+            sources: true,
+            actors: false,
+            timeline: false,
+            hypotheses: false,
+          },
+        }),
+      });
+      if (!response.ok) throw new Error(`fork_failed_${response.status}`);
+      const body = await response.json() as { core?: { id?: string; name?: string } };
+      const forkedId = body.core?.id ?? `local-fork-${Date.now()}`;
+      addSituation({
+        id: forkedId,
+        name: body.core?.name ?? forkName,
+        type: 'international',
+        description: form.what,
+        region: form.geography,
+        actors: [],
+        userRole: 'analyst',
+        status: 'active',
+        riskScore: 0,
+        glaslStage: null,
+        escalationTrend: 'stable',
+        actorCount: 0,
+        graphEntities: 0,
+        documentCount: 0,
+        sourceUrls: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        ontologyId: form.ontology as never,
+      });
+      setSaveState('saved');
+      setOperationNote('Fork created and set as active.');
+    } catch {
+      setSaveState('error');
+      setOperationNote('Fork failed.');
+    }
+  }
+
+  async function handleShare() {
+    if (!principalId.trim()) return;
+    setSaveState('saving');
+    try {
+      const id = await ensureSituationCore();
+      const response = await fetch(`/api/backend/cores/${id}/grants`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ principalKind: 'user', principalId: principalId.trim(), role: grantRole }),
+      });
+      if (!response.ok) throw new Error(`share_failed_${response.status}`);
+      setSaveState('saved');
+      setOperationNote(`Shared with ${principalId.trim()} as ${grantRole}.`);
+      setPrincipalId('');
+    } catch {
+      setSaveState('error');
+      setOperationNote('Share failed.');
+    }
+  }
 
   return (
     <>
@@ -365,28 +526,23 @@ function SituationCoreDrawerBody({
       <div className="flex-1 overflow-y-auto px-5 py-5">
         {activeTab === 'Frame' && (
           <div className="space-y-4">
-            <ReadonlyFrameField
-              label="What's happening"
-              value={situation ? `${situation.name} is the active case PRAXIS will use for this Ask thread.` : 'No active Situation has been selected yet.'}
-            />
-            <ReadonlyFrameField
-              label="Why it matters"
-              value={situation?.region ?? 'Open or create a Situation so PRAXIS can inherit the policy frame, actors, sources, graph, and outputs.'}
-            />
-            <ReadonlyFrameField
-              label="What would change the assessment"
-              value="Use Ask PRAXIS to surface gaps, then promote confirmed changes into the Case Core."
-            />
-            <ReadonlyFrameField
-              label="Policy question"
-              value="What should be verified, explained, drafted, or handed over next?"
-            />
+            <Field label="Situation name" value={form.name} onChange={(value) => updateField('name', value)} />
+            <TextAreaField label="What's happening" value={form.what} onChange={(value) => updateField('what', value)} />
+            <TextAreaField label="Why it matters" value={form.why} onChange={(value) => updateField('why', value)} />
+            <TextAreaField label="What would change the assessment" value={form.change} onChange={(value) => updateField('change', value)} />
+            <TextAreaField label="Policy question" value={form.question} onChange={(value) => updateField('question', value)} />
+            <TextAreaField label="Goals" value={form.goalsText} onChange={(value) => updateField('goalsText', value)} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Ontology" value={form.ontology} onChange={(value) => updateField('ontology', value)} />
+              <Field label="Geography" value={form.geography} onChange={(value) => updateField('geography', value)} />
+            </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-semibold uppercase text-slate-700">Ontology</p>
               <p className="mt-2 text-sm font-semibold text-navy-950">Conflict + local Situation extensions</p>
               <p className="mt-1 text-xs leading-5 text-slate-700">
                 ACO primitives remain locked. Local subtypes are scoped to this Case Core.
               </p>
+              <Field label="Local subtype" value={form.localSubtype} placeholder="e.g. ClusterLead under Actor" onChange={(value) => updateField('localSubtype', value)} />
             </div>
           </div>
         )}
@@ -438,7 +594,46 @@ function SituationCoreDrawerBody({
         )}
       </div>
 
-      <DrawerFooter saveState="saved">
+      <div className="border-t border-slate-200 px-5 py-4">
+        <div className="grid gap-3 lg:grid-cols-2">
+          <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <p className="text-xs font-semibold uppercase text-slate-700">Fork Case Core</p>
+            <Field label="New name" value={forkName} onChange={setForkName} />
+            <button
+              type="button"
+              onClick={() => void handleFork()}
+              className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-navy-800 hover:border-navy-300"
+            >
+              <GitBranch className="h-4 w-4" />
+              Fork Case Core
+            </button>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <p className="text-xs font-semibold uppercase text-slate-700">Share Case Core</p>
+            <Field label="User email or uid" value={principalId} placeholder="analyst@example.org" onChange={setPrincipalId} />
+            <select
+              value={grantRole}
+              onChange={(event) => setGrantRole(event.target.value)}
+              className="mt-2 min-h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-navy-950"
+            >
+              <option value="viewer">viewer</option>
+              <option value="editor">editor</option>
+              <option value="commenter">commenter</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => void handleShare()}
+              className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-navy-800 hover:border-navy-300"
+            >
+              <Share2 className="h-4 w-4" />
+              Share
+            </button>
+          </div>
+        </div>
+        {operationNote && <p className="mt-3 text-xs font-semibold text-slate-700">{operationNote}</p>}
+      </div>
+
+      <DrawerFooter saveState={saveState}>
         <Link
           href={workspaceHref}
           className="inline-flex min-h-10 items-center gap-2 rounded-md bg-navy-950 px-3 py-2 text-sm font-semibold text-white hover:bg-navy-800"
@@ -446,12 +641,14 @@ function SituationCoreDrawerBody({
           Open in workspace
           <ArrowRight className="h-4 w-4" />
         </Link>
-        <Link
-          href="/app/situations/new"
+        <button
+          type="button"
+          onClick={() => void saveSituation()}
           className="inline-flex min-h-10 items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-navy-800 hover:border-navy-300"
         >
-          Fork / new Case
-        </Link>
+          <Save className="h-4 w-4" />
+          Save Case Core
+        </button>
       </DrawerFooter>
     </>
   );
@@ -498,6 +695,31 @@ function SelectField({ label, value, onChange }: { label: string; value: string;
         <option value="gemini-3-flash">gemini-3-flash</option>
         <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
       </select>
+    </label>
+  );
+}
+
+function TextAreaField({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-xs font-semibold uppercase text-slate-700">{label}</span>
+      <textarea
+        value={value}
+        placeholder={placeholder}
+        rows={3}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-1 min-h-24 w-full resize-y rounded-md border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-navy-950 outline-none placeholder:text-slate-400 focus:border-navy-400"
+      />
     </label>
   );
 }
@@ -591,17 +813,6 @@ function CoreListRow({ label, detail }: { label: string; detail: string }) {
   );
 }
 
-function ReadonlyFrameField({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-xs font-semibold uppercase text-slate-700">{label}</p>
-      <p className="mt-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-sm leading-6 text-navy-950">
-        {value}
-      </p>
-    </div>
-  );
-}
-
 function ThinTab({
   icon: Icon,
   title,
@@ -642,4 +853,44 @@ function stringValue(...values: unknown[]): string {
     if (typeof value === 'number' && Number.isFinite(value)) return String(value);
   }
   return '';
+}
+
+function isUuid(value?: string | null): value is string {
+  return Boolean(value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value));
+}
+
+function situationDefaults(situation?: V7CoreDrawerSituation | null): SituationCoreForm {
+  return {
+    name: situation?.name ?? 'New Situation',
+    what: situation ? `${situation.name} is the active case PRAXIS will use for this Ask thread.` : '',
+    why: situation?.region ?? 'Open or create a Situation so PRAXIS can inherit the policy frame, actors, sources, graph, and outputs.',
+    change: 'A major shift in actors, access, facts, or source confidence would change the assessment.',
+    question: 'What should be verified, explained, drafted, or handed over next?',
+    goalsText: 'Brief the principal\nMap stakeholders\nIdentify source gaps',
+    ontology: 'conflict',
+    geography: situation?.region ?? '',
+    localSubtype: '',
+  };
+}
+
+function situationPayload(form: SituationCoreForm) {
+  return {
+    frame: {
+      what_is_happening: form.what,
+      why_does_it_matter: form.why,
+      what_would_change_assessment: form.change,
+      policy_question: form.question,
+    },
+    goals: form.goalsText.split('\n').map((goal) => goal.trim()).filter(Boolean),
+    geography: {
+      regions: form.geography.split(',').map((region) => region.trim()).filter(Boolean),
+      iso_codes: [],
+    },
+    ontology_id: form.ontology,
+    ontology_version: 'v7-local',
+    local_ontology_extensions: {
+      primitive_subtypes: form.localSubtype ? { Actor: [form.localSubtype] } : {},
+      relations: [],
+    },
+  };
 }

@@ -80,8 +80,13 @@ export function V7HomeSurface() {
   const { user } = useAuth();
   const situations = useSituationStore((state) => state.situations);
   const activeSituation = useSituationStore((state) => state.activeSituation);
+  const addSituation = useSituationStore((state) => state.addSituation);
   const [query, setQuery] = useState('');
   const [mode, setMode] = useState<(typeof modeOptions)[number]>('Quick');
+  const [newSituationOpen, setNewSituationOpen] = useState(false);
+  const [newSituationName, setNewSituationName] = useState('');
+  const [newSituationOntology, setNewSituationOntology] = useState('conflict');
+  const [newSituationNote, setNewSituationNote] = useState('');
   const active = activeSituation ?? situations[0] ?? (user?.isDemo ? demoSituationFallback : null);
   const [openCore, setOpenCore] = useState<V7CoreDrawerKind | null>(null);
   const activeCaseId = active?.id;
@@ -145,6 +150,64 @@ export function V7HomeSurface() {
     inputRef.current?.focus();
   }
 
+  async function createSituationCore() {
+    const name = newSituationName.trim();
+    if (!name) return;
+    setNewSituationNote('Creating Situation Core...');
+    try {
+      const response = await fetch('/api/backend/cores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'situation',
+          name,
+          description: 'Created from the v7 Home inline Situation picker.',
+          ontologyId: newSituationOntology,
+          metadata: {
+            frame: {
+              what_is_happening: '',
+              why_does_it_matter: '',
+              what_would_change_assessment: '',
+              policy_question: '',
+            },
+            goals: [],
+            ontology_id: newSituationOntology,
+            createdFrom: 'v7.home.inline_new_situation',
+          },
+        }),
+      });
+      if (!response.ok) throw new Error(`create_failed_${response.status}`);
+      const body = await response.json() as { core?: { id?: string; name?: string } };
+      const id = body.core?.id ?? `local-situation-${Date.now()}`;
+      addSituation({
+        id,
+        name: body.core?.name ?? name,
+        type: 'international',
+        description: '',
+        region: 'Frame this Situation',
+        actors: [],
+        userRole: 'analyst',
+        status: 'active',
+        riskScore: 0,
+        glaslStage: null,
+        escalationTrend: 'stable',
+        actorCount: 0,
+        graphEntities: 0,
+        documentCount: 0,
+        sourceUrls: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        ontologyId: newSituationOntology as never,
+      });
+      setNewSituationOpen(false);
+      setNewSituationName('');
+      setNewSituationNote('Created and attached.');
+      setOpenCore('situation');
+    } catch {
+      setNewSituationNote('Could not create the Situation Core.');
+    }
+  }
+
   return (
     <div className="space-y-5" data-testid="v7-home-surface">
       <section className="overflow-hidden rounded-lg border border-navy-200 bg-white shadow-sm shadow-navy-950/5">
@@ -161,6 +224,14 @@ export function V7HomeSurface() {
             >
               <span className="truncate">My workspace · {activeCaseName}</span>
               <ChevronDown className="h-4 w-4 shrink-0 text-slate-600" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setNewSituationOpen(true)}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-navy-900 hover:border-navy-300"
+            >
+              <Plus className="h-4 w-4" />
+              New Situation
             </button>
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
               <button
@@ -252,9 +323,9 @@ export function V7HomeSurface() {
                   <Link href="/login?mode=demo&example=syria-2026" className="inline-flex min-h-11 items-center justify-center rounded-md bg-navy-950 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800">
                     Open demo Situation
                   </Link>
-                  <Link href="/app/situations/new" className="inline-flex min-h-11 items-center justify-center rounded-md border border-slate-200 px-4 py-2 text-sm font-semibold text-navy-800 hover:border-navy-300">
+                  <button type="button" onClick={() => setNewSituationOpen(true)} className="inline-flex min-h-11 items-center justify-center rounded-md border border-slate-200 px-4 py-2 text-sm font-semibold text-navy-800 hover:border-navy-300">
                     Create new Situation
-                  </Link>
+                  </button>
                 </div>
               )}
 
@@ -322,6 +393,57 @@ export function V7HomeSurface() {
           </div>
         </div>
       </section>
+      {newSituationOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/35 p-4" data-testid="v7-new-situation-popover">
+          <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-2xl shadow-navy-950/20">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase text-gold-700">New Situation</p>
+                <h2 className="mt-1 text-lg font-semibold text-navy-950">Create a Case Core</h2>
+              </div>
+              <button type="button" onClick={() => setNewSituationOpen(false)} className="rounded-md border border-slate-200 px-2 py-1 text-sm font-semibold text-slate-700">
+                Close
+              </button>
+            </div>
+            <label className="mt-4 block">
+              <span className="text-xs font-semibold uppercase text-slate-700">Name</span>
+              <input
+                value={newSituationName}
+                onChange={(event) => setNewSituationName(event.target.value)}
+                className="mt-1 min-h-11 w-full rounded-md border border-slate-200 px-3 text-sm text-navy-950 outline-none focus:border-navy-400"
+                placeholder="e.g. Red Sea shipping risk"
+              />
+            </label>
+            <label className="mt-3 block">
+              <span className="text-xs font-semibold uppercase text-slate-700">Suggested ontology</span>
+              <select
+                value={newSituationOntology}
+                onChange={(event) => setNewSituationOntology(event.target.value)}
+                className="mt-1 min-h-11 w-full rounded-md border border-slate-200 px-3 text-sm font-semibold text-navy-950 outline-none focus:border-navy-400"
+              >
+                <option value="conflict">Conflict</option>
+                <option value="mediation">Mediation</option>
+                <option value="governance">Governance</option>
+                <option value="narrative">Narrative</option>
+                <option value="humanitarian">Humanitarian</option>
+              </select>
+            </label>
+            <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+              <p className="text-sm font-semibold text-navy-950">Start from a blank frame</p>
+              <p className="mt-1 text-xs leading-5 text-slate-700">The drawer opens immediately after creation so you can fill the four-field frame inline.</p>
+            </div>
+            {newSituationNote && <p className="mt-3 text-xs font-semibold text-slate-700">{newSituationNote}</p>}
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={() => setNewSituationOpen(false)} className="min-h-10 rounded-md border border-slate-200 px-3 text-sm font-semibold text-navy-800">
+                Cancel
+              </button>
+              <button type="button" onClick={() => void createSituationCore()} disabled={!newSituationName.trim()} className="min-h-10 rounded-md bg-navy-950 px-3 text-sm font-semibold text-white disabled:bg-slate-300">
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <V7CoreDrawer
         open={openCore !== null}
         kind={openCore ?? 'user'}

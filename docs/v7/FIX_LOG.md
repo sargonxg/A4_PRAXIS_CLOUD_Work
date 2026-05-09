@@ -506,3 +506,30 @@
   - MEDIUM: Lighthouse remains pending because the repo has no local Lighthouse dependency.
   - HIGH: real Situation Core mutation/create/fork/share remains next.
 - Suggested next letter for paste #24: B/E to ship Situation Core inline mutation and creation, keeping Loop F behind v7 flags.
+
+### Paste #24 - 2026-05-09
+- Letter chosen: B/E
+- Slice/issue: `02_CORES_INLINE.md` Loops 2-3 completion.
+- PR: not opened in this checkpoint; committed locally on `v7/bootstrap-current-state-audit`.
+- LOC diff: bounded Cores Inline completion: added backend Core create/fork/share/revoke routes, grant-aware owner-scoped reads, Next proxy allowlisting and local fallbacks, editable Case Core frame autosave, inline Home Situation creation, Case Core fork/share controls, Ask attach-core picker, and floating PRAXIS suppression while modal drawers are open.
+- Audits added or changed: added `audit:cores-grants-coverage`; extended `audit:v7-inline-cores`; wired grants coverage into `audit:gate` and `audit:architecture-chain`.
+- Acceptance criteria results:
+  - `npm run audit:cores-owner-scoping`: pass.
+  - `npm run audit:cores-grants-coverage`: pass.
+  - `npm run audit:v7-inline-cores`: pass.
+  - `npm run audit:cores-schema`: pass.
+  - `npm run audit:cores-types-parity`: pass.
+  - `npm run audit:v7-build-loop`: pass.
+  - `npm run audit:v7-shell-skeleton`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing warnings.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true PLAYWRIGHT_BASE_URL=http://localhost:3100 npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass after restarting `next start` with local backend fallback.
+- Skills/subagents invoked: playwright skill for browser verification.
+- Findings parked for later:
+  - MEDIUM: full `/app/cores/me` editor is still linked but not implemented as a standalone page.
+  - MEDIUM: production lazy backfill proof for existing legacy Situations into `cores.core_id` remains pending.
+  - LOW: drag-and-drop from the Cores rail is not implemented yet; Ask has the mobile/desktop `+ attach core` picker path.
+  - MEDIUM: full `audit:gate` remains blocked locally by GCP auth unless credentials are refreshed.
+- Suggested next letter for paste #25: B/E to implement `/app/cores/me` full editor or production backfill proof, whichever is higher priority.

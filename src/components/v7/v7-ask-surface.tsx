@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useEffect } from 'react';
 import { Boxes, Sparkles, UserRound } from 'lucide-react';
 
 import { ChatInterface } from '@/components/assistant/chat-interface';
@@ -20,6 +21,13 @@ const modeLabels: Record<AskMode, string> = {
   talking_points: 'Talking points',
 };
 
+type PickableCore = {
+  id: string;
+  kind: string;
+  name: string;
+  status?: string;
+};
+
 export function V7AskSurface({
   stagedSkillId = null,
   initialQuery = '',
@@ -33,6 +41,9 @@ export function V7AskSurface({
   const activeSituation = useSituationStore((state) => state.activeSituation);
   const [mode, setMode] = useState<AskMode>('quick');
   const [openCore, setOpenCore] = useState<V7CoreDrawerKind | null>(null);
+  const [corePickerOpen, setCorePickerOpen] = useState(false);
+  const [pickableCores, setPickableCores] = useState<PickableCore[]>([]);
+  const [attachedCoreIds, setAttachedCoreIds] = useState<string[]>([]);
   const active = activeSituation ?? situations[0] ?? null;
   const skillLedger = useMemo(() => getSimplifiedCapabilityLedger(), []);
   const stagedSkill = useMemo(
@@ -59,9 +70,27 @@ export function V7AskSurface({
     () => [
       { label: 'My Core', detail: 'Always attached', icon: UserRound, state: 'who PRAXIS answers for', kind: 'user' as const },
       { label: active?.name ?? 'No Case selected', detail: 'Case Core', icon: Boxes, state: active ? 'attached' : 'missing', kind: 'situation' as const },
+      ...pickableCores
+        .filter((core) => attachedCoreIds.includes(core.id))
+        .map((core) => ({ label: core.name, detail: `${core.kind} core`, icon: Boxes, state: 'attached', kind: 'situation' as const })),
     ],
-    [active],
+    [active, attachedCoreIds, pickableCores],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/backend/cores')
+      .then(async (response) => (await response.json()) as { cores?: PickableCore[] })
+      .then((body) => {
+        if (!cancelled) setPickableCores(body.cores ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setPickableCores([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="space-y-5" data-testid="v7-ask-surface">
@@ -118,7 +147,44 @@ export function V7AskSurface({
               </span>
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setCorePickerOpen((open) => !open)}
+            className="flex min-w-[156px] items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white px-3 py-3 text-sm font-semibold text-navy-900 transition hover:border-navy-400"
+          >
+            + attach core
+          </button>
         </div>
+        {corePickerOpen && (
+          <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3" data-testid="v7-attach-core-picker">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase text-slate-700">Attach a Core</p>
+              <button type="button" onClick={() => setCorePickerOpen(false)} className="text-xs font-semibold text-slate-700">
+                Close
+              </button>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {pickableCores.length ? pickableCores.slice(0, 8).map((core) => {
+                const attached = attachedCoreIds.includes(core.id);
+                return (
+                  <button
+                    key={core.id}
+                    type="button"
+                    onClick={() => setAttachedCoreIds((current) => attached ? current.filter((id) => id !== core.id) : [...current, core.id].slice(0, 5))}
+                    className={`rounded-md border px-3 py-2 text-left text-sm font-semibold ${
+                      attached ? 'border-navy-800 bg-navy-950 text-white' : 'border-slate-200 bg-white text-navy-950 hover:border-navy-300'
+                    }`}
+                  >
+                    {core.name}
+                    <span className="block text-[10px] uppercase opacity-75">{core.kind}</span>
+                  </button>
+                );
+              }) : (
+                <p className="text-xs leading-5 text-slate-700">No saved cores returned yet. My Core and the active Case Core remain attached.</p>
+              )}
+            </div>
+          </div>
+        )}
 
         {stagedSkill && (
           <div className="mt-5 rounded-lg border border-gold-200 bg-gold-50 p-4" data-testid="v7-staged-skill-card">
@@ -150,7 +216,7 @@ export function V7AskSurface({
       <V7AskRuntimePanel
         mode={mode}
         situationId={active?.id}
-        attachedCoreIds={[]}
+        attachedCoreIds={attachedCoreIds}
         skillId={stagedSkill?.toolId}
         initialQuery={initialQuery}
       />
