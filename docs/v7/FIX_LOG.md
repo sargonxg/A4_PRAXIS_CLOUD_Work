@@ -6,7 +6,7 @@ A-G loop plan in `docs/v7/build/03_BUILD_LOOP.md`.
 ### Paste #1 - 2026-05-09
 - Letter chosen: A
 - Slice/issue: Loop A - Foundations.
-- PR: pending at time of local verification; update after PR creation.
+- PR: https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work/pull/8
 - LOC diff: Loop A foundation packet only: v7 operating docs, Core schema
   migrations, TypeScript and Pydantic Core schemas, v7 flags, and guard audits.
 - Audits added or changed:

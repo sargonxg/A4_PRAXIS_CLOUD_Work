@@ -19,7 +19,7 @@ from the superseded slice plan is useful evidence, not shipped status.
 
 | Loop | Name | Brief | State | PR | Acceptance posture |
 |---|---|---|---|---|---|
-| A | Foundations | 02, 03 | in-review | pending | `0019`/`0020`, TS/Pydantic core schemas, v7 flags, and core audits exist locally. Static audits, typecheck, lint, build, flag-on build, and full Vitest pass. `audit:gate` reaches the cloud posture check and then fails because gcloud cannot refresh tokens non-interactively. Ephemeral Postgres upgrade/downgrade remains unverified locally because Docker/psql are not installed; CI/prod migration proof is required before marking shipped. |
+| A | Foundations | 02, 03 | in-review | [#8](https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work/pull/8) | `0019`/`0020`, TS/Pydantic core schemas, v7 flags, and core audits exist locally. Static audits, typecheck, lint, build, flag-on build, and full Vitest pass. `audit:gate` reaches the cloud posture check and then fails because gcloud cannot refresh tokens non-interactively. Ephemeral Postgres upgrade/downgrade remains unverified locally because Docker/psql are not installed; CI/prod migration proof is required before marking shipped. |
 | B | The new homepage | 01 | proposed | - | Begins after Loop A PR is merged or explicitly approved to parallelize. |
 | C | The new Ask surface | 01, 02, 04 | proposed | - | Begins after Loop B shell/handoff is reviewed, unless owner explicitly scopes a backend-only preparatory PR. |
 | D | The new landing | 01 | proposed | - | Not started under the canonical loop plan. |
