@@ -25,6 +25,9 @@ const adminTabRedirects = [
 ];
 
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_PRAXIS_V7: process.env.NEXT_PUBLIC_PRAXIS_V7 ?? 'false',
+  },
   // Cloud Run: standalone output bundles only what's needed for Docker
   output: 'standalone',
   turbopack: {

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- feat(v7): start Loop A foundations.
+  Installed the canonical A-G build-loop ledger, v7 build briefs, Core schema
+  migrations, Core TS/Pydantic schemas, v7 flags, and Loop A audits.
+
 - feat(analytics): add Pack 31 network, sanctions, and simulation foundation.
   Added NetworkX graph metrics, additive graph node metrics migration, yente
   sanctions sidecar scaffolding, sanctions licensing runbook, Mesa-style policy

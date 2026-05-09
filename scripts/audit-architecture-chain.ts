@@ -38,6 +38,11 @@ for (const script of [
   'audit:tool-context-isolation',
   'audit:firewall-coverage',
   'audit:owner-scoping',
+  'audit:v7-index-current',
+  'audit:v7-build-loop',
+  'audit:cores-schema',
+  'audit:cores-types-parity',
+  'audit:cores-owner-scoping',
 ]) {
   if (!scripts[script]) failures.push(`missing required architecture script: ${script}`);
 }

@@ -4,33 +4,61 @@
 > The single source of truth for "where are we?". Updated after every PR merge.
 > Codex reads this first, every session.
 
-**Last updated:** 2026-05-08 by Codex
-**Current focus:** v7 operating packet installed; Slice 1 remains proposed pending Giulio approval.
-**Production state:** legacy shell live; v7 design-led Ask PRAXIS shell not yet implemented.
+**Last updated:** 2026-05-09 by Codex
+**Current focus:** Loop A - Foundations. The Build Loop in `docs/v7/build/03_BUILD_LOOP.md` is now the canonical v7 sequence. The older slice ledger is preserved below only for traceability.
+**Production state:** legacy shell live; v7 not canaried.
 
 ---
 
-## Slices
+## Canonical Loops
+
+The canonical sequence is `A -> B -> C -> D -> E -> F -> G` from
+`docs/v7/build/03_BUILD_LOOP.md`. A loop is not `shipped` until its PR is
+merged to `main` and its acceptance checks are green. Local implementation
+from the superseded slice plan is useful evidence, not shipped status.
+
+| Loop | Name | Brief | State | PR | Acceptance posture |
+|---|---|---|---|---|---|
+| A | Foundations | 02, 03 | in-review | pending | `0019`/`0020`, TS/Pydantic core schemas, v7 flags, and core audits exist locally. Static audits, typecheck, lint, build, flag-on build, and full Vitest pass. `audit:gate` reaches the cloud posture check and then fails because gcloud cannot refresh tokens non-interactively. Ephemeral Postgres upgrade/downgrade remains unverified locally because Docker/psql are not installed; CI/prod migration proof is required before marking shipped. |
+| B | The new homepage | 01 | proposed | - | Begins after Loop A PR is merged or explicitly approved to parallelize. |
+| C | The new Ask surface | 01, 02, 04 | proposed | - | Begins after Loop B shell/handoff is reviewed, unless owner explicitly scopes a backend-only preparatory PR. |
+| D | The new landing | 01 | proposed | - | Not started under the canonical loop plan. |
+| E | User Core inline | 02, 03 | proposed | - | Starts only after Loop A foundations are merged. |
+| F | Situation Core inline | 02, 03 | proposed | - | Starts after Loop E; depends on Core API and inline drawer acceptance. |
+| G | Cores rail + share | 02, 03 | proposed | - | Starts after Loop F; includes drag/drop, grants, default attachments, and recipient proof. |
+
+States: `proposed | in-progress | in-review | shipped | blocked | reverted`.
+
+## Superseded Slice Ledger
+
+The rows below are retained for traceability only. They are superseded by
+Loops A-G and must not be used as the canonical execution sequence.
 
 | # | Slice | Brief | State | PR | Notes |
 |---|---|---|---|---|---|
-| 1 | Foundations: cores schema + flag | 02, 03 | proposed | — | — |
-| 2 | App shell skeleton (v7 IA) | 01 | proposed | — | depends on 1 |
-| 3 | Home destination | 01 | proposed | — | depends on 2 |
-| 4 | Ask end-to-end | 01, 02, 04 | proposed | — | depends on 3 |
-| 5 | Situation destination | 01, 03 | proposed | — | depends on 2 |
-| 6 | Sources destination | 01, 03 | proposed | — | depends on 2 |
-| 7 | Outputs destination | 01, 04 | proposed | — | depends on 2 |
-| 8 | Analyst Skills + routing | 04 | proposed | — | depends on 4 |
-| 9 | Cutover | all | proposed | — | depends on 1–8 |
-
-States: `proposed | in-progress | shipped | reverted`.
+| 0 | Foundations: cores schema + flag | 02, 03 | superseded by Loop A | — | migrations/types/flags/audits implemented locally; now reviewed under Loop A |
+| 1 | Foundations: experience map + workflow registry | 01, 02, 03 | superseded by Loop B | — | four-surface/product registry work maps to Loop B/C support |
+| 2 | App shell skeleton (v7 IA) | 01 | superseded by Loop B | — | shell and route work maps to Loop B |
+| 3 | Home destination | 01 | superseded by Loop B | — | `/app/home` preview maps to Loop B |
+| 4 | Ask thread substrate | 01, 02, 04 | superseded by Loop C | — | Ask schema/types map to Loop C |
+| 5 | Cores Library destination | 01, 03 | superseded by Loops E-G | — | Cores Library surface maps to the inline Core loops |
+| 6 | Source/Document Core consolidation | 01, 03 | superseded by Loops E-G | — | source/document panels remain supporting detail inside Case Core |
+| 7 | Outputs destination | 01, 04 | superseded by Loop C | — | output promotion/export work maps to Loop C and post-loop cutover |
+| 8 | Analyst Skills + routing | 04 | superseded by Loop C | — | Ask routing and skill suggestion work maps to Loop C |
+| 9 | v7 skill manifest | 04 | superseded by Loop C | — | skill metadata supports Loop C |
+| 10 | Ask runtime persistence seam | 01, 02, 04 | superseded by Loop C | — | Ask persistence maps to Loop C |
+| 11 | Ask routing layer | 01, 02, 04 | superseded by Loop C | — | routing maps to Loop C |
+| 12 | Ask core resolution | 01, 02, 03 | superseded by Loop C | — | core resolution maps to Loop C |
+| 13 | Ask direct answer execution | 01, 02, 03, 04 | superseded by Loop C | — | direct answer execution maps to Loop C |
+| 14 | Cores read API | 01, 02, 03 | superseded by Loop A/E/F/G | — | read API supports Loop A foundation and inline loops |
+| 15 | Ask core skill execution | 01, 02, 03, 04 | superseded by Loop C | — | first read-only skill execution maps to Loop C |
+| 16 | Cutover | all | superseded by post-G | — | cutover starts only after Loops A-G ship |
 
 ---
 
-## Production checklist (for slice 9)
+## Production checklist (after Loop G)
 
-- [ ] All slices 1–8 shipped + audits green for 7 days.
+- [ ] All Loops A-G shipped + audits green for 7 days.
 - [ ] `monitoring/v7_dashboard.json` deployed and showing real traffic.
 - [ ] Migrations 0019–0022 applied to prod.
 - [ ] Cognee toggle tested in `disabled` and `postgres-kuzu` modes.
@@ -56,22 +84,26 @@ States: `proposed | in-progress | shipped | reverted`.
 
 [Append-only. Newest first. One paragraph each.]
 
-- **2026-05-08 — Codex —** Installed the v7 operating packet under `docs/v7/` rather than replacing root `AGENTS.md`. The packet governs future v7 slices after Giulio approves a slice to move from `proposed` to `in-progress`.
+- **2026-05-09 — Codex —** `docs/v7/build/03_BUILD_LOOP.md` is the canonical v7 execution order. The older slice ledger is retained below as traceability only, and Loop A is reviewed as a foundations-only branch with later Home/Ask/Core UI work deferred to Loops B-G.
 
 ---
 
 ## Known issues / flakies
 
-No known v7-specific flakies yet. Existing repo-wide audit/build posture remains governed by root docs and `package.json`.
+[Things that are red but not blocking, with owner and ETA. If this list
+gets longer than 5, stop new work and burn it down.]
+
+- `audit:gate` fails at `audit:gcp` in this local shell because `gcloud` and ADC require browser reauthentication. Owner: GC/Codex once credentials are refreshed. Workaround: run `npm run auth:doctor` and the printed `gcloud auth login --update-adc` / ADC commands.
+- Loop A ephemeral Postgres migration upgrade/downgrade is not locally verified because this shell has no Docker or `psql`. Owner: Codex/CI. Required before Loop A can move from `in-review` to `shipped`.
+- Alembic currently reports more than one migration head in this repo family. Owner: Codex/DB reviewer before production migration. Loop A adds `0020_cores_linkage` on the `0019` chain but does not resolve the pre-existing branch.
+- Production v7 verification is incomplete: Cloud Run revisions and `monitoring/v7_dashboard.json` were not verified in this shell. Owner: Codex after GCP auth is repaired.
 
 ---
 
 ## Next session prompt (Codex copy-pastes this into chat)
 
 ```
-Read root AGENTS.md and docs/v7/AGENTS.md, then docs/v7/STATUS.md,
-docs/v7/OPEN_QUESTIONS.md, and the approved slice under docs/v7/SLICES/.
-If Slice 1 is still proposed, stop and ask Giulio before implementation.
-Follow docs/v7/AGENTS.md session ritual and self-review. Ship to main behind
-flags only after approval. Update STATUS.md and DECISION_LOG.md when done.
+Read docs/v7/STATUS.md, then docs/v7/<the brief that owns the current focus>.
+Resume the current slice. Follow AGENTS.md §1 (session ritual) and §4
+(self-review). Ship to main behind flags. Update STATUS.md when done.
 ```
