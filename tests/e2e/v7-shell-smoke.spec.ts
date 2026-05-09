@@ -106,6 +106,14 @@ test('v7 command shell renders behind the feature flag', async ({ page }) => {
   await expect(page.getByTestId('v7-outputs-surface')).toBeVisible();
   await expect(page.getByText(/Provenance before polish/i)).toBeVisible();
 
+  await page.goto('/app/cores/me');
+  await page.waitForLoadState('networkidle');
+  await expect(page.getByTestId('v7-user-core-editor')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Who PRAXIS is answering for/i })).toBeVisible();
+  await page.getByLabel('Role').fill('Senior policy analyst');
+  await page.getByRole('button', { name: /Save User Core/i }).click();
+  await expect(page.getByText(/Saved/i).first()).toBeVisible();
+
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/app/home');
   await page.waitForLoadState('networkidle');

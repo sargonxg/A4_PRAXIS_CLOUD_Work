@@ -555,3 +555,24 @@
   - MEDIUM: Lighthouse remains pending because the repo has no local Lighthouse dependency.
   - MEDIUM: full `/app/cores/me` editor, production lazy backfill proof, and drag-and-drop rail polish remain the next Cores follow-ups.
 - Suggested next letter for paste #26: B/E to implement `/app/cores/me` full editor or production backfill proof, whichever is higher priority.
+
+### Paste #26 - 2026-05-09
+- Letter chosen: B/E
+- Slice/issue: v7 production-readiness pass: User Core full editor and durable build todo.
+- PR: not opened in this checkpoint; committed locally on `v7/bootstrap-current-state-audit`.
+- LOC diff: bounded v7 UI/docs/audit update: added `/app/cores/me`, `V7UserCoreEditor`, production-ready build todo, and smoke/audit coverage for the full User Core editor.
+- Audits added or changed: extended `audit:v7-inline-cores`; updated v7 Playwright smoke for `/app/cores/me`.
+- Acceptance criteria results:
+  - `npm run audit:v7-inline-cores`: pass.
+  - `npm run audit:v7-build-loop`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing 97 warnings.
+  - `npm run build`: pass.
+  - `PRAXIS_V7_BACKEND=true NEXT_PUBLIC_PRAXIS_V7=true PLAYWRIGHT_BASE_URL=http://localhost:3100 npx playwright test tests/e2e/v7-shell-smoke.spec.ts`: pass.
+- Skills/subagents invoked: playwright skill for planned browser verification.
+- Findings parked for later:
+  - HIGH: production migration/backfill proof remains pending.
+  - HIGH: Ask/Skill/Output happy path still needs full production-style browser verification with backend configured.
+  - MEDIUM: drag-and-drop Cores rail polish remains pending; the attach-core picker is the working path today.
+  - MEDIUM: landing page polish still needs a final pass against the real v7 app screenshots.
+- Suggested next letter for paste #27: B/C to run the v7 smoke, polish Ask runtime UX, and collapse legacy chat behind an advanced toggle.

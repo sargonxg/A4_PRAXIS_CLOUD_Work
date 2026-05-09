@@ -140,7 +140,7 @@ the execution playbook cannot drift into a docs-only artifact.
    - Timeline and Events.
    - Graph and Ontology.
    - Hypotheses and Gaps.
-   - Current status: `/app/cores` now renders `V7CoresSurface` behind the v7 flag. It wraps the current workbench as the live source of truth, explains the seven-chapter spine in plain language, exposes only My Core and Case Core as first-class user concepts, calls the owner-scoped `/api/backend/cores` read path, and links to existing Source, Document, Graph, Ontology, Analyst Skills, ACH, Boardroom, and Settings panels. User Core inline hydration and autosave are implemented through `GET/PATCH /cores/me`; Situation Core frame autosave, inline creation, fork, share grants, and Ask attachment picker are implemented and covered by focused audits. Full `/app/cores/me`, production backfill proof, and drag-and-drop rail polish remain.
+   - Current status: `/app/cores` now renders `V7CoresSurface` behind the v7 flag. It wraps the current workbench as the live source of truth, explains the seven-chapter spine in plain language, exposes only My Core and Case Core as first-class user concepts, calls the owner-scoped `/api/backend/cores` read path, and links to existing Source, Document, Graph, Ontology, Analyst Skills, ACH, Boardroom, and Settings panels. User Core inline hydration/autosave and the full `/app/cores/me` editor are implemented through `GET/PATCH /cores/me`; Situation Core frame autosave, inline creation, fork, share grants, and Ask attachment picker are implemented and covered by focused audits. Production backfill proof and drag-and-drop rail polish remain.
 
 2. Source + Document Core panel.
    - Library with source receipts.

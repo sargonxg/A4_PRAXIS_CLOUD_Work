@@ -18,6 +18,8 @@ const drawer = read('src/components/v7/v7-core-drawer.tsx');
 const home = read('src/components/v7/v7-home-surface.tsx');
 const ask = read('src/components/v7/v7-ask-surface.tsx');
 const cores = read('src/components/v7/v7-cores-surface.tsx');
+const userCoreEditor = read('src/components/v7/v7-user-core-editor.tsx');
+const userCorePage = read('src/app/app/cores/me/page.tsx');
 const proxy = read('src/app/api/backend/[...path]/route.ts');
 const backend = read('backend/routers/cores.py');
 const packageJson = JSON.parse(read('package.json') || '{}') as { scripts?: Record<string, string> };
@@ -60,6 +62,22 @@ for (const [path, source] of [
 
 if (home.includes("detail: 'Source Core'") || ask.includes("detail: 'Source Core'")) {
   failures.push('Home/Ask still expose Source Core as a first-class attached chip');
+}
+
+for (const token of [
+  'data-testid="v7-user-core-editor"',
+  "fetch('/api/backend/cores/me')",
+  "method: 'PATCH'",
+  'Save User Core',
+  'Who PRAXIS is answering for',
+  'gemini-3-flash',
+  'gemini-3.1-pro-preview',
+]) {
+  if (!userCoreEditor.includes(token)) failures.push(`User Core full editor missing ${token}`);
+}
+
+if (!userCorePage.includes('V7UserCoreEditor')) {
+  failures.push('/app/cores/me page does not render V7UserCoreEditor');
 }
 
 for (const token of ['@router.get("/me")', '@router.patch("/me")', '@router.post("")', '@router.post("/{core_id}/fork")', '@router.post("/{core_id}/grants")', "INSERT INTO core_audit", "_ensure_user_core"]) {
