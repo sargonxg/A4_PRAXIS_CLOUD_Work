@@ -70,6 +70,7 @@ export function V7AskRuntimePanel({
   const [result, setResult] = useState<AskRuntimeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const selectedCoreCount = attachedCoreIds.length;
   const assistantMessage = useMemo(
     () => result?.messages?.find((message) => message.role === 'assistant')?.content,
     [result],
@@ -119,12 +120,17 @@ export function V7AskRuntimePanel({
           <p className="text-xs font-semibold uppercase text-gold-700">Context-aware runtime</p>
           <h2 className="mt-1 text-lg font-semibold text-navy-950">Ask against your resolved cores</h2>
           <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-700">
-            PRAXIS saves the thread, resolves User and Situation Cores, and uses that snapshot for direct-answer execution when the backend AI flag is enabled. Skill and subagent executors remain staged for the next cutover slice.
+            PRAXIS searches My Core plus the selected Context Cores, saves the thread, and uses that snapshot for direct-answer execution when the backend AI flag is enabled. Skill and subagent executors remain staged for the next cutover slice.
           </p>
         </div>
-        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-semibold uppercase text-slate-700">
-          {mode.replace('_', ' ')}
-        </span>
+        <div className="flex flex-wrap gap-2">
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-semibold uppercase text-slate-700">
+            {mode.replace('_', ' ')}
+          </span>
+          <span className="rounded-full border border-gold-200 bg-gold-50 px-3 py-1 text-[10px] font-semibold uppercase text-gold-900">
+            My Core + {selectedCoreCount} selected
+          </span>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3 sm:flex-row">

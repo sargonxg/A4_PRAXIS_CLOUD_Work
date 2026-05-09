@@ -19,12 +19,17 @@ const proxy = read('src/app/api/backend/[...path]/route.ts');
 const drawer = read('src/components/v7/v7-core-drawer.tsx');
 
 for (const token of [
+  "principal_kind text NOT NULL CHECK (principal_kind IN ('user','team'))",
   'core_grants.principal_kind =',
   'core_grants.principal_id = current_tenant()',
   'principal_kind = \'user\' AND principal_id = current_tenant()',
   'WITH CHECK (owner_uid = current_tenant())',
 ]) {
   if (!migration.includes(token)) failures.push(`core grants RLS missing ${token}`);
+}
+
+for (const forbidden of ["principal_kind IN ('user','team','link','public')", "core_grants.principal_kind = 'public'"]) {
+  if (migration.includes(forbidden)) failures.push(`core grants migration still permits v7-disabled grant path: ${forbidden}`);
 }
 
 for (const token of [

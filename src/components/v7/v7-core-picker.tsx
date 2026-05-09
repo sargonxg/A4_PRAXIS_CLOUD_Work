@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import type { ComponentType } from 'react';
+import Link from 'next/link';
 import { DndContext, useDraggable, useDroppable, type DragEndEvent } from '@dnd-kit/core';
 import { Boxes, FileText, GitBranch, GripVertical, Library, Network, Search, ShieldCheck, UserRound, X } from 'lucide-react';
 
@@ -50,12 +51,16 @@ export function V7CorePickerStrip({
   onAttachedCoreIdsChange,
   activeSituation,
   onOpenCore,
+  onCreateSituation,
+  examplesHref = '/app/cores?examples=1',
 }: {
   availableCores: V7PickableCore[];
   attachedCoreIds: string[];
   onAttachedCoreIdsChange: (ids: string[]) => void;
   activeSituation?: V7PickableCore | null;
   onOpenCore?: (kind: V7CoreDrawerKind) => void;
+  onCreateSituation?: () => void;
+  examplesHref?: string;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -165,6 +170,23 @@ export function V7CorePickerStrip({
               className="w-full bg-transparent text-sm text-navy-950 outline-none placeholder:text-slate-500"
             />
           </label>
+          <div className="mt-3 rounded-md border border-slate-200 bg-white p-3" data-testid="v7-build-core-menu">
+            <p className="text-xs font-semibold uppercase text-slate-700">Build a core</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-4">
+              <button type="button" onClick={() => { setPickerOpen(false); onCreateSituation?.(); }} className="rounded-md border border-slate-200 px-2 py-2 text-left text-xs font-semibold text-navy-900 hover:border-navy-300">
+                Situation
+              </button>
+              <Link href="/app/cores?panel=methodology" className="rounded-md border border-slate-200 px-2 py-2 text-xs font-semibold text-navy-900 hover:border-navy-300">
+                Methodology
+              </Link>
+              <Link href="/app/cores?panel=team" className="rounded-md border border-slate-200 px-2 py-2 text-xs font-semibold text-navy-900 hover:border-navy-300">
+                Team rubric
+              </Link>
+              <Link href="/app/cores?panel=sources" className="rounded-md border border-slate-200 px-2 py-2 text-xs font-semibold text-navy-900 hover:border-navy-300">
+                Source
+              </Link>
+            </div>
+          </div>
           <div className="mt-3 space-y-3">
             {grouped.length ? grouped.map(([kind, cores]) => {
               const Icon = kindIcons[kind] ?? Boxes;
@@ -192,6 +214,22 @@ export function V7CorePickerStrip({
             }) : (
               <p className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-700">No matching cores. Create a new Situation or clear the search.</p>
             )}
+          </div>
+          <div className="mt-4 flex flex-col gap-2 border-t border-slate-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              data-testid="v7-create-situation-core"
+              onClick={() => {
+                setPickerOpen(false);
+                onCreateSituation?.();
+              }}
+              className="inline-flex min-h-10 items-center justify-center rounded-md bg-navy-950 px-3 py-2 text-xs font-semibold text-white hover:bg-navy-800"
+            >
+              Create Situation Core
+            </button>
+            <Link href={examplesHref} className="inline-flex min-h-10 items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-navy-900 hover:border-navy-300">
+              Browse seeded examples
+            </Link>
           </div>
         </div>
       )}

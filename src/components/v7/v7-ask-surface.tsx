@@ -29,19 +29,23 @@ export function V7AskSurface({
   initialQuery = '',
   initialThreadId,
   initialAttachedCoreIds = EMPTY_ATTACHED_CORE_IDS,
+  initialMode = 'quick',
+  initialSituationId,
 }: {
   stagedSkillId?: string | null;
   initialQuery?: string;
   initialThreadId?: string;
   initialAttachedCoreIds?: string[];
+  initialMode?: AskMode;
+  initialSituationId?: string;
 }) {
   const situations = useSituationStore((state) => state.situations);
   const activeSituation = useSituationStore((state) => state.activeSituation);
-  const [mode, setMode] = useState<AskMode>('quick');
+  const [mode, setMode] = useState<AskMode>(initialMode);
   const [openCore, setOpenCore] = useState<V7CoreDrawerKind | null>(null);
   const [pickableCores, setPickableCores] = useState<V7PickableCore[]>([]);
   const [attachedCoreIds, setAttachedCoreIds] = useState<string[]>(initialAttachedCoreIds);
-  const active = activeSituation ?? situations[0] ?? null;
+  const active = situations.find((situation) => situation.id === initialSituationId) ?? activeSituation ?? situations[0] ?? null;
   const availableCores = useMemo<V7PickableCore[]>(() => [
     ...pickableCores,
     ...situations.map((situation) => ({
@@ -96,9 +100,14 @@ export function V7AskSurface({
   }, [initialAttachedCoreIds]);
 
   useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
+
+  useEffect(() => {
     if (!active) return;
+    if (initialAttachedCoreIds.length > 0) return;
     setAttachedCoreIds((current) => (current.includes(active.id) ? current : [active.id, ...current]));
-  }, [active]);
+  }, [active, initialAttachedCoreIds.length]);
 
   return (
     <div className="space-y-5" data-testid="v7-ask-surface">
@@ -144,6 +153,7 @@ export function V7AskSurface({
             onAttachedCoreIdsChange={setAttachedCoreIds}
             activeSituation={activeSituationCore}
             onOpenCore={setOpenCore}
+            examplesHref="/app/cores?examples=1"
           />
         </div>
 
@@ -176,7 +186,7 @@ export function V7AskSurface({
 
       <V7AskRuntimePanel
         mode={mode}
-        situationId={active?.id}
+        situationId={initialSituationId ?? active?.id}
         attachedCoreIds={attachedCoreIds}
         skillId={stagedSkill?.toolId}
         initialQuery={initialQuery}

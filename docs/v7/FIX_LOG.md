@@ -623,3 +623,29 @@
   - HIGH: production Core availability depends on the stacked migrations/API landing.
   - MEDIUM: add full pointer-drag gesture test to Playwright after this branch stack is merged.
 - Suggested next letter for paste #29: E/Block 5 to verify Postgres Cores and owner scoping before deeper Ask routing.
+
+### Paste #29 - 2026-05-09
+- Letter chosen: E/Block 5
+- Slice/issue: INSPECT Block 5 - Cores in Postgres + owner scoping.
+- PR: pending at this checkpoint.
+- LOC diff: bounded schema/audit/test/docs update under the 600 LOC block limit.
+- Audits added or changed: strengthened `audit:cores-grants-coverage`; added `backend/tests/test_cores_owner_scoping_contract.py`.
+- User-facing changes: Home skill links preserve selected Context Cores into Ask; `/app/ask` and `/app/ask/[threadId]` parse `mode`, `situationId`, and `attachedCoreIds`; the core picker now includes a first-class build menu for Situation, Methodology, Team rubric, and Source cores; the Ask runtime panel displays My Core plus selected-core count.
+- Acceptance criteria results:
+  - Zero owner_uid NULLs: not production-verified; static schema enforces `owner_uid text NOT NULL`.
+  - >=95% linkage coverage: not production-verified; `0020_cores_linkage.py` statically adds nullable `core_id` to the v7 substrate tables.
+  - All migrations downgrade-reversible: pass static for `0019`, `0020`, `0022`, `0023`; runtime ephemeral Postgres proof blocked by missing Docker/psql.
+  - `audit:cores-owner-scoping`: pass.
+  - `audit:cores-grants-coverage`: pass after hardening public/link grant checks.
+  - Cross-tenant test: pass local contract via `python -m pytest backend/tests/test_cores_owner_scoping_contract.py -q`; production two-user runtime proof blocked until v7 is deployed with test tokens.
+  - `npm run audit:postgres-schema-current`, `npm run audit:owner-scoping`, `npm run audit:architecture-chain`: pass.
+  - `npx tsc --noEmit`: pass after clearing generated `.next/dev/types`.
+  - `npm run lint`: pass with existing warnings.
+  - `npm run build`: pass.
+  - Browser verification: pass on local v7 dev server with screenshots in `docs/v7/build/SCREENSHOTS/v7-block5-*.png`; Home attach, build-core menu, create-core modal, and Ask core handoff all rendered; no non-dev console errors.
+- Skills/subagents invoked: none; this was a bounded database/router/audit contract pass.
+- Findings parked for later:
+  - HIGH: production Cloud SQL row-level inspection blocked because `cloud-sql-proxy`, `psql`, and Docker are unavailable locally; install proxy or provide an approved SQL inspection path.
+  - HIGH: full `audit:gate` remains blocked by pre-existing Block 6 `audit:ai-provider-isolation` findings.
+  - MEDIUM: add CI ephemeral Postgres migration upgrade/downgrade proof; static downgrade inspection is insufficient.
+- Suggested next letter for paste #30: C/Block 6 to clear provider-isolation so the stacked v7 branches can get to a green gate before Block 4 Ask routing.

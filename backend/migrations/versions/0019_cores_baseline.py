@@ -55,7 +55,7 @@ def upgrade() -> None:
           id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
           owner_uid text NOT NULL,
           core_id uuid NOT NULL REFERENCES cores(id) ON DELETE CASCADE,
-          principal_kind text NOT NULL CHECK (principal_kind IN ('user','team','link','public')),
+          principal_kind text NOT NULL CHECK (principal_kind IN ('user','team')),
           principal_id text NOT NULL,
           role text NOT NULL CHECK (role IN ('owner','editor','commenter','viewer')),
           granted_by text NOT NULL,
@@ -109,7 +109,6 @@ def upgrade() -> None:
                 AND core_grants.revoked_at IS NULL
                 AND (
                   (core_grants.principal_kind = 'user' AND core_grants.principal_id = current_tenant())
-                  OR (core_grants.principal_kind = 'public')
                 )
             )
           )

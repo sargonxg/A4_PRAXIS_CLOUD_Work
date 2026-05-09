@@ -16,6 +16,8 @@ function read(path: string): string {
 const picker = read('src/components/v7/v7-core-picker.tsx');
 const home = read('src/components/v7/v7-home-surface.tsx');
 const ask = read('src/components/v7/v7-ask-surface.tsx');
+const askPage = read('src/app/app/ask/page.tsx');
+const askThreadPage = read('src/app/app/ask/[threadId]/page.tsx');
 const packageJson = JSON.parse(read('package.json') || '{}') as { scripts?: Record<string, string> };
 
 for (const token of [
@@ -34,6 +36,10 @@ for (const token of [
   'Team and rubric',
   'Situations',
   'Sources',
+  'data-testid="v7-create-situation-core"',
+  'data-testid="v7-build-core-menu"',
+  'Browse seeded examples',
+  'Team rubric',
 ]) {
   if (!picker.includes(token)) failures.push(`v7 core picker missing ${token}`);
 }
@@ -44,6 +50,15 @@ for (const [path, source] of [
 ] as const) {
   if (!source.includes('V7CorePickerStrip')) failures.push(`${path} does not render shared V7CorePickerStrip`);
   if (!source.includes("fetch('/api/backend/cores')")) failures.push(`${path} does not fetch accessible cores`);
+}
+
+for (const token of ['attachedCoreIds', 'situationId', 'initialAttachedCoreIds', 'initialSituationId', 'parseAskMode']) {
+  if (!askPage.includes(token)) failures.push(`/app/ask page does not preserve ${token}`);
+  if (!askThreadPage.includes(token)) failures.push(`/app/ask/[threadId] page does not preserve ${token}`);
+}
+
+for (const token of ['askHref', 'attachedCoreIds', 'onCreateSituation']) {
+  if (!home.includes(token)) failures.push(`Home core handoff missing ${token}`);
 }
 
 if (!packageJson.scripts?.['audit:cores-picker-coverage']) failures.push('package.json missing audit:cores-picker-coverage');

@@ -26,12 +26,19 @@ import { useSituationStore } from '@/stores/situation-store';
 
 const modeOptions = ['Quick', 'Deep', 'Plan', 'Memo', 'Brief'] as const;
 
-const starterTools = [
+const starterTools: Array<{
+  label: string;
+  detail: string;
+  icon: ComponentType<{ className?: string }>;
+  href: string;
+  params?: Record<string, string>;
+}> = [
   {
     label: 'Stakeholder map',
     detail: 'Map actors, interests, leverage, and constraints.',
     icon: Target,
     href: '/app/ask?skill=actors-stakeholders',
+    params: { skill: 'actors-stakeholders' },
   },
   {
     label: 'Timeline',
@@ -44,12 +51,14 @@ const starterTools = [
     detail: 'Stress-test the dominant assessment and thin claims.',
     icon: ShieldAlert,
     href: '/app/ask?skill=research-sources&query=Red-team%20the%20current%20assessment.',
+    params: { skill: 'research-sources', query: 'Red-team the current assessment.' },
   },
   {
     label: 'Find gaps',
     detail: 'Surface missing sources, actors, events, and weak evidence.',
     icon: Search,
     href: '/app/ask?skill=research-sources&query=Find%20the%20most%20important%20context%20gaps.',
+    params: { skill: 'research-sources', query: 'Find the most important context gaps.' },
   },
 ];
 
@@ -205,6 +214,14 @@ export function V7HomeSurface() {
     router.push(`/app/ask/${threadId}?${params.toString()}`);
   }
 
+  function askHref(extra: Record<string, string> = {}) {
+    const params = new URLSearchParams(extra);
+    if (active?.id) params.set('situationId', active.id);
+    if (attachedSituationIds.length) params.set('attachedCoreIds', attachedSituationIds.join(','));
+    const queryString = params.toString();
+    return queryString ? `/app/ask?${queryString}` : '/app/ask';
+  }
+
   function openCommandPalette() {
     window.dispatchEvent(new CustomEvent('open-praxis-chat'));
     inputRef.current?.focus();
@@ -333,6 +350,7 @@ export function V7HomeSurface() {
                   onAttachedCoreIdsChange={handleAttachedCoreIdsChange}
                   activeSituation={activeSituationCore}
                   onOpenCore={setOpenCore}
+                  onCreateSituation={() => setNewSituationOpen(true)}
                 />
                 {attachedSituations.length > 1 && (
                   <p className="mb-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
@@ -401,7 +419,7 @@ export function V7HomeSurface() {
                 </div>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   {starterTools.map((tool) => (
-                    <ToolCard key={tool.label} {...tool} disabled={!active} />
+                    <ToolCard key={tool.label} {...tool} href={tool.params ? askHref(tool.params) : tool.href} disabled={!active} />
                   ))}
                 </div>
               </div>
@@ -410,7 +428,7 @@ export function V7HomeSurface() {
                 {suggestedSkills.map((skill) => (
                   <Link
                     key={skill.toolId}
-                    href={`/app/ask?skill=${skill.toolId}`}
+                    href={askHref({ skill: skill.toolId })}
                     className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-navy-300 hover:bg-white hover:text-navy-950"
                   >
                     {skill.label}
@@ -557,12 +575,14 @@ function ToolCard({
   label,
   detail,
   href,
+  params: _params,
   icon: Icon,
   disabled = false,
 }: {
   label: string;
   detail: string;
   href: string;
+  params?: Record<string, string>;
   icon: ComponentType<{ className?: string }>;
   disabled?: boolean;
 }) {

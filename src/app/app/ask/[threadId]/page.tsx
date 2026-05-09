@@ -10,6 +10,8 @@ export default async function V7AskThreadPage({ params, searchParams }: V7AskThr
   const query = await searchParams;
   const stagedSkillId = typeof query?.skill === 'string' ? query.skill : null;
   const initialQuery = typeof query?.query === 'string' ? query.query : '';
+  const initialMode = parseAskMode(query?.mode);
+  const initialSituationId = typeof query?.situationId === 'string' ? query.situationId : undefined;
   const initialAttachedCoreIds =
     typeof query?.attachedCoreIds === 'string'
       ? query.attachedCoreIds.split(',').map((id) => id.trim()).filter(Boolean)
@@ -22,6 +24,14 @@ export default async function V7AskThreadPage({ params, searchParams }: V7AskThr
       initialQuery={initialQuery}
       initialThreadId={threadId}
       initialAttachedCoreIds={initialAttachedCoreIds}
+      initialMode={initialMode}
+      initialSituationId={initialSituationId}
     />
   );
+}
+
+function parseAskMode(value: unknown) {
+  return value === 'deep' || value === 'plan' || value === 'memo' || value === 'brief' || value === 'talking_points'
+    ? value
+    : 'quick';
 }
