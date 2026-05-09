@@ -5,10 +5,24 @@
 > Codex reads this first, every session.
 
 **Last updated:** 2026-05-09 by Codex
-**Current focus:** `03_BUILD_LOOP.md` is installed, indexed, and audit-guarded as the v7 execution playbook. `01_THE_NEW_FACE.md` and `02_CORES_INLINE.md` now make the generic empty homepage and multi-select core picker canonical: the default home state has no active Situation, only the User Core chip, disabled Ask copy, four greyed-out tools, and a prominent "+ attach core" path into `/app/cores?examples=1`. Implementation follow-up: verify/update the local v7 Home and Ask surfaces so they match this corrected spec, including multi-core ordering, calibration precedence, and attached-Situation warnings.
+**Current focus:** Block 1 ground-truth audit is recorded in `docs/v7/AUDIT_2026-05-09.md`. The seven-loop sequence in `03_BUILD_LOOP.md` is canonical; none of Loops A-G are shipped to `main` yet. Production is coherently legacy (`NEXT_PUBLIC_PRAXIS_V7` and `PRAXIS_V7_BACKEND` absent/off), while the stacked v7 branch is blocked by `audit:ai-provider-isolation` findings in v7 files before it can be considered gate-green.
 **Production state:** legacy shell live; v7 not canaried.
 
 ---
+
+## Build loops A-G (canonical)
+
+| Loop | Scope | State | Evidence | Next action |
+|---|---|---|---|---|
+| A | Foundations | in-progress | PR #8 open; `0019`/`0020`, core types, and core audits exist on v7 branches, but gate is red and ephemeral Postgres proof is still missing. | Fix gate issue #11, then rerun migration upgrade/downgrade proof. |
+| B | The new homepage | in-progress | PR #9 open; `/app/home` exists, but corrected generic empty-state spec from PR #10 still needs implementation/verification. | Run Block 2 after Block 1 lands. |
+| C | The new Ask surface | in-progress | PR #9 open; `/app/ask/[threadId]` and backend Ask router exist, but gate is red and production flag is off. | Fix #11 before runtime acceptance can be trusted. |
+| D | The new landing | proposed | `03_BUILD_LOOP.md` defines the five-section landing loop; production landing is still legacy/current public site. | Start after B/C or as an independent landing PR. |
+| E | User Core inline | in-progress | PR #9 open; User Core drawer/editor code exists locally, but not shipped and gate is red. | Fix #11, then verify Loop E acceptance. |
+| F | Situation Core inline | in-progress | PR #9 open; Situation create/fork/share paths are described as local/unmerged. | Verify after Loop E. |
+| G | Cores rail + share | in-progress | PR #9 open; attach picker/grants exist locally, while drag/drop rail polish remains pending. | Verify after Loop F. |
+
+States: `proposed | in-progress | shipped | reverted`.
 
 ## Slices
 
