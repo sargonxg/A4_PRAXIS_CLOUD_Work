@@ -24,6 +24,14 @@
 | `docs/v7/03_CONTEXT_CORES_AND_DYNAMIC_ONTOLOGIES.md` | Eight core types, inheritance, sharing, dynamic ontology binding. | Cores work. |
 | `docs/v7/04_ANALYST_SKILLS_POLICY_PRODUCT_AND_OUTPUTS.md` | Analyst Skills (renamed from Tools), routing layer, outputs, Policy Product. | Skills/outputs work. |
 
+## Build briefs (read with the owning vision brief)
+
+| Path | Owns | When to read |
+|---|---|---|
+| `docs/v7/build/01_THE_NEW_FACE.md` | The simplified Home/Ask-first product face, mobile behaviour, and visual polish. | New Face, Home, shell, and landing-facing app work. |
+| `docs/v7/build/02_CORES_INLINE.md` | Drawer-first User Core and Case Core editing, create, fork, share, and attach flows. | Any Core UX, Core mutation, or Ask attachment work. |
+| `docs/v7/build/03_BUILD_LOOP.md` | A-G execution order, verification rhythm, infrastructure non-negotiables, and ship definition. | Every v7 advance session before selecting a loop. |
+
 ## Operational logs (Codex writes to these)
 
 | Path | Purpose |

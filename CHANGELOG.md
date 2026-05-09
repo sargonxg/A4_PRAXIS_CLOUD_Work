@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- docs(v7): harden the Build Loop playbook guard.
+  Added the v7 build briefs to `docs/v7/INDEX.md` and expanded
+  `audit:v7-build-loop` so the A-G loop order, prompts, ledger references,
+  non-negotiables, and drawer-first Core contract are checked together.
 - feat(v7): complete Cores Inline create, fork, share, and attach.
   Case Core drawers now edit and autosave the Situation frame, Home can create
   a new Situation Core inline, Ask exposes an attach-core picker, and backend

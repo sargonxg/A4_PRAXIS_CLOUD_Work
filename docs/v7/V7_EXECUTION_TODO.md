@@ -7,6 +7,9 @@ all line up.
 Build-loop source of truth: `docs/v7/build/03_BUILD_LOOP.md` is installed and
 guarded by `audit:v7-build-loop`. Use the A-G loop order unless `STATUS.md`
 or a verification finding forces a regression fix first.
+The build briefs are also indexed in `docs/v7/INDEX.md`, and the build-loop
+audit now checks the ADVANCE/VERIFY prompt rhythm plus the non-negotiables so
+the execution playbook cannot drift into a docs-only artifact.
 
 ## P0 - Make v7 safe to start
 

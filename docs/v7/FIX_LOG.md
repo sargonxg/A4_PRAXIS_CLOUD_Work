@@ -533,3 +533,25 @@
   - LOW: drag-and-drop from the Cores rail is not implemented yet; Ask has the mobile/desktop `+ attach core` picker path.
   - MEDIUM: full `audit:gate` remains blocked locally by GCP auth unless credentials are refreshed.
 - Suggested next letter for paste #25: B/E to implement `/app/cores/me` full editor or production backfill proof, whichever is higher priority.
+
+### Paste #25 - 2026-05-09
+- Letter chosen: A/C
+- Slice/issue: `03_BUILD_LOOP.md` completion and drift guard hardening.
+- PR: not opened in this checkpoint; committed locally on `v7/bootstrap-current-state-audit`.
+- LOC diff: bounded docs/audit update: indexed the v7 build briefs in `docs/v7/INDEX.md`, expanded `audit:v7-build-loop` to check the ADVANCE/VERIFY prompt rhythm, V7 execution ledger references, A-G loop sequence, non-negotiables, drawer-first Core contract, and audit-gate wiring, and updated the v7 ledgers.
+- Audits added or changed: hardened `audit:v7-build-loop`; no new audit names added.
+- Acceptance criteria results:
+  - `npm run audit:v7-build-loop`: pass.
+  - `npm run audit:v7-index-current`: pass.
+  - `npm run audit:architecture-chain`: pass.
+  - `npm run audit:v7-inline-cores`: pass.
+  - `npm run audit:cores-grants-coverage`: pass.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing warnings.
+  - `npm run build`: pass.
+- Skills/subagents invoked: none; this was a bounded build-loop guard and ledger pass.
+- Findings parked for later:
+  - MEDIUM: full `audit:gate` remains blocked locally by GCP auth unless credentials are refreshed.
+  - MEDIUM: Lighthouse remains pending because the repo has no local Lighthouse dependency.
+  - MEDIUM: full `/app/cores/me` editor, production lazy backfill proof, and drag-and-drop rail polish remain the next Cores follow-ups.
+- Suggested next letter for paste #26: B/E to implement `/app/cores/me` full editor or production backfill proof, whichever is higher priority.
