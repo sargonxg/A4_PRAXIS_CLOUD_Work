@@ -28,14 +28,18 @@ type PickableCore = {
   status?: string;
 };
 
+const EMPTY_ATTACHED_CORE_IDS: string[] = [];
+
 export function V7AskSurface({
   stagedSkillId = null,
   initialQuery = '',
   initialThreadId,
+  initialAttachedCoreIds = EMPTY_ATTACHED_CORE_IDS,
 }: {
   stagedSkillId?: string | null;
   initialQuery?: string;
   initialThreadId?: string;
+  initialAttachedCoreIds?: string[];
 }) {
   const situations = useSituationStore((state) => state.situations);
   const activeSituation = useSituationStore((state) => state.activeSituation);
@@ -43,7 +47,7 @@ export function V7AskSurface({
   const [openCore, setOpenCore] = useState<V7CoreDrawerKind | null>(null);
   const [corePickerOpen, setCorePickerOpen] = useState(false);
   const [pickableCores, setPickableCores] = useState<PickableCore[]>([]);
-  const [attachedCoreIds, setAttachedCoreIds] = useState<string[]>([]);
+  const [attachedCoreIds, setAttachedCoreIds] = useState<string[]>(initialAttachedCoreIds);
   const active = activeSituation ?? situations[0] ?? null;
   const skillLedger = useMemo(() => getSimplifiedCapabilityLedger(), []);
   const stagedSkill = useMemo(
@@ -91,6 +95,10 @@ export function V7AskSurface({
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    setAttachedCoreIds(initialAttachedCoreIds);
+  }, [initialAttachedCoreIds]);
 
   return (
     <div className="space-y-5" data-testid="v7-ask-surface">

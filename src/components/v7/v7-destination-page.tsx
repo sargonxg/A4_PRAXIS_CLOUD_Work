@@ -17,7 +17,7 @@ const areaFallbacks: Record<ProductExperienceAreaId, string> = {
   home: '/app/dashboard',
   ask: '/app/dashboard#ask-praxis',
   cores: '/app/workbench',
-  outputs: '/app/workbench/syria-2026?openChapter=draft',
+  outputs: '/app/outputs',
 };
 
 export function V7DestinationPage({ areaId }: V7DestinationPageProps) {
@@ -30,7 +30,7 @@ export function V7DestinationPage({ areaId }: V7DestinationPageProps) {
   const workflows = AGENTIC_WORKFLOWS.filter((workflow) => workflow.primaryArea === areaId);
   const siblingAreas = PRODUCT_EXPERIENCE_AREAS.filter((item) => item.id !== areaId);
   const currentSurfaceHref = activeCaseId
-    ? areaFallbacks[areaId].replaceAll('syria-2026', activeCaseId)
+    ? areaFallbacks[areaId].replaceAll('[caseId]', activeCaseId)
     : '/app/workbench';
 
   return (
@@ -124,7 +124,7 @@ function workflowHref(routes: string[], activeCaseId: string | undefined): strin
   const caseId = activeCaseId ?? '';
   return route.includes('[caseId]') && !caseId
     ? '/app/workbench'
-    : route.replaceAll('[caseId]', caseId).replaceAll('syria-2026', caseId || 'syria-2026');
+    : route.replaceAll('[caseId]', caseId);
 }
 
 function Pill({ children }: { children: string }) {

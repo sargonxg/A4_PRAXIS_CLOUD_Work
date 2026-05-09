@@ -43,6 +43,7 @@ for (const script of [
   'audit:cores-owner-scoping',
   'audit:cores-grants-coverage',
   'audit:v7-shell-skeleton',
+  'audit:v7-home-shape',
   'audit:v7-cores-surface',
   'audit:v7-cores-api',
   'audit:v7-source-document-core-panel',

@@ -576,3 +576,33 @@
   - MEDIUM: drag-and-drop Cores rail polish remains pending; the attach-core picker is the working path today.
   - MEDIUM: landing page polish still needs a final pass against the real v7 app screenshots.
 - Suggested next letter for paste #27: B/C to run the v7 smoke, polish Ask runtime UX, and collapse legacy chat behind an advanced toggle.
+
+### Paste #27 - 2026-05-09
+- Letter chosen: B
+- Slice/issue: INSPECT Block 2 - Homepage is generic.
+- PR: pending at this checkpoint.
+- LOC diff: bounded v7 home/Ask handoff/audit/migration/docs update under the 600 LOC block limit.
+- Audits added or changed: added `audit:v7-home-shape`; wired it into `audit:gate` and `audit:architecture-chain`.
+- Acceptance criteria results:
+  - `/app/home` generic empty state: pass via Playwright screenshot `docs/v7/build/SCREENSHOTS/v7-block2-home-empty-desktop.png`.
+  - No hardcoded v7 Home case/country names: pass; focused `rg` returned no matches.
+  - Seeded examples: pass in code via idempotent `0023_seeded_examples.py`; production deployment pending.
+  - Single attach state: pass via `docs/v7/build/SCREENSHOTS/v7-block2-home-single-attach.png`.
+  - Multi-attach handoff: pass; URL carried `attachedCoreIds=local-core-2,local-core-1`.
+  - Mobile empty state: pass via `docs/v7/build/SCREENSHOTS/v7-block2-home-empty-mobile.png`.
+  - Lighthouse desktop: pass, performance 86.
+  - `npx tsc --noEmit`: pass.
+  - `npm run lint`: pass with existing warnings.
+  - `npm run build`: pass.
+  - `npm run audit:v7-home-shape`: pass.
+  - `npm run audit:v7-shell-skeleton`: pass.
+  - `npm run audit:v7-inline-cores`: pass.
+  - `npx vitest run`: pass, 153 files / 594 tests.
+  - `npm run audit:gate`: red at pre-existing `audit:ai-provider-isolation` findings; parked for Block 6.
+- Skills/subagents invoked: playwright skill for browser screenshots and local flow verification.
+- Findings parked for later:
+  - HIGH: first-class Cores picker, search/grouping, drag/drop, reorder persistence, and seeded-core browsing remain Block 3.
+  - HIGH: real comparative Ask response across two Situation Cores remains Block 4.
+  - HIGH: seeded examples must be deployed through migrations before production can show them.
+  - MEDIUM: provider-isolation audit drift blocks full `audit:gate` and belongs to Block 6.
+- Suggested next letter for paste #28: B/E to run INSPECT Block 3 and make the Cores picker first-class.

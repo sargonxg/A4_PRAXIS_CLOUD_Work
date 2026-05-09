@@ -135,5 +135,5 @@ function workflowHref(routes: string[], activeCaseId: string): string {
   const route = routes.find((item) => item.startsWith('/app')) ?? '/app/dashboard';
   return route.includes('[caseId]') && !activeCaseId
     ? '/app/workbench'
-    : route.replaceAll('[caseId]', activeCaseId).replaceAll('syria-2026', activeCaseId || 'syria-2026');
+    : route.replaceAll('[caseId]', activeCaseId);
 }

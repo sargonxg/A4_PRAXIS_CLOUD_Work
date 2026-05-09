@@ -402,7 +402,7 @@ function QuickPanelLink({
   icon: ComponentType<{ className?: string }>;
   caseId?: string;
 }) {
-  const resolvedHref = href.replaceAll('[caseId]', caseId ?? 'syria-2026');
+  const resolvedHref = caseId ? href.replaceAll('[caseId]', caseId) : '/app/workbench';
 
   return (
     <Link

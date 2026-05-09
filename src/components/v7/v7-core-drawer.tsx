@@ -307,7 +307,7 @@ function UserCoreDrawerBody({ onClose }: { onClose: () => void }) {
 
         <DrawerSection title="Default attached case cores">
           <div className="space-y-2">
-            <CoreListRow label="Syria Transition" detail="Active Case Core" />
+            <CoreListRow label="Recent Situation" detail="Optional Situation Core" />
             <button
               type="button"
               className="inline-flex min-h-10 items-center gap-2 rounded-md border border-dashed border-slate-300 px-3 py-2 text-sm font-semibold text-navy-800 hover:border-navy-400 hover:bg-slate-50"

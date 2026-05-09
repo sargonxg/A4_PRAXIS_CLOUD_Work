@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 
 import { V7CoreDrawer, type V7CoreDrawerKind, type V7CoreDrawerSituation } from '@/components/v7/v7-core-drawer';
-import { useAuth } from '@/lib/auth/auth-context';
 import { getSimplifiedCapabilityLedger } from '@/lib/product/context-core-map';
 import { useSituationStore } from '@/stores/situation-store';
 
@@ -62,22 +61,9 @@ const recentItems = [
   { label: 'Brief outline', detail: 'Output Core', href: '/app/outputs' },
 ];
 
-const demoSituationFallback = {
-  id: 'syria-2026',
-  name: 'Syria Transition',
-  region: 'Northeast integration, humanitarian strain, and regional spillover',
-  sourceUrls: ['demo-source-1', 'demo-source-2', 'demo-source-3'],
-  customSources: [],
-  documentCount: 4,
-  graphEntities: 18,
-  actorCount: 7,
-  actors: [],
-};
-
 export function V7HomeSurface() {
   const router = useRouter();
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
-  const { user } = useAuth();
   const situations = useSituationStore((state) => state.situations);
   const activeSituation = useSituationStore((state) => state.activeSituation);
   const addSituation = useSituationStore((state) => state.addSituation);
@@ -87,11 +73,17 @@ export function V7HomeSurface() {
   const [newSituationName, setNewSituationName] = useState('');
   const [newSituationOntology, setNewSituationOntology] = useState('conflict');
   const [newSituationNote, setNewSituationNote] = useState('');
-  const active = activeSituation ?? situations[0] ?? (user?.isDemo ? demoSituationFallback : null);
+  const active = activeSituation ?? null;
+  const [attachedSituationIds, setAttachedSituationIds] = useState<string[]>([]);
   const [openCore, setOpenCore] = useState<V7CoreDrawerKind | null>(null);
   const activeCaseId = active?.id;
-  const activeCaseName = active?.name ?? 'No active Situation';
-  const activeRegion = active?.region ?? 'Open or create a Situation';
+  const attachedSituations = useMemo(() => {
+    const byId = new Map(situations.map((situation) => [situation.id, situation]));
+    if (active) byId.set(active.id, active);
+    return attachedSituationIds.map((id) => byId.get(id)).filter(Boolean) as typeof situations;
+  }, [active, attachedSituationIds, situations]);
+  const activeCaseName = active?.name ?? 'No Situation selected';
+  const activeRegion = active?.region ?? 'Pick or create a Situation Core to start';
   const sourceCount = active?.sourceUrls?.length ?? active?.customSources?.length ?? 0;
   const documentCount = active?.documentCount ?? 0;
   const graphCount = active?.graphEntities ?? active?.actorCount ?? active?.actors?.length ?? 0;
@@ -114,14 +106,29 @@ export function V7HomeSurface() {
 
   const attachedCores = [
     { label: 'My Core', detail: 'Always attached', tone: 'user', icon: UserRound, kind: 'user' as const },
-    { label: active?.name ?? 'Pick a Case', detail: 'Case Core', tone: 'situation', icon: Boxes, kind: 'situation' as const },
+    ...attachedSituations.map((situation) => ({
+      label: situation.name,
+      detail: 'Situation Core',
+      tone: 'situation',
+      icon: Boxes,
+      kind: 'situation' as const,
+    })),
   ];
 
   const gaps = buildGaps({ active: Boolean(active), sourceCount, documentCount, graphCount });
+  const visibleRecentItems = active ? recentItems : [];
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (!active) {
+      setAttachedSituationIds([]);
+      return;
+    }
+    setAttachedSituationIds((current) => (current.includes(active.id) ? current : [active.id, ...current]));
+  }, [active]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -141,7 +148,12 @@ export function V7HomeSurface() {
     const trimmed = query.trim();
     if (!trimmed || !active) return;
     const threadId = `home-${Date.now().toString(36)}`;
-    const params = new URLSearchParams({ query: trimmed, mode: mode.toLowerCase(), situationId: active.id });
+    const params = new URLSearchParams({
+      query: trimmed,
+      mode: mode.toLowerCase(),
+      situationId: active.id,
+      attachedCoreIds: attachedSituationIds.join(','),
+    });
     router.push(`/app/ask/${threadId}?${params.toString()}`);
   }
 
@@ -179,6 +191,7 @@ export function V7HomeSurface() {
       if (!response.ok) throw new Error(`create_failed_${response.status}`);
       const body = await response.json() as { core?: { id?: string; name?: string } };
       const id = body.core?.id ?? `local-situation-${Date.now()}`;
+      setAttachedSituationIds((current) => [id, ...current.filter((item) => item !== id)]);
       addSituation({
         id,
         name: body.core?.name ?? name,
@@ -251,12 +264,12 @@ export function V7HomeSurface() {
           <CoreRail activeCaseId={activeCaseId} />
           <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_minmax(300px,0.34fr)]">
             <div className="p-4 sm:p-6 lg:p-8">
-              <p className="text-sm font-semibold text-gold-700">Welcome back, Giulio.</p>
+              <p className="text-sm font-semibold text-gold-700">My workspace</p>
               <h1 className="mt-2 max-w-3xl text-2xl font-semibold leading-tight text-navy-950 sm:text-4xl">
-                {active ? `You're working on ${activeCaseName}.` : "You haven't opened a Situation yet."}
+                {active ? `You're working on ${activeCaseName}.` : 'Pick or create a Situation Core to start.'}
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
-                Type the question. Pick the cores that frame it. Let PRAXIS choose the skill or constrain the answer yourself.
+                Type the question once a Situation is attached. PRAXIS will use your User Core plus the cores you choose to frame the answer.
               </p>
               <p className="mt-2 text-xs font-semibold uppercase text-slate-600">{activeRegion}</p>
 
@@ -275,14 +288,27 @@ export function V7HomeSurface() {
                       disabled={!active && core.tone !== 'user'}
                     />
                   ))}
+                  <Link
+                    href="/app/cores?examples=1"
+                    data-testid="v7-attach-core-link"
+                    className="inline-flex min-h-10 items-center gap-2 rounded-full border border-dashed border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-navy-900 transition hover:border-navy-400 hover:bg-slate-50"
+                  >
+                    <Plus className="h-4 w-4" />
+                    attach core
+                  </Link>
                 </div>
+                {attachedSituations.length > 1 && (
+                  <p className="mb-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+                    Two Situations attached — answers will reference both.
+                  </p>
+                )}
                 <textarea
                   ref={inputRef}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   disabled={!active}
                   rows={3}
-                  placeholder={active ? `Ask PRAXIS about ${activeCaseName}...` : 'Open a Situation to ask PRAXIS...'}
+                  placeholder={active ? `Ask PRAXIS about ${activeCaseName}...` : 'Pick or create a Situation Core to start'}
                   className="min-h-[108px] w-full resize-none border-0 bg-transparent px-2 py-2 text-base text-navy-950 outline-none placeholder:text-slate-500 disabled:cursor-not-allowed sm:text-lg"
                   onKeyDown={(event) => {
                     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
@@ -320,8 +346,8 @@ export function V7HomeSurface() {
 
               {!active && (
                 <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                  <Link href="/login?mode=demo&example=syria-2026" className="inline-flex min-h-11 items-center justify-center rounded-md bg-navy-950 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800">
-                    Open demo Situation
+                  <Link href="/app/cores?examples=1" className="inline-flex min-h-11 items-center justify-center rounded-md bg-navy-950 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800">
+                    Open a seeded Situation
                   </Link>
                   <button type="button" onClick={() => setNewSituationOpen(true)} className="inline-flex min-h-11 items-center justify-center rounded-md border border-slate-200 px-4 py-2 text-sm font-semibold text-navy-800 hover:border-navy-300">
                     Create new Situation
@@ -373,8 +399,9 @@ export function V7HomeSurface() {
                 </div>
               </Panel>
               <Panel title="Recent">
-                <div className="space-y-2">
-                  {recentItems.map((item) => (
+                {visibleRecentItems.length ? (
+                  <div className="space-y-2">
+                    {visibleRecentItems.map((item) => (
                     <Link
                       key={`${item.label}-${item.detail}`}
                       href={item.href}
@@ -386,8 +413,11 @@ export function V7HomeSurface() {
                       </span>
                       <ArrowRight className="h-4 w-4 shrink-0 text-slate-500" />
                     </Link>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm leading-6 text-slate-700">No recent Ask threads or outputs yet.</p>
+                )}
               </Panel>
             </aside>
           </div>
@@ -458,7 +488,7 @@ function CoreRail({ activeCaseId }: { activeCaseId?: string }) {
   const items = [
     { label: 'Ask threads', icon: Sparkles, href: '/app/ask' },
     { label: 'Cores Library', icon: Boxes, href: '/app/cores' },
-    { label: 'Situations', icon: GitBranch, href: activeCaseId ? `/app/workbench/${activeCaseId}` : '/app/workbench' },
+    { label: 'Situations', icon: GitBranch, href: activeCaseId ? `/app/workbench/${activeCaseId}` : '/app/cores?examples=1' },
     { label: 'Sources', icon: Library, href: '/app/cores?panel=sources' },
     { label: 'Outputs', icon: FileText, href: '/app/outputs' },
     { label: 'Advanced', icon: Plus, href: '/app/cores?panel=advanced' },
@@ -546,7 +576,7 @@ function ToolCard({
         <Icon className="h-4 w-4" />
       </span>
       <span className="mt-3 block text-sm font-semibold text-navy-950">{label}</span>
-      <span className="mt-1 block text-xs leading-5 text-slate-700">{disabled ? 'Open a Situation to use this skill.' : detail}</span>
+      <span className="mt-1 block text-xs leading-5 text-slate-700">{disabled ? 'Open a Situation to use this.' : detail}</span>
     </>
   );
 
@@ -588,9 +618,9 @@ function buildGaps({
   if (!active) {
     return [
       {
-        label: 'No active Situation',
-        detail: 'Open a demo or create a new Situation before running skills.',
-        href: '/app/workbench',
+        label: 'Pick a Situation to see gaps',
+        detail: 'Open a seeded Situation or create your own to compute missing sources, actors, timeline, and graph coverage.',
+        href: '/app/cores?examples=1',
       },
     ];
   }
