@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Wave 2 Lane C committed locally; push is next, then Wave 2 Integration Gate
+Status: Wave 2 Integration Gate validated locally; Phase 4A is next after docs push
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -319,9 +319,54 @@ only the intended Phase 0 changes.
   - ENVIRONMENT: full `pytest backend/ -q` still cannot collect in the active Python environment because backend dependencies/import path are unavailable (`agents`, `fastapi`, `pydantic_settings`, `psycopg`, `psycopg_pool`, and `google` import errors). Focused Lane C backend tests pass.
   - SCOPE NOTE: `/users` and `/users/[modelId]` UI are still Phase 4B. This checkpoint completes the Phase 3 schema/seeds/fork/capture/context core required for that surface.
 - Commit: `9e4d58bc` (`feat(v5-2c): add grounded research pipeline and user models`)
-- Push: pending
+- Push: pushed to `origin/main`
 - Open blockers:
   - Live Google grounding depends on configured provider/runtime credentials; the local route emits transparent fallback events rather than claiming live grounded execution.
   - Full backend pytest remains blocked by the local Python dependency environment.
-  - Wave 2 integration gate remains blocked until this checkpoint is committed and pushed.
+  - Wave 2 integration gate is now unblocked and in progress.
 - Notes for next agent: After this checkpoint is pushed, run Queue 06 / Wave 2 Integration Gate. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md` unless Giulio explicitly assigns them.
+
+### 2026-05-10 - Wave 2 Integration Gate - Phases 2A-2E And 3
+
+- Owner: Codex
+- Prompt source: `docs/build/PRAXIS_v5_ANTIGRAVITY_QUEUE_PROMPTS.md` Copy Block 06
+- Scope completed:
+  - Pulled latest `main` after Lane C landed and verified Wave 2 lanes 2A, 2B, 2C, 2D, 2E, and Phase 3 core integrate in one app.
+  - Confirmed Context routes, source tier panel, timeline panel, methods panel, drafts panel, research API auth boundary, and mobile Context shell load together.
+  - No integration code fixes were required.
+  - Refreshed graphify after the Lane C docs commits so the master-charter and repo-shape gates agree with the current commit graph.
+- Files changed: queue tracker, execution ledger, graphify output
+- Validation run:
+  - `git pull origin main`
+  - `git status --short --branch`
+  - `git log --oneline -5`
+  - `npm install`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run typecheck`
+  - `npx vitest run`
+  - `pytest backend/ -q`
+  - `npm run audit:routes`
+  - `npm run audit:research-pipeline-shape`
+  - `npm run audit:document-pipeline-shape`
+  - `npm run audit:user-model-versioning`
+  - `graphify update .`
+  - `npm run audit:master-charter`
+  - `npm run audit:gate`
+  - Production-mode local browser smoke on `http://127.0.0.1:3026`
+- Validation result: pass with documented environment exceptions
+  - PASS: lint completed with existing warning debt only.
+  - PASS: build and typecheck after clearing stale generated `.next/dev` types and rerunning sequentially.
+  - PASS: 580 Vitest tests.
+  - PASS: focused Wave 2 audits and full `npm run audit:gate`, including GCP checks.
+  - PASS: browser smoke loaded `/contexts`, `/contexts/syria-2026`, `?panel=sources`, `?panel=timeline`, `?panel=methods`, `?panel=drafts`, and the mobile Context shell with no production-mode console errors.
+  - PASS: unauthenticated POST to `/api/research/run` returned `401`, preserving the research API owner-scoped auth boundary.
+  - ENVIRONMENT: full `pytest backend/ -q` still cannot collect in the active Python environment because backend dependencies/import path are unavailable (`agents`, `fastapi`, `pydantic_settings`, `psycopg`, `psycopg_pool`, and `google` import errors). This is unchanged from Phases 0-2C.
+  - NOTE: running `build` and `typecheck` concurrently once produced malformed generated `.next/dev/types`; generated cache was removed and sequential rerun passed.
+- Commit: pending (`docs(v5): record wave 2 integration gate`)
+- Push: pending
+- Open blockers:
+  - Phase 4A frontend build can begin.
+  - Full backend pytest still needs a properly provisioned Python/backend environment.
+  - Production deploy remains manual-approval-only.
+- Notes for next agent: Continue with Queue 07 / Phase 4A. Do not start production deployment. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md`.
