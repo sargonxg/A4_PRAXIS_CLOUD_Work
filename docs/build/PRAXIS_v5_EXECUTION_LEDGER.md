@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Phase 4A validated locally; commit and push are next
+Status: Phase 4A committed locally; push is next
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -79,7 +79,7 @@ Known setup warnings:
 | 2D | File 2 Prompt 2D.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
 | 2E | File 2 Prompt 2E.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
 | 3 | File 2 Prompt 3.A | Phase 1 merged | complete-core | Codex | `9e4d58bc` |
-| 4A | File 3 Phase 4A | Phase 1 plus compatible 2/3 surfaces | complete | Codex | pending |
+| 4A | File 3 Phase 4A | Phase 1 plus compatible 2/3 surfaces | complete | Codex | `330b1bbd` |
 | 4B | File 3 Phase 4B | Phase 3 types/seeds | not-started | unassigned | pending |
 | 4C | File 3 Phase 4C | Phase 4A foundation | not-started | unassigned | pending |
 | 4D | File 3 Phase 4D | Methods and runtime prerequisites | not-started | unassigned | pending |
@@ -398,7 +398,7 @@ only the intended Phase 0 changes.
   - PASS: typecheck, build, route audit, no-internal-jargon audit, experience-map audit, 580 Vitest tests, graphify update, and diff check.
   - PASS: browser smoke loaded `/contexts` desktop/mobile, opened the create wizard, and loaded `/contexts/syria-2026` desktop/mobile plus all eight panel URLs with no console errors.
   - SCOPE NOTE: authenticated persistence for new Context creation remains honest placeholder behavior until the owner-scoped Firestore creation path is assigned. The UI does not claim it created a persisted Context.
-- Commit: pending (`feat(v5-4a): add contexts surface`)
+- Commit: `330b1bbd` (`feat(v5-4a): add contexts surface`)
 - Push: pending
 - Open blockers:
   - Phase 4B `/users` surface is next now that Phase 3 user-model core exists.
