@@ -31,59 +31,30 @@ on GCP Cloud Run.
 
 ## Agent Handoff
 
-Before changing code, future Claude Code / Codex sessions must read these
-in order. Skipping any of items 5–11 will produce duplicate work or break
-the architectural contract.
+Before changing code, future Claude Code / Codex sessions read these in
+order. Skipping items 4–8 will produce duplicate work.
 
 1. `README.md`
 2. `CLAUDE.md` (this file)
 3. `AGENTS.md` — hard rules, validation gate, deploy procedure
-4. `ARCHITECTURE.md` — architecture entrypoint and current canonical links
-5. `docs/architecture/PRAXIS_ARCHITECTURE.md` — architecture bible and target-state reference
-6. `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md` — shipped, partial, gated, and drift notes
-7. `TODO.md` — current production continuation roadmap
-8. `docs/PRAXIS_SUPERPLAN_2026-04-29.md` — current multi-agent execution plan
-9. `CHANGELOG.md`
-10. `docs/ROUND_6_READINESS_2026-04-27.md` — current short plan, LangGraph
-   readiness, and human decisions
-11. `docs/DEEP_RESEARCH_ACTION_PLAN_2026-04-27.md` — 12-lane execution plan
-   distilled from the deep-research memo
-12. `docs/LANGGRAPH_CLOUDSQL_CHECKPOINTING.md` — Cloud SQL/Postgres
-   checkpoint store, cleanup, and verification
-13. `docs/CODEX_HANDOFF_2026-04-27.md` — active Codex drop-in prompt
-14. `docs/CONTINUATION.md` — last "do this next" note from previous agent
-15. `docs/STRATEGY.md` — six-week roadmap
-16. `docs/SPRINT_2026-04-25.md` — current week-long sprint plan
-17. **`docs/SPRINT_BACKLOG.md`** — canonical actionable list. Pick your
-    task from here; mark `In progress` before starting.
-18. **`docs/CONTEXT_INJECTION.md`** — the architectural contract every AI
-    route must honour. This is the most important doc in the repo.
-19. **`docs/OPERATIONAL_SPINE.md`** — the second-most important doc.
-    Defines tool_runs, background_jobs, system_events, notifications,
-    semaphore states, idempotency, retention. Every async unit of work
-    in PRAXIS lives in this layer. Read this BEFORE adding new
-    triggers, agents, or tools.
-20. `docs/tools/INDEX.md` — per-tool micro-app specs catalogue
-21. `docs/GCP_OPERATIONS.md` — every gcloud / Secret Manager command
-22. `docs/RESEARCH_PROMPTS.md` — prompts to give the user when you need
-    info you don't have access to (vendor docs, current API limits, etc.)
-23. `docs/HANDOFF_PROMPTS.md` — drop-in prompts to start a fresh session
-24. `docs/DEPLOYMENT_LOG.md` — last successful production deploy
-25. **`docs/compass_artifact_wf-7af05074-9b31-4316-834d-b3a7500f4cf7_text_markdown.md`**
-    — deep-research artifact (789 lines, 2026-04-25) answering all 10
-    research prompts: Vertex ADK deployment recipe (with working
-    `deploy.py`), ACLED licensing risk (CRITICAL — see G-2), GDELT
-    BigQuery migration, Firecrawl pricing, BigQuery public datasets,
-    Stripe v2 Meters API recipe, vector index recommendations, Vertex
-    AI vs. AI Studio decision, GraphRAG architecture extension, UN
-    procurement / SOC 2 / DPA path. **Read this before doing any
-    Stream C / Stream G work.**
-26. `docs/USER_ACTION_LIST.md` — exact playbook for things only Giulio
-    (CEO/CTO) can do.
-27. `docs/VISION_2026.md` — strategic north-star objective. Every
-    backlog item ladders up to one of the priorities here.
-28. `docs/COMPLIANCE.md` — licensing, certs, sub-processors, audit log.
-29. `docs/TEAM_OPS.md` — multi-agent operations playbook.
+4. `ARCHITECTURE.md` — architecture entrypoint and canonical links
+5. `docs/architecture/PRAXIS_ARCHITECTURE.md` — architecture bible / invariants
+6. `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md` — shipped vs gated state
+7. `docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md` — current product model (Home, Ask PRAXIS, Sources, Situation Model, Outputs, Advanced)
+8. `docs/v7/STATUS.md` and `docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md` — active simplification slices
+9. `STATUS.md`
+10. `TODO.md`
+11. `CHANGELOG.md` — `[Unreleased]` section only
+
+### Operational references (consult when relevant, not every session)
+
+- `docs/CONTEXT_INJECTION.md` — calibration contract every AI route honours
+- `docs/OPERATIONAL_SPINE.md` — tool_runs, background_jobs, system_events, notifications, semaphore states
+- `docs/GCP_OPERATIONS.md` — gcloud / Secret Manager commands
+- `docs/COMPLIANCE.md` — licensing, certs, sub-processors
+- `docs/CORPUS_ARCHITECTURE.md` — corpus + retrieval design
+- `docs/tools/INDEX.md` — per-tool micro-app specs
+
 
 Fresh-clone start command:
 
@@ -354,16 +325,18 @@ Tool page → useSituationGuard() → usePersistedToolData(toolId, sitId)
 
 ## Model String Discipline (CRITICAL)
 
-**Never hardcode `gemini-*` strings outside `src/lib/ai/providers.ts`.** That module is the single source of truth.
+**Never hardcode `gemini-*` strings outside `src/lib/ai/providers.ts` and `src/lib/ai/MODEL_MATRIX.json`.** Those are the single source of truth.
+
+**Current canonical family:** `gemini-2.5-flash` and `gemini-2.5-pro` (Vertex stable IDs). The previous `gemini-3-*-preview` family was withdrawn by Google; do not reintroduce it without flipping the model matrix and verifying Vertex availability in the target project.
 
 **Forbidden strings anywhere in `src/` or `backend/`:**
 - `gemini-2.0-*` (deprecated)
-- `gemini-2.5-*` (deprecated)
 - `gemini-3-pro-preview` (discontinued by Google March 26, 2026)
+- Any new `gemini-3-*` IDs unless `PRAXIS_ALLOW_GEMINI3_TARGETS=1` is set and `audit:model-matrix-coverage` is updated.
 
-Verify with: `rg "gemini-2\.0|gemini-2\.5|gemini-3-pro-preview" src/ backend/` — must return zero matches.
+Verify with: `rg "gemini-2\.0|gemini-3-pro-preview" src/ backend/` — must return zero matches.
 
-**Thinking levels (Gemini 3+):** Use `thinking_level: 'low' | 'medium' | 'high'`. The old `thinking_budget` is deprecated. `MEDIUM` is the new default.
+**Thinking levels:** prefer `thinking_level: 'low' | 'medium' | 'high'` where the SDK supports it. Defaults are encoded in `MODEL_MATRIX.json`.
 
 ## Anti-Patterns to Refuse
 
@@ -392,16 +365,20 @@ These files are security-critical. If a task seems to require changing them, **s
 - Loosen Firestore rules to allow cross-user reads
 - Hardcode service-account keys, API keys, or secrets in source
 
-## AI Model Tiers (v3.0 — Gemini 3)
+## AI Model Tiers (Gemini 2.5 — current canon)
 
 | Function | Model | Used For |
 |---|---|---|
-| `getModel()` | `gemini-3-flash-preview` | Chat, terminology, lightweight tasks, grounded search |
-| `getProModel()` | `gemini-3.1-pro-preview` | Structured tool generation, reports, dossiers (1M ctx, 65K output) |
-| `getAnalysisModel()` | `claude-sonnet-4-20250514` → Gemini 3.1 Pro | Deep conflict analysis, diplomatic language (falls back to Pro) |
-| `getDeepThinkModel()` | `gemini-3.1-pro-preview` + `thinkingLevel: 'high'` | Game Theory, Scenarios, treaty analysis (set via providerOptions) |
-| `getEmbeddingModel()` | `gemini-embedding-2-preview` → `text-embedding-005` → null | SKC Vector Layer, document embedding, 768-dim multimodal |
-| `getGroundedModel()` | `gemini-3-flash-preview` + Google Search | Research tools, actor enrichment, source discovery |
+| `getModel()` | `gemini-2.5-flash` | Chat, terminology, lightweight tasks, grounded search |
+| `getProModel()` | `gemini-2.5-pro` | Structured tool generation, reports, dossiers |
+| `getAnalysisModel()` | `claude-sonnet-4-*` → `gemini-2.5-pro` | Deep conflict analysis, diplomatic language (falls back to Pro) |
+| `getDeepThinkModel()` | `gemini-2.5-pro` + `thinking_level: 'high'` | Game Theory, Scenarios, treaty analysis |
+| `getEmbeddingModel()` | `text-embedding-005` (768-dim) | SKC Vector Layer, document embedding |
+| `getGroundedModel()` | `gemini-2.5-flash` + Google Search | Research tools, actor enrichment, source discovery |
+
+The exact mapping per task kind lives in `src/lib/ai/MODEL_MATRIX.json`.
+`audit:model-matrix-coverage` enforces it. Gemini 3 promotion is gated by
+`PRAXIS_ALLOW_GEMINI3_TARGETS=1` and is currently OFF.
 | Vertex ADK | Agent Engine | Deep Search Agent (falls back to Gemini 3 + Search) |
 
 ## Situation Knowledge Core (SKC)

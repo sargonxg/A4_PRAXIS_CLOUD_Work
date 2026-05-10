@@ -1,18 +1,19 @@
 # PRAXIS Architecture
 
-Last updated: 2026-05-06.
+Last updated: 2026-05-10.
 
-The canonical architecture reference is now:
+## Canonical references
 
-- [`docs/architecture/PRAXIS_ARCHITECTURE.md`](./docs/architecture/PRAXIS_ARCHITECTURE.md)
+- [`docs/architecture/PRAXIS_ARCHITECTURE.md`](./docs/architecture/PRAXIS_ARCHITECTURE.md) — architecture bible / invariant source.
+- [`docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`](./docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md) — shipped, partial, gated, and drift state.
+- [`docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md`](./docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md) — current product model (Home, Ask PRAXIS, Sources, Situation Model, Outputs, Advanced; eight context cores).
 
-The live-app parity layer is:
+## Active simplification (v7)
 
-- [`docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`](./docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md)
+- [`docs/v7/STATUS.md`](./docs/v7/STATUS.md) — slice ledger.
+- [`docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md`](./docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md).
+- [`docs/v7/SLICES/`](./docs/v7/SLICES/) — proposed slices, do not implement without explicit approval.
 
-Read both together. The architecture bible is the product/architecture target
-and invariant source. The live-app alignment document records what is shipped,
-what is partially implemented, and what remains owner-gated or production-gated.
 
 ## Current Production Shape
 

@@ -1,4 +1,20 @@
-# PRAXIS Codex Night Pack - STATUS
+# PRAXIS — STATUS
+
+## 2026-05-10 — repo cleanup
+
+Removed historical specs, codex prompt packs, V2/Z session intakes,
+superseded phase-foundation docs, six orphan one-shot scripts, the
+833-line session-log TODO, and the obsolete `gemini-3` blocker. CLAUDE.md
+"Model String Discipline" corrected to match `MODEL_MATRIX.json`
+(`gemini-2.5-*` is current canon). Agent handoff lists trimmed to the
+canonical trinity (architecture bible, live alignment, simplified context
+core) plus v7 STATUS.
+
+**Next:** Giulio approves v7 Slice 1; next agent ships it behind a flag.
+
+---
+
+# Historical: PRAXIS Codex Night Pack — STATUS (2026-05-08)
 
 > Morning brief for the 2026-05-08 night-pack pass. This file is intentionally candid: the session resumed with marketplace, calibration, and Cognee honesty changes already present in the dirty tree, so the clean diagnostic baseline requested by `01_DIAGNOSTICS` is not available from this checkpoint.
 

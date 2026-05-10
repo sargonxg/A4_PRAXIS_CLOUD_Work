@@ -6,12 +6,6 @@ Context: `NOTIFICATIONS_FEEDBACK_SYSTEM.md` is now implemented for in-app notifi
 
 Options considered: mock provider delivery and call it done, remove channels from the registry until providers exist, or keep the channel contract visible while marking provider sends as a live operations slice. Recommendation: keep the dispatcher contract and add provider-backed sends only after Resend/web-push/webhook secrets and staging migration are confirmed. Smallest unblocking diff: add Cloud Scheduler or worker invocation for `/v1/notifications/dispatch`, wire approved email/push/webhook providers, store provider delivery receipts, and extend `audit:notifications-feedback` with provider-backed smoke tests.
 
-## 2026-05-07 — Gemini 3-only prompt conflicts with current model guard
-
-Context: the new workspace prompt requires only `gemini-3-flash` and `gemini-3.1-pro-preview` as model strings. The current repo intentionally keeps `src/lib/ai/MODEL_MATRIX.json`, `src/lib/ai/providers.ts`, and `backend/ai/providers.py` on stable Gemini 2.5 IDs, and `npm run audit:model-matrix-coverage` passes by rejecting Gemini 3 targets unless `PRAXIS_ALLOW_GEMINI3_TARGETS=1` is set.
-
-Options considered: switch the model matrix immediately to Gemini 3, add a new failing `audit:model-strings` script that blocks the repo, or keep the current production-safe guard and record the conflict. Recommendation: do not flip the model matrix until Vertex availability for the exact IDs is verified in the target GCP project and the architecture/model-selection docs are reconciled. Smallest unblocking diff after approval: update `MODEL_MATRIX.json`, `providers.ts`, `backend/ai/providers.py`, `.env.example`, and `docs/architecture/MODEL_SELECTION.md`, then replace the current gate with a stricter `audit:model-strings` script.
-
 ## 2026-05-07 — Live Cognee SDK calls are intentionally service-owned
 
 Context: `backend/services/cognee_memory.py` is disabled-safe and raises `NotImplementedError` when Cognee is enabled in the monolith, because live `remember`, `add`, `cognify`, `search`, `memify`, and `forget` are owned by the isolated `praxis-cognee` Cloud Run service. The Tabs/Chapters can queue and persist local rows, but live latency and token-cost verification require that service and its Cloud SQL/Cognee database binding.

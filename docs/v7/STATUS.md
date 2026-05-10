@@ -4,8 +4,8 @@
 > The single source of truth for "where are we?". Updated after every PR merge.
 > Codex reads this first, every session.
 
-**Last updated:** 2026-05-08 by Codex
-**Current focus:** v7 operating packet installed; Slice 1 remains proposed pending Giulio approval.
+**Last updated:** 2026-05-10
+**Current focus:** Slice 1 remains proposed pending Giulio approval. Repo doc tree was cleaned on 2026-05-10 (historical specs, codex prompts, V2/Z session intakes, and phase-foundation docs removed; agent handoff lists trimmed).
 **Production state:** legacy shell live; v7 design-led Ask PRAXIS shell not yet implemented.
 
 ---

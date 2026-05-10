@@ -70,6 +70,7 @@
     "deploy:frontend:cloud": "gcloud builds submit --config=cloudbuild.frontend.yaml --project=praxisbytacitus",
     "seed:preferences": "tsx scripts/seed-preferences-defaults.ts",
     "seed:advisors": "tsx scripts/seed-advisors.ts",
+    "seed:domains": "tsx scripts/seed-domains.ts",
     "audit:gcp": "node scripts/audit-gcp.mjs",
     "audit:gcp-production-posture": "tsx scripts/audit-gcp-production-posture.ts",
     "audit:workbench": "tsx scripts/audit-workbench.ts",
