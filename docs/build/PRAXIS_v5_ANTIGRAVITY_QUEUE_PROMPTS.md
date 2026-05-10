@@ -4,35 +4,67 @@ Date: 2026-05-10
 Repo: `C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work`
 Production target: `https://praxis.tacitus.me`
 
-This file is built for Antigravity queueing. Copy one prompt block at a time.
-Do not launch dependency-blocked prompts early. Phase 0 and Phase 1 are
-sequential. Wave 2 can split into parallel lanes after Phase 1 is complete.
+This file is built for Antigravity queueing. The fenced `text` blocks below
+are the exact messages to copy into Antigravity.
 
-## Queue Map
+## Copy/Paste Instructions
 
-Run in this order:
+1. Open this file in Antigravity.
+2. Create one queued job per section below.
+3. Copy only the fenced block under each section: start after the opening
+   ` ```text ` line and stop before the closing ` ``` ` line.
+4. Do not copy the Markdown heading into the prompt unless you want to.
+5. Do not queue dependency-blocked phases as active work. Queue them as paused,
+   waiting, or manual-next if Antigravity supports that.
+6. Phase 0 and Phase 1 must run one after the other.
+7. After Phase 1 completes, queue `03`, `04`, and `05` together as the only
+   planned parallel batch.
+8. Run `06 Wave 2 Integration Gate` after all three Wave 2 lanes are pushed.
+9. Run `17 Production Deploy and Live Verification` only after Giulio explicitly
+   approves production deployment.
 
-1. `00 Preflight Orchestrator`
-2. `01 Phase 0`
-3. `02 Phase 1`
-4. `03 Wave 2 Lane A` plus `04 Wave 2 Lane B` plus `05 Wave 2 Lane C` in parallel
-5. `06 Wave 2 Integration Gate`
-6. `07 Phase 4A`
-7. `08 Phase 4B`
-8. `09 Phase 4C`
-9. `10 Phase 4D`
-10. `11 Phase 4E`
-11. `12 Phase 5 Methods`
-12. `13 Phase 6 Drafting`
-13. `14 Phase 7 Demo Content`
-14. `15 Phase 8 Landing`
-15. `16 Phase 9 Polish and Ship`
-16. `17 Production Deploy and Live Verification`
-17. `18 Final Product QA`
+## What To Queue
 
-Use separate queued agents only when the prompt says it is parallel-safe. If
-multiple agents are active, each agent must own a disjoint file area and update
-the ledger before touching code.
+Copy these blocks in this order:
+
+| Queue # | Copy This Block | When To Run | Parallel? |
+|---|---|---|---|
+| 00 | `00 Preflight Orchestrator` | First | No |
+| 01 | `01 Phase 0` | After 00 | No |
+| 02 | `02 Phase 1` | After 01 is pushed | No |
+| 03 | `03 Wave 2 Lane A` | After 02 is pushed | Yes, with 04 and 05 |
+| 04 | `04 Wave 2 Lane B` | After 02 is pushed | Yes, with 03 and 05 |
+| 05 | `05 Wave 2 Lane C` | After 02 is pushed | Yes, with 03 and 04 |
+| 06 | `06 Wave 2 Integration Gate` | After 03, 04, and 05 are pushed | No |
+| 07 | `07 Phase 4A` | After 06 | No |
+| 08 | `08 Phase 4B` | After Phase 3 from lane C is complete | No |
+| 09 | `09 Phase 4C` | After 07 | No |
+| 10 | `10 Phase 4D` | After 09 | No |
+| 11 | `11 Phase 4E` | After 07 and drafting prerequisites are clear | No |
+| 12 | `12 Phase 5 Methods` | After 09 | Usually one method group at a time |
+| 13 | `13 Phase 6 Drafting` | After 11 and needed methods | No |
+| 14 | `14 Phase 7 Demo Content` | After Waves 1-3 app work is complete | No |
+| 15 | `15 Phase 8 Landing` | After 14 | No |
+| 16 | `16 Phase 9 Polish and Ship` | After 15 | No |
+| 17 | `17 Production Deploy and Live Verification` | After 16 and explicit deploy approval | No |
+| 18 | `18 Final Product QA and Red-Team Review` | After live deployment or final staging build | No |
+
+## Recommended Antigravity Setup
+
+Create the queue like this:
+
+- Active now: `00 Preflight Orchestrator`.
+- Next paused: `01 Phase 0`.
+- Next paused: `02 Phase 1`.
+- Parallel paused batch after Phase 1: `03`, `04`, `05`.
+- Next paused after parallel batch: `06`.
+- Sequential paused app build: `07`, `08`, `09`, `10`, `11`, `12`, `13`, `14`,
+  `15`, `16`.
+- Final manual approval steps: `17`, then `18`.
+
+Use separate queued agents only when the table says parallel-safe. If multiple
+agents are active, each agent must own a disjoint file area and update the
+ledger before touching code.
 
 ## Universal Rules For Every Prompt
 
@@ -65,7 +97,7 @@ non-negotiables:
 
 ---
 
-## 00 Preflight Orchestrator
+## COPY BLOCK 00 - Preflight Orchestrator
 
 ```text
 You are the PRAXIS v5 preflight orchestrator.
@@ -134,7 +166,7 @@ Giulio how to coordinate with Claude Code.
 
 ---
 
-## 01 Phase 0 - Vision Adopt, Personas, ADRs, Audit Stubs
+## COPY BLOCK 01 - Phase 0 - Vision Adopt, Personas, ADRs, Audit Stubs
 
 ```text
 You are implementing PRAXIS v5 Phase 0 only.
@@ -218,7 +250,7 @@ If validation fails, do not push. Update the ledger with blockers and stop.
 
 ---
 
-## 02 Phase 1 - Ontology Layer and Work Ontologies
+## COPY BLOCK 02 - Phase 1 - Ontology Layer and Work Ontologies
 
 ```text
 You are implementing PRAXIS v5 Phase 1 only.
@@ -301,7 +333,7 @@ Push only after validation and ledger update.
 
 ---
 
-## 03 Wave 2 Lane A - Context Shell, Source Tier, Episodes
+## COPY BLOCK 03 - Wave 2 Lane A - Context Shell, Source Tier, Episodes
 
 ```text
 You are Wave 2 Lane A for PRAXIS v5.
@@ -384,7 +416,7 @@ Push only after validation and ledger update.
 
 ---
 
-## 04 Wave 2 Lane B - Document Pipeline
+## COPY BLOCK 04 - Wave 2 Lane B - Document Pipeline
 
 ```text
 You are Wave 2 Lane B for PRAXIS v5.
@@ -454,7 +486,7 @@ Push only after validation and ledger update.
 
 ---
 
-## 05 Wave 2 Lane C - Research Pipeline and User Models
+## COPY BLOCK 05 - Wave 2 Lane C - Research Pipeline and User Models
 
 ```text
 You are Wave 2 Lane C for PRAXIS v5.
@@ -526,7 +558,7 @@ Push only after validation and ledger update.
 
 ---
 
-## 06 Wave 2 Integration Gate
+## COPY BLOCK 06 - Wave 2 Integration Gate
 
 ```text
 You are the Wave 2 integration gate for PRAXIS v5.
@@ -588,7 +620,7 @@ Push only after green validation.
 
 ---
 
-## 07 Phase 4A - Contexts Surface
+## COPY BLOCK 07 - Phase 4A - Contexts Surface
 
 ```text
 You are implementing PRAXIS v5 Phase 4A only.
@@ -639,7 +671,7 @@ Push only after validation and ledger update.
 
 ---
 
-## 08 Phase 4B - User Models Surface
+## COPY BLOCK 08 - Phase 4B - User Models Surface
 
 ```text
 You are implementing PRAXIS v5 Phase 4B only.
@@ -690,7 +722,7 @@ Push only after validation and ledger update.
 
 ---
 
-## 09 Phase 4C - Methods Marketplace
+## COPY BLOCK 09 - Phase 4C - Methods Marketplace
 
 ```text
 You are implementing PRAXIS v5 Phase 4C only.
@@ -744,7 +776,7 @@ Push only after validation and ledger update.
 
 ---
 
-## 10 Phase 4D - Ask Homepage
+## COPY BLOCK 10 - Phase 4D - Ask Homepage
 
 ```text
 You are implementing PRAXIS v5 Phase 4D only.
@@ -797,7 +829,7 @@ Push only after validation and ledger update.
 
 ---
 
-## 11 Phase 4E - Drafting Studio Shell
+## COPY BLOCK 11 - Phase 4E - Drafting Studio Shell
 
 ```text
 You are implementing PRAXIS v5 Phase 4E only.
@@ -841,7 +873,7 @@ Push only after validation and ledger update.
 
 ---
 
-## 12 Phase 5 - MVP Methods
+## COPY BLOCK 12 - Phase 5 - MVP Methods
 
 ```text
 You are implementing PRAXIS v5 Phase 5.
@@ -903,7 +935,7 @@ Push validated checkpoints only.
 
 ---
 
-## 13 Phase 6 - Drafting Templates and AI Actions
+## COPY BLOCK 13 - Phase 6 - Drafting Templates and AI Actions
 
 ```text
 You are implementing PRAXIS v5 Phase 6.
@@ -957,7 +989,7 @@ Push only after validation and ledger update.
 
 ---
 
-## 14 Phase 7 - Demo Content and Wow Paths
+## COPY BLOCK 14 - Phase 7 - Demo Content and Wow Paths
 
 ```text
 You are implementing PRAXIS v5 Phase 7.
@@ -1018,7 +1050,7 @@ Push only after validation and ledger update.
 
 ---
 
-## 15 Phase 8 - Public Landing Page
+## COPY BLOCK 15 - Phase 8 - Public Landing Page
 
 ```text
 You are implementing PRAXIS v5 Phase 8.
@@ -1077,7 +1109,7 @@ Push only after validation and ledger update.
 
 ---
 
-## 16 Phase 9 - Polish and Ship
+## COPY BLOCK 16 - Phase 9 - Polish and Ship
 
 ```text
 You are implementing PRAXIS v5 Phase 9.
@@ -1152,7 +1184,7 @@ Push only after green validation.
 
 ---
 
-## 17 Production Deploy and Live Verification
+## COPY BLOCK 17 - Production Deploy and Live Verification
 
 ```text
 You are the PRAXIS v5 production deployment and live verification agent.
@@ -1236,7 +1268,7 @@ Push after validation.
 
 ---
 
-## 18 Final Product QA and Red-Team Review
+## COPY BLOCK 18 - Final Product QA and Red-Team Review
 
 ```text
 You are the final PRAXIS v5 product QA and red-team review agent.
@@ -1315,7 +1347,7 @@ If fixes are broad, do not start them. Record the blocker list and stop.
 
 ---
 
-## Emergency Blocker Prompt
+## COPY BLOCK Emergency - Blocker Handoff
 
 Use this when an agent hits a serious blocker and needs to hand off cleanly.
 
