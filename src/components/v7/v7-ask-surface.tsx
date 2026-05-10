@@ -147,6 +147,7 @@ export function V7AskSurface({
         </div>
 
         <div className="mt-5">
+          <p className="mb-2 text-xs font-semibold uppercase text-slate-600">Attached cores</p>
           <V7CorePickerStrip
             availableCores={availableCores}
             attachedCoreIds={attachedCoreIds}

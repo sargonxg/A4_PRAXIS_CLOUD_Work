@@ -23,6 +23,7 @@ const userCoreEditor = read('src/components/v7/v7-user-core-editor.tsx');
 const userCorePage = read('src/app/app/cores/me/page.tsx');
 const proxy = read('src/app/api/backend/[...path]/route.ts');
 const backend = read('backend/routers/cores.py');
+const modelMatrix = read('src/lib/ai/model-matrix.ts');
 const packageJson = JSON.parse(read('package.json') || '{}') as { scripts?: Record<string, string> };
 
 for (const token of ['The user only ever needs to think about **two**', 'My Core', 'Case Cores']) {
@@ -71,10 +72,14 @@ for (const token of [
   "method: 'PATCH'",
   'Save User Core',
   'Who PRAXIS is answering for',
-  'gemini-3-flash',
-  'gemini-3.1-pro-preview',
+  'V7_USER_CORE_MODEL_DEFAULTS',
+  'V7_USER_CORE_MODEL_OPTIONS',
 ]) {
   if (!userCoreEditor.includes(token)) failures.push(`User Core full editor missing ${token}`);
+}
+
+for (const token of ['V7_USER_CORE_MODEL_DEFAULTS', 'gemini-3-flash', 'gemini-3.1-pro-preview']) {
+  if (!modelMatrix.includes(token)) failures.push(`AI model matrix missing ${token}`);
 }
 
 if (!userCorePage.includes('V7UserCoreEditor')) {

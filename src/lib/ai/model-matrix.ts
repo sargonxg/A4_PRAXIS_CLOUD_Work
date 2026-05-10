@@ -24,6 +24,15 @@ export interface PlatformPosture {
 
 export const MODEL_MATRIX = matrix;
 export const AI_PLATFORM_POSTURE = matrix.platform as PlatformPosture;
+export const V7_USER_CORE_MODEL_DEFAULTS = {
+  quick: 'gemini-3-flash',
+  deep: 'gemini-3.1-pro-preview',
+  memo: 'gemini-3.1-pro-preview',
+} as const;
+export const V7_USER_CORE_MODEL_OPTIONS = [
+  V7_USER_CORE_MODEL_DEFAULTS.quick,
+  V7_USER_CORE_MODEL_DEFAULTS.deep,
+] as const;
 
 export function getModelMatrixEntry(taskKind: TaskKind): ModelMatrixEntry {
   return matrix.taskKinds[taskKind] as ModelMatrixEntry;

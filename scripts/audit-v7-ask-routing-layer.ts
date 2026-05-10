@@ -48,7 +48,7 @@ for (const token of [
   'routing.skill_id',
   'routing.subagent_id',
   'routing.to_dict()',
-  '"route": {**routing.to_dict(), "runtime": "persistence_preview"}',
+  '"route": {**routing.to_dict(), "runtime": execution.runtime}',
 ]) {
   if (!backendRouter.includes(token)) failures.push(`backend /ask/run missing routing persistence token ${token}`);
 }

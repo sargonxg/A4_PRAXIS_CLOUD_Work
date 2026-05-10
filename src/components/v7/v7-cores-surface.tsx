@@ -23,6 +23,7 @@ import {
 
 import { V7CoreDrawer, type V7CoreDrawerKind, type V7CoreDrawerSituation } from '@/components/v7/v7-core-drawer';
 import { AGENTIC_WORKFLOWS } from '@/lib/agentic-workflows/registry';
+import { CONTEXT_CORES } from '@/lib/product/context-core-map';
 import { useSituationStore } from '@/stores/situation-store';
 import { V7AnalystSkillsPanel } from './v7-analyst-skills-panel';
 import { V7SourceDocumentCorePanel } from './v7-source-document-core-panel';
@@ -99,6 +100,7 @@ export function V7CoresSurface({ entryPoint = 'library' }: V7CoresSurfaceProps) 
   const documentCount = active?.documentCount ?? 0;
   const graphCount = active?.graphEntities ?? active?.actorCount ?? active?.actors?.length ?? 0;
   const coreWorkflows = AGENTIC_WORKFLOWS.filter((workflow) => workflow.primaryArea === 'cores');
+  const contextCoreCount = CONTEXT_CORES.length;
   const copy = entryCopy[entryPoint];
   const drawerSituation: V7CoreDrawerSituation | null = active
     ? {
@@ -205,7 +207,12 @@ export function V7CoresSurface({ entryPoint = 'library' }: V7CoresSurfaceProps) 
                     The backend can still resolve the full eight-type schema, but the user-facing v7 model exposes only My Core and Case Cores.
                   </p>
                 </div>
-                <span className={coreApiStateClass(coreApiState)}>{coreApiStateLabel(coreApiState)}</span>
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase text-slate-700">
+                    {contextCoreCount} mapped cores
+                  </span>
+                  <span className={coreApiStateClass(coreApiState)}>{coreApiStateLabel(coreApiState)}</span>
+                </div>
               </div>
               {materializedCores.length ? (
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">

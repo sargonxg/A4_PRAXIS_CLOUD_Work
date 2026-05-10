@@ -19,6 +19,7 @@ import {
   X,
 } from 'lucide-react';
 
+import { V7_USER_CORE_MODEL_DEFAULTS, V7_USER_CORE_MODEL_OPTIONS } from '@/lib/ai/model-matrix';
 import { useSituationStore } from '@/stores/situation-store';
 
 export type V7CoreDrawerKind = 'user' | 'situation';
@@ -97,9 +98,9 @@ const defaultUserCoreForm: UserCoreForm = {
   formality: 'Formal',
   citationDensity: 'High',
   structure: 'Bulleted',
-  quickModel: 'gemini-3-flash',
-  deepModel: 'gemini-3.1-pro-preview',
-  memoModel: 'gemini-3.1-pro-preview',
+  quickModel: V7_USER_CORE_MODEL_DEFAULTS.quick,
+  deepModel: V7_USER_CORE_MODEL_DEFAULTS.deep,
+  memoModel: V7_USER_CORE_MODEL_DEFAULTS.memo,
   costCeiling: '2.50',
 };
 
@@ -692,8 +693,9 @@ function SelectField({ label, value, onChange }: { label: string; value: string;
         onChange={(event) => onChange(event.target.value)}
         className="min-h-10 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-navy-950 outline-none focus:border-navy-400"
       >
-        <option value="gemini-3-flash">gemini-3-flash</option>
-        <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
+        {V7_USER_CORE_MODEL_OPTIONS.map((option) => (
+          <option key={option} value={option}>{option}</option>
+        ))}
       </select>
     </label>
   );

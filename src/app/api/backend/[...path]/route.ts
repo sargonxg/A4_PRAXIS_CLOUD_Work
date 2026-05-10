@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
 import { callBackend } from '@/lib/api/praxis-backend-server';
+import { V7_USER_CORE_MODEL_DEFAULTS } from '@/lib/ai/model-matrix';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -167,9 +168,9 @@ async function localBackendFallback(req: Request, path: string): Promise<Record<
             structure: 'Bulleted',
           },
           models: {
-            quick: 'gemini-3-flash',
-            deep: 'gemini-3.1-pro-preview',
-            memo: 'gemini-3.1-pro-preview',
+            quick: V7_USER_CORE_MODEL_DEFAULTS.quick,
+            deep: V7_USER_CORE_MODEL_DEFAULTS.deep,
+            memo: V7_USER_CORE_MODEL_DEFAULTS.memo,
             costCeiling: '2.50',
           },
         },
@@ -283,7 +284,7 @@ async function localBackendFallback(req: Request, path: string): Promise<Record<
         {
           id: 'local-ask-message',
           role: 'assistant',
-          content: `Backend is not configured in this local session; PRAXIS staged this turn as ${route.action} with a local Context Core receipt.`,
+          content: `Backend is not configured in this local session; PRAXIS routed this turn as ${route.action} with a local Context Core receipt.`,
         },
       ],
       route,

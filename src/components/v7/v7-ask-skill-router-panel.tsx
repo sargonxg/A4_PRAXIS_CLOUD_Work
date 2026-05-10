@@ -90,6 +90,7 @@ export function V7AskSkillRouterPanel({
             <h2 className="mt-1 text-lg font-semibold text-navy-950">{primarySkill.label}</h2>
             <p className="mt-2 text-xs leading-5 text-slate-700">
               Ask PRAXIS frames your request with these context cores, then runs supported skills through the v7 runtime. Unsupported specialist tools stay clearly staged until their executor lands.
+              Persisted skill-run execution is the next backend slice for the remaining specialist tools.
             </p>
 
             <div className="mt-4 space-y-3">

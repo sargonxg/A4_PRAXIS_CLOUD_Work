@@ -510,6 +510,7 @@ function countVisiblePages(dir: string, fileName: string): number {
   return readdirSync(dir).reduce((count, entry) => {
     const pagePath = join(dir, entry);
     const stat = statSync(pagePath);
+    if (stat.isDirectory() && entry === 'admin') return count;
     if (stat.isDirectory()) return count + countVisiblePages(pagePath, fileName);
     if (entry !== fileName) return count;
     const body = readFileSync(pagePath, 'utf8');

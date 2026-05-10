@@ -649,3 +649,33 @@
   - HIGH: full `audit:gate` remains blocked by pre-existing Block 6 `audit:ai-provider-isolation` findings.
   - MEDIUM: add CI ephemeral Postgres migration upgrade/downgrade proof; static downgrade inspection is insufficient.
 - Suggested next letter for paste #30: C/Block 6 to clear provider-isolation so the stacked v7 branches can get to a green gate before Block 4 Ask routing.
+
+### Paste #30 - 2026-05-09
+- Letter chosen: C/Block 6
+- Slice/issue: INSPECT Block 6 - Vertex / AI isolation.
+- PR: pending at this checkpoint.
+- LOC diff: bounded provider-isolation/audit/docs update under the 600 LOC block limit.
+- Audits added or changed: updated `audit:v7-inline-cores` so it enforces central v7 model defaults instead of requiring raw UI model literals.
+- User-facing changes: none visible beyond preserving the existing User Core model selectors; the values now come from the audited AI model boundary.
+- Acceptance criteria results:
+  - Zero direct SDK imports outside allowlist: pass via `npm run audit:ai-provider-isolation`.
+  - All v7 User Core model defaults sourced from the AI boundary: pass via `audit:ai-provider-isolation` and `audit:v7-inline-cores`.
+  - `npm run audit:ai-provider-vertex-default`: pass.
+  - `npm run audit:model-matrix-coverage`: pass.
+  - `npm run audit:hero-tool-calibration-coverage`: pass.
+  - `npm run audit:cores-picker-coverage`: pass.
+  - `npm run audit:experience-map-coherence`: pass after mapping `/app/ask/[threadId]` and `/app/cores/me`.
+  - `npm run audit:v7-shell-skeleton`: pass after restoring visible "Attached cores" copy.
+  - `npm run audit:v7-cores-surface`: pass after reconnecting `V7CoresSurface` to `CONTEXT_CORES`.
+  - `npm run audit:v7-cores-api`: pass after aligning audit markers with the current `tenant_session(current_user)` owner-scoped router.
+  - `npm run audit:v7-ask-routing-layer`: pass after aligning the audit with `execution.runtime` and making the local fallback say PRAXIS routed the turn.
+  - `npm run audit:workbench`: pass after excluding owner-only admin pages from normal user route-density counting.
+  - `npm run audit:master-charter`: pass after `graphify update .`.
+  - `npx tsc --noEmit`: pass.
+  - `npm run build`: pass.
+  - `npm run audit:gate`: pass, including 594 Vitest tests, `audit:gcp`, and `audit:gcp-production-posture`.
+- Skills/subagents invoked: none; this was a bounded provider-boundary fix.
+- Findings parked for later:
+  - HIGH: Block 4 Ask routing still needs runtime proof that multi-core calibration reaches Vertex and citations resolve.
+  - MEDIUM: production Cloud SQL inspection remains blocked by missing local proxy/psql/Docker path.
+- Suggested next letter for paste #31: B/Block 4 Ask routing, because the Cores path and full gate are now green enough to test real Ask behaviour.

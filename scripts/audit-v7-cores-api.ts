@@ -19,8 +19,9 @@ for (const token of [
   '@router.get("")',
   '@router.get("/{core_id}")',
   'verify_firebase_token',
-  'tenant_session(token["uid"])',
-  "owner_uid = %s OR owner_uid = 'platform'",
+  'tenant_session(current_user)',
+  'owner_uid = %s',
+  "OR owner_uid = 'platform'",
   'INSERT INTO core_audit',
   "'read'",
 ]) {
