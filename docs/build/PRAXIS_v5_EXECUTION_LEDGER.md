@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Phase 0 complete and pushed; Phase 1 ready
+Status: Phase 1 complete and pushed; Wave 2 ready
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -72,7 +72,7 @@ Known setup warnings:
 | Phase | Prompt Source | Dependency | Status | Owner | Commit |
 |---|---|---|---|---|---|
 | 0 | File 2 Prompt 0.A | v4 cleanup merged | complete | Codex | `483d3605` |
-| 1 | File 2 Prompt 1.A | Phase 0 merged | complete-local | Codex | pending |
+| 1 | File 2 Prompt 1.A | Phase 0 merged | complete | Codex | `924ed579` |
 | 2A | File 2 Prompt 2A.A | Phase 1 merged | not-started | unassigned | pending |
 | 2B | File 2 Prompt 2B.A | Phase 1 merged | not-started | unassigned | pending |
 | 2C | File 2 Prompt 2C.A | Phase 1 merged | not-started | unassigned | pending |
@@ -192,8 +192,8 @@ only the intended Phase 0 changes.
   - PASS: Browser smoke for ontology list and detail routes with no console errors.
   - PASS: `npm run audit:v5-readiness` now advances through `audit:llm-pattern-coverage`; it expectedly stops at the Phase 2D `audit:source-tier-discipline` stub.
   - ENVIRONMENT: `pytest backend/ -q` remains unavailable in the active Python environment because backend dependencies/import path are not installed.
-- Commit: pending
-- Push: pending
+- Commit: `924ed579` (`feat(v5-phase-1): surface ontologies and add work ontology layer`)
+- Push: pushed to `origin/main`
 - Open blockers:
   - Prompt 1.A references 13 domain ontology specializations; the repo currently contains 10 OWL specializations. The app surfaces the actual 10 and keeps non-MVP domains visible through the existing TypeScript ontology registry.
   - `tacitus-ontology` separate GitHub repository publication is not performed here; the queue prompt says Giulio owns repo creation. Current work keeps the package-ready work ontology specs in-repo.
