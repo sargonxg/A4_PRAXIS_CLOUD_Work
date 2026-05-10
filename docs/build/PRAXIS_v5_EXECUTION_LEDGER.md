@@ -72,7 +72,7 @@ Known setup warnings:
 | Phase | Prompt Source | Dependency | Status | Owner | Commit |
 |---|---|---|---|---|---|
 | 0 | File 2 Prompt 0.A | v4 cleanup merged | complete | Codex | `483d3605` |
-| 1 | File 2 Prompt 1.A | Phase 0 merged | not-started | unassigned | pending |
+| 1 | File 2 Prompt 1.A | Phase 0 merged | complete-local | Codex | pending |
 | 2A | File 2 Prompt 2A.A | Phase 1 merged | not-started | unassigned | pending |
 | 2B | File 2 Prompt 2B.A | Phase 1 merged | not-started | unassigned | pending |
 | 2C | File 2 Prompt 2C.A | Phase 1 merged | not-started | unassigned | pending |
@@ -162,3 +162,39 @@ only the intended Phase 0 changes.
   - Backend Python verification requires environment setup before `pytest backend/ -q` can collect.
   - `npm run audit:gcp-production-posture` has zero hard failures and three soft warnings: uploads bucket public-access prevention is inherited, Terraform state bucket is not readable by the active user, and Cloud Armor exists as a warning-level check.
 - Notes for next agent: Do not start Phase 1 until this checkpoint is committed and pushed to `main`. Phase 1 should replace the expected-red `audit:llm-pattern-coverage` v5 stub and continue the v5 readiness chain.
+
+### 2026-05-10 - Phase 1 - Ontology Surfacing And Work Ontologies
+
+- Owner: Codex
+- Prompt source: `docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md` Prompt 1.A
+- Scope completed:
+  - Added `/ontologies` and `/ontologies/[id]` for domain and work ontology browsing.
+  - Added three MVP work ontology YAML specs, Pydantic mirrors, and extraction prompt templates under `backend/data/ontologies/work/`.
+  - Extended `backend/services/ontology_system.py` with work ontology resolution and demo Context domain-stack mapping notes.
+  - Replaced Phase 1 audit stubs for `audit:llm-pattern-coverage` and `audit:work-ontology-coverage`; wired both into `audit:gate`.
+  - Updated architecture docs to distinguish domain ontologies from work ontologies.
+- Files changed: ontology routes, ontology metadata, backend work ontology specs, Phase 1 audits, package audit gate, architecture docs, graphify output, execution ledger
+- Validation run:
+  - `npm run lint`
+  - `npm run typecheck`
+  - `npm run build`
+  - `npm run audit:gate`
+  - `npm run audit:llm-pattern-coverage`
+  - `npm run audit:work-ontology-coverage`
+  - `npm run audit:ontology-mapping`
+  - `npm run audit:ontology-system`
+  - `npm run audit:ontology-versions`
+  - `graphify update .`
+  - Browser smoke on `http://localhost:3020/ontologies`, `/ontologies/conflict`, and `/ontologies/foreign-policy-research`
+- Validation result: pass with documented exceptions
+  - PASS: `npm run audit:gate` with the two Phase 1 audits included.
+  - PASS: `npm run build`; routes `/ontologies` and `/ontologies/[id]` render in the build output.
+  - PASS: Browser smoke for ontology list and detail routes with no console errors.
+  - PASS: `npm run audit:v5-readiness` now advances through `audit:llm-pattern-coverage`; it expectedly stops at the Phase 2D `audit:source-tier-discipline` stub.
+  - ENVIRONMENT: `pytest backend/ -q` remains unavailable in the active Python environment because backend dependencies/import path are not installed.
+- Commit: pending
+- Push: pending
+- Open blockers:
+  - Prompt 1.A references 13 domain ontology specializations; the repo currently contains 10 OWL specializations. The app surfaces the actual 10 and keeps non-MVP domains visible through the existing TypeScript ontology registry.
+  - `tacitus-ontology` separate GitHub repository publication is not performed here; the queue prompt says Giulio owns repo creation. Current work keeps the package-ready work ontology specs in-repo.
+- Notes for next agent: Wave 2 can start only after this checkpoint is committed and pushed. Phase 2D owns replacing `audit:source-tier-discipline`; Phase 2B owns document pipeline stubs; Phase 2C owns research pipeline stubs.

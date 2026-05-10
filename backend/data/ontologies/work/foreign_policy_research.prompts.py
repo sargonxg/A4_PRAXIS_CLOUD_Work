@@ -1,0 +1,1 @@
+EXTRACTION_PROMPT = """Extract research actors, claims, interests, constraints, leverage, commitments, events, and narratives from the analyst's foreign-policy research context. Preserve source provenance for every claim."""

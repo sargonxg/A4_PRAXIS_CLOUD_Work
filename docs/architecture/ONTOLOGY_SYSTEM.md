@@ -2,9 +2,11 @@
 
 Last updated: 2026-05-07
 
-PRAXIS uses a two-layer ontology system for extraction: a shared Analytical Concepts Ontology base and optional case-type specializations. The base lives at `backend/data/ontologies/praxis_aco_base.owl` and defines the eight stable primitives: Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, and Narrative.
+PRAXIS uses a two-layer ontology system for extraction: a shared Analytical Concepts Ontology base, optional case-type domain specializations, and v5 work ontologies that describe the analyst mandate. The base lives at `backend/data/ontologies/praxis_aco_base.owl` and defines the eight stable primitives: Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, and Narrative.
 
 Case-type specializations live under `backend/data/ontologies/specializations/`. The current registry covers ten case types: active conflict, frozen conflict, negotiation/mediation, counter-terrorism, humanitarian crisis, political transition, sanctions/economic statecraft, strategic competition, cyber/hybrid, and forced displacement. Each specialization imports the base ontology, declares its case type, subclasses base primitives, and has a colocated changelog.
+
+Work ontologies live under `backend/data/ontologies/work/`. The v5 MVP work ontologies are Foreign Policy Research, Domestic Policy Analysis, and Corporate Strategic Analysis. Domain ontologies answer "what kind of world is this Context about"; work ontologies answer "what kind of analyst work is being performed." Runtime composition is exposed by `ontology_stack_for_context()` in `backend/services/ontology_system.py`.
 
 Runtime composition is owned by `backend/services/ontology_system.py`. Callers pass `case_type` and optional `case_type_secondary`; the helper returns a deterministic base-plus-specialization stack and the corresponding Cognee data-point classes from `backend/services/cognee_aco_models/`. Cognee remains isolated: only `backend/services/cognee_memory.py` owns the Cognee boundary, and the monolith currently returns disabled-safe extraction shapes until the isolated service consumes the resolver descriptor.
 

@@ -90,6 +90,14 @@ These rules govern every part of PRAXIS. Violating any of them is a defect, even
 
 ### 3.1 The eight ACO primitives are the substrate
 
+PRAXIS v5 keeps the eight ACO primitives stable and adds a second ontology
+category for work mandates. Domain ontologies stay under
+`backend/data/ontologies/specializations/`; work ontologies live under
+`backend/data/ontologies/work/` and currently cover Foreign Policy Research,
+Domestic Policy Analysis, and Corporate Strategic Analysis. A Context can stack
+domain lenses with one active work ontology so the app can distinguish the
+subject matter from the analyst's job-to-be-done.
+
 ```sql
 primitive TEXT NOT NULL CHECK (primitive IN
   ('Actor', 'Claim', 'Interest', 'Constraint', 'Leverage',

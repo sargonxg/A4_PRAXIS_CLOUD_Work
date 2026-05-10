@@ -1,0 +1,18 @@
+id: foreign-policy-research
+name: Foreign Policy Research
+active_in_mvp: true
+persona: Foreign Policy Analyst
+primitives:
+  Actor: [ResearcherSelf, ResearchInstitution, EditorialBoard, FundingSource, MediaContact, AcademicPeer, PolicymakerAudience, ExternalSource]
+  Claim: [ResearchHypothesis, EditorialPosition, MethodologicalChoice, EvidenceClaim]
+  Interest: [PublicationGoal, IntellectualPositioning, FundingAlignment, PolicyInfluence]
+  Constraint: [PublicationDeadline, EthicalReview, EditorialStandards, FundingScope, AcademicStandards]
+  Leverage: [PublicationVenue, CitationCapital, NetworkAccess, MethodologicalCredibility]
+  Commitment: [PublicationDeliverable, ConferencePresentation, EditorialOutput, PeerReviewResponse]
+  Event: [ResearchCycle, PeerReviewMilestone, PublicationLaunch, ConferenceParticipation]
+  Narrative: [AnalyticalFraming, PolicyRecommendationFraming, MethodologyNarrative, LiteraturePositioning]
+mandatory_relations:
+  - { from: Claim, to: Actor, relation: supported_by_source }
+  - { from: Commitment, to: Constraint, relation: bounded_by_publication_rule }
+  - { from: Narrative, to: Interest, relation: serves_research_objective }
+external_mappings: [BFO, CCO, PLOVER, FrameNet]

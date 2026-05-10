@@ -1,0 +1,18 @@
+id: corporate-strategic-analysis
+name: Corporate Strategic Analysis
+active_in_mvp: true
+persona: Corporate Strategic Analyst
+primitives:
+  Actor: [AnalystSelf, ExecutiveSupervisor, BoardAudience, InvestorAudience, RegulatorActor, NGOActor, JournalistContact, IndustryPeer, EmployeeAudience, CustomerAudience]
+  Claim: [StrategicPosition, RegulatoryComplianceClaim, MaterialityAssessment, StakeholderClaim, FinancialClaim]
+  Interest: [ShareholderValue, RegulatoryAlignment, ReputationalProtection, StrategicPositioning, ESGCredibility]
+  Constraint: [SECDisclosure, RegulatoryRule, BoardMandate, FinancialPosture, ESGStandard, ReputationalRisk]
+  Leverage: [MarketPosition, RegulatoryRelationship, MediaRelationship, InvestorBacking, CertificationCredibility]
+  Commitment: [SustainabilityPledge, RegulatoryCommitment, BoardDirective, DisclosureCommitment, StakeholderEngagement]
+  Event: [BoardMeeting, EarningsCall, SustainabilityReportRelease, RegulatoryFiling, NGOCampaignEvent, ESGRatingEvent]
+  Narrative: [CorporateFraming, ESGFraming, ReputationalFraming, InvestorFraming]
+mandatory_relations:
+  - { from: Claim, to: Constraint, relation: bounded_by_disclosure }
+  - { from: Actor, to: Interest, relation: represents_stakeholder_interest }
+  - { from: Commitment, to: Event, relation: evidenced_by_event }
+external_mappings: [BFO, CCO, POLECAT, FrameNet]

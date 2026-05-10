@@ -1,0 +1,18 @@
+id: domestic-policy-analysis
+name: Domestic Policy Analysis
+active_in_mvp: true
+persona: Domestic Policy Analyst
+primitives:
+  Actor: [AnalystSelf, Supervisor, Principal, CommitteeMember, AdvocacyOrgPartner, JournalistContact, SubjectMatterExpert, ConstituentAudience]
+  Claim: [PolicyPosition, RegulatoryInterpretation, EvidenceClaim, PoliticalViability]
+  Interest: [PolicyOutcome, ElectoralInterest, BudgetaryInterest, CoalitionInterest]
+  Constraint: [LegislativeCalendar, BudgetCycle, ProcessConstraint, PartisanFraming, LegalStandard, EthicalRule]
+  Leverage: [CommitteeAssignment, MediaAccess, CoalitionStrength, ConstituentBase, EvidenceQuality]
+  Commitment: [HearingTestimony, PolicyMemoCommit, BudgetRequest, RegulatoryCommentLetter]
+  Event: [HearingCycle, BudgetCycle, RegulatoryRulemaking, ElectionCycle, CommitteeMarkup, LegislativeSession]
+  Narrative: [PolicyFraming, BipartisanFraming, ConstituentFraming, AdministrativeFraming]
+mandatory_relations:
+  - { from: Claim, to: Actor, relation: stated_for_principal }
+  - { from: Constraint, to: Commitment, relation: constrains_deliverable }
+  - { from: Interest, to: Leverage, relation: enables_coalition_action }
+external_mappings: [BFO, CCO, POLECAT, FrameNet]

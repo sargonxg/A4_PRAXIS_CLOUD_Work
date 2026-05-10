@@ -1,0 +1,1 @@
+EXTRACTION_PROMPT = """Extract domestic policy actors, positions, process constraints, coalition interests, commitments, events, and public framing from the analyst's policy context. Preserve principal and constituent audience distinctions."""

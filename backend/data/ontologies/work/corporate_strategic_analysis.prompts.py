@@ -1,0 +1,1 @@
+EXTRACTION_PROMPT = """Extract corporate strategy actors, material claims, stakeholder interests, disclosure constraints, leverage, commitments, events, and reputation narratives. Preserve source provenance and disclosure boundaries."""

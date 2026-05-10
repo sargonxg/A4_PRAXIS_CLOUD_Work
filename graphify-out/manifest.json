@@ -219,6 +219,30 @@
     "mtime": 1778429928.6104674,
     "hash": "965421449665b55d8c401eede2820de4"
   },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\data\\ontologies\\work\\corporate_strategic_analysis.prompts.py": {
+    "mtime": 1778441604.2408206,
+    "hash": "32731cf9a71c56865d600e749bc9e281"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\data\\ontologies\\work\\corporate_strategic_analysis.py": {
+    "mtime": 1778441604.2234366,
+    "hash": "f5fbc556e9a245ce918f41e269bf375c"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\data\\ontologies\\work\\domestic_policy_analysis.prompts.py": {
+    "mtime": 1778441604.2255516,
+    "hash": "ff4f769992b2dbb793eec83bb8a18ce7"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\data\\ontologies\\work\\domestic_policy_analysis.py": {
+    "mtime": 1778441604.2234366,
+    "hash": "f72fe6dfb0da087447056fbcd67c5352"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\data\\ontologies\\work\\foreign_policy_research.prompts.py": {
+    "mtime": 1778441604.2255516,
+    "hash": "1d56780ad7e73056eca553ded9b8b58e"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\data\\ontologies\\work\\foreign_policy_research.py": {
+    "mtime": 1778441604.2187183,
+    "hash": "81d3a18ae2f078211b355ce3b8665583"
+  },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\dialectica\\runner.py": {
     "mtime": 1778429928.6360416,
     "hash": "024bc97bfc4fd9165cfb23c6df2b915d"
@@ -540,8 +564,8 @@
     "hash": "cb0b72f1ae745faab7cd8444c02727a3"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\services\\ontology_system.py": {
-    "mtime": 1778429928.7212653,
-    "hash": "d2c2da0af40cbbdbf7d0035f8d3bf565"
+    "mtime": 1778441631.8484392,
+    "hash": "6474dc9cceae5c8db33f58f566f152b8"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\services\\pgvector.py": {
     "mtime": 1778429928.7222779,
@@ -1155,6 +1179,10 @@
     "mtime": 1778429929.1472042,
     "hash": "3a89d5e6e4a791908594383229281b62"
   },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-docs-lint.ts": {
+    "mtime": 1778440558.8972487,
+    "hash": "3a3d655edc0eff5bcf2264cdc4af7ca1"
+  },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-document-ingest-parity.ts": {
     "mtime": 1778429929.155284,
     "hash": "6a9662357ef9a99fd98a8e70c1c1e7f6"
@@ -1236,8 +1264,8 @@
     "hash": "12dadb3f8164911f1b1e0f1362893d70"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-llm-pattern-coverage.ts": {
-    "mtime": 1778435934.6860015,
-    "hash": "230819880ce33e4ffc755bfd7ca6e536"
+    "mtime": 1778441687.956597,
+    "hash": "4e5b4163ab6a56b043273a8b2ee8cb92"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-master-charter.ts": {
     "mtime": 1778429929.1856742,
@@ -1444,8 +1472,8 @@
     "hash": "2682a3ac2b8e833dcf0d32458cd5fd13"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-work-ontology-coverage.ts": {
-    "mtime": 1778435934.689605,
-    "hash": "91f322ef7df422a4e2473032c5cb1ff9"
+    "mtime": 1778441687.9599936,
+    "hash": "49e855e5fffd901aeaf224e9d281f5f0"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-workbench-bundle.ts": {
     "mtime": 1778429929.2416828,
@@ -2670,6 +2698,14 @@
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\onboarding\\step-working-style.tsx": {
     "mtime": 1778429929.84427,
     "hash": "a709c3574089afb8bf6607dabdc66fa1"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\ontologies\\page.tsx": {
+    "mtime": 1778441549.5912626,
+    "hash": "84e4fe53d669d93e647544ff2fe8b731"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\ontologies\\[id]\\page.tsx": {
+    "mtime": 1778442307.8126228,
+    "hash": "d75d61957f3b053de78726d5d6b697d2"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\pricing\\page.tsx": {
     "mtime": 1778429929.84427,
@@ -4907,6 +4943,10 @@
     "mtime": 1778429930.418922,
     "hash": "e8891947be0902a0321deb93c8b2e2eb"
   },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\ontology\\work-ontologies.ts": {
+    "mtime": 1778441549.5884929,
+    "hash": "8c301cdcf3d903d4f2805a2bcce5aece"
+  },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\ontology\\conflict\\index.ts": {
     "mtime": 1778429930.405749,
     "hash": "297e32feb9c7a0627fee78995767b0a6"
@@ -6295,6 +6335,22 @@
     "mtime": 1778429928.6307845,
     "hash": "88ff3aa5ed9246ed2821bb93b4b222bf"
   },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\data\\ontologies\\work\\corporate-strategic-analysis.yaml": {
+    "mtime": 1778441604.2187183,
+    "hash": "c622baecd72318dee3f24f26492416bc"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\data\\ontologies\\work\\domestic-policy-analysis.yaml": {
+    "mtime": 1778441604.2126412,
+    "hash": "b18ccb448934d9288c1a3e7362c0ceec"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\data\\ontologies\\work\\foreign-policy-research.yaml": {
+    "mtime": 1778441604.2126412,
+    "hash": "e1f60a3259e94db3ee8c8b399a726179"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\data\\ontologies\\work\\README.md": {
+    "mtime": 1778441604.211457,
+    "hash": "6fd0f508a9c644760eeb67c9b63c746b"
+  },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\services\\extract_structured\\prompts\\verification.md": {
     "mtime": 1778429928.7105238,
     "hash": "18a5cf396d3e5cf1e2c40f8c65e693e1"
@@ -6592,16 +6648,16 @@
     "hash": "742b039f780111ec0d9b6fc5d5b10d2e"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\architecture\\ONTOLOGY_SYSTEM.md": {
-    "mtime": 1778429928.8274293,
-    "hash": "f44fd4fc199e03e9114eb860e3e56d37"
+    "mtime": 1778441733.3624215,
+    "hash": "a1d48d53a05697ca5e640d5f77bcc01e"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\architecture\\POSTGRES_SCHEMA.md": {
     "mtime": 1778429928.8285203,
     "hash": "c3b8104b84a11a35e4e8748cb283183d"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\architecture\\PRAXIS_ARCHITECTURE.md": {
-    "mtime": 1778429928.8285203,
-    "hash": "7b202166dc8d89e0fdc1eb3d3904d35b"
+    "mtime": 1778441733.3624215,
+    "hash": "335654e8a29a0209825c925d3e1c7c69"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\architecture\\PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md": {
     "mtime": 1778429928.8285203,

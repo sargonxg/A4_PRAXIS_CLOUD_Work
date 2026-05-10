@@ -17,6 +17,7 @@ ONTOLOGY_VERSION = "2026.05.07"
 BASE_ONTOLOGY_FILE = "praxis_aco_base.owl"
 BASE_ONTOLOGY_PATH = Path("backend/data/ontologies") / BASE_ONTOLOGY_FILE
 SPECIALIZATION_ROOT = Path("backend/data/ontologies/specializations")
+WORK_ONTOLOGY_ROOT = Path("backend/data/ontologies/work")
 
 
 @dataclass(frozen=True)
@@ -112,6 +113,42 @@ CASE_TYPES: tuple[CaseTypeSpec, ...] = (
 CASE_TYPE_BY_SLUG = {spec.slug: spec for spec in CASE_TYPES}
 
 
+@dataclass(frozen=True)
+class WorkOntologySpec:
+    slug: str
+    label: str
+    roles: tuple[str, ...]
+    mandates: tuple[str, ...]
+
+    @property
+    def ontology_path(self) -> Path:
+        return WORK_ONTOLOGY_ROOT / f"{self.slug}.yaml"
+
+
+WORK_ONTOLOGIES: tuple[WorkOntologySpec, ...] = (
+    WorkOntologySpec(
+        slug="foreign-policy-research",
+        label="Foreign Policy Research",
+        roles=("foreign-policy-analyst", "researcher", "policy-scholar"),
+        mandates=("foreign policy", "research", "indo-pacific", "strategic competition"),
+    ),
+    WorkOntologySpec(
+        slug="domestic-policy-analysis",
+        label="Domestic Policy Analysis",
+        roles=("domestic-policy-analyst", "legislative-analyst", "policy-staffer"),
+        mandates=("domestic policy", "regulation", "legislative", "ai regulation"),
+    ),
+    WorkOntologySpec(
+        slug="corporate-strategic-analysis",
+        label="Corporate Strategic Analysis",
+        roles=("corporate-strategic-analyst", "strategy-analyst", "esg-analyst"),
+        mandates=("corporate", "strategy", "sustainability", "food", "beverage", "esg"),
+    ),
+)
+
+WORK_ONTOLOGY_BY_SLUG = {spec.slug: spec for spec in WORK_ONTOLOGIES}
+
+
 def normalize_case_type(value: str | None) -> str | None:
     if not value:
         return None
@@ -123,6 +160,58 @@ def normalize_case_type(value: str | None) -> str | None:
 
 def available_case_types() -> tuple[str, ...]:
     return tuple(spec.slug for spec in CASE_TYPES)
+
+
+def available_work_ontologies() -> tuple[str, ...]:
+    return tuple(spec.slug for spec in WORK_ONTOLOGIES)
+
+
+def resolve_work_ontology(active_user_model: dict[str, Any] | None = None) -> str:
+    """Resolve the work ontology from the active user model role and mandate."""
+    model = active_user_model or {}
+    text = " ".join(
+        str(model.get(key, ""))
+        for key in ("role", "persona", "mandate", "description", "domain")
+    ).lower()
+    for spec in WORK_ONTOLOGIES:
+        if any(marker in text for marker in (*spec.roles, *spec.mandates)):
+            return spec.slug
+    return "foreign-policy-research"
+
+
+def domain_stack_for_context(context: dict[str, Any] | None = None) -> tuple[str, ...]:
+    """Resolve MVP domain ontology stack from context frame and geography.
+
+    Demo fit notes:
+    - Indo-Pacific strategic competition maps to strategic-competition with
+      conflict, mediation, and humanitarian as the MVP public lens.
+    - AI regulation stretches the MVP domain stack; governance/regulatory is
+      documented as v1.5, with mediation and humanitarian as MVP fallbacks.
+    - Food and beverage sustainability stretches the MVP domain stack;
+      sustainability is v1.5, with mediation and humanitarian as fallbacks.
+    """
+    frame = " ".join(str((context or {}).get(key, "")) for key in ("name", "frame", "domain", "region")).lower()
+    if "ai regulation" in frame or "domestic" in frame:
+        return ("negotiation-mediation", "humanitarian-crisis")
+    if "food" in frame or "beverage" in frame or "sustainability" in frame:
+        return ("negotiation-mediation", "humanitarian-crisis")
+    if "indo-pacific" in frame or "strategic competition" in frame:
+        return ("strategic-competition", "active-conflict", "negotiation-mediation", "humanitarian-crisis")
+    return ("active-conflict", "negotiation-mediation", "humanitarian-crisis")
+
+
+def ontology_stack_for_context(
+    context: dict[str, Any] | None = None,
+    active_user_model: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return domain and work ontology paths for a Context/User Model pair."""
+    domain_slugs = domain_stack_for_context(context)
+    return {
+        "domainOntologyIds": list(domain_slugs),
+        "domainOntologyPaths": [CASE_TYPE_BY_SLUG[slug].ontology_path.as_posix() for slug in domain_slugs if slug in CASE_TYPE_BY_SLUG],
+        "workOntologyId": resolve_work_ontology(active_user_model),
+        "workOntologyPath": WORK_ONTOLOGY_BY_SLUG[resolve_work_ontology(active_user_model)].ontology_path.as_posix(),
+    }
 
 
 def ontology_stack_for_case_types(
@@ -204,5 +293,15 @@ def ontology_cache_snapshot() -> dict[str, Any]:
                 "anchors": list(spec.anchors),
             }
             for spec in CASE_TYPES
+        ],
+        "workOntologies": [
+            {
+                "slug": spec.slug,
+                "label": spec.label,
+                "ontologyPath": spec.ontology_path.as_posix(),
+                "roles": list(spec.roles),
+                "mandates": list(spec.mandates),
+            }
+            for spec in WORK_ONTOLOGIES
         ],
     }
