@@ -1,0 +1,833 @@
+# PRAXIS Production TODO
+
+Status: active continuation roadmap.
+Last updated: 2026-05-07.
+Workspace: `C:\Users\giuli\praxiscodexworking`.
+Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`.
+Branch: `main`.
+
+This is the root handoff list for continuing the current product-hardening
+loop. The deeper historical backlog remains in
+`docs/PRODUCTION_TODO_2026-04-28.md`; this file is the current operating
+checklist for the next implementation passes.
+
+## v7 Design-Led Agentic UX Packet
+
+- [x] Save the v7 operating packet in `docs/v7/`:
+  `AGENTS.md`, `PROMPTS.md`, `STATUS.md`, `SLICE_TEMPLATE.md`, vision briefs,
+  open questions, and the first proposed slice.
+- [x] Link root agent handoff docs to `docs/v7/README.md`,
+  `docs/v7/STATUS.md`, `docs/v7/AGENTS.md`, and
+  `docs/v7/OPEN_QUESTIONS.md`.
+- [ ] Get Giulio approval for
+  `docs/v7/SLICES/01_foundations_experience_map.md` before coding the first
+  v7 product slice.
+- [ ] After approval, implement the thin v7 experience map and agentic workflow
+  registry without deleting existing workbench functionality.
+
+The hyper-detailed multi-agent execution plan is
+`docs/PRAXIS_SUPERPLAN_2026-04-29.md`. Use that document for subagent lanes,
+file-level work scopes, acceptance criteria, and verification evidence.
+
+The current master-charter completion checklist is
+`docs/backlog/2026-05-06-master-charter-completion-todo.md`. It is the active
+source for remaining Pack 03-14, phase-spec, launch, and production-excellence
+tasks until PRAXIS reaches the strict `v1.0.0` gate.
+
+The latest Pack 18 production-reality closure pass is
+`docs/audits/2026-05-07-PACK18_PRODUCTION_REALITY_CLOSURE.md`. It records the
+preserved Pack 18 prompt and the closed canonical entry-route gap for
+`/demo/syria-2024`, `/waitlist`, `/login/callback`, and
+`/legal/{privacy,terms,security,data-retention}`, plus first-class foundation
+registration for `cross.memo-create` and `cross.memo-refresh`.
+
+The latest Pack 19 genuinely-useful pass is
+`docs/audits/2026-05-07-PACK19_GENUINELY_USEFUL.md`. It preserves the v1.1
+prompt, records that Pack 19's post-v1.0 assumptions are not fully true yet,
+and ships the safe usefulness slices that are honest on the current app:
+marketplace transparency cards for all 22 current tools plus tool-run evidence
+drawer and comparison UI, guarded by `npm run audit:transparency-cards` and
+`npm run audit:evidence-drawer`.
+
+The latest real-app dashboard pass is
+`docs/audits/2026-05-07-DASHBOARD_REAL_APP_PASS.md`. It records the replacement
+of the redirect-only `/app/dashboard` with the current command-center route and
+the audit guard that keeps the route tied to real workbench surfaces.
+
+The latest repo-shape and graphify prep pass is
+`docs/audits/2026-05-07-REPO_SHAPE_GRAPHIFY_PREP.md`. It records the refreshed
+5,147-node / 8,517-edge graphify map, explains why `graphify-out/graph.html`
+is no longer tracked for the full repo graph, adds `npm run audit:repo-shape`,
+and separates advisory Knip dead-code findings from safe deletion work.
+
+## Repo Shape And Next-Round Readiness
+
+- [x] Refresh graphify with `graphify update .` after the Cognee/memory layer
+  work so the code graph reflects the current app.
+- [x] Treat `graphify-out/GRAPH_REPORT.md` and `graphify-out/graph.json` as
+  authoritative for the full repo now that the graph is above the HTML
+  visualization limit.
+- [x] Add `npm run audit:repo-shape` and wire it into `audit:gate`.
+- [x] Record Knip findings as advisory instead of deleting route-discovered,
+  registry-discovered, migration, or upcoming-surface files blindly.
+- [ ] Create a narrowed graphify HTML view for the app/workbench/tools subgraph
+  so humans can inspect the architecture visually without the full-repo
+  5,000-node guard.
+- [ ] Triage Knip candidates by category: scripts, hooks, stores, UI
+  components, and types. Delete only after proving no route/registry/generated
+  docs/build path still uses them.
+- [ ] Add an authenticated browser fixture for `/app/*` flows so production
+  smoke can prove real-user behavior, not only public routes and auth redirects.
+
+The latest Pack 16 boardroom gap pass is
+`docs/audits/2026-05-07-PACK16_AGENTIC_BOARDROOM_GAP_AUDIT.md`. It records the
+remaining Agentic Boardroom gaps after fixing the synthesis route e2e failure:
+Agent Engine deployment, real persona corpus indexing, custom corpus upload,
+eval depth, tool invocation, cost telemetry, and trace evidence.
+
+The current 15-initiative app-wide improvement plan is
+`docs/PRAXIS_15_APP_WIDE_IMPROVEMENTS_2026-04-29.md`.
+
+The latest sophisticated persona/product QA wave is
+`docs/PRAXIS_SOPHISTICATED_PERSONA_WAVE_2026-04-29.md`. It contains five
+serious user workflows, live-site findings, and a 35-item roadmap spanning AI
+trust, export provenance, demo route continuity, landing-page credibility,
+testing, cloud, and deployment parity.
+
+The grounded-search intelligence spine plan is
+`docs/PRAXIS_GROUNDED_SEARCH_INTELLIGENCE_SPINE_2026-04-29.md`. It defines the
+current product direction: grounded Google Search is the primary live research
+path; GDELT, ReliefWeb, UN News, UCDP, HDX, UNHCR, World Bank, SIPRI, and
+Crisis Group are corroborating layers.
+
+The latest 20-item subagent audit and implementation wave is
+`docs/PRAXIS_NEXT_20_IMPROVEMENTS_2026-04-29.md`.
+
+The latest diplomatic/policy writing architecture pass is
+`docs/PRAXIS_DIPLOMATIC_DRAFTING_ARCHITECTURE_2026-04-29.md`.
+
+The current all-tools operating-system architecture pass is
+`docs/PRAXIS_TOOL_OPERATING_SYSTEM_2026-04-30.md`.
+
+The current generated tool-by-tool sprint backlog is
+`docs/PRAXIS_TOOL_BY_TOOL_SPRINT_BACKLOG_2026-05-01.md`. Regenerate it with
+`npm run generate:tool-backlog` after tool/page/route changes.
+
+The current subagent synthesis for the tool sprint is
+`docs/PRAXIS_TOOL_SPRINT_SUBAGENT_SYNTHESIS_2026-04-30.md`.
+
+The current shared context/tool architecture note is
+`docs/PRAXIS_CONTEXT_AND_TOOL_ARCHITECTURE_2026-04-30.md`. It defines the
+context layers, database paths, graph/Dialectica plan, document-production
+lane, and active generic + conflict/political implementation focus.
+
+The current ranked execution queue is
+`docs/PRAXIS_TOP_10_NEXT_EXECUTION_2026-04-30.md`.
+
+The current product/architecture wave for the next 10 critical improvements is
+`docs/PRAXIS_NEXT_10_CRITICAL_IMPROVEMENTS_2026-04-30.md`.
+
+The current Firestore-first graph backbone execution plan is
+`docs/PRAXIS_GRAPH_BACKBONE_SPRINT_A_2026-04-30.md`. Reference it as
+**Graph Backbone Sprint A** or **GB-A**. It defines GB-A-01 through GB-A-10
+plus the **GB-A-FALKOR** FalkorDB GraphRAG-SDK pilot.
+
+The current dashboard/tool-package wave is
+`docs/PRAXIS_TOOL_PACKAGES_DASHBOARD_WAVE_2026-05-01.md`. It records the
+generic-core plus conflict/political dashboard package surface and the next 10
+tool-workspace improvements.
+
+The current ranked next-10 improvement wave is
+`docs/PRAXIS_NEXT_10_IMPROVEMENTS_2026-05-01.md`. It records the package
+readiness, GraphOps registry, status coverage, and next AI/tool wiring work.
+
+The current tools usability round is
+`docs/PRAXIS_TOOLS_USABILITY_ROUND_2026-05-01.md`. It records the 10-target
+round for turning package readiness into concrete user actions.
+
+The current context-creation release note is
+`docs/PRAXIS_CONTEXT_CREATION_RELEASE_2026-05-01.md`. It records the
+situation/onboarding context improvements that make AI/tool outputs more
+user- and situation-specific.
+
+The current real-app critical roadmap is
+`docs/PRAXIS_REAL_APP_CRITICAL_ROADMAP_2026-05-01.md`. It separates production
+content from demo content and ranks the highest-impact work needed for a real
+user to operate PRAXIS end to end.
+
+The current Dialectica premium-backbone plan is
+`docs/PRAXIS_DIALECTICA_BACKBONE_ARCHITECTURE_2026-05-01.md`. It defines how
+future premium users can connect PRAXIS situations to Dialectica dynamic
+ontologies, deterministic graph reasoning, context packs, and analyst-approved
+graph mutations.
+
+The current boardroom/context/search audit is
+`docs/PRAXIS_BOARDROOM_CONTEXT_SEARCH_AUDIT_2026-05-01.md`. It captures the
+latest online research synthesis, four-expert boardroom capability pass,
+new/returning-user gaps, source-search improvements, and Dialectica-ready
+premium graph path.
+
+The current autonomous improvement plan is
+`docs/PRAXIS_AUTONOMOUS_IMPROVEMENT_PLAN.md`. It reconstructs the app from
+code, maps customer-fit workflows, audits product and technical gaps, records
+the latest mission-playbook implementation wave, and ranks the next 10
+improvements.
+
+The current ten-tool consolidation audit is
+`docs/PRAXIS_CONSOLIDATED_TOOL_AUDIT_2026-05-01.md`. It records the latest
+code audit, primary ten-tool surface, legacy-tool absorption map, onboarding
+simplification, and Google Cloud / premium research cost guardrails.
+
+Generated per-tool specifications live under `docs/tools/generated/` and
+currently cover 55 registered tools. Refresh them with
+`npm run generate:tool-docs` after changing the registry, operating contracts,
+path taxonomy, or context blueprints.
+
+## Active Tool Operating System Workstream
+
+- [x] Add a central operating contract for every registered PRAXIS tool:
+  objective, value, applicability, required questions, expected outputs, Ask
+  PRAXIS actions, situation inputs, persistence expectations, and quality bar.
+- [x] Add a reusable tool operating-contract panel and wire it through the
+  registry-driven tool info component.
+- [x] Add `/api/tools/contracts` so tool metadata can be inspected and reused
+  by future UI, agents, audits, and admin workflows.
+- [x] Make floating Ask PRAXIS send the current tool id/path to chat and inject
+  the tool contract into the chat system prompt.
+- [x] Add `npm run audit:tool-contracts` to verify that every registered tool
+  has a route/page/contract baseline.
+- [x] Add `npm run generate:tool-backlog` to build a verifiable per-tool TODO
+  list from the live registry, operating contracts, page inspection, and AI
+  route audit.
+- [x] Start the P0 page-surface upgrade with Policy Memo: registry tool info,
+  operating contract, and output confidence/provenance frame are now visible.
+- [x] Start the P0 Sources Library page-surface upgrade with registry tool info
+  and operating contract visibility.
+- [x] Codify the generic PRAXIS core plus ten policy workflow paths and mark
+  the current sprint focus as generic + conflict/political analyst.
+- [x] Make dashboard/sidebar recommendations account for the active
+  situation's workflow path, not only role/domain.
+- [x] Migrate `src/middleware.ts` to `src/proxy.ts` to resolve the recurring
+  Next.js middleware convention warning.
+- [x] Add a central context-blueprint layer for every tool: required context
+  layers, canonical database paths, graph-backbone mode, evidence policy,
+  document/LibreOffice production readiness, and future Dialectica role.
+- [x] Show context blueprint and canonical data paths in the shared operating
+  contract panel so tool pages expose not only purpose but also the knowledge
+  context they require.
+- [x] Generate per-tool documentation files under `docs/tools/generated/`
+  from live registry, contracts, paths, and context blueprints.
+- [x] Tighten `/api/tool-data` so manual saves use a structured versioned
+  envelope with metadata/source receipts, legacy compatibility mirroring, and
+  payload-size protection.
+- [x] Add `npm run admin:check -- giulio@tacitus.me` and enrich `/api/admin/me`
+  so admin access is explainable by verified email allowlist vs UID allowlist.
+- [x] Update admin UI copy to stop implying UID-only access; verified
+  `giulio@tacitus.me` is an allowed admin identity when the Firebase email is
+  verified.
+- [x] Add a context-backbone readout to the dashboard launchpad showing tool
+  readiness, required context layers, graph/document/provenance coverage, and
+  the next missing situation field.
+- [x] Make `/api/tools/contracts` expose context blueprints in addition to
+  operating contracts for future agents, admin tools, and documentation.
+- [x] Add a ranked top-10 execution plan for the next architecture wave.
+- [x] Make `withCalibration()` automatically inject the canonical operating
+  contract and context blueprint into every calibrated AI route.
+- [x] Add a dedicated Tools Workspace page with package filters, search,
+  readiness badges, saved-output freshness, required-context checks, and route
+  wiring health.
+- [x] Turn package readiness into user-facing next actions across the dashboard
+  and Tools Workspace: context, GraphOps, sources, documents, stale refresh,
+  and first-run tool actions.
+- [x] Add package warnings for graph-dependent, source-dependent,
+  document-dependent, stale, missing-output, missing-context, and route-wiring
+  gaps so users can understand why a package is not ready.
+- [x] Expand calibrated AI prompts with richer situation context: description,
+  workflow path, domain confidence, source URLs, custom sources, analyst notes,
+  context inventory, and situation overrides.
+- [x] Add default situation-aware retrieval for calibrated AI routes that do
+  not provide their own retrieval query.
+- [x] Add a public four-advisor capability registry covering each expert's
+  method, boardroom role, visible tool access, source/data diet, and
+  Dialectica-ready graph layer.
+- [x] Reuse that advisor capability registry on the landing page and real
+  Strategic Advisory picker so the app and marketing surface describe the same
+  differentiated agents.
+- [x] Add the boardroom/context/search audit with a ranked next queue for
+  guided context building, search-plan visibility, returning-user memory,
+  boardroom run artifacts, and Dialectica graph integration.
+- [x] Create the autonomous improvement plan and customer-fit audit requested
+  for the current product-engineering loop.
+- [x] Expand policy workflow paths into mission playbooks with actual workflow,
+  valuable UI, paid output, first-run question, and required inputs.
+- [x] Surface workflow mission playbooks in blank state, situation creation,
+  and dashboard launchpad so new and returning users can understand the work
+  PRAXIS is helping them complete.
+- [x] Harden situation creation context intake with URL normalization,
+  deduping, protocol checks, source caps, custom-source filtering, and context
+  note caps.
+- [x] Add an AI context quality readout to the situation creation review step.
+- [x] Stop Ask PRAXIS from showing demo conflict prompts to real users without
+  an active situation; live no-situation prompts now focus on setup, context
+  quality, workflow, and graph readiness.
+- [x] Add a real-app critical roadmap and Dialectica backbone architecture note
+  so future work keeps demo mode separate from production user content.
+- [x] Consolidate the product-facing workspace to ten primary tool surfaces:
+  Dashboard, Context Builder, Ask PRAXIS, Research & Sources, Documents,
+  GraphOps, Conflict Graph, Timeline & Signals, Actors & Stakeholders, and
+  Briefing Studio.
+- [x] Preserve specialized pages as supporting legacy capabilities while
+  removing them from first-run/sidebar dominance.
+- [x] Add grounded-research fanout limits and server-premium provider opt-in so
+  Google/Vertex, Parallel, and Firecrawl usage does not scale accidentally.
+- [ ] Add a CI audit that blocks demo/sample content from appearing in real
+  `/app` empty states, exports, prompt suggestions, and saved outputs.
+- [ ] Add a typed content-origin field to saved tool outputs so production
+  reports can reject `demo_only` content for non-demo users.
+- [ ] Apply `RegistryToolInfo` / `ToolOperatingContractPanel` to every tool page
+  that still bypasses the shared shell.
+- [x] Move the active generic + conflict/political tools to the context
+  blueprint in their AI route prompts via shared calibration.
+- [x] Add a document-production spine to Documents so live and demo workspaces
+  show intake, extraction, structure, context, draft, and export readiness from
+  real document/entity/chunk counts.
+- [x] Upgrade the Nordalia demo Documents view from a passive placeholder to a
+  labelled demo workspace with synthetic source documents and computed
+  production readiness.
+- [x] Install and register Graphify for Codex on this repository, generate the
+  initial `graphify-out/` code graph, and use it to identify the current
+  architecture hubs before the next optimization pass.
+- [x] Add `cloudbuild.frontend.yaml` and `npm run deploy:frontend:cloud` as a
+  faster Cloud Build path for frontend/tool-surface iterations that do not need
+  backend or worker image rebuilds.
+- [x] Exclude `.codex/`, `.code-review-graph/`, and `graphify-out/` from GCP
+  and Docker build contexts so agent artifacts do not inflate production build
+  uploads or frontend images.
+- [x] Add a deterministic situation-context health model covering analyst
+  profile, evidence, graph, tool context, agentic memory, freshness, ready
+  layers, and missing layers.
+- [x] Inject situation-context health into `buildCalibratedContext()` so all
+  calibrated AI tools receive explicit confidence and missing-context
+  instructions.
+- [x] Surface context-health score, dimension badges, and the first actionable
+  context gap in the Dashboard Situation Launchpad.
+- [x] Add a shared source-receipt/audit layer that normalizes grounded web
+  results, Firecrawl scrapes, and UCDP structured records into checkable
+  provenance metadata.
+- [x] Wire Source Scout to persist and display source receipts, provider
+  counts, checkable URL count, high-reliability source count, scrape coverage,
+  and source-confidence badge.
+- [x] Add GraphOps v0.1 as the canonical graph maintenance contract:
+  Firestore-backed summary API, dashboard panel, provenance/temporal coverage,
+  pending proposal pressure, low-confidence counts, orphan detection, and
+  snapshot awareness.
+- [x] Harden Neo4j wiring for production compatibility: support both
+  `NEO4J_USER` and `NEO4J_USERNAME`, honor `NEO4J_DATABASE`, and sanitize
+  dynamic Neo4j labels/relationships before Cypher execution.
+- [x] Save the next graph backbone roadmap as Graph Backbone Sprint A / GB-A,
+  including stable item codes GB-A-01 through GB-A-10 and the GB-A-FALKOR
+  derived GraphRAG pilot.
+- [x] Start GB-A implementation: canonical graph v1 normalizer, evidence
+  envelope schema, temporal assertion schema, graph context-pack service,
+  deterministic repair suggestions, proposal-first extraction writes, Ask
+  PRAXIS `proposeGraphDelta`, and `/app/graphops`.
+- [x] Make tool-package structure visible on the real dashboard: generic core
+  workspace, active conflict/political analyst path, next packages, future
+  packages, primary tools, deliverables, and status labels now render from the
+  canonical workflow taxonomy.
+- [x] Promote GraphOps into the generic core workspace so graph maintenance is
+  treated as a baseline context capability, not an operator-only afterthought.
+- [x] Register GraphOps as a first-class PRAXIS tool with method, schema,
+  evidence policy, generated documentation, and contract-audit coverage.
+- [x] Replace the static `/api/tool-status` tool inventory with the live
+  registry so readiness/status coverage cannot drift from registered tools.
+- [x] Add package readiness scoring to the dashboard based on saved outputs,
+  stale outputs, required context readiness, and AI/data route wiring.
+- [ ] Audit prompts for duplicated contract text now that `withCalibration()`
+  injects the shared backbone automatically.
+- [x] Add the graph approval mutator so approved `graph_updates` payloads are
+  applied to `graph/main` transactionally with snapshots.
+- [ ] Mirror approved graph updates to the derived Neo4j/Falkor/Spanner index
+  when enabled, with rebuild-from-Firestore guarantees.
+- [ ] Add a GraphOps workspace page with proposal review, temporal diff,
+  canonical-name merge suggestions, source-fragment evidence drawers, and
+  Neo4j connectivity diagnostics.
+- [ ] Build a document export adapter that renders saved structured tool data
+  into DOCX/PDF/LibreOffice-compatible sections without a second AI call.
+- [ ] Work through the generated P0 queue: Conflict Graph, Deep Search Agent,
+  Talking Points, Dashboard, Ask PRAXIS, Sources Library, ARGUS, Dossier,
+  Human Rights, Legal Tracker, Policy Memo route-quality upgrade, Sanctions,
+  Treaty Analyzer, and UN Toolkit.
+- [ ] Add typed Ask PRAXIS writeback adapters for graph, timeline, draft,
+  scorecard, source, and workspace-state patches.
+- [ ] Upgrade the next 10 lowest-scoring AI tools to the generation baseline:
+  calibrated route, request schema, situation/user/context injection, useful
+  structured output, source/confidence notes, persistence, and degraded state.
+
+## Active Diplomatic Drafting Workstream
+
+- [x] Add a central diplomatic drafting service inspired by durable legal
+  document workspaces: shared situation resolution, evidence context, artifact
+  modes, and source/confidence audit fields.
+- [x] Fix Policy Memo contract mismatch so the page, route, persistence key,
+  and structured output schema agree.
+- [x] Fix the remaining demo Policy Memo no-op by supplying the route with a
+  real structured Nordalia situation when demo mode has no active store
+  situation. Verified in production: first-time demo flow -> Policy Memo ->
+  `/api/ai/policy-memo` 200 -> Executive Summary / Policy Options /
+  Recommendation render.
+- [x] Fix Talking Points contract mismatch so the page sends valid route input
+  and renders structured JSON output correctly.
+- [ ] Remove or gate the demo Firestore `permission-denied` snapshot listener
+  warning emitted by `useToolData` subscriptions; it does not block generation,
+  but it is noisy and weakens operator confidence during browser QA.
+- [ ] Extend the same drafting service to UN Toolkit, Legal Tracker,
+  Treaty Analyzer, Dossier, Briefing, Report, and Resolution routes.
+- [ ] Add a unified diplomatic artifact route and reusable workflow templates
+  for policy memo, decision memo, diplomatic cable, demarche, non-paper,
+  communique, legal brief, and implementation checklist.
+
+## Current Baseline
+
+- Product: PRAXIS by TACITUS, an AI-native workspace for policy, diplomacy,
+  conflict analysis, mediation, humanitarian analysis, legal/sanctions work,
+  and political intelligence.
+- Objective: make the app clearer, more useful, and more trustworthy for real
+  policy users, not only cleaner for developers.
+- Core promise: a calibrated system of record for conflict, centered on Actor,
+  Claim, Interest, Constraint, Leverage, Commitment, Event, Narrative,
+  provenance, and reusable decision intelligence.
+- Frontend: Next.js 16 App Router, React 19, TypeScript, Tailwind 4, Radix,
+  Zustand, Vercel AI SDK v6.
+- Backend: private Python FastAPI Cloud Run service for graph/pipeline/analysis.
+- Data/auth/cloud: Firebase Auth, Firestore, Cloud Storage, Vertex AI, BigQuery,
+  Pub/Sub, Cloud Tasks, Cloud Functions, Cloud Scheduler, Secret Manager,
+  Cloud Build, Cloud Run.
+- Current validation on 2026-04-29:
+  - `npx tsc --noEmit`: passed.
+  - Targeted ESLint for grounded-search, research-extract, web-research, live
+    source pack, and demo fallback paths: passed.
+  - `npx vitest run tests/unit/lib/ai/situation-intelligence-schema.test.ts`:
+    passed, covering geopolitical, corporate conflict, and policy memo output
+    contracts.
+  - `npm run build`: passed; Next.js still reports the existing
+    `middleware` file convention deprecation.
+  - `npm run lint`: passed with existing warnings; no lint errors.
+  - `npm run audit:routes`: passed, 62 AI routes calibrated and 5 exempt.
+  - `npm run audit:tools`: passed and updated
+    `docs/audits/tools-2026-04-29.md`; `grounded-search` is now 6/11 and
+    `research-extract` is 6/11.
+  - `npm run audit:gcp`: passed, 0 hard failures and 0 soft warnings.
+  - GCP audit enforcement wave: Cloud Build audit IAM granted, `_AUDIT_GCP_SKIP`
+    flipped to `0`, and the audit now checks Firecrawl, Parallel, UCDP, and
+    Vertex Agent Engine secrets.
+  - Shared AI safeguard tests:
+    `npx vitest run tests/unit/lib/api/with-calibration.test.ts` passed
+    with malformed JSON, excessive message history, and oversized request
+    rejection before credit deduction or model calls.
+
+## Agentic Loop
+
+Repeat this loop for every slice:
+
+1. Understand: read the relevant docs and route/component contracts.
+2. Run: start the app or use targeted tests before editing when practical.
+3. Test as real users: exercise one persona and one concrete workflow.
+4. Identify issues: write exact symptoms, route, console, or data path.
+5. Fix: keep changes scoped to the failing workflow.
+6. Validate: run focused tests plus the needed global checks.
+7. Document: update this file, `CHANGELOG.md`, and any affected runbook.
+8. Repeat: continue until no high-impact issues remain or a blocker is real.
+
+After every change, ask: does this make PRAXIS clearer, more useful, or more
+trustworthy for a real user?
+
+## Critical Tasks
+
+- [ ] Raise all 62 AI tools to the acceptable baseline.
+  - Latest audit: `docs/audits/tools-2026-04-29.md`.
+  - Current result: 2/62 tools meet the 10/11 calibration metadata bar.
+  - Important nuance: `ask-praxis` is a re-export of `chat`, so the audit
+    undercounts that route; still, the action item is real.
+  - Baseline required for every user-facing tool button: calibrated route,
+    useful grounded-search or situation-context injection, schema where the
+    output is structured, persistence, visible source/confidence state, and
+    non-empty degraded result when optional providers fail.
+  - Progress this wave: `grounded-search` now uses the correct calibrated
+    tool id and credit operation, validates requests, and writes a streamed
+    provenance trace; `research-extract` now validates input, uses the live
+    source pack, and persists extraction metadata.
+  - Next priority tools: deep-research source receipts, extract-episodes
+    persistence, terminology persistence, report schema/provenance, and
+    browser-regression coverage for Ask PRAXIS.
+  - Progress this wave: audit now scores delegated `ask-praxis` from the chat
+    implementation; `terminology`, `extract-episodes`, `deep-research`, and
+    `deep-search-agent` gained validation and/or canonical persistence.
+
+- [ ] Complete canonical tool-output envelope migration.
+  - Progress this wave: `saveToolOutput` writes canonical versioned
+    `tool-data/{toolId}` envelopes plus legacy `tools/{toolId}` compatibility
+    docs; Export Center reads both and labels canonical vs legacy exports.
+  - Next: migrate direct `writeToolDataServer` paths and add source receipts,
+    model/provider, and output-path telemetry to every flagship route.
+
+- [x] Fix the first Ask PRAXIS demo trust failure found by browser testing.
+  - Browser path: `/login?mode=demo` -> `/demo/dashboard` -> `/demo/assistant`.
+  - Finding: after dismissing the welcome modal, a realistic risk/evidence/
+    mediator prompt returned the generic greeting when no live AI key was
+    configured.
+  - Fix: added a targeted Nordalia demo fallback for risk/evidence/mediation
+    prompts and expanded the demo intent router.
+  - Verification: `agent-browser` confirmed the same prompt now returns
+    a concrete three-bullet answer with risk, evidence basis, mediator next
+    question, and no visible AI error text.
+
+- [x] Implement the first PRAXIS executive intelligence slice.
+  - Files: `src/app/api/ai/situation-intelligence/route.ts`,
+    `src/lib/ai/schemas/situation-intelligence.ts`,
+    `src/components/dashboard/executive-intelligence-panel.tsx`,
+    `src/app/app/dashboard/page.tsx`.
+  - Delivers: executive diagnosis, strategic insight, causal timeline, actor
+    dossiers, best/likely/worst scenarios, derived risk score, concrete
+    actions, lightweight memory, live graph primitives, provenance, JSON
+    export, and confidence handling.
+  - Verification so far: `npx tsc --noEmit`, targeted ESLint, and schema
+    Vitest passed. Real authenticated browser and live AI smoke remains open.
+
+- [x] Harden Executive Intelligence as a production-grade registered tool.
+  - Plan/report:
+    `docs/PRAXIS_ITERATION_WAVE_2026-04-29_EXEC_INTEL_HARDENING.md`.
+  - Done: registry entry, explicit `ai_situation_intelligence` metering,
+    server-side `tool-data` persistence, controlled schema/generation errors,
+    role recommendation deep-link, and source-claim cleanup in registry/docs/
+    landing tour surfaces.
+  - Verification: focused route, schema, and recommendation tests passed;
+    typecheck passed.
+
+- [ ] Execute the 15 app-wide high-impact initiatives.
+  - Plan: `docs/PRAXIS_15_APP_WIDE_IMPROVEMENTS_2026-04-29.md`.
+  - First pass started: public source claims, hero promise, sample-workspace CTA,
+    situation creation language, AnalystProfile-to-situation role defaults, and
+    public credit-cost copy.
+  - Done when: each initiative has code/docs changes, a persona workflow,
+    validation evidence, and updated handoff docs.
+
+- [x] Run persona QA wave 1 and fix the highest-impact demo trust issue.
+  - Plan/report: `docs/PRAXIS_PERSONA_QA_WAVE_2026-04-29.md`.
+  - Personas covered: first-time user, serious customer, returning user, power
+    user, and skeptical security/trust reviewer.
+  - Done: stale demo positioning removed from active demo UI, demo dashboard
+    brief no longer exposes admin AI-provider setup failure, and Ask PRAXIS
+    product framing now matches the current PRAXIS mission.
+  - Follow-up: script the persona matrix with browser assertions and add mobile
+    plus slow-network checks.
+
+- [x] Run sophisticated persona wave 2 and start the 35-item trust roadmap.
+  - Plan/report:
+    `docs/PRAXIS_SOPHISTICATED_PERSONA_WAVE_2026-04-29.md`.
+  - Personas covered: policy director, mediator/envoy analyst, intelligence
+    analyst, enterprise buyer, and skeptical security/trust reviewer.
+  - Done: landing credibility pass, sanctions no-training-data fallback,
+    demo sanctions metadata, export source footer hardening, and live-site
+    parity findings.
+  - Follow-up: implement append-only tool run history, source receipts,
+    grounded-search receipts, demo route regression tests, and deploy parity.
+
+- [ ] Execute Superplan Loop 1: public identity and first-run clarity.
+  - Plan: `docs/PRAXIS_SUPERPLAN_2026-04-29.md`.
+  - Subagents: Identity UX worker plus QA explorer.
+  - Done when: retired/conflicting source claims are removed, plan taxonomy is
+    consistent, core "case" language is normalized to "situation", and landing
+    smoke passes.
+
+- [ ] Execute Superplan Loop 2: browser QA foundation.
+  - Plan: `docs/PRAXIS_SUPERPLAN_2026-04-29.md`.
+  - Subagents: QA worker plus AI Evidence explorer.
+  - Done when: route smoke inventory is current, golden path checks generation
+    and persistence, and at least one flagship tool is proven useful, cited,
+    saved, and reloadable.
+
+- [ ] Execute Superplan Loop 3: security and deploy safety.
+  - Plan: `docs/PRAXIS_SUPERPLAN_2026-04-29.md`.
+  - Subagents: Security Cloud worker plus Platform Ops worker.
+  - Done when: Cloud Build audit fails closed, Firestore/Storage rules have
+    emulator coverage, and backend trust-boundary smoke tests are documented.
+
+- [ ] Rotate local workstation secrets and update Secret Manager.
+  - Why: local `.env.local` has contained live provider credentials.
+  - Owner: human/operator, with agent support for inventory only.
+  - Done when: old Firebase/Polar/Firecrawl/Parallel/Gemini keys are revoked,
+    new values are in Secret Manager, local env is refreshed, and health checks
+    still pass.
+
+- [ ] Automate Firestore rules and indexes deployment in the deploy gate.
+  - Why: rules/index drift can break auth, storage, and queries after app
+    deploys.
+  - Files: `firebase.json`, `firestore.rules`, `firestore.indexes.json`,
+    `cloudbuild.yaml`, `docs/GCP_OPERATIONS.md`.
+  - Done when: Cloud Build either deploys rules/indexes or blocks on a drift
+    preflight with a clear operator action.
+
+- [ ] Enforce `npm run audit:gcp` in Cloud Build without skip flags.
+  - Why: infrastructure drift must fail before production deploy, not after.
+  - Files: `cloudbuild.yaml`, `scripts/audit-gcp.mjs`,
+    `infrastructure/grant-cloudbuild-audit-iam.sh`.
+  - Progress this wave: Cloud Build service account received read-only audit
+    roles and `_AUDIT_GCP_SKIP` now defaults to `0`.
+  - Done when: a full Cloud Build deploy proves the enforced audit passes
+    under the build service account.
+
+- [ ] Smoke-test the five recently uplifted tools end-to-end on a real
+  situation.
+  - Tools: Ask PRAXIS, Dashboard, Conflict Graph, Risk Monitor/Timeline,
+    Briefing.
+  - Test data: authenticated user with Nordalia or a new real situation.
+  - Done when: `docs/TOOL_QUALITY_AUDIT_2026-04-28.md` records works,
+    non-empty, provenance/citation, saved, reload behavior, and exact defects.
+
+- [ ] Complete grounded-search-first intelligence spine.
+  - Plan: `docs/PRAXIS_GROUNDED_SEARCH_INTELLIGENCE_SPINE_2026-04-29.md`.
+  - First pass done: active aggregators now run grounded Google Search as the
+    primary live intelligence path; Source Monitor lists grounded search first;
+    active paid ACLED provider/runtime paths were removed or relabeled; UCDP
+    now uses the authenticated token path and appears as visible feed items.
+  - Next: persist source evidence records, expose source/provider badges,
+    add scrape-on-demand via Firecrawl, add Parallel.ai second-lens enrichment,
+    and connect extracted fragments to Conflict Grammar graph nodes.
+
+- [ ] Browser-smoke the new Executive Intelligence panel with real AI.
+  - Test cases: geopolitical situation, corporate conflict, policy memo.
+  - Done when: each generation succeeds with live provider credentials, output
+    is non-empty, graph nodes are clickable, provenance references source
+    fragments, export JSON contains the current timestamp and sections, output
+    saves to `tool-data/situation-intelligence`, and reload restores it.
+
+- [ ] Complete the tool-output storage migration.
+  - Why: `tool-data/{toolId}` and `tools/{toolId}` still coexist, which creates
+    retrieval misses and confusing persistence.
+  - Files: `src/lib/api/save-tool-output.ts`,
+    `src/lib/firebase/tool-data-service.ts`,
+    `src/lib/knowledge/evidence-envelope.ts`,
+    `src/lib/knowledge/tool-output-layer.ts`,
+    `src/hooks/use-persisted-tool-data.ts`.
+  - Done when: flagship tools write/read one canonical envelope, legacy paths
+    migrate or backfill, and Ask PRAXIS cites saved outputs reliably.
+
+- [ ] Keep the Python backend private and verify every browser-facing backend
+  workflow goes through a Next.js API bridge.
+  - Files: `src/lib/api/praxis-backend.ts`,
+    `src/lib/api/praxis-backend-server.ts`,
+    `src/app/api/backend/[...path]/route.ts`,
+    `backend/auth.py`, `next.config.ts`.
+  - Done when: no browser component depends on private Cloud Run URLs and the
+    allowlist covers only intended user-scoped paths.
+
+## High-Impact Product Work
+
+- [ ] Add Core-8 coverage warnings to Ask PRAXIS.
+  - User value: analysts see when an answer is based on a graph missing claims,
+    interests, constraints, leverage, commitments, events, or narratives.
+  - Done when: Ask PRAXIS can surface a compact "graph coverage is thin" cue
+    and suggest the next extraction/research action.
+
+- [ ] Add Core-8 and evidence coverage to corpus traces.
+  - User value: every retrieval result becomes auditable by source, age,
+    primitive coverage, and confidence.
+  - Done when: corpus search returns source age, source type, coverage gaps,
+    and a stable citation handle.
+
+- [ ] Build a Situation Health dashboard.
+  - Include: graph coverage, source freshness, retrieval health, tool failures,
+    extraction failures, citation coverage, missing evidence, and stale outputs.
+  - User value: one trust score before the user relies on generated analysis.
+
+- [ ] Improve first-time user "aha" from situation creation to first output.
+  - Flow: sign up -> onboarding -> create situation -> dashboard -> first
+    cited output -> recommended next action.
+  - Done when: a non-technical user can reach value without understanding
+    tool IDs, provider keys, or graph internals.
+
+- [ ] Add sample/demo data controls inside the real app.
+  - User value: users can evaluate PRAXIS with a safe situation before adding
+    sensitive material.
+  - Constraint: demo content must never leak into real user situations unless
+    explicitly selected.
+
+- [ ] Make empty states role-aware and domain-aware.
+  - User value: "As a mediator working on a diplomacy situation, start with..."
+    is more useful than generic "Create or select a situation."
+  - Files: `src/components/praxis/no-situation-state.tsx`,
+    `src/components/praxis/onboarding-required-state.tsx`,
+    `src/components/praxis/situation-dashboard.tsx`.
+
+- [ ] Normalize the plan/subscription language.
+  - Known issue: some copy uses Institution while client/server types use
+    `enterprise`.
+  - Done when: public pricing, Firestore tier resolution, checkout, and UI
+    labels are aligned.
+
+- [ ] Add an export/share audit trail.
+  - User value: PDF/DOCX/briefing exports should carry source provenance,
+    profile version, model, generated time, and limits.
+
+- [ ] Create an operator-visible "user success" panel.
+  - Include: failed signups, onboarding drop-offs, first-output failures,
+    empty tool outputs, provider health, and recent support-relevant errors.
+
+## Persona Testing Backlog
+
+- [ ] First-time user: create account, complete onboarding, create situation,
+  generate first dashboard output, understand what to do next.
+- [ ] Serious customer: import documents, run Briefing, Risk Monitor, Conflict
+  Graph, export a brief, inspect provenance, and reload.
+- [ ] Returning user: reopen an existing situation, identify what changed since
+  last session, continue from saved outputs, and generate next actions.
+- [ ] Power user: run multiple tools, compare outputs, use Ask PRAXIS over
+  saved artifacts, export/report, and inspect graph updates.
+- [ ] Admin/operator: open diagnostics, operator console, system health,
+  provider readiness, failed jobs, and user credit/subscription controls.
+- [ ] Security reviewer: verify auth gates, admin allowlist, Firestore rules,
+  storage rules, secrets handling, API validation, and backend trust boundary.
+- [ ] Non-technical user: read landing page, sign in, create a situation,
+  understand terminology, and recover from an error without developer context.
+
+For each persona, record:
+
+- Route path and account state.
+- Exact action sequence.
+- Console/network/API failures.
+- Empty/loading/error states.
+- Trust/confusion gaps.
+- Whether output was useful, cited, saved, and reloadable.
+
+## Core Workflow QA
+
+- [ ] Auth: Google OAuth, email/password if enabled, demo mode, logout,
+  expired session, invalid session, admin gate, non-admin denial.
+- [ ] Onboarding: identity, perspective, working style, skip path, profile
+  snapshots, live profile refresh, profile edit.
+- [ ] Situations: create, classify domain, inspect, settings, graph, recent
+  tools, source coverage, delete/archive if available.
+- [ ] Documents: upload, extract, retrieve, Cloud Storage durability, checksum,
+  error recovery, large file limits, storage rules.
+- [ ] Dashboard: selected situation, launchpad, readiness, tool status,
+  recommended tools, activity feed.
+- [ ] Ask PRAXIS: calibrated context, citations, saved prior outputs,
+  empty response handling, missing provider fallback, limits disclosure.
+- [ ] Briefing/reporting: generate, edit, regenerate block, cite, export,
+  reload, share, provenance.
+- [ ] Graph: auto-populate staged, review diff, approve/discard, Core-8
+  coverage, graph backend connection, Firestore fallback.
+- [ ] Admin: users, domains, diagnostics, operator console, advisor feed,
+  credits, provider health, audit events.
+- [ ] APIs: request validation, standard errors, rate/tier behavior, safe
+  logging, no raw secrets, no internal costs in public UI.
+- [ ] Mobile: onboarding, dashboard, sidebar, major tool pages, modals,
+  exports, error states.
+- [ ] Slow network: loading skeletons, retry actions, idempotency, no duplicate
+  charges or duplicate graph writes.
+
+## Engineering Quality
+
+- [ ] Replace the deprecated Next `middleware` convention with the supported
+  `proxy` convention after a focused auth/routing test plan.
+  - Current signal: `npm run build` still warns that `middleware` should become
+    `proxy`.
+  - Constraint: this touches auth, redirects, CSP, and route protection, so it
+    needs focused Playwright and API route checks.
+
+- [ ] Reduce the existing lint warning backlog by workflow area.
+  - Current signal: `npm run lint` passes with warnings, including unused code,
+    React hook dependency warnings, set-state-in-effect warnings, and some
+    purity/static-component warnings.
+  - Constraint: avoid broad mechanical churn; fix warnings when they are in
+    touched files or when they affect user-visible reliability.
+
+## AI and LLM Quality
+
+- [ ] Confirm all AI routes remain wrapped by `withCalibration` or are
+  documented as exempt.
+- [ ] Verify audience tone presets affect dashboard, auto-briefing, and
+  briefing generation when enabled.
+- [ ] Add hallucination checks for claims that lack source receipts.
+- [ ] Make limits visible: live source availability, stale feeds, missing
+  provider keys, graph coverage gaps, and confidence level.
+- [ ] Add regression fixtures for "same situation, different audience" and
+  "same user, different domain" prompt behavior.
+- [ ] Save model, prompt version, profile version, source receipts, and output
+  schema version with every generated artifact.
+- [ ] Move long-running research/agent tasks out of synchronous request paths
+  into Cloud Tasks plus durable checkpoints.
+
+## Firebase and GCP Tasks
+
+- [ ] Deploy and smoke-test Vertex AI Agent Engine; set
+  `VERTEX_AGENT_ENGINE_ID` only after the engine works.
+- [ ] Configure Polar production billing: access token, webhook secret,
+  product IDs, webhook events, checkout success, portal, entitlement mirror.
+- [ ] Add budget alerts for Vertex, BigQuery, Firecrawl/Parallel if enabled,
+  Cloud Run, and Cloud Functions.
+- [ ] Add BigQuery operational marts for tool runs, background jobs, model
+  cost, provider failures, source freshness, and user activation.
+- [ ] Store original document binaries in Cloud Storage with checksum and
+  metadata references.
+- [ ] Review Storage rules for read/write separation and document ownership.
+- [ ] Verify TTL policies for `tool_runs`, `background_jobs`, `system_events`,
+  notifications, and alerts.
+- [ ] Keep Cloud Run backend private; periodically test unauthenticated access
+  fails.
+
+## Security Tasks
+
+- [ ] Confirm no secrets are committed or logged.
+- [ ] Keep `COOKIE_SIGNING_SECRET`, Firebase Admin credentials, Polar secrets,
+  provider keys, and user-key master only server-side.
+- [ ] Verify all admin APIs require authenticated admin sessions, not only
+  shared secrets.
+- [ ] Verify destructive routes require explicit confirmation bodies.
+- [ ] Add or keep tests around `with-auth`, admin gates, cookie signing,
+  Firebase rules, storage rules, and backend OIDC trust.
+- [ ] Add App Check or equivalent abuse controls for high-cost endpoints.
+- [x] Add shared pre-model request safeguards for calibrated AI routes.
+  - Done: `withCalibration()` rejects malformed JSON, payloads over 750 KB,
+    more than 50 chat messages, and aggregate text over 250k characters before
+    onboarding, credits, tool-run creation, calibration, or model calls.
+  - Visibility: `/api/health` and `/api/health/diagnostics` expose non-secret
+    safeguard limits for operator verification.
+  - Follow-up: add per-tier concurrency controls for long-running agent routes
+    and tune limits from production telemetry.
+- [ ] Document incident response: key rotation, user notification, provider
+  revocation, and deploy rollback.
+
+## Documentation Tasks
+
+- [ ] Keep `README.md` as the high-level product and architecture index.
+- [ ] Keep `CLAUDE.md` as the agent operating guide.
+- [ ] Keep `AGENTS.md` as the Codex entrypoint.
+- [ ] Keep this `TODO.md` current after each completed task.
+- [ ] Keep `ARCHITECTURE.md`, `docs/architecture/PRAXIS_ARCHITECTURE.md`,
+  `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`,
+  `DEPLOYMENT.md`, `TESTING.md`, and
+  `SECURITY.md` aligned with deeper docs.
+- [ ] Run `npm run audit:architecture-reference` whenever the architecture
+  bible, app architecture, or agent handoff docs change.
+- [ ] Run `npm run audit:architecture-chain` whenever the architecture bible's
+  §19 command list or `package.json` audit scripts change.
+- [ ] Update `CHANGELOG.md` for every code or runbook change.
+- [ ] Update `docs/TOOL_QUALITY_AUDIT_2026-04-28.md` during browser tool
+  audits.
+- [ ] Update `docs/GCP_OPERATIONS.md` when deploy, secrets, IAM, or billing
+  procedures change.
+
+## Future Roadmap
+
+- [ ] Enterprise audit console for data access, AI outputs, approvals, exports,
+  and admin actions.
+- [ ] Organization/team workspaces with shared situations and shared corpora.
+- [ ] Managed RAG path using Vertex AI Search/RAG Engine for large corpora.
+- [ ] Dedicated `praxis-agents` Cloud Run service for durable orchestration.
+- [ ] Graph analytics scale path through Spanner Graph, Neo4j, or another
+  dedicated graph backend.
+- [ ] Public/internal policy chatbot deployment over curated PRAXIS corpora.
+- [ ] SOC 2/DPA/procurement pack: subprocessors, retention, audit logging,
+  data residency, incident response, security architecture.

@@ -26,19 +26,27 @@ work unless Giulio explicitly asks.
 4. [`ARCHITECTURE.md`](./ARCHITECTURE.md)
 5. [`docs/architecture/PRAXIS_ARCHITECTURE.md`](./docs/architecture/PRAXIS_ARCHITECTURE.md)
 6. [`docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`](./docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md)
-7. [`TODO.md`](./TODO.md)
-8. [`CHANGELOG.md`](./CHANGELOG.md)
-9. [`docs/CONTEXT_INJECTION.md`](./docs/CONTEXT_INJECTION.md)
-10. [`docs/OPERATIONAL_SPINE.md`](./docs/OPERATIONAL_SPINE.md)
-11. [`docs/CORPUS_ARCHITECTURE.md`](./docs/CORPUS_ARCHITECTURE.md)
-12. [`docs/GCP_OPERATIONS.md`](./docs/GCP_OPERATIONS.md)
-13. [`docs/COMPLIANCE.md`](./docs/COMPLIANCE.md)
-14. [`docs/PRAXIS_TECHNICAL_SPECIFICATION.md`](./docs/PRAXIS_TECHNICAL_SPECIFICATION.md)
-15. [`docs/phases/PRAXIS_PHASE_1_FOUNDATION.md`](./docs/phases/PRAXIS_PHASE_1_FOUNDATION.md)
-16. [`docs/phases/PRAXIS_PHASE_2_AGENTIC_SPINE.md`](./docs/phases/PRAXIS_PHASE_2_AGENTIC_SPINE.md)
-17. [`docs/phases/PRAXIS_PHASE_3_PRODUCT_SURFACE.md`](./docs/phases/PRAXIS_PHASE_3_PRODUCT_SURFACE.md)
-18. [`docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md`](./docs/PRAXIS_ARCHITECTURE_AND_AGENT_HANDOFF_2026-05-06.md)
-19. [`docs/PRAXIS_PHASE_SPEC_AUDIT_2026-05-06.md`](./docs/PRAXIS_PHASE_SPEC_AUDIT_2026-05-06.md)
+7. [`docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md`](./docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md)
+8. [`docs/v7/STATUS.md`](./docs/v7/STATUS.md) and [`docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md`](./docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md)
+9. [`STATUS.md`](./STATUS.md)
+10. [`TODO.md`](./TODO.md)
+11. [`CHANGELOG.md`](./CHANGELOG.md) — `[Unreleased]` section only
+
+## Operational references (consult when relevant)
+
+- [`docs/CONTEXT_INJECTION.md`](./docs/CONTEXT_INJECTION.md)
+- [`docs/OPERATIONAL_SPINE.md`](./docs/OPERATIONAL_SPINE.md)
+- [`docs/CORPUS_ARCHITECTURE.md`](./docs/CORPUS_ARCHITECTURE.md)
+- [`docs/GCP_OPERATIONS.md`](./docs/GCP_OPERATIONS.md)
+- [`docs/COMPLIANCE.md`](./docs/COMPLIANCE.md)
+- [`docs/PRAXIS_TECHNICAL_SPECIFICATION.md`](./docs/PRAXIS_TECHNICAL_SPECIFICATION.md)
+
+## Historical references
+
+Archived material lives under [`docs/_archive/2026-05-pre-v4/`](./docs/_archive/2026-05-pre-v4/).
+That includes the prior `docs/codex-prompts/`, `docs/superpowers/`,
+`docs/specs/`, `docs/phases/`, and the V2/Z session audit intakes. Do
+not anchor new work on them.
 
 ## v7 Slice Work
 
