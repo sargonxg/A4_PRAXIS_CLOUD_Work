@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Phase 4C committed locally; push is next
+Status: Phase 4C pushed; Queue 10 / Phase 4D is next
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -81,7 +81,7 @@ Known setup warnings:
 | 3 | File 2 Prompt 3.A | Phase 1 merged | complete-core | Codex | `9e4d58bc` |
 | 4A | File 3 Phase 4A | Phase 1 plus compatible 2/3 surfaces | complete | Codex | `330b1bbd` |
 | 4B | File 3 Phase 4B | Phase 3 types/seeds | complete | Codex | `8e5df782`, `e74792b8` |
-| 4C | File 3 Phase 4C | Phase 4A foundation | complete | Codex | `04e703d0` |
+| 4C | File 3 Phase 4C | Phase 4A foundation | complete | Codex | `04e703d0`, `7fa55185` |
 | 4D | File 3 Phase 4D | Methods and runtime prerequisites | not-started | unassigned | pending |
 | 4E | File 3 Phase 4E | Drafting prerequisites | not-started | unassigned | pending |
 | 5 | File 3 Phase 5 | Phase 4C | not-started | unassigned | pending |
@@ -472,7 +472,7 @@ only the intended Phase 0 changes.
   - ENVIRONMENT: the first default `npx vitest run` attempt had 551 passing tests but reported worker startup timeouts for 15 workers. Rerunning with `--pool=threads` produced the clean 149-file / 580-test pass.
   - SCOPE NOTE: Phase 4C exposes honest runtime entry points and context requirements. Phase 5 still owns implementing the full ten-method execution layer; this checkpoint does not claim every method has production runtime.
 - Commit: `04e703d0` (`feat(v5-4c): add methods marketplace`)
-- Push: pending
+- Push: pushed to `origin/main`
 - Open blockers:
   - Phase 4D Ask homepage is next and depends on this Methods surface.
   - Full executable method runtime remains Phase 5.
