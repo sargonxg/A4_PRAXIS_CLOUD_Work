@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Phase 4B committed locally; push is next
+Status: Phase 4C validated locally; commit and push are next
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -80,8 +80,8 @@ Known setup warnings:
 | 2E | File 2 Prompt 2E.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
 | 3 | File 2 Prompt 3.A | Phase 1 merged | complete-core | Codex | `9e4d58bc` |
 | 4A | File 3 Phase 4A | Phase 1 plus compatible 2/3 surfaces | complete | Codex | `330b1bbd` |
-| 4B | File 3 Phase 4B | Phase 3 types/seeds | complete | Codex | `8e5df782` |
-| 4C | File 3 Phase 4C | Phase 4A foundation | not-started | unassigned | pending |
+| 4B | File 3 Phase 4B | Phase 3 types/seeds | complete | Codex | `8e5df782`, `e74792b8` |
+| 4C | File 3 Phase 4C | Phase 4A foundation | validated-local | Codex | pending |
 | 4D | File 3 Phase 4D | Methods and runtime prerequisites | not-started | unassigned | pending |
 | 4E | File 3 Phase 4E | Drafting prerequisites | not-started | unassigned | pending |
 | 5 | File 3 Phase 5 | Phase 4C | not-started | unassigned | pending |
@@ -433,8 +433,47 @@ only the intended Phase 0 changes.
   - PASS: browser smoke loaded `/users`, forked the Foreign Policy Analyst seed, opened the private editor, edited and saved Mandate, set active model, verified the public editor is read-only, and loaded mobile `/users` with no console errors.
   - SCOPE NOTE: the current MVP uses local browser persistence for unauthenticated smoke testing and exposes the owner-scoped Firestore current path. Production Firestore writes remain a follow-on integration point; public UI copy is honest and does not claim remote sync.
 - Commit: `8e5df782` (`feat(v5-4b): add user models surface`)
-- Push: pending
+- Push: pushed to `origin/main`
 - Open blockers:
   - Header-wide active model picker integration remains minimal; the `/users` surface displays and updates the active model locally.
   - Firestore-backed private model CRUD should replace local persistence when auth-backed user-model APIs are assigned.
 - Notes for next agent: Continue with Queue 09 / Phase 4C after this checkpoint is committed and pushed.
+
+### 2026-05-10 - Phase 4C - Methods Marketplace
+
+- Owner: Codex
+- Prompt source: `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md` Phase 4C
+- Scope completed:
+  - Added `/methods` as the focused MVP Methods marketplace with AI, Research, and Deterministic filters.
+  - Surfaced the 10 MVP methods only: Position-vs-Interest Decoder, Scenario Projector, Analysis of Competing Hypotheses, Memo Drafter, Frame & Narrative Analyzer, Contradiction Finder, Grounded Research, Stakeholder Power-Interest Map, Coalition Detector, and Commitment Tracker.
+  - Added a 3-method suggestion strip that responds to search and active-context state without exposing the wider 57-tool catalog as the default surface.
+  - Added `/methods/[methodId]` detail pages with method contract, required context, endpoint mapping, and honest runtime-readiness states.
+  - Preserved the existing audited tool marketplace and marked the remaining specialist catalog as deferred rather than deleting it.
+- Files changed: methods catalog, method marketplace UI components, `/methods` routes, graphify output, generated tool-contract audit evidence, queue tracker, execution ledger
+- Validation run:
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run audit:tool-contracts`
+  - `npm run audit:tool-contract-v2`
+  - `npm run audit:tool-marketplace`
+  - `npm run audit:tool-context-isolation`
+  - `npm run audit:no-internal-jargon-ui`
+  - `npm run audit:tool-skills-present`
+  - `npm run audit:tool-suggestion-eval`
+  - `node scripts/audit-ai-routes.mjs`
+  - `npx vitest run --pool=threads`
+  - `graphify update .`
+  - Production-mode local browser smoke on `http://127.0.0.1:3031`
+- Validation result: pass
+  - PASS: typecheck, build, method/tool audits, route audit, no-internal-jargon audit, tool skills, tool suggestions, 580 Vitest tests with `--pool=threads`, and graphify update.
+  - PASS: lint completed with existing warning debt only.
+  - PASS: browser smoke loaded `/methods` desktop/mobile, verified category filters, suggestion strip, active-context suggestion state, `/methods/contradiction-finder`, and run-readiness state with no console errors.
+  - ENVIRONMENT: the first default `npx vitest run` attempt had 551 passing tests but reported worker startup timeouts for 15 workers. Rerunning with `--pool=threads` produced the clean 149-file / 580-test pass.
+  - SCOPE NOTE: Phase 4C exposes honest runtime entry points and context requirements. Phase 5 still owns implementing the full ten-method execution layer; this checkpoint does not claim every method has production runtime.
+- Commit: pending
+- Push: pending
+- Open blockers:
+  - Phase 4D Ask homepage is next and depends on this Methods surface.
+  - Full executable method runtime remains Phase 5.
+- Notes for next agent: Continue with Queue 10 / Phase 4D after this checkpoint is committed and pushed. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md`.
