@@ -7,13 +7,16 @@
 
 > **Current handoff:** Before continuing work, read `ARCHITECTURE.md`,
 > `docs/architecture/PRAXIS_ARCHITECTURE.md`,
-> `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`, `TODO.md`,
+> `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`,
+> `docs/build/PRAXIS_v5_EXECUTION_LEDGER.md`,
+> `docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md`, the assigned
+> v5 phase prompt in `docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md`
+> or `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md`, `TODO.md`,
 > `docs/v7/README.md`, `docs/v7/STATUS.md`, `docs/v7/AGENTS.md`,
 > `docs/v7/OPEN_QUESTIONS.md`, and the `[Unreleased]` section in
-> `CHANGELOG.md`. The current product direction is the v7 design-led Ask
-> PRAXIS simplification wave: mobile-first, tacit-knowledge centered, and built
-> on the existing workbench, context, Cognee boundary, graph, and output
-> infrastructure. Do not start a v7 slice marked `proposed` without Giulio's
+> `CHANGELOG.md`. The current product direction is the v5 MVP build pack,
+> coordinated through the execution ledger; v7 slice work remains governed by
+> the v7 status docs and must not start from `proposed` without Giulio's
 > approval. Validate with `npx tsc --noEmit`, focused Vitest/pytest for touched
 > areas, `npm run build`, `npm run audit:repo-shape`, and relevant audit gates
 > before deploying via Cloud Build.
@@ -40,11 +43,14 @@ order. Skipping items 4–8 will produce duplicate work.
 4. `ARCHITECTURE.md` — architecture entrypoint and canonical links
 5. `docs/architecture/PRAXIS_ARCHITECTURE.md` — architecture bible / invariants
 6. `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md` — shipped vs gated state
-7. `docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md` — current product model (Home, Ask PRAXIS, Sources, Situation Model, Outputs, Advanced)
-8. `docs/v7/STATUS.md` and `docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md` — active simplification slices
-9. `STATUS.md`
-10. `TODO.md`
-11. `CHANGELOG.md` — `[Unreleased]` section only
+7. `docs/build/PRAXIS_v5_EXECUTION_LEDGER.md` — phase status, owners, validation, commit checkpoints
+8. `docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md` — v5 operating guide
+9. Assigned v5 phase prompt in `docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md` or `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md`
+10. `docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md` — current product model (Home, Ask PRAXIS, Sources, Situation Model, Outputs, Advanced)
+11. `docs/v7/STATUS.md` and `docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md` — active simplification slices
+12. `STATUS.md`
+13. `TODO.md`
+14. `CHANGELOG.md` — `[Unreleased]` section only
 
 ### Operational references (consult when relevant, not every session)
 

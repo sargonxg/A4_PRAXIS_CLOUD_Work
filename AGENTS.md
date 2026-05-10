@@ -24,13 +24,16 @@ work unless Giulio explicitly asks.
 2. [`CLAUDE.md`](./CLAUDE.md)
 3. [`AGENTS.md`](./AGENTS.md)
 4. [`ARCHITECTURE.md`](./ARCHITECTURE.md)
-5. [`docs/architecture/PRAXIS_ARCHITECTURE.md`](./docs/architecture/PRAXIS_ARCHITECTURE.md)
-6. [`docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`](./docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md)
-7. [`docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md`](./docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md)
-8. [`docs/v7/STATUS.md`](./docs/v7/STATUS.md) and [`docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md`](./docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md)
-9. [`STATUS.md`](./STATUS.md)
-10. [`TODO.md`](./TODO.md)
-11. [`CHANGELOG.md`](./CHANGELOG.md) — `[Unreleased]` section only
+5. [`docs/build/PRAXIS_v5_EXECUTION_LEDGER.md`](./docs/build/PRAXIS_v5_EXECUTION_LEDGER.md)
+6. [`docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md`](./docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md)
+7. The assigned v5 phase prompt in [`docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md`](./docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md) or [`docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md`](./docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md)
+8. [`docs/architecture/PRAXIS_ARCHITECTURE.md`](./docs/architecture/PRAXIS_ARCHITECTURE.md)
+9. [`docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`](./docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md)
+10. [`docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md`](./docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md)
+11. [`docs/v7/STATUS.md`](./docs/v7/STATUS.md) and [`docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md`](./docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md)
+12. [`STATUS.md`](./STATUS.md)
+13. [`TODO.md`](./TODO.md)
+14. [`CHANGELOG.md`](./CHANGELOG.md) — `[Unreleased]` section only
 
 ## Operational references (consult when relevant)
 
