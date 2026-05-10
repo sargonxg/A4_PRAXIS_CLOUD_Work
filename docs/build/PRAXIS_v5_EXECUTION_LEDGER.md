@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Phase 0 committed locally; pending push
+Status: Phase 0 complete and pushed; Phase 1 ready
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -71,7 +71,7 @@ Known setup warnings:
 
 | Phase | Prompt Source | Dependency | Status | Owner | Commit |
 |---|---|---|---|---|---|
-| 0 | File 2 Prompt 0.A | v4 cleanup merged | complete-local | Codex | this commit |
+| 0 | File 2 Prompt 0.A | v4 cleanup merged | complete | Codex | `483d3605` |
 | 1 | File 2 Prompt 1.A | Phase 0 merged | not-started | unassigned | pending |
 | 2A | File 2 Prompt 2A.A | Phase 1 merged | not-started | unassigned | pending |
 | 2B | File 2 Prompt 2B.A | Phase 1 merged | not-started | unassigned | pending |
@@ -153,8 +153,8 @@ only the intended Phase 0 changes.
   - ENVIRONMENT: `pytest backend/ -q` cannot collect in the active Python environment because backend dependencies/import path are unavailable (`fastapi`, `pydantic_settings`, `psycopg`, `psycopg_pool`, `google`, and `agents` import errors). No Phase 0 backend product code depends on this.
   - REPAIRED: `npm run audit:gate` previously failed because v4 cleanup removed active-audit required artifacts. Restored required `docs/codex-prompts/`, `docs/audits/2026-05-08-V2-PROMPT-PACK-COMPLETION.md`, `src/lib/cases/user-cases/loader.ts`, `src/components/landing/_archive/`, and `scripts/bench-gliner-cost-reduction.py`.
   - SKIPPED: `git diff --cached --check` because nothing was staged after validation failed.
-- Commit: this commit (`chore(v5-phase-0): adopt vision and readiness stubs`)
-- Push: pending
+- Commit: `483d3605` (`chore(v5-phase-0): adopt vision and readiness stubs`)
+- Push: pushed to `origin/main`
 - Open blockers:
   - The standalone `PRAXIS_VISION_v4_*` files referenced by Prompt 0.A were absent at phase start; repo-local canonical files were created from the authoritative v5 build pack.
   - Existing historical ADRs already used numeric prefixes `0037`, `0038`, and `0040`; the requested v5 ADR filenames were added without renaming existing ADRs.
