@@ -65,7 +65,7 @@ prompts; this status table is the operational tracker.
 | 00 | complete | Preflight represented in Phase 0/1 ledger entries | No action unless cloud credentials drift. |
 | 01 | complete | `483d3605`, `df69de86` | Done. |
 | 02 | complete | `924ed579`, `79cbec0b` | Done. |
-| 03 | complete locally; commit pending in current checkpoint | Lane A validation: typecheck, build, lint, focused audits, vitest, browser smoke, graphify | Commit/push Lane A, then continue with 04. |
+| 03 | complete | `d9f7d64d`; Lane A validation: typecheck, build, lint, full audit gate, vitest, browser smoke, graphify | Done; continue with 04. |
 | 04 | not-started | pending | Run next: Wave 2 Lane B document pipeline. |
 | 05 | not-started | pending | Run after or in parallel with 04 only if another agent owns it. |
 | 06 | blocked | pending | Wait for 03, 04, and 05 to be pushed. |

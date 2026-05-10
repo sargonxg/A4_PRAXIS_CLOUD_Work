@@ -73,11 +73,11 @@ Known setup warnings:
 |---|---|---|---|---|---|
 | 0 | File 2 Prompt 0.A | v4 cleanup merged | complete | Codex | `483d3605` |
 | 1 | File 2 Prompt 1.A | Phase 0 merged | complete | Codex | `924ed579` |
-| 2A | File 2 Prompt 2A.A | Phase 1 merged | complete-local | Codex | pending |
+| 2A | File 2 Prompt 2A.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
 | 2B | File 2 Prompt 2B.A | Phase 1 merged | not-started | unassigned | pending |
 | 2C | File 2 Prompt 2C.A | Phase 1 merged | not-started | unassigned | pending |
-| 2D | File 2 Prompt 2D.A | Phase 1 merged | complete-local | Codex | pending |
-| 2E | File 2 Prompt 2E.A | Phase 1 merged | complete-local | Codex | pending |
+| 2D | File 2 Prompt 2D.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
+| 2E | File 2 Prompt 2E.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
 | 3 | File 2 Prompt 3.A | Phase 1 merged | not-started | unassigned | pending |
 | 4A | File 3 Phase 4A | Phase 1 plus compatible 2/3 surfaces | not-started | unassigned | pending |
 | 4B | File 3 Phase 4B | Phase 3 types/seeds | not-started | unassigned | pending |
@@ -233,7 +233,7 @@ only the intended Phase 0 changes.
   - PASS: browser smoke rendered the Context list, eight-panel shell, Source Tier badges, and Timeline strands without console errors.
   - PASS: full `npm run audit:gate` passed with the longer timeout, including GCP checks. `audit:gcp-production-posture` still reports three soft warnings and zero hard failures.
   - SCOPE NOTE: Phase 2B still owns document pipeline internals; Phase 2C still owns research pipeline internals and Phase 3 user models. The Source panel therefore uses existing example-case source metadata plus honest Phase 2B placeholder copy.
-- Commit: pending
+- Commit: `d9f7d64d` (`feat(v5-2a): add context shell source tiers and timeline`)
 - Push: pending
 - Open blockers:
   - Lane B document pipeline remains not-started.
