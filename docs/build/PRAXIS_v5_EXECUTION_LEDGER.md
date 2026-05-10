@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Phase 4A committed locally; push is next
+Status: Phase 4B validated locally; commit and push are next
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -80,7 +80,7 @@ Known setup warnings:
 | 2E | File 2 Prompt 2E.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
 | 3 | File 2 Prompt 3.A | Phase 1 merged | complete-core | Codex | `9e4d58bc` |
 | 4A | File 3 Phase 4A | Phase 1 plus compatible 2/3 surfaces | complete | Codex | `330b1bbd` |
-| 4B | File 3 Phase 4B | Phase 3 types/seeds | not-started | unassigned | pending |
+| 4B | File 3 Phase 4B | Phase 3 types/seeds | complete | Codex | pending |
 | 4C | File 3 Phase 4C | Phase 4A foundation | not-started | unassigned | pending |
 | 4D | File 3 Phase 4D | Methods and runtime prerequisites | not-started | unassigned | pending |
 | 4E | File 3 Phase 4E | Drafting prerequisites | not-started | unassigned | pending |
@@ -399,8 +399,42 @@ only the intended Phase 0 changes.
   - PASS: browser smoke loaded `/contexts` desktop/mobile, opened the create wizard, and loaded `/contexts/syria-2026` desktop/mobile plus all eight panel URLs with no console errors.
   - SCOPE NOTE: authenticated persistence for new Context creation remains honest placeholder behavior until the owner-scoped Firestore creation path is assigned. The UI does not claim it created a persisted Context.
 - Commit: `330b1bbd` (`feat(v5-4a): add contexts surface`)
-- Push: pending
+- Push: pushed to `origin/main`
 - Open blockers:
   - Phase 4B `/users` surface is next now that Phase 3 user-model core exists.
   - The three final buyer demo Contexts are still Phase 7; current Context list uses the available example cases.
 - Notes for next agent: Continue with Queue 08 / Phase 4B after this checkpoint is committed and pushed. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md`.
+
+### 2026-05-10 - Phase 4B - User Models Surface
+
+- Owner: Codex
+- Prompt source: `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md` Phase 4B
+- Scope completed:
+  - Added `/users` with My Models and Public Library sections.
+  - Added cards for the three public seeded user models with Use, Fork, and Open actions.
+  - Added `/users/[modelId]` structured editor with Identity, Mandate, Methodology, Style, Standing Assumptions, Prohibited Frames, Sources, and Audience Defaults tabs.
+  - Added typed `src/lib/users/api.ts` helpers for public reads, owner-scoped current paths, local private forks, save, and active model selection.
+  - Kept public seeds read-only; editing requires a private fork.
+- Files changed: user-model routes, user-model UI components, local owner-scoped API helpers, graphify output, queue tracker, execution ledger
+- Validation run:
+  - `npm run build`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run audit:user-model-versioning`
+  - `npm run audit:owner-scoping`
+  - `npm run audit:routes`
+  - `npx vitest run`
+  - `graphify update .`
+  - `git diff --check`
+  - Production-mode local browser smoke on `http://127.0.0.1:3028`
+- Validation result: pass
+  - PASS: build, typecheck, route audit, user-model audit, owner-scoping audit, 580 Vitest tests, graphify update, and diff check.
+  - PASS: lint completed with existing warning debt plus two new React-effect warnings from hydration-safe localStorage loading in the user-model client components.
+  - PASS: browser smoke loaded `/users`, forked the Foreign Policy Analyst seed, opened the private editor, edited and saved Mandate, set active model, verified the public editor is read-only, and loaded mobile `/users` with no console errors.
+  - SCOPE NOTE: the current MVP uses local browser persistence for unauthenticated smoke testing and exposes the owner-scoped Firestore current path. Production Firestore writes remain a follow-on integration point; public UI copy is honest and does not claim remote sync.
+- Commit: pending (`feat(v5-4b): add user models surface`)
+- Push: pending
+- Open blockers:
+  - Header-wide active model picker integration remains minimal; the `/users` surface displays and updates the active model locally.
+  - Firestore-backed private model CRUD should replace local persistence when auth-backed user-model APIs are assigned.
+- Notes for next agent: Continue with Queue 09 / Phase 4C after this checkpoint is committed and pushed.
