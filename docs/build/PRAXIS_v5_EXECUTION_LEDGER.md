@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Wave 2 Lane C validated locally; commit and push are next
+Status: Wave 2 Lane C committed locally; push is next, then Wave 2 Integration Gate
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -75,10 +75,10 @@ Known setup warnings:
 | 1 | File 2 Prompt 1.A | Phase 0 merged | complete | Codex | `924ed579` |
 | 2A | File 2 Prompt 2A.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
 | 2B | File 2 Prompt 2B.A | Phase 1 merged | complete | Codex | `7422b0aa` |
-| 2C | File 2 Prompt 2C.A | Phase 1 merged | complete | Codex | pending |
+| 2C | File 2 Prompt 2C.A | Phase 1 merged | complete | Codex | `9e4d58bc` |
 | 2D | File 2 Prompt 2D.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
 | 2E | File 2 Prompt 2E.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
-| 3 | File 2 Prompt 3.A | Phase 1 merged | complete-core | Codex | pending |
+| 3 | File 2 Prompt 3.A | Phase 1 merged | complete-core | Codex | `9e4d58bc` |
 | 4A | File 3 Phase 4A | Phase 1 plus compatible 2/3 surfaces | not-started | unassigned | pending |
 | 4B | File 3 Phase 4B | Phase 3 types/seeds | not-started | unassigned | pending |
 | 4C | File 3 Phase 4C | Phase 4A foundation | not-started | unassigned | pending |
@@ -318,7 +318,7 @@ only the intended Phase 0 changes.
   - PASS: local API smoke proved unauthenticated `/api/research/run` returns `401`, preserving the owner-scoped auth boundary.
   - ENVIRONMENT: full `pytest backend/ -q` still cannot collect in the active Python environment because backend dependencies/import path are unavailable (`agents`, `fastapi`, `pydantic_settings`, `psycopg`, `psycopg_pool`, and `google` import errors). Focused Lane C backend tests pass.
   - SCOPE NOTE: `/users` and `/users/[modelId]` UI are still Phase 4B. This checkpoint completes the Phase 3 schema/seeds/fork/capture/context core required for that surface.
-- Commit: pending (`feat(v5-2c): add grounded research pipeline and user models`)
+- Commit: `9e4d58bc` (`feat(v5-2c): add grounded research pipeline and user models`)
 - Push: pending
 - Open blockers:
   - Live Google grounding depends on configured provider/runtime credentials; the local route emits transparent fallback events rather than claiming live grounded execution.
