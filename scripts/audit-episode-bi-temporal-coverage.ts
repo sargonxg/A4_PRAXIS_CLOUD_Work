@@ -12,3 +12,5 @@ console.error(
     `Will enforce bi-temporal stamps on every episode.`,
 );
 process.exit(2);
+
+export {};

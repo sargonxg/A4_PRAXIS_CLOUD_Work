@@ -13,3 +13,5 @@ console.error(
     `Will enforce that every Situation declares a work-ontology template.`,
 );
 process.exit(2);
+
+export {};

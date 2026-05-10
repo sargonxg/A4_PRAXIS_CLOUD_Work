@@ -12,3 +12,5 @@ console.error(
     `Will enforce presence of the 14 v4 drafting templates.`,
 );
 process.exit(2);
+
+export {};

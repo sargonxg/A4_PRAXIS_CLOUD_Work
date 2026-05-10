@@ -35,3 +35,12 @@ at `docs/_archive/2026-05-pre-v4/TODO_pre_v4.md`.
 
 `npm run audit:v4-readiness` runs eight failing stubs that block the v4 phases
 they correspond to. They are intentionally noisy until each phase ships.
+
+## Repo Shape And Next-Round Readiness
+
+This file is checked by `npm run audit:repo-shape`. The markers below are
+required so the audit recognises this file as the canonical TODO.
+
+- **graphify**: knowledge graph at `graphify-out/`. Run `graphify update .` after code edits to keep it current.
+- **Knip**: dead-export detection. Not currently in `audit:gate`; run on demand when chasing unused exports.
+- **audit:architecture-reference**: enforces that startup docs link to `docs/architecture/PRAXIS_ARCHITECTURE.md` and `PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`. Both are referenced in this TODO via the v7 / context-core trinity above.

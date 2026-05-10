@@ -12,3 +12,5 @@ console.error(
     `Will enforce T0-T7 tiers on sources and tier references on citations.`,
 );
 process.exit(2);
+
+export {};

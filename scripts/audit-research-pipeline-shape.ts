@@ -11,3 +11,5 @@ console.error(
     `Will enforce R1-R13 stage conformance on Research orchestration.`,
 );
 process.exit(2);
+
+export {};

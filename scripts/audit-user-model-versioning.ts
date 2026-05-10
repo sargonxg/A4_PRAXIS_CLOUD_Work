@@ -13,3 +13,5 @@ console.error(
     `Will enforce append-only user_model_versions storage.`,
 );
 process.exit(2);
+
+export {};

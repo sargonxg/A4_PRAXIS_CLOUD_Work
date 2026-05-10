@@ -13,3 +13,5 @@ console.error(
     `Will enforce that every Method registers an L-pattern in {L1..L12}.`,
 );
 process.exit(2);
+
+export {};

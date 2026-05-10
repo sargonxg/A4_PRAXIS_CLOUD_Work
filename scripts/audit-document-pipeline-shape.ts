@@ -11,3 +11,5 @@ console.error(
     `Will enforce D1-D12 stage conformance on Document ingest.`,
 );
 process.exit(2);
+
+export {};
