@@ -66,7 +66,7 @@ prompts; this status table is the operational tracker.
 | 01 | complete | `483d3605`, `df69de86` | Done. |
 | 02 | complete | `924ed579`, `79cbec0b` | Done. |
 | 03 | complete | `d9f7d64d`; Lane A validation: typecheck, build, lint, full audit gate, vitest, browser smoke, graphify | Done; continue with 04. |
-| 04 | complete locally; commit pending in current checkpoint | Phase 2B validation: typecheck, build, lint, document audits, focused Python tests, vitest | Commit/push Lane B, then continue with 05. |
+| 04 | complete | `7422b0aa`; Phase 2B validation: typecheck, build, lint, full audit gate, document audits, focused Python tests, vitest | Done; continue with 05. |
 | 05 | not-started | pending | Run next: Wave 2 Lane C research pipeline and user models. |
 | 06 | blocked | pending | Wait for 03, 04, and 05 to be pushed. |
 | 07 | blocked | pending | Wait for Wave 2 integration gate. |

@@ -74,7 +74,7 @@ Known setup warnings:
 | 0 | File 2 Prompt 0.A | v4 cleanup merged | complete | Codex | `483d3605` |
 | 1 | File 2 Prompt 1.A | Phase 0 merged | complete | Codex | `924ed579` |
 | 2A | File 2 Prompt 2A.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
-| 2B | File 2 Prompt 2B.A | Phase 1 merged | complete-local | Codex | pending |
+| 2B | File 2 Prompt 2B.A | Phase 1 merged | complete | Codex | `7422b0aa` |
 | 2C | File 2 Prompt 2C.A | Phase 1 merged | not-started | unassigned | pending |
 | 2D | File 2 Prompt 2D.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
 | 2E | File 2 Prompt 2E.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
@@ -273,7 +273,7 @@ only the intended Phase 0 changes.
   - PASS: typecheck, build, document audits, route audit, 577 Vitest tests, the four focused Phase 2B Python test files, graphify update, and full `npm run audit:gate`.
   - PASS: lint completed with existing warning debt only.
   - ENVIRONMENT: full `pytest backend/ -q` still cannot collect in the active Python environment because backend dependencies/import path are unavailable (`agents`, `fastapi`, `pydantic_settings`, `psycopg`, `psycopg_pool`, and `google` import errors). This matches the Phase 0/1 environment limitation.
-- Commit: pending
+- Commit: `7422b0aa` (`feat(v5-2b): add document extraction pipeline`)
 - Push: pending
 - Open blockers:
   - Runtime deployment of the Cloud Function/worker path was not performed; deploy remains manual-approval-only.
