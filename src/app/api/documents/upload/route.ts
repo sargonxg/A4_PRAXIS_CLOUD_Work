@@ -198,27 +198,13 @@ export const POST = withAuth(async (request, user) => {
     }
 
     let text = '';
+    let extractionMode: 'inline-text' | 'docling-queued' = 'inline-text';
     if (fileType === 'txt' || fileType === 'md' || fileType === 'html') {
       text = await file.text();
     } else if (fileType === 'pdf') {
-      try {
-        const pdfMod = await import('pdf-parse');
-        const pdfParse = (pdfMod as unknown as { default: (...args: unknown[]) => unknown }).default || pdfMod;
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const result = await pdfParse(buffer) as { text: string };
-        text = result.text;
-      } catch {
-        text = '[PDF text extraction failed — file stored but text could not be extracted automatically]';
-      }
+      extractionMode = 'docling-queued';
     } else if (fileType === 'docx') {
-      try {
-        const mammoth = await import('mammoth');
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const result = await mammoth.extractRawText({ buffer });
-        text = result.value;
-      } catch {
-        text = '[DOCX text extraction failed — file stored but text could not be extracted automatically]';
-      }
+      extractionMode = 'docling-queued';
     }
 
     // Best-effort: also push the raw bytes to the GCS bucket so the document
@@ -251,14 +237,14 @@ export const POST = withAuth(async (request, user) => {
       fileType,
       size: file.size,
       text,
-      status: text.startsWith('[') ? 'error' : 'uploaded',
+      status: extractionMode === 'docling-queued' ? 'processing' : 'uploaded',
       uploadedAt: new Date().toISOString(),
       entityCount: 0,
       bucketUri: bucketUri ?? undefined,
     });
 
     let chunkCount = 0;
-    if (text.length > 0 && !text.startsWith('[')) {
+    if (text.length > 0) {
       try {
         chunkCount = await chunkAndSaveDocument(user.uid, situationId, stored.id, file.name, text);
         console.log(`[documents] Chunked ${file.name}: ${chunkCount} chunks`);
@@ -275,7 +261,7 @@ export const POST = withAuth(async (request, user) => {
       route: '/api/documents/upload',
       status: 'ok',
       latencyMs: Date.now() - startedAt,
-      details: { mode: 'multipart', fileType, chunkCount, documentId: stored.id },
+      details: { mode: 'multipart', fileType, extractionMode, chunkCount, documentId: stored.id },
     });
     return NextResponse.json({
       success: true,
@@ -291,7 +277,9 @@ export const POST = withAuth(async (request, user) => {
         chunkCount,
         bucketUri,
       },
-      message: chunkCount > 0
+      message: extractionMode === 'docling-queued'
+        ? 'Document uploaded and queued for structured extraction.'
+        : chunkCount > 0
         ? 'Document uploaded, chunked, and indexed for retrieval.'
         : 'Document uploaded and saved to your situation. Text extraction did not produce retrievable chunks.',
     });

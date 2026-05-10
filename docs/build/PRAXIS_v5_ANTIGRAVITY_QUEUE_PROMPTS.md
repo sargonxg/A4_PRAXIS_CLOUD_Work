@@ -66,8 +66,8 @@ prompts; this status table is the operational tracker.
 | 01 | complete | `483d3605`, `df69de86` | Done. |
 | 02 | complete | `924ed579`, `79cbec0b` | Done. |
 | 03 | complete | `d9f7d64d`; Lane A validation: typecheck, build, lint, full audit gate, vitest, browser smoke, graphify | Done; continue with 04. |
-| 04 | not-started | pending | Run next: Wave 2 Lane B document pipeline. |
-| 05 | not-started | pending | Run after or in parallel with 04 only if another agent owns it. |
+| 04 | complete locally; commit pending in current checkpoint | Phase 2B validation: typecheck, build, lint, document audits, focused Python tests, vitest | Commit/push Lane B, then continue with 05. |
+| 05 | not-started | pending | Run next: Wave 2 Lane C research pipeline and user models. |
 | 06 | blocked | pending | Wait for 03, 04, and 05 to be pushed. |
 | 07 | blocked | pending | Wait for Wave 2 integration gate. |
 | 08 | blocked | pending | Wait for Phase 3 from Lane C. |

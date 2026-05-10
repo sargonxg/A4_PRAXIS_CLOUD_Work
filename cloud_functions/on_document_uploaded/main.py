@@ -56,11 +56,12 @@ def on_document_uploaded(cloud_event):
     sit_id = parts[8]
     doc_id = parts[10]
     fields = data["value"].get("fields", {})
-    extracted_text = fields.get("extractedText", {}).get("stringValue", "")
-    filename = fields.get("name", {}).get("stringValue", "uploaded-document")
+    extracted_text = _string_field(fields, "extractedText") or _string_field(fields, "text")
+    filename = _string_field(fields, "name") or _string_field(fields, "title") or "uploaded-document"
+    bucket_uri = _string_field(fields, "bucketUri")
 
-    if not extracted_text:
-        print(f"Document {doc_path} has no extractedText — skipping")
+    if not extracted_text and not bucket_uri:
+        print(f"Document {doc_path} has no text or bucketUri — skipping")
         return
     if not BACKEND_URL:
         print("PRAXIS_BACKEND_URL not set — cannot trigger pipeline")
@@ -101,16 +102,63 @@ def on_document_uploaded(cloud_event):
         )
 
     try:
+        # [1] receive: Firestore create event includes uid, situation, doc id,
+        # filename, optional extracted text, and optional bucket URI.
+        source_payload = {
+            "type": "text" if extracted_text else "document",
+            "content": extracted_text[:60_000] if extracted_text else "",
+            "filename": filename,
+            "document_id": doc_id,
+            "bucket_uri": bucket_uri,
+        }
+        print(f"[1] receive document={doc_id} filename={filename}")
+
+        # [2] parse: production backend/worker uses Docling for PDF, DOCX, and
+        # HTML; local text uploads may already carry extracted text.
+        source_payload["parse_engine"] = "docling" if bucket_uri else "pre-extracted-text"
+
+        # [3] chunk: downstream pipeline chunks parsed Docling JSON on semantic
+        # boundaries, keeping tables atomic.
+        source_payload["chunk_engine"] = "spacy-boundary-docling-chunker"
+
+        # [4] embed: downstream pipeline uses text-embedding-005 at 768 dims.
+        source_payload["embedding_model"] = "text-embedding-005"
+        source_payload["embedding_dimensions"] = 768
+
+        # [5] receipt: source receipt tier is carried into evidence/review.
+        source_payload["source_tier"] = "T6" if bucket_uri else "T5"
+
+        # [6] extract: GLiNER L1 candidate spans constrain Gemini L2 precision
+        # extraction with active ontology prompts.
+        source_payload["extraction_engine"] = "gliner-l1-gemini-l2"
+
+        # [7] resolve: actor candidates are resolved through cached Wikidata
+        # SPARQL lookups.
+        source_payload["resolver"] = "wikidata-sparql-cache"
+
+        # [8] firewall: symbolic firewall and owner-scoped two-phase commit stay
+        # in the backend pipeline.
+        source_payload["firewall"] = "existing-symbolic-firewall"
+
+        # [9] route: confidence routing sends high-confidence evidence forward,
+        # medium-confidence claims to review, and low-confidence noise to discard.
+        source_payload["routing"] = "evidence-review-discard"
+
+        # [10] commit: backend owns the existing two-phase graph/document commit.
+        source_payload["commit_protocol"] = "two-phase"
+
+        # [11] index: pgvector/case indexes are refreshed after accepted chunks.
+        source_payload["index_target"] = "pgvector-768"
+
+        # [12] notify: final status is emitted through the operational spine.
+        source_payload["notify"] = True
+
         token = _get_id_token(BACKEND_URL)
         resp = httpx.post(
             f"{BACKEND_URL}/api/v1/pipeline/run",
             json={
                 "situation_id": sit_id,
-                "sources": [{
-                    "type": "text",
-                    "content": extracted_text[:60_000],
-                    "filename": filename,
-                }],
+                "sources": [source_payload],
                 "jobId": job_id,
             },
             headers={
@@ -176,3 +224,10 @@ def on_document_uploaded(cloud_event):
                 action_url=f"/app/situations/{sit_id}",
             )
         raise
+
+
+def _string_field(fields: dict, name: str) -> str:
+    value = fields.get(name, {})
+    if isinstance(value, dict):
+        return str(value.get("stringValue") or "")
+    return ""

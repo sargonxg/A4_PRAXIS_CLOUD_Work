@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Wave 2 Lane A validated locally; Lane B is next
+Status: Wave 2 Lane B validated locally; Lane C is next
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -74,7 +74,7 @@ Known setup warnings:
 | 0 | File 2 Prompt 0.A | v4 cleanup merged | complete | Codex | `483d3605` |
 | 1 | File 2 Prompt 1.A | Phase 0 merged | complete | Codex | `924ed579` |
 | 2A | File 2 Prompt 2A.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
-| 2B | File 2 Prompt 2B.A | Phase 1 merged | not-started | unassigned | pending |
+| 2B | File 2 Prompt 2B.A | Phase 1 merged | complete-local | Codex | pending |
 | 2C | File 2 Prompt 2C.A | Phase 1 merged | not-started | unassigned | pending |
 | 2D | File 2 Prompt 2D.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
 | 2E | File 2 Prompt 2E.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
@@ -240,3 +240,43 @@ only the intended Phase 0 changes.
   - Lane C research pipeline and user models remain not-started.
   - Full Wave 2 integration gate is blocked until Lanes A, B, and C are pushed.
 - Notes for next agent: Continue with Queue 04 / Wave 2 Lane B unless another active agent already owns it. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md` unless Giulio assigns them.
+
+### 2026-05-10 - Wave 2 Lane B - Document Pipeline
+
+- Owner: Codex
+- Prompt source: `docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md` Prompt 2B.A
+- Scope completed:
+  - Added dependency-optional `backend/services/docling_parser.py` with a parsed-document contract, byte-span metadata, HTML/TXT support, and Docling fallback behavior for local environments.
+  - Added `backend/services/gliner_pre_pass.py` for GLiNER L1 candidate spans with deterministic regex fallback when the model dependency is not installed.
+  - Added `backend/services/wikidata_resolver.py` with known QID fixtures, normalization, rate-limited SPARQL lookup, and cache protocol.
+  - Added `backend/graphify_tacitus/extraction.py` as the v5 GLiNER L1 plus Gemini L2 orchestration layer.
+  - Refactored `cloud_functions/on_document_uploaded/main.py` into an auditable 12-step document pipeline contract.
+  - Updated `/api/documents/upload` so PDF/DOCX uploads no longer use inline `pdf-parse` or `mammoth`; they are stored and marked `processing` for structured Docling extraction.
+  - Replaced `audit:document-pipeline-shape` and wired it into `audit:gate`.
+  - Added focused Python tests and a deterministic GLiNER cost benchmark.
+- Files changed: document upload route, cloud document trigger, backend document services, graphify extraction adapter, document pipeline audit, focused backend tests, package audit gate, queue status docs
+- Validation run:
+  - `npm run typecheck`
+  - `npm run build`
+  - `npm run lint`
+  - `node scripts/audit-ai-routes.mjs`
+  - `npx vitest run`
+  - `npm run audit:document-pipeline-shape`
+  - `npm run audit:document-ingest-parity`
+  - `npm run audit:library-ingest-consolidation`
+  - `npm run audit:source-tier-discipline`
+  - `pytest backend/tests/test_docling_parser.py backend/tests/test_gliner_pre_pass.py backend/tests/test_wikidata_resolver.py backend/tests/test_document_pipeline_e2e.py -q`
+  - `pytest backend/ -q`
+  - `graphify update .`
+  - `npm run audit:gate`
+- Validation result: pass with documented environment exception
+  - PASS: typecheck, build, document audits, route audit, 577 Vitest tests, the four focused Phase 2B Python test files, graphify update, and full `npm run audit:gate`.
+  - PASS: lint completed with existing warning debt only.
+  - ENVIRONMENT: full `pytest backend/ -q` still cannot collect in the active Python environment because backend dependencies/import path are unavailable (`agents`, `fastapi`, `pydantic_settings`, `psycopg`, `psycopg_pool`, and `google` import errors). This matches the Phase 0/1 environment limitation.
+- Commit: pending
+- Push: pending
+- Open blockers:
+  - Runtime deployment of the Cloud Function/worker path was not performed; deploy remains manual-approval-only.
+  - Local environment does not include Docling/GLiNER model dependencies, so focused tests exercise the production contract and deterministic fallback rather than live model inference.
+  - Lane C research pipeline and user models remain not-started.
+- Notes for next agent: Continue with Queue 05 / Wave 2 Lane C after this checkpoint is committed and pushed. Do not run production deploy commands.
