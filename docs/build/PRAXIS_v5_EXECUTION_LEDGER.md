@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Wave 2 Integration Gate validated locally; Phase 4A is next after docs push
+Status: Wave 2 Integration Gate committed locally; Phase 4A is next after push
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -363,7 +363,7 @@ only the intended Phase 0 changes.
   - PASS: unauthenticated POST to `/api/research/run` returned `401`, preserving the research API owner-scoped auth boundary.
   - ENVIRONMENT: full `pytest backend/ -q` still cannot collect in the active Python environment because backend dependencies/import path are unavailable (`agents`, `fastapi`, `pydantic_settings`, `psycopg`, `psycopg_pool`, and `google` import errors). This is unchanged from Phases 0-2C.
   - NOTE: running `build` and `typecheck` concurrently once produced malformed generated `.next/dev/types`; generated cache was removed and sequential rerun passed.
-- Commit: pending (`docs(v5): record wave 2 integration gate`)
+- Commit: `b6a23d86` (`docs(v5): record wave 2 integration gate`)
 - Push: pending
 - Open blockers:
   - Phase 4A frontend build can begin.
