@@ -3,6 +3,7 @@ import type { OntologyId } from '@/lib/ontology/types';
 import type { TacitusCorePrimitive } from '@/lib/graph/core-primitives';
 import type { MemoTemplateId } from '@/types/memo';
 import type { WorkbenchTabId } from '@/types/workbench';
+import type { UserModelFields } from '@/lib/user-models/types';
 
 export const ContextLayerSchema = z.enum(['user', 'workspace', 'case', 'conversation']);
 export const UserRoleSchema = z.enum([
@@ -31,6 +32,8 @@ export type ToolId = string;
 export interface UserContext {
   uid: string;
   workspaceId: WorkspaceId;
+  activeUserModelId?: string;
+  userModel?: UserModelFields;
   identity: {
     displayName: string;
     role?: UserRole;

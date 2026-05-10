@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Wave 2 Lane B validated locally; Lane C is next
+Status: Wave 2 Lane C validated locally; commit and push are next
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -75,10 +75,10 @@ Known setup warnings:
 | 1 | File 2 Prompt 1.A | Phase 0 merged | complete | Codex | `924ed579` |
 | 2A | File 2 Prompt 2A.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
 | 2B | File 2 Prompt 2B.A | Phase 1 merged | complete | Codex | `7422b0aa` |
-| 2C | File 2 Prompt 2C.A | Phase 1 merged | not-started | unassigned | pending |
+| 2C | File 2 Prompt 2C.A | Phase 1 merged | complete | Codex | pending |
 | 2D | File 2 Prompt 2D.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
 | 2E | File 2 Prompt 2E.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
-| 3 | File 2 Prompt 3.A | Phase 1 merged | not-started | unassigned | pending |
+| 3 | File 2 Prompt 3.A | Phase 1 merged | complete-core | Codex | pending |
 | 4A | File 3 Phase 4A | Phase 1 plus compatible 2/3 surfaces | not-started | unassigned | pending |
 | 4B | File 3 Phase 4B | Phase 3 types/seeds | not-started | unassigned | pending |
 | 4C | File 3 Phase 4C | Phase 4A foundation | not-started | unassigned | pending |
@@ -234,7 +234,7 @@ only the intended Phase 0 changes.
   - PASS: full `npm run audit:gate` passed with the longer timeout, including GCP checks. `audit:gcp-production-posture` still reports three soft warnings and zero hard failures.
   - SCOPE NOTE: Phase 2B still owns document pipeline internals; Phase 2C still owns research pipeline internals and Phase 3 user models. The Source panel therefore uses existing example-case source metadata plus honest Phase 2B placeholder copy.
 - Commit: `d9f7d64d` (`feat(v5-2a): add context shell source tiers and timeline`)
-- Push: pending
+- Push: pushed to `origin/main`
 - Open blockers:
   - Lane B document pipeline remains not-started.
   - Lane C research pipeline and user models remain not-started.
@@ -274,9 +274,54 @@ only the intended Phase 0 changes.
   - PASS: lint completed with existing warning debt only.
   - ENVIRONMENT: full `pytest backend/ -q` still cannot collect in the active Python environment because backend dependencies/import path are unavailable (`agents`, `fastapi`, `pydantic_settings`, `psycopg`, `psycopg_pool`, and `google` import errors). This matches the Phase 0/1 environment limitation.
 - Commit: `7422b0aa` (`feat(v5-2b): add document extraction pipeline`)
-- Push: pending
+- Push: pushed to `origin/main`
 - Open blockers:
   - Runtime deployment of the Cloud Function/worker path was not performed; deploy remains manual-approval-only.
   - Local environment does not include Docling/GLiNER model dependencies, so focused tests exercise the production contract and deterministic fallback rather than live model inference.
   - Lane C research pipeline and user models remain not-started.
 - Notes for next agent: Continue with Queue 05 / Wave 2 Lane C after this checkpoint is committed and pushed. Do not run production deploy commands.
+
+### 2026-05-10 - Wave 2 Lane C - Research Pipeline And User Models
+
+- Owner: Codex
+- Prompt source: `docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md` Prompts 2C.A and 3.A
+- Scope completed:
+  - Added a Google Grounded Search service contract with a T5 fallback result and optional provider abstraction hook.
+  - Added a Wikidata SPARQL service with actor disambiguation, entity facts, related entities, known-QID fixtures, rate limiting, and dependency-light tests.
+  - Added the Source Augmenter state machine with ordered R1-R13 research-pipeline markers.
+  - Added `/api/research/run` as an owner-scoped SSE route that returns transparent local fallback events when live grounding is unavailable.
+  - Added TypeScript research client and method registry entries for deep research, Wikidata SPARQL, and Google Grounded Search.
+  - Added three public seeded user models, owner-scoped fork helpers, active model ContextSnapshot fields, capture-loop helpers, Python mirror types, and migration scaffold.
+  - Replaced the Phase 2C and Phase 3 audit stubs and wired both into `audit:gate`.
+- Files changed: research backend services/router/state machine, research API route/client/methods/skills, user-model types/seeds/store/capture loop, context typing/injection, audits, package gate, focused tests, graphify output, queue status docs
+- Validation run:
+  - `npm run lint`
+  - `npm run typecheck`
+  - `npm run build`
+  - `node scripts/audit-ai-routes.mjs`
+  - `npm run audit:research-pipeline-shape`
+  - `npm run audit:user-model-versioning`
+  - `npm run audit:ai-provider-isolation`
+  - `npm run audit:ai-provider-vertex-default`
+  - `npm run audit:model-matrix-coverage`
+  - `npm run audit:owner-scoping`
+  - `pytest backend/tests/test_google_grounded_search.py backend/tests/test_wikidata_sparql.py backend/tests/test_research_pipeline_e2e.py backend/tests/test_user_models_e2e.py -q`
+  - `pytest backend/ -q`
+  - `npx vitest run`
+  - `graphify update .`
+  - `npm run audit:gate`
+  - `git diff --check`
+  - Local API smoke against `http://127.0.0.1:3024/api/research/run`
+- Validation result: pass with documented environment/auth exceptions
+  - PASS: lint completed with existing warning debt only.
+  - PASS: typecheck, build, AI route audit, focused Lane C audits, provider audits, model-matrix audit, owner-scoping audit, 580 Vitest tests, focused Lane C Python tests, graphify update, and full `npm run audit:gate`.
+  - PASS: local API smoke proved unauthenticated `/api/research/run` returns `401`, preserving the owner-scoped auth boundary.
+  - ENVIRONMENT: full `pytest backend/ -q` still cannot collect in the active Python environment because backend dependencies/import path are unavailable (`agents`, `fastapi`, `pydantic_settings`, `psycopg`, `psycopg_pool`, and `google` import errors). Focused Lane C backend tests pass.
+  - SCOPE NOTE: `/users` and `/users/[modelId]` UI are still Phase 4B. This checkpoint completes the Phase 3 schema/seeds/fork/capture/context core required for that surface.
+- Commit: pending (`feat(v5-2c): add grounded research pipeline and user models`)
+- Push: pending
+- Open blockers:
+  - Live Google grounding depends on configured provider/runtime credentials; the local route emits transparent fallback events rather than claiming live grounded execution.
+  - Full backend pytest remains blocked by the local Python dependency environment.
+  - Wave 2 integration gate remains blocked until this checkpoint is committed and pushed.
+- Notes for next agent: After this checkpoint is pushed, run Queue 06 / Wave 2 Integration Gate. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md` unless Giulio explicitly assigns them.

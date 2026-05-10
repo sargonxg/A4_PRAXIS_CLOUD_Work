@@ -2,6 +2,7 @@ import type { AuthenticatedUser } from '@/lib/api/with-auth';
 import { computeContextHealthScore } from '@/lib/context/context-health-score';
 import { sanitizeConversationContext, verifyConversationContextToken } from '@/lib/context/conversation-token';
 import { getSituationAdmin } from '@/lib/firebase/situations';
+import { getPublicUserModel } from '@/lib/user-models/seeds';
 import type { ContextAdvisory, ContextSnapshot, ContextSpec, ConversationContext, UserContext, WorkspaceContext } from '@/types/context';
 import type { Situation } from '@/types/situation';
 
@@ -59,9 +60,12 @@ export async function withContextAware(options: ContextAwareOptions): Promise<Co
 }
 
 function buildUserContext(user: AuthenticatedUser, ontologyId: string): UserContext {
+  const activeUserModel = getPublicUserModel(user.isDemo ? 'foreign-policy-analyst' : 'foreign-policy-analyst');
   return {
     uid: user.uid,
     workspaceId: `personal-${user.uid}`,
+    activeUserModelId: activeUserModel?.modelId,
+    userModel: activeUserModel,
     identity: {
       displayName: user.name || user.email || 'PRAXIS user',
       role: user.isDemo ? 'analyst' : undefined,
