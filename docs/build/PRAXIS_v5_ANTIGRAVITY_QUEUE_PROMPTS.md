@@ -10,44 +10,47 @@ are the exact messages to copy into Antigravity.
 ## Copy/Paste Instructions
 
 1. Open this file in Antigravity.
-2. Create one queued job per section below.
-3. Copy only the fenced block under each section: start after the opening
+2. For each queued job, paste `COPY BLOCK MASTER` first.
+3. Then paste the numbered `COPY BLOCK` for that job directly below it in the
+   same Antigravity message.
+4. Copy only the fenced block under each section: start after the opening
    ` ```text ` line and stop before the closing ` ``` ` line.
-4. Do not copy the Markdown heading into the prompt unless you want to.
-5. Do not queue dependency-blocked phases as active work. Queue them as paused,
+5. Do not copy the Markdown heading into the prompt unless you want to.
+6. Do not queue dependency-blocked phases as active work. Queue them as paused,
    waiting, or manual-next if Antigravity supports that.
-6. Phase 0 and Phase 1 must run one after the other.
-7. After Phase 1 completes, queue `03`, `04`, and `05` together as the only
+7. Phase 0 and Phase 1 must run one after the other.
+8. After Phase 1 completes, queue `03`, `04`, and `05` together as the only
    planned parallel batch.
-8. Run `06 Wave 2 Integration Gate` after all three Wave 2 lanes are pushed.
-9. Run `17 Production Deploy and Live Verification` only after Giulio explicitly
+9. Run `06 Wave 2 Integration Gate` after all three Wave 2 lanes are pushed.
+10. Run `17 Production Deploy and Live Verification` only after Giulio explicitly
    approves production deployment.
 
 ## What To Queue
 
-Copy these blocks in this order:
+Copy `MASTER` plus one numbered block for each queued job:
 
 | Queue # | Copy This Block | When To Run | Parallel? |
 |---|---|---|---|
-| 00 | `00 Preflight Orchestrator` | First | No |
-| 01 | `01 Phase 0` | After 00 | No |
-| 02 | `02 Phase 1` | After 01 is pushed | No |
-| 03 | `03 Wave 2 Lane A` | After 02 is pushed | Yes, with 04 and 05 |
-| 04 | `04 Wave 2 Lane B` | After 02 is pushed | Yes, with 03 and 05 |
-| 05 | `05 Wave 2 Lane C` | After 02 is pushed | Yes, with 03 and 04 |
-| 06 | `06 Wave 2 Integration Gate` | After 03, 04, and 05 are pushed | No |
-| 07 | `07 Phase 4A` | After 06 | No |
-| 08 | `08 Phase 4B` | After Phase 3 from lane C is complete | No |
-| 09 | `09 Phase 4C` | After 07 | No |
-| 10 | `10 Phase 4D` | After 09 | No |
-| 11 | `11 Phase 4E` | After 07 and drafting prerequisites are clear | No |
-| 12 | `12 Phase 5 Methods` | After 09 | Usually one method group at a time |
-| 13 | `13 Phase 6 Drafting` | After 11 and needed methods | No |
-| 14 | `14 Phase 7 Demo Content` | After Waves 1-3 app work is complete | No |
-| 15 | `15 Phase 8 Landing` | After 14 | No |
-| 16 | `16 Phase 9 Polish and Ship` | After 15 | No |
-| 17 | `17 Production Deploy and Live Verification` | After 16 and explicit deploy approval | No |
-| 18 | `18 Final Product QA and Red-Team Review` | After live deployment or final staging build | No |
+| MASTER | `COPY BLOCK MASTER` | Paste before every numbered block | N/A |
+| 00 | `COPY BLOCK MASTER` + `00 Preflight Orchestrator` | First | No |
+| 01 | `COPY BLOCK MASTER` + `01 Phase 0` | After 00 | No |
+| 02 | `COPY BLOCK MASTER` + `02 Phase 1` | After 01 is pushed | No |
+| 03 | `COPY BLOCK MASTER` + `03 Wave 2 Lane A` | After 02 is pushed | Yes, with 04 and 05 |
+| 04 | `COPY BLOCK MASTER` + `04 Wave 2 Lane B` | After 02 is pushed | Yes, with 03 and 05 |
+| 05 | `COPY BLOCK MASTER` + `05 Wave 2 Lane C` | After 02 is pushed | Yes, with 03 and 04 |
+| 06 | `COPY BLOCK MASTER` + `06 Wave 2 Integration Gate` | After 03, 04, and 05 are pushed | No |
+| 07 | `COPY BLOCK MASTER` + `07 Phase 4A` | After 06 | No |
+| 08 | `COPY BLOCK MASTER` + `08 Phase 4B` | After Phase 3 from lane C is complete | No |
+| 09 | `COPY BLOCK MASTER` + `09 Phase 4C` | After 07 | No |
+| 10 | `COPY BLOCK MASTER` + `10 Phase 4D` | After 09 | No |
+| 11 | `COPY BLOCK MASTER` + `11 Phase 4E` | After 07 and drafting prerequisites are clear | No |
+| 12 | `COPY BLOCK MASTER` + `12 Phase 5 Methods` | After 09 | Usually one method group at a time |
+| 13 | `COPY BLOCK MASTER` + `13 Phase 6 Drafting` | After 11 and needed methods | No |
+| 14 | `COPY BLOCK MASTER` + `14 Phase 7 Demo Content` | After Waves 1-3 app work is complete | No |
+| 15 | `COPY BLOCK MASTER` + `15 Phase 8 Landing` | After 14 | No |
+| 16 | `COPY BLOCK MASTER` + `16 Phase 9 Polish and Ship` | After 15 | No |
+| 17 | `COPY BLOCK MASTER` + `17 Production Deploy and Live Verification` | After 16 and explicit deploy approval | No |
+| 18 | `COPY BLOCK MASTER` + `18 Final Product QA and Red-Team Review` | After live deployment or final staging build | No |
 
 ## Recommended Antigravity Setup
 
@@ -66,10 +69,79 @@ Use separate queued agents only when the table says parallel-safe. If multiple
 agents are active, each agent must own a disjoint file area and update the
 ledger before touching code.
 
+## COPY BLOCK MASTER - Paste Before Every Numbered Block
+
+```text
+Universal PRAXIS v5 rules for this queued job:
+
+Workspace:
+C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work
+
+This repository is shared by Codex, Claude Code, Antigravity agents, and human
+operators. Preserve unrelated uncommitted work. Never reset, checkout, or
+overwrite another agent's edits.
+
+Before editing:
+git pull origin main
+git status --short --branch
+git log --oneline -5
+npm install
+
+If the tree is dirty, inspect the changes before editing. Do not continue if
+the dirty files overlap your assigned phase in a way that cannot be reconciled
+safely.
+
+Read first:
+1. AGENTS.md
+2. CLAUDE.md
+3. docs/build/PRAXIS_v5_EXECUTION_LEDGER.md
+4. docs/build/ANTIGRAVITY_V5_HANDOFF.md
+5. docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md
+6. The assigned phase prompt in docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md or docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md
+
+Non-negotiables:
+- Do not run git add . Stage explicit files only.
+- Commit and push to main only for coherent validated checkpoints.
+- Do not run mutating gcloud, firebase deploy, gcloud run deploy, or terraform
+  apply unless Giulio explicitly authorizes that exact deploy step.
+- Do not hardcode secrets. Do not print secrets.
+- Do not bypass withCalibration, owner scoping, ContextProvider boundaries, or
+  the two-phase commit protocol.
+- Do not touch security-boundary files unless the assigned prompt explicitly
+  requires it and Giulio has approved it:
+  - src/lib/firebase/admin.ts
+  - src/lib/api/with-auth.ts
+  - src/middleware.ts
+  - firestore.rules
+  - storage.rules
+  - src/lib/auth/cookie-signer.ts
+  - src/lib/firebase/config.ts
+- After code changes, run graphify update . when practical. If skipped, record
+  why in docs/build/PRAXIS_v5_EXECUTION_LEDGER.md.
+- Browser verification is required for user-facing surfaces.
+- Production-readiness means local checks plus live checks on
+  https://praxis.tacitus.me, not just a green build.
+
+Commit protocol:
+1. Update docs/build/PRAXIS_v5_EXECUTION_LEDGER.md with status, validation,
+   commit, push, blockers, and notes for the next agent.
+2. Run the assigned verification commands.
+3. Run git diff --check and git diff --cached --check.
+4. Stage explicit intended files only.
+5. Commit only if validation is green or expected-red behavior is explicitly
+   documented by the phase prompt.
+6. Before push: git fetch origin main; git pull --rebase origin main.
+7. Push to origin main only after a clean rebase and clean status.
+
+If validation fails, do not push broken code. Record the blocker in the ledger
+and stop with a concise blocker report.
+```
+
 ## Universal Rules For Every Prompt
 
-Every queued prompt below already includes the essentials, but these are the
-non-negotiables:
+If Antigravity does not support combining two copied blocks into one queued
+message, manually paste `COPY BLOCK MASTER` first and the numbered block below
+it in the same message. The bullets below are kept for quick scanning:
 
 - Preserve unrelated uncommitted work. Never reset, checkout, or overwrite
   another agent's edits.
