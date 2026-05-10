@@ -41,12 +41,6 @@ work unless Giulio explicitly asks.
 - [`docs/COMPLIANCE.md`](./docs/COMPLIANCE.md)
 - [`docs/PRAXIS_TECHNICAL_SPECIFICATION.md`](./docs/PRAXIS_TECHNICAL_SPECIFICATION.md)
 
-## Historical references
-
-Archived material lives under [`docs/_archive/2026-05-pre-v4/`](./docs/_archive/2026-05-pre-v4/).
-That includes the prior `docs/codex-prompts/`, `docs/superpowers/`,
-`docs/specs/`, `docs/phases/`, and the V2/Z session audit intakes. Do
-not anchor new work on them.
 
 ## v7 Slice Work
 

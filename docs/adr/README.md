@@ -46,15 +46,6 @@ Accepted ADRs are not edited for meaning. Supersede them with a later ADR.
 - `0043-research-as-ingestion-front-door.md`
 - `0044-draft-as-briefing-assembly-contract.md`
 - `0045-ai-first-case-creation-pattern.md`
-- `0046-visualization-library-decision-matrix.md`
-- `0047` … `0049-cognee-disabled-first.md`
-
-### v4 ADRs (Proposed — awaiting Giulio sign-off)
-
-- `0050-user-models-as-first-class-versioned-artifacts.md` — versioned User Model artifacts with append-only storage.
-- `0051-two-context-product-model-on-dual-ontology-layer.md` — domain ontologies + new work-ontology layer (8 templates).
-- `0052-seven-logical-graphs-one-user-facing-graph.md` — owning-module per logical graph; Graph panel as a deterministic merge view.
-- `0053-twelve-named-llm-graph-interaction-patterns.md` — L1-L12 fixed taxonomy declared per Method.
 
 Active target-state gaps are tracked in:
 

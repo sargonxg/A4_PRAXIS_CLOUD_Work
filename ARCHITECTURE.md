@@ -14,15 +14,6 @@ Last updated: 2026-05-10.
 - [`docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md`](./docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md).
 - [`docs/v7/SLICES/`](./docs/v7/SLICES/) — proposed slices, do not implement without explicit approval.
 
-## Cleanup pass
-
-The 2026-05-10 v4 cleanup pass moved historical specs, codex prompts, V2
-session intakes, and the phase-foundation docs to
-[`docs/_archive/2026-05-pre-v4/`](./docs/_archive/2026-05-pre-v4/). The
-cleanup inventory is at
-[`docs/audits/2026-05-10-v4-cleanup-inventory.md`](./docs/audits/2026-05-10-v4-cleanup-inventory.md)
-and the completion summary is at
-[`docs/audits/2026-05-10-v4-cleanup-completion.md`](./docs/audits/2026-05-10-v4-cleanup-completion.md).
 
 ## Current Production Shape
 

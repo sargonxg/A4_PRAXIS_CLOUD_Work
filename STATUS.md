@@ -1,22 +1,20 @@
 # PRAXIS — STATUS
 
-## 2026-05-10 — v4 cleanup pass complete
+## 2026-05-10 — repo cleanup
 
-Repo cleaned for the v4 build. Historical specs, codex prompt packs, V2/Z
-session intakes, and superseded phase-foundation docs moved under
-`docs/_archive/2026-05-pre-v4/`. Six orphan one-shot scripts archived. Eight
-v4-readiness audit stubs added (`npm run audit:v4-readiness` shows the
-checklist). Four v4 ADRs (0050–0053) opened at Proposed status.
+Removed historical specs, codex prompt packs, V2/Z session intakes,
+superseded phase-foundation docs, six orphan one-shot scripts, the
+833-line session-log TODO, and the obsolete `gemini-3` blocker. CLAUDE.md
+"Model String Discipline" corrected to match `MODEL_MATRIX.json`
+(`gemini-2.5-*` is current canon). Agent handoff lists trimmed to the
+canonical trinity (architecture bible, live alignment, simplified context
+core) plus v7 STATUS.
 
-**Next:** Giulio reviews and signs ADRs 0050–0053; then v4 Phase 1 (M1
-Ontology) begins.
-
-Cleanup inventory: `docs/audits/2026-05-10-v4-cleanup-inventory.md`.
-Completion summary: `docs/audits/2026-05-10-v4-cleanup-completion.md`.
+**Next:** Giulio approves v7 Slice 1; next agent ships it behind a flag.
 
 ---
 
-# PRAXIS Codex Night Pack — STATUS (historical 2026-05-08)
+# Historical: PRAXIS Codex Night Pack — STATUS (2026-05-08)
 
 > Morning brief for the 2026-05-08 night-pack pass. This file is intentionally candid: the session resumed with marketplace, calibration, and Cognee honesty changes already present in the dirty tree, so the clean diagnostic baseline requested by `01_DIAGNOSTICS` is not available from this checkpoint.
 

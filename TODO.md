@@ -1,9 +1,6 @@
 # PRAXIS TODO
 
-Last updated: 2026-05-10 (v4 cleanup pass).
-
-This file is a thin pointer. The previous 833-line session-log TODO is archived
-at `docs/_archive/2026-05-pre-v4/TODO_pre_v4.md`.
+Last updated: 2026-05-10.
 
 ## Where current work lives
 
@@ -16,13 +13,8 @@ at `docs/_archive/2026-05-pre-v4/TODO_pre_v4.md`.
 
 ## Immediate next steps
 
-1. Giulio reviews and signs off on the four v4 ADRs (proposed status):
-   - `docs/adr/0037-user-models-as-first-class-versioned-artifacts.md`
-   - `docs/adr/0038-two-context-product-model-on-dual-ontology-layer.md`
-   - `docs/adr/0039-seven-logical-graphs-one-user-facing-graph.md`
-   - `docs/adr/0040-twelve-named-llm-graph-interaction-patterns.md`
-2. Giulio approves v7 Slice 1 (`docs/v7/SLICES/01_foundations_experience_map.md`) to move from `proposed` to `in-progress`.
-3. Once both above are unblocked, the next agent picks Slice 1's acceptance criteria and ships behind a feature flag.
+1. Giulio approves v7 Slice 1 (`docs/v7/SLICES/01_foundations_experience_map.md`) to move from `proposed` to `in-progress`.
+2. Next agent ships Slice 1 behind a feature flag.
 
 ## Standing rules
 
@@ -31,11 +23,6 @@ at `docs/_archive/2026-05-pre-v4/TODO_pre_v4.md`.
 - Do not touch the security boundaries listed in `CLAUDE.md`.
 - Cognee stays disabled-first in production.
 
-## v4-readiness audit suite
-
-`npm run audit:v4-readiness` runs eight failing stubs that block the v4 phases
-they correspond to. They are intentionally noisy until each phase ships.
-
 ## Repo Shape And Next-Round Readiness
 
 This file is checked by `npm run audit:repo-shape`. The markers below are
@@ -43,4 +30,4 @@ required so the audit recognises this file as the canonical TODO.
 
 - **graphify**: knowledge graph at `graphify-out/`. Run `graphify update .` after code edits to keep it current.
 - **Knip**: dead-export detection. Not currently in `audit:gate`; run on demand when chasing unused exports.
-- **audit:architecture-reference**: enforces that startup docs link to `docs/architecture/PRAXIS_ARCHITECTURE.md` and `PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`. Both are referenced in this TODO via the v7 / context-core trinity above.
+- **audit:architecture-reference**: enforces that startup docs link to `docs/architecture/PRAXIS_ARCHITECTURE.md` and `PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`. Both are referenced via the v7 / context-core trinity above.

@@ -55,12 +55,6 @@ order. Skipping items 4–8 will produce duplicate work.
 - `docs/CORPUS_ARCHITECTURE.md` — corpus + retrieval design
 - `docs/tools/INDEX.md` — per-tool micro-app specs
 
-### Historical references (do not require reading; consult only for context)
-
-Archived and superseded docs live under `docs/_archive/2026-05-pre-v4/`.
-Older specs, codex prompt packs, V2 session intakes, and the
-phase-foundation docs were moved there during the v4 cleanup pass on
-2026-05-10. Do not anchor new work on them.
 
 Fresh-clone start command:
 
@@ -507,26 +501,6 @@ cd backend && pip install -e ".[dev]" && python -m pytest tests/ -v
 # Frontend type check
 npx tsc --noEmit
 ```
-
-## Pre-merge optional: v4-readiness stubs
-
-`npm run audit:v4-readiness` runs eight stubs that each fail until the
-matching v4 phase ships. They are intentionally NOT in `audit:gate`; they
-exist so the next agent has a checklist of what's still missing.
-
-| Stub | Phase |
-|---|---|
-| `audit:llm-pattern-coverage` | M1 Ontology |
-| `audit:work-ontology-coverage` | M1 Ontology |
-| `audit:source-tier-discipline` | M2 Context |
-| `audit:research-pipeline-shape` | M2 Context |
-| `audit:document-pipeline-shape` | M2 Context |
-| `audit:user-model-versioning` | M3 User Model |
-| `audit:episode-bi-temporal-coverage` | M5 Episode + Timeline |
-| `audit:drafting-templates-present` | M6 Ask + Drafting |
-
-When a phase ships, replace the stub with a real implementation and move it
-into `audit:gate`.
 
 ## Latest Validation Checkpoint
 
