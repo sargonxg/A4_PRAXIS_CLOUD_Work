@@ -8,7 +8,7 @@
     "hash": "8b4b8776da15df30cee6721093b01ab1"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\next-env.d.ts": {
-    "mtime": 1778451098.1707528,
+    "mtime": 1778452909.780593,
     "hash": "b698cdd97fe8e3bd16dcd74899ad7cef"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\next.config.ts": {
@@ -2728,12 +2728,12 @@
     "hash": "088d638f9234cf77e295a6801aad5091"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\contexts\\page.tsx": {
-    "mtime": 1778444060.5314617,
-    "hash": "02f263c4e48d19c6437e01faba6c7fd3"
+    "mtime": 1778452668.0317135,
+    "hash": "d73dffb7d34b0250e53ac56984dff9a4"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\contexts\\[caseId]\\page.tsx": {
-    "mtime": 1778444060.5314617,
-    "hash": "629740d7107be2643a0b64746e848ef0"
+    "mtime": 1778452678.568195,
+    "hash": "50852df92ecb671d216f29be93457641"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\demo\\error.tsx": {
     "mtime": 1778429929.821248,
@@ -3035,13 +3035,17 @@
     "mtime": 1778444018.2732983,
     "hash": "832155deb136c96e25f1c746b85e63ce"
   },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\contexts\\CreateContextWizard.tsx": {
+    "mtime": 1778452642.5040774,
+    "hash": "2d01e4ae98fc45d63a2fb7d98c99221c"
+  },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\contexts\\EpisodeContext.tsx": {
     "mtime": 1778443960.3915353,
     "hash": "17d1701d272688dce0e5524cca021078"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\contexts\\NewContextWizard.tsx": {
-    "mtime": 1778444018.2759802,
-    "hash": "6f616b7236feb7070170f9db019312f0"
+    "mtime": 1778452651.6410449,
+    "hash": "48315d95508bfd198358163ce8f811bb"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\contexts\\panels\\DraftsPanel.tsx": {
     "mtime": 1778444018.2874913,

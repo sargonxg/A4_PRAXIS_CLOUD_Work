@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Wave 2 Integration Gate committed locally; Phase 4A is next after push
+Status: Phase 4A validated locally; commit and push are next
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -79,7 +79,7 @@ Known setup warnings:
 | 2D | File 2 Prompt 2D.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
 | 2E | File 2 Prompt 2E.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
 | 3 | File 2 Prompt 3.A | Phase 1 merged | complete-core | Codex | `9e4d58bc` |
-| 4A | File 3 Phase 4A | Phase 1 plus compatible 2/3 surfaces | not-started | unassigned | pending |
+| 4A | File 3 Phase 4A | Phase 1 plus compatible 2/3 surfaces | complete | Codex | pending |
 | 4B | File 3 Phase 4B | Phase 3 types/seeds | not-started | unassigned | pending |
 | 4C | File 3 Phase 4C | Phase 4A foundation | not-started | unassigned | pending |
 | 4D | File 3 Phase 4D | Methods and runtime prerequisites | not-started | unassigned | pending |
@@ -364,9 +364,43 @@ only the intended Phase 0 changes.
   - ENVIRONMENT: full `pytest backend/ -q` still cannot collect in the active Python environment because backend dependencies/import path are unavailable (`agents`, `fastapi`, `pydantic_settings`, `psycopg`, `psycopg_pool`, and `google` import errors). This is unchanged from Phases 0-2C.
   - NOTE: running `build` and `typecheck` concurrently once produced malformed generated `.next/dev/types`; generated cache was removed and sequential rerun passed.
 - Commit: `b6a23d86` (`docs(v5): record wave 2 integration gate`)
-- Push: pending
+- Push: pushed to `origin/main`
 - Open blockers:
   - Phase 4A frontend build can begin.
   - Full backend pytest still needs a properly provisioned Python/backend environment.
   - Production deploy remains manual-approval-only.
 - Notes for next agent: Continue with Queue 07 / Phase 4A. Do not start production deployment. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md`.
+
+### 2026-05-10 - Phase 4A - Contexts Surface
+
+- Owner: Codex
+- Prompt source: `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md` Phase 4A
+- Scope completed:
+  - Kept the existing `/contexts` and `/contexts/[caseId]` Context shell as the Phase 4A baseline.
+  - Added the expected `CreateContextWizard` client component with a four-step modal flow for name, domain ontology, work ontology, and initial four-field frame.
+  - Updated `/contexts` cards with ontology stack badges and visible Context Health status.
+  - Added detail-page breadcrumbs, active panel title, and work episode selector above the eight-panel content.
+  - Verified all eight sidebar panels render: Frame, Sources, Extraction Lenses, Work Process, Timeline, Graph, Drafts, and Methods Used.
+- Files changed: Context routes, Context wizard components, graphify output, queue tracker, execution ledger
+- Validation run:
+  - `npm run lint`
+  - `npm run typecheck`
+  - `npm run build`
+  - `npm run audit:routes`
+  - `npm run audit:no-internal-jargon-ui`
+  - `npm run audit:experience-map-coherence`
+  - `npx vitest run`
+  - `graphify update .`
+  - `git diff --check`
+  - Production-mode local browser smoke on `http://127.0.0.1:3027`
+- Validation result: pass
+  - PASS: lint completed with existing warning debt only.
+  - PASS: typecheck, build, route audit, no-internal-jargon audit, experience-map audit, 580 Vitest tests, graphify update, and diff check.
+  - PASS: browser smoke loaded `/contexts` desktop/mobile, opened the create wizard, and loaded `/contexts/syria-2026` desktop/mobile plus all eight panel URLs with no console errors.
+  - SCOPE NOTE: authenticated persistence for new Context creation remains honest placeholder behavior until the owner-scoped Firestore creation path is assigned. The UI does not claim it created a persisted Context.
+- Commit: pending (`feat(v5-4a): add contexts surface`)
+- Push: pending
+- Open blockers:
+  - Phase 4B `/users` surface is next now that Phase 3 user-model core exists.
+  - The three final buyer demo Contexts are still Phase 7; current Context list uses the available example cases.
+- Notes for next agent: Continue with Queue 08 / Phase 4B after this checkpoint is committed and pushed. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md`.

@@ -68,8 +68,8 @@ prompts; this status table is the operational tracker.
 | 03 | complete | `d9f7d64d`; Lane A validation: typecheck, build, lint, full audit gate, vitest, browser smoke, graphify | Done; continue with 04. |
 | 04 | complete | `7422b0aa`; Phase 2B validation: typecheck, build, lint, full audit gate, document audits, focused Python tests, vitest | Done. |
 | 05 | complete | `9e4d58bc`, `638c94d8`; Lane C validation: typecheck, build, lint, full audit gate, research/user-model audits, provider audits, focused Python tests, vitest | Done. |
-| 06 | committed-local | `b6a23d86`; integration validation: lint, build/typecheck, vitest, full audit gate, browser smoke, graphify | Push next, then done. |
-| 07 | next-after-push | pending | Run Phase 4A after 06 is pushed. |
+| 06 | complete | `b6a23d86`, `9f7f0d4b`; integration validation: lint, build/typecheck, vitest, full audit gate, browser smoke, graphify | Done. |
+| 07 | validated-local | pending commit; Phase 4A validation: lint, typecheck, build, route/UI audits, vitest, browser smoke, graphify | Commit and push next. |
 | 08 | blocked | pending | Wait for Phase 3 from Lane C. |
 | 09 | blocked | pending | Wait for Phase 4A. |
 | 10 | blocked | pending | Wait for Phase 4C. |

@@ -56,6 +56,24 @@ export default async function ContextDetailPage({
           </aside>
           <section className="p-5 lg:p-8">
             <div className="mx-auto max-w-6xl">
+              <header className="mb-6 flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-sm text-slate-500">
+                    <Link href="/contexts" className="hover:text-slate-950">Contexts</Link>
+                    <span className="px-2">/</span>
+                    <span>{caseModule.manifest.name}</span>
+                  </p>
+                  <h2 className="mt-1 text-2xl font-semibold tracking-tight">{panels.find((panel) => panel.id === activePanel)?.label}</h2>
+                </div>
+                <label className="grid gap-1 text-sm text-slate-600 md:min-w-72">
+                  <span className="font-medium">Work episode</span>
+                  <select className="h-10 border border-slate-300 bg-white px-3">
+                    {episodes.map((episode) => (
+                      <option key={episode.id}>{episode.title}</option>
+                    ))}
+                  </select>
+                </label>
+              </header>
               {activePanel === 'frame' && <FramePanel caseModule={caseModule} />}
               {activePanel === 'sources' && <SourcesPanel caseModule={caseModule} />}
               {activePanel === 'lenses' && <ExtractionLensesPanel />}
