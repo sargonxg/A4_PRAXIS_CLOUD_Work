@@ -2,32 +2,34 @@
 
 Last updated: 2026-05-10.
 
-## Where current work lives
+## Current Build Queue
 
-- **Vision and product model:** `docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md`.
-- **Active simplification slices:** `docs/v7/STATUS.md` and `docs/v7/SLICES/`. All slices are still `proposed`; Slice 1 (foundations) is the entry point and needs Giulio sign-off before implementation.
-- **Architecture invariants:** `docs/architecture/PRAXIS_ARCHITECTURE.md`.
-- **What's actually shipped:** `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`.
-- **Live blockers:** `BLOCKERS.md`.
-- **Last validation evidence:** `STATUS.md` and `BUILD_LOG.md`.
+- v5 MVP control file: `docs/build/PRAXIS_v5_EXECUTION_LEDGER.md`.
+- v5 operating guide: `docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md`.
+- Backend phase prompts: `docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md`.
+- Frontend/ship prompts: `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md`.
 
-## Immediate next steps
+## Immediate Next Steps
 
-1. Giulio approves v7 Slice 1 (`docs/v7/SLICES/01_foundations_experience_map.md`) to move from `proposed` to `in-progress`.
-2. Next agent ships Slice 1 behind a feature flag.
+1. Complete Phase 0 validation and commit.
+2. Start Phase 1 only after Phase 0 is pushed to `main`.
+3. Do not start Wave 2 until Phase 1 is complete and the ledger says so.
 
-## Standing rules
+## Live Production Blockers
 
-- Do not implement v7 slices marked `proposed` without explicit approval.
-- Do not flip the model matrix to Gemini 3 without setting `PRAXIS_ALLOW_GEMINI3_TARGETS=1` and verifying Vertex availability.
+- Provider-backed notification delivery remains open; see `BLOCKERS.md`.
+- Live Cognee SDK calls remain service-owned and disabled-first; see `BLOCKERS.md`.
+- Deep pre-ship live checks still require staging/prod execution; see `BLOCKERS.md`.
+
+## Standing Rules
+
 - Do not touch the security boundaries listed in `CLAUDE.md`.
 - Cognee stays disabled-first in production.
+- Do not run mutating cloud/deploy commands without Giulio's explicit approval.
+- Keep claims aligned with `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`.
 
 ## Repo Shape And Next-Round Readiness
 
-This file is checked by `npm run audit:repo-shape`. The markers below are
-required so the audit recognises this file as the canonical TODO.
-
 - **graphify**: knowledge graph at `graphify-out/`. Run `graphify update .` after code edits to keep it current.
 - **Knip**: dead-export detection. Not currently in `audit:gate`; run on demand when chasing unused exports.
-- **audit:architecture-reference**: enforces that startup docs link to `docs/architecture/PRAXIS_ARCHITECTURE.md` and `PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`. Both are referenced via the v7 / context-core trinity above.
+- **audit:architecture-reference**: startup docs link to `docs/architecture/PRAXIS_ARCHITECTURE.md` and `PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`.

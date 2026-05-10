@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- docs(v5): adopt Phase 0 build direction with v4/v5 vision docs, proposed v5
+  ADRs, v5 readiness audit stubs, and execution-ledger tracking.
 - feat(analytics): add Pack 31 network, sanctions, and simulation foundation.
   Added NetworkX graph metrics, additive graph node metrics migration, yente
   sanctions sidecar scaffolding, sanctions licensing runbook, Mesa-style policy

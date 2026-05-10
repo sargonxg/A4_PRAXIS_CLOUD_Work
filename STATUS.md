@@ -1,5 +1,43 @@
 # PRAXIS — STATUS
 
+## 2026-05-10 — v5 MVP Phase 0
+
+Phase 0 is implemented locally as the v5 build adoption checkpoint, but it is
+blocked from commit/push until the existing Pack 22 audit-gate mismatch is
+repaired. The repo now treats the v4/v5 vision docs and `docs/build/` execution
+ledger as the active MVP build queue.
+
+| Phase | Goal | Status |
+|---|---|---|
+| Phase 0 | Vision adopt + persona addendum + 4 ADRs | blocked pending gate repair |
+| Phase 1 | Ontology layer surfacing + 3 work ontologies + tacitus-ontology MIT package | not-started |
+| Phase 2A | Context page shell + 8-panel sidebar | not-started |
+| Phase 2B | Document pipeline (Docling + GLiNER + Gemini extraction) | not-started |
+| Phase 2C | Research pipeline (Google Grounded + Wikidata) | not-started |
+| Phase 2D | Source Tier system + audit | not-started |
+| Phase 2E | Episode + Timeline module | not-started |
+| Phase 3 | User Models module + 3 seeded personas + capture loop | not-started |
+| Phase 4 | Methods marketplace + Top 10 Methods | not-started |
+| Phase 5 | Ask homepage + Public landing | not-started |
+| Phase 6 | Drafting Studio + 5 templates | not-started |
+| Phase 7 | Subagent runtime on Vertex Agent Engine | not-started |
+| Phase 8 | Demo seeding (3 Contexts) + Polish + Ship | not-started |
+
+Phase 0 repo notes:
+
+- The referenced standalone v4 vision files were absent at phase start; repo-local
+  canonical files were created under `docs/architecture/PRAXIS_VISION_v4_*`
+  from the authoritative v5 build pack.
+- The existing ADR directory already had unrelated `0037`, `0038`, and `0040`
+  ADRs; Phase 0 preserves them and adds the requested v5 ADR filenames.
+- The eight v5 audit stubs are intentionally red and are wired only into
+  `audit:v5-readiness`, not `audit:gate`.
+- `audit:gate` currently fails in existing `audit:pack22-verification` because
+  `docs/codex-prompts/PRAXIS_CODEX_22_GCP_GEMINI_VERIFICATION.md` is absent
+  after the v4 cleanup/archive pass.
+
+---
+
 ## 2026-05-10 — repo cleanup
 
 Removed historical specs, codex prompt packs, V2/Z session intakes,

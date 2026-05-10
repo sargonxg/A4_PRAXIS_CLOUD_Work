@@ -4,16 +4,24 @@ Last updated: 2026-05-10.
 
 ## Canonical references
 
+- [`docs/architecture/PRAXIS_VISION_v4_01_VISION.md`](./docs/architecture/PRAXIS_VISION_v4_01_VISION.md) — v5 MVP product vision and three-persona market frame.
+- [`docs/architecture/PRAXIS_VISION_v4_02_ARCHITECTURE.md`](./docs/architecture/PRAXIS_VISION_v4_02_ARCHITECTURE.md) — v5 MVP architecture direction: dual ontology layer, owner scope, model/provider boundaries, and two-phase commit posture.
+- [`docs/architecture/PRAXIS_VISION_v4_03_BUILD.md`](./docs/architecture/PRAXIS_VISION_v4_03_BUILD.md) — v5 MVP phase plan and build governance.
 - [`docs/architecture/PRAXIS_ARCHITECTURE.md`](./docs/architecture/PRAXIS_ARCHITECTURE.md) — architecture bible / invariant source.
 - [`docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`](./docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md) — shipped, partial, gated, and drift state.
 - [`docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md`](./docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md) — current product model (Home, Ask PRAXIS, Sources, Situation Model, Outputs, Advanced; eight context cores).
 
-## Active simplification (v7)
+## Active MVP Build (v5)
+
+- [`docs/build/PRAXIS_v5_EXECUTION_LEDGER.md`](./docs/build/PRAXIS_v5_EXECUTION_LEDGER.md) — phase queue, validation, commit, and blocker ledger.
+- [`docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md`](./docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md) — agent operating guide.
+- [`docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md`](./docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md) and [`docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md`](./docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md) — executable phase prompts.
+
+## Historical / Subsumed Directions
 
 - [`docs/v7/STATUS.md`](./docs/v7/STATUS.md) — slice ledger.
 - [`docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md`](./docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md).
-- [`docs/v7/SLICES/`](./docs/v7/SLICES/) — proposed slices, do not implement without explicit approval.
-
+- [`docs/v7/SLICES/`](./docs/v7/SLICES/) — v7 design-led simplification slices. Slice 1 is now mapped to v5 Phase 1; remaining v7 slices are historical planning references unless remapped in the v5 ledger.
 
 ## Current Production Shape
 

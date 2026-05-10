@@ -5,7 +5,7 @@
 > Codex reads this first, every session.
 
 **Last updated:** 2026-05-10
-**Current focus:** Slice 1 remains proposed pending Giulio approval. Repo doc tree was cleaned on 2026-05-10 (historical specs, codex prompts, V2/Z session intakes, and phase-foundation docs removed; agent handoff lists trimmed).
+**Current focus:** Slice 1 is in-progress only as mapped into v5 Phase 1 (Ontology Module). The v5 build pack is now the active execution queue; remaining v7 slices stay historical/planning references until remapped.
 **Production state:** legacy shell live; v7 design-led Ask PRAXIS shell not yet implemented.
 
 ---
@@ -14,7 +14,7 @@
 
 | # | Slice | Brief | State | PR | Notes |
 |---|---|---|---|---|---|
-| 1 | Foundations: cores schema + flag | 02, 03 | proposed | — | — |
+| 1 | Foundations: cores schema + flag | 02, 03 | in-progress | — | Mapped to v5 Phase 1 (Ontology Module); implementation proceeds through `docs/build/PRAXIS_v5_EXECUTION_LEDGER.md`. |
 | 2 | App shell skeleton (v7 IA) | 01 | proposed | — | depends on 1 |
 | 3 | Home destination | 01 | proposed | — | depends on 2 |
 | 4 | Ask end-to-end | 01, 02, 04 | proposed | — | depends on 3 |
@@ -25,6 +25,11 @@
 | 9 | Cutover | all | proposed | — | depends on 1–8 |
 
 States: `proposed | in-progress | shipped | reverted`.
+
+Note: v5 Phase 1 carries the active implementation path for the Slice 1
+foundation concepts. The v4/v5 build direction is recorded in
+`docs/architecture/PRAXIS_VISION_v4_03_BUILD.md`; use that document and the
+v5 execution ledger before starting any further v7 slice work.
 
 ---
 

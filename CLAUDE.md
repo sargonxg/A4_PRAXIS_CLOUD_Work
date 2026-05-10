@@ -8,6 +8,9 @@
 > **Current handoff:** Before continuing work, read `ARCHITECTURE.md`,
 > `docs/architecture/PRAXIS_ARCHITECTURE.md`,
 > `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`,
+> `docs/architecture/PRAXIS_VISION_v4_01_VISION.md`,
+> `docs/architecture/PRAXIS_VISION_v4_02_ARCHITECTURE.md`,
+> `docs/architecture/PRAXIS_VISION_v4_03_BUILD.md`,
 > `docs/build/PRAXIS_v5_EXECUTION_LEDGER.md`,
 > `docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md`, the assigned
 > v5 phase prompt in `docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md`
@@ -41,16 +44,17 @@ order. Skipping items 4–8 will produce duplicate work.
 2. `CLAUDE.md` (this file)
 3. `AGENTS.md` — hard rules, validation gate, deploy procedure
 4. `ARCHITECTURE.md` — architecture entrypoint and canonical links
-5. `docs/architecture/PRAXIS_ARCHITECTURE.md` — architecture bible / invariants
-6. `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md` — shipped vs gated state
-7. `docs/build/PRAXIS_v5_EXECUTION_LEDGER.md` — phase status, owners, validation, commit checkpoints
-8. `docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md` — v5 operating guide
-9. Assigned v5 phase prompt in `docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md` or `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md`
-10. `docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md` — current product model (Home, Ask PRAXIS, Sources, Situation Model, Outputs, Advanced)
-11. `docs/v7/STATUS.md` and `docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md` — active simplification slices
-12. `STATUS.md`
-13. `TODO.md`
-14. `CHANGELOG.md` — `[Unreleased]` section only
+5. `docs/architecture/PRAXIS_VISION_v4_01_VISION.md` — v5 MVP product vision and three-persona market frame
+6. `docs/architecture/PRAXIS_VISION_v4_02_ARCHITECTURE.md` — v5 MVP architecture direction
+7. `docs/architecture/PRAXIS_VISION_v4_03_BUILD.md` — v5 MVP phase plan
+8. `docs/architecture/PRAXIS_ARCHITECTURE.md` — architecture bible / invariants
+9. `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md` — shipped vs gated state
+10. `docs/build/PRAXIS_v5_EXECUTION_LEDGER.md` — phase status, owners, validation, commit checkpoints
+11. `docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md` — v5 operating guide
+12. Assigned v5 phase prompt in `docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md` or `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md`
+13. `STATUS.md`
+14. `TODO.md`
+15. `CHANGELOG.md` — `[Unreleased]` section only
 
 ### Operational references (consult when relevant, not every session)
 
