@@ -508,6 +508,26 @@ cd backend && pip install -e ".[dev]" && python -m pytest tests/ -v
 npx tsc --noEmit
 ```
 
+## Pre-merge optional: v4-readiness stubs
+
+`npm run audit:v4-readiness` runs eight stubs that each fail until the
+matching v4 phase ships. They are intentionally NOT in `audit:gate`; they
+exist so the next agent has a checklist of what's still missing.
+
+| Stub | Phase |
+|---|---|
+| `audit:llm-pattern-coverage` | M1 Ontology |
+| `audit:work-ontology-coverage` | M1 Ontology |
+| `audit:source-tier-discipline` | M2 Context |
+| `audit:research-pipeline-shape` | M2 Context |
+| `audit:document-pipeline-shape` | M2 Context |
+| `audit:user-model-versioning` | M3 User Model |
+| `audit:episode-bi-temporal-coverage` | M5 Episode + Timeline |
+| `audit:drafting-templates-present` | M6 Ask + Drafting |
+
+When a phase ships, replace the stub with a real implementation and move it
+into `audit:gate`.
+
 ## Latest Validation Checkpoint
 
 2026-04-25 local validation:
