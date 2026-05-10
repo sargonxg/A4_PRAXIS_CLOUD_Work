@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Phase 4B validated locally; commit and push are next
+Status: Phase 4B committed locally; push is next
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -80,7 +80,7 @@ Known setup warnings:
 | 2E | File 2 Prompt 2E.A | Phase 1 merged | complete | Codex | `d9f7d64d` |
 | 3 | File 2 Prompt 3.A | Phase 1 merged | complete-core | Codex | `9e4d58bc` |
 | 4A | File 3 Phase 4A | Phase 1 plus compatible 2/3 surfaces | complete | Codex | `330b1bbd` |
-| 4B | File 3 Phase 4B | Phase 3 types/seeds | complete | Codex | pending |
+| 4B | File 3 Phase 4B | Phase 3 types/seeds | complete | Codex | `8e5df782` |
 | 4C | File 3 Phase 4C | Phase 4A foundation | not-started | unassigned | pending |
 | 4D | File 3 Phase 4D | Methods and runtime prerequisites | not-started | unassigned | pending |
 | 4E | File 3 Phase 4E | Drafting prerequisites | not-started | unassigned | pending |
@@ -432,7 +432,7 @@ only the intended Phase 0 changes.
   - PASS: lint completed with existing warning debt plus two new React-effect warnings from hydration-safe localStorage loading in the user-model client components.
   - PASS: browser smoke loaded `/users`, forked the Foreign Policy Analyst seed, opened the private editor, edited and saved Mandate, set active model, verified the public editor is read-only, and loaded mobile `/users` with no console errors.
   - SCOPE NOTE: the current MVP uses local browser persistence for unauthenticated smoke testing and exposes the owner-scoped Firestore current path. Production Firestore writes remain a follow-on integration point; public UI copy is honest and does not claim remote sync.
-- Commit: pending (`feat(v5-4b): add user models surface`)
+- Commit: `8e5df782` (`feat(v5-4b): add user models surface`)
 - Push: pending
 - Open blockers:
   - Header-wide active model picker integration remains minimal; the `/users` surface displays and updates the active model locally.
