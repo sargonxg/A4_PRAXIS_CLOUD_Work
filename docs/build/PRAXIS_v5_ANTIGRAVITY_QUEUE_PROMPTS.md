@@ -52,6 +52,36 @@ Copy `MASTER` plus one numbered block for each queued job:
 | 17 | `COPY BLOCK MASTER` + `17 Production Deploy and Live Verification` | After 16 and explicit deploy approval | No |
 | 18 | `COPY BLOCK MASTER` + `18 Final Product QA and Red-Team Review` | After live deployment or final staging build | No |
 
+## Live Queue Status
+
+Last updated: 2026-05-10 by Codex
+
+Use this table to see what has already been completed in this checkout and what
+still needs to be prompted or run next. The copy blocks below remain the source
+prompts; this status table is the operational tracker.
+
+| Queue # | Status | Commit / Evidence | Next Action |
+|---|---|---|---|
+| 00 | complete | Preflight represented in Phase 0/1 ledger entries | No action unless cloud credentials drift. |
+| 01 | complete | `483d3605`, `df69de86` | Done. |
+| 02 | complete | `924ed579`, `79cbec0b` | Done. |
+| 03 | complete locally; commit pending in current checkpoint | Lane A validation: typecheck, build, lint, focused audits, vitest, browser smoke, graphify | Commit/push Lane A, then continue with 04. |
+| 04 | not-started | pending | Run next: Wave 2 Lane B document pipeline. |
+| 05 | not-started | pending | Run after or in parallel with 04 only if another agent owns it. |
+| 06 | blocked | pending | Wait for 03, 04, and 05 to be pushed. |
+| 07 | blocked | pending | Wait for Wave 2 integration gate. |
+| 08 | blocked | pending | Wait for Phase 3 from Lane C. |
+| 09 | blocked | pending | Wait for Phase 4A. |
+| 10 | blocked | pending | Wait for Phase 4C. |
+| 11 | blocked | pending | Wait for Phase 4A and drafting prerequisites. |
+| 12 | blocked | pending | Wait for Phase 4C. |
+| 13 | blocked | pending | Wait for Drafting Studio and needed methods. |
+| 14 | blocked | pending | Wait for Waves 1-3 app work. |
+| 15 | blocked | pending | Wait for demo content. |
+| 16 | blocked | pending | Wait for Phases 0-8. |
+| 17 | manual-approval-only | pending | Requires Giulio's explicit production deploy approval. |
+| 18 | blocked | pending | Run after live deployment or final staging build. |
+
 ## Recommended Antigravity Setup
 
 Create the queue like this:

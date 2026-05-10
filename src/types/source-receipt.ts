@@ -32,6 +32,7 @@ export interface CanonicalSourceReceipt {
   query?: string;
   reliabilityScore: number;
   confidence: SourceReceiptConfidence;
+  tier?: import('@/lib/sources/tiers').SourceTier;
   excerpt?: string;
   contentHash?: string;
   span?: SourceReceiptSpan;

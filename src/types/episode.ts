@@ -88,3 +88,19 @@ export type EpisodeSource = z.infer<typeof EpisodeSourceSchema>;
 export type Episode = z.infer<typeof EpisodeSchema>;
 export type ExtractedEpisode = z.infer<typeof ExtractedEpisodeSchema>;
 export type ExtractEpisodesOutput = z.infer<typeof ExtractEpisodesOutputSchema>;
+
+export type EpisodeStrand = 'situation' | 'work';
+
+export interface ContextEpisode {
+  id: string;
+  caseId: string;
+  episodeId: string;
+  ownerUid: string;
+  strand: EpisodeStrand;
+  episodeType: string;
+  title: string;
+  validFrom: string;
+  validTo?: string | null;
+  graphSnapshotId?: string | null;
+  metadata?: Record<string, unknown>;
+}

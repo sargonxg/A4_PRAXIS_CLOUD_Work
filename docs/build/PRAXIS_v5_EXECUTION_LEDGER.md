@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Phase 1 complete and pushed; Wave 2 ready
+Status: Wave 2 Lane A validated locally; Lane B is next
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -73,11 +73,11 @@ Known setup warnings:
 |---|---|---|---|---|---|
 | 0 | File 2 Prompt 0.A | v4 cleanup merged | complete | Codex | `483d3605` |
 | 1 | File 2 Prompt 1.A | Phase 0 merged | complete | Codex | `924ed579` |
-| 2A | File 2 Prompt 2A.A | Phase 1 merged | not-started | unassigned | pending |
+| 2A | File 2 Prompt 2A.A | Phase 1 merged | complete-local | Codex | pending |
 | 2B | File 2 Prompt 2B.A | Phase 1 merged | not-started | unassigned | pending |
 | 2C | File 2 Prompt 2C.A | Phase 1 merged | not-started | unassigned | pending |
-| 2D | File 2 Prompt 2D.A | Phase 1 merged | not-started | unassigned | pending |
-| 2E | File 2 Prompt 2E.A | Phase 1 merged | not-started | unassigned | pending |
+| 2D | File 2 Prompt 2D.A | Phase 1 merged | complete-local | Codex | pending |
+| 2E | File 2 Prompt 2E.A | Phase 1 merged | complete-local | Codex | pending |
 | 3 | File 2 Prompt 3.A | Phase 1 merged | not-started | unassigned | pending |
 | 4A | File 3 Phase 4A | Phase 1 plus compatible 2/3 surfaces | not-started | unassigned | pending |
 | 4B | File 3 Phase 4B | Phase 3 types/seeds | not-started | unassigned | pending |
@@ -185,6 +185,7 @@ only the intended Phase 0 changes.
   - `npm run audit:ontology-system`
   - `npm run audit:ontology-versions`
   - `graphify update .`
+  - `npm run audit:gate`
   - Browser smoke on `http://localhost:3020/ontologies`, `/ontologies/conflict`, and `/ontologies/foreign-policy-research`
 - Validation result: pass with documented exceptions
   - PASS: `npm run audit:gate` with the two Phase 1 audits included.
@@ -198,3 +199,44 @@ only the intended Phase 0 changes.
   - Prompt 1.A references 13 domain ontology specializations; the repo currently contains 10 OWL specializations. The app surfaces the actual 10 and keeps non-MVP domains visible through the existing TypeScript ontology registry.
   - `tacitus-ontology` separate GitHub repository publication is not performed here; the queue prompt says Giulio owns repo creation. Current work keeps the package-ready work ontology specs in-repo.
 - Notes for next agent: Wave 2 can start only after this checkpoint is committed and pushed. Phase 2D owns replacing `audit:source-tier-discipline`; Phase 2B owns document pipeline stubs; Phase 2C owns research pipeline stubs.
+
+### 2026-05-10 - Wave 2 Lane A - Context Shell, Source Tiers, Episode Timeline
+
+- Owner: Codex
+- Prompt source: `docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md` Prompts 2A.A, 2D.A, and 2E.A
+- Scope completed:
+  - Added `/contexts` and `/contexts/[caseId]` as the unified Context workspace entry points.
+  - Added the eight-panel Context shell: Frame, Sources, Extraction Lenses, Work Process, Timeline, Graph, Drafts, and Methods Used.
+  - Added a client-side new Context wizard shell with honest auth/persistence fallback copy.
+  - Added a typed T0-T7 Source Tier model, UI badge, backend type mirror, and additive migration scaffold for existing chunk tables.
+  - Added Context Episode typing, provider state, backend type mirror, episode-state migration scaffold, and owner/case/time scoped query helpers.
+  - Replaced the Phase 2D and Phase 2E failing audit stubs and wired both audits into `audit:gate`.
+  - Updated `graphify-out/` with `graphify update .`.
+- Files changed: Context routes and panel components, source tier library/badge/types/migration/audit, episode provider/types/migration/scoping/audit, package audit gate, queue status doc, graphify output
+- Validation run:
+  - `npm run typecheck`
+  - `npm run build`
+  - `npm run lint`
+  - `node scripts/audit-ai-routes.mjs`
+  - `npm run audit:routes`
+  - `npm run audit:no-internal-jargon-ui`
+  - `npm run audit:experience-map-coherence`
+  - `npm run audit:source-tier-discipline`
+  - `npm run audit:episode-bi-temporal-coverage`
+  - `npm run audit:repo-shape`
+  - `npx vitest run`
+  - `graphify update .`
+  - Browser smoke on `http://localhost:3021/contexts`, `/contexts/syria-2026`, `/contexts/syria-2026?panel=sources`, and `/contexts/syria-2026?panel=timeline` at desktop and 390px mobile widths
+- Validation result: pass with documented exceptions
+  - PASS: typecheck, build, route audits, focused Lane A audits, repo-shape audit, and 577 Vitest tests.
+  - PASS: lint completed with existing warning debt only.
+  - PASS: browser smoke rendered the Context list, eight-panel shell, Source Tier badges, and Timeline strands without console errors.
+  - PASS: full `npm run audit:gate` passed with the longer timeout, including GCP checks. `audit:gcp-production-posture` still reports three soft warnings and zero hard failures.
+  - SCOPE NOTE: Phase 2B still owns document pipeline internals; Phase 2C still owns research pipeline internals and Phase 3 user models. The Source panel therefore uses existing example-case source metadata plus honest Phase 2B placeholder copy.
+- Commit: pending
+- Push: pending
+- Open blockers:
+  - Lane B document pipeline remains not-started.
+  - Lane C research pipeline and user models remain not-started.
+  - Full Wave 2 integration gate is blocked until Lanes A, B, and C are pushed.
+- Notes for next agent: Continue with Queue 04 / Wave 2 Lane B unless another active agent already owns it. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md` unless Giulio assigns them.
