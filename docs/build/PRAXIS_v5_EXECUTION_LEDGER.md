@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Phase 4E validated locally; commit and push pending
+Status: Phase 4E committed; push pending
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -83,7 +83,7 @@ Known setup warnings:
 | 4B | File 3 Phase 4B | Phase 3 types/seeds | complete | Codex | `8e5df782`, `e74792b8` |
 | 4C | File 3 Phase 4C | Phase 4A foundation | complete | Codex | `04e703d0`, `7fa55185` |
 | 4D | File 3 Phase 4D | Methods and runtime prerequisites | complete | Codex | `c4938c99`, `995e5e8e` |
-| 4E | File 3 Phase 4E | Drafting prerequisites | validated-local | Codex | pending |
+| 4E | File 3 Phase 4E | Drafting prerequisites | complete | Codex | `54d46851` |
 | 5 | File 3 Phase 5 | Phase 4C | not-started | unassigned | pending |
 | 6 | File 3 Phase 6 | Drafting shell and templates | not-started | unassigned | pending |
 | 7 | File 3 Phase 7 | Waves 1-3 complete | not-started | unassigned | pending |
@@ -545,7 +545,7 @@ only the intended Phase 0 changes.
   - PASS: browser smoke loaded `/draft`, `/draft/new?caseId=syria-2026&template=un-one-pager`, `/draft/demo-brief`, mobile `/draft`, and mobile `/draft/demo-brief` with no console errors.
   - ENVIRONMENT: `next start` still logs the repo's standalone-output warning but served the production build successfully for smoke verification.
   - ENVIRONMENT: Vitest was run with `--pool=threads` because the default worker pool has timed out on this Windows checkout during prior v5 queue runs.
-- Commit: pending
+- Commit: `54d46851` (`feat(v5-4e): add drafting studio shell`)
 - Push: pending
 - Open blockers:
   - Phase 6 still owns generated drafting templates, section-level AI actions, inline citation drag/drop, and signed export artifact behavior.
