@@ -776,8 +776,38 @@ only the intended Phase 0 changes.
   - PASS: GCP audit and KG backend audit passed; GCP production posture had 0 hard failures and 3 soft warnings.
   - PASS: visualization, graph-viewer, and legal entry-route audits passed.
   - GAP: latest pushed landing/graph code is not live on `praxis.tacitus.me`; production deploy remains manual-approval-only.
-- Commit: pending
-- Push: pending
+- Commit: `7d95dc77`
+- Push: pushed to `origin/main` through `7d95dc77`
 - Open blockers:
   - Production deploy requires Giulio's explicit deploy approval.
   - Neon should not be used as the live PRAXIS database until a Neon project/database exists and a migration plan is approved.
+
+### 2026-05-11 - Phase 9 Sub-Checkpoint - Persona Smoke Gate And CI
+
+- Owner: Codex
+- Prompt source: `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md` Phase 9 persona-suite requirement, plus Giulio's request to keep the queue moving and update the tracker.
+- Scope completed:
+  - Added two new persona smoke specs for the v5 public demo paths: foreign-policy analyst on Indo-Pacific and domestic-policy analyst on AI Regulation.
+  - Added `openSeededDemoWorkbench` and `openWorkbenchChapter` persona helpers so specs open the intended case and do not accidentally close already-open chapter panels.
+  - Stabilized the existing Nordalia persona specs against the current chapter desk UI.
+  - Added `.github/workflows/persona-smoke.yml` so the persona smoke suite runs on pushes, pull requests, and manual dispatch with a production build and local `next start`.
+  - Adjusted demo-session cookie options so local HTTP `next start` smoke tests can set the signed session cookie while HTTPS production requests still receive secure cookies.
+- Files changed: persona smoke workflow, auth session route, persona fixtures, new Indo-Pacific and AI Regulation persona specs, existing Nordalia persona specs, queue tracker, execution ledger, STATUS, TODO, CHANGELOG, graphify output
+- Validation run:
+  - `npm run lint -- src\app\api\auth\session\route.ts tests\e2e\personas\_shared\persona-fixtures.ts tests\e2e\personas\diplomat-indo-pacific.spec.ts tests\e2e\personas\researcher-ai-regulation.spec.ts tests\e2e\personas\researcher.spec.ts tests\e2e\personas\mediator.spec.ts`
+  - `npx playwright test tests/e2e/personas/diplomat-indo-pacific.spec.ts tests/e2e/personas/researcher-ai-regulation.spec.ts --reporter=line`
+  - `npm run smoke:personas -- --reporter=line`
+  - `npm run typecheck`
+  - `npm run build`
+  - `npm run docs:lint`
+  - `graphify update .`
+  - `git diff --check`
+- Validation result: pass
+  - PASS: scoped lint, focused new persona specs, full six-spec persona smoke suite, typecheck, production build, docs lint, graphify update, and whitespace check.
+  - PASS: persona smoke suite covered Syria, Nordalia, Indo-Pacific, and AI Regulation workbench paths with chapter desk, graph, research, draft, tools, and boardroom assertions.
+  - ENVIRONMENT: local persona smoke used a signed demo cookie with `COOKIE_SIGNING_SECRET=persona-smoke-cookie-secret` against production `next start` on `http://127.0.0.1:3111`.
+- Commit: `a3bfb296`
+- Push: pending
+- Open blockers:
+  - Phase 9 is still not complete. Production deploy/canary/final QA remain manual-gated, and the Phase 9 prompt asks for ten consecutive persona-suite CI passes before merge; this checkpoint adds the CI gate but cannot honestly claim ten future green runs yet.
+  - Checkout/pricing wiring remains to be reconciled with the current Polar-based billing routes and any approved Stripe decision.

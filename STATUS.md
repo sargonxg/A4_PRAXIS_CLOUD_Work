@@ -1,5 +1,25 @@
 # PRAXIS — STATUS
 
+## 2026-05-11 — v5 MVP Queue Status
+
+The v5 queue in `docs/build/PRAXIS_v5_ANTIGRAVITY_QUEUE_PROMPTS.md` is the
+active tracker. Queues `00` through `15` are complete and pushed. Queue `16`
+Phase 9 is in progress with graph polish, live database review, and persona
+smoke CI/checkpoint work completed locally. Queues `17` and `18` remain gated:
+production deploy requires Giulio's explicit approval, and final QA runs after
+live deployment or an approved final staging build.
+
+Current Phase 9 blockers:
+
+- Production `praxis.tacitus.me` is not yet proven to contain the latest Phase
+  8/9 pushed code.
+- Persona CI wiring exists, but the "10 consecutive passes" requirement cannot
+  be claimed until the workflow has actually produced those runs.
+- Checkout/pricing still needs a final implementation decision against the
+  current Polar billing routes before Phase 9 can close.
+
+---
+
 ## 2026-05-10 — v5 MVP Phase 0
 
 Phase 0 is implemented locally as the v5 build adoption checkpoint, but it is

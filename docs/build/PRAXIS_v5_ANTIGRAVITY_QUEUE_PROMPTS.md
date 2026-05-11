@@ -78,7 +78,7 @@ prompts; this status table is the operational tracker.
 | 13 | complete | `c781887a`; Phase 6 validation: typecheck, lint, build, drafting/export/provider audits, AI route audit, full Vitest, browser smoke, graphify | Done. |
 | 14 | complete | `ec88a6e4`, `18bff42d`; validation: demo seed/verify scripts, focused Vitest, typecheck, lint, build, demo/onboarding/stage/jargon audits, GCP/Firebase review, graphify | Done. |
 | 15 | complete | `b7ae568c`, `4c4ee7a0`; validation: typecheck, lint, build, landing/legal/demo/experience/jargon audits, full Vitest, browser smoke, graphify | Done. |
-| 16 | in-progress | `da561346`, `82d3de84`, `47b9a9a9`; graph polish checkpoint pushed; live/database review pending commit | Continue remaining Phase 9 ship work: approved frontend deploy, checkout/pricing wiring, wider route polish, persona suites, canary/ship prep. |
+| 16 | in-progress | `da561346`, `82d3de84`, `47b9a9a9`, `7d95dc77`, `a3bfb296`; graph polish, live/database, and persona smoke checkpoints committed | Continue remaining Phase 9 ship work: approved frontend deploy, checkout/pricing wiring, wider route polish, canary/ship prep, and repeated persona-suite CI proof. |
 | 17 | manual-approval-only | pending | Requires Giulio's explicit production deploy approval. |
 | 18 | blocked | pending | Run after live deployment or final staging build. |
 
@@ -88,7 +88,7 @@ Create the remaining queue like this:
 
 - Completed in this checkout: `00` through `15`.
 - Active in progress: `16 Phase 9 Polish and Ship`.
-- Completed Phase 9 sub-checkpoint on 2026-05-11: landing and signed-out demo graph visualization polish, with local build/browser evidence. Remaining Phase 9 ship items are still open until pricing/checkout, broader route polish, persona suites, and canary preparation are complete.
+- Completed Phase 9 sub-checkpoints on 2026-05-11: landing and signed-out demo graph visualization polish; live database/production gap review; persona smoke CI wiring and six-spec local persona suite proof. Remaining Phase 9 ship items are still open until pricing/checkout decisions, broader route polish, canary preparation, production deploy, and final QA are complete.
 - Sequential paused ship work after `16`: production deploy remains manual approval only.
 - Final manual approval steps: `17`, then `18`.
 

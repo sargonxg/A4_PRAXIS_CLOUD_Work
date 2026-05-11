@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- test(v5): add Phase 9 persona smoke CI coverage for Indo-Pacific and AI
+  Regulation demo paths, stabilize current persona specs against the chapter
+  desk UI, and allow signed demo sessions in local HTTP production smoke runs.
 - docs(v5): adopt Phase 0 build direction with v4/v5 vision docs, proposed v5
   ADRs, v5 readiness audit stubs, and execution-ledger tracking.
 - feat(analytics): add Pack 31 network, sanctions, and simulation foundation.

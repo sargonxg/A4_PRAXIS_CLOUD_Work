@@ -23,6 +23,34 @@ export async function openExampleWorkbench(page: Page, caseId: string, tab = 'ch
   }
 }
 
+export async function openSeededDemoWorkbench(page: Page, caseId: string, tab?: 'context' | 'library' | 'ontology' | 'graph') {
+  await page.addInitScript(() => {
+    window.localStorage.setItem('praxis-tour-seen', 'true');
+  });
+  await page.goto(`/login?mode=demo&example=${caseId}`);
+  await page.waitForURL(new RegExp(`/app/workbench/${caseId}$`), { timeout: 30_000 });
+  if (tab) {
+    await page.goto(`/app/workbench/${caseId}?tab=${tab}`);
+    await expect(page).toHaveURL(new RegExp(`tab=${tab}`));
+  }
+  await expect(page.locator('h1')).toBeVisible();
+  await expect(page.getByText('Example case').first()).toBeVisible();
+  await expect(page.getByText('Context health').first()).toBeVisible();
+  const dismissPrimer = page.getByRole('button', { name: /^Dismiss conflict grammar primer$/i });
+  if (await dismissPrimer.isVisible().catch(() => false)) {
+    await dismissPrimer.click();
+  }
+}
+
+export async function openWorkbenchChapter(page: Page, chapter: 'Research' | 'Memos' | 'Draft' | 'ACH' | 'Tools' | 'Boardroom') {
+  const button = page.getByRole('button', { name: new RegExp(`^${chapter}$`, 'i') });
+  await expect(button).toBeVisible();
+  if ((await button.getAttribute('aria-pressed')) !== 'true') {
+    await button.click();
+  }
+  await page.locator(`#${chapter.toLowerCase()}`).scrollIntoViewIfNeeded();
+}
+
 export async function expectWorkbenchTab(page: Page, heading: string) {
   const headingPattern = heading === 'Graph'
     ? /^(Graph|Graph Visualization)$/i

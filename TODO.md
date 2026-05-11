@@ -1,6 +1,6 @@
 # PRAXIS TODO
 
-Last updated: 2026-05-10.
+Last updated: 2026-05-11.
 
 ## Current Build Queue
 
@@ -11,15 +11,17 @@ Last updated: 2026-05-10.
 
 ## Immediate Next Steps
 
-1. Complete Phase 0 validation and commit.
-2. Start Phase 1 only after Phase 0 is pushed to `main`.
-3. Do not start Wave 2 until Phase 1 is complete and the ledger says so.
+1. Continue Queue `16` / Phase 9 from the persona smoke checkpoint.
+2. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
+3. Prepare canary/deploy evidence, but do not run production deployment without Giulio's explicit approval.
+4. After approved deploy or final staging build, run Queue `18` final product QA and red-team review.
 
 ## Live Production Blockers
 
 - Provider-backed notification delivery remains open; see `BLOCKERS.md`.
 - Live Cognee SDK calls remain service-owned and disabled-first; see `BLOCKERS.md`.
 - Deep pre-ship live checks still require staging/prod execution; see `BLOCKERS.md`.
+- Phase 9 production deploy, canary, and final QA remain gated by explicit approval and live/staging availability.
 
 ## Standing Rules
 

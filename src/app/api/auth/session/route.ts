@@ -7,13 +7,23 @@ import { getAdminPrincipalAccess } from '@/lib/auth/admin-gate';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
 
-const COOKIE_OPTIONS = {
+const BASE_COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax' as const,
   maxAge: 60 * 60 * 24, // 24 hours
   path: '/',
 };
+
+function cookieOptionsForRequest(request: Request) {
+  const url = new URL(request.url);
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+  const isHttps = forwardedProto === 'https' || url.protocol === 'https:';
+  const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]';
+  return {
+    ...BASE_COOKIE_OPTIONS,
+    secure: process.env.NODE_ENV === 'production' ? !isLocalhost || isHttps : isHttps,
+  };
+}
 
 /**
  * POST — Sets the auth session cookie.
@@ -45,10 +55,11 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const cookieStore = await cookies();
+    const cookieOptions = cookieOptionsForRequest(request);
 
     if (body.demo === true) {
       // Demo mode session
-      cookieStore.set(SESSION_COOKIE, signCookie(JSON.stringify({ demo: true, onboarded: true, onboardingComplete: true })), COOKIE_OPTIONS);
+      cookieStore.set(SESSION_COOKIE, signCookie(JSON.stringify({ demo: true, onboarded: true, onboardingComplete: true })), cookieOptions);
       return NextResponse.json({ success: true });
     }
 
@@ -98,7 +109,7 @@ export async function POST(request: Request) {
           admin: adminAccess.admin,
           adminReason: adminAccess.reason,
         })),
-        COOKIE_OPTIONS,
+        cookieOptions,
       );
       return NextResponse.json({ success: true });
     }
