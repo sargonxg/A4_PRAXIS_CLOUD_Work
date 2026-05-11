@@ -15,6 +15,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
+import { ContextGraphPreview } from "@/components/graph/ContextGraphPreview";
 
 type PersonaId = "foreign-policy-analyst" | "domestic-policy-analyst" | "corporate-strategic-analyst";
 type ContextId = "indo-pacific-2026" | "ai-regulation-2026" | "fb-sustainability-2026";
@@ -146,6 +147,27 @@ const trustItems = [
   ["Google Cloud + Firebase", "The production path uses the connected PRAXIS cloud project."],
   ["No signup wall", "The public demo opens before account creation."],
 ] as const;
+
+const graphStatsByContext: Record<ContextId, Array<{ label: string; value: string }>> = {
+  "indo-pacific-2026": [
+    { label: "sources", value: "30" },
+    { label: "episodes", value: "11" },
+    { label: "actors", value: "8" },
+    { label: "objects", value: "157" },
+  ],
+  "ai-regulation-2026": [
+    { label: "sources", value: "30" },
+    { label: "episodes", value: "11" },
+    { label: "actors", value: "9" },
+    { label: "objects", value: "189" },
+  ],
+  "fb-sustainability-2026": [
+    { label: "sources", value: "30" },
+    { label: "episodes", value: "11" },
+    { label: "actors", value: "8" },
+    { label: "objects", value: "170" },
+  ],
+};
 
 function trackLandingEvent(eventName: string, params: Record<string, string>) {
   window.dispatchEvent(new CustomEvent(eventName, { detail: params }));
@@ -335,6 +357,23 @@ export function Phase8WowLanding() {
               </button>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section id="graph-intelligence" className="border-b border-[#d7c89f] bg-[#111827] px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-8 max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f6c85f]">Graph intelligence</p>
+            <h2 className="mt-3 font-serif text-3xl font-semibold text-white sm:text-5xl">The answer is only useful if the graph behind it is legible.</h2>
+            <p className="mt-4 text-sm leading-6 text-zinc-300 sm:text-base">
+              Each demo context carries a visible operating picture: source receipts, actors, claims, evidence, and drafts stay connected instead of disappearing into a chat transcript.
+            </p>
+          </div>
+          <ContextGraphPreview
+            title={`${context.label} graph`}
+            summary={`${persona.label} view for ${context.region}: the public demo keeps the graph path visible from source intake through drafting.`}
+            stats={graphStatsByContext[context.id]}
+          />
         </div>
       </section>
 

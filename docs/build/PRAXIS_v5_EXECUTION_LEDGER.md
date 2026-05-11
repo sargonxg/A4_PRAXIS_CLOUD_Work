@@ -714,3 +714,36 @@ only the intended Phase 0 changes.
   - Production deploy remains manual-approval-only.
   - Neon token is stored for future administration only; the active Postgres path is still Cloud SQL Postgres.
 - Notes for next agent: After this checkpoint is committed and pushed, continue with Queue 16 / Phase 9 Polish and Ship. Preserve unrelated untracked `.playwright-cli/`, `docs/audits/2026-05-10-v5-final-product-qa.md`, Phase 6 server logs, and Phase 8 browser artifacts unless Giulio explicitly asks to clean scratch output.
+
+### 2026-05-11 - Phase 9 Sub-Checkpoint - Landing and Demo Graph Polish
+
+- Owner: Codex
+- Prompt source: `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md` Phase 9, plus Giulio's request to review `praxis.tacitus.me`, the app, graph visualizations, Google Cloud/Firebase structure, and Postgres posture.
+- Scope completed:
+  - Added a reusable `ContextGraphPreview` public graph visualization that shows sources, actors, evidence, claims, drafts, review posture, and layer counts.
+  - Added a new landing `Graph intelligence` section driven by the selected demo context and persona.
+  - Replaced the signed-out `/demo/[contextId]` graph snapshot from plain counts with the richer graph preview and real truth-layer counts.
+  - Verified the active database posture remains Cloud SQL Postgres for PRAXIS; the provided Neon API token is stored in Secret Manager as `praxis-neon-api-key` for future administration only.
+  - Checked live `https://praxis.tacitus.me/` and `/demo/indo-pacific-2026` via HTTP; both timed out from this machine during this run, so no production deployment was attempted.
+- Files changed: graph preview component, Phase 8 landing component, public demo route, graphify output, queue tracker, execution ledger
+- Validation run:
+  - `npm run typecheck`
+  - `npm run lint -- src\components\graph\ContextGraphPreview.tsx src\components\landing\phase8-wow-landing.tsx src\app\demo\[contextId]\page.tsx`
+  - `npm run build`
+  - `npm run audit:landing`
+  - `npm run audit:no-internal-jargon-ui`
+  - `npm run audit:demo-claim`
+  - Local production-mode browser smoke on `http://localhost:3110/` and `http://localhost:3110/demo/indo-pacific-2026`
+  - `graphify update .`
+- Validation result: pass
+  - PASS: typecheck, scoped lint, build, landing audit, no-internal-jargon audit, demo-claim audit, local browser smoke, and graphify update.
+  - PASS: browser snapshot confirmed the landing graph section and demo graph snapshot render with graph labels, edge labels, and live layer statistics.
+  - Screenshots captured locally: `output/playwright/phase9-landing-graph.png` and `output/playwright/phase9-demo-graph.png`.
+  - ENVIRONMENT: `next start` logs the repo's standalone-output warning but served the production build successfully for smoke verification.
+- Commit: pending
+- Push: pending
+- Open blockers:
+  - Phase 9 is not complete. Checkout/pricing wiring, broader mobile route polish, persona suites, canary prep, and production ship evidence remain open.
+  - Production deploy remains manual-approval-only and was not run.
+  - Live production HTTP checks timed out from this environment; re-check production from a browser or deployment host before claiming the latest local graph polish is live.
+- Notes for next agent: Continue Queue 16 / Phase 9 Polish and Ship from this sub-checkpoint. Preserve unrelated untracked scratch artifacts unless Giulio explicitly asks to clean them.

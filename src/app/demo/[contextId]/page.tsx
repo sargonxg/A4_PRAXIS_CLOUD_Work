@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { ArrowRight, Database, FileText, Layers3, MessageSquareText, RadioTower } from 'lucide-react';
+import { ContextGraphPreview } from '@/components/graph/ContextGraphPreview';
 import { getCaseModule } from '@/lib/cases/registry';
 
 interface DemoContextPageProps {
@@ -102,14 +103,11 @@ export default async function DemoContextPage({ params }: DemoContextPageProps) 
           </Panel>
 
           <Panel title="Graph Snapshot">
-            <div className="space-y-3">
-              {Object.entries(caseModule.truthLayers).map(([name, layer]) => (
-                <div key={name} className="flex items-center justify-between rounded-md bg-white/[0.04] px-4 py-3">
-                  <span className="text-sm font-medium capitalize text-zinc-200">{name}</span>
-                  <span className="text-sm text-zinc-400">{layer.nodeCount} nodes · {layer.edgeCount} edges</span>
-                </div>
-              ))}
-            </div>
+            <ContextGraphPreview
+              title="Demo graph backbone"
+              summary="The read-only demo shows how the context graph ties source receipts, actors, evidence, claims, and draftable outputs together before a user signs in."
+              truthLayers={caseModule.truthLayers}
+            />
           </Panel>
 
           <Link

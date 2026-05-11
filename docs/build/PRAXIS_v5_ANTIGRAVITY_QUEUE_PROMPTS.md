@@ -78,7 +78,7 @@ prompts; this status table is the operational tracker.
 | 13 | complete | `c781887a`; Phase 6 validation: typecheck, lint, build, drafting/export/provider audits, AI route audit, full Vitest, browser smoke, graphify | Done. |
 | 14 | complete | `ec88a6e4`, `18bff42d`; validation: demo seed/verify scripts, focused Vitest, typecheck, lint, build, demo/onboarding/stage/jargon audits, GCP/Firebase review, graphify | Done. |
 | 15 | complete | `b7ae568c`, `4c4ee7a0`; validation: typecheck, lint, build, landing/legal/demo/experience/jargon audits, full Vitest, browser smoke, graphify | Done. |
-| 16 | next | pending | Run Phase 9 polish and ship after Phase 8 checkpoint is pushed. |
+| 16 | in-progress | 2026-05-11 graph polish checkpoint; validation: typecheck, scoped lint, build, landing/demo/jargon audits, browser smoke, graphify | Continue remaining Phase 9 ship work: checkout/pricing wiring, wider route polish, persona suites, canary/ship prep. |
 | 17 | manual-approval-only | pending | Requires Giulio's explicit production deploy approval. |
 | 18 | blocked | pending | Run after live deployment or final staging build. |
 
@@ -87,7 +87,8 @@ prompts; this status table is the operational tracker.
 Create the remaining queue like this:
 
 - Completed in this checkout: `00` through `15`.
-- Active next after Phase 8 is pushed: `16 Phase 9 Polish and Ship`.
+- Active in progress: `16 Phase 9 Polish and Ship`.
+- Completed Phase 9 sub-checkpoint on 2026-05-11: landing and signed-out demo graph visualization polish, with local build/browser evidence. Remaining Phase 9 ship items are still open until pricing/checkout, broader route polish, persona suites, and canary preparation are complete.
 - Sequential paused ship work after `16`: production deploy remains manual approval only.
 - Final manual approval steps: `17`, then `18`.
 

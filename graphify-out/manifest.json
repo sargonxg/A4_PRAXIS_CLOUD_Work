@@ -2796,8 +2796,8 @@
     "hash": "40f5b4c0a7570f8eb6ca279be9fd9a95"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\demo\\[contextId]\\page.tsx": {
-    "mtime": 1778468708.1404572,
-    "hash": "2d053adcbbdad03637c6e1cad010f191"
+    "mtime": 1778470852.1887422,
+    "hash": "0ae7a479dedff56ed84280d4834f6820"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\docs\\page.tsx": {
     "mtime": 1778469590.5123677,
@@ -3243,6 +3243,10 @@
     "mtime": 1778429929.9133153,
     "hash": "2eee4e77e7e583ca233169008d2e58da"
   },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\graph\\ContextGraphPreview.tsx": {
+    "mtime": 1778470826.4181952,
+    "hash": "10edfc4d53da4c6a6dbafcb889ddeef2"
+  },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\graph\\entity-panel.tsx": {
     "mtime": 1778429929.921893,
     "hash": "be309d340fa05b600bdbf5e3dd2e6069"
@@ -3348,8 +3352,8 @@
     "hash": "98917b60e5ef3a4d6281476c1adf06fe"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\landing\\phase8-wow-landing.tsx": {
-    "mtime": 1778469529.8726604,
-    "hash": "fbf121f1b7960d6b1f9d6bd09d3a7f11"
+    "mtime": 1778470844.2689972,
+    "hash": "ffd16bed99be91a24f96924972c539da"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\landing\\pricing-cta.tsx": {
     "mtime": 1778429929.950238,
@@ -8411,9 +8415,13 @@
     "mtime": 1778470445.1452143,
     "hash": "2fa594d22c2a78c630a99acf551dcb95"
   },
-  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\output\\playwright\\phase8-test.png": {
-    "mtime": 1778470119.2819905,
-    "hash": "fe6b9b5b329d3a2bdcfff5a5e1a238ea"
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\output\\playwright\\phase9-demo-graph.png": {
+    "mtime": 1778471089.126899,
+    "hash": "814abc65a45f839464825aa8c320849b"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\output\\playwright\\phase9-landing-graph.png": {
+    "mtime": 1778471074.0725157,
+    "hash": "7053ac4aa384aaf27147eae2fe4f745b"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\public\\favicon.svg": {
     "mtime": 1778429929.103981,
