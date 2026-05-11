@@ -34,26 +34,26 @@ export function ContextPanel({ caseModule, draft }: { caseModule: CaseModule; dr
       <Panel icon={Timer} title="Episodes">
         <div className="border border-slate-200 bg-slate-50 p-3">
           <p className="text-sm font-semibold text-slate-950">{draft.workEpisode}</p>
-          <p className="mt-1 text-xs leading-5 text-slate-600">Draft shell is scoped to this work episode. Full section lineage lands with Phase 6 actions.</p>
+          <p className="mt-1 text-xs leading-5 text-slate-600">Draft proposals are scoped to this work episode and remain review-required before save or export.</p>
         </div>
       </Panel>
 
       <Panel icon={UserRound} title="User model">
         <p className="text-sm leading-6 text-slate-650">
-          Active model summary is available to the app shell. Section generation will use the active model once Phase 6 enables AI actions.
+          Active model summary is available to the app shell. Section actions use the current context posture and keep analyst review visible.
         </p>
       </Panel>
 
       <Panel icon={Layers3} title="Actions">
         <div className="grid gap-2">
           <button type="button" disabled className="border border-slate-200 bg-slate-100 px-3 py-2 text-left text-sm font-semibold text-slate-500">
-            Generate section · Phase 6
+            Auto-fill from header
           </button>
           <button type="button" disabled className="border border-slate-200 bg-slate-100 px-3 py-2 text-left text-sm font-semibold text-slate-500">
-            Tighten language · Phase 6
+            Tighten in section toolbar
           </button>
           <button type="button" disabled className="border border-slate-200 bg-slate-100 px-3 py-2 text-left text-sm font-semibold text-slate-500">
-            Add citations · Phase 6
+            Add citations in section toolbar
           </button>
         </div>
       </Panel>

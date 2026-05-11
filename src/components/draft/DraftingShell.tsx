@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Download, Save, ShieldCheck } from 'lucide-react';
+import { AutoFillButton } from '@/components/draft/AutoFillButton';
 import { BlockEditor } from '@/components/draft/BlockEditor';
 import { ContextPanel } from '@/components/draft/ContextPanel';
 import { getDraftCase, getDraftTemplate, listDraftTemplates, type DraftShellRecord } from '@/lib/draft/api';
@@ -24,6 +25,7 @@ export function DraftingShell({ draft }: { draft: DraftShellRecord }) {
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-650">{draft.summary}</p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <AutoFillButton draftId={draft.id} templateId={draft.templateId} />
               <button type="button" className="inline-flex h-10 items-center gap-2 border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                 <Save className="h-4 w-4" />
                 Save shell
@@ -53,7 +55,7 @@ export function DraftingShell({ draft }: { draft: DraftShellRecord }) {
             <div className="flex items-end">
               <div className="flex min-h-10 w-full items-center gap-2 border border-slate-200 bg-slate-50 px-3 text-sm text-slate-650">
                 <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                Export controls are visible. Server-side generation and signed artifacts remain Phase 6 or production export work.
+                Export controls are visible. Auto-fill and refinements return review-required proposals; signed artifacts remain production export work.
               </div>
             </div>
           </div>
@@ -61,7 +63,7 @@ export function DraftingShell({ draft }: { draft: DraftShellRecord }) {
       </div>
 
       <div className="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-8">
-        <BlockEditor blocks={draft.blocks} />
+        <BlockEditor draftId={draft.id} blocks={draft.blocks} />
         <ContextPanel caseModule={caseModule} draft={draft} />
       </div>
     </main>

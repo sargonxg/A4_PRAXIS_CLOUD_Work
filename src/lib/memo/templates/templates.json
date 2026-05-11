@@ -1,0 +1,9 @@
+{
+  "templates": [
+    { "id": "un-1-pager", "label": "UN 1-pager", "audienceDefault": "principal", "useCases": ["decision brief", "mission update"], "demoContextAffinity": ["foreign-policy"] },
+    { "id": "country-card", "label": "Country card", "audienceDefault": "desk officer", "useCases": ["country snapshot", "theater card"], "demoContextAffinity": ["foreign-policy"] },
+    { "id": "talking-points", "label": "Talking points", "audienceDefault": "meeting lead", "useCases": ["stakeholder meeting", "public affairs"], "demoContextAffinity": ["domestic-policy"] },
+    { "id": "mediation-brief", "label": "Mediation brief", "audienceDefault": "mediator", "useCases": ["session prep", "package design"], "demoContextAffinity": ["foreign-policy"] },
+    { "id": "executive-summary", "label": "Executive summary", "audienceDefault": "executive", "useCases": ["board note", "risk summary"], "demoContextAffinity": ["corporate-strategy"] }
+  ]
+}

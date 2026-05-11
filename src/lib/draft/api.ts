@@ -2,11 +2,11 @@ import { getCaseModule, listExampleCases } from '@/lib/cases/registry';
 import type { CaseModule } from '@/types/case-module';
 
 export type DraftTemplateId =
-  | 'un-one-pager'
+  | 'un-1-pager'
   | 'country-card'
   | 'talking-points'
   | 'mediation-brief'
-  | 'corporate-risk-brief';
+  | 'executive-summary';
 
 export type DraftStatus = 'new' | 'working' | 'review' | 'export-ready';
 
@@ -16,7 +16,9 @@ export interface DraftTemplateShell {
   buyerPath: 'Foreign Policy Analyst' | 'Domestic Policy Analyst' | 'Corporate Strategic Analyst';
   description: string;
   phase: 'phase-4e-shell' | 'phase-6-generation';
-  sections: Array<{ id: string; title: string; prompt: string }>;
+  header: string;
+  footer: string;
+  sections: Array<{ id: string; title: string; prompt: string; required: boolean; maxLength: number; citationPolicy: 'required' | 'recommended' | 'optional' }>;
 }
 
 export interface DraftShellBlock {
@@ -42,16 +44,22 @@ export interface DraftShellRecord {
 
 export const DRAFTING_TEMPLATES: DraftTemplateShell[] = [
   {
-    id: 'un-one-pager',
+    id: 'un-1-pager',
     label: 'UN 1-pager',
     buyerPath: 'Foreign Policy Analyst',
     description: 'Decision-ready brief for a principal who needs the issue, stakes, options, and source posture on one page.',
-    phase: 'phase-4e-shell',
+    phase: 'phase-6-generation',
+    header: 'PRAXIS sourced one-page brief',
+    footer: 'Citations and uncertainty must remain visible before export.',
     sections: [
-      { id: 'bluf', title: 'Bottom line', prompt: 'State the decision-relevant answer in one paragraph.' },
-      { id: 'stakes', title: 'Stakes', prompt: 'Name the strategic, humanitarian, and diplomatic stakes.' },
-      { id: 'options', title: 'Options', prompt: 'Compare two to three plausible courses of action.' },
-      { id: 'source-posture', title: 'Source posture', prompt: 'Summarize confidence, citations, and uncertainty.' },
+      section('title', 'Title', 'Write a concise brief title.', 120, 'optional'),
+      section('date', 'Date', 'Set the as-of date.', 80, 'optional'),
+      section('bluf', 'BLUF', 'State the decision-relevant bottom line in one paragraph.', 500, 'required'),
+      section('background', 'Background', 'Summarize the essential context and source base.', 900, 'required'),
+      section('current-dynamics', 'Current Dynamics', 'Explain what is changing now.', 900, 'required'),
+      section('key-actors', 'Key Actors', 'Name key actors and their role.', 700, 'recommended'),
+      section('risks', 'Risks', 'List the most important risks and uncertainty.', 700, 'recommended'),
+      section('recommendation', 'Recommendation', 'State a bounded recommendation or next action.', 600, 'required'),
     ],
   },
   {
@@ -59,11 +67,17 @@ export const DRAFTING_TEMPLATES: DraftTemplateShell[] = [
     label: 'Country card',
     buyerPath: 'Foreign Policy Analyst',
     description: 'Compact country or theater card with actors, recent movement, leverage, risk, and watchpoints.',
-    phase: 'phase-4e-shell',
+    phase: 'phase-6-generation',
+    header: 'PRAXIS country card',
+    footer: 'Use concise fields and source receipts.',
     sections: [
-      { id: 'snapshot', title: 'Snapshot', prompt: 'Summarize the theater and why it matters now.' },
-      { id: 'actors', title: 'Actors and leverage', prompt: 'List actors, incentives, and leverage.' },
-      { id: 'risk', title: 'Risk and watchpoints', prompt: 'Name near-term risk indicators.' },
+      section('title', 'Title', 'Write the country or theater card title.', 120, 'optional'),
+      section('snapshot', 'Snapshot', 'Summarize why this case matters now.', 700, 'required'),
+      section('demographics', 'Demographics', 'Add population or social factors only when sourced.', 500, 'recommended'),
+      section('political-landscape', 'Political Landscape', 'Summarize political actors and constraints.', 800, 'required'),
+      section('economic-indicators', 'Economic Indicators', 'List relevant economic signals and uncertainty.', 600, 'recommended'),
+      section('security', 'Security', 'Summarize security dynamics and risk.', 700, 'required'),
+      section('sources', 'Sources', 'List the source posture and citation gaps.', 500, 'required'),
     ],
   },
   {
@@ -71,11 +85,15 @@ export const DRAFTING_TEMPLATES: DraftTemplateShell[] = [
     label: 'Talking points',
     buyerPath: 'Domestic Policy Analyst',
     description: 'Briefing lines for meetings, public affairs, or stakeholder engagement.',
-    phase: 'phase-4e-shell',
+    phase: 'phase-6-generation',
+    header: 'PRAXIS talking points',
+    footer: 'Keep lines source-grounded and audience-appropriate.',
     sections: [
-      { id: 'context', title: 'Context', prompt: 'Frame the audience and meeting purpose.' },
-      { id: 'messages', title: 'Key messages', prompt: 'Draft concise lines with source backing.' },
-      { id: 'if-pressed', title: 'If pressed', prompt: 'Prepare careful fallback lines for uncertainty.' },
+      section('title', 'Title', 'Write the talking-points title.', 120, 'optional'),
+      section('audience-note', 'Audience Note', 'Frame the audience and meeting purpose.', 350, 'required'),
+      section('headline-points', 'Headline Points', 'Draft three to five short source-backed lines.', 700, 'required'),
+      section('qa-anticipations', 'Q&A Anticipations', 'Prepare three to five careful responses.', 800, 'recommended'),
+      section('closing', 'Closing', 'End with a restrained closing line or next step.', 250, 'optional'),
     ],
   },
   {
@@ -83,24 +101,34 @@ export const DRAFTING_TEMPLATES: DraftTemplateShell[] = [
     label: 'Mediation brief',
     buyerPath: 'Foreign Policy Analyst',
     description: 'Negotiation support brief that separates positions, interests, possible packages, and commitments.',
-    phase: 'phase-4e-shell',
+    phase: 'phase-6-generation',
+    header: 'PRAXIS mediation brief',
+    footer: 'Separate stated positions from inferred interests.',
     sections: [
-      { id: 'parties', title: 'Parties', prompt: 'Identify parties and their roles.' },
-      { id: 'positions', title: 'Positions and interests', prompt: 'Separate stated positions from likely interests.' },
-      { id: 'packages', title: 'Possible packages', prompt: 'Outline practical package space.' },
-      { id: 'commitments', title: 'Commitments', prompt: 'List commitments to verify or pursue.' },
+      section('title', 'Title', 'Write the session brief title.', 120, 'optional'),
+      section('session-goal', 'Session Goal', 'State the immediate mediation objective.', 450, 'required'),
+      section('parties', 'Parties', 'Identify parties and roles.', 700, 'required'),
+      section('positions-interests', 'Positions vs Interests', 'Separate demands from likely interests.', 900, 'required'),
+      section('batna', 'BATNA Analysis', 'Name alternatives and leverage risks.', 700, 'recommended'),
+      section('suggested-sequence', 'Suggested Sequence', 'Propose a practical conversation sequence.', 700, 'recommended'),
+      section('risks', 'Risks', 'Name process and implementation risks.', 600, 'required'),
     ],
   },
   {
-    id: 'corporate-risk-brief',
-    label: 'Corporate risk brief',
+    id: 'executive-summary',
+    label: 'Executive summary',
     buyerPath: 'Corporate Strategic Analyst',
-    description: 'Board-ready risk note connecting regulation, market exposure, sustainability pressure, and options.',
-    phase: 'phase-4e-shell',
+    description: 'Board-ready executive summary connecting findings, implications, and recommendation.',
+    phase: 'phase-6-generation',
+    header: 'PRAXIS executive summary',
+    footer: 'Recommendations must preserve assumptions and source posture.',
     sections: [
-      { id: 'exposure', title: 'Exposure', prompt: 'Name direct and indirect exposures.' },
-      { id: 'signals', title: 'Signals', prompt: 'Summarize regulatory and market signals.' },
-      { id: 'actions', title: 'Actions', prompt: 'Recommend actions with assumptions and evidence.' },
+      section('title', 'Title', 'Write the executive summary title.', 120, 'optional'),
+      section('bottom-line', 'Bottom Line', 'State the conclusion and decision relevance.', 450, 'required'),
+      section('context', 'Context', 'Summarize the evidence base and scope.', 700, 'required'),
+      section('findings', 'Findings', 'List three to five findings with citation posture.', 1000, 'required'),
+      section('implications', 'Implications', 'Explain operational or strategic implications.', 800, 'required'),
+      section('recommendation', 'Recommendation', 'Recommend a bounded next action.', 550, 'required'),
     ],
   },
 ];
@@ -111,7 +139,7 @@ const DEMO_DRAFTS: DraftShellRecord[] = [
   buildDraftRecord({
     id: 'demo-brief',
     caseId: DEFAULT_CASE_ID,
-    templateId: 'un-one-pager',
+    templateId: 'un-1-pager',
     status: 'working',
     workEpisode: 'Current assessment',
     updatedAt: '2026-05-10T16:20:00.000Z',
@@ -178,14 +206,25 @@ function buildDraftRecord(input: {
     ...input,
     templateId: template.id,
     title: `${template.label}: ${caseModule.manifest.name}`,
-    summary: `${template.description} Phase 4E provides the workspace shell; generated templates and section actions are owned by Phase 6.`,
+    summary: `${template.description} Phase 6 adds source-aware auto-fill proposals and section refinements that remain review-required before export.`,
     blocks: template.sections.map((section, index) => ({
       id: section.id,
       title: section.title,
       body: index === 0
-        ? `${caseModule.manifest.summary} This section is ready for analyst editing and source-grounded generation in Phase 6.`
+        ? `${caseModule.manifest.summary} This section is ready for analyst editing, source-grounded generation, and section-level refinement.`
         : section.prompt,
-      evidenceState: index === 0 ? 'grounded' : 'placeholder',
+      evidenceState: index === 0 || section.citationPolicy === 'required' ? 'grounded' : 'placeholder',
     })),
   };
+}
+
+function section(
+  id: string,
+  title: string,
+  prompt: string,
+  maxLength: number,
+  citationPolicy: DraftTemplateShell['sections'][number]['citationPolicy'],
+  required = true,
+): DraftTemplateShell['sections'][number] {
+  return { id, title, prompt, maxLength, citationPolicy, required };
 }

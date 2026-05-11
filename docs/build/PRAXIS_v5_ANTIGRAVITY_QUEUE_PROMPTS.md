@@ -54,7 +54,7 @@ Copy `MASTER` plus one numbered block for each queued job:
 
 ## Live Queue Status
 
-Last updated: 2026-05-10 by Codex
+Last updated: 2026-05-11 by Codex
 
 Use this table to see what has already been completed in this checkout and what
 still needs to be prompted or run next. The copy blocks below remain the source
@@ -75,8 +75,8 @@ prompts; this status table is the operational tracker.
 | 10 | complete | `c4938c99`, `995e5e8e`; Phase 4D validation: typecheck, lint, build, Ask/UI/provider audits, route audit, vitest, browser smoke, graphify | Done. |
 | 11 | complete | `54d46851`, `b40cb735`; Phase 4E validation: typecheck, lint, build, route audit, drafting-template audit, vitest, browser smoke, graphify | Done. |
 | 12 | complete | `cca0a32e`, `951ae357`; Phase 5 validation: typecheck, lint, build, method/tool audits, vitest, browser smoke, graphify | Done. |
-| 13 | next | pending | Run Phase 6 Drafting after Phase 5 is pushed. |
-| 14 | blocked | pending | Wait for Waves 1-3 app work. |
+| 13 | complete | pending commit; Phase 6 validation: typecheck, lint, build, drafting/export/provider audits, AI route audit, vitest, browser smoke, graphify | Done after commit/push. |
+| 14 | next | pending | Run Phase 7 demo content and persona wow paths after Phase 6 push. |
 | 15 | blocked | pending | Wait for demo content. |
 | 16 | blocked | pending | Wait for Phases 0-8. |
 | 17 | manual-approval-only | pending | Requires Giulio's explicit production deploy approval. |
@@ -84,15 +84,11 @@ prompts; this status table is the operational tracker.
 
 ## Recommended Antigravity Setup
 
-Create the queue like this:
+Create the remaining queue like this:
 
-- Active now: `00 Preflight Orchestrator`.
-- Next paused: `01 Phase 0`.
-- Next paused: `02 Phase 1`.
-- Parallel paused batch after Phase 1: `03`, `04`, `05`.
-- Next paused after parallel batch: `06`.
-- Sequential paused app build: `07`, `08`, `09`, `10`, `11`, `12`, `13`, `14`,
-  `15`, `16`.
+- Completed in this checkout: `00` through `13`.
+- Active next after Phase 6 is pushed: `14 Phase 7 Demo Content`.
+- Sequential paused ship work after `14`: `15`, then `16`.
 - Final manual approval steps: `17`, then `18`.
 
 Use separate queued agents only when the table says parallel-safe. If multiple

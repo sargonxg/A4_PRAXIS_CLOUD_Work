@@ -36,11 +36,11 @@ export function DraftingInbox({
               <p className="text-[11px] font-semibold uppercase text-slate-500">PRAXIS drafting</p>
               <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Drafting Studio</h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-650">
-                Assemble context-grounded briefings, review source posture, and prepare export packages. Phase 4E provides the workspace shell; Phase 6 owns generated templates and section AI actions.
+                Assemble context-grounded briefings, review source posture, auto-fill MVP templates, and refine sections with visible citations.
               </p>
             </div>
             <Link
-              href={`/draft/new?caseId=${encodeURIComponent(listDraftShells()[0]?.caseId ?? 'syria-2026')}&template=un-one-pager`}
+              href={`/draft/new?caseId=${encodeURIComponent(listDraftShells()[0]?.caseId ?? 'syria-2026')}&template=un-1-pager`}
               className="inline-flex h-10 items-center justify-center gap-2 border border-slate-900 bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800"
             >
               <Plus className="h-4 w-4" />

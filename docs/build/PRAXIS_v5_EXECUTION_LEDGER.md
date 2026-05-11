@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Phase 5 pushed; Queue 13 / Phase 6 Drafting is next
+Status: Queue 14 / Phase 7 Demo Content is next
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -85,7 +85,7 @@ Known setup warnings:
 | 4D | File 3 Phase 4D | Methods and runtime prerequisites | complete | Codex | `c4938c99`, `995e5e8e` |
 | 4E | File 3 Phase 4E | Drafting prerequisites | complete | Codex | `54d46851`, `b40cb735` |
 | 5 | File 3 Phase 5 | Phase 4C | complete | Codex | `cca0a32e`, `951ae357` |
-| 6 | File 3 Phase 6 | Drafting shell and templates | not-started | unassigned | pending |
+| 6 | File 3 Phase 6 | Drafting shell and templates | complete | Codex | pending |
 | 7 | File 3 Phase 7 | Waves 1-3 complete | not-started | unassigned | pending |
 | 8 | File 3 Phase 8 | Demo content and app surfaces | not-started | unassigned | pending |
 | 9 | File 3 Phase 9 | All MVP phases complete | not-started | unassigned | pending |
@@ -592,3 +592,41 @@ only the intended Phase 0 changes.
   - Live source depth for Deep Research still depends on provider credentials and the Phase 2C research pipeline availability.
   - Phase 6 still owns final drafting templates and section-level AI actions.
 - Notes for next agent: After this checkpoint is committed and pushed, continue with Queue 13 / Phase 6 Drafting. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md`.
+
+### 2026-05-11 - Phase 6 - Drafting Templates And Section Actions
+
+- Owner: Codex
+- Prompt source: `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md` Phase 6
+- Scope completed:
+  - Replaced Phase 4E placeholder drafting templates with the five MVP Phase 6 templates: UN 1-pager, Country card, Talking points, Mediation brief, and Executive summary.
+  - Added structured section metadata with header/footer, required flags, max lengths, and citation policy.
+  - Added section-level AI action UI for Tighten, Rewrite, Add citation, Add scenario, and Continue.
+  - Added inline citation chips and visible source/provenance posture in the editor.
+  - Added authenticated draft auto-fill and refine API routes with review-required/two-phase-commit response posture.
+  - Added static memo template block scaffolding under `src/lib/memo/templates/`.
+  - Updated the drafting audit and added focused Phase 6 Vitest coverage.
+- Files changed: draft template API, Drafting Studio components, draft auto-fill/refine API routes, memo template scaffolding, drafting-template audit, Phase 6 tests, graphify output, queue tracker, execution ledger
+- Validation run:
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run audit:drafting-templates-present`
+  - `npm run audit:export-coverage`
+  - `npm run audit:ai-provider-isolation`
+  - `node scripts/audit-ai-routes.mjs`
+  - `npx vitest run --pool=threads`
+  - `graphify update .`
+  - Production-mode local browser smoke on `http://localhost:3096`
+- Validation result: pass
+  - PASS: typecheck, build, drafting-template audit, export coverage audit, AI provider isolation audit, AI route audit, full 151-file / 584-test Vitest run, and graphify update.
+  - PASS: lint completed with existing warning debt only.
+  - PASS: browser smoke loaded `/draft/new` for all five templates, auto-filled each template, ran `/api/draft/new/auto-fill`, ran `/api/draft/new/refine?action=tighten`, verified 200 responses, checked zero browser console warnings/errors, and captured desktop/mobile screenshots at `output/playwright/phase6-draft-desktop.png` and `output/playwright/phase6-draft-mobile.png`.
+  - ENVIRONMENT: `next start` logs the repo's standalone-output warning but served the production build successfully for smoke verification.
+  - ENVIRONMENT: local browser auth smoke used a signed demo cookie with `COOKIE_SIGNING_SECRET=local-smoke-secret` because draft action APIs use `withAuth`.
+  - ENVIRONMENT: Vitest was run with `--pool=threads`, consistent with the Windows-stable mode used in prior v5 checkpoints.
+- Commit: pending
+- Push: pending
+- Open blockers:
+  - Section actions currently return deterministic review-required proposals rather than claiming fully autonomous production drafting.
+  - Signed export artifact production behavior remains covered by existing export surfaces and later ship verification.
+- Notes for next agent: After this checkpoint is committed and pushed, continue with Queue 14 / Phase 7 Demo Content. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md`.
