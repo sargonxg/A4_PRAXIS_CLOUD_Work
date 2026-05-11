@@ -105,7 +105,44 @@ Do not claim the new landing or graph polish is live at `praxis.tacitus.me` unti
 
 ## Next Action
 
-Queue 16 remains in progress. The next production-facing action is an explicit approved frontend deploy using the existing frontend Cloud Build path, followed by live browser verification of:
+Queue 16 remains in progress. Giulio approved the production frontend deploy in
+the current session, and the first deploy/verification pass is complete.
+
+### 2026-05-11 Approved Frontend Deploy And Live Verification
+
+- Deployment command: `npm run deploy:frontend:cloud`.
+- Cloud Build: `1314022b-3069-44ac-b1d0-f09242e39161`, status `SUCCESS`.
+- Image: `us-central1-docker.pkg.dev/praxisbytacitus/praxis/praxis-frontend`.
+- Cloud Run frontend revision: `praxis-frontend-00306-fvx`.
+- Production URL: `https://praxis.tacitus.me`.
+- HTTP 200 checks passed for `/`, `/api/health`, `/demo/indo-pacific-2026`,
+  `/demo/ai-regulation-2026`, `/demo/fb-sustainability-2026`, `/pricing`, and
+  `/login`.
+- Browser checks passed on desktop and mobile for landing, three public demo
+  contexts, pricing, and login. No console warnings/errors were observed on the
+  checked routes.
+- Production persona smoke passed 6/6 specs:
+  `PLAYWRIGHT_BASE_URL=https://praxis.tacitus.me npm run smoke:personas -- --reporter=line`.
+- 100% canary monitor passed with 12 samples, 0 error rate, and p95 latency
+  258 ms:
+  `tsx scripts/canary-monitor.ts --phase=100 --url=https://praxis.tacitus.me --samples=3`.
+- Static audits passed: `audit:landing`, `audit:demo-claim`,
+  `audit:visualization`, `audit:graph-viewer`.
+- Full `audit:gate` passed after refreshing Graphify and routing `/app` to
+  `/app/dashboard`.
+- GCP production posture remains 0 hard failures and 3 soft warnings.
+
+Remaining production-facing blockers:
+
+- Paid checkout is not complete: `/api/health` reports Polar unconfigured, and
+  the current app has Polar checkout/portal/webhook routes rather than the
+  older Stripe wording in the Phase 9 prompt.
+- The persona smoke workflow exists and production smoke passed, but the
+  required 10 consecutive CI green runs are not yet proven.
+- Cognee memory remains unconfigured/disabled-first until a separate Cognee
+  service is deployed and approved.
+
+Final deploy follow-up after the `/app` redirect patch must verify:
 
 - `/`
 - `/demo/indo-pacific-2026`

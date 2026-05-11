@@ -78,19 +78,19 @@ prompts; this status table is the operational tracker.
 | 13 | complete | `c781887a`; Phase 6 validation: typecheck, lint, build, drafting/export/provider audits, AI route audit, full Vitest, browser smoke, graphify | Done. |
 | 14 | complete | `ec88a6e4`, `18bff42d`; validation: demo seed/verify scripts, focused Vitest, typecheck, lint, build, demo/onboarding/stage/jargon audits, GCP/Firebase review, graphify | Done. |
 | 15 | complete | `b7ae568c`, `4c4ee7a0`; validation: typecheck, lint, build, landing/legal/demo/experience/jargon audits, full Vitest, browser smoke, graphify | Done. |
-| 16 | in-progress | `da561346`, `82d3de84`, `47b9a9a9`, `7d95dc77`, `25d13a75`, tracker `80ef65c6`; graph polish, live/database, and persona smoke checkpoints pushed | Continue remaining Phase 9 ship work: approved frontend deploy, checkout/pricing wiring, wider route polish, canary/ship prep, and repeated persona-suite CI proof. |
-| 17 | manual-approval-only | pending | Requires Giulio's explicit production deploy approval. |
-| 18 | blocked | pending | Run after live deployment or final staging build. |
+| 16 | in-progress | `da561346`, `82d3de84`, `47b9a9a9`, `7d95dc77`, `25d13a75`, tracker `80ef65c6`; graph polish, live/database, persona smoke, and pre-deploy checkpoints pushed | Continue remaining Phase 9 ship work: checkout/pricing provider configuration and repeated persona-suite CI proof. |
+| 17 | in-progress | Cloud Build `1314022b-3069-44ac-b1d0-f09242e39161`; Cloud Run `praxis-frontend-00306-fvx`; live HTTP/browser/persona/canary checks passed | Finalize redirect patch, commit/push, redeploy frontend, and record final revision. |
+| 18 | in-progress | production smoke started after approved deploy | Complete final QA/red-team record; billing remains blocked on provider env/decision. |
 
 ## Recommended Antigravity Setup
 
 Create the remaining queue like this:
 
 - Completed in this checkout: `00` through `15`.
-- Active in progress: `16 Phase 9 Polish and Ship`.
-- Completed Phase 9 sub-checkpoints on 2026-05-11: landing and signed-out demo graph visualization polish; live database/production gap review; persona smoke CI wiring and six-spec local persona suite proof. Remaining Phase 9 ship items are still open until pricing/checkout decisions, broader route polish, canary preparation, production deploy, and final QA are complete.
-- Sequential paused ship work after `16`: production deploy remains manual approval only.
-- Final manual approval steps: `17`, then `18`.
+- Active in progress: `16 Phase 9 Polish and Ship`, `17 Production Deploy and Live Verification`, and `18 Final Product QA and Red-Team Review`.
+- Completed Phase 9 sub-checkpoints on 2026-05-11: landing and signed-out demo graph visualization polish; live database/production gap review; persona smoke CI wiring and six-spec local/persona production proof; approved frontend deploy to `praxis.tacitus.me`; production HTTP/browser/canary checks.
+- Remaining Phase 9 ship items are still open until pricing/checkout provider configuration is complete and the persona-suite CI workflow produces the required repeated green-run proof.
+- Queue `17` is no longer approval-blocked for this session because Giulio explicitly asked to deploy the frontend. Finish by committing the redirect patch, redeploying, and recording the final revision.
 
 Use separate queued agents only when the table says parallel-safe. If multiple
 agents are active, each agent must own a disjoint file area and update the

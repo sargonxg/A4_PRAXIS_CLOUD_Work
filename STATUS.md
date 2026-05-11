@@ -4,19 +4,31 @@
 
 The v5 queue in `docs/build/PRAXIS_v5_ANTIGRAVITY_QUEUE_PROMPTS.md` is the
 active tracker. Queues `00` through `15` are complete and pushed. Queue `16`
-Phase 9 is in progress with graph polish, live database review, and persona
-smoke CI/checkpoint work completed locally. Queues `17` and `18` remain gated:
-production deploy requires Giulio's explicit approval, and final QA runs after
-live deployment or an approved final staging build.
+Phase 9 is in progress with graph polish, live database review, persona smoke
+CI/checkpoint work, and production deploy evidence completed. Queue `17` is
+approved for this session and has reached production once; Queue `18` final QA
+is in progress against the live site.
 
 Current Phase 9 blockers:
 
-- Production `praxis.tacitus.me` is not yet proven to contain the latest Phase
-  8/9 pushed code.
 - Persona CI wiring exists, but the "10 consecutive passes" requirement cannot
   be claimed until the workflow has actually produced those runs.
-- Checkout/pricing still needs a final implementation decision against the
-  current Polar billing routes before Phase 9 can close.
+- Checkout/pricing still needs production billing provider configuration and a
+  final implementation decision against the current Polar billing routes before
+  Phase 9 can close.
+- Cognee remains disabled/unconfigured in production by design until the
+  separate `praxis-cognee` service is deployed and approved.
+
+Latest production deploy evidence:
+
+- Cloud Build `1314022b-3069-44ac-b1d0-f09242e39161` succeeded.
+- Cloud Run frontend revision `praxis-frontend-00306-fvx` became ready.
+- `https://praxis.tacitus.me/`, `/api/health`, three public demo routes,
+  `/pricing`, and `/login` returned HTTP 200.
+- Production browser checks across desktop/mobile reported no console
+  warnings/errors on the checked routes.
+- Production persona smoke passed 6/6 specs, and the 100% canary monitor
+  passed with 0 error rate and p95 latency 258 ms.
 
 ---
 

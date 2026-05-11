@@ -11,17 +11,17 @@ Last updated: 2026-05-11.
 
 ## Immediate Next Steps
 
-1. Continue Queue `16` / Phase 9 from the persona smoke checkpoint.
-2. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
-3. Prepare canary/deploy evidence, but do not run production deployment without Giulio's explicit approval.
-4. After approved deploy or final staging build, run Queue `18` final product QA and red-team review.
+1. Finish Queue `17` by committing/pushing the `/app` dashboard redirect patch, redeploying the frontend, and recording the final Cloud Build/revision.
+2. Continue Queue `18` final product QA and red-team review on live production.
+3. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
+4. Track persona smoke CI until the required 10 consecutive green runs are real, not projected.
 
 ## Live Production Blockers
 
 - Provider-backed notification delivery remains open; see `BLOCKERS.md`.
 - Live Cognee SDK calls remain service-owned and disabled-first; see `BLOCKERS.md`.
 - Deep pre-ship live checks still require staging/prod execution; see `BLOCKERS.md`.
-- Phase 9 production deploy, canary, and final QA remain gated by explicit approval and live/staging availability.
+- Phase 9 production deploy approval was granted in this session; final QA and billing provider configuration remain open.
 
 ## Standing Rules
 

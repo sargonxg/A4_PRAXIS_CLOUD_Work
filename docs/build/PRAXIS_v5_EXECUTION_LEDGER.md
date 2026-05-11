@@ -811,3 +811,39 @@ only the intended Phase 0 changes.
 - Open blockers:
   - Phase 9 is still not complete. Production deploy/canary/final QA remain manual-gated, and the Phase 9 prompt asks for ten consecutive persona-suite CI passes before merge; this checkpoint adds the CI gate but cannot honestly claim ten future green runs yet.
   - Checkout/pricing wiring remains to be reconciled with the current Polar-based billing routes and any approved Stripe decision.
+
+### 2026-05-11 - Queue 17 - Approved Frontend Deploy And Live Verification
+
+- Owner: Codex
+- Prompt source: Giulio explicitly asked to deploy the frontend, finish all needed work, keep everything on `main`, and verify `praxis.tacitus.me`.
+- Scope completed:
+  - Ran the repo-approved frontend Cloud Build deploy path: `npm run deploy:frontend:cloud`.
+  - Verified Cloud Build succeeded and Cloud Run served the new frontend revision.
+  - Verified production HTTP, browser, persona, canary, static product audits, and GCP posture.
+  - Fixed the `/app` route to redirect to `/app/dashboard` after `audit:dashboard` correctly flagged the old Ask homepage index.
+  - Refreshed Graphify after the route patch so `audit:master-charter` and the full `audit:gate` pass.
+- Deployment evidence:
+  - Cloud Build: `1314022b-3069-44ac-b1d0-f09242e39161`
+  - Cloud Run frontend revision: `praxis-frontend-00306-fvx`
+  - Production URL: `https://praxis.tacitus.me`
+- Live production checks:
+  - HTTP 200: `/`, `/api/health`, `/demo/indo-pacific-2026`, `/demo/ai-regulation-2026`, `/demo/fb-sustainability-2026`, `/pricing`, `/login`.
+  - Browser desktop/mobile: landing, three demo routes, pricing, and login loaded with expected titles/H1s and no console warnings/errors on checked routes.
+  - Persona smoke: `PLAYWRIGHT_BASE_URL=https://praxis.tacitus.me npm run smoke:personas -- --reporter=line` passed 6/6 specs.
+  - Canary monitor: `tsx scripts/canary-monitor.ts --phase=100 --url=https://praxis.tacitus.me --samples=3` passed with 12 samples, 0 error rate, and p95 latency 258 ms.
+  - GCP posture: `npm run audit:gcp-production-posture` passed with 0 hard failures and 3 soft warnings.
+- Validation run:
+  - `npm run audit:dashboard`
+  - `npm run typecheck`
+  - `npm run lint -- src\app\app\page.tsx`
+  - `graphify update .`
+  - `npm run audit:master-charter`
+  - `npm run audit:gate`
+- Validation result: pass
+  - PASS: full `audit:gate`, including build/typecheck, route audits, product audits, 152-file / 587-test Vitest run, `audit:gcp`, and `audit:gcp-production-posture`.
+  - PASS: production frontend is no longer stale relative to the Phase 8/9 public demo routes checked in this deployment.
+  - NOTE: checkout/pricing is still not launch-complete because `/api/health` reports Polar billing unconfigured and the app currently has Polar routes rather than the older Stripe wording in the Phase 9 prompt.
+- Open blockers:
+  - Billing provider configuration/decision: finish Polar production env setup or approve a Stripe migration before claiming paid checkout complete.
+  - Persona CI streak: production smoke passed, but the 10 consecutive CI green-run requirement remains unproven until GitHub Actions records those runs.
+  - Cognee remains disabled/unconfigured in production by design until the separate service is deployed and approved.

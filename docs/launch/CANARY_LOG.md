@@ -3,7 +3,10 @@
 Production target: `https://praxis.tacitus.me`
 Required phases: 5% -> 25% -> 100%
 
-No Pack 14 canary phase has been started from this session. Owner approval is required before traffic shifting.
+Giulio approved frontend production deployment on 2026-05-11. This session used
+the repo-approved Cloud Build deploy path directly to the frontend service,
+then ran the 100% synthetic monitor against the production domain. No 5%/25%
+traffic split was used in this direct deploy path.
 
 ## Phase Template
 
@@ -11,7 +14,7 @@ No Pack 14 canary phase has been started from this session. Owner approval is re
 |---|---|---|---|---:|---:|---:|---|---|
 | 5% | TBD | TBD | TBD | TBD | TBD | TBD | `tsx scripts/canary-monitor.ts --phase=5` | Giulio required |
 | 25% | TBD | TBD | TBD | TBD | TBD | TBD | `tsx scripts/canary-monitor.ts --phase=25` | Giulio required |
-| 100% | TBD | TBD | TBD | TBD | TBD | TBD | `tsx scripts/canary-monitor.ts --phase=100` | Giulio required |
+| 100% | `praxis-frontend-00306-fvx` | 2026-05-11T04:58Z | 2026-05-11T05:05Z | 0 | 258 ms | not measured | `tsx scripts/canary-monitor.ts --phase=100 --url=https://praxis.tacitus.me --samples=3` | pass |
 
 ## Rollback Rule
 

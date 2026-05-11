@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- fix(v5): route `/app` to the dashboard, refresh Graphify, pass the full
+  `audit:gate`, and record the approved frontend production deploy evidence.
 - test(v5): add Phase 9 persona smoke CI coverage for Indo-Pacific and AI
   Regulation demo paths, stabilize current persona specs against the chapter
   desk UI, and allow signed demo sessions in local HTTP production smoke runs.
