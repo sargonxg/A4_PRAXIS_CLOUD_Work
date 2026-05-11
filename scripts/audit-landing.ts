@@ -39,6 +39,12 @@ for (const marker of requiredHeroMarkers) {
 
 const requiredSections = [
   'Two contexts, one engine',
+  'Domain-targeted ontologies',
+  'Context layer for policy AI',
+  'Give your AI the policy context it needs.',
+  'Foreign policy desks',
+  'Economic policy teams',
+  'International diplomacy teams',
   'Not a chat box. A working console for policy analysis.',
   'Drag the work stack before the tool runs.',
   'The right tools for the work',
@@ -75,7 +81,7 @@ for (const href of ['/demo/indo-pacific-2026', '/demo/ai-regulation-2026', '/dem
   }
 }
 
-for (const nav of ['#two-contexts', '#real-app', '#core-stack', '#methods', '#drafting', '#trust', '#pricing']) {
+for (const nav of ['#two-contexts', '#domain-ontologies', '#real-app', '#core-stack', '#methods', '#drafting', '#trust', '#pricing']) {
   if (!layout.includes(nav)) throw new Error(`Landing nav missing anchor: ${nav}`);
 }
 

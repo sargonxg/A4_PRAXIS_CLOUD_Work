@@ -12,7 +12,7 @@ const softwareJsonLd = {
   applicationSubCategory: "Policy workbench",
   operatingSystem: "Web",
   description:
-    "PRAXIS helps policy, diplomacy, and strategy teams move from live situations to sourced analysis, method runs, and reviewable drafts.",
+    "PRAXIS helps policy, diplomacy, and strategy teams build the user context, situation cores, domain ontologies, tool workflows, and reviewable drafts needed to use AI well.",
   url: siteUrl,
   image: `${siteUrl}/opengraph-image`,
   inLanguage: "en",
@@ -51,6 +51,7 @@ const softwareJsonLd = {
   featureList: [
     "Public demo contexts for Indo-Pacific, AI regulation, and food and beverage sustainability",
     "Persona-aware answers for foreign policy, domestic policy, and corporate strategy work",
+    "User Core, Situation Core, source graph, and domain-targeted ontology workflows for policy teams",
     "Ten reviewable methods for research, stakeholder mapping, scenarios, contradictions, commitments, and memo drafting",
     "Review-first drafting with source posture and visible gaps",
     "Google Cloud, Firebase, Firestore, Cloud SQL Postgres, and Secret Manager production path",

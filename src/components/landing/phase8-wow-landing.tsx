@@ -7,6 +7,8 @@ import {
   BadgeCheck,
   Building2,
   ClipboardCheck,
+  DollarSign,
+  Earth,
   FileText,
   FileOutput,
   GitBranch,
@@ -146,6 +148,27 @@ const methods = [
   ["Coalition Detector", "Maps supportive, blocking, and swing actors around a decision."],
   ["Commitment Tracker", "Checks whether promises are monitorable, attributable, and enforceable."],
   ["Memo Drafter", "Turns selected findings into a reviewable memo with citation gaps visible."],
+] as const;
+
+const policyTeams = [
+  {
+    label: "Foreign policy desks",
+    icon: Earth,
+    focus: "Alliances, sanctions, deterrence, mediation, escalation, and diplomatic signaling.",
+    ontology: "Actors, interests, leverage, commitments, episodes, and red lines.",
+  },
+  {
+    label: "Economic policy teams",
+    icon: DollarSign,
+    focus: "Trade, industrial policy, markets, energy, regulation, supply chains, and fiscal exposure.",
+    ontology: "Sectors, instruments, winners, losers, constraints, and implementation risk.",
+  },
+  {
+    label: "International diplomacy teams",
+    icon: Landmark,
+    focus: "Negotiations, mandates, missions, institutions, public language, and handovers.",
+    ontology: "Mandates, parties, venues, commitments, spoilers, confidence measures, and drafts.",
+  },
 ] as const;
 
 const trustItems = [
@@ -299,19 +322,20 @@ export function Phase8WowLanding() {
       <section className="relative overflow-hidden border-b border-[#C6D2DD] bg-[linear-gradient(135deg,#F8FBFD_0%,#EEF6F6_46%,#F9F0D5_100%)]">
         <div className="mx-auto grid min-h-[calc(100vh-8rem)] max-w-7xl gap-8 px-4 pb-8 pt-8 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-12 lg:pt-12">
           <div className="flex flex-col justify-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#8a5a00]">PRAXIS by TACITUS</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#8a5a00]">PRAXIS by TACITUS · Context layer for policy AI</p>
             <h1 className="mt-4 max-w-3xl font-serif text-4xl font-semibold leading-[1.02] text-[#111827] sm:text-6xl lg:text-7xl">
-              Ask better questions of live policy work.
+              Give your AI the policy context it needs.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-[#374151] sm:text-lg">
-              PRAXIS turns a situation, a role, and a task into sourced analysis, tool runs, and drafts that fit the work.
+              Policy teams cannot get serious AI output from a blank chat box. PRAXIS builds the User Core, Situation Core, source graph, and domain ontology your LLM needs before it analyzes, recommends, or drafts.
             </p>
             <div className="mt-7 rounded-[1.5rem] border border-white/70 bg-white/70 p-3 shadow-2xl shadow-[#0B1B2B]/10 backdrop-blur">
               <div className="flex flex-wrap gap-2 pb-3">
                 {[
                   ["User Core", persona.short, "border-[#4A90A4] bg-[#EAF5F7]"],
-                  ["Context Core", context.label, "border-[#E8B931] bg-[#FFF7D6]"],
-                  ["Suggested tools", "memo · graph · sources", "border-[#2F8F83] bg-[#E9F7F3]"],
+                  ["Situation Core", context.label, "border-[#E8B931] bg-[#FFF7D6]"],
+                  ["Domain ontology", "foreign policy · economic · diplomacy", "border-[#5967D8] bg-[#EEF0FF]"],
+                  ["Suggested tools", "research · graph · memo", "border-[#2F8F83] bg-[#E9F7F3]"],
                 ].map(([label, value, tone]) => (
                   <span key={label} className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold text-[#111827]", tone)}>
                     <GripVertical className="h-3.5 w-3.5 text-[#6b7280]" aria-hidden="true" />
@@ -330,7 +354,7 @@ export function Phase8WowLanding() {
                 <span className="min-w-0 flex-1">
                   <span className="block text-base font-semibold">Ask PRAXIS about this policy situation...</span>
                   <span className="mt-1 block text-xs leading-5 text-[#D7E1EA]">
-                    Attach cores, let PRAXIS suggest the right tool, then turn the answer into a memo or workbench action.
+                    Attach the right cores, let PRAXIS choose the method, then turn the answer into analysis, a decision note, or a memo draft.
                   </span>
                 </span>
                 <ArrowRight className="h-5 w-5 shrink-0 text-[#D7E1EA]" aria-hidden="true" />
@@ -363,12 +387,12 @@ export function Phase8WowLanding() {
             </div>
             <div className="mt-8 grid max-w-2xl gap-2 sm:grid-cols-3">
               {[
-                ["57", "tool contracts"],
-                ["8", "context panels"],
-                ["10", "primary methods"],
+                ["Context", "built before prompting"],
+                ["Ontologies", "targeted to the domain"],
+                ["Drafts", "grounded in the case"],
               ].map(([value, label]) => (
                 <div key={label} className="rounded-md border border-[#C6D2DD] bg-white/75 px-3 py-3">
-                  <p className="text-2xl font-semibold text-[#0B3B4A]">{value}</p>
+                  <p className="text-xl font-semibold text-[#0B3B4A]">{value}</p>
                   <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#5C6975]">{label}</p>
                 </div>
               ))}
@@ -381,7 +405,7 @@ export function Phase8WowLanding() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8a5a00]">Live demo bar</p>
-                    <p className="mt-1 text-sm font-medium text-[#4b5563]">No login required. Cached demo responses load instantly.</p>
+                    <p className="mt-1 text-sm font-medium text-[#4b5563]">A simple view of the model: user, situation, ontology, tools, and draftable output.</p>
                   </div>
                   <span className="inline-flex items-center gap-2 rounded-full bg-[#eef7f1] px-3 py-1 text-xs font-semibold text-[#166534]">
                     <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
@@ -404,7 +428,7 @@ export function Phase8WowLanding() {
                   </select>
                 </label>
                 <label className="block">
-                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6b7280]">Context</span>
+                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6b7280]">Situation Core</span>
                   <select
                     value={contextId}
                     onChange={(event) => {
@@ -473,7 +497,10 @@ export function Phase8WowLanding() {
         <div className="mx-auto max-w-7xl">
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a5a00]">Two contexts, one engine</p>
-            <h2 className="mt-3 font-serif text-3xl font-semibold text-[#111827] sm:text-5xl">The same question changes by role.</h2>
+            <h2 className="mt-3 font-serif text-3xl font-semibold text-[#111827] sm:text-5xl">AI works better when it knows who is asking and what situation it is inside.</h2>
+            <p className="mt-4 text-sm leading-6 text-[#4b5563] sm:text-base">
+              PRAXIS keeps the user model and situation model inspectable. The same facts produce different work for a diplomat, an economic policy team, or a strategy desk because the task, audience, and ontology are explicit.
+            </p>
           </div>
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             {personaAnswers.map((item) => (
@@ -491,13 +518,47 @@ export function Phase8WowLanding() {
         </div>
       </section>
 
+      <section id="domain-ontologies" className="border-b border-[#C6D2DD] bg-[#F8FBFD] px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0B6F70]">Domain-targeted ontologies</p>
+              <h2 className="mt-3 font-serif text-3xl font-semibold text-[#111827] sm:text-5xl">
+                Not every policy team needs the same model.
+              </h2>
+              <p className="mt-4 text-sm leading-6 text-[#4B5563] sm:text-base">
+                PRAXIS turns policy work into structured context: actors, interests, commitments, sources, claims, constraints, outputs, and open questions. Then the right ontology steers the LLM toward the work your team actually needs.
+              </p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              {policyTeams.map((team) => {
+                const Icon = team.icon;
+                return (
+                  <article key={team.label} className="rounded-xl border border-[#D9E2E8] bg-white p-5 shadow-sm shadow-[#0B3B4A]/5">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-md bg-[#EAF5F7] text-[#0B6F70]">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <h3 className="mt-4 text-base font-semibold text-[#111827]">{team.label}</h3>
+                    <p className="mt-2 text-sm leading-6 text-[#4B5563]">{team.focus}</p>
+                    <div className="mt-4 rounded-lg border border-[#C6D2DD] bg-[#F8FBFD] p-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5C6975]">Ontology directs</p>
+                      <p className="mt-2 text-xs leading-5 text-[#374151]">{team.ontology}</p>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="graph-intelligence" className="border-b border-[#d7c89f] bg-[#111827] px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8 max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f6c85f]">Graph intelligence</p>
             <h2 className="mt-3 font-serif text-3xl font-semibold text-white sm:text-5xl">The answer is only useful if the graph behind it is legible.</h2>
             <p className="mt-4 text-sm leading-6 text-zinc-300 sm:text-base">
-              Each demo context carries a visible operating picture: source receipts, actors, claims, evidence, and drafts stay connected instead of disappearing into a chat transcript.
+              Each Situation Core carries a visible operating picture: source receipts, actors, claims, evidence, open questions, and drafts stay connected instead of disappearing into a chat transcript.
             </p>
           </div>
           <ContextGraphPreview
@@ -517,7 +578,7 @@ export function Phase8WowLanding() {
                 Not a chat box. A working console for policy analysis.
               </h2>
               <p className="mt-4 text-sm leading-6 text-[#4B5563] sm:text-base">
-                The public demo is a window into shipped app surfaces: dashboard, workbench, graph, memo studio, boardroom, ACH, and context creation. Sign in to create private contexts and keep the core stack attached to the work.
+                The public demo is a window into shipped app surfaces: dashboard, workbench, graph, memo studio, boardroom, ACH, and context creation. Sign in to create private User Cores and Situation Cores, then apply them to the tools and drafts your team needs.
               </p>
               <Link
                 href="/app"
@@ -562,19 +623,19 @@ export function Phase8WowLanding() {
       <section id="core-stack" className="border-b border-[#C6D2DD] bg-[#07131F] px-4 py-14 text-white sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7DD3C7]">User Core + Context Cores</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7DD3C7]">User Core + Situation Cores</p>
             <h2 className="mt-3 font-serif text-3xl font-semibold sm:text-5xl">
               Drag the work stack before the tool runs.
             </h2>
             <p className="mt-4 text-sm leading-6 text-slate-300 sm:text-base">
-              PRAXIS keeps the user model, active context, source receipts, graph, and output package separate enough to inspect, but connected enough to move together. The authenticated dashboard now includes the same draggable core stack.
+              PRAXIS keeps the user model, active situation, domain ontology, source receipts, graph, and output package separate enough to inspect, but connected enough to move together. The authenticated dashboard includes the same draggable core stack.
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               {[
                 ["User Core", persona.label],
-                ["Context Core", context.label],
+                ["Situation Core", context.label],
+                ["Domain Ontology", persona.label.includes("Foreign") ? "foreign policy" : persona.label.includes("Domestic") ? "public policy" : "economic strategy"],
                 ["Graph Core", graphStatsByContext[context.id][3].value + " objects"],
-                ["Output Core", activeQuestion.question.includes("Draft") ? "Drafting" : "Memo-ready"],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-md border border-white/10 bg-white/8 px-3 py-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</p>
