@@ -87,7 +87,7 @@ Known setup warnings:
 | 5 | File 3 Phase 5 | Phase 4C | complete | Codex | `cca0a32e`, `951ae357` |
 | 6 | File 3 Phase 6 | Drafting shell and templates | complete | Codex | `c781887a` |
 | 7 | File 3 Phase 7 | Waves 1-3 complete | complete | Codex | `ec88a6e4` |
-| 8 | File 3 Phase 8 | Demo content and app surfaces | complete | Codex | pending |
+| 8 | File 3 Phase 8 | Demo content and app surfaces | complete | Codex | `b7ae568c` |
 | 9 | File 3 Phase 9 | All MVP phases complete | not-started | unassigned | pending |
 
 ## Checkpoint Template
@@ -707,8 +707,8 @@ only the intended Phase 0 changes.
   - Screenshots captured: `output/playwright/phase8-landing-desktop.png` and `output/playwright/phase8-landing-mobile.png`.
   - ENVIRONMENT: `next start` logs the repo's standalone-output warning but served the production build successfully for smoke verification.
   - SCOPE NOTE: Lighthouse CI and magic-link email delivery are not currently wired as local scripts in this repo; Phase 8 validated with build, static audits, full Vitest, and Playwright browser smoke.
-- Commit: pending
-- Push: pending
+- Commit: `b7ae568c`
+- Push: pending tracker update
 - Open blockers:
   - Phase 9 still owns final polish, pricing/checkout, mobile-wide route polish, persona suites, and ship/canary tasks.
   - Production deploy remains manual-approval-only.
