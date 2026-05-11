@@ -877,6 +877,7 @@ only the intended Phase 0 changes.
   - HTTP checks passed for `/`, `/api/health`, three demo routes, `/pricing`, `/login`, and `/app`.
   - Production persona smoke passed 6/6 specs.
   - CI persona smoke run `25652772692` passed on commit `6c9e407c`, bringing the recorded CI streak to 2/10.
+  - CI persona smoke run `25653068426` passed on commit `7b658de6`, bringing the recorded CI streak to 3/10.
   - Canary monitor initially failed on p95 latency only immediately after deploy, then passed on retry with 0 error rate and p95 192 ms.
 - Open blockers carried forward:
   - Billing provider configuration/decision remains the only buyer-facing paid-plan launch blocker.

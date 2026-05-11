@@ -13,7 +13,7 @@ Current Phase 9 blockers:
 
 - Persona CI wiring exists, but the "10 consecutive passes" requirement cannot
   be claimed until the workflow has actually produced those runs. Current
-  recorded streak: 2/10.
+  recorded streak: 3/10.
 - Checkout/pricing still needs production billing provider configuration and a
   final implementation decision against the current Polar billing routes before
   Phase 9 can close.
