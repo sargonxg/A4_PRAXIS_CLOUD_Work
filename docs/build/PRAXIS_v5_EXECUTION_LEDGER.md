@@ -85,7 +85,7 @@ Known setup warnings:
 | 4D | File 3 Phase 4D | Methods and runtime prerequisites | complete | Codex | `c4938c99`, `995e5e8e` |
 | 4E | File 3 Phase 4E | Drafting prerequisites | complete | Codex | `54d46851`, `b40cb735` |
 | 5 | File 3 Phase 5 | Phase 4C | complete | Codex | `cca0a32e`, `951ae357` |
-| 6 | File 3 Phase 6 | Drafting shell and templates | complete | Codex | pending |
+| 6 | File 3 Phase 6 | Drafting shell and templates | complete | Codex | `c781887a` |
 | 7 | File 3 Phase 7 | Waves 1-3 complete | not-started | unassigned | pending |
 | 8 | File 3 Phase 8 | Demo content and app surfaces | not-started | unassigned | pending |
 | 9 | File 3 Phase 9 | All MVP phases complete | not-started | unassigned | pending |
@@ -624,7 +624,7 @@ only the intended Phase 0 changes.
   - ENVIRONMENT: `next start` logs the repo's standalone-output warning but served the production build successfully for smoke verification.
   - ENVIRONMENT: local browser auth smoke used a signed demo cookie with `COOKIE_SIGNING_SECRET=local-smoke-secret` because draft action APIs use `withAuth`.
   - ENVIRONMENT: Vitest was run with `--pool=threads`, consistent with the Windows-stable mode used in prior v5 checkpoints.
-- Commit: pending
+- Commit: `c781887a`
 - Push: pending
 - Open blockers:
   - Section actions currently return deterministic review-required proposals rather than claiming fully autonomous production drafting.
