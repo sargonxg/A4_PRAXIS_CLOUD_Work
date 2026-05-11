@@ -59,6 +59,24 @@ The appropriate active Postgres path remains Google Cloud SQL Postgres. The prov
 - Browser console check across `/`, `/demo/indo-pacific-2026`, and `/pricing`: no console errors observed.
 - `npm run audit:gcp-production-posture`: 0 hard failures, 3 soft warnings.
 
+### 2026-05-11 Local Build And Usability Recheck
+
+- GitHub `main` was clean and synced before verification.
+- Latest local commit verified: `1fd1c60b`.
+- `npm run typecheck`: pass.
+- Scoped ESLint for landing, graph preview, public demo route, auth session route, and persona specs: pass.
+- `COOKIE_SIGNING_SECRET=persona-smoke-cookie-secret npm run build`: pass.
+- Local production server: `next start` on `http://127.0.0.1:3120`.
+- `npm run smoke:personas -- --reporter=line`: 6 passed.
+- Desktop and mobile browser checks loaded `/`, `/demo/indo-pacific-2026`, `/demo/ai-regulation-2026`, `/demo/fb-sustainability-2026`, `/pricing`, and `/login`.
+- Local browser checks confirmed the three v5 demo contexts render their expected H1s:
+  - `Indo-Pacific Strategic Competition 2026`
+  - `AI Regulation 2026 - US Federal and State Landscape`
+  - `Food and Beverage Regulatory and Sustainability Outlook 2026`
+- Local browser console check: no console warnings or errors observed on the checked routes.
+- Static product audits passed: `audit:landing`, `audit:demo-claim`, and `audit:visualization`.
+- Runtime cloud posture remained healthy: `audit:gcp-production-posture` reported 0 hard failures and 3 soft warnings.
+
 ## Graph And App Checks
 
 - Added and pushed richer graph previews in commit `da561346`.
