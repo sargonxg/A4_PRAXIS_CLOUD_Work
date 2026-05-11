@@ -667,7 +667,7 @@ only the intended Phase 0 changes.
   - PASS: `npm run audit:gcp` reported 0 hard failures and 0 soft warnings after local `gcloud` and ADC quota project were aligned to `praxisbytacitus`.
   - SCOPE NOTE: seed scripts are intentionally non-destructive local bundle/verification scripts. They do not write Firestore or Storage without an explicit production data-seeding runbook.
 - Commit: `ec88a6e4`
-- Push: pending tracker update
+- Push: pushed to `origin/main` through tracker commit `18bff42d`
 - Open blockers:
   - Phase 8 still owns landing-page polish and public narrative integration.
   - Production deploy remains manual-approval-only.

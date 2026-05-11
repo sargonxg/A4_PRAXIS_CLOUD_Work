@@ -76,7 +76,7 @@ prompts; this status table is the operational tracker.
 | 11 | complete | `54d46851`, `b40cb735`; Phase 4E validation: typecheck, lint, build, route audit, drafting-template audit, vitest, browser smoke, graphify | Done. |
 | 12 | complete | `cca0a32e`, `951ae357`; Phase 5 validation: typecheck, lint, build, method/tool audits, vitest, browser smoke, graphify | Done. |
 | 13 | complete | `c781887a`; Phase 6 validation: typecheck, lint, build, drafting/export/provider audits, AI route audit, full Vitest, browser smoke, graphify | Done. |
-| 14 | complete | `ec88a6e4`; validation: demo seed/verify scripts, focused Vitest, typecheck, lint, build, demo/onboarding/stage/jargon audits, GCP/Firebase review, graphify | Done; push tracker update. |
+| 14 | complete | `ec88a6e4`, `18bff42d`; validation: demo seed/verify scripts, focused Vitest, typecheck, lint, build, demo/onboarding/stage/jargon audits, GCP/Firebase review, graphify | Done. |
 | 15 | next | pending | Run Phase 8 landing after Phase 7 checkpoint is pushed. |
 | 16 | blocked | pending | Wait for Phases 0-8. |
 | 17 | manual-approval-only | pending | Requires Giulio's explicit production deploy approval. |
