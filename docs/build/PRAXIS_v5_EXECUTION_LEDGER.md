@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Phase 4E committed; push pending
+Status: Phase 4E pushed; Queue 12 / Phase 5 Methods is next
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -83,7 +83,7 @@ Known setup warnings:
 | 4B | File 3 Phase 4B | Phase 3 types/seeds | complete | Codex | `8e5df782`, `e74792b8` |
 | 4C | File 3 Phase 4C | Phase 4A foundation | complete | Codex | `04e703d0`, `7fa55185` |
 | 4D | File 3 Phase 4D | Methods and runtime prerequisites | complete | Codex | `c4938c99`, `995e5e8e` |
-| 4E | File 3 Phase 4E | Drafting prerequisites | complete | Codex | `54d46851` |
+| 4E | File 3 Phase 4E | Drafting prerequisites | complete | Codex | `54d46851`, `b40cb735` |
 | 5 | File 3 Phase 5 | Phase 4C | not-started | unassigned | pending |
 | 6 | File 3 Phase 6 | Drafting shell and templates | not-started | unassigned | pending |
 | 7 | File 3 Phase 7 | Waves 1-3 complete | not-started | unassigned | pending |
@@ -546,7 +546,7 @@ only the intended Phase 0 changes.
   - ENVIRONMENT: `next start` still logs the repo's standalone-output warning but served the production build successfully for smoke verification.
   - ENVIRONMENT: Vitest was run with `--pool=threads` because the default worker pool has timed out on this Windows checkout during prior v5 queue runs.
 - Commit: `54d46851` (`feat(v5-4e): add drafting studio shell`)
-- Push: pending
+- Push: pushed to `origin/main`
 - Open blockers:
   - Phase 6 still owns generated drafting templates, section-level AI actions, inline citation drag/drop, and signed export artifact behavior.
   - Phase 4E uses local typed shell/demo data and does not add Firestore draft CRUD or new security-boundary rules.
