@@ -740,7 +740,7 @@ only the intended Phase 0 changes.
   - PASS: browser snapshot confirmed the landing graph section and demo graph snapshot render with graph labels, edge labels, and live layer statistics.
   - Screenshots captured locally: `output/playwright/phase9-landing-graph.png` and `output/playwright/phase9-demo-graph.png`.
   - ENVIRONMENT: `next start` logs the repo's standalone-output warning but served the production build successfully for smoke verification.
-- Commit: pending
+- Commit: `da561346`
 - Push: pending
 - Open blockers:
   - Phase 9 is not complete. Checkout/pricing wiring, broader mobile route polish, persona suites, canary prep, and production ship evidence remain open.
