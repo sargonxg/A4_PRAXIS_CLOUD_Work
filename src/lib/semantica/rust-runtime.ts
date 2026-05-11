@@ -31,7 +31,7 @@ export async function validateWithRustSemanticaCore(graph: unknown): Promise<Rus
   const binary = getRustSemanticaBinaryPath();
   const payload = JSON.stringify(graph);
   return new Promise((resolve, reject) => {
-    const child = execFile(binary, { timeout: 4_000, maxBuffer: 128_000 }, (error, stdout, stderr) => {
+    const child = execFile(binary, [], { timeout: 4_000, maxBuffer: 128_000 }, (error, stdout, stderr) => {
       const text = stdout.trim();
       if (!text) {
         reject(new Error(stderr.trim() || error?.message || 'Rust semantic validator returned no output'));

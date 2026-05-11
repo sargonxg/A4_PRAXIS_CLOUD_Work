@@ -54,7 +54,7 @@ if (failures.length === 0) {
   }
 
   const rustRuntime = file('src/lib/semantica/rust-runtime.ts');
-  for (const marker of ['PRAXIS_SEMANTICA_CORE_BIN', 'execFile', 'validateWithRustSemanticaCore']) {
+  for (const marker of ['PRAXIS_SEMANTICA_CORE_BIN', 'execFile(binary, []', 'validateWithRustSemanticaCore']) {
     if (!rustRuntime.includes(marker)) failures.push(`Rust runtime bridge missing ${marker}`);
   }
 
