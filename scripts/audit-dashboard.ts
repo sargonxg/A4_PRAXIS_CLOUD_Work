@@ -33,8 +33,10 @@ mustInclude('src/components/dashboard/dashboard-command-center.tsx', [
   'Marketplace contracts allow raw text, context dumps, and structured output persistence.',
 ]);
 mustInclude('src/components/app/app-sidebar.tsx', [
-  'href="/dashboard"',
-  'label="Dashboard"',
+  'href="/dashboard#ask-praxis"',
+  'label="Ask PRAXIS"',
+  'label="Context Core"',
+  'label="User Core"',
   "pathname === '/app/dashboard'",
 ]);
 mustInclude('src/app/app/dashboard/README.md', [

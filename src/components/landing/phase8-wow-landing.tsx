@@ -306,6 +306,36 @@ export function Phase8WowLanding() {
             <p className="mt-5 max-w-2xl text-base leading-7 text-[#374151] sm:text-lg">
               PRAXIS turns a situation, a role, and a task into sourced analysis, tool runs, and drafts that fit the work.
             </p>
+            <div className="mt-7 rounded-[1.5rem] border border-white/70 bg-white/70 p-3 shadow-2xl shadow-[#0B1B2B]/10 backdrop-blur">
+              <div className="flex flex-wrap gap-2 pb-3">
+                {[
+                  ["User Core", persona.short, "border-[#4A90A4] bg-[#EAF5F7]"],
+                  ["Context Core", context.label, "border-[#E8B931] bg-[#FFF7D6]"],
+                  ["Suggested tools", "memo · graph · sources", "border-[#2F8F83] bg-[#E9F7F3]"],
+                ].map(([label, value, tone]) => (
+                  <span key={label} className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold text-[#111827]", tone)}>
+                    <GripVertical className="h-3.5 w-3.5 text-[#6b7280]" aria-hidden="true" />
+                    <span>{label}</span>
+                    <span className="max-w-[180px] truncate text-[#4b5563]">{value}</span>
+                  </span>
+                ))}
+              </div>
+              <Link
+                href="/app"
+                prefetch={false}
+                onClick={trackSignup}
+                className="flex w-full items-center gap-4 rounded-[1.1rem] bg-[#111827] px-5 py-5 text-left text-white transition hover:bg-[#243244]"
+              >
+                <Sparkles className="h-5 w-5 shrink-0 text-[#E8B931]" aria-hidden="true" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-base font-semibold">Ask PRAXIS about this policy situation...</span>
+                  <span className="mt-1 block text-xs leading-5 text-[#D7E1EA]">
+                    Attach cores, let PRAXIS suggest the right tool, then turn the answer into a memo or workbench action.
+                  </span>
+                </span>
+                <ArrowRight className="h-5 w-5 shrink-0 text-[#D7E1EA]" aria-hidden="true" />
+              </Link>
+            </div>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href={`/demo/${context.id}`}

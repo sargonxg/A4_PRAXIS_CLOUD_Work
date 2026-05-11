@@ -2,7 +2,7 @@
 
 import type { ComponentType } from 'react';
 import Link from 'next/link';
-import { FileText, Home, Library, MoreHorizontal, Sparkles } from 'lucide-react';
+import { FileText, Home, MoreHorizontal, Sparkles, Target } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useSituationStore } from '@/stores/situation-store';
 import { cn } from '@/lib/utils/cn';
@@ -12,7 +12,7 @@ type MobileNavItem =
   | { kind: 'link'; label: string; href: string; icon: ComponentType<{ className?: string }> };
 
 const navItems: MobileNavItem[] = [
-  { kind: 'query', label: 'Sources', queryKey: 'tab', queryValue: 'library', icon: Library },
+  { kind: 'link', label: 'Context', href: '/app/cores/context', icon: Target },
   { kind: 'query', label: 'Outputs', queryKey: 'openChapter', queryValue: 'draft', icon: FileText },
   { kind: 'link', label: 'More', href: '/app/tools', icon: MoreHorizontal },
 ];

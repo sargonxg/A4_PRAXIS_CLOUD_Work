@@ -3,25 +3,17 @@
 import type { ReactNode, ComponentType } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
-  BookOpen,
-  Boxes,
-  BrainCircuit,
-  Briefcase,
   ChevronsLeft,
   ChevronsRight,
   FileText,
   FolderKanban,
-  GitBranch,
-  GitBranchPlus,
-  Library,
   LayoutDashboard,
   LogOut,
   Plus,
-  Search,
   Settings,
   Store,
+  Target,
   UserCircle,
-  Users,
   Wrench,
 } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
@@ -29,23 +21,6 @@ import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useAppStore } from '@/stores/app-store';
 import { useSituationStore } from '@/stores/situation-store';
-import { WORKBENCH_TABS } from '@/lib/workbench/tabs';
-
-const TAB_ICONS = {
-  chapters: BookOpen,
-  desk: Briefcase,
-  context: FileText,
-  library: Library,
-  research: Search,
-  memory: BrainCircuit,
-  ontology: Boxes,
-  graph: GitBranch,
-  ach: GitBranchPlus,
-  tools: Store,
-  memos: FileText,
-  boardroom: Users,
-  draft: FileText,
-} as const;
 
 const ARCHIVE_LINKS = [
   { label: 'Source Scout', href: '/source-scout' },
@@ -111,36 +86,25 @@ export function AppSidebar() {
       </div>
 
       <nav className="min-h-0 flex-1 space-y-5 overflow-y-auto px-2 py-4">
-        <SectionLabel open={sidebarOpen}>Workbench</SectionLabel>
-        <NavItem open={sidebarOpen} href="/dashboard" label="Dashboard" icon={LayoutDashboard} active={pathname === '/app/dashboard'} />
-        <NavItem open={sidebarOpen} href="/workbench" label="Workbench" icon={FolderKanban} active={pathname === '/app/workbench'} />
-        <div className="space-y-1">
-          {WORKBENCH_TABS.map((tab, index) => {
-            const Icon = TAB_ICONS[tab.id] ?? BookOpen;
-            const href = `/workbench/${activeCaseId}?tab=${tab.id}`;
-            const active = pathname.includes('/app/workbench') && searchParams.get('tab') === tab.id;
-            return (
-              <NavItem
-                key={tab.id}
-                open={sidebarOpen}
-                href={href}
-                label={tab.label}
-                icon={Icon}
-                active={active}
-                suffix={String(index + 1)}
-                inset
-              />
-            );
-          })}
-        </div>
+        <SectionLabel open={sidebarOpen}>PRAXIS MVP</SectionLabel>
+        <NavItem open={sidebarOpen} href="/dashboard#ask-praxis" label="Ask PRAXIS" icon={LayoutDashboard} active={pathname === '/app/dashboard'} />
+        <NavItem open={sidebarOpen} href="/cores/context" label="Context Core" icon={Target} active={pathname === '/app/cores/context'} />
+        <NavItem open={sidebarOpen} href="/cores/user" label="User Core" icon={UserCircle} active={pathname === '/app/cores/user'} />
+        <NavItem open={sidebarOpen} href="/workbench" label={`Workbench${situations.length ? ` (${situations.length})` : ''}`} icon={FolderKanban} active={pathname === '/app/workbench'} />
+        <NavItem
+          open={sidebarOpen}
+          href={`/workbench/${activeCaseId}?openChapter=memos`}
+          label="Outputs"
+          icon={FileText}
+          active={pathname.includes('/app/workbench') && searchParams.get('openChapter') === 'memos'}
+        />
+        <NavItem open={sidebarOpen} href="/tools" label="Tools" icon={Store} active={pathname === '/app/tools'} />
 
-        <SectionLabel open={sidebarOpen}>Cases</SectionLabel>
-        <NavItem open={sidebarOpen} href="/workbench" label={`My Cases${situations.length ? ` (${situations.length})` : ''}`} icon={FolderKanban} />
-        <NavItem open={sidebarOpen} href="/situations/new" label="New Case" icon={Plus} />
+        <SectionLabel open={sidebarOpen}>Create</SectionLabel>
+        <NavItem open={sidebarOpen} href="/situations/new" label="New Context" icon={Plus} />
 
         <SectionLabel open={sidebarOpen}>Account</SectionLabel>
         <NavItem open={sidebarOpen} href="/settings" label="Settings" icon={Settings} active={pathname.startsWith('/app/settings')} />
-        <NavItem open={sidebarOpen} href="/profile" label="Profile" icon={UserCircle} active={pathname === '/app/profile'} />
 
         {showArchive ? (
           <>
