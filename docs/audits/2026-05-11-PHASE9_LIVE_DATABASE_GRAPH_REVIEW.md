@@ -46,6 +46,19 @@ The appropriate active Postgres path remains Google Cloud SQL Postgres. The prov
 - Cloud Run frontend latest ready revision: `praxis-frontend-00304-fpd`.
 - Most recent Cloud Build shown by `gcloud builds list`: 2026-05-07.
 
+### 2026-05-11 Post-Push Recheck
+
+- GitHub `main` is pushed through `8de97754`.
+- Cloud Run `praxis-frontend` is still ready on `praxis-frontend-00304-fpd` with 100% traffic.
+- `https://praxis.tacitus.me/`: HTTP 200, title `PRAXIS by TACITUS - AI Built for Statecraft`.
+- Browser check: homepage renders `The policy workbench for grounded statecraft.`
+- Browser check: homepage does not include the Phase 8/9 public demo selector copy.
+- `https://praxis.tacitus.me/demo/indo-pacific-2026`: redirects into the older Syria demo surface; the page does not show `Indo-Pacific Strategic Competition 2026`.
+- `https://praxis.tacitus.me/demo/ai-regulation-2026`: HTTP 307 in the live deployed frontend.
+- `https://praxis.tacitus.me/pricing`: HTTP 200 and renders `PRAXIS Plans`.
+- Browser console check across `/`, `/demo/indo-pacific-2026`, and `/pricing`: no console errors observed.
+- `npm run audit:gcp-production-posture`: 0 hard failures, 3 soft warnings.
+
 ## Graph And App Checks
 
 - Added and pushed richer graph previews in commit `da561346`.
