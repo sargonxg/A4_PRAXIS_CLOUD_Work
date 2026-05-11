@@ -625,7 +625,7 @@ only the intended Phase 0 changes.
   - ENVIRONMENT: local browser auth smoke used a signed demo cookie with `COOKIE_SIGNING_SECRET=local-smoke-secret` because draft action APIs use `withAuth`.
   - ENVIRONMENT: Vitest was run with `--pool=threads`, consistent with the Windows-stable mode used in prior v5 checkpoints.
 - Commit: `c781887a`
-- Push: pending
+- Push: pushed to `origin/main` through tracker commit `00d5474f`
 - Open blockers:
   - Section actions currently return deterministic review-required proposals rather than claiming fully autonomous production drafting.
   - Signed export artifact production behavior remains covered by existing export surfaces and later ship verification.
