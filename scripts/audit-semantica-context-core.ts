@@ -5,8 +5,8 @@ const failures: string[] = [];
 
 const requiredFiles = [
   'src/lib/semantica/context-core-adapter.ts',
-  'src/lib/contexts/context-create-payload.ts',
   'src/app/api/situations/route.ts',
+  'src/app/app/situations/new/page.tsx',
   'tests/unit/lib/semantica/context-core-adapter.test.ts',
   'docs/architecture/PRAXIS_SEMANTICA_CONTEXT_CORE_PLAN_2026-05-11.md',
 ];
@@ -33,14 +33,14 @@ if (failures.length === 0) {
     if (!adapter.includes(marker)) failures.push(`Semantica adapter missing ${marker}`);
   }
 
-  const payload = file('src/lib/contexts/context-create-payload.ts');
-  for (const marker of ['buildSemanticaContextGraph', 'semanticaLayer', 'semanticaContextGraph']) {
-    if (!payload.includes(marker)) failures.push(`context create payload missing ${marker}`);
-  }
-
   const route = file('src/app/api/situations/route.ts');
   for (const marker of ['cleanSemanticaContextGraph', 'MAX_SEMANTICA_GRAPH_BYTES', 'semanticaGraphNodes']) {
     if (!route.includes(marker)) failures.push(`situations API missing ${marker}`);
+  }
+
+  const realCreatePage = file('src/app/app/situations/new/page.tsx');
+  for (const marker of ['buildSemanticaSituationGraph', 'semanticaContextGraph', 'semanticaLayer']) {
+    if (!realCreatePage.includes(marker)) failures.push(`authenticated context creation missing ${marker}`);
   }
 
   const plan = file('docs/architecture/PRAXIS_SEMANTICA_CONTEXT_CORE_PLAN_2026-05-11.md');

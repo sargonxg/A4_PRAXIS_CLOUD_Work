@@ -144,3 +144,6 @@ creation flow and future graph enrichment:
 - Later route that seed to a Python/REST Semantica worker for entity
   resolution, ontology reasoning, conflict checks, retrieval, and provenance.
 - Use Semantica-enriched graph health to drive Ask PRAXIS tool suggestions.
+- Keep Rust acceleration behind worker/service boundaries. The first current-main
+  component is `rust/semantica-core`, which validates context graph seeds before
+  future Semantica enrichment.

@@ -1,4 +1,6 @@
-import type { ContextDomainOption, ContextCreateDraft, ContextWorkOption } from '@/lib/contexts/context-create-payload';
+import type { CaseTypeId } from '@/lib/ontology/case-types';
+import type { OntologyId } from '@/lib/ontology/types';
+import type { UserRole } from '@/types/situation';
 
 export const SEMANTICA_CONTEXT_GRAPH_SCHEMA_VERSION = 'praxis-semantica-context-core.v1';
 export const SEMANTICA_ADAPTER_VERSION = 'praxis-semantica-adapter.2026-05-11';
@@ -74,6 +76,20 @@ export interface SemanticaContextGraph {
   >;
 }
 
+export interface SemanticaSituationGraphInput {
+  name: string;
+  frame: string;
+  domainId: string;
+  domainLabel: string;
+  ontologyIds: OntologyId[];
+  primaryOntologyId: OntologyId;
+  caseType: CaseTypeId;
+  regionFallback: string;
+  userRole: UserRole;
+  workflowPath: string;
+  workflowPathLabel: string;
+}
+
 function slug(value: string): string {
   return value
     .trim()
@@ -101,23 +117,15 @@ function frameStatements(frame: string): string[] {
     .slice(0, 8);
 }
 
-export function buildSemanticaContextGraph({
-  draft,
-  domain,
-  work,
-}: {
-  draft: ContextCreateDraft;
-  domain: ContextDomainOption;
-  work: ContextWorkOption;
-}): SemanticaContextGraph {
-  const name = draft.name.trim();
-  const frame = draft.frame.trim();
+export function buildSemanticaSituationGraph(input: SemanticaSituationGraphInput): SemanticaContextGraph {
+  const name = input.name.trim();
+  const frame = input.frame.trim();
   const contextCoreId = `context-core:${slug(name)}`;
-  const userCoreId = `user-core:${work.id}`;
-  const domainNodeId = `domain-ontology:${domain.domainId}`;
-  const workNodeId = `work-ontology:${work.workflowPath}`;
-  const caseTypeNodeId = `case-type:${domain.caseType}`;
-  const primaryOntologyNodeId = `ontology:${domain.ontologyIds[0]}`;
+  const userCoreId = `user-core:${slug(input.userRole)}`;
+  const domainNodeId = `domain-ontology:${input.domainId}`;
+  const workNodeId = `work-ontology:${input.workflowPath}`;
+  const caseTypeNodeId = `case-type:${input.caseType}`;
+  const primaryOntologyNodeId = `ontology:${input.primaryOntologyId}`;
   const statements = frameStatements(frame);
 
   const entities: SemanticaContextNode[] = [
@@ -128,7 +136,7 @@ export function buildSemanticaContextGraph({
       text: frame || `Initial context frame for ${name}.`,
       properties: {
         name,
-        regionFallback: domain.regionFallback,
+        regionFallback: input.regionFallback,
         ownerScope: 'authenticated-user',
         status: 'active',
       },
@@ -137,38 +145,38 @@ export function buildSemanticaContextGraph({
     {
       id: userCoreId,
       type: 'user_core',
-      label: work.label,
+      label: input.workflowPathLabel,
       properties: {
-        userRole: work.userRole,
-        workflowPath: work.workflowPath,
+        userRole: input.userRole,
+        workflowPath: input.workflowPath,
       },
       provenance: provenance('work'),
     },
     {
       id: domainNodeId,
       type: 'domain_ontology',
-      label: domain.label,
+      label: input.domainLabel,
       properties: {
-        domainId: domain.domainId,
-        ontologyIds: domain.ontologyIds,
+        domainId: input.domainId,
+        ontologyIds: input.ontologyIds,
       },
       provenance: provenance('domain'),
     },
     {
       id: workNodeId,
       type: 'work_ontology',
-      label: work.label,
+      label: input.workflowPathLabel,
       properties: {
-        workflowPath: work.workflowPath,
+        workflowPath: input.workflowPath,
       },
       provenance: provenance('work'),
     },
     {
       id: caseTypeNodeId,
       type: 'case_type',
-      label: domain.caseType,
+      label: input.caseType,
       properties: {
-        caseType: domain.caseType,
+        caseType: input.caseType,
         locked: true,
       },
       provenance: provenance('domain.caseType'),
@@ -176,9 +184,9 @@ export function buildSemanticaContextGraph({
     {
       id: primaryOntologyNodeId,
       type: 'domain_ontology',
-      label: domain.ontologyIds[0],
+      label: input.primaryOntologyId,
       properties: {
-        ontologyId: domain.ontologyIds[0],
+        ontologyId: input.primaryOntologyId,
         primary: true,
       },
       provenance: provenance('domain.ontologyIds'),
@@ -221,10 +229,10 @@ export function buildSemanticaContextGraph({
       nodeCount: entities.length,
       edgeCount: relationships.length,
       hasContextRoot: true,
-      hasDomainOntology: true,
-      hasWorkOntology: true,
+      hasDomainOntology: Boolean(input.domainId),
+      hasWorkOntology: Boolean(input.workflowPath),
       hasFrame: statements.length > 0,
-      semanticaReady: Boolean(name && domain.domainId && work.workflowPath),
+      semanticaReady: Boolean(name && input.domainId && input.workflowPath),
     },
     intendedSemanticaCapabilities: [
       'context_graph',

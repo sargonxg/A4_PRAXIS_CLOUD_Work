@@ -121,6 +121,21 @@ checks, and tool recommendations.
 Canonical plan:
 
 - `docs/architecture/PRAXIS_SEMANTICA_CONTEXT_CORE_PLAN_2026-05-11.md`
+- `docs/architecture/PRAXIS_RUST_ACCELERATION_PLAN_2026-05-11.md`
+
+Deployed-surface cleanup:
+
+- The real authenticated creation path is `/app/situations/new`, linked from
+  `/app/cores/context`, and now emits the same Semantica graph seed as the
+  situation API persists.
+- The unused lightweight creation files were removed:
+  `src/components/contexts/NewContextWizard.tsx`,
+  `src/components/contexts/CreateContextWizard.tsx`, and
+  `src/lib/contexts/context-create-payload.ts`.
+- The public `/contexts` route no longer exposes duplicate creation; it points
+  users to the canonical app Context Core.
+- `rust/semantica-core` is the first optional Rust acceleration component,
+  scoped to deterministic graph validation for future workers.
 
 ## Next Deletion Queue
 

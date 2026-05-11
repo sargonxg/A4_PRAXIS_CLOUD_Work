@@ -18,7 +18,7 @@ This is a product-readiness audit, not a full launch audit. Cloud/billing/live-o
 - Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`
 - Branch: `main`
 - Current improvement pass:
-  - `CreateContextWizard` now posts to `/api/situations` for authenticated owner-scoped context creation.
+  - `/app/situations/new` now posts to `/api/situations` for authenticated owner-scoped context creation.
   - The wizard preserves drafts in browser storage when sign-in is required.
   - Successful creation routes to `/app/workbench/{id}?openChapter=context&source=contexts`.
   - `tests/e2e/core-flows-smoke.spec.ts` and `npm run smoke:core-flows` cover the public landing context switch, context creation modal, and drafting route.
@@ -124,7 +124,7 @@ Browser evidence:
 
 Current behavior:
 
-`src/components/contexts/CreateContextWizard.tsx` builds a context payload through `src/lib/contexts/context-create-payload.ts`, posts it to `/api/situations`, and routes authenticated users into the app workbench for the new context. If the user is not signed in, the draft remains in browser storage and the user is sent to sign in. Example/demo sessions remain read-only.
+`src/app/app/situations/new/page.tsx` builds the authenticated context payload, adds the Semantica-compatible graph seed, posts it to `/api/situations`, and routes authenticated users into the app workbench for the new context. Example/demo sessions remain read-only.
 
 Remaining gap:
 

@@ -1,21 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { buildSemanticaContextGraph } from '@/lib/semantica/context-core-adapter';
-import {
-  findContextDomainOption,
-  findContextWorkOption,
-} from '@/lib/contexts/context-create-payload';
+import { buildSemanticaSituationGraph } from '@/lib/semantica/context-core-adapter';
 
 describe('Semantica context core adapter', () => {
   it('creates a Semantica-compatible graph seed for situation context creation', () => {
-    const graph = buildSemanticaContextGraph({
-      draft: {
-        name: 'Maritime ceasefire monitoring',
-        frame: 'What is happening? Talks are fragile.\nWhat decision does this support? Monitoring posture.',
-        domain: 'mediation',
-        work: 'foreign-policy',
-      },
-      domain: findContextDomainOption('mediation'),
-      work: findContextWorkOption('foreign-policy'),
+    const graph = buildSemanticaSituationGraph({
+      name: 'Maritime ceasefire monitoring',
+      frame: 'What is happening? Talks are fragile.\nWhat decision does this support? Monitoring posture.',
+      domainId: 'diplomacy-negotiation',
+      domainLabel: 'Mediation',
+      ontologyIds: ['mediation', 'conflict', 'governance'],
+      primaryOntologyId: 'mediation',
+      caseType: 'negotiation-mediation',
+      regionFallback: 'Negotiation track',
+      userRole: 'advisor',
+      workflowPath: 'foreign-policy-research',
+      workflowPathLabel: 'Foreign Policy Research',
     });
 
     expect(graph.schemaVersion).toBe('praxis-semantica-context-core.v1');
@@ -50,5 +49,26 @@ describe('Semantica context core adapter', () => {
       hasFrame: true,
       semanticaReady: true,
     });
+  });
+
+  it('supports the real authenticated situation creation flow', () => {
+    const graph = buildSemanticaSituationGraph({
+      name: 'Indo-Pacific maritime coercion',
+      frame: 'A partner government needs a sourced diplomatic options memo.',
+      domainId: 'armed-conflict-security',
+      domainLabel: 'Armed Conflict and Security',
+      ontologyIds: ['conflict', 'security', 'governance'],
+      primaryOntologyId: 'conflict',
+      caseType: 'strategic-competition',
+      regionFallback: 'Indo-Pacific',
+      userRole: 'advisor',
+      workflowPath: 'political-officer',
+      workflowPathLabel: 'UN / OSCE Political Officer',
+    });
+
+    expect(graph.contextCoreId).toBe('context-core:indo-pacific-maritime-coercion');
+    expect(graph.entities.some((entity) => entity.type === 'context_core')).toBe(true);
+    expect(graph.entities.some((entity) => entity.type === 'work_ontology')).toBe(true);
+    expect(graph.quality.semanticaReady).toBe(true);
   });
 });

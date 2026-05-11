@@ -58,6 +58,7 @@ import {
   suggestCaseTypesForRole,
 } from '@/lib/ontology/case-types';
 import type { CaseScaffoldProposal } from '@/lib/onboarding/case-scaffold';
+import { buildSemanticaSituationGraph } from '@/lib/semantica/context-core-adapter';
 
 /* ---------- Types ---------- */
 
@@ -1665,6 +1666,23 @@ export default function NewSituationPage() {
         ...context.urls.filter((u) => u.trim()),
         ...context.customSources.map((c) => c.url).filter(Boolean),
       ];
+      const workflowPath = getPolicyWorkflowPath(form.workflowPath);
+      const semanticaContextGraph = buildSemanticaSituationGraph({
+        name: form.name,
+        frame: [
+          form.description.trim(),
+          context.notes.trim() ? `Context notes:\n${context.notes.trim()}` : '',
+        ].filter(Boolean).join('\n\n'),
+        domainId: domainPreview.domainId,
+        domainLabel: DOMAIN_SEEDS[domainPreview.domainId]?.name ?? domainPreview.domainId,
+        ontologyIds: form.ontologyIds,
+        primaryOntologyId: form.primaryOntologyId,
+        caseType: form.caseType,
+        regionFallback: form.region || 'Global',
+        userRole: form.userRole,
+        workflowPath: workflowPath?.id ?? (form.workflowPath || 'manual-context-creation'),
+        workflowPathLabel: workflowPath?.label ?? 'Manual Context Creation',
+      });
 
       // Create the situation FIRST — no pre-create upload dance (that was the
       // "stuck" source: if a file upload hung with no timeout, the wizard
@@ -1684,8 +1702,8 @@ export default function NewSituationPage() {
             context.selectedSources.map((id) => [id, true]),
           ),
           sourceCategoryOrder: context.sourceOrder,
-          workflowPath: form.workflowPath || undefined,
-          workflowPathLabel: getPolicyWorkflowPath(form.workflowPath)?.label,
+          workflowPath: workflowPath?.id ?? (form.workflowPath || undefined),
+          workflowPathLabel: workflowPath?.label,
           customSources: context.customSources,
           domain: domainPreview.domainId,
           domainOverriddenByUser: domainPreview.overridden,
@@ -1696,6 +1714,12 @@ export default function NewSituationPage() {
           caseTypeSecondary: form.caseTypeSecondary,
           caseTypeConfidence: form.caseTypeConfidence,
           caseTypeLocked: form.caseTypeLocked,
+          semanticaLayer: {
+            enabled: true,
+            adapterVersion: semanticaContextGraph.adapterVersion,
+            serviceBoundary: 'future-python-or-rest-worker',
+          },
+          semanticaContextGraph,
         }),
       });
       if (!res.ok) {

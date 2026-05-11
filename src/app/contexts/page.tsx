@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { listExampleCases } from '@/lib/cases/registry';
 import type { CaseModule } from '@/types/case-module';
-import { CreateContextWizard } from '@/components/contexts/CreateContextWizard';
 
 export const metadata = { title: 'Contexts | PRAXIS' };
 
@@ -37,7 +36,9 @@ async function ContextsList({ searchParams }: { searchParams?: Promise<{ q?: str
             </select>
             <button className="h-10 border border-slate-900 bg-slate-900 px-4 text-sm font-medium text-white">Filter</button>
           </form>
-          <CreateContextWizard />
+          <Link href="/app/cores/context" className="inline-flex h-10 w-fit items-center justify-center border border-slate-900 bg-slate-900 px-4 text-sm font-medium text-white">
+            Open Context Core
+          </Link>
         </header>
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {contexts.map((context) => (
