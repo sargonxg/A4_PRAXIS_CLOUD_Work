@@ -7,13 +7,10 @@ import { Menu, X } from "lucide-react";
 
 const navLinks = [
   { label: "Demo", href: "#top" },
-  { label: "Contexts", href: "#two-contexts" },
-  { label: "Ontologies", href: "#domain-ontologies" },
-  { label: "Real App", href: "#real-app" },
   { label: "Cores", href: "#core-stack" },
-  { label: "Methods", href: "#methods" },
-  { label: "Drafting", href: "#drafting" },
-  { label: "Trust", href: "#trust" },
+  { label: "Tools", href: "#methods" },
+  { label: "Drafts", href: "#drafting" },
+  { label: "App", href: "#real-app" },
   { label: "Pricing", href: "#pricing" },
 ];
 

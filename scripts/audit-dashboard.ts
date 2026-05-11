@@ -39,6 +39,15 @@ mustInclude('src/components/app/app-sidebar.tsx', [
   'label="User Core"',
   "pathname === '/app/dashboard'",
 ]);
+mustInclude('src/components/dashboard/core-repository-spine.tsx', [
+  'Attach the context stack, then let PRAXIS suggest the next tools.',
+  'Build User Core',
+  'Build Situation Core',
+  'Suggested by attached cores',
+  'Context Builder',
+  'Source Scout',
+  'Memo Drafter',
+]);
 mustInclude('src/app/app/dashboard/README.md', [
   'First-touch app command center',
   'context, graph, tools, memo studio, boardroom, ACH, and settings',

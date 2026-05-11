@@ -1,14 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   ArrowRight,
   BadgeCheck,
   Building2,
   ClipboardCheck,
-  DollarSign,
-  Earth,
   FileText,
   FileOutput,
   GitBranch,
@@ -150,25 +148,10 @@ const methods = [
   ["Memo Drafter", "Turns selected findings into a reviewable memo with citation gaps visible."],
 ] as const;
 
-const policyTeams = [
-  {
-    label: "Foreign policy desks",
-    icon: Earth,
-    focus: "Alliances, sanctions, deterrence, mediation, escalation, and diplomatic signaling.",
-    ontology: "Actors, interests, leverage, commitments, episodes, and red lines.",
-  },
-  {
-    label: "Economic policy teams",
-    icon: DollarSign,
-    focus: "Trade, industrial policy, markets, energy, regulation, supply chains, and fiscal exposure.",
-    ontology: "Sectors, instruments, winners, losers, constraints, and implementation risk.",
-  },
-  {
-    label: "International diplomacy teams",
-    icon: Landmark,
-    focus: "Negotiations, mandates, missions, institutions, public language, and handovers.",
-    ontology: "Mandates, parties, venues, commitments, spoilers, confidence measures, and drafts.",
-  },
+const outcomeCards = [
+  ["Better answers", "AI starts with role, audience, sources, ontology, and case frame."],
+  ["Faster memos", "Research, graph review, and drafting stay in one context trail."],
+  ["Less tool noise", "PRAXIS suggests the few tools that fit the active Situation Core."],
 ] as const;
 
 const trustItems = [
@@ -225,10 +208,17 @@ const realAppSurfaces = [
 
 const corePreview = [
   { id: "user", label: "User Core", detail: "Role, preferences, audience, language, and working style.", tone: "border-[#4A90A4] bg-[#EAF5F7]" },
-  { id: "context", label: "Context Core", detail: "The case frame, actors, assumptions, timeline, and gaps.", tone: "border-[#E8B931] bg-[#FFF7D6]" },
+  { id: "context", label: "Situation Core", detail: "The case frame, actors, assumptions, timeline, and gaps.", tone: "border-[#E8B931] bg-[#FFF7D6]" },
   { id: "source", label: "Source Core", detail: "Receipts, credibility posture, fragments, and coverage gaps.", tone: "border-[#2F8F83] bg-[#E9F7F3]" },
   { id: "graph", label: "Graph Core", detail: "Claims, events, edges, provenance, and graph health.", tone: "border-[#5967D8] bg-[#EEF0FF]" },
   { id: "output", label: "Output Core", detail: "Memos, briefs, handovers, exports, and review state.", tone: "border-[#C75B39] bg-[#FFF0EA]" },
+] as const;
+
+const attachedToolPreview = [
+  ["Context Builder", "Complete the User Core and Situation Core before analysis."],
+  ["Source Scout", "Find evidence gaps and receipts for the active case."],
+  ["Graph Review", "Inspect actors, claims, commitments, and provenance."],
+  ["Memo Drafter", "Turn the selected stack into a reviewable policy memo."],
 ] as const;
 
 type CorePreviewId = typeof corePreview[number]["id"];
@@ -275,15 +265,6 @@ export function Phase8WowLanding() {
   const context = contexts.find((item) => item.id === contextId) ?? contexts[0];
   const activeQuestion = context.questions[questionIndex % context.questions.length];
 
-  const personaAnswers = useMemo(
-    () =>
-      personas.map((item) => ({
-        ...item,
-        active: item.id === personaId,
-      })),
-    [personaId],
-  );
-
   function runDemoQuestion() {
     trackLandingEvent("demo_question_asked", {
       persona: persona.id,
@@ -320,14 +301,17 @@ export function Phase8WowLanding() {
   return (
     <div className="bg-[#F4F7FA] text-[#111827]">
       <section className="relative overflow-hidden border-b border-[#C6D2DD] bg-[linear-gradient(135deg,#F8FBFD_0%,#EEF6F6_46%,#F9F0D5_100%)]">
-        <div className="mx-auto grid min-h-[calc(100vh-8rem)] max-w-7xl gap-8 px-4 pb-8 pt-8 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-12 lg:pt-12">
+        <div className="mx-auto grid min-h-[calc(100vh-9rem)] max-w-7xl gap-8 px-4 pb-7 pt-7 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-10 lg:pt-10">
           <div className="flex flex-col justify-center">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#8a5a00]">PRAXIS by TACITUS · Context layer for policy AI</p>
             <h1 className="mt-4 max-w-3xl font-serif text-4xl font-semibold leading-[1.02] text-[#111827] sm:text-6xl lg:text-7xl">
-              Give your AI the policy context it needs.
+              Policy AI that starts with the right context.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-[#374151] sm:text-lg">
-              Policy teams cannot get serious AI output from a blank chat box. PRAXIS builds the User Core, Situation Core, source graph, and domain ontology your LLM needs before it analyzes, recommends, or drafts.
+              PRAXIS builds the User Core, Situation Core, source graph, and domain ontology your team needs, then applies them to research, tool selection, and memo drafting.
+            </p>
+            <p className="mt-3 text-sm font-semibold text-[#0B3B4A]">
+              Built for foreign policy desks, economic policy teams, and international diplomacy teams.
             </p>
             <div className="mt-7 rounded-[1.5rem] border border-white/70 bg-white/70 p-3 shadow-2xl shadow-[#0B1B2B]/10 backdrop-blur">
               <div className="flex flex-wrap gap-2 pb-3">
@@ -335,7 +319,7 @@ export function Phase8WowLanding() {
                   ["User Core", persona.short, "border-[#4A90A4] bg-[#EAF5F7]"],
                   ["Situation Core", context.label, "border-[#E8B931] bg-[#FFF7D6]"],
                   ["Domain ontology", "foreign policy · economic · diplomacy", "border-[#5967D8] bg-[#EEF0FF]"],
-                  ["Suggested tools", "research · graph · memo", "border-[#2F8F83] bg-[#E9F7F3]"],
+                  ["Suggested tools", "builder · source · graph · memo", "border-[#2F8F83] bg-[#E9F7F3]"],
                 ].map(([label, value, tone]) => (
                   <span key={label} className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold text-[#111827]", tone)}>
                     <GripVertical className="h-3.5 w-3.5 text-[#6b7280]" aria-hidden="true" />
@@ -354,7 +338,7 @@ export function Phase8WowLanding() {
                 <span className="min-w-0 flex-1">
                   <span className="block text-base font-semibold">Ask PRAXIS about this policy situation...</span>
                   <span className="mt-1 block text-xs leading-5 text-[#D7E1EA]">
-                    Attach the right cores, let PRAXIS choose the method, then turn the answer into analysis, a decision note, or a memo draft.
+                    Attach cores, get the right tool sequence, then turn the result into a sourced memo or briefing.
                   </span>
                 </span>
                 <ArrowRight className="h-5 w-5 shrink-0 text-[#D7E1EA]" aria-hidden="true" />
@@ -386,14 +370,10 @@ export function Phase8WowLanding() {
               </Link>
             </div>
             <div className="mt-8 grid max-w-2xl gap-2 sm:grid-cols-3">
-              {[
-                ["Context", "built before prompting"],
-                ["Ontologies", "targeted to the domain"],
-                ["Drafts", "grounded in the case"],
-              ].map(([value, label]) => (
+              {outcomeCards.map(([value, label]) => (
                 <div key={label} className="rounded-md border border-[#C6D2DD] bg-white/75 px-3 py-3">
                   <p className="text-xl font-semibold text-[#0B3B4A]">{value}</p>
-                  <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#5C6975]">{label}</p>
+                  <p className="mt-1 text-xs leading-5 text-[#5C6975]">{label}</p>
                 </div>
               ))}
             </div>
@@ -405,7 +385,7 @@ export function Phase8WowLanding() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8a5a00]">Live demo bar</p>
-                    <p className="mt-1 text-sm font-medium text-[#4b5563]">A simple view of the model: user, situation, ontology, tools, and draftable output.</p>
+                    <p className="mt-1 text-sm font-medium text-[#4b5563]">Attach a user, attach a situation, then let the workbench route the next move.</p>
                   </div>
                   <span className="inline-flex items-center gap-2 rounded-full bg-[#eef7f1] px-3 py-1 text-xs font-semibold text-[#166534]">
                     <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
@@ -493,65 +473,6 @@ export function Phase8WowLanding() {
         </div>
       </section>
 
-      <section id="two-contexts" className="border-b border-[#d7c89f] bg-white px-4 py-14 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a5a00]">Two contexts, one engine</p>
-            <h2 className="mt-3 font-serif text-3xl font-semibold text-[#111827] sm:text-5xl">AI works better when it knows who is asking and what situation it is inside.</h2>
-            <p className="mt-4 text-sm leading-6 text-[#4b5563] sm:text-base">
-              PRAXIS keeps the user model and situation model inspectable. The same facts produce different work for a diplomat, an economic policy team, or a strategy desk because the task, audience, and ontology are explicit.
-            </p>
-          </div>
-          <div className="mt-8 grid gap-4 lg:grid-cols-3">
-            {personaAnswers.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setPersonaId(item.id)}
-                className={`rounded-lg border p-5 text-left transition ${item.active ? "border-[#8a5a00] bg-[#fff8e5] shadow-lg shadow-[#8a5a00]/10" : "border-[#e5dcc2] bg-[#fbfaf7] hover:border-[#c4b37f]"}`}
-              >
-                <p className="text-sm font-semibold text-[#111827]">{item.label}</p>
-                <p className="mt-3 text-sm leading-6 text-[#4b5563]">{item.answer}</p>
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="domain-ontologies" className="border-b border-[#C6D2DD] bg-[#F8FBFD] px-4 py-14 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0B6F70]">Domain-targeted ontologies</p>
-              <h2 className="mt-3 font-serif text-3xl font-semibold text-[#111827] sm:text-5xl">
-                Not every policy team needs the same model.
-              </h2>
-              <p className="mt-4 text-sm leading-6 text-[#4B5563] sm:text-base">
-                PRAXIS turns policy work into structured context: actors, interests, commitments, sources, claims, constraints, outputs, and open questions. Then the right ontology steers the LLM toward the work your team actually needs.
-              </p>
-            </div>
-            <div className="grid gap-3 md:grid-cols-3">
-              {policyTeams.map((team) => {
-                const Icon = team.icon;
-                return (
-                  <article key={team.label} className="rounded-xl border border-[#D9E2E8] bg-white p-5 shadow-sm shadow-[#0B3B4A]/5">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-md bg-[#EAF5F7] text-[#0B6F70]">
-                      <Icon className="h-5 w-5" aria-hidden="true" />
-                    </span>
-                    <h3 className="mt-4 text-base font-semibold text-[#111827]">{team.label}</h3>
-                    <p className="mt-2 text-sm leading-6 text-[#4B5563]">{team.focus}</p>
-                    <div className="mt-4 rounded-lg border border-[#C6D2DD] bg-[#F8FBFD] p-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5C6975]">Ontology directs</p>
-                      <p className="mt-2 text-xs leading-5 text-[#374151]">{team.ontology}</p>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section id="graph-intelligence" className="border-b border-[#d7c89f] bg-[#111827] px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8 max-w-3xl">
@@ -620,15 +541,15 @@ export function Phase8WowLanding() {
         </div>
       </section>
 
-      <section id="core-stack" className="border-b border-[#C6D2DD] bg-[#07131F] px-4 py-14 text-white sm:px-6 lg:px-8">
+      <section id="core-stack" className="border-b border-[#C6D2DD] bg-[#07131F] px-4 py-12 text-white sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7DD3C7]">User Core + Situation Cores</p>
             <h2 className="mt-3 font-serif text-3xl font-semibold sm:text-5xl">
-              Drag the work stack before the tool runs.
+              Drag cores into the stack. PRAXIS suggests the tools.
             </h2>
             <p className="mt-4 text-sm leading-6 text-slate-300 sm:text-base">
-              PRAXIS keeps the user model, active situation, domain ontology, source receipts, graph, and output package separate enough to inspect, but connected enough to move together. The authenticated dashboard includes the same draggable core stack.
+              Keep the user model, situation, source receipts, graph, and output package inspectable. Attach only what the task needs, then run the right next tool.
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               {[
@@ -677,16 +598,33 @@ export function Phase8WowLanding() {
                 </div>
               ))}
             </div>
+            <div className="mt-4 rounded-lg border border-white/10 bg-[#0B1B2B] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7DD3C7]">Suggested tools from the attached stack</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {attachedToolPreview.map(([name, detail]) => (
+                  <Link
+                    key={name}
+                    href="/app"
+                    prefetch={false}
+                    onClick={trackSignup}
+                    className="rounded-md border border-white/10 bg-white/8 p-3 transition hover:border-[#F6C85F]/50 hover:bg-white/12"
+                  >
+                    <span className="block text-sm font-semibold text-white">{name}</span>
+                    <span className="mt-1 block text-xs leading-5 text-slate-300">{detail}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section id="methods" className="border-b border-[#d7c89f] bg-[#f7f3e8] px-4 py-14 sm:px-6 lg:px-8">
+      <section id="methods" className="border-b border-[#d7c89f] bg-[#f7f3e8] px-4 py-10 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a5a00]">The right tools for the work</p>
-              <h2 className="mt-3 font-serif text-3xl font-semibold text-[#111827] sm:text-5xl">Ten methods, one workspace.</h2>
+              <h2 className="mt-3 font-serif text-3xl font-semibold text-[#111827] sm:text-5xl">Ten useful methods, suggested by context.</h2>
             </div>
             <Link href="/methods" prefetch={false} className="inline-flex items-center gap-2 text-sm font-semibold text-[#8a5a00]">
               See methods <ArrowRight className="h-4 w-4" aria-hidden="true" />

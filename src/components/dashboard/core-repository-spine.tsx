@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {
   ArrowRight,
   Bot,
+  BrainCircuit,
   CheckCircle2,
   Database,
   FileText,
@@ -50,7 +51,7 @@ const repositoryStages = [
   },
   {
     id: 'context-core',
-    label: 'Context Core',
+    label: 'Situation Core',
     href: '/app/cores/context',
     icon: Target,
     accent: 'bg-gold-50 text-gold-800 border-gold-200',
@@ -82,8 +83,43 @@ const repositoryStages = [
   },
 ] as const;
 
+type RepositoryStage = typeof repositoryStages[number];
+
+const toolSuggestions = [
+  {
+    id: 'context-builder',
+    label: 'Context Builder',
+    hrefTab: 'context',
+    detail: 'Repair the Situation Core: frame, actors, gaps, and ontology before deeper analysis.',
+    needs: ['user-core', 'context-core'],
+  },
+  {
+    id: 'source-scout',
+    label: 'Source Scout',
+    hrefTab: 'library',
+    detail: 'Find the missing receipts and unresolved evidence for the active Situation Core.',
+    needs: ['context-core', 'graph-core'],
+  },
+  {
+    id: 'graph-review',
+    label: 'Graph Review',
+    hrefTab: 'graph',
+    detail: 'Inspect actors, claims, commitments, and orphan evidence before the answer hardens.',
+    needs: ['graph-core'],
+  },
+  {
+    id: 'memo-drafter',
+    label: 'Memo Drafter',
+    hrefTab: 'memos',
+    detail: 'Turn selected cores into a reviewable memo outline with citations and gaps visible.',
+    needs: ['user-core', 'context-core', 'memo'],
+  },
+] as const;
+
 export function CoreRepositorySpine({ activeCaseId, activeCaseName, marketplaceToolCount }: CoreRepositorySpineProps) {
   const [selectedStageIds, setSelectedStageIds] = useState<string[]>(['user-core', 'context-core', 'graph-core']);
+  const [stageOrder, setStageOrder] = useState<string[]>(repositoryStages.map((stage) => stage.id));
+  const [draggingStageId, setDraggingStageId] = useState<string | null>(null);
   const [rustHealth, setRustHealth] = useState<RustSemanticaHealth | null>(null);
 
   useEffect(() => {
@@ -102,17 +138,33 @@ export function CoreRepositorySpine({ activeCaseId, activeCaseName, marketplaceT
   }, []);
 
   const stages = useMemo(
-    () =>
-      repositoryStages.map((stage) => ({
-        ...stage,
-        href: stage.href || `/app/workbench/${activeCaseId}${stage.id === 'memo' ? '?openChapter=memos' : '?tab=graph'}`,
-        selected: selectedStageIds.includes(stage.id),
-      })),
-    [activeCaseId, selectedStageIds],
+    () => {
+      const stageById = new Map<string, RepositoryStage>(repositoryStages.map((stage) => [stage.id, stage]));
+      return stageOrder.flatMap((stageId) => {
+        const stage = stageById.get(stageId);
+        if (!stage) return [];
+        return [
+          {
+            ...stage,
+            href: stage.href || `/app/workbench/${activeCaseId}${stage.id === 'memo' ? '?openChapter=memos' : '?tab=graph'}`,
+            selected: selectedStageIds.includes(stage.id),
+          },
+        ];
+      });
+    },
+    [activeCaseId, selectedStageIds, stageOrder],
   );
 
   const selectedStages = stages.filter((stage) => stage.selected);
   const rustReady = rustHealth?.status === 'ok' && rustHealth.validation?.result?.semanticaReady === true;
+  const recommendedTools = toolSuggestions
+    .map((tool) => ({
+      ...tool,
+      score: tool.needs.filter((stageId) => selectedStageIds.includes(stageId)).length,
+    }))
+    .filter((tool) => tool.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
 
   function toggleStage(stageId: string) {
     setSelectedStageIds((current) => {
@@ -121,10 +173,24 @@ export function CoreRepositorySpine({ activeCaseId, activeCaseName, marketplaceT
     });
   }
 
+  function dropStage(targetStageId: string) {
+    if (!draggingStageId || draggingStageId === targetStageId) return;
+    setStageOrder((current) => {
+      const withoutDragged = current.filter((id) => id !== draggingStageId);
+      const targetIndex = withoutDragged.indexOf(targetStageId);
+      if (targetIndex < 0) return current;
+      const next = [...withoutDragged];
+      next.splice(targetIndex, 0, draggingStageId);
+      return next;
+    });
+    setDraggingStageId(null);
+  }
+
   function askWithSelectedCores() {
     const prompt = [
       `For ${activeCaseName}, use this Repository stack before answering: ${selectedStages.map((stage) => stage.label).join(' -> ')}.`,
       ...selectedStages.map((stage) => stage.prompt),
+      `Prioritize these suggested tools if relevant: ${recommendedTools.map((tool) => tool.label).join(', ') || 'Context Builder, Source Scout, Memo Drafter'}.`,
       'Return a concise analysis plan, the tools you recommend, the missing evidence, and the first memo outline.',
     ].join('\n');
     window.dispatchEvent(new CustomEvent('open-praxis-chat', { detail: { prompt } }));
@@ -138,20 +204,30 @@ export function CoreRepositorySpine({ activeCaseId, activeCaseName, marketplaceT
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Repository Spine</p>
               <h2 className="mt-2 text-2xl font-semibold text-navy-950 sm:text-3xl">
-                One visible line from cores to research, tools, and memo.
+                Attach the context stack, then let PRAXIS suggest the next tools.
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
-                Select the working layers for {activeCaseName}. Ask PRAXIS will treat them as the active repository before it recommends research, graph work, tools, or drafting.
+                Drag to set priority, click to attach or detach, then ask with the selected User Core, Situation Core, graph, tools, and memo path.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={askWithSelectedCores}
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-navy-950 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-navy-950/15 hover:bg-navy-800"
-            >
-              <MessageSquareText className="h-4 w-4" />
-              Ask with stack
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/app/cores/user" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-diplomatic-blue/30 bg-white px-4 py-2 text-sm font-semibold text-diplomatic-blue hover:bg-diplomatic-blue/5">
+                <UserCircle className="h-4 w-4" />
+                Build User Core
+              </Link>
+              <Link href="/app/cores/context" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-gold-300 bg-white px-4 py-2 text-sm font-semibold text-gold-800 hover:bg-gold-50">
+                <Target className="h-4 w-4" />
+                Build Situation Core
+              </Link>
+              <button
+                type="button"
+                onClick={askWithSelectedCores}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-navy-950 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-navy-950/15 hover:bg-navy-800"
+              >
+                <MessageSquareText className="h-4 w-4" />
+                Ask with stack
+              </button>
+            </div>
           </div>
 
           <div className="mt-6 grid gap-3 lg:grid-cols-5" aria-label="Selectable PRAXIS repository line">
@@ -163,10 +239,16 @@ export function CoreRepositorySpine({ activeCaseId, activeCaseName, marketplaceT
                   <button
                     type="button"
                     onClick={() => toggleStage(stage.id)}
+                    draggable
+                    onDragStart={() => setDraggingStageId(stage.id)}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={() => dropStage(stage.id)}
+                    onDragEnd={() => setDraggingStageId(null)}
                     className={cn(
-                      'group flex min-h-[156px] w-full flex-col justify-between rounded-xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md hover:shadow-navy-950/10',
+                      'group flex min-h-[156px] w-full cursor-grab flex-col justify-between rounded-xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md hover:shadow-navy-950/10 active:cursor-grabbing',
                       stage.accent,
                       stage.selected ? 'ring-2 ring-navy-950/15' : 'opacity-72 grayscale-[0.25]',
+                      draggingStageId === stage.id && 'scale-[0.98] opacity-60',
                     )}
                   >
                     <span className="flex items-start justify-between gap-3">
@@ -192,6 +274,32 @@ export function CoreRepositorySpine({ activeCaseId, activeCaseName, marketplaceT
                 </div>
               );
             })}
+          </div>
+
+          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold-700">Suggested by attached cores</p>
+                <h3 className="mt-1 text-base font-semibold text-navy-950">Run fewer tools, in the right order.</h3>
+              </div>
+              <BrainCircuit className="h-5 w-5 text-diplomatic-blue" />
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              {recommendedTools.map((tool) => (
+                <Link
+                  key={tool.id}
+                  href={`/app/workbench/${activeCaseId}?tab=${tool.hrefTab}`}
+                  className="group rounded-lg border border-white bg-white p-3 shadow-sm shadow-navy-950/5 transition hover:border-diplomatic-blue/30 hover:shadow-md"
+                >
+                  <span className="text-xs font-semibold uppercase tracking-wide text-diplomatic-blue">Recommended</span>
+                  <span className="mt-1 block text-sm font-semibold text-navy-950">{tool.label}</span>
+                  <span className="mt-2 block text-xs leading-5 text-slate-700">{tool.detail}</span>
+                  <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-navy-800">
+                    Open tool <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+                  </span>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
 
