@@ -25,6 +25,9 @@ const requiredHeroMarkers = [
   'ai-regulation-2026',
   'fb-sustainability-2026',
   'Run cached answer',
+  'Open real app',
+  'Inside the real app',
+  'Core priority builder',
   'demo_question_asked',
   'method_run',
   'sign_up_clicked',
@@ -36,6 +39,8 @@ for (const marker of requiredHeroMarkers) {
 
 const requiredSections = [
   'Two contexts, one engine',
+  'Not a chat box. A working console for policy analysis.',
+  'Drag the work stack before the tool runs.',
   'The right tools for the work',
   'Drafting that fits the work',
   'Compare plans',
@@ -70,7 +75,7 @@ for (const href of ['/demo/indo-pacific-2026', '/demo/ai-regulation-2026', '/dem
   }
 }
 
-for (const nav of ['#two-contexts', '#methods', '#drafting', '#trust', '#pricing']) {
+for (const nav of ['#two-contexts', '#real-app', '#core-stack', '#methods', '#drafting', '#trust', '#pricing']) {
   if (!layout.includes(nav)) throw new Error(`Landing nav missing anchor: ${nav}`);
 }
 

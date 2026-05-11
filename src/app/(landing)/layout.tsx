@@ -8,6 +8,8 @@ import { Menu, X } from "lucide-react";
 const navLinks = [
   { label: "Demo", href: "#top" },
   { label: "Contexts", href: "#two-contexts" },
+  { label: "Real App", href: "#real-app" },
+  { label: "Cores", href: "#core-stack" },
   { label: "Methods", href: "#methods" },
   { label: "Drafting", href: "#drafting" },
   { label: "Trust", href: "#trust" },
@@ -98,9 +100,16 @@ export default function LandingLayout({
             <Link
               href="/demo/indo-pacific-2026"
               prefetch={false}
-              className="inline-flex items-center justify-center rounded-md bg-gold-600 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-lg hover:shadow-gold-600/20 active:bg-gold-700"
+              className="text-sm font-semibold text-gold-700 transition-colors hover:text-gold-800"
             >
-              Try the demo
+              Try demo
+            </Link>
+            <Link
+              href="/app"
+              prefetch={false}
+              className="inline-flex items-center justify-center rounded-md bg-navy-900 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-navy-800 hover:shadow-lg hover:shadow-navy-900/20 active:bg-navy-950"
+            >
+              Open real app
             </Link>
           </div>
 
@@ -148,9 +157,17 @@ export default function LandingLayout({
               href="/demo/indo-pacific-2026"
               prefetch={false}
               onClick={() => setMobileMenuOpen(false)}
-              className="mt-2 block w-full rounded-md bg-gold-600 px-5 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-gold-500"
+              className="block py-3 text-sm font-semibold text-gold-700 transition-colors hover:text-gold-800"
             >
-              Try the demo
+              Try demo
+            </Link>
+            <Link
+              href="/app"
+              prefetch={false}
+              onClick={() => setMobileMenuOpen(false)}
+              className="mt-2 block w-full rounded-md bg-navy-900 px-5 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-navy-800"
+            >
+              Open real app
             </Link>
           </div>
         </div>
