@@ -24,6 +24,7 @@ import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
 import { AskPraxisHome } from '@/components/dashboard/ask-praxis-home';
 import { ActiveCoreStack } from '@/components/dashboard/active-core-stack';
+import { CoreRepositorySpine } from '@/components/dashboard/core-repository-spine';
 
 interface DashboardExampleCase {
   id: string;
@@ -86,6 +87,11 @@ export function DashboardCommandCenter({ exampleCases, marketplaceToolCount }: D
   return (
     <div className="space-y-6" data-testid="praxis-dashboard-command-center">
       <AskPraxisHome exampleCases={exampleCases} marketplaceToolCount={marketplaceToolCount} />
+      <CoreRepositorySpine
+        activeCaseId={activeCaseId}
+        activeCaseName={activeCaseName}
+        marketplaceToolCount={marketplaceToolCount}
+      />
       <ActiveCoreStack activeCaseName={activeCaseName} />
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">

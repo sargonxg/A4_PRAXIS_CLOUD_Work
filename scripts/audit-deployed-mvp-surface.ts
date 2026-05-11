@@ -20,6 +20,7 @@ for (const path of [
   'src/app/api/health/semantica-core/route.ts',
   'src/components/dashboard/ask-praxis-home.tsx',
   'src/components/dashboard/active-core-stack.tsx',
+  'src/components/dashboard/core-repository-spine.tsx',
   'src/lib/semantica/context-core-adapter.ts',
   'src/lib/semantica/rust-runtime.ts',
   'rust/semantica-core/Cargo.toml',
@@ -87,6 +88,11 @@ if (failures.length === 0) {
   const dashboard = file('src/components/dashboard/ask-praxis-home.tsx');
   for (const marker of ['Ask PRAXIS', '/app/cores/user', '/app/cores/context']) {
     if (!dashboard.includes(marker)) failures.push(`Ask dashboard missing ${marker}`);
+  }
+
+  const repositorySpine = file('src/components/dashboard/core-repository-spine.tsx');
+  for (const marker of ['Repository Spine', '/api/health/semantica-core', 'Ask with stack', 'User Core', 'Context Core', 'Memo Output']) {
+    if (!repositorySpine.includes(marker)) failures.push(`Repository Spine missing ${marker}`);
   }
 
   const sidebar = file('src/components/app/app-sidebar.tsx');
