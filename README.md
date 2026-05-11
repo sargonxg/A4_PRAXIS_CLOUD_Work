@@ -1,12 +1,26 @@
 # PRAXIS by TACITUS
 
-> **The AI-native workspace for policy, diplomacy, and political analysis.**
+> **The context layer and workbench that helps policy teams use AI seriously.**
 >
-> v6.4.x · Pure GCP Cloud Run (Next.js 16 frontend + Python FastAPI backend) · Project `praxisbytacitus` · Region `us-central1` · Domain `praxis.tacitus.me`
+> v6.4.x · GCP Cloud Run · Next.js 16 frontend/API gateway · Python FastAPI graph backend · Rust Semantica core · Firebase/Firestore · Project `praxisbytacitus` · Region `us-central1` · Domain `praxis.tacitus.me`
 
-PRAXIS turns sources, documents, open feeds, and graph context into cited assessments, briefings, reports, and decision support for policy officers, diplomats, mediators, humanitarian coordinators, legal/sanctions analysts, and conflict researchers. It is designed as a **system of record for conflict**: a governed data layer for human friction where claims, actors, interests, constraints, leverage, commitments, events, and narratives can be extracted, reasoned over, challenged, and reused.
+PRAXIS exists because policy analysis teams cannot get professional results by dropping sensitive, ambiguous, multi-source situations into a blank chat box. A useful model needs to know **who is asking**, **what situation it is inside**, **which ontology should organize the facts**, **which sources are trusted**, and **what kind of work product is needed**.
 
-It now presents **one canonical workbench** with 10 consolidated primary tools and an explicit archive for the older specialist registry. The codebase still keeps the broader registered tool/catalogue metadata for compatibility and planning, but the authenticated app surface is intentionally narrow: case picker, active workbench, settings/profile, situations/new, tools archive, and admin. The backend remains a large calibrated Next.js API surface plus a **Python FastAPI graph backend** (ACO conflict intelligence pipeline), and a Google-native open-data stack centered on GDELT, UCDP, ReliefWeb, HDX, UN News, World Bank, UNHCR, and grounded Google Search.
+PRAXIS builds and manages that context. It gives each workspace a **User Core** for the team or analyst, one or more **Situation Cores** for live cases, a typed **policy graph**, domain-targeted ontologies, source receipts, suggested tools, and drafting workflows. Those cores are injected into calibrated LLM calls so the AI can reason, retrieve, compare, challenge, and draft with the right institutional memory instead of generic instructions.
+
+The product target is deliberately simple:
+
+```mermaid
+flowchart LR
+  Ask["Ask PRAXIS"] --> Core["Attach User Core + Situation Core"]
+  Core --> Context["Context Pack<br/>profile, case, ontology, graph, sources"]
+  Context --> Tools["Policy Tools<br/>research, graph, boardroom, draft"]
+  Tools --> Output["Reviewable Output<br/>brief, memo, note, scenario, talking points"]
+  Output --> Memory["Persisted Knowledge<br/>sources, claims, entities, decisions"]
+  Memory --> Core
+```
+
+The public app and authenticated workbench are organized around that loop. PRAXIS is not a loose catalogue of AI tools; it is a context-building system for foreign policy, economic policy, diplomacy, humanitarian, legal, sanctions, conflict, and political analysis teams.
 
 This README is a **reference document for both human developers and AI agents** (Claude Code + Codex). For agent-specific conventions, model-string discipline, security boundaries, and anti-patterns, see [`CLAUDE.md`](./CLAUDE.md) (Codex agents: see [`AGENTS.md`](./AGENTS.md)).
 
@@ -14,17 +28,14 @@ This README is a **reference document for both human developers and AI agents** 
 
 ## Current Ship Checkpoint
 
-As of 2026-05-08, `main` is moving into the v7 design-led simplification wave:
-Ask PRAXIS as the primary entry point, mobile-first workbench navigation, and a
-clear tacit-knowledge model for policy teams. The operating packet is
-[`docs/v7/README.md`](./docs/v7/README.md), with current status in
-[`docs/v7/STATUS.md`](./docs/v7/STATUS.md) and open decisions in
-[`docs/v7/OPEN_QUESTIONS.md`](./docs/v7/OPEN_QUESTIONS.md).
+As of 2026-05-11, `main` is aligned around a simplified PRAXIS MVP:
 
-The active strategic plans for this wave are
-[`docs/roadmap/PRAXIS_DESIGN_LED_AGENTIC_APP_PLAN_2026-05-08.md`](./docs/roadmap/PRAXIS_DESIGN_LED_AGENTIC_APP_PLAN_2026-05-08.md),
-[`docs/roadmap/PRAXIS_AGENTIC_MOBILE_FIRST_UX_PLAN_2026-05-08.md`](./docs/roadmap/PRAXIS_AGENTIC_MOBILE_FIRST_UX_PLAN_2026-05-08.md), and
-[`docs/roadmap/PRAXIS_TACIT_KNOWLEDGE_UX_REORGANIZATION_PLAN_2026-05-08.md`](./docs/roadmap/PRAXIS_TACIT_KNOWLEDGE_UX_REORGANIZATION_PLAN_2026-05-08.md).
+- **Public landing page:** PRAXIS is positioned as the context layer for policy AI.
+- **Authenticated app:** Ask PRAXIS is the primary entry point, with a repository spine for User Cores, Situation Cores, graph/sources, tools, and memo output.
+- **Rust Semantica core:** `rust/semantica-core` validates the minimal context-graph contract and is deployed inside the Cloud Run frontend image.
+- **Policy workbench:** the exposed app surface is intentionally narrow: Home / Ask, Library, Cores, Tools, Drafts, Settings/Admin, and a gated archive for legacy specialist tools.
+
+The operating packet is [`docs/v7/README.md`](./docs/v7/README.md), with current status in [`docs/v7/STATUS.md`](./docs/v7/STATUS.md) and open decisions in [`docs/v7/OPEN_QUESTIONS.md`](./docs/v7/OPEN_QUESTIONS.md). The active strategic plans for this wave are [`docs/roadmap/PRAXIS_DESIGN_LED_AGENTIC_APP_PLAN_2026-05-08.md`](./docs/roadmap/PRAXIS_DESIGN_LED_AGENTIC_APP_PLAN_2026-05-08.md), [`docs/roadmap/PRAXIS_AGENTIC_MOBILE_FIRST_UX_PLAN_2026-05-08.md`](./docs/roadmap/PRAXIS_AGENTIC_MOBILE_FIRST_UX_PLAN_2026-05-08.md), and [`docs/roadmap/PRAXIS_TACIT_KNOWLEDGE_UX_REORGANIZATION_PLAN_2026-05-08.md`](./docs/roadmap/PRAXIS_TACIT_KNOWLEDGE_UX_REORGANIZATION_PLAN_2026-05-08.md).
 
 The full-repo graphify map is larger than the HTML visualization guard, so use
 `graphify-out/GRAPH_REPORT.md` and `graphify-out/graph.json` for architecture
@@ -34,32 +45,180 @@ navigation.
 
 ## Table of Contents
 
-1. [Architecture](#architecture)
-2. [Tech Stack](#tech-stack)
-3. [File Map](#file-map)
-4. [Two Experiences: Demo vs Real App](#two-experiences-demo-vs-real-app)
-5. [Quick Start (Local Development)](#quick-start-local-development)
-6. [Environment Variables](#environment-variables)
-7. [Scripts](#scripts)
-8. [Deployment (Cloud Run)](#deployment-cloud-run)
-9. [Verification Before Deploy](#verification-before-deploy)
-10. [Tools, Frameworks, Data Feeds](#tools-frameworks-data-feeds)
-11. [Calibration Contract (AnalystProfile)](#calibration-contract-analystprofile)
-12. [What's Next](#whats-next)
-13. [Documentation Map](#documentation-map)
-14. [Working With Agents](#working-with-agents)
+1. [Product Model](#product-model)
+2. [Core Context Model](#core-context-model)
+3. [Semantica and the Graph](#semantica-and-the-graph)
+4. [Policy Team Workflows](#policy-team-workflows)
+5. [Architecture](#architecture)
+6. [Tech Stack](#tech-stack)
+7. [File Map](#file-map)
+8. [Two Experiences: Demo vs Real App](#two-experiences-demo-vs-real-app)
+9. [Quick Start (Local Development)](#quick-start-local-development)
+10. [Environment Variables](#environment-variables)
+11. [Scripts](#scripts)
+12. [Deployment (Cloud Run)](#deployment-cloud-run)
+13. [Verification Before Deploy](#verification-before-deploy)
+14. [Tools, Frameworks, Data Feeds](#tools-frameworks-data-feeds)
+15. [Calibration Contract (AnalystProfile)](#calibration-contract-analystprofile)
+16. [What's Next](#whats-next)
+17. [Documentation Map](#documentation-map)
+18. [Working With Agents](#working-with-agents)
 
 ---
+
+## Product Model
+
+PRAXIS is a professional workbench for policy teams that need AI to produce reliable analysis, not generic prose. The application creates a reusable operating model around every analyst and every case.
+
+| Layer | What it answers | Why it matters |
+|---|---|---|
+| **User Core** | Who is asking? What institution, role, methods, risk posture, writing style, constraints, and recurring needs shape the answer? | Prevents the model from treating a diplomat, sanctions analyst, humanitarian coordinator, and economic-policy team as the same user. |
+| **Situation Core** | What case is the team working on? Which actors, claims, events, sources, commitments, risks, uncertainties, and decisions define it? | Gives every analysis a grounded case model instead of forcing the user to repeat context in every prompt. |
+| **Domain Ontology** | Which policy domain should organize the work: diplomacy, economic sanctions, conflict, humanitarian response, governance, cyber, climate security, and more? | Makes extraction, retrieval, tool selection, and drafting match the team's professional vocabulary. |
+| **Work Ontology** | What kind of work is being produced: memo, briefing, scenario, negotiation note, stakeholder map, early warning, source review, or talking points? | Shapes output structure, evidence standard, caveats, and review flow. |
+| **Policy Graph** | How do actors, claims, interests, events, risks, constraints, leverage, and commitments relate? | Turns a pile of documents into inspectable structure that can be queried, challenged, and reused. |
+| **Drafting Layer** | What should be written, for whom, with which level of confidence and citation? | Converts context and graph-backed analysis into professional work products. |
+
+The app is built so teams can create, inspect, attach, detach, update, and reuse these cores. Ask PRAXIS is central because the user can start with a question, but the system routes that question through the right context and tools.
+
+```mermaid
+flowchart TB
+  UserCore["User Core<br/>role, institution, preferences, constraints"]
+  SituationCore["Situation Core<br/>case, actors, sources, timeline, uncertainties"]
+  Domain["Domain Ontology<br/>foreign policy, economics, diplomacy, humanitarian, sanctions"]
+  Work["Work Ontology<br/>memo, brief, scenario, talking points, source review"]
+  Graph["Policy Graph<br/>entities + typed relationships + provenance"]
+  LLM["Best Available LLM<br/>Gemini / Vertex with calibrated prompts"]
+  Output["Cited Analysis + Drafts"]
+
+  UserCore --> LLM
+  SituationCore --> Graph
+  Domain --> Graph
+  Work --> LLM
+  Graph --> LLM
+  LLM --> Output
+  Output --> Graph
+```
+
+## Core Context Model
+
+### User Core
+
+The User Core is the durable model of the analyst, team, or organization. It is created through onboarding and profile maintenance, then injected into AI routes through the calibration layer.
+
+It captures:
+
+- role and organization context;
+- policy domains and recurring jurisdictions;
+- methodological preferences and analytical frameworks;
+- tone, format, and writing expectations;
+- risk tolerance, confidence thresholds, and caveat discipline;
+- preferred sources, restricted sources, and institutional constraints;
+- saved outputs and feedback signals that should improve future work.
+
+In code, the User Core is represented by the `AnalystProfile` contract and consumed by calibrated AI routes through `withCalibration(...)`, `buildCalibratedContext(...)`, and the system-prompt context builders under `src/lib/context/` and `src/lib/ai/`.
+
+### Situation Core
+
+The Situation Core is the case model. It is where PRAXIS turns a policy problem into a structured operating picture.
+
+It captures:
+
+- case frame, geography, timeframe, and policy objective;
+- actors, institutions, coalitions, interests, constraints, and leverage;
+- claims, narratives, risks, commitments, events, and uncertainties;
+- source library, source receipts, conflicting evidence, and provenance;
+- selected domain ontology and work ontology;
+- graph state, extraction runs, tool outputs, and review decisions.
+
+Situation Cores are designed to be inspectable. A team should be able to see what the system believes, where it came from, what is uncertain, and what changed after a new source, analyst note, or tool run.
+
+### Core Lifecycle
+
+```mermaid
+sequenceDiagram
+  participant Analyst
+  participant PRAXIS
+  participant Sources
+  participant Graph
+  participant Semantica
+  participant LLM
+
+  Analyst->>PRAXIS: Create or select User Core
+  Analyst->>PRAXIS: Create Situation Core
+  PRAXIS->>Sources: Ingest documents, notes, feeds, search results
+  Sources->>Graph: Extract entities, claims, events, relationships
+  Graph->>Semantica: Validate context graph contract
+  Semantica-->>Graph: Ready state, gaps, orphan edges, ontology coverage
+  Analyst->>PRAXIS: Ask question or choose tool
+  PRAXIS->>LLM: Inject User Core + Situation Core + graph + ontology
+  LLM-->>Analyst: Analysis, memo, brief, scenario, or reviewable draft
+  Analyst->>PRAXIS: Save, revise, cite, export, or feed back into core
+```
+
+## Semantica and the Graph
+
+PRAXIS uses Semantica as the semantic contract for context-core creation. The current deployed Rust component is intentionally small and strict: it validates that a context graph has a root context core, a domain ontology, a work ontology, bounded node/edge counts, unique node IDs, and no orphan relationships.
+
+That validator lives in [`rust/semantica-core`](./rust/semantica-core) and is invoked from [`src/lib/semantica/rust-runtime.ts`](./src/lib/semantica/rust-runtime.ts). The deployed health endpoint is `/api/health/semantica-core`.
+
+```mermaid
+flowchart LR
+  Ingest["Source Ingest<br/>docs, URLs, feeds, notes"] --> Extract["Extraction<br/>entities, claims, events, commitments"]
+  Extract --> Candidate["Candidate Graph<br/>typed nodes + edges"]
+  Candidate --> Rust["Rust Semantica Core<br/>fast contract validation"]
+  Rust --> Ready{"Semantica ready?"}
+  Ready -- yes --> Persist["Persist Graph<br/>Firestore compatibility + Postgres/pgvector target"]
+  Ready -- no --> Repair["Repair Queue<br/>missing ontology, orphan edge, weak provenance"]
+  Persist --> Ask["Ask PRAXIS + Tools"]
+  Repair --> Candidate
+```
+
+The near-term roadmap is to expand Semantica from a minimal validator into the durable context compiler:
+
+- validate richer ontology coverage for domain-specific cases;
+- score source and relationship quality before a graph is trusted;
+- compile context packs for LLM prompts and agent workflows;
+- expose graph gaps and repair suggestions in the UI;
+- support fast Rust-side transforms for larger policy graphs at scale.
+
+The graph layer is built around the ACO conflict and policy ontology: Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, Narrative, Institution, Norm, Resource, Risk, Policy, and Grievance. These primitives let PRAXIS move beyond summaries into reusable structure.
+
+## Policy Team Workflows
+
+PRAXIS is designed for teams that need context-aware AI across repeatable workflows.
+
+| Team | Core need | PRAXIS workflow |
+|---|---|---|
+| Foreign policy desk | Understand actors, options, constraints, and second-order effects. | Build a Situation Core, run graph-grounded research, compare narratives, draft an options memo. |
+| Economic policy team | Track shocks, sanctions, tradeoffs, and macro-political effects. | Attach economic ontology, ingest indicators and source evidence, draft decision notes and risk scenarios. |
+| International diplomacy team | Prepare for meetings, negotiations, communiques, and partner alignment. | Map stakeholders and commitments, monitor changes, draft talking points and negotiation briefs. |
+| Humanitarian or conflict team | Understand needs, access constraints, violence trends, and operational risks. | Combine open feeds with situation graph, inspect evidence, produce cited situation updates. |
+| Legal, sanctions, or governance team | Maintain defensible evidence and policy reasoning. | Preserve source receipts, trace claims, draft structured analysis with confidence and caveats. |
+
+The consolidated app surfaces map to this work:
+
+- **Ask PRAXIS:** the primary command surface for questions, tool suggestions, and context-aware follow-up.
+- **Library / Repository:** User Cores, Situation Cores, sources, graph objects, tools, and work products in one place.
+- **Context Studio:** create, inspect, and repair cores.
+- **Research:** source search, deep research, feed ingestion, and evidence review.
+- **Graph:** actor maps, relationships, commitments, narratives, timelines, and provenance.
+- **Boardroom:** scenarios, alternative hypotheses, mediation/negotiation views, and advisory workflows.
+- **Draft:** policy memos, briefings, talking points, dossiers, reports, and exports.
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Frontend (Next.js 16 App Router) → Cloud Run praxis-frontend   │
-│    src/app/app/*       one workbench + narrow app shell          │
+│  Frontend/API Gateway (Next.js 16) → Cloud Run praxis-frontend  │
+│    src/app/app/*       Ask PRAXIS + repository/workbench shell   │
 │    src/app/demo/*      Demo mirror pages (cookie auth)          │
 │    src/app/onboarding  3-screen wizard                          │
 │    src/app/api/*       calibrated routes for AI, data, auth      │
+├─────────────────────────────────────────────────────────────────┤
+│  Rust Semantica Core → packaged in the frontend container        │
+│    rust/semantica-core  fast context-graph contract validation   │
+│    /api/health/semantica-core  deployed readiness proof          │
 ├─────────────────────────────────────────────────────────────────┤
 │  Backend (Python FastAPI) → Cloud Run praxis-backend (private)  │
 │    /api/v1/pipeline/*   extract → build → cluster → analyze     │
@@ -67,10 +226,11 @@ navigation.
 │    /api/v1/analyze/*    pre-computed analysis                   │
 │    /api/v1/memory/*     disabled-safe Cognee memory bridge      │
 ├─────────────────────────────────────────────────────────────────┤
-│  Firebase: Auth + Firestore (single source of truth)            │
+│  Firebase: Auth + Firestore user/session/situation metadata     │
 │  GCP:  Vertex AI · BigQuery · Cloud Storage · Pub/Sub           │
 │        Cloud Functions · Cloud Scheduler · Secret Manager       │
 │        Artifact Registry · Cloud Build                          │
+│  Target graph store: Postgres + pgvector, with Firestore paths   │
 │  Optional: private praxis-cognee service + praxis_cognee DB      │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -145,14 +305,15 @@ graph-grounded policy question, and economic/HLP scenario research. See
 | Layer | Technology |
 |---|---|
 | Framework | Next.js 16.2.4 (App Router, Turbopack) |
-| Language | TypeScript 5.9 (strict), Python 3.11 |
+| Language | TypeScript 5.9 (strict), Python 3.11, Rust 2021 |
 | UI | React 19, Tailwind CSS 4, Radix UI, Framer Motion 12, D3.js 7, react-leaflet |
 | State | Zustand 5 (persisted) |
 | AI SDK | Vercel AI SDK v6 (`@ai-sdk/google`, `@ai-sdk/google-vertex`) |
 | AI Providers | Gemini Flash / Gemini Pro on Google AI and Vertex AI, Vertex AI Agent Engine (ADK) |
 | Backend | Python FastAPI, NetworkX, Graspologic, Pydantic v2, Genkit, disabled-first Cognee adapter |
 | Auth & DB | Firebase Auth + Firestore + Admin SDK |
-| Graph | Postgres ACO graph with optional graph export adapters; Cognee is candidate memory only |
+| Semantica | Rust context-graph validator packaged into the frontend Cloud Run image |
+| Graph | Postgres + pgvector target for ACO/context graphs, Firestore compatibility paths, optional graph export adapters; Cognee is candidate memory only |
 | Validation | Zod 4 |
 | Documents | pdf-parse, mammoth, docx, jspdf |
 | Web Research | Grounded Google Search and open-data feed clients |
@@ -194,6 +355,7 @@ graph-grounded policy question, and economic/HLP scenario research. See
 │   ├── api/                 with-auth, with-credits, with-calibration, save-tool-output, standard-error
 │   ├── auth/                auth-context.tsx, cookie-signer.ts (HMAC)
 │   ├── firebase/            config.ts, admin.ts, situations-service.ts, analyst-profile-service.ts
+│   ├── semantica/           Rust Semantica runtime bridge for context-graph validation
 │   ├── context/             profile-context.ts (buildCalibratedContext), system-prompt-block.ts
 │   ├── crypto/              envelope.ts (AES-256-GCM for user API keys)
 │   ├── data-feeds/          11 source clients + feed-aggregator + capabilities resolver
@@ -221,6 +383,9 @@ graph-grounded policy question, and economic/HLP scenario research. See
 │   ├── on_situation_created/    Auto-trigger pipeline on new situation
 │   ├── on_document_uploaded/    Extract text + run pipeline
 │   └── gdelt_poller/            Continuous GDELT ingestion worker pool
+│
+├── rust/
+│   └── semantica-core/          Rust validator for the PRAXIS context-core graph contract
 │
 ├── infrastructure/
 │   ├── setup-gcp.sh             One-time: enable APIs, BigQuery, Pub/Sub, IAM
@@ -334,6 +499,7 @@ npm run lint                   # ESLint
 
 # Verification
 npx tsc --noEmit               # Type check
+npm run audit:rust-semantic-core # Rust Semantica tests + build
 npm run verify-tools           # Tool registry sanity
 npm run audit:tools            # Per-tool calibration scoring (12 dimensions)
 npm run audit:routes           # AI route compliance (auth, credits, error handling)
@@ -411,7 +577,8 @@ See [`docs/CUSTOM_DOMAIN_SETUP.md`](./docs/CUSTOM_DOMAIN_SETUP.md) for DNS, Fire
 npx tsc --noEmit                       # 1. TypeScript clean
 npm run build                          # 2. Production build clean
 node scripts/audit-ai-routes.mjs       # 3. AI routes compliant
-npm run audit:gcp                      # 4. GCP resources ready
+npm run audit:rust-semantic-core       # 4. Rust Semantica core valid
+npm run audit:gcp                      # 5. GCP resources ready
 ```
 
 After deploy, verify:
@@ -421,6 +588,7 @@ curl -sI https://praxis.tacitus.me/
 curl -sI https://praxis.tacitus.me/login
 curl -sI https://praxis.tacitus.me/onboarding
 curl -s  https://praxis.tacitus.me/api/health      # status: ok
+curl -s  https://praxis.tacitus.me/api/health/semantica-core
 ```
 
 For 5xx triage, see [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md).
