@@ -8,6 +8,7 @@ Operator: Codex
 
 - Set the active `gcloud` project for the `tacitus` configuration to `praxisbytacitus`.
 - Set Application Default Credentials quota project to `praxisbytacitus`.
+- Stored the provided Neon API token as Secret Manager secret `praxis-neon-api-key`; it is not committed to source and is not used as the active PRAXIS database path.
 - Verified Firebase CLI binding points at `praxisbytacitus`.
 - Verified Firestore and Storage rules compile with `firebase deploy --only firestore:rules,firestore:indexes,storage --project praxisbytacitus --dry-run`.
 - Ran `npm run auth:doctor` after the local project fix; all checks passed.
@@ -25,6 +26,7 @@ Operator: Codex
 | Cloud Scheduler | paused by design | `praxis-check-alerts`, `praxis-generate-briefing`, and `gdelt-poller` are paused. No active cron spending was found. |
 | Cloud SQL | intentional paid resource | `praxisbytacitus-instance` is `db-f1-micro`, Postgres 16, 10 GB, activation policy `ALWAYS`. It supports `praxis`, `praxis_langgraph`, and `dialectica`. |
 | Secret Manager | healthy | PRAXIS services mount runtime secrets from Secret Manager. Secret values were not printed. |
+| Neon API token | stored only | `praxis-neon-api-key` exists for future Neon administration if needed; PRAXIS remains on Cloud SQL Postgres unless a migration decision changes this. |
 | Artifact Registry | healthy with cleanup candidates | PRAXIS, Cloud Functions, and Dialectica images exist. Old untagged images are cleanup candidates, but were not deleted because they can still be useful for rollback. |
 | Cloud Build | idle | No ongoing builds were found. |
 | Recommender | no active recommendations | Cloud Run cost and IAM recommenders returned no open recommendations in the checked locations. |

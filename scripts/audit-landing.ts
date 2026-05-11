@@ -1,82 +1,85 @@
 import { existsSync, readFileSync } from 'node:fs';
 
-const hero = readFileSync('src/components/landing/hero.tsx', 'utf8');
-const landingPage = readFileSync('src/app/(landing)/page.tsx', 'utf8');
-const login = readFileSync('src/app/(auth)/login/page.tsx', 'utf8');
+const page = readFileSync('src/app/(landing)/page.tsx', 'utf8');
+const layout = readFileSync('src/app/(landing)/layout.tsx', 'utf8');
+const phase8 = readFileSync('src/components/landing/phase8-wow-landing.tsx', 'utf8');
+const docsPage = readFileSync('src/app/docs/page.tsx', 'utf8');
 const ogImage = readFileSync('src/app/opengraph-image.tsx', 'utf8');
-const exampleModal = readFileSync('src/components/landing/example-cases-modal.tsx', 'utf8');
-const agenticApp = readFileSync('src/components/landing/agentic-app-section.tsx', 'utf8');
-const sixSteps = readFileSync('src/components/landing/six-steps.tsx', 'utf8');
 
-if (/syria/i.test(hero)) {
-  throw new Error('Landing hero must not contain Syria copy or a direct Syria demo URL.');
+const requiredPageMarkers = [
+  'Phase8WowLanding',
+  'NEXT_PUBLIC_GA_MEASUREMENT_ID',
+  'NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID',
+  'Google Cloud, Firebase, Firestore, Cloud SQL Postgres, and Secret Manager production path',
+];
+
+for (const marker of requiredPageMarkers) {
+  if (!page.includes(marker)) throw new Error(`Landing page missing marker: ${marker}`);
 }
 
-if (!hero.includes('ExampleCasesModal') || !exampleModal.includes('aria-haspopup="dialog"')) {
-  throw new Error('Landing hero secondary example action must open an accessible dialog.');
+const requiredHeroMarkers = [
+  'PRAXIS by TACITUS',
+  'Live demo bar',
+  'foreign-policy-analyst',
+  'indo-pacific-2026',
+  'ai-regulation-2026',
+  'fb-sustainability-2026',
+  'Run cached answer',
+  'demo_question_asked',
+  'method_run',
+  'sign_up_clicked',
+];
+
+for (const marker of requiredHeroMarkers) {
+  if (!phase8.includes(marker)) throw new Error(`Phase 8 landing hero missing marker: ${marker}`);
 }
 
-if (!landingPage.includes('ExampleCasesGallery')) {
-  throw new Error('Landing page must render the example-cases gallery.');
+const requiredSections = [
+  'Two contexts, one engine',
+  'The right tools for the work',
+  'Drafting that fits the work',
+  'Compare plans',
+  'Source receipts',
+  'No signup wall',
+];
+
+for (const marker of requiredSections) {
+  if (!phase8.includes(marker)) throw new Error(`Phase 8 landing section missing marker: ${marker}`);
 }
 
-if (!landingPage.includes('AgenticAppSection')) {
-  throw new Error('Landing page must render the design-led agentic app section.');
+const requiredMethodNames = [
+  'Stakeholder Power-Interest Map',
+  'Grounded Research',
+  'Position-vs-Interest Decoder',
+  'Scenario Projector',
+  'Analysis of Competing Hypotheses',
+  'Contradiction Finder',
+  'Frame & Narrative Analyzer',
+  'Coalition Detector',
+  'Commitment Tracker',
+  'Memo Drafter',
+];
+
+for (const method of requiredMethodNames) {
+  if (!phase8.includes(method)) throw new Error(`Phase 8 landing missing MVP method: ${method}`);
 }
 
-for (const required of ['Home, Ask PRAXIS, Situation Model, Sources, Outputs', 'Guided workflows', 'Mobile-first navigation']) {
-  if (!landingPage.includes(required)) {
-    throw new Error(`Landing JSON-LD is missing design-led app feature: ${required}`);
+for (const href of ['/demo/indo-pacific-2026', '/demo/ai-regulation-2026', '/demo/fb-sustainability-2026']) {
+  if (!phase8.includes(href) && !docsPage.includes(href)) {
+    throw new Error(`Landing/docs missing demo route: ${href}`);
   }
 }
 
-for (const required of ['PRODUCT_EXPERIENCE_AREAS', 'AGENTIC_WORKFLOWS', 'PRIMARY_MOBILE_WORKFLOWS']) {
-  if (!agenticApp.includes(required)) {
-    throw new Error(`Agentic landing section must be wired to ${required}.`);
-  }
+for (const nav of ['#two-contexts', '#methods', '#drafting', '#trust', '#pricing']) {
+  if (!layout.includes(nav)) throw new Error(`Landing nav missing anchor: ${nav}`);
 }
 
-for (const required of ['Context cores', 'General PRAXIS', 'User core', 'Team core', 'Situation core']) {
-  if (!agenticApp.includes(required)) {
-    throw new Error(`Agentic landing section is missing context-core copy: ${required}.`);
-  }
-}
-
-for (const required of ['Open', 'Ask', 'Model', 'Source', 'Produce', 'Inherit']) {
-  if (!sixSteps.includes(`title: "${required}"`)) {
-    throw new Error(`Six-step landing workflow is missing "${required}".`);
-  }
-}
-
-for (const archived of [
-  'advisory-council.tsx',
-  'ai-companion-section.tsx',
-  'data-substrate.tsx',
-  'domain-catalogue.tsx',
-  'live-platform-preview.tsx',
-  'testimonials.tsx',
-]) {
-  if (!existsSync(`src/components/landing/_archive/${archived}`)) {
-    throw new Error(`Missing archived landing component: ${archived}`);
-  }
-}
-
-if (/Guest-session Syria public-source case/.test(landingPage)) {
-  throw new Error('Landing JSON-LD still describes the demo as a Syria-only case.');
-}
-
-const requiredExamples = ['Syria', 'Nordalia', 'Sahel', 'housing', 'workplace', 'sanctions'];
-const mentionedExamples = requiredExamples.filter((example) => landingPage.toLowerCase().includes(example.toLowerCase()));
-if (mentionedExamples.length < 3) {
-  throw new Error('Landing JSON-LD must list multiple example cases, not one geography.');
+for (const rel of ['src/app/demo/[contextId]/page.tsx', 'src/app/docs/page.tsx', 'src/app/pricing/page.tsx', 'src/app/legal/security/page.tsx']) {
+  if (!existsSync(rel)) throw new Error(`Landing target route missing: ${rel}`);
 }
 
 if (/syria/i.test(ogImage)) {
   throw new Error('OpenGraph image must be workbench-led and contain no Syria text.');
 }
 
-if (!login.includes("resolvePostLoginRedirect")) {
-  throw new Error('Login page does not use centralized post-login redirect helper.');
-}
-
-console.log('audit-landing: ok (static-marker)');
+console.log('audit-landing: ok (phase8-static-marker)');

@@ -161,9 +161,9 @@ export function proxy(request: NextRequest) {
     return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }
 
-  // --- /demo/* routes: require demo session cookie ---
+  // --- /demo/* routes: public read-only demos ---
   if (pathname.startsWith('/demo')) {
-    if (pathname === '/demo/syria-2024') {
+    if (pathname === '/demo' || pathname === '/demo/syria-2024' || /^\/demo\/[a-z0-9-]+$/.test(pathname)) {
       return nextWithNonce(request, nonce);
     }
 

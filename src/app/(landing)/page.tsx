@@ -1,47 +1,24 @@
-import { headers } from 'next/headers';
-import dynamic from 'next/dynamic';
-import { Hero } from "@/components/landing/hero";
-import { SixSteps } from "@/components/landing/six-steps";
-import { AgenticAppSection } from "@/components/landing/agentic-app-section";
-import { ExampleCasesGallery } from "@/components/landing/example-cases-gallery";
-import { Dialectica } from "@/components/landing/dialectica";
-import { LiveDemo } from "@/components/landing/live-demo";
+import { headers } from "next/headers";
+import { Phase8WowLanding } from "@/components/landing/phase8-wow-landing";
 
-// Below-fold sections stay split while remaining crawler-visible through SSR.
-const BuiltFor = dynamic(() =>
-  import("@/components/landing/built-for").then((m) => m.BuiltFor),
-);
-const Trust = dynamic(() =>
-  import("@/components/landing/trust").then((m) => m.Trust),
-);
-const PricingCTA = dynamic(() =>
-  import("@/components/landing/pricing-cta").then((m) => m.PricingCTA),
-);
-const WaitlistForm = dynamic(() =>
-  import("@/components/landing/waitlist-form").then((m) => m.WaitlistForm),
-);
-const Footer = dynamic(() =>
-  import("@/components/landing/footer").then((m) => m.Footer),
-);
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://praxis.tacitus.me';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://praxis.tacitus.me";
+const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
 
 const softwareJsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   name: "PRAXIS by TACITUS",
   applicationCategory: "BusinessApplication",
-  applicationSubCategory: "Policy Workbench & Conflict Intelligence",
+  applicationSubCategory: "Policy workbench",
   operatingSystem: "Web",
   description:
-    "PRAXIS is a policy workbench: every user opens a live Situation, asks PRAXIS what matters, reviews trust-marked sources and claims, and produces handovers, briefs, memos, drafts, and exports. Example cases including Syria, Nordalia, Sahel, US housing, workplace mediation, and sanctions are available as guest sessions before login.",
+    "PRAXIS helps policy, diplomacy, and strategy teams move from live situations to sourced analysis, method runs, and reviewable drafts.",
   url: siteUrl,
   image: `${siteUrl}/opengraph-image`,
   inLanguage: "en",
   audience: {
     "@type": "Audience",
-    audienceType:
-      "Diplomats, conflict analysts, mediators, humanitarian leads, policy officers, foreign-policy researchers, sanctions and compliance teams",
+    audienceType: "Policy teams, diplomatic teams, research desks, public affairs teams, and institutional analysts",
   },
   offers: [
     {
@@ -49,36 +26,21 @@ const softwareJsonLd = {
       name: "Demo",
       price: "0",
       priceCurrency: "USD",
-      description: "Guest-session example cases (Syria, Nordalia, Sahel, US housing, workplace mediation, sanctions) for evaluating the real PRAXIS workspace, graph workflows, DIALECTICA reasoning, and briefing exports",
+      description: "Read-only public demo contexts with cached answers before signup",
     },
     {
       "@type": "Offer",
       name: "Analyst",
-      price: "100.00",
+      price: "30.00",
       priceCurrency: "USD",
-      description: "Single-licence individual workspace for live situations, grounded research, canonical actor checks, reports, and exports",
+      description: "Individual workspace for private situations, methods, and drafts",
     },
     {
       "@type": "Offer",
       name: "Team",
-      price: "499.00",
+      price: "120.00",
       priceCurrency: "USD",
-      priceSpecification: {
-        "@type": "UnitPriceSpecification",
-        billingDuration: "P1M",
-      },
-      description: "Shared workspace for teams handling multiple live situations, source monitoring, Advisor Council workflows, and graph configuration",
-    },
-    {
-      "@type": "Offer",
-      name: "Institution",
-      price: "0",
-      priceCurrency: "USD",
-      priceSpecification: {
-        "@type": "UnitPriceSpecification",
-        billingDuration: "P1M",
-      },
-      description: "Custom institutional deployment and pricing for governance, SSO, audit controls, and private GCP architecture",
+      description: "Shared workspace for teams handling multiple live situations",
     },
   ],
   creator: {
@@ -87,14 +49,11 @@ const softwareJsonLd = {
     url: "https://tacitus.me",
   },
   featureList: [
-    "Home, Ask PRAXIS, Situation Model, Sources, Outputs, and Advanced areas",
-    "Guided workflows for understanding a Situation, improving context, updating briefs, and generating handovers",
-    "Mobile-first navigation for Home, Ask, Sources, Outputs, and More",
-    "Source receipts and provenance manifests on exported work products",
-    "Example cases as guest sessions before login: Syria, Nordalia, Sahel, US housing, workplace mediation, and sanctions",
-    "Boardroom-deliberated policy options with human review",
-    "Trust posture for graph support, source quality, reliability, and consensus",
-    "Google Cloud, Firebase, and graph projection architecture",
+    "Public demo contexts for Indo-Pacific, AI regulation, and food and beverage sustainability",
+    "Persona-aware answers for foreign policy, domestic policy, and corporate strategy work",
+    "Ten reviewable methods for research, stakeholder mapping, scenarios, contradictions, commitments, and memo drafting",
+    "Review-first drafting with source posture and visible gaps",
+    "Google Cloud, Firebase, Firestore, Cloud SQL Postgres, and Secret Manager production path",
   ],
 };
 
@@ -106,33 +65,22 @@ const organizationJsonLd = {
   url: "https://tacitus.me",
   logo: `${siteUrl}/favicon.svg`,
   description:
-    "TACITUS is building the AI-native stack for statecraft: policy and conflict-intelligence software that keeps analysis tied to sources, methods, institutional context, and human review.",
-  sameAs: [
-    "https://praxis.tacitus.me",
-    "https://tacitus.me",
-  ],
+    "TACITUS builds software for statecraft, policy analysis, conflict intelligence, and institutional decision work.",
+  sameAs: ["https://praxis.tacitus.me", "https://tacitus.me"],
   contactPoint: [
     {
       "@type": "ContactPoint",
       contactType: "sales",
       email: "hello@tacitus.me",
       areaServed: "Worldwide",
-      availableLanguage: ["English", "French"],
+      availableLanguage: ["English"],
     },
   ],
 };
 
-const websiteJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: "PRAXIS by TACITUS",
-  url: siteUrl,
-  inLanguage: "en",
-  publisher: { "@type": "Organization", name: "TACITUS", url: "https://tacitus.me" },
-};
-
 export default async function LandingPage() {
-  const nonce = (await headers()).get('x-nonce') ?? undefined;
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <>
       <script
@@ -145,22 +93,23 @@ export default async function LandingPage() {
         nonce={nonce}
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
       />
-      <script
-        type="application/ld+json"
-        nonce={nonce}
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
-      />
-      <Hero />
-      <SixSteps />
-      <AgenticAppSection />
-      <ExampleCasesGallery />
-      <Dialectica />
-      <LiveDemo />
-      <BuiltFor />
-      <Trust />
-      <PricingCTA />
-      <WaitlistForm />
-      <Footer />
+      {gaMeasurementId ? (
+        <>
+          <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} nonce={nonce} />
+          <script
+            nonce={nonce}
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaMeasurementId}', { anonymize_ip: true });
+              `,
+            }}
+          />
+        </>
+      ) : null}
+      <Phase8WowLanding />
     </>
   );
 }

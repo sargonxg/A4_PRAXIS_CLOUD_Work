@@ -6,10 +6,10 @@ import { cn } from "@/lib/utils/cn";
 import { Menu, X } from "lucide-react";
 
 const navLinks = [
-  { label: "Six Steps", href: "#six-steps" },
-  { label: "DIALECTICA", href: "#dialectica" },
-  { label: "Live Demo", href: "#live-demo" },
-  { label: "Built For", href: "#built-for" },
+  { label: "Demo", href: "#top" },
+  { label: "Contexts", href: "#two-contexts" },
+  { label: "Methods", href: "#methods" },
+  { label: "Drafting", href: "#drafting" },
   { label: "Trust", href: "#trust" },
   { label: "Pricing", href: "#pricing" },
 ];
@@ -37,7 +37,7 @@ export default function LandingLayout({
   }, []);
 
   return (
-    <div className="landing-light paper-texture relative min-h-screen">
+    <div id="top" className="landing-light paper-texture relative min-h-screen">
       {/* DEMO mode banner — normal flow, scrolls away naturally */}
       <div className="relative z-[60] bg-diplomatic-blue px-4 py-2 text-center text-xs text-white/90">
         <span className="font-semibold tracking-wide uppercase text-gold-400">Demo</span>
@@ -96,7 +96,7 @@ export default function LandingLayout({
               Sign In
             </Link>
             <Link
-              href="/demo/syria-2024"
+              href="/demo/indo-pacific-2026"
               prefetch={false}
               className="inline-flex items-center justify-center rounded-md bg-gold-600 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-lg hover:shadow-gold-600/20 active:bg-gold-700"
             >
@@ -145,7 +145,7 @@ export default function LandingLayout({
               Sign In
             </Link>
             <Link
-              href="/demo/syria-2024"
+              href="/demo/indo-pacific-2026"
               prefetch={false}
               onClick={() => setMobileMenuOpen(false)}
               className="mt-2 block w-full rounded-md bg-gold-600 px-5 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-gold-500"

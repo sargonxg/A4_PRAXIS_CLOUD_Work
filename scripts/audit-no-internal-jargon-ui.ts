@@ -23,6 +23,7 @@ const PRIMARY_ENTRY_FILES = [
 ];
 const LANDING_ENTRY_FILES = [
   join(ROOT, 'src', 'app', '(landing)', 'page.tsx'),
+  join(ROOT, 'src', 'components', 'landing', 'phase8-wow-landing.tsx'),
   join(ROOT, 'src', 'components', 'landing', 'agentic-app-section.tsx'),
   join(ROOT, 'src', 'components', 'landing', 'hero.tsx'),
   join(ROOT, 'src', 'components', 'landing', 'hero-visual.tsx'),

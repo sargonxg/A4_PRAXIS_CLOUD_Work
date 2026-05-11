@@ -5,6 +5,8 @@ const failures: string[] = [];
 
 const requiredRoutes = [
   'src/app/demo/syria-2024/page.tsx',
+  'src/app/demo/[contextId]/page.tsx',
+  'src/app/docs/page.tsx',
   'src/app/waitlist/page.tsx',
   'src/app/(auth)/login/callback/page.tsx',
   'src/app/privacy/page.tsx',
@@ -37,7 +39,7 @@ if (!existsSync(proxyFile)) {
 
 const landingFiles = [
   'src/app/(landing)/layout.tsx',
-  'src/components/landing/live-demo.tsx',
+  'src/components/landing/phase8-wow-landing.tsx',
   'src/components/landing/pricing-cta.tsx',
 ];
 for (const file of landingFiles) {
@@ -47,7 +49,14 @@ for (const file of landingFiles) {
     continue;
   }
   const text = readFileSync(full, 'utf8');
-  if (!text.includes('/demo/syria-2024')) failures.push(`${file} does not point primary demo CTA at /demo/syria-2024`);
+  if (
+    !text.includes('/demo/syria-2024') &&
+    !text.includes('/demo/indo-pacific-2026') &&
+    !text.includes('/demo/ai-regulation-2026') &&
+    !text.includes('/demo/fb-sustainability-2026')
+  ) {
+    failures.push(`${file} does not point to a public demo CTA`);
+  }
 }
 
 if (failures.length > 0) {

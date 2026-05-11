@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Queue 15 / Phase 8 Landing is next after Phase 7 checkpoint push
+Status: Queue 16 / Phase 9 Polish and Ship is next after Phase 8 checkpoint push
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -87,7 +87,7 @@ Known setup warnings:
 | 5 | File 3 Phase 5 | Phase 4C | complete | Codex | `cca0a32e`, `951ae357` |
 | 6 | File 3 Phase 6 | Drafting shell and templates | complete | Codex | `c781887a` |
 | 7 | File 3 Phase 7 | Waves 1-3 complete | complete | Codex | `ec88a6e4` |
-| 8 | File 3 Phase 8 | Demo content and app surfaces | not-started | unassigned | pending |
+| 8 | File 3 Phase 8 | Demo content and app surfaces | complete | Codex | pending |
 | 9 | File 3 Phase 9 | All MVP phases complete | not-started | unassigned | pending |
 
 ## Checkpoint Template
@@ -673,3 +673,44 @@ only the intended Phase 0 changes.
   - Production deploy remains manual-approval-only.
   - Artifact Registry retention cleanup, Dialectica runtime consolidation, and Cloud SQL split decisions are documented in `docs/audits/2026-05-11-GCP_FIREBASE_CLEANUP_REVIEW.md` but were not executed because they require telemetry or explicit retirement confirmation.
 - Notes for next agent: After this checkpoint is committed and pushed, continue with Queue 15 / Phase 8 Landing. Preserve unrelated untracked `.playwright-cli/`, `docs/audits/2026-05-10-v5-final-product-qa.md`, and Phase 6 server logs unless Giulio explicitly asks to clean scratch output.
+
+### 2026-05-11 - Phase 8 - Public Landing Page Rebuild
+
+- Owner: Codex
+- Prompt source: `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md` Phase 8
+- Scope completed:
+  - Rebuilt `/` around the v5 public demo: first viewport now leads with PRAXIS by TACITUS, persona picker, context picker, cached answer bar, and no signup wall.
+  - Added selectable demo paths for Indo-Pacific, AI Regulation, and Food & Beverage Sustainability with cached answers and routes into `/demo/[contextId]`, Methods, and Drafting.
+  - Added "Two contexts, one engine", 10-method grid, drafting comparison, pricing CTA, trust strip, and footer links.
+  - Added optional GA4 script loading through `NEXT_PUBLIC_GA_MEASUREMENT_ID` / `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` and client events for demo question, method click, and signup/pricing click.
+  - Added `/docs` as a simple public starting point so the landing footer does not route to a missing docs page.
+  - Updated the proxy so `/demo`, `/demo/syria-2024`, and `/demo/[contextId]` are public read-only routes instead of redirecting signed-out users to login.
+  - Updated landing/legal/jargon audits to match the Phase 8 demo-first surface.
+  - Stored the provided Neon API token as Secret Manager secret `praxis-neon-api-key`; PRAXIS remains on Cloud SQL Postgres unless a later migration decision changes it.
+- Files changed: landing page/layout, Phase 8 landing component, docs route, proxy, landing/legal/jargon audits, env examples, GCP/Firebase audit doc, graphify output, queue tracker, execution ledger
+- Validation run:
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run audit:landing`
+  - `npm run audit:no-internal-jargon-ui`
+  - `npm run audit:demo-claim`
+  - `npm run audit:experience-map-coherence`
+  - `npm run audit:legal-pages-present`
+  - `npx vitest run --pool=threads`
+  - `graphify update .`
+  - Production-mode local browser smoke on `http://127.0.0.1:3108`
+- Validation result: pass
+  - PASS: typecheck, build, landing audit, no-internal-jargon audit, demo-claim audit, experience-map audit, legal pages audit, full 152-file / 587-test Vitest run, and graphify update.
+  - PASS: lint completed with existing warning debt only.
+  - PASS: browser smoke loaded `/` desktop/mobile, verified first viewport and next section are visible, switched the Context picker to AI Regulation, clicked "Run cached answer", confirmed signed-out navigation to `/demo/ai-regulation-2026`, and recorded zero browser console warnings/errors.
+  - Screenshots captured: `output/playwright/phase8-landing-desktop.png` and `output/playwright/phase8-landing-mobile.png`.
+  - ENVIRONMENT: `next start` logs the repo's standalone-output warning but served the production build successfully for smoke verification.
+  - SCOPE NOTE: Lighthouse CI and magic-link email delivery are not currently wired as local scripts in this repo; Phase 8 validated with build, static audits, full Vitest, and Playwright browser smoke.
+- Commit: pending
+- Push: pending
+- Open blockers:
+  - Phase 9 still owns final polish, pricing/checkout, mobile-wide route polish, persona suites, and ship/canary tasks.
+  - Production deploy remains manual-approval-only.
+  - Neon token is stored for future administration only; the active Postgres path is still Cloud SQL Postgres.
+- Notes for next agent: After this checkpoint is committed and pushed, continue with Queue 16 / Phase 9 Polish and Ship. Preserve unrelated untracked `.playwright-cli/`, `docs/audits/2026-05-10-v5-final-product-qa.md`, Phase 6 server logs, and Phase 8 browser artifacts unless Giulio explicitly asks to clean scratch output.
