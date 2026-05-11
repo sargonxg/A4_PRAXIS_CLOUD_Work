@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Phase 4E pushed; Queue 12 / Phase 5 Methods is next
+Status: Phase 5 validated locally; commit and push pending
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -84,7 +84,7 @@ Known setup warnings:
 | 4C | File 3 Phase 4C | Phase 4A foundation | complete | Codex | `04e703d0`, `7fa55185` |
 | 4D | File 3 Phase 4D | Methods and runtime prerequisites | complete | Codex | `c4938c99`, `995e5e8e` |
 | 4E | File 3 Phase 4E | Drafting prerequisites | complete | Codex | `54d46851`, `b40cb735` |
-| 5 | File 3 Phase 5 | Phase 4C | not-started | unassigned | pending |
+| 5 | File 3 Phase 5 | Phase 4C | validated-local | Codex | pending |
 | 6 | File 3 Phase 6 | Drafting shell and templates | not-started | unassigned | pending |
 | 7 | File 3 Phase 7 | Waves 1-3 complete | not-started | unassigned | pending |
 | 8 | File 3 Phase 8 | Demo content and app surfaces | not-started | unassigned | pending |
@@ -551,3 +551,44 @@ only the intended Phase 0 changes.
   - Phase 6 still owns generated drafting templates, section-level AI actions, inline citation drag/drop, and signed export artifact behavior.
   - Phase 4E uses local typed shell/demo data and does not add Firestore draft CRUD or new security-boundary rules.
 - Notes for next agent: After this checkpoint is committed and pushed, continue with Queue 12 / Phase 5 Methods. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md`.
+
+### 2026-05-10 - Phase 5 - MVP Methods Runtime
+
+- Owner: Codex
+- Prompt source: `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md` Phase 5
+- Scope completed:
+  - Added a Phase 5 MVP Method runtime layer for all 10 Methods with runtime IDs, L-pattern declarations, ontology requirements, composition, output schema validation, citations, gaps, next actions, and owner-scoped artifact posture.
+  - Added `/api/methods/[methodId]/run`, using `withAuth`, `buildContextSnapshot`, existing ContextProvider isolation, and existing `toolRunArtifacts` persistence for non-demo users.
+  - Updated the `/methods/[methodId]` run panel to execute methods, render findings, show provenance chips, and display persistence scope.
+  - Added 10 canonical Method SKILL.md files and role-affinity mappings for the three MVP personas.
+  - Extended tool-contract-v2 and tool-skills audits to cover the MVP Method layer.
+  - Added a Phase 5 canary test that runs all 10 MVP Methods against a ContextSnapshot and validates output schema.
+- Files changed: method catalog/runtime, method run API, method UI run view, Method skills, role affinity, tool audits, Phase 5 test, generated tool-contract audit evidence, graphify output, queue tracker, execution ledger
+- Validation run:
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run audit:tool-contracts`
+  - `npm run audit:tool-contract-v2`
+  - `npm run audit:tool-context-isolation`
+  - `npm run audit:tool-canary-executable`
+  - `npm run audit:tool-semantic-canaries`
+  - `npm run audit:tool-marketplace`
+  - `npm run audit:tool-skills-present`
+  - `node scripts/audit-ai-routes.mjs`
+  - `npx vitest run --pool=threads`
+  - `graphify update .`
+  - Production-mode local browser smoke on `http://localhost:3036`
+- Validation result: pass
+  - PASS: typecheck, build, route audit, tool contract audits, context isolation, canary executable audit, semantic canaries, marketplace audit, skills audit, full 150-file / 582-test Vitest run, and graphify update.
+  - PASS: lint completed with existing warning debt only.
+  - PASS: browser smoke loaded `/methods/contradiction-finder`, set a signed demo session, entered `syria-2026`, ran readiness, executed `/api/methods/contradiction-finder/run`, rendered findings/provenance/persistence, and reported zero console warnings/errors.
+  - ENVIRONMENT: `next start` logs the repo's standalone-output warning but served the production build successfully for smoke verification.
+  - ENVIRONMENT: Vitest was run with `--pool=threads`, consistent with the Windows-stable mode used in prior v5 checkpoints.
+- Commit: pending
+- Push: pending
+- Open blockers:
+  - Phase 5 provides a deterministic/foundation runtime over the existing marketplace and research primitives. It does not claim every method is model-backed in production.
+  - Live source depth for Deep Research still depends on provider credentials and the Phase 2C research pipeline availability.
+  - Phase 6 still owns final drafting templates and section-level AI actions.
+- Notes for next agent: After this checkpoint is committed and pushed, continue with Queue 13 / Phase 6 Drafting. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md`.

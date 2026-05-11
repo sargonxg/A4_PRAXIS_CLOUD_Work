@@ -6,6 +6,7 @@ export type MethodStatus = 'runtime-ready' | 'context-required' | 'phase-5-runti
 
 export interface MethodDefinition {
   id: string;
+  runtimeId: string;
   name: string;
   category: MethodCategory;
   summary: string;
@@ -30,6 +31,7 @@ const method = (definition: MethodDefinition): MethodDefinition => definition;
 export const MVP_METHODS: MethodDefinition[] = [
   method({
     id: 'position-interest-decoder',
+    runtimeId: 'analysis.position-vs-interest',
     name: 'Position-vs-Interest Decoder',
     category: 'ai',
     summary: 'Separates stated positions from likely underlying interests, confidence, and evidence gaps.',
@@ -37,13 +39,14 @@ export const MVP_METHODS: MethodDefinition[] = [
     inputs: ['actor list', 'claims', 'source excerpts'],
     outputs: ['interest map', 'confidence notes', 'questions to resolve'],
     contextNeeds: ['named actors', 'claims or public demands', 'at least one source receipt'],
-    status: 'context-required',
+    status: 'runtime-ready',
     sourceToolId: 'mediation.position-vs-interest',
     runPath: '/api/tools/marketplace/run',
     suggestionWeight: 96,
   }),
   method({
     id: 'scenario-projector',
+    runtimeId: 'analysis.scenario-projector',
     name: 'Scenario Projector',
     category: 'ai',
     summary: 'Projects likely, high-risk, and opportunity paths from the current context and constraints.',
@@ -51,13 +54,14 @@ export const MVP_METHODS: MethodDefinition[] = [
     inputs: ['current frame', 'events', 'constraints', 'assumptions'],
     outputs: ['scenario set', 'warning indicators', 'decision triggers'],
     contextNeeds: ['recent events', 'actors', 'uncertainties', 'source coverage'],
-    status: 'context-required',
+    status: 'runtime-ready',
     sourceToolId: 'cross.scenario-projector',
     runPath: '/api/tools/marketplace/run',
     suggestionWeight: 89,
   }),
   method({
     id: 'ach',
+    runtimeId: 'analysis.ach-hypothesis',
     name: 'Analysis of Competing Hypotheses',
     category: 'ai',
     summary: 'Compares competing explanations and highlights evidence that weakens each explanation.',
@@ -65,13 +69,14 @@ export const MVP_METHODS: MethodDefinition[] = [
     inputs: ['hypotheses', 'evidence items', 'assumptions'],
     outputs: ['hypothesis matrix', 'weak evidence flags', 'next collection moves'],
     contextNeeds: ['two or more explanations', 'evidence list', 'source provenance'],
-    status: 'context-required',
+    status: 'runtime-ready',
     sourceToolId: 'cross.ach',
     runPath: '/api/tools/marketplace/run',
     suggestionWeight: 92,
   }),
   method({
     id: 'memo-drafter',
+    runtimeId: 'drafting.memo-drafter',
     name: 'Memo Drafter',
     category: 'ai',
     summary: 'Turns selected context, findings, and gaps into a reviewable memo draft.',
@@ -79,13 +84,14 @@ export const MVP_METHODS: MethodDefinition[] = [
     inputs: ['memo goal', 'audience', 'selected findings', 'citations'],
     outputs: ['structured draft', 'citation gaps', 'review checklist'],
     contextNeeds: ['audience', 'key findings', 'source receipts'],
-    status: 'phase-5-runtime',
+    status: 'runtime-ready',
     sourceToolId: 'cross.memo-create',
     runPath: '/api/tools/marketplace/run',
     suggestionWeight: 84,
   }),
   method({
     id: 'frame-narrative-analyzer',
+    runtimeId: 'analysis.frame-narrative',
     name: 'Frame & Narrative Analyzer',
     category: 'ai',
     summary: 'Finds the frames, messengers, audiences, and claim movement shaping a case.',
@@ -93,13 +99,14 @@ export const MVP_METHODS: MethodDefinition[] = [
     inputs: ['claims', 'actors', 'source excerpts', 'audiences'],
     outputs: ['frame map', 'audience exposure', 'counter-frame needs'],
     contextNeeds: ['claims', 'messengers', 'audience or stakeholder notes'],
-    status: 'context-required',
+    status: 'runtime-ready',
     sourceToolId: 'narrative.frame-cascade',
     runPath: '/api/tools/marketplace/run',
     suggestionWeight: 82,
   }),
   method({
     id: 'contradiction-finder',
+    runtimeId: 'analysis.contradiction-finder',
     name: 'Contradiction Finder',
     category: 'ai',
     summary: 'Flags conflicting claims across sources, notes, graph facts, and prior outputs.',
@@ -114,6 +121,7 @@ export const MVP_METHODS: MethodDefinition[] = [
   }),
   method({
     id: 'deep-research',
+    runtimeId: 'research.deep-research-agent',
     name: 'Grounded Research',
     category: 'research',
     summary: 'Runs a sourced research pass using grounded search and Wikidata where available.',
@@ -121,12 +129,13 @@ export const MVP_METHODS: MethodDefinition[] = [
     inputs: ['research question', 'case scope', 'source constraints'],
     outputs: ['sourced answer', 'open questions', 'entity candidates'],
     contextNeeds: ['question', 'case scope', 'acceptable source boundaries'],
-    status: 'context-required',
+    status: 'runtime-ready',
     runPath: '/api/research/run',
     suggestionWeight: 90,
   }),
   method({
     id: 'stakeholder-power-interest-map',
+    runtimeId: 'analysis.stakeholder-power-interest',
     name: 'Stakeholder Power-Interest Map',
     category: 'deterministic',
     summary: 'Ranks actors by influence and interest so engagement priorities are explicit.',
@@ -141,6 +150,7 @@ export const MVP_METHODS: MethodDefinition[] = [
   }),
   method({
     id: 'coalition-detector',
+    runtimeId: 'analysis.coalition-detector',
     name: 'Coalition Detector',
     category: 'deterministic',
     summary: 'Maps supportive, blocking, and swing actors around a policy action or negotiation move.',
@@ -148,13 +158,14 @@ export const MVP_METHODS: MethodDefinition[] = [
     inputs: ['actors', 'positions', 'institutional ties'],
     outputs: ['coalition map', 'swing actors', 'blocking risks'],
     contextNeeds: ['actors', 'positions', 'relationship evidence'],
-    status: 'context-required',
+    status: 'runtime-ready',
     sourceToolId: 'governance.coalition-map',
     runPath: '/api/tools/marketplace/run',
     suggestionWeight: 86,
   }),
   method({
     id: 'commitment-tracker',
+    runtimeId: 'analysis.commitment-tracker',
     name: 'Commitment Tracker',
     category: 'deterministic',
     summary: 'Checks whether a proposed commitment is monitorable, attributable, and enforceable.',

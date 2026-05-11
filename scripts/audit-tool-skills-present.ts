@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { MVP_METHODS } from '@/lib/methods/catalog';
 import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
 
 const failures: string[] = [];
@@ -24,6 +25,26 @@ for (const tool of MARKETPLACE_TOOLS) {
   }
 }
 
+for (const method of MVP_METHODS) {
+  const file = join(process.cwd(), `skills/tools/${method.runtimeId}/SKILL.md`);
+  if (!existsSync(file)) {
+    failures.push(`${method.runtimeId} missing MVP Method skill file`);
+    continue;
+  }
+  const text = readFileSync(file, 'utf8');
+  let previousIndex = -1;
+  for (const section of sections) {
+    const index = text.indexOf(`## ${section}`);
+    if (index === -1) {
+      failures.push(`${method.runtimeId} skill missing ${section}`);
+      continue;
+    }
+    if (index <= previousIndex) failures.push(`${method.runtimeId} skill section ${section} is out of canonical order`);
+    previousIndex = index;
+  }
+  if (!text.includes(method.runtimeId)) failures.push(`${method.runtimeId} skill must name its runtime id`);
+}
+
 for (const subagent of ['context-preparer', 'source-augmenter', 'output-refiner', 'memo-drafter', 'red-team-analyst', 'analyst_persona', 'moderator']) {
   const file = join(process.cwd(), `skills/subagents/${subagent}/SKILL.md`);
   if (!existsSync(file)) failures.push(`missing subagent skill ${subagent}`);
@@ -35,4 +56,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Tool skills audit passed for ${MARKETPLACE_TOOLS.length} tools and 7 subagents. (static-marker)`);
+console.log(`Tool skills audit passed for ${MARKETPLACE_TOOLS.length} tools, ${MVP_METHODS.length} MVP Methods, and 7 subagents. (static-marker)`);
