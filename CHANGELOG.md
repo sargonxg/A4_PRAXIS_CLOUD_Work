@@ -4,6 +4,8 @@
 
 - fix(v5): route `/app` to the dashboard, refresh Graphify, pass the full
   `audit:gate`, and record the approved frontend production deploy evidence.
+- fix(v5): show an explicit checkout-unavailable message when Polar billing is
+  not configured, record final product QA, and update CI actions for Node 24.
 - test(v5): add Phase 9 persona smoke CI coverage for Indo-Pacific and AI
   Regulation demo paths, stabilize current persona specs against the chapter
   desk UI, and allow signed demo sessions in local HTTP production smoke runs.

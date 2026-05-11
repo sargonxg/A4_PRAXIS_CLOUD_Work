@@ -850,3 +850,27 @@ only the intended Phase 0 changes.
   - Billing provider configuration/decision: finish Polar production env setup or approve a Stripe migration before claiming paid checkout complete.
   - Persona CI streak: production smoke passed, but the 10 consecutive CI green-run requirement remains unproven until GitHub Actions records those runs.
   - Cognee remains disabled/unconfigured in production by design until the separate service is deployed and approved.
+
+### 2026-05-11 - Queue 18 - Final Product QA And Readiness Cleanup
+
+- Owner: Codex
+- Prompt source: Giulio asked to keep working, finish the TODO list, deploy what is needed on `praxis.tacitus.me`, clean up unnecessary output, update documentation, and prepare for a new improvement round.
+- Scope completed:
+  - Verified the live Cloud Run service inventory: all currently deployed PRAXIS-adjacent services in `us-central1` reported Ready.
+  - Confirmed no Polar, Stripe, Cognee, Resend, or webhook provider secrets are visible to the active account; no unsupported provider service deployment was attempted.
+  - Added an explicit Settings checkout fallback so an unconfigured Polar checkout shows a buyer-facing message instead of silently stopping.
+  - Updated GitHub Actions workflow actions to Node 24 runtime-compatible major versions after the persona workflow emitted Node 20 deprecation warnings.
+  - Created `docs/audits/2026-05-11-v5-final-product-qa.md`.
+  - Removed generated local Playwright `test-results/` scratch output.
+- Validation run:
+  - `npm run lint -- src\app\app\settings\page.tsx`
+  - `npm run typecheck`
+  - `npm run build`
+  - GitHub Actions persona smoke run `25652333690`
+- Validation result: pass
+  - PASS: settings fallback lint, typecheck, and production build.
+  - PASS: persona smoke CI run `25652333690` passed on commit `1b3a6c69`, bringing the recorded CI streak to 1/10.
+- Open blockers carried forward:
+  - Billing provider configuration/decision remains the only buyer-facing paid-plan launch blocker.
+  - Persona CI streak is 1/10, not complete.
+  - Cognee remains disabled-first until a separate service deployment is approved.

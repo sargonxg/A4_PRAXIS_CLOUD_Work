@@ -80,7 +80,7 @@ prompts; this status table is the operational tracker.
 | 15 | complete | `b7ae568c`, `4c4ee7a0`; validation: typecheck, lint, build, landing/legal/demo/experience/jargon audits, full Vitest, browser smoke, graphify | Done. |
 | 16 | in-progress | `da561346`, `82d3de84`, `47b9a9a9`, `7d95dc77`, `25d13a75`, tracker `80ef65c6`; graph polish, live/database, persona smoke, and pre-deploy checkpoints pushed | Continue remaining Phase 9 ship work: checkout/pricing provider configuration and repeated persona-suite CI proof. |
 | 17 | complete | Cloud Builds `1314022b-3069-44ac-b1d0-f09242e39161`, `f78fc2fa-3a86-4194-87e7-3f0033e55595`; final Cloud Run `praxis-frontend-00308-29d`; live HTTP/browser/persona/canary checks passed | Done. |
-| 18 | in-progress | production smoke and red-team evidence started after approved deploy | Complete final QA/red-team record; billing remains blocked on provider env/decision. |
+| 18 | complete-with-blockers | `docs/audits/2026-05-11-v5-final-product-qa.md`; production smoke, CI smoke, and red-team evidence recorded | Billing provider config, 10-run CI streak, and Cognee decision carry into the next improvement round. |
 
 ## Recommended Antigravity Setup
 

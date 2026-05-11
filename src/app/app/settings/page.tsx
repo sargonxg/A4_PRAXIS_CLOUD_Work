@@ -189,6 +189,7 @@ function PaymentBanner() {
   const { user } = useAuth();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   // Auto-trigger checkout when user arrives with ?upgrade=analyst
   useEffect(() => {
@@ -200,6 +201,7 @@ function PaymentBanner() {
 
   async function handleUpgrade(planId: string) {
     setIsCheckingOut(true);
+    setCheckoutError(null);
     try {
       const res = await fetch('/api/polar/checkout', {
         method: 'POST',
@@ -210,9 +212,13 @@ function PaymentBanner() {
       if (data.url) {
         window.location.href = data.url;
       } else {
+        setCheckoutError(
+          data.error || 'Subscription checkout is not available yet. Contact TACITUS to activate this plan.',
+        );
         setIsCheckingOut(false);
       }
     } catch {
+      setCheckoutError('Subscription checkout could not be reached. Contact TACITUS to activate this plan.');
       setIsCheckingOut(false);
     }
   }
@@ -243,6 +249,19 @@ function PaymentBanner() {
           <p className="text-xs text-gold-600">No charges were made. You can upgrade anytime from the pricing page.</p>
         </div>
         <button onClick={() => setDismissed(true)} className="text-gold-400 hover:text-gold-600 text-xs">Dismiss</button>
+      </div>
+    );
+  }
+
+  if (checkoutError) {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-gold-300 bg-gold-50 p-4">
+        <AlertCircle className="h-5 w-5 shrink-0 text-gold-600" />
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-gold-800">Checkout Not Available</p>
+          <p className="text-xs text-gold-700">{checkoutError}</p>
+        </div>
+        <button onClick={() => setDismissed(true)} className="text-gold-500 hover:text-gold-700 text-xs">Dismiss</button>
       </div>
     );
   }

@@ -11,17 +11,17 @@ Last updated: 2026-05-11.
 
 ## Immediate Next Steps
 
-1. Continue Queue `18` final product QA and red-team review on live production.
-2. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
-3. Track persona smoke CI until the required 10 consecutive green runs are real, not projected.
-4. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
+1. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
+2. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 1/10.
+3. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
+4. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
 
 ## Live Production Blockers
 
 - Provider-backed notification delivery remains open; see `BLOCKERS.md`.
 - Live Cognee SDK calls remain service-owned and disabled-first; see `BLOCKERS.md`.
 - Deep pre-ship live checks still require staging/prod execution; see `BLOCKERS.md`.
-- Phase 9 production deploy approval was granted in this session; final QA and billing provider configuration remain open.
+- Phase 9 production deploy approval was granted in this session; final QA is recorded in `docs/audits/2026-05-11-v5-final-product-qa.md`; billing provider configuration remains open.
 
 ## Standing Rules
 

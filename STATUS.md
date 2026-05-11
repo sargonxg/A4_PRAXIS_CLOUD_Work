@@ -5,14 +5,15 @@
 The v5 queue in `docs/build/PRAXIS_v5_ANTIGRAVITY_QUEUE_PROMPTS.md` is the
 active tracker. Queues `00` through `15` are complete and pushed. Queue `16`
 Phase 9 is in progress with graph polish, live database review, persona smoke
-CI/checkpoint work, and production deploy evidence completed. Queue `17` is
-approved for this session and has reached production once; Queue `18` final QA
-is in progress against the live site.
+CI/checkpoint work, production deploy evidence, and Queue `18` final QA
+completed. Queue `17` is complete for this session and live on
+`praxis.tacitus.me`.
 
 Current Phase 9 blockers:
 
 - Persona CI wiring exists, but the "10 consecutive passes" requirement cannot
-  be claimed until the workflow has actually produced those runs.
+  be claimed until the workflow has actually produced those runs. Current
+  recorded streak: 1/10.
 - Checkout/pricing still needs production billing provider configuration and a
   final implementation decision against the current Polar billing routes before
   Phase 9 can close.
@@ -30,6 +31,8 @@ Latest production deploy evidence:
   warnings/errors on the checked routes.
 - Production persona smoke passed 6/6 specs, and the final 100% canary monitor
   passed with 0 error rate and p95 latency 272 ms.
+- Final product QA is recorded in
+  `docs/audits/2026-05-11-v5-final-product-qa.md`.
 
 ---
 

@@ -7,17 +7,25 @@ Pack 21 reset: 2026-05-07
 
 | Suite | Latest recorded local status | Consecutive CI green runs |
 |---|---:|---:|
-| diplomat | production smoke passed on 2026-05-11 | 0 |
-| mediator | production smoke passed on 2026-05-11 | 0 |
-| analyst | production smoke passed on 2026-05-11 | 0 |
-| researcher | production smoke passed on 2026-05-11 | 0 |
+| diplomat | production and CI smoke passed on 2026-05-11 | 1 |
+| mediator | production and CI smoke passed on 2026-05-11 | 1 |
+| analyst | production and CI smoke passed on 2026-05-11 | 1 |
+| researcher | production and CI smoke passed on 2026-05-11 | 1 |
 
 Latest production command:
 
 `PLAYWRIGHT_BASE_URL=https://praxis.tacitus.me npm run smoke:personas -- --reporter=line`
 
-Result: 6/6 persona specs passed against production. CI green streak remains 0
-until GitHub Actions records actual consecutive workflow passes.
+Result: 6/6 persona specs passed against production. CI green streak is now
+1/10 after the first successful GitHub Actions persona-smoke run.
+
+Latest CI proof:
+
+- Workflow: `persona-smoke`
+- Run: `25652333690`
+- Commit: `1b3a6c69`
+- Result: success
+- Streak: 1/10
 
 ## Policy
 
