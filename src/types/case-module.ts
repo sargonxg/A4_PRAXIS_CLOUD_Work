@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { CanonicalSourceReceipt } from '@/types/source-receipt';
+import type { ContextEpisode } from '@/types/episode';
 import type { Situation } from '@/types/situation';
 import type { WorkbenchChapterId } from '@/lib/workbench/chapter-flow';
 
@@ -28,6 +29,14 @@ export interface CaseModule {
   };
   situation: Situation;
   sources: CanonicalSourceReceipt[];
+  episodes?: ContextEpisode[];
+  cachedResponses?: Array<{
+    questionId: string;
+    question: string;
+    response: string;
+    targetPath: string;
+    latencyTargetMs: number;
+  }>;
   chapters?: Partial<Record<WorkbenchChapterId, () => ReactNode>>;
   truthLayers: {
     source: TruthLayerSnapshot;

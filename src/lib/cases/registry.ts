@@ -1,8 +1,10 @@
 import type { CaseModule, LandingCaseCard } from '@/types/case-module';
 import { syria2026CaseModule } from '@/lib/cases/syria-2026';
 import { nordalia2026CaseModule } from '@/lib/cases/nordalia-2026';
+import { V5_DEMO_CASE_MODULES } from '@/lib/cases/v5-demo-contexts';
 
 export const EXAMPLE_CASE_MODULES: CaseModule[] = [
+  ...V5_DEMO_CASE_MODULES,
   syria2026CaseModule,
   nordalia2026CaseModule,
 ];

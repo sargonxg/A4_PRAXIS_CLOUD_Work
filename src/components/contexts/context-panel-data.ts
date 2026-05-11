@@ -2,6 +2,8 @@ import type { CaseModule } from '@/types/case-module';
 import type { ContextEpisode } from '@/types/episode';
 
 export function buildContextEpisodes(caseModule: CaseModule): ContextEpisode[] {
+  if (caseModule.episodes?.length) return caseModule.episodes;
+
   const updated = caseModule.situation.updatedAt || new Date().toISOString();
   return [
     {

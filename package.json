@@ -81,6 +81,8 @@
     "seed:preferences": "tsx scripts/seed-preferences-defaults.ts",
     "seed:advisors": "tsx scripts/seed-advisors.ts",
     "seed:domains": "tsx scripts/seed-domains.ts",
+    "scripts:seed-demos": "tsx scripts/seed-demos/seed-indo-pacific.ts && tsx scripts/seed-demos/seed-ai-regulation.ts && tsx scripts/seed-demos/seed-fb-sustainability.ts && tsx scripts/seed-demos/seed-user-models.ts && tsx scripts/seed-demos/seed-cached-responses.ts",
+    "scripts:verify-demos": "tsx scripts/seed-demos/verify.ts",
     "audit:gcp": "node scripts/audit-gcp.mjs",
     "audit:gcp-production-posture": "tsx scripts/audit-gcp-production-posture.ts",
     "audit:workbench": "tsx scripts/audit-workbench.ts",

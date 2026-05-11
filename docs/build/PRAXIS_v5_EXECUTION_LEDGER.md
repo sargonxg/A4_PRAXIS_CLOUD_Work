@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Queue 14 / Phase 7 Demo Content is next
+Status: Queue 15 / Phase 8 Landing is next after Phase 7 checkpoint push
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -36,8 +36,8 @@ stop and record the conflict here before editing.
 
 Known setup warnings:
 
-- Application Default Credentials need browser reauthentication before Vertex
-  or Google SDK parity work: run `gcloud auth application-default login --project=praxisbytacitus`.
+- Application Default Credentials are present and quota-aligned to
+  `praxisbytacitus` as of 2026-05-11.
 - Cloud Scheduler jobs are paused.
 - Firestore delete protection and point-in-time recovery are disabled.
 - Current user cannot verify `gs://praxis-terraform-state`.
@@ -86,7 +86,7 @@ Known setup warnings:
 | 4E | File 3 Phase 4E | Drafting prerequisites | complete | Codex | `54d46851`, `b40cb735` |
 | 5 | File 3 Phase 5 | Phase 4C | complete | Codex | `cca0a32e`, `951ae357` |
 | 6 | File 3 Phase 6 | Drafting shell and templates | complete | Codex | `c781887a` |
-| 7 | File 3 Phase 7 | Waves 1-3 complete | not-started | unassigned | pending |
+| 7 | File 3 Phase 7 | Waves 1-3 complete | complete | Codex | pending |
 | 8 | File 3 Phase 8 | Demo content and app surfaces | not-started | unassigned | pending |
 | 9 | File 3 Phase 9 | All MVP phases complete | not-started | unassigned | pending |
 
@@ -630,3 +630,46 @@ only the intended Phase 0 changes.
   - Section actions currently return deterministic review-required proposals rather than claiming fully autonomous production drafting.
   - Signed export artifact production behavior remains covered by existing export surfaces and later ship verification.
 - Notes for next agent: After this checkpoint is committed and pushed, continue with Queue 14 / Phase 7 Demo Content. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md`.
+
+### 2026-05-11 - Phase 7 - Demo Content And Persona Wow Paths
+
+- Owner: Codex
+- Prompt source: `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md` Phase 7
+- Scope completed:
+  - Added three v5 demo Context modules: Indo-Pacific Strategic Competition 2026, AI Regulation 2026 - US Federal and State Landscape, and Food and Beverage Regulatory and Sustainability Outlook 2026.
+  - Added 90 public source receipts across the three Contexts, with tiered source metadata and graph paths.
+  - Added 24 situation episodes, 9 work episodes, graph counts, and 9 cached demo responses with 200ms display targets.
+  - Wired v5 demo Contexts into the existing case registry so `/contexts` and `/contexts/[caseId]` can render them.
+  - Added public `/demo/[contextId]` cached demo route for the three demo Contexts.
+  - Added non-destructive `scripts/seed-demos/*` scripts and `npm run scripts:seed-demos` / `npm run scripts:verify-demos`.
+  - Reused the three public user model seeds required by the demo paths: foreign policy analyst, domestic policy analyst, and corporate strategic analyst.
+  - Completed a GCP/Firebase cleanup review and corrected local `gcloud`/ADC project alignment to `praxisbytacitus`.
+- Files changed: v5 demo Context data, case registry, Context panel episode source, demo route, seed/verify scripts, Phase 7 test, package scripts, GCP/Firebase audit doc, queue tracker, execution ledger, graphify output
+- Validation run:
+  - `npm run scripts:verify-demos`
+  - `npm run scripts:seed-demos`
+  - `npx vitest run tests/demo/phase7-demo-contexts.test.ts --pool=threads`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run audit:demo-claim`
+  - `npm run audit:onboarding-gate`
+  - `npm run audit:stage-target-coverage`
+  - `npm run audit:no-internal-jargon-ui`
+  - `npm run auth:doctor`
+  - `npm run audit:gcp`
+  - `firebase firestore:indexes --project praxisbytacitus`
+  - `firebase deploy --only firestore:rules,firestore:indexes,storage --project praxisbytacitus --dry-run`
+  - `graphify update .`
+- Validation result: pass
+  - PASS: demo verify/seed scripts, focused Phase 7 Vitest, typecheck, build, demo-claim audit, onboarding gate, stage-target coverage, no-internal-jargon audit, auth doctor, GCP audit, Firestore index read, Firebase rules/index/storage dry run, and graphify update.
+  - PASS: lint completed with existing warning debt only.
+  - PASS: `npm run audit:gcp` reported 0 hard failures and 0 soft warnings after local `gcloud` and ADC quota project were aligned to `praxisbytacitus`.
+  - SCOPE NOTE: seed scripts are intentionally non-destructive local bundle/verification scripts. They do not write Firestore or Storage without an explicit production data-seeding runbook.
+- Commit: pending
+- Push: pending
+- Open blockers:
+  - Phase 8 still owns landing-page polish and public narrative integration.
+  - Production deploy remains manual-approval-only.
+  - Artifact Registry retention cleanup, Dialectica runtime consolidation, and Cloud SQL split decisions are documented in `docs/audits/2026-05-11-GCP_FIREBASE_CLEANUP_REVIEW.md` but were not executed because they require telemetry or explicit retirement confirmation.
+- Notes for next agent: After this checkpoint is committed and pushed, continue with Queue 15 / Phase 8 Landing. Preserve unrelated untracked `.playwright-cli/`, `docs/audits/2026-05-10-v5-final-product-qa.md`, and Phase 6 server logs unless Giulio explicitly asks to clean scratch output.
