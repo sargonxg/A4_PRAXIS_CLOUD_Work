@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
 pub const PRAXIS_SEMANTICA_SCHEMA: &str = "praxis-semantica-context-core.v1";
@@ -34,7 +34,8 @@ pub struct Relationship {
     pub relationship_type: String,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GraphValidation {
     pub node_count: usize,
     pub edge_count: usize,
@@ -42,14 +43,12 @@ pub struct GraphValidation {
     pub has_domain_ontology: bool,
     pub has_work_ontology: bool,
     pub orphan_edge_count: usize,
+    pub semantica_ready: bool,
 }
 
 impl GraphValidation {
     pub fn semantica_ready(&self) -> bool {
-        self.has_context_root
-            && self.has_domain_ontology
-            && self.has_work_ontology
-            && self.orphan_edge_count == 0
+        self.semantica_ready
     }
 }
 
@@ -86,13 +85,18 @@ pub fn validate_context_graph(graph: &ContextGraph) -> Result<GraphValidation, S
         .filter(|edge| !ids.contains(edge.source_id.as_str()) || !ids.contains(edge.target_id.as_str()))
         .count();
 
+    let has_context_root = graph.entities.iter().any(|entity| entity.entity_type == "context_core");
+    let has_domain_ontology = graph.entities.iter().any(|entity| entity.entity_type == "domain_ontology");
+    let has_work_ontology = graph.entities.iter().any(|entity| entity.entity_type == "work_ontology");
+
     Ok(GraphValidation {
         node_count: graph.entities.len(),
         edge_count: graph.relationships.len(),
-        has_context_root: graph.entities.iter().any(|entity| entity.entity_type == "context_core"),
-        has_domain_ontology: graph.entities.iter().any(|entity| entity.entity_type == "domain_ontology"),
-        has_work_ontology: graph.entities.iter().any(|entity| entity.entity_type == "work_ontology"),
+        has_context_root,
+        has_domain_ontology,
+        has_work_ontology,
         orphan_edge_count,
+        semantica_ready: has_context_root && has_domain_ontology && has_work_ontology && orphan_edge_count == 0,
     })
 }
 

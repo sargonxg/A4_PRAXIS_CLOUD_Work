@@ -499,7 +499,7 @@ export async function createSituationAdmin(
     glaslStage: typeof data.glaslStage === 'number' || data.glaslStage === null ? data.glaslStage : null,
     escalationTrend: data.escalationTrend ?? 'stable',
     actorCount: data.actors.length,
-    graphEntities: 0,
+    graphEntities: data.semanticaContextGraph?.quality.nodeCount ?? 0,
     documentCount: data.initialDocumentIds?.length ?? 0,
     ...(data.sourceUrls?.length ? { sourceUrls: data.sourceUrls } : {}),
     ...(data.contextNotes ? { contextNotes: data.contextNotes } : {}),
@@ -542,6 +542,22 @@ export async function createSituationAdmin(
     updatedAt: now,
   };
   await ref.set(situation);
+  if (data.semanticaContextGraph) {
+    await ref.collection('graph').doc('semantica-context-core').set({
+      schemaVersion: data.semanticaContextGraph.schemaVersion,
+      adapterVersion: data.semanticaContextGraph.adapterVersion,
+      targetSemanticaVersion: data.semanticaContextGraph.targetSemanticaVersion,
+      contextCoreId: data.semanticaContextGraph.contextCoreId,
+      nodes: data.semanticaContextGraph.entities,
+      edges: data.semanticaContextGraph.relationships,
+      quality: data.semanticaContextGraph.quality,
+      capabilities: data.semanticaContextGraph.intendedSemanticaCapabilities,
+      storageRole: 'owner-scoped-firestore-graph-seed',
+      postgresPromotionStatus: 'pending-worker',
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
   return situation;
 }
 

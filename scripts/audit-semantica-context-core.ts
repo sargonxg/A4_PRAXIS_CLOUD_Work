@@ -7,6 +7,11 @@ const requiredFiles = [
   'src/lib/semantica/context-core-adapter.ts',
   'src/app/api/situations/route.ts',
   'src/app/app/situations/new/page.tsx',
+  'src/app/api/health/semantica-core/route.ts',
+  'src/app/api/situations/[id]/inspect/route.ts',
+  'src/lib/semantica/rust-runtime.ts',
+  'backend/services/semantica_context_store.py',
+  'backend/tests/test_semantica_context_store.py',
   'tests/unit/lib/semantica/context-core-adapter.test.ts',
   'docs/architecture/PRAXIS_SEMANTICA_CONTEXT_CORE_PLAN_2026-05-11.md',
 ];
@@ -38,9 +43,29 @@ if (failures.length === 0) {
     if (!route.includes(marker)) failures.push(`situations API missing ${marker}`);
   }
 
+  const firestore = file('src/lib/firebase/situations.ts');
+  for (const marker of ['semantica-context-core', 'postgresPromotionStatus', 'owner-scoped-firestore-graph-seed']) {
+    if (!firestore.includes(marker)) failures.push(`Firestore situation creation missing ${marker}`);
+  }
+
   const realCreatePage = file('src/app/app/situations/new/page.tsx');
   for (const marker of ['buildSemanticaSituationGraph', 'semanticaContextGraph', 'semanticaLayer']) {
     if (!realCreatePage.includes(marker)) failures.push(`authenticated context creation missing ${marker}`);
+  }
+
+  const rustRuntime = file('src/lib/semantica/rust-runtime.ts');
+  for (const marker of ['PRAXIS_SEMANTICA_CORE_BIN', 'execFile', 'validateWithRustSemanticaCore']) {
+    if (!rustRuntime.includes(marker)) failures.push(`Rust runtime bridge missing ${marker}`);
+  }
+
+  const backendStore = file('backend/services/semantica_context_store.py');
+  for (const marker of ['GraphNodeRecord', 'GraphEdgeRecord', 'promote_semantica_context_graph', 'uuid5']) {
+    if (!backendStore.includes(marker)) failures.push(`Semantica backend store missing ${marker}`);
+  }
+
+  const inspectRoute = file('src/app/api/situations/[id]/inspect/route.ts');
+  for (const marker of ['semanticaContextGraph', "doc('semantica-context-core')"]) {
+    if (!inspectRoute.includes(marker)) failures.push(`situation inspect route missing ${marker}`);
   }
 
   const plan = file('docs/architecture/PRAXIS_SEMANTICA_CONTEXT_CORE_PLAN_2026-05-11.md');

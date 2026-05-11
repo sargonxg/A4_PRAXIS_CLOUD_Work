@@ -135,7 +135,22 @@ Deployed-surface cleanup:
 - The public `/contexts` route no longer exposes duplicate creation; it points
   users to the canonical app Context Core.
 - `rust/semantica-core` is the first optional Rust acceleration component,
-  scoped to deterministic graph validation for future workers.
+  scoped to deterministic graph validation for future workers. It is now built
+  into the deployed frontend container and exposed through
+  `/api/health/semantica-core`.
+- Context creation also writes an inspectable graph seed at
+  `users/{uid}/situations/{id}/graph/semantica-context-core` with
+  `postgresPromotionStatus: pending-worker`.
+- `backend/services/semantica_context_store.py` maps that seed into
+  deterministic Postgres `graph_nodes` / `graph_edges` records for the next
+  worker promotion step.
+
+Research/source checks in this pass:
+
+- Wikidata SPARQL local helper test passed.
+- Google Grounded Search fallback honesty test passed.
+- Deep Search canonical route audit passed; `/api/ai/deep-search-agent` remains
+  the canonical agent route.
 
 ## Next Deletion Queue
 

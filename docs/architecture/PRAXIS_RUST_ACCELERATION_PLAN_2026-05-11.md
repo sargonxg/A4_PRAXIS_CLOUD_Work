@@ -6,7 +6,7 @@ Use Rust for hot-path validation, graph normalization, policy-workbench indexing
 
 ## First Component
 
-`rust/semantica-core` is a small Rust library for validating PRAXIS Semantica context graph seeds. It is intentionally independent from the frontend build today.
+`rust/semantica-core` is a small Rust library and CLI for validating PRAXIS Semantica context graph seeds. It is now part of the frontend Cloud Run deployment: Cloud Build runs its tests, the Docker image builds the release binary, and `/api/health/semantica-core` executes the deployed binary.
 
 Current capabilities:
 
@@ -14,6 +14,7 @@ Current capabilities:
 - Enforce schema version, node limits, edge limits, unique entity ids, and required context root.
 - Detect orphan relationships.
 - Return a compact readiness result for future worker pipelines.
+- Expose a runtime health check proving the deployed container can execute the Rust validator.
 
 ## Where Rust Belongs
 
@@ -29,9 +30,19 @@ Current capabilities:
 
 1. Next.js app creates `semanticaContextGraph`.
 2. API persists the sanitized seed on the situation.
-3. Worker reads the seed and calls Rust validation before Semantica enrichment.
-4. Semantica/Python enriches ontology, provenance, conflict checks, and semantic retrieval.
-5. Rust can post-process enriched graphs for stable scoring, dedupe, and export manifests.
+3. API also writes the seed into `users/{uid}/situations/{id}/graph/semantica-context-core` with `postgresPromotionStatus: pending-worker`.
+4. The deployed Rust binary validates graph readiness and orphan-edge status.
+5. Worker reads the seed and calls Rust validation before Semantica enrichment.
+6. Semantica/Python enriches ontology, provenance, conflict checks, and semantic retrieval.
+7. Rust can post-process enriched graphs for stable scoring, dedupe, and export manifests.
+
+## Deployment Proof
+
+- Cloud Build step: `preflight-rust-semantica-core`.
+- Docker stage: `rust-builder`.
+- Runtime binary env: `PRAXIS_SEMANTICA_CORE_BIN=/app/bin/praxis-semantica-core`.
+- Runtime smoke endpoint: `/api/health/semantica-core`.
+- Local audit: `npm run audit:rust-semantic-core`.
 
 ## Guardrails
 

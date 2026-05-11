@@ -17,10 +17,13 @@ for (const path of [
   'src/app/app/cores/user/page.tsx',
   'src/app/app/dashboard/page.tsx',
   'src/app/app/situations/new/page.tsx',
+  'src/app/api/health/semantica-core/route.ts',
   'src/components/dashboard/ask-praxis-home.tsx',
   'src/components/dashboard/active-core-stack.tsx',
   'src/lib/semantica/context-core-adapter.ts',
+  'src/lib/semantica/rust-runtime.ts',
   'rust/semantica-core/Cargo.toml',
+  'rust/semantica-core/src/main.rs',
 ]) {
   requireFile(path);
 }
@@ -46,10 +49,16 @@ if (failures.length === 0) {
   for (const marker of [
     'praxis-frontend',
     'NEXT_PUBLIC_SITE_URL=https://praxis.tacitus.me',
+    'preflight-rust-semantica-core',
     '- run',
     '- deploy',
   ]) {
     if (!cloudbuild.includes(marker)) failures.push(`frontend deploy config missing ${marker}`);
+  }
+
+  const dockerfile = file('Dockerfile');
+  for (const marker of ['rust-builder', 'praxis-semantica-core', 'PRAXIS_SEMANTICA_CORE_BIN']) {
+    if (!dockerfile.includes(marker)) failures.push(`Dockerfile missing deployed Rust marker ${marker}`);
   }
 
   const newSituation = file('src/app/app/situations/new/page.tsx');
@@ -81,13 +90,18 @@ if (failures.length === 0) {
   }
 
   const sidebar = file('src/components/app/app-sidebar.tsx');
-  for (const marker of ['href="/cores/context"', 'href="/cores/user"', 'href="/situations/new"']) {
+  for (const marker of ['Repository', 'href="/cores/context"', 'href="/cores/user"', 'href="/tools"', 'href="/situations/new"']) {
     if (!sidebar.includes(marker)) failures.push(`app sidebar missing PraxisLink-relative route ${marker}`);
   }
 
   const rust = file('rust/semantica-core/src/lib.rs');
   for (const marker of ['validate_context_graph_json', 'semantica_ready', 'MAX_NODES', 'MAX_EDGES']) {
     if (!rust.includes(marker)) failures.push(`Rust semantic core missing ${marker}`);
+  }
+
+  const rustHealth = file('src/app/api/health/semantica-core/route.ts');
+  for (const marker of ['validateWithRustSemanticaCore', 'binaryPath', 'semanticaReady']) {
+    if (!rustHealth.includes(marker)) failures.push(`Rust health route missing ${marker}`);
   }
 }
 

@@ -7,7 +7,7 @@ import {
   ChevronsRight,
   FileText,
   FolderKanban,
-  LayoutDashboard,
+  MessageSquareText,
   LogOut,
   Plus,
   Settings,
@@ -86,11 +86,14 @@ export function AppSidebar() {
       </div>
 
       <nav className="min-h-0 flex-1 space-y-5 overflow-y-auto px-2 py-4">
-        <SectionLabel open={sidebarOpen}>PRAXIS MVP</SectionLabel>
-        <NavItem open={sidebarOpen} href="/dashboard#ask-praxis" label="Ask PRAXIS" icon={LayoutDashboard} active={pathname === '/app/dashboard'} />
+        <SectionLabel open={sidebarOpen}>Command</SectionLabel>
+        <NavItem open={sidebarOpen} href="/dashboard#ask-praxis" label="Ask PRAXIS" icon={MessageSquareText} active={pathname === '/app/dashboard'} />
+        <NavItem open={sidebarOpen} href="/situations/new" label="New Context" icon={Plus} />
+
+        <SectionLabel open={sidebarOpen}>Repository</SectionLabel>
         <NavItem open={sidebarOpen} href="/cores/context" label="Context Core" icon={Target} active={pathname === '/app/cores/context'} />
         <NavItem open={sidebarOpen} href="/cores/user" label="User Core" icon={UserCircle} active={pathname === '/app/cores/user'} />
-        <NavItem open={sidebarOpen} href="/workbench" label={`Workbench${situations.length ? ` (${situations.length})` : ''}`} icon={FolderKanban} active={pathname === '/app/workbench'} />
+        <NavItem open={sidebarOpen} href="/workbench" label={`Situations${situations.length ? ` (${situations.length})` : ''}`} icon={FolderKanban} active={pathname === '/app/workbench'} />
         <NavItem
           open={sidebarOpen}
           href={`/workbench/${activeCaseId}?openChapter=memos`}
@@ -99,9 +102,6 @@ export function AppSidebar() {
           active={pathname.includes('/app/workbench') && searchParams.get('openChapter') === 'memos'}
         />
         <NavItem open={sidebarOpen} href="/tools" label="Tools" icon={Store} active={pathname === '/app/tools'} />
-
-        <SectionLabel open={sidebarOpen}>Create</SectionLabel>
-        <NavItem open={sidebarOpen} href="/situations/new" label="New Context" icon={Plus} />
 
         <SectionLabel open={sidebarOpen}>Account</SectionLabel>
         <NavItem open={sidebarOpen} href="/settings" label="Settings" icon={Settings} active={pathname.startsWith('/app/settings')} />

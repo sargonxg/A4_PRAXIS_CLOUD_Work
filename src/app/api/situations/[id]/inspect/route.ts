@@ -7,6 +7,7 @@
  *     situation,         // full AdminSituation document
  *     documents: [{ id, name, size, extractedTextPreview }],
  *     toolsCache: [{ toolId, generatedAt, profileVersion }],
+ *     semanticaContextGraph, // Context Core graph seed if present
  *     episodes: null,    // not implemented yet — gracefully omitted
  *     resolvedDomain,    // MergedDomainConfig for the situation's domain
  *   }
@@ -56,6 +57,7 @@ export function GET(req: NextRequest, ctx: RouteContext) {
 
     let documents: DocumentPreview[] = [];
     let toolsCache: ToolCacheEntry[] = [];
+    let semanticaContextGraph: Record<string, unknown> | null = null;
 
     try {
       const db = getAdminDbOrThrow();
@@ -65,9 +67,10 @@ export function GET(req: NextRequest, ctx: RouteContext) {
         .collection('situations')
         .doc(id);
 
-      const [docsSnap, toolsSnap] = await Promise.all([
+      const [docsSnap, toolsSnap, semanticaSnap] = await Promise.all([
         sitRef.collection('documents').limit(50).get(),
         sitRef.collection('tools').limit(100).get(),
+        sitRef.collection('graph').doc('semantica-context-core').get(),
       ]);
 
       documents = docsSnap.docs.map((d) => {
@@ -107,6 +110,7 @@ export function GET(req: NextRequest, ctx: RouteContext) {
             typeof data.profileVersion === 'number' ? data.profileVersion : null,
         };
       });
+      semanticaContextGraph = semanticaSnap.exists ? semanticaSnap.data() ?? null : null;
     } catch (err) {
       console.warn('[situations/inspect] subcollection read failed:', err);
     }
@@ -120,6 +124,7 @@ export function GET(req: NextRequest, ctx: RouteContext) {
       situation,
       documents,
       toolsCache,
+      semanticaContextGraph,
       episodes,
       resolvedDomain,
     });

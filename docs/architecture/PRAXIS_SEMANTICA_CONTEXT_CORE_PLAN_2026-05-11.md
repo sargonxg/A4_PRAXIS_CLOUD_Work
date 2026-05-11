@@ -13,7 +13,7 @@ The current creation path now emits:
 - `semanticaLayer`: the adapter metadata and future service boundary.
 - `semanticaContextGraph`: a portable JSON graph seed with entities, relationships, provenance, quality checks, and intended Semantica capabilities.
 
-The graph seed is generated in `src/lib/semantica/context-core-adapter.ts` and attached by the real authenticated creation surface at `src/app/app/situations/new/page.tsx`. The `/api/situations` route sanitizes graph shape and size before persistence.
+The graph seed is generated in `src/lib/semantica/context-core-adapter.ts` and attached by the real authenticated creation surface at `src/app/app/situations/new/page.tsx`. The `/api/situations` route sanitizes graph shape and size before persistence. Creation now stores the seed both on the situation document and in the inspectable Firestore graph document `users/{uid}/situations/{id}/graph/semantica-context-core`.
 
 ## Context Core Mapping
 
@@ -41,7 +41,7 @@ The graph seed is generated in `src/lib/semantica/context-core-adapter.ts` and a
 Preferred runtime shape:
 
 - PRAXIS Next.js app: creates, validates, stores, and reads graph seeds.
-- Rust semantic core: fast deterministic validation and future graph-normalization kernels.
+- Rust semantic core: deployed fast deterministic validation and future graph-normalization kernels.
 - Semantica worker/API: performs heavy Python graph and ML work.
 - Firestore/Graph backend: stores owner-scoped graph state and provenance.
 - Ask PRAXIS: consumes the prepared graph context through the existing context-provider path.
@@ -50,12 +50,13 @@ This avoids shipping transformer, FAISS, Torch, and Python graph dependencies in
 
 ## Next Build Queue
 
-1. Add a server-side enrichment job that sends `semanticaContextGraph` to a Semantica REST/MCP service when credentials and runtime are configured.
-2. Put `rust/semantica-core` in front of that worker for high-speed graph validation and orphan-edge detection.
-3. Store enriched entities and relationships in the existing situation graph path with provenance receipts.
-4. Add a Context Core health panel showing frame completeness, ontology coverage, unresolved entities, source gaps, and suggested next tools.
-5. Feed graph health into Ask PRAXIS so the command plane can recommend the next action from what the user wrote.
-6. Add an end-to-end test that creates a context, reloads the workbench, and confirms the context graph seed remains available.
+1. Add a server-side enrichment job that sends `graph/semantica-context-core` to a Semantica REST/MCP service when credentials and runtime are configured.
+2. Run the deployed Rust validator before promotion or enrichment.
+3. Promote validated graph seed nodes into Postgres `graph_nodes` / `graph_edges` through `backend/services/semantica_context_store.py`.
+4. Store enriched entities and relationships in the existing situation graph path with provenance receipts.
+5. Add a Context Core health panel showing frame completeness, ontology coverage, unresolved entities, source gaps, and suggested next tools.
+6. Feed graph health into Ask PRAXIS so the command plane can recommend the next action from what the user wrote.
+7. Add an end-to-end test that creates a context, reloads the workbench, and confirms the context graph seed remains available.
 
 Related acceleration plan:
 

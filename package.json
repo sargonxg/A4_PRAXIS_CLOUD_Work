@@ -47,7 +47,7 @@
     "audit:simplified-capability-ledger": "tsx scripts/audit-simplified-capability-ledger.ts",
     "audit:semantica-context-core": "tsx scripts/audit-semantica-context-core.ts",
     "audit:deployed-mvp-surface": "tsx scripts/audit-deployed-mvp-surface.ts",
-    "audit:rust-semantic-core": "cargo test --manifest-path rust/semantica-core/Cargo.toml --target-dir rust/semantica-core/target-ci",
+    "audit:rust-semantic-core": "cargo test --manifest-path rust/semantica-core/Cargo.toml --target-dir rust/semantica-core/target-ci && cargo build --manifest-path rust/semantica-core/Cargo.toml --target-dir rust/semantica-core/target-ci",
     "audit:no-internal-jargon-ui": "tsx scripts/audit-no-internal-jargon-ui.ts",
     "audit:dashboard": "tsx scripts/audit-dashboard.ts",
     "audit:architecture-reference": "tsx scripts/audit-architecture-reference.ts",
