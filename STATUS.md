@@ -22,6 +22,13 @@ Current Phase 9 blockers:
 
 Latest production deploy evidence:
 
+- Context/core-flow improvement deploy:
+  - Commit `781b6728` pushed to `main`.
+  - Cloud Build `93061520-328b-416e-8bcf-8f970bc21e3e` succeeded.
+  - Cloud Run frontend revision `praxis-frontend-00312-9nl` became ready with 100% traffic.
+  - `https://praxis.tacitus.me/`, `/contexts`, `/draft`, and `/api/health` returned HTTP 200.
+  - Production `npm run smoke:core-flows` passed against `https://praxis.tacitus.me`.
+  - Deprecated live GDELT HTTP function and paused legacy Scheduler job were removed; Cloud Run Worker Pool `gdelt-poller` remained `Ready`.
 - Cloud Builds `1314022b-3069-44ac-b1d0-f09242e39161` and
   `f78fc2fa-3a86-4194-87e7-3f0033e55595` succeeded.
 - Cloud Run frontend revision `praxis-frontend-00308-29d` became ready.

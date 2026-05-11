@@ -41,6 +41,11 @@ This is a product-readiness audit, not a full launch audit. Cloud/billing/live-o
   - `http://127.0.0.1:3128/draft` loaded the drafting inbox.
   - `http://127.0.0.1:3128/draft/new?caseId=indo-pacific-2026&template=country-card` loaded the drafting editor when the URL is quoted correctly.
   - `http://127.0.0.1:3129/app/workbench/indo-pacific-2026?openChapter=memos` loaded the authenticated workbench memo surface after setting `COOKIE_SIGNING_SECRET` for the local server.
+- Production deploy verification:
+  - Commit `781b6728` was pushed to `origin/main`.
+  - Cloud Build `93061520-328b-416e-8bcf-8f970bc21e3e` deployed frontend revision `praxis-frontend-00312-9nl`.
+  - `https://praxis.tacitus.me/`, `/contexts`, `/draft`, and `/api/health` returned HTTP 200.
+  - `PLAYWRIGHT_BASE_URL=https://praxis.tacitus.me npm run smoke:core-flows` passed.
 
 ## What Works Now
 
