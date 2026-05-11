@@ -807,7 +807,7 @@ only the intended Phase 0 changes.
   - PASS: persona smoke suite covered Syria, Nordalia, Indo-Pacific, and AI Regulation workbench paths with chapter desk, graph, research, draft, tools, and boardroom assertions.
   - ENVIRONMENT: local persona smoke used a signed demo cookie with `COOKIE_SIGNING_SECRET=persona-smoke-cookie-secret` against production `next start` on `http://127.0.0.1:3111`.
 - Commit: `25d13a75`
-- Push: pending until this ledger update is pushed
+- Push: pushed to `origin/main` through tracker commit `80ef65c6`
 - Open blockers:
   - Phase 9 is still not complete. Production deploy/canary/final QA remain manual-gated, and the Phase 9 prompt asks for ten consecutive persona-suite CI passes before merge; this checkpoint adds the CI gate but cannot honestly claim ten future green runs yet.
   - Checkout/pricing wiring remains to be reconciled with the current Polar-based billing routes and any approved Stripe decision.
