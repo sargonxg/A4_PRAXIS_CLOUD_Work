@@ -741,7 +741,7 @@ only the intended Phase 0 changes.
   - Screenshots captured locally: `output/playwright/phase9-landing-graph.png` and `output/playwright/phase9-demo-graph.png`.
   - ENVIRONMENT: `next start` logs the repo's standalone-output warning but served the production build successfully for smoke verification.
 - Commit: `da561346`
-- Push: pending
+- Push: pushed to `origin/main` through tracker commit `82d3de84`
 - Open blockers:
   - Phase 9 is not complete. Checkout/pricing wiring, broader mobile route polish, persona suites, canary prep, and production ship evidence remain open.
   - Production deploy remains manual-approval-only and was not run.
