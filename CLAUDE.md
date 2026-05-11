@@ -188,7 +188,7 @@ npm install
 ├── cloud_functions/         GCP Cloud Functions
 │   ├── on_situation_created/  Auto-trigger pipeline on new situation
 │   ├── on_document_uploaded/  Extract text + run pipeline
-│   └── gdelt_poller/         Scheduled GDELT feed ingestion (every 15min)
+│   └── gdelt_poller/         Continuous GDELT feed ingestion worker pool
 ├── infrastructure/
 │   ├── setup-gcp.sh         One-time project setup (APIs, BigQuery, Pub/Sub, IAM)
 │   ├── deploy.sh            Full deploy via Cloud Build

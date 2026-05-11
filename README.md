@@ -220,7 +220,7 @@ graph-grounded policy question, and economic/HLP scenario research. See
 ├── cloud_functions/
 │   ├── on_situation_created/    Auto-trigger pipeline on new situation
 │   ├── on_document_uploaded/    Extract text + run pipeline
-│   └── gdelt_poller/            Scheduled GDELT ingestion (Cloud Scheduler, every 15 min)
+│   └── gdelt_poller/            Continuous GDELT ingestion worker pool
 │
 ├── infrastructure/
 │   ├── setup-gcp.sh             One-time: enable APIs, BigQuery, Pub/Sub, IAM

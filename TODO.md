@@ -11,10 +11,13 @@ Last updated: 2026-05-11.
 
 ## Immediate Next Steps
 
-1. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
-2. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 3/10.
-3. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
-4. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
+1. Merge private user-created contexts into `/contexts`; the wizard now creates owner-scoped contexts and opens the workbench, but the list still shows examples only.
+2. Add an app-level Active Core Stack indicator across User, Context/Situation, Source, Document, Graph, and Output cores.
+3. Make Drafting and Memo Studio visibly show which cores fed the current output.
+4. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
+5. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 3/10.
+6. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
+7. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
 
 ## Live Production Blockers
 
@@ -35,3 +38,4 @@ Last updated: 2026-05-11.
 - **graphify**: knowledge graph at `graphify-out/`. Run `graphify update .` after code edits to keep it current.
 - **Knip**: dead-export detection. Not currently in `audit:gate`; run on demand when chasing unused exports.
 - **audit:architecture-reference**: startup docs link to `docs/architecture/PRAXIS_ARCHITECTURE.md` and `PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`.
+- **smoke:core-flows**: fast Playwright check for the landing context switch, `/contexts` creation modal, and drafting route.

@@ -22,8 +22,8 @@ Operator: Codex
 | Firestore | healthy | Native database in `nam5`; rules and indexes compile. |
 | Storage | healthy | Storage rules compile; Firebase bucket and app upload buckets are present. |
 | Cloud Run | healthy | `praxis-frontend` and `praxis-backend` exist; min scale is default `0`, max scale is capped at `10`. |
-| Cloud Functions v2 | healthy | `gdelt-poller`, `on-document-uploaded`, and `on-situation-created` exist with max scale `1`. |
-| Cloud Scheduler | paused by design | `praxis-check-alerts`, `praxis-generate-briefing`, and `gdelt-poller` are paused. No active cron spending was found. |
+| Cloud Functions v2 | healthy | `on-document-uploaded` and `on-situation-created` exist with max scale `1`; the deprecated HTTP `gdelt-poller` function was removed after the Worker Pool was verified ready. |
+| Cloud Scheduler | paused by design | `praxis-check-alerts` and `praxis-generate-briefing` are paused. The deprecated paused `gdelt-poller` Scheduler job was removed because GDELT ingestion now runs through the Cloud Run Worker Pool. |
 | Cloud SQL | intentional paid resource | `praxisbytacitus-instance` is `db-f1-micro`, Postgres 16, 10 GB, activation policy `ALWAYS`. It supports `praxis`, `praxis_langgraph`, and `dialectica`. |
 | Secret Manager | healthy | PRAXIS services mount runtime secrets from Secret Manager. Secret values were not printed. |
 | Neon API token | stored only | `praxis-neon-api-key` exists for future Neon administration if needed; PRAXIS remains on Cloud SQL Postgres unless a migration decision changes this. |
@@ -33,7 +33,7 @@ Operator: Codex
 
 ## Services Not Deleted
 
-No project, database, bucket, secret, Cloud Run service, function, or Artifact Registry image was deleted in this pass.
+No project, database, bucket, secret, active Cloud Run service, or required Artifact Registry image was deleted in the first pass. A follow-up cleanup removed only the deprecated GDELT HTTP Cloud Function and its paused legacy Scheduler job after confirming the Cloud Run Worker Pool `gdelt-poller` remained `Ready`.
 
 Reasons:
 
