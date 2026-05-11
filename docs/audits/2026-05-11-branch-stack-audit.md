@@ -117,12 +117,30 @@ High-value items to inspect and selectively port:
 
 ## Immediate Next Work Queue
 
+Status update after the first cleanup pass: the merged remote branch
+`claude/review-praxis-setup-0GOaI` has been deleted, and current `main` now
+contains the simplified Ask PRAXIS, Context Core, and User Core surfaces.
+
 1. Compare the current dashboard `ActiveCoreStack` against
    `v7-core-picker.tsx` and port only missing drag/drop or persistence behavior.
 2. Compare current context creation against `backend/routers/cores.py` and
-   `backend/services/cores/*` for backend persistence gaps.
+   `backend/services/cores/*` for backend persistence gaps. Prefer the new
+   Semantica-compatible context graph seed as the current-main adapter target
+   rather than directly porting stale v7 backend routes.
 3. Decide whether Ask PRAXIS needs the old `backend/services/ask/*` substrate or
    whether the current Next/API route stack should remain the source of truth.
 4. Add a current-main test that proves selected core order survives page reload
    once persistence is implemented.
 5. After salvage, close the stale stacked PRs and delete their remote branches.
+
+## Semantica Follow-Up
+
+The next high-impact salvage step is not a wholesale v7 branch merge. It is to
+use the new Semantica Context Core plan as the bridge between the current
+creation flow and future graph enrichment:
+
+- Keep PRAXIS-owned context creation in the current Next/Firebase stack.
+- Emit and persist a portable Semantica-compatible graph seed.
+- Later route that seed to a Python/REST Semantica worker for entity
+  resolution, ontology reasoning, conflict checks, retrieval, and provenance.
+- Use Semantica-enriched graph health to drive Ask PRAXIS tool suggestions.

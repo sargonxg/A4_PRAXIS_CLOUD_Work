@@ -527,6 +527,8 @@ export async function createSituationAdmin(
     ...(data.sourceCategoryOrder?.length ? { sourceCategoryOrder: data.sourceCategoryOrder } : {}),
     ...(data.workflowPath ? { workflowPath: data.workflowPath } : {}),
     ...(data.workflowPathLabel ? { workflowPathLabel: data.workflowPathLabel } : {}),
+    ...(data.semanticaLayer ? { semanticaLayer: data.semanticaLayer } : {}),
+    ...(data.semanticaContextGraph ? { semanticaContextGraph: data.semanticaContextGraph } : {}),
     ...(data.customSources?.length ? { customSources: data.customSources } : {}),
     ...(data.domain ? { domain: data.domain } : {}),
     ...(typeof data.domainConfidence === 'number'

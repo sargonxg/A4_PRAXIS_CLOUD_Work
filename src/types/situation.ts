@@ -1,6 +1,7 @@
 import type { CaseOntology } from '@/lib/constants/case-registry';
 import type { CaseTypeId } from '@/lib/ontology/case-types';
 import type { OntologyId } from '@/lib/ontology/types';
+import type { SemanticaContextGraph } from '@/lib/semantica/context-core-adapter';
 
 // ============================================================================
 // Tool Registry Types
@@ -180,6 +181,16 @@ export interface Situation {
   workflowPath?: string;
   workflowPathLabel?: string;
   /**
+   * Compact context-graph seed emitted during situation creation. This is
+   * intentionally a portable JSON graph, not a runtime Semantica dependency.
+   */
+  semanticaContextGraph?: SemanticaContextGraph;
+  semanticaLayer?: {
+    enabled: boolean;
+    adapterVersion: string;
+    serviceBoundary: string;
+  };
+  /**
    * Custom per-situation source URLs the user attached via the SourcePicker
    * "Add custom source" dialog. These are scraped alongside the built-in
    * feeds for this situation.
@@ -229,6 +240,12 @@ export interface CreateSituationInput {
   sourceCategoryOrder?: string[];
   workflowPath?: string;
   workflowPathLabel?: string;
+  semanticaContextGraph?: SemanticaContextGraph;
+  semanticaLayer?: {
+    enabled: boolean;
+    adapterVersion: string;
+    serviceBoundary: string;
+  };
   customSources?: Array<{
     id: string;
     url: string;

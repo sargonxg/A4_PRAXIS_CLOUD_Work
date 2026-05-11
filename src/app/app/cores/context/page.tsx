@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ElementType } from 'react';
-import { ArrowRight, FileText, GitBranch, Layers3, Plus, Target } from 'lucide-react';
+import { ArrowRight, FileText, GitBranch, Layers3, Network, Plus, Target } from 'lucide-react';
 import { listExampleCases } from '@/lib/cases/registry';
 
 export const metadata = {
@@ -21,6 +21,9 @@ export default function ContextCorePage() {
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-700">
               Context Core is the maintained case model: frame, actors, claims, sources, documents, graph, open questions, and output history. Build it once, then let Ask PRAXIS and tools reuse it.
             </p>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-700">
+              New contexts now start as a semantic graph seed, so the first frame can become actor links, source gaps, provenance checks, and suggested workbench actions.
+            </p>
           </div>
           <Link
             href="/app/situations/new"
@@ -32,10 +35,11 @@ export default function ContextCorePage() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <CoreAction icon={Target} label="Frame" href="/app/situations/new" detail="Define the situation, purpose, scope, assumptions, and analytic red lines." />
         <CoreAction icon={Layers3} label="Sources" href="/app/workbench/syria-2026?tab=library" detail="Attach receipts, documents, source gaps, and credibility posture." />
         <CoreAction icon={GitBranch} label="Graph" href="/app/workbench/syria-2026?tab=graph" detail="Inspect actors, claims, events, relations, and provenance before tools run." />
+        <CoreAction icon={Network} label="Semantic Seed" href="/app/situations/new" detail="Turn the setup frame into a portable graph Ask PRAXIS can enrich and reuse." />
       </section>
 
       <section className="rounded-2xl border border-white/70 bg-white/75 p-5 shadow-sm shadow-navy-950/5 backdrop-blur">

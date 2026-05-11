@@ -35,5 +35,22 @@ describe('context create payload', () => {
     expect(payload.contextNotes).toContain('Domain ontology: Humanitarian');
     expect(payload.contextNotes).toContain('Work ontology: Foreign Policy Research');
     expect(payload.description).toContain('Aid corridors are contested');
+    expect(payload.semanticaLayer).toMatchObject({
+      enabled: true,
+      serviceBoundary: 'future-python-or-rest-worker',
+    });
+    expect(payload.semanticaContextGraph).toMatchObject({
+      schemaVersion: 'praxis-semantica-context-core.v1',
+      generatedBy: 'praxis-context-create',
+      quality: {
+        hasContextRoot: true,
+        hasDomainOntology: true,
+        hasWorkOntology: true,
+        hasFrame: true,
+        semanticaReady: true,
+      },
+    });
+    expect(payload.semanticaContextGraph.entities.some((node) => node.type === 'frame_statement')).toBe(true);
+    expect(payload.semanticaContextGraph.relationships.some((edge) => edge.type === 'scoped_by_user_core')).toBe(true);
   });
 });

@@ -2,6 +2,11 @@ import type { DomainId } from '@/types/domain';
 import type { UserRole } from '@/types/situation';
 import type { CaseTypeId } from '@/lib/ontology/case-types';
 import type { OntologyId } from '@/lib/ontology/types';
+import {
+  SEMANTICA_ADAPTER_VERSION,
+  buildSemanticaContextGraph,
+  type SemanticaContextGraph,
+} from '@/lib/semantica/context-core-adapter';
 
 export type ContextDomainOptionId = 'conflict' | 'mediation' | 'humanitarian';
 export type ContextWorkOptionId = 'foreign-policy' | 'domestic-policy' | 'corporate-strategy';
@@ -47,6 +52,12 @@ export interface ContextCreatePayload {
   domainOverriddenByUser: true;
   workflowPath: string;
   workflowPathLabel: string;
+  semanticaLayer: {
+    enabled: true;
+    adapterVersion: typeof SEMANTICA_ADAPTER_VERSION;
+    serviceBoundary: 'future-python-or-rest-worker';
+  };
+  semanticaContextGraph: SemanticaContextGraph;
 }
 
 export const CONTEXT_DOMAIN_OPTIONS: ContextDomainOption[] = [
@@ -122,6 +133,7 @@ export function buildContextCreatePayload(draft: ContextCreateDraft): ContextCre
   const domain = findContextDomainOption(draft.domain);
   const work = findContextWorkOption(draft.work);
   const description = frame || `Initial context frame for ${name}.`;
+  const semanticaContextGraph = buildSemanticaContextGraph({ draft, domain, work });
 
   return {
     name,
@@ -146,5 +158,11 @@ export function buildContextCreatePayload(draft: ContextCreateDraft): ContextCre
     domainOverriddenByUser: true,
     workflowPath: work.workflowPath,
     workflowPathLabel: work.label,
+    semanticaLayer: {
+      enabled: true,
+      adapterVersion: SEMANTICA_ADAPTER_VERSION,
+      serviceBoundary: 'future-python-or-rest-worker',
+    },
+    semanticaContextGraph,
   };
 }

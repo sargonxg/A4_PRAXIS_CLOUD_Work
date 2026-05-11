@@ -109,6 +109,19 @@ This pass should make the app visibly simpler without risky backend removal:
    and Context Core attachments.
 6. Advanced/specialist tools remain available through `/app/tools`.
 
+## Semantica Context Layer
+
+Context creation now has a clear semantic-layer target. New Context Cores emit
+a Semantica-compatible graph seed that binds the situation frame, domain
+ontology, work ontology, case type, and user-core workflow into one portable
+context graph. This preserves the simple MVP UX while giving Ask PRAXIS and
+future workers a concrete graph substrate for retrieval, provenance, conflict
+checks, and tool recommendations.
+
+Canonical plan:
+
+- `docs/architecture/PRAXIS_SEMANTICA_CONTEXT_CORE_PLAN_2026-05-11.md`
+
 ## Next Deletion Queue
 
 After the first checkpoint is validated:

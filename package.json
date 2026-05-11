@@ -45,6 +45,7 @@
     "audit:ask-praxis-primary": "tsx scripts/audit-ask-praxis-primary.ts",
     "audit:mobile-primary-flows": "tsx scripts/audit-mobile-primary-flows.ts",
     "audit:simplified-capability-ledger": "tsx scripts/audit-simplified-capability-ledger.ts",
+    "audit:semantica-context-core": "tsx scripts/audit-semantica-context-core.ts",
     "audit:no-internal-jargon-ui": "tsx scripts/audit-no-internal-jargon-ui.ts",
     "audit:dashboard": "tsx scripts/audit-dashboard.ts",
     "audit:architecture-reference": "tsx scripts/audit-architecture-reference.ts",
