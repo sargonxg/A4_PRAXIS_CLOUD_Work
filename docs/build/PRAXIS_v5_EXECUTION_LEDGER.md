@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Phase 5 validated locally; commit and push pending
+Status: Phase 5 committed; push pending
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -84,7 +84,7 @@ Known setup warnings:
 | 4C | File 3 Phase 4C | Phase 4A foundation | complete | Codex | `04e703d0`, `7fa55185` |
 | 4D | File 3 Phase 4D | Methods and runtime prerequisites | complete | Codex | `c4938c99`, `995e5e8e` |
 | 4E | File 3 Phase 4E | Drafting prerequisites | complete | Codex | `54d46851`, `b40cb735` |
-| 5 | File 3 Phase 5 | Phase 4C | validated-local | Codex | pending |
+| 5 | File 3 Phase 5 | Phase 4C | complete | Codex | `cca0a32e` |
 | 6 | File 3 Phase 6 | Drafting shell and templates | not-started | unassigned | pending |
 | 7 | File 3 Phase 7 | Waves 1-3 complete | not-started | unassigned | pending |
 | 8 | File 3 Phase 8 | Demo content and app surfaces | not-started | unassigned | pending |
@@ -585,7 +585,7 @@ only the intended Phase 0 changes.
   - PASS: browser smoke loaded `/methods/contradiction-finder`, set a signed demo session, entered `syria-2026`, ran readiness, executed `/api/methods/contradiction-finder/run`, rendered findings/provenance/persistence, and reported zero console warnings/errors.
   - ENVIRONMENT: `next start` logs the repo's standalone-output warning but served the production build successfully for smoke verification.
   - ENVIRONMENT: Vitest was run with `--pool=threads`, consistent with the Windows-stable mode used in prior v5 checkpoints.
-- Commit: pending
+- Commit: `cca0a32e` (`feat(v5-5): implement MVP method runtime`)
 - Push: pending
 - Open blockers:
   - Phase 5 provides a deterministic/foundation runtime over the existing marketplace and research primitives. It does not claim every method is model-backed in production.
