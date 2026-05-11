@@ -747,3 +747,37 @@ only the intended Phase 0 changes.
   - Production deploy remains manual-approval-only and was not run.
   - Live production HTTP checks timed out from this environment; re-check production from a browser or deployment host before claiming the latest local graph polish is live.
 - Notes for next agent: Continue Queue 16 / Phase 9 Polish and Ship from this sub-checkpoint. Preserve unrelated untracked scratch artifacts unless Giulio explicitly asks to clean them.
+
+### 2026-05-11 - Phase 9 Sub-Checkpoint - Live Database And Production Gap Review
+
+- Owner: Codex
+- Prompt source: Giulio's repeated request to ensure the Neon API key is stored, use Neon or Firebase/Firestore appropriately, ensure the Postgres database is appropriate, review `praxis.tacitus.me`, and keep graph visualization work serving the production app.
+- Scope completed:
+  - Verified Secret Manager contains `praxis-neon-api-key` with an enabled latest version.
+  - Ran a read-only Neon API check from the stored secret; the token is accepted and currently returns zero Neon projects.
+  - Verified Cloud SQL Postgres remains the appropriate active PRAXIS database path: `praxisbytacitus-instance`, `POSTGRES_16`, `RUNNABLE`, backups enabled, public IPv4 disabled, with `praxis` and `praxis_langgraph` present.
+  - Verified Cloud Run frontend/backend are ready and `praxis.tacitus.me` domain mapping is healthy.
+  - Confirmed live `praxis.tacitus.me` is serving an older landing page because the latest Cloud Build listed is from 2026-05-07, before today's Phase 8/9 pushes.
+  - Added `docs/audits/2026-05-11-PHASE9_LIVE_DATABASE_GRAPH_REVIEW.md` as the durable evidence artifact.
+- Validation run:
+  - Read-only `gcloud secrets describe praxis-neon-api-key`
+  - Read-only Neon API project-list check from Secret Manager value
+  - Read-only Cloud SQL instance and database inventory
+  - Read-only Cloud Run service and domain mapping inventory
+  - `npm run audit:kg-backend`
+  - `npm run audit:gcp`
+  - `npm run audit:gcp-production-posture`
+  - `npm run audit:visualization`
+  - `npm run audit:graph-viewer`
+  - `npm run audit:legal-pages-present`
+- Validation result: pass with production deploy gap
+  - PASS: Neon secret exists and token authenticates, but no Neon projects are available.
+  - PASS: Cloud SQL Postgres production posture is healthy for the current PRAXIS path.
+  - PASS: GCP audit and KG backend audit passed; GCP production posture had 0 hard failures and 3 soft warnings.
+  - PASS: visualization, graph-viewer, and legal entry-route audits passed.
+  - GAP: latest pushed landing/graph code is not live on `praxis.tacitus.me`; production deploy remains manual-approval-only.
+- Commit: pending
+- Push: pending
+- Open blockers:
+  - Production deploy requires Giulio's explicit deploy approval.
+  - Neon should not be used as the live PRAXIS database until a Neon project/database exists and a migration plan is approved.
