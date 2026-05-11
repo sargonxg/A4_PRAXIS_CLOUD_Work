@@ -11,10 +11,10 @@ Last updated: 2026-05-11.
 
 ## Immediate Next Steps
 
-1. Finish Queue `17` by committing/pushing the `/app` dashboard redirect patch, redeploying the frontend, and recording the final Cloud Build/revision.
-2. Continue Queue `18` final product QA and red-team review on live production.
-3. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
-4. Track persona smoke CI until the required 10 consecutive green runs are real, not projected.
+1. Continue Queue `18` final product QA and red-team review on live production.
+2. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
+3. Track persona smoke CI until the required 10 consecutive green runs are real, not projected.
+4. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
 
 ## Live Production Blockers
 

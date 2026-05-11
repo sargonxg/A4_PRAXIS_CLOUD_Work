@@ -114,6 +114,9 @@ the current session, and the first deploy/verification pass is complete.
 - Cloud Build: `1314022b-3069-44ac-b1d0-f09242e39161`, status `SUCCESS`.
 - Image: `us-central1-docker.pkg.dev/praxisbytacitus/praxis/praxis-frontend`.
 - Cloud Run frontend revision: `praxis-frontend-00306-fvx`.
+- Final Cloud Build after `/app` redirect commit:
+  `f78fc2fa-3a86-4194-87e7-3f0033e55595`, status `SUCCESS`.
+- Final Cloud Run frontend revision: `praxis-frontend-00308-29d`.
 - Production URL: `https://praxis.tacitus.me`.
 - HTTP 200 checks passed for `/`, `/api/health`, `/demo/indo-pacific-2026`,
   `/demo/ai-regulation-2026`, `/demo/fb-sustainability-2026`, `/pricing`, and
@@ -123,8 +126,8 @@ the current session, and the first deploy/verification pass is complete.
   checked routes.
 - Production persona smoke passed 6/6 specs:
   `PLAYWRIGHT_BASE_URL=https://praxis.tacitus.me npm run smoke:personas -- --reporter=line`.
-- 100% canary monitor passed with 12 samples, 0 error rate, and p95 latency
-  258 ms:
+- 100% canary monitor passed with 12 samples, 0 error rate, and final p95
+  latency 272 ms:
   `tsx scripts/canary-monitor.ts --phase=100 --url=https://praxis.tacitus.me --samples=3`.
 - Static audits passed: `audit:landing`, `audit:demo-claim`,
   `audit:visualization`, `audit:graph-viewer`.
@@ -142,7 +145,7 @@ Remaining production-facing blockers:
 - Cognee memory remains unconfigured/disabled-first until a separate Cognee
   service is deployed and approved.
 
-Final deploy follow-up after the `/app` redirect patch must verify:
+Final deploy follow-up after the `/app` redirect patch verified:
 
 - `/`
 - `/demo/indo-pacific-2026`
@@ -150,3 +153,4 @@ Final deploy follow-up after the `/app` redirect patch must verify:
 - `/demo/fb-sustainability-2026`
 - `/pricing`
 - `/login`
+- `/app` redirects unauthenticated users to `/login?redirect=%2Fapp`.

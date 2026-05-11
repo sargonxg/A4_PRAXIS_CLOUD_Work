@@ -21,14 +21,15 @@ Current Phase 9 blockers:
 
 Latest production deploy evidence:
 
-- Cloud Build `1314022b-3069-44ac-b1d0-f09242e39161` succeeded.
-- Cloud Run frontend revision `praxis-frontend-00306-fvx` became ready.
+- Cloud Builds `1314022b-3069-44ac-b1d0-f09242e39161` and
+  `f78fc2fa-3a86-4194-87e7-3f0033e55595` succeeded.
+- Cloud Run frontend revision `praxis-frontend-00308-29d` became ready.
 - `https://praxis.tacitus.me/`, `/api/health`, three public demo routes,
   `/pricing`, and `/login` returned HTTP 200.
 - Production browser checks across desktop/mobile reported no console
   warnings/errors on the checked routes.
-- Production persona smoke passed 6/6 specs, and the 100% canary monitor
-  passed with 0 error rate and p95 latency 258 ms.
+- Production persona smoke passed 6/6 specs, and the final 100% canary monitor
+  passed with 0 error rate and p95 latency 272 ms.
 
 ---
 

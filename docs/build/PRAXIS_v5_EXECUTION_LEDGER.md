@@ -825,12 +825,14 @@ only the intended Phase 0 changes.
 - Deployment evidence:
   - Cloud Build: `1314022b-3069-44ac-b1d0-f09242e39161`
   - Cloud Run frontend revision: `praxis-frontend-00306-fvx`
+  - Final Cloud Build after `/app` redirect commit: `f78fc2fa-3a86-4194-87e7-3f0033e55595`
+  - Final Cloud Run frontend revision: `praxis-frontend-00308-29d`
   - Production URL: `https://praxis.tacitus.me`
 - Live production checks:
   - HTTP 200: `/`, `/api/health`, `/demo/indo-pacific-2026`, `/demo/ai-regulation-2026`, `/demo/fb-sustainability-2026`, `/pricing`, `/login`.
   - Browser desktop/mobile: landing, three demo routes, pricing, and login loaded with expected titles/H1s and no console warnings/errors on checked routes.
   - Persona smoke: `PLAYWRIGHT_BASE_URL=https://praxis.tacitus.me npm run smoke:personas -- --reporter=line` passed 6/6 specs.
-  - Canary monitor: `tsx scripts/canary-monitor.ts --phase=100 --url=https://praxis.tacitus.me --samples=3` passed with 12 samples, 0 error rate, and p95 latency 258 ms.
+  - Canary monitor: `tsx scripts/canary-monitor.ts --phase=100 --url=https://praxis.tacitus.me --samples=3` passed with 12 samples, 0 error rate, and final p95 latency 272 ms.
   - GCP posture: `npm run audit:gcp-production-posture` passed with 0 hard failures and 3 soft warnings.
 - Validation run:
   - `npm run audit:dashboard`
@@ -842,6 +844,7 @@ only the intended Phase 0 changes.
 - Validation result: pass
   - PASS: full `audit:gate`, including build/typecheck, route audits, product audits, 152-file / 587-test Vitest run, `audit:gcp`, and `audit:gcp-production-posture`.
   - PASS: production frontend is no longer stale relative to the Phase 8/9 public demo routes checked in this deployment.
+  - PASS: final browser verification on revision `praxis-frontend-00308-29d` loaded `/`, three demo routes, `/pricing`, `/login`, and `/app` on desktop/mobile with no console warnings/errors. `/app` redirected unauthenticated users to `/login?redirect=%2Fapp`.
   - NOTE: checkout/pricing is still not launch-complete because `/api/health` reports Polar billing unconfigured and the app currently has Polar routes rather than the older Stripe wording in the Phase 9 prompt.
 - Open blockers:
   - Billing provider configuration/decision: finish Polar production env setup or approve a Stripe migration before claiming paid checkout complete.
