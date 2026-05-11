@@ -708,7 +708,7 @@ only the intended Phase 0 changes.
   - ENVIRONMENT: `next start` logs the repo's standalone-output warning but served the production build successfully for smoke verification.
   - SCOPE NOTE: Lighthouse CI and magic-link email delivery are not currently wired as local scripts in this repo; Phase 8 validated with build, static audits, full Vitest, and Playwright browser smoke.
 - Commit: `b7ae568c`
-- Push: pending tracker update
+- Push: pushed to `origin/main` through tracker commit `4c4ee7a0`
 - Open blockers:
   - Phase 9 still owns final polish, pricing/checkout, mobile-wide route polish, persona suites, and ship/canary tasks.
   - Production deploy remains manual-approval-only.
