@@ -19,6 +19,10 @@ not configured, Cognee remains disabled-first by design, and the required
 
 - Final deployed frontend revision before this QA pass:
   `praxis-frontend-00308-29d`.
+- Final deployed frontend revision after checkout-fallback cleanup:
+  `praxis-frontend-00310-bqx`.
+- Final cleanup deploy Cloud Build:
+  `337715b7-ec55-4cec-b15b-5511f6861684`.
 - Cloud Run services in `us-central1` reported Ready:
   `praxis-frontend`, `praxis-backend`, `gdelt-poller`,
   `on-document-uploaded`, `on-situation-created`, `dialectica-api`, and
@@ -32,8 +36,11 @@ not configured, Cognee remains disabled-first by design, and the required
   `/login?redirect=%2Fapp`.
 - Production persona smoke passed 6/6 specs against `praxis.tacitus.me`.
 - GitHub Actions persona smoke run `25652333690` passed on commit `1b3a6c69`.
+- GitHub Actions persona smoke run `25652772692` passed on commit `6c9e407c`.
 - Canary monitor passed at 100% with 12 samples, 0 error rate, and p95 latency
   272 ms.
+- After the final cleanup deploy, the first canary hit a cold-start p95 of
+  19216 ms with 0 errors; the immediate retry passed with p95 192 ms.
 
 ## Severity-Ranked Findings
 
@@ -114,6 +121,8 @@ not configured, Cognee remains disabled-first by design, and the required
 - `PLAYWRIGHT_BASE_URL=https://praxis.tacitus.me npm run smoke:personas -- --reporter=line`
 - `npx tsx scripts/canary-monitor.ts --phase=100 --url=https://praxis.tacitus.me --samples=3`
 - `gh run watch 25652333690 --repo sargonxg/A4_PRAXIS_CLOUD_Work --exit-status`
+- Final live route/browser/persona/canary checks after deploy
+  `337715b7-ec55-4cec-b15b-5511f6861684`
 
 ## Next Improvement Round
 

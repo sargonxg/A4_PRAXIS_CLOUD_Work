@@ -13,7 +13,7 @@ Current Phase 9 blockers:
 
 - Persona CI wiring exists, but the "10 consecutive passes" requirement cannot
   be claimed until the workflow has actually produced those runs. Current
-  recorded streak: 1/10.
+  recorded streak: 2/10.
 - Checkout/pricing still needs production billing provider configuration and a
   final implementation decision against the current Polar billing routes before
   Phase 9 can close.
@@ -25,12 +25,14 @@ Latest production deploy evidence:
 - Cloud Builds `1314022b-3069-44ac-b1d0-f09242e39161` and
   `f78fc2fa-3a86-4194-87e7-3f0033e55595` succeeded.
 - Cloud Run frontend revision `praxis-frontend-00308-29d` became ready.
+- Final cleanup revision `praxis-frontend-00310-bqx` became ready after Cloud
+  Build `337715b7-ec55-4cec-b15b-5511f6861684`.
 - `https://praxis.tacitus.me/`, `/api/health`, three public demo routes,
   `/pricing`, and `/login` returned HTTP 200.
 - Production browser checks across desktop/mobile reported no console
   warnings/errors on the checked routes.
 - Production persona smoke passed 6/6 specs, and the final 100% canary monitor
-  passed with 0 error rate and p95 latency 272 ms.
+  passed with 0 error rate and p95 latency 192 ms after one cold-start retry.
 - Final product QA is recorded in
   `docs/audits/2026-05-11-v5-final-product-qa.md`.
 

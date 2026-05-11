@@ -12,7 +12,7 @@ Last updated: 2026-05-11.
 ## Immediate Next Steps
 
 1. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
-2. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 1/10.
+2. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 2/10.
 3. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
 4. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
 

@@ -870,6 +870,14 @@ only the intended Phase 0 changes.
 - Validation result: pass
   - PASS: settings fallback lint, typecheck, and production build.
   - PASS: persona smoke CI run `25652333690` passed on commit `1b3a6c69`, bringing the recorded CI streak to 1/10.
+- Final deploy:
+  - Commit: `6c9e407c`
+  - Cloud Build: `337715b7-ec55-4cec-b15b-5511f6861684`
+  - Cloud Run frontend revision: `praxis-frontend-00310-bqx` at 100% traffic.
+  - HTTP checks passed for `/`, `/api/health`, three demo routes, `/pricing`, `/login`, and `/app`.
+  - Production persona smoke passed 6/6 specs.
+  - CI persona smoke run `25652772692` passed on commit `6c9e407c`, bringing the recorded CI streak to 2/10.
+  - Canary monitor initially failed on p95 latency only immediately after deploy, then passed on retry with 0 error rate and p95 192 ms.
 - Open blockers carried forward:
   - Billing provider configuration/decision remains the only buyer-facing paid-plan launch blocker.
   - Persona CI streak is 1/10, not complete.

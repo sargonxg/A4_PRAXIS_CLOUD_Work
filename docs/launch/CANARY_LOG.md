@@ -15,6 +15,7 @@ traffic split was used in this direct deploy path.
 | 5% | TBD | TBD | TBD | TBD | TBD | TBD | `tsx scripts/canary-monitor.ts --phase=5` | Giulio required |
 | 25% | TBD | TBD | TBD | TBD | TBD | TBD | `tsx scripts/canary-monitor.ts --phase=25` | Giulio required |
 | 100% | `praxis-frontend-00308-29d` | 2026-05-11T05:27Z | 2026-05-11T05:36Z | 0 | 272 ms | not measured | `tsx scripts/canary-monitor.ts --phase=100 --url=https://praxis.tacitus.me --samples=3` | pass |
+| 100% | `praxis-frontend-00310-bqx` | 2026-05-11T05:50Z | 2026-05-11T05:58Z | 0 | 192 ms | not measured | `tsx scripts/canary-monitor.ts --phase=100 --url=https://praxis.tacitus.me --samples=3` | pass after one cold-start latency retry |
 
 ## Rollback Rule
 
