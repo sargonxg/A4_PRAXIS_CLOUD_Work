@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Phase 4C pushed; Queue 10 / Phase 4D is next
+Status: Phase 4D validated locally; commit and push are next
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -82,7 +82,7 @@ Known setup warnings:
 | 4A | File 3 Phase 4A | Phase 1 plus compatible 2/3 surfaces | complete | Codex | `330b1bbd` |
 | 4B | File 3 Phase 4B | Phase 3 types/seeds | complete | Codex | `8e5df782`, `e74792b8` |
 | 4C | File 3 Phase 4C | Phase 4A foundation | complete | Codex | `04e703d0`, `7fa55185` |
-| 4D | File 3 Phase 4D | Methods and runtime prerequisites | not-started | unassigned | pending |
+| 4D | File 3 Phase 4D | Methods and runtime prerequisites | validated-local | Codex | pending |
 | 4E | File 3 Phase 4E | Drafting prerequisites | not-started | unassigned | pending |
 | 5 | File 3 Phase 5 | Phase 4C | not-started | unassigned | pending |
 | 6 | File 3 Phase 6 | Drafting shell and templates | not-started | unassigned | pending |
@@ -477,3 +477,40 @@ only the intended Phase 0 changes.
   - Phase 4D Ask homepage is next and depends on this Methods surface.
   - Full executable method runtime remains Phase 5.
 - Notes for next agent: Continue with Queue 10 / Phase 4D after this checkpoint is committed and pushed. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md`.
+
+### 2026-05-10 - Phase 4D - Ask Homepage
+
+- Owner: Codex
+- Prompt source: `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md` Phase 4D
+- Scope completed:
+  - Replaced `/app` redirect with the authenticated Ask homepage.
+  - Added the two required pickers: active User Model and active Context.
+  - Added six Ask modes: Quick, Deep, Research, Memo, Scenario, and Auto.
+  - Added deterministic intent classification, slash-command parsing, plan preview, confirmation, transparent response preview, file/source routing states, and capture-loop review actions.
+  - Routed Drafts to the existing workbench memo chapter until `/draft` lands in Phase 4E, preventing a broken `/draft` prefetch before that phase exists.
+  - Kept runtime copy honest: Phase 4D previews the plan and review flow without claiming every deeper method has production execution yet.
+- Files changed: `/app` route, Ask homepage components, intent classifier, slash-command parser, graphify output, queue tracker, execution ledger
+- Validation run:
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run audit:ask-praxis-primary`
+  - `npm run audit:experience-map-coherence`
+  - `npm run audit:no-internal-jargon-ui`
+  - `npm run audit:ai-provider-isolation`
+  - `node scripts/audit-ai-routes.mjs`
+  - `npx vitest run --pool=threads`
+  - `graphify update .`
+  - Production-mode local browser smoke on `http://127.0.0.1:3032`
+- Validation result: pass
+  - PASS: typecheck, build, ask-primary audit, experience-map audit, no-internal-jargon audit, AI provider isolation audit, route audit, 580 Vitest tests with `--pool=threads`, and graphify update.
+  - PASS: lint completed with existing warning debt only.
+  - PASS: browser smoke confirmed unauthenticated `/app` redirects to `/login?redirect=%2Fapp`, demo session reaches `/app`, Research mode preview works, plan confirmation shows answer preview, capture loop marks a standing assumption for review, source URL routing message renders, utility links avoid 404s, and desktop/mobile had no console errors.
+  - ENVIRONMENT: local browser auth smoke required `COOKIE_SIGNING_SECRET=local-smoke-secret` for the production-mode server because signed session cookies are required.
+  - ENVIRONMENT: one Vitest invocation timed out without results; rerunning with the same `--pool=threads` mode and a longer timeout produced the clean 149-file / 580-test pass.
+- Commit: pending
+- Push: pending
+- Open blockers:
+  - Phase 4E still owns `/draft` and `/draft/[draftId]`; Phase 4D links to the existing workbench memo chapter until that route exists.
+  - Full runtime execution for all ten Methods remains Phase 5.
+- Notes for next agent: Continue with Queue 11 / Phase 4E after this checkpoint is committed and pushed. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md`.
