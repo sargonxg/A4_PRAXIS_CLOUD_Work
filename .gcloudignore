@@ -71,3 +71,8 @@ docs/
 playwright-report/
 test-results/
 graphify-out/
+
+# ── Rust local build outputs ────────────────────────────────────────────────
+target/
+**/target/
+**/target-ci/

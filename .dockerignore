@@ -5,6 +5,9 @@ node_modules
 .codex/
 .code-review-graph/
 graphify-out/
+target/
+**/target/
+**/target-ci/
 
 # Backend and cloud functions are separate Docker builds
 backend/
