@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Phase 4D pushed; Queue 11 / Phase 4E is next
+Status: Phase 4E validated locally; commit and push pending
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -83,7 +83,7 @@ Known setup warnings:
 | 4B | File 3 Phase 4B | Phase 3 types/seeds | complete | Codex | `8e5df782`, `e74792b8` |
 | 4C | File 3 Phase 4C | Phase 4A foundation | complete | Codex | `04e703d0`, `7fa55185` |
 | 4D | File 3 Phase 4D | Methods and runtime prerequisites | complete | Codex | `c4938c99`, `995e5e8e` |
-| 4E | File 3 Phase 4E | Drafting prerequisites | not-started | unassigned | pending |
+| 4E | File 3 Phase 4E | Drafting prerequisites | validated-local | Codex | pending |
 | 5 | File 3 Phase 5 | Phase 4C | not-started | unassigned | pending |
 | 6 | File 3 Phase 6 | Drafting shell and templates | not-started | unassigned | pending |
 | 7 | File 3 Phase 7 | Waves 1-3 complete | not-started | unassigned | pending |
@@ -514,3 +514,40 @@ only the intended Phase 0 changes.
   - Phase 4E still owns `/draft` and `/draft/[draftId]`; Phase 4D links to the existing workbench memo chapter until that route exists.
   - Full runtime execution for all ten Methods remains Phase 5.
 - Notes for next agent: Continue with Queue 11 / Phase 4E after this checkpoint is committed and pushed. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md`.
+
+### 2026-05-10 - Phase 4E - Drafting Studio Shell
+
+- Owner: Codex
+- Prompt source: `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md` Phase 4E
+- Scope completed:
+  - Added `/draft` as the Drafting Studio inbox with search, template filter, status filter, demo draft cards, and "New draft" entry.
+  - Added `/draft/[draftId]` composition shell with template picker, work-episode picker, export controls, editable section blocks, and a right-side context panel.
+  - Added typed Phase 4E draft shell data and five MVP drafting template registrations: UN 1-pager, Country card, Talking points, Mediation brief, and Corporate risk brief.
+  - Kept AI generation, section-level actions, signed export artifacts, and final template generation honest as Phase 6 work.
+  - Updated the Ask homepage Drafts utility link to route to `/draft` now that the canonical surface exists.
+  - Replaced the failing drafting-template audit stub with a route/component/template audit for the Phase 4E shell.
+- Files changed: `/draft` routes, draft shell components, draft template shell data, drafting-template audit, Ask homepage link, graphify output, queue tracker, execution ledger
+- Validation run:
+  - `npm run typecheck`
+  - `npm run audit:drafting-templates-present`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run audit:routes`
+  - `npx vitest run --pool=threads`
+  - `graphify update .`
+  - Production-mode local browser smoke on `http://localhost:3034`
+- Validation result: pass
+  - PASS: typecheck and `audit:drafting-templates-present`.
+  - PASS: lint completed with existing warning debt only.
+  - PASS: build; Next output includes `/draft` and `/draft/[draftId]`.
+  - PASS: route audit and 149-file / 580-test Vitest run with `--pool=threads`.
+  - PASS: graphify update.
+  - PASS: browser smoke loaded `/draft`, `/draft/new?caseId=syria-2026&template=un-one-pager`, `/draft/demo-brief`, mobile `/draft`, and mobile `/draft/demo-brief` with no console errors.
+  - ENVIRONMENT: `next start` still logs the repo's standalone-output warning but served the production build successfully for smoke verification.
+  - ENVIRONMENT: Vitest was run with `--pool=threads` because the default worker pool has timed out on this Windows checkout during prior v5 queue runs.
+- Commit: pending
+- Push: pending
+- Open blockers:
+  - Phase 6 still owns generated drafting templates, section-level AI actions, inline citation drag/drop, and signed export artifact behavior.
+  - Phase 4E uses local typed shell/demo data and does not add Firestore draft CRUD or new security-boundary rules.
+- Notes for next agent: After this checkpoint is committed and pushed, continue with Queue 12 / Phase 5 Methods. Preserve unrelated untracked `.playwright-cli/` and `docs/audits/2026-05-10-v5-final-product-qa.md`.

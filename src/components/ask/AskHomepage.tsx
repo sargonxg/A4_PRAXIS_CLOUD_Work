@@ -62,7 +62,7 @@ export function AskHomepage({
               <UtilityLink icon={Search} href="/methods" label="Browse Methods" />
               <UtilityLink icon={Layers3} href="/contexts" label="Manage Contexts" />
               <UtilityLink icon={UserRound} href="/users" label="Manage Models" />
-              <UtilityLink icon={FileText} href={`/app/workbench/${activeContext?.id ?? 'syria-2026'}?openChapter=memos`} label="Drafts" />
+              <UtilityLink icon={FileText} href="/draft" label="Drafts" />
               <UtilityLink icon={BookOpen} href="/app/dashboard" label="Dashboard" />
             </div>
           </section>
