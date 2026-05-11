@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import path from 'node:path';
 
 export interface RustSemanticaValidationResult {
@@ -31,16 +31,33 @@ export async function validateWithRustSemanticaCore(graph: unknown): Promise<Rus
   const binary = getRustSemanticaBinaryPath();
   const payload = JSON.stringify(graph);
   return new Promise((resolve, reject) => {
-    const child = execFile(binary, [], { timeout: 4_000, maxBuffer: 128_000 }, (error, stdout, stderr) => {
+    const child = spawn(binary, [], { stdio: ['pipe', 'pipe', 'pipe'] });
+    const chunks: Buffer[] = [];
+    const errorChunks: Buffer[] = [];
+    const timeout = setTimeout(() => {
+      child.kill('SIGKILL');
+      reject(new Error('Rust semantic validator timed out'));
+    }, 4_000);
+
+    child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk));
+    child.stderr.on('data', (chunk: Buffer) => errorChunks.push(chunk));
+    child.on('error', (error) => {
+      clearTimeout(timeout);
+      reject(error);
+    });
+    child.on('close', (code, signal) => {
+      clearTimeout(timeout);
+      const stdout = Buffer.concat(chunks).toString('utf8');
+      const stderr = Buffer.concat(errorChunks).toString('utf8');
       const text = stdout.trim();
       if (!text) {
-        reject(new Error(stderr.trim() || error?.message || 'Rust semantic validator returned no output'));
+        reject(new Error(stderr.trim() || `Rust semantic validator returned no output (exit=${code ?? 'unknown'}, signal=${signal ?? 'none'})`));
         return;
       }
       try {
         const parsed = JSON.parse(text) as RustSemanticaCliResponse;
-        if (error && parsed.ok) {
-          reject(error);
+        if (code && parsed.ok) {
+          reject(new Error(`Rust semantic validator exited ${code} after ok response`));
           return;
         }
         resolve(parsed);
