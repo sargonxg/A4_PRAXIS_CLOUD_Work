@@ -1,7 +1,7 @@
 # PRAXIS v5 Execution Ledger
 
 Date opened: 2026-05-10
-Status: Phase 4D committed locally; push is next
+Status: Phase 4D pushed; Queue 11 / Phase 4E is next
 
 This ledger is the working control file for the v5 build pack. It turns the
 three prompt files into explicit checkpoints so Codex, Claude Code,
@@ -82,7 +82,7 @@ Known setup warnings:
 | 4A | File 3 Phase 4A | Phase 1 plus compatible 2/3 surfaces | complete | Codex | `330b1bbd` |
 | 4B | File 3 Phase 4B | Phase 3 types/seeds | complete | Codex | `8e5df782`, `e74792b8` |
 | 4C | File 3 Phase 4C | Phase 4A foundation | complete | Codex | `04e703d0`, `7fa55185` |
-| 4D | File 3 Phase 4D | Methods and runtime prerequisites | complete | Codex | `c4938c99` |
+| 4D | File 3 Phase 4D | Methods and runtime prerequisites | complete | Codex | `c4938c99`, `995e5e8e` |
 | 4E | File 3 Phase 4E | Drafting prerequisites | not-started | unassigned | pending |
 | 5 | File 3 Phase 5 | Phase 4C | not-started | unassigned | pending |
 | 6 | File 3 Phase 6 | Drafting shell and templates | not-started | unassigned | pending |
@@ -509,7 +509,7 @@ only the intended Phase 0 changes.
   - ENVIRONMENT: local browser auth smoke required `COOKIE_SIGNING_SECRET=local-smoke-secret` for the production-mode server because signed session cookies are required.
   - ENVIRONMENT: one Vitest invocation timed out without results; rerunning with the same `--pool=threads` mode and a longer timeout produced the clean 149-file / 580-test pass.
 - Commit: `c4938c99` (`feat(v5-4d): add ask homepage`)
-- Push: pending
+- Push: pushed to `origin/main`
 - Open blockers:
   - Phase 4E still owns `/draft` and `/draft/[draftId]`; Phase 4D links to the existing workbench memo chapter until that route exists.
   - Full runtime execution for all ten Methods remains Phase 5.
