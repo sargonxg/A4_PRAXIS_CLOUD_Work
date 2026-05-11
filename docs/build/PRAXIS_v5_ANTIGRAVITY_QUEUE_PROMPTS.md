@@ -72,7 +72,7 @@ prompts; this status table is the operational tracker.
 | 07 | complete | `330b1bbd`, `3f467af1`; Phase 4A validation: lint, typecheck, build, route/UI audits, vitest, browser smoke, graphify | Done. |
 | 08 | complete | `8e5df782`, `e74792b8`; Phase 4B validation: build/typecheck/lint, user-model and owner-scope audits, vitest, browser smoke, graphify | Done. |
 | 09 | complete | `04e703d0`, `7fa55185`; Phase 4C validation: typecheck, lint, build, method/tool audits, route audit, vitest, browser smoke, graphify | Done. |
-| 10 | validated-local | pending commit; Phase 4D validation: typecheck, lint, build, Ask/UI/provider audits, route audit, vitest, browser smoke, graphify | Commit and push next. |
+| 10 | committed-local | `c4938c99`; Phase 4D validation: typecheck, lint, build, Ask/UI/provider audits, route audit, vitest, browser smoke, graphify | Push next. |
 | 11 | blocked | pending | Wait for Phase 4D push and drafting prerequisites. |
 | 12 | blocked | pending | Wait for Phase 4C. |
 | 13 | blocked | pending | Wait for Drafting Studio and needed methods. |
