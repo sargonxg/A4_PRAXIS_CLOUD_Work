@@ -86,7 +86,7 @@ Known setup warnings:
 | 4E | File 3 Phase 4E | Drafting prerequisites | complete | Codex | `54d46851`, `b40cb735` |
 | 5 | File 3 Phase 5 | Phase 4C | complete | Codex | `cca0a32e`, `951ae357` |
 | 6 | File 3 Phase 6 | Drafting shell and templates | complete | Codex | `c781887a` |
-| 7 | File 3 Phase 7 | Waves 1-3 complete | complete | Codex | pending |
+| 7 | File 3 Phase 7 | Waves 1-3 complete | complete | Codex | `ec88a6e4` |
 | 8 | File 3 Phase 8 | Demo content and app surfaces | not-started | unassigned | pending |
 | 9 | File 3 Phase 9 | All MVP phases complete | not-started | unassigned | pending |
 
@@ -666,8 +666,8 @@ only the intended Phase 0 changes.
   - PASS: lint completed with existing warning debt only.
   - PASS: `npm run audit:gcp` reported 0 hard failures and 0 soft warnings after local `gcloud` and ADC quota project were aligned to `praxisbytacitus`.
   - SCOPE NOTE: seed scripts are intentionally non-destructive local bundle/verification scripts. They do not write Firestore or Storage without an explicit production data-seeding runbook.
-- Commit: pending
-- Push: pending
+- Commit: `ec88a6e4`
+- Push: pending tracker update
 - Open blockers:
   - Phase 8 still owns landing-page polish and public narrative integration.
   - Production deploy remains manual-approval-only.
