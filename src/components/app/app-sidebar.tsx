@@ -91,7 +91,7 @@ export function AppSidebar() {
         <NavItem open={sidebarOpen} href="/situations/new" label="New Context" icon={Plus} />
 
         <SectionLabel open={sidebarOpen}>Repository</SectionLabel>
-        <NavItem open={sidebarOpen} href="/cores/context" label="Context Core" icon={Target} active={pathname === '/app/cores/context'} />
+        <NavItem open={sidebarOpen} href="/cores/context" label="Situation Core" icon={Target} active={pathname === '/app/cores/context'} />
         <NavItem open={sidebarOpen} href="/cores/user" label="User Core" icon={UserCircle} active={pathname === '/app/cores/user'} />
         <NavItem open={sidebarOpen} href="/workbench" label={`Situations${situations.length ? ` (${situations.length})` : ''}`} icon={FolderKanban} active={pathname === '/app/workbench'} />
         <NavItem

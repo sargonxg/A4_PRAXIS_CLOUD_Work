@@ -35,7 +35,7 @@ mustInclude('src/components/dashboard/dashboard-command-center.tsx', [
 mustInclude('src/components/app/app-sidebar.tsx', [
   'href="/dashboard#ask-praxis"',
   'label="Ask PRAXIS"',
-  'label="Context Core"',
+  'label="Situation Core"',
   'label="User Core"',
   "pathname === '/app/dashboard'",
 ]);

@@ -73,8 +73,13 @@ if (failures.length === 0) {
   }
 
   const contextCore = file('src/app/app/cores/context/page.tsx');
-  for (const marker of ['Build Context Core', '/app/situations/new', 'Semantic Seed']) {
+  for (const marker of ['Situation Core Builder', 'Build Context Core', '/app/situations/new', 'Semantic Seed', 'Context readiness', 'Tool sequence']) {
     if (!contextCore.includes(marker)) failures.push(`Context Core page missing ${marker}`);
+  }
+
+  const userCore = file('src/app/app/cores/user/page.tsx');
+  for (const marker of ['User Core Builder', 'Maintain User Core', 'Attach to Ask PRAXIS', 'Readiness', 'Prompt effects']) {
+    if (!userCore.includes(marker)) failures.push(`User Core page missing ${marker}`);
   }
 
   const publicContexts = file('src/app/contexts/page.tsx');
@@ -91,12 +96,12 @@ if (failures.length === 0) {
   }
 
   const repositorySpine = file('src/components/dashboard/core-repository-spine.tsx');
-  for (const marker of ['Repository Spine', '/api/health/semantica-core', 'Ask with stack', 'User Core', 'Context Core', 'Memo Output']) {
+  for (const marker of ['Repository Spine', '/api/health/semantica-core', 'Ask with stack', 'User Core', 'Situation Core', 'Memo Output']) {
     if (!repositorySpine.includes(marker)) failures.push(`Repository Spine missing ${marker}`);
   }
 
   const sidebar = file('src/components/app/app-sidebar.tsx');
-  for (const marker of ['Repository', 'href="/cores/context"', 'href="/cores/user"', 'href="/tools"', 'href="/situations/new"']) {
+  for (const marker of ['Repository', 'label="Situation Core"', 'href="/cores/context"', 'href="/cores/user"', 'href="/tools"', 'href="/situations/new"']) {
     if (!sidebar.includes(marker)) failures.push(`app sidebar missing PraxisLink-relative route ${marker}`);
   }
 
