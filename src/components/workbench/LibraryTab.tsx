@@ -43,6 +43,7 @@ function documentIdFromPayload(payload: unknown): string | null {
 
 export function LibraryTab() {
   const { caseId, caseModule } = useWorkbenchScope();
+  const isExampleCase = caseModule.kind === 'example';
   const features = useFeatureFlags();
   const cogneeEnabled = features.cognee.enabled;
   const [query, setQuery] = useState('');
@@ -78,6 +79,10 @@ export function LibraryTab() {
   }
 
   useEffect(() => {
+    if (isExampleCase) {
+      setSavedClaims([]);
+      return;
+    }
     let ignore = false;
     fetch(`/api/cases/${encodeURIComponent(caseId)}/saved-claims`)
       .then((response) => response.ok ? response.json() : { claims: [] })
@@ -90,15 +95,16 @@ export function LibraryTab() {
     return () => {
       ignore = true;
     };
-  }, [caseId]);
+  }, [caseId, isExampleCase]);
 
   const refreshBackendSources = useCallback(async () => {
+    if (isExampleCase) return;
     const response = await fetch(`/api/backend/tabs/library?case_id=${encodeURIComponent(caseId)}`).catch(() => null);
     const payload = await response?.json().catch(() => ({}));
     if (response?.ok && Array.isArray(payload.sources)) {
       setBackendSources(payload.sources);
     }
-  }, [caseId]);
+  }, [caseId, isExampleCase]);
 
   useEffect(() => {
     void refreshBackendSources();

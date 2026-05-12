@@ -3,6 +3,14 @@ import crypto from 'crypto';
 function getCookieSigningSecret(): string {
   const secret = process.env.COOKIE_SIGNING_SECRET;
   if (!secret) {
+    const runningOnCloudRun = Boolean(
+      process.env.K_SERVICE ||
+      process.env.K_REVISION ||
+      process.env.K_CONFIGURATION
+    );
+    if (!runningOnCloudRun) {
+      return 'praxis-dev-cookie-signing-secret';
+    }
     throw new Error('[auth] COOKIE_SIGNING_SECRET is required for signed sessions');
   }
   return secret;

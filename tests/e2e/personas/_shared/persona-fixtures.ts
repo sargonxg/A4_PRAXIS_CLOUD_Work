@@ -1,17 +1,35 @@
+import crypto from 'node:crypto';
 import { expect, type Page } from '@playwright/test';
+
+const DEMO_SESSION_SECRET = 'praxis-dev-cookie-signing-secret';
+const DEMO_SESSION_COOKIE = 'tacitus-auth-session';
+const BASE_ORIGIN = 'http://localhost:3000';
+
+function signDemoSession(value: string) {
+  const sig = crypto.createHmac('sha256', DEMO_SESSION_SECRET).update(value).digest('base64url');
+  return `${value}.${sig}`;
+}
+
+async function seedDemoSession(page: Page) {
+  const sessionValue = JSON.stringify({ demo: true, onboarded: true, onboardingComplete: true });
+  await page.context().addCookies([
+    {
+      name: DEMO_SESSION_COOKIE,
+      value: signDemoSession(sessionValue),
+      url: BASE_ORIGIN,
+    },
+  ]);
+}
 
 export async function openExampleWorkbench(page: Page, caseId: string, tab = 'chapters') {
   await page.addInitScript(() => {
     window.localStorage.setItem('praxis-tour-seen', 'true');
   });
-  await page.goto(`/login?mode=demo&example=${caseId}`);
-  await page.waitForURL(new RegExp(`/app/workbench/${caseId}(?:\\?tab=chapters)?$`), { timeout: 30_000 });
-  const exploreFreely = page.getByRole('button', { name: /Explore Freely/i });
-  if (await exploreFreely.isVisible().catch(() => false)) {
-    await exploreFreely.click();
-  }
-  await expect(page.getByText('Example case')).toBeVisible();
-  await expect(page.getByText('Context health').first()).toBeVisible();
+  await seedDemoSession(page);
+  await page.goto(`/app/workbench/${caseId}`);
+  await page.waitForURL(new RegExp(`/app/workbench/${caseId}(?:\\?.*)?$`), { timeout: 30_000 });
+  await expect(page.getByTestId('praxis-workspace-shell')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Ask PRAXIS/i }).first()).toBeVisible();
   const dismissPrimer = page.getByRole('button', { name: /^Dismiss conflict grammar primer$/i });
   if (await dismissPrimer.isVisible().catch(() => false)) {
     await dismissPrimer.click();
@@ -27,15 +45,15 @@ export async function openSeededDemoWorkbench(page: Page, caseId: string, tab?: 
   await page.addInitScript(() => {
     window.localStorage.setItem('praxis-tour-seen', 'true');
   });
-  await page.goto(`/login?mode=demo&example=${caseId}`);
+  await seedDemoSession(page);
+  await page.goto(`/app/workbench/${caseId}`);
   await page.waitForURL(new RegExp(`/app/workbench/${caseId}$`), { timeout: 30_000 });
   if (tab) {
     await page.goto(`/app/workbench/${caseId}?tab=${tab}`);
     await expect(page).toHaveURL(new RegExp(`tab=${tab}`));
   }
   await expect(page.locator('h1')).toBeVisible();
-  await expect(page.getByText('Example case').first()).toBeVisible();
-  await expect(page.getByText('Context health').first()).toBeVisible();
+  await expect(page.getByTestId('praxis-workspace-shell')).toBeVisible();
   const dismissPrimer = page.getByRole('button', { name: /^Dismiss conflict grammar primer$/i });
   if (await dismissPrimer.isVisible().catch(() => false)) {
     await dismissPrimer.click();
@@ -43,7 +61,8 @@ export async function openSeededDemoWorkbench(page: Page, caseId: string, tab?: 
 }
 
 export async function openWorkbenchChapter(page: Page, chapter: 'Research' | 'Memos' | 'Draft' | 'ACH' | 'Tools' | 'Boardroom') {
-  const button = page.getByRole('button', { name: new RegExp(`^${chapter}$`, 'i') });
+  const legacyDeskSurface = page.getByTestId('workspace-chapter-desk');
+  const button = legacyDeskSurface.getByRole('button', { name: new RegExp(`^${chapter}$`, 'i') });
   await expect(button).toBeVisible();
   if ((await button.getAttribute('aria-pressed')) !== 'true') {
     await button.click();

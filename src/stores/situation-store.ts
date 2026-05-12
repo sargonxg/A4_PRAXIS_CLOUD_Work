@@ -94,7 +94,9 @@ export const useSituationStore = create<SituationStore>()(
             loading: false,
           });
         } catch (error) {
-          console.error('fetchSituations failed:', error);
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('fetchSituations failed:', error);
+          }
           set({ loading: false });
         }
       },

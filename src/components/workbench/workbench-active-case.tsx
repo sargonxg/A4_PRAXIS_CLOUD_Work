@@ -10,32 +10,52 @@ import { WorkbenchChapterRenderer } from '@/components/workbench/chapter-rendere
 import { WorkbenchScopeProvider, useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { WorkbenchTabContent } from '@/components/workbench/workbench-tab-content';
 import { WorkbenchTabs } from '@/components/workbench/workbench-tabs';
+import { PraxisWorkspaceShell } from '@/components/app/praxis-workspace-shell';
+import { listExampleCases } from '@/lib/cases/registry';
+import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
 import { useAuth } from '@/lib/auth/auth-context';
 import { isOnboardingComplete } from '@/lib/auth/onboarding-status';
 import type { WorkspaceTabId } from '@/types/workbench';
 
-export function WorkbenchActiveCase({ caseId, activeTab }: { caseId: string; activeTab: WorkspaceTabId | null }) {
-  const [openTab, setOpenTab] = useState<WorkspaceTabId | null>(activeTab);
-
+export function WorkbenchActiveCase({
+  caseId,
+  activeTab,
+  openChapter,
+}: {
+  caseId: string;
+  activeTab: string | null;
+  openChapter?: string | null;
+}) {
   return (
-    <WorkbenchScopeProvider caseId={caseId} activeTab={openTab}>
-      <WorkbenchActiveCaseInner activeTab={openTab} onOpenTab={setOpenTab} />
-    </WorkbenchScopeProvider>
+    <>
+      <PraxisWorkspaceShell
+        caseId={caseId}
+        focusSection={mapFocusSection(activeTab, openChapter)}
+        exampleCases={listExampleCases().map((caseModule) => ({
+          id: caseModule.id,
+          name: caseModule.manifest.name,
+          region: caseModule.manifest.region,
+          summary: caseModule.manifest.summary,
+          risk: caseModule.manifest.risk,
+          glaslStage: caseModule.manifest.glaslStage,
+          tags: caseModule.manifest.tags,
+        }))}
+        marketplaceToolCount={MARKETPLACE_TOOLS.length}
+      />
+      <WorkbenchScopeProvider caseId={caseId} activeTab={normalizeTab(activeTab)}>
+        <WorkbenchLegacySurface activeTab={normalizeTab(activeTab)} />
+      </WorkbenchScopeProvider>
+    </>
   );
 }
 
-function WorkbenchActiveCaseInner({
-  activeTab,
-  onOpenTab,
-}: {
-  activeTab: WorkspaceTabId | null;
-  onOpenTab: (tab: WorkspaceTabId | null) => void;
-}) {
+function WorkbenchLegacySurface({ activeTab }: { activeTab: WorkspaceTabId | null }) {
   const { situation, isExampleCase, caseModule } = useWorkbenchScope();
   const { user, analystProfile } = useAuth();
   const searchParams = useSearchParams();
   const showOnboardingBanner = Boolean(user && !user.isDemo && !isOnboardingComplete(analystProfile));
   const showDemoCopyBanner = !isExampleCase && searchParams.get('source') === 'demo';
+  const [openTab, setOpenTab] = useState<WorkspaceTabId | null>(activeTab);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -91,22 +111,22 @@ function WorkbenchActiveCaseInner({
             </div>
           </div>
         </div>
-        <WorkbenchTabs activeTab={activeTab} onOpen={onOpenTab} />
+        <WorkbenchTabs activeTab={openTab} onOpen={setOpenTab} />
       </header>
       <div className="mx-auto max-w-[1400px] p-4 sm:p-6">
         <WorkbenchChapterRenderer />
       </div>
-      {activeTab ? (
+      {openTab ? (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-navy-950/45 p-3 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true">
           <section className="mx-auto min-h-[calc(100vh-1.5rem)] max-w-[1440px] rounded-lg border border-slate-200 bg-slate-50 shadow-2xl sm:min-h-[calc(100vh-3rem)]">
             <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-navy-500">Workspace tab</p>
-                <h2 className="text-base font-semibold text-navy-950">{activeTabLabel(activeTab)}</h2>
+                <h2 className="text-base font-semibold text-navy-950">{activeTabLabel(openTab)}</h2>
               </div>
               <button
                 type="button"
-                onClick={() => onOpenTab(null)}
+                onClick={() => setOpenTab(null)}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-navy-800 hover:border-navy-300"
                 aria-label="Close workspace tab"
               >
@@ -114,13 +134,27 @@ function WorkbenchActiveCaseInner({
               </button>
             </div>
             <div className="p-4 sm:p-6">
-              <WorkbenchTabContent activeTab={activeTab} />
+              <WorkbenchTabContent activeTab={openTab} />
             </div>
           </section>
         </div>
       ) : null}
     </main>
   );
+}
+
+function mapFocusSection(activeTab: string | null, openChapter?: string | null) {
+  if (openChapter === 'memos' || openChapter === 'draft') return 'draft';
+  if (openChapter === 'research') return 'sources';
+  if (openChapter === 'graph') return 'summary';
+  if (activeTab === 'library' || activeTab === 'context') return 'cores';
+  if (activeTab === 'graph') return 'summary';
+  return null;
+}
+
+function normalizeTab(value: string | null): WorkspaceTabId | null {
+  if (value === 'context' || value === 'library' || value === 'ontology' || value === 'graph') return value;
+  return null;
 }
 
 function activeTabLabel(tab: WorkspaceTabId): string {

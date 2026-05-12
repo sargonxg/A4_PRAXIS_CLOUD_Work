@@ -54,6 +54,7 @@ interface ResearchStreamEvent {
 
 export function ResearchTab() {
   const { caseId, caseModule } = useWorkbenchScope();
+  const isExampleCase = caseModule.kind === 'example';
   const features = useFeatureFlags();
   const cogneeEnabled = features.cognee.enabled;
   const [question, setQuestion] = useState(`${caseModule.manifest.name} latest source updates`);
@@ -75,13 +76,14 @@ export function ResearchTab() {
   );
 
   const refreshThreads = useCallback(async () => {
+    if (isExampleCase) return;
     const response = await fetch(`/api/backend/chapters/research/threads?case_id=${encodeURIComponent(caseId)}`).catch(() => null);
     const payload = await response?.json().catch(() => ({}));
     if (response?.ok && Array.isArray(payload.threads)) {
       setThreads(payload.threads);
       setActiveThreadId((current) => current ?? payload.threads[0]?.id ?? null);
     }
-  }, [caseId]);
+  }, [caseId, isExampleCase]);
 
   useEffect(() => {
     void refreshThreads();
@@ -102,6 +104,10 @@ export function ResearchTab() {
   }
 
   async function runResearch() {
+    if (isExampleCase) {
+      setIngestNote('Example cases use local research planning.');
+      return;
+    }
     setLoading(true);
     setIngestNote(null);
     try {
@@ -130,6 +136,10 @@ export function ResearchTab() {
   }
 
   async function createThread() {
+    if (isExampleCase) {
+      setThreadNote('Example cases keep research threads local.');
+      return;
+    }
     setThreadNote('Opening research thread...');
     const response = await fetch('/api/backend/chapters/research/threads', {
       method: 'POST',
@@ -148,6 +158,10 @@ export function ResearchTab() {
   }
 
   async function recallThread(threadId: string) {
+    if (isExampleCase) {
+      setThreadNote('Example cases do not recall backend threads.');
+      return;
+    }
     setThreadNote('Running graph recall...');
     const response = await fetch(`/api/backend/chapters/research/threads/${encodeURIComponent(threadId)}/recall`, {
       method: 'POST',
@@ -172,6 +186,10 @@ export function ResearchTab() {
   }
 
   async function closeThread(threadId: string) {
+    if (isExampleCase) {
+      setThreadNote('Example cases do not close backend threads.');
+      return;
+    }
     setThreadNote(cogneeEnabled ? 'Closing thread into memory...' : 'Closing thread...');
     const response = await fetch(`/api/backend/chapters/research/threads/${encodeURIComponent(threadId)}/close`, {
       method: 'POST',
@@ -187,6 +205,10 @@ export function ResearchTab() {
   }
 
   async function stageIngest(resultIds: string[]) {
+    if (isExampleCase) {
+      setIngestNote('Example cases keep source ingest local.');
+      return;
+    }
     const candidates = results.filter((result) => resultIds.includes(result.id));
     if (!candidates.length) {
       setIngestNote('Select at least one candidate source before staging ingestion.');

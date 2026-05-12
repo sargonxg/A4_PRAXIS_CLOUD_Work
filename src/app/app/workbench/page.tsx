@@ -1,5 +1,5 @@
-import { WorkbenchCasePicker } from '@/components/workbench/case-picker';
+import { redirect } from 'next/navigation';
 
 export default function WorkbenchPage() {
-  return <WorkbenchCasePicker />;
+  redirect('/app/dashboard');
 }

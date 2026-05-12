@@ -6,8 +6,8 @@ export default async function WorkbenchCasePage({
   searchParams,
 }: {
   params: Promise<{ caseId: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; openChapter?: string }>;
 }) {
   const [{ caseId }, query] = await Promise.all([params, searchParams]);
-  return <WorkbenchActiveCase caseId={caseId} activeTab={normalizeWorkbenchTab(query.tab)} />;
+  return <WorkbenchActiveCase caseId={caseId} activeTab={normalizeWorkbenchTab(query.tab)} openChapter={query.openChapter ?? null} />;
 }

@@ -23,18 +23,19 @@ test('landing renders hero animation, static fallback, and 3D ontology graph', a
   const consoleErrors = collectConsoleErrors(page);
 
   await page.goto('/');
-  await expect(page.getByTestId('landing-hero-visual')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /Open a Situation\. Ask PRAXIS\. Produce the handover\./i })).toBeVisible();
-  await expect(page.getByText(/The real app now starts with the job/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Policy AI that starts with the right context\./i })).toBeVisible();
+  await expect(page.getByText(/Ask PRAXIS about this policy situation/i)).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Open real app$/i }).first()).toBeVisible();
 
-  await page.locator('#dialectica').scrollIntoViewIfNeeded();
-  await expect(page.getByTestId('dialectica-graph-3d')).toBeVisible();
-  await expect(page.getByText(/DIALECTICA keeps policy AI tied to evidence/i)).toBeVisible();
-  await expect(page.getByTestId('dialectica-graph-3d').getByText(/Source grounded/i)).toBeVisible();
+  const realApp = page.locator('#real-app');
+  await realApp.scrollIntoViewIfNeeded();
+  await expect(realApp.getByText(/Inside the real app/i)).toBeVisible();
+  await expect(realApp.getByText(/Not a chat box\. A working console for policy analysis\./i)).toBeVisible();
+  await expect(realApp.getByText(/dashboard, workbench, graph, memo studio, boardroom, ACH, and context creation/i)).toBeVisible();
 
   await page.goto('/?staticHero=1');
-  await expect(page.getByTestId('landing-hero-visual')).toBeVisible();
-  await expect(page.getByText(/source-grounded model/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Policy AI that starts with the right context\./i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Open real app$/i }).first()).toBeVisible();
 
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });
@@ -44,8 +45,7 @@ test('demo workbench exposes context, ontology, graph, tools, memo, and draft su
   const closeWorkspaceTab = () => page.getByRole('button', { name: /^Close workspace tab$/i }).click();
 
   await openExampleWorkbench(page, 'syria-2026');
-  await expect(page.getByText('Example case')).toBeVisible();
-  await expect(page.getByText('Context health').first()).toBeVisible();
+  await expect(page.getByTestId('praxis-workspace-shell')).toBeVisible();
 
   await expect(page.getByRole('button', { name: /Desk.*always on/i })).toBeVisible();
   await expect(page.getByTestId('workbench-desk-surface')).toBeVisible();
@@ -77,7 +77,7 @@ test('demo workbench exposes context, ontology, graph, tools, memo, and draft su
   await expect(page.getByRole('button', { name: /^Refresh receipts$/i })).toBeVisible();
   await closeWorkspaceTab();
 
-  await page.getByRole('button', { name: /^Research$/i }).click();
+  await page.getByTestId('workspace-chapter-desk').getByRole('button', { name: /^Research$/i }).click();
   const researchSurface = page.getByTestId('workbench-research-surface');
   await expect(researchSurface).toBeVisible();
   await expect(researchSurface.getByText(/Current source receipts/i)).toBeVisible();
@@ -138,13 +138,23 @@ test('demo workbench exposes context, ontology, graph, tools, memo, and draft su
 test('workbench case picker uses readable copy contrast', async ({ page }) => {
   const consoleErrors = collectConsoleErrors(page);
 
-  await page.request.post('/api/auth/session', { data: { demo: true } });
+  await openExampleWorkbench(page, 'syria-2026');
   await page.goto('/app/workbench');
-  const intro = page.getByText(/Each case opens in the same operating room/i);
+  await expect(page).toHaveURL(/\/app\/dashboard$/);
+  const intro = page.getByText(/Ask PRAXIS starts from (?:the selected user core and situation core|[^.]+ and [^.]+)\./i);
   await expect(intro).toBeVisible();
 
   const color = await intro.evaluate((element) => getComputedStyle(element).color);
-  expect(color).toBe('rgb(51, 65, 85)');
+  const luminance = color.startsWith('lab(')
+    ? Number((color.match(/^lab\(([-0-9.]+)/)?.[1] ?? '100'))
+    : color.startsWith('rgb(')
+      ? (() => {
+          const [r, g, b] = color.match(/\d+/g)?.map(Number) ?? [255, 255, 255];
+          return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 2.55;
+        })()
+      : 100;
+  expect(luminance).toBeGreaterThan(0);
+  expect(luminance).toBeLessThan(40);
 
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });

@@ -23,6 +23,7 @@ import {
 
 export function DraftTab() {
   const { caseId, caseModule, user } = useWorkbenchScope();
+  const isDemoWorkbench = caseModule.kind === 'example' || user?.isDemo === true;
   const memoOptions = useMemo(() => buildDraftMemoOptions(caseModule), [caseModule]);
   const appendices = useMemo(() => buildDraftAppendices(caseModule), [caseModule]);
   const [selectedMemoIds, setSelectedMemoIds] = useState<string[]>(() => memoOptions.slice(0, 2).map((memo) => memo.id));
@@ -78,6 +79,10 @@ export function DraftTab() {
   }
 
   async function persistDraft(markdown = buildMarkdown()): Promise<string | null> {
+    if (isDemoWorkbench) {
+      setExportNote('Draft held locally; chapter backend save unavailable.');
+      return null;
+    }
     const response = await fetch('/api/backend/chapters/drafts', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -129,34 +134,38 @@ export function DraftTab() {
     const markdown = buildMarkdown();
     const plainText = renderDraftPlainText(coverPage.title, markdown);
     const draftId = await persistDraft(markdown);
-    if (draftId && settings.format !== 'markdown') {
+    if (!isDemoWorkbench && draftId && settings.format !== 'markdown') {
       await fetch(`/api/backend/chapters/drafts/${encodeURIComponent(draftId)}/export?format=${settings.format}`, { method: 'POST' }).catch(() => null);
     }
-    const persistResponse = await fetch(`/api/cases/${encodeURIComponent(caseId)}/draft/export`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        title: coverPage.title,
-        format: settings.format,
-        audience: settings.audience,
-        markdown,
-        plainText,
-        primaryMemoId,
-        memoIds: selectedMemos.map((memo) => memo.id),
-        appendixIds: selectedAppendixIds,
-        coverPage,
-        embedC2pa: settings.embedC2pa,
-        embedAuditManifest: settings.embedAuditManifest,
-        redactionSummary: redactions,
-      }),
-    }).catch(() => null);
-    const persistPayload = await persistResponse?.json().catch(() => ({}));
-    if (persistResponse?.ok) {
-      setExportNote(persistPayload.mode === 'persisted'
-        ? 'Export manifest persisted to this case library.'
-        : 'Demo export manifest generated for this session.');
+    if (!isDemoWorkbench) {
+      const persistResponse = await fetch(`/api/cases/${encodeURIComponent(caseId)}/draft/export`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          title: coverPage.title,
+          format: settings.format,
+          audience: settings.audience,
+          markdown,
+          plainText,
+          primaryMemoId,
+          memoIds: selectedMemos.map((memo) => memo.id),
+          appendixIds: selectedAppendixIds,
+          coverPage,
+          embedC2pa: settings.embedC2pa,
+          embedAuditManifest: settings.embedAuditManifest,
+          redactionSummary: redactions,
+        }),
+      }).catch(() => null);
+      const persistPayload = await persistResponse?.json().catch(() => ({}));
+      if (persistResponse?.ok) {
+        setExportNote(persistPayload.mode === 'persisted'
+          ? 'Export manifest persisted to this case library.'
+          : 'Demo export manifest generated for this session.');
+      } else {
+        setExportNote('Download prepared locally; server export persistence was unavailable.');
+      }
     } else {
-      setExportNote('Download prepared locally; server export persistence was unavailable.');
+      setExportNote('Demo export manifest generated for this session.');
     }
 
     const filenameRoot = `${caseModule.id}-briefing-package`;

@@ -54,13 +54,17 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const cookieStore = await cookies();
     const cookieOptions = cookieOptionsForRequest(request);
 
     if (body.demo === true) {
       // Demo mode session
-      cookieStore.set(SESSION_COOKIE, signCookie(JSON.stringify({ demo: true, onboarded: true, onboardingComplete: true })), cookieOptions);
-      return NextResponse.json({ success: true });
+      const response = NextResponse.json({ success: true });
+      response.cookies.set(
+        SESSION_COOKIE,
+        signCookie(JSON.stringify({ demo: true, onboarded: true, onboardingComplete: true })),
+        cookieOptions,
+      );
+      return response;
     }
 
     if (body.token && typeof body.token === 'string') {
@@ -93,7 +97,8 @@ export async function POST(request: Request) {
       const adminAccess = getAdminPrincipalAccess(verifiedUser);
 
       // Token is valid — store in cookie for subsequent requests (includes onboarded flag for middleware)
-      cookieStore.set(
+      const response = NextResponse.json({ success: true });
+      response.cookies.set(
         SESSION_COOKIE,
         signCookie(JSON.stringify({
           token: body.token,
@@ -111,7 +116,7 @@ export async function POST(request: Request) {
         })),
         cookieOptions,
       );
-      return NextResponse.json({ success: true });
+      return response;
     }
 
     return NextResponse.json({ error: 'Missing token or demo flag' }, { status: 400 });
@@ -176,7 +181,7 @@ export async function GET() {
  * DELETE — Clears the auth session cookie.
  */
 export async function DELETE() {
-  const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE);
-  return NextResponse.json({ success: true });
+  const response = NextResponse.json({ success: true });
+  response.cookies.delete(SESSION_COOKIE);
+  return response;
 }

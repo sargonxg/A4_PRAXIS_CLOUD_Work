@@ -25,17 +25,13 @@ test('dashboard is the real app command center for active case work', async ({ p
   await openExampleWorkbench(page, 'syria-2026');
   await page.goto('/app/dashboard');
 
-  await expect(page.getByTestId('praxis-dashboard-command-center')).toBeVisible();
-  await expect(page.getByTestId('dashboard-graph-orbit')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /Four moves/i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Graph Inspect actors/i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Suggested Tools Run only/i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Memo Drafting Draft and export/i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Personas/i })).toBeVisible();
-
-  await page.getByRole('link', { name: /Graph Inspect actors/i }).click();
-  await expect(page).toHaveURL(/\/app\/workbench\/[^/]+\?tab=graph/);
-  await expect(page.getByTestId('praxis-graph-canvas')).toBeVisible();
+  await expect(page.getByTestId('praxis-workspace-shell')).toBeVisible();
+  await expect(page.getByTestId('core-library-panel')).toBeVisible();
+  await expect(page.getByTestId('draft-workbench-panel')).toBeVisible();
+  await expect(page.getByText(/^Ask PRAXIS$/i).first()).toBeVisible();
+  await expect(page.getByText(/^Core library$/i).first()).toBeVisible();
+  await expect(page.getByText(/^Drafting workbench$/i).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /Open memo route/i }).first()).toBeVisible();
 
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });
@@ -47,12 +43,13 @@ test('dashboard graph remains prominent on mobile', async ({ page }) => {
   await openExampleWorkbench(page, 'syria-2026');
   await page.goto('/app/dashboard');
 
-  const graph = page.getByTestId('dashboard-graph-orbit');
-  await expect(page.getByTestId('praxis-dashboard-command-center')).toBeVisible();
-  await expect(graph).toBeVisible();
-  await expect(page.getByRole('link', { name: /Graph Inspect actors/i })).toBeVisible();
+  const shell = page.getByTestId('praxis-workspace-shell');
+  const library = page.getByTestId('core-library-panel');
+  await expect(shell).toBeVisible();
+  await expect(library).toBeVisible();
+  await expect(page.getByText(/^Core library$/i).first()).toBeVisible();
 
-  const box = await graph.boundingBox();
+  const box = await library.boundingBox();
   expect(box?.width ?? 0).toBeGreaterThan(300);
   expect(box?.height ?? 0).toBeGreaterThan(280);
 

@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
 
@@ -12,15 +11,7 @@ export async function POST(request: Request) {
     const { isDemo } = await request.json();
 
     if (isDemo === true) {
-      const cookieStore = await cookies();
-      cookieStore.set(SESSION_COOKIE, JSON.stringify({ demo: true }), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24,
-        path: '/',
-      });
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         user: {
           id: 'demo-user-001',
@@ -32,6 +23,14 @@ export async function POST(request: Request) {
           isDemo: true,
         },
       });
+      response.cookies.set(SESSION_COOKIE, JSON.stringify({ demo: true }), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24,
+        path: '/',
+      });
+      return response;
     }
 
     return NextResponse.json(
