@@ -88,6 +88,7 @@ flowchart LR
 
 The real app lives under `/app/*` and should stay simple:
 
+- `/app/assistant` is the dedicated full-page Ask PRAXIS workspace.
 - `/app/dashboard` is the main workspace shell.
 - `/app/contexts` is the core library entry point.
 - `/app/cores/user` manages User Cores.

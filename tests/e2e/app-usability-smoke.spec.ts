@@ -158,3 +158,21 @@ test('workbench case picker uses readable copy contrast', async ({ page }) => {
 
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });
+
+test('ask workspace exposes the full-page write surface and core attachers', async ({ page }) => {
+  const consoleErrors = collectConsoleErrors(page);
+
+  await openExampleWorkbench(page, 'syria-2026');
+  await page.goto('/app/assistant');
+
+  await expect(page.getByTestId('ask-workspace-page')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Write, attach context, and route the work from one page\./i })).toBeVisible();
+  await expect(page.getByText(/^Ask PRAXIS$/i).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Tools library$/i })).toBeVisible();
+  await expect(page.getByLabel(/User Core/i)).toBeVisible();
+  await expect(page.getByLabel(/Situation Core/i)).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Open drafting workbench$/i })).toBeVisible();
+  await expect(page.getByText(/Gemini now, provider picker later/i)).toBeVisible();
+
+  expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
+});

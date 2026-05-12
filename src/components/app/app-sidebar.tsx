@@ -66,7 +66,7 @@ export function AppSidebar() {
 
       <nav className="min-h-0 flex-1 space-y-5 overflow-y-auto px-2 py-4">
         <SectionLabel open={sidebarOpen}>Start</SectionLabel>
-        <NavItem open={sidebarOpen} href="/app/dashboard#ask-praxis" label="Ask PRAXIS" icon={MessageSquareText} active={pathname === '/app/dashboard'} />
+        <NavItem open={sidebarOpen} href="/app/assistant" label="Ask PRAXIS" icon={MessageSquareText} active={pathname.startsWith('/app/assistant')} />
         <NavItem open={sidebarOpen} href="/app/situations/new" label="New Context" icon={Plus} />
 
         <SectionLabel open={sidebarOpen}>Core library</SectionLabel>
