@@ -15,6 +15,8 @@ import {
   MutationConfirmCard,
   type MutationPatch,
 } from '@/components/assistant/mutation-confirm-card';
+import { ResponseActions } from '@/components/assistant/response-actions';
+import { inferResponseActionKinds, type ResponseActionKind } from '@/lib/assistant/response-action-kinds';
 
 interface ChatProposal {
   summary: string;
@@ -26,6 +28,8 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   proposal?: ChatProposal | null;
+  availableActions?: ResponseActionKind[];
+  question?: string;
 }
 
 interface QuickAction {
@@ -341,7 +345,7 @@ export function FloatingPraxis() {
       const assistantId = `assistant-${Date.now()}`;
       setMessages((prev) => [
         ...prev,
-        { id: assistantId, role: 'assistant', content: '' },
+        { id: assistantId, role: 'assistant', content: '', question: userMessage.content },
       ]);
 
       // Fire the intent classifier in parallel — non-blocking. If it resolves
@@ -429,8 +433,8 @@ export function FloatingPraxis() {
 
       // Attach any intent-classifier proposal to the completed assistant turn.
       const intent = await intentPromise;
-      if (
-        intent &&
+        if (
+          intent &&
         typeof intent === 'object' &&
         intent.intent === 'profile.mutation' &&
         intent.patch &&
@@ -451,6 +455,14 @@ export function FloatingPraxis() {
           )
         );
       }
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId && m.role === 'assistant'
+            ? { ...m, availableActions: inferResponseActionKinds(m.content) }
+            : m
+        )
+      );
     },
     [isStreaming, messages, activeSituation, demoMode, currentToolId, pathname]
   );
@@ -628,6 +640,13 @@ export function FloatingPraxis() {
                           <MutationConfirmCard
                             summary={msg.proposal.summary}
                             patch={msg.proposal.patch}
+                          />
+                        )}
+                        {!isStreaming && (
+                          <ResponseActions
+                            message={msg}
+                            situation={activeSituation}
+                            question={msg.question}
                           />
                         )}
                       </div>

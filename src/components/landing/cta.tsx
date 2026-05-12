@@ -27,11 +27,11 @@ export function Cta() {
           </div>
 
           <h2 className="mb-6 font-serif text-3xl text-navy-900 sm:text-4xl lg:text-5xl">
-            Start Building Smarter Diplomatic Intelligence
+            Want to see PRAXIS write a memo from your sources?
           </h2>
           <p className="mb-10 text-lg text-navy-500">
-            Sign in for the focused 12-tool workspace, or explore the live
-            demo with specialist labs instantly — no account needed.
+            Start a workspace, attach your cores, and turn the answer into a
+            cited draft instead of another loose chat transcript.
           </p>
         </motion.div>
 
@@ -47,13 +47,13 @@ export function Cta() {
             href="/login"
             className="group inline-flex items-center justify-center gap-2 rounded-md bg-gold-600 px-10 py-4 text-base font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-xl hover:shadow-gold-600/20 active:scale-[0.98]"
           >
-            Access PRAXIS
+            Start your workspace
             <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </a>
 
-          <p className="text-xs text-navy-400">
-            Sign in for full access · or try the demo — no account needed
-          </p>
+          <a href="/tour" className="text-sm font-semibold text-navy-500 underline-offset-4 hover:text-navy-800 hover:underline">
+            Or watch the 90-second tour
+          </a>
 
           {/* Secondary: contact */}
           <a

@@ -7,7 +7,6 @@ import { ArrowRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useNarrativeMotion } from "./landing-motion-context";
 import { HeroVisual } from "./hero-visual";
-import { ExampleCasesModal } from "./example-cases-modal";
 
 // ---- Animated Situation Model SVG ----
 // 7 nodes: 3 state actors, 2 armed groups, 1 institution, 1 norm
@@ -322,7 +321,6 @@ export function Hero() {
             PRAXIS turns tacit desk context into a guided app: choose the Situation, ask what matters, review sources and confidence, then export a trusted brief, memo, or successor handover.
           </motion.p>
 
-          {/* Single CTA — all paths go through /login */}
           <motion.div
             initial={animateText ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
             animate={{ opacity: 1, y: 0 }}
@@ -335,16 +333,25 @@ export function Hero() {
                 prefetch={false}
                 className="group inline-flex items-center justify-center gap-2 rounded-md bg-gold-600 px-10 py-4 text-base font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-xl hover:shadow-gold-600/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500/60"
               >
-                Start Your Workspace
+                Start your workspace
                 <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
               </Link>
-              <ExampleCasesModal
-                triggerClassName="inline-flex items-center justify-center rounded-md border border-diplomatic-blue/20 px-8 py-4 text-base font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40"
-              />
+              <Link
+                href="/app/demo/syria-2024"
+                prefetch={false}
+                className="inline-flex items-center justify-center rounded-md border border-diplomatic-blue/20 px-8 py-4 text-base font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40"
+              >
+                Try the live example
+              </Link>
+              <Link
+                href="/app/demo/syria-2024/write?guided=1"
+                prefetch={false}
+                className="inline-flex items-center justify-center rounded-md px-3 py-4 text-base font-semibold text-navy-600 underline-offset-4 transition hover:text-navy-900 hover:underline"
+              >
+                See PRAXIS write a memo
+              </Link>
             </div>
-            <p className="text-xs text-navy-400">
-              Sign in for your private workspace, or open a guest session of an example case file.
-            </p>
+            <p className="text-xs text-navy-400">30 seconds to a real memo with citations.</p>
           </motion.div>
         </div>
 

@@ -22,6 +22,7 @@ import {
 } from '@/lib/ai/ask-praxis-context';
 import { toLegacyDataStreamResponse } from '@/lib/ai/legacy-data-stream';
 import { buildToolPromptContract } from '@/lib/tools/tool-operating-contracts';
+import { inferResponseActionKinds } from '@/lib/assistant/response-action-kinds';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -292,7 +293,11 @@ You have access to the user's active situation data. When answering questions:
             situationId: sitId,
             toolId: 'chat',
             profileVersion: provenance.profileVersion,
-            output: { lastMessage: text.slice(0, 4000), at: new Date().toISOString() },
+            output: {
+              lastMessage: text.slice(0, 4000),
+              availableActions: inferResponseActionKinds(text),
+              at: new Date().toISOString(),
+            },
           }).catch((err) => console.warn('[chat] saveToolOutput failed:', err));
         }
       },

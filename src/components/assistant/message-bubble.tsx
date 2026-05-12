@@ -4,11 +4,16 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils/cn";
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import { useAuth } from "@/lib/auth/auth-context";
+import { ResponseActions } from "@/components/assistant/response-actions";
+import type { ResponseActionKind } from "@/lib/assistant/response-action-kinds";
 
 interface MessageBubbleProps {
   role: "user" | "assistant";
   content: string;
   isStreaming?: boolean;
+  situation?: { id?: string; name?: string } | null;
+  question?: string;
+  availableActions?: ResponseActionKind[];
 }
 
 function UserAvatar({ name }: { name: string }) {
@@ -38,6 +43,9 @@ export function MessageBubble({
   role,
   content,
   isStreaming,
+  situation,
+  question,
+  availableActions,
 }: MessageBubbleProps) {
   const { user } = useAuth();
   const userName = user?.name ?? "User";
@@ -73,6 +81,13 @@ export function MessageBubble({
             <MarkdownRenderer content={content} className="text-sm" />
             {isStreaming && (
               <span className="inline-block w-0.5 h-4 bg-gold-400 animate-pulse ml-0.5 align-text-bottom" />
+            )}
+            {!isStreaming && (
+              <ResponseActions
+                message={{ content, availableActions }}
+                situation={situation}
+                question={question}
+              />
             )}
           </div>
         ) : (

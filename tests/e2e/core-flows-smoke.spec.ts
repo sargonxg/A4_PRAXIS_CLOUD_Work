@@ -10,7 +10,7 @@ test.describe('PRAXIS core product flows', () => {
     await contextSelect.selectOption('ai-regulation-2026');
     await expect(contextSelect).toHaveValue('ai-regulation-2026');
     await expect(page.getByRole('heading', { name: /The answer is only useful if the graph behind it is legible\./i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Write with PRAXIS/i }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /See PRAXIS write a memo/i }).first()).toBeVisible();
     await expect(page.getByRole('heading', { name: /Policy context creation, research, and memo writing in one place\./i })).toBeVisible();
     await expect(page.getByRole('link', { name: /Open PRAXIS/i }).first()).toBeVisible();
     await expect(page.getByRole('heading', { name: /Attach the context that matters\. PRAXIS suggests the next move\./i })).toBeVisible();

@@ -331,16 +331,16 @@ export function Phase8WowLanding() {
                 ))}
               </div>
               <Link
-                href="/app/dashboard"
+                href="/app/demo/syria-2024/write?guided=1"
                 prefetch={false}
                 onClick={trackSignup}
                 className="flex w-full items-center gap-4 rounded-[1.1rem] bg-[#111827] px-5 py-5 text-left text-white transition hover:bg-[#243244]"
               >
                 <Sparkles className="h-5 w-5 shrink-0 text-[#E8B931]" aria-hidden="true" />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-base font-semibold">Ask PRAXIS about this policy context.</span>
+                  <span className="block text-base font-semibold">See PRAXIS write the memo from this context.</span>
                   <span className="mt-1 block text-xs leading-5 text-[#D7E1EA]">
-                    Attach the cores, get the right tool sequence, then turn the result into a sourced memo or briefing.
+                    Attach the cores, route the right tools, then open the sourced draft in Write.
                   </span>
                 </span>
                 <ArrowRight className="h-5 w-5 shrink-0 text-[#D7E1EA]" aria-hidden="true" />
@@ -348,29 +348,30 @@ export function Phase8WowLanding() {
             </div>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                href="/app/assistant"
-                prefetch={false}
-                onClick={runPreviewQuestion}
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-[#111827] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#243244]"
-              >
-                Open PRAXIS <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
-              <Link
-                href="/app/write"
+                href="/login"
                 prefetch={false}
                 onClick={trackSignup}
-                className="inline-flex items-center justify-center gap-2 rounded-md border border-[#4A90A4] bg-white px-5 py-3 text-sm font-semibold text-[#0B3B4A] transition hover:bg-[#EAF5F7]"
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-[#E8B931] px-5 py-3 text-sm font-semibold text-[#111827] transition hover:bg-[#f2ca4b]"
               >
-                Write with PRAXIS <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                Start your workspace <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <Link
-                href="/pricing"
+                href="/app/demo/syria-2024"
                 prefetch={false}
-                className="inline-flex items-center justify-center rounded-md border border-[#9f8d61] bg-white/70 px-5 py-3 text-sm font-semibold text-[#111827] transition hover:bg-white"
+                onClick={runPreviewQuestion}
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-[#4A90A4] bg-white px-5 py-3 text-sm font-semibold text-[#0B3B4A] transition hover:bg-[#EAF5F7]"
               >
-                View pricing
+                Try the live example <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <Link
+                href="/app/demo/syria-2024/write?guided=1"
+                prefetch={false}
+                className="inline-flex items-center justify-center rounded-md px-2 py-3 text-sm font-semibold text-[#8a5a00] underline-offset-4 transition hover:underline"
+              >
+                See PRAXIS write a memo
               </Link>
             </div>
+            <p className="mt-3 text-xs font-semibold text-[#5C6975]">30 seconds to a real memo with citations.</p>
             <div className="mt-8 grid max-w-2xl gap-2 sm:grid-cols-3">
               {outcomeCards.map(([value, label]) => (
                 <div key={label} className="rounded-md border border-[#C6D2DD] bg-white/75 px-3 py-3">

@@ -19,6 +19,17 @@ const PUBLIC_SYRIA_APP_ROUTES = new Set([
   '/app/tools',
 ]);
 
+function isPublicSyriaAppRoute(pathname: string): boolean {
+  return (
+    PUBLIC_SYRIA_APP_ROUTES.has(pathname) ||
+    pathname === '/app/workbench/syria-2026' ||
+    pathname.startsWith('/app/workbench/syria-2026/') ||
+    pathname === '/app/write' ||
+    pathname === '/app/demo/syria-2024' ||
+    pathname === '/app/demo/syria-2024/write'
+  );
+}
+
 const LEGACY_WORKBENCH_ROUTE_ALIASES: Record<string, string> = {
   '/app/desk': 'desk',
   '/app/cockpit': 'desk',
@@ -156,6 +167,16 @@ export function proxy(request: NextRequest) {
     return redirectWithSearch(request, nonce, '/app/workbench/syria-2026');
   }
 
+  if (pathname === '/app/demo/syria-2024' || pathname === '/app/demo/syria-2026') {
+    return redirectWithSearch(request, nonce, '/app/workbench/syria-2026');
+  }
+  if (pathname === '/app/demo/syria-2024/write' || pathname === '/app/demo/syria-2026/write') {
+    const url = new URL('/app/write', request.url);
+    url.searchParams.set('situationId', 'syria-2026');
+    request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
+    return addSecurityHeaders(NextResponse.redirect(url), nonce);
+  }
+
   if (pathname === '/contexts') {
     return redirectWithSearch(request, nonce, '/app/contexts');
   }
@@ -238,7 +259,7 @@ export function proxy(request: NextRequest) {
     if (!hasFirebaseToken) {
       const loginUrl = new URL('/login', request.url);
       const redirectUrl = request.nextUrl.clone();
-      if (PUBLIC_SYRIA_APP_ROUTES.has(pathname)) {
+      if (isPublicSyriaAppRoute(pathname)) {
         loginUrl.searchParams.set('mode', 'demo');
         loginUrl.searchParams.set('example', 'syria-2026');
       }

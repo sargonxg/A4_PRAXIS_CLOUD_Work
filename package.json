@@ -13,6 +13,7 @@
     "schema:gen": "tsx scripts/codegen-schema.ts",
     "verify-tools": "npx tsx scripts/verify-tools.ts",
     "check:landing-bundle": "tsx scripts/check-landing-bundle.ts",
+    "check-landing-bundle": "tsx scripts/check-landing-bundle.ts",
     "auth:doctor": "tsx scripts/auth-doctor.ts",
     "seed:onboarding": "tsx scripts/seed-onboarding-config.ts",
     "audit:tools": "tsx scripts/audit-tools.ts",

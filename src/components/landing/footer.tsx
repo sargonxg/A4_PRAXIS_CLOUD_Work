@@ -143,7 +143,7 @@ export function Footer() {
             href="/login"
             className="inline-flex shrink-0 items-center gap-2 rounded-md bg-gold-600 px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-lg hover:shadow-gold-600/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500/60"
           >
-            Access PRAXIS
+            Start your workspace
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </a>
         </div>
