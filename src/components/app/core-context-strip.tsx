@@ -51,14 +51,14 @@ export function CoreContextStrip() {
         <CorePill
           href="/app/cores/user"
           icon={Brain}
-          label="Speaking to"
+          label="User Core"
           title={`${role} - ${audience}`}
           detail={`${org} - ${lenses}`}
         />
         <CorePill
           href={context?.href ?? '/app/workbench'}
           icon={Target}
-          label="Working in"
+          label="Situation Core"
           title={context?.name ?? 'No context selected'}
           detail={context?.meta ?? 'Create or open a context to ground Ask PRAXIS'}
           muted={!context}
@@ -67,7 +67,7 @@ export function CoreContextStrip() {
           href="/app/dashboard#ask-praxis"
           className="ml-auto hidden items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold text-gold-700 transition hover:bg-gold-50 lg:inline-flex"
         >
-          Ask with these cores
+          Open Ask
           <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </div>

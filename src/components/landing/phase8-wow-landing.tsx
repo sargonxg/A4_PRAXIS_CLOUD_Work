@@ -207,17 +207,18 @@ const realAppSurfaces = [
 ] as const;
 
 const corePreview = [
-  { id: "user", label: "User Core", detail: "Role, preferences, audience, language, and working style.", tone: "border-[#4A90A4] bg-[#EAF5F7]" },
-  { id: "context", label: "Situation Core", detail: "The case frame, actors, assumptions, timeline, and gaps.", tone: "border-[#E8B931] bg-[#FFF7D6]" },
-  { id: "source", label: "Source Core", detail: "Receipts, credibility posture, fragments, and coverage gaps.", tone: "border-[#2F8F83] bg-[#E9F7F3]" },
-  { id: "graph", label: "Graph Core", detail: "Claims, events, edges, provenance, and graph health.", tone: "border-[#5967D8] bg-[#EEF0FF]" },
-  { id: "output", label: "Output Core", detail: "Memos, briefs, handovers, exports, and review state.", tone: "border-[#C75B39] bg-[#FFF0EA]" },
+  { id: "user", label: "User Core", detail: "Role, audience, preferences, and writing style.", tone: "border-[#4A90A4] bg-[#EAF5F7]" },
+  { id: "context", label: "Situation Core", detail: "Actors, frame, assumptions, and open questions.", tone: "border-[#E8B931] bg-[#FFF7D6]" },
+  { id: "time", label: "Time Core", detail: "Sequence, recency, deadlines, and what changed when.", tone: "border-[#2F8F83] bg-[#E9F7F3]" },
+  { id: "office", label: "Office Context", detail: "Institution, team, decision lane, and constraints.", tone: "border-[#5967D8] bg-[#EEF0FF]" },
+  { id: "source", label: "Source Core", detail: "Receipts, credibility, coverage, and provenance.", tone: "border-[#C75B39] bg-[#FFF0EA]" },
+  { id: "output", label: "Output Core", detail: "Memos, briefs, handoffs, and export state.", tone: "border-[#7A5FD8] bg-[#F1EEFF]" },
 ] as const;
 
 const attachedToolPreview = [
-  ["Context Builder", "Complete the User Core and Situation Core before analysis."],
-  ["Source Scout", "Find evidence gaps and receipts for the active case."],
-  ["Graph Review", "Inspect actors, claims, commitments, and provenance."],
+  ["Research", "Pull the sources that matter and keep gaps visible."],
+  ["Source Intake", "Review uploads, receipts, and provenance in one place."],
+  ["Graph Review", "Inspect actors, claims, commitments, and temporality."],
   ["Memo Drafter", "Turn the selected stack into a reviewable policy memo."],
 ] as const;
 
@@ -318,8 +319,9 @@ export function Phase8WowLanding() {
                 {[
                   ["User Core", persona.short, "border-[#4A90A4] bg-[#EAF5F7]"],
                   ["Situation Core", context.label, "border-[#E8B931] bg-[#FFF7D6]"],
-                  ["Domain ontology", "foreign policy · economic · diplomacy", "border-[#5967D8] bg-[#EEF0FF]"],
-                  ["Suggested tools", "builder · source · graph · memo", "border-[#2F8F83] bg-[#E9F7F3]"],
+                  ["Temporality", "sequence · deadline · recency", "border-[#2F8F83] bg-[#E9F7F3]"],
+                  ["Office context", "team · institution · audience", "border-[#5967D8] bg-[#EEF0FF]"],
+                  ["Suggested tools", "research · source · graph · memo", "border-[#C75B39] bg-[#FFF0EA]"],
                 ].map(([label, value, tone]) => (
                   <span key={label} className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold text-[#111827]", tone)}>
                     <GripVertical className="h-3.5 w-3.5 text-[#6b7280]" aria-hidden="true" />
@@ -329,16 +331,16 @@ export function Phase8WowLanding() {
                 ))}
               </div>
               <Link
-                href="/app"
+                href="/app/assistant"
                 prefetch={false}
                 onClick={trackSignup}
                 className="flex w-full items-center gap-4 rounded-[1.1rem] bg-[#111827] px-5 py-5 text-left text-white transition hover:bg-[#243244]"
               >
                 <Sparkles className="h-5 w-5 shrink-0 text-[#E8B931]" aria-hidden="true" />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-base font-semibold">Ask PRAXIS about this policy situation...</span>
+                  <span className="block text-base font-semibold">Ask PRAXIS about this policy context.</span>
                   <span className="mt-1 block text-xs leading-5 text-[#D7E1EA]">
-                    Attach cores, get the right tool sequence, then turn the result into a sourced memo or briefing.
+                    Attach the cores, get the right tool sequence, then turn the result into a sourced memo or briefing.
                   </span>
                 </span>
                 <ArrowRight className="h-5 w-5 shrink-0 text-[#D7E1EA]" aria-hidden="true" />
@@ -346,20 +348,20 @@ export function Phase8WowLanding() {
             </div>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                href="/app"
+                href="/app/assistant"
                 prefetch={false}
                 onClick={runPreviewQuestion}
                 className="inline-flex items-center justify-center gap-2 rounded-md bg-[#111827] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#243244]"
               >
-                Open real app <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                Open Ask workspace <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <Link
-                href="/app"
+                href="/app/dashboard"
                 prefetch={false}
                 onClick={trackSignup}
                 className="inline-flex items-center justify-center gap-2 rounded-md border border-[#4A90A4] bg-white px-5 py-3 text-sm font-semibold text-[#0B3B4A] transition hover:bg-[#EAF5F7]"
               >
-                Open real app <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                Open dashboard <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <Link
                 href="/pricing"
@@ -385,7 +387,7 @@ export function Phase8WowLanding() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8a5a00]">Ask PRAXIS preview</p>
-                    <p className="mt-1 text-sm font-medium text-[#4b5563]">Attach a user, attach a situation, then let the workbench route the next move.</p>
+                    <p className="mt-1 text-sm font-medium text-[#4b5563]">Attach a User Core, a Situation Core, and the office context, then let PRAXIS route the next move.</p>
                   </div>
                   <span className="inline-flex items-center gap-2 rounded-full bg-[#eef7f1] px-3 py-1 text-xs font-semibold text-[#166534]">
                     <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
@@ -457,14 +459,14 @@ export function Phase8WowLanding() {
                     className="inline-flex items-center justify-center gap-2 rounded-md bg-[#8a5a00] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#714900]"
                   >
                     <Play className="h-4 w-4" aria-hidden="true" />
-                    Ask with attached cores
+                    Ask this context
                   </Link>
                   <Link
                     href="/app/workbench"
                     prefetch={false}
                     className="inline-flex items-center justify-center rounded-md border border-[#d7c89f] bg-white px-4 py-2.5 text-sm font-semibold text-[#111827] transition hover:bg-[#fffaf0]"
                   >
-                    Open workbench context
+                    Open workbench
                   </Link>
                 </div>
               </div>
@@ -479,7 +481,7 @@ export function Phase8WowLanding() {
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f6c85f]">Graph intelligence</p>
             <h2 className="mt-3 font-serif text-3xl font-semibold text-white sm:text-5xl">The answer is only useful if the graph behind it is legible.</h2>
             <p className="mt-4 text-sm leading-6 text-zinc-300 sm:text-base">
-              Each Situation Core carries a visible operating picture: source receipts, actors, claims, evidence, open questions, and drafts stay connected instead of disappearing into a chat transcript.
+              Each Situation Core carries a visible operating picture: source receipts, actors, claims, evidence, temporality, and drafts stay connected instead of disappearing into a chat transcript.
             </p>
           </div>
           <ContextGraphPreview
@@ -496,10 +498,10 @@ export function Phase8WowLanding() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0B6F70]">Inside the real app</p>
               <h2 className="mt-3 font-serif text-3xl font-semibold text-[#111827] sm:text-5xl">
-                Not a chat box. A working console for policy analysis.
+                Policy context creation, research, and memo writing in one place.
               </h2>
               <p className="mt-4 text-sm leading-6 text-[#4B5563] sm:text-base">
-                The preview is a window into shipped app surfaces: dashboard, workbench, graph, memo studio, boardroom, ACH, and context creation. Sign in to create private User Cores and Situation Cores, then apply them to the tools and drafts your team needs.
+                The preview is a window into shipped app surfaces: dashboard, workbench, graph, memo studio, research, and context creation. Sign in to create private User Cores and Situation Cores, then apply them to the tools and drafts your team needs.
               </p>
               <Link
                 href="/app"
@@ -507,7 +509,7 @@ export function Phase8WowLanding() {
                 onClick={trackSignup}
                 className="mt-6 inline-flex items-center justify-center gap-2 rounded-md bg-[#0B3B4A] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#155C6F]"
               >
-                Open real app <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                Open app <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -546,10 +548,10 @@ export function Phase8WowLanding() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7DD3C7]">User Core + Situation Cores</p>
             <h2 className="mt-3 font-serif text-3xl font-semibold sm:text-5xl">
-              Drag cores into the stack. PRAXIS suggests the tools.
+              Attach the context that matters. PRAXIS suggests the next move.
             </h2>
             <p className="mt-4 text-sm leading-6 text-slate-300 sm:text-base">
-              Keep the user model, situation, source receipts, graph, and output package inspectable. Attach only what the task needs, then run the right next tool.
+              Keep the user model, situation, time, office, source receipts, graph, and output package inspectable. Attach only what the task needs, then run the right next tool.
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               {[
@@ -569,7 +571,7 @@ export function Phase8WowLanding() {
           <div className="rounded-xl border border-white/10 bg-white/8 p-4 shadow-2xl shadow-black/30">
             <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7DD3C7]">Core priority builder</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7DD3C7]">Context stack</p>
                 <p className="mt-1 text-sm text-slate-300">Drag a core card, or open the real app to work with the live stack.</p>
               </div>
               <Settings2 className="h-5 w-5 text-[#F6C85F]" aria-hidden="true" />

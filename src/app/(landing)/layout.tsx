@@ -41,7 +41,7 @@ export default function LandingLayout({
       {/* Preview banner — normal flow, scrolls away naturally */}
       <div className="relative z-[60] bg-diplomatic-blue px-4 py-2 text-center text-xs text-white/90">
         <span className="font-semibold tracking-wide uppercase text-gold-400">Preview</span>
-        {" "}— PRAXIS is consolidating around Ask PRAXIS, User Cores, Situation Cores, suggested tools, and memo output.{" "}
+        {" "}— PRAXIS is consolidating around Ask, attached cores, research, and memo writing.{" "}
         <a href="mailto:hello@tacitus.me" className="underline underline-offset-2 hover:text-white transition-colors">
           Write us at hello@tacitus.me
         </a>
@@ -96,18 +96,11 @@ export default function LandingLayout({
               Sign In
             </Link>
             <Link
-              href="/app"
+              href="/app/assistant"
               prefetch={false}
               className="text-sm font-semibold text-gold-700 transition-colors hover:text-gold-800"
             >
-              Open app
-            </Link>
-            <Link
-              href="/app"
-              prefetch={false}
-              className="inline-flex items-center justify-center rounded-md bg-navy-900 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-navy-800 hover:shadow-lg hover:shadow-navy-900/20 active:bg-navy-950"
-            >
-              Open real app
+              Open Ask workspace
             </Link>
           </div>
 
@@ -152,20 +145,12 @@ export default function LandingLayout({
               Sign In
             </Link>
             <Link
-              href="/app"
+              href="/app/assistant"
               prefetch={false}
               onClick={() => setMobileMenuOpen(false)}
               className="block py-3 text-sm font-semibold text-gold-700 transition-colors hover:text-gold-800"
             >
-              Open app
-            </Link>
-            <Link
-              href="/app"
-              prefetch={false}
-              onClick={() => setMobileMenuOpen(false)}
-              className="mt-2 block w-full rounded-md bg-navy-900 px-5 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-navy-800"
-            >
-              Open real app
+              Open Ask workspace
             </Link>
           </div>
         </div>

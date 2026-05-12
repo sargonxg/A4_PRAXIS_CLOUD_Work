@@ -24,18 +24,18 @@ test('landing renders hero animation, static fallback, and 3D ontology graph', a
 
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /Policy AI that starts with the right context\./i })).toBeVisible();
-  await expect(page.getByText(/Ask PRAXIS about this policy situation/i)).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Open real app$/i }).first()).toBeVisible();
+  await expect(page.getByText(/Ask PRAXIS about this policy context/i)).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Open Ask workspace$/i }).first()).toBeVisible();
 
   const realApp = page.locator('#real-app');
   await realApp.scrollIntoViewIfNeeded();
   await expect(realApp.getByText(/Inside the real app/i)).toBeVisible();
-  await expect(realApp.getByText(/Not a chat box\. A working console for policy analysis\./i)).toBeVisible();
-  await expect(realApp.getByText(/dashboard, workbench, graph, memo studio, boardroom, ACH, and context creation/i)).toBeVisible();
+  await expect(realApp.getByText(/Policy context creation, research, and memo writing in one place\./i)).toBeVisible();
+  await expect(realApp.getByText(/dashboard, workbench, graph, memo studio, research, and context creation/i)).toBeVisible();
 
   await page.goto('/?staticHero=1');
   await expect(page.getByRole('heading', { name: /Policy AI that starts with the right context\./i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Open real app$/i }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Open Ask workspace$/i }).first()).toBeVisible();
 
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });

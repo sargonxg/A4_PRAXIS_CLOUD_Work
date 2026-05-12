@@ -10,10 +10,10 @@ test.describe('PRAXIS core product flows', () => {
     await contextSelect.selectOption('ai-regulation-2026');
     await expect(page.getByRole('heading', { name: /AI Regulation 2026 graph/i })).toBeVisible();
     await expect(page.getByText(/Memo Drafter/i).first()).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Not a chat box/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Open real app/i }).first()).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Drag cores into the stack/i })).toBeVisible();
-    await expect(page.getByText(/Core priority builder/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Policy context creation, research, and memo writing in one place\./i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Open Ask workspace/i }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Attach the context that matters\. PRAXIS suggests the next move\./i })).toBeVisible();
+    await expect(page.getByText(/Context stack/i)).toBeVisible();
 
     await page.request.post('/api/auth/session', { data: { demo: true } });
 

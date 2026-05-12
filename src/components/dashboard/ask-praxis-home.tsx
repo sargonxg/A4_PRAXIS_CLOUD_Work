@@ -78,7 +78,7 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
               href={`/app/workbench/${activeCaseId}`}
               className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-navy-200 px-3 py-2 text-sm font-semibold text-navy-800 hover:border-navy-300 hover:bg-slate-50"
             >
-              Open Situation
+              Open workbench
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -107,10 +107,10 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
               className="flex w-full items-center gap-4 rounded-[1.1rem] bg-navy-950 px-5 py-5 text-left text-white shadow-lg shadow-navy-950/20 transition hover:bg-navy-900"
             >
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10 text-gold-300">
-                <Sparkles className="h-5 w-5" />
+              <Sparkles className="h-5 w-5" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-base font-semibold">Ask PRAXIS anything about this policy situation...</span>
+                <span className="block text-base font-semibold">Ask PRAXIS about this policy situation.</span>
                 <span className="mt-1 block text-xs leading-5 text-navy-200">
                   It checks the cores, suggests tools, and keeps memo drafting reviewable.
                 </span>

@@ -1,10 +1,17 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import {
-  Shield, Zap, Map, FileText, MessageSquare,
-  GitBranch, BarChart3, Scale, Newspaper, Search, Upload,
+  Clock3,
+  FileText,
+  GitBranch,
+  MessageSquare,
+  Search,
+  Shield,
+  Users,
+  Wrench,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useRoutePrefix } from '@/lib/utils/routes';
@@ -17,29 +24,33 @@ interface WelcomeModalProps {
 }
 
 const REAL_FEATURES = [
-  { icon: MessageSquare, label: 'AI Assistant', description: 'Chat with PRAXIS about your situation — context-aware, tool-powered' },
-  { icon: GitBranch, label: 'Conflict Graph', description: '14-entity knowledge graph built from your documents and research' },
-  { icon: FileText, label: 'Report Studio', description: 'AI-generated situation reports, intel briefs, mediation briefs' },
-  { icon: Search, label: 'Deep Research', description: 'Multi-source web intelligence with reliability scoring' },
-  { icon: BarChart3, label: 'Risk Monitor', description: '5-dimension risk assessment with early warning indicators' },
-  { icon: Scale, label: 'Negotiation Prep', description: 'Fisher/Ury ZOPA/BATNA analysis for conflict parties' },
-  { icon: Newspaper, label: 'Media Roundup', description: 'Automated media briefings scored by source reliability' },
-  { icon: Upload, label: 'Document Analysis', description: 'Upload PDFs/DOCX — AI extracts actors, events, claims' },
+  { icon: MessageSquare, label: 'Ask PRAXIS', description: 'Write the question and keep the context attached.' },
+  { icon: Users, label: 'User and Situation cores', description: 'Keep role, audience, actors, and office context visible.' },
+  { icon: Search, label: 'Research and receipts', description: 'Pull sources, snippets, and provenance into the same record.' },
+  { icon: FileText, label: 'Memo drafting', description: 'Move from analysis to a reviewable brief or memo.' },
+  { icon: GitBranch, label: 'Graph review', description: 'Inspect claims, relationships, and evidence before export.' },
+  { icon: Wrench, label: 'Suggested tools', description: 'PRAXIS recommends the few tools that fit the case.' },
 ];
 
 const DEMO_FEATURES = [
-  { icon: Map, label: 'Conflict Knowledge Graph', description: 'Synthetic actor and event network' },
-  { icon: Zap, label: 'Sample Intelligence Briefs', description: 'Derived from the Nordalia workspace' },
-  { icon: FileText, label: 'Report Studio', description: '10 diplomatic templates' },
-  { icon: Shield, label: 'Early Warning System', description: 'Glasl 9-stage escalation model' },
+  { icon: GitBranch, label: 'Conflict graph', description: 'Synthetic actor and event network.' },
+  { icon: Zap, label: 'Sample briefs', description: 'Example outputs from a seeded workspace.' },
+  { icon: FileText, label: 'Report studio', description: 'Templates for policy notes and memos.' },
+  { icon: Shield, label: 'Early warning', description: 'Escalation signals and risk view.' },
 ];
 
 const SYRIA_DEMO_FEATURES = [
-  { icon: Search, label: 'Source Receipts', description: 'UN and humanitarian public-source audit' },
-  { icon: GitBranch, label: 'Syria Graph', description: 'Agreement, actors, displacement, and spillover' },
-  { icon: Shield, label: 'GraphOps Health', description: 'Provenance and temporal readiness' },
-  { icon: FileText, label: 'Decision Brief', description: 'Editable briefing with DOCX-ready provenance' },
+  { icon: Search, label: 'Source receipts', description: 'Public-source audit with visible provenance.' },
+  { icon: GitBranch, label: 'Syria graph', description: 'Actors, agreements, displacement, and spillover.' },
+  { icon: Clock3, label: 'Temporality', description: 'Sequence, phases, and change over time.' },
+  { icon: FileText, label: 'Decision brief', description: 'Editable briefing with export-ready structure.' },
 ];
+
+const WORKFLOW_STEPS = [
+  { title: 'Attach cores', description: 'Pick the User Core and Situation Core that frame the work.' },
+  { title: 'Ask PRAXIS', description: 'Write the question, surface the next move, and keep provenance visible.' },
+  { title: 'Draft the memo', description: 'Research, review, and export from the same workspace.' },
+] as const;
 
 export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) {
   const prefix = useRoutePrefix();
@@ -63,11 +74,10 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 16 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden"
+          className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl"
         >
           <div className="h-1 w-full bg-gradient-to-r from-diplomatic-blue via-gold-500 to-diplomatic-blue" />
 
-          {/* Header */}
           <div className="px-8 pt-8 pb-5 text-center border-b border-gray-100">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-diplomatic-blue shadow-lg">
               <span className="font-serif text-2xl font-bold text-white">P</span>
@@ -80,34 +90,49 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
               by TACITUS
             </p>
 
-            <p className="mt-4 text-sm leading-relaxed text-navy-600 max-w-sm mx-auto">
+            <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-navy-600">
               {isDemo ? (
                 isSyriaCase ? (
                   <>
-                    Explore the <span className="font-semibold text-navy-800">Syria Transition</span> public-source case file -
-                    built to show how PRAXIS turns receipts, graph context, expert disagreement, and briefings into a real workflow.
+                    Explore the <span className="font-semibold text-navy-800">Syria Transition</span> public-source case file. PRAXIS shows receipts, time, actors, and the memo path in one workspace.
                   </>
                 ) : (
                   <>
-                    Explore the <span className="font-semibold text-navy-800">Nordalia - Contested Border Arrangement</span> sample workspace -
-                    a synthetic sovereignty dispute built to show how PRAXIS organizes actors, sources, risks, and briefings.
+                    Explore the <span className="font-semibold text-navy-800">Nordalia</span> sample workspace. It is a synthetic policy case built to show how PRAXIS organizes sources, context, and writing.
                   </>
                 )
               ) : (
                 <>
-                  Your AI-powered conflict intelligence workspace. Create situations, upload documents,
-                  and let PRAXIS research, analyze, and draft intelligence products for you.
+                  PRAXIS is a policy context workspace. Attach a User Core and Situation Core, ask one question, then research and draft with provenance and temporality visible.
                 </>
               )}
             </p>
+            {!isDemo && (
+              <p className="mt-3 text-xs font-medium text-navy-500">
+                LLM-agnostic path: Gemini now, provider choice later.
+              </p>
+            )}
           </div>
 
-          {/* Feature grid */}
           <div className="px-8 py-5">
+            <div className="grid gap-3 sm:grid-cols-3">
+              {WORKFLOW_STEPS.map((step, index) => (
+                <div key={step.title} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-left">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+                    {index + 1}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-navy-900">{step.title}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">{step.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="px-8 pb-5">
             <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-navy-400 text-center">
-              {isDemo ? "What you'll explore" : 'Your toolkit'}
+              {isDemo ? 'What you will explore' : 'What PRAXIS does for policy work'}
             </p>
-            <div className={cn('grid gap-2', isDemo ? 'grid-cols-2' : 'grid-cols-2')}>
+            <div className="grid gap-2 sm:grid-cols-2">
               {features.map(({ icon: Icon, label, description }) => (
                 <div key={label} className="flex items-start gap-2.5 rounded-lg bg-gray-50 px-3 py-2.5">
                   <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-diplomatic-blue/10">
@@ -122,20 +147,6 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
             </div>
           </div>
 
-          {/* How it works — real app only */}
-          {!isDemo && (
-            <div className="mx-8 mb-4 rounded-lg border border-gold-500/20 bg-gold-500/5 px-4 py-3">
-              <p className="text-[11px] font-semibold text-gold-700 mb-1.5">How it works</p>
-              <ol className="space-y-1 text-[11px] text-navy-600">
-                <li><span className="font-semibold text-navy-800">1.</span> Create a situation (e.g., &ldquo;Syria Ceasefire&rdquo;)</li>
-                <li><span className="font-semibold text-navy-800">2.</span> Upload documents or let AI research online</li>
-                <li><span className="font-semibold text-navy-800">3.</span> Use tools to analyze, draft reports, assess risks</li>
-                <li><span className="font-semibold text-navy-800">4.</span> PRAXIS learns and improves as you add more data</li>
-              </ol>
-            </div>
-          )}
-
-          {/* Actions */}
           <div className="px-8 pb-7 flex flex-col gap-2.5">
             <button
               onClick={onStartTour}
@@ -145,7 +156,7 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
                 'shadow-md shadow-diplomatic-blue/20'
               )}
             >
-              {isDemo ? 'Take the Tour' : 'Get Started'} <span className="opacity-75">(2 min)</span>
+              {isDemo ? 'Start guided tour' : 'Open guided tour'}
             </button>
 
             <button
@@ -155,7 +166,7 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
                 'transition-all duration-150 hover:bg-gray-50 active:scale-[0.98]'
               )}
             >
-              {isDemo ? 'Explore Freely' : "I'll explore on my own"}
+              {isDemo ? 'Explore sample workspace' : 'Explore freely'}
             </button>
 
             <p className="text-center text-[11px] text-navy-400 mt-1">
@@ -163,7 +174,7 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
                 ? isSyriaCase
                   ? 'Public-source case file - not live or classified intelligence'
                   : 'Demo environment - synthetic sample data only'
-                : "You can revisit this from Settings anytime"}
+                : 'You can revisit this from Settings anytime'}
             </p>
           </div>
         </motion.div>
