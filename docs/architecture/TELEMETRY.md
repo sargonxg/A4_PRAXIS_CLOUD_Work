@@ -1,8 +1,8 @@
 # PRAXIS Structured Telemetry
 
 Date: 2026-05-08
-Source prompts: `docs/codex-prompts/PRAXIS_V2_D0_STRUCTURED_EVENTS.md`,
-`docs/codex-prompts/PRAXIS_V2_D1_KPI_PIPELINE.md`
+Source prompts: `docs/_archive/codex-prompts/PRAXIS_V2_D0_STRUCTURED_EVENTS.md`,
+`docs/_archive/codex-prompts/PRAXIS_V2_D1_KPI_PIPELINE.md`
 
 PRAXIS emits a small, schema-versioned JSON-line event stream for the user
 actions and backend paths that determine product health. The local contract is

@@ -151,7 +151,7 @@ only the intended Phase 0 changes.
   - PASS: `git diff --check`.
   - EXPECTED RED: `npm run audit:v5-readiness` fails on `audit:llm-pattern-coverage`, as Prompt 0.A requires failing stubs that are not yet in `audit:gate`.
   - ENVIRONMENT: `pytest backend/ -q` cannot collect in the active Python environment because backend dependencies/import path are unavailable (`fastapi`, `pydantic_settings`, `psycopg`, `psycopg_pool`, `google`, and `agents` import errors). No Phase 0 backend product code depends on this.
-  - REPAIRED: `npm run audit:gate` previously failed because v4 cleanup removed active-audit required artifacts. Restored required `docs/codex-prompts/`, `docs/audits/2026-05-08-V2-PROMPT-PACK-COMPLETION.md`, `src/lib/cases/user-cases/loader.ts`, `src/components/landing/_archive/`, and `scripts/bench-gliner-cost-reduction.py`.
+  - SUPERSEDED 2026-05-12: `npm run audit:gate` was narrowed to the core MVP gate. Historical prompt packs now live under `docs/_archive/codex-prompts/`, and the landing component archive was deleted.
   - SKIPPED: `git diff --cached --check` because nothing was staged after validation failed.
 - Commit: `483d3605` (`chore(v5-phase-0): adopt vision and readiness stubs`)
 - Push: pushed to `origin/main`

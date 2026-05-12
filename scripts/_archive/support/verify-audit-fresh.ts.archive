@@ -9,13 +9,13 @@ import { join } from 'node:path';
 import { execSync } from 'node:child_process';
 
 const audits = readdirSync(join(process.cwd(), 'docs', 'audits'));
-const latestAudit = audits.filter(f => /^tools-\d{4}-\d{2}-\d{2}\.md$/.test(f)).sort().pop();
+const latestAudit = audits.filter(f => /^tool-contracts-\d{4}-\d{2}-\d{2}\.md$/.test(f)).sort().pop();
 if (!latestAudit) {
-  console.error('No audit report found in docs/audits/. Run: npx tsx scripts/audit-tools.ts');
+  console.error('No tool-contract audit report found in docs/audits/. Run: npm run audit:tool-contracts');
   process.exit(1);
 }
 
-const auditDate = latestAudit.match(/^tools-(\d{4}-\d{2}-\d{2})/)?.[1];
+const auditDate = latestAudit.match(/^tool-contracts-(\d{4}-\d{2}-\d{2})/)?.[1];
 if (!auditDate) { console.error('Bad audit filename:', latestAudit); process.exit(1); }
 
 const changedSince = execSync(`git log --since="${auditDate} 00:00:00" --name-only --pretty=format: -- src/app/api/ai/`, { encoding: 'utf8' })
@@ -24,7 +24,7 @@ const changedSince = execSync(`git log --since="${auditDate} 00:00:00" --name-on
 if (changedSince.length > 0) {
   console.error(`AI routes changed since last audit (${auditDate}):`);
   changedSince.forEach(f => console.error('  -', f));
-  console.error('Re-run: npm run audit:tools && commit the new report.');
+  console.error('Re-run: npm run audit:tool-contracts && commit the new report.');
   process.exit(1);
 }
 console.log(`✓ Audit ${latestAudit} is current with routes.`);

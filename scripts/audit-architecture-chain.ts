@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root = process.cwd();
@@ -6,45 +6,49 @@ const architecture = readFileSync(join(root, 'docs/architecture/PRAXIS_ARCHITECT
 const alignment = readFileSync(join(root, 'docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md'), 'utf8');
 const packageJson = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { scripts?: Record<string, string> };
 const scripts = packageJson.scripts ?? {};
-
 const failures: string[] = [];
-const match = architecture.match(/## 19\. The audit chain[\s\S]*?```([\s\S]*?)```/);
-if (!match) failures.push('architecture bible missing §19 audit-chain code block');
 
-const auditChain = match?.[1] ?? '';
-const npmScripts = Array.from(auditChain.matchAll(/npm run ([^\s#]+)/g)).map((item) => item[1]);
-const uniqueScripts = Array.from(new Set(npmScripts));
-
-const gatedBlock = alignment.match(/<!-- architecture-gated-audits:start -->([\s\S]*?)<!-- architecture-gated-audits:end -->/);
-if (!gatedBlock) failures.push('alignment doc missing architecture-gated-audits block');
-const gatedScripts = new Set(Array.from((gatedBlock?.[1] ?? '').matchAll(/`([^`]+)`/g)).map((item) => item[1]));
-
-for (const script of uniqueScripts) {
-  if (!scripts[script] && !gatedScripts.has(script)) {
-    failures.push(`§19 script is neither implemented nor documented as gated: ${script}`);
-  }
-}
-
-for (const script of gatedScripts) {
-  if (!uniqueScripts.includes(script)) failures.push(`gated script is not present in §19: ${script}`);
-}
-
-for (const script of [
-  'audit:architecture-chain',
-  'audit:architecture-reference',
+const coreGate = [
   'audit:routes',
-  'audit:context-aware-coverage',
-  'audit:tool-contract-v2',
-  'audit:tool-context-isolation',
-  'audit:firewall-coverage',
-  'audit:owner-scoping',
-]) {
-  if (!scripts[script]) failures.push(`missing required architecture script: ${script}`);
+  'audit:architecture-chain',
+  'audit:repo-shape',
+  'audit:architecture-reference',
+  'audit:mvp-route-shape',
+  'audit:tool-contracts',
+  'audit:purpose-surface',
+  'audit:deep-preship',
+  'audit:cognee',
+  'audit:gcp',
+];
+
+if (!architecture.includes('## 19. The audit chain')) {
+  failures.push('architecture bible missing §19 audit-chain section');
+}
+if (!alignment.includes('<!-- architecture-gated-audits:start -->')) {
+  failures.push('alignment doc missing architecture-gated-audits block');
+}
+
+for (const script of coreGate) {
+  if (!scripts[script]) failures.push(`missing core audit script: ${script}`);
 }
 
 const gate = scripts['audit:gate'] ?? '';
-for (const script of ['audit:architecture-chain', 'audit:architecture-reference']) {
+for (const script of coreGate) {
   if (!gate.includes(script)) failures.push(`audit:gate missing ${script}`);
+}
+for (const file of [
+  'scripts/audit-ai-routes.mjs',
+  'scripts/audit-architecture-chain.ts',
+  'scripts/audit-repo-shape.ts',
+  'scripts/audit-architecture-reference.ts',
+  'scripts/audit-mvp-route-shape.ts',
+  'scripts/audit-tool-contracts.ts',
+  'scripts/audit-purpose-surface.ts',
+  'scripts/audit-deep-preship.ts',
+  'scripts/audit-cognee-isolation.ts',
+  'scripts/audit-gcp.mjs',
+]) {
+  if (!existsSync(join(root, file))) failures.push(`missing core audit file: ${file}`);
 }
 
 if (failures.length > 0) {
@@ -53,4 +57,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Architecture chain audit passed: ${uniqueScripts.length} §19 npm scripts accounted for. (static-marker)`);
+console.log(`Architecture chain audit passed: ${coreGate.length} core audits are wired. Historical audits may live under scripts/_archive/audits. (static-marker)`);

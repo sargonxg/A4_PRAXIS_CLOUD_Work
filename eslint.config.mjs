@@ -50,6 +50,8 @@ const eslintConfig = defineConfig([
     "backend/.venv/**",
     "backend/**/site-packages/**",
     "**/__pycache__/**",
+    "docs/_archive/**",
+    "scripts/_archive/**",
     "next-env.d.ts",
   ]),
 ]);

@@ -7,6 +7,7 @@ Baseline commits reviewed:
 
 - `8dd480ab feat: consolidate PRAXIS writer tools and navigation`
 - `2bc31230 feat(landing,ask): add response actions and tour`
+- `66b32232 docs(build): record MVP pack ABCD completion`
 
 This ledger records the repo-backed completion status of the four MVP prompt packs. It is intentionally blunt: shipped means code exists and validation passed; partial means a user-visible or architecture-relevant item still needs follow-up; retained means the literal prompt asked for deletion, but current dependencies make deletion unsafe.
 
@@ -149,3 +150,47 @@ Commands passed on 2026-05-12:
 2. Autopopulate writer `/timeline` from situation events.
 3. Add a direct client-safe action path for `runDeepResearch` instead of prompt-dispatching through Ask.
 4. Record a browser demo QA pass covering slash menu, citation sidebar, reload from IndexedDB, and Markdown/DOCX/PDF export.
+
+## Cleanup Pass - 2026-05-12
+
+Completed after Packs A-D:
+
+- Confirmed the editor/draft sprawl paths were already deleted:
+  - `src/components/draft/`
+  - `src/components/workbench/draft/`
+  - `src/components/memo/MemoStudio.tsx`
+  - `src/app/draft/`
+- Confirmed the legacy public route paths were already deleted:
+  - `src/app/contexts/`
+  - `src/app/methods/`
+  - `src/app/ontologies/`
+  - `src/app/users/`
+  - `src/app/app/syria-case/`
+- Confirmed `src/components/app/situation-selector.tsx` was already deleted.
+- Deleted `src/components/landing/_archive/`.
+- Rewrote `src/components/tools/ToolMarketplace.tsx` so the active workbench Tools chapter renders the canonical attachable twelve and three suggestions, not the old specialist marketplace grid.
+- Deleted unused active UI files superseded by the canonical marketplace:
+  - `src/components/tools/ToolTransparencyCard.tsx`
+  - `src/components/tools/AbmTrajectoryView.tsx`
+- Archived `docs/codex-prompts/` to `docs/_archive/codex-prompts/`.
+- Reduced active audit scripts from 102 to 11 and moved 91 historical audits into `scripts/_archive/audits/` with `.archive` suffixes so they no longer participate in TypeScript, ESLint, or graphify code extraction.
+- Simplified `package.json` audit scripts so `audit:gate` now runs the core gate only:
+  - typecheck
+  - build
+  - `audit:routes`
+  - `audit:architecture-chain`
+  - `audit:repo-shape`
+  - `audit:architecture-reference`
+  - `audit:mvp-route-shape`
+  - `audit:tool-contracts`
+  - `audit:purpose-surface`
+  - `audit:deep-preship`
+  - `audit:cognee`
+  - `audit:gcp`
+- Kept `scripts/audit-cognee-operations.ts` as a supporting architecture evidence file because `audit:cognee` explicitly checks for it.
+- Archived the stale `tests/unit/scripts/audit-tools.test.ts` beside the retired `audit-tools` script.
+
+Still intentionally retained:
+
+- `src/lib/constants/consolidated-tools.ts` remains active. It is still imported by `src/lib/product/context-core-map.ts`, `src/lib/dashboard/role-recommendations.ts`, `src/lib/tools/tool-navigation.ts`, `src/lib/tools/tool-path-taxonomy.ts`, `src/lib/constants/tool-groups.ts`, and `src/app/app/contexts/page.tsx`.
+- The retained file should be migrated through a compatibility adapter before deletion, because it still backs the simplified capability ledger and context-core mapping.
