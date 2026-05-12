@@ -9,18 +9,21 @@ import {
   Lock,
   PenLine,
   Quote,
+  Route,
   ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { buildReasoningSpineSummary, type ReasoningSpineSummary } from '@/lib/reasoning/reasoning-spine';
 import type {
   DraftAppendixOption,
   DraftExportSettings,
   DraftMemoOption,
 } from '@/lib/workbench/draft-assembly-state';
 
-type CompanionPanelId = 'outline' | 'evidence' | 'graph' | 'style' | 'audit';
+type CompanionPanelId = 'outline' | 'spine' | 'evidence' | 'graph' | 'style' | 'audit';
 
 interface DraftCompanionProps {
+  caseId: string;
   selectedMemos: DraftMemoOption[];
   selectedAppendices: DraftAppendixOption[];
   primaryMemoId: string;
@@ -29,6 +32,7 @@ interface DraftCompanionProps {
 
 const PANELS: Array<{ id: CompanionPanelId; label: string; icon: typeof ListChecks }> = [
   { id: 'outline', label: 'Outline', icon: ListChecks },
+  { id: 'spine', label: 'Spine', icon: Route },
   { id: 'evidence', label: 'Evidence', icon: Quote },
   { id: 'graph', label: 'Graph', icon: GitBranch },
   { id: 'style', label: 'Style', icon: PenLine },
@@ -45,6 +49,7 @@ const ACTIONS = [
 ];
 
 export function DraftCompanion({
+  caseId,
   selectedMemos,
   selectedAppendices,
   primaryMemoId,
@@ -54,6 +59,13 @@ export function DraftCompanion({
   const [actionNote, setActionNote] = useState('Pick an action to see the next drafting move for this package.');
   const primaryMemo = selectedMemos.find((memo) => memo.id === primaryMemoId) ?? selectedMemos[0];
   const companionState = useMemo(() => buildCompanionState(selectedMemos, selectedAppendices), [selectedMemos, selectedAppendices]);
+  const reasoningSpine = useMemo(() => buildReasoningSpineSummary({
+    caseId,
+    selectedMemos,
+    selectedAppendices,
+    primaryMemoId,
+    settings,
+  }), [caseId, selectedMemos, selectedAppendices, primaryMemoId, settings]);
 
   return (
     <aside data-testid="draft-companion" className="rounded-lg border border-navy-200 bg-white shadow-sm shadow-navy-950/5">
@@ -77,7 +89,7 @@ export function DraftCompanion({
       </div>
 
       <div className="border-b border-slate-200 p-2">
-        <div className="grid grid-cols-5 gap-1" role="tablist" aria-label="Drafter companion panels">
+        <div className="grid grid-cols-3 gap-1 sm:grid-cols-6" role="tablist" aria-label="Drafter companion panels">
           {PANELS.map((panel) => {
             const Icon = panel.icon;
             const active = activePanel === panel.id;
@@ -105,6 +117,7 @@ export function DraftCompanion({
 
       <div className="min-h-[290px] p-4">
         {activePanel === 'outline' ? <OutlinePanel selectedMemos={selectedMemos} primaryMemoId={primaryMemo?.id ?? ''} /> : null}
+        {activePanel === 'spine' ? <ReasoningSpinePanel summary={reasoningSpine} /> : null}
         {activePanel === 'evidence' ? <EvidencePanel evidence={companionState.evidence} /> : null}
         {activePanel === 'graph' ? <GraphPanel state={companionState} /> : null}
         {activePanel === 'style' ? <StylePanel primaryMemo={primaryMemo} selectedMemos={selectedMemos} /> : null}
@@ -190,6 +203,58 @@ function EvidencePanel({ evidence }: { evidence: EvidenceItem[] }) {
           </p>
         </div>
       ))}
+    </div>
+  );
+}
+
+function ReasoningSpinePanel({ summary }: { summary: ReasoningSpineSummary }) {
+  return (
+    <div className="space-y-3" data-testid="draft-reasoning-spine">
+      <div className="rounded-md border border-navy-200 bg-navy-50 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-navy-700">Context fingerprint</p>
+          <span className={cn(
+            'rounded px-2 py-0.5 text-[11px] font-semibold',
+            summary.posture === 'ready'
+              ? 'bg-emerald-100 text-emerald-800'
+              : summary.posture === 'thin'
+                ? 'bg-amber-100 text-amber-800'
+                : 'bg-rose-100 text-rose-800',
+          )}>
+            {summary.posture}
+          </span>
+        </div>
+        <p className="mt-2 font-mono text-sm font-semibold text-navy-950">{summary.contextFingerprint}</p>
+        <p className="mt-2 text-xs leading-5 text-navy-800">
+          Stable client-side fingerprint for the selected memos, appendices, and export settings. Rust BLAKE3 context-pack compilation remains the backend hardening step.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Metric label="Inputs" value={summary.inputCount} />
+        <Metric label="Est. tokens" value={summary.tokenEstimate} />
+      </div>
+
+      <div className="space-y-2">
+        {summary.checkpoints.map((checkpoint) => (
+          <div key={checkpoint.id} className="rounded-md border border-slate-200 bg-white p-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold text-navy-950">{checkpoint.label}</p>
+              <span className={cn(
+                'rounded px-2 py-0.5 text-[11px] font-semibold',
+                checkpoint.status === 'ready'
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : checkpoint.status === 'queued'
+                    ? 'bg-slate-100 text-slate-700'
+                    : 'bg-amber-100 text-amber-800',
+              )}>
+                {checkpoint.status === 'needs-input' ? 'Needs input' : checkpoint.status}
+              </span>
+            </div>
+            <p className="mt-1 text-xs leading-5 text-slate-700">{checkpoint.detail}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

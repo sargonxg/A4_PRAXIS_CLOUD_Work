@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- feat(reasoning): add the Pack 24 Reasoning Spine first slice.
+  Drafter Companion now shows a simple context fingerprint, evidence posture,
+  reasoning checkpoints, and honest queued status for live tracing/STORM work.
 - feat(drafting): add the Pack 23 Drafter Companion first slice.
   The workbench draft tab now has a live companion rail with outline,
   evidence, graph context, style, audit receipts, and suggested writer actions

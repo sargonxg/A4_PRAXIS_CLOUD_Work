@@ -10,6 +10,9 @@ test('draft renders Pack 28 briefing assembly and exports a package', async ({ p
     await expect(page.getByRole('heading', { name: new RegExp(`^${heading}$`, 'i') })).toBeVisible();
   }
   await expect(page.getByTestId('draft-companion')).toBeVisible();
+  await page.getByRole('tab', { name: /Spine/i }).click();
+  await expect(page.getByTestId('draft-reasoning-spine')).toBeVisible();
+  await expect(page.getByText('Context fingerprint')).toBeVisible();
   await expect(page.getByRole('tab', { name: /Evidence/i })).toBeVisible();
   await page.getByRole('tab', { name: /Audit/i }).click();
   await expect(page.getByText('Audit manifest enabled')).toBeVisible();

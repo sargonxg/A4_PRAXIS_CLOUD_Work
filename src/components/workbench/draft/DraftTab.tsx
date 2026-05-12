@@ -268,6 +268,7 @@ export function DraftTab() {
         </div>
         <div className="xl:sticky xl:top-4 xl:self-start">
           <DraftCompanion
+            caseId={caseId}
             selectedMemos={selectedMemos}
             selectedAppendices={selectedAppendices}
             primaryMemoId={primaryMemoId}
