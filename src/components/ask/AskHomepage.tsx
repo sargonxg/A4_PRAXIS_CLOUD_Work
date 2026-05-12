@@ -35,8 +35,8 @@ export function AskHomepage({
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-          <PickerCard icon={UserRound} label="User model" title={activeUser?.identity ?? 'No user model'} href="/users" />
-          <PickerCard icon={Layers3} label="Context" title={activeContext?.name ?? 'No context selected'} href="/contexts" />
+          <PickerCard icon={UserRound} label="User Core" title={activeUser?.identity ?? 'No user core'} href="/app/cores/user" />
+          <PickerCard icon={Layers3} label="Situation Core" title={activeContext?.name ?? 'No situation selected'} href="/app/cores/context" />
         </div>
       </header>
 
@@ -48,7 +48,7 @@ export function AskHomepage({
             <h2 className="text-sm font-semibold text-navy-900">Recent contexts</h2>
             <div className="mt-3 space-y-2">
               {contexts.slice(0, 4).map((context) => (
-                <Link key={context.id} href={`/contexts/${context.id}`} className="block rounded-md border border-slate-200 bg-slate-50 p-3 hover:bg-white">
+                <Link key={context.id} href={`/app/workbench/${context.id}`} className="block rounded-md border border-slate-200 bg-slate-50 p-3 hover:bg-white">
                   <p className="text-sm font-semibold text-navy-900">{context.name}</p>
                   <p className="mt-1 text-xs text-navy-600">{context.region}</p>
                 </Link>
@@ -59,10 +59,10 @@ export function AskHomepage({
           <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold text-navy-900">Work links</h2>
             <div className="mt-3 grid gap-2">
-              <UtilityLink icon={Search} href="/methods" label="Browse Methods" />
-              <UtilityLink icon={Layers3} href="/contexts" label="Manage Contexts" />
-              <UtilityLink icon={UserRound} href="/users" label="Manage Models" />
-              <UtilityLink icon={FileText} href="/draft" label="Drafts" />
+              <UtilityLink icon={Search} href="/app/tools" label="Suggested Tools" />
+              <UtilityLink icon={Layers3} href="/app/cores/context" label="Manage Situation Cores" />
+              <UtilityLink icon={UserRound} href="/app/cores/user" label="Manage User Cores" />
+              <UtilityLink icon={FileText} href="/app/workbench?openChapter=memos" label="Memo Output" />
               <UtilityLink icon={BookOpen} href="/app/dashboard" label="Dashboard" />
             </div>
           </section>

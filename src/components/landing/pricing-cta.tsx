@@ -85,13 +85,13 @@ export function PricingCTA() {
 
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
-            href="/demo/syria-2024"
+            href="/app"
             prefetch={false}
             data-analytics="pricing-cta-demo"
             onClick={() => trackPricingCta("demo")}
             className="group inline-flex w-full items-center justify-center gap-2 rounded-md bg-gold-600 px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-gold-500 hover:shadow-lg hover:shadow-gold-600/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-600 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-100 active:scale-[0.99] sm:w-auto"
           >
-            Try the demo →
+            Open real app →
           </Link>
           <a
             href="mailto:hello@tacitus.me?subject=PRAXIS%20intro%20call"

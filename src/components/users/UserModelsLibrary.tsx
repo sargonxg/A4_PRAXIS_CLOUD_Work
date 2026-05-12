@@ -89,7 +89,7 @@ function ModelCard({ model, active, onActivate, onFork }: { model: UserModelReco
             Fork
           </button>
         ) : null}
-        <Link href={`/users/${model.modelId}`} className="border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">
+        <Link href="/app/cores/user" className="border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">
           Open
         </Link>
       </div>

@@ -65,19 +65,19 @@ const contexts: Array<{
         question: "What changed in Indo-Pacific dynamics this month?",
         answer:
           "Alliance signaling is outpacing institutional absorption. Quad public-goods language remains stable, while AUKUS coordination and Philippine maritime risk make deterrence credibility the near-term watchpoint.",
-        targetPath: "/demo/indo-pacific-2026",
+        targetPath: "/app/dashboard",
       },
       {
         question: "Show me the stakeholder power-interest map.",
         answer:
           "The United States, Japan, Australia, India, China, Taiwan, the Philippines, and ASEAN split across deterrence, autonomy, trade resilience, and escalation-management interests.",
-        targetPath: "/methods/stakeholder-power-interest-map",
+        targetPath: "/app/tools",
       },
       {
         question: "Draft a country card on Taiwan dynamics.",
         answer:
           "The country card should lead with leadership continuity, gray-zone coercion, semiconductor exposure, and alliance signaling as the core analytic watchpoints.",
-        targetPath: "/draft/new?caseId=indo-pacific-2026&template=country-card",
+        targetPath: "/app/workbench/indo-pacific-2026?openChapter=memos",
       },
     ],
   },
@@ -91,19 +91,19 @@ const contexts: Array<{
         question: "What is the state of US federal AI regulation?",
         answer:
           "The United States remains a federal-guidance plus state-law patchwork. NIST and agency guidance anchor governance while Congress and the White House contest state preemption.",
-        targetPath: "/demo/ai-regulation-2026",
+        targetPath: "/app/dashboard",
       },
       {
         question: "Map industry positions versus interests.",
         answer:
           "Industry positions cluster around uniform federal rules and liability predictability. Civil society emphasizes rights, discrimination controls, transparency, and durable enforcement.",
-        targetPath: "/methods/position-interest-decoder",
+        targetPath: "/app/tools",
       },
       {
         question: "Draft a legislative briefing on AI preemption.",
         answer:
           "The briefing should define the preemption question, map state-law stakes, identify constitutional and implementation risks, and offer options that preserve child-safety and civil-rights safeguards.",
-        targetPath: "/draft/new?caseId=ai-regulation-2026&template=talking-points",
+        targetPath: "/app/workbench/ai-regulation-2026?openChapter=memos",
       },
     ],
   },
@@ -117,19 +117,19 @@ const contexts: Array<{
         question: "Track sustainability commitments and compliance.",
         answer:
           "Separate climate, packaging, water, sourcing, and nutrition claims. Investor and regulator pressure is strongest where disclosures meet consumer-facing claims.",
-        targetPath: "/demo/fb-sustainability-2026",
+        targetPath: "/app/dashboard",
       },
       {
         question: "Map positions on FDA labeling reform.",
         answer:
           "Stakeholder positions split across consumer transparency, compliance burden, public-health evidence, and brand-risk management. Retailers can amplify pressure faster than formal rules.",
-        targetPath: "/methods/stakeholder-power-interest-map",
+        targetPath: "/app/tools",
       },
       {
         question: "Draft a board briefing on regulatory exposure.",
         answer:
           "Lead with material regulatory exposure, then show claims risk, disclosure risk, supplier risk, and governance actions with source posture visible.",
-        targetPath: "/draft/new?caseId=fb-sustainability-2026&template=executive-summary",
+        targetPath: "/app/workbench/fb-sustainability-2026?openChapter=memos",
       },
     ],
   },
@@ -155,10 +155,10 @@ const outcomeCards = [
 ] as const;
 
 const trustItems = [
-  ["Source receipts", "Every demo answer links back to public material."],
+  ["Source receipts", "Every answer is designed to preserve the source posture and open gaps."],
   ["Review-first drafting", "Outputs are proposals for analysts to accept, revise, or reject."],
   ["Google Cloud + Firebase", "The production path uses the connected PRAXIS cloud project."],
-  ["No signup wall", "The public demo opens before account creation."],
+  ["Real app first", "The preview points into the authenticated app instead of a parallel demo surface."],
 ] as const;
 
 const realAppSurfaces = [
@@ -265,8 +265,8 @@ export function Phase8WowLanding() {
   const context = contexts.find((item) => item.id === contextId) ?? contexts[0];
   const activeQuestion = context.questions[questionIndex % context.questions.length];
 
-  function runDemoQuestion() {
-    trackLandingEvent("demo_question_asked", {
+  function runPreviewQuestion() {
+    trackLandingEvent("ask_preview_submitted", {
       persona: persona.id,
       context: context.id,
       question: activeQuestion.question,
@@ -346,12 +346,12 @@ export function Phase8WowLanding() {
             </div>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                href={`/demo/${context.id}`}
+                href="/app"
                 prefetch={false}
-                onClick={runDemoQuestion}
+                onClick={runPreviewQuestion}
                 className="inline-flex items-center justify-center gap-2 rounded-md bg-[#111827] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#243244]"
               >
-                Try the demo <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                Open real app <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <Link
                 href="/app"
@@ -384,7 +384,7 @@ export function Phase8WowLanding() {
               <div className="border-b border-[#e5dcc2] px-4 py-3 sm:px-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8a5a00]">Live demo bar</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8a5a00]">Ask PRAXIS preview</p>
                     <p className="mt-1 text-sm font-medium text-[#4b5563]">Attach a user, attach a situation, then let the workbench route the next move.</p>
                   </div>
                   <span className="inline-flex items-center gap-2 rounded-full bg-[#eef7f1] px-3 py-1 text-xs font-semibold text-[#166534]">
@@ -453,18 +453,18 @@ export function Phase8WowLanding() {
                   <Link
                     href={activeQuestion.targetPath}
                     prefetch={false}
-                    onClick={runDemoQuestion}
+                    onClick={runPreviewQuestion}
                     className="inline-flex items-center justify-center gap-2 rounded-md bg-[#8a5a00] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#714900]"
                   >
                     <Play className="h-4 w-4" aria-hidden="true" />
-                    Run cached answer
+                    Ask with attached cores
                   </Link>
                   <Link
-                    href={`/demo/${context.id}`}
+                    href="/app/workbench"
                     prefetch={false}
                     className="inline-flex items-center justify-center rounded-md border border-[#d7c89f] bg-white px-4 py-2.5 text-sm font-semibold text-[#111827] transition hover:bg-[#fffaf0]"
                   >
-                    Open read-only context
+                    Open workbench context
                   </Link>
                 </div>
               </div>
@@ -484,7 +484,7 @@ export function Phase8WowLanding() {
           </div>
           <ContextGraphPreview
             title={`${context.label} graph`}
-            summary={`${persona.label} view for ${context.region}: the public demo keeps the graph path visible from source intake through drafting.`}
+            summary={`${persona.label} view for ${context.region}: the preview keeps the graph path visible from source intake through drafting.`}
             stats={graphStatsByContext[context.id]}
           />
         </div>
@@ -499,7 +499,7 @@ export function Phase8WowLanding() {
                 Not a chat box. A working console for policy analysis.
               </h2>
               <p className="mt-4 text-sm leading-6 text-[#4B5563] sm:text-base">
-                The public demo is a window into shipped app surfaces: dashboard, workbench, graph, memo studio, boardroom, ACH, and context creation. Sign in to create private User Cores and Situation Cores, then apply them to the tools and drafts your team needs.
+                The preview is a window into shipped app surfaces: dashboard, workbench, graph, memo studio, boardroom, ACH, and context creation. Sign in to create private User Cores and Situation Cores, then apply them to the tools and drafts your team needs.
               </p>
               <Link
                 href="/app"
@@ -626,15 +626,15 @@ export function Phase8WowLanding() {
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a5a00]">The right tools for the work</p>
               <h2 className="mt-3 font-serif text-3xl font-semibold text-[#111827] sm:text-5xl">Ten useful methods, suggested by context.</h2>
             </div>
-            <Link href="/methods" prefetch={false} className="inline-flex items-center gap-2 text-sm font-semibold text-[#8a5a00]">
-              See methods <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            <Link href="/app/tools" prefetch={false} className="inline-flex items-center gap-2 text-sm font-semibold text-[#8a5a00]">
+              See suggested tools <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
           <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {methods.map(([name, summary]) => (
               <Link
                 key={name}
-                href="/methods"
+                href="/app/tools"
                 prefetch={false}
                 onClick={() => trackMethod(name)}
                 className="rounded-lg border border-[#d7c89f] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[#8a5a00] hover:shadow-lg hover:shadow-[#111827]/10"
@@ -682,7 +682,7 @@ export function Phase8WowLanding() {
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f6c85f]">Pricing</p>
-            <h2 className="mt-3 font-serif text-3xl font-semibold sm:text-5xl">Start with the demo. Scale when the workflow is real.</h2>
+            <h2 className="mt-3 font-serif text-3xl font-semibold sm:text-5xl">Start with the real workflow. Scale when the team needs shared context.</h2>
             <Link
               href="/pricing"
               prefetch={false}
@@ -693,11 +693,11 @@ export function Phase8WowLanding() {
             </Link>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            {["Demo", "Analyst", "Team"].map((plan) => (
+            {["Preview", "Analyst", "Team"].map((plan) => (
               <div key={plan} className="rounded-lg border border-white/15 bg-white/8 p-5">
                 <p className="text-lg font-semibold">{plan}</p>
                 <p className="mt-2 text-sm leading-6 text-white/70">
-                  {plan === "Demo" ? "Read-only contexts and cached answers." : plan === "Analyst" ? "Private situations, methods, and drafts." : "Shared contexts, handoffs, and review."}
+                  {plan === "Preview" ? "Ask-first product tour with example cores." : plan === "Analyst" ? "Private situations, suggested tools, and drafts." : "Shared cores, handoffs, and review."}
                 </p>
               </div>
             ))}

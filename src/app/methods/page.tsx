@@ -1,9 +1,7 @@
-import { MethodsMarketplace } from '@/components/methods/MethodsMarketplace';
+import { redirect } from 'next/navigation';
 
-export const metadata = {
-  title: 'Methods | PRAXIS',
-};
+export const metadata = { title: 'Tools | PRAXIS' };
 
-export default function MethodsPage() {
-  return <MethodsMarketplace />;
+export default function PublicMethodsRedirectPage() {
+  redirect('/app/tools');
 }

@@ -31,8 +31,8 @@ const tsTypes = read('src/types/episode.ts');
 for (const marker of ['ContextEpisode', "EpisodeStrand = 'situation' | 'work'", 'validFrom']) {
   if (!tsTypes.includes(marker)) failures.push(`src/types/episode.ts missing ${marker}`);
 }
-if (!read('src/app/contexts/[caseId]/page.tsx').includes('TimelinePanel')) {
-  failures.push('/contexts/[caseId] must render TimelinePanel');
+if (!read('src/components/contexts/panels/TimelinePanel.tsx').includes('validFrom')) {
+  failures.push('TimelinePanel must keep bi-temporal episode fields visible');
 }
 
 const gate = read('package.json');

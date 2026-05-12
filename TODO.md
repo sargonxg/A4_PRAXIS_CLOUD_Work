@@ -14,7 +14,7 @@ Last updated: 2026-05-11.
 1. Make Ask PRAXIS persist recommended next moves from the active User Core and Situation Core so the dashboard suggestions become saved workspace state, not only UI guidance.
 2. Complete Pack 24 backend Reasoning Spine: Rust BLAKE3 context-pack compiler, real trace ids, Langfuse or equivalent trace store, and live event streaming behind the current Spine panel.
 3. Complete Pack 23 backend Library Bucket: real DOCX/PDF/MD ingestion, source receipts, hybrid search, and provenance-ledger persistence behind the current Drafter Companion UI.
-4. Merge private user-created contexts into `/contexts`; the wizard now creates owner-scoped contexts and opens the workbench, but the list still shows examples only.
+4. Keep user-created Situation Cores primary inside `/app/contexts` and `/app/cores/context`; public `/contexts` is now only a redirect.
 5. Make Drafting and Memo Studio visibly show which cores fed the current output.
 6. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
 7. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 3/10.
@@ -40,4 +40,5 @@ Last updated: 2026-05-11.
 - **graphify**: knowledge graph at `graphify-out/`. Run `graphify update .` after code edits to keep it current.
 - **Knip**: dead-export detection. Not currently in `audit:gate`; run on demand when chasing unused exports.
 - **audit:architecture-reference**: startup docs link to `docs/architecture/PRAXIS_ARCHITECTURE.md` and `PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`.
-- **smoke:core-flows**: fast Playwright check for the landing context switch, `/contexts` creation modal, and drafting route.
+- **smoke:core-flows**: fast Playwright check for the landing Ask preview, `/app/cores/context`, and memo output in the workbench.
+- **audit:mvp-route-shape**: static guard that legacy public demo/context/method/draft/user routes redirect into the canonical app surface.

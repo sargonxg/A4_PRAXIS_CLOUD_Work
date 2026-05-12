@@ -47,7 +47,7 @@ export function UserModelEditor({ seed, modelId }: { seed: UserModelRecord; mode
     <main className="min-h-screen bg-slate-50 px-6 py-8 text-slate-950">
       <div className="mx-auto grid max-w-6xl gap-6">
         <header className="border-b border-slate-200 pb-5">
-          <Link href="/users" className="text-sm text-slate-600 hover:text-slate-950">Back to user models</Link>
+          <Link href="/app/cores/user" className="text-sm text-slate-600 hover:text-slate-950">Back to User Core</Link>
           <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
               <h1 className="text-3xl font-semibold tracking-tight">{model.identity}</h1>

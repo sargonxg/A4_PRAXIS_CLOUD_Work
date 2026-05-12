@@ -19,16 +19,16 @@ for (const marker of requiredPageMarkers) {
 
 const requiredHeroMarkers = [
   'PRAXIS by TACITUS',
-  'Live demo bar',
+  'Ask PRAXIS preview',
   'foreign-policy-analyst',
   'indo-pacific-2026',
   'ai-regulation-2026',
   'fb-sustainability-2026',
-  'Run cached answer',
+  'Ask with attached cores',
   'Open real app',
   'Inside the real app',
   'Core priority builder',
-  'demo_question_asked',
+  'ask_preview_submitted',
   'method_run',
   'sign_up_clicked',
 ];
@@ -48,7 +48,7 @@ const requiredSections = [
   'Drafting that fits the work',
   'Compare plans',
   'Source receipts',
-  'No signup wall',
+  'Real app first',
 ];
 
 for (const marker of requiredSections) {
@@ -72,9 +72,15 @@ for (const method of requiredMethodNames) {
   if (!phase8.includes(method)) throw new Error(`Phase 8 landing missing MVP method: ${method}`);
 }
 
-for (const href of ['/demo/indo-pacific-2026', '/demo/ai-regulation-2026', '/demo/fb-sustainability-2026']) {
+for (const forbidden of ['Live demo bar', 'Run cached answer', 'Open read-only context', 'cached answers before signup']) {
+  if (page.includes(forbidden) || phase8.includes(forbidden) || layout.includes(forbidden)) {
+    throw new Error(`Landing still exposes obsolete demo-first copy: ${forbidden}`);
+  }
+}
+
+for (const href of ['/app/dashboard', '/app/tools', '/app/workbench']) {
   if (!phase8.includes(href) && !docsPage.includes(href)) {
-    throw new Error(`Landing/docs missing demo route: ${href}`);
+    throw new Error(`Landing/docs missing canonical app route: ${href}`);
   }
 }
 
@@ -82,7 +88,7 @@ for (const nav of ['#real-app', '#core-stack', '#methods', '#drafting', '#pricin
   if (!layout.includes(nav)) throw new Error(`Landing nav missing anchor: ${nav}`);
 }
 
-for (const rel of ['src/app/demo/[contextId]/page.tsx', 'src/app/docs/page.tsx', 'src/app/pricing/page.tsx', 'src/app/legal/security/page.tsx']) {
+for (const rel of ['src/app/docs/page.tsx', 'src/app/pricing/page.tsx', 'src/app/legal/security/page.tsx']) {
   if (!existsSync(rel)) throw new Error(`Landing target route missing: ${rel}`);
 }
 

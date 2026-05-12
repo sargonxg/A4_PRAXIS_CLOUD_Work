@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { APP_RELEASE_LABEL } from "@/lib/constants/app-version";
 
-const EXAMPLE_CASE_HREF = "/demo/syria-2024";
+const EXAMPLE_CASE_HREF = "/app/workbench/syria-2026";
 
 const footerSections = [
   {

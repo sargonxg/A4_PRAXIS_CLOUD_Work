@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(mvp): consolidate public routes around the Ask-first app.
+  Landing now shows an Ask PRAXIS preview with User Core, Situation Core,
+  suggested tools, and memo output; legacy public demo/context/method/draft/user
+  routes redirect into canonical `/app/*` surfaces, with `audit:mvp-route-shape`
+  guarding the simplified route posture.
 - feat(app): simplify the Ask-first dashboard workflow.
   The app dashboard now centers Ask PRAXIS, reduces the visible path to User
   Core, Situation Core, suggested tools, and memo drafting, and trims the

@@ -23,10 +23,10 @@ const softwareJsonLd = {
   offers: [
     {
       "@type": "Offer",
-      name: "Demo",
+      name: "Preview",
       price: "0",
       priceCurrency: "USD",
-      description: "Read-only public demo contexts with cached answers before signup",
+      description: "Ask PRAXIS preview that shows how User Cores, Situation Cores, suggested tools, and memo outputs fit together",
     },
     {
       "@type": "Offer",
@@ -49,10 +49,10 @@ const softwareJsonLd = {
     url: "https://tacitus.me",
   },
   featureList: [
-    "Public demo contexts for Indo-Pacific, AI regulation, and food and beverage sustainability",
-    "Persona-aware answers for foreign policy, domestic policy, and corporate strategy work",
+    "Ask PRAXIS preview for User Core and Situation Core attachment",
+    "Persona-aware answers for policy, diplomacy, and strategic analysis work",
     "User Core, Situation Core, source graph, and domain-targeted ontology workflows for policy teams",
-    "Ten reviewable methods for research, stakeholder mapping, scenarios, contradictions, commitments, and memo drafting",
+    "Suggested actions for research, source intake, graph review, stakeholder mapping, scenarios, memo drafting, brief export, and red team review",
     "Review-first drafting with source posture and visible gaps",
     "Google Cloud, Firebase, Firestore, Cloud SQL Postgres, and Secret Manager production path",
   ],

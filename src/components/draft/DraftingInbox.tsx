@@ -40,7 +40,7 @@ export function DraftingInbox({
               </p>
             </div>
             <Link
-              href={`/draft/new?caseId=${encodeURIComponent(listDraftShells()[0]?.caseId ?? 'syria-2026')}&template=un-1-pager`}
+              href={`/app/workbench/${encodeURIComponent(listDraftShells()[0]?.caseId ?? 'syria-2026')}?openChapter=memos`}
               className="inline-flex h-10 items-center justify-center gap-2 border border-slate-900 bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800"
             >
               <Plus className="h-4 w-4" />

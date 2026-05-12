@@ -9,6 +9,18 @@ CI/checkpoint work, production deploy evidence, and Queue `18` final QA
 completed. Queue `17` is complete for this session and live on
 `praxis.tacitus.me`.
 
+Current local cleanup pass:
+
+- Landing page is being consolidated around Ask PRAXIS, User Core, Situation
+  Core, suggested tools, and memo output. The previous "Live demo bar",
+  cached-answer CTA, and read-only context CTA are removed from active landing
+  copy.
+- Public duplicate routes `/demo/*`, `/contexts*`, `/methods*`, `/draft*`, and
+  `/users*` are legacy redirects into canonical `/app/*` surfaces rather than
+  first-class product pages.
+- `audit:mvp-route-shape` now guards the simplified route posture and the
+  default sidebar surface.
+
 Current Phase 9 blockers:
 
 - Persona CI wiring exists, but the "10 consecutive passes" requirement cannot

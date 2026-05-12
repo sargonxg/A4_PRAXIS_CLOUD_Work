@@ -49,7 +49,7 @@ export function MethodCard({ method, compact = false }: { method: MethodDefiniti
           {sourceTool ? `Backed by ${sourceTool.name}` : 'Backed by grounded research'}
         </span>
         <Link
-          href={`/methods/${method.id}`}
+          href={`/app/tools?method=${encodeURIComponent(method.id)}`}
           className="inline-flex shrink-0 items-center gap-1 rounded-md border border-navy-200 px-3 py-1.5 text-xs font-semibold text-navy-800 hover:bg-navy-50"
         >
           Open

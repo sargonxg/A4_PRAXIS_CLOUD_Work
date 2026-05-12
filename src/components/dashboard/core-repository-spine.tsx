@@ -66,7 +66,7 @@ const repositoryStages = [
   },
   {
     id: 'memo',
-    label: 'Memo Drafting',
+    label: 'Memo Output',
     href: '',
     icon: FileText,
     accent: 'bg-rose-50 text-rose-800 border-rose-200',

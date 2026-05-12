@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils/cn";
 import { Menu, X } from "lucide-react";
 
 const navLinks = [
-  { label: "Demo", href: "#top" },
+  { label: "Ask", href: "#top" },
   { label: "Cores", href: "#core-stack" },
   { label: "Tools", href: "#methods" },
   { label: "Drafts", href: "#drafting" },
@@ -38,10 +38,10 @@ export default function LandingLayout({
 
   return (
     <div id="top" className="landing-light paper-texture relative min-h-screen">
-      {/* DEMO mode banner — normal flow, scrolls away naturally */}
+      {/* Preview banner — normal flow, scrolls away naturally */}
       <div className="relative z-[60] bg-diplomatic-blue px-4 py-2 text-center text-xs text-white/90">
-        <span className="font-semibold tracking-wide uppercase text-gold-400">Demo</span>
-        {" "}— PRAXIS is in early demo mode. We are collecting initial feedback from practitioners.{" "}
+        <span className="font-semibold tracking-wide uppercase text-gold-400">Preview</span>
+        {" "}— PRAXIS is consolidating around Ask PRAXIS, User Cores, Situation Cores, suggested tools, and memo output.{" "}
         <a href="mailto:hello@tacitus.me" className="underline underline-offset-2 hover:text-white transition-colors">
           Write us at hello@tacitus.me
         </a>
@@ -96,11 +96,11 @@ export default function LandingLayout({
               Sign In
             </Link>
             <Link
-              href="/demo/indo-pacific-2026"
+              href="/app"
               prefetch={false}
               className="text-sm font-semibold text-gold-700 transition-colors hover:text-gold-800"
             >
-              Try demo
+              Open app
             </Link>
             <Link
               href="/app"
@@ -152,12 +152,12 @@ export default function LandingLayout({
               Sign In
             </Link>
             <Link
-              href="/demo/indo-pacific-2026"
+              href="/app"
               prefetch={false}
               onClick={() => setMobileMenuOpen(false)}
               className="block py-3 text-sm font-semibold text-gold-700 transition-colors hover:text-gold-800"
             >
-              Try demo
+              Open app
             </Link>
             <Link
               href="/app"

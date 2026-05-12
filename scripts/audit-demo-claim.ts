@@ -34,8 +34,7 @@ requireIncludes('src/components/demo/DemoClaimButton.tsx', [
 ]);
 
 requireIncludes('src/app/demo/syria-2024/page.tsx', [
-  'DemoClaimButton',
-  'SYRIA_DEMO_CASE_ID',
+  "redirect('/app/workbench/syria-2026')",
 ]);
 
 requireIncludes('src/app/api/situations/copy-from-demo/route.ts', [
@@ -63,4 +62,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Demo claim audit passed: public demo copy CTA, authenticated clone route, seeded graph, telemetry, and workspace banner are enforced. (static-marker)');
+console.log('Demo claim audit passed: legacy demo routes redirect to the real workbench while the authenticated clone route remains available. (static-marker)');

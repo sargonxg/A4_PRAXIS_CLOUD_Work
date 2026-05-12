@@ -1,8 +1,7 @@
-import { UserModelsLibrary } from '@/components/users/UserModelsLibrary';
-import { listPublicUserModels } from '@/lib/users/api';
+import { redirect } from 'next/navigation';
 
-export const metadata = { title: 'User Models | PRAXIS' };
+export const metadata = { title: 'User Cores | PRAXIS' };
 
-export default function UsersPage() {
-  return <UserModelsLibrary publicModels={listPublicUserModels()} />;
+export default function PublicUsersRedirectPage() {
+  redirect('/app/cores/user');
 }

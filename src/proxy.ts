@@ -161,21 +161,10 @@ export function proxy(request: NextRequest) {
     return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }
 
-  // --- /demo/* routes: public read-only demos ---
+  // --- /demo/* routes: legacy redirects into the authenticated app shape ---
   if (pathname.startsWith('/demo')) {
-    if (pathname === '/demo' || pathname === '/demo/syria-2024' || /^\/demo\/[a-z0-9-]+$/.test(pathname)) {
-      return nextWithNonce(request, nonce);
-    }
-
-    if (!sessionData) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('mode', 'demo');
-      loginUrl.searchParams.set('example', 'syria-2026');
-      return addSecurityHeaders(NextResponse.redirect(loginUrl), nonce);
-    }
-
-    const url = request.nextUrl.clone();
-    url.pathname = pathname === '/demo' ? '/app/workbench/syria-2026' : pathname.replace(/^\/demo/, '/app');
+    const slug = pathname === '/demo' ? 'syria-2026' : pathname.split('/').filter(Boolean).at(1);
+    const url = new URL(`/app/workbench/${slug === 'syria-2024' ? 'syria-2026' : slug || 'syria-2026'}`, request.url);
     return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }
 

@@ -67,8 +67,8 @@ export function WaitlistPageClient() {
             PRAXIS
           </Link>
           <nav className="flex items-center gap-4 text-sm text-navy-200">
-            <Link href="/demo/syria-2024" className="hover:text-white">
-              Demo
+            <Link href="/app" className="hover:text-white">
+              App
             </Link>
             <Link href="/login" className="hover:text-white">
               Login
@@ -92,7 +92,7 @@ export function WaitlistPageClient() {
             and memo exports with human review.
           </p>
           <div className="mt-9 grid max-w-2xl gap-3 sm:grid-cols-3">
-            {["Public demo first", "Workspace onboarding", "Human-reviewed outputs"].map((item) => (
+            {["Ask PRAXIS first", "Workspace onboarding", "Human-reviewed outputs"].map((item) => (
               <div key={item} className="rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm text-navy-100">
                 {item}
               </div>

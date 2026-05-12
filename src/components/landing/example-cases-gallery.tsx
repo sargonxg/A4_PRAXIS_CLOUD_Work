@@ -62,7 +62,7 @@ export function ExampleCasesGallery({ compact = false }: ExampleCasesGalleryProp
 
                 {card.available ? (
                   <Link
-                    href={card.id === 'syria-2026' ? '/demo/syria-2024' : `/login?mode=demo&example=${card.id}`}
+                    href={card.id === 'syria-2026' ? '/app/workbench/syria-2026' : `/app/workbench/${card.id}`}
                     prefetch={false}
                     className="inline-flex items-center gap-2 text-sm font-semibold text-diplomatic-blue transition hover:text-navy-950"
                   >

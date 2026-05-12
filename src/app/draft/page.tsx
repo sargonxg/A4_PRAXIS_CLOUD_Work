@@ -1,14 +1,7 @@
-import { DraftingInbox } from '@/components/draft/DraftingInbox';
+import { redirect } from 'next/navigation';
 
-export const metadata = {
-  title: 'Drafting Studio | PRAXIS',
-};
+export const metadata = { title: 'Memo Output | PRAXIS' };
 
-export default async function DraftPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ q?: string; template?: string; status?: string }>;
-}) {
-  const params = await searchParams;
-  return <DraftingInbox query={params?.q} templateId={params?.template} status={params?.status} />;
+export default function PublicDraftRedirectPage() {
+  redirect('/app/workbench?openChapter=memos');
 }

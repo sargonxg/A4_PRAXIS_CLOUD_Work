@@ -160,9 +160,9 @@ const DEMO_SEEDS: DemoContextSeed[] = [
       { id: 'principal-memo', title: 'Principal memo and public commentary package', date: '2026-04-15', type: 'drafting' },
     ],
     cachedResponses: [
-      cached('ip-q1', "What's changed in Indo-Pacific dynamics this month?", 'Alliance signaling is outpacing institutional absorption: Quad public-goods language remains stable, but AUKUS industrial coordination and Philippine maritime risk make deterrence credibility the near-term watchpoint.', '/methods/deep-research-agent'),
-      cached('ip-q2', 'Show me the stakeholder power-interest map.', 'Power-interest map: the United States, Japan, Australia, India, China, Taiwan, Philippines, and ASEAN split across deterrence, autonomy, trade resilience, and escalation-management interests.', '/methods/stakeholder-power-interest-map'),
-      cached('ip-q3', 'Draft a 1-page think-tank country card on Taiwan dynamics.', 'Taiwan card draft: leadership continuity raises policy predictability, while gray-zone coercion, semiconductor exposure, and alliance signaling define the main analytic watchpoints.', '/draft/new?caseId=indo-pacific-2026&template=country-card'),
+      cached('ip-q1', "What's changed in Indo-Pacific dynamics this month?", 'Alliance signaling is outpacing institutional absorption: Quad public-goods language remains stable, but AUKUS industrial coordination and Philippine maritime risk make deterrence credibility the near-term watchpoint.', '/app/tools?method=deep-research-agent'),
+      cached('ip-q2', 'Show me the stakeholder power-interest map.', 'Power-interest map: the United States, Japan, Australia, India, China, Taiwan, Philippines, and ASEAN split across deterrence, autonomy, trade resilience, and escalation-management interests.', '/app/tools?method=stakeholder-power-interest-map'),
+      cached('ip-q3', 'Draft a 1-page think-tank country card on Taiwan dynamics.', 'Taiwan card draft: leadership continuity raises policy predictability, while gray-zone coercion, semiconductor exposure, and alliance signaling define the main analytic watchpoints.', '/app/workbench/indo-pacific-2026?openChapter=memos'),
     ],
   },
   {
@@ -193,9 +193,9 @@ const DEMO_SEEDS: DemoContextSeed[] = [
       { id: 'bill-redlines', title: 'Preemption bill redlines and policy memo', date: '2026-04-15', type: 'drafting' },
     ],
     cachedResponses: [
-      cached('ai-q1', "What's the current state of US federal AI regulation?", 'The U.S. remains a federal-guidance plus state-law patchwork: NIST and agency guidance anchor governance while Congress and the White House contest whether state AI rules should be preempted.', '/methods/deep-research-agent'),
-      cached('ai-q2', 'Map industry positions vs underlying interests on AI safety.', 'Industry positions cluster around uniform federal rules and liability predictability; civil-society actors emphasize rights, discrimination controls, transparency, and enforcement durability.', '/methods/position-interest-decoder'),
-      cached('ai-q3', 'Draft a legislative briefing for a Senate staffer on AI regulation pre-emption.', 'Briefing draft: define the preemption question, map state-law stakes, identify constitutional and implementation risks, and offer options that preserve room for child-safety and civil-rights safeguards.', '/draft/new?caseId=ai-regulation-2026&template=talking-points'),
+      cached('ai-q1', "What's the current state of US federal AI regulation?", 'The U.S. remains a federal-guidance plus state-law patchwork: NIST and agency guidance anchor governance while Congress and the White House contest whether state AI rules should be preempted.', '/app/tools?method=deep-research-agent'),
+      cached('ai-q2', 'Map industry positions vs underlying interests on AI safety.', 'Industry positions cluster around uniform federal rules and liability predictability; civil-society actors emphasize rights, discrimination controls, transparency, and enforcement durability.', '/app/tools?method=position-interest-decoder'),
+      cached('ai-q3', 'Draft a legislative briefing for a Senate staffer on AI regulation pre-emption.', 'Briefing draft: define the preemption question, map state-law stakes, identify constitutional and implementation risks, and offer options that preserve room for child-safety and civil-rights safeguards.', '/app/workbench/ai-regulation-2026?openChapter=memos'),
     ],
   },
   {
@@ -226,9 +226,9 @@ const DEMO_SEEDS: DemoContextSeed[] = [
       { id: 'trade-association', title: 'Trade association policy position review', date: '2026-04-20', type: 'coalition' },
     ],
     cachedResponses: [
-      cached('fb-q1', 'Track sustainability commitments by F&B majors and compliance.', 'Commitment tracking should separate climate, packaging, water, sourcing, and nutrition claims; investor and regulator pressure is strongest where disclosures meet consumer-facing claims.', '/methods/commitment-tracker'),
-      cached('fb-q2', 'Map stakeholder positions on FDA labeling reform.', 'Stakeholder positions split across consumer transparency, compliance burden, public-health evidence, and brand-risk management; retailers can amplify pressure faster than formal rules.', '/methods/stakeholder-power-interest-map'),
-      cached('fb-q3', 'Draft a board briefing on F&B regulatory and ESG exposure.', 'Board briefing draft: lead with material regulatory exposure, then show claims-risk, disclosure-risk, supplier-risk, and recommended governance actions with source posture visible.', '/draft/new?caseId=fb-sustainability-2026&template=executive-summary'),
+      cached('fb-q1', 'Track sustainability commitments by F&B majors and compliance.', 'Commitment tracking should separate climate, packaging, water, sourcing, and nutrition claims; investor and regulator pressure is strongest where disclosures meet consumer-facing claims.', '/app/tools?method=commitment-tracker'),
+      cached('fb-q2', 'Map stakeholder positions on FDA labeling reform.', 'Stakeholder positions split across consumer transparency, compliance burden, public-health evidence, and brand-risk management; retailers can amplify pressure faster than formal rules.', '/app/tools?method=stakeholder-power-interest-map'),
+      cached('fb-q3', 'Draft a board briefing on F&B regulatory and ESG exposure.', 'Board briefing draft: lead with material regulatory exposure, then show claims-risk, disclosure-risk, supplier-risk, and recommended governance actions with source posture visible.', '/app/workbench/fb-sustainability-2026?openChapter=memos'),
     ],
   },
 ];

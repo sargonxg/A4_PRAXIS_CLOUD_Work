@@ -32,7 +32,7 @@ if (!existsSync(proxyFile)) {
   failures.push('missing src/proxy.ts');
 } else {
   const proxyText = readFileSync(proxyFile, 'utf8');
-  for (const matcher of ["pathname === '/demo/syria-2024'", "'/login/:path*'", "'/waitlist'", "'/legal/:path*'"]) {
+  for (const matcher of ["pathname.startsWith('/demo')", "'/login/:path*'", "'/waitlist'", "'/legal/:path*'"]) {
     if (!proxyText.includes(matcher)) failures.push(`proxy matcher missing ${matcher}`);
   }
 }
@@ -49,13 +49,8 @@ for (const file of landingFiles) {
     continue;
   }
   const text = readFileSync(full, 'utf8');
-  if (
-    !text.includes('/demo/syria-2024') &&
-    !text.includes('/demo/indo-pacific-2026') &&
-    !text.includes('/demo/ai-regulation-2026') &&
-    !text.includes('/demo/fb-sustainability-2026')
-  ) {
-    failures.push(`${file} does not point to a public demo CTA`);
+  if (!text.includes('/app')) {
+    failures.push(`${file} does not point to the canonical app CTA`);
   }
 }
 
