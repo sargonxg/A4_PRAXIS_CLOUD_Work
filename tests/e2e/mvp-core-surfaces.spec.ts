@@ -11,8 +11,16 @@ test.describe('PRAXIS MVP core surfaces', () => {
 
     await expect(page.getByTestId('ask-praxis-home')).toBeVisible();
     await expect(page.getByText(/Ask PRAXIS anything about this policy situation/i)).toBeVisible();
+    await expect(page.getByText('Speaking to')).toBeVisible();
+    await expect(page.getByText('Working in')).toBeVisible();
     await expect(page.getByRole('link', { name: /User Core/i }).first()).toBeVisible();
     await expect(page.getByRole('link', { name: /Situation Core/i }).first()).toBeVisible();
+
+    await page.goto('/app/contexts');
+    await expect(page.getByRole('heading', { name: /Open the context PRAXIS should use/i })).toBeVisible();
+    await expect(page.getByText('My contexts')).toBeVisible();
+    await expect(page.getByText('Examples')).toBeVisible();
+    await expect(page.getByText(/Example context/i).first()).toBeVisible();
 
     await page.goto('/app/cores/context');
     await expect(page.getByRole('heading', { name: /Build the policy situation PRAXIS reasons from/i })).toBeVisible();

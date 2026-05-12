@@ -22,10 +22,13 @@ import { ActivityPanel } from '@/components/app/activity-panel';
 import { ErrorBoundary } from '@/components/shared/error-boundary';
 import { ToolErrorBoundary } from '@/components/praxis/tool-error-boundary';
 import { AiErrorToast } from '@/components/praxis/ai-error-toast';
+import { CoreContextStrip } from '@/components/app/core-context-strip';
+import { useSituationStore } from '@/stores/situation-store';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { setUser, setDemoMode, sidebarOpen, setSidebarOpen } = useAppStore();
+  const fetchSituations = useSituationStore((state) => state.fetchSituations);
   const router = useRouter();
   const pathname = usePathname();
   const route = usePraxisRoute();
@@ -75,6 +78,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       }
     }
   }, [user, setUser, setDemoMode]);
+
+  useEffect(() => {
+    if (user) void fetchSituations();
+  }, [fetchSituations, user]);
 
   const openSearch = useCallback(() => setSearchOpen(true), []);
   const closeSearch = useCallback(() => setSearchOpen(false), []);
@@ -137,6 +144,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <DemoModeBanner />
           {!user.isDemo && <SkipNudgeBanner />}
           <Header isMobile={isMobile} />
+          <CoreContextStrip />
           <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
             <div className="mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-6">
               <ErrorBoundary>
