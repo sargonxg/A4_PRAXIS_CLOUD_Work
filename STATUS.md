@@ -20,6 +20,10 @@ Current local cleanup pass:
   first-class product pages.
 - `audit:mvp-route-shape` now guards the simplified route posture and the
   default sidebar surface.
+- Dashboard next moves now persist for authenticated user Situation Cores via
+  `/api/workspace/next-moves`; users can mark moves done or dismiss them, and
+  Ask PRAXIS responses can add generated follow-up moves directly. Public
+  example situations remain local-only.
 
 Current Phase 9 blockers:
 

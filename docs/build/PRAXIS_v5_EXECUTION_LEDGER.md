@@ -883,3 +883,46 @@ only the intended Phase 0 changes.
   - Billing provider configuration/decision remains the only buyer-facing paid-plan launch blocker.
   - Persona CI streak is 1/10, not complete.
   - Cognee remains disabled-first until a separate service deployment is approved.
+
+### 2026-05-12 - Next-Round Resume - Persist Dashboard Next Moves
+
+- Owner: Codex
+- Prompt source: Giulio asked to resume after the laptop restarted; resumed from the clean `main` checkout and current TODO.
+- Scope completed:
+  - Added owner-scoped `/api/workspace/next-moves` GET/POST persistence for dashboard next moves.
+  - Added PATCH status updates plus shared sanitizers and a Firestore-safe document id helper for User Core + Situation Core next-move state.
+  - Wired the app dashboard shell to save generated suggested tools for authenticated user Situation Cores, show a saved-state badge, and mark moves done or dismissed.
+  - Added an Ask PRAXIS response action that saves generated follow-up answers as persisted workspace next moves and refreshes the dashboard state.
+  - Kept public/example situations local-only so demo browsing does not create workspace state.
+  - Aligned the cookie-signer unit test with the current runtime contract: deterministic local fallback off Cloud Run, fail-closed when Cloud Run env is present.
+- Files changed: dashboard shell, response actions, response-action inference, workspace next-moves API, next-moves sanitizer/test, response-action inference test, cookie-signer test, STATUS, TODO, CHANGELOG, pre-ship audit output, graphify output
+- Validation run:
+  - `npx vitest run tests/unit/lib/dashboard/next-moves.test.ts tests/unit/lib/dashboard/role-recommendations.test.ts --pool=threads`
+  - `npx vitest run tests/unit/lib/dashboard/next-moves.test.ts tests/unit/lib/assistant/response-action-kinds.test.ts tests/unit/lib/auth/cookie-signer.test.ts --pool=threads`
+  - `npm run lint -- src\components\app\praxis-workspace-shell.tsx src\app\api\workspace\next-moves\route.ts src\lib\dashboard\next-moves.ts tests\unit\lib\dashboard\next-moves.test.ts`
+  - `npx eslint src\components\app\praxis-workspace-shell.tsx src\components\assistant\response-actions.tsx src\app\api\workspace\next-moves\route.ts src\lib\dashboard\next-moves.ts src\lib\assistant\response-action-kinds.ts tests\unit\lib\dashboard\next-moves.test.ts tests\unit\lib\assistant\response-action-kinds.test.ts`
+  - `npm run lint -- tests\unit\lib\auth\cookie-signer.test.ts`
+  - `npx tsc --noEmit`
+  - `npm run build`
+  - `npm run audit:repo-shape`
+  - `npm run audit:mvp-route-shape`
+  - `npm run audit:architecture-reference`
+  - `npx vitest run --pool=threads`
+  - `npx vitest run --pool=threads --testTimeout=30000`
+  - `npx vitest run tests/firebase/advisor-service.test.ts --pool=threads --testTimeout=30000`
+  - `npm run audit:gate`
+  - `graphify update .`
+  - `git diff --check`
+- Validation result: pass with cloud-auth exception
+  - PASS: focused unit tests, scoped lint, cookie-signer test lint, typecheck, production build, repo-shape audit, MVP route-shape audit, architecture-reference audit, full Vitest rerun with extended per-test timeout (`155` files / `595` tests), isolated Firebase advisor-service rerun, graphify update, and `git diff --check` with only expected CRLF warnings.
+  - NOTE: the first full Vitest run after the Ask response-action wiring timed out once in `tests/firebase/advisor-service.test.ts` at the default 5s limit; the same test passed isolated with a 30s timeout and the full suite passed with that timeout.
+  - PARTIAL: `npm run audit:gate` passed typecheck, build, route audit, architecture-chain audit, repo-shape audit, architecture-reference audit, MVP route-shape audit, tool-contracts audit, purpose-surface audit, deep-preship audit, and Cognee audit, then failed at `audit:gcp` because `gcloud` needs interactive reauthentication in this shell.
+  - NOTE: production build still reports the existing Turbopack NFT tracing warning from `next.config.ts` via `src/lib/semantica/rust-runtime.ts`; no new build failure.
+  - NOTE: `npm run docs:lint` is no longer present in the current `package.json`; docs validation fell back to targeted repo/documentation audits and `git diff --check`.
+- Commit: pending
+- Push: pending
+- Open blockers carried forward:
+  - Billing provider configuration/decision remains the buyer-facing paid-plan launch blocker.
+  - Persona CI 10-run streak still requires real GitHub Actions history.
+  - Cognee remains disabled-first until a separate service deployment is approved.
+  - Persisted next moves still need signed-user browser verification and a Playwright smoke before being treated as a full task workflow.

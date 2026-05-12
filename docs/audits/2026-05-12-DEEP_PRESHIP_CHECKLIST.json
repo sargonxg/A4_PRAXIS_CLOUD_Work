@@ -1,8 +1,8 @@
 {
   "date": "2026-05-12",
   "summary": {
-    "pass": 134,
-    "warn": 3,
+    "pass": 136,
+    "warn": 1,
     "blocked": 4,
     "total": 141
   },
@@ -1027,17 +1027,17 @@
       "id": "vertex-banned-gpt-",
       "section": "7. Vertex Gemini integration",
       "title": "No banned direct model marker gpt-",
-      "status": "WARN",
-      "evidence": "gpt- marker found; run audit:model-strings for allowlist context.",
-      "remediation": "Move direct model strings into the approved provider matrix or update the allowlist audit."
+      "status": "PASS",
+      "evidence": "gpt- marker not found.",
+      "remediation": "None."
     },
     {
       "id": "vertex-banned-claude-",
       "section": "7. Vertex Gemini integration",
       "title": "No banned direct model marker claude-",
-      "status": "WARN",
-      "evidence": "claude- marker found; run audit:model-strings for allowlist context.",
-      "remediation": "Move direct model strings into the approved provider matrix or update the allowlist audit."
+      "status": "PASS",
+      "evidence": "claude- marker not found.",
+      "remediation": "None."
     },
     {
       "id": "vertex-banned-gemini-1-",

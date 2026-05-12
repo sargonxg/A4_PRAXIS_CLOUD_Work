@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { BookOpenText, FileQuestion, FolderKanban, GitBranch, Search, SquareArrowOutUpRight } from 'lucide-react';
+import { BookOpenText, CheckSquare, FileQuestion, FolderKanban, GitBranch, Search, SquareArrowOutUpRight } from 'lucide-react';
 import type { CoreKind } from '@/lib/tools/contract';
 import type { WorkbenchTabId } from '@/types/workbench';
 import { inferResponseActionKinds, type ResponseActionKind } from '@/lib/assistant/response-action-kinds';
@@ -22,6 +22,7 @@ export type ResponseAction =
   | { kind: 'save_to_write'; payload: { situationId: string; text: string; citations: Citation[] } }
   | { kind: 'cite_as_gap'; payload: { situationId: string; question: string } }
   | { kind: 'attach_to_core'; payload: { situationId: string; coreKind: CoreKind; content: string } }
+  | { kind: 'add_next_move'; payload: { situationId: string; text: string } }
   | { kind: 'run_deep_research'; payload: { situationId: string; question: string } }
   | { kind: 'open_in_workbench'; payload: { situationId: string; tab: WorkbenchTabId } }
   | { kind: 'propose_graph_edit'; payload: { situationId: string; delta: GraphDelta } };
@@ -47,6 +48,7 @@ const ACTION_META: Record<ResponseActionKind, {
   save_to_write: { label: 'Save to Write', icon: BookOpenText },
   cite_as_gap: { label: 'Cite as gap', icon: FileQuestion },
   attach_to_core: { label: 'Attach to Core', icon: FolderKanban },
+  add_next_move: { label: 'Add next move', icon: CheckSquare },
   run_deep_research: { label: 'Run deep research', icon: Search },
   open_in_workbench: { label: 'Open in workbench', icon: SquareArrowOutUpRight },
   propose_graph_edit: { label: 'Propose graph edit', icon: GitBranch },
@@ -113,6 +115,31 @@ export function ResponseActions({
         return;
       }
 
+      if (kind === 'add_next_move') {
+        const userModelId = window.localStorage.getItem('praxis:v5:active-user-model') ?? 'foreign-policy-analyst';
+        const response = await fetch('/api/workspace/next-moves', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            situationId,
+            userModelId,
+            moves: [
+              {
+                id: `ask-${message.id ?? stableIdFromText(message.content)}`,
+                label: 'Ask PRAXIS follow-up',
+                detail: extractFirstLine(question || message.content),
+                href: `/app/workbench/${encodeURIComponent(situationId)}?tab=context`,
+                emphasis: 'primary',
+              },
+            ],
+          }),
+        });
+        if (!response.ok) throw new Error('next move save failed');
+        setStatus('Next move saved');
+        window.dispatchEvent(new CustomEvent('praxis-next-moves-updated', { detail: { situationId, userModelId } }));
+        return;
+      }
+
       if (kind === 'run_deep_research') {
         window.dispatchEvent(
           new CustomEvent('open-praxis-chat', {
@@ -162,4 +189,8 @@ export function ResponseActions({
 
 function extractFirstLine(text: string): string {
   return text.split('\n').find((line) => line.trim())?.trim().slice(0, 240) || 'Follow up on this Ask PRAXIS answer.';
+}
+
+function stableIdFromText(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'response';
 }

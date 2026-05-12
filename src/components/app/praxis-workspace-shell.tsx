@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { AskBar } from '@/components/ask/AskBar';
+import type { WorkspaceNextMove, WorkspaceNextMoveStatus } from '@/lib/dashboard/next-moves';
 import { cn } from '@/lib/utils/cn';
 import { PUBLIC_USER_MODELS } from '@/lib/user-models/seeds';
 import type { UserModelRecord } from '@/lib/user-models/types';
@@ -81,12 +82,15 @@ type ToolCard = {
   detail: string;
   href: string;
   emphasis: 'primary' | 'secondary' | 'subtle';
+  status?: WorkspaceNextMoveStatus;
 };
 
 export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseId, focusSection }: PraxisWorkspaceShellProps) {
   const [privateModels, setPrivateModels] = useState<UserModelRecord[]>([]);
   const [activeUserModelId, setActiveUserModelId] = useState('foreign-policy-analyst');
   const [draftText, setDraftText] = useState('');
+  const [savedNextMoves, setSavedNextMoves] = useState<WorkspaceNextMove[] | null>(null);
+  const [nextMovesSavedAt, setNextMovesSavedAt] = useState<string | null>(null);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(caseId ?? null);
 
   const situations = useSituationStore((state) => state.situations);
@@ -118,10 +122,69 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
   }, [activeSituation, selectedCaseId, workspaceCases]);
   const workspaceLens = useMemo(() => buildWorkspaceLens(activeUserModel, selectedCase, marketplaceToolCount), [activeUserModel, marketplaceToolCount, selectedCase]);
   const toolCards = useMemo(() => buildToolCards(selectedCase, activeUserModel), [activeUserModel, selectedCase]);
+  const displayedToolCards = savedNextMoves?.length ? savedNextMoves.map(nextMoveToToolCard) : toolCards;
 
   useEffect(() => {
     setDraftText(buildDraftSeed(activeUserModel, selectedCase));
   }, [activeUserModel, selectedCase]);
+
+  useEffect(() => {
+    if (!selectedCase || selectedCase.kind !== 'user') {
+      setSavedNextMoves(null);
+      setNextMovesSavedAt(null);
+      return;
+    }
+
+    const controller = new AbortController();
+    const moves = toolCards.map((tool) => ({ ...tool, status: 'open' }));
+    fetch('/api/workspace/next-moves', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        situationId: selectedCase.id,
+        userModelId: activeUserModel.modelId,
+        moves,
+      }),
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (!payload?.state?.moves) return;
+        setSavedNextMoves(payload.state.moves);
+        setNextMovesSavedAt(payload.state.updatedAt ?? null);
+      })
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        setSavedNextMoves(null);
+        setNextMovesSavedAt(null);
+      });
+
+    return () => controller.abort();
+  }, [activeUserModel.modelId, selectedCase, toolCards]);
+
+  useEffect(() => {
+    if (!selectedCase || selectedCase.kind !== 'user') return;
+
+    const currentSituationId = selectedCase.id;
+    const currentUserModelId = activeUserModel.modelId;
+
+    async function refreshNextMoves() {
+      const response = await fetch(`/api/workspace/next-moves?situationId=${encodeURIComponent(currentSituationId)}&userModelId=${encodeURIComponent(currentUserModelId)}`);
+      const payload = response.ok ? await response.json().catch(() => null) : null;
+      if (!payload?.state?.moves) return;
+      setSavedNextMoves(payload.state.moves);
+      setNextMovesSavedAt(payload.state.updatedAt ?? null);
+    }
+
+    function handleNextMovesUpdated(event: Event) {
+      const detail = (event as CustomEvent<{ situationId?: string; userModelId?: string }>).detail;
+      if (detail?.situationId !== currentSituationId || detail.userModelId !== currentUserModelId) return;
+      void refreshNextMoves();
+    }
+
+    window.addEventListener('praxis-next-moves-updated', handleNextMovesUpdated);
+    return () => window.removeEventListener('praxis-next-moves-updated', handleNextMovesUpdated);
+  }, [activeUserModel.modelId, selectedCase]);
 
   useEffect(() => {
     if (!selectedCaseId && activeSituation?.id) {
@@ -155,6 +218,31 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
     } else {
       setActiveSituation(null);
     }
+  }
+
+  function updateNextMove(moveId: string, status: WorkspaceNextMoveStatus) {
+    if (!selectedCase || selectedCase.kind !== 'user') return;
+    setSavedNextMoves((current) => current?.map((move) => (move.id === moveId ? { ...move, status } : move)) ?? current);
+    fetch('/api/workspace/next-moves', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        situationId: selectedCase.id,
+        userModelId: activeUserModel.modelId,
+        moveId,
+        status,
+      }),
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (!payload?.state?.moves) return;
+        setSavedNextMoves(payload.state.moves);
+        setNextMovesSavedAt(payload.state.updatedAt ?? null);
+      })
+      .catch(() => {
+        setSavedNextMoves(null);
+        setNextMovesSavedAt(null);
+      });
   }
 
   const userLibrary = [...privateModels, ...PUBLIC_USER_MODELS];
@@ -376,13 +464,24 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-700">Suggested tools</p>
               <h2 className="mt-1 text-xl font-semibold text-navy-950">Research, source intake, graph review, stakeholder map, ACH, memo drafting, export, red team.</h2>
             </div>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-              {marketplaceToolCount} tools mapped
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {nextMovesSavedAt ? (
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+                  Saved workspace state
+                </span>
+              ) : null}
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                {marketplaceToolCount} tools mapped
+              </span>
+            </div>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {toolCards.map((tool) => (
-              <ToolCardView key={tool.id} tool={tool} />
+            {displayedToolCards.map((tool) => (
+              <ToolCardView
+                key={tool.id}
+                tool={tool}
+                onStatusChange={savedNextMoves?.length ? updateNextMove : undefined}
+              />
             ))}
           </div>
         </div>
@@ -494,6 +593,17 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
       </section>
     </main>
   );
+}
+
+function nextMoveToToolCard(move: WorkspaceNextMove): ToolCard {
+  return {
+    id: move.id,
+    label: move.label,
+    detail: move.detail,
+    href: move.href,
+    emphasis: move.emphasis,
+    status: move.status,
+  };
 }
 
 function buildWorkspaceCases(situations: Situation[], exampleCases: ExampleCase[]): WorkspaceCase[] {
@@ -875,26 +985,55 @@ function SituationLibraryCard({
   );
 }
 
-function ToolCardView({ tool }: { tool: ToolCard }) {
+function ToolCardView({
+  tool,
+  onStatusChange,
+}: {
+  tool: ToolCard;
+  onStatusChange?: (moveId: string, status: WorkspaceNextMoveStatus) => void;
+}) {
   const emphasisClass = tool.emphasis === 'primary'
     ? 'border-diplomatic-blue/25 bg-diplomatic-blue/5'
     : tool.emphasis === 'secondary'
       ? 'border-slate-200 bg-slate-50'
       : 'border-slate-200 bg-white';
+  const isClosed = tool.status === 'done' || tool.status === 'dismissed';
 
   return (
-    <Link href={tool.href} className={cn('group rounded-xl border p-4 transition hover:-translate-y-0.5 hover:border-navy-300 hover:bg-white', emphasisClass)}>
+    <div className={cn('group rounded-xl border p-4 transition hover:-translate-y-0.5 hover:border-navy-300 hover:bg-white', emphasisClass, isClosed && 'opacity-60')}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-navy-700 ring-1 ring-slate-200">
           <Wrench className="h-4 w-4" />
         </div>
-        <span className="rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
-          Open
+        <span className={cn(
+          'rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]',
+          tool.status === 'done'
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+            : tool.status === 'dismissed'
+              ? 'border-slate-200 bg-slate-100 text-slate-500'
+              : 'border-slate-200 bg-white text-slate-600',
+        )}>
+          {tool.status === 'done' ? 'Done' : tool.status === 'dismissed' ? 'Dismissed' : 'Open'}
         </span>
       </div>
       <h3 className="mt-4 text-sm font-semibold text-navy-950">{tool.label}</h3>
       <p className="mt-2 text-xs leading-5 text-slate-700">{tool.detail}</p>
-    </Link>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link href={tool.href} className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-navy-700 hover:bg-slate-50">
+          Open
+        </Link>
+        {onStatusChange && tool.status !== 'done' ? (
+          <button type="button" onClick={() => onStatusChange(tool.id, 'done')} className="rounded-md bg-navy-950 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-navy-800">
+            Done
+          </button>
+        ) : null}
+        {onStatusChange && tool.status !== 'dismissed' ? (
+          <button type="button" onClick={() => onStatusChange(tool.id, 'dismissed')} className="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+            Dismiss
+          </button>
+        ) : null}
+      </div>
+    </div>
   );
 }
 

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- feat(dashboard): persist Ask-first recommended next moves.
+  The dashboard now saves User Core + Situation Core suggested tool moves for
+  authenticated user situations through an owner-scoped workspace API, exposes
+  done/dismiss controls, and keeps public example situations local-only.
 - feat(mvp): consolidate public routes around the Ask-first app.
   Landing now shows an Ask PRAXIS preview with User Core, Situation Core,
   suggested tools, and memo output; legacy public demo/context/method/draft/user

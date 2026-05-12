@@ -1,6 +1,6 @@
 # PRAXIS TODO
 
-Last updated: 2026-05-11.
+Last updated: 2026-05-12.
 
 ## Current Build Queue
 
@@ -11,7 +11,7 @@ Last updated: 2026-05-11.
 
 ## Immediate Next Steps
 
-1. Make Ask PRAXIS persist recommended next moves from the active User Core and Situation Core so the dashboard suggestions become saved workspace state, not only UI guidance.
+1. Browser-verify the persisted next-move workflow with a signed user session and add a Playwright smoke once the auth fixture is stable.
 2. Complete Pack 24 backend Reasoning Spine: Rust BLAKE3 context-pack compiler, real trace ids, Langfuse or equivalent trace store, and live event streaming behind the current Spine panel.
 3. Complete Pack 23 backend Library Bucket: real DOCX/PDF/MD ingestion, source receipts, hybrid search, and provenance-ledger persistence behind the current Drafter Companion UI.
 4. Keep user-created Situation Cores primary inside `/app/contexts` and `/app/cores/context`; public `/contexts` is now only a redirect.
@@ -20,6 +20,12 @@ Last updated: 2026-05-11.
 7. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 3/10.
 8. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
 9. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
+
+## Future Architecture Direction
+
+- Keep PRAXIS focused on user context, analysis, writing, review, and handover.
+- Use DIALECTICA as the ingestion and knowledge layer through a narrow adapter contract; see `docs/architecture/PRAXIS_DIALECTICA_KNOWLEDGE_LAYER_ALIGNMENT.md`.
+- Treat KAIROS and AGON as upstream evidence/graph providers to DIALECTICA, not as direct PRAXIS UI dependencies.
 
 ## Live Production Blockers
 
