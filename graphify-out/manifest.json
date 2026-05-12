@@ -4179,9 +4179,13 @@
     "mtime": 1778429930.0896025,
     "hash": "6e8b5a863fafd955d688fcad3bcec95c"
   },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\workbench\\draft\\DraftCompanion.tsx": {
+    "mtime": 1778546312.5974,
+    "hash": "34a4f88d7e284dd47f982df0d96edf3b"
+  },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\workbench\\draft\\DraftTab.tsx": {
-    "mtime": 1778429930.0896025,
-    "hash": "74ed8615b233654ded31c785cd90f925"
+    "mtime": 1778545702.4458494,
+    "hash": "8d065e45cbe3ff6b0be9b7923a372d16"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\workbench\\draft\\ExportControls.tsx": {
     "mtime": 1778429930.0896025,
@@ -6128,8 +6132,8 @@
     "hash": "adcc48ce46eea94bd9e26596e276b5bd"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\e2e\\workbench\\draft-briefing-assembly.spec.ts": {
-    "mtime": 1778429930.6248894,
-    "hash": "b7f6535067f9dc9dbb02a69325f7220c"
+    "mtime": 1778546224.7452319,
+    "hash": "5ddabd3cacbddeec9647093241282ee9"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\e2e\\workbench\\library-faceted-browse.spec.ts": {
     "mtime": 1778429930.6258955,
@@ -6708,8 +6712,8 @@
     "hash": "373d6e49b2a14fd39b4152249eb5a4df"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\CHANGELOG.md": {
-    "mtime": 1778478127.6184325,
-    "hash": "e302214aeb1cd695b58dbdcbda65e549"
+    "mtime": 1778545826.1469266,
+    "hash": "6617cf95c07b6e172c7bbf7bd30e0e89"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\CLAUDE.md": {
     "mtime": 1778513850.8080926,
@@ -6756,8 +6760,8 @@
     "hash": "4480eec3f1c2e0555ad88d1b65411d4e"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\TODO.md": {
-    "mtime": 1778514149.1250238,
-    "hash": "767698babbc48bf8b460d25f890b9582"
+    "mtime": 1778545835.4570427,
+    "hash": "e4a8865ca4d95a4d9295153a3e8fd88b"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\agents\\README.md": {
     "mtime": 1778429928.5706878,

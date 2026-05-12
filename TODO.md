@@ -11,13 +11,14 @@ Last updated: 2026-05-11.
 
 ## Immediate Next Steps
 
-1. Merge private user-created contexts into `/contexts`; the wizard now creates owner-scoped contexts and opens the workbench, but the list still shows examples only.
-2. Add an app-level Active Core Stack indicator across User, Context/Situation, Source, Document, Graph, and Output cores.
-3. Make Drafting and Memo Studio visibly show which cores fed the current output.
-4. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
-5. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 3/10.
-6. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
-7. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
+1. Complete Pack 23 backend Library Bucket: real DOCX/PDF/MD ingestion, source receipts, hybrid search, and provenance-ledger persistence behind the current Drafter Companion UI.
+2. Merge private user-created contexts into `/contexts`; the wizard now creates owner-scoped contexts and opens the workbench, but the list still shows examples only.
+3. Add an app-level Active Core Stack indicator across User, Context/Situation, Source, Document, Graph, and Output cores.
+4. Make Drafting and Memo Studio visibly show which cores fed the current output.
+5. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
+6. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 3/10.
+7. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
+8. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
 
 ## Live Production Blockers
 

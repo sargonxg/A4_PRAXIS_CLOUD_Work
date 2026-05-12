@@ -6,6 +6,7 @@ import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { AppendixPicker } from '@/components/workbench/draft/AppendixPicker';
 import { CoverPageEditor } from '@/components/workbench/draft/CoverPageEditor';
+import { DraftCompanion } from '@/components/workbench/draft/DraftCompanion';
 import { ExportControls } from '@/components/workbench/draft/ExportControls';
 import { MemosSelection } from '@/components/workbench/draft/MemosSelection';
 import { RedactionSettings } from '@/components/workbench/draft/RedactionSettings';
@@ -39,6 +40,7 @@ export function DraftTab() {
   const [backendDraftId, setBackendDraftId] = useState<string | null>(null);
   const [citationNote, setCitationNote] = useState<string | null>(null);
   const selectedMemos = memoOptions.filter((memo) => selectedMemoIds.includes(memo.id));
+  const selectedAppendices = appendices.filter((appendix) => selectedAppendixIds.includes(appendix.id));
 
   function toggleMemo(memoId: string) {
     setSelectedMemoIds((current) => {
@@ -238,29 +240,41 @@ export function DraftTab() {
         {citationNote ? <p className="mt-3 text-sm font-semibold text-navy-900">{citationNote}</p> : null}
       </div>
 
-      <MemosSelection
-        memoOptions={memoOptions}
-        selectedMemoIds={selectedMemoIds}
-        primaryMemoId={primaryMemoId}
-        onToggleMemo={toggleMemo}
-        onSetPrimary={setPrimaryMemoId}
-      />
-      <CoverPageEditor value={coverPage} onChange={setCoverPage} />
-      <AppendixPicker appendices={appendices} selectedAppendixIds={selectedAppendixIds} onToggleAppendix={toggleAppendix} />
-      <RedactionSettings
-        audience={settings.audience}
-        selectedMemos={selectedMemos}
-        redactions={redactions}
-        onAudienceChange={(audience) => setSettings((current) => ({ ...current, audience }))}
-        onRedactionChange={changeRedaction}
-      />
-      <ExportControls
-        settings={settings}
-        disabled={selectedMemos.length === 0}
-        exportSummary={exportNote ? `${exportSummary} ${exportNote}` : exportSummary}
-        onSettingsChange={setSettings}
-        onExport={exportPackage}
-      />
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="space-y-4">
+          <MemosSelection
+            memoOptions={memoOptions}
+            selectedMemoIds={selectedMemoIds}
+            primaryMemoId={primaryMemoId}
+            onToggleMemo={toggleMemo}
+            onSetPrimary={setPrimaryMemoId}
+          />
+          <CoverPageEditor value={coverPage} onChange={setCoverPage} />
+          <AppendixPicker appendices={appendices} selectedAppendixIds={selectedAppendixIds} onToggleAppendix={toggleAppendix} />
+          <RedactionSettings
+            audience={settings.audience}
+            selectedMemos={selectedMemos}
+            redactions={redactions}
+            onAudienceChange={(audience) => setSettings((current) => ({ ...current, audience }))}
+            onRedactionChange={changeRedaction}
+          />
+          <ExportControls
+            settings={settings}
+            disabled={selectedMemos.length === 0}
+            exportSummary={exportNote ? `${exportSummary} ${exportNote}` : exportSummary}
+            onSettingsChange={setSettings}
+            onExport={exportPackage}
+          />
+        </div>
+        <div className="xl:sticky xl:top-4 xl:self-start">
+          <DraftCompanion
+            selectedMemos={selectedMemos}
+            selectedAppendices={selectedAppendices}
+            primaryMemoId={primaryMemoId}
+            settings={settings}
+          />
+        </div>
+      </div>
     </section>
   );
 }

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- feat(drafting): add the Pack 23 Drafter Companion first slice.
+  The workbench draft tab now has a live companion rail with outline,
+  evidence, graph context, style, audit receipts, and suggested writer actions
+  driven by the selected memos and appendices.
 - fix(v5): route `/app` to the dashboard, refresh Graphify, pass the full
   `audit:gate`, and record the approved frontend production deploy evidence.
 - fix(v5): show an explicit checkout-unavailable message when Polar billing is
