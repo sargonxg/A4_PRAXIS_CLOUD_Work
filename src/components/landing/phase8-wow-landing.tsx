@@ -149,9 +149,9 @@ const methods = [
 ] as const;
 
 const outcomeCards = [
-  ["Better answers", "AI starts with role, audience, sources, ontology, and case frame."],
-  ["Faster memos", "Research, graph review, and drafting stay in one context trail."],
-  ["Less tool noise", "PRAXIS suggests the few tools that fit the active Situation Core."],
+  ["Vetted context", "Answers start from sources, actors, deadlines, assumptions, and what the team already knows."],
+  ["Inherited work", "New analysts can pick up the reasoning trail instead of inheriting a folder of disconnected files."],
+  ["Fewer hallucinations", "PRAXIS shows what is sourced, what is inferred, and what still needs human judgment."],
 ] as const;
 
 const trustItems = [
@@ -207,12 +207,12 @@ const realAppSurfaces = [
 ] as const;
 
 const corePreview = [
-  { id: "user", label: "User Core", detail: "Role, audience, preferences, and writing style.", tone: "border-[#4A90A4] bg-[#EAF5F7]" },
-  { id: "context", label: "Situation Core", detail: "Actors, frame, assumptions, and open questions.", tone: "border-[#E8B931] bg-[#FFF7D6]" },
+  { id: "user", label: "User Core", detail: "Role, audience, voice, preferences, and decision posture.", tone: "border-[#4A90A4] bg-[#EAF5F7]" },
+  { id: "context", label: "Situation Core", detail: "Actors, claims, stakes, assumptions, and unresolved questions.", tone: "border-[#E8B931] bg-[#FFF7D6]" },
   { id: "time", label: "Time Core", detail: "Sequence, recency, deadlines, and what changed when.", tone: "border-[#2F8F83] bg-[#E9F7F3]" },
-  { id: "office", label: "Office Context", detail: "Institution, team, decision lane, and constraints.", tone: "border-[#5967D8] bg-[#EEF0FF]" },
-  { id: "source", label: "Source Core", detail: "Receipts, credibility, coverage, and provenance.", tone: "border-[#C75B39] bg-[#FFF0EA]" },
-  { id: "output", label: "Output Core", detail: "Memos, briefs, handoffs, and export state.", tone: "border-[#7A5FD8] bg-[#F1EEFF]" },
+  { id: "office", label: "Office Context", detail: "Institution, mandate, audience, blockers, and yes, office politics.", tone: "border-[#5967D8] bg-[#EEF0FF]" },
+  { id: "source", label: "Source Core", detail: "Receipts, credibility, source reading notes, and provenance.", tone: "border-[#C75B39] bg-[#FFF0EA]" },
+  { id: "output", label: "Output Core", detail: "Memos, briefs, handoffs, review history, and export state.", tone: "border-[#7A5FD8] bg-[#F1EEFF]" },
 ] as const;
 
 const attachedToolPreview = [
@@ -304,24 +304,24 @@ export function Phase8WowLanding() {
       <section className="relative overflow-hidden border-b border-[#C6D2DD] bg-[linear-gradient(135deg,#F8FBFD_0%,#EEF6F6_46%,#F9F0D5_100%)]">
         <div className="mx-auto grid min-h-[calc(100vh-9rem)] max-w-7xl gap-8 px-4 pb-7 pt-7 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-10 lg:pt-10">
           <div className="flex flex-col justify-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#8a5a00]">PRAXIS by TACITUS · Context layer for policy AI</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#8a5a00]">PRAXIS by TACITUS · Institutional memory for policy teams</p>
             <h1 className="mt-4 max-w-3xl font-serif text-4xl font-semibold leading-[1.02] text-[#111827] sm:text-6xl lg:text-7xl">
               Policy AI that starts with the right context.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-[#374151] sm:text-lg">
-              PRAXIS builds the User Core, Situation Core, source graph, and domain ontology your team needs, then applies them to research, tool selection, and memo drafting.
+              PRAXIS turns tacit expertise, vetted sources, stakeholder dynamics, deadlines, and office reality into reusable context. Then AI can reason from what your team actually knows, not from a blank chat box.
             </p>
             <p className="mt-3 text-sm font-semibold text-[#0B3B4A]">
-              Built for foreign policy desks, economic policy teams, and international diplomacy teams.
+              Built for policy teams that need judgment, continuity, and defensible memos under real-world pressure.
             </p>
             <div className="mt-7 rounded-[1.5rem] border border-white/70 bg-white/70 p-3 shadow-2xl shadow-[#0B1B2B]/10 backdrop-blur">
               <div className="flex flex-wrap gap-2 pb-3">
                 {[
                   ["User Core", persona.short, "border-[#4A90A4] bg-[#EAF5F7]"],
                   ["Situation Core", context.label, "border-[#E8B931] bg-[#FFF7D6]"],
-                  ["Temporality", "sequence · deadline · recency", "border-[#2F8F83] bg-[#E9F7F3]"],
-                  ["Office context", "team · institution · audience", "border-[#5967D8] bg-[#EEF0FF]"],
-                  ["Suggested tools", "research · source · graph · memo", "border-[#C75B39] bg-[#FFF0EA]"],
+                  ["Source posture", "vetted · disputed · missing", "border-[#C75B39] bg-[#FFF0EA]"],
+                  ["Decision reality", "deadline · audience · constraints", "border-[#2F8F83] bg-[#E9F7F3]"],
+                  ["Office context", "mandate · culture · politics", "border-[#5967D8] bg-[#EEF0FF]"],
                 ].map(([label, value, tone]) => (
                   <span key={label} className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold text-[#111827]", tone)}>
                     <GripVertical className="h-3.5 w-3.5 text-[#6b7280]" aria-hidden="true" />
@@ -340,7 +340,7 @@ export function Phase8WowLanding() {
                 <span className="min-w-0 flex-1">
                   <span className="block text-base font-semibold">See PRAXIS write the memo from this context.</span>
                   <span className="mt-1 block text-xs leading-5 text-[#D7E1EA]">
-                    Attach the cores, route the right tools, then open the sourced draft in Write.
+                    Attach the evidence and tacit context, route the right tools, then open the sourced draft in Write.
                   </span>
                 </span>
                 <ArrowRight className="h-5 w-5 shrink-0 text-[#D7E1EA]" aria-hidden="true" />
@@ -371,7 +371,7 @@ export function Phase8WowLanding() {
                 See PRAXIS write a memo
               </Link>
             </div>
-            <p className="mt-3 text-xs font-semibold text-[#5C6975]">30 seconds to a real memo with citations.</p>
+            <p className="mt-3 text-xs font-semibold text-[#5C6975]">30 seconds from messy situation to cited memo path.</p>
             <div className="mt-8 grid max-w-2xl gap-2 sm:grid-cols-3">
               {outcomeCards.map(([value, label]) => (
                 <div key={label} className="rounded-md border border-[#C6D2DD] bg-white/75 px-3 py-3">
@@ -387,12 +387,12 @@ export function Phase8WowLanding() {
               <div className="border-b border-[#e5dcc2] px-4 py-3 sm:px-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8a5a00]">Ask PRAXIS preview</p>
-                    <p className="mt-1 text-sm font-medium text-[#4b5563]">Attach a User Core, a Situation Core, and the office context, then let PRAXIS route the next move.</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8a5a00]">Context engine</p>
+                    <p className="mt-1 text-sm font-medium text-[#4b5563]">Policy work is not just sources. It is people, timing, incentives, institutional memory, and the quiet stuff nobody writes down.</p>
                   </div>
                   <span className="inline-flex items-center gap-2 rounded-full bg-[#eef7f1] px-3 py-1 text-xs font-semibold text-[#166534]">
                     <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                    ready
+                    vetted
                   </span>
                 </div>
               </div>
@@ -482,7 +482,7 @@ export function Phase8WowLanding() {
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f6c85f]">Graph intelligence</p>
             <h2 className="mt-3 font-serif text-3xl font-semibold text-white sm:text-5xl">The answer is only useful if the graph behind it is legible.</h2>
             <p className="mt-4 text-sm leading-6 text-zinc-300 sm:text-base">
-              Each Situation Core carries a visible operating picture: source receipts, actors, claims, evidence, temporality, and drafts stay connected instead of disappearing into a chat transcript.
+              The moat is the maintained context graph: source receipts, actors, claims, evidence, deadlines, office constraints, and draft decisions stay connected instead of disappearing into a chat transcript.
             </p>
           </div>
           <ContextGraphPreview
@@ -499,10 +499,10 @@ export function Phase8WowLanding() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0B6F70]">Inside the real app</p>
               <h2 className="mt-3 font-serif text-3xl font-semibold text-[#111827] sm:text-5xl">
-                Policy context creation, research, and memo writing in one place.
+                Capture the context behind the policy work, then make it reusable.
               </h2>
               <p className="mt-4 text-sm leading-6 text-[#4B5563] sm:text-base">
-                The preview is a window into shipped app surfaces: dashboard, workbench, graph, memo studio, research, and context creation. Sign in to create private User Cores and Situation Cores, then apply them to the tools and drafts your team needs.
+                PRAXIS keeps analyst reasoning, source judgments, stakeholder read, deadlines, office expectations, and memo history attached to the situation. Your next analyst inherits the work instead of starting over.
               </p>
               <Link
                 href="/app"
@@ -549,10 +549,10 @@ export function Phase8WowLanding() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7DD3C7]">User Core + Situation Cores</p>
             <h2 className="mt-3 font-serif text-3xl font-semibold sm:text-5xl">
-              Attach the context that matters. PRAXIS suggests the next move.
+              Attach the context that matters. Make team judgment portable.
             </h2>
             <p className="mt-4 text-sm leading-6 text-slate-300 sm:text-base">
-              Keep the user model, situation, time, office, source receipts, graph, and output package inspectable. Attach only what the task needs, then run the right next tool.
+              Keep the user model, situation, time, office, source receipts, graph, and output package inspectable. Attach only what the task needs, then PRAXIS can explain the answer, the gaps, and the next move.
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               {[

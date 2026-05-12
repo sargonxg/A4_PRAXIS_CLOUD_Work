@@ -12,7 +12,7 @@ const softwareJsonLd = {
   applicationSubCategory: "Policy workbench",
   operatingSystem: "Web",
   description:
-    "PRAXIS helps policy, diplomacy, and strategy teams build the user context, situation cores, domain ontologies, tool workflows, and reviewable drafts needed to use AI well.",
+    "PRAXIS helps policy, diplomacy, and strategy teams turn tacit expertise, vetted sources, stakeholder dynamics, and institutional memory into reusable AI context and reviewable drafts.",
   url: siteUrl,
   image: `${siteUrl}/opengraph-image`,
   inLanguage: "en",
@@ -26,7 +26,7 @@ const softwareJsonLd = {
       name: "Preview",
       price: "0",
       priceCurrency: "USD",
-      description: "Ask PRAXIS preview that shows how User Cores, Situation Cores, suggested tools, and memo outputs fit together",
+      description: "Interactive PRAXIS preview showing how structured context, source posture, stakeholder dynamics, and memo outputs fit together",
     },
     {
       "@type": "Offer",
@@ -49,9 +49,9 @@ const softwareJsonLd = {
     url: "https://tacitus.me",
   },
   featureList: [
-    "Ask PRAXIS preview for User Core and Situation Core attachment",
+    "Policy AI that starts with structured context instead of a blank chat box",
     "Persona-aware answers for policy, diplomacy, and strategic analysis work",
-    "User Core, Situation Core, source graph, and domain-targeted ontology workflows for policy teams",
+    "User Core, Situation Core, source graph, tacit institutional memory, and memo workflows for policy teams",
     "Suggested actions for research, source intake, graph review, stakeholder mapping, scenarios, memo drafting, brief export, and red team review",
     "Review-first drafting with source posture and visible gaps",
     "Google Cloud, Firebase, Firestore, Cloud SQL Postgres, and Secret Manager production path",
