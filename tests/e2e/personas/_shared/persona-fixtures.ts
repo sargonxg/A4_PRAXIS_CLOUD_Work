@@ -3,7 +3,7 @@ import { expect, type Page } from '@playwright/test';
 
 const DEMO_SESSION_SECRET = 'praxis-dev-cookie-signing-secret';
 const DEMO_SESSION_COOKIE = 'tacitus-auth-session';
-const BASE_ORIGIN = 'http://localhost:3000';
+const BASE_ORIGIN = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 function signDemoSession(value: string) {
   const sig = crypto.createHmac('sha256', DEMO_SESSION_SECRET).update(value).digest('base64url');

@@ -1,48 +1,27 @@
 'use client';
 
 import type { ReactNode, ComponentType } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   ChevronsLeft,
   ChevronsRight,
-  FileText,
-  FolderKanban,
   MessageSquareText,
   LogOut,
   Plus,
   Settings,
   Store,
-  Target,
-  UserCircle,
-  Wrench,
+  FolderKanban,
 } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useAppStore } from '@/stores/app-store';
-import { useSituationStore } from '@/stores/situation-store';
-
-const ARCHIVE_LINKS = [
-  { label: 'Source Scout', href: '/source-scout' },
-  { label: 'GraphOps', href: '/graphops' },
-  { label: 'Briefing Studio', href: '/briefing' },
-  { label: 'Advisor Table', href: '/brainstorming-table' },
-  { label: 'Documents', href: '/documents' },
-  { label: 'Sanctions', href: '/sanctions' },
-  { label: 'Media Compass', href: '/media-compass' },
-  { label: 'Methodology', href: '/methodology' },
-];
 
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, logout } = useAuth();
   const { sidebarOpen, toggleSidebar } = useAppStore();
-  const situations = useSituationStore((state) => state.situations);
-  const activeSituation = useSituationStore((state) => state.activeSituation);
-  const showArchive = searchParams.get('show_archive') === '1';
-  const activeCaseId = activeSituation?.id ?? situations[0]?.id ?? 'syria-2026';
   const initials = (user?.name || user?.email || 'DA')
     .split(/\s|@/)
     .filter(Boolean)
@@ -64,7 +43,7 @@ export function AppSidebar() {
       aria-label="PRAXIS navigation"
     >
       <div className="flex h-16 items-center gap-3 border-b border-[var(--color-app-border)] px-3">
-        <PraxisLink href="/dashboard" className="flex min-w-0 flex-1 items-center gap-3">
+        <PraxisLink href="/app/dashboard" className="flex min-w-0 flex-1 items-center gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-diplomatic-blue text-sm font-bold text-white">
             P
           </span>
@@ -86,35 +65,16 @@ export function AppSidebar() {
       </div>
 
       <nav className="min-h-0 flex-1 space-y-5 overflow-y-auto px-2 py-4">
-        <SectionLabel open={sidebarOpen}>Command</SectionLabel>
-        <NavItem open={sidebarOpen} href="/dashboard#ask-praxis" label="Ask PRAXIS" icon={MessageSquareText} active={pathname === '/app/dashboard'} />
-        <NavItem open={sidebarOpen} href="/situations/new" label="New Context" icon={Plus} />
+        <SectionLabel open={sidebarOpen}>Start</SectionLabel>
+        <NavItem open={sidebarOpen} href="/app/dashboard#ask-praxis" label="Ask PRAXIS" icon={MessageSquareText} active={pathname === '/app/dashboard'} />
+        <NavItem open={sidebarOpen} href="/app/situations/new" label="New Context" icon={Plus} />
 
-        <SectionLabel open={sidebarOpen}>Repository</SectionLabel>
-        <NavItem open={sidebarOpen} href="/cores/context" label="Situation Core" icon={Target} active={pathname === '/app/cores/context'} />
-        <NavItem open={sidebarOpen} href="/cores/user" label="User Core" icon={UserCircle} active={pathname === '/app/cores/user'} />
-        <NavItem open={sidebarOpen} href="/contexts" label={`Contexts${situations.length ? ` (${situations.length})` : ''}`} icon={FolderKanban} active={pathname.startsWith('/app/contexts') || pathname.startsWith('/app/workbench')} />
-        <NavItem
-          open={sidebarOpen}
-          href={`/workbench/${activeCaseId}?openChapter=memos`}
-          label="Outputs"
-          icon={FileText}
-          active={pathname.includes('/app/workbench') && searchParams.get('openChapter') === 'memos'}
-        />
-        <NavItem open={sidebarOpen} href="/tools" label="Tools" icon={Store} active={pathname === '/app/tools'} />
+        <SectionLabel open={sidebarOpen}>Core library</SectionLabel>
+        <NavItem open={sidebarOpen} href="/app/contexts" label="Manage cores" icon={FolderKanban} active={pathname.startsWith('/app/contexts')} />
+        <NavItem open={sidebarOpen} href="/app/tools" label="Tools" icon={Store} active={pathname === '/app/tools'} />
 
         <SectionLabel open={sidebarOpen}>Account</SectionLabel>
-        <NavItem open={sidebarOpen} href="/settings" label="Settings" icon={Settings} active={pathname.startsWith('/app/settings')} />
-
-        {showArchive ? (
-          <>
-            <SectionLabel open={sidebarOpen}>Archive</SectionLabel>
-            <NavItem open={sidebarOpen} href="/tools?show_archive=1" label="All legacy tools" icon={Wrench} />
-            {ARCHIVE_LINKS.map((item) => (
-              <NavItem key={item.href} open={sidebarOpen} href={item.href} label={item.label} icon={Wrench} inset />
-            ))}
-          </>
-        ) : null}
+        <NavItem open={sidebarOpen} href="/app/settings" label="Settings" icon={Settings} active={pathname.startsWith('/app/settings')} />
       </nav>
 
       <div className="border-t border-[var(--color-app-border)] p-2">

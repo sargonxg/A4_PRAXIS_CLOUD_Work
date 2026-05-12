@@ -3052,8 +3052,8 @@
     "hash": "e1a2ac9e52d0b8070ff173d629a0e317"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\app\\app-sidebar.tsx": {
-    "mtime": 1778551277.6247828,
-    "hash": "6bceb22b3dc05d602eb6ed62d20b9e16"
+    "mtime": 1778565059.6629221,
+    "hash": "e239a54182731996383c2ea254c66397"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\app\\core-context-strip.tsx": {
     "mtime": 1778552429.4199336,
@@ -3072,8 +3072,8 @@
     "hash": "dfd159b386013249cc50a51167cfeac4"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\app\\mobile-bottom-nav.tsx": {
-    "mtime": 1778519815.254601,
-    "hash": "9ddb2f85099d8a5e36bdf6a2310bca09"
+    "mtime": 1778565065.3102975,
+    "hash": "6b54fe9abb32946363788207437b099b"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\app\\praxis-workspace-shell.tsx": {
     "mtime": 1778562829.1336508,
@@ -6052,8 +6052,8 @@
     "hash": "4225dad4f976287f6a783fe9c32aadd5"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\e2e\\dashboard-command-center.spec.ts": {
-    "mtime": 1778562656.409452,
-    "hash": "5c4821fcc94a2d2c345033e766c6373c"
+    "mtime": 1778565501.9873548,
+    "hash": "f37a4b2ac6d325e8d1d6e107339be735"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\e2e\\golden-path.spec.ts": {
     "mtime": 1778429930.6029327,
@@ -6108,8 +6108,8 @@
     "hash": "e0ab7b652e0132c67e90c3dfd5af77dd"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\e2e\\personas\\_shared\\persona-fixtures.ts": {
-    "mtime": 1778563320.428226,
-    "hash": "2eb9a630a5ae090c9a36abc1cc930dee"
+    "mtime": 1778565587.8677418,
+    "hash": "699b4e6b16a41a5db6b82172417e3db6"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\e2e\\settings\\custom-persona-creation.spec.ts": {
     "mtime": 1778429930.6145444,
